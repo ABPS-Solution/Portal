@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<title>ABPS Minimalist Auth Baseline</title>
+<title>ABPS Auth Baseline Test</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, system-ui, sans-serif; background: #f0f4f8; color: #1a2332; padding: 20px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f4f8; color: #1a2332; padding: 20px; }
   
   #auth-container { max-width: 400px; margin: 100px auto; padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
   h2 { margin-bottom: 16px; color: #003d82; text-align: center; }
   
   label { display: block; font-size: .75rem; font-weight: 600; color: #6b7a8d; text-transform: uppercase; margin: 14px 0 4px; }
-  input { width: 100%; padding: 10px; border: 1.5px solid #d0d9e4; border-radius: 8px; font-size: .9rem; }
+  input { width: 100%; padding: 10px; border: 1.5px solid #d0d9e4; border-radius: 8px; font-size: .9rem; background: #fff; color: #1a2332; }
   
   .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 20px; font-size: 1rem; background: #0056b3; color: #fff; }
   .btn:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -23,7 +23,8 @@
 <body>
 
 <div id="auth-container">
-  <h2>ABPS Secure Sign-In</h2>
+  <h2>ABPS Gateway System</h2>
+  
   <label>Username</label>
   <input type="text" id="auth-user" placeholder="e.g. demo.engineer" />
   
@@ -34,25 +35,25 @@
 </div>
 
 <div id="app-portal">
-  <h1 style="color: #00a878; margin-bottom: 10px;">🎉 Success!</h1>
-  <p style="color: #6b7a8d; margin-bottom: 20px;">You have cleared the security firewall gateway.</p>
-  <div style="background: #f8fafc; padding: 16px; border-radius: 8px; font-weight: bold;" id="user-badge"></div>
+  <h1 style="color: #00a878; margin-bottom: 10px;">🎉 Handshake Complete!</h1>
+  <p style="color: #6b7a8d; margin-bottom: 20px;">The network security firewall has cleared your workspace access.</p>
+  <div style="background: #f8fafc; padding: 16px; border-radius: 8px; font-weight: bold; margin-bottom: 20px;" id="user-badge"></div>
   <button class="btn" style="background: #e84545; width: auto; padding: 8px 16px;" onclick="location.reload()">Sign Out</button>
 </div>
 
 <script>
-// Paste your copied Web App link string directly between these quotes:
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxyiBOclsLH-S7hbsigxjEST37E-JZp8G_XVu_zq-xSuE0vG4b2Nech4CLURcHbS_UHaw/exec";
+// Pointed directly to your live Web App endpoint URL string
+const GAS_URL = "https://script.google.com/macros/s/AKfycbygnmkPzgE3qyhmjvRYQJlWBdFldTvg676sewbII3BhZcZk-nE5PM1oeMniLlb7X88okw/exec";
 
 async function executeLogin() {
   const u = document.getElementById('auth-user').value.trim();
   const p = document.getElementById('auth-pass').value;
   const btn = document.getElementById('login-btn');
   
-  if(!u || !p) return alert("Please fill out both entry fields.");
+  if(!u || !p) return alert("Credentials fields cannot be left blank.");
   
   btn.disabled = true;
-  btn.textContent = "Verifying...";
+  btn.textContent = "Verifying Identity Loop...";
 
   try {
     const res = await fetch(GAS_URL, {
@@ -65,13 +66,13 @@ async function executeLogin() {
     if(data.success) {
       document.getElementById('auth-container').style.display = 'none';
       document.getElementById('app-portal').style.display = 'block';
-      document.getElementById('user-badge').textContent = "Active User Profile Context: " + data.username;
+      document.getElementById('user-badge').textContent = "Authenticated Context Active: " + data.username;
     } else {
-      alert("Verification Failed: " + data.error);
+      alert("Authentication Refused: " + data.error);
     }
   } catch(e) {
-    console.error("Network Log Exception:", e);
-    alert("Connection Error: Check console logs for error context parameters.");
+    console.error("Network Log Exception Context:", e);
+    alert("Connection Error: Handshake dropped before completion. Verify developer console parameters.");
   } finally {
     btn.disabled = false;
     btn.textContent = "Sign In";
