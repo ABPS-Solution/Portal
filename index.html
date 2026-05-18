@@ -386,12 +386,12 @@ async function executeLogin() {
   if(!u || !p) return alert("Credentials fields cannot be left blank.");
 
   try {
+    // We remove explicit mode and content headers to let standard browser redirects flow
     const res = await fetch(GAS_URL, {
       method: 'POST',
-      mode: 'cors',
-      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'login', username: u, password: p })
     });
+    
     const data = await res.json();
     if(data.success) {
       currentActiveSessionToken = data.token;
@@ -402,6 +402,7 @@ async function executeLogin() {
       alert("Authentication Failed: " + data.error);
     }
   } catch(e) {
+    console.error("Connection Debug Log:", e);
     alert("System API Communication Interrupted: Failed to fetch network layer responses.");
   }
 }
