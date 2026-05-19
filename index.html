@@ -35,7 +35,7 @@
   .section-header { background: var(--brand); color: #fff; padding: 6px 12px; font-size: .75rem; font-weight: 700; text-transform: uppercase; }
   .section-body { padding: 12px; }
   
-  /* Ultra-Compact Micro Dashboard Data Grid Container with Text Wrap Guarding */
+  /* Ultra-Compact Scannable Framework with multi-span rules text wrap configurations */
   .compact-fields-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; text-align: left; }
   @media(min-width: 600px) { .compact-fields-grid { grid-template-columns: repeat(4, 1fr); } }
   @media(min-width: 950px) { .compact-fields-grid { grid-template-columns: repeat(6, 1fr); } }
@@ -43,7 +43,11 @@
   .grid-cell-item label { font-size: 0.6rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 1px; }
   .grid-cell-item input, .grid-cell-item select, .grid-cell-item textarea { padding: 3px 4px; font-size: 0.8rem; font-weight: 600; border-radius: 3px; border: 1px solid var(--border); }
   
-  /* Ultra-Thin Grouping Section Dividers rules */
+  /* Layout Spanning Rules configuration */
+  .span-two-units { grid-column: span 2; }
+  @media(min-width: 600px) { .span-two-units { grid-column: span 2; } }
+  @media(min-width: 950px) { .span-two-units { grid-column: span 2; } }
+  
   .section-divider-line { grid-column: 1 / -1; height: 1px; background: #cbd5e1; margin: 4px 0; }
   
   .pill-group { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
@@ -51,7 +55,7 @@
   .pill-group label { padding: 4px 8px; border: 1.5px solid var(--border); border-radius: 14px; font-size: .72rem; cursor: pointer; background: #fff; white-space: nowrap; }
   .pill-group input:checked + label { background: var(--brand); border-color: var(--brand); color: #fff; }
   
-  .navigation-action-header-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: #ffffff; border-radius: 6px; margin-bottom: 14px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+  .navigation-action-header-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: #ffffff; border-radius: 6px; margin-bottom: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
   .nav-btn-styled { background: var(--brand); color: white; border: none; padding: 6px 14px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.15s; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
   .nav-btn-styled:hover { background: var(--brand-dk); }
   
@@ -68,7 +72,6 @@
   .fup-item-header { padding: 10px; background: #edf2f7; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; align-items: center; }
   .fup-item-body { padding: 12px; display: none; border-top: 1px solid var(--border); background: #fff; }
   
-  /* Double column scheduling sub rows layout alignments style configurations */
   .task-double-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; grid-column: span 2; }
   .task-grid-inputs, .fup-grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #f1f5f9; padding: 12px; border-radius: 4px; margin: 8px 0; text-align: left; }
   .task-item-card { background: var(--card); border: 1px solid var(--border); padding: 10px; border-radius: 4px; text-align: left; margin-bottom: 6px; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
@@ -115,7 +118,8 @@
 
   <div id="module-workspace-container" style="display: none;">
     <div class="navigation-action-header-row">
-      <div style="width:10px;"></div> <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
+      <div style="width:10px;"></div>
+      <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
     </div>
     
     <div id="workspace-cardDetails" class="workspace-panel" style="display: none;">
@@ -145,7 +149,7 @@
       </div>
 
       <div id="missing-trigger-notice-block" style="display:none; padding:20px; text-align:center; background:white; border-radius:var(--radius); border:1px solid var(--border); margin-bottom:15px;">
-        <p style="color:var(--muted); margin-bottom:12px; font-size:0.88rem;">No record matched your target company query parameters.</p>
+        <p style="color:var(--muted); margin-bottom:12px; font-size:0.88rem;">No record matched your target company parameters.</p>
         <button class="btn btn-sub" id="reveal-new-entry-btn" onclick="revealNewEntryFormDropdown()">Create New Entry</button>
       </div>
 
@@ -216,8 +220,11 @@
           <div class="section">
             <div class="section-header">Section 5 — Action Plan</div>
             <div class="section-body">
-              <label class="field-label">Send Profile</label><select id="act1"><option>No</option><option>Yes</option></select>
-              <label class="field-label">Send Techno</label><select id="act6"><option>No</option><option>Yes</option></select>
+              <label class="field-label">Send Company Profile</label><select id="act1"><option>No</option><option>Yes</option></select>
+              <label class="field-label">Send Technical Presentation</label><select id="act2"><option>No</option><option>Yes</option></select>
+              <label class="field-label">Arrange Site Visit</label><select id="act3"><option>No</option><option>Yes</option></select>
+              <label class="field-label">Get Enquiry</label><select id="act4"><option>No</option><option>Yes</option></select>
+              <label class="field-label">Send Offer</label><select id="actOffer"><option value="No">No</option><option value="Send Budgetary Offer">Send Budgetary Offer</option><option value="Send Techno-Commercial Offer">Send Techno-Commercial Offer</option></select>
               <label class="field-label">Follow-Up Required</label><select id="act7"><option>No</option><option>Yes</option></select>
               <label class="field-label">Next Follow-Up Date</label><input type="date" id="nextDate" />
             </div>
@@ -240,7 +247,7 @@
 
         <div class="section">
           <div class="section-header">Company Information</div>
-          <div class="section-body" id="leads-editable-fields-box" style="padding:8px;">
+          <div class="section-body" id="leads-editable-fields-box">
             </div>
         </div>
 
@@ -286,11 +293,15 @@
             <div id="task-form-expansion" style="display:none;" class="task-grid-inputs">
               <input type="hidden" id="task-edit-id" />
               
-              <div><label class="field-label">Task Status</label><select id="task-status-select"><option>TS1</option><option>TS2</option><option>TS3</option><option>TS4</option></select></div>
-              <div><label class="field-label">Task Type</label><select id="task-type-select"><option>Task A</option><option>Task B</option><option>Task C</option></select></div>
+              <div class="task-double-row">
+                <div><label class="field-label">Task Status</label><select id="task-status-select"><option>TS1</option><option>TS2</option><option>TS3</option><option>TS4</option></select></div>
+                <div><label class="field-label">Task Type</label><select id="task-type-select"><option>Task A</option><option>Task B</option><option>Task C</option></select></div>
+              </div>
               
-              <div><label class="field-label">Engineer Name</label><select id="task-eng-select"></select></div>
-              <div><label class="field-label">Assigning Engineer</label><select id="task-assigner-select"></select></div>
+              <div class="task-double-row">
+                <div><label class="field-label">Engineer Name</label><select id="task-eng-select"></select></div>
+                <div><label class="field-label">Assigning Engineer</label><select id="task-assigner-select"></select></div>
+              </div>
               
               <div style="grid-column: span 2;"><label class="field-label">Task Description</label><textarea id="task-desc-input"></textarea></div>
               <div><label class="field-label">Target Time</label><select id="task-shift-select"><option>Morning</option><option>Afternoon</option><option>Evening</option></select></div>
@@ -314,7 +325,7 @@
 
 <script>
 // --- CENTRAL CONFIGURATION HUB ---
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyLRkTPOgcQJ5HZ1Dq95CQ5GKyW15c3O_f2kR-zXdwLGdAI-AoKxpNhc7wJO1Yg8F98Dg/exec"; 
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw7uyOtFeoO7kc22WA_Mur6qrNO51rZHb8DOXXIFnO3vNBVtAqydfvZ_9Knd7nuaBpEJQ/exec"; 
 
 let userPermissions = { cardDetails: false, searchCompany: false, searchStatus: false, searchEngineer: false };
 let cachedEngineers = [];
@@ -322,11 +333,11 @@ let activeSearchRef = "";
 let activeSearchCompany = "";
 let currentFollowUpCount = 0;
 
-// High fidelity Timestamp Parser converting messy sheet dates into clean IST views
+// Dynamic Time Handshake Interceptor parsing anomalies into clear IST arrays
 function cleanISTTimestamp(rawStr) {
-  if (!rawStr) return "None";
+  if (!rawStr) return "";
   let str = rawStr.toString().trim();
-  if (!str) return "None";
+  if (!str) return "";
   if (str.indexOf("T") === -1 && (str.indexOf("am") !== -1 || str.indexOf("pm") !== -1)) return str;
   
   let dateObj = new Date(str);
@@ -340,13 +351,10 @@ function cleanISTTimestamp(rawStr) {
     return hours + ":" + String(minutes).padStart(2,'0') + " " + ampm;
   }
 
-  let month = String(dateObj.getMonth() + 1).padStart(2, '0');
-  let day = String(dateObj.getDate()).padStart(2, '0');
   let hours = dateObj.getHours(); let minutes = dateObj.getMinutes();
   let ampm = hours >= 12 ? 'pm' : 'am';
   hours = hours % 12; hours = hours ? hours : 12;
-  
-  return year + "-" + month + "-" + day + " " + String(hours).padStart(2, '0') + ":" + String(minutes).padStart(2, '0') + " " + ampm;
+  return hours + ":" + String(minutes).padStart(2,'0') + " " + ampm;
 }
 
 function formatCleanDateOnly(rawStr) {
@@ -423,7 +431,6 @@ function toggleSubPanelVisibility(panelId, triggeringBtn) {
   }
 }
 
-// Fixed tracking collapse sub methods assignments parameters
 function collapseSubPanelExplicitly(panelId, openBtnId) {
   document.getElementById(panelId).style.display = "none"; document.getElementById(openBtnId).style.display = "inline-flex";
   const suffix = panelId.startsWith("fup") ? "fup" : "task";
@@ -456,35 +463,42 @@ async function triggerSequentialSearch() {
       document.getElementById("step1-card-capture-block").style.display = "none";
       document.getElementById("step2-inline-interaction-canvas").style.display = "block";
     } else {
-      document.getElementById("missing-trigger-notice-block").style.block = "block";
+      document.getElementById("missing-trigger-notice-block").style.display = "block";
       document.getElementById("step2-inline-interaction-canvas").style.display = "none";
     }
   } catch(e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = "Search Database"; }
 }
 
-// ── COMPACT SECTION MATRIX BUILDING COMPONENT GRIDS ─────────────────────────
+// ── CUSTOM-SPAN INDEPENDENT CORE COMPACT FORM LAYOUT CANVAS ─────────────────
 function buildLeadsEditableFormCanvas(leadMap) {
   const container = document.getElementById("leads-editable-fields-box"); container.innerHTML = "";
   const gridWrapper = document.createElement("div"); gridWrapper.className = "compact-fields-grid";
   
-  // Section structural sorting bounds keys tracking array definition layout
-  const sectionsDef = [
-    { name: "Card Info", keys: ["Engineer Name", "Name", "Company", "Position", "Phone", "Alt Phone", "Email", "Website", "Address"] },
-    { name: "Sec 1: Meeting Details", keys: ["Date of Meeting", "Time of Meeting", "Meeting Venue", "Venue Name / City", "Additional Meeting Details"] },
-    { name: "Sec 2: Technical Details", keys: ["ABPS Business Vertical", "Type of Industry", "Qualification", "Type of Vendor", "Name of Materials"] },
-    { name: "Sec 3: Area of Concerns", keys: ["Low Power Factor Issue", "High Electricity Bill Issue", "Harmonics Issue", "Transformer Heating Issue", "Grid Stability Issue", "Existing System Details", "Voltage Level", "Contract Demand (MVA)", "Running Demand (MVA)", "Monthly Average Power Factor", "Problem Observed", "Technical Discussion Summary"] },
-    { name: "Sec 4: Requirement", keys: ["Existing Project", "Upcoming Project", "Products Discussed", "Approx Requirement", "Expected Tender Date", "Expected Order Timeline", "Competitor Details", "Approx Business Potential"] },
-    { name: "Sec 5: Action Plan", keys: ["Send Company Profile", "Send Technical Presentation", "Arrange Site Visit", "Get Enquiry", "Send Budgetary Offer", "Send Techno-Commercial Offer", "Follow-Up Required", "Next Follow-Up Date", "Status", "Assigned Engineer"] }
+  // Custom Ordered Array Structure Segment Mapping Sequences
+  const customSectionLayout = [
+    { type: "META", keys: ["Status", "Engineer Name"] },
+    { type: "CARD", keys: ["Name", "Company", "Position", "Phone", "Alt Phone", "Email", "Website", "Address"] },
+    { type: "SEC1", keys: ["Date of Meeting", "Time of Meeting", "Meeting Venue", "Venue Name / City", "Additional Meeting Details (if any)"] },
+    { type: "SEC2", keys: ["ABPS Business Vertical", "Type of Industry", "Qualification", "Type of Vendor", "Name of Materials"] },
+    { type: "SEC3", keys: ["Low Power Factor Issue", "High Electricity Bill Issue", "Harmonics Issue", "Transformer Heating / Breakdown Issue", "Grid Stability Issue", "Existing System Details", "Voltage Level", "Contract Demand (MVA)", "Running Demand (MVA)", "Monthly Average Power Factor", "Problem Observed", "Technical Discussion Summary"] },
+    { type: "SEC4", keys: ["Existing Project", "Upcoming Project", "Products Discussed", "Approx Requirement", "Expected Tender / RFQ Date", "Expected Order Timeline", "Competitor Details", "Approx Business Potential"] },
+    { type: "SEC5", keys: ["Send Company Profile", "Send Technical Presentation", "Arrange Site Visit", "Get Enquiry", "Send Offer", "Follow-Up Required", "Next Follow- Up Date"] }
   ];
 
-  sectionsDef.forEach((sec, sIdx) => {
+  customSectionLayout.forEach((sec, sIdx) => {
     if (sIdx > 0) {
-      let hr = document.createElement("div"); hr.className = "section-divider-line"; gridWrapper.appendChild(hr);
+      let line = document.createElement("div"); line.className = "section-divider-line"; gridWrapper.appendChild(line);
     }
     
     sec.keys.forEach(key => {
       if (leadMap[key] === undefined) return;
       let cell = document.createElement("div"); cell.className = "grid-cell-item";
+      
+      // Enforce full horizontal block grid spans on large multi-line text input fields
+      if (key === "Technical Discussion Summary" || key === "Additional Meeting Details (if any)") {
+        cell.className += " span-two-units";
+      }
+      
       let label = document.createElement("label"); label.textContent = key;
       cell.appendChild(label);
 
@@ -495,7 +509,7 @@ function buildLeadsEditableFormCanvas(leadMap) {
           if(leadMap[key] === st) op.selected = true; sel.appendChild(op);
         });
         cell.appendChild(sel);
-      } else if (["Date of Meeting", "Expected Tender / RFQ Date", "Expected Tender Date", "Next Follow-Up Date"].indexOf(key) !== -1) {
+      } else if (["Date of Meeting", "Expected Tender / RFQ Date", "Next Follow-Up Date", "Next Follow- Up Date"].indexOf(key) !== -1) {
         let inp = document.createElement("input"); inp.type = "date"; inp.className = "live-lead-field-input";
         inp.dataset.headerKey = key; inp.value = formatCleanDateOnly(leadMap[key]);
         cell.appendChild(inp);
@@ -509,7 +523,14 @@ function buildLeadsEditableFormCanvas(leadMap) {
           let op = document.createElement("option"); op.textContent = eng; if(leadMap[key] === eng) op.selected = true; sel.appendChild(op);
         });
         cell.appendChild(sel);
-      } else if (["Meeting Venue", "ABPS Business Vertical", "Approx Business Potential", "Send Company Profile", "Send Technical Presentation", "Arrange Site Visit", "Get Enquiry", "Send Budgetary Offer", "Send Techno-Commercial Offer", "Follow-Up Required"].indexOf(key) !== -1) {
+      } else if (key === "Send Offer") {
+        let sel = document.createElement("select"); sel.className = "live-lead-field-input"; sel.dataset.headerKey = key;
+        ["No", "Send Budgetary Offer", "Send Techno-Commercial Offer"].forEach(opText => {
+          let op = document.createElement("option"); op.textContent = opText; op.value = opText;
+          if(leadMap[key] === opText) op.selected = true; sel.appendChild(op);
+        });
+        cell.appendChild(sel);
+      } else if (["Meeting Venue", "ABPS Business Vertical", "Approx Business Potential", "Send Company Profile", "Send Technical Presentation", "Arrange Site Visit", "Get Enquiry", "Follow-Up Required"].indexOf(key) !== -1) {
         let sel = document.createElement("select"); sel.className = "live-lead-field-input"; sel.dataset.headerKey = key;
         let opts = ["No", "Yes"];
         if(key === "Meeting Venue") opts = ["Exhibition", "Customer Place"];
@@ -531,6 +552,9 @@ function buildLeadsEditableFormCanvas(leadMap) {
           div.appendChild(chk); div.appendChild(span); wrapper.appendChild(div);
         });
         cell.appendChild(wrapper);
+      } else if (key === "Technical Discussion Summary" || key === "Additional Meeting Details (if any)" || key === "Address" || key === "Existing System Details") {
+        let tx = document.createElement("textarea"); tx.className = "live-lead-field-input"; tx.dataset.headerKey = key;
+        tx.value = leadMap[key] || ""; tx.style.minHeight = "45px"; cell.appendChild(tx);
       } else {
         let inp = document.createElement("input"); inp.type = "text"; inp.className = "live-lead-field-input";
         inp.dataset.headerKey = key; inp.value = leadMap[key] || "";
@@ -561,7 +585,7 @@ async function commitLeadsTableFieldMutations() {
   
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "updateLeadFull", leadRef: activeSearchRef, fields: fieldsPayload }) });
-    const r = await res.json(); if (r.success) alert("Modifications saved.");
+    const r = await res.json(); if (r.success) alert("Modifications committed.");
   } catch(e) { alert(e.message); } finally { if(btn) { btn.disabled = false; btn.innerHTML = "Save Modifications"; } }
 }
 
@@ -575,7 +599,7 @@ function resetSequentialFormState() {
   document.getElementById("parse-btn").disabled = true;
 }
 
-// ── FIXED ACTION: EXPANDABLE FOLLOW-UP CHRONOLOGICAL ARCHITECTURE ───────────
+// ── FIXED TIMESTAMPS HANDLER FOR TIMELINE DISPATCH MODULES ──────────────────
 function renderFollowUpTimeline(list) {
   const box = document.getElementById("timeline-box");
   box.innerHTML = list.length === 0 ? '<p style="color:var(--muted); font-size:0.85rem; padding:10px;">No records</p>' : '';
@@ -583,14 +607,15 @@ function renderFollowUpTimeline(list) {
     let card = document.createElement("div"); card.className = "fup-item-card";
     card.innerHTML = `
       <div class="fup-item-header" onclick="toggleFollowUpAccordion(this)">
-        <span>Follow-Up ${f.num} (${formatCleanDateOnly(f.date)} ${f.time})</span>
+        <span>Follow-Up ${f.num} (${formatCleanDateOnly(f.date)} ${cleanISTTimestamp(f.time)})</span>
         <span style="color:var(--brand); font-size:0.75rem;">View details ▾</span>
       </div>
       <div class="fup-item-body">
-        <div style="font-size:0.82rem; line-height:1.4; color:var(--muted); margin-bottom:6px;">
+        <div style="font-size:0.82rem; line-height:1.5; color:var(--muted); margin-bottom:6px;">
           <strong>Status:</strong> ${f.status}<br/><strong>Lead ID:</strong> ${f.leadId}<br/><strong>Engineer Name:</strong> ${f.eng}<br/>
-          <strong>Next Follow-Up Date:</strong> ${formatCleanDateOnly(f.nextDate)} | <strong>Time:</strong> ${f.nextTime || "None"}<br/>
-          <strong>NQ1:</strong> ${f.nq1} | <strong>NQ2:</strong> ${f.nq2} | <strong>NQ3:</strong> ${f.nq3}
+          <strong>Next Follow-Up Date:</strong> ${formatCleanDateOnly(f.nextDate)} | <strong>Time Shift:</strong> ${f.nextTime || "None"}<br/>
+          <strong>NQ1:</strong> ${f.nq1} | <strong>NQ2:</strong> ${f.nq2} | <strong>NQ3:</strong> ${f.nq3}<br/>
+          <strong>NQ4:</strong> ${f.nq4} | <strong>NQ5:</strong> ${f.nq5} | <strong>NQ6:</strong> ${f.nq6}
         </div>
         <div style="font-size:0.85rem; color:#2d3748; padding:6px 0; border-top:1px solid #edf2f7; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"><strong>Notes:</strong> ${f.notes}</div>
         <div style="margin-top:8px; display:flex; gap:8px;">
@@ -602,7 +627,6 @@ function renderFollowUpTimeline(list) {
   });
 }
 
-// Rest of user scripts mapping actions triggers parameters logic blocks configurations set
 function toggleFollowUpAccordion(headerEl) {
   const body = headerEl.nextElementSibling; const isVisible = body.style.display === "block";
   body.style.display = isVisible ? "none" : "block";
@@ -613,6 +637,7 @@ function showNewFollowUpForm() {
   document.getElementById("fup-is-edit-flag").value = "false";
   document.getElementById("fup-num-input").value = currentFollowUpCount + 1;
   document.getElementById("fup-leadid-input").value = activeSearchRef;
+  document.getElementById("fup-status-select").value = "FuS1";
   document.getElementById("fup-notes-input").value = ""; document.getElementById("fup-nexttarget-input").value = "";
   document.getElementById("fup-nq1").value = ""; document.getElementById("fup-nq2").value = "";
   document.getElementById("fup-nq3").value = ""; document.getElementById("fup-nq4").value = "";
@@ -669,7 +694,7 @@ async function removeFollowUpItem(lId, fNum) {
   } catch(e) { alert(e.message); }
 }
 
-// ── DOUBLE COLUMN ENHANCED ENGINEER TASK BLOCKS ─────────────────────────────
+// ── COMPLIANT ROTATION TASKS GENERATORS ────────────────────────────────────
 function renderTaskItemsList(list) {
   const box = document.getElementById("task-cards-box");
   box.innerHTML = list.length === 0 ? '<p style="color:var(--muted); font-size:0.85rem; padding:10px;">No active entries.</p>' : '';
@@ -689,6 +714,7 @@ function renderTaskItemsList(list) {
 function showNewTaskForm() {
   document.getElementById("task-edit-id").value = ""; document.getElementById("task-desc-input").value = "";
   document.getElementById("task-targetdate-input").value = ""; document.getElementById("task-status-select").value = "TS1";
+  document.getElementById("task-type-select").value = "Task A";
 }
 
 function editTaskItem(id, eng, assigner, type, desc, shift, targetDate, status) {
@@ -788,7 +814,8 @@ async function submitLead() {
       existingProject: document.getElementById('epInput').value, upcomingProject: document.getElementById('upInput').value,
       products: getChecks('prod'), approxReq: document.getElementById('approxReq').value, tenderDate: document.getElementById('tenderDate').value,
       orderTimeline: document.getElementById('orderTimeline').value, competitors: document.getElementById('competitors').value, potential: getRadio('pot'),
-      sendProfile: document.getElementById('act1').value, sendTechno: document.getElementById('act6').value, followUpRequired: document.getElementById('act7').value, nextDate: document.getElementById('nextDate').value,
+      sendProfile: document.getElementById('act1').value, sendPresentation: document.getElementById('act2').value, arrangeVisit: document.getElementById('act3').value,
+      getEnquiry: document.getElementById('act4').value, sendOffer: document.getElementById('actOffer').value, followUpRequired: document.getElementById('act7').value, nextDate: document.getElementById('nextDate').value
     };
     const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'submit', fields, imageUrl }) });
     const d = await res.json();
