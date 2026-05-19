@@ -15,8 +15,8 @@
   #auth-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, var(--brand-dk), var(--brand)); }
   .auth-card { background: var(--card); width: 100%; max-width: 400px; padding: 30px; border-radius: var(--radius); box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
   .auth-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 25px; }
-  label.field-label { display: block; font-size: .65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin: 6px 0 1px; }
-  input, select, textarea { width: 100%; padding: 4px 6px; border: 1.5px solid var(--border); border-radius: 4px; font-size: .82rem; background: #fff; color: var(--text); }
+  label.field-label { display: block; font-size: .68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin: 8px 0 2px; }
+  input, select, textarea { width: 100%; padding: 6px 8px; border: 1.5px solid var(--border); border-radius: 4px; font-size: .85rem; background: #fff; color: var(--text); }
   
   header { background: linear-gradient(135deg, var(--brand-dk), var(--brand)); color: #fff; padding: 12px 20px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; }
   header h1 { font-size: 1.1rem; font-weight: 700; }
@@ -33,27 +33,31 @@
   .workspace-panel { padding: 10px 12px; }
   .section { background: var(--card); border-radius: var(--radius); margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); overflow: hidden; }
   .section-header { background: var(--brand); color: #fff; padding: 6px 12px; font-size: .75rem; font-weight: 700; text-transform: uppercase; }
-  .section-body { padding: 10px; }
+  .section-body { padding: 12px; }
   
-  /* Ultra-Compressed Micro Dashboard Form Grid Layout Configuration */
-  .compact-fields-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; text-align: left; }
+  /* Split multi contact parent framework blocks css definitions */
+  .contact-summary-card-parent { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+  .contact-summary-header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px; margin-bottom: 10px; }
+  .contact-summary-title-info { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+  .contact-summary-title-info span { font-weight: 500; color: var(--muted); margin-right: 12px; }
+
+  .compact-fields-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; text-align: left; }
   @media(min-width: 600px) { .compact-fields-grid { grid-template-columns: repeat(4, 1fr); } }
   @media(min-width: 950px) { .compact-fields-grid { grid-template-columns: repeat(6, 1fr); } }
-  .grid-cell-item { display: flex; flex-direction: column; background: #f8fafc; padding: 3px 5px; border: 1px solid #e2e8f0; border-radius: 4px; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
+  .grid-cell-item { display: flex; flex-direction: column; background: #f8fafc; padding: 4px 6px; border: 1px solid #e2e8f0; border-radius: 4px; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
+  .grid-cell-item label { font-size: 0.6rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 1px; }
+  .grid-cell-item input, .grid-cell-item select, .grid-cell-item textarea { padding: 3px 4px; font-size: 0.8rem; font-weight: 600; border-radius: 3px; border: 1px solid var(--border); }
   
   .span-two-units { grid-column: span 2; }
-  @media(min-width: 600px) { .span-two-units { grid-column: span 2; } }
-  @media(min-width: 950px) { .span-two-units { grid-column: span 2; } }
-  
-  .section-divider-line { grid-column: 1 / -1; height: 1px; background: #cbd5e1; margin: 2px 0; }
+  .section-divider-line { grid-column: 1 / -1; height: 1px; background: #cbd5e1; margin: 4px 0; }
   
   .pill-group { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
   .pill-group input { display: none; }
   .pill-group label { padding: 4px 8px; border: 1.5px solid var(--border); border-radius: 14px; font-size: .72rem; cursor: pointer; background: #fff; white-space: nowrap; }
   .pill-group input:checked + label { background: var(--brand); border-color: var(--brand); color: #fff; }
   
-  .navigation-action-header-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: #ffffff; border-radius: 6px; margin-bottom: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-  .nav-btn-styled { background: var(--brand); color: white; border: none; padding: 6px 14px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.15s; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+  .navigation-action-header-row { display: flex; justify-content: flex-end; align-items: center; padding: 6px 12px; background: #ffffff; border-radius: 6px; margin-bottom: 12px; border: 1px solid var(--border); }
+  .nav-btn-styled { background: var(--brand); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: background 0.15s; outline: none; }
   .nav-btn-styled:hover { background: var(--brand-dk); }
   
   .btn { width: 100%; padding: 10px; border: none; border-radius: 4px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem; }
@@ -115,7 +119,6 @@
 
   <div id="module-workspace-container" style="display: none;">
     <div class="navigation-action-header-row">
-      <div style="width:10px;"></div>
       <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
     </div>
     
@@ -146,7 +149,7 @@
       </div>
 
       <div id="missing-trigger-notice-block" style="display:none; padding:20px; text-align:center; background:white; border-radius:var(--radius); border:1px solid var(--border); margin-bottom:15px;">
-        <p style="color:var(--muted); margin-bottom:12px; font-size:0.88rem;">No record matched your target company parameters.</p>
+        <p style="color:var(--muted); margin-bottom:12px; font-size:0.88rem;">No record matched your target company query parameters.</p>
         <button class="btn btn-sub" id="reveal-new-entry-btn" onclick="revealNewEntryFormDropdown()">Create New Entry</button>
       </div>
 
@@ -223,6 +226,7 @@
               <label class="field-label">Get Enquiry</label><select id="act4"><option>No</option><option>Yes</option></select>
               <label class="field-label">Send Offer</label><select id="actOffer"><option value="No">No</option><option value="Send Budgetary Offer">Send Budgetary Offer</option><option value="Send Techno-Commercial Offer">Send Techno-Commercial Offer</option></select>
               <label class="field-label">Follow-Up Required</label><select id="act7"><option>No</option><option>Yes</option></select>
+              <label class="field-label">Next Follow-Up Date</label><input type="date" id="nextDate" />
             </div>
           </div>
 
@@ -241,74 +245,7 @@
           <button class="nav-btn-styled" onclick="exitCanvasToCardView()" style="background:#4a5568;">Back to Search</button>
         </div>
 
-        <div class="section">
-          <div class="section-header">Company Information</div>
-          <div class="section-body" id="leads-editable-fields-box">
-            </div>
-        </div>
-
-        <div class="section">
-          <div class="section-header">Follow-Up Tracking</div>
-          <div class="section-body">
-            <div style="display:flex; gap:10px; margin-bottom:12px;">
-              <button class="btn btn-ai" id="toggle-fup-form-btn" onclick="toggleSubPanelVisibility('fup-form-expansion', this)" style="margin:0; width:auto;">+ Create New Follow-Up</button>
-              <button class="btn btn-warn" id="collapse-fup-panel-btn" onclick="collapseSubPanelExplicitly('fup-form-expansion', 'toggle-fup-form-btn')" style="display:none; margin:0; width:auto;">Collapse</button>
-            </div>
-            
-            <div id="fup-form-expansion" style="display:none;" class="fup-grid-inputs">
-              <input type="hidden" id="fup-is-edit-flag" value="false" />
-              <div><label class="field-label">Follow-Up Status</label><select id="fup-status-select"><option>FuS1</option><option>FuS2</option><option>FuS3</option><option>FuS4</option></select></div>
-              <div><label class="field-label">Follow-Up Number</label><input type="number" id="fup-num-input" readonly style="background:#e2e8f0; cursor:not-allowed;" /></div>
-              <div><label class="field-label">Lead ID</label><input type="text" id="fup-leadid-input" readonly style="background:#e2e8f0; cursor:not-allowed;" /></div>
-              <div><label class="field-label">Engineer Name</label><select id="fup-eng-select"></select></div>
-              <div><label class="field-label">Next Follow-Up Date</label><input type="date" id="fup-nexttarget-input" /></div>
-              <div><label class="field-label">Next Follow-Up Time</label><select id="fup-nexttime-select"><option>Morning</option><option>Afternoon</option><option>Evening</option></select></div>
-              <div style="grid-column: span 2;"><label class="field-label">Interaction Notes *</label><textarea id="fup-notes-input" placeholder="Type logs..."></textarea></div>
-              <div><label class="field-label">NQ1</label><input type="text" id="fup-nq1" /></div>
-              <div><label class="field-label">NQ2</label><input type="text" id="fup-nq2" /></div>
-              <div><label class="field-label">NQ3</label><input type="text" id="fup-nq3" /></div>
-              <div><label class="field-label">NQ4</label><input type="text" id="fup-nq4" /></div>
-              <div><label class="field-label">NQ5</label><input type="text" id="fup-nq5" /></div>
-              <div><label class="field-label">NQ6</label><input type="text" id="fup-nq6" /></div>
-              
-              <button class="btn btn-sub" id="save-fup-btn" onclick="commitFollowUpItem()" style="grid-column: span 2; margin-top:5px;">Save Follow-Up</button>
-            </div>
-
-            <div class="timeline-container" id="timeline-box"></div>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-header">Engineer Tasks</div>
-          <div class="section-body">
-            <div style="display:flex; gap:10px; margin-bottom:12px;">
-              <button class="btn btn-ai" id="toggle-task-form-btn" onclick="toggleSubPanelVisibility('task-form-expansion', this)" style="margin:0; width:auto; background:transparent; border:1px solid var(--brand); color:var(--brand);">+ Create New Task</button>
-              <button class="btn btn-warn" id="collapse-task-panel-btn" onclick="collapseSubPanelExplicitly('task-form-expansion', 'toggle-task-form-btn')" style="display:none; margin:0; width:auto;">Collapse</button>
-            </div>
-            
-            <div id="task-form-expansion" style="display:none;" class="task-grid-inputs">
-              <input type="hidden" id="task-edit-id" />
-              
-              <div class="task-double-row">
-                <div><label class="field-label">Task Status</label><select id="task-status-select"><option>TS1</option><option>TS2</option><option>TS3</option><option>TS4</option></select></div>
-                <div><label class="field-label">Task Type</label><select id="task-type-select"><option>Task A</option><option>Task B</option><option>Task C</option></select></div>
-              </div>
-              
-              <div class="task-double-row">
-                <div><label class="field-label">Engineer Name</label><select id="task-eng-select"></select></div>
-                <div><label class="field-label">Assigning Engineer</label><select id="task-assigner-select"></select></div>
-              </div>
-              
-              <div style="grid-column: span 2;"><label class="field-label">Task Description</label><textarea id="task-desc-input"></textarea></div>
-              <div><label class="field-label">Target Time</label><select id="task-shift-select"><option>Morning</option><option>Afternoon</option><option>Evening</option></select></div>
-              <div><label class="field-label">Target Date</label><input type="date" id="task-targetdate-input" /></div>
-              
-              <button class="btn btn-sub" id="save-task-btn" onclick="commitTaskItem()" style="grid-column:span 2; margin-top:5px;">Save Task</button>
-            </div>
-
-            <div class="task-list-container" id="task-cards-box"></div>
-          </div>
-        </div>
+        <div id="multi-contact-records-container"></div>
       </div>
 
     </div>
@@ -321,13 +258,16 @@
 
 <script>
 // --- CENTRAL CONFIGURATION HUB ---
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxNnvuoMDV0JBdSMda6LkeFMNAVcvVuKgLDH3zRo651_VibZUjbb6vOGGEgsEpjiyr2wg/exec"; 
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzqYVJRt1h6D5KonTSPDwrmPZekYd11B6OftEo8nsPgDTZ5yGX4ZLdZU9zAj2--swkDrA/exec"; 
 
 let userPermissions = { cardDetails: false, searchCompany: false, searchStatus: false, searchEngineer: false };
 let cachedEngineers = [];
-let activeSearchRef = "";
 let activeSearchCompany = "";
 let currentFollowUpCount = 0;
+
+// Universal structural dataset caches for matching contacts references tracking map keys
+let serverCachedFollowUpsMap = {};
+let serverCachedTasksMap = {};
 
 function cleanISTTimestamp(rawStr) {
   if (!rawStr) return "";
@@ -338,6 +278,13 @@ function cleanISTTimestamp(rawStr) {
   let dateObj = new Date(str);
   if (isNaN(dateObj.getTime())) return str;
   
+  let year = dateObj.getFullYear();
+  if (year === 1899) {
+    let hours = dateObj.getHours(); let minutes = dateObj.getMinutes();
+    let ampm = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12; hours = hours ? hours : 12;
+    return hours + ":" + String(minutes).padStart(2,'0') + " " + ampm;
+  }
   let hours = dateObj.getHours(); let minutes = dateObj.getMinutes();
   let ampm = hours >= 12 ? 'pm' : 'am';
   hours = hours % 12; hours = hours ? hours : 12;
@@ -360,8 +307,7 @@ window.onload = function() {
 async function executeLogin() {
   const userField = document.getElementById("auth-user"); const passField = document.getElementById("auth-pass");
   const btn = document.getElementById("login-btn");
-  if (!userField.value || !passField.value) return alert("Complete credential fields.");
-  
+  if (!userField.value || !passField.value) return alert("Complete credential parameters.");
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Verifying...';
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "login", username: userField.value, password: passField.value }) });
@@ -421,7 +367,7 @@ function toggleSubPanelVisibility(panelId, triggeringBtn) {
 function collapseSubPanelExplicitly(panelId, openBtnId) {
   document.getElementById(panelId).style.display = "none"; document.getElementById(openBtnId).style.display = "inline-flex";
   const suffix = panelId.startsWith("fup") ? "fup" : "task";
-  document.getElementById(`collapse-${suffix}-panel-btn`).style.display = "none";
+  const el = document.getElementById(`collapse-${suffix}-panel-btn`); if(el) el.style.display = "none";
 }
 
 function revealNewEntryFormDropdown() {
@@ -439,12 +385,11 @@ async function triggerSequentialSearch() {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "searchCompanyData", companyName: comp }) });
     const data = await res.json();
     if (data.success) {
-      activeSearchRef = data.lead["Lead ID"]; activeSearchCompany = data.lead["Company"];
-      currentFollowUpCount = data.followups.length;
+      activeSearchCompany = comp;
+      serverCachedFollowUpsMap = data.followups;
+      serverCachedTasksMap = data.tasks;
       
-      buildLeadsEditableFormCanvas(data.lead);
-      renderFollowUpTimeline(data.followups);
-      renderTaskItemsList(data.tasks);
+      buildMultiContactDirectoryInterface(data.leads);
       
       document.getElementById("missing-trigger-notice-block").style.display = "none";
       document.getElementById("step1-card-capture-block").style.display = "none";
@@ -456,13 +401,78 @@ async function triggerSequentialSearch() {
   } catch(e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = "Search Database"; }
 }
 
-function buildLeadsEditableFormCanvas(leadMap) {
-  const container = document.getElementById("leads-editable-fields-box"); container.innerHTML = "";
-  const gridWrapper = document.createElement("div"); gridWrapper.className = "compact-fields-grid";
+// ── MULTI-CONTACT SEQUENTIAL ENGINE COMPONENT INJECTORS ─────────────────────
+function buildMultiContactDirectoryInterface(leadsList) {
+  const container = document.getElementById("multi-contact-records-container");
+  container.innerHTML = "";
+  
+  leadsList.forEach(lead => {
+    let tRef = lead["Lead ID"];
+    let wrapperCard = document.createElement("div");
+    wrapperCard.className = "contact-summary-card-parent";
+    wrapperCard.id = `contact-parent-wrapper-${tRef}`;
+    
+    wrapperCard.innerHTML = `
+      <div class="contact-summary-header-row">
+        <div class="contact-summary-title-info">
+          <span>Company:</span><strong>${lead["Company"]}</strong>
+          <span style="margin-left:15px;">Name:</span><strong>${lead["Name"] || "Unspecified"}</strong>
+          <span style="margin-left:15px;">Position:</span><strong>${lead["Position"] || "Unspecified"}</strong>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn-styled" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)" id="expand-trigger-${tRef}">View Details</button>
+          <button class="nav-btn-styled" onclick="removeLeadRowEntirely('${tRef}')" style="background:var(--warn);">Delete Record</button>
+        </div>
+      </div>
+      <div class="contact-expanded-workspace-payload-drawer" id="drawer-panel-${tRef}" style="display:none; padding-top:10px;">
+         <div class="leads-editable-fields-box-canvas" id="canvas-fields-${tRef}"></div>
+      </div>
+    `;
+    container.appendChild(wrapperCard);
+  });
+}
+
+function toggleContactExpansionView(leadRef, encodedLeadMap) {
+  const drawer = document.getElementById(`drawer-panel-${leadRef}`);
+  const triggerBtn = document.getElementById(`expand-trigger-${leadRef}`);
+  
+  if (drawer.style.display === "block") {
+    drawer.style.display = "none";
+    triggerBtn.textContent = "View Details";
+  } else {
+    // Close all alternative drawers gracefully to conserve absolute monitor tracking boundaries
+    document.querySelectorAll(".contact-expanded-workspace-payload-drawer").forEach(d => d.style.display = "none");
+    document.querySelectorAll('[id^="expand-trigger-"]').forEach(b => b.textContent = "View Details");
+    
+    const leadMap = JSON.parse(decodeURIComponent(encodedLeadMap));
+    activeSearchRef = leadRef; // Direct focal context pointer parameters realignment
+    currentFollowUpCount = serverCachedFollowUpsMap[leadRef] ? serverCachedFollowUpsMap[leadRef].length : 0;
+    
+    // Build specific canvas forms structures safely
+    buildTargetedLeadsFormCanvas(leadRef, leadMap);
+    
+    // Shift child elements into the single expanded panel view cleanly
+    drawer.appendChild(document.querySelector("#workspace-cardDetails .section:nth-of-type(2)")); // Shift FollowUp module
+    drawer.appendChild(document.querySelector("#workspace-cardDetails .section:nth-of-type(3)")); // Shift Tasks module
+    
+    renderFollowUpTimeline(serverCachedFollowUpsMap[leadRef] || []);
+    renderTaskItemsList(serverCachedTasksMap[leadRef] || []);
+    
+    drawer.style.display = "block";
+    triggerBtn.textContent = "Collapse Details";
+  }
+}
+
+function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
+  const canvas = document.getElementById(`canvas-fields-${leadRef}`);
+  canvas.innerHTML = "";
+  
+  const gridWrapper = document.createElement("div");
+  gridWrapper.className = "compact-fields-grid";
   
   const customSectionLayout = [
-    { type: "ROW1", keys: ["Status", "Engineer Name", "Website"] },
-    { type: "CARD", keys: ["Name", "Company", "Position", "Phone", "Alt Phone", "Email", "Company Address"] },
+    { type: "META", keys: ["Status", "Engineer Name"] },
+    { type: "CARD", keys: ["Name", "Company", "Position", "Phone", "Alt Phone", "Email", "Website", "Company Address"] },
     { type: "SEC1", keys: ["Date of Meeting", "Time of Meeting", "Meeting Venue", "Venue Name / City", "Additional Meeting Details (if any)"] },
     { type: "SEC2", keys: ["ABPS Business Vertical", "Type of Industry", "Qualification", "Type of Vendor", "Name of Materials"] },
     { type: "SEC3", keys: ["Low Power Factor Issue", "High Electricity Bill Issue", "Harmonics Issue", "Transformer Heating / Breakdown Issue", "Grid Stability Issue", "Existing System Details", "Voltage Level", "Contract Demand (MVA)", "Running Demand (MVA)", "Monthly Average Power Factor", "Problem Observed", "Technical Discussion Summary"] },
@@ -470,8 +480,8 @@ function buildLeadsEditableFormCanvas(leadMap) {
     { type: "SEC5", keys: ["Send Company Profile", "Send Technical Presentation", "Arrange Site Visit", "Get Enquiry", "Send Offer", "Follow-Up Required"] }
   ];
 
-  customSectionLayout.forEach((sec, secIdx) => {
-    if (secIdx > 0) {
+  customSectionLayout.forEach((sec, sIdx) => {
+    if (sIdx > 0) {
       let line = document.createElement("div"); line.className = "section-divider-line"; gridWrapper.appendChild(line);
     }
     
@@ -487,35 +497,35 @@ function buildLeadsEditableFormCanvas(leadMap) {
       cell.appendChild(label);
 
       if (key === "Status") {
-        let sel = document.createElement("select"); sel.className = "live-lead-field-input"; sel.dataset.headerKey = key;
+        let sel = document.createElement("select"); sel.className = `live-lead-field-input-${leadRef}`; sel.dataset.headerKey = key;
         ["Status1", "Status2", "Status3", "Status4"].forEach(st => {
           let op = document.createElement("option"); op.textContent = st; op.value = st;
           if(leadMap[key] === st) op.selected = true; sel.appendChild(op);
         });
         cell.appendChild(sel);
       } else if (["Date of Meeting", "Expected Tender / RFQ Date"].indexOf(key) !== -1) {
-        let inp = document.createElement("input"); inp.type = "date"; inp.className = "live-lead-field-input";
+        let inp = document.createElement("input"); inp.type = "date"; inp.className = `live-lead-field-input-${leadRef}`;
         inp.dataset.headerKey = key; inp.value = formatCleanDateOnly(leadMap[key]);
         cell.appendChild(inp);
       } else if (["Time of Meeting", "Meeting Time"].indexOf(key) !== -1) {
-        let inp = document.createElement("input"); inp.type = "time"; inp.className = "live-lead-field-input";
+        let inp = document.createElement("input"); inp.type = "time"; inp.className = `live-lead-field-input-${leadRef}`;
         inp.dataset.headerKey = key; inp.value = leadMap[key] ? (leadMap[key].toString().indexOf("T") !== -1 ? leadMap[key].toString().split("T")[1].substring(0,5) : leadMap[key]) : "";
         cell.appendChild(inp);
       } else if (["Assigned Engineer", "Engineer Name"].indexOf(key) !== -1) {
-        let sel = document.createElement("select"); sel.className = "live-lead-field-input"; sel.dataset.headerKey = key;
+        let sel = document.createElement("select"); sel.className = `live-lead-field-input-${leadRef}`; sel.dataset.headerKey = key;
         cachedEngineers.forEach(eng => {
           let op = document.createElement("option"); op.textContent = eng; if(leadMap[key] === eng) op.selected = true; sel.appendChild(op);
         });
         cell.appendChild(sel);
       } else if (key === "Send Offer") {
-        let sel = document.createElement("select"); sel.className = "live-lead-field-input"; sel.dataset.headerKey = key;
+        let sel = document.createElement("select"); sel.className = `live-lead-field-input-${leadRef}`; sel.dataset.headerKey = key;
         ["No", "Send Budgetary Offer", "Send Techno-Commercial Offer"].forEach(opText => {
           let op = document.createElement("option"); op.textContent = opText; op.value = opText;
           if(leadMap[key] === opText) op.selected = true; sel.appendChild(op);
         });
         cell.appendChild(sel);
       } else if (["Meeting Venue", "ABPS Business Vertical", "Approx Business Potential", "Send Company Profile", "Send Technical Presentation", "Arrange Site Visit", "Get Enquiry", "Follow-Up Required"].indexOf(key) !== -1) {
-        let sel = document.createElement("select"); sel.className = "live-lead-field-input"; sel.dataset.headerKey = key;
+        let sel = document.createElement("select"); sel.className = `live-lead-field-input-${leadRef}`; sel.dataset.headerKey = key;
         let opts = ["No", "Yes"];
         if(key === "Meeting Venue") opts = ["Exhibition", "Customer Place"];
         if(key === "ABPS Business Vertical") opts = ["Industrial", "Power"];
@@ -530,50 +540,74 @@ function buildLeadsEditableFormCanvas(leadMap) {
         let currentValues = (leadMap[key] || "").toString().split(", ");
         opts.forEach(o => {
           let div = document.createElement("div"); div.style.display="flex"; div.style.gap="4px"; div.style.alignItems="center";
-          let chk = document.createElement("input"); chk.type="checkbox"; chk.value = o; chk.className = "live-lead-check-subset"; chk.dataset.masterKey = key;
+          let chk = document.createElement("input"); chk.type="checkbox"; chk.value = o; chk.className = `live-lead-check-subset-${leadRef}`; chk.dataset.masterKey = key;
           if(currentValues.indexOf(o) !== -1) chk.checked = true;
           let span = document.createElement("span"); span.textContent = o; span.style.fontSize="0.72rem";
           div.appendChild(chk); div.appendChild(span); wrapper.appendChild(div);
         });
         cell.appendChild(wrapper);
-      } else if (key === "Technical Discussion Summary" || key === "Additional Meeting Details (if any)" || key === "Company Address" || key === "Existing System Details") {
-        let tx = document.createElement("textarea"); tx.className = "live-lead-field-input"; tx.dataset.headerKey = key;
-        tx.value = leadMap[key] || ""; tx.style.minHeight = "40px"; cell.appendChild(tx);
+      } else if (key === "Technical Discussion Summary" || key === "Additional Meeting Details (if any)" || key === "Company Address" || key === "Address" || key === "Existing System Details") {
+        let tx = document.createElement("textarea"); tx.className = `live-lead-field-input-${leadRef}`; tx.dataset.headerKey = key;
+        tx.value = leadMap[key] || ""; tx.style.minHeight = "45px"; cell.appendChild(tx);
+      } else if (key === "Company") {
+        let inp = document.createElement("input"); inp.type = "text"; inp.value = leadMap[key] || "";
+        inp.disabled = true; inp.style.background = "#e2e8f0"; inp.style.cursor = "not-allowed"; cell.appendChild(inp);
       } else {
-        let inp = document.createElement("input"); inp.type = "text"; inp.className = "live-lead-field-input";
+        let inp = document.createElement("input"); inp.type = "text"; inp.className = `live-lead-field-input-${leadRef}`;
         inp.dataset.headerKey = key; inp.value = leadMap[key] || "";
         cell.appendChild(inp);
       }
       gridWrapper.appendChild(cell);
     });
   });
-  container.appendChild(gridWrapper);
+  canvas.appendChild(gridWrapper);
   
-  let saveBtn = document.createElement("button"); saveBtn.className = "btn btn-sub"; saveBtn.id = "save-leads-matrix-btn";
-  saveBtn.style.marginTop = "14px"; saveBtn.textContent = "Save Modifications";
-  saveBtn.onclick = commitLeadsTableFieldMutations; container.appendChild(saveBtn);
+  let saveBtn = document.createElement("button"); saveBtn.className = "btn btn-sub"; saveBtn.id = `save-leads-matrix-btn-${leadRef}`;
+  saveBtn.style.marginTop = "12px"; saveBtn.textContent = "Save Modifications";
+  saveBtn.onclick = function() { commitTargetedLeadsMutationsRows(leadRef); };
+  canvas.appendChild(saveBtn);
 }
 
-async function commitLeadsTableFieldMutations() {
-  const btn = document.getElementById("save-leads-matrix-btn");
+async function commitTargetedLeadsMutationsRows(leadRef) {
+  const btn = document.getElementById(`save-leads-matrix-btn-${leadRef}`);
   if(btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...'; }
+  
   let fieldsPayload = {};
-  document.querySelectorAll(".live-lead-field-input").forEach(el => { fieldsPayload[el.dataset.headerKey] = el.value; });
+  document.querySelectorAll(`.live-lead-field-input-${leadRef}`).forEach(el => { fieldsPayload[el.dataset.headerKey] = el.value; });
   
   let checkGroups = {};
-  document.querySelectorAll(".live-lead-check-subset").forEach(el => {
+  document.querySelectorAll(`.live-lead-check-subset-${leadRef}`).forEach(el => {
     let mk = el.dataset.masterKey; if(!checkGroups[mk]) checkGroups[mk] = [];
     if(el.checked) checkGroups[mk].push(el.value);
   });
   Object.keys(checkGroups).forEach(key => { fieldsPayload[key] = checkGroups[key].join(", "); });
   
   try {
-    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "updateLeadFull", leadRef: activeSearchRef, fields: fieldsPayload }) });
+    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "updateLeadFull", leadRef: leadRef, fields: fieldsPayload }) });
     const r = await res.json(); if (r.success) alert("Modifications committed.");
   } catch(e) { alert(e.message); } finally { if(btn) { btn.disabled = false; btn.innerHTML = "Save Modifications"; } }
 }
 
-function exitCanvasToCardView() { document.getElementById("step2-inline-interaction-canvas").style.display = "none"; document.getElementById("step1-card-capture-block").style.display = "block"; }
+async function removeLeadRowEntirely(leadRef) {
+  if (!confirm("CRITICAL: Confirm removal of this specific contact person record from Leads tracking row?")) return;
+  try {
+    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "deleteLeadRow", leadRef: leadRef }) });
+    const r = await res.json();
+    if (r.success) {
+      document.getElementById(`workspace-cardDetails`).appendChild(document.querySelector("#timeline-box").parentElement.parentElement); // Safe pop background elements out
+      document.getElementById(`workspace-cardDetails`).appendChild(document.querySelector("#task-cards-box").parentElement.parentElement);
+      triggerSequentialSearch();
+    }
+  } catch(e) { alert(e.message); }
+}
+
+function exitCanvasToCardView() {
+  document.getElementById(`workspace-cardDetails`).appendChild(document.querySelector("#timeline-box").parentElement.parentElement);
+  document.getElementById(`workspace-cardDetails`).appendChild(document.querySelector("#task-cards-box").parentElement.parentElement);
+  document.getElementById("step2-inline-interaction-canvas").style.display = "none"; 
+  document.getElementById("step1-card-capture-block").style.display = "block"; 
+}
+
 function resetSequentialFormState() {
   document.getElementById("step1-card-capture-block").style.display = "block"; document.getElementById("step2-new-entry-dropdown").style.display = "none";
   document.getElementById("step2-inline-interaction-canvas").style.display = "none"; document.getElementById("missing-trigger-notice-block").style.display = "none";
@@ -583,6 +617,7 @@ function resetSequentialFormState() {
   document.getElementById("parse-btn").disabled = true;
 }
 
+// ── FOLLOW-UP RENDERING ARCHITECTURE ───────────────────────────────────────
 function renderFollowUpTimeline(list) {
   const box = document.getElementById("timeline-box");
   box.innerHTML = list.length === 0 ? '<p style="color:var(--muted); font-size:0.85rem; padding:10px;">No records</p>' : '';
@@ -596,9 +631,9 @@ function renderFollowUpTimeline(list) {
       <div class="fup-item-body">
         <div style="font-size:0.82rem; line-height:1.5; color:var(--muted); margin-bottom:6px;">
           <strong>Status:</strong> ${f.status}<br/><strong>Lead ID:</strong> ${f.leadId}<br/><strong>Engineer Name:</strong> ${f.eng}<br/>
-          <strong>Next Follow-Up Date:</strong> ${formatCleanDateOnly(f.nextDate)} | <strong>Time Shift:</strong> ${f.nextTime || "None"}<br/>
-          <div style="margin-top:2px;"><strong>NQ1:</strong> ${f.nq1} | <strong>NQ2:</strong> ${f.nq2} | <strong>NQ3:</strong> ${f.nq3}</div>
-          <div style="margin-top:2px;"><strong>NQ4:</strong> ${f.nq4} | <strong>NQ5:</strong> ${f.nq5} | <strong>NQ6:</strong> ${f.nq6}</div>
+          <strong>Next Follow-Up Date:</strong> ${formatCleanDateOnly(f.nextDate)} | <strong>Time:</strong> ${f.nextTime || "None"}<br/>
+          <strong>NQ1:</strong> ${f.nq1} | <strong>NQ2:</strong> ${f.nq2} | <strong>NQ3:</strong> ${f.nq3}<br/>
+          <strong>NQ4:</strong> ${f.nq4} | <strong>NQ5:</strong> ${f.nq5} | <strong>NQ6:</strong> ${f.nq6}
         </div>
         <div style="font-size:0.85rem; color:#2d3748; padding:6px 0; border-top:1px solid #edf2f7; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"><strong>Notes:</strong> ${f.notes}</div>
         <div style="margin-top:8px; display:flex; gap:8px;">
@@ -608,12 +643,6 @@ function renderFollowUpTimeline(list) {
       </div>`;
     box.appendChild(card);
   });
-}
-
-function toggleFollowUpAccordion(headerEl) {
-  const body = headerEl.nextElementSibling; const isVisible = body.style.display === "block";
-  body.style.display = isVisible ? "none" : "block";
-  headerEl.querySelector("span:last-child").textContent = isVisible ? "View details ▾" : "Collapse ▴";
 }
 
 function showNewFollowUpForm() {
@@ -664,7 +693,10 @@ async function commitFollowUpItem() {
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "saveFollowUp", followUpData }) });
     const r = await res.json();
-    if (r.success) { collapseSubPanelExplicitly('fup-form-expansion', 'toggle-fup-form-btn'); refreshCanvasDataNodes(); }
+    if (r.success) { 
+      collapseSubPanelExplicitly('fup-form-expansion', 'toggle-fup-form-btn'); 
+      await refreshCanvasDataNodesGlobal(); 
+    }
   } catch(e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = "Save Follow-Up"; }
 }
 
@@ -673,17 +705,18 @@ async function removeFollowUpItem(lId, fNum) {
   const fupId = lId + "||" + fNum;
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "deleteFollowUp", fupId: fupId }) });
-    const r = await res.json(); if (r.success) refreshCanvasDataNodes();
+    const r = await res.json(); if (r.success) await refreshCanvasDataNodesGlobal();
   } catch(e) { alert(e.message); }
 }
 
+// ── TASK RENDERING SUBSYSTEM BLOCKS ──────────────────────────────────────────
 function renderTaskItemsList(list) {
   const box = document.getElementById("task-cards-box");
   box.innerHTML = list.length === 0 ? '<p style="color:var(--muted); font-size:0.85rem; padding:10px;">No active entries.</p>' : '';
   list.forEach(t => {
     let div = document.createElement("div"); div.className = "task-item-card";
     div.innerHTML = `<strong>${t.type}</strong> - ${t.eng}<br/><small>Time: ${t.shift} | Target Date: ${formatCleanDateOnly(t.targetDate)}</small>
-                     <p style="font-size:0.82rem; margin-top:4px; color:var(--text); word-wrap:break-word; white-space:pre-wrap;"><strong>Desc:</strong> ${t.desc || 'None'}</p>
+                     <p style="font-size:0.82rem; margin-top:4px; color:var(--text); word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"><strong>Desc:</strong> ${t.desc || 'None'}</p>
                      <div style="font-size:0.75rem; font-weight:bold; color:var(--brand); margin-top:4px;">Status: ${t.status} | Assigner: ${t.assigner || "System"}</div>
                      <div style="margin-top:8px; display:flex; gap:6px;">
                        <button class="nav-btn-styled" onclick="editTaskItem('${t.id}','${t.eng}','${t.assigner}','${t.type}',\`${(t.desc||'').replace(/'/g,"\\'")}\`,'${t.shift}','${t.targetDate}','${t.status}')" style="font-size:0.75rem; padding:2px 6px;">Edit</button>
@@ -727,7 +760,7 @@ async function commitTaskItem() {
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "saveTask", taskData }) });
     const r = await res.json();
-    if (r.success) { collapseSubPanelExplicitly('task-form-expansion', 'toggle-task-form-btn'); refreshCanvasDataNodes(); }
+    if (r.success) { collapseSubPanelExplicitly('task-form-expansion', 'toggle-task-form-btn'); await refreshCanvasDataNodesGlobal(); }
   } catch(e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = "Save Task"; }
 }
 
@@ -735,15 +768,22 @@ async function removeTaskItem(id) {
   if (!confirm("Confirm cancellation?")) return;
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "deleteTask", taskId: id }) });
-    const r = await res.json(); if (r.success) refreshCanvasDataNodes();
+    const r = await res.json(); if (r.success) await refreshCanvasDataNodesGlobal();
   } catch(e) { alert(e.message); }
 }
 
-async function refreshCanvasDataNodes() {
+async function refreshCanvasDataNodesGlobal() {
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "searchCompanyData", companyName: activeSearchCompany }) });
     const data = await res.json();
-    if (data.success) { currentFollowUpCount = data.followups.length; renderFollowUpTimeline(data.followups); renderTaskItemsList(data.tasks); }
+    if (data.success) { 
+      serverCachedFollowUpsMap = data.followups;
+      serverCachedTasksMap = data.tasks;
+      currentFollowUpCount = data.followups[activeSearchRef] ? data.followups[activeSearchRef].length : 0;
+      
+      renderFollowUpTimeline(data.followups[activeSearchRef] || []); 
+      renderTaskItemsList(data.tasks[activeSearchRef] || []); 
+    }
   } catch(e) { console.error(e.message); }
 }
 
@@ -787,7 +827,7 @@ async function submitLead() {
       position: document.getElementById('f-position').value, phone: document.getElementById('f-phone').value, altPhone: document.getElementById('f-altphone').value,
       email: document.getElementById('f-email').value, website: document.getElementById('f-website').value, address: document.getElementById('f-address').value,
       meetingDate: document.getElementById('meetingDate').value, meetingTime: document.getElementById('meetingTime').value,
-      meetingVenue: getRadio('meetingVenue'), venueName: document.getElementById('venueName').value, additionalMeetingDetails: document.getElementById('additionalMeetingDetails'),
+      meetingVenue: getRadio('meetingVenue'), venueName: document.getElementById('venueName').value, additionalMeetingDetails: document.getElementById('additionalMeetingDetails').value,
       businessVertical: getRadio('businessVertical'), industry: document.getElementById('industry').value, qualification: getChecks('qualification'), vendorType: [''],
       materialsName: document.getElementById('materialsName').value, lpi: document.getElementById('lpi').value, hbi: document.getElementById('hbi').value,
       hi: document.getElementById('hi').value, thi: document.getElementById('thi').value, gsi: document.getElementById('gsi').value, esd: document.getElementById('esd').value,
@@ -797,7 +837,7 @@ async function submitLead() {
       products: getChecks('prod'), approxReq: document.getElementById('approxReq').value, tenderDate: document.getElementById('tenderDate').value,
       orderTimeline: document.getElementById('orderTimeline').value, competitors: document.getElementById('competitors').value, potential: getRadio('pot'),
       sendProfile: document.getElementById('act1').value, sendPresentation: document.getElementById('act2').value, arrangeVisit: document.getElementById('act3').value,
-      getEnquiry: document.getElementById('act4').value, sendOffer: document.getElementById('actOffer').value, followUpRequired: document.getElementById('act7').value
+      getEnquiry: document.getElementById('act4').value, sendOffer: document.getElementById('actOffer').value, followUpRequired: document.getElementById('act7').value, nextDate: document.getElementById('nextDate').value
     };
     const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'submit', fields, imageUrl }) });
     const d = await res.json();
