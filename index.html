@@ -1291,20 +1291,22 @@ async function triggerEngineerSearch() {
         if (data.success) {
             const canvas = document.getElementById("step2-inline-interaction-canvas");
             
-            // Set up header with the Create button enabled
+            // Set up header
+            // Explicitly REMOVED the "Create New Entry" logic from this innerHTML
             document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div class="qualification-status-bar" style="flex:1;">Engineer: ${engVal}</div>
+                    <div class="qualification-status-bar" style="flex:1; margin-right:10px;">Engineer: ${engVal}</div>
                     <button class="nav-btn-styled" onclick="returnToDashboard()">Return</button>
                 </div>
             `;
             
-            // Enable the Create Entry button for this module
-            document.getElementById("global-direct-inline-create-entry-btn").style.display = "inline-flex";
+            // EXPLICITLY HIDE the Create button
+            document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
             
             globalFollowUpsCacheMap = data.followups;
             globalTasksCacheMap = data.tasks;
             buildMultiContactDirectoryInterface(data.leads, "");
+            
             canvas.style.display = "block";
             document.getElementById("workspace-searchEngineer").appendChild(canvas);
         } else {
