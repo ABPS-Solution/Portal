@@ -420,7 +420,7 @@
 
 <script>
 // --- CENTRAL CONFIGURATION HUB ---
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxdGjq0Q_ijP8XQdAf2SJQ4HIXGMxD8V-nCMeztQZohxe46rxxbit3hvZFdT_Z1hw4LRw/exec"; 
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzFprQ5IzHzhSOGnqq0FpFnJQZTmjxX0LW0YdVRgKtsrcEKlUvJViDUeXiFNkdmZNT4Yg/exec"; 
 
 let userPermissions = { cardDetails: false, searchCompany: false, searchStatus: false, searchEngineer: false };
 let cachedEngineers = [];
@@ -1140,7 +1140,6 @@ function updateSelectedDisplay() {
 }
 
 // Triggers the search and prepares the UI
-
 async function triggerQualificationSearch() {
     const btn = document.getElementById("qual-search-btn");
     const selected = Array.from(document.querySelectorAll('input[name="searchQual"]:checked')).map(i => i.value);
@@ -1154,19 +1153,20 @@ async function triggerQualificationSearch() {
         const data = await res.json();
         
         if (data.success) {
-            // Setup the UI
-            const activePanel = document.getElementById("workspace-searchQualification");
-            activePanel.appendChild(document.getElementById("step2-inline-interaction-canvas"));
-            
-            // Inject the Status Bar and remove back button
             const canvas = document.getElementById("step2-inline-interaction-canvas");
-            const backBtnRow = document.getElementById("canvas-back-btn-enclosure-row");
-            backBtnRow.innerHTML = `<div class="qualification-status-bar">Qualifications: ${selected.join(", ")}</div>`;
+            // Use a container that forces the button to the right
+            document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                    <div class="qualification-status-bar" style="flex:1; margin-right:10px;">Qualifications: ${selected.join(", ")}</div>
+                    <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
+                </div>
+            `;
             
             globalFollowUpsCacheMap = data.followups;
             globalTasksCacheMap = data.tasks;
             buildMultiContactDirectoryInterface(data.leads, "");
             canvas.style.display = "block";
+            document.getElementById("workspace-searchQualification").appendChild(canvas);
         }
     } catch(e) { alert(e.message); } finally {
         btn.classList.remove("loading");
