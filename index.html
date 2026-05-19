@@ -10,6 +10,7 @@
     --brand: #0056b3; --brand-dk: #003d82; --accent: #00a878; --warn: #e84545;
     --bg: #f0f4f8; --card: #ffffff; --border: #d0d9e4; --text: #1a2332;
     --muted: #6b7a8d; --radius: 6px;
+    --highlight-bg: #f0f7ff; --highlight-border: #0056b3;
   }
   body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 20px; }
   #auth-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, var(--brand-dk), var(--brand)); }
@@ -35,13 +36,16 @@
   .section-header { background: var(--brand); color: #fff; padding: 5px 12px; font-size: .75rem; font-weight: 700; text-transform: uppercase; }
   .section-body { padding: 10px; }
   
-  .contact-summary-card-parent { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+  .contact-summary-card-parent { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: all 0.2s ease; }
+  
+  /* Targeted Focal Highlighting Row Metrics Rule Mapping sets */
+  .contact-summary-card-parent.search-highlighted-focus-node { background: var(--highlight-bg) !important; border: 2px solid var(--highlight-border) !important; box-shadow: 0 4px 10px rgba(0, 86, 179, 0.1) !important; }
+  
   .contact-summary-header-row { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; border-bottom: 1px dashed var(--border); padding-bottom: 8px; margin-bottom: 10px; }
   @media(min-width: 800px) { .contact-summary-header-row { flex-direction: row; justify-content: space-between; align-items: center; } }
   
-  .contact-summary-title-info { font-size: 0.95rem; font-weight: 700; color: var(--text); width: 100%; text-align: left; line-height: 1.5; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+  .contact-summary-title-info { font-size: 0.95rem; font-weight: 700; color: var(--text); width: 100%; text-align: left; line-height: 1.5; display: block; }
   .contact-summary-title-info .meta-row-line-block { display: flex; align-items: center; width: 100%; margin-bottom: 4px; }
-  @media(min-width: 800px) { .contact-summary-title-info .meta-row-line-block { width: auto; margin-bottom: 0; } }
   .contact-summary-title-info span { font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; background: #edf2f7; padding: 2px 6px; border-radius: 4px; margin-right: 4px; display: inline-block; }
   .contact-summary-title-info strong { margin-right: 18px; color: #111827; display: inline-block; }
   .directory-btn-actions-block { display: flex; gap: 6px; width: 100%; justify-content: flex-start; }
@@ -469,7 +473,7 @@ function navigateToModule(key) {
 }
 
 function returnToDashboard() { 
-  collapseNewEntryDropdownFormExplicitly(); // Force anti bleed collapse rules execution
+  collapseNewEntryDropdownFormExplicitly(); 
   showAppView(); 
 }
 
@@ -478,11 +482,9 @@ function revealNewEntryFormDropdown() {
   const container = (currentActiveModuleContext === "CARD") ? "workspace-cardDetails" : "workspace-searchCompany";
   document.getElementById(container).appendChild(document.getElementById("step2-new-entry-dropdown"));
   
-  // Dynamic extraction binding parameter to lock company title inside section 1 fields automatically
   const targetedLockStringValue = (currentActiveModuleContext === "CARD") ? document.getElementById("f-company").value : document.getElementById("lookup-module-company-dropdown").value;
   document.getElementById("dropform-company-locked").value = targetedLockStringValue || "No Company Specified";
   
-  // Force reset child input maps
   document.getElementById("dropform-name").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-name").value : "";
   document.getElementById("dropform-position").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-position").value : "";
   document.getElementById("dropform-phone").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-phone").value : "";
@@ -551,7 +553,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
         bannerHook.innerHTML = "";
       }
 
-      buildMultiContactDirectoryInterface(data.leads);
+      buildMultiContactDirectoryInterface(data.leads, targetName);
       
       document.getElementById("missing-trigger-notice-block").style.display = "none";
       if(triggerSourceMode === "CARD") document.getElementById("step1-card-capture-block").style.display = "none";
@@ -577,7 +579,6 @@ function revealNewEntryFormDropdownFromBanner() {
   const parentId = (currentActiveModuleContext === "CARD") ? "workspace-cardDetails" : "workspace-searchCompany";
   document.getElementById(parentId).appendChild(document.getElementById("step2-new-entry-dropdown"));
   
-  // Sync the disabled company title lock input box cleanly parameter
   document.getElementById("dropform-company-locked").value = activeSearchCompany;
   document.getElementById("dropform-name").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-name").value : "";
   document.getElementById("dropform-position").value = ""; document.getElementById("dropform-phone").value = "";
@@ -598,10 +599,26 @@ function returnToDirectoryCardsFromFormView() {
   document.getElementById("step2-inline-interaction-canvas").style.display = "block";
 }
 
-function buildMultiContactDirectoryInterface(leadsList) {
+// FIXED ARCHITECTURE: INTERACTION TO ENFORCE PRIORITY CAPTURE HIGHLIGHT AND AUTO ORDER SORT CHANNELS
+function buildMultiContactDirectoryInterface(leadsList, targetSearchName) {
   const container = document.getElementById("multi-contact-records-container");
   container.innerHTML = "";
   
+  const sanitizedTargetName = targetSearchName ? targetSearchName.toString().replace(/\s+/g, '').toLowerCase() : "";
+
+  // Perform a predictive high fidelity lookahead split layout sort array calculation metrics parameters
+  leadsList.sort(function(a, b) {
+    let aNameClean = (a["Name"] || "").toString().replace(/\s+/g, '').toLowerCase();
+    let bNameClean = (b["Name"] || "").toString().replace(/\s+/g, '').toLowerCase();
+    
+    let aMatches = (sanitizedTargetName !== "" && aNameClean === sanitizedTargetName);
+    let bMatches = (sanitizedTargetName !== "" && bNameClean === sanitizedTargetName);
+    
+    if (aMatches && !bMatches) return -1;
+    if (!aMatches && bMatches) return 1;
+    return 0;
+  });
+
   leadsList.forEach(lead => {
     let tRef = lead["Lead ID"];
     let wrapperCard = document.createElement("div");
@@ -609,7 +626,13 @@ function buildMultiContactDirectoryInterface(leadsList) {
     wrapperCard.id = `contact-parent-wrapper-${tRef}`;
     
     let cardDisplayName = (lead["Name"] && lead["Name"].toString().trim() !== "") ? lead["Name"] : "Unspecified";
-    
+    let leadCleanedName = cardDisplayName.toString().replace(/\s+/g, '').toLowerCase();
+
+    // Condition trigger matching block metrics rule configurations set validation gate
+    if (sanitizedTargetName !== "" && leadCleanedName === sanitizedTargetName) {
+      wrapperCard.className += " search-highlighted-focus-node";
+    }
+
     wrapperCard.innerHTML = `
       <div class="contact-summary-header-row">
         <div class="contact-summary-title-info">
@@ -831,7 +854,7 @@ async function removeLeadRowEntirely(leadRef) {
 }
 
 function exitCanvasToCardView() {
-  collapseNewEntryDropdownFormExplicitly(); // Force absolute anti bleed collapse execution triggers
+  collapseNewEntryDropdownFormExplicitly(); 
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
   document.getElementById("step2-inline-interaction-canvas").style.display = "none"; 
   if(currentActiveModuleContext === "CARD") document.getElementById("step1-card-capture-block").style.display = "block"; 
@@ -983,6 +1006,34 @@ async function globalExecutionScopeReloader(leadRef, scopeNode) {
   } catch(e) { console.error(e.message); }
 }
 
+let fileFront = null, fileBack = null;
+document.getElementById('card-front').onchange = (e) => { fileFront = e.target.files[0]; document.getElementById('front-box').textContent = "Front ✅"; document.getElementById('front-box').classList.add('done'); document.getElementById('parse-btn').disabled = false; };
+document.getElementById('card-back').onchange = (e) => { fileBack = e.target.files[0]; document.getElementById('back-box').textContent = "Back ✅"; document.getElementById('back-box').classList.add('done'); };
+function toggleOtherText(r, id) { document.getElementById(id).style.display = (r.value === 'Other') ? 'block' : 'none'; }
+function handleQualChange() { document.getElementById('vendor-fields').style.display = document.getElementById('q8').checked ? 'block' : 'none'; }
+function toggleNo(btn) { const i = document.getElementById(btn.dataset.target); const act = btn.classList.toggle('active'); i.value = act ? "No" : ""; i.disabled = act; }
+function clearNo(i) { const b = document.querySelector(`button[data-target="${i.id}"]`); if (b) b.classList.remove('active'); }
+
+async function parseCard() {
+  const btn = document.getElementById('parse-btn'); btn.innerHTML = '<div class="spinner"></div> Parsing...'; btn.disabled = true;
+  const getB64 = (f) => new Promise((res) => { const rd = new FileReader(); rd.onload = () => res(rd.result.split(',')[1]); rd.readAsDataURL(f); });
+  try {
+    const img1 = await getB64(fileFront); const img2 = fileBack ? await getB64(fileBack) : null;
+    const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'parse', image: img1, imageBack: img2 }) });
+    const j = await res.json(); const d = JSON.parse(j.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim());
+    document.getElementById('dropform-name').value = d.name || ""; document.getElementById('f-company').value = d.company || "";
+    document.getElementById('dropform-position').value = d.position || ""; document.getElementById('dropform-phone').value = d.phone || "";
+    document.getElementById('dropform-altphone').value = d.altPhone || ""; document.getElementById('dropform-email').value = d.email || "";
+    document.getElementById('dropform-website').value = d.website || ""; document.getElementById('dropform-address').value = d.address || "";
+  } catch (e) { alert(e.message); } finally { btn.innerHTML = 'Parse Card with AI'; btn.disabled = false; }
+}
+
+async function uploadToCloudinary(file) {
+  if (!file) return ""; const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', UPLOAD_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
+  const d = await res.json(); return d.secure_url || "";
+}
+
 async function submitLead() {
   const btn = document.getElementById('submit-btn'); btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...';
   const getChecks = n => Array.from(document.querySelectorAll(`input[name="${n}"]:checked`)).map(c => c.value);
@@ -992,7 +1043,6 @@ async function submitLead() {
     const imageUrl = [url1, url2].filter(u => u).join(", ");
     const fields = {
       engineerName: document.getElementById('engName').value, 
-      // Synchronize customized segment inputs dynamically
       name: document.getElementById('dropform-name').value || document.getElementById('f-name').value, 
       company: document.getElementById('dropform-company-locked').value || document.getElementById('f-company').value,
       position: document.getElementById('dropform-position').value || document.getElementById('f-position').value, 
