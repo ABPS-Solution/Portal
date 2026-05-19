@@ -32,14 +32,13 @@
   .menu-card { background: var(--card); border: 1.5px solid var(--border); padding: 20px; border-radius: var(--radius); cursor: pointer; font-weight: 700; font-size: 0.95rem; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: transform 0.15s, border-color 0.15s; }
   .menu-card:hover { transform: translateY(-1px); border-color: var(--brand); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
   .menu-card.locked { opacity: 0.5; cursor: not-allowed; background: #e9ecef; }
-  .menu-card.locked:hover { transform: none; border-color: var(--border); box-shadow: none; }
   
   .workspace-panel { padding: 4px 10px; }
   .section { background: var(--card); border-radius: var(--radius); margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); overflow: hidden; }
   .section-header { background: var(--brand); color: #fff; padding: 5px 12px; font-size: .75rem; font-weight: 700; text-transform: uppercase; }
   .section-body { padding: 10px; }
   
-  .contact-summary-card-parent { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+  .contact-summary-card-parent { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: all 0.2s ease; }
   .contact-summary-card-parent.search-highlighted-focus-node { background: var(--highlight-bg) !important; border: 2px solid var(--highlight-border) !important; box-shadow: 0 4px 10px rgba(0, 86, 179, 0.1) !important; }
   .contact-summary-header-row { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; border-bottom: 1px dashed var(--border); padding-bottom: 8px; margin-bottom: 10px; }
   @media(min-width: 800px) { .contact-summary-header-row { flex-direction: row; justify-content: space-between; align-items: center; } }
@@ -51,52 +50,51 @@
   .directory-btn-actions-block { display: flex; gap: 6px; width: 100%; justify-content: flex-start; }
   @media(min-width: 800px) { .directory-btn-actions-block { width: auto; justify-content: flex-end; } }
 
-  .compact-fields-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; text-align: left; }
+  .compact-fields-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; text-align: left; }
   @media(min-width: 600px) { .compact-fields-grid { grid-template-columns: repeat(4, 1fr); } }
   @media(min-width: 950px) { .compact-fields-grid { grid-template-columns: repeat(6, 1fr); } }
-  .grid-cell-item { display: flex; flex-direction: column; background: #f8fafc; padding: 2px 4px; border: 1px solid #e2e8f0; border-radius: 4px; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
-  .grid-cell-item label { font-size: 0.58rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 1px; }
-  .grid-cell-item input, .grid-cell-item select, .grid-cell-item textarea { padding: 2px 4px; font-size: 0.78rem; font-weight: 600; border-radius: 3px; border: 1px solid var(--border); }
-  
-  .aoc-split-row-box { display: grid; grid-template-columns: 85px 1fr; gap: 8px; align-items: center; width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 6px; }
-  .aoc-split-row-box select { padding: 4px 6px; font-weight: 700; color: var(--brand); text-align: center; }
-  .aoc-split-row-box input { border: 1px solid var(--border); }
+  .grid-cell-item { display: flex; flex-direction: column; background: #f8fafc; padding: 4px 6px; border: 1px solid #e2e8f0; border-radius: 4px; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
+  .grid-cell-item label { font-size: 0.6rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 1px; }
+  .grid-cell-item input, .grid-cell-item select, .grid-cell-item textarea { padding: 3px 4px; font-size: 0.8rem; font-weight: 600; border-radius: 3px; border: 1px solid var(--border); }
   
   .span-two-units { grid-column: span 2; }
-  .section-divider-line { grid-column: 1 / -1; height: 1px; background: #cbd5e1; margin: 2px 0; }
+  .section-divider-line { grid-column: 1 / -1; height: 1px; background: #cbd5e1; margin: 4px 0; }
   
-  .pill-group { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 1px; }
+  .pill-group { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
   .pill-group input { display: none; }
-  .pill-group label { padding: 3px 6px; border: 1.5px solid var(--border); border-radius: 12px; font-size: .7rem; cursor: pointer; background: #fff; white-space: nowrap; }
+  .pill-group label { padding: 4px 8px; border: 1.5px solid var(--border); border-radius: 14px; font-size: .72rem; cursor: pointer; background: #fff; white-space: nowrap; }
   .pill-group input:checked + label { background: var(--brand); border-color: var(--brand); color: #fff; }
   
-  .navigation-action-header-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; background: #ffffff; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-  .nav-btn-styled { background: var(--brand); color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: background 0.15s; outline: none; }
+  .navigation-action-header-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: #ffffff; border-radius: 6px; margin-bottom: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+  .nav-btn-styled { background: var(--brand); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: background 0.15s; outline: none; }
   .nav-btn-styled:hover { background: var(--brand-dk); }
   
-  .btn { width: 100%; padding: 6px 10px; border: none; border-radius: 4px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.82rem; }
+  .btn { width: 100%; padding: 10px; border: none; border-radius: 4px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem; }
   .btn-sub { background: var(--brand); color: #fff; }
-  .btn-ai { background: var(--accent); color: #fff; margin-bottom: 4px; padding: 4px; }
+  .btn-ai { background: var(--accent); color: #fff; margin-bottom: 12px; }
   .btn-warn { background: #718096; color: #fff; }
   
-  .system-runtime-inline-alert-callout { padding: 6px 10px; background: #fffaf0; border-left: 4px solid #dd6b20; border-radius: 4px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 6px; text-align: left; }
+  .system-runtime-inline-alert-callout { padding: 12px 16px; background: #fffaf0; border-left: 4px solid #dd6b20; border-radius: 4px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px; text-align: left; }
   @media(min-width: 600px) { .system-runtime-inline-alert-callout { flex-direction: row; justify-content: space-between; align-items: center; } }
-  .alert-callout-text-msg { font-size: 0.8rem; font-weight: 700; color: #dd6b20; line-height: 1.3; }
+  .alert-callout-text-msg { font-size: 0.88rem; font-weight: 600; color: #dd6b20; line-height: 1.4; }
 
-  #missing-trigger-notice-block { padding: 6px; text-align: center; background: white; border-radius: var(--radius); border: 1px solid var(--warn); margin-bottom: 4px; }
-  #missing-trigger-notice-block p { font-size: 0.78rem; font-weight: 700; color: #e53e3e; margin: 0 0 4px; }
-
-  .card-row { display: flex; gap: 6px; margin-bottom: 4px; }
-  .card-box { flex: 1; border: 2px dashed var(--border); padding: 6px; text-align: center; font-size: .75rem; cursor: pointer; border-radius: 4px; }
+  #missing-trigger-notice-block { padding: 20px; text-align: center; background: white; border-radius: var(--radius); border: 1px solid var(--warn); margin-bottom: 15px; }
+  .card-row { display: flex; gap: 10px; margin-bottom: 10px; }
+  .card-box { flex: 1; border: 2px dashed var(--border); padding: 12px; text-align: center; font-size: .78rem; cursor: pointer; border-radius: 4px; }
   .card-box.done { border-color: var(--accent); color: var(--accent); font-weight: 700; }
   
-  .fup-item-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 4px; text-align: left; overflow: hidden; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
-  .fup-item-header { padding: 8px; background: #edf2f7; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600; align-items: center; }
-  .fup-item-body { padding: 10px; display: none; border-top: 1px solid var(--border); background: #fff; }
+  .fup-item-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 6px; text-align: left; overflow: hidden; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
+  .fup-item-header { padding: 10px; background: #edf2f7; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; align-items: center; }
+  .fup-item-body { padding: 12px; display: none; border-top: 1px solid var(--border); background: #fff; }
   
   .task-double-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; grid-column: span 2; }
-  .task-grid-inputs, .fup-grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #f1f5f9; padding: 10px; border-radius: 4px; margin: 6px 0; text-align: left; }
-  .task-item-card { background: var(--card); border: 1px solid var(--border); padding: 8px; border-radius: 4px; text-align: left; margin-bottom: 4px; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
+  .task-grid-inputs, .fup-grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #f1f5f9; padding: 12px; border-radius: 4px; margin: 8px 0; text-align: left; }
+  .task-item-card { background: var(--card); border: 1px solid var(--border); padding: 10px; border-radius: 4px; text-align: left; margin-bottom: 6px; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
+  .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .8s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .no-btn { padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 4px; background: #fff; cursor: pointer; font-size: .75rem; }
+  .no-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .toggle-input-group { display: flex; gap: 6px; align-items: center; }
 </style>
 </head>
 <body>
@@ -146,7 +144,7 @@
     <div id="workspace-cardDetails" class="workspace-panel" style="display: none;">
       <div id="step1-card-capture-block" class="section">
         <div class="section-header">Business Card Information</div>
-        <div class="section-body" style="padding: 5px;">
+        <div class="section-body">
           <div class="card-row">
             <div class="card-box" id="front-box" onclick="document.getElementById('card-front').click()">📷 Front Side</div>
             <div class="card-box" id="back-box" onclick="document.getElementById('card-back').click()">📷 Back Side (Opt)</div>
@@ -162,9 +160,9 @@
           <label class="field-label">Alt Phone</label><input type="tel" id="f-altphone" />
           <label class="field-label">Email</label><input type="email" id="f-email" />
           <label class="field-label">Website</label><input type="url" id="f-website" />
-          <label class="field-label">Address</label><textarea id="f-address" style="min-height:28px;"></textarea>
+          <label class="field-label">Address</label><textarea id="f-address" style="min-height:35px;"></textarea>
           
-          <button class="btn btn-sub" id="gate-search-btn" onclick="triggerSequentialSearch('CARD')" style="margin-top:6px;">Search Database</button>
+          <button class="btn btn-sub" id="gate-search-btn" onclick="triggerSequentialSearch('CARD')" style="margin-top:8px;">Search Database</button>
         </div>
       </div>
     </div>
@@ -172,9 +170,9 @@
     <div id="workspace-searchCompany" class="workspace-panel" style="display: none;">
       <div id="company-dropdown-selector-block" class="section">
         <div class="section-header">Choose Target Company Profile</div>
-        <div class="section-body" style="padding: 6px; text-align: left;">
+        <div class="section-body" style="padding: 10px; text-align: left;">
           <label class="field-label">Select Company Name</label>
-          <select id="lookup-module-company-dropdown" style="margin-bottom: 6px; font-size:0.95rem; padding:6px;"><option value="">Loading Unique Company Names...</option></select>
+          <select id="lookup-module-company-dropdown" style="margin-bottom: 12px; font-size:0.95rem; padding:6px;"><option value="">Loading Unique Company Names...</option></select>
           <button class="btn btn-sub" id="lookup-module-search-btn" onclick="triggerSequentialSearch('DROPDOWN')">Search Company</button>
         </div>
       </div>
@@ -183,33 +181,32 @@
     <div id="workspace-searchQualification" class="workspace-panel" style="display: none;">
       <div id="qual-dropdown-selector-block" class="section">
         <div class="section-header">Filter Directory by Qualification</div>
-        <div class="section-body" style="padding: 6px; text-align: left;">
+        <div class="section-body" style="padding: 10px; text-align: left;">
           <label class="field-label">Select Target Qualification Type</label>
-          <select id="lookup-module-qual-dropdown" style="margin-bottom: 6px; font-size:0.95rem; padding:6px;">
-            <option value="">— Choose Qualification Variable —</option>
-            <option value="Industry">Industry</option>
-            <option value="Vendor">Vendor</option>
-            <option value="EPC">EPC</option>
-            <option value="Consultant">Consultant</option>
-          </select>
+          <div id="qual-checkbox-list" class="pill-group" style="margin-bottom:10px;">
+            <input type="checkbox" class="qual-checkbox" value="Industry" id="q_ind"><label for="q_ind">Industry</label>
+            <input type="checkbox" class="qual-checkbox" value="Vendor" id="q_ven"><label for="q_ven">Vendor</label>
+            <input type="checkbox" class="qual-checkbox" value="EPC" id="q_epc"><label for="q_epc">EPC</label>
+            <input type="checkbox" class="qual-checkbox" value="Consultant" id="q_con"><label for="q_con">Consultant</label>
+          </div>
           <button class="btn btn-sub" id="lookup-module-qual-search-btn" onclick="triggerSequentialSearch('QUALIFICATION')">Search Qualification</button>
         </div>
       </div>
     </div>
 
     <div id="missing-trigger-notice-block" style="display:none;">
-      <p>No record matched your target company parameters.</p>
-      <button class="btn btn-sub" id="reveal-new-entry-btn" onclick="revealNewEntryFormDropdown()" style="width:auto; display:inline-flex; padding:4px 10px; font-size:0.75rem;">Create New Entry</button>
+      <p style="color:#e53e3e; font-weight:700;">No record matched your target company parameters.</p>
+      <button class="btn btn-sub" id="reveal-new-entry-btn" onclick="revealNewEntryFormDropdown()" style="width:auto; display:inline-flex; padding:5px 14px; font-size:0.78rem;">Create New Entry</button>
     </div>
 
-    <div id="step2-new-entry-dropdown" style="display: none; padding: 0 4px;">
-      <div class="navigation-action-header-row" id="staged-back-button-row" style="display:none; background:#fffaf0; border:1px solid #dd6b20; margin-bottom:6px; padding:2px 6px;">
-        <span style="font-size:0.72rem; font-weight:700; color:#dd6b20;">Lead Capture Form Active</span>
-        <button class="nav-btn-styled" style="background:#718096; padding:3px 6px; font-size:0.7rem;" onclick="returnToDirectoryCardsFromFormView()">Back to Company Contacts List</button>
+    <div id="step2-new-entry-dropdown" style="display: none; padding: 0 12px;">
+      <div class="navigation-action-header-row" id="staged-back-button-row" style="display:none; background:#fffaf0; border:1px solid #dd6b20; margin-bottom:10px; padding:4px 10px;">
+        <span style="font-size:0.75rem; font-weight:700; color:#dd6b20;">Lead Capture Form Active</span>
+        <button class="nav-btn-styled" style="background:#718096; padding:4px 10px; font-size:0.75rem;" onclick="returnToDirectoryCardsFromFormView()">Back to Company Contacts List</button>
       </div>
 
-      <div id="success-screen" style="display:none; text-align:center; padding:15px;">
-        <h2>Submission Successful!</h2><p id="success-ref" style="font-weight:bold; color:var(--brand); margin:6px 0;"></p>
+      <div id="success-screen" style="display:none; text-align:center; padding:20px;">
+        <h2>Submission Successful!</h2><p id="success-ref" style="font-weight:bold; color:var(--brand); margin:10px 0;"></p>
         <button class="btn btn-sub" onclick="resetSequentialFormState()">Process Another Card</button>
       </div>
 
@@ -251,7 +248,6 @@
             <div id="vendor-fields" style="display:none; margin-top:10px;"><label class="field-label">Materials Name</label><input type="text" id="materialsName" /></div>
           </div>
         </div>
-        
         <div class="section">
           <div class="section-header">Section 4 — Area of Concerns</div>
           <div class="section-body" style="display: flex; flex-direction: column; gap: 8px;">
@@ -290,7 +286,6 @@
             <label class="field-label">Technical Discussion Summary</label><textarea id="techSummary"></textarea>
           </div>
         </div>
-
         <div class="section">
           <div class="section-header">Section 5 — Requirement</div>
           <div class="section-body">
@@ -325,16 +320,13 @@
       </div>
     </div>
 
-    <div id="step2-inline-interaction-canvas" style="display: none; padding: 0 4px;">
-      <div style="margin-bottom:6px; text-align:left;" id="canvas-back-btn-enclosure-row">
+    <div id="step2-inline-interaction-canvas" style="display: none; padding: 0 12px;">
+      <div style="margin-bottom:12px; text-align:left;" id="canvas-back-btn-enclosure-row">
         <button class="nav-btn-styled" onclick="exitCanvasToCardView()" style="background:#4a5568;">Back to Search</button>
       </div>
       <div id="split-missing-person-banner-hook"></div>
       <div id="multi-contact-records-container"></div>
     </div>
-
-    <div id="workspace-searchStatus" class="workspace-panel" style="display: none;"><h3>Search Status Workspace</h3></div>
-    <div id="workspace-searchEngineer" class="workspace-panel" style="display: none;"><h3>Search Engineer Workspace</h3></div>
   </div>
 </div>
 
@@ -346,7 +338,6 @@
         <button class="btn btn-ai trigger-fup-open" style="margin:0; width:auto;">+ Create New Follow-Up</button>
         <button class="btn btn-warn trigger-fup-close" style="display:none; margin:0; width:auto;">Collapse</button>
       </div>
-      
       <div class="fup-grid-inputs template-fup-form" style="display:none;">
         <input type="hidden" class="fup-is-edit-flag" value="false" />
         <div><label class="field-label">Follow-Up Status</label><select class="fup-status-select"><option>FuS1</option><option>FuS2</option><option>FuS3</option><option>FuS4</option></select></div>
@@ -375,7 +366,6 @@
         <button class="btn btn-ai trigger-task-open" style="margin:0; width:auto; background:transparent; border:1px solid var(--brand); color:var(--brand);">+ Create New Task</button>
         <button class="btn btn-warn trigger-task-close" style="display:none; margin:0; width:auto;">Collapse</button>
       </div>
-      
       <div class="task-grid-inputs template-task-form" style="display:none;">
         <input type="hidden" class="task-edit-id" />
         <div class="task-double-row">
@@ -398,7 +388,7 @@
 
 <script>
 // --- CENTRAL CONFIGURATION HUB ---
-const GAS_URL = "https://script.google.com/macros/s/AKfycbze2hfqViL8bbOVeULuCAAwl4LKaFyrLJf3CHV74wZSj1Pual3bQj4_NjW0LjwpnbsJ-w/exec"; 
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwwWhCWS4E5JYiVe1ETp4e_P5seO05syQJ9GW4uXj5M-MbCY2X574NtjJlAR8wahom0Xw/exec"; 
 
 let userPermissions = { cardDetails: false, searchCompany: false, searchStatus: false, searchEngineer: false, searchQualification: false };
 let cachedEngineers = [];
@@ -415,10 +405,8 @@ function cleanISTTimestamp(rawStr) {
   let str = rawStr.toString().trim();
   if (!str) return "";
   if (str.indexOf("T") === -1 && (str.indexOf("am") !== -1 || str.indexOf("pm") !== -1)) return str;
-  
   let dateObj = new Date(str);
   if (isNaN(dateObj.getTime())) return str;
-  
   let year = dateObj.getFullYear();
   if (year === 1899) {
     let hours = dateObj.getHours(); let minutes = dateObj.getMinutes();
@@ -427,7 +415,7 @@ function cleanISTTimestamp(rawStr) {
   }
   let hours = dateObj.getHours(); let minutes = dateObj.getMinutes();
   let ampm = hours >= 12 ? 'pm' : 'am'; hours = hours % 12; hours = hours ? hours : 12;
-  return hours + ":" + String(minutes).padStart(2,'0') + " " + ampm;
+  return year + "-" + String(dateObj.getMonth() + 1).padStart(2, '0') + "-" + String(dateObj.getDate()).padStart(2, '0') + " " + hours + ":" + String(minutes).padStart(2,'0') + " " + ampm;
 }
 
 function formatCleanDateOnly(rawStr) {
@@ -439,8 +427,12 @@ function formatCleanDateOnly(rawStr) {
 }
 
 window.onload = function() {
-  const token = localStorage.getItem("sessionToken"); const expires = localStorage.getItem("sessionExpiry"); const savedPerms = localStorage.getItem("userPermissions");
-  if (token && expires && new Date() < new Date(expires) && savedPerms) { userPermissions = JSON.parse(savedPerms); showAppView(); } else executeLogout();
+  const token = localStorage.getItem("sessionToken"); 
+  const expires = localStorage.getItem("sessionExpiry"); 
+  const savedPerms = localStorage.getItem("userPermissions");
+  if (token && expires && new Date() < new Date(expires) && savedPerms) { 
+    userPermissions = JSON.parse(savedPerms); showAppView(); 
+  } else executeLogout();
 };
 
 async function executeLogin() {
@@ -462,18 +454,13 @@ async function executeLogin() {
 function executeLogout() { localStorage.clear(); document.getElementById("app-container").style.display = "none"; document.getElementById("auth-container").style.display = "flex"; }
 
 async function showAppView() {
-  // 1. Set main display visibility
   document.getElementById("auth-container").style.display = "none"; 
   document.getElementById("app-container").style.display = "block";
   document.getElementById("dashboard-view").style.display = "block"; 
   document.getElementById("module-workspace-container").style.display = "none";
-  
-  // 2. Set user identity headers
   document.getElementById("display-full-name").textContent = localStorage.getItem("userFirstName");
   document.getElementById("display-username").textContent = "@" + localStorage.getItem("sessionUser");
   
-  // 3. Map permission keys to menu IDs
-  // These keys MUST match the keys returned from the handleLogin() function in Code.gs
   const menuMap = {
     "mod-card": "cardDetails",
     "mod-company": "searchCompany",
@@ -482,42 +469,25 @@ async function showAppView() {
     "mod-engineer": "searchEngineer"
   };
 
-  // 4. Toggle lock styles based on permission object
   Object.keys(menuMap).forEach(id => {
     const el = document.getElementById(id);
     if(el) {
-      const permissionKey = menuMap[id];
-      const isAllowed = userPermissions[permissionKey];
-      
-      el.classList.toggle("locked", !isAllowed);
-      
-      // Prevent clicking if locked
-      if (!isAllowed) {
-        el.onclick = function() { alert("System Module Security Lock Activated."); };
-      } else {
-        // Re-attach original navigation logic if unlocked
-        el.onclick = function() { navigateToModule(permissionKey); };
-      }
+      const allowed = userPermissions[menuMap[id]];
+      el.classList.toggle("locked", !allowed);
+      el.onclick = allowed ? () => navigateToModule(menuMap[id]) : () => alert("System Module Security Lock Activated.");
     }
   });
 
-  // 5. Fetch required backend data
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "getEngineers" }) });
     const data = await res.json();
-    if (data.success) { 
-      cachedEngineers = data.engineers; 
-      populateEngineerDropdowns(); 
-    }
-  } catch(e) { console.error("Engineer load error: ", e.message); }
-  
-  // Refresh the dropdown listing for the company lookup module
+    if (data.success) { cachedEngineers = data.engineers; populateEngineerDropdowns(); }
+  } catch(e) { console.error(e.message); }
   triggerCompanyDropdownArrayFetch();
 }
 
 function populateEngineerDropdowns() {
-  const menus = ["engName"];
-  menus.forEach(mId => {
+  ["engName"].forEach(mId => {
     const el = document.getElementById(mId); if (!el) return;
     el.innerHTML = '<option value="">— Select —</option>';
     cachedEngineers.forEach(eng => {
@@ -542,13 +512,10 @@ async function triggerCompanyDropdownArrayFetch() {
 }
 
 function navigateToModule(key) { 
-  if (!userPermissions[key]) return alert("System Module Security Lock Activated."); 
   document.getElementById("dashboard-view").style.display = "none"; 
   document.getElementById("module-workspace-container").style.display = "block"; 
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none"); 
   document.getElementById("workspace-" + key).style.display = "block"; 
-  
-  // Set context states flags accurately
   currentActiveModuleContext = (key === "cardDetails") ? "CARD" : (key === "searchCompany") ? "DROPDOWN" : "QUALIFICATION";
   resetSequentialFormState(); 
 }
@@ -566,21 +533,18 @@ function revealNewEntryFormDropdown() {
   const compFieldInput = document.getElementById("dropform-company-locked");
   const compLabelInput = document.getElementById("lbl-creation-comp-lock-state");
 
-  // INDEPENDENT REQUIREMENT MATRIX ENFORCEMENT PROTECTION
   if (currentActiveModuleContext === "QUALIFICATION") {
     compFieldInput.removeAttribute("readonly");
-    compFieldInput.style.background = "#ffffff";
-    compFieldInput.style.cursor = "text";
-    compFieldInput.value = "";
-    compLabelInput.textContent = "Company Name (Editable)";
+    compFieldInput.style.background = "#ffffff"; compFieldInput.style.cursor = "text";
+    compFieldInput.value = ""; compLabelInput.textContent = "Company Name (Editable)";
   } else {
     compFieldInput.setAttribute("readonly", "true");
-    compFieldInput.style.background = "#e2e8f0";
-    compFieldInput.style.cursor = "not-allowed";
+    compFieldInput.style.background = "#e2e8f0"; compFieldInput.style.cursor = "not-allowed";
     compFieldInput.value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-company").value : document.getElementById("lookup-module-company-dropdown").value;
     compLabelInput.textContent = "Company Name (Locked)";
   }
   
+  // Persistence field bridging
   document.getElementById("dropform-name").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-name").value : "";
   document.getElementById("dropform-position").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-position").value : "";
   document.getElementById("dropform-phone").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-phone").value : "";
@@ -605,8 +569,7 @@ function collapseNewEntryDropdownFormExplicitly() {
 }
 
 async function triggerSequentialSearch(triggerSourceMode) {
-  let comp = ""; let targetName = "";
-  let btn = null;
+  let comp = "", targetName = "", btn = null;
   
   if (triggerSourceMode === "CARD") {
     comp = document.getElementById("f-company").value;
@@ -614,22 +577,19 @@ async function triggerSequentialSearch(triggerSourceMode) {
     btn = document.getElementById("gate-search-btn");
   } else if (triggerSourceMode === "DROPDOWN") {
     comp = document.getElementById("lookup-module-company-dropdown").value;
-    targetName = ""; 
-    btn = document.getElementById("lookup-module-search-btn");
+    targetName = ""; btn = document.getElementById("lookup-module-search-btn");
     if(!comp) return alert("Select a company Name option.");
   } else {
-    // Qualification runtime bypass search gate routing parameters settings mapping sets
     comp = document.getElementById("lookup-module-qual-dropdown").value;
-    targetName = "";
-    btn = document.getElementById("lookup-module-qual-search-btn");
-    if(!comp) return alert("Select a target qualification type parameter.");
+    targetName = ""; btn = document.getElementById("lookup-module-qual-search-btn");
+    if(!comp) return alert("Select a target qualification type.");
   }
+  
+  if (!comp) return alert("Specify Company parameters.");
   
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Searching...';
   try {
-    // For qualification search mode logic parameters routing, leverage fallback mock queries schemas
-    const fetchTargetQueryKeyString = (triggerSourceMode === "QUALIFICATION") ? "ABB India Limited" : comp; // Uses robust sandbox reloader metrics values
-    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "searchCompanyData", companyName: fetchTargetQueryKeyString, contactName: targetName }) });
+    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "searchCompanyData", companyName: comp, contactName: targetName }) });
     const data = await res.json();
     
     const activePanelId = (triggerSourceMode === "CARD") ? "workspace-cardDetails" : (triggerSourceMode === "DROPDOWN") ? "workspace-searchCompany" : "workspace-searchQualification";
@@ -639,7 +599,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
     activePanel.appendChild(document.getElementById("step2-inline-interaction-canvas"));
     
     if (data.success) {
-      activeSearchCompany = fetchTargetQueryKeyString.toString().trim();
+      activeSearchCompany = comp.toString().trim();
       globalFollowUpsCacheMap = data.followups;
       globalTasksCacheMap = data.tasks;
       
@@ -651,9 +611,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
             <button class="nav-btn-styled" style="background:#dd6b20;" onclick="revealNewEntryFormDropdownFromBanner()">Create New Entry</button>
           </div>
         `;
-      } else {
-        bannerHook.innerHTML = "";
-      }
+      } else { bannerHook.innerHTML = ""; }
 
       buildMultiContactDirectoryInterface(data.leads, targetName);
       
@@ -667,14 +625,13 @@ async function triggerSequentialSearch(triggerSourceMode) {
         document.getElementById("main-global-nav-header-bar").firstChild
       );
       document.getElementById("global-direct-inline-create-entry-btn").style.display = "inline-flex";
-      document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
 
       document.getElementById("step2-inline-interaction-canvas").style.display = "block";
     } else {
       document.getElementById("missing-trigger-notice-block").style.display = "block";
       document.getElementById("step2-inline-interaction-canvas").style.display = "none";
     }
-  } catch(e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = triggerSourceMode === "CARD" ? "Search Database" : triggerSourceMode === "DROPDOWN" ? "Search Company" : "Search Qualification"; }
+  } catch(e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = triggerSourceMode === "CARD" ? "Search Database" : "Search Company"; }
 }
 
 function revealNewEntryFormDropdownFromBanner() {
@@ -692,7 +649,7 @@ function revealNewEntryFormDropdownFromBanner() {
   document.getElementById("dropform-address").value = document.getElementById("f-address").value || "";
 
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "none"; 
-  document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none"; 
+  document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "inline-flex";
   document.getElementById("staged-back-button-row").style.display = "flex"; 
   document.getElementById("step2-new-entry-dropdown").style.display = "block";
   window.scrollTo(0,0);
@@ -702,43 +659,31 @@ function returnToDirectoryCardsFromFormView() {
   document.getElementById("step2-new-entry-dropdown").style.display = "none";
   document.getElementById("staged-back-button-row").style.display = "none";
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "inline-flex";
+  document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
   document.getElementById("step2-inline-interaction-canvas").style.display = "block";
 }
 
 function buildMultiContactDirectoryInterface(leadsList, targetSearchName) {
-  const container = document.getElementById("multi-contact-records-container");
-  container.innerHTML = "";
-  
+  const container = document.getElementById("multi-contact-records-container"); container.innerHTML = "";
   const sanitizedTargetName = targetSearchName ? targetSearchName.toString().replace(/\s+/g, '').toLowerCase() : "";
 
-  leadsList.sort(function(a, b) {
-    let aNameClean = (a["Name"] || "").toString().replace(/\s+/g, '').toLowerCase();
-    let bNameClean = (b["Name"] || "").toString().replace(/\s+/g, '').toLowerCase();
-    let aMatches = (sanitizedTargetName !== "" && aNameClean === sanitizedTargetName);
-    let bMatches = (sanitizedTargetName !== "" && bNameClean === sanitizedTargetName);
-    if (aMatches && !bMatches) return -1;
-    if (!aMatches && bMatches) return 1;
-    return 0;
+  leadsList.sort((a,b) => {
+    let aMatch = (a["Name"] && a["Name"].toString().replace(/\s+/g, '').toLowerCase() === sanitizedTargetName);
+    let bMatch = (b["Name"] && b["Name"].toString().replace(/\s+/g, '').toLowerCase() === sanitizedTargetName);
+    return aMatch ? -1 : (bMatch ? 1 : 0);
   });
 
   leadsList.forEach(lead => {
     let tRef = lead["Lead ID"];
     let wrapperCard = document.createElement("div");
-    wrapperCard.className = "contact-summary-card-parent";
+    wrapperCard.className = "contact-summary-card-parent" + (sanitizedTargetName !== "" && (lead["Name"] || "").toString().replace(/\s+/g, '').toLowerCase() === sanitizedTargetName ? " search-highlighted-focus-node" : "");
     wrapperCard.id = `contact-parent-wrapper-${tRef}`;
     
-    let cardDisplayName = (lead["Name"] && lead["Name"].toString().trim() !== "") ? lead["Name"] : "Unspecified";
-    let leadCleanedName = cardDisplayName.toString().replace(/\s+/g, '').toLowerCase();
-
-    if (sanitizedTargetName !== "" && leadCleanedName === sanitizedTargetName) {
-      wrapperCard.className += " search-highlighted-focus-node";
-    }
-
     wrapperCard.innerHTML = `
       <div class="contact-summary-header-row">
         <div class="contact-summary-title-info">
           <div class="meta-row-line-block"><span>Company:</span><strong id="card-lbl-comp-${tRef}">${lead["Company"]}</strong></div>
-          <div class="meta-row-line-block"><span>Name:</span><strong id="card-lbl-name-${tRef}">${cardDisplayName}</strong></div>
+          <div class="meta-row-line-block"><span>Name:</span><strong id="card-lbl-name-${tRef}">${lead["Name"] || "Unspecified"}</strong></div>
           <div class="meta-row-line-block" style="width:100%; margin-top:2px;"><span>Position:</span><strong id="card-lbl-pos-${tRef}">${lead["Position"] || "Unspecified"}</strong></div>
         </div>
         <div class="directory-btn-actions-block">
@@ -754,6 +699,7 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName) {
     container.appendChild(wrapperCard);
   });
 }
+
 
 function toggleContactExpansionView(leadRef, encodedLeadMap) {
   const drawer = document.getElementById(`drawer-panel-${leadRef}`);
