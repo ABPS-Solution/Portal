@@ -12,10 +12,6 @@
     --muted: #6b7a8d; --radius: 6px;
   }
   body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 40px; }
-  
-  /* Text wrapping optimizations */
-  input, select, textarea, div, span, p { word-wrap: break-word; overflow-wrap: break-word; white-space: normal; }
-  
   #auth-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, var(--brand-dk), var(--brand)); }
   .auth-card { background: var(--card); width: 100%; max-width: 400px; padding: 30px; border-radius: var(--radius); box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
   .auth-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 25px; }
@@ -39,39 +35,40 @@
   .section-header { background: var(--brand); color: #fff; padding: 6px 12px; font-size: .75rem; font-weight: 700; text-transform: uppercase; }
   .section-body { padding: 12px; }
   
-  /* Ultra-Compact 6-Column Dashboard Layout */
-  .compact-fields-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; text-align: left; }
-  @media(min-width: 600px) { .compact-fields-grid { grid-template-columns: repeat(4, 1fr); } }
-  @media(min-width: 1024px) { .compact-fields-grid { grid-template-columns: repeat(6, 1fr); } }
-  .grid-cell-item { display: flex; flex-direction: column; background: #f8fafc; padding: 4px 6px; border: 1px solid #e2e8f0; border-radius: 4px; min-width: 0; }
-  .grid-cell-item label { font-size: 0.6rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 1px; }
+  /* Form text wrapping protection rules updates */
+  .compact-fields-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 8px; text-align: left; }
+  @media(min-width: 500px) { .compact-fields-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media(min-width: 850px) { .compact-fields-grid { grid-template-columns: repeat(3, 1fr); } }
+  .grid-cell-item { display: flex; flex-direction: column; background: #f8fafc; padding: 8px; border: 1px solid #e2e8f0; border-radius: 4px; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
+  .grid-cell-item input, .grid-cell-item select, .grid-cell-item textarea { font-size: 0.82rem; margin-top: 2px; }
   
-  .pill-group { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+  .pill-group { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
   .pill-group input { display: none; }
-  .pill-group label { padding: 3px 6px; border: 1.5px solid var(--border); border-radius: 12px; font-size: .7rem; cursor: pointer; background: #fff; }
+  .pill-group label { padding: 4px 8px; border: 1.5px solid var(--border); border-radius: 14px; font-size: .72rem; cursor: pointer; background: #fff; white-space: nowrap; }
   .pill-group input:checked + label { background: var(--brand); border-color: var(--brand); color: #fff; }
   
-  .navigation-action-header-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: #e2e8f0; border-radius: var(--radius); margin-bottom: 12px; }
-  .nav-btn-styled { background: var(--brand); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: background 0.15s; display: inline-flex; align-items: center; justify-content: center; }
-  .nav-btn-styled:hover { background: var(--brand-dk); }
+  .navigation-action-header-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: #edf2f7; border-radius: var(--radius); margin-bottom: 12px; border: 1px solid var(--border); }
+  .nav-btn-styled { background: #4a5568; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .nav-btn-styled:hover { background: #2d3748; }
   
   .btn { width: 100%; padding: 10px; border: none; border-radius: 4px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem; }
   .btn-sub { background: var(--brand); color: #fff; }
   .btn-ai { background: var(--accent); color: #fff; margin-bottom: 12px; }
+  .btn-warn { background: #718096; color: #fff; }
   
   .card-row { display: flex; gap: 10px; margin-bottom: 10px; }
   .card-box { flex: 1; border: 2px dashed var(--border); padding: 12px; text-align: center; font-size: .78rem; cursor: pointer; border-radius: 4px; }
   .card-box.done { border-color: var(--accent); color: var(--accent); font-weight: 700; }
   
-  .fup-item-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 6px; text-align: left; overflow: hidden; }
-  .fup-item-header { padding: 10px; background: #edf2f7; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; }
+  .fup-item-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 6px; text-align: left; overflow: hidden; min-width: 0; word-wrap: break-word; }
+  .fup-item-header { padding: 10px; background: #edf2f7; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; align-items: center; }
   .fup-item-body { padding: 12px; display: none; border-top: 1px solid var(--border); background: #fff; }
   
   .task-grid-inputs, .fup-grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #f1f5f9; padding: 12px; border-radius: 4px; margin: 8px 0; text-align: left; }
-  .task-item-card { background: var(--card); border: 1px solid var(--border); padding: 10px; border-radius: 4px; text-align: left; margin-bottom: 6px; }
+  .task-item-card { background: var(--card); border: 1px solid var(--border); padding: 10px; border-radius: 4px; text-align: left; margin-bottom: 6px; word-wrap: break-word; }
   .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .8s linear infinite; display: inline-block; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .no-btn { padding: 4px 8px; border: 1.5px solid var(--border); border-radius: 4px; background: #fff; cursor: pointer; font-size: .72rem; }
+  .no-btn { padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 4px; background: #fff; cursor: pointer; font-size: .75rem; }
   .no-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
   .toggle-input-group { display: flex; gap: 6px; align-items: center; }
 </style>
@@ -113,7 +110,7 @@
   <div id="module-workspace-container" style="display: none;">
     <div class="navigation-action-header-row">
       <div style="font-weight:700; font-size:0.82rem; color:var(--text); text-transform:uppercase;">Console</div>
-      <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
+      <button class="nav-btn-styled" onclick="returnToDashboard()" style="background:var(--brand);">Return to Main Dashboard</button>
     </div>
     
     <div id="workspace-cardDetails" class="workspace-panel" style="display: none;">
@@ -143,7 +140,7 @@
       </div>
 
       <div id="missing-trigger-notice-block" style="display:none; padding:20px; text-align:center; background:white; border-radius:var(--radius); border:1px solid var(--border); margin-bottom:15px;">
-        <p style="color:var(--muted); margin-bottom:12px; font-size:0.88rem;">No record matched your target company query parameters.</p>
+        <p style="color:var(--muted); margin-bottom:12px; font-size:0.88rem;">No record matched your target company parameters.</p>
         <button class="btn btn-sub" id="reveal-new-entry-btn" onclick="revealNewEntryFormDropdown()">Create New Entry</button>
       </div>
 
@@ -154,74 +151,74 @@
         </div>
 
         <div id="remaining-sections-form">
-          <div class="section" id="form-sec-1">
+          <div class="section">
             <div class="section-header">Section 1 — Meeting Details</div>
             <div class="section-body">
-              <label class="field-label">Date of Meeting</label><input type="date" class="f-data" data-key="Date of Meeting" />
-              <label class="field-label">Time of Meeting</label><input type="time" class="f-data" data-key="Time of Meeting" />
+              <label class="field-label">Date of Meeting</label><input type="date" id="meetingDate" />
+              <label class="field-label">Time of Meeting</label><input type="time" id="meetingTime" />
               <label class="field-label">Meeting Venue</label>
               <div class="pill-group"><input type="radio" name="meetingVenue" value="Exhibition" id="mv1"><label for="mv1">Exhibition</label><input type="radio" name="meetingVenue" value="Customer Place" id="mv2"><label for="mv2">Customer Place</label></div>
-              <label class="field-label">Venue Name / City</label><input type="text" class="f-data" data-key="Venue Name / City" />
-              <label class="field-label">Additional Details</label><textarea class="f-data" data-key="Additional Meeting Details"></textarea>
+              <label class="field-label">Venue Name / City</label><input type="text" id="venueName" />
+              <label class="field-label">Additional Details</label><textarea id="additionalMeetingDetails"></textarea>
             </div>
           </div>
 
-          <div class="section" id="form-sec-2">
+          <div class="section">
             <div class="section-header">Section 2 — Technical Details</div>
             <div class="section-body">
               <label class="field-label">ABPS Business Vertical</label>
               <div class="pill-group"><input type="radio" name="businessVertical" value="Industrial" id="bv1"><label for="bv1">Industrial</label><input type="radio" name="businessVertical" value="Power" id="bv2"><label for="bv2">Power</label></div>
-              <label class="field-label">Type of Industry</label><input type="text" class="f-data" data-key="Type of Industry" />
+              <label class="field-label">Type of Industry</label><input type="text" id="industry" />
               <label class="field-label">Qualification (Multiple)</label>
               <div class="pill-group"><input type="checkbox" name="qualification" value="Industry" id="q1" onchange="handleQualChange()"><label for="q1">Industry</label><input type="checkbox" name="qualification" value="Vendor" id="q8" onchange="handleQualChange()"><label for="q8">Vendor</label></div>
-              <div id="vendor-fields" style="display:none; margin-top:10px;"><label class="field-label">Materials Name</label><input type="text" class="f-data" data-key="Name of Materials" /></div>
+              <div id="vendor-fields" style="display:none; margin-top:10px;"><label class="field-label">Materials Name</label><input type="text" id="materialsName" /></div>
             </div>
           </div>
 
-          <div class="section" id="form-sec-3">
+          <div class="section">
             <div class="section-header">Section 3 — Area of Concerns</div>
             <div class="section-body">
-              <label class="field-label">Low Power Factor Issue</label><div class="toggle-input-group"><button class="no-btn" data-target="lpi" onclick="toggleNo(this)">No</button><input type="text" id="lpi" class="f-data" data-key="Low Power Factor Issue" oninput="clearNo(this)" /></div>
-              <label class="field-label">High Electricity Bill Issue</label><div class="toggle-input-group"><button class="no-btn" data-target="hbi" onclick="toggleNo(this)">No</button><input type="text" id="hbi" class="f-data" data-key="High Electricity Bill Issue" oninput="clearNo(this)" /></div>
-              <label class="field-label">Harmonics Issue</label><div class="toggle-input-group"><button class="no-btn" data-target="hi" onclick="toggleNo(this)">No</button><input type="text" id="hi" class="f-data" data-key="Harmonics Issue" oninput="clearNo(this)" /></div>
-              <label class="field-label">Transformer Heating Issue</label><div class="toggle-input-group"><button class="no-btn" data-target="thi" onclick="toggleNo(this)">No</button><input type="text" id="thi" class="f-data" data-key="Transformer Heating Issue" oninput="clearNo(this)" /></div>
-              <label class="field-label">Grid Stability Issue</label><div class="toggle-input-group"><button class="no-btn" data-target="gsi" onclick="toggleNo(this)">No</button><input type="text" id="gsi" class="f-data" data-key="Grid Stability Issue" oninput="clearNo(this)" /></div>
-              <label class="field-label">Existing System Details</label><textarea class="f-data" data-key="Existing System Details"></textarea>
+              <label class="field-label">Low Power Factor Issue</label><div class="toggle-input-group"><button class="no-btn" data-target="lpi" onclick="toggleNo(this)">No</button><input type="text" id="lpi" oninput="clearNo(this)" /></div>
+              <label class="field-label">High Electricity Bill Issue</label><div class="toggle-input-group"><button class="no-btn" data-target="hbi" onclick="toggleNo(this)">No</button><input type="text" id="hbi" oninput="clearNo(this)" /></div>
+              <label class="field-label">Harmonics Issue</label><div class="toggle-input-group"><button class="no-btn" data-target="hi" onclick="toggleNo(this)">No</button><input type="text" id="hi" oninput="clearNo(this)" /></div>
+              <label class="field-label">Transformer Heating Issue</label><div class="toggle-input-group"><button class="no-btn" data-target="thi" onclick="toggleNo(this)">No</button><input type="text" id="thi" oninput="clearNo(this)" /></div>
+              <label class="field-label">Grid Stability Issue</label><div class="toggle-input-group"><button class="no-btn" data-target="gsi" onclick="toggleNo(this)">No</button><input type="text" id="gsi" oninput="clearNo(this)" /></div>
+              <label class="field-label">Existing System Details</label><textarea id="esd"></textarea>
               <label class="field-label">Voltage Level</label><div class="pill-group"><input type="checkbox" name="voltage" value="440V" id="vl1"><label for="vl1">440V</label></div>
               <label class="field-label">Capacity Details</label>
-              <input type="text" class="f-data" data-key="Contract Demand (MVA)" placeholder="Contract Demand (MVA)" style="margin-bottom:4px;" />
-              <input type="text" class="f-data" data-key="Running Demand (MVA)" placeholder="Running Demand (MVA)" style="margin-bottom:4px;" />
-              <input type="text" class="f-data" data-key="Monthly Average Power Factor" placeholder="Monthly Average Power Factor" />
-              <label class="field-label">Problem Observed</label><input type="text" class="f-data" data-key="Problem Observed" />
-              <label class="field-label">Technical Discussion Summary</label><textarea class="f-data" data-key="Technical Discussion Summary"></textarea>
+              <input type="text" id="cdMva" placeholder="Contract Demand (MVA)" style="margin-bottom:4px;" />
+              <input type="text" id="rdMva" placeholder="Running Demand (MVA)" style="margin-bottom:4px;" />
+              <input type="text" id="avgPf" placeholder="Monthly Average Power Factor" />
+              <label class="field-label">Problem Observed</label><input type="text" id="problemObserved" />
+              <label class="field-label">Technical Discussion Summary</label><textarea id="techSummary"></textarea>
             </div>
           </div>
 
-          <div class="section" id="form-sec-4">
+          <div class="section">
             <div class="section-header">Section 4 — Requirement</div>
             <div class="section-body">
-              <label class="field-label">Existing Project</label><input type="text" class="f-data" data-key="Existing Project" />
-              <label class="field-label">Upcoming Project</label><input type="text" class="f-data" data-key="Upcoming Project" />
+              <label class="field-label">Existing Project</label><input type="text" id="epInput" />
+              <label class="field-label">Upcoming Project</label><input type="text" id="upInput" />
               <label class="field-label">Products Discussed</label><div class="pill-group"><input type="checkbox" name="prod" value="APFC" id="pd1"><label for="pd1">APFC</label></div>
-              <label class="field-label">Approx Requirement</label><input type="text" class="f-data" data-key="Approx Requirement" />
-              <label class="field-label">Expected Tender Date</label><input type="date" class="f-data" data-key="Expected Tender Date" />
-              <label class="field-label">Expected Order Timeline</label><input type="text" class="f-data" data-key="Expected Order Timeline" />
-              <label class="field-label">Competitor Details</label><input type="text" class="f-data" data-key="Competitor Details" />
+              <label class="field-label">Approx Requirement</label><input type="text" id="approxReq" />
+              <label class="field-label">Expected Tender Date</label><input type="date" id="tenderDate" />
+              <label class="field-label">Expected Order Timeline</label><input type="text" id="orderTimeline" />
+              <label class="field-label">Competitor Details</label><input type="text" id="competitors" />
               <label class="field-label">Approx Business Potential</label><div class="pill-group"><input type="radio" name="pot" value="&lt;10L" id="bp1"><label for="bp1">&lt; 10L</label></div>
             </div>
           </div>
 
-          <div class="section" id="form-sec-5">
+          <div class="section">
             <div class="section-header">Section 5 — Action Plan</div>
             <div class="section-body">
-              <label class="field-label">Send Profile</label><select class="f-data" data-key="Send Company Profile"><option>No</option><option>Yes</option></select>
-              <label class="field-label">Send Techno</label><select class="f-data" data-key="Send Techno-Commercial Offer"><option>No</option><option>Yes</option></select>
-              <label class="field-label">Follow-Up Required</label><select class="f-data" data-key="Follow-Up Required"><option>No</option><option>Yes</option></select>
-              <label class="field-label">Next Follow-Up Date</label><input type="date" class="f-data" data-key="Next Follow-Up Date" />
+              <label class="field-label">Send Profile</label><select id="act1"><option>No</option><option>Yes</option></select>
+              <label class="field-label">Send Techno</label><select id="act6"><option>No</option><option>Yes</option></select>
+              <label class="field-label">Follow-Up Required</label><select id="act7"><option>No</option><option>Yes</option></select>
+              <label class="field-label">Next Follow-Up Date</label><input type="date" id="nextDate" />
             </div>
           </div>
 
-          <div class="section" id="form-sec-6">
+          <div class="section">
             <div class="section-header">Section 6 — Engineer Info</div>
             <div class="section-body">
               <label class="field-label">Assign Creator Name</label><select id="engName"><option value="">Loading Dynamic Listing...</option></select>
@@ -233,29 +230,32 @@
 
       <div id="step2-inline-interaction-canvas" style="display: none;">
         <div style="margin-bottom:12px; text-align:left;">
-          <button class="nav-btn-styled" onclick="exitCanvasToCardView()" style="background:#4a5568;">Back to Search</button>
+          <button class="nav-btn-styled" onclick="exitCanvasToCardView()">Back to Search</button>
         </div>
 
-        <div id="canvas-editable-sections-wrapper">
-          </div>
+        <div class="section">
+          <div class="section-header">Company Information</div>
+          <div class="section-body" id="leads-editable-fields-box">
+            </div>
+        </div>
 
         <div class="section">
           <div class="section-header">Follow-Up Tracking</div>
           <div class="section-body">
             <div style="display:flex; gap:10px; margin-bottom:12px;">
               <button class="btn btn-ai" id="toggle-fup-form-btn" onclick="toggleSubPanelVisibility('fup-form-expansion', this)" style="margin:0; width:auto;">+ Create New Follow-Up</button>
-              <button class="btn btn-warn" id="collapse-fup-panel-btn" onclick="collapseSubPanelExplicitly('fup-form-expansion', 'toggle-fup-form-btn')" style="display:none; margin:0; width:auto; background:#718096; border:none; padding:6px 12px; color:white; font-size:0.8rem; font-weight:600; border-radius:4px; cursor:pointer;">Collapse</button>
+              <button class="btn btn-warn" id="collapse-fup-panel-btn" onclick="collapseSubPanelExplicitly('fup-form-expansion', 'toggle-fup-form-btn')" style="display:none; margin:0; width:auto;">Collapse</button>
             </div>
             
             <div id="fup-form-expansion" style="display:none;" class="fup-grid-inputs">
-              <input type="hidden" id="fup-edit-id" />
+              <input type="hidden" id="fup-is-edit-flag" value="false" />
+              <div><label class="field-label">Follow-Up Status</label><select id="fup-status-select"><option>Open</option><option>Pending Validation</option><option>Completed</option><option>Escalated</option></select></div>
               <div><label class="field-label">Follow-Up Number</label><input type="number" id="fup-num-input" readonly style="background:#e2e8f0; cursor:not-allowed;" /></div>
               <div><label class="field-label">Lead ID</label><input type="text" id="fup-leadid-input" readonly style="background:#e2e8f0; cursor:not-allowed;" /></div>
-              <div><label class="field-label">Follow-Up Status</label><select id="fup-status-select"><option>Status1</option><option>Status2</option><option>Status3</option><option>Status4</option></select></div>
-              <div><label class="field-label">User / Engineer</label><select id="fup-eng-select"></select></div>
-              <div><label class="field-label">Next Follow-Up Date</label><input type="date" id="fup-nexttarget-input" /></div>
+              <div><label class="field-label">Engineer Name</label><select id="fup-eng-select"></select></div>
+              <div><label class="field-label">Next Target Date</label><input type="date" id="fup-nexttarget-input" /></div>
               <div><label class="field-label">Next Follow-Up Time</label><select id="fup-nexttime-select"><option>Morning</option><option>Afternoon</option><option>Evening</option></select></div>
-              <div style="grid-column: span 2;"><label class="field-label">Interaction Notes *</label><textarea id="fup-notes-input" placeholder="Type log remarks..."></textarea></div>
+              <div style="grid-column: span 2;"><label class="field-label">Interaction Notes *</label><textarea id="fup-notes-input" placeholder="Type notes log here..."></textarea></div>
               <div><label class="field-label">NQ1</label><input type="text" id="fup-nq1" /></div>
               <div><label class="field-label">NQ2</label><input type="text" id="fup-nq2" /></div>
               <div><label class="field-label">NQ3</label><input type="text" id="fup-nq3" /></div>
@@ -275,12 +275,11 @@
           <div class="section-body">
             <div style="display:flex; gap:10px; margin-bottom:12px;">
               <button class="btn btn-ai" id="toggle-task-form-btn" onclick="toggleSubPanelVisibility('task-form-expansion', this)" style="margin:0; width:auto; background:transparent; border:1px solid var(--brand); color:var(--brand);">+ Create New Task</button>
-              <button class="btn btn-warn" id="collapse-task-panel-btn" onclick="collapseSubPanelExplicitly('task-form-expansion', 'toggle-task-form-btn')" style="display:none; margin:0; width:auto; background:#718096; border:none; padding:6px 12px; color:white; font-size:0.8rem; font-weight:600; border-radius:4px; cursor:pointer;">Collapse</button>
+              <button class="btn btn-warn" id="collapse-task-panel-btn" onclick="collapseSubPanelExplicitly('task-form-expansion', 'toggle-task-form-btn')" style="display:none; margin:0; width:auto;">Collapse</button>
             </div>
             
             <div id="task-form-expansion" style="display:none;" class="task-grid-inputs">
               <input type="hidden" id="task-edit-id" />
-              <input type="hidden" id="task-fup-linked-num" />
               <div><label class="field-label">Task Status</label><select id="task-status-select"><option>Pending</option><option>In Progress</option><option>Completed</option></select></div>
               <div><label class="field-label">Engineer Name</label><select id="task-eng-select"></select></div>
               <div><label class="field-label">Task Type</label><select id="task-type-select"><option>Task A</option><option>Task B</option><option>Task C</option></select></div>
@@ -305,7 +304,7 @@
 
 <script>
 // --- CENTRAL CONFIGURATION HUB ---
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyhxZt3kDCFOEUYP9xLteecdI68dAB2oGevhWHTzMvloxVXzPunoE-MNNGuhveeK7rVjw/exec"; 
+const GAS_URL = "https://script.google.com/macros/s/AKfycby5XumyY0UVE16M8eQPULpV4FISDuNaTPf4QAhNYpDWQzfw4cL8yRQfG5k70uybIbmxMw/exec"; 
 
 let userPermissions = { cardDetails: false, searchCompany: false, searchStatus: false, searchEngineer: false };
 let cachedEngineers = [];
@@ -313,37 +312,13 @@ let activeSearchRef = "";
 let activeSearchCompany = "";
 let currentFollowUpCount = 0;
 
-// Optimized Sanitization Engine to scrub time string leaks out of spreadsheet dates
-function cleanISTTimestamp(rawStr, mode) {
-  if (!rawStr) return "None";
-  let str = rawStr.toString().trim();
-  if (!str) return "None";
-  
-  if (mode === 'DATE_ONLY') {
-    if (str.indexOf("T") !== -1) return str.split("T")[0];
-    if (str.indexOf(" ") !== -1) {
-      let parts = str.split(" ");
-      if (parts[0].indexOf("-") !== -1 || parts[0].indexOf("/") !== -1) return parts[0];
-    }
-    return str;
-  }
-  
-  let dateObj = new Date(str);
-  if (isNaN(dateObj.getTime())) return str;
-  
-  let year = dateObj.getFullYear();
-  if (year === 1899) {
-    let hours = dateObj.getHours(); let minutes = dateObj.getMinutes();
-    let ampm = hours >= 12 ? 'pm' : 'am'; hours = hours % 12; hours = hours ? hours : 12;
-    return hours + ":" + String(minutes).padStart(2,'0') + " " + ampm;
-  }
-  
-  let month = String(dateObj.getMonth() + 1).padStart(2, '0');
-  let day = String(dateObj.getDate()).padStart(2, '0');
-  let hours = dateObj.getHours(); let minutes = dateObj.getMinutes();
-  let ampm = hours >= 12 ? 'pm' : 'am'; hours = hours % 12; hours = hours ? hours : 12;
-  
-  return year + "-" + month + "-" + day + " " + String(hours).padStart(2, '0') + ":" + String(minutes).padStart(2, '0') + " " + ampm;
+// Dynamic Sanitizer to drop unformatted timezone strings cleanly
+function formatCleanDateOnly(rawStr) {
+  if (!rawStr) return "";
+  let s = rawStr.toString().trim();
+  if (s.indexOf("T") !== -1) s = s.split("T")[0];
+  if (s.indexOf(" ") !== -1) s = s.split(" ")[0];
+  return s;
 }
 
 window.onload = function() {
@@ -353,7 +328,8 @@ window.onload = function() {
 
 async function executeLogin() {
   const userField = document.getElementById("auth-user"); const passField = document.getElementById("auth-pass");
-  const btn = document.getElementById("login-btn"); if (!userField.value || !passField.value) return alert("Complete fields.");
+  const btn = document.getElementById("login-btn");
+  if (!userField.value || !passField.value) return alert("Complete credential fields.");
   
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Verifying...';
   try {
@@ -435,7 +411,7 @@ async function triggerSequentialSearch() {
       activeSearchRef = data.lead["Lead ID"]; activeSearchCompany = data.lead["Company"];
       currentFollowUpCount = data.followups.length;
       
-      buildLeadsReplicatedFormCanvas(data.lead);
+      buildLeadsEditableFormCanvas(data.lead);
       renderFollowUpTimeline(data.followups);
       renderTaskItemsList(data.tasks);
       
@@ -449,113 +425,93 @@ async function triggerSequentialSearch() {
   } catch(e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = "Search Database"; }
 }
 
-// ── REPLICATED FULL FORM INTERFACE CLONE FOR COMPACT CANVAS ──────────────────
-function buildLeadsReplicatedFormCanvas(leadMap) {
-  const wrapper = document.getElementById("canvas-editable-sections-wrapper");
-  wrapper.innerHTML = "";
-
-  // Dynamic Generator replicates sections 1-6 layout rules explicitly
-  for (let sNum = 1; sNum <= 6; sNum++) {
-    const templateSec = document.getElementById(`form-sec-${sNum}`);
-    if (!templateSec) continue;
-
-    let clonedSection = document.createElement("div");
-    clonedSection.className = "section";
+// ── HIGH-LEVEL 3-COLUMN STRUCTURED MAPPING ASSIGNMENT GRID ──────────────────
+function buildLeadsEditableFormCanvas(leadMap) {
+  const container = document.getElementById("leads-editable-fields-box"); container.innerHTML = "";
+  const gridWrapper = document.createElement("div"); gridWrapper.className = "compact-fields-grid";
+  
+  // High fidelity components map definitions configuration block
+  Object.keys(leadMap).forEach(key => {
+    if (["Lead ID", "Timestamp", "Card Image Link(s)"].indexOf(key) !== -1) return;
     
-    let header = document.createElement("div");
-    header.className = "section-header";
-    header.textContent = templateSec.querySelector(".section-header").textContent;
-    clonedSection.appendChild(header);
+    let cell = document.createElement("div"); cell.className = "grid-cell-item";
+    let label = document.createElement("label"); label.textContent = key;
+    cell.appendChild(label);
 
-    let body = document.createElement("div");
-    body.className = "section-body compact-fields-grid";
-
-    // Clone interactive configurations natively inside the dashboard canvas matrix
-    templateSec.querySelectorAll(".section-body > label.field-label").forEach(lbl => {
-      let cell = document.createElement("div");
-      cell.className = "grid-cell-item";
+    // Context Component Routing Architecture Rule Mapping Sets
+    if (key === "Status") {
+      let sel = document.createElement("select"); sel.className = "live-lead-field-input"; sel.dataset.headerKey = key;
+      ["Status1", "Status2", "Status3", "Status4"].forEach(st => {
+        let op = document.createElement("option"); op.textContent = st; op.value = st;
+        if(leadMap[key] === st) op.selected = true; sel.appendChild(op);
+      });
+      cell.appendChild(sel);
+    } else if (["Date of Meeting", "Expected Tender / RFQ Date", "Expected Tender Date", "Next Follow-Up Date"].indexOf(key) !== -1) {
+      let inp = document.createElement("input"); inp.type = "date"; inp.className = "live-lead-field-input";
+      inp.dataset.headerKey = key; inp.value = formatCleanDateOnly(leadMap[key]);
+      cell.appendChild(inp);
+    } else if (["Time of Meeting", "Meeting Time"].indexOf(key) !== -1) {
+      let inp = document.createElement("input"); inp.type = "time"; inp.className = "live-lead-field-input";
+      inp.dataset.headerKey = key; inp.value = leadMap[key] ? (leadMap[key].toString().indexOf("T") !== -1 ? leadMap[key].toString().split("T")[1].substring(0,5) : leadMap[key]) : "";
+      cell.appendChild(inp);
+    } else if (key === "Assigned Engineer" || key === "Engineer Name") {
+      let sel = document.createElement("select"); sel.className = "live-lead-field-input"; sel.dataset.headerKey = key;
+      cachedEngineers.forEach(eng => {
+        let op = document.createElement("option"); op.textContent = eng; if(leadMap[key] === eng) op.selected = true; sel.appendChild(op);
+      });
+      cell.appendChild(sel);
+    } else if (key === "Meeting Venue" || key === "ABPS Business Vertical" || key === "Approx Business Potential") {
+      let sel = document.createElement("select"); sel.className = "live-lead-field-input"; sel.dataset.headerKey = key;
+      let opts = key === "Meeting Venue" ? ["Exhibition", "Customer Place"] : key === "ABPS Business Vertical" ? ["Industrial", "Power"] : ["<10L", "10-50L"];
+      opts.forEach(o => {
+        let op = document.createElement("option"); op.textContent = o; if(leadMap[key] === o) op.selected = true; sel.appendChild(op);
+      });
+      cell.appendChild(sel);
+    } else if (key === "Voltage Level" || key === "Products Discussed" || key === "Qualification") {
+      let wrapper = document.createElement("div"); wrapper.style.display = "flex"; wrapper.style.flexDirection = "column"; wrapper.style.gap = "4px";
+      let opts = key === "Voltage Level" ? ["440V", "11KV"] : key === "Products Discussed" ? ["APFC", "SVG"] : ["Industry", "Vendor"];
+      let currentValues = (leadMap[key] || "").toString().split(", ");
       
-      let clonedLabel = document.createElement("label");
-      clonedLabel.textContent = lbl.textContent;
-      cell.appendChild(clonedLabel);
-
-      let formControl = lbl.nextElementSibling;
-      if (!formControl) return;
-
-      // Handle standard inputs
-      if (formControl.tagName === "INPUT" && formControl.type !== "radio" && formControl.type !== "checkbox") {
-        let el = document.createElement("input"); el.type = formControl.type;
-        el.className = "canvas-lead-field-input"; el.dataset.headerKey = formControl.dataset.key;
-        el.value = leadMap[formControl.dataset.key] || "";
-        cell.appendChild(el);
-      } 
-      else if (formControl.tagName === "SELECT") {
-        let el = document.createElement("select"); el.className = "canvas-lead-field-input";
-        el.dataset.headerKey = formControl.dataset.key;
-        Array.from(formControl.options).forEach(opt => {
-          let o = document.createElement("option"); o.text = opt.text; el.appendChild(o);
-        });
-        el.value = leadMap[formControl.dataset.key] || formControl.options[0].text;
-        cell.appendChild(el);
-      } 
-      else if (formControl.tagName === "TEXTAREA") {
-        let el = document.createElement("input"); el.type = "text"; el.className = "canvas-lead-field-input";
-        el.dataset.headerKey = formControl.dataset.key; el.value = leadMap[formControl.dataset.key] || "";
-        cell.appendChild(el);
-      }
-      else if (formControl.className === "pill-group" || formControl.className === "toggle-input-group") {
-        // Safe structural fallback matching elements parameters into string cells gracefully
-        let el = document.createElement("input"); el.type = "text"; el.className = "canvas-lead-field-input";
-        let targetKey = formControl.querySelector("input") ? formControl.querySelector("input").name || formControl.querySelector("input").dataset.key : "";
-        if(!targetKey) {
-          let nestedInput = formControl.querySelector("input[type='text']");
-          targetKey = nestedInput ? nestedInput.dataset.key : "";
-        }
-        // Direct absolute structural lookup fallback string mapping loops
-        if (!targetKey) {
-          if (lbl.textContent.indexOf("Vertical") !== -1) targetKey = "ABPS Business Vertical";
-          if (lbl.textContent.indexOf("Venue") !== -1) targetKey = "Meeting Venue";
-          if (lbl.textContent.indexOf("Qualification") !== -1) targetKey = "Qualification";
-          if (lbl.textContent.indexOf("Voltage") !== -1) targetKey = "Voltage Level";
-          if (lbl.textContent.indexOf("Products") !== -1) targetKey = "Products Discussed";
-          if (lbl.textContent.indexOf("Potential") !== -1) targetKey = "Approx Business Potential";
-        }
-        el.dataset.headerKey = targetKey; el.value = leadMap[targetKey] || "";
-        cell.appendChild(el);
-      }
-
-      body.appendChild(cell);
-    });
-
-    clonedSection.appendChild(body);
-    wrapper.appendChild(clonedSection);
-  }
-
-  // Inject Status assignment select dynamically into the layout flow
-  let statusCard = document.createElement("div"); statusCard.className = "section";
-  statusCard.innerHTML = `<div class="section-header">Account Controls</div>
-    <div class="section-body" style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left;">
-      <div><label class="field-label">Pipeline Status</label>
-      <select id="res-status-select"><option>Status1</option><option>Status2</option><option>Status3</option><option>Status4</option></select></div>
-      <button class="btn btn-sub" id="canvas-global-save-btn" onclick="commitCanvasLeadsMutations()">Save Modifications</button>
-    </div>`;
-  wrapper.appendChild(statusCard);
-  document.getElementById("res-status-select").value = leadMap["Status"] || "Status1";
+      opts.forEach(o => {
+        let div = document.createElement("div"); div.style.display="flex"; div.style.gap="6px"; div.style.alignItems="center";
+        let chk = document.createElement("input"); chk.type="checkbox"; chk.value = o; chk.className = "live-lead-check-subset"; chk.dataset.masterKey = key;
+        if(currentValues.indexOf(o) !== -1) chk.checked = true;
+        let span = document.createElement("span"); span.textContent = o; span.style.fontSize="0.75rem";
+        div.appendChild(chk); div.appendChild(span); wrapper.appendChild(div);
+      });
+      cell.appendChild(wrapper);
+    } else {
+      let inp = document.createElement("input"); inp.type = "text"; inp.className = "live-lead-field-input";
+      inp.dataset.headerKey = key; inp.value = leadMap[key] || "";
+      cell.appendChild(inp);
+    }
+    gridWrapper.appendChild(cell);
+  });
+  container.appendChild(gridWrapper);
+  
+  let saveBtn = document.createElement("button"); saveBtn.className = "btn btn-sub"; saveBtn.id = "save-leads-matrix-btn";
+  saveBtn.style.marginTop = "12px"; saveBtn.textContent = "Save Modifications";
+  saveBtn.onclick = commitLeadsTableFieldMutations; container.appendChild(saveBtn);
 }
 
-async function commitCanvasLeadsMutations() {
-  const btn = document.getElementById("canvas-global-save-btn");
+async function commitLeadsTableFieldMutations() {
+  const btn = document.getElementById("save-leads-matrix-btn");
   if(btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...'; }
   
   let fieldsPayload = {};
-  document.querySelectorAll(".canvas-lead-field-input").forEach(el => {
-    if(el.dataset.headerKey) fieldsPayload[el.dataset.headerKey] = el.value;
+  document.querySelectorAll(".live-lead-field-input").forEach(el => { fieldsPayload[el.dataset.headerKey] = el.value; });
+  
+  // Aggregate multi-checkbox entries configurations smoothly into comma strings arrays
+  let checkGroups = {};
+  document.querySelectorAll(".live-lead-check-subset").forEach(el => {
+    let mk = el.dataset.masterKey; if(!checkGroups[mk]) checkGroups[mk] = [];
+    if(el.checked) checkGroups[mk].push(el.value);
   });
-  fieldsPayload["Status"] = document.getElementById("res-status-select").value;
+  Object.keys(checkGroups).forEach(key => { fieldsPayload[key] = checkGroups[key].join(", "); });
   
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "updateLeadFull", leadRef: activeSearchRef, fields: fieldsPayload }) });
-    const r = await res.json(); if (r.success) alert("Modifications saved successfully.");
+    const r = await res.json(); if (r.success) alert("Modifications committed.");
   } catch(e) { alert(e.message); } finally { if(btn) { btn.disabled = false; btn.innerHTML = "Save Modifications"; } }
 }
 
@@ -569,49 +525,43 @@ function resetSequentialFormState() {
   document.getElementById("parse-btn").disabled = true;
 }
 
+// ── AUTOMATED IST LOG TIMELINE DISPATCH MODULES ──────────────────────────────
 function renderFollowUpTimeline(list) {
   const box = document.getElementById("timeline-box");
-  box.innerHTML = list.length === 0 ? '<p style="color:var(--muted); font-size:0.85rem; padding:10px;">No historical follow-ups recorded.</p>' : '';
+  box.innerHTML = list.length === 0 ? '<p style="color:var(--muted); font-size:0.85rem; padding:10px;">No records parsed.</p>' : '';
   list.forEach(f => {
     let card = document.createElement("div"); card.className = "fup-item-card";
     card.innerHTML = `
       <div class="fup-item-header" onclick="toggleFollowUpAccordion(this)">
-        <span>Follow-Up ${f.num} (${cleanISTTimestamp(f.date, 'DATE_ONLY')} ${cleanISTTimestamp(f.time, 'TIME_ONLY')})</span>
-        <span style="color:var(--brand); font-size:0.75rem;">Click to view details ▾</span>
+        <span>Follow-Up ${f.num} (${formatCleanDateOnly(f.date)} ${f.time})</span>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <span style="color:var(--brand); font-size:0.75rem;">View details ▾</span>
+        </div>
       </div>
       <div class="fup-item-body">
-        <div style="font-size:0.82rem; line-height:1.5; color:var(--muted); margin-bottom:8px;">
-          <strong>Follow-Up Status:</strong> ${f.status}<br/><strong>Lead ID:</strong> ${f.leadId}<br/><strong>Engineer:</strong> ${f.eng}<br/>
-          <strong>Next Follow-Up Date:</strong> ${cleanISTTimestamp(f.nextDate, 'DATE_ONLY')}<br/><strong>Next Follow-Up Time:</strong> ${f.nextTime || 'None'}<br/>
-          <strong>NQ1:</strong> ${f.nq1} | <strong>NQ2:</strong> ${f.nq2} | <strong>NQ3:</strong> ${f.nq3}<br/>
-          <strong>NQ4:</strong> ${f.nq4} | <strong>NQ5:</strong> ${f.nq5} | <strong>NQ6:</strong> ${f.nq6}
+        <div style="font-size:0.82rem; line-height:1.4; color:var(--muted); margin-bottom:6px;">
+          <strong>Status:</strong> ${f.status}<br/><strong>Lead ID:</strong> ${f.leadId}<br/><strong>Engineer:</strong> ${f.eng}<br/>
+          <strong>Next Target Date:</strong> ${formatCleanDateOnly(f.nextDate)} | <strong>Time:</strong> ${f.nextTime || "None"}<br/>
+          <strong>NQ1:</strong> ${f.nq1} | <strong>NQ2:</strong> ${f.nq2} | <strong>NQ3:</strong> ${f.nq3} | <strong>NQ4:</strong> ${f.nq4}
         </div>
-        <div style="font-size:0.88rem; color:#2d3748; padding:8px 0; border-top:1px solid #edf2f7;"><strong>Interaction Notes:</strong> ${f.notes}</div>
-        <div style="margin-top:8px; display:flex; gap:6px;">
-          <button class="nav-btn-styled" onclick="editFollowUpItem('${f.status}','${f.num}','${f.date}','${f.time}','${f.eng}',\`${f.notes.replace(/'/g, "\\'")}\`,'${f.nextDate}','${f.nextTime}','${f.nq1}','${f.nq2}','${f.nq3}','${f.nq4}','${f.nq5}','${f.nq6}')" style="font-size:0.72rem; padding:4px 8px;">Edit</button>
-          <button class="nav-btn-styled" onclick="executeFollowUpDeletion('${f.num}')" style="font-size:0.72rem; background:var(--warn); padding:4px 8px;">Delete</button>
+        <div style="font-size:0.85rem; color:#2d3748; padding:6px 0; border-top:1px solid #edf2f7; word-break:break-word;"><strong>Notes:</strong> ${f.notes}</div>
+        <div style="margin-top:8px; display:flex; gap:8px;">
+          <button class="nav-btn-styled" onclick="editFollowUpItem('${f.status}',${f.num},'${f.eng}',\`${f.notes.replace(/'/g, "\\'")}\`,'${f.nextDate}','${f.nextTime}','${f.nq1}','${f.nq2}','${f.nq3}','${f.nq4}','${f.nq5}','${f.nq6}')" style="font-size:0.7rem; padding:4px 8px;">Edit</button>
+          <button class="nav-btn-styled" onclick="removeFollowUpItem('${activeSearchRef}','${f.num}')" style="font-size:0.7rem; background:var(--warn); padding:4px 8px;">Delete</button>
         </div>
       </div>`;
     box.appendChild(card);
   });
 }
 
-async function executeFollowUpDeletion(fupNum) {
-  if(!confirm("Confirm absolute removal of Follow-Up row tracking logs?")) return;
-  try {
-    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "deleteFollowUp", fupId: fupNum }) });
-    const r = await res.json(); if(r.success) refreshCanvasDataNodes();
-  } catch(e) { alert(e.message); }
-}
-
 function toggleFollowUpAccordion(headerEl) {
   const body = headerEl.nextElementSibling; const isVisible = body.style.display === "block";
   body.style.display = isVisible ? "none" : "block";
-  headerEl.querySelector("span:last-child").textContent = isVisible ? "Click to view details ▾" : "Collapse ▴";
+  headerEl.querySelector("span:last-child").textContent = isVisible ? "View details ▾" : "Collapse ▴";
 }
 
 function showNewFollowUpForm() {
-  document.getElementById("fup-edit-id").value = "";
+  document.getElementById("fup-is-edit-flag").value = "false";
   document.getElementById("fup-num-input").value = currentFollowUpCount + 1;
   document.getElementById("fup-leadid-input").value = activeSearchRef;
   document.getElementById("fup-notes-input").value = ""; document.getElementById("fup-nexttarget-input").value = "";
@@ -620,12 +570,16 @@ function showNewFollowUpForm() {
   document.getElementById("fup-nq5").value = ""; document.getElementById("fup-nq6").value = "";
 }
 
-function editFollowUpItem(status, num, date, time, eng, notes, nextTarget, nextTime, n1, n2, n3, n4, n5, n6) {
-  document.getElementById("fup-edit-id").value = "EDIT"; document.getElementById("fup-num-input").value = num;
-  document.getElementById("fup-leadid-input").value = activeSearchRef; document.getElementById("fup-status-select").value = status;
-  document.getElementById("fup-eng-select").value = eng; document.getElementById("fup-notes-input").value = notes;
-  document.getElementById("fup-nexttarget-input").value = nextTarget ? nextTarget.split("T")[0] : "";
+function editFollowUpItem(status, num, eng, notes, nextTarget, nextTime, n1, n2, n3, n4, n5, n6) {
+  document.getElementById("fup-is-edit-flag").value = "true";
+  document.getElementById("fup-status-select").value = status;
+  document.getElementById("fup-num-input").value = num;
+  document.getElementById("fup-leadid-input").value = activeSearchRef;
+  document.getElementById("fup-eng-select").value = eng;
+  document.getElementById("fup-notes-input").value = notes;
+  document.getElementById("fup-nexttarget-input").value = formatCleanDateOnly(nextTarget);
   document.getElementById("fup-nexttime-select").value = nextTime || "Morning";
+  
   document.getElementById("fup-nq1").value = n1; document.getElementById("fup-nq2").value = n2;
   document.getElementById("fup-nq3").value = n3; document.getElementById("fup-nq4").value = n4;
   document.getElementById("fup-nq5").value = n5; document.getElementById("fup-nq6").value = n6;
@@ -638,15 +592,16 @@ function editFollowUpItem(status, num, date, time, eng, notes, nextTarget, nextT
 async function commitFollowUpItem() {
   const btn = document.getElementById("save-fup-btn");
   const followUpData = {
-    id: document.getElementById("fup-edit-id").value || "NEW", isEdit: document.getElementById("fup-edit-id").value === "EDIT",
-    leadRef: activeSearchRef, company: activeSearchCompany, status: document.getElementById("fup-status-select").value,
-    num: document.getElementById("fup-num-input").value, eng: document.getElementById("fup-eng-select").value,
-    notes: document.getElementById("fup-notes-input").value, nextDate: document.getElementById("fup-nexttarget-input").value,
-    nextTime: document.getElementById("fup-nexttime-select").value,
+    isEdit: document.getElementById("fup-is-edit-flag").value === "true",
+    status: document.getElementById("fup-status-select").value,
+    num: document.getElementById("fup-num-input").value,
+    leadRef: activeSearchRef, company: activeSearchCompany,
+    eng: document.getElementById("fup-eng-select").value, notes: document.getElementById("fup-notes-input").value,
+    nextDate: document.getElementById("fup-nexttarget-input").value, nextTime: document.getElementById("fup-nexttime-select").value,
     nq1: document.getElementById("fup-nq1").value, nq2: document.getElementById("fup-nq2").value, nq3: document.getElementById("fup-nq3").value,
     nq4: document.getElementById("fup-nq4").value, nq5: document.getElementById("fup-nq5").value, nq6: document.getElementById("fup-nq6").value
   };
-  if (!followUpData.notes) return alert("Interaction Notes required.");
+  if (!followUpData.notes) return alert("Type Interaction Notes parameters log.");
   
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...';
   try {
@@ -656,14 +611,24 @@ async function commitFollowUpItem() {
   } catch(e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = "Save Follow-Up"; }
 }
 
+async function removeFollowUpItem(lId, fNum) {
+  if(!confirm("Confirm deletion of this explicit follow up entry?")) return;
+  const fupId = lId + "||" + fNum;
+  try {
+    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "deleteFollowUp", fupId: fupId }) });
+    const r = await res.json(); if (r.success) refreshCanvasDataNodes();
+  } catch(e) { alert(e.message); }
+}
+
+// ── ENGINEER TASKS METHODS ──────────────────────────────────────────────────
 function renderTaskItemsList(list) {
   const box = document.getElementById("task-cards-box");
-  box.innerHTML = list.length === 0 ? '<p style="color:var(--muted); font-size:0.85rem; padding:10px;">No tasks mapped.</p>' : '';
+  box.innerHTML = list.length === 0 ? '<p style="color:var(--muted); font-size:0.85rem; padding:10px;">No active assignments.</p>' : '';
   list.forEach(t => {
     let div = document.createElement("div"); div.className = "task-item-card";
-    div.innerHTML = `<strong>${t.type}</strong> - ${t.eng}<br/><small>Time: ${t.shift} | Target Date: ${cleanISTTimestamp(t.targetDate, 'DATE_ONLY')}</small>
-                     <p style="font-size:0.82rem; margin-top:4px; color:var(--text);"><strong>Task Description:</strong> ${t.desc || 'None'}</p>
-                     <div style="font-size:0.75rem; font-weight:bold; color:var(--brand); margin-top:4px;">Task Status: ${t.status}</div>
+    div.innerHTML = `<strong>${t.type}</strong> - ${t.eng}<br/><small>Time: ${t.shift} | Target Date: ${formatCleanDateOnly(t.targetDate)}</small>
+                     <p style="font-size:0.82rem; margin-top:4px; color:var(--text); word-wrap:break-word;"><strong>Desc:</strong> ${t.desc || 'None'}</p>
+                     <div style="font-size:0.75rem; font-weight:bold; color:var(--brand); margin-top:4px;">Status: ${t.status}</div>
                      <div style="margin-top:8px; display:flex; gap:6px;">
                        <button class="nav-btn-styled" onclick="editTaskItem('${t.id}','${t.eng}','${t.type}',\`${(t.desc||'').replace(/'/g,"\\'")}\`,'${t.shift}','${t.targetDate}','${t.status}')" style="font-size:0.75rem; padding:2px 6px;">Edit</button>
                        <button class="nav-btn-styled" onclick="removeTaskItem('${t.id}')" style="font-size:0.75rem; background:var(--warn); padding:2px 6px;">Delete</button>
@@ -674,14 +639,13 @@ function renderTaskItemsList(list) {
 
 function showNewTaskForm() {
   document.getElementById("task-edit-id").value = ""; document.getElementById("task-desc-input").value = "";
-  document.getElementById("task-targetdate-input").value = ""; document.getElementById("task-fup-linked-num").value = currentFollowUpCount;
-  document.getElementById("task-status-select").value = "Pending";
+  document.getElementById("task-targetdate-input").value = ""; document.getElementById("task-status-select").value = "Pending";
 }
 
 function editTaskItem(id, eng, type, desc, shift, targetDate, status) {
   document.getElementById("task-edit-id").value = id; document.getElementById("task-eng-select").value = eng;
   document.getElementById("task-type-select").value = type; document.getElementById("task-desc-input").value = desc;
-  document.getElementById("task-shift-select").value = shift; document.getElementById("task-targetdate-input").value = targetDate ? targetDate.split("T")[0] : "";
+  document.getElementById("task-shift-select").value = shift; document.getElementById("task-targetdate-input").value = formatCleanDateOnly(targetDate);
   document.getElementById("task-status-select").value = status;
   
   document.getElementById("task-form-expansion").style.display = "grid";
@@ -690,14 +654,15 @@ function editTaskItem(id, eng, type, desc, shift, targetDate, status) {
 }
 
 async function commitTaskItem() {
-  const btn = document.getElementById("save-task-btn"); const editId = document.getElementById("task-edit-id").value;
+  const btn = document.getElementById("save-task-btn");
+  const editId = document.getElementById("task-edit-id").value;
   const taskData = {
     id: editId || "NEW", isNew: !editId, leadRef: activeSearchRef,
     engineer: document.getElementById("task-eng-select").value, type: document.getElementById("task-type-select").value,
     desc: document.getElementById("task-desc-input").value, shift: document.getElementById("task-shift-select").value,
     targetDate: document.getElementById("task-targetdate-input").value, status: document.getElementById("task-status-select").value
   };
-  if (!taskData.targetDate) return alert("Provide Target Date.");
+  if (!taskData.targetDate) return alert("Provide a Target Date.");
   
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...';
   try {
@@ -708,7 +673,7 @@ async function commitTaskItem() {
 }
 
 async function removeTaskItem(id) {
-  if (!confirm("Confirm cancellation metrics?")) return;
+  if (!confirm("Confirm removal parameters?")) return;
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "deleteTask", taskId: id }) });
     const r = await res.json(); if (r.success) refreshCanvasDataNodes();
@@ -758,28 +723,21 @@ async function submitLead() {
   try {
     const [url1, url2] = await Promise.all([uploadToCloudinary(fileFront), uploadToCloudinary(fileBack)]);
     const imageUrl = [url1, url2].filter(u => u).join(", ");
-    
-    // Dynamic mapping pulls from live elements array directly
-    let formData = {};
-    document.querySelectorAll(".f-data").forEach(el => {
-      formData[el.dataset.key] = el.value;
-    });
-
     const fields = {
       engineerName: document.getElementById('engName').value, name: document.getElementById('f-name').value, company: document.getElementById('f-company').value,
       position: document.getElementById('f-position').value, phone: document.getElementById('f-phone').value, altPhone: document.getElementById('f-altphone').value,
       email: document.getElementById('f-email').value, website: document.getElementById('f-website').value, address: document.getElementById('f-address').value,
-      meetingDate: formData["Date of Meeting"] || "", meetingTime: formData["Time of Meeting"] || "",
-      meetingVenue: getRadio('meetingVenue'), venueName: formData["Venue Name / City"] || "", additionalMeetingDetails: formData["Additional Meeting Details"] || "",
-      businessVertical: getRadio('businessVertical'), industry: formData["Type of Industry"] || "", qualification: getChecks('qualification'), vendorType: [''],
-      materialsName: formData["Name of Materials"] || "", lpi: document.getElementById('lpi').value, hbi: document.getElementById('hbi').value,
-      hi: document.getElementById('hi').value, thi: document.getElementById('thi').value, gsi: document.getElementById('gsi').value, esd: formData["Existing System Details"] || "",
-      voltage: getChecks('voltage'), cdMva: formData["Contract Demand (MVA)"] || "", rdMva: formData["Running Demand (MVA)"] || "", avgPf: formData["Monthly Average Power Factor"] || "",
-      problemObserved: formData["Problem Observed"] || "", techSummary: formData["Technical Discussion Summary"] || "",
-      existingProject: formData["Existing Project"] || "", upcomingProject: formData["Upcoming Project"] || "",
-      products: getChecks('prod'), approxReq: formData["Approx Requirement"] || "", tenderDate: formData["Expected Tender Date"] || "",
-      orderTimeline: formData["Expected Order Timeline"] || "", competitors: formData["Competitor Details"] || "", potential: getRadio('pot'),
-      sendProfile: formData["Send Company Profile"] || "No", sendTechno: formData["Send Techno-Commercial Offer"] || "No", followUpRequired: formData["Follow-Up Required"] || "No", nextDate: formData["Next Follow-Up Date"] || "",
+      meetingDate: document.getElementById('meetingDate').value, meetingTime: document.getElementById('meetingTime').value,
+      meetingVenue: getRadio('meetingVenue'), venueName: document.getElementById('venueName').value, additionalMeetingDetails: document.getElementById('additionalMeetingDetails').value,
+      businessVertical: getRadio('businessVertical'), industry: document.getElementById('industry').value, qualification: getChecks('qualification'), vendorType: [''],
+      materialsName: document.getElementById('materialsName').value, lpi: document.getElementById('lpi').value, hbi: document.getElementById('hbi').value,
+      hi: document.getElementById('hi').value, thi: document.getElementById('thi').value, gsi: document.getElementById('gsi').value, esd: document.getElementById('esd').value,
+      voltage: getChecks('voltage'), cdMva: document.getElementById('cdMva').value, rdMva: document.getElementById('rdMva').value, avgPf: document.getElementById('avgPf').value,
+      problemObserved: document.getElementById('problemObserved').value, techSummary: document.getElementById('techSummary').value,
+      existingProject: document.getElementById('epInput').value, upcomingProject: document.getElementById('upInput').value,
+      products: getChecks('prod'), approxReq: document.getElementById('approxReq').value, tenderDate: document.getElementById('tenderDate').value,
+      orderTimeline: document.getElementById('orderTimeline').value, competitors: document.getElementById('competitors').value, potential: getRadio('pot'),
+      sendProfile: document.getElementById('act1').value, sendTechno: document.getElementById('act6').value, followUpRequired: document.getElementById('act7').value, nextDate: document.getElementById('nextDate').value,
     };
     const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'submit', fields, imageUrl }) });
     const d = await res.json();
