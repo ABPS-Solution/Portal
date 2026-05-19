@@ -467,6 +467,8 @@ async function showAppView() {
   document.getElementById("dashboard-view").style.display = "block"; document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("display-full-name").textContent = localStorage.getItem("userFirstName") + " " + localStorage.getItem("userLastName");
   document.getElementById("display-username").textContent = "@" + localStorage.getItem("sessionUser");
+  document.getElementById("mod-qual").classList.toggle("locked", !userPermissions.searchQualification);
+  loadQualFilter();
   
   ["mod-card","mod-company","mod-status","mod-engineer"].forEach(id => {
     let key = id === "mod-card" ? "cardDetails" : id === "mod-company" ? "searchCompany" : id === "mod-status" ? "searchStatus" : "searchEngineer";
@@ -1095,6 +1097,51 @@ async function submitLead() {
     if (d.success) { document.getElementById('remaining-sections-form').style.display = 'none'; document.getElementById('success-screen').style.display = 'block'; document.getElementById('success-ref').textContent = "Lead ID: " + d.leadRef; }
   } catch (e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = 'Submit New Account Entry'; }
 }
+
+// Fetches unique quals and builds the checkboxes
+async function loadQualFilter() {
+  const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "getUniqueQualifications" }) });
+  const data = await res.json();
+  const container = document.getElementById("qual-filter-checkboxes");
+  container.innerHTML = ""; // Clear existing
+  data.quals.forEach(q => {
+    container.innerHTML += `
+      <input type="checkbox" name="searchQual" value="${q}" id="q_${q}" onchange="updateSelectedDisplay()">
+      <label for="q_${q}">${q}</label>
+    `;
+  });
+}
+
+// Updates the top-display text whenever a checkbox is clicked
+function updateSelectedDisplay() {
+  const checked = Array.from(document.querySelectorAll('input[name="searchQual"]:checked')).map(i => i.value);
+  document.getElementById("selected-quals-display").textContent = checked.length > 0 ? "Filtering for: " + checked.join(", ") : "";
+}
+
+// Triggers the search and prepares the UI
+async function triggerQualificationSearch() {
+  const selected = Array.from(document.querySelectorAll('input[name="searchQual"]:checked')).map(i => i.value);
+  if(selected.length === 0) return alert("Select at least one qualification.");
+  
+  // Reuse existing interaction canvas
+  const activePanel = document.getElementById("workspace-searchQualification");
+  activePanel.appendChild(document.getElementById("step2-inline-interaction-canvas"));
+  
+  try {
+    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "searchByQualifications", qualifications: selected }) });
+    const data = await res.json();
+    
+    if (data.success && data.leads.length > 0) {
+      globalFollowUpsCacheMap = data.followups;
+      globalTasksCacheMap = data.tasks;
+      buildMultiContactDirectoryInterface(data.leads, "");
+      document.getElementById("step2-inline-interaction-canvas").style.display = "block";
+    } else {
+      alert("No companies found with these qualifications.");
+    }
+  } catch(e) { alert(e.message); }
+}
+
 </script>
 </body>
 </html>
