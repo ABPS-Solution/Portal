@@ -42,10 +42,11 @@
   .contact-summary-header-row { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; border-bottom: 1px dashed var(--border); padding-bottom: 8px; margin-bottom: 10px; }
   @media(min-width: 800px) { .contact-summary-header-row { flex-direction: row; justify-content: space-between; align-items: center; } }
   
-  .contact-summary-title-info { font-size: 0.95rem; font-weight: 700; color: var(--text); width: 100%; text-align: left; line-height: 1.5; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+  .contact-summary-title-info { font-size: 0.95rem; font-weight: 700; color: var(--text); width: 100%; text-align: left; line-height: 1.5; display: flex; flex-wrap: wrap; gap: 4px; flex-direction: column; align-items: flex-start;  }
   .contact-summary-title-info .meta-row-line-block { display: flex; align-items: center; width: 100%; margin-bottom: 4px; }
   .contact-summary-title-info span { font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; background: #edf2f7; padding: 2px 6px; border-radius: 4px; margin-right: 4px; display: inline-block; }
   .contact-summary-title-info strong { margin-right: 18px; color: #111827; display: inline-block; }
+  
   .directory-btn-actions-block { display: flex; gap: 6px; width: 100%; justify-content: flex-start; }
   @media(min-width: 800px) { .directory-btn-actions-block { width: auto; justify-content: flex-end; } }
 
@@ -769,9 +770,18 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName) {
     wrapperCard.innerHTML = `
       <div class="contact-summary-header-row">
         <div class="contact-summary-title-info">
-          <div class="meta-row-line-block"><span>Company:</span><strong id="card-lbl-comp-${tRef}">${lead["Company"]}</strong></div>
-          <div class="meta-row-line-block"><span>Name:</span><strong id="card-lbl-name-${tRef}">${cardDisplayName}</strong></div>
-          <div class="meta-row-line-block" style="width:100%; margin-top:2px;"><span>Position:</span><strong id="card-lbl-pos-${tRef}">${lead["Position"] || "Unspecified"}</strong></div>
+          <div class="meta-row-line-block" style="margin-bottom: 6px;">
+            <span style="background: #e2e8f0;">Company:</span>
+            <strong style="margin-right: 20px;">${lead["Company"]}</strong>
+            <span style="background: #edf2f7;">Status:</span>
+            <strong>${lead["Status"] || "N/A"}</strong>
+          </div>
+          <div class="meta-row-line-block">
+            <span style="background: #e2e8f0;">Name:</span>
+            <strong style="margin-right: 20px;">${cardDisplayName}</strong>
+            <span style="background: #edf2f7;">Position:</span>
+            <strong>${lead["Position"] || "Unspecified"}</strong>
+          </div>
         </div>
         <div class="directory-btn-actions-block">
           <button class="nav-btn-styled" style="font-size:0.92rem; padding:6px 14px;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)" id="expand-trigger-${tRef}">View Details</button>
@@ -779,8 +789,8 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName) {
         </div>
       </div>
       <div class="contact-expanded-workspace-payload-drawer" id="drawer-panel-${tRef}" style="display:none; padding-top:4px;">
-         <div class="leads-editable-fields-box-canvas" id="canvas-fields-${tRef}"></div>
-         <div class="child-injected-modules-mount-point" id="modules-mount-${tRef}" style="margin-top:10px;"></div>
+        <div class="leads-editable-fields-box-canvas" id="canvas-fields-${tRef}"></div>
+        <div class="child-injected-modules-mount-point" id="modules-mount-${tRef}" style="margin-top:10px;"></div>
       </div>
     `;
     container.appendChild(wrapperCard);
@@ -1291,17 +1301,15 @@ async function triggerEngineerSearch() {
         if (data.success) {
             const canvas = document.getElementById("step2-inline-interaction-canvas");
             
-            // Set up header
-            // Explicitly REMOVED the "Create New Entry" logic from this innerHTML
+            // Updated: Removed the button HTML from this enclosure
             document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div class="qualification-status-bar" style="flex:1; margin-right:10px;">Engineer: ${engVal}</div>
-                    <button class="nav-btn-styled" onclick="returnToDashboard()">Return</button>
+                <div class="qualification-status-bar" style="width: 100%;">
+                    Engineer: ${engVal}
                 </div>
             `;
             
-            // EXPLICITLY HIDE the Create button
-            document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
+            // Explicitly ensure the Create Entry button is available since you need it here
+            document.getElementById("global-direct-inline-create-entry-btn").style.display = "inline-flex";
             
             globalFollowUpsCacheMap = data.followups;
             globalTasksCacheMap = data.tasks;
@@ -1317,7 +1325,6 @@ async function triggerEngineerSearch() {
         btn.textContent = "Search Leads";
     }
 }
-
 </script>
 </body>
 </html>
