@@ -902,15 +902,23 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         cell.appendChild(sel);
       } else if (["Date of Meeting", "Expected Tender / RFQ Date"].indexOf(key) !== -1) {
         let inp = document.createElement("input");
-        inp.type = "date"; // This MUST be YYYY-MM-DD for the calendar to work
+        inp.type = "date";
         inp.className = 'live-lead-field-input-' + leadRef;
         inp.dataset.headerKey = key;
         
         let rawDate = leadMap[key];
         if (rawDate) {
-            // 1. Handle ISO strings (T...) and convert to YYYY-MM-DD
-            let datePart = rawDate.toString().split('T')[0];
-            inp.value = datePart;
+            // Force conversion to YYYY-MM-DD
+            let d = new Date(rawDate);
+            if (!isNaN(d.getTime())) {
+                let year = d.getFullYear();
+                let month = ("0" + (d.getMonth() + 1)).slice(-2);
+                let day = ("0" + d.getDate()).slice(-2);
+                inp.value = `${year}-${month}-${day}`;
+            } else {
+                // Fallback: If it's already a YYYY-MM-DD string
+                inp.value = rawDate.toString().split('T')[0];
+            }
         }
         cell.appendChild(inp);
       } else if (["Time of Meeting", "Meeting Time"].indexOf(key) !== -1) {
@@ -921,11 +929,21 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         
         let rawTime = leadMap[key];
         if (rawTime) {
-            // 2. If it contains a 'T', split and take the time part (HH:MM)
-            let timePart = rawTime.toString().includes('T') 
-                ? rawTime.toString().split('T')[1].substring(0, 5) 
-                : rawTime.toString().substring(0, 5);
-            inp.value = timePart;
+            // If rawTime is a string like "12:27" or "03:02 PM"
+            // We need to normalize this to 24hr HH:MM
+            let timeStr = rawTime.toString();
+            
+            // Basic check for AM/PM to convert to 24h
+            if (timeStr.toLowerCase().includes("am") || timeStr.toLowerCase().includes("pm")) {
+                let [t, modifier] = timeStr.split(' ');
+                let [hours, minutes] = t.split(':');
+                if (hours === '12') hours = '00';
+                if (modifier.toLowerCase() === 'pm') hours = parseInt(hours, 10) + 12;
+                inp.value = `${hours.toString().padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+            } else {
+                // It's already in 24hr format
+                inp.value = timeStr.substring(0, 5);
+            }
         }
         cell.appendChild(inp);
       } else if (["Assigned Engineer", "Engineer Name"].indexOf(key) !== -1) {
