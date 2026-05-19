@@ -126,7 +126,7 @@
 
 <div id="auth-container">
   <div class="auth-card">
-    <div class="auth-title">ABPS Portal</div>
+    <div class="auth-title">ABPS Marketing Portal</div>
     <div style="text-align: left;">
       <label class="field-label">Username</label><input type="text" id="auth-user" placeholder="Enter username..." />
       <label class="field-label">Password</label><input type="password" id="auth-pass" placeholder="Enter password..." />
@@ -371,7 +371,18 @@
         </div>
       </div>
     </div>
-    <div id="workspace-searchEngineer" class="workspace-panel" style="display: none;"><h3>Search Engineer Workspace</h3></div>
+    <div id="workspace-searchEngineer" class="workspace-panel" style="display: none;">
+      <div class="section">
+        <div class="section-header">Filter Leads by Engineer</div>
+        <div class="section-body">
+          <label class="field-label">Select Engineer</label>
+          <select id="engineer-filter-select" style="margin-bottom:10px;">
+            <option value="">— Select Engineer —</option>
+          </select>
+          <button class="btn btn-sub" id="eng-search-btn" onclick="triggerEngineerSearch()">Search Leads</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -435,7 +446,7 @@
 
 <script>
 // --- CENTRAL CONFIGURATION HUB ---
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwVq505jNES8uYLQ8DUwpOtzB4ax_kprcAyQXZyEYc3pQKPGz8n5Cjp3TQqKOgoD4BvPg/exec"; 
+const GAS_URL = "https://script.google.com/macros/s/AKfycbz26N8C2O8D0BM5Dwwx4g_AZMMnx1NbdUIFHSWAtWlP69Jnx99Cy9qT2lcYl6Xg5O5ZGQ/exec"; 
 
 let userPermissions = { cardDetails: false, searchCompany: false, searchStatus: false, searchEngineer: false };
 let cachedEngineers = [];
@@ -499,23 +510,57 @@ async function executeLogin() {
 function executeLogout() { localStorage.clear(); document.getElementById("app-container").style.display = "none"; document.getElementById("auth-container").style.display = "flex"; }
 
 async function showAppView() {
-  document.getElementById("auth-container").style.display = "none"; document.getElementById("app-container").style.display = "block";
-  document.getElementById("dashboard-view").style.display = "block"; document.getElementById("module-workspace-container").style.display = "none";
+  // 1. UI Visibility Toggle
+  document.getElementById("auth-container").style.display = "none"; 
+  document.getElementById("app-container").style.display = "block";
+  document.getElementById("dashboard-view").style.display = "block"; 
+  document.getElementById("module-workspace-container").style.display = "none";
+  
+  // 2. Set User Meta
   document.getElementById("display-full-name").textContent = localStorage.getItem("userFirstName") + " " + localStorage.getItem("userLastName");
   document.getElementById("display-username").textContent = "@" + localStorage.getItem("sessionUser");
-  document.getElementById("mod-qual").classList.toggle("locked", !userPermissions.searchQualification);
-  loadQualFilter();
   
-  ["mod-card","mod-company","mod-status","mod-engineer"].forEach(id => {
-    let key = id === "mod-card" ? "cardDetails" : id === "mod-company" ? "searchCompany" : id === "mod-status" ? "searchStatus" : "searchEngineer";
-    document.getElementById(id).classList.toggle("locked", !userPermissions[key]);
+  // 3. Load Qualification filter checkboxes
+  loadQualFilter();
+
+  // 4. Permission-based menu locking
+  // Mappings for the menu cards
+  const menuPermissions = [
+    { id: "mod-card", key: "cardDetails" },
+    { id: "mod-company", key: "searchCompany" },
+    { id: "mod-qual", key: "searchQualification" },
+    { id: "mod-status", key: "searchStatus" },
+    { id: "mod-engineer", key: "searchEngineer" }
+  ];
+
+  menuPermissions.forEach(item => {
+    const el = document.getElementById(item.id);
+    if (el) el.classList.toggle("locked", !userPermissions[item.key]);
   });
 
+  // 5. Fetch and Populate Engineer Dropdowns
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "getEngineers" }) });
     const data = await res.json();
-    if (data.success) { cachedEngineers = data.engineers; populateEngineerDropdowns(); }
-  } catch(e) { console.error(e.message); }
+    if (data.success) { 
+      cachedEngineers = data.engineers; 
+      populateEngineerDropdowns(); 
+      
+      // Populate Engineer Filter for "Search Leads and Follow Ups by Engineer Name"
+      const engDrop = document.getElementById("engineer-filter-select");
+      if (engDrop) {
+        engDrop.innerHTML = '<option value="">— Select Engineer —</option>';
+        cachedEngineers.forEach(eng => {
+          let opt = document.createElement("option");
+          opt.value = eng;
+          opt.textContent = eng;
+          engDrop.appendChild(opt);
+        });
+      }
+    }
+  } catch(e) { console.error("Engineer load error:", e.message); }
+  
+  // 6. Fetch initial company list for dropdown search
   triggerCompanyDropdownArrayFetch();
 }
 
@@ -1224,6 +1269,46 @@ async function triggerStatusSearch() {
             document.getElementById("workspace-searchStatus").appendChild(canvas);
         } else {
             alert(data.error || "No leads found with this status.");
+        }
+    } catch(e) { alert(e.message); } finally {
+        btn.classList.remove("loading");
+        btn.textContent = "Search Leads";
+    }
+}
+
+async function triggerEngineerSearch() {
+    const btn = document.getElementById("eng-search-btn");
+    const engVal = document.getElementById("engineer-filter-select").value;
+    if(!engVal) return alert("Please select an engineer.");
+
+    btn.classList.add("loading");
+    btn.textContent = "Searching...";
+
+    try {
+        const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "searchByEngineer", engName: engVal }) });
+        const data = await res.json();
+        
+        if (data.success) {
+            const canvas = document.getElementById("step2-inline-interaction-canvas");
+            
+            // Set up header with the Create button enabled
+            document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div class="qualification-status-bar" style="flex:1;">Engineer: ${engVal}</div>
+                    <button class="nav-btn-styled" onclick="returnToDashboard()">Return</button>
+                </div>
+            `;
+            
+            // Enable the Create Entry button for this module
+            document.getElementById("global-direct-inline-create-entry-btn").style.display = "inline-flex";
+            
+            globalFollowUpsCacheMap = data.followups;
+            globalTasksCacheMap = data.tasks;
+            buildMultiContactDirectoryInterface(data.leads, "");
+            canvas.style.display = "block";
+            document.getElementById("workspace-searchEngineer").appendChild(canvas);
+        } else {
+            alert("No leads found for this engineer.");
         }
     } catch(e) { alert(e.message); } finally {
         btn.classList.remove("loading");
