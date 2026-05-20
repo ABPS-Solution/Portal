@@ -344,7 +344,7 @@
             <label class="field-label">Assign Creator Name</label>
             <select id="engName"><option value="">Loading Dynamic Listing...</option></select>
             
-            <label class="field-label">Account Status</label>
+            <label class="field-label">Lead Status</label>
             <select id="dropform-status">
               <option value="Status1">Status1</option>
               <option value="Status2">Status2</option>
@@ -444,7 +444,7 @@
           <div><label class="field-label">Engineer Name</label><select class="task-eng-select"></select></div>
           <div><label class="field-label">Assigning Engineer</label><select class="task-assigner-select"></select></div>
         </div>
-        <div style="grid-column: span 2;"><label class="field-label">Task Description</label><textarea class="task-desc-input"></textarea></div>
+        <div style="grid-column: span 2;"><label class="field-label">Task Description *</label><textarea class="task-desc-input"></textarea></div>
         <div><label class="field-label">Target Time</label><select class="task-shift-select"><option>Morning</option><option>Afternoon</option><option>Evening</option></select></div>
         <div><label class="field-label">Target Date</label><input type="date" class="task-targetdate-input" /></div>
         <button class="btn btn-sub commit-task-btn-trigger" style="grid-column:span 2; margin-top:5px;">Save Task</button>
@@ -1204,6 +1204,18 @@ async function globalExecutionScopeReloader(leadRef, scopeNode) {
     const data = await res.json();
     if (data.success) { globalFollowUpsCacheMap = data.followups; globalTasksCacheMap = data.tasks; currentFollowUpCount = data.followups[leadRef] ? data.followups[leadRef].length : 0; renderIsolatedFollowUpTimeline(leadRef, data.followups[leadRef] || [], scopeNode); renderIsolatedTaskItemsList(leadRef, data.tasks[leadRef] || [], scopeNode); }
   } catch(e) { console.error(e.message); }
+}
+
+async function uploadToCloudinary(file) {
+  if (!file) return "";
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', UPLOAD_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+    method: 'POST', body: fd
+  });
+  const d = await res.json();
+  return d.secure_url || "";
 }
 
 async function submitLead() {
