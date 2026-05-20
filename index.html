@@ -644,14 +644,21 @@ function returnToDashboard() {
 }
 
 function revealNewEntryFormDropdown() { 
-  document.getElementById("missing-trigger-notice-block").style.display = "none"; 
+  document.getElementById("missing-trigger-notice-block").style.display = "none";
   const container = (currentActiveModuleContext === "CARD") ? "workspace-cardDetails" : "workspace-searchCompany";
   document.getElementById(container).appendChild(document.getElementById("step2-new-entry-dropdown"));
+
+  let companyName = "";
+  if (currentActiveModuleContext === "CARD") {
+      companyName = document.getElementById("f-company").value;
+  } else {
+      // In Search by Company, the value is in the dropdown selector
+      companyName = document.getElementById("lookup-module-company-dropdown").value;
+  }
+  document.getElementById("dropform-company-locked").value = companyName || "No Company Specified";
   
   const targetedLockStringValue = (currentActiveModuleContext === "CARD") ? document.getElementById("f-company").value : document.getElementById("lookup-module-company-dropdown").value;
-  document.getElementById("dropform-company-locked").value = targetedLockStringValue || "No Company Specified";
   
-  // FIX: Persistent pre population bridging configurations parameters setup inside targeted elements fields maps
   document.getElementById("dropform-name").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-name").value : "";
   document.getElementById("dropform-position").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-position").value : "";
   document.getElementById("dropform-phone").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-phone").value : "";
@@ -662,7 +669,6 @@ function revealNewEntryFormDropdown() {
 
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
   document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "inline-flex";
-
   document.getElementById("step2-new-entry-dropdown").style.display = "block"; 
   window.scrollTo(0,0); 
 }
