@@ -1040,21 +1040,31 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
 }
 
 async function removeLeadRowEntirely(leadRef) {
-  if (!confirm("Confirm record row extraction removal?")) return;
-  try {
-    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "deleteLeadRow", leadRef: leadRef }) });
-    const r = await res.json(); if (r.success) triggerSequentialSearch(currentActiveModuleContext);
-  } catch(e) { alert(e.message); }
+    if (!confirm("Confirm record row extraction removal?")) return;
+    
+    // Find the button within the card for this specific record
+    const btn = document.querySelector(`[onclick="removeLeadRowEntirely('${leadRef}')"]`);
+    if(btn) { btn.classList.add("loading"); btn.textContent = "Deleting..."; }
+    
+    try {
+        const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "deleteLeadRow", leadRef: leadRef }) });
+        const r = await res.json();
+        if (r.success) triggerSequentialSearch(currentActiveModuleContext);
+    } catch(e) { alert(e.message); btn.classList.remove("loading"); btn.textContent = "Delete Record"; }
 }
 
 function exitCanvasToCardView() {
-  collapseNewEntryDropdownFormExplicitly(); 
+  collapseNewEntryDropdownFormExplicitly();
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
-  document.getElementById("step2-inline-interaction-canvas").style.display = "none"; 
-  if(currentActiveModuleContext === "CARD") document.getElementById("step1-card-capture-block").style.display = "block"; 
-  if(currentActiveModuleContext === "DROPDOWN") document.getElementById("company-dropdown-selector-block").style.display = "block";
+  document.getElementById("step2-inline-interaction-canvas").style.display = "none";
+  
+  if(currentActiveModuleContext === "CARD") {
+      document.getElementById("step1-card-capture-block").style.display = "block";
+  } else if(currentActiveModuleContext === "DROPDOWN") {
+      document.getElementById("company-dropdown-selector-block").style.display = "block";
+      triggerCompanyDropdownArrayFetch();
+  }
 }
-
 function toggleFollowUpAccordion(headerElement) {
   // Find the body block next to or within the parent wrapper card
   const itemCard = headerElement.closest('.fup-item-card');
@@ -1232,9 +1242,12 @@ async function uploadToCloudinary(file) {
 
 async function submitLead() {
   const btn = document.getElementById('submit-btn');
-  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...';
-  const meetingDate = document.getElementById('meetingDate').value; // Already YYYY-MM-DD
-  const meetingTime = document.getElementById('meetingTime').value; // Already HH:MM
+  btn.disabled = true; 
+  btn.innerHTML = '<div class="spinner"></div> Saving...';
+  
+  const meetingDate = document.getElementById('meetingDate').value; // Always YYYY-MM-DD
+  const meetingTime = document.getElementById('meetingTime').value; // Always HH:MM
+
   const getChecks = n => Array.from(document.querySelectorAll(`input[name="${n}"]:checked`)).map(c => c.value);
   const getRadio  = n => (document.querySelector(`input[name="${n}"]:checked`) || {}).value || "";
   try {
