@@ -341,7 +341,16 @@
         <div class="section">
           <div class="section-header">Section 7 — Engineer Info</div>
           <div class="section-body">
-            <label class="field-label">Assign Creator Name</label><select id="engName"><option value="">Loading Dynamic Listing...</option></select>
+            <label class="field-label">Assign Creator Name</label>
+            <select id="engName"><option value="">Loading Dynamic Listing...</option></select>
+            
+            <label class="field-label">Account Status</label>
+            <select id="dropform-status">
+              <option value="Status1">Status1</option>
+              <option value="Status2">Status2</option>
+              <option value="Status3">Status3</option>
+              <option value="Status4">Status4</option>
+            </select>
           </div>
         </div>
         <button class="btn btn-sub" id="submit-btn" onclick="submitLead()">Submit New Account Entry</button>
@@ -447,7 +456,7 @@
 
 <script>
 // --- CENTRAL CONFIGURATION HUB ---
-const GAS_URL = "https://script.google.com/macros/s/AKfycbz26N8C2O8D0BM5Dwwx4g_AZMMnx1NbdUIFHSWAtWlP69Jnx99Cy9qT2lcYl6Xg5O5ZGQ/exec"; 
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxoiR1YDDJDq09iors2mBH43DOIWcTjUOLxdOe8GjCCI_I_goE9hGHjWTgweVtgja_A/exec"; 
 
 let userPermissions = { cardDetails: false, searchCompany: false, searchStatus: false, searchEngineer: false };
 let cachedEngineers = [];
@@ -1161,7 +1170,9 @@ function editIsolatedTaskItem(leadRef, scopeNode, t) {
 }
 
 async function commitIsolatedTaskItem(leadRef, scopeNode) {
-  const form = scopeNode.querySelector(".template-task-form"); const btn = scopeNode.querySelector(".commit-task-btn-trigger");
+  const form = scopeNode.querySelector(".template-task-form");
+  const desc = form.querySelector(".task-desc-input").value;
+  const btn = scopeNode.querySelector(".commit-task-btn-trigger");
   const editId = form.querySelector(".task-edit-id").value;
   const taskData = {
     id: editId || "NEW", isNew: !editId, fupNum: currentFollowUpCount, leadRef: leadRef, company: activeSearchCompany,
@@ -1170,6 +1181,7 @@ async function commitIsolatedTaskItem(leadRef, scopeNode) {
     shift: form.querySelector(".task-shift-select").value, targetDate: form.querySelector(".task-targetdate-input").value, status: form.querySelector(".task-status-select").value
   };
   if (!taskData.targetDate) return alert("Target Date required.");
+  if (!desc || desc.trim() === "") return alert("Task Description is a compulsory field.");
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...';
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "saveTask", taskData }) });
@@ -1195,7 +1207,10 @@ async function globalExecutionScopeReloader(leadRef, scopeNode) {
 }
 
 async function submitLead() {
-  const btn = document.getElementById('submit-btn'); btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...';
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...';
+  const meetingDate = document.getElementById('meetingDate').value; // Already YYYY-MM-DD
+  const meetingTime = document.getElementById('meetingTime').value; // Already HH:MM
   const getChecks = n => Array.from(document.querySelectorAll(`input[name="${n}"]:checked`)).map(c => c.value);
   const getRadio  = n => (document.querySelector(`input[name="${n}"]:checked`) || {}).value || "";
   try {
@@ -1210,6 +1225,7 @@ async function submitLead() {
     const dynamicOverriddenGsiValue = document.getElementById("sel-gsi").value === "Yes" ? document.getElementById("gsi").value : "No";
 
     const fields = {
+      status: document.getElementById('dropform-status').value,
       engineerName: document.getElementById('engName').value, 
       name: document.getElementById('dropform-name').value || document.getElementById('f-name').value, 
       company: document.getElementById('dropform-company-locked').value || document.getElementById('f-company').value,
@@ -1219,7 +1235,7 @@ async function submitLead() {
       email: document.getElementById('dropform-email').value || document.getElementById('f-email').value, 
       website: document.getElementById('dropform-website').value || document.getElementById('f-website').value, 
       address: document.getElementById('dropform-address').value || document.getElementById('f-address').value,
-      meetingDate: document.getElementById('meetingDate').value, meetingTime: document.getElementById('meetingTime').value,
+      meetingDate: meetingDate, meetingTime: meetingTime,
       meetingVenue: getRadio('meetingVenue'), venueName: document.getElementById('venueName').value, additionalMeetingDetails: document.getElementById('additionalMeetingDetails').value,
       businessVertical: getRadio('businessVertical'), industry: document.getElementById('industry').value, qualification: getChecks('qualification'), vendorType: [''],
       materialsName: document.getElementById('materialsName').value, 
