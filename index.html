@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<title>ABPS Enterprise Portal</title>
+<title>ABPS</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -79,20 +79,13 @@
   .btn-ai { background: var(--accent); color: #fff; margin-bottom: 4px; padding: 4px; }
   .btn-warn { background: #718096; color: #fff; }
 
-    /* Make Qualifications bigger */
+  /* Make Qualifications bigger */
   #qual-filter-checkboxes { gap: 10px; }
-  #qual-filter-checkboxes label { 
-      font-size: 0.9rem !important; 
-      padding: 8px 12px !important; 
-      border-radius: 20px !important; 
-  }
+  #qual-filter-checkboxes label { font-size: 0.9rem !important; padding: 8px 12px !important; border-radius: 20px !important; }
 
   /* Loading animation for buttons */
   .btn.loading { opacity: 0.7; cursor: wait; pointer-events: none; }
-  .btn.loading::after {
-      content: " ...";
-      animation: blink 1.2s infinite;
-  }
+  .btn.loading::after { content: " ..."; animation: blink 1.2s infinite;}
   @keyframes blink { 50% { opacity: 0; } }
 
   /* Centered status bar */
@@ -457,6 +450,20 @@
 <script>
 // --- CENTRAL CONFIGURATION HUB ---
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxoiR1YDDJDq09iors2mBH43DOIWcTjUOLxdOe8GjCCI_I_goE9hGHjWTgweVtgja_A/exec"; 
+
+let fileFront = null, fileBack = null;
+
+document.getElementById('card-front').onchange = (e) => {
+  fileFront = e.target.files[0];
+  document.getElementById('front-box').textContent = "Front ✅";
+  document.getElementById('front-box').classList.add('done');
+  document.getElementById('parse-btn').disabled = false;
+};
+document.getElementById('card-back').onchange = (e) => {
+  fileBack = e.target.files[0];
+  document.getElementById('back-box').textContent = "Back ✅";
+  document.getElementById('back-box').classList.add('done');
+};
 
 let userPermissions = { cardDetails: false, searchCompany: false, searchStatus: false, searchEngineer: false };
 let cachedEngineers = [];
@@ -1226,7 +1233,11 @@ async function submitLead() {
   const getChecks = n => Array.from(document.querySelectorAll(`input[name="${n}"]:checked`)).map(c => c.value);
   const getRadio  = n => (document.querySelector(`input[name="${n}"]:checked`) || {}).value || "";
   try {
-    const [url1, url2] = await Promise.all([uploadToCloudinary(fileFront), uploadToCloudinary(fileBack)]);
+    // Upload card images to Cloudinary first
+    const [url1, url2] = await Promise.all([
+      uploadToCloudinary(fileFront),
+      uploadToCloudinary(fileBack)
+    ]);
     const imageUrl = [url1, url2].filter(u => u).join(", ");
     
     // Explicit dynamic mapping overrides to prevent structural data drop leaks
