@@ -581,6 +581,7 @@ async function showAppView() {
   
   // 6. Fetch initial company list for dropdown search
   triggerCompanyDropdownArrayFetch();
+
 }
 
 function populateEngineerDropdowns() {
@@ -646,17 +647,22 @@ function navigateToModule(key) {
     resetSequentialFormState(); 
 }
 
-function returnToDashboard() {
-  collapseNewEntryDropdownFormExplicitly();
+function returnToDashboard() { 
+  // 1. Force-collapse the form if open
+  collapseNewEntryDropdownFormExplicitly(); 
+  showAppView(); 
+  
+  // 2. Hide the workspace entirely
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("dashboard-view").style.display = "block";
   
-  // Clear the search results canvas
-  document.getElementById("step2-inline-interaction-canvas").style.display = "none";
+  // 3. Clear the interaction canvas to ensure it's "fresh" next time
+  const canvas = document.getElementById("step2-inline-interaction-canvas");
+  canvas.style.display = "none";
   document.getElementById("multi-contact-records-container").innerHTML = "";
   
-  // Re-enable the dropdown search block
-  document.getElementById("company-dropdown-selector-block").style.display = "block";
+  // 4. Reset specific module visibility
+  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
 }
 
 function revealNewEntryFormDropdown() { 
@@ -699,6 +705,9 @@ function collapseNewEntryDropdownFormExplicitly() {
 async function triggerSequentialSearch(triggerSourceMode) {
   let comp = ""; let targetName = "";
   let btn = null;
+
+  document.getElementById('success-screen').style.display = 'none';
+  document.getElementById('remaining-sections-form').style.display = 'block';
   
   if (triggerSourceMode === "CARD") {
     comp = document.getElementById("f-company").value;
@@ -708,7 +717,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
     comp = document.getElementById("lookup-module-company-dropdown").value;
     targetName = ""; 
     btn = document.getElementById("lookup-module-search-btn");
-    if(!comp) return alert("Select a company option string first.");
+    if(!comp) return alert("Select a company first.");
   }
   
   if (!comp) return alert("Specify Company parameters.");
@@ -1330,7 +1339,7 @@ async function submitLead() {
     if (d.success) { 
       document.getElementById('remaining-sections-form').style.display = 'none'; 
       document.getElementById('success-screen').style.display = 'block'; 
-      document.getElementById('success-ref').textContent = "Lead ID: " + d.leadRef;
+      document.getElementById('success-ref').textContent = "Lead ID: " + (d.leadRef || "Error generating ID");
       triggerSequentialSearch(currentActiveModuleContext); 
     }
   } catch (e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = 'Submit New Account Entry'; }
@@ -1358,6 +1367,7 @@ function updateSelectedDisplay() {
 
 // Triggers the search and prepares the UI
 async function triggerQualificationSearch() {
+    document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
     const btn = document.getElementById("qual-search-btn");
     const selected = Array.from(document.querySelectorAll('input[name="searchQual"]:checked')).map(i => i.value);
     if(selected.length === 0) return alert("Select at least one qualification.");
@@ -1393,6 +1403,7 @@ async function triggerQualificationSearch() {
 }
 
 async function triggerStatusSearch() {
+    document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
     const btn = document.getElementById("status-search-btn");
     const statusVal = document.getElementById("status-filter-select").value;
     if(!statusVal) return alert("Please select a status.");
