@@ -148,7 +148,7 @@
         <div class="user-full-name" id="display-full-name"></div>
         <div class="user-display-username" id="display-username"></div>
       </div>
-      <button class="logout-btn" style="padding-top: 20px;" onclick="executeLogout()">Sign Out</button>
+      <button class="logout-btn" onclick="executeLogout()" style="margin-top: 20px;">Sign Out</button>
     </div>
   </header>
 
@@ -846,7 +846,7 @@ function toggleDropdownNo(selectNode, inputId) {
 }
 
 function navigateToModule(key) { 
-    if (!userPermissions[key]) return alert("Denied."); 
+    if (!userPermissions[key]) return alert("Access Denied."); 
     
     const canvas = document.getElementById("step2-inline-interaction-canvas");
     if (canvas) {
@@ -857,7 +857,9 @@ function navigateToModule(key) {
     document.getElementById("dashboard-view").style.display = "none"; 
     document.getElementById("module-workspace-container").style.display = "block"; 
     document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none"); 
-    document.getElementById("workspace-" + key).style.display = "block"; 
+    
+    const targetWorkspacePanel = document.getElementById("workspace-" + key);
+    if (targetWorkspacePanel) targetWorkspacePanel.style.display = "block"; 
     
     document.getElementById("multi-contact-records-container").innerHTML = "";
     document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
@@ -866,11 +868,38 @@ function navigateToModule(key) {
     
     const taskOutputNode = document.getElementById("task-matrix-results-output-node");
     if (taskOutputNode) taskOutputNode.innerHTML = "";
-    
-    document.querySelectorAll('input[name="taskMatrixStatus"], input[name="taskMatrixEngineer"]').forEach(cb => cb.checked = false);
 
     currentActiveModuleContext = key === "cardDetails" ? "CARD" : "DROPDOWN";
     resetSequentialFormState(); 
+    
+    // SMART RE-LOADER UTILITIES: Auto-triggers existing search configurations if values exist
+    if (key === "searchCompany") {
+      const companyDropdownNode = document.getElementById("lookup-module-company-dropdown");
+      if (companyDropdownNode && companyDropdownNode.value) {
+         // Auto-fires query reconstruction without user interface reload requirements
+         triggerSequentialSearch('DROPDOWN');
+      } else {
+         // Fallback default state parameter mapping recovery execution rule route
+         triggerCompanyDropdownArrayFetch();
+      }
+    } else if (key === "cardDetails") {
+      const companyInputTextNode = document.getElementById("f-company");
+      if (companyInputTextNode && companyInputTextNode.value.trim() !== "") {
+         triggerSequentialSearch('CARD');
+      }
+    } else if (key === "searchQualification") {
+      const checkedQuals = Array.from(document.querySelectorAll('input[name="searchQual"]:checked'));
+      if (checkedQuals.length > 0) triggerQualificationSearch();
+    } else if (key === "searchStatus") {
+      const statusSelectNode = document.getElementById("status-filter-select");
+      if (statusSelectNode && statusSelectNode.value) triggerStatusSearch();
+    } else if (key === "searchEngineer") {
+      const engineerSelectNode = document.getElementById("engineer-filter-select");
+      if (engineerSelectNode && engineerSelectNode.value) triggerEngineerSearch();
+    } else if (key === "searchTasks") {
+      // Clear out status checkbox parameters cleanly to allow a crisp interface search loop initialization
+      document.querySelectorAll('input[name="taskMatrixStatus"], input[name="taskMatrixEngineer"]').forEach(cb => cb.checked = false);
+    }
 }
 
 function returnToDashboard() { 
@@ -879,7 +908,9 @@ function returnToDashboard() {
   document.getElementById("dashboard-view").style.display = "block";
   
   const canvas = document.getElementById("step2-inline-interaction-canvas");
-  canvas.style.display = "none";
+  if (canvas) canvas.style.display = "none";
+  
+  // Clear only the visible multi-contact results container tree list arrays
   document.getElementById("multi-contact-records-container").innerHTML = "";
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
   document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
