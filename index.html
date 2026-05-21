@@ -203,6 +203,10 @@
         <div class="section-header">Filter Directory by Qualification</div>
         <div class="section-body">
           <label class="field-label" style="font-size: 0.8rem;">Select Qualifications</label>
+          
+          <!-- Added to catch script text adjustments -->
+          <div id="selected-quals-display" style="font-size: 0.8rem; font-weight: bold; color: var(--brand); margin-bottom: 6px;"></div>
+          
           <div class="pill-group" id="qual-filter-checkboxes" style="margin: 10px 0;"></div>
           <button class="btn btn-sub" id="qual-search-btn" onclick="triggerQualificationSearch()">Search Qualifications</button>
         </div>
@@ -451,7 +455,9 @@
 
 <script>
 // --- CENTRAL CONFIGURATION HUB ---
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyXQqevcvAArfxJTpsP_6IiZhW8QoNOkyUTO0BKZeqBdnnLSn7AlyKyh2-bhLVYSkiQSQ/exec"; 
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxwqgjEHEhY0YCjdF0hWVYbsj1899puuD06bllaj-NM_crA8-nzCPVp3YsdxluvLV6M7g/exec"; 
+const CLOUD_NAME   = "dcdhahrhz";          
+const UPLOAD_PRESET = "ABPS Leads Form";      
 
 let fileFront = null, fileBack = null;
 
@@ -600,17 +606,18 @@ async function triggerCompanyDropdownArrayFetch() {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "getUniqueCompaniesList" }) });
     const d = await res.json();
     if (d.success) {
-      document.getElementById('remaining-sections-form').style.display = 'none';
+      const dropdown = document.getElementById("lookup-module-company-dropdown");
+      if (!dropdown) return;
       
-      const canvas = document.getElementById("step2-inline-interaction-canvas");
-      const successDiv = document.createElement("div");
-      successDiv.id = "temp-success-msg";
-      successDiv.innerHTML = `<h3>Submission Successful!</h3><p>Lead ID: ${d.leadRef}</p>`;
-      canvas.appendChild(successDiv); 
-      
-      triggerSequentialSearch(currentActiveModuleContext); 
+      dropdown.innerHTML = '<option value="">— Select Company —</option>';
+      d.companies.forEach(item => {
+        let opt = document.createElement("option");
+        opt.value = item.companyValue;
+        opt.textContent = item.displayLabel;
+        dropdown.appendChild(opt);
+      });
     }
-  } catch(e) { console.error(e.message); }
+  } catch(e) { console.error("Error loading dropdown array metadata:", e.message); }
 }
 
 function resetSequentialFormState() {
@@ -839,13 +846,13 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName) {
             <span style="background: #e2e8f0;">Company:</span>
             <strong style="margin-right: 20px;">${lead["Company"]}</strong>
             <span style="background: #edf2f7;">Status:</span>
-            <strong>${lead["Status"] || "N/A"}</strong>
+            <strong id="card-lbl-status-${tRef}">${lead["Status"] || "N/A"}</strong>
           </div>
           <div class="meta-row-line-block">
             <span style="background: #e2e8f0;">Name:</span>
-            <strong style="margin-right: 20px;">${cardDisplayName}</strong>
+            <strong style="margin-right: 20px;" id="card-lbl-name-${tRef}">${cardDisplayName}</strong>
             <span style="background: #edf2f7;">Position:</span>
-            <strong>${lead["Position"] || "Unspecified"}</strong>
+            <strong id="card-lbl-pos-${tRef}">${lead["Position"] || "Unspecified"}</strong>
           </div>
         </div>
         <div class="directory-btn-actions-block">
@@ -858,6 +865,7 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName) {
         <div class="child-injected-modules-mount-point" id="modules-mount-${tRef}" style="margin-top:10px;"></div>
       </div>
     `;
+
     container.appendChild(wrapperCard);
   });
 }
@@ -1063,11 +1071,15 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
       alert("Modifications Saved.");
       const updatedNameText = fieldsPayload["Name"] && fieldsPayload["Name"].trim() !== "" ? fieldsPayload["Name"] : "Unspecified";
       const updatedPositionText = fieldsPayload["Position"] && fieldsPayload["Position"].trim() !== "" ? fieldsPayload["Position"] : "Unspecified";
+      const updatedStatusText = fieldsPayload["Status"] && fieldsPayload["Status"].trim() !== "" ? fieldsPayload["Status"] : "N/A";
       
       const targetLblNameNode = document.getElementById(`card-lbl-name-${leadRef}`);
       const targetLblPosNode = document.getElementById(`card-lbl-pos-${leadRef}`);
+      const targetLblStatusNode = document.getElementById(`card-lbl-status-${leadRef}`);
+      
       if (targetLblNameNode) targetLblNameNode.textContent = updatedNameText;
       if (targetLblPosNode) targetLblPosNode.textContent = updatedPositionText;
+      if (targetLblStatusNode) targetLblStatusNode.textContent = updatedStatusText;
     }
   } catch(e) { alert(e.message); } finally { if(btn) { btn.disabled = false; btn.innerHTML = "Save Modifications"; } }
 }
@@ -1281,70 +1293,91 @@ async function uploadToCloudinary(file) {
 
 async function submitLead() {
   const btn = document.getElementById('submit-btn');
-
   const statusField = document.getElementById('dropform-status');
-  if (!statusField.value) { alert("Lead Status is compulsory."); return;}
+  if (!statusField.value) { alert("Lead Status is compulsory."); return; }
 
   btn.disabled = true; 
   btn.innerHTML = '<div class="spinner"></div> Saving...';
   
-  const meetingDate = document.getElementById('meetingDate').value; // Always YYYY-MM-DD
-  const meetingTime = document.getElementById('meetingTime').value; // Always HH:MM
+  const meetingDate = document.getElementById('meetingDate').value;
+  const meetingTime = document.getElementById('meetingTime').value;
 
   const getChecks = n => Array.from(document.querySelectorAll(`input[name="${n}"]:checked`)).map(c => c.value);
   const getRadio  = n => (document.querySelector(`input[name="${n}"]:checked`) || {}).value || "";
+  
   try {
-    // Upload card images to Cloudinary first
     const [url1, url2] = await Promise.all([
       uploadToCloudinary(fileFront),
       uploadToCloudinary(fileBack)
     ]);
     const imageUrl = [url1, url2].filter(u => u).join(", ");
     
-    // Explicit dynamic mapping overrides to prevent structural data drop leaks
     const dynamicOverriddenLpiValue = document.getElementById("sel-lpi").value === "Yes" ? document.getElementById("lpi").value : "No";
     const dynamicOverriddenHbiValue = document.getElementById("sel-hbi").value === "Yes" ? document.getElementById("hbi").value : "No";
     const dynamicOverriddenHiValue = document.getElementById("sel-hi").value === "Yes" ? document.getElementById("hi").value : "No";
     const dynamicOverriddenThiValue = document.getElementById("sel-thi").value === "Yes" ? document.getElementById("thi").value : "No";
     const dynamicOverriddenGsiValue = document.getElementById("sel-gsi").value === "Yes" ? document.getElementById("gsi").value : "No";
 
+    // Pull from manual dropform first; if empty, safely fall back to card input fields
     const fields = {
-      status: document.getElementById('dropform-status').value,
+      status: statusField.value,
       engineerName: document.getElementById('engName').value, 
-      name: document.getElementById('dropform-name').value || document.getElementById('f-name').value, 
-      company: document.getElementById('dropform-company-locked').value || document.getElementById('f-company').value,
-      position: document.getElementById('dropform-position').value || document.getElementById('f-position').value, 
-      phone: document.getElementById('dropform-phone').value || document.getElementById('f-phone').value, 
-      altPhone: document.getElementById('dropform-altphone').value || document.getElementById('f-altphone').value,
-      email: document.getElementById('dropform-email').value || document.getElementById('f-email').value, 
-      website: document.getElementById('dropform-website').value || document.getElementById('f-website').value, 
-      address: document.getElementById('dropform-address').value || document.getElementById('f-address').value,
-      meetingDate: meetingDate, meetingTime: meetingTime,
-      meetingVenue: getRadio('meetingVenue'), venueName: document.getElementById('venueName').value, additionalMeetingDetails: document.getElementById('additionalMeetingDetails').value,
-      businessVertical: getRadio('businessVertical'), industry: document.getElementById('industry').value, qualification: getChecks('qualification'), vendorType: [''],
+      name: document.getElementById('dropform-name').value.trim() || document.getElementById('f-name').value.trim(), 
+      company: document.getElementById('dropform-company-locked').value.trim(),
+      position: document.getElementById('dropform-position').value.trim() || document.getElementById('f-position').value.trim(), 
+      phone: document.getElementById('dropform-phone').value.trim() || document.getElementById('f-phone').value.trim(), 
+      altPhone: document.getElementById('dropform-altphone').value.trim() || document.getElementById('f-altphone').value.trim(),
+      email: document.getElementById('dropform-email').value.trim() || document.getElementById('f-email').value.trim(), 
+      website: document.getElementById('dropform-website').value.trim() || document.getElementById('f-website').value.trim(), 
+      address: document.getElementById('dropform-address').value.trim() || document.getElementById('f-address').value.trim(),
+      meetingDate: meetingDate, 
+      meetingTime: meetingTime,
+      meetingVenue: getRadio('meetingVenue'), 
+      venueName: document.getElementById('venueName').value, 
+      additionalMeetingDetails: document.getElementById('additionalMeetingDetails').value,
+      businessVertical: getRadio('businessVertical'), 
+      industry: document.getElementById('industry').value, 
+      qualification: getChecks('qualification'), 
+      vendorType: [],
       materialsName: document.getElementById('materialsName').value, 
-      lpi: dynamicOverriddenLpiValue, hbi: dynamicOverriddenHbiValue, hi: dynamicOverriddenHiValue, thi: dynamicOverriddenThiValue, gsi: dynamicOverriddenGsiValue,
+      lpi: dynamicOverriddenLpiValue, 
+      hbi: dynamicOverriddenHbiValue, 
+      hi: dynamicOverriddenHiValue, 
+      thi: dynamicOverriddenThiValue, 
+      gsi: dynamicOverriddenGsiValue,
       esd: document.getElementById('esd').value,
-      voltage: getChecks('voltage'), cdMva: document.getElementById('cdMva').value, rdMva: document.getElementById('rdMva').value, avgPf: document.getElementById('avgPf').value,
-      problemObserved: document.getElementById('problemObserved').value, techSummary: document.getElementById('techSummary').value,
-      existingProject: document.getElementById('epInput').value, upcomingProject: document.getElementById('upInput').value,
-      products: getChecks('prod'), approxReq: document.getElementById('approxReq').value, tenderDate: document.getElementById('tenderDate').value,
-      orderTimeline: document.getElementById('orderTimeline').value, competitors: document.getElementById('competitors').value, potential: getRadio('pot'),
-      sendProfile: document.getElementById('act1').value, sendPresentation: document.getElementById('act2').value, arrangeVisit: document.getElementById('act3').value,
-      getEnquiry: document.getElementById('act4').value, sendOffer: document.getElementById('actOffer').value, followUpRequired: document.getElementById('act7').value
+      voltage: getChecks('voltage'), 
+      cdMva: document.getElementById('cdMva').value, 
+      rdMva: document.getElementById('rdMva').value, 
+      avgPf: document.getElementById('avgPf').value,
+      problemObserved: document.getElementById('problemObserved').value, 
+      techSummary: document.getElementById('techSummary').value,
+      existingProject: document.getElementById('epInput').value, 
+      upcomingProject: document.getElementById('upInput').value,
+      products: getChecks('prod'), 
+      approxReq: document.getElementById('approxReq').value, 
+      tenderDate: document.getElementById('tenderDate').value,
+      orderTimeline: document.getElementById('orderTimeline').value, 
+      competitors: document.getElementById('competitors').value, 
+      potential: getRadio('pot'),
+      sendProfile: document.getElementById('act1').value, 
+      sendPresentation: document.getElementById('act2').value, 
+      arrangeVisit: document.getElementById('act3').value,
+      getEnquiry: document.getElementById('act4').value, 
+      sendOffer: document.getElementById('actOffer').value, 
+      followUpRequired: document.getElementById('act7').value
     };
+
     const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'submit', fields, imageUrl }) });
     const d = await res.json();
     if (d.success) { 
       document.getElementById('remaining-sections-form').style.display = 'none'; 
       document.getElementById('success-screen').style.display = 'block'; 
       document.getElementById('success-ref').textContent = "Lead ID: " + (d.leadRef || "Error generating ID");
-      triggerSequentialSearch(currentActiveModuleContext); 
     }
-  } catch (e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = 'Submit New Account Entry'; }
+  } catch (e) { alert("Submission failed: " + e.message); } finally { btn.disabled = false; btn.innerHTML = 'Submit New Account Entry'; }
 }
 
-// Fetches unique quals and builds the checkboxes
 async function loadQualFilter() {
   const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "getUniqueQualifications" }) });
   const data = await res.json();
