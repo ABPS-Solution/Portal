@@ -451,12 +451,27 @@
         <div class="section">
           <div class="section-header">Section 6 — Action Plan</div>
           <div class="section-body">
-            <label class="field-label">Send Company Profile</label><select id="act1"><option>No</option><option>Yes</option></select>
-            <label class="field-label">Send Technical Presentation</label><select id="act2"><option>No</option><option>Yes</option></select>
-            <label class="field-label">Arrange Site Visit</label><select id="act3"><option>No</option><option>Yes</option></select>
-            <label class="field-label">Get Enquiry</label><select id="act4"><option>No</option><option>Yes</option></select>
-            <label class="field-label">Send Offer</label><select id="actOffer"><option value="No">No</option><option value="Send Budgetary Offer">Send Budgetary Offer</option><option value="Send Techno-Commercial Offer">Send Techno-Commercial Offer</option></select>
-            <label class="field-label">Follow-Up Required</label><select id="act7"><option>No</option><option>Yes</option></select>
+            <label class="field-label">Send Company Profile</label>
+            <select id="act1"><option selected>No</option><option>Yes</option></select>
+            
+            <label class="field-label">Send Technical Presentation</label>
+            <select id="act2"><option selected>No</option><option>Yes</option></select>
+            
+            <label class="field-label">Arrange Site Visit</label>
+            <select id="act3"><option selected>No</option><option>Yes</option></select>
+            
+            <label class="field-label">Get Enquiry</label>
+            <select id="act4"><option selected>No</option><option>Yes</option></select>
+            
+            <label class="field-label">Send Offer</label>
+            <select id="actOffer">
+              <option value="No" selected>No</option>
+              <option value="Send Budgetary Offer">Send Budgetary Offer</option>
+              <option value="Send Techno-Commercial Offer">Send Techno-Commercial Offer</option>
+            </select>
+            
+            <label class="field-label">Follow-Up Required</label>
+            <select id="act7"><option selected>No</option><option>Yes</option></select>
           </div>
         </div>
 
@@ -704,14 +719,24 @@ async function triggerCompanyDropdownArrayFetch() {
 function resetSequentialFormState() {
   document.getElementById('remaining-sections-form').style.display = 'block';
   document.getElementById('success-screen').style.display = 'none';
+  
+  // Clear all input fields
   const inputs = document.querySelectorAll('#remaining-sections-form input, #remaining-sections-form textarea, #remaining-sections-form select');
   inputs.forEach(input => {
       if(input.type === 'checkbox' || input.type === 'radio') {
           input.checked = false;
+      } else if (input.tagName === 'SELECT') {
+          if (['act1', 'act2', 'act3', 'act4', 'actOffer', 'act7'].includes(input.id)) {
+              input.value = 'No';
+          } else if (input.id !== 'dropform-status') {
+              input.value = ''; 
+          }
       } else if (input.id !== 'dropform-company-locked') {
           input.value = '';
       }
   });
+
+  document.querySelectorAll('.other-input, #vendor-fields').forEach(el => el.style.display = 'none');
 }
 
 function toggleOtherText(r, id) {
