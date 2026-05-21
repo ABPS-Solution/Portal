@@ -455,7 +455,7 @@
 
 <script>
 // --- CENTRAL CONFIGURATION HUB ---
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxwqgjEHEhY0YCjdF0hWVYbsj1899puuD06bllaj-NM_crA8-nzCPVp3YsdxluvLV6M7g/exec"; 
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyH8TEVhQdrpFtonry784klBXIn2QJ3WYQrgejtRFwQ25F9ls3Wj971aTNp84TTJBRcNg/exec"; 
 const CLOUD_NAME   = "dcdhahrhz";          
 const UPLOAD_PRESET = "ABPS Leads Form";      
 
@@ -646,28 +646,33 @@ function navigateToModule(key) {
     document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none"); 
     document.getElementById("workspace-" + key).style.display = "block"; 
     
-    // RESET: Clear results when entering a module fresh
+    // RESET: Clear results and force-hide contextual entry buttons across tabs
     document.getElementById("step2-inline-interaction-canvas").style.display = "none";
     document.getElementById("multi-contact-records-container").innerHTML = "";
+    document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
+    document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
+    document.getElementById("missing-trigger-notice-block").style.display = "none";
     
     currentActiveModuleContext = key === "cardDetails" ? "CARD" : "DROPDOWN";
     resetSequentialFormState(); 
 }
 
 function returnToDashboard() { 
-  // 1. Force-collapse the form if open
   collapseNewEntryDropdownFormExplicitly(); 
   
-  // 2. Hide the workspace entirely
+  // Hide the workspace entirely
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("dashboard-view").style.display = "block";
   
-  // 3. Clear the interaction canvas to ensure it's "fresh" next time
+  // Clear layout containers completely
   const canvas = document.getElementById("step2-inline-interaction-canvas");
   canvas.style.display = "none";
   document.getElementById("multi-contact-records-container").innerHTML = "";
   
-  // 4. Reset specific module visibility
+  // Explicitly strip structural navigation button rendering states
+  document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
+  document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
+  
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
 }
 
@@ -708,6 +713,7 @@ function collapseNewEntryDropdownFormExplicitly() {
   }
 }
 
+
 async function triggerSequentialSearch(triggerSourceMode) {
   let comp = ""; let targetName = "";
   let btn = null;
@@ -720,7 +726,9 @@ async function triggerSequentialSearch(triggerSourceMode) {
     targetName = document.getElementById("f-name").value;
     btn = document.getElementById("gate-search-btn");
   } else {
-    comp = document.getElementById("lookup-module-company-dropdown").value;
+    // Read the selected value BEFORE updating button text elements to avoid state mutation drop leaks
+    const dropdown = document.getElementById("lookup-module-company-dropdown");
+    comp = dropdown.value;
     targetName = ""; 
     btn = document.getElementById("lookup-module-search-btn");
     if(!comp) return alert("Select a company first.");
@@ -728,7 +736,9 @@ async function triggerSequentialSearch(triggerSourceMode) {
   
   if (!comp) return alert("Specify Company parameters.");
   
-  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Searching...';
+  btn.disabled = true; 
+  btn.innerHTML = '<div class="spinner"></div> Searching...';
+  
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "searchCompanyData", companyName: comp, contactName: targetName }) });
     const data = await res.json();
@@ -736,6 +746,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
     const activePanelId = (triggerSourceMode === "CARD") ? "workspace-cardDetails" : "workspace-searchCompany";
     const activePanel = document.getElementById(activePanelId);
     
+    // Maintain a clean DOM hierarchy: canvas appends below filter forms
     activePanel.appendChild(document.getElementById("missing-trigger-notice-block"));
     activePanel.appendChild(document.getElementById("step2-inline-interaction-canvas"));
     
@@ -762,11 +773,18 @@ async function triggerSequentialSearch(triggerSourceMode) {
       if(triggerSourceMode === "CARD") document.getElementById("step1-card-capture-block").style.display = "none";
       if(triggerSourceMode === "DROPDOWN") document.getElementById("company-dropdown-selector-block").style.display = "none";
       
+      // Setup structural elements for global nav headers
       document.getElementById("main-global-nav-header-bar").insertBefore(
         document.getElementById("inline-creation-header-controls-block"),
         document.getElementById("main-global-nav-header-bar").firstChild
       );
-      document.getElementById("global-direct-inline-create-entry-btn").style.display = "inline-flex";
+      
+      // ONLY render Create Entry button if we are inside Company Name or Card details context views
+      if (currentActiveModuleContext === "CARD" || currentActiveModuleContext === "DROPDOWN") {
+        document.getElementById("global-direct-inline-create-entry-btn").style.display = "inline-flex";
+      } else {
+        document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
+      }
       document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
 
       document.getElementById("step2-inline-interaction-canvas").style.display = "block";
@@ -774,7 +792,10 @@ async function triggerSequentialSearch(triggerSourceMode) {
       document.getElementById("missing-trigger-notice-block").style.display = "block";
       document.getElementById("step2-inline-interaction-canvas").style.display = "none";
     }
-  } catch(e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = triggerSourceMode === "CARD" ? "Search Database" : "Search Company"; }
+  } catch(e) { alert(e.message); } finally { 
+    btn.disabled = false; 
+    btn.innerHTML = triggerSourceMode === "CARD" ? "Search Database" : "Search Company"; 
+  }
 }
 
 function revealNewEntryFormDropdownFromBanner() {
@@ -1085,7 +1106,7 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
 }
 
 async function removeLeadRowEntirely(leadRef) {
-    if (!confirm("Confirm record removal?")) return;
+    if (!confirm("Confirm Lead Deletion")) return;
     
     const btn = event.target; 
     btn.classList.add("loading"); 
@@ -1293,8 +1314,11 @@ async function uploadToCloudinary(file) {
 
 async function submitLead() {
   const btn = document.getElementById('submit-btn');
+  
   const statusField = document.getElementById('dropform-status');
   if (!statusField.value) { alert("Lead Status is compulsory."); return; }
+  const engineerField = document.getElementById('engName');
+  if (!engineerField || !engineerField.value) { alert("Assign Creator Name is a compulsory.");  return; }
 
   btn.disabled = true; 
   btn.innerHTML = '<div class="spinner"></div> Saving...';
@@ -1371,9 +1395,33 @@ async function submitLead() {
     const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'submit', fields, imageUrl }) });
     const d = await res.json();
     if (d.success) { 
+      // Collapse form view panel elements cleanly
       document.getElementById('remaining-sections-form').style.display = 'none'; 
-      document.getElementById('success-screen').style.display = 'block'; 
+      
+      // Target the success screen view elements directly
+      const successScreen = document.getElementById('success-screen');
+      successScreen.style.display = 'block'; 
       document.getElementById('success-ref').textContent = "Lead ID: " + (d.leadRef || "Error generating ID");
+      
+      // Move success box dynamically to the BOTTOM of the canvas context structure
+      const canvasNode = document.getElementById("step2-inline-interaction-canvas");
+      canvasNode.appendChild(successScreen);
+      
+      // Force immediate data fetch to append the new card entry directly to the top of the workspace list view
+      if (currentActiveModuleContext === "CARD" || currentActiveModuleContext === "DROPDOWN") {
+         const compParamValue = fields.company;
+         const targetPersonNameParam = fields.name;
+         
+         // Trigger a silent database refresh to render cards alongside the new lead
+         const refreshRes = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "searchCompanyData", companyName: compParamValue, contactName: targetPersonNameParam }) });
+         const refreshData = await refreshRes.json();
+         if (refreshData.success) {
+            globalFollowUpsCacheMap = refreshData.followups;
+            globalTasksCacheMap = refreshData.tasks;
+            buildMultiContactDirectoryInterface(refreshData.leads, targetPersonNameParam);
+            canvasNode.style.display = "block";
+         }
+      }
     }
   } catch (e) { alert("Submission failed: " + e.message); } finally { btn.disabled = false; btn.innerHTML = 'Submit New Account Entry'; }
 }
