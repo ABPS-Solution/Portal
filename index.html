@@ -240,7 +240,7 @@
 
     <div id="workspace-searchTasks" class="workspace-panel" style="display: none;">
       <div class="section">
-        <div class="section-header">Search Tasks Matrix Board</div>
+        <div class="section-header">Search Tasks</div>
         <div class="section-body" style="text-align: left;">
           <label class="field-label" style="font-size:0.8rem;">Filter By Engineers</label>
           <div class="pill-group" id="task-matrix-engineer-checkboxes" style="margin:8px 0 16px;"></div>
@@ -480,7 +480,7 @@
 </div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxvG4ANlIqdC1I3BNq8VRnYae2neLRGW6t4wTnydzzdqf7KRy-YFrjHBad_9uzbyzqVPA/exec"; 
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwXAQezo98vAmehRxSG6RGjZepsfNeO4EU8QO5QoFtpwjiatlrG8GzXkVRjnQqHyn7LAQ/exec"; 
 const CLOUD_NAME = "your_actual_cloud_name"; 
 const UPLOAD_PRESET = "your_actual_upload_preset"; 
 
@@ -678,7 +678,8 @@ function navigateToModule(key) {
 function returnToDashboard() { 
   collapseNewEntryDropdownFormExplicitly(); 
   document.getElementById("module-workspace-container").style.display = "none";
-  document.getElementById("dashboard-view").style.block = "block";
+  
+  document.getElementById("dashboard-view").style.display = "block";
   
   const canvas = document.getElementById("step2-inline-interaction-canvas");
   canvas.style.display = "none";
@@ -1426,6 +1427,9 @@ async function executeTaskMatrixSearch() {
       data.tasks.forEach(t => {
         let card = document.createElement("div");
         card.className = "task-item-card"; card.style.padding = "12px"; card.style.borderLeft = "4px solid var(--brand)"; card.style.background = "#fff"; card.style.marginBottom = "6px"; card.style.boxShadow = "0 1px 3px rgba(0,0,0,0.02)";
+        
+        let escapedDesc = (t.desc || "").replace(/`/g, "\\`").replace(/"/g, "&quot;");
+
         card.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed #edf2f7; padding-bottom:4px; margin-bottom:6px;">
             <strong style="color:var(--brand); font-size:0.9rem;">${t.type}</strong>
@@ -1437,12 +1441,112 @@ async function executeTaskMatrixSearch() {
             <strong>Lead Reference:</strong> ${t.leadId || "N/A"}
           </div>
           <div style="font-size:0.82rem; color:#4a5568; padding:6px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; margin-top:6px; white-space:pre-wrap;"><strong>Description:</strong> ${t.desc || 'None'}</div>
+          
+          <div style="margin-top:10px; display:flex; gap:8px;">
+            <button class="nav-btn-styled" id="matrix-edit-task-btn-${t.id}" style="font-size:0.72rem; padding:3px 8px; background:var(--accent);">Edit Task Details</button>
+            <button class="nav-btn-styled" id="matrix-delete-task-btn-${t.id}" style="font-size:0.72rem; padding:3px 8px; background:var(--warn);">Delete</button>
+          </div>
+          
+          <div id="matrix-task-form-mount-${t.id}" style="margin-top:10px; display:none;"></div>
         `;
         outputNode.appendChild(card);
+
+        // Bind interactive inline form injection functions
+        document.getElementById(`matrix-edit-task-btn-${t.id}`).onclick = function() {
+          injectMatrixInlineTaskForm(t, card);
+        };
+        document.getElementById(`matrix-delete-task-btn-${t.id}`).onclick = function() {
+          removeMatrixTaskFromEngine(t.id);
+        };
       });
     }
-  } catch(e) { alert("Task matrix engine fetch error: " + e.message); } finally { btn.classList.remove("loading"); btn.textContent = "Run Matrix Search Filter"; }
+  } catch(e) { alert("Task matrix engine fetch error: " + e.message); } finally { btn.classList.remove("loading"); btn.textContent = "Search Filter Combination"; }
 }
+
+function injectMatrixInlineTaskForm(taskItem, parentCardNode) {
+  const formMount = parentCardNode.querySelector(`#matrix-task-form-mount-${taskItem.id}`);
+  
+  if (formMount.style.display === "block") {
+    formMount.style.display = "none";
+    formMount.innerHTML = "";
+    return;
+  }
+
+  // Clone template structures directly
+  const templateClone = document.getElementById("reusable-child-modules-template").cloneNode(true);
+  const coreTaskForm = templateClone.querySelector(".template-task-form");
+  
+  // Set up dropdown selectors
+  const taskEngSelect = coreTaskForm.querySelector(".task-eng-select");
+  const taskAssignerSelect = coreTaskForm.querySelector(".task-assigner-select");
+  
+  taskEngSelect.innerHTML = ""; taskAssignerSelect.innerHTML = "";
+  cachedEngineers.forEach(eng => {
+    let o1 = document.createElement("option"); o1.textContent = eng; if(taskItem.eng === eng) o1.selected = true; taskEngSelect.appendChild(o1);
+    let o2 = document.createElement("option"); o2.textContent = eng; if(taskItem.assigner === eng) o2.selected = true; taskAssignerSelect.appendChild(o2);
+  });
+
+  // Populate row elements 
+  coreTaskForm.querySelector(".task-edit-id").value = taskItem.id;
+  coreTaskForm.querySelector(".task-status-select").value = taskItem.status;
+  coreTaskForm.querySelector(".task-type-select").value = taskItem.type;
+  coreTaskForm.querySelector(".task-desc-input").value = taskItem.desc || "";
+  coreTaskForm.querySelector(".task-shift-select").value = taskItem.shift || "Morning";
+  coreTaskForm.querySelector(".task-targetdate-input").value = formatCleanDateOnly(taskItem.targetDate);
+  
+  // Force field view grid layout style values
+  coreTaskForm.style.display = "grid";
+  
+  // Update the button event handler to route through matrix updater instead of workspace reloader
+  const commitBtn = coreTaskForm.querySelector(".commit-task-btn-trigger");
+  commitBtn.onclick = async function() {
+    commitMatrixTaskMutations(coreTaskForm, taskItem.leadId, commitBtn);
+  };
+
+  formMount.innerHTML = "";
+  formMount.appendChild(coreTaskForm);
+  formMount.style.display = "block";
+}
+
+async function commitMatrixTaskMutations(formNode, fallbackLeadId, btnNode) {
+  const editId = formNode.querySelector(".task-edit-id").value;
+  const desc = formNode.querySelector(".task-desc-input").value;
+  const targetDate = formNode.querySelector(".task-targetdate-input").value;
+
+  if (!targetDate) return alert("Target Date required.");
+  if (!desc || desc.trim() === "") return alert("Task Description is compulsory.");
+
+  const taskData = {
+    id: editId, isNew: false, leadRef: fallbackLeadId,
+    engineer: formNode.querySelector(".task-eng-select").value,
+    assigner: formNode.querySelector(".task-assigner-select").value,
+    type: formNode.querySelector(".task-type-select").value,
+    desc: desc,
+    shift: formNode.querySelector(".task-shift-select").value,
+    targetDate: targetDate,
+    status: formNode.querySelector(".task-status-select").value
+  };
+
+  btnNode.disabled = true; btnNode.innerHTML = 'Saving Changes...';
+  try {
+    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "saveTask", taskData }) });
+    const r = await res.json();
+    if (r.success) {
+      alert("Task modifications saved successfully.");
+      executeTaskMatrixSearch(); // Instant refresh
+    }
+  } catch(e) { alert("Matrix Update Error: " + e.message); }
+}
+
+async function removeMatrixTaskFromEngine(taskId) {
+  if (!confirm("Confirm task cancellation/removal?")) return;
+  try {
+    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "deleteTask", taskId: taskId }) });
+    const r = await res.json();
+    if (r.success) { executeTaskMatrixSearch(); }
+  } catch(e) { alert(e.message); }
+}
+
 </script>
 </body>
 </html>
