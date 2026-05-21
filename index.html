@@ -645,21 +645,17 @@ function navigateToModule(key) {
     resetSequentialFormState(); 
 }
 
-function returnToDashboard() { 
-  // 1. Force-collapse the form if open
-  collapseNewEntryDropdownFormExplicitly(); 
-  
-  // 2. Hide the workspace entirely
+function returnToDashboard() {
+  collapseNewEntryDropdownFormExplicitly();
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("dashboard-view").style.display = "block";
   
-  // 3. Clear the interaction canvas to ensure it's "fresh" next time
-  const canvas = document.getElementById("step2-inline-interaction-canvas");
-  canvas.style.display = "none";
+  // Clear the search results canvas
+  document.getElementById("step2-inline-interaction-canvas").style.display = "none";
   document.getElementById("multi-contact-records-container").innerHTML = "";
   
-  // 4. Reset specific module visibility
-  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+  // Re-enable the dropdown search block
+  document.getElementById("company-dropdown-selector-block").style.display = "block";
 }
 
 function revealNewEntryFormDropdown() { 
@@ -667,18 +663,13 @@ function revealNewEntryFormDropdown() {
   document.getElementById(container).appendChild(document.getElementById("step2-new-entry-dropdown"));;
 
   let companyName = "";
-    if (currentActiveModuleContext === "CARD") {
-        companyName = document.getElementById("f-company").value;
-    } else {
-        const dropdown = document.getElementById("lookup-module-company-dropdown");
-        // Use the text content of the selected option, not just the value if value is missing
-        companyName = dropdown.options[dropdown.selectedIndex].text;
-        
-        // If the dropdown is set to the default "Select..." option, show "No Company Specified"
-        if (dropdown.selectedIndex === 0) companyName = "No Company Specified";
-    }
-    
-    document.getElementById("dropform-company-locked").value = companyName;
+  if (currentActiveModuleContext === "CARD") {
+      companyName = document.getElementById("f-company").value;
+  } else {
+      const dropdown = document.getElementById("lookup-module-company-dropdown");
+      companyName = dropdown.options[dropdown.selectedIndex].text.split(" (")[0]; // Cleans the label to just the name
+  }
+  document.getElementById("dropform-company-locked").value = companyName || "No Company Specified";
   
   const targetedLockStringValue = (currentActiveModuleContext === "CARD") ? document.getElementById("f-company").value : document.getElementById("lookup-module-company-dropdown").value;
   
@@ -805,7 +796,7 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName) {
   
   const sanitizedTargetName = targetSearchName ? targetSearchName.toString().replace(/\s+/g, '').toLowerCase() : "";
 
-  leadsList.sort(function(a, b) {
+  leadsList.sort((a, b) => {
     let aNameClean = (a["Name"] || "").toString().replace(/\s+/g, '').toLowerCase();
     let bNameClean = (b["Name"] || "").toString().replace(/\s+/g, '').toLowerCase();
     let aMatches = (sanitizedTargetName !== "" && aNameClean === sanitizedTargetName);
@@ -814,7 +805,6 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName) {
     if (aMatches && !bMatches) return -1;
     if (!aMatches && bMatches) return 1;
     
-    // Sort by Lead ID (descending)
     let aId = parseInt(a["Lead ID"].split("-")[1]);
     let bId = parseInt(b["Lead ID"].split("-")[1]);
     return bId - aId; 
@@ -1282,6 +1272,9 @@ async function submitLead() {
   const btn = document.getElementById('submit-btn');
   btn.disabled = true; 
   btn.innerHTML = '<div class="spinner"></div> Saving...';
+
+  const statusField = document.getElementById('dropform-status');
+  if (!statusField.value) { alert("Lead Status is compulsory."); return;}
   
   const meetingDate = document.getElementById('meetingDate').value; // Always YYYY-MM-DD
   const meetingTime = document.getElementById('meetingTime').value; // Always HH:MM
