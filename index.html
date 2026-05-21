@@ -132,7 +132,7 @@
       </select>
     </div>
 
-    <label class="field-label" style="text-align: left; color: var(--text); font-weight: 700;">VERIFY ACCESS DOMAIN ACCOUNT</label>
+    <label class="field-label" style="text-align: left; color: var(--text); font-weight: 700;">VERIFY ACCESS ACCOUNT</label>
     <div id="google-auth-button-mount-point" style="display: flex; justify-content: center; margin-top: 15px; min-height: 40px;"></div>
   </div>
 </div>
@@ -154,7 +154,7 @@
       <div class="menu-card" id="mod-card" onclick="navigateToModule('cardDetails')"><div class="menu-title">Enter Card Details</div></div>
       <div class="menu-card" id="mod-company" onclick="navigateToModule('searchCompany')"><div class="menu-title">Search by Company Name</div></div>
       
-      <div class="menu-card" id="mod-email-whatsapp" onclick="navigateToModule('emailWhatsapp')"><div class="menu-title">Email and Whatsapp Leads</div></div>
+      <div class="menu-card" id="mod-email-whatsapp" onclick="navigateToModule('emailWhatsapp')"  style="border: 4px solid red;"><div class="menu-title">Email and Whatsapp Leads</div></div>
       <div class="menu-card" id="mod-tasks" onclick="navigateToModule('searchTasks')"><div class="menu-title">Search Tasks by Engineer Name</div></div>
       
       <div class="menu-card" id="mod-engineer" onclick="navigateToModule('searchEngineer')"><div class="menu-title">Search Leads and Follow Ups by Engineer Name</div></div>
@@ -215,7 +215,7 @@
 
     <div id="workspace-searchQualification" class="workspace-panel" style="display: none;">
       <div class="section">
-        <div class="section-header">Filter Directory by Qualification</div>
+        <div class="section-header">Filter Leads by Qualification</div>
         <div class="section-body">
           <label class="field-label" style="font-size: 0.8rem;">Select Qualifications</label>
           <div id="selected-quals-display" style="font-size: 0.8rem; font-weight: bold; color: var(--brand); margin-bottom: 6px;"></div>
@@ -227,7 +227,7 @@
 
     <div id="workspace-searchCityState" class="workspace-panel" style="display: none;">
       <div class="section">
-        <div class="section-header">Filter Directory by Location</div>
+        <div class="section-header">Filter Leads by Location</div>
         <div class="section-body">
           
           <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">1. Select Target States (Multiple)</label>
@@ -238,14 +238,14 @@
              <div class="pill-group" id="location-city-checkboxes-mount" style="margin: 0;"></div>
           </div>
           
-          <button class="btn btn-sub" id="city-state-search-submit-btn" onclick="triggerCityStateQuerySearchExecution()">Search Location Matrix</button>
+          <button class="btn btn-sub" id="city-state-search-submit-btn" onclick="triggerCityStateQuerySearchExecution()">Search Location</button>
         </div>
       </div>
     </div>
 
     <div id="workspace-searchStatus" class="workspace-panel" style="display: none;">
       <div class="section">
-        <div class="section-header">Filter Directory by Lead Status</div>
+        <div class="section-header">Filter Leads by Status</div>
         <div class="section-body">
           <label class="field-label">Select Target Status</label>
           <select id="status-filter-select" style="margin-bottom:10px;">
@@ -295,7 +295,7 @@
 
     <div id="workspace-emailWhatsapp" class="workspace-panel" style="display: none;">
       <div class="section">
-        <div class="section-header" style="border: 4px solid red;">Email and Whatsapp Leads Management</div>
+        <div class="section-header">Email and Whatsapp Leads Management</div>
         <div class="section-body" style="padding: 30px; text-align: center; color: var(--muted);">
           <h3>Section Coming Soon</h3>
           <p style="font-size: 0.85rem; margin-top: 8px;">Functional integration modules will be populated here.</p>
