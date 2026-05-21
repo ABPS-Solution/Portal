@@ -193,6 +193,8 @@
           <label class="field-label">Alt Phone</label><input type="tel" id="f-altphone" />
           <label class="field-label">Email</label><input type="email" id="f-email" />
           <label class="field-label">Website</label><input type="url" id="f-website" />
+          <label class="field-label">City *</label><input type="text" id="f-city" />
+          <label class="field-label">State *</label><input type="text" id="f-state" />
           <label class="field-label">Address</label><textarea id="f-address" style="min-height:28px;"></textarea>
           
           <button class="btn btn-sub" id="gate-search-btn" onclick="triggerSequentialSearch('CARD')" style="margin-top:6px;">Search Database</button>
@@ -330,6 +332,8 @@
             <label class="field-label">Alt Phone</label><input type="tel" id="dropform-altphone" />
             <label class="field-label">Email</label><input type="email" id="dropform-email" />
             <label class="field-label">Website</label><input type="url" id="dropform-website" />
+            <label class="field-label">City *</label><input type="text" id="dropform-city" />
+            <label class="field-label">State *</label><input type="text" id="dropform-state" />
             <label class="field-label">Company Address</label><textarea id="dropform-address" style="min-height:45px;"></textarea>
           </div>
         </div>
@@ -596,7 +600,7 @@
 </div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbytfMdcVhDi4qBdleS59ekFbvcLHGeOPuglRlPz8Vx9ITR2SgELlXzEkdevJqZbATGYNA/exec"; 
+const GAS_URL = "https://script.google.com/macros/s/AKfycbx3ZlbJhycYTgH-SnwD75us_KmW0uLHdeE-FKJDNWu6t_TEZl4eswZQ8adOJT8kXop5Bw/exec"; 
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -690,6 +694,78 @@ async function handleGooglePlatformCredentialResponse(response) {
     }
   } catch (e) {
     alert("Connection verification failure payload dropped: " + e.message);
+  }
+}
+
+async function parseCard() {
+  const btn = document.getElementById('parse-btn');
+  if (!fileFront) return alert("Please capture or select the Front Side of the business card first.");
+  
+  btn.disabled = true;
+  btn.classList.add("loading");
+  btn.textContent = "AI Parsing Card...";
+  
+  try {
+    // 1. Convert files into Base64 formats strings parameters
+    const getBase64 = file => new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(',')[1]);
+      r.onerror = e => rej(e);
+      r.readAsDataURL(file);
+    });
+    
+    const base64Front = await getBase64(fileFront);
+    const base64Back = fileBack ? await getBase64(fileBack) : null;
+    
+    // 2. Fire payload hit directly to your Apps Script doPost endpoint
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "parse",
+        sessionToken: localStorage.getItem("sessionToken"),
+        activeEngineer: appActiveOperatorIdentityString,
+        image: base64Front,
+        imageBack: base64Back
+      })
+    });
+    
+    const data = await res.json();
+    
+    // 3. Drill down into the Gemini API raw response text node wrapper
+    if (data && data.candidates && data.candidates[0].content.parts[0].text) {
+      let rawText = data.candidates[0].content.parts[0].text;
+      
+      // Clean markdown code blocks if Gemini accidentally wraps its response in ```json
+      if (rawText.includes("```")) {
+        rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+      }
+      
+      const resultData = JSON.parse(rawText);
+      
+      // 4. DESTINATION HANDLER: Inject properties directly into your frontend inputs
+      document.getElementById("f-company").value = resultData.company || "";
+      document.getElementById("f-name").value = resultData.name || "";
+      document.getElementById("f-position").value = resultData.position || "";
+      document.getElementById("f-phone").value = resultData.phone || "";
+      document.getElementById("f-altphone").value = resultData.altPhone || "";
+      document.getElementById("f-email").value = resultData.email || "";
+      document.getElementById("f-website").value = resultData.website || "";
+      document.getElementById("f-address").value = resultData.address || "";
+      
+      // Injected clean target location assignments
+      if (document.getElementById("f-city")) document.getElementById("f-city").value = resultData.city || "";
+      if (document.getElementById("f-state")) document.getElementById("f-state").value = resultData.state || "";
+      
+      alert("AI Parsing Complete! Review the fields below before searching or submitting.");
+    } else {
+      alert("AI Parsing failed: Invalid response format from the language model engine.");
+    }
+  } catch (e) {
+    alert("Card parsing network execution crash: " + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove("loading");
+    btn.textContent = "Parse Card with AI";
   }
 }
 
@@ -1058,6 +1134,7 @@ function resetSequentialFormState() {
   document.getElementById('remaining-sections-form').style.display = 'block';
   document.getElementById('success-screen').style.display = 'none';
   
+  // Clear all standard input elements
   const inputs = document.querySelectorAll('#remaining-sections-form input, #remaining-sections-form textarea, #remaining-sections-form select');
   inputs.forEach(input => {
       if(input.type === 'checkbox' || input.type === 'radio') {
@@ -1072,6 +1149,9 @@ function resetSequentialFormState() {
           input.value = '';
       }
   });
+
+  if (document.getElementById("dropform-city")) document.getElementById("dropform-city").value = "";
+  if (document.getElementById("dropform-state")) document.getElementById("dropform-state").value = "";
 
   document.querySelectorAll('.other-input, #vendor-fields').forEach(el => el.style.display = 'none');
 }
@@ -1097,6 +1177,7 @@ function toggleDropdownNo(selectNode, inputId) {
 
 function revealNewEntryFormDropdown() { 
   const container = (currentActiveModuleContext === "CARD") ? "workspace-cardDetails" : "workspace-searchCompany";
+  
   document.getElementById(container).appendChild(document.getElementById("step2-new-entry-dropdown"));
 
   let companyName = "";
@@ -1114,6 +1195,8 @@ function revealNewEntryFormDropdown() {
   document.getElementById("dropform-altphone").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-altphone").value : "";
   document.getElementById("dropform-email").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-email").value : "";
   document.getElementById("dropform-website").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-website").value : "";
+  document.getElementById("dropform-city").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-city").value : "";
+  document.getElementById("dropform-state").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-state").value : "";
   document.getElementById("dropform-address").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-address").value : "";
 
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
@@ -1231,6 +1314,8 @@ function revealNewEntryFormDropdownFromBanner() {
   document.getElementById("dropform-altphone").value = document.getElementById("f-altphone").value || "";
   document.getElementById("dropform-email").value = document.getElementById("f-email").value || "";
   document.getElementById("dropform-website").value = document.getElementById("f-website").value || "";
+  document.getElementById("dropform-city").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-city").value : "";
+  document.getElementById("dropform-state").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-state").value : "";
   document.getElementById("dropform-address").value = document.getElementById("f-address").value || "";
 
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "none"; 
@@ -1810,6 +1895,8 @@ async function submitLead() {
       altPhone: document.getElementById('dropform-altphone').value.trim() || document.getElementById('f-altphone').value.trim(),
       email: document.getElementById('dropform-email').value.trim() || document.getElementById('f-email').value.trim(), 
       website: document.getElementById('dropform-website').value.trim() || document.getElementById('f-website').value.trim(), 
+      city: document.getElementById('dropform-city').value.trim() || document.getElementById('f-city').value.trim(),
+      state: document.getElementById('dropform-state').value.trim() || document.getElementById('f-state').value.trim(),
       address: document.getElementById('dropform-address').value.trim() || document.getElementById('f-address').value.trim(),
       meetingDate: meetingDate, 
       meetingTime: meetingTime,
