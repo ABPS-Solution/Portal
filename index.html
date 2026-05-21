@@ -368,7 +368,7 @@
       <div class="section">
         <div class="section-header">Filter Directory by Lead Status</div>
         <div class="section-body">
-          <label class="field-label">Select Target Status</label>
+          <label class="field-label">Select Lead Status</label>
           <select id="status-filter-select" style="margin-bottom:10px;">
             <option value="">— Select Status —</option>
             <option value="Status1">Status1</option>
@@ -722,7 +722,6 @@ function collapseNewEntryDropdownFormExplicitly() {
   }
 }
 
-
 async function triggerSequentialSearch(triggerSourceMode) {
   let comp = ""; let targetName = "";
   let btn = null;
@@ -735,7 +734,6 @@ async function triggerSequentialSearch(triggerSourceMode) {
     targetName = document.getElementById("f-name").value;
     btn = document.getElementById("gate-search-btn");
   } else {
-    // Read the selected value BEFORE updating button text elements to avoid state mutation drop leaks
     const dropdown = document.getElementById("lookup-module-company-dropdown");
     comp = dropdown.value;
     targetName = ""; 
@@ -749,13 +747,20 @@ async function triggerSequentialSearch(triggerSourceMode) {
   btn.innerHTML = '<div class="spinner"></div> Searching...';
   
   try {
+    // FIX: Rebuild the structural canvas header row to wipe out stale qualification/status bars
+    const headerRowEnclosure = document.getElementById("canvas-back-btn-enclosure-row");
+    if (headerRowEnclosure) {
+      headerRowEnclosure.innerHTML = `
+        <button class="nav-btn-styled" onclick="exitCanvasToCardView()" style="background:#4a5568;">Back to Search</button>
+      `;
+    }
+
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "searchCompanyData", companyName: comp, contactName: targetName }) });
     const data = await res.json();
     
     const activePanelId = (triggerSourceMode === "CARD") ? "workspace-cardDetails" : "workspace-searchCompany";
     const activePanel = document.getElementById(activePanelId);
     
-    // Maintain a clean DOM hierarchy: canvas appends below filter forms
     activePanel.appendChild(document.getElementById("missing-trigger-notice-block"));
     activePanel.appendChild(document.getElementById("step2-inline-interaction-canvas"));
     
@@ -782,13 +787,11 @@ async function triggerSequentialSearch(triggerSourceMode) {
       if(triggerSourceMode === "CARD") document.getElementById("step1-card-capture-block").style.display = "none";
       if(triggerSourceMode === "DROPDOWN") document.getElementById("company-dropdown-selector-block").style.display = "none";
       
-      // Setup structural elements for global nav headers
       document.getElementById("main-global-nav-header-bar").insertBefore(
         document.getElementById("inline-creation-header-controls-block"),
         document.getElementById("main-global-nav-header-bar").firstChild
       );
       
-      // ONLY render Create Entry button if we are inside Company Name or Card details context views
       if (currentActiveModuleContext === "CARD" || currentActiveModuleContext === "DROPDOWN") {
         document.getElementById("global-direct-inline-create-entry-btn").style.display = "inline-flex";
       } else {
