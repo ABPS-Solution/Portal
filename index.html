@@ -57,7 +57,6 @@
   .grid-cell-item label { font-size: 0.58rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 1px; }
   .grid-cell-item input, .grid-cell-item select, .grid-cell-item textarea { padding: 2px 4px; font-size: 0.78rem; font-weight: 600; border-radius: 3px; border: 1px solid var(--border); }
   
-  /* Redesigned Area of Concerns Horizontal Layout Rules */
   .aoc-split-row-box { display: grid; grid-template-columns: 85px 1fr; gap: 8px; align-items: center; width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 6px; }
   .aoc-split-row-box select { padding: 4px 6px; font-weight: 700; color: var(--brand); text-align: center; }
   .aoc-split-row-box input { border: 1px solid var(--border); }
@@ -79,16 +78,13 @@
   .btn-ai { background: var(--accent); color: #fff; margin-bottom: 4px; padding: 4px; }
   .btn-warn { background: #718096; color: #fff; }
 
-  /* Make Qualifications bigger */
   #qual-filter-checkboxes { gap: 10px; }
   #qual-filter-checkboxes label { font-size: 0.9rem !important; padding: 8px 12px !important; border-radius: 20px !important; }
 
-  /* Loading animation for buttons */
   .btn.loading { opacity: 0.7; cursor: wait; pointer-events: none; }
   .btn.loading::after { content: " ..."; animation: blink 1.2s infinite;}
   @keyframes blink { 50% { opacity: 0; } }
 
-  /* Centered status bar */
   .qualification-status-bar {
       display: flex; justify-content: center; align-items: center;
       padding: 8px; background: #edf2f7; border-radius: 6px;
@@ -149,6 +145,8 @@
       <div class="menu-card" id="mod-qual" onclick="navigateToModule('searchQualification')"><div class="menu-title">Search by Qualification</div></div>
       <div class="menu-card" id="mod-status" onclick="navigateToModule('searchStatus')"><div class="menu-title">Search by Lead Status</div></div>
       <div class="menu-card" id="mod-engineer" onclick="navigateToModule('searchEngineer')"><div class="menu-title"> Search Leads and Follow Ups by Engineer Name</div></div>
+      <div class="menu-card" id="mod-tasks" onclick="navigateToModule('searchTasks')"><div class="menu-title">Search Tasks by Engineer Name</div></div>
+      <div class="menu-card" id="mod-email-whatsapp" onclick="navigateToModule('emailWhatsapp')"><div class="menu-title">Email and Whatsapp Leads</div></div>
     </div>
   </div>
 
@@ -203,12 +201,69 @@
         <div class="section-header">Filter Directory by Qualification</div>
         <div class="section-body">
           <label class="field-label" style="font-size: 0.8rem;">Select Qualifications</label>
-          
-          <!-- Added to catch script text adjustments -->
           <div id="selected-quals-display" style="font-size: 0.8rem; font-weight: bold; color: var(--brand); margin-bottom: 6px;"></div>
-          
           <div class="pill-group" id="qual-filter-checkboxes" style="margin: 10px 0;"></div>
           <button class="btn btn-sub" id="qual-search-btn" onclick="triggerQualificationSearch()">Search Qualifications</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="workspace-searchStatus" class="workspace-panel" style="display: none;">
+      <div class="section">
+        <div class="section-header">Filter Directory by Lead Status</div>
+        <div class="section-body">
+          <label class="field-label">Select Target Status</label>
+          <select id="status-filter-select" style="margin-bottom:10px;">
+            <option value="">— Select Status —</option>
+            <option value="Status1">Status1</option>
+            <option value="Status2">Status2</option>
+            <option value="Status3">Status3</option>
+            <option value="Status4">Status4</option>
+          </select>
+          <button class="btn btn-sub" id="status-search-btn" onclick="triggerStatusSearch()">Search Leads</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="workspace-searchEngineer" class="workspace-panel" style="display: none;">
+      <div class="section">
+        <div class="section-header">Filter Leads by Engineer</div>
+        <div class="section-body">
+          <label class="field-label">Select Engineer</label>
+          <select id="engineer-filter-select" style="margin-bottom:10px;">
+            <option value="">— Select Engineer —</option>
+          </select>
+          <button class="btn btn-sub" id="eng-search-btn" onclick="triggerEngineerSearch()">Search Leads</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="workspace-searchTasks" class="workspace-panel" style="display: none;">
+      <div class="section">
+        <div class="section-header">Search Tasks Matrix Board</div>
+        <div class="section-body" style="text-align: left;">
+          <label class="field-label" style="font-size:0.8rem;">Filter By Engineers</label>
+          <div class="pill-group" id="task-matrix-engineer-checkboxes" style="margin:8px 0 16px;"></div>
+          
+          <label class="field-label" style="font-size:0.8rem;">Filter By Task Status</label>
+          <div class="pill-group" id="task-matrix-status-checkboxes" style="margin:8px 0 16px;">
+            <input type="checkbox" name="taskMatrixStatus" value="TS1" id="tms_ts1" onchange="executeTaskMatrixSearch()"><label for="tms_ts1">TS1</label>
+            <input type="checkbox" name="taskMatrixStatus" value="TS2" id="tms_ts2" onchange="executeTaskMatrixSearch()"><label for="tms_ts2">TS2</label>
+            <input type="checkbox" name="taskMatrixStatus" value="TS3" id="tms_ts3" onchange="executeTaskMatrixSearch()"><label for="tms_ts3">TS3</label>
+            <input type="checkbox" name="taskMatrixStatus" value="TS4" id="tms_ts4" onchange="executeTaskMatrixSearch()"><label for="tms_ts4">TS4</label>
+          </div>
+          <button class="btn btn-sub" id="task-matrix-search-btn" onclick="executeTaskMatrixSearch()">Run Matrix Search Filter</button>
+        </div>
+      </div>
+      <div id="task-matrix-results-output-node" style="margin-top:12px;"></div>
+    </div>
+
+    <div id="workspace-emailWhatsapp" class="workspace-panel" style="display: none;">
+      <div class="section">
+        <div class="section-header">Email and Whatsapp Leads Management</div>
+        <div class="section-body" style="padding: 30px; text-align: center; color: var(--muted);">
+          <h3>Section Coming Soon</h3>
+          <p style="font-size: 0.85rem; margin-top: 8px;">Functional integration modules will be populated here.</p>
         </div>
       </div>
     </div>
@@ -264,7 +319,7 @@
             <div class="pill-group"><input type="radio" name="businessVertical" value="Industrial" id="bv1"><label for="bv1">Industrial</label><input type="radio" name="businessVertical" value="Power" id="bv2"><label for="bv2">Power</label></div>
             <label class="field-label">Type of Industry</label><input type="text" id="industry" />
             <label class="field-label">Qualification (Multiple)</label>
-            <div class="pill-group"><input type="checkbox" name="qualification" value="Industry" id="q1" onchange="handleQualChange()"><label for="q1">Industry</label><input type="checkbox" name="qualification" value="Vendor" id="q8" onchange="handleQualChange()"><label for="q8">Vendor</label></div>
+            <div class="pill-group"><input type="checkbox" name="qualification" value="Industry" id="q1"><label for="q1">Industry</label><input type="checkbox" name="qualification" value="Vendor" id="q8"><label for="q8">Vendor</label></div>
             <div id="vendor-fields" style="display:none; margin-top:10px;"><label class="field-label">Materials Name</label><input type="text" id="materialsName" /></div>
           </div>
         </div>
@@ -340,7 +395,7 @@
         <div class="section">
           <div class="section-header">Section 7 — Engineer Info</div>
           <div class="section-body">
-            <label class="field-label">Assign Creator Name</label>
+            <label class="field-label">Assign Creator Name *</label>
             <select id="engName"><option value="">Loading Dynamic Listing...</option></select>
             
             <label class="field-label">Lead Status</label>
@@ -362,35 +417,6 @@
       </div>
       <div id="split-missing-person-banner-hook"></div>
       <div id="multi-contact-records-container"></div>
-    </div>
-
-    <div id="workspace-searchStatus" class="workspace-panel" style="display: none;">
-      <div class="section">
-        <div class="section-header">Filter Directory by Lead Status</div>
-        <div class="section-body">
-          <label class="field-label">Select Lead Status</label>
-          <select id="status-filter-select" style="margin-bottom:10px;">
-            <option value="">— Select Status —</option>
-            <option value="Status1">Status1</option>
-            <option value="Status2">Status2</option>
-            <option value="Status3">Status3</option>
-            <option value="Status4">Status4</option>
-          </select>
-          <button class="btn btn-sub" id="status-search-btn" onclick="triggerStatusSearch()">Search Leads</button>
-        </div>
-      </div>
-    </div>
-    <div id="workspace-searchEngineer" class="workspace-panel" style="display: none;">
-      <div class="section">
-        <div class="section-header">Filter Leads by Engineer</div>
-        <div class="section-body">
-          <label class="field-label">Select Engineer</label>
-          <select id="engineer-filter-select" style="margin-bottom:10px;">
-            <option value="">— Select Engineer —</option>
-          </select>
-          <button class="btn btn-sub" id="eng-search-btn" onclick="triggerEngineerSearch()">Search Leads</button>
-        </div>
-      </div>
     </div>
   </div>
 </div>
@@ -454,10 +480,9 @@
 </div>
 
 <script>
-// --- CENTRAL CONFIGURATION HUB ---
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw4opBzfzaoMH0-KIu53zT1BApELh0WzgyE4fr1BVTSTPbVviisWCb9EE48ZsfVBwfV2w/exec"; 
-const CLOUD_NAME   = "dcdhahrhz";          
-const UPLOAD_PRESET = "ABPS Leads Form";      
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxvG4ANlIqdC1I3BNq8VRnYae2neLRGW6t4wTnydzzdqf7KRy-YFrjHBad_9uzbyzqVPA/exec"; 
+const CLOUD_NAME = "your_actual_cloud_name"; 
+const UPLOAD_PRESET = "your_actual_upload_preset"; 
 
 let fileFront = null, fileBack = null;
 
@@ -473,7 +498,7 @@ document.getElementById('card-back').onchange = (e) => {
   document.getElementById('back-box').classList.add('done');
 };
 
-let userPermissions = { cardDetails: false, searchCompany: false, searchStatus: false, searchEngineer: false };
+let userPermissions = { cardDetails: false, searchCompany: false, searchStatus: false, searchEngineer: false, searchTasks: false, emailWhatsapp: false };
 let cachedEngineers = [];
 let activeSearchRef = ""; 
 let activeSearchCompany = "";
@@ -492,12 +517,6 @@ function cleanISTTimestamp(rawStr) {
   let dateObj = new Date(str);
   if (isNaN(dateObj.getTime())) return str;
   
-  let year = dateObj.getFullYear();
-  if (year === 1899) {
-    let hours = dateObj.getHours(); let minutes = dateObj.getMinutes();
-    let ampm = hours >= 12 ? 'pm' : 'am'; hours = hours % 12; hours = hours ? hours : 12;
-    return hours + ":" + String(minutes).padStart(2,'0') + " " + ampm;
-  }
   let hours = dateObj.getHours(); let minutes = dateObj.getMinutes();
   let ampm = hours >= 12 ? 'pm' : 'am'; hours = hours % 12; hours = hours ? hours : 12;
   return hours + ":" + String(minutes).padStart(2,'0') + " " + ampm;
@@ -535,27 +554,24 @@ async function executeLogin() {
 function executeLogout() { localStorage.clear(); document.getElementById("app-container").style.display = "none"; document.getElementById("auth-container").style.display = "flex"; }
 
 async function showAppView() {
-  // 1. UI Visibility Toggle
   document.getElementById("auth-container").style.display = "none"; 
   document.getElementById("app-container").style.display = "block";
   document.getElementById("dashboard-view").style.display = "block"; 
   document.getElementById("module-workspace-container").style.display = "none";
   
-  // 2. Set User Meta
   document.getElementById("display-full-name").textContent = localStorage.getItem("userFirstName") + " " + localStorage.getItem("userLastName");
   document.getElementById("display-username").textContent = "@" + localStorage.getItem("sessionUser");
   
-  // 3. Load Qualification filter checkboxes
   loadQualFilter();
 
-  // 4. Permission-based menu locking
-  // Mappings for the menu cards
   const menuPermissions = [
     { id: "mod-card", key: "cardDetails" },
     { id: "mod-company", key: "searchCompany" },
     { id: "mod-qual", key: "searchQualification" },
     { id: "mod-status", key: "searchStatus" },
-    { id: "mod-engineer", key: "searchEngineer" }
+    { id: "mod-engineer", key: "searchEngineer" },
+    { id: "mod-tasks", key: "searchTasks" },
+    { id: "mod-email-whatsapp", key: "emailWhatsapp" }
   ];
 
   menuPermissions.forEach(item => {
@@ -563,7 +579,6 @@ async function showAppView() {
     if (el) el.classList.toggle("locked", !userPermissions[item.key]);
   });
 
-  // 5. Fetch and Populate Engineer Dropdowns
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "getEngineers" }) });
     const data = await res.json();
@@ -571,33 +586,35 @@ async function showAppView() {
       cachedEngineers = data.engineers; 
       populateEngineerDropdowns(); 
       
-      // Populate Engineer Filter for "Search Leads and Follow Ups by Engineer Name"
       const engDrop = document.getElementById("engineer-filter-select");
       if (engDrop) {
         engDrop.innerHTML = '<option value="">— Select Engineer —</option>';
         cachedEngineers.forEach(eng => {
-          let opt = document.createElement("option");
-          opt.value = eng;
-          opt.textContent = eng;
-          engDrop.appendChild(opt);
+          let opt = document.createElement("option"); opt.value = eng; opt.textContent = eng; engDrop.appendChild(opt);
+        });
+      }
+
+      const matrixEngBoxEnclosure = document.getElementById("task-matrix-engineer-checkboxes");
+      if (matrixEngBoxEnclosure) {
+        matrixEngBoxEnclosure.innerHTML = "";
+        cachedEngineers.forEach(eng => {
+          matrixEngBoxEnclosure.innerHTML += `
+            <input type="checkbox" name="taskMatrixEngineer" value="${eng}" id="chk_tm_eng_${eng.replace(/\s+/g, '_')}" onchange="executeTaskMatrixSearch()">
+            <label for="chk_tm_eng_${eng.replace(/\s+/g, '_')}">${eng}</label>
+          `;
         });
       }
     }
   } catch(e) { console.error("Engineer load error:", e.message); }
   
-  // 6. Fetch initial company list for dropdown search
   triggerCompanyDropdownArrayFetch();
-
 }
 
 function populateEngineerDropdowns() {
-  const menus = ["engName"];
-  menus.forEach(mId => {
-    const el = document.getElementById(mId); if (!el) return;
-    el.innerHTML = '<option value="">— Select —</option>';
-    cachedEngineers.forEach(eng => {
-      let opt = document.createElement("option"); opt.textContent = eng; el.appendChild(opt);
-    });
+  const el = document.getElementById("engName"); if (!el) return;
+  el.innerHTML = '<option value="">— Select —</option>';
+  cachedEngineers.forEach(eng => {
+    let opt = document.createElement("option"); opt.textContent = eng; el.appendChild(opt);
   });
 }
 
@@ -608,28 +625,22 @@ async function triggerCompanyDropdownArrayFetch() {
     if (d.success) {
       const dropdown = document.getElementById("lookup-module-company-dropdown");
       if (!dropdown) return;
-      
       dropdown.innerHTML = '<option value="">— Select Company —</option>';
       d.companies.forEach(item => {
-        let opt = document.createElement("option");
-        opt.value = item.companyValue;
-        opt.textContent = item.displayLabel;
-        dropdown.appendChild(opt);
+        let opt = document.createElement("option"); opt.value = item.companyValue; opt.textContent = item.displayLabel; dropdown.appendChild(opt);
       });
     }
-  } catch(e) { console.error("Error loading dropdown array metadata:", e.message); }
+  } catch(e) { console.error(e.message); }
 }
 
 function resetSequentialFormState() {
   document.getElementById('remaining-sections-form').style.display = 'block';
   document.getElementById('success-screen').style.display = 'none';
-  
-  // Clear all input fields
   const inputs = document.querySelectorAll('#remaining-sections-form input, #remaining-sections-form textarea, #remaining-sections-form select');
   inputs.forEach(input => {
       if(input.type === 'checkbox' || input.type === 'radio') {
           input.checked = false;
-      } else if (input.id !== 'dropform-company-locked') { // Don't clear the locked company
+      } else if (input.id !== 'dropform-company-locked') {
           input.value = '';
       }
   });
@@ -638,47 +649,40 @@ function resetSequentialFormState() {
 function navigateToModule(key) { 
     if (!userPermissions[key]) return alert("Denied."); 
     
-    // 1. Reset and move the reusable canvas element back to the main body root safely
     const canvas = document.getElementById("step2-inline-interaction-canvas");
     if (canvas) {
         canvas.style.display = "none";
-        document.body.appendChild(canvas); // Keeps it safe from being wiped out or lost inside a hidden panel
+        document.body.appendChild(canvas);
     }
     
-    // 2. Hide dashboard view panel
     document.getElementById("dashboard-view").style.display = "none"; 
     document.getElementById("module-workspace-container").style.display = "block"; 
-    
-    // 3. Hide all module workspace panels completely
     document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none"); 
-    
-    // 4. Reveal the target panel fresh
     document.getElementById("workspace-" + key).style.display = "block"; 
     
-    // 5. Clean stale data strings out of your interaction layout views
     document.getElementById("multi-contact-records-container").innerHTML = "";
     document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
     document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
     document.getElementById("missing-trigger-notice-block").style.display = "none";
     
-    // 6. Manage state context
+    const taskOutputNode = document.getElementById("task-matrix-results-output-node");
+    if (taskOutputNode) taskOutputNode.innerHTML = "";
+    
+    // Clear dynamic selection states from previous sessions
+    document.querySelectorAll('input[name="taskMatrixStatus"], input[name="taskMatrixEngineer"]').forEach(cb => cb.checked = false);
+
     currentActiveModuleContext = key === "cardDetails" ? "CARD" : "DROPDOWN";
     resetSequentialFormState(); 
 }
 
 function returnToDashboard() { 
   collapseNewEntryDropdownFormExplicitly(); 
-  
-  // Hide the workspace entirely
   document.getElementById("module-workspace-container").style.display = "none";
-  document.getElementById("dashboard-view").style.display = "block";
+  document.getElementById("dashboard-view").style.block = "block";
   
-  // Clear layout containers completely
   const canvas = document.getElementById("step2-inline-interaction-canvas");
   canvas.style.display = "none";
   document.getElementById("multi-contact-records-container").innerHTML = "";
-  
-  // Explicitly strip structural navigation button rendering states
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
   document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
   
@@ -687,18 +691,16 @@ function returnToDashboard() {
 
 function revealNewEntryFormDropdown() { 
   const container = (currentActiveModuleContext === "CARD") ? "workspace-cardDetails" : "workspace-searchCompany";
-  document.getElementById(container).appendChild(document.getElementById("step2-new-entry-dropdown"));;
+  document.getElementById(container).appendChild(document.getElementById("step2-new-entry-dropdown"));
 
   let companyName = "";
   if (currentActiveModuleContext === "CARD") {
       companyName = document.getElementById("f-company").value;
   } else {
       const dropdown = document.getElementById("lookup-module-company-dropdown");
-      companyName = dropdown.options[dropdown.selectedIndex].text.split(" (")[0]; // Cleans the label to just the name
+      companyName = dropdown.options[dropdown.selectedIndex].text.split(" (")[0];
   }
   document.getElementById("dropform-company-locked").value = companyName || "No Company Specified";
-  
-  const targetedLockStringValue = (currentActiveModuleContext === "CARD") ? document.getElementById("f-company").value : document.getElementById("lookup-module-company-dropdown").value;
   
   document.getElementById("dropform-name").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-name").value : "";
   document.getElementById("dropform-position").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-position").value : "";
@@ -717,7 +719,7 @@ function revealNewEntryFormDropdown() {
 function collapseNewEntryDropdownFormExplicitly() {
   document.getElementById("step2-new-entry-dropdown").style.display = "none";
   document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
-  if (document.getElementById("step2-inline-interaction-canvas").style.display === "block") {
+  if (document.getElementById("step2-inline-interaction-canvas").style.display === "block" && (currentActiveModuleContext === "CARD" || currentActiveModuleContext === "DROPDOWN")) {
     document.getElementById("global-direct-inline-create-entry-btn").style.display = "inline-flex";
   }
 }
@@ -743,16 +745,11 @@ async function triggerSequentialSearch(triggerSourceMode) {
   
   if (!comp) return alert("Specify Company parameters.");
   
-  btn.disabled = true; 
-  btn.innerHTML = '<div class="spinner"></div> Searching...';
-  
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Searching...';
   try {
-    // FIX: Rebuild the structural canvas header row to wipe out stale qualification/status bars
     const headerRowEnclosure = document.getElementById("canvas-back-btn-enclosure-row");
     if (headerRowEnclosure) {
-      headerRowEnclosure.innerHTML = `
-        <button class="nav-btn-styled" onclick="exitCanvasToCardView()" style="background:#4a5568;">Back to Search</button>
-      `;
+      headerRowEnclosure.innerHTML = `<button class="nav-btn-styled" onclick="exitCanvasToCardView()" style="background:#4a5568;">Back to Search</button>`;
     }
 
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "searchCompanyData", companyName: comp, contactName: targetName }) });
@@ -804,10 +801,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
       document.getElementById("missing-trigger-notice-block").style.display = "block";
       document.getElementById("step2-inline-interaction-canvas").style.display = "none";
     }
-  } catch(e) { alert(e.message); } finally { 
-    btn.disabled = false; 
-    btn.innerHTML = triggerSourceMode === "CARD" ? "Search Database" : "Search Company"; 
-  }
+  } catch(e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = triggerSourceMode === "CARD" ? "Search Database" : "Search Company"; }
 }
 
 function revealNewEntryFormDropdownFromBanner() {
@@ -815,7 +809,6 @@ function revealNewEntryFormDropdownFromBanner() {
   const parentId = (currentActiveModuleContext === "CARD") ? "workspace-cardDetails" : "workspace-searchCompany";
   document.getElementById(parentId).appendChild(document.getElementById("step2-new-entry-dropdown"));
   
-  // FIX: Retain and populate all parsed fields when a record is missing matching criteria properties maps
   document.getElementById("dropform-company-locked").value = activeSearchCompany;
   document.getElementById("dropform-name").value = document.getElementById("f-name").value || "";
   document.getElementById("dropform-position").value = document.getElementById("f-position").value || "";
@@ -842,7 +835,6 @@ function returnToDirectoryCardsFromFormView() {
 function buildMultiContactDirectoryInterface(leadsList, targetSearchName) {
   const container = document.getElementById("multi-contact-records-container");
   container.innerHTML = "";
-  
   const sanitizedTargetName = targetSearchName ? targetSearchName.toString().replace(/\s+/g, '').toLowerCase() : "";
 
   leadsList.sort((a, b) => {
@@ -850,13 +842,9 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName) {
     let bNameClean = (b["Name"] || "").toString().replace(/\s+/g, '').toLowerCase();
     let aMatches = (sanitizedTargetName !== "" && aNameClean === sanitizedTargetName);
     let bMatches = (sanitizedTargetName !== "" && bNameClean === sanitizedTargetName);
-    
     if (aMatches && !bMatches) return -1;
     if (!aMatches && bMatches) return 1;
-    
-    let aId = parseInt(a["Lead ID"].split("-")[1]);
-    let bId = parseInt(b["Lead ID"].split("-")[1]);
-    return bId - aId; 
+    return parseInt(b["Lead ID"].split("-")[1]) - parseInt(a["Lead ID"].split("-")[1]); 
   });
 
   leadsList.forEach(lead => {
@@ -864,11 +852,8 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName) {
     let wrapperCard = document.createElement("div");
     wrapperCard.className = "contact-summary-card-parent";
     wrapperCard.id = `contact-parent-wrapper-${tRef}`;
-    
     let cardDisplayName = (lead["Name"] && lead["Name"].toString().trim() !== "") ? lead["Name"] : "Unspecified";
-    let leadCleanedName = cardDisplayName.toString().replace(/\s+/g, '').toLowerCase();
-
-    if (sanitizedTargetName !== "" && leadCleanedName === sanitizedTargetName) {
+    if (sanitizedTargetName !== "" && cardDisplayName.toString().replace(/\s+/g, '').toLowerCase() === sanitizedTargetName) {
       wrapperCard.className += " search-highlighted-focus-node";
     }
 
@@ -876,16 +861,12 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName) {
       <div class="contact-summary-header-row">
         <div class="contact-summary-title-info">
           <div class="meta-row-line-block" style="margin-bottom: 6px;">
-            <span style="background: #e2e8f0;">Company:</span>
-            <strong style="margin-right: 20px;">${lead["Company"]}</strong>
-            <span style="background: #edf2f7;">Status:</span>
-            <strong id="card-lbl-status-${tRef}">${lead["Status"] || "N/A"}</strong>
+            <span style="background: #e2e8f0;">Company:</span><strong style="margin-right: 20px;">${lead["Company"]}</strong>
+            <span style="background: #edf2f7;">Status:</span><strong id="card-lbl-status-${tRef}">${lead["Status"] || "N/A"}</strong>
           </div>
           <div class="meta-row-line-block">
-            <span style="background: #e2e8f0;">Name:</span>
-            <strong style="margin-right: 20px;" id="card-lbl-name-${tRef}">${cardDisplayName}</strong>
-            <span style="background: #edf2f7;">Position:</span>
-            <strong id="card-lbl-pos-${tRef}">${lead["Position"] || "Unspecified"}</strong>
+            <span style="background: #e2e8f0;">Name:</span><strong style="margin-right: 20px;" id="card-lbl-name-${tRef}">${cardDisplayName}</strong>
+            <span style="background: #edf2f7;">Position:</span><strong id="card-lbl-pos-${tRef}">${lead["Position"] || "Unspecified"}</strong>
           </div>
         </div>
         <div class="directory-btn-actions-block">
@@ -898,7 +879,6 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName) {
         <div class="child-injected-modules-mount-point" id="modules-mount-${tRef}" style="margin-top:10px;"></div>
       </div>
     `;
-
     container.appendChild(wrapperCard);
   });
 }
@@ -917,7 +897,6 @@ function toggleContactExpansionView(leadRef, encodedLeadMap) {
     
     const leadMap = JSON.parse(decodeURIComponent(encodedLeadMap));
     activeSearchRef = leadRef; 
-    
     buildTargetedLeadsFormCanvas(leadRef, leadMap);
     
     const templateClone = document.getElementById("reusable-child-modules-template").cloneNode(true);
@@ -1007,30 +986,14 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         });
         cell.appendChild(sel);
       } else if (["Date of Meeting", "Expected Tender / RFQ Date"].indexOf(key) !== -1) {
-        let inp = document.createElement("input");
-        inp.type = "date";
-        inp.className = 'live-lead-field-input-' + leadRef;
-        inp.dataset.headerKey = key;
-        
+        let inp = document.createElement("input"); inp.type = "date"; inp.className = 'live-lead-field-input-' + leadRef; inp.dataset.headerKey = key;
         let rawDate = leadMap[key];
-        if (rawDate) {
-            // This regex ensures we only grab YYYY-MM-DD
-            let match = rawDate.toString().match(/(\d{4}-\d{2}-\d{2})/);
-            inp.value = match ? match[1] : "";
-        }
+        if (rawDate) { let match = rawDate.toString().match(/(\d{4}-\d{2}-\d{2})/); inp.value = match ? match[1] : ""; }
         cell.appendChild(inp);
       } else if (["Time of Meeting", "Meeting Time"].indexOf(key) !== -1) {
-        let inp = document.createElement("input");
-        inp.type = "time";
-        inp.className = 'live-lead-field-input-' + leadRef;
-        inp.dataset.headerKey = key;
-        
+        let inp = document.createElement("input"); inp.type = "time"; inp.className = 'live-lead-field-input-' + leadRef; inp.dataset.headerKey = key;
         let rawTime = leadMap[key];
-        if (rawTime) {
-            // Extract HH:MM directly
-            let timeMatch = rawTime.toString().match(/(\d{1,2}:\d{2})/);
-            inp.value = timeMatch ? timeMatch[0] : "";
-        }
+        if (rawTime) { let timeMatch = rawTime.toString().match(/(\d{1,2}:\d{2})/); inp.value = timeMatch ? timeMatch[0] : ""; }
         cell.appendChild(inp);
       } else if (["Assigned Engineer", "Engineer Name"].indexOf(key) !== -1) {
         let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
@@ -1109,7 +1072,6 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
       const targetLblNameNode = document.getElementById(`card-lbl-name-${leadRef}`);
       const targetLblPosNode = document.getElementById(`card-lbl-pos-${leadRef}`);
       const targetLblStatusNode = document.getElementById(`card-lbl-status-${leadRef}`);
-      
       if (targetLblNameNode) targetLblNameNode.textContent = updatedNameText;
       if (targetLblPosNode) targetLblPosNode.textContent = updatedPositionText;
       if (targetLblStatusNode) targetLblStatusNode.textContent = updatedStatusText;
@@ -1118,21 +1080,13 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
 }
 
 async function removeLeadRowEntirely(leadRef) {
-    if (!confirm("Confirm Lead Deletion")) return;
-    
-    const btn = event.target; 
-    btn.classList.add("loading"); 
-    btn.textContent = "Deleting...";
-    
+    if (!confirm("Confirm record removal?")) return;
+    const btn = event.target; btn.classList.add("loading"); btn.textContent = "Deleting...";
     try {
         const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "deleteLeadRow", leadRef: leadRef }) });
         const r = await res.json();
         if (r.success) triggerSequentialSearch(currentActiveModuleContext);
-    } catch(e) { 
-        alert(e.message); 
-        btn.classList.remove("loading"); 
-        btn.textContent = "Delete Record"; 
-    }
+    } catch(e) { alert(e.message); btn.classList.remove("loading"); btn.textContent = "Delete Record"; }
 }
 
 function exitCanvasToCardView() {
@@ -1140,29 +1094,20 @@ function exitCanvasToCardView() {
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
   document.getElementById("step2-inline-interaction-canvas").style.display = "none";
   document.getElementById("missing-trigger-notice-block").style.display = "none";
-  
-  if(currentActiveModuleContext === "CARD") {
-      document.getElementById("step1-card-capture-block").style.display = "block";
-  }  
+  if(currentActiveModuleContext === "CARD") document.getElementById("step1-card-capture-block").style.display = "block";
   if(currentActiveModuleContext === "DROPDOWN") {
       document.getElementById("company-dropdown-selector-block").style.display = "block";
-      // This will safely reload your dropdown elements without wiping structural layout trees
-      triggerCompanyDropdownArrayFetch(); 
+      triggerCompanyDropdownArrayFetch();
   }
 }
 
 function toggleFollowUpAccordion(headerElement) {
-  // Find the body block next to or within the parent wrapper card
-  const itemCard = headerElement.closest('.fup-item-card');
-  const bodyPanel = itemCard.querySelector('.fup-item-body');
+  const bodyPanel = headerElement.closest('.fup-item-card').querySelector('.fup-item-body');
   const statusIndicator = headerElement.querySelector('span:last-child');
-  
   if (bodyPanel.style.display === "block" || bodyPanel.style.display === "") {
-    bodyPanel.style.display = "none";
-    if (statusIndicator) statusIndicator.textContent = "View details ▾";
+    bodyPanel.style.display = "none"; if (statusIndicator) statusIndicator.textContent = "View details ▾";
   } else {
-    bodyPanel.style.display = "block";
-    if (statusIndicator) statusIndicator.textContent = "Collapse details ▴";
+    bodyPanel.style.display = "block"; if (statusIndicator) statusIndicator.textContent = "Collapse details ▴";
   }
 }
 
@@ -1191,7 +1136,6 @@ function renderIsolatedFollowUpTimeline(leadRef, list, scopeNode) {
         </div>
       </div>`;
     box.appendChild(card);
-    
     document.getElementById('trigger-inner-edit-fup-' + leadRef + '-' + f.num).onclick = function() { editIsolatedFollowUpItem(leadRef, scopeNode, f); };
     document.getElementById('trigger-inner-delete-fup-' + leadRef + '-' + f.num).onclick = function() { removeIsolatedFollowUpItem(leadRef, f.num); };
   });
@@ -1211,16 +1155,12 @@ function editIsolatedFollowUpItem(leadRef, scopeNode, f) {
   fupForm.querySelector(".fup-nq1").value = f.nq1; fupForm.querySelector(".fup-nq2").value = f.nq2;
   fupForm.querySelector(".fup-nq3").value = f.nq3; fupForm.querySelector(".fup-nq4").value = f.nq4;
   fupForm.querySelector(".fup-nq5").value = f.nq5; fupForm.querySelector(".fup-nq6").value = f.nq6;
-  
-  fupForm.style.display = "grid";
-  scopeNode.querySelector(".trigger-fup-open").style.display = "none";
-  scopeNode.querySelector(".trigger-fup-close").style.display = "inline-flex";
+  fupForm.style.display = "grid"; scopeNode.querySelector(".trigger-fup-open").style.display = "none"; scopeNode.querySelector(".trigger-fup-close").style.display = "inline-flex";
 }
 
 async function commitIsolatedFollowUpItem(leadRef, scopeNode) {
   const form = scopeNode.querySelector(".template-fup-form");
   const btn = scopeNode.querySelector(".commit-fup-btn-trigger");
-  
   const followUpData = {
     isEdit: form.querySelector(".fup-is-edit-flag").value === "true",
     status: form.querySelector(".fup-status-select").value,
@@ -1316,38 +1256,27 @@ async function globalExecutionScopeReloader(leadRef, scopeNode) {
 
 async function uploadToCloudinary(file) {
   if (!file) return "";
-  const fd = new FormData();
-  fd.append('file', file);
-  fd.append('upload_preset', UPLOAD_PRESET);
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-    method: 'POST', body: fd
-  });
-  const d = await res.json();
-  return d.secure_url || "";
+  const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', UPLOAD_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
+  const d = await res.json(); return d.secure_url || "";
 }
 
 async function submitLead() {
   const btn = document.getElementById('submit-btn');
-  
   const statusField = document.getElementById('dropform-status');
-  if (!statusField.value) { alert("Lead Status is compulsory."); return; }
-  const engineerField = document.getElementById('engName');
-  if (!engineerField || !engineerField.value) { alert("Assign Creator Name is a compulsory.");  return; }
+  if (!statusField.value) { alert("Lead Status is compulsory."); return;}
 
-  btn.disabled = true; 
-  btn.innerHTML = '<div class="spinner"></div> Saving...';
-  
+  const engineerField = document.getElementById('engName');
+  if (!engineerField || !engineerField.value) { alert("Assign Creator Name is a compulsory question."); return; }
+
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...';
   const meetingDate = document.getElementById('meetingDate').value;
   const meetingTime = document.getElementById('meetingTime').value;
 
   const getChecks = n => Array.from(document.querySelectorAll(`input[name="${n}"]:checked`)).map(c => c.value);
   const getRadio  = n => (document.querySelector(`input[name="${n}"]:checked`) || {}).value || "";
-  
   try {
-    const [url1, url2] = await Promise.all([
-      uploadToCloudinary(fileFront),
-      uploadToCloudinary(fileBack)
-    ]);
+    const [url1, url2] = await Promise.all([ uploadToCloudinary(fileFront), uploadToCloudinary(fileBack) ]);
     const imageUrl = [url1, url2].filter(u => u).join(", ");
     
     const dynamicOverriddenLpiValue = document.getElementById("sel-lpi").value === "Yes" ? document.getElementById("lpi").value : "No";
@@ -1356,10 +1285,8 @@ async function submitLead() {
     const dynamicOverriddenThiValue = document.getElementById("sel-thi").value === "Yes" ? document.getElementById("thi").value : "No";
     const dynamicOverriddenGsiValue = document.getElementById("sel-gsi").value === "Yes" ? document.getElementById("gsi").value : "No";
 
-    // Pull from manual dropform first; if empty, safely fall back to card input fields
     const fields = {
-      status: statusField.value,
-      engineerName: document.getElementById('engName').value, 
+      status: statusField.value, engineerName: engineerField.value, 
       name: document.getElementById('dropform-name').value.trim() || document.getElementById('f-name').value.trim(), 
       company: document.getElementById('dropform-company-locked').value.trim(),
       position: document.getElementById('dropform-position').value.trim() || document.getElementById('f-position').value.trim(), 
@@ -1368,70 +1295,34 @@ async function submitLead() {
       email: document.getElementById('dropform-email').value.trim() || document.getElementById('f-email').value.trim(), 
       website: document.getElementById('dropform-website').value.trim() || document.getElementById('f-website').value.trim(), 
       address: document.getElementById('dropform-address').value.trim() || document.getElementById('f-address').value.trim(),
-      meetingDate: meetingDate, 
-      meetingTime: meetingTime,
-      meetingVenue: getRadio('meetingVenue'), 
-      venueName: document.getElementById('venueName').value, 
-      additionalMeetingDetails: document.getElementById('additionalMeetingDetails').value,
-      businessVertical: getRadio('businessVertical'), 
-      industry: document.getElementById('industry').value, 
-      qualification: getChecks('qualification'), 
-      vendorType: [],
-      materialsName: document.getElementById('materialsName').value, 
-      lpi: dynamicOverriddenLpiValue, 
-      hbi: dynamicOverriddenHbiValue, 
-      hi: dynamicOverriddenHiValue, 
-      thi: dynamicOverriddenThiValue, 
-      gsi: dynamicOverriddenGsiValue,
-      esd: document.getElementById('esd').value,
-      voltage: getChecks('voltage'), 
-      cdMva: document.getElementById('cdMva').value, 
-      rdMva: document.getElementById('rdMva').value, 
-      avgPf: document.getElementById('avgPf').value,
-      problemObserved: document.getElementById('problemObserved').value, 
-      techSummary: document.getElementById('techSummary').value,
-      existingProject: document.getElementById('epInput').value, 
-      upcomingProject: document.getElementById('upInput').value,
-      products: getChecks('prod'), 
-      approxReq: document.getElementById('approxReq').value, 
-      tenderDate: document.getElementById('tenderDate').value,
-      orderTimeline: document.getElementById('orderTimeline').value, 
-      competitors: document.getElementById('competitors').value, 
-      potential: getRadio('pot'),
-      sendProfile: document.getElementById('act1').value, 
-      sendPresentation: document.getElementById('act2').value, 
-      arrangeVisit: document.getElementById('act3').value,
-      getEnquiry: document.getElementById('act4').value, 
-      sendOffer: document.getElementById('actOffer').value, 
-      followUpRequired: document.getElementById('act7').value
+      meetingDate, meetingTime, meetingVenue: getRadio('meetingVenue'), venueName: document.getElementById('venueName').value, additionalMeetingDetails: document.getElementById('additionalMeetingDetails').value,
+      businessVertical: getRadio('businessVertical'), industry: document.getElementById('industry').value, qualification: getChecks('qualification'), vendorType: [],
+      materialsName: document.getElementById('materialsName').value, lpi: dynamicOverriddenLpiValue, hbi: dynamicOverriddenHbiValue, hi: dynamicOverriddenHiValue, thi: dynamicOverriddenThiValue, gsi: dynamicOverriddenGsiValue,
+      esd: document.getElementById('esd').value, voltage: getChecks('voltage'), cdMva: document.getElementById('cdMva').value, rdMva: document.getElementById('rdMva').value, avgPf: document.getElementById('avgPf').value,
+      problemObserved: document.getElementById('problemObserved').value, techSummary: document.getElementById('techSummary').value,
+      existingProject: document.getElementById('epInput').value, upcomingProject: document.getElementById('upInput').value,
+      products: getChecks('prod'), approxReq: document.getElementById('approxReq').value, tenderDate: document.getElementById('tenderDate').value,
+      orderTimeline: document.getElementById('orderTimeline').value, competitors: document.getElementById('competitors').value, potential: getRadio('pot'),
+      sendProfile: document.getElementById('act1').value, sendPresentation: document.getElementById('act2').value, arrangeVisit: document.getElementById('act3').value,
+      getEnquiry: document.getElementById('act4').value, sendOffer: document.getElementById('actOffer').value, followUpRequired: document.getElementById('act7').value
     };
-
+    
     const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'submit', fields, imageUrl }) });
     const d = await res.json();
     if (d.success) { 
-      // Collapse form view panel elements cleanly
       document.getElementById('remaining-sections-form').style.display = 'none'; 
-      
-      // Target the success screen view elements directly
-      const successScreen = document.getElementById('success-screen');
-      successScreen.style.display = 'block'; 
+      const successScreen = document.getElementById('success-screen'); successScreen.style.display = 'block'; 
       document.getElementById('success-ref').textContent = "Lead ID: " + (d.leadRef || "Error generating ID");
       
-      // Move success box dynamically to the BOTTOM of the canvas context structure
       const canvasNode = document.getElementById("step2-inline-interaction-canvas");
       canvasNode.appendChild(successScreen);
       
-      // Force immediate data fetch to append the new card entry directly to the top of the workspace list view
       if (currentActiveModuleContext === "CARD" || currentActiveModuleContext === "DROPDOWN") {
-         const compParamValue = fields.company;
-         const targetPersonNameParam = fields.name;
-         
-         // Trigger a silent database refresh to render cards alongside the new lead
+         const compParamValue = fields.company; const targetPersonNameParam = fields.name;
          const refreshRes = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "searchCompanyData", companyName: compParamValue, contactName: targetPersonNameParam }) });
          const refreshData = await refreshRes.json();
          if (refreshData.success) {
-            globalFollowUpsCacheMap = refreshData.followups;
-            globalTasksCacheMap = refreshData.tasks;
+            globalFollowUpsCacheMap = refreshData.followups; globalTasksCacheMap = refreshData.tasks;
             buildMultiContactDirectoryInterface(refreshData.leads, targetPersonNameParam);
             canvasNode.style.display = "block";
          }
@@ -1443,57 +1334,35 @@ async function submitLead() {
 async function loadQualFilter() {
   const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "getUniqueQualifications" }) });
   const data = await res.json();
-  const container = document.getElementById("qual-filter-checkboxes");
-  container.innerHTML = ""; // Clear existing
+  const container = document.getElementById("qual-filter-checkboxes"); container.innerHTML = "";
   data.quals.forEach(q => {
-    container.innerHTML += `
-      <input type="checkbox" name="searchQual" value="${q}" id="q_${q}" onchange="updateSelectedDisplay()">
-      <label for="q_${q}">${q}</label>
-    `;
+    container.innerHTML += `<input type="checkbox" name="searchQual" value="${q}" id="q_${q}" onchange="updateSelectedDisplay()"><label for="q_${q}">${q}</label>`;
   });
 }
 
-// Updates the top-display text whenever a checkbox is clicked
 function updateSelectedDisplay() {
   const checked = Array.from(document.querySelectorAll('input[name="searchQual"]:checked')).map(i => i.value);
   document.getElementById("selected-quals-display").textContent = checked.length > 0 ? "Filtering for: " + checked.join(", ") : "";
 }
 
-// Triggers the search and prepares the UI
 async function triggerQualificationSearch() {
     document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
     const btn = document.getElementById("qual-search-btn");
     const selected = Array.from(document.querySelectorAll('input[name="searchQual"]:checked')).map(i => i.value);
     if(selected.length === 0) return alert("Select at least one qualification.");
-
-    btn.classList.add("loading");
-    btn.textContent = "Searching...";
-
+    btn.classList.add("loading"); btn.textContent = "Searching...";
     try {
         const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "searchByQualifications", qualifications: selected }) });
         const data = await res.json();
-        
         if (data.success) {
             const canvas = document.getElementById("step2-inline-interaction-canvas");
-            
-            // Clear previous results/buttons in the canvas enclosure
-            const backBtnRow = document.getElementById("canvas-back-btn-enclosure-row");
-            backBtnRow.innerHTML = `<div class="qualification-status-bar">Qualifications: ${selected.join(", ")}</div>`;
-            
-            // Hide the Global Create Entry button for this specific module context
+            document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `<div class="qualification-status-bar">Qualifications: ${selected.join(", ")}</div>`;
             document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
-            
-            globalFollowUpsCacheMap = data.followups;
-            globalTasksCacheMap = data.tasks;
+            globalFollowUpsCacheMap = data.followups; globalTasksCacheMap = data.tasks;
             buildMultiContactDirectoryInterface(data.leads, "");
-            
-            canvas.style.display = "block";
-            document.getElementById("workspace-searchQualification").appendChild(canvas);
+            canvas.style.display = "block"; document.getElementById("workspace-searchQualification").appendChild(canvas);
         }
-    } catch(e) { alert(e.message); } finally {
-        btn.classList.remove("loading");
-        btn.textContent = "Search Qualifications";
-    }
+    } catch(e) { alert(e.message); } finally { btn.classList.remove("loading"); btn.textContent = "Search Qualifications"; }
 }
 
 async function triggerStatusSearch() {
@@ -1501,77 +1370,78 @@ async function triggerStatusSearch() {
     const btn = document.getElementById("status-search-btn");
     const statusVal = document.getElementById("status-filter-select").value;
     if(!statusVal) return alert("Please select a status.");
-
-    btn.classList.add("loading");
-    btn.textContent = "Searching...";
-
+    btn.classList.add("loading"); btn.textContent = "Searching...";
     try {
         const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "searchByStatus", statusValue: statusVal }) });
         const data = await res.json();
-        
         if (data.success) {
             const canvas = document.getElementById("step2-inline-interaction-canvas");
-            // Set up header row without the create button
-            document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `
-                <div class="qualification-status-bar">Status: ${statusVal}</div>
-            `;
-            
-            // Explicitly hide the global create entry buttons
+            document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `<div class="qualification-status-bar">Status: ${statusVal}</div>`;
             document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
-            
-            globalFollowUpsCacheMap = data.followups;
-            globalTasksCacheMap = data.tasks;
+            globalFollowUpsCacheMap = data.followups; globalTasksCacheMap = data.tasks;
             buildMultiContactDirectoryInterface(data.leads, "");
-            canvas.style.display = "block";
-            document.getElementById("workspace-searchStatus").appendChild(canvas);
-        } else {
-            alert(data.error || "No leads found with this status.");
-        }
-    } catch(e) { alert(e.message); } finally {
-        btn.classList.remove("loading");
-        btn.textContent = "Search Leads";
-    }
+            canvas.style.display = "block"; document.getElementById("workspace-searchStatus").appendChild(canvas);
+        } else { alert(data.error || "No leads found with this status."); }
+    } catch(e) { alert(e.message); } finally { btn.classList.remove("loading"); btn.textContent = "Search Leads"; }
 }
 
 async function triggerEngineerSearch() {
     const btn = document.getElementById("eng-search-btn");
     const engVal = document.getElementById("engineer-filter-select").value;
     if(!engVal) return alert("Please select an engineer.");
-
-    btn.classList.add("loading");
-    btn.textContent = "Searching...";
-
+    btn.classList.add("loading"); btn.textContent = "Searching...";
     try {
         const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "searchByEngineer", engName: engVal }) });
         const data = await res.json();
-        
         if (data.success) {
           const canvas = document.getElementById("step2-inline-interaction-canvas");
-          
-          // 1. Update the header row (keep existing layout)
-          document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `
-              <div class="qualification-status-bar" style="width: 100%;">
-                  Engineer: ${engVal}
-              </div>
-          `;
-          
-          // 2. EXPLICITLY HIDE the Create button
-          // Set display to 'none' so it does not render
+          document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `<div class="qualification-status-bar" style="width: 100%;">Engineer: ${engVal}</div>`;
           document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
-          
-          globalFollowUpsCacheMap = data.followups;
-          globalTasksCacheMap = data.tasks;
+          globalFollowUpsCacheMap = data.followups; globalTasksCacheMap = data.tasks;
           buildMultiContactDirectoryInterface(data.leads, "");
-          
-          canvas.style.display = "block";
-          document.getElementById("workspace-searchEngineer").appendChild(canvas);
-        } else {
-            alert("No leads found for this engineer.");
-        }
-    } catch(e) { alert(e.message); } finally {
-        btn.classList.remove("loading");
-        btn.textContent = "Search Leads";
+          canvas.style.display = "block"; document.getElementById("workspace-searchEngineer").appendChild(canvas);
+        } else { alert("No leads found for this engineer."); }
+    } catch(e) { alert(e.message); } finally { btn.classList.remove("loading"); btn.textContent = "Search Leads"; }
+}
+
+async function executeTaskMatrixSearch() {
+  const btn = document.getElementById("task-matrix-search-btn");
+  const outputNode = document.getElementById("task-matrix-results-output-node");
+  if (!outputNode) return;
+
+  const checkedEngineers = Array.from(document.querySelectorAll('input[name="taskMatrixEngineer"]:checked')).map(i => i.value);
+  const checkedStatuses = Array.from(document.querySelectorAll('input[name="taskMatrixStatus"]:checked')).map(i => i.value);
+
+  btn.classList.add("loading"); btn.textContent = "Filtering Tasks...";
+  try {
+    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "searchTasksMatrix", engineers: checkedEngineers, statuses: checkedStatuses }) });
+    const data = await res.json();
+
+    if (data.success) {
+      outputNode.innerHTML = "";
+      if (data.tasks.length === 0) {
+        outputNode.innerHTML = '<p style="color:var(--muted); font-size:0.85rem; padding:10px; text-align:center; background:#fff; border:1px solid var(--border); border-radius:4px;">No matching tasks found.</p>';
+        return;
+      }
+      data.tasks.forEach(t => {
+        let card = document.createElement("div");
+        card.className = "task-item-card"; card.style.padding = "12px"; card.style.borderLeft = "4px solid var(--brand)"; card.style.background = "#fff"; card.style.marginBottom = "6px"; card.style.boxShadow = "0 1px 3px rgba(0,0,0,0.02)";
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed #edf2f7; padding-bottom:4px; margin-bottom:6px;">
+            <strong style="color:var(--brand); font-size:0.9rem;">${t.type}</strong>
+            <span style="font-size:0.7rem; background:#edf2f7; padding:2px 6px; border-radius:4px; font-weight:700;">${t.status}</span>
+          </div>
+          <div style="font-size:0.8rem; line-height:1.4; color:var(--text);">
+            <strong>Engineer:</strong> ${t.eng} | <strong>Assigner:</strong> ${t.assigner || "System"}<br/>
+            <strong>Target Date:</strong> ${formatCleanDateOnly(t.targetDate)} | <strong>Shift:</strong> ${t.shift}<br/>
+            <strong>Lead Reference:</strong> ${t.leadId || "N/A"}
+          </div>
+          <div style="font-size:0.82rem; color:#4a5568; padding:6px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; margin-top:6px; white-space:pre-wrap;"><strong>Description:</strong> ${t.desc || 'None'}</div>
+        `;
+        outputNode.appendChild(card);
+      });
     }
+  } catch(e) { alert("Task matrix engine fetch error: " + e.message); } finally { btn.classList.remove("loading"); btn.textContent = "Run Matrix Search Filter"; }
 }
 </script>
 </body>
