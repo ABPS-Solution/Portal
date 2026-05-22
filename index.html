@@ -236,10 +236,10 @@
         <div class="section-header">Filter Leads by Location</div>
         <div class="section-body">
           
-          <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">1. Select Target States (Multiple)</label>
+          <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">Select Target States</label>
           <div class="pill-group" id="location-state-checkboxes-mount" style="margin: 6px 0 14px;"></div>
           
-          <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">2. Select Specific Cities (Multiple)</label>
+          <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">Select Specific Cities</label>
           <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 12px;">
              <div class="pill-group" id="location-city-checkboxes-mount" style="margin: 0;"></div>
           </div>
@@ -251,17 +251,21 @@
 
     <div id="workspace-searchStatus" class="workspace-panel" style="display: none;">
       <div class="section">
-        <div class="section-header">Filter Leads by Status</div>
-        <div class="section-body">
-          <label class="field-label">Select Target Status</label>
-          <select id="status-filter-select" style="margin-bottom:10px;">
-            <option value="">— Select Status —</option>
-            <option value="Status1">Status1</option>
-            <option value="Status2">Status2</option>
-            <option value="Status3">Status3</option>
-            <option value="Status4">Status4</option>
-          </select>
-          <button class="btn btn-sub" id="status-search-btn" onclick="triggerStatusSearch()">Search Leads</button>
+        <div class="section-header">Advanced Leads Combination Matrix Filter</div>
+        <div class="section-body" style="text-align: left;">
+          
+          <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Filter By Engineers</label>
+          <div class="pill-group" id="lead-matrix-engineer-checkboxes-mount" style="margin:8px 0 16px;"></div>
+          
+          <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Filter By Lead Status</label>
+          <div class="pill-group" id="lead-matrix-status-checkboxes-mount" style="margin:8px 0 16px;">
+            <input type="checkbox" name="leadMatrixStatusFilter" value="Status1" id="lms_st1" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st1">Status1</label>
+            <input type="checkbox" name="leadMatrixStatusFilter" value="Status2" id="lms_st2" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st2">Status2</label>
+            <input type="checkbox" name="leadMatrixStatusFilter" value="Status3" id="lms_st3" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st3">Status3</label>
+            <input type="checkbox" name="leadMatrixStatusFilter" value="Status4" id="lms_st4" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st4">Status4</label>
+          </div>
+          
+          <button class="btn btn-sub" id="lead-matrix-search-submit-btn" onclick="executeLeadMatrixFilterSearch()">Run Leads Matrix Search</button>
         </div>
       </div>
     </div>
@@ -606,7 +610,7 @@
 </div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbx3ZlbJhycYTgH-SnwD75us_KmW0uLHdeE-FKJDNWu6t_TEZl4eswZQ8adOJT8kXop5Bw/exec"; 
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyiT4_JH7LhrMUKBXf_42BdW0lmuHXHu6ImNUAUw9jGCU5MozEhfZAjYeVte-8ObfRThg/exec"; 
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -643,7 +647,7 @@ function initializeGoogleAuthPlatformEngine() {
   if (document.getElementById("auth-portal-processing-loader")) {
     document.getElementById("auth-portal-processing-loader").style.display = "none";
   }
-  
+  f
   localStorage.clear();
   appActiveOperatorIdentityString = "";
   document.getElementById("app-container").style.display = "none";
@@ -1127,8 +1131,8 @@ function navigateToModule(key) {
       const checkedQuals = Array.from(document.querySelectorAll('input[name="searchQual"]:checked'));
       if (checkedQuals.length > 0) triggerQualificationSearch();
     } else if (key === "searchStatus") {
-      const statusSelectNode = document.getElementById("status-filter-select");
-      if (statusSelectNode && statusSelectNode.value) triggerStatusSearch();
+      document.querySelectorAll('input[name="leadMatrixStatusFilter"]').forEach(cb => cb.checked = false);
+      renderLeadMatrixEngineerCheckboxes();
     } else if (key === "searchEngineer") {
       const engineerSelectNode = document.getElementById("engineer-filter-select");
       if (engineerSelectNode && engineerSelectNode.value) triggerEngineerSearch();
@@ -2284,6 +2288,68 @@ async function removeMatrixTaskFromEngine(taskId, event) {
     btn.textContent = "Delete";
   }
 }
+
+function renderLeadMatrixEngineerCheckboxes() {
+  const mountPoint = document.getElementById("lead-matrix-engineer-checkboxes-mount");
+  if (!mountPoint) return;
+  
+  mountPoint.innerHTML = "";
+  cachedEngineers.forEach(eng => {
+     const cleanId = `chk_lm_eng_${eng.replace(/\s+/g, '_')}`;
+     mountPoint.innerHTML += `
+       <input type="checkbox" name="leadMatrixEngineerFilter" value="${eng}" id="${cleanId}" onchange="executeLeadMatrixFilterSearch()">
+       <label for="${cleanId}">${eng}</label>
+     `;
+  });
+}
+
+async function executeLeadMatrixFilterSearch() {
+  const btn = document.getElementById("lead-matrix-search-submit-btn");
+  const checkedEngineers = Array.from(document.querySelectorAll('input[name="leadMatrixEngineerFilter"]:checked')).map(i => i.value);
+  const checkedStatuses = Array.from(document.querySelectorAll('input[name="leadMatrixStatusFilter"]:checked')).map(i => i.value);
+
+  // If entering panel fresh with nothing selected, do not execute blank request hits
+  if (checkedEngineers.length === 0 && checkedStatuses.length === 0) return;
+
+  btn.classList.add("loading"); btn.textContent = "Filtering Matrix Leads...";
+  document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
+  
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "searchLeadsMatrixCombination",
+        sessionToken: localStorage.getItem("sessionToken"),
+        activeEngineer: appActiveOperatorIdentityString,
+        engineers: checkedEngineers,
+        statuses: checkedStatuses
+      })
+    });
+    const data = await res.json();
+    
+    if (data.success) {
+      const canvas = document.getElementById("step2-inline-interaction-canvas");
+      
+      // Update heading context layout info dynamically 
+      document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `
+        <div class="qualification-status-bar" style="width: 100%;">
+          Leads Combined Matrix Filter Active
+        </div>
+      `;
+      
+      globalFollowUpsCacheMap = data.followups;
+      globalTasksCacheMap = data.tasks;
+      buildMultiContactDirectoryInterface(data.leads, "");
+      canvas.style.display = "block";
+      document.getElementById("workspace-searchStatus").appendChild(canvas);
+    }
+  } catch(e) {
+    alert("Leads matrix execution request dropped: " + e.message);
+  } finally {
+    btn.classList.remove("loading"); btn.textContent = "Run Leads Matrix Search";
+  }
+}
+
 </script>
 </body>
 </html>
