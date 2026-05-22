@@ -341,7 +341,7 @@
     <div id="workspace-emailWhatsapp" class="workspace-panel" style="display: none;">
       <div class="section">
         <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
-          <span>Inbound AI-Parsed Email Leads Directory</span>
+          <span>AI Email Leads</span>
           <button class="nav-btn-styled" id="email-sync-trigger-btn" style="background:var(--accent); font-size:0.68rem; padding:2px 8px;" onclick="executeInboundEmailSyncPipelineFetch()">Sync Inbox Streams</button>
         </div>
         <div class="section-body" style="padding: 10px;">
@@ -667,7 +667,7 @@
 </div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzzMtYn-qIFMKM0M0SQQkgWyOxmkG9yCAu-Nhp_fJGsoeVfiw9unB2V0-IIfHSxXrb4nQ/exec"; 
+const GAS_URL = "https://script.google.com/macros/s/AKfycbym0Luj3MsJ9YmketlRwaMG7uGQpc820egONa9g6dyiUyhTbHEgft5_V2h3-3IrtqhbAQ/exec"; 
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -2733,7 +2733,7 @@ async function executeInboundEmailSyncPipelineFetch() {
   
   syncBtn.disabled = true; syncBtn.textContent = "Syncing...";
   feedbackNode.style.cssText = "display:block; background:var(--highlight-bg); border:1px solid var(--brand); color:var(--brand);";
-  feedbackNode.textContent = "Connecting to mail server layers... Running AI qualification filters rules...";
+  feedbackNode.textContent = "Connecting to mail server ...";
   
   try {
     const res = await fetch(GAS_URL, {
@@ -2784,6 +2784,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
     
     const attsLabel = mail.attachments && mail.attachments.length > 0 ? mail.attachments.join(", ") : "None";
     
+    // REMOVED: The view details button and the hidden accordion drawer have been stripped down
     card.innerHTML = `
       <div class="contact-summary-header-row" style="margin-bottom:6px;">
         <div class="contact-summary-title-info">
@@ -2797,7 +2798,6 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
           </div>
         </div>
         <div class="directory-btn-actions-block" style="margin-top:4px;">
-          <button class="nav-btn-styled" style="background:var(--brand); font-size:0.75rem; padding:4px 8px;" onclick="toggleEmailSubjectBodyAccordionDrawer(${mIdx})">View Details</button>
           <a href="${mail.originalDeepLinkThreadUrl}" target="_blank" class="nav-btn-styled" style="background:#4a5568; text-decoration:none; font-size:0.75rem; padding:4px 8px; display:inline-flex; align-items:center;">Open Email ↗</a>
           <button class="nav-btn-styled" style="background:var(--warn); font-size:0.75rem; padding:4px 8px;" onclick="purgeEmailLeadCardViewFromScreen(${mIdx})">Delete</button>
         </div>
@@ -2818,22 +2818,11 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
         <button class="btn btn-sub" style="width:auto; font-size:0.78rem; padding:5px 12px;" onclick="triggerEmailLeadDatabaseActionPipeline(${mIdx})">Create New Entry</button>
       </div>
       
-      <!-- Hidden Collapsible Complete Email Message Subject & Body Accordion Panel Layout -->
-      <div id="email-lead-message-body-accordion-drawer-${mIdx}" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed var(--border); text-align:left;">
-         <div style="font-size:0.82rem; font-weight:700; margin-bottom:4px; color:var(--brand);">Subject: ${mail.fullSubjectLine}</div>
-         <div style="font-size:0.82rem; background:#fff; border:1px solid var(--border); padding:10px; border-radius:4px; max-height:220px; overflow-y:auto; font-family:monospace; white-space:pre-wrap; color:#2d3748;">${mail.fullMessageBodyText}</div>
-      </div>
-      
       <!-- Dynamic Nested Placement Mount Panel Box Anchor Point -->
       <div id="email-nested-inline-database-workspace-anchor-${mIdx}" style="margin-top:10px; display:none; background:#f1f5f9; padding:8px; border-radius:6px; border:1px solid var(--border);"></div>
     `;
     canvas.appendChild(card);
   });
-}
-
-function toggleEmailSubjectBodyAccordionDrawer(index) {
-  const drawer = document.getElementById(`email-lead-message-body-accordion-drawer-${index}`);
-  drawer.style.display = (drawer.style.display === "none") ? "block" : "none";
 }
 
 function purgeEmailLeadCardViewFromScreen(index) {
@@ -2875,20 +2864,18 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
       `;
       nestedWorkspace.style.display = "block";
       
-      // Cache values global maps hooks down into timeline interfaces frameworks
       globalFollowUpsCacheMap = data.followups;
       globalTasksCacheMap = data.tasks;
       
-      // Direct structural hijack append layout canvas maps
       const oldCanvasNode = document.getElementById("step2-inline-interaction-canvas");
       const oldDirectoryContainer = document.getElementById("multi-contact-records-container");
       
-      // Temporarily swap document root anchor targets to build cards inline 
-      document.body.appendChild(oldCanvasNode);
+      if (oldCanvasNode) document.body.appendChild(oldCanvasNode);
       const targetSubMount = nestedWorkspace.querySelector(`#nested-email-contacts-mount-canvas-${index}`);
-      targetSubMount.appendChild(oldDirectoryContainer);
+      if (targetSubMount && oldDirectoryContainer) {
+        targetSubMount.appendChild(oldDirectoryContainer);
+      }
       
-      // Draw cards using the standard UI engine
       buildMultiContactDirectoryInterface(data.leads, mailObject.extractedContactName);
     } 
     // --- SCENARIO B: BRAND NEW COMPANY — OPEN CREATION FORM ---
@@ -2902,28 +2889,39 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
       `;
       nestedWorkspace.style.display = "block";
       
-      const formWrapperContainer = document.getElementById("step2-new-entry-dropdown");
-      nestedWorkspace.querySelector(`#nested-email-creation-form-mount-${index}`).appendChild(formWrapperContainer);
+      // SAFETY FIX: Ensure the form wrapper exists in the document pool before appending
+      let formWrapperContainer = document.getElementById("step2-new-entry-dropdown");
+      if (!formWrapperContainer) {
+        // Fallback: If it's lost in the DOM trees, re-pull it by creating a temporary fragment or locating its parent
+        formWrapperContainer = document.body.querySelector("#step2-new-entry-dropdown");
+      }
       
-      // Reset form variables data states properties configurations
-      resetSequentialFormState();
+      const mountPoint = nestedWorkspace.querySelector(`#nested-email-creation-form-mount-${index}`);
       
-      // Pre-fill fields with AI-extracted contact details data
-      document.getElementById("dropform-company-locked").value = mailObject.extractedCompany;
-      document.getElementById("dropform-name").value = mailObject.extractedContactName;
-      
-      // Set view visibility parameters states flags
-      document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
-      document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
-      document.getElementById("staged-back-button-row").style.display = "none";
-      formWrapperContainer.style.display = "block";
+      if (formWrapperContainer && mountPoint) {
+        mountPoint.appendChild(formWrapperContainer);
+        
+        // Reset form variables data states properties configurations
+        resetSequentialFormState();
+        
+        // Pre-fill fields with AI-extracted contact details data
+        document.getElementById("dropform-company-locked").value = mailObject.extractedCompany;
+        document.getElementById("dropform-name").value = mailObject.extractedContactName;
+        
+        // Set view visibility parameters states flags
+        document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
+        document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
+        document.getElementById("staged-back-button-row").style.display = "none";
+        formWrapperContainer.style.display = "block";
+      } else {
+        alert("UI Render Error: Entry form template element '#step2-new-entry-dropdown' could not be safely targeted.");
+      }
     }
   } catch(e) {
     alert("Email database workflow assignment sync crash: " + e.message);
     actionBtn.disabled = false; actionBtn.textContent = "Create New Entry";
   }
 }
-
 
 </script>
 </body>
