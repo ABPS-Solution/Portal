@@ -341,9 +341,9 @@
 
     <div id="workspace-emailWhatsapp" class="workspace-panel" style="display: none;">
       <div class="section">
-        <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
-          <span>AI Email Leads</span>
-          <button class="nav-btn-styled" id="email-sync-trigger-btn" style="background:var(--accent); font-size:0.68rem; padding:2px 8px;" onclick="executeInboundEmailSyncPipelineFetch()">Sync Inbox Streams</button>
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--border);">
+          <span style="font-size: 1.15rem; font-weight: 700; color: var(--brand); letter-spacing: 0.3px;">AI Email Leads</span>
+          <button class="nav-btn-styled" id="email-sync-trigger-btn" style="background: var(--accent); font-size: 0.8rem; padding: 5px 12px; font-weight: 600;" onclick="executeInboundEmailSyncPipelineFetch()">Sync Inbox Streams</button>
         </div>
         <div class="section-body" style="padding: 10px;">
           <!-- Live Status Loading Tracker Placeholder -->
@@ -685,6 +685,7 @@ let globalFollowUpsCacheMap = {};
 let globalTasksCacheMap = {};
 let globalLocationDatabaseCacheMap = {};
 let cachedInboundEmailLeadsArray = [];
+let activeEmailLeadContextIndex = null;
 
 window.onload = function() {
   const token = localStorage.getItem("sessionToken"); 
@@ -2297,7 +2298,36 @@ async function submitLead() {
       })
     });
     const d = await res.json();
+    
     if (d.success) { 
+      // -------------------------------------------------------------
+      // NEW ADDITION: AUTO-DELETE TARGET EMAIL CARD WRAPPER
+      if (activeEmailLeadContextIndex !== null) {
+        const cardWrapperNode = document.getElementById(`email-lead-wrapper-node-${activeEmailLeadContextIndex}`);
+        
+        // Safely extract the entry form template container out of the card before removing it
+        const formTemplateSource = document.getElementById("step2-new-entry-dropdown");
+        if (formTemplateSource) {
+          formTemplateSource.style.display = "none";
+          document.body.appendChild(formTemplateSource); // Places it safely back at the root body pool
+        }
+        
+        // Instantly tear down the parent wrapper card container
+        if (cardWrapperNode) {
+          cardWrapperNode.remove();
+        }
+        
+        // Evaluate remaining items. If empty, print the default "All dealt with" alert block
+        const remainingCards = document.getElementById("email-leads-inbound-feed-canvas").children.length;
+        if (remainingCards === 0) {
+          renderEmailLeadsFeedInterface([]);
+        }
+        
+        // Reset tracking variable reference
+        activeEmailLeadContextIndex = null;
+      }
+      // -------------------------------------------------------------
+
       document.getElementById('remaining-sections-form').style.display = 'none'; 
       const successScreen = document.getElementById('success-screen'); 
       successScreen.style.display = 'block'; 
@@ -2944,10 +2974,25 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
     } 
     // --- SCENARIO B: BRAND NEW COMPANY — OPEN CREATION FORM ---
     else {
-      actionBtn.textContent = "Staging Onboarding Form...";
+      // TOGGLE CHECK: If the nested workspace is already open and visible, collapse it!
+      if (nestedWorkspace.style.display === "block") {
+        nestedWorkspace.style.display = "none";
+        actionBtn.textContent = "Create New Entry";
+        return;
+      }
+
+      activeEmailLeadContextIndex = index;
+
+      actionBtn.textContent = "Collapse Form";
       nestedWorkspace.innerHTML = `
-        <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--accent); margin-bottom:6px;">
-          ➕ Open Account Entry Form:
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:4px; border-bottom:1px solid var(--border);">
+          <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--accent);">
+            ➕ Open Account Entry Form:
+          </span>
+          <button class="nav-btn-styled" style="background:#718096; font-size:0.7rem; padding:2px 6px;" 
+            onclick="document.getElementById('email-action-response-mount-zone-${index}').querySelector('button').click()">
+            Minimize
+          </button>
         </div>
         <div id="nested-email-creation-form-mount-${index}"></div>
       `;
@@ -2957,7 +3002,6 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
       const targetFormMountNode = nestedWorkspace.querySelector(`#nested-email-creation-form-mount-${index}`);
       
       if (formTemplateSource && targetFormMountNode) {
-        // Unhide template context visibility flags before displaying container blocks
         formTemplateSource.style.display = "block";
         targetFormMountNode.appendChild(formTemplateSource);
         
@@ -2966,6 +3010,7 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
         document.getElementById("dropform-company-locked").value = mailObject.extractedCompany;
         document.getElementById("dropform-name").value = mailObject.extractedContactName;
         
+        // Hide standard external standalone workspace submission buttons
         document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
         document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
         document.getElementById("staged-back-button-row").style.display = "none";
