@@ -1509,7 +1509,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
   
   const customSectionLayout = [
     { type: "META", keys: ["Status", "Engineer Name"] },
-    { type: "CARD", keys: ["Name", "Company", "Position", "Phone", "Alt Phone", "Email", "Website", "Company Address"] },
+    { type: "CARD", keys: ["Name", "Company", "Position", "Phone", "Alt Phone", "Email", "Website", "City", "State", "Company Address"] },
     { type: "SEC1", keys: ["Date of Meeting", "Time of Meeting", "Meeting Venue", "Venue Name / City", "Additional Meeting Details (if any)"] },
     { type: "SEC2", keys: ["ABPS Business Vertical", "Type of Industry", "Qualification", "Type of Vendor", "Name of Materials"] },
     { type: "SEC3", keys: ["Low Power Factor Issue", "High Electricity Bill Issue", "Harmonics Issue", "Transformer Heating / Breakdown Issue", "Grid Stability Issue", "Existing System Details", "Voltage Level", "Contract Demand (MVA)", "Running Demand (MVA)", "Monthly Average Power Factor", "Problem Observed", "Technical Discussion Summary"] },
@@ -1560,20 +1560,37 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
         let opts = ["No", "Yes"];
         if(key === "Meeting Venue") opts = ["Exhibition", "Customer Place"];
-        if(key === "ABPS Business Vertical") opts = ["Industrial", "Power"];
-        if(key === "Approx Business Potential") opts = ["<10L", "10-50L"];
+        if(key === "ABPS Business Vertical") opts = ["Industrial", "Power", "Renewable", "Other"];
+        if(key === "Approx Business Potential") opts = ["<10L", "10-50L", "50L-2cr", ">2cr"];
         opts.forEach(o => {
           let op = document.createElement("option"); op.textContent = o; if(leadMap[key] === o) op.selected = true; sel.appendChild(op);
         });
         cell.appendChild(sel);
-      } else if (["Voltage Level", "Products Discussed", "Qualification"].indexOf(key) !== -1) {
+      } else if (["Voltage Level", "Products Discussed", "Qualification", "Type of Vendor"].indexOf(key) !== -1) {
+        // IMPROVED LAYER: Pulls the full list matching your new database entry structure mapping fields
         let wrapper = document.createElement("div"); wrapper.style.display = "flex"; wrapper.style.flexDirection = "column"; wrapper.style.gap = "2px";
-        let opts = key === "Voltage Level" ? ["440V", "11KV"] : key === "Products Discussed" ? ["APFC", "SVG"] : ["Industry", "Vendor"];
-        let currentValues = (leadMap[key] || "").toString().split(", ");
+        
+        let opts = [];
+        if (key === "Voltage Level") {
+          opts = ["440V", "660V", "3.3KV", "6.6KV", "11KV", "22KV", "33KV", "66KV", "132KV", "220KV", "400KV"];
+        } else if (key === "Products Discussed") {
+          opts = ["APFC", "RPTFC", "Harmonic Filter", "SVG", "MV Capacitor Bank", "Reactor", "Others"];
+        } else if (key === "Qualification") {
+          opts = ["Industry", "EPC", "Govt/PSU", "Consultant", "Developer", "Electrical Contractor", "Dealer", "Vendor", "Others"];
+        } else if (key === "Type of Vendor") {
+          opts = ["Raw Materials supplier", "MC Supplier", "Capital Goods Supplier", "Others"];
+        }
+
+        // Split data fields cleanly by commas to mark existing checkboxes as active
+        let currentValues = (leadMap[key] || "").toString().split(",").map(v => v.trim());
+        
         opts.forEach(o => {
           let div = document.createElement("div"); div.style.display="flex"; div.style.gap="4px"; div.style.alignItems="center";
           let chk = document.createElement("input"); chk.type="checkbox"; chk.value = o; chk.className = 'live-lead-check-subset-' + leadRef; chk.dataset.masterKey = key;
+          
+          // Cross-reference existing profile details data context to check matches
           if(currentValues.indexOf(o) !== -1) chk.checked = true;
+          
           let span = document.createElement("span"); span.textContent = o; span.style.fontSize="0.72rem";
           div.appendChild(chk); div.appendChild(span); wrapper.appendChild(div);
         });
