@@ -2301,23 +2301,38 @@ async function submitLead() {
     
     if (d.success) { 
       // -------------------------------------------------------------
-      // NEW ADDITION: AUTO-DELETE TARGET EMAIL CARD WRAPPER
+      // ENHANCED AUTO-DELETE & PERMANENT BLOCK ENTRY MATRIX
       if (activeEmailLeadContextIndex !== null) {
+        // 1. Get the target email object parameters out of your cache stream array
+        const mailObject = cachedInboundEmailLeadsArray[activeEmailLeadContextIndex];
         const cardWrapperNode = document.getElementById(`email-lead-wrapper-node-${activeEmailLeadContextIndex}`);
         
-        // Safely extract the entry form template container out of the card before removing it
+        // 2. BACKEND BLOCK: Fire a background hit to register this ID in ProcessedEmails immediately
+        if (mailObject && mailObject.messageIdReference) {
+          fetch(GAS_URL, {
+            method: "POST",
+            body: JSON.stringify({
+              action: "saveFollowUp",
+              sessionToken: localStorage.getItem("sessionToken"),
+              activeEngineer: appActiveOperatorIdentityString,
+              archiveTargetEmailIdString: mailObject.messageIdReference // Logs to ProcessedEmails sheet
+            })
+          }).catch(err => console.log("Silent background archive processing catch:", err));
+        }
+
+        // 3. Push the form safely back into the body pool so it isn't destroyed
         const formTemplateSource = document.getElementById("step2-new-entry-dropdown");
         if (formTemplateSource) {
           formTemplateSource.style.display = "none";
-          document.body.appendChild(formTemplateSource); // Places it safely back at the root body pool
+          document.body.appendChild(formTemplateSource);
         }
         
-        // Instantly tear down the parent wrapper card container
+        // 4. Remove the visual card seamlessly from your current screen view layout
         if (cardWrapperNode) {
           cardWrapperNode.remove();
         }
         
-        // Evaluate remaining items. If empty, print the default "All dealt with" alert block
+        // 5. Evaluate remaining items. If empty, print the default "All dealt with" alert block
         const remainingCards = document.getElementById("email-leads-inbound-feed-canvas").children.length;
         if (remainingCards === 0) {
           renderEmailLeadsFeedInterface([]);
@@ -2828,7 +2843,6 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
     canvas.innerHTML = `
       <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;">
         <h3 style="color: var(--accent);">All Email Leads are dealt with</h3>
-        <p style="font-size:0.8rem; margin-top:4px;">No unread sales or commercial enquiries detected in the lookback window.</p>
       </div>
     `;
     return;
@@ -2851,7 +2865,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
           <div class="meta-row-line-block">
             <span style="background:var(--accent); color:#fff;">SOURCE: EMAIL</span>
             <span style="background:var(--highlight-bg); border:1px solid var(--brand); color:var(--brand); font-family:monospace; text-transform:none;">${mail.destinationInboxAccount}</span>
-            <span style="background:#cbd5e1; color:#1e293b; font-weight:700;">📅 ${mail.receivedDate} at ${mail.receivedTime}</span>
+            <span style="background:#cbd5e1; color:#1e293b; font-weight:700;">${mail.receivedDate} at ${mail.receivedTime}</span>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px;">
             <span style="background:#e2e8f0;">Company:</span><strong style="margin-right:20px; color:var(--brand);">${mail.extractedCompany}</strong>
