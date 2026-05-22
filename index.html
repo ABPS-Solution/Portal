@@ -1179,6 +1179,7 @@ async function triggerCompanyDropdownArrayFetch() {
 }
 
 function navigateToModule(key) { 
+    // 1. Core verification gateway check routing against userPermissions payload mapping
     if (!userPermissions[key]) return alert("Access Denied: Missing permission"); 
     
     const canvas = document.getElementById("step2-inline-interaction-canvas");
@@ -1191,7 +1192,13 @@ function navigateToModule(key) {
     document.getElementById("module-workspace-container").style.display = "block"; 
     document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none"); 
     
-    const targetWorkspacePanel = document.getElementById("workspace-" + key);
+    // FIX: Translate 'emailLeads' context parameter mapping down to target workspace element panel ID matching
+    let targetPanelKeyIdStr = key;
+    if (key === "emailLeads") {
+        targetPanelKeyIdStr = "emailWhatsapp";
+    }
+
+    const targetWorkspacePanel = document.getElementById("workspace-" + targetPanelKeyIdStr);
     if (targetWorkspacePanel) targetWorkspacePanel.style.display = "block"; 
     
     document.getElementById("multi-contact-records-container").innerHTML = "";
@@ -1203,20 +1210,20 @@ function navigateToModule(key) {
     if (taskOutputNode) taskOutputNode.innerHTML = "";
 
     currentActiveModuleContext = (key === "cardDetails") ? "CARD" : (key === "searchCompany" ? "DROPDOWN" : "FILTERS");
-    resetSequentialFormState(); 
+    resetSequentialFormState();
     
     // SMART PERSISTENCE WORKSPACE FIX: Keeps panels updated without requiring hardware browser refreshes
     if (key === "searchCompany") {
       const companyDropdownNode = document.getElementById("lookup-module-company-dropdown");
       if (companyDropdownNode && companyDropdownNode.value) {
-         triggerSequentialSearch('DROPDOWN');
+          triggerSequentialSearch('DROPDOWN');
       } else {
-         triggerCompanyDropdownArrayFetch();
+          triggerCompanyDropdownArrayFetch();
       }
     } else if (key === "cardDetails") {
       const companyInputTextNode = document.getElementById("f-company");
       if (companyInputTextNode && companyInputTextNode.value.trim() !== "") {
-         triggerSequentialSearch('CARD');
+          triggerSequentialSearch('CARD');
       }
     } else if (key === "searchQualification") {
       document.querySelectorAll('input[name="searchQual"], #sq_others_trigger').forEach(cb => cb.checked = false);
@@ -1234,6 +1241,9 @@ function navigateToModule(key) {
       if (engineerSelectNode && engineerSelectNode.value) triggerEngineerSearch();
     } else if (key === "searchCityState") {
       loadCityStateFilterOptions();
+    } else if (key === "emailLeads") { 
+      // Synchronizes and fires off asynchronous thread pipeline fetches automatically
+      executeInboundEmailSyncPipelineFetch();
     }
 }
 
