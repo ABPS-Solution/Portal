@@ -188,7 +188,7 @@
 
 <div id="app-container" style="display: none;">
   <header>
-    <h1>ABPS Management Portal</h1>
+    <h1>ABPS Portal</h1>
     <div class="header-actions-block">
       <div class="user-profile-meta">
         <div class="user-full-name" id="display-full-name"></div>
@@ -198,152 +198,107 @@
     </div>
   </header>
 
-  <!-- BEGIN SIDEBAR & VIEWPORT CONTAINER LAYOUT ROW -->
-  <div style="display: flex; gap: 20px; padding: 0 12px; margin-top: 15px; align-items: flex-start;">
-
-    <!-- SIDE NAVIGATION BAR SPLIT-HEADER LAYOUT     -->
-    <div class="portal-sidebar-navigation-drawer" style="width: 260px; flex-shrink: 0; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; min-height: 75vh;">
+  <div id="dashboard-view" style="padding: 16px 12px; display: flex; flex-direction: column; gap: 20px;">
+    
+    <div id="dashboard-marketing-department-header-block">
+      <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--brand); margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">📊 Marketing Department</h2>
       
-      <!-- DEPARTMENT SECTION 1: MARKETING CONTENT CHANNELS -->
-      <div id="dashboard-marketing-department-header" class="nav-department-group-wrapper">
-        <div class="nav-group-title-label">📊 Marketing Department</div>
-        <ul class="nav-links-list-stack" style="list-style:none; padding:0; margin:0;">
-          <li><a href="#" onclick="switchActiveDashboardModule('marketing-leads')">Leads Directory</a></li>
-          <li><a href="#" onclick="switchActiveDashboardModule('marketing-email-leads')">AI Email Leads</a></li>
-          <li><a href="#" onclick="switchActiveDashboardModule('marketing-tasks')">Tasks Dashboard</a></li>
-        </ul>
+      <div class="dashboard-grid" style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+        <div class="menu-card" id="mod-card" onclick="navigateToModule('cardDetails')"><div class="menu-title">Enter Card Details</div></div>
+        <div class="menu-card" id="mod-company" onclick="navigateToModule('searchCompany')"><div class="menu-title">Search by Company Name</div></div>
+        
+        <div class="menu-card" id="mod-email-whatsapp" onclick="navigateToModule('emailLeads')" style="grid-column: 1 / -1; border: 2px solid var(--border); background: var(--card); color: var(--text); padding: 20px;">
+          <div class="menu-title">Email Leads</div>
+        </div>
+        
+        <div class="menu-card" id="mod-tasks" onclick="navigateToModule('searchTasks')"><div class="menu-title">Search Tasks by Engineer Name</div></div>
+        <div class="menu-card" id="mod-status" onclick="navigateToModule('searchStatus')"><div class="menu-title">Search by Lead Status</div></div>
+        <div class="menu-card" id="mod-city-state" onclick="navigateToModule('searchCityState')"><div class="menu-title">Search by City and State</div></div>
+        <div class="menu-card" id="mod-qual" onclick="navigateToModule('searchQualification')"><div class="menu-title">Search by Qualification</div></div>
       </div>
-      
-      <hr style="border:0; border-top:1px solid var(--border); margin:12px 0;">
-
-      <!-- DEPARTMENT SECTION 2: STORE & INVENTORY CHANNELS -->
-      <div id="dashboard-store-department-header" class="nav-department-group-wrapper" style="display:none;">
-        <div class="nav-group-title-label">🏬 Store & Inventory</div>
-        <ul class="nav-links-list-stack" style="list-style:none; padding:0; margin:0;">
-          <li id="nav-item-store-upload"><a href="#" onclick="switchActiveDashboardModule('store-invoice-intake')">Inbound Invoice Ingest</a></li>
-          <li id="nav-item-store-ticket-create"><a href="#" onclick="switchActiveDashboardModule('store-material-request')">Create Material Ticket</a></li>
-          <li id="nav-item-store-approvals"><a href="#" onclick="switchActiveDashboardModule('store-manager-approvals')">Pending Stock Releases</a></li>
-          <li id="nav-item-store-matrix"><a href="#" onclick="switchActiveDashboardModule('store-history-matrix')">Search Store Tickets</a></li>
-        </ul>
-      </div>
-
     </div>
 
-    <!-- MAIN VIEWPORT STACK RENDER INNER FRAME WORKSPACE -->
-    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 15px;">
+    <div id="dashboard-store-department-header-block" style="display: none;">
+      <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--brand); margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">🏬 Store Department</h2>
+      
+      <div class="dashboard-grid" style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+        <div class="menu-card" id="mod-store-upload" onclick="navigateToStoreWorkspacePanel('store-invoice-intake')" style="display: none;"><div class="menu-title">Store Upload Invoice</div></div>
+        <div class="menu-card" id="mod-store-ticket" onclick="navigateToStoreWorkspacePanel('store-material-request')" style="display: none;"><div class="menu-title">Store Create Ticket</div></div>
+        <div class="menu-card" id="mod-store-approvals" onclick="navigateToStoreWorkspacePanel('store-manager-approvals')" style="display: none;"><div class="menu-title">Store Approve Tickets</div></div>
+        <div class="menu-card" id="mod-store-matrix" onclick="navigateToStoreWorkspacePanel('store-history-matrix')" style="display: none;"><div class="menu-title">Search Store Tickets</div></div>
+      </div>
+    </div>
 
-      <div id="dashboard-view">
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: 1fr; gap: 12px; padding: 16px 12px;">
-          
-          <!-- Row 1: Core Entries and Lookup Blocks -->
-          <div class="menu-card" id="mod-card" onclick="navigateToModule('cardDetails')"><div class="menu-title">Enter Card Details</div></div>
-          <div class="menu-card" id="mod-company" onclick="navigateToModule('searchCompany')"><div class="menu-title">Search by Company Name</div></div>
-          
-          <!-- Row 2: Marketing Leads Core Block Span Across Full Screen Width -->
-          <div class="menu-card" id="mod-email-whatsapp" onclick="navigateToModule('emailLeads')" style="grid-column: 1 / -1; border: 2px solid var(--border); background: var(--card); color: var(--text); padding: 20px;">
-            <div class="menu-title">Email Leads</div>
+  </div> <div id="module-store-workspace-enclosure-panel" style="display: none; padding: 12px 10px;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px;">
+      <div></div> <button class="nav-btn-styled" onclick="exitStoreWorkspacePanelBackToMenu()" style="background:#4a5568;">Return to Main Dashboard</button>
+    </div>
+
+    <div id="canvas-module-store-invoice-intake" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <h2>📥 Store Upload Invoice</h2>
+      <p style="color:var(--muted); font-size:0.82rem; margin-top:-4px; margin-bottom:16px;">
+        Upload a phone photo or digital scan of your signed vendor invoice. The system AI will extract line counts, scale quantities, and verify background duplication profiles.
+      </p>
+      <div id="store-invoice-intake-viewport-mount"></div>
+    </div>
+
+    <div id="canvas-module-store-material-request" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <h2>📝 Store Create Ticket</h2>
+      <p style="color:var(--muted); font-size:0.82rem; margin-top:-4px; margin-bottom:16px;">
+        Compile components required for shop floor panel assembly. Reserving parts applies an instant ghost-stock lockdown protection map across other workshop active terminal stations.
+      </p>
+      
+      <div class="section" style="background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
+        <div style="margin-bottom: 16px;">
+          <label class="field-label" style="font-weight: 700; color: var(--brand);">Select Destination Project ID *</label>
+          <select id="ticket-project-id-dropdown" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);"><option value="">— Loading Active Projects —</option></select>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: var(--radius); margin-bottom: 16px;">
+          <span style="display: block; font-size: 0.72rem; font-weight: 800; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Add Component Line Item</span>
+          <div style="display: flex; gap: 10px; align-items: flex-end;">
+            <div style="flex-grow: 1;">
+              <label class="field-label" style="font-size: 0.75rem;">Material Description</label>
+              <select id="ticket-item-selection-dropdown" onchange="updateSelectedLiveStockPillCounter()" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);"><option value="">Loading Master Catalog...</option></select>
+            </div>
+            <div style="width: 100px;">
+              <label class="field-label" style="font-size: 0.75rem;">Quantity</label>
+              <input type="number" id="ticket-item-quantity-input" min="1" placeholder="Qty" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" />
+            </div>
+            <button class="nav-btn-styled" onclick="addItemToShoppingBasketRow()" style="background: var(--brand); padding: 9px 14px; font-weight: 600;">+ Add</button>
           </div>
-          <!-- Row 3: Engineering Follow-ups Matrices (Side by Side) -->
-          <div class="menu-card" id="mod-tasks" onclick="navigateToModule('searchTasks')"><div class="menu-title">Search Tasks by Engineer Name</div></div>
-          <div class="menu-card" id="mod-status" onclick="navigateToModule('searchStatus')"><div class="menu-title">Search by Lead Status</div></div>
-          
-          <!-- Row 4: Secondary Filters Blocks (Side by Side) -->
-          <div class="menu-card" id="mod-qual" onclick="navigateToModule('searchQualification')"><div class="menu-title">Search by Qualification</div></div>
-          <div class="menu-card" id="mod-city-state" onclick="navigateToModule('searchCityState')"><div class="menu-title">Search by City and State</div></div>
-          
+          <div id="ticket-live-counter-pill-zone" style="margin-top: 8px; font-size: 0.8rem; min-height: 20px;"></div>
+        </div>
+
+        <div style="margin-bottom: 20px; overflow-x: auto;">
+          <span style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--brand); text-transform: uppercase; margin-bottom: 6px;">Draft Material Specification Basket</span>
+          <table class="store-basket-data-table" id="shopping-basket-preview-table">
+            <thead>
+              <tr><th>Material Name</th><th>Required Quantity</th><th>Unit</th><th style="width: 60px; text-align: center;">Action</th></tr>
+            </thead>
+            <tbody id="shopping-basket-table-body">
+              <tr><td colspan="4" style="text-align: center; color: var(--muted); padding: 20px;">Your request ticket basket is currently empty.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border); padding-top: 14px;">
+          <button class="nav-btn-styled" onclick="clearFullBasketDraftState()" style="background: #718096;">Clear Basket</button>
+          <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="submitMaterialRequestTicketToBackend()" style="background: var(--accent); padding: 8px 20px; font-weight: 700;">Generate Material Ticket</button>
         </div>
       </div>
+    </div>
 
-      <!-- STORE MODULE PANEL 1: INBOUND INVOICE INGEST WORKSPACE -->
-      <div id="canvas-module-store-invoice-intake" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-        <h2>📥 Inbound Invoice Ingest & Stock Ingest</h2>
-        <p class="section-subtitle-description" style="color:var(--muted); font-size:0.82rem; margin-top:-6px; margin-bottom:16px;">
-          Upload a phone photo or digital scan of your signed vendor invoice. The system AI will extract line counts, scale quantities, and verify background duplication profiles.
-        </p>
-        <div id="store-invoice-intake-viewport-mount"><!-- Module Content Injected Later --></div>
-      </div>
+    <div id="canvas-module-store-manager-approvals" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <h2>⚖️ Store Approve Tickets</h2>
+      <div id="store-manager-approvals-viewport-mount"></div>
+    </div>
 
-      <!-- STORE MODULE PANEL 2: MATERIAL TICKET BASKET GENERATOR -->
-      <div id="canvas-module-store-material-request" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-        <h2>📝 Create Outbound Material Request Ticket</h2>
-        <p class="section-subtitle-description" style="color:var(--muted); font-size:0.82rem; margin-top:-6px; margin-bottom:16px;">
-          Compile components required for shop floor panel assembly. Reserving parts applies an instant ghost-stock lockdown protection map across other workshop active terminal stations.
-        </p>
-        <div id="store-material-request-viewport-mount">
-          <div class="section" style="background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
-            
-            <!-- Project ID Selection Row -->
-            <div style="margin-bottom: 16px;">
-              <label class="field-label" style="font-weight: 700; color: var(--brand);">Select Destination Project ID *</label>
-              <select id="ticket-project-id-dropdown" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);">
-                <option value="">— Loading Active Projects —</option>
-              </select>
-            </div>
-
-            <!-- Active Drafting Row Controls -->
-            <div style="background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: var(--radius); margin-bottom: 16px;">
-              <span style="display: block; font-size: 0.72rem; font-weight: 800; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Add Component Line Item</span>
-              
-              <div style="display: flex; gap: 10px; align-items: flex-end;">
-                <div style="flex-grow: 1;">
-                  <label class="field-label" style="font-size: 0.75rem;">Material Description</label>
-                  <select id="ticket-item-selection-dropdown" onchange="updateSelectedLiveStockPillCounter()" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);">
-                    <option value="">Loading Master Catalog...</option>
-                  </select>
-                </div>
-                
-                <div style="width: 120px;">
-                  <label class="field-label" style="font-size: 0.75rem;">Quantity</label>
-                  <input type="number" id="ticket-item-quantity-input" min="1" placeholder="Qty" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" />
-                </div>
-                
-                <button class="nav-btn-styled" onclick="addItemToShoppingBasketRow()" style="background: var(--brand); padding: 9px 16px; font-weight: 600;">+ Add</button>
-              </div>
-
-              <!-- Real-Time Selected Stock Readout -->
-              <div id="ticket-live-counter-pill-zone" style="margin-top: 8px; font-size: 0.8rem; min-height: 20px;"></div>
-            </div>
-
-            <!-- Draft Basket Table Display Workspace -->
-            <div style="margin-bottom: 20px;">
-              <span style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--brand); text-transform: uppercase; margin-bottom: 6px;">Draft Material Specification Basket</span>
-              <table class="store-basket-data-table" id="shopping-basket-preview-table">
-                <thead>
-                  <tr>
-                    <th>Material Name</th>
-                    <th>Required Quantity</th>
-                    <th>Unit</th>
-                    <th style="width: 60px; text-align: center;">Action</th>
-                  </tr>
-                </thead>
-                <tbody id="shopping-basket-table-body">
-                  <tr>
-                    <td colspan="4" style="text-align: center; color: var(--muted); padding: 20px;">Your request ticket basket is currently empty.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Submission Control Trigger Box -->
-            <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border); padding-top: 14px;">
-              <button class="nav-btn-styled" onclick="clearFullBasketDraftState()" style="background: #718096;">Clear Basket</button>
-              <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="submitMaterialRequestTicketToBackend()" style="background: var(--accent); padding: 8px 20px; font-weight: 700;">Generate Material Ticket</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- STORE MODULE PANEL 3: MANAGER STOCK RELEASE QUEUE -->
-      <div id="canvas-module-store-manager-approvals" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-        <h2>⚖️ Pending Stock Releases & Verification Ledger</h2>
-        <div id="store-manager-approvals-viewport-mount"><!-- Module Content Injected Later --></div>
-      </div>
-
-      <!-- STORE MODULE PANEL 4: ADMIN HISTORICAL SEARCH MATRIX -->
-      <div id="canvas-module-store-history-matrix" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-        <h2>🔍 Search Store Tickets & Operational Analytics</h2>
-        <div id="store-history-matrix-viewport-mount"><!-- Module Content Injected Later --></div>
-      </div>
+    <div id="canvas-module-store-history-matrix" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <h2>🔍 Search Store Tickets</h2>
+      <div id="store-history-matrix-viewport-mount"></div>
+    </div>
+  </div>
 
       <!-- WORKSPACE CONTAINER HUB (MARKETING ACTIONS SLIDERS) -->
       <div id="module-workspace-container" style="display: none;">
@@ -2987,37 +2942,24 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
 }
 
 function enforceDynamicModuleRoleGateways(userPermissionsObject) {
-  // Check permission allocations from the Users sheet columns
+  // 1. Gather secure access parameters toggles
   const canUploadInvoice = userPermissionsObject.storeUploadInvoice === true;
   const canCreateTicket  = userPermissionsObject.storeCreateTicket === true;
   const canReleaseTicket = userPermissionsObject.storeApproveTickets === true;
   const canSearchMatrix  = userPermissionsObject.storeAdminMatrix === true;
-  
-  // Outer Department Headers Visibility Toggles
-  const storeHeaderWrapper = document.getElementById("dashboard-store-department-header");
-  const marketingHeaderWrapper = document.getElementById("dashboard-marketing-department-header");
-  
-  // Show/Hide Entire Store Department Wrapper Container
-  if (storeHeaderWrapper) {
-    if (canUploadInvoice || canCreateTicket || canReleaseTicket || canSearchMatrix) {
-      storeHeaderWrapper.style.display = "block";
-    } else {
-      storeHeaderWrapper.style.display = "none";
-    }
-  }
-  
-  // Inline Section-Block Level Visibility Switches
-  if (document.getElementById("nav-item-store-upload")) {
-    document.getElementById("nav-item-store-upload").style.display = canUploadInvoice ? "block" : "none";
-  }
-  if (document.getElementById("nav-item-store-ticket-create")) {
-    document.getElementById("nav-item-store-ticket-create").style.display = canCreateTicket ? "block" : "none";
-  }
-  if (document.getElementById("nav-item-store-approvals")) {
-    document.getElementById("nav-item-store-approvals").style.display = canReleaseTicket ? "block" : "none";
-  }
-  if (document.getElementById("nav-item-store-matrix")) {
-    document.getElementById("nav-item-store-matrix").style.display = canSearchMatrix ? "block" : "none";
+
+  // 2. Set individual block section card visibilities
+  document.getElementById("mod-store-upload").style.display = canUploadInvoice ? "block" : "none";
+  document.getElementById("mod-store-ticket").style.display = canCreateTicket ? "block" : "none";
+  document.getElementById("mod-store-approvals").style.display = canReleaseTicket ? "block" : "none";
+  document.getElementById("mod-store-matrix").style.display = canSearchMatrix ? "block" : "none";
+
+  // 3. DEPARTMENT BLOCK GATEWAY: Hide header row completely if no internal sub-items are visible
+  const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");
+  if (canUploadInvoice || canCreateTicket || canReleaseTicket || canSearchMatrix) {
+    storeHeaderBlock.style.display = "block";
+  } else {
+    storeHeaderBlock.style.display = "none";
   }
 }
 
@@ -3266,6 +3208,38 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   } else if (targetCanvasModuleId === 'store-history-matrix') {
     document.getElementById("canvas-module-store-history-matrix").style.display = "block";
   }
+}
+
+function navigateToStoreWorkspacePanel(targetPanelModuleId) {
+  // Hide home main landing dashboard view container completely
+  document.getElementById("dashboard-view").style.display = "none";
+  document.getElementById("module-workspace-container").style.display = "none";
+  
+  // Reset visibility states properties arrays flags across sub-canvases
+  document.getElementById("canvas-module-store-invoice-intake").style.display = "none";
+  document.getElementById("canvas-module-store-material-request").style.display = "none";
+  document.getElementById("canvas-module-store-manager-approvals").style.display = "none";
+  document.getElementById("canvas-module-store-history-matrix").style.display = "none";
+
+  // Maximize target overlay screen
+  document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+
+  if (targetPanelModuleId === 'store-material-request') {
+    document.getElementById("canvas-module-store-material-request").style.display = "block";
+    initializeMaterialRequestWorkspace(); // Synchronize inventory values live
+  } else if (targetPanelModuleId === 'store-invoice-intake') {
+    document.getElementById("canvas-module-store-invoice-intake").style.display = "block";
+  } else if (targetPanelModuleId === 'store-manager-approvals') {
+    document.getElementById("canvas-module-store-manager-approvals").style.display = "block";
+  } else if (targetPanelModuleId === 'store-history-matrix') {
+    document.getElementById("canvas-module-store-history-matrix").style.display = "block";
+  }
+}
+
+function exitStoreWorkspacePanelBackToMenu() {
+  document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
+  document.getElementById("dashboard-view").style.display = "flex"; // Brings back full stacked landing categories
+  triggerCompanyDropdownArrayFetch(); // Keeps marketing components synced in background
 }
 
 </script>
