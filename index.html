@@ -268,7 +268,68 @@
         <p class="section-subtitle-description" style="color:var(--muted); font-size:0.82rem; margin-top:-6px; margin-bottom:16px;">
           Compile components required for shop floor panel assembly. Reserving parts applies an instant ghost-stock lockdown protection map across other workshop active terminal stations.
         </p>
-        <div id="store-material-request-viewport-mount"><!-- Module Content Injected Later --></div>
+        <div id="store-material-request-viewport-mount">
+          <div class="section" style="background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
+            
+            <!-- Project ID Selection Row -->
+            <div style="margin-bottom: 16px;">
+              <label class="field-label" style="font-weight: 700; color: var(--brand);">Select Destination Project ID *</label>
+              <select id="ticket-project-id-dropdown" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);">
+                <option value="">— Loading Active Projects —</option>
+              </select>
+            </div>
+
+            <!-- Active Drafting Row Controls -->
+            <div style="background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: var(--radius); margin-bottom: 16px;">
+              <span style="display: block; font-size: 0.72rem; font-weight: 800; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Add Component Line Item</span>
+              
+              <div style="display: flex; gap: 10px; align-items: flex-end;">
+                <div style="flex-grow: 1;">
+                  <label class="field-label" style="font-size: 0.75rem;">Material Description</label>
+                  <select id="ticket-item-selection-dropdown" onchange="updateSelectedLiveStockPillCounter()" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);">
+                    <option value="">Loading Master Catalog...</option>
+                  </select>
+                </div>
+                
+                <div style="width: 120px;">
+                  <label class="field-label" style="font-size: 0.75rem;">Quantity</label>
+                  <input type="number" id="ticket-item-quantity-input" min="1" placeholder="Qty" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" />
+                </div>
+                
+                <button class="nav-btn-styled" onclick="addItemToShoppingBasketRow()" style="background: var(--brand); padding: 9px 16px; font-weight: 600;">+ Add</button>
+              </div>
+
+              <!-- Real-Time Selected Stock Readout -->
+              <div id="ticket-live-counter-pill-zone" style="margin-top: 8px; font-size: 0.8rem; min-height: 20px;"></div>
+            </div>
+
+            <!-- Draft Basket Table Display Workspace -->
+            <div style="margin-bottom: 20px;">
+              <span style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--brand); text-transform: uppercase; margin-bottom: 6px;">Draft Material Specification Basket</span>
+              <table class="store-basket-data-table" id="shopping-basket-preview-table">
+                <thead>
+                  <tr>
+                    <th>Material Name</th>
+                    <th>Required Quantity</th>
+                    <th>Unit</th>
+                    <th style="width: 60px; text-align: center;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="shopping-basket-table-body">
+                  <tr>
+                    <td colspan="4" style="text-align: center; color: var(--muted); padding: 20px;">Your request ticket basket is currently empty.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Submission Control Trigger Box -->
+            <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border); padding-top: 14px;">
+              <button class="nav-btn-styled" onclick="clearFullBasketDraftState()" style="background: #718096;">Clear Basket</button>
+              <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="submitMaterialRequestTicketToBackend()" style="background: var(--accent); padding: 8px 20px; font-weight: 700;">Generate Material Ticket</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- STORE MODULE PANEL 3: MANAGER STOCK RELEASE QUEUE -->
@@ -2948,6 +3009,241 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   }
   if (document.getElementById("nav-item-store-matrix")) {
     document.getElementById("nav-item-store-matrix").style.display = canSearchMatrix ? "block" : "none";
+  }
+}
+
+/**
+ * 1. INITIALIZE OUTBOUND WORKSPACE
+ * Pulls master catalogs and project drop lists from the backend spreadsheet logs
+ */
+async function initializeMaterialRequestWorkspace() {
+  const projectDropdown = document.getElementById("ticket-project-id-dropdown");
+  const itemDropdown = document.getElementById("ticket-item-selection-dropdown");
+  
+  document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
+  clearFullBasketDraftState();
+
+  try {
+    // Dispatch query to pull updated live quantities
+    const response = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "pullLiveInventoryCounts",
+        sessionToken: localStorage.getItem("sessionToken")
+      })
+    });
+    
+    const data = await response.json();
+    if (!data.success) {
+      alert("Inventory sync failed: " + data.error);
+      return;
+    }
+    
+    // Store data inside cache structure matrix
+    cachedInventoryStockCollection = data.inventory;
+    
+    // Populate Material Catalog Drops
+    itemDropdown.innerHTML = '<option value="">— Select Component —</option>';
+    cachedInventoryStockCollection.forEach(item => {
+      const opt = document.createElement("option");
+      opt.value = item.materialName;
+      opt.textContent = item.materialName;
+      itemDropdown.appendChild(opt);
+    });
+
+    // Populate Project Context Drop list options 
+    // (Note: In a later phase, we can alter this to pull live from your project worksheet tab)
+    projectDropdown.innerHTML = '<option value="">— Select Target Site Project ID —</option>';
+    activeInventoryProjectIdsList.forEach(id => {
+      const opt = document.createElement("option");
+      opt.value = id;
+      opt.textContent = id;
+      projectDropdown.appendChild(opt);
+    });
+
+  } catch (error) {
+    alert("Network sync drop: " + error.message);
+  }
+}
+
+/**
+ * 2. LIVE SELECTION STOCK COUNTER LOOKUP PILL
+ * Scans cache maps instantly as the user clicks options to show stock states
+ */
+function updateSelectedLiveStockPillCounter() {
+  const selectedMaterial = document.getElementById("ticket-item-selection-dropdown").value;
+  const counterZone = document.getElementById("ticket-live-counter-pill-zone");
+  
+  if (!selectedMaterial) {
+    counterZone.innerHTML = "";
+    return;
+  }
+  
+  const match = cachedInventoryStockCollection.find(i => i.materialName === selectedMaterial);
+  if (match) {
+    let styleClass = "pill-stock-healthy";
+    if (match.availableStock === 0) styleClass = "pill-stock-empty";
+    else if (match.availableStock <= match.reorderLevel) styleClass = "pill-stock-low";
+    
+    counterZone.innerHTML = `Real-time Stock Count: <span class="live-counter-pill ${styleClass}">${match.availableStock} ${match.unitType} Available</span> (Reserved: ${match.reservedStock})`;
+  }
+}
+
+/**
+ * 3. ADD LINE ITEM TO BASKET STREAM
+ * Validates against ghost-stock limitations and formats rows inside the view viewport
+ */
+function addItemToShoppingBasketRow() {
+  const itemSelect = document.getElementById("ticket-item-selection-dropdown");
+  const qtyInput = document.getElementById("ticket-item-quantity-input");
+  
+  const materialName = itemSelect.value;
+  const quantity = parseInt(qtyInput.value, 10);
+  
+  if (!materialName || isNaN(quantity) || quantity <= 0) {
+    alert("Validation Error: Please pick a valid item component and assign a positive numeric count.");
+    return;
+  }
+  
+  const itemData = cachedInventoryStockCollection.find(i => i.materialName === materialName);
+  if (!itemData) return;
+  
+  // Ghost-Stock Check: Make sure request threshold doesn't exceed true immediate shelf count
+  if (quantity > itemData.availableStock) {
+    alert(`Ghost-Stock Alert: You are attempting to reserve ${quantity} units, but only ${itemData.availableStock} are currently remaining on the shelves.`);
+    return;
+  }
+  
+  // Handle duplicate row configurations by merging entries together inside the basket array
+  const existingLineItem = dynamicTicketShoppingBasketArray.find(i => i.materialName === materialName);
+  if (existingLineItem) {
+    const projectedNewQty = existingLineItem.quantity + quantity;
+    if (projectedNewQty > itemData.availableStock) {
+      alert(`Ghost-Stock Alert: Aggregate row total (${projectedNewQty}) exceeds remaining raw shelf space stock limit of ${itemData.availableStock}.`);
+      return;
+    }
+    existingLineItem.quantity = projectedNewQty;
+  } else {
+    dynamicTicketShoppingBasketArray.push({
+      materialName: materialName,
+      quantity: quantity,
+      unitType: itemData.unitType
+    });
+  }
+  
+  // Clear layout input controls and rebuild preview card rows
+  qtyInput.value = "";
+  renderDraftBasketTableViewportRows();
+}
+
+/**
+ * 4. RENDER BASKET DATA VIEWPORT ROWS
+ */
+function renderDraftBasketTableViewportRows() {
+  const tbody = document.getElementById("shopping-basket-table-body");
+  
+  if (dynamicTicketShoppingBasketArray.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--muted); padding: 20px;">Your request ticket basket is currently empty.</td></tr>`;
+    return;
+  }
+  
+  tbody.innerHTML = "";
+  dynamicTicketShoppingBasketArray.forEach((rowItem, arrayIdx) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="font-weight:600; color:var(--text);">${rowItem.materialName}</td>
+      <td style="font-family:monospace; font-weight:700;">${rowItem.quantity}</td>
+      <td style="color:var(--muted); font-size:0.8rem;">${rowItem.unitType}</td>
+      <td style="text-align:center;">
+        <button class="nav-btn-styled" onclick="removeSingleBasketItemLineAtIndex(${arrayIdx})" style="background:#e53e3e; padding:2px 8px; font-size:0.75rem;">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function removeSingleBasketItemLineAtIndex(index) {
+  dynamicTicketShoppingBasketArray.splice(index, 1);
+  renderDraftBasketTableViewportRows();
+}
+
+function clearFullBasketDraftState() {
+  dynamicTicketShoppingBasketArray = [];
+  renderDraftBasketTableViewportRows();
+}
+
+/**
+ * 5. SUBMIT MATERIAL REQUEST TICKET TO BACKEND
+ * Ships data block to handleInventoryModulePostRequests pipeline router gateway
+ */
+async function submitMaterialRequestTicketToBackend() {
+  const projectId = document.getElementById("ticket-project-id-dropdown").value;
+  const submitBtn = document.getElementById("submit-ticket-final-btn");
+  
+  if (!projectId) {
+    alert("Compulsory input dropped: Destination Project ID allocation configuration is required.");
+    return;
+  }
+  
+  if (dynamicTicketShoppingBasketArray.length === 0) {
+    alert("Validation failure: Cannot process submission frames on an empty draft allocation stream.");
+    return;
+  }
+  
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = "Generating Reservation Ticket...";
+  
+  try {
+    const payload = {
+      action: "submitEngineerMaterialTicket",
+      sessionToken: localStorage.getItem("sessionToken"),
+      activeEngineer: appActiveOperatorIdentityString, // Automatically pulled from current user identity
+      projectId: projectId,
+      itemsClusterArray: dynamicTicketShoppingBasketArray
+    };
+    
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    
+    const result = await res.json();
+    if (result.success) {
+      alert(`Success! Ticket created successfully.\nAssigned System Reference ID: ${result.ticketId}`);
+      clearFullBasketDraftState();
+      document.getElementById("ticket-project-id-dropdown").value = "";
+      document.getElementById("ticket-item-selection-dropdown").value = "";
+      document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
+    } else {
+      alert("Submission Rejected: " + result.error);
+    }
+    
+  } catch (err) {
+    alert("Network transmission block: " + err.message);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = "Generate Material Ticket";
+  }
+}
+
+function switchActiveDashboardModule(targetCanvasModuleId) {
+  // Hide all standard layout canvas frame panels
+  const allPanels = document.querySelectorAll('.workspace-panel, #dashboard-view');
+  allPanels.forEach(p => p.style.display = 'none');
+  
+  // Separate visibility selector logic mapping conditions
+  if (targetCanvasModuleId === 'store-material-request') {
+    document.getElementById("canvas-module-store-material-request").style.display = "block";
+    initializeMaterialRequestWorkspace(); // Triggers live inventory synchronization lookups
+  } else if (targetCanvasModuleId === 'store-invoice-intake') {
+    document.getElementById("canvas-module-store-invoice-intake").style.display = "block";
+  } else if (targetCanvasModuleId === 'store-manager-approvals') {
+    document.getElementById("canvas-module-store-manager-approvals").style.display = "block";
+  } else if (targetCanvasModuleId === 'store-history-matrix') {
+    document.getElementById("canvas-module-store-history-matrix").style.display = "block";
+  } else {
+    // Revert back to handling default fallback options context routes
+    // (e.g. your marketing-leads or task directory targets)
   }
 }
 
