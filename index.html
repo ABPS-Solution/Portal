@@ -220,10 +220,10 @@
       <div id="dashboard-store-department-header" class="nav-department-group-wrapper" style="display:none;">
         <div class="nav-group-title-label">🏬 Store & Inventory</div>
         <ul class="nav-links-list-stack" style="list-style:none; padding:0; margin:0;">
-          <li id="nav-item-store-upload"><a href="#" onclick="switchActiveDashboardModule('store-invoice-intake')">📥 Inbound Invoice Ingest</a></li>
-          <li id="nav-item-store-ticket-create"><a href="#" onclick="switchActiveDashboardModule('store-material-request')">📝 Create Material Ticket</a></li>
-          <li id="nav-item-store-approvals"><a href="#" onclick="switchActiveDashboardModule('store-manager-approvals')">⚖️ Pending Stock Releases</a></li>
-          <li id="nav-item-store-matrix"><a href="#" onclick="switchActiveDashboardModule('store-history-matrix')">🔍 Search Store Tickets</a></li>
+          <li id="nav-item-store-upload"><a href="#" onclick="switchActiveDashboardModule('store-invoice-intake')">Inbound Invoice Ingest</a></li>
+          <li id="nav-item-store-ticket-create"><a href="#" onclick="switchActiveDashboardModule('store-material-request')">Create Material Ticket</a></li>
+          <li id="nav-item-store-approvals"><a href="#" onclick="switchActiveDashboardModule('store-manager-approvals')">Pending Stock Releases</a></li>
+          <li id="nav-item-store-matrix"><a href="#" onclick="switchActiveDashboardModule('store-history-matrix')">Search Store Tickets</a></li>
         </ul>
       </div>
 
@@ -1027,6 +1027,8 @@ async function showAppView() {
   document.getElementById("display-full-name").textContent = localStorage.getItem("userFirstName") + " " + localStorage.getItem("userLastName");
   document.getElementById("display-username").textContent = "@" + localStorage.getItem("sessionUser");
   
+  enforceDynamicModuleRoleGateways(userPermissions);
+  
   loadQualFilter();
 
   const menuPermissions = [
@@ -1193,13 +1195,19 @@ function navigateToModule(key) {
 
 function returnToDashboard() { 
   collapseNewEntryDropdownFormExplicitly(); 
+  
+  // Hide all store modules views panels
+  document.getElementById("canvas-module-store-invoice-intake").style.display = "none";
+  document.getElementById("canvas-module-store-material-request").style.display = "none";
+  document.getElementById("canvas-module-store-manager-approvals").style.display = "none";
+  document.getElementById("canvas-module-store-history-matrix").style.display = "none";
+  
   document.getElementById("module-workspace-container").style.display = "none";
-  document.getElementById("dashboard-view").style.display = "block";
+  document.getElementById("dashboard-view").style.display = "block"; // Brings back home grid view
   
   const canvas = document.getElementById("step2-inline-interaction-canvas");
   if (canvas) canvas.style.display = "none";
   
-  // Empty canvas arrays to save terminal device processing load
   document.getElementById("multi-contact-records-container").innerHTML = "";
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
   document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
@@ -3228,23 +3236,35 @@ async function submitMaterialRequestTicketToBackend() {
 }
 
 function switchActiveDashboardModule(targetCanvasModuleId) {
-  // Hide all standard layout canvas frame panels
-  const allPanels = document.querySelectorAll('.workspace-panel, #dashboard-view');
-  allPanels.forEach(p => p.style.display = 'none');
+  // 1. Hide the legacy homepage landing cards grid and all marketing popups
+  document.getElementById("dashboard-view").style.display = "none";
+  document.getElementById("module-workspace-container").style.display = "none";
+  document.getElementById("step2-inline-interaction-canvas").style.display = "none";
   
-  // Separate visibility selector logic mapping conditions
-  if (targetCanvasModuleId === 'store-material-request') {
+  // 2. Hide all modular store dashboard section wrapper panels completely
+  document.getElementById("canvas-module-store-invoice-intake").style.display = "none";
+  document.getElementById("canvas-module-store-material-request").style.display = "none";
+  document.getElementById("canvas-module-store-manager-approvals").style.display = "none";
+  document.getElementById("canvas-module-store-history-matrix").style.display = "none";
+  
+  // 3. SECURE REDIRECT ROUTING OVERRIDES: Route sidebar hooks to appropriate dashboards
+  if (targetCanvasModuleId === 'marketing-leads') {
+    navigateToModule('searchCompany');
+  } else if (targetCanvasModuleId === 'marketing-email-leads') {
+    navigateToModule('emailLeads');
+  } else if (targetCanvasModuleId === 'marketing-tasks') {
+    navigateToModule('searchTasks');
+  } 
+  // 4. STORE PIPELINE ROUTING SWITCHES
+  else if (targetCanvasModuleId === 'store-material-request') {
     document.getElementById("canvas-module-store-material-request").style.display = "block";
-    initializeMaterialRequestWorkspace(); // Triggers live inventory synchronization lookups
+    initializeMaterialRequestWorkspace(); // Pulls quantities down live
   } else if (targetCanvasModuleId === 'store-invoice-intake') {
     document.getElementById("canvas-module-store-invoice-intake").style.display = "block";
   } else if (targetCanvasModuleId === 'store-manager-approvals') {
     document.getElementById("canvas-module-store-manager-approvals").style.display = "block";
   } else if (targetCanvasModuleId === 'store-history-matrix') {
     document.getElementById("canvas-module-store-history-matrix").style.display = "block";
-  } else {
-    // Revert back to handling default fallback options context routes
-    // (e.g. your marketing-leads or task directory targets)
   }
 }
 
