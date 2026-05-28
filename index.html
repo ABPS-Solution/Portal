@@ -213,18 +213,11 @@
     <div id="dashboard-store-department-header-block" style="display: none;">
       <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--brand); margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Store Department</h2>
       
-      <div class="menu-card" id="mod-live-store-stock" style="display: none; grid-column: 1 / -1; border: 2.5px solid var(--border); background: var(--card); color: var(--text); padding: 15px; margin-bottom: 12px; cursor: default;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 4px;">
-          <span style="font-size: 0.82rem; font-weight: 800; color: var(--brand); text-transform: uppercase; letter-spacing: 0.5px;">Real-time Stock Inventory Stream</span>
-          <button class="nav-btn-styled" style="padding: 2px 8px; font-size: 0.68rem;" onclick="triggerLiveWarehouseStockMetricsSync()">Sync Stream</button>
-        </div>
-        
-        <div id="dashboard-live-inventory-metrics-mount-zone" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; text-align: left;">
-          <p style="font-size: 0.8rem; color: var(--muted); text-align: center; grid-column: 1 / -1; padding: 10px;">Establishing active warehouse database socket stream...</p>
-        </div>
-      </div>
-
       <div class="dashboard-grid" style="display: grid; grid-template-columns: 1fr; gap: 12px; padding: 0 0 16px;">
+        <div class="menu-card" id="mod-live-store-stock" onclick="navigateToStoreWorkspacePanel('store-live-stock')" style="display: none; grid-column: 1 / -1; background: var(--card); border: 2px solid var(--border); padding: 20px;">
+          <div class="menu-title" style="font-size: 1.05rem; color: var(--brand);">Live Store Stock</div>
+        </div>
+
         <div class="menu-card" id="mod-store-upload" onclick="navigateToStoreWorkspacePanel('store-invoice-intake')" style="display: none;"><div class="menu-title">Store Upload Invoice</div></div>
         <div class="menu-card" id="mod-store-ticket" onclick="navigateToStoreWorkspacePanel('store-material-request')" style="display: none;"><div class="menu-title">Store Create Ticket</div></div>
         <div class="menu-card" id="mod-store-approvals" onclick="navigateToStoreWorkspacePanel('store-manager-approvals')" style="display: none;"><div class="menu-title">Store Approve Tickets</div></div>
@@ -235,10 +228,24 @@
   
   <div id="module-store-workspace-enclosure-panel" style="display: none; padding: 12px 10px;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px;">
-      <div></div> <button class="nav-btn-styled" onclick="exitStoreWorkspacePanelBackToMenu()" style="background:#4a5568;">Return to Main Dashboard</button>
+      <div></div> <button class="nav-btn-styled" onclick="exitStoreWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
     </div>
 
-    <!-- STORE MODULE PANEL 1: INBOUND INVOICE ADD WORKSPACE -->
+    <div id="canvas-module-store-live-stock" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+        <button class="nav-btn-styled" style="background: var(--brand); padding: 6px 16px;" onclick="triggerLiveWarehouseStockMetricsSync()">Sync</button>
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0;">📊 Live Store Stock</h2>
+        <button class="nav-btn-styled" style="background: #4a5568; padding: 6px 16px;" onclick="exitStoreWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
+      </div>
+
+      <div style="background: var(--highlight-bg); border: 1.5px solid var(--border); border-left: 4px solid var(--brand); padding: 16px; border-radius: var(--radius); text-align: left;">
+        <div id="dashboard-live-inventory-metrics-mount-zone" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
+          <p style="font-size: 0.85rem; color: var(--muted); text-align: center; grid-column: 1 / -1; padding: 20px;">⏳ Syncing active material databases logs...</p>
+        </div>
+      </div>
+    </div>
+
     <div id="canvas-module-store-invoice-intake" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
       <h2 style="margin-bottom: 16px;">Store Upload Invoice</h2>
       <p style="color:var(--muted); font-size:0.82rem; margin-top:-4px; margin-bottom:16px;">
@@ -3152,9 +3159,9 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canReleaseTicket   = userPermissionsObject.storeApproveTickets === true;
   const canSearchStoreMat  = userPermissionsObject.storeAdminMatrix === true;
 
-  const liveStockNode = document.getElementById("mod-live-store-stock");
-  if (liveStockNode) {
-    liveStockNode.style.display = canViewLiveStock ? "block" : "none";
+  const liveStockMenuCard = document.getElementById("mod-live-store-stock");
+  if (liveStockMenuCard) {
+    liveStockMenuCard.style.display = canViewLiveStock ? "block" : "none";
   }
 
   // 3. SET INDIVIDUAL MARKETING SECTIONS CARDS VISIBILITY STATES
@@ -3503,17 +3510,15 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
 }
 
 function navigateToStoreWorkspacePanel(targetPanelModuleId) {
-  // Hide home main landing dashboard view container completely
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   
-  // Reset visibility states properties arrays flags across sub-canvases
   document.getElementById("canvas-module-store-invoice-intake").style.display = "none";
   document.getElementById("canvas-module-store-material-request").style.display = "none";
   document.getElementById("canvas-module-store-manager-approvals").style.display = "none";
   document.getElementById("canvas-module-store-history-matrix").style.display = "none";
+  document.getElementById("canvas-module-store-live-stock").style.display = "none"; // Clear layout canvas references
 
-  // Maximize target overlay screen
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
 
   if (targetPanelModuleId === 'store-material-request') {
@@ -3521,12 +3526,15 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
     initializeMaterialRequestWorkspace();
   } else if (targetPanelModuleId === 'store-manager-approvals') {
     document.getElementById("canvas-module-store-manager-approvals").style.display = "block";
-    initializeStoreManagerApprovalsWorkspace(); // FIXED: ADD THIS QUEUE TRIGGER PULL INITIALIZER HERE
+    initializeStoreManagerApprovalsWorkspace();
   } else if (targetPanelModuleId === 'store-invoice-intake') {
     document.getElementById("canvas-module-store-invoice-intake").style.display = "block";
   } else if (targetPanelModuleId === 'store-history-matrix') {
     document.getElementById("canvas-module-store-history-matrix").style.display = "block";
-    initializeStoreHistoryMatrixWorkspace(); // FIXED: CALL HISTORICAL ENGINE SYNC INITIALIZER HERE
+    initializeStoreHistoryMatrixWorkspace();
+  } else if (targetPanelModuleId === 'store-live-stock') { // FIXED: Standalone panel entry initialization
+    document.getElementById("canvas-module-store-live-stock").style.display = "block";
+    triggerLiveWarehouseStockMetricsSync(); // Runs data pull automatically upon card click
   }
 }
 
@@ -4153,24 +4161,23 @@ async function triggerLiveWarehouseStockMetricsSync() {
     }
   } catch (error) {
     console.error("Live inventory polling thread dropped:", error);
-    mountZone.innerHTML = `<p style="font-size: 0.75rem; color: var(--warn); grid-column: 1 / -1; text-align: center;">⚠️ Sync Exception: Couldn't refresh active inventory balances.</p>`;
+    mountZone.innerHTML = `<p style="font-size: 0.75rem; color: var(--warn); grid-column: 1 / -1; text-align: center;">Sync Exception: Couldn't refresh active inventory balances.</p>`;
   }
 }
 
-// FIXED TRIGGER: Force immediate background fetch loop right inside showAppView completion routine paths
+// FIXED REF: Automatic background refresh controller targeting loop
 const parentShowAppView = showAppView;
 showAppView = async function() {
   await parentShowAppView();
-  // If operator possesses authorized permission clearance, drop dynamic inventory numbers on dashboard
+  
   if (userPermissions && userPermissions.liveStoreStock === true) {
-    triggerLiveWarehouseStockMetricsSync();
-    
-    // ATOMIC AUTO-REFRESH ENGINE: Polling interval triggers every 30 seconds to lock real-time stock balances parity
+    // Background polling routine tracks panel visibility status keys before hitting server
     setInterval(() => {
-      if (document.getElementById("dashboard-view").style.display !== "none") {
+      const liveStockPanel = document.getElementById("canvas-module-store-live-stock");
+      if (liveStockPanel && liveStockPanel.style.display === "block") {
         triggerLiveWarehouseStockMetricsSync();
       }
-    }, 30000); // 30 seconds
+    }, 30000); // Polls every 30 seconds to lock real-time stock balances parity
   }
 };
  
