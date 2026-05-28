@@ -119,7 +119,7 @@
   .pill-stock-empty { background: #fee2e2; color: #b91c1c; }
 
   /* --- NAVIGATION CONTROLS & COMPACT INTERACTION BUTTONS --- */
-  .navigation-action-header-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; background: #ffffff; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); }
+  .navigation-action-header-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; background: #ffffff; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 48px;}
   .nav-btn-styled { background: var(--brand); color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: background 0.15s; outline: none; }
   .nav-btn-styled:hover { background: var(--brand-dk); }
   
@@ -233,16 +233,14 @@
 
     <div id="canvas-module-store-live-stock" class="workspace-panel" style="display:none;">
       
-      <!-- Top Dynamic Action Control Header Row Box -->
-      <div class="navigation-action-header-row" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; margin-bottom: 12px; background: #ffffff; border: 1px solid var(--border); border-radius: var(--radius);">
-        <div style="display: flex; align-items: center; gap: 14px;">
-          <button class="nav-btn-styled" style="background: var(--brand); padding: 5px 14px;" onclick="triggerLiveWarehouseStockMetricsSync()">Sync</button>
-          <span style="font-size: 1.05rem; font-weight: 700; color: var(--text); letter-spacing: 0.2px;">Live Store Stock</span>
+      <div class="navigation-action-header-row" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; margin-bottom: 16px; background: #ffffff; border: 1px solid var(--border); border-radius: var(--radius);">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <button class="nav-btn-styled" style="background: var(--brand); padding: 6px 18px;" onclick="triggerLiveWarehouseStockMetricsSync()">Sync</button>
+          <span style="font-size: 1.1rem; font-weight: 700; color: var(--text); letter-spacing: 0.2px;">Live Store Stock</span>
         </div>
-        <button class="nav-btn-styled" onclick="exitStoreWorkspacePanelBackToMenu()" style="background: #4a5568;">Return to Main Dashboard</button>
+        <button class="nav-btn-styled" onclick="exitStoreWorkspacePanelBackToMenu()" style="background: var(--brand); padding: 6px 16px;">Return to Main Dashboard</button>
       </div>
 
-      <!-- Optimized Main Materials Data Canvas Grid Container Box -->
       <div style="background: var(--highlight-bg); border: 1.5px solid var(--border); border-left: 4px solid var(--brand); padding: 16px; border-radius: var(--radius); text-align: left;">
         <div id="dashboard-live-inventory-metrics-mount-zone" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
           <p style="font-size: 0.85rem; color: var(--muted); text-align: center; grid-column: 1 / -1; padding: 20px;">Syncing Current Material Quantity...</p>
