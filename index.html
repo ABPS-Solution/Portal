@@ -291,6 +291,7 @@
     <div id="canvas-module-store-material-request" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
       <h2>Store Create Ticket</h2>
       
+      <div id="store-ticket-runtime-inline-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>    
       <div class="section" style="background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
         <div style="margin-bottom: 16px;">
           <label class="field-label" style="font-weight: 700; color: var(--brand);">Select Project ID *</label>
@@ -635,7 +636,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxNoqgCg8AgYvKhui9EZ_bosznVObDlnn0CKQXuNgThBWzhF7vx5avwnNjsAgr0kg1LcA/exec"; 
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyEyXgs79Pt6sv8r8lqm7HmO_NpsriC6fcYlHiAuHvt2UtfC4w4rV9q-jnWh3BX1EIU/exec"; 
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -1112,9 +1113,12 @@ async function showAppView() {
           `;
         });
       }
+
+      // FIXED: Force immediate initialization calls right here to prevent rendering delays across panels
+      renderLeadMatrixEngineerCheckboxes();
     }
   } catch(e) { console.error("Engineer load error:", e.message); }
-  
+
   triggerCompanyDropdownArrayFetch();
 }
 
@@ -3589,6 +3593,7 @@ function resetAndPrepareForNewInvoiceIntakeLoop() {
   
   resetInvoiceUploadIntakeState();
   
+  // FIXED: Variable instantiation safe tracking clamp
   const submitBtn = document.getElementById('invoice-submit-ledger-btn');
   if (submitBtn) {
     submitBtn.disabled = false;
