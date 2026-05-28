@@ -227,20 +227,16 @@
   </div> 
   
   <div id="module-store-workspace-enclosure-panel" style="display: none; padding: 12px 10px;">
+    
     <div class="navigation-action-header-row" style="margin-bottom: 15px;">
-      <div></div> <button class="nav-btn-styled" onclick="exitStoreWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
+      <div id="store-panel-left-controls" style="display: flex; align-items: center; gap: 16px; visibility: hidden;">
+        <button class="nav-btn-styled" id="live-stock-sync-btn" style="background: var(--brand); padding: 6px 18px; display: inline-flex; align-items: center; gap: 6px;" onclick="triggerLiveWarehouseStockMetricsSync()">Sync</button>
+        <span style="font-size: 1.1rem; font-weight: 700; color: var(--text); letter-spacing: 0.2px;">Live Store Stock</span>
+      </div>
+      <button class="nav-btn-styled" onclick="exitStoreWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
     </div>
 
     <div id="canvas-module-store-live-stock" class="workspace-panel" style="display:none;">
-      
-      <div class="navigation-action-header-row" style="margin-bottom: 15px;">
-        <div style="display: flex; align-items: center; gap: 16px;">
-          <button class="nav-btn-styled" id="live-stock-sync-btn" style="background: var(--brand); padding: 6px 18px; display: inline-flex; align-items: center; gap: 6px;" onclick="triggerLiveWarehouseStockMetricsSync()">Sync</button>
-          <span style="font-size: 1.1rem; font-weight: 700; color: var(--text); letter-spacing: 0.2px;">Live Store Stock</span>
-        </div>
-        <button class="nav-btn-styled" onclick="exitStoreWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
-      </div>
-
       <div style="background: var(--highlight-bg); border: 1.5px solid var(--border); border-left: 4px solid var(--brand); padding: 16px; border-radius: var(--radius); text-align: left;">
         <div id="dashboard-live-inventory-metrics-mount-zone" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
           <p style="font-size: 0.85rem; color: var(--muted); text-align: center; grid-column: 1 / -1; padding: 20px;">Syncing Current Material Quantity...</p>
@@ -3514,14 +3510,20 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
 function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
-  
+
   document.getElementById("canvas-module-store-invoice-intake").style.display = "none";
   document.getElementById("canvas-module-store-material-request").style.display = "none";
   document.getElementById("canvas-module-store-manager-approvals").style.display = "none";
   document.getElementById("canvas-module-store-history-matrix").style.display = "none";
-  document.getElementById("canvas-module-store-live-stock").style.display = "none"; // Clear layout canvas references
+  document.getElementById("canvas-module-store-live-stock").style.display = "none";
 
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+
+  // Show/hide the Sync + title only for the live stock panel
+  const leftControls = document.getElementById("store-panel-left-controls");
+  if (leftControls) {
+    leftControls.style.visibility = (targetPanelModuleId === 'store-live-stock') ? "visible" : "hidden";
+  }
 
   if (targetPanelModuleId === 'store-material-request') {
     document.getElementById("canvas-module-store-material-request").style.display = "block";
@@ -3534,9 +3536,9 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   } else if (targetPanelModuleId === 'store-history-matrix') {
     document.getElementById("canvas-module-store-history-matrix").style.display = "block";
     initializeStoreHistoryMatrixWorkspace();
-  } else if (targetPanelModuleId === 'store-live-stock') { // FIXED: Standalone panel entry initialization
+  } else if (targetPanelModuleId === 'store-live-stock') {
     document.getElementById("canvas-module-store-live-stock").style.display = "block";
-    triggerLiveWarehouseStockMetricsSync(); // Runs data pull automatically upon card click
+    triggerLiveWarehouseStockMetricsSync();
   }
 }
 
