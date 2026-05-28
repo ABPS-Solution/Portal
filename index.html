@@ -228,11 +228,11 @@
   
   <div id="module-store-workspace-enclosure-panel" style="display: none; padding: 12px 10px;">
     
-    <div class="navigation-action-header-row" style="margin-bottom: 15px;">
-      <div id="store-panel-left-controls" style="display: flex; align-items: center; gap: 16px; visibility: hidden;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; position: relative; display: flex; align-items: center; justify-content: space-between;">
+      <div id="store-panel-left-controls" style="visibility: hidden;">
         <button class="nav-btn-styled" id="live-stock-sync-btn" style="background: var(--brand); padding: 6px 18px; display: inline-flex; align-items: center; gap: 6px;" onclick="triggerLiveWarehouseStockMetricsSync()">Sync</button>
-        <span style="font-size: 1.1rem; font-weight: 700; color: var(--text); letter-spacing: 0.2px;">Live Store Stock</span>
       </div>
+      <span id="store-panel-center-title" style="position: absolute; left: 50%; transform: translateX(-50%); font-size: 1.1rem; font-weight: 700; color: var(--text); letter-spacing: 0.2px; visibility: hidden; white-space: nowrap;">Live Store Stock</span>
       <button class="nav-btn-styled" onclick="exitStoreWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
     </div>
 
@@ -3521,9 +3521,10 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
 
   // Show/hide the Sync + title only for the live stock panel
   const leftControls = document.getElementById("store-panel-left-controls");
-  if (leftControls) {
-    leftControls.style.visibility = (targetPanelModuleId === 'store-live-stock') ? "visible" : "hidden";
-  }
+  const centerTitle = document.getElementById("store-panel-center-title");
+  const isLiveStock = targetPanelModuleId === 'store-live-stock';
+  if (leftControls) leftControls.style.visibility = isLiveStock ? "visible" : "hidden";
+  if (centerTitle) centerTitle.style.visibility = isLiveStock ? "visible" : "hidden";
 
   if (targetPanelModuleId === 'store-material-request') {
     document.getElementById("canvas-module-store-material-request").style.display = "block";
