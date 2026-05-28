@@ -215,7 +215,7 @@
       
       <div class="dashboard-grid" style="display: grid; grid-template-columns: 1fr; gap: 12px; padding: 0 0 16px;">
         <div class="menu-card" id="mod-live-store-stock" onclick="navigateToStoreWorkspacePanel('store-live-stock')" style="display: none; grid-column: 1 / -1; background: var(--card); border: 2px solid var(--border); padding: 20px;">
-          <div class="menu-title" style="font-size: 1.05rem; color: var(--brand);">Live Store Stock</div>
+          <div class="menu-title" style="display: none;">Live Store Stock</div>
         </div>
 
         <div class="menu-card" id="mod-store-upload" onclick="navigateToStoreWorkspacePanel('store-invoice-intake')" style="display: none;"><div class="menu-title">Store Upload Invoice</div></div>
@@ -235,13 +235,12 @@
       
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
         <button class="nav-btn-styled" style="background: var(--brand); padding: 6px 16px;" onclick="triggerLiveWarehouseStockMetricsSync()">Sync</button>
-        <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0;">📊 Live Store Stock</h2>
-        <button class="nav-btn-styled" style="background: #4a5568; padding: 6px 16px;" onclick="exitStoreWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0;">Live Store Stock</h2>
       </div>
 
       <div style="background: var(--highlight-bg); border: 1.5px solid var(--border); border-left: 4px solid var(--brand); padding: 16px; border-radius: var(--radius); text-align: left;">
         <div id="dashboard-live-inventory-metrics-mount-zone" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
-          <p style="font-size: 0.85rem; color: var(--muted); text-align: center; grid-column: 1 / -1; padding: 20px;">⏳ Syncing active material databases logs...</p>
+          <p style="font-size: 0.85rem; color: var(--muted); text-align: center; grid-column: 1 / -1; padding: 20px;">Syncing active material logs...</p>
         </div>
       </div>
     </div>
