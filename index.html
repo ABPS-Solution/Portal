@@ -439,21 +439,16 @@
 
         <div id="workspace-dispatchCommissioning" class="workspace-panel" style="display: none;">
           <div class="section">
-            <div class="section-header">Logistics & Site Operations Sign-Off</div>
+            <div class="section-header">Dispatched Bill & Commissioning Report</div>
             <div class="section-body" style="text-align: left; padding: 16px;">
               <p style="color: var(--muted); font-size: 0.82rem; margin-bottom: 16px;">
-                Select your target prospect record from the dropdown directory tracker below, upload the corresponding documentation file sheet, and execute validation to update database values instantly.
+                Upload phone photos, digital scans, or PDF files of your signed transport Dispatched Bill or site Commissioning Report. The AI will automatically detect the target company account and update its pipeline status context.
               </p>
               
               <div id="marketing-ops-runtime-inline-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
 
-              <div id="marketing-ops-inputs-wrapper-container">
-                <div style="margin-bottom: 14px;">
-                  <label class="field-label" style="font-weight: 700; color: var(--brand);">Target Account Company Name *</label>
-                  <select id="ops-module-company-dropdown" style="padding: 8px; font-size: 0.9rem;"><option value="">— Loading Active Corporate Entities —</option></select>
-                </div>
-
-                <div class="card-row" style="display: flex; gap: 12px; margin-top: 16px; margin-bottom: 16px;">
+              <div id="marketing-ops-inputs-wrapper-container" style="display: block;">
+                <div class="card-row" style="display: flex; gap: 12px; margin-top: 8px; margin-bottom: 16px;">
                   <div class="card-box" id="dispatch-bill-upload-box" onclick="document.getElementById('dispatch-bill-raw-file').click()" style="padding: 24px; font-size: 0.9rem; flex: 1; min-height: 90px; display: flex; align-items: center; justify-content: center; flex-direction: column;">📋 Select Dispatched Bill</div>
                   <div class="card-box" id="commissioning-report-upload-box" onclick="document.getElementById('commissioning-report-raw-file').click()" style="padding: 24px; font-size: 0.9rem; flex: 1; min-height: 90px; display: flex; align-items: center; justify-content: center; flex-direction: column;">🛠️ Select Commissioning Report</div>
                 </div>
@@ -462,8 +457,8 @@
                 <input type="file" id="commissioning-report-raw-file" accept="image/*,application/pdf" hidden />
 
                 <div style="display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 14px;">
-                  <button class="nav-btn-styled" id="btn-ops-dispatch-submit" onclick="executeMarketingOperationsDocumentCommit('DISPATCH')" style="background: var(--brand); flex: 1; padding: 10px; font-size: 0.85rem;">Process Dispatch Bill</button>
-                  <button class="nav-btn-styled" id="btn-ops-commission-submit" onclick="executeMarketingOperationsDocumentCommit('COMMISSION')" style="background: var(--accent); flex: 1; padding: 10px; font-size: 0.85rem;">Process Commissioning Report</button>
+                  <button class="nav-btn-styled" id="btn-ops-dispatch-submit" onclick="executeMarketingOperationsDocumentCommit('DISPATCH')" style="background: var(--brand); flex: 1; padding: 10px; font-size: 0.85rem;">Process Dispatch Bill with AI</button>
+                  <button class="nav-btn-styled" id="btn-ops-commission-submit" onclick="executeMarketingOperationsDocumentCommit('COMMISSION')" style="background: var(--accent); flex: 1; padding: 10px; font-size: 0.85rem;">Process Commissioning Report with AI</button>
                 </div>
               </div>
             </div>
@@ -539,8 +534,11 @@
               <div class="pill-group" id="lead-matrix-status-checkboxes-mount" style="margin:8px 0 16px;">
                 <input type="checkbox" name="leadMatrixStatusFilter" value="New Lead" id="lms_st1" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st1">New Lead</label>
                 <input type="checkbox" name="leadMatrixStatusFilter" value="Technical Discussion" id="lms_st2" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st2">Technical Discussion</label>
-                <input type="checkbox" name="leadMatrixStatusFilter" value="Offer Submitted" id="lms_st3" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st3">Offer Submitted</label>
-                <input type="checkbox" name="leadMatrixStatusFilter" value="Won / Closed" id="lms_st4" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st4">Won / Closed</label>
+                <input type="checkbox" name="leadMatrixStatusFilter" value="Offer Sent" id="lms_st3" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st3">Offer Sent</label>
+                <input type="checkbox" name="leadMatrixStatusFilter" value="Order Received" id="lms_st4" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st4">Order Received</label>
+                <input type="checkbox" name="leadMatrixStatusFilter" value="Offer Dispatched" id="lms_st5" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st5">Offer Dispatched</label>
+                <input type="checkbox" name="leadMatrixStatusFilter" value="Offer Commissioned" id="lms_st6" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st6">Offer Commissioned</label>
+                <input type="checkbox" name="leadMatrixStatusFilter" value="Lead Failed" id="lms_st7" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st7">Lead Failed</label>
               </div>
               
               <button class="btn btn-sub" id="lead-matrix-search-submit-btn" onclick="executeLeadMatrixFilterSearch()">Run Leads Search</button>
@@ -599,7 +597,25 @@
         </div>
 
         <div id="step2-new-entry-dropdown" style="display: none; padding: 0 4px;">
-          <!-- Inline forms container (omitted here for space, matches your code precisely) -->
+          <div class="section" style="background: var(--card); padding: 15px; border-radius: var(--radius); border: 1px solid var(--border);">
+            <div class="section-header" style="margin-bottom:10px;">Create New Lead Record Details</div>
+            
+            <div id="remaining-sections-form">
+              <div style="margin-bottom: 12px; text-align: left;">
+                <label class="field-label">Lead Status *</label>
+                <select id="dropform-status" style="padding: 8px; font-weight: 600; width: 100%; border: 1.5px solid var(--border); border-radius: 4px;">
+                  <option value="New Lead">New Lead</option>
+                  <option value="Technical Discussion">Technical Discussion</option>
+                  <option value="Offer Sent">Offer Sent</option>
+                  <option value="Order Received">Order Received</option>
+                  <option value="Offer Dispatched">Offer Dispatched</option>
+                  <option value="Offer Commissioned">Offer Commissioned</option>
+                  <option value="Lead Failed">Lead Failed</option>
+                </select>
+              </div>
+
+              </div>
+          </div>
         </div>
 
         <div id="step2-inline-interaction-canvas" style="display: none; padding: 0 4px;">
@@ -1342,36 +1358,18 @@ async function navigateToModule(key) {
     } else if (key === "searchCityState") {
       loadCityStateFilterOptions();
     } else if (key === "emailLeads") { 
-      // Synchronizes and fires off asynchronous thread pipeline fetches automatically
       executeInboundEmailSyncPipelineFetch();
     } else if (key === "dispatchCommissioning") {
-      // FIXED: Placed cleanly at the end of the routing matrix chain
-      const opsDropdown = document.getElementById("ops-module-company-dropdown");
-      if (opsDropdown) opsDropdown.innerHTML = '<option value="">⏳ Syncing directory records...</option>';
+      document.getElementById("marketing-ops-inputs-wrapper-container").style.display = "block";
+      const banner = document.getElementById("marketing-ops-runtime-inline-feedback-banner");
+      if (banner) banner.style.display = "none";
       
-      // Reuse your hyper-optimized backend method to populate corporate entities instantly
-      try {
-        const res = await fetch(GAS_URL, { 
-          method: "POST", 
-          body: JSON.stringify({ 
-            action: "getUniqueCompaniesList", 
-            sessionToken: localStorage.getItem("sessionToken"), 
-            activeEngineer: appActiveOperatorIdentityString 
-          }) 
-        });
-        const d = await res.json();
-        if (d.success && opsDropdown) {
-          opsDropdown.innerHTML = '<option value="">— Select Target Account —</option>';
-          d.companies.forEach(item => {
-            let opt = document.createElement("option");
-            opt.value = item.companyValue; 
-            opt.textContent = item.displayLabel;
-            opsDropdown.appendChild(opt);
-          });
-        }
-      } catch(ex) { 
-        console.error("Ops dropdown data sync crash: ", ex); 
-      }
+      targetDispatchBillFileObj = null;
+      targetCommissioningReportFileObj = null;
+      const b1 = document.getElementById('dispatch-bill-upload-box');
+      const b2 = document.getElementById('commissioning-report-upload-box');
+      if (b1) { b1.textContent = "📋 Select Dispatched Bill"; b1.classList.remove('done'); }
+      if (b2) { b2.textContent = "🛠️ Select Commissioning Report"; b2.classList.remove('done'); }
     }
 }
 
@@ -1806,10 +1804,10 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
 
       if (key === "Status") {
         let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
-        ["New Lead", "Technical Discussion", "Offer Submitted", "Won / Closed"].forEach(st => {
+        ["New Lead", "Technical Discussion", "Offer Sent", "Order Received", "Offer Dispatched", "Offer Commissioned", "Lead Failed"].forEach(st => {
           let op = document.createElement("option"); op.textContent = st; if(leadMap[key] === st) op.selected = true; sel.appendChild(op);
         });
-        cell.appendChild(sel);
+        cell.appendChild(sel);  
       } else if (key === "Date of Meeting") {
         let inp = document.createElement("input"); inp.type = "date"; inp.className = 'live-lead-field-input-' + leadRef; inp.dataset.headerKey = key;
         let rawDate = leadMap[key];
@@ -4359,20 +4357,16 @@ document.getElementById('commissioning-report-raw-file').onchange = (e) => {
 };
 
 async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
-  const chosenCompanyRaw = document.getElementById("ops-module-company-dropdown").value;
   const feedbackBanner = document.getElementById("marketing-ops-runtime-inline-feedback-banner");
   const targetBtn = document.getElementById(opsFlagTypeString === "DISPATCH" ? "btn-ops-dispatch-submit" : "btn-ops-commission-submit");
   
-  if (!chosenCompanyRaw) return alert("Please select a target company account first.");
-  
-  const cleanCompanyName = chosenCompanyRaw.split(" (")[0].trim();
   const activeWorkingFile = opsFlagTypeString === "DISPATCH" ? targetDispatchBillFileObj : targetCommissioningReportFileObj;
   
-  if (!activeWorkingFile) return alert(`Please capture or select the corresponding file before processing.`);
+  if (!activeWorkingFile) return alert(`Please capture or select the corresponding document before running the AI engine.`);
   
   if (targetBtn) {
     targetBtn.disabled = true;
-    targetBtn.innerHTML = '<div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div> Uploading to Drive...';
+    targetBtn.innerHTML = '<div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div> AI Parsing & Matching Document...';
   }
 
   try {
@@ -4390,7 +4384,6 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
         action: "commitMarketingOperationsDocument",
         sessionToken: localStorage.getItem("sessionToken"),
         activeEngineer: appActiveOperatorIdentityString,
-        companyName: cleanCompanyName,
         operationType: opsFlagTypeString,
         fileData64: fileBase64Raw,
         isPdf: isPdfFormat
@@ -4400,23 +4393,31 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
     const data = await res.json();
     if (data.success) {
       if (feedbackBanner) {
-        feedbackBanner.style.cssText = "display: block; background: #dcfce7; border-color: #15803d; color: #15803d; padding: 12px; margin-bottom: 16px; border-left: 4px solid #15803d;";
-        feedbackBanner.innerHTML = `<strong>Success!</strong> ${cleanCompanyName} record has been securely updated to "${opsFlagTypeString === "DISPATCH" ? "Offer Dispatched" : "Offer Commissioned"}" and file link saved to Drive.`;
+        feedbackBanner.style.cssText = "display: block; background: #dcfce7; border-color: #15803d; color: #15803d; padding: 14px; margin-bottom: 16px; border-left: 4px solid #15803d;";
+        feedbackBanner.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <strong>AI Matching Action Successful!</strong><br/>
+              <span>Matched Company: <strong>${data.matchedCompany}</strong> updated to <strong>${opsFlagTypeString === "DISPATCH" ? "Offer Dispatched" : "Offer Commissioned"}</strong>.</span>
+            </div>
+            <button class="nav-btn-styled" onclick="document.getElementById('marketing-ops-inputs-wrapper-container').style.display='block'; document.getElementById('marketing-ops-runtime-inline-feedback-banner').style.display='none'; navigateToModule('dispatchCommissioning');" style="background:#15803d; color:white; padding:6px 12px; font-weight:700;">+ Process Another Document</button>
+          </div>
+        `;
       }
       document.getElementById("marketing-ops-inputs-wrapper-container").style.display = "none";
     } else {
-      alert("Processing error: " + data.error);
+      alert("AI Processing Encountered Error: " + data.error);
     }
   } catch(err) {
-    alert("Connection error: " + err.message);
+    alert("Network Connection Exception: " + err.message);
   } finally {
     if (targetBtn) {
       targetBtn.disabled = false;
-      targetBtn.innerHTML = opsFlagTypeString === "DISPATCH" ? "Process Dispatch Bill" : "Process Commissioning Report";
+      targetBtn.innerHTML = opsFlagTypeString === "DISPATCH" ? "Process Dispatch Bill with AI" : "Process Commissioning Report with AI";
     }
   }
 }
- 
+
 </script>
 </body>
 </html>
