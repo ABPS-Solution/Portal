@@ -653,7 +653,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxIqa9rbnQYsknWdA0LIYazIuth1BmYBdr1dBjAEpisdYckwQltgGXEGf9sZRYREcCJHA/exec"; 
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwAexYaR34aaUDWn3uzGDZ-SLf7MZflJwnYxlS-XH-8f1l-MZGQST-nmlR1OBWFa6f3wQ/exec"; 
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -3553,7 +3553,7 @@ function exitStoreWorkspacePanelBackToMenu() {
   triggerCompanyDropdownArrayFetch(); 
 }
 
-// Handle visual file confirmation indicators
+// Handle visual file confirmation indicators for Invoice
 document.getElementById('invoice-image-file').onchange = (e) => {
   targetInvoiceUploadFileObject = e.target.files[0];
   const uploadBox = document.getElementById('invoice-upload-box');
@@ -3563,7 +3563,7 @@ document.getElementById('invoice-image-file').onchange = (e) => {
   }
 };
 
-// Capture dynamic input streams for Challan
+// Handle visual file confirmation indicators for Challan
 document.getElementById('challan-image-file').onchange = (e) => {
   targetChallanUploadFileObject = e.target.files[0];
   const uploadBox = document.getElementById('challan-upload-box');
@@ -3689,6 +3689,7 @@ function renderInvoiceDualSignOffVerificationWorkspace() {
 
 /**
  * 3. COMMIT VERIFIED BALANCES TO LEDGER
+ * Direct-converts raw file data blocks to Base64 strings to write files into Drive folders.
  */
 async function commitVerifiedInvoiceToInventoryLedger() {
   const submitBtn = document.getElementById('invoice-submit-ledger-btn');
@@ -3704,11 +3705,27 @@ async function commitVerifiedInvoiceToInventoryLedger() {
     finalizedActualPhysicalQuantitiesArray.push(sourceLineData);
   });
 
-  submitBtn.disabled = true;
-  submitBtn.innerHTML = "Adding Stock Balances...";
-  feedbackBanner.style.display = "none";
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = "Processing Drive Uploads...";
+  }
+  if (feedbackBanner) feedbackBanner.style.display = "none";
 
   try {
+    // Utility worker function maps files to data arrays
+    const getBase64DataString = file => new Promise((resolve) => {
+      if (!file) { resolve(""); return; }
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.readAsDataURL(file);
+    });
+
+    // Extract raw string blocks concurrently
+    const [invoiceBase64String, challanBase64String] = await Promise.all([
+      getBase64DataString(targetInvoiceUploadFileObject),
+      getBase64DataString(targetChallanUploadFileObject)
+    ]);
+
     const res = await fetch(GAS_URL, {
       method: "POST",
       body: JSON.stringify({
@@ -3718,7 +3735,10 @@ async function commitVerifiedInvoiceToInventoryLedger() {
         invoiceMetadata: {
           invoiceNumber: activeParsedInvoicePayloadCache.invoiceNumber,
           vendorName: activeParsedInvoicePayloadCache.vendorName,
-          invoiceDate: activeParsedInvoicePayloadCache.invoiceDate
+          invoiceDate: activeParsedInvoicePayloadCache.invoiceDate,
+          // Encapsulate images payloads variables off metadata elements object wrapper
+          invoiceImageBase64Raw: invoiceBase64String,
+          challanImageBase64Raw: challanBase64String
         },
         actualPhysicalQuantities: finalizedActualPhysicalQuantitiesArray,
         driveFileUrl: "STUB_MOCK_DRIVE_LINK_PLACEHOLDER"
@@ -3727,36 +3747,42 @@ async function commitVerifiedInvoiceToInventoryLedger() {
 
     const output = await res.json();
     if (output.success) {
-      // SILENT METRICS RE-INDEX: Instantly refresh home dashboard widgets states counters fields
       if (userPermissions.liveStoreStock === true) triggerLiveWarehouseStockMetricsSync();
-      // INLINE RECURRENT WORKFLOW GENERATOR: Do not navigate away, print quick action controller buttons reset paths
-      feedbackBanner.style.cssText = "display: block; background: #dcfce7; border-color: #15803d; color: #15803d; padding: 16px; margin-bottom: 16px; border-left: 4px solid #15803d;";
-      feedbackBanner.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <strong style="font-size:0.95rem;">Invoice Saved Successfully!</strong><br/>
-            <span>Invoice No: ${activeParsedInvoicePayloadCache.invoiceNumber} added to inventory.</span>
-          </div>
-          <button class="nav-btn-styled" onclick="resetAndPrepareForNewInvoiceIntakeLoop()" style="background:#15803d; color:white; padding:6px 12px; font-weight:700;">+ Upload Another Invoice</button>
-        </div>
-      `;
       
-      // Hide the editing workspace panel out of sight below the message banner
+      if (feedbackBanner) {
+        feedbackBanner.style.cssText = "display: block; background: #dcfce7; border-color: #15803d; color: #15803d; padding: 16px; margin-bottom: 16px; border-left: 4px solid #15803d;";
+        feedbackBanner.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <strong style="font-size:0.95rem;">Invoice & Chalan Saved to Google Drive!</strong><br/>
+              <span>Invoice No: ${activeParsedInvoicePayloadCache.invoiceNumber} processed successfully.</span>
+            </div>
+            <button class="nav-btn-styled" onclick="resetAndPrepareForNewInvoiceIntakeLoop()" style="background:#15803d; color:white; padding:6px 12px; font-weight:700;">+ Process Another Inbound</button>
+          </div>
+        `;
+      }
+      
       document.getElementById('invoice-ai-verification-workspace').style.display = "none";
-      document.getElementById('invoice-upload-box').style.display = "none";
-      document.getElementById('invoice-parse-ai-btn').style.display = "none";
       
     } else {
+      if (feedbackBanner) {
+        feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 14px; margin-bottom: 16px;";
+        feedbackBanner.innerHTML = `<strong>Stock Addition Rejected:</strong> ${output.error}`;
+      }
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = "Verify & Add Stock";
+      }
+    }
+  } catch (error) {
+    if (feedbackBanner) {
       feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 14px; margin-bottom: 16px;";
-      feedbackBanner.innerHTML = `<strong>Stock Addition Rejected:</strong> ${output.error}`;
+      feedbackBanner.innerHTML = `<strong>Network Transmit Failure:</strong> ${error.message}`;
+    }
+    if (submitBtn) {
       submitBtn.disabled = false;
       submitBtn.innerHTML = "Verify & Add Stock";
     }
-  } catch (error) {
-    feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 14px; margin-bottom: 16px;";
-    feedbackBanner.innerHTML = `<strong>Network Transmit Failure:</strong> ${error.message}`;
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = "Verify & Add Stock";
   }
 }
 
