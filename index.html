@@ -3154,7 +3154,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 
   // 2. EXTRACT STORE ACCESS MATRIX FLAGS
   const canViewLiveStock = userPermissionsObject.liveStoreStock === true;
-  const canUploadInvoice   = userPermissionsObject.storeUploadInvoice === true;
+  const canUploadInvoice   = userPermissionsObject.liveStoreStock === true || userPermissionsObject.storeUploadInvoice === true;
   const canCreateTicket    = userPermissionsObject.storeCreateTicket === true;
   const canReleaseTicket   = userPermissionsObject.storeApproveTickets === true;
   const canSearchStoreMat  = userPermissionsObject.storeAdminMatrix === true;
