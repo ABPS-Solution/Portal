@@ -1290,7 +1290,8 @@ async function triggerCompanyDropdownArrayFetch() {
 
 async function navigateToModule(key) { 
     // 1. Core verification gateway check routing against userPermissions payload mapping
-    if (!userPermissions[key]) return alert("Access Denied: Missing permission"); 
+    const permissionKey = (key === "emailLeads") ? "emailWhatsapp" : key;
+    if (!userPermissions[permissionKey]) return alert("Access Denied: Missing permission");
     
     const canvas = document.getElementById("step2-inline-interaction-canvas");
     if (canvas) {
@@ -1390,7 +1391,7 @@ function returnToDashboard() {
   
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   document.getElementById("global-email-sync-btn").style.display = "none";
-document.getElementById("global-module-center-title").style.display = "none";
+  document.getElementById("global-module-center-title").style.display = "none";
 }
 
 function resetSequentialFormState() {
