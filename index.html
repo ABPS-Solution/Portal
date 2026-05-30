@@ -311,13 +311,24 @@
     </div>
 
     <div id="canvas-module-store-material-request" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 16px;">Store Create Ticket</h2>
+      <!-- TOP NAVIGATION ACTION GRID WITH ACTION SELECTION DROPDOWN -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:2px solid var(--bg); padding-bottom:10px;">
+        <h2 style="margin:0;">Store Log Ticket</h2>
+        <div style="width:180px;">
+          <select id="ticket-action-type-toggle-dropdown" onchange="handleStoreTicketTypeInterfaceLayoutChange(this.value)" style="border-color:var(--brand); font-weight:700; color:var(--brand); padding:6px;">
+            <option value="Request Material">Request Material</option>
+            <option value="Return Material">Return Material</option>
+          </select>
+        </div>
+      </div>
+
       <div id="store-ticket-runtime-inline-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid;"></div>    
       
       <div class="section" style="background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
         
         <div style="margin-bottom: 16px;">
-          <label class="field-label" style="font-weight: 700; color: var(--brand);">Requested By *</label>
+          <!-- DYNAMIC CONTENT TARGET LABELS MARKER -->
+          <label class="field-label" id="lbl-dynamic-operator-signature-title" style="font-weight: 700; color: var(--brand);">Requested By *</label>
           <select id="ticket-requested-by-operator-dropdown" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);">
             <option value="">— Loading Authorized Store Staff —</option>
           </select>
@@ -348,7 +359,7 @@
           <span style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--brand); text-transform: uppercase; margin-bottom: 6px;">Material Basket</span>
           <table class="store-basket-data-table" id="shopping-basket-preview-table">
             <thead>
-              <tr><th>Material Name</th><th>Required Quantity</th><th>Unit</th><th style="width: 60px; text-align: center;">Action</th></tr>
+              <tr><th>Material Name</th><th>Quantity</th><th>Unit</th><th style="width: 60px; text-align: center;">Action</th></tr>
             </thead>
             <tbody id="shopping-basket-table-body">
               <tr><td colspan="4" style="text-align: center; color: var(--muted); padding: 20px;">Your request ticket basket is currently empty.</td></tr>
@@ -376,10 +387,20 @@
     </div>
 
     <div id="canvas-module-store-history-matrix" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 16px;">Search Store Tickets</h2>
+      <h2>Search Store Tickets</h2>
 
       <div style="background: var(--highlight-bg); border: 1.5px solid var(--border); border-left: 4px solid var(--brand); padding: 14px; border-radius: var(--radius); margin-bottom: 16px; text-align: left;">
         <span style="display: block; font-size: 0.72rem; font-weight: 800; color: var(--brand); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">Search Filter Parameters</span>  
+        
+        <!-- NEW PIPELINE MODIFIER: INJECTED TYPE SELECTION CONTROLS -->
+        <label class="field-label" style="font-size:0.8rem; color:var(--brand); margin-bottom:6px;">Filter By Ticket Operation Type</label>
+        <div class="pill-group" style="margin-bottom:14px;">
+          <input type="checkbox" name="matrixTypeFilter" value="Request Material" id="mt_ty_req" onchange="executeClientSideStoreTicketFilterSearch()">
+          <label for="mt_ty_req">Request Material</label>
+          <input type="checkbox" name="matrixTypeFilter" value="Return Material" id="mt_ty_ret" onchange="executeClientSideStoreTicketFilterSearch()">
+          <label for="mt_ty_ret">Return Material</label>
+        </div>
+
         <label class="field-label" style="font-size:0.8rem; color:var(--brand); margin-bottom:6px;">Filter By Project ID</label>
         <div class="pill-group" id="matrix-search-projects-checkbox-mount" style="margin-bottom:14px;">
           <p style="font-size:0.75rem; color:var(--muted);">Syncing Projects...</p>
@@ -389,15 +410,10 @@
         <div class="pill-group" id="matrix-search-status-checkbox-mount" style="margin-bottom:6px;">
           <input type="checkbox" name="matrixStatusFilter" value="Pending Approval" id="ms_st_pending" onchange="executeClientSideStoreTicketFilterSearch()">
           <label for="ms_st_pending">Pending Approval</label>
-          
           <input type="checkbox" name="matrixStatusFilter" value="Approved & Released" id="ms_st_approved" onchange="executeClientSideStoreTicketFilterSearch()">
           <label for="ms_st_approved">Approved & Released</label>
-          
           <input type="checkbox" name="matrixStatusFilter" value="Rejected" id="ms_st_rejected" onchange="executeClientSideStoreTicketFilterSearch()">
           <label for="ms_st_rejected">Rejected</label>
-          
-          <input type="checkbox" name="matrixStatusFilter" value="Expired" id="ms_st_expired" onchange="executeClientSideStoreTicketFilterSearch()">
-          <label for="ms_st_expired">Expired</label>
         </div>
       </div>
 
@@ -991,7 +1007,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyg33vQODgzoR0CulG4IuO2oWg3pucIPyBuSGwWeCgxKkYhZIhhZO-RcdtQHPM5lvJUnA/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxIjl_6DGiz_qjlqzm8Zox-D19CoH-rL4KLmI67H9w634WpxYW-bleAgX8wm9KLqLD-1w/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -4379,99 +4395,148 @@ async function initializeStoreManagerApprovalsWorkspace() {
 }
 
 /**
- * 2. RENDER PENDING TICKETS FEED DRAWER PANELS
+ * HANDLES FORM CONTENT TOGGLING
+ * Synchronizes interface text lines matching chosen drop-down modes indicators
  */
+function handleStoreTicketTypeInterfaceLayoutChange(chosenModeString) {
+  const labelNode = document.getElementById("lbl-dynamic-operator-signature-title");
+  const submitBtn = document.getElementById("submit-ticket-final-btn");
+  
+  if (!labelNode || !submitBtn) return;
+  
+  if (chosenModeString === "Return Material") {
+    labelNode.textContent = "Returned By *";
+    submitBtn.textContent = "Generate Return Ticket";
+  } else {
+    labelNode.textContent = "Requested By *";
+    submitBtn.textContent = "Generate Material Ticket";
+  }
+}
+
+// Update your submit Material Request method loop payload capture
+// Locate inside submitMaterialRequestTicketToBackend the payload building structure and change to:
+    const ticketTypeVal = document.getElementById("ticket-action-type-toggle-dropdown").value;
+    const payload = {
+      action: "submitEngineerMaterialTicket",
+      sessionToken: localStorage.getItem("sessionToken"),
+      activeEngineer: operatorSignatureName,
+      projectId: projectId,
+      ticketTypeCommandString: ticketTypeVal, // Injected parameter pass rule
+      itemsClusterArray: dynamicTicketShoppingBasketArray
+    };
+
+// Reconstruct Approvals View Node Generator UI Engine Builder
 function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
   const cardsFeedZone = document.getElementById("store-manager-approvals-queue-cards-feed");
   cardsFeedZone.innerHTML = "";
-
   if (pendingTicketsList.length === 0) {
-    cardsFeedZone.innerHTML = `
-      <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;">
-        <h3 style="color: var(--accent); margin-bottom:4px;">Approvals Queue Clear</h3>
-        <p style="font-size:0.8rem; margin:0;">All material request releases have been reviewed and processed.</p>
-      </div>
-    `;
+    cardsFeedZone.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;"><h3 style="color:var(--accent);">Approvals Queue Clear</h3></div>`;
     return;
   }
-
   pendingTicketsList.forEach((ticket) => {
     let cardWrapper = document.createElement("div");
     cardWrapper.className = "contact-summary-card-parent";
     cardWrapper.id = `store-pending-ticket-card-node-${ticket.ticketId}`;
-    cardWrapper.style.cssText = "background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 14px; position:relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02);";
-
-    // Parse the inner item arrays string back out safely
     let itemsArray = [];
-    try {
-      itemsArray = JSON.parse(ticket.itemsJson);
-    } catch(e) {
-      itemsArray = [];
-    }
-
-    // Build the sub-table rows for this specific ticket's items
+    try { itemsArray = JSON.parse(ticket.itemsJson); } catch(e) { itemsArray = []; }
     let itemRowsHtml = "";
     itemsArray.forEach(item => {
-      itemRowsHtml += `
-        <tr>
-          <td style="padding:6px; border-bottom:1px solid #edf2f7; font-weight:600;">${item.materialName}</td>
-          <td style="padding:6px; border-bottom:1px solid #edf2f7; font-family:monospace; font-weight:700; color:var(--brand);">${item.quantity}</td>
-          <td style="padding:6px; border-bottom:1px solid #edf2f7; color:var(--muted); font-size:0.78rem;">${item.unitType}</td>
-        </tr>
-      `;
+      itemRowsHtml += `<tr><td style="padding:6px; font-weight:600;">${item.materialName}</td><td style="padding:6px; font-family:monospace; font-weight:700; color:var(--brand);">${item.quantity}</td><td style="padding:6px; color:var(--muted); font-size:0.78rem;">${item.unitType}</td></tr>`;
     });
-
-    let cleanCreationTimestamp = ticket.dateCreated.toString();
-    if (cleanCreationTimestamp.indexOf(" GMT") !== -1) {
-      cleanCreationTimestamp = cleanCreationTimestamp.split(" GMT")[0];
-    }
+    
+    // Check type constraints to print high-contrast operational status flags tags
+    const typeLabel = ticket.ticketType || "Request Material";
+    const typeColorStyle = (typeLabel === "Return Material") ? "background:#e0f2fe; color:#0369a1;" : "background:#edf2f7; color:#1e293b;";
 
     cardWrapper.innerHTML = `
       <div class="contact-summary-header-row" style="margin-bottom:10px; padding-bottom:6px; border-bottom:1px dashed var(--border);">
         <div class="contact-summary-title-info">
           <div class="meta-row-line-block">
             <span style="background:var(--brand); color:#fff; font-family:monospace; font-size:0.75rem; padding:3px 6px;">${ticket.ticketId}</span>
+            <span style="font-weight:800; font-size:0.72rem; padding:3px 6px; border-radius:4px; ${typeColorStyle}">${typeLabel.toUpperCase()}</span>
             <span style="background:#fef3c7; color:#b45309; font-weight:700;">PENDING RELEASE</span>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
-            <span>Engineer:</span><strong style="margin-right:15px; color:#111827;">${ticket.requestedBy}</strong>
+            <span>Operator:</span><strong style="margin-right:15px; color:#111827;">${ticket.requestedBy}</strong>
             <span>Project ID:</span><strong style="color:var(--brand);">${ticket.projectId}</strong>
-          </div>
-          <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">
-            Submitted on: <strong>${cleanCreationTimestamp}</strong>
           </div>
         </div>
       </div>
-
       <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px; margin-bottom:12px;">
-        <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.82rem;">
-          <thead>
-            <tr style="color:#64748b; font-size:0.7rem; text-transform:uppercase; font-weight:800;">
-              <th style="padding:4px 6px; border-bottom:1px solid var(--border);">Component Name</th>
-              <th style="padding:4px 6px; border-bottom:1px solid var(--border);">Qty</th>
-              <th style="padding:4px 6px; border-bottom:1px solid var(--border);">Unit</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${itemRowsHtml}
-          </tbody>
-        </table>
+        <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.82rem;"><tbody>${itemRowsHtml}</tbody></table>
       </div>
-
       <div style="display:flex; justify-content:flex-end; gap:8px;">
-        <button class="nav-btn-styled" id="btn-reject-${ticket.ticketId}" style="background:#e53e3e; padding:6px 12px; font-size:0.75rem; display:flex; align-items:center; gap:6px;" 
-          onclick="executeStoreManagerTicketActionDecision('${ticket.ticketId}', 'REJECT')">
-          <span>Reject & Free Stock</span>
-        </button>
-        <button class="nav-btn-styled" id="btn-approve-${ticket.ticketId}" style="background:var(--accent); padding:6px 14px; font-size:0.78rem; font-weight:700; display:flex; align-items:center; gap:6px;" 
-          onclick="executeStoreManagerTicketActionDecision('${ticket.ticketId}', 'APPROVE')">
-          <span>Approve & Release Items</span>
-        </button>
+        <button class="nav-btn-styled" id="btn-reject-${ticket.ticketId}" style="background:#e53e3e; padding:6px 12px; font-size:0.75rem;" onclick="executeStoreManagerTicketActionDecision('${ticket.ticketId}', 'REJECT')">Reject</button>
+        <button class="nav-btn-styled" id="btn-approve-${ticket.ticketId}" style="background:var(--accent); padding:6px 14px; font-size:0.78rem; font-weight:700;" onclick="executeStoreManagerTicketActionDecision('${ticket.ticketId}', 'APPROVE')">Approve Action</button>
       </div>
     `;
     cardsFeedZone.appendChild(cardWrapper);
   });
 }
+
+// Reconstruct Historical Matrix Data Filtering Search Interface Nodes
+function executeClientSideStoreTicketFilterSearch() {
+  const resultsFeedZone = document.getElementById("store-historical-matrix-results-feed");
+  if (!resultsFeedZone) return;
+
+  const checkedTypes = Array.from(document.querySelectorAll('input[name="matrixTypeFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
+  const checkedProjects = Array.from(document.querySelectorAll('input[name="matrixProjectFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
+  const checkedStatuses = Array.from(document.querySelectorAll('input[name="matrixStatusFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
+
+  resultsFeedZone.innerHTML = "";
+
+  const filteredOutputList = masterStoreTicketsHistoryCacheCollection.filter(ticket => {
+    const ticketTypeStr = ticket.ticketType || "Request Material";
+    const matchType    = (checkedTypes.length === 0 || checkedTypes.indexOf(ticketTypeStr.toLowerCase().trim()) !== -1);
+    const matchProject = (checkedProjects.length === 0 || checkedProjects.indexOf(ticket.projectId.trim().toLowerCase()) !== -1);
+    const matchStatus  = (checkedStatuses.length === 0 || checkedStatuses.indexOf(ticket.status.trim().toLowerCase()) !== -1);
+    return matchType && matchProject && matchStatus;
+  });
+
+  if (filteredOutputList.length === 0) {
+    resultsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; background:#fff; border:1px solid var(--border); border-radius:4px; color:var(--muted); font-size:0.85rem;">No historical tickets matched your current criteria combination.</div>`;
+    return;
+  }
+
+  filteredOutputList.forEach(ticket => {
+    const card = document.createElement("div");
+    card.className = "contact-summary-card-parent";
+    
+    let itemsArray = [];
+    try { itemsArray = JSON.parse(ticket.itemsJson); } catch(e) { itemsArray = []; }
+    let itemsTableRowsHtml = "";
+    itemsArray.forEach(i => {
+      itemsTableRowsHtml += `<tr><td style="padding:4px; color:var(--text); font-weight:600;">${i.materialName}</td><td style="padding:4px; font-family:monospace; font-weight:700; text-align:right;">${i.quantity} ${i.unitType}</td></tr>`;
+    });
+
+    let badgeColorStyle = "background:#fef3c7; color:#b45309;"; 
+    if (ticket.status === "Approved & Released") badgeColorStyle = "background:#dcfce7; color:#15803d;";
+    if (ticket.status === "Rejected" || ticket.status === "Expired") badgeColorStyle = "background:#fee2e2; color:#b91c1c;";
+
+    const typeLabel = ticket.ticketType || "Request Material";
+    const typeLabelColorStyle = (typeLabel === "Return Material") ? "background:#e0f2fe; color:#0369a1;" : "background:#edf2f7; color:#1e293b;";
+
+    card.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed var(--border); padding-bottom:6px; margin-bottom:8px;">
+        <div>
+          <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:2px 6px; border-radius:4px; font-size:0.8rem;">${ticket.ticketId}</span>
+          <span style="font-size:0.65rem; font-weight:700; border-radius:3px; padding:1px 5px; margin-left:4px; ${typeLabelColorStyle}">${typeLabel.toUpperCase()}</span>
+          <strong style="margin-left:8px; font-size:0.85rem; color:var(--brand);">Project ID: ${ticket.projectId}</strong>
+        </div>
+        <span style="font-size:0.68rem; font-weight:700; border-radius:4px; padding:2px 6px; ${badgeColorStyle}">${ticket.status.toUpperCase()}</span>
+      </div>
+      <div style="font-size:0.8rem; line-height:1.4; margin-bottom:8px; color:#4a5568;">
+        <strong>Operator Account:</strong> ${ticket.requestedBy} | <strong>Actioned By:</strong> ${ticket.actionedBy || "Waiting Handover"}<br/>  
+        <strong>Created:</strong> ${ticket.dateCreated.split(" GMT")[0]}
+      </div>
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px;">
+        <table style="width:100%; font-size:0.78rem; border-collapse:collapse;"><tbody>${itemsTableRowsHtml}</tbody></table>
+      </div>
+    `;
+    resultsFeedZone.appendChild(card);
+  });
+}
+
 
 /**
  * 3. EXECUTE RELEASE DISPATCH ACTION CONTROL LOOP (UPDATED: CLICK ANIMATIONS ADDED)
@@ -4627,90 +4692,6 @@ async function initializeStoreHistoryMatrixWorkspace() {
   } catch (error) {
     if (resultsFeedZone) resultsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn);">Network Exception: ${error.message}</div>`;
   }
-}
-
-/**
- * CLIENT-SIDE INTERACTIVE MATRIX SEARCH FILTER ENGINE
- * Performs instant cross-filtering using array structures directly inside the browser viewport frame
- */
-function executeClientSideStoreTicketFilterSearch() {
-  const resultsFeedZone = document.getElementById("store-historical-matrix-results-feed");
-  if (!resultsFeedZone) return;
-
-  const checkedProjects = Array.from(document.querySelectorAll('input[name="matrixProjectFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
-  const checkedStatuses = Array.from(document.querySelectorAll('input[name="matrixStatusFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
-
-  resultsFeedZone.innerHTML = "";
-
-  const filteredOutputList = masterStoreTicketsHistoryCacheCollection.filter(ticket => {
-    const matchProject = (checkedProjects.length === 0 || checkedProjects.indexOf(ticket.projectId.trim().toLowerCase()) !== -1);
-    const matchStatus  = (checkedStatuses.length === 0 || checkedStatuses.indexOf(ticket.status.trim().toLowerCase()) !== -1);
-    return matchProject && matchStatus;
-  });
-
-  if (filteredOutputList.length === 0) {
-    resultsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; background:#fff; border:1px solid var(--border); border-radius:4px; color:var(--muted); font-size:0.85rem;">No tickets matched your current search combination.</div>`;
-    return;
-  }
-
-  filteredOutputList.forEach(ticket => {
-    const card = document.createElement("div");
-    card.className = "contact-summary-card-parent";
-    card.style.cssText = "background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px; text-align:left; box-shadow:0 1px 3px rgba(0,0,0,0.01); margin-bottom:10px;";
-
-    let itemsArray = [];
-    try { itemsArray = JSON.parse(ticket.itemsJson); } catch(e) { itemsArray = []; }
-
-    let itemsTableRowsHtml = "";
-    itemsArray.forEach(i => {
-      itemsTableRowsHtml += `<tr><td style="padding:4px; color:var(--text); font-weight:600;">${i.materialName}</td><td style="padding:4px; font-family:monospace; font-weight:700; text-align:right;">${i.quantity} ${i.unitType}</td></tr>`;
-    });
-
-    let badgeColorStyle = "background:#fef3c7; color:#b45309;"; 
-    if (ticket.status === "Approved & Released") badgeColorStyle = "background:#dcfce7; color:#15803d;";
-    if (ticket.status === "Rejected" || ticket.status === "Expired") badgeColorStyle = "background:#fee2e2; color:#b91c1c;";
-
-    // Clean timestamp formats out of visible strings layout parameters fields bounds
-    const formatTimestampToDropSeconds = (rawDateTimeStr) => {
-      if (!rawDateTimeStr) return "";
-      let baseStr = rawDateTimeStr.toString().split(" GMT")[0].trim();
-      
-      // If string contains time colon structures (e.g. YYYY-MM-DD HH:MM:SS)
-      if (baseStr.includes(":")) {
-        let timeParts = baseStr.split(":");
-        if (timeParts.length >= 3) {
-          // Join only the Hours and Minutes back to the Date line, dropping the seconds cell block
-          return timeParts[0] + ":" + timeParts[1];
-        }
-      }
-      return baseStr;
-    };
-
-    let cleanCreated = formatTimestampToDropSeconds(ticket.dateCreated);
-    let cleanActioned = ticket.dateActioned ? formatTimestampToDropSeconds(ticket.dateActioned) : "";
-    let cleanOperatorNameSignature = ticket.actionedBy ? ticket.actionedBy.toString().trim() : "Unprocessed";
-
-    // FIXED: Rendered exactly matching your supplied structural template parameters layout row
-    card.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed var(--border); padding-bottom:6px; margin-bottom:8px;">
-        <div>
-          <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:2px 6px; border-radius:4px; font-size:0.8rem;">${ticket.ticketId}</span>
-          <strong style="margin-left:8px; font-size:0.85rem; color:var(--brand);">Project ID: ${ticket.projectId}</strong>
-        </div>
-        <span style="font-size:0.68rem; font-weight:700; border-radius:4px; padding:2px 6px; ${badgeColorStyle}">${ticket.status.toUpperCase()}</span>
-      </div>
-      <div style="font-size:0.8rem; line-height:1.4; margin-bottom:8px; color:#4a5568;">
-        <strong>Requested By:</strong> ${ticket.requestedBy} | <strong>Actioned By:</strong> ${cleanOperatorNameSignature}<br/>  
-        <strong>Created:</strong> ${cleanCreated} | ${ticket.dateActioned ? `<strong>Processed On:</strong> ${cleanActioned}` : `<strong>Status:</strong> Waiting Handover`}
-      </div>
-      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px;">
-        <table style="width:100%; font-size:0.78rem; border-collapse:collapse;">
-          <tbody>${itemsTableRowsHtml}</tbody>
-        </table>
-      </div>
-    `;
-    resultsFeedZone.appendChild(card);
-  });
 }
 
 /**
