@@ -601,14 +601,14 @@
           <button class="btn btn-sub" id="reveal-new-entry-btn" onclick="revealNewEntryFormDropdown()" style="width:auto; display:inline-flex; padding:4px 10px; font-size:0.75rem;">Create New Entry</button>
         </div>
 
-        <div id="step2-new-entry-dropdown" style="display: none; padding: 0 4px;">
+        <div id="step2-new-entry-dropdown" style="display: none; padding: 0 4px; text-align: left;">
           <div class="section" style="background: var(--card); padding: 15px; border-radius: var(--radius); border: 1px solid var(--border);">
             <div class="section-header" style="margin-bottom:10px;">Create New Lead Record Details</div>
             
             <div id="remaining-sections-form">
-              <div style="margin-bottom: 12px; text-align: left;">
+              <div style="margin-bottom: 12px;">
                 <label class="field-label">Lead Status *</label>
-                <select id="dropform-status" style="padding: 8px; font-weight: 600; width: 100%; border: 1.5px solid var(--border); border-radius: 4px;">
+                <select id="dropform-status" style="padding: 8px; font-weight: 600;">
                   <option value="New Lead">New Lead</option>
                   <option value="Technical Discussion">Technical Discussion</option>
                   <option value="Offer Sent">Offer Sent</option>
@@ -619,8 +619,282 @@
                 </select>
               </div>
 
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Creator / Engineer Name *</label>
+                <select id="engName" style="padding: 8px; font-weight: 600;">
+                  <option value="">— Loading Engineers List —</option>
+                </select>
               </div>
+
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Company Name *</label>
+                <input type="text" id="dropform-company-locked" placeholder="Enter company name..." style="background: #ffffff; font-weight: 600;" />
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Contact Person Name</label>
+                <input type="text" id="dropform-name" placeholder="Enter contact name..." />
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Position / Designation</label>
+                <input type="text" id="dropform-position" placeholder="e.g. Procurement Manager" />
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div><label class="field-label">Phone</label><input type="tel" id="dropform-phone" /></div>
+                <div><label class="field-label">Alt Phone</label><input type="tel" id="dropform-altphone" /></div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div><label class="field-label">Email Address</label><input type="email" id="dropform-email" /></div>
+                <div><label class="field-label">Website</label><input type="url" id="dropform-website" /></div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div><label class="field-label">City *</label><input type="text" id="dropform-city" /></div>
+                <div><label class="field-label">State *</label><input type="text" id="dropform-state" /></div>
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Company Address</label>
+                <textarea id="dropform-address" style="min-height: 40px;"></textarea>
+              </div>
+
+              <div class="section-divider-line" style="margin: 15px 0; background: var(--border); height: 1px;"></div>
+
+              <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--brand); margin-bottom: 8px; text-transform: uppercase;">Section 1: Initial Handshake</h3>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div><label class="field-label">Date of Meeting</label><input type="date" id="meetingDate" /></div>
+                <div><label class="field-label">Time of Meeting</label><input type="time" id="meetingTime" /></div>
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Meeting Venue</label>
+                <div style="display: flex; gap: 12px; margin-top: 4px;">
+                  <label style="width:auto; cursor:pointer;"><input type="radio" name="meetingVenue" value="Exhibition" onclick="toggleOtherText(this, 'meetingVenueOther')" style="width:auto; margin-right:4px;"> Exhibition</label>
+                  <label style="width:auto; cursor:pointer;"><input type="radio" name="meetingVenue" value="Customer Place" onclick="toggleOtherText(this, 'meetingVenueOther')" style="width:auto; margin-right:4px;"> Customer Place</label>
+                  <label style="width:auto; cursor:pointer;"><input type="radio" name="meetingVenue" value="Other" onclick="toggleOtherText(this, 'meetingVenueOther')" style="width:auto; margin-right:4px;"> Other</label>
+                </div>
+                <input type="text" id="meetingVenueOther" placeholder="Specify other venue..." class="other-input" style="display: none; margin-top: 6px;" />
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Venue Name / City</label>
+                <input type="text" id="venueName" placeholder="e.g. Pragati Maidan, Delhi" />
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Additional Meeting Details (if any)</label>
+                <textarea id="additionalMeetingDetails" style="min-height: 40px;"></textarea>
+              </div>
+
+              <div class="section-divider-line" style="margin: 15px 0; background: var(--border); height: 1px;"></div>
+
+              <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--brand); margin-bottom: 8px; text-transform: uppercase;">Section 2: Lead Profile Categorization</h3>
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">ABPS Business Vertical</label>
+                <div style="display: flex; gap: 12px; margin-top: 4px;">
+                  <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Industrial" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Industrial</label>
+                  <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Power" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Power</label>
+                  <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Renewable" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Renewable</label>
+                  <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Other" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Other</label>
+                </div>
+                <input type="text" id="businessVerticalOther" placeholder="Specify vertical..." class="other-input" style="display: none; margin-top: 6px;" />
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Type of Industry</label>
+                <input type="text" id="industry" placeholder="e.g. Cement, Steel, Chemical" />
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Qualification Mapping</label>
+                <div class="pill-group" style="margin-top: 4px;">
+                  <input type="checkbox" name="qualification" value="Industry" id="q1"><label for="q1">Industry</label>
+                  <input type="checkbox" name="qualification" value="EPC" id="q2"><label for="q2">EPC</label>
+                  <input type="checkbox" name="qualification" value="Govt/PSU" id="q3"><label for="q3">Govt/PSU</label>
+                  <input type="checkbox" name="qualification" value="Consultant" id="q4"><label for="q4">Consultant</label>
+                  <input type="checkbox" name="qualification" value="Developer" id="q5"><label for="q5">Developer</label>
+                  <input type="checkbox" name="qualification" value="Electrical Contractor" id="q6"><label for="q6">Electrical Contractor</label>
+                  <input type="checkbox" name="qualification" value="Dealer" id="q7"><label for="q7">Dealer</label>
+                  <input type="checkbox" name="qualification" value="Vendor" id="q8" onchange="handleQualChange()"><label for="q8">Vendor</label>
+                  <input type="checkbox" name="qualification" value="Others" id="q9" onchange="handleQualChange()"><label for="q9">Others ▾</label>
+                </div>
+                <input type="text" id="qualificationOther" placeholder="Specify other qualification..." class="other-input" style="display: none; margin-top: 6px;" />
+              </div>
+
+              <div id="vendor-fields" style="display: none; background: #f8fafc; padding: 10px; border: 1px dashed var(--border); border-radius: 4px; margin-bottom: 12px;">
+                <label class="field-label">Type of Vendor</label>
+                <div class="pill-group">
+                  <input type="checkbox" name="vendorType" value="Raw Materials supplier" id="vt1"><label for="vt1">Raw Materials Supplier</label>
+                  <input type="checkbox" name="vendorType" value="MC Supplier" id="vt2"><label for="vt2">MC Supplier</label>
+                  <input type="checkbox" name="vendorType" value="Capital Goods Supplier" id="vt3"><label for="vt3">Capital Goods Supplier</label>
+                  <input type="checkbox" name="vendorType" value="Others" id="vt4" onchange="toggleOtherCheck(this, 'vtoText')"><label for="vt4">Others</label>
+                </div>
+                <input type="text" id="vtoText" placeholder="Specify vendor type details..." class="other-input" style="display: none; margin-top: 4px;" />
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Name of Materials Supplied / Required</label>
+                <input type="text" id="materialsName" placeholder="Enter items description..." />
+              </div>
+
+              <div class="section-divider-line" style="margin: 15px 0; background: var(--border); height: 1px;"></div>
+
+              <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--brand); margin-bottom: 8px; text-transform: uppercase;">Section 3: Engineering Metrics & Diagnostics</h3>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                <div class="aoc-split-row-box">
+                  <select id="sel-lpi" onchange="toggleDropdownNo(this, 'lpi')"><option value="No">No</option><option value="Yes">Yes</option></select>
+                  <div><label class="field-label" style="margin:0;">Low Power Factor Penalty</label><input type="text" id="lpi" value="No" /></div>
+                </div>
+                <div class="aoc-split-row-box">
+                  <select id="sel-hbi" onchange="toggleDropdownNo(this, 'hbi')"><option value="No">No</option><option value="Yes">Yes</option></select>
+                  <div><label class="field-label" style="margin:0;">High Electricity Bill Issue</label><input type="text" id="hbi" value="No" /></div>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                <div class="aoc-split-row-box">
+                  <select id="sel-hi" onchange="toggleDropdownNo(this, 'hi')"><option value="No">No</option><option value="Yes">Yes</option></select>
+                  <div><label class="field-label" style="margin:0;">Harmonics Distortions</label><input type="text" id="hi" value="No" /></div>
+                </div>
+                <div class="aoc-split-row-box">
+                  <select id="sel-thi" onchange="toggleDropdownNo(this, 'thi')"><option value="No">No</option><option value="Yes">Yes</option></select>
+                  <div><label class="field-label" style="margin:0;">Transformer Breakdown Heating</label><input type="text" id="thi" value="No" /></div>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                <div class="aoc-split-row-box" style="grid-column: span 2;">
+                  <select id="sel-gsi" onchange="toggleDropdownNo(this, 'gsi')"><option value="No">No</option><option value="Yes">Yes</option></select>
+                  <div><label class="field-label" style="margin:0;">Grid Instability Issue / Voltage Fluctuations</label><input type="text" id="gsi" value="No" /></div>
+                </div>
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Existing System Compensation Details</label>
+                <textarea id="esd" placeholder="Provide legacy load parameters setups if any..." style="min-height: 40px;"></textarea>
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Voltage Level Requirements</label>
+                <div class="pill-group">
+                  <input type="checkbox" name="voltage" value="440V" id="v_440"><label for="v_440">440V</label>
+                  <input type="checkbox" name="voltage" value="660V" id="v_660"><label for="v_660">660V</label>
+                  <input type="checkbox" name="voltage" value="3.3KV" id="v_33"><label for="v_33">3.3KV</label>
+                  <input type="checkbox" name="voltage" value="6.6KV" id="v_66"><label for="v_66">6.6KV</label>
+                  <input type="checkbox" name="voltage" value="11KV" id="v_11"><label for="v_11">11KV</label>
+                  <input type="checkbox" name="voltage" value="22KV" id="v_22"><label for="v_22">22KV</label>
+                  <input type="checkbox" name="voltage" value="33KV" id="v_33k"><label for="v_33k">33KV</label>
+                  <input type="checkbox" name="voltage" value="66KV" id="v_66k"><label for="v_66k">66KV</label>
+                  <input type="checkbox" name="voltage" value="132KV" id="v_132"><label for="v_132">132KV</label>
+                  <input type="checkbox" name="voltage" value="220KV" id="v_220"><label for="v_220">220KV</label>
+                  <input type="checkbox" name="voltage" value="400KV" id="v_400"><label for="v_400">400KV</label>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div><label class="field-label">Contract Demand (MVA)</label><input type="text" id="cdMva" /></div>
+                <div><label class="field-label">Running Demand (MVA)</label><input type="text" id="rdMva" /></div>
+                <div><label class="field-label">Avg Power Factor</label><input type="text" id="avgPf" placeholder="e.g. 0.85" /></div>
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Problem Observed Description</label>
+                <input type="text" id="problemObserved" placeholder="Summarize client's primary power problems..." />
+              </div>
+
+              <div class="section-divider-line" style="margin: 15px 0; background: var(--border); height: 1px;"></div>
+
+              <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--brand); margin-bottom: 8px; text-transform: uppercase;">Section 4: Technical Commercial Opportunities</h3>
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Technical Discussion Summary / Diagnostics Notes</label>
+                <textarea id="techSummary" style="min-height: 40px;"></textarea>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div><label class="field-label">Existing Project Description</label><input type="text" id="epInput" /></div>
+                <div><label class="field-label">Upcoming Project Scope</label><input type="text" id="upInput" /></div>
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Products Discussed Mapping</label>
+                <div class="pill-group">
+                  <input type="checkbox" name="prod" value="APFC" id="p_apfc"><label for="p_apfc">APFC</label>
+                  <input type="checkbox" name="prod" value="RPTFC" id="p_rptfc"><label for="p_rptfc">RPTFC</label>
+                  <input type="checkbox" name="prod" value="Harmonic Filter" id="p_hf"><label for="p_hf">Harmonic Filter</label>
+                  <input type="checkbox" name="prod" value="SVG" id="p_svg"><label for="p_svg">SVG</label>
+                  <input type="checkbox" name="prod" value="MV Capacitor Bank" id="p_mvcb"><label for="p_mvcb">MV Capacitor Bank</label>
+                  <input type="checkbox" name="prod" value="Reactor" id="p_rx"><label for="p_rx">Reactor</label>
+                  <input type="checkbox" name="prod" value="Others" id="p_oth" onchange="toggleOtherCheck(this, 'pdoText')"><label for="p_oth">Others ▾</label>
+                </div>
+                <input type="text" id="pdoText" placeholder="Specify other ABPS engineering systems..." class="other-input" style="display: none; margin-top: 4px;" />
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div><label class="field-label">Approx Equipment Requirement Qty</label><input type="text" id="approxReq" placeholder="e.g. 2 Units SVG" /></div>
+                <div><label class="field-label">Expected Tender / RFQ Date</label><input type="date" id="tenderDate" /></div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div><label class="field-label">Expected Order Timeline</label><input type="text" id="orderTimeline" placeholder="e.g. Next 3 months" /></div>
+                <div><label class="field-label">Competitor Details</label><input type="text" id="competitors" /></div>
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <label class="field-label">Approx Business Potential Valuation</label>
+                <div style="display: flex; gap: 15px; margin-top: 4px;">
+                  <label style="width:auto; cursor:pointer;"><input type="radio" name="pot" value="&lt;10L" style="width:auto; margin-right:4px;"> &lt;10L</label>
+                  <label style="width:auto; cursor:pointer;"><input type="radio" name="pot" value="10-50L" style="width:auto; margin-right:4px;"> 10-50L</label>
+                  <label style="width:auto; cursor:pointer;"><input type="radio" name="pot" value="50L-2cr" style="width:auto; margin-right:4px;"> 50L-2cr</label>
+                  <label style="width:auto; cursor:pointer;"><input type="radio" name="pot" value="&gt;2cr" style="width:auto; margin-right:4px;"> &gt;2cr</label>
+                </div>
+              </div>
+
+              <div class="section-divider-line" style="margin: 15px 0; background: var(--border); height: 1px;"></div>
+
+              <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--brand); margin-bottom: 8px; text-transform: uppercase;">Section 5: Actions Matrix Pipeline Tasks</h3>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 15px;">
+                <div>
+                  <label class="field-label">Send Company Profile</label>
+                  <select id="act1"><option value="No">No</option><option value="Yes">Yes</option></select>
+                </div>
+                <div>
+                  <label class="field-label">Send Tech Presentation</label>
+                  <select id="act2"><option value="No">No</option><option value="Yes">Yes</option></select>
+                </div>
+                <div>
+                  <label class="field-label">Arrange Site Visit</label>
+                  <select id="act3"><option value="No">No</option><option value="Yes">Yes</option></select>
+                </div>
+                <div>
+                  <label class="field-label">Get Enquiry</label>
+                  <select id="act4"><option value="No">No</option><option value="Yes">Yes</option></select>
+                </div>
+                <div>
+                  <label class="field-label">Send Offer</label>
+                  <select id="actOffer">
+                    <option value="No">No</option>
+                    <option value="Send Budgetary Offer">Send Budgetary Offer</option>
+                    <option value="Send Techno-Commercial Offer">Send Techno-Commercial Offer</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label">Follow-Up Required</label>
+                  <select id="act7"><option value="No">No</option><option value="Yes">Yes</option></select>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 10px; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 12px;" id="staged-back-button-row">
+                <button class="btn btn-warn" onclick="returnToDirectoryCardsFromFormView()" style="background: #718096; flex: 1;">Cancel & Back</button>
+                <button class="btn btn-sub" id="submit-btn" onclick="submitLead()" style="background: var(--brand); flex: 2;">Submit Lead</button>
+              </div>
+
+            </div>
           </div>
+        </div>  
+
         </div>
 
         <div id="step2-inline-interaction-canvas" style="display: none; padding: 0 4px;">
@@ -1194,6 +1468,11 @@ async function triggerCityStateQuerySearchExecution() {
   }
 }
 
+/**
+ * FULL STRUCTURAL VIEWPORT CONTROLLER
+ * Initializes backend lookups, registers engineers lists across panel dropdowns,
+ * validates access roles gateways, and sets dynamic metric dashboard cards.
+ */
 async function showAppView() {
   document.getElementById("auth-container").style.display = "none"; 
   document.getElementById("app-container").style.display = "block";
@@ -1233,10 +1512,23 @@ async function showAppView() {
       }) 
     });
     const data = await res.json();
+    
     if (data.success) { 
       cachedEngineers = data.engineers; 
       populateEngineerDropdowns(); 
       
+      // 1. MASTER LEAD ENTRY DROPDOWN PATCH
+      const targetFormEngSelector = document.getElementById("engName");
+      if (targetFormEngSelector) {
+        targetFormEngSelector.innerHTML = '<option value="">— Select Your Name —</option>';
+        cachedEngineers.forEach(eng => {
+          let opt = document.createElement("option");
+          opt.value = eng; opt.textContent = eng;
+          targetFormEngSelector.appendChild(opt);
+        });
+      }
+      
+      // 2. SEARCH BY ENGINEER FILTER DROPDOWN
       const engDrop = document.getElementById("engineer-filter-select");
       if (engDrop) {
         engDrop.innerHTML = '<option value="">— Select Engineer —</option>';
@@ -1245,6 +1537,7 @@ async function showAppView() {
         });
       }
 
+      // 3. SEARCH TASKS ENGINE COMBINATION CHECKBOX MATRIX
       const matrixEngBoxEnclosure = document.getElementById("task-matrix-engineer-checkboxes");
       if (matrixEngBoxEnclosure) {
         matrixEngBoxEnclosure.innerHTML = "";
@@ -1256,10 +1549,12 @@ async function showAppView() {
         });
       }
 
-      // FIXED: Force immediate initialization calls right here to prevent rendering delays across panels
+      // 4. SEARCH LEADS STATUS MATRIX CHECKBOXES
       renderLeadMatrixEngineerCheckboxes();
     }
-  } catch(e) { console.error("Engineer load error:", e.message); }
+  } catch(e) { 
+    console.error("Engineer profile listing lookups sync initialization error dropped: ", e.message); 
+  }
 
   triggerCompanyDropdownArrayFetch();
   loadCityStateFilterOptions();
@@ -1451,34 +1746,31 @@ function toggleDropdownNo(selectNode, inputId) {
   }
 }
 
-function revealNewEntryFormDropdown() { 
-  const container = (currentActiveModuleContext === "CARD") ? "workspace-cardDetails" : "workspace-searchCompany";
+function revealNewEntryFormDropdownFromBanner() {
+  document.getElementById("step2-inline-interaction-canvas").style.display = "none";
+  const parentId = (currentActiveModuleContext === "CARD") ? "workspace-cardDetails" : "workspace-searchCompany";
+  document.getElementById(parentId).appendChild(document.getElementById("step2-new-entry-dropdown"));
   
-  document.getElementById(container).appendChild(document.getElementById("step2-new-entry-dropdown"));
-
-  let companyName = "";
-  if (currentActiveModuleContext === "CARD") {
-      companyName = document.getElementById("f-company").value;
-  } else {
-      const dropdown = document.getElementById("lookup-module-company-dropdown");
-      companyName = dropdown.options[dropdown.selectedIndex].text.split(" (")[0];
-  }
-  document.getElementById("dropform-company-locked").value = companyName || "No Company Specified";
-  
-  document.getElementById("dropform-name").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-name").value : "";
-  document.getElementById("dropform-position").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-position").value : "";
-  document.getElementById("dropform-phone").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-phone").value : "";
-  document.getElementById("dropform-altphone").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-altphone").value : "";
-  document.getElementById("dropform-email").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-email").value : "";
-  document.getElementById("dropform-website").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-website").value : "";
+  document.getElementById("dropform-company-locked").value = activeSearchCompany;
+  document.getElementById("dropform-name").value = document.getElementById("f-name").value || "";
+  document.getElementById("dropform-position").value = document.getElementById("f-position").value || "";
+  document.getElementById("dropform-phone").value = document.getElementById("f-phone").value || "";
+  document.getElementById("dropform-altphone").value = document.getElementById("f-altphone").value || "";
+  document.getElementById("dropform-email").value = document.getElementById("f-email").value || "";
+  document.getElementById("dropform-website").value = document.getElementById("f-website").value || "";
   document.getElementById("dropform-city").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-city").value : "";
   document.getElementById("dropform-state").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-state").value : "";
-  document.getElementById("dropform-address").value = (currentActiveModuleContext === "CARD") ? document.getElementById("f-address").value : "";
+  document.getElementById("dropform-address").value = document.getElementById("f-address").value || "";
 
-  document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
-  document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "inline-flex";
-  document.getElementById("step2-new-entry-dropdown").style.display = "block"; 
-  window.scrollTo(0,0); 
+  document.getElementById("global-direct-inline-create-entry-btn").style.display = "none"; 
+  document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none"; 
+  
+  // FIXED SAFETY CHECK
+  const rowNode = document.getElementById("staged-back-button-row");
+  if (rowNode) rowNode.style.display = "flex"; 
+
+  document.getElementById("step2-new-entry-dropdown").style.display = "block";
+  window.scrollTo(0,0);
 }
 
 function collapseNewEntryDropdownFormExplicitly() {
