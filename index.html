@@ -4859,10 +4859,29 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
         feedbackBanner.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div>
-              <strong>AI Matching Action Successful!</strong><br/>
-              <span>Matched Company: <strong>${data.matchedCompany}</strong> updated to <strong>${opsFlagTypeString === "DISPATCH" ? "Offer Dispatched" : "Offer Commissioned"}</strong>.</span>
+              <strong>AI Matching Successful!</strong><br/>
+              <span><strong>${data.matchedCompany}</strong> Status updated to <strong>${opsFlagTypeString === "DISPATCH" ? "Offer Dispatched" : "Offer Commissioned"}</strong>.</span>
             </div>
-            <button class="nav-btn-styled" onclick="document.getElementById('marketing-ops-inputs-wrapper-container').style.display='block'; document.getElementById('marketing-ops-runtime-inline-feedback-banner').style.display='none'; navigateToModule('dispatchCommissioning');" style="background:#15803d; color:white; padding:6px 12px; font-weight:700;">+ Process Another Document</button>
+            <button class="nav-btn-styled" onclick="
+              // 1. Reset file object references to clean memory states
+              targetDispatchBillFileObj = null;
+              targetCommissioningReportFileObj = null;
+              document.getElementById('dispatch-bill-raw-file').value = '';
+              document.getElementById('commissioning-report-raw-file').value = '';
+
+              // 2. Isolate drop boxes elements blocks handles
+              const b1 = document.getElementById('dispatch-bill-upload-box');
+              const b2 = document.getElementById('commissioning-report-upload-box');
+
+              // 3. Clear text strings and strip out active CSS class styling highlights
+              if (b1) { b1.textContent = '📋 Select Dispatched Bill'; b1.classList.remove('done'); }
+              if (b2) { b2.textContent = '🛠️ Select Commissioning Report'; b2.classList.remove('done'); }
+
+              // 4. Restore home dashboard view panels visibility constraints
+              document.getElementById('marketing-ops-inputs-wrapper-container').style.display = 'block'; 
+              document.getElementById('marketing-ops-runtime-inline-feedback-banner').style.display = 'none';
+            " style="background:#15803d; color:white; padding:6px 12px; font-weight:700;">+ Process Another Document
+            </button>
           </div>
         `;
       }
