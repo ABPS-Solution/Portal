@@ -991,7 +991,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwi48mJAWPyrEpKLdTfWflOhGffgGeSgh6j7_ietCOjtzg22mXqUdj8z1TLkwzq6bvZZQ/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwPkQSGLtfUDBVNj_0d5BI3CyKt4WCgRxv8FlFubOaF5rre1tjzfJI4qCpgk4JwZQncvw/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -4809,13 +4809,13 @@ showAppView = async function() {
 document.getElementById('dispatch-bill-raw-file').onchange = (e) => {
   targetDispatchBillFileObj = e.target.files[0];
   const box = document.getElementById('dispatch-bill-upload-box');
-  if (box && targetDispatchBillFileObj) { box.textContent = "Bill Document Staged ✅"; box.classList.add('done'); }
+  if (box && targetDispatchBillFileObj) { box.textContent = "Bill Document Added ✅"; box.classList.add('done'); }
 };
 
 document.getElementById('commissioning-report-raw-file').onchange = (e) => {
   targetCommissioningReportFileObj = e.target.files[0];
   const box = document.getElementById('commissioning-report-upload-box');
-  if (box && targetCommissioningReportFileObj) { box.textContent = "Report Document Staged ✅"; box.classList.add('done'); }
+  if (box && targetCommissioningReportFileObj) { box.textContent = "Report Document Added ✅"; box.classList.add('done'); }
 };
 
 async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
