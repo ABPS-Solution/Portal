@@ -711,7 +711,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw3TD5JmsLLxUg_gbNU6n1wagWBminpNL8nxJzSGRnoiPa4zzN8tS2HC5ZpdTmhObO1yQ/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycby14v26PFdY6_1oo97RLyhXigQMhUhI18q6GgClBsbgYh3rUVPZJnec1hFo6sX6ZNZx0w/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -2992,7 +2992,7 @@ async function executeInboundEmailSyncPipelineFetch() {
       animation: spin 0.8s linear infinite;
     "></div>
     <span style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-      Connecting to mail server... Running AI filters
+      Connecting to mail server...
     </span>
   `;
   
@@ -3025,7 +3025,7 @@ async function executeInboundEmailSyncPipelineFetch() {
   } finally {
     // 5. Restore full structural button states parameters regardless of success or failure paths
     syncBtn.disabled = false; 
-    syncBtn.textContent = "Sync Inbox Streams";
+    syncBtn.textContent = "Sync Inbox";
   }
 }
 
