@@ -641,6 +641,7 @@
           <div class="section" style="background: var(--card); padding: 15px; border-radius: var(--radius); border: 1px solid var(--border);">
             <div class="section-header" style="margin-bottom:10px;">Create New Lead Record Details</div>
             
+            <div id="marketing-lead-creation-inline-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>    
             <div id="remaining-sections-form">
               <div style="margin-bottom: 12px;">
                 <label class="field-label">Lead Status *</label>
@@ -2891,19 +2892,23 @@ async function uploadToCloudinary(file) {
 async function submitLead() {
   const btn = document.getElementById('submit-btn');
   const statusField = document.getElementById('dropform-status');
+  const feedbackBanner = document.getElementById('marketing-lead-creation-inline-feedback-banner');
+  const activeFormContainerScopeNode = document.getElementById("step2-new-entry-dropdown");
+  
   if (!statusField.value) { alert("Lead Status is compulsory."); return; }
 
   const engineerField = document.getElementById('engName');
-  if (!engineerField || !engineerField.value) { alert("Creator Name is a compulsory question."); return; }
+  if (!engineerField || !engineerField.value) { alert("Engineer Name is a compulsory question."); return; }
+
+  if (feedbackBanner) {
+    feedbackBanner.style.display = "none";
+  }
 
   btn.disabled = true; 
   btn.innerHTML = '<div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div> Saving Lead...';
   
   const meetingDate = document.getElementById('meetingDate').value;
   const meetingTime = document.getElementById('meetingTime').value;
-
-  // FIXED: Scope query selections tightly to active panel containers to safeguard layout transitions
-  const activeFormContainerScopeNode = document.getElementById("step2-new-entry-dropdown");
   
   const getChecks = n => Array.from(activeFormContainerScopeNode.querySelectorAll(`input[name="${n}"]:checked`)).map(c => c.value);
   const getRadio  = n => (activeFormContainerScopeNode.querySelector(`input[name="${n}"]:checked`) || {}).value || "No";
@@ -2915,7 +2920,6 @@ async function submitLead() {
     ]);
     const imageUrl = [url1, url2].filter(u => u).join(", ");
     
-    // Safety check fallback references to guarantee input values are preserved
     const lpiNode  = document.getElementById("lpi");  const selLpiNode  = document.getElementById("sel-lpi");
     const hbiNode  = document.getElementById("hbi");  const selHbiNode  = document.getElementById("sel-hbi");
     const hiNode   = document.getElementById("hi");   const selHiNode   = document.getElementById("sel-hi");
@@ -2924,12 +2928,6 @@ async function submitLead() {
     const vtoNode  = document.getElementById("vtoText");
     const pdoNode  = document.getElementById("pdoText");
     const qOtherNode = document.getElementById("qualificationOther");
-
-    const dynamicOverriddenLpiValue = selLpiNode && selLpiNode.value === "Yes" ? (lpiNode ? lpiNode.value : "Yes") : "No";
-    const dynamicOverriddenHbiValue = selHbiNode && selHbiNode.value === "Yes" ? (hbiNode ? hbiNode.value : "Yes") : "No";
-    const dynamicOverriddenHiValue  = selHiNode  && selHiNode.value  === "Yes" ? (hiNode  ? hiNode.value  : "Yes") : "No";
-    const dynamicOverriddenThiValue = selThiNode && selThiNode.value === "Yes" ? (thiNode ? thiNode.value : "Yes") : "No";
-    const dynamicOverriddenGsiValue = selGsiNode && selGsiNode.value === "Yes" ? (gsiNode ? gsiNode.value : "Yes") : "No";
 
     const qualChecked = getChecks('qualification');
     const qualFinal = qualChecked.map(v => v === 'Others' ? ((qOtherNode && qOtherNode.value) ? qOtherNode.value : 'Others') : v);
@@ -2961,9 +2959,9 @@ async function submitLead() {
       additionalMeetingDetails: document.getElementById('additionalMeetingDetails').value,
       businessVertical: getRadio('businessVertical') === 'Other' ? (document.getElementById('businessVerticalOther') ? document.getElementById('businessVerticalOther').value : 'Other') : getRadio('businessVertical'), 
       industry: document.getElementById('industry').value, 
-      "Type of Customer": qualFinal, // FIXED COLUMN KEY MATCH
+      "Type of Customer": qualFinal, 
       vendorType: vtFinal,
-      "Name of Materials Supplied": document.getElementById('materialsName').value, // FIXED COLUMN KEY MATCH
+      "Name of Materials Supplied": document.getElementById('materialsName').value, 
       lpi: document.getElementById("sel-lpi").value === "Yes" ? document.getElementById("lpi").value : "", 
       hbi: document.getElementById("sel-hbi").value === "Yes" ? document.getElementById("hbi").value : "", 
       hi: document.getElementById("sel-hi").value === "Yes" ? document.getElementById("hi").value : "", 
@@ -2972,7 +2970,7 @@ async function submitLead() {
       purchaseInquire: document.getElementById('purchaseInquire').value.trim(),
       tenderInquire: document.getElementById('tenderInquire').value.trim(),
       esd: document.getElementById('esd').value.trim(),
-      "Voltage Level Requirements": getChecks('voltage'), // FIXED COLUMN KEY MATCH
+      "Voltage Level Requirements": getChecks('voltage'), 
       cdMva: document.getElementById('cdMva').value, 
       rdMva: document.getElementById('rdMva').value, 
       avgPf: document.getElementById('avgPf').value,
@@ -3007,7 +3005,11 @@ async function submitLead() {
     const d = await res.json();
     
     if (d.success) { 
-      // 1. Safe cleaning check for Inbound Email Leads pipeline tracking
+      if (feedbackBanner) {
+        feedbackBanner.style.cssText = "display: block; background: #dcfce7; border-color: #15803d; color: #15803d; padding: 14px; margin-bottom: 16px; border-left: 4px solid #15803d; text-align: left;";
+        feedbackBanner.innerHTML = `<strong>Success! Transaction Ticket Created Perfectly.</strong><br/>Assigned Reference Tracking ID: <span style="font-family:monospace; font-weight:800; background:#fff; padding:2px 6px; border-radius:4px; border:1px solid #15803d; margin-left:4px;">${d.leadRef}</span>`;
+      }
+
       if (activeEmailLeadContextIndex !== null) {
         const mailObject = cachedInboundEmailLeadsArray[activeEmailLeadContextIndex];
         const targetMsgId = mailObject.messageIdReference;
@@ -3028,38 +3030,57 @@ async function submitLead() {
         activeEmailLeadContextIndex = null;
       }
 
-      // 2. SUCCESS NOTIFICATION ALERT: Replaces missing structural screen logic safely
-      alert(`Success! Lead Created Perfectly.\nAssigned System Reference: ${d.leadRef || "LEAD-ASSIGNED"}`);
+      // Smoothly scroll to top so the user instantly notices the inline success banner
+      window.scrollTo({ top: 0, behavior: 'smooth' });
 
-      // 3. Clear and Collapse entry form drawer workspace elements
-      collapseNewEntryDropdownFormExplicitly();
-      resetSequentialFormState();
-
-      // 4. Smooth background refresh layout synchronization lookups
-      if (currentActiveModuleContext === "CARD" || currentActiveModuleContext === "DROPDOWN") {
-         const compParamValue = fields["Company Name"]; 
-         const targetPersonNameParam = fields["Contact Person Name"];
-         const refreshRes = await fetch(GAS_URL, { 
-           method: "POST", 
-           body: JSON.stringify({ 
-             action: "searchCompanyData",
-             sessionToken: localStorage.getItem("sessionToken"),
-             activeEngineer: appActiveOperatorIdentityString, 
-             companyName: compParamValue, 
-             contactName: targetPersonNameParam 
-           }) 
-         });
-         const refreshData = await refreshRes.json();
-         if (refreshData.success) {
+      setTimeout(async () => {
+        if (feedbackBanner) feedbackBanner.style.display = "none";
+        
+        // Collapse entry form drawer
+        collapseNewEntryDropdownFormExplicitly();
+        resetSequentialFormState();
+        
+        // Fetch completely fresh data matching our updated record targets indices
+        if (currentActiveModuleContext === "CARD" || currentActiveModuleContext === "DROPDOWN") {
+          const compParamValue = fields["Company Name"]; 
+          const targetPersonNameParam = fields["Contact Person Name"];
+          
+          const refreshRes = await fetch(GAS_URL, { 
+            method: "POST", 
+            body: JSON.stringify({ 
+              action: "searchCompanyData",
+              sessionToken: localStorage.getItem("sessionToken"),
+              activeEngineer: appActiveOperatorIdentityString, 
+              companyName: compParamValue, 
+              contactName: targetPersonNameParam 
+            }) 
+          });
+          const refreshData = await refreshRes.json();
+          if (refreshData.success) {
             globalFollowUpsCacheMap = refreshData.followups; 
             globalTasksCacheMap = refreshData.tasks;
-            buildMultiContactDirectoryInterface(refreshData.leads, targetPersonNameParam);
+            
             const canvasNode = document.getElementById("step2-inline-interaction-canvas");
-            if (canvasNode) canvasNode.style.display = "block";
-         }
-      }
-    }
-    else {
+            if (canvasNode) {
+              canvasNode.style.display = "block";
+              
+              // Render cards directory framework elements lines
+              buildMultiContactDirectoryInterface(refreshData.leads, targetPersonNameParam);
+              
+              // OPTIMIZATION FLOW: Inject highlighted border around the freshly generated lead node wrapper card
+              const topFreshCardNode = document.getElementById(`contact-parent-wrapper-${d.leadRef}`);
+              if (topFreshCardNode) {
+                topFreshCardNode.style.cssText = "border: 2.5px solid var(--accent) !important; box-shadow: 0 4px 12px rgba(0, 168, 120, 0.15) !important;";
+              }
+            }
+          }
+          
+          // Re-fetch company lists asynchronously to instantly group brackets contents parameters
+          await triggerCompanyDropdownArrayFetch();
+        }
+      }, 3500);
+
+    } else {
       alert("Submission failed: " + (d.error || "Unknown server error."));
     }
   } catch (e) { 
