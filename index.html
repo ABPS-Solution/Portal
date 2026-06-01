@@ -595,11 +595,13 @@
               <div class="pill-group" id="lead-matrix-status-checkboxes-mount" style="margin:8px 0 16px;">
                 <input type="checkbox" name="leadMatrixStatusFilter" value="New Lead" id="lms_st1" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st1">New Lead</label>
                 <input type="checkbox" name="leadMatrixStatusFilter" value="Technical Discussion" id="lms_st2" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st2">Technical Discussion</label>
-                <input type="checkbox" name="leadMatrixStatusFilter" value="Offer Sent" id="lms_st3" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st3">Offer Sent</label>
-                <input type="checkbox" name="leadMatrixStatusFilter" value="Order Received" id="lms_st4" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st4">Order Received</label>
-                <input type="checkbox" name="leadMatrixStatusFilter" value="Offer Dispatched" id="lms_st5" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st5">Offer Dispatched</label>
-                <input type="checkbox" name="leadMatrixStatusFilter" value="Offer Commissioned" id="lms_st6" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st6">Offer Commissioned</label>
-                <input type="checkbox" name="leadMatrixStatusFilter" value="Lead Failed" id="lms_st7" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st7">Lead Failed</label>
+                <input type="checkbox" name="leadMatrixStatusFilter" value="Inquire Recieved" id="lms_st3" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st3">Inquire Recieved</label>
+                <input type="checkbox" name="leadMatrixStatusFilter" value="Offer Sent" id="lms_st4" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st4">Offer Sent</label>
+                <input type="checkbox" name="leadMatrixStatusFilter" value="Order Received" id="lms_st5" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st5">Order Received</label>
+                <input type="checkbox" name="leadMatrixStatusFilter" value="Order Dispatched" id="lms_st6" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st6">Order Dispatched</label>
+                <input type="checkbox" name="leadMatrixStatusFilter" value="Product Commissioned" id="lms_st7" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st7">Product Commissioned</label>
+                <input type="checkbox" name="leadMatrixStatusFilter" value="Lead Failed" id="lms_st8" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st8">Lead Failed</label>
+                <input type="checkbox" name="leadMatrixStatusFilter" value="Order not Recieved" id="lms_st9" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st9">Order not Recieved</label>
               </div>
               
               <button class="btn btn-sub" id="lead-matrix-search-submit-btn" onclick="executeLeadMatrixFilterSearch()">Run Leads Search</button>
@@ -673,11 +675,13 @@
                 <select id="dropform-status" style="padding: 8px; font-weight: 600;">
                   <option value="New Lead">New Lead</option>
                   <option value="Technical Discussion">Technical Discussion</option>
+                  <option value="Inquire Received">Inquire Received</option>
                   <option value="Offer Sent">Offer Sent</option>
                   <option value="Order Received">Order Received</option>
-                  <option value="Offer Dispatched">Offer Dispatched</option>
-                  <option value="Offer Commissioned">Offer Commissioned</option>
+                  <option value="Order Dispatched">Order Dispatched</option>
+                  <option value="Product Commissioned">Product Commissioned</option>
                   <option value="Lead Failed">Lead Failed</option>
+                  <option value="Order not Received">Order not Received</option>
                 </select>
               </div>
 
@@ -1055,7 +1059,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwvOtE5yMEOzrt_Wd93F5t6rfkLaJcjGWKttk3H8UZmgJ_rE8AqR7wfW3T3N35sGn20GQ/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbztoIkP7lI_XOLYxvitP57zK7P5aqArtppSsZGilMdauhL8SOQuckvZUGCSxc6_R9GG9A/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -2410,7 +2414,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
       // --- 1. CORE PIPELINE CONTROLLER ROUTINES ---
       if (key === "Status") {
         let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
-        ["New Lead", "Technical Discussion", "Offer Sent", "Order Received", "Offer Dispatched", "Offer Commissioned", "Lead Failed"].forEach(st => {
+        ["New Lead", "Technical Discussion", "Inquire Received", "Offer Sent", "Order Received", "Order Dispatched", "Product Commissioned", "Lead Failed", "Order not Received"].forEach(st => {
           let op = document.createElement("option"); op.textContent = st; if(leadMap[key] === st) op.selected = true; sel.appendChild(op);
         });
         cell.appendChild(sel);  
