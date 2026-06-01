@@ -203,19 +203,37 @@
     <!-- MARKETING DEPARTMENT BUTTONS INTERFACE GRID MAP -->
 
     <div id="dashboard-marketing-department-header-block">
-      <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--brand); margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Marketing Department</h2>
+      <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--brand); margin-bottom: 16px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Marketing Department</h2>
       
-      <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
-        <div class="menu-card" id="mod-card" onclick="navigateToModule('cardDetails')">Enter Card Details</div>
-        <div class="menu-card" id="mod-company" onclick="navigateToModule('searchCompany')">Search by Company Name</div>
-        
-        <div class="menu-card" id="mod-email-whatsapp" onclick="navigateToModule('emailLeads')">Email Leads</div>
-        <div class="menu-card" id="mod-dispatch-commissioning" onclick="navigateToModule('dispatchCommissioning')">Dispatched Bill & Commissioning Report</div>
-        
-        <div class="menu-card" id="mod-tasks" onclick="navigateToModule('searchTasks')">Search Tasks by Engineer Name</div>
-        <div class="menu-card" id="mod-status" onclick="navigateToModule('searchStatus')">Search by Lead Status</div>
-        <div class="menu-card" id="mod-qual" onclick="navigateToModule('searchQualification')">Search by Type of Customer</div>
-        <div class="menu-card" id="mod-city-state" onclick="navigateToModule('searchCityState')">Search by City and State</div>
+      <!-- SUB-SECTION 1: LEAD SOURCE -->
+      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
+        <div class="nav-group-title-label" style="font-size: 0.8rem; color: var(--brand); font-weight: 800; margin-bottom: 8px;">1) Lead Source</div>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-card" onclick="navigateToModule('cardDetails')">Enter Visiting Card Details</div>
+          <div class="menu-card" id="mod-email-whatsapp" onclick="navigateToModule('emailLeads')">Leads Received through Email</div>
+        </div>
+      </div>
+
+      <!-- SUB-SECTION 2: UPLOAD DOCUMENTS -->
+      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
+        <div class="nav-group-title-label" style="font-size: 0.8rem; color: var(--brand); font-weight: 800; margin-bottom: 8px;">2) Upload Documents</div>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-dispatch-bill" onclick="navigateToModule('dispatchBill')">Upload Dispatched Bill</div>
+          <div class="menu-card" id="mod-commissioning-report" onclick="navigateToModule('commissioningReport')">Upload Commissioning Report</div>
+          <div class="menu-card" id="mod-purchase-order" onclick="navigateToModule('purchaseOrder')">Upload Purchase Order</div>
+        </div>
+      </div>
+
+      <!-- SUB-SECTION 3: SEARCH -->
+      <div class="nav-department-group-wrapper" style="margin-bottom: 8px;">
+        <div class="nav-group-title-label" style="font-size: 0.8rem; color: var(--brand); font-weight: 800; margin-bottom: 8px;">3) Search</div>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-company" onclick="navigateToModule('searchCompany')">Search by Company Name</div>
+          <div class="menu-card" id="mod-tasks" onclick="navigateToModule('searchTasks')">Search Tasks by ABPS Engineer Name and Status</div>
+          <div class="menu-card" id="mod-status" onclick="navigateToModule('searchStatus')">Search Leads by ABPS Engineer Name and Status</div>
+          <div class="menu-card" id="mod-qual" onclick="navigateToModule('searchQualification')">Search by Type of Customer</div>
+          <div class="menu-card" id="mod-city-state" onclick="navigateToModule('searchCityState')">Search by City, State and Country</div>
+        </div>
       </div>
     </div>
 
@@ -473,30 +491,34 @@
           </div>
         </div>
 
-        <div id="workspace-dispatchCommissioning" class="workspace-panel" style="display: none;">
+        <!-- SPECIALIZED UPLOAD WORKSPACES -->
+        <div id="workspace-dispatchBill" class="workspace-panel" style="display: none;">
           <div class="section">
-            <div class="section-header">Dispatched Bill & Commissioning Report</div>
+            <div class="section-header">Upload Dispatched Bill</div>
             <div class="section-body" style="text-align: left; padding: 16px;">
-              <p style="color: var(--muted); font-size: 0.82rem; margin-bottom: 16px;">
-                Upload phone photos, digital scans, or PDF files of the Dispatched Bill or Commissioning Report.
-              </p>
-              
-              <div id="marketing-ops-runtime-inline-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
+              <div class="card-box" id="dispatch-bill-upload-box" onclick="document.getElementById('dispatch-bill-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Dispatched Bill</div>
+              <input type="file" id="dispatch-bill-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'dispatch-bill-upload-box', 'Bill Document Added ✅')" />
+              <button class="btn btn-sub" style="margin-top: 14px;" onclick="executeMarketingOperationsDocumentCommit('DISPATCH')">Process Dispatch Bill with AI</button>
+            </div>
+          </div>
+        </div>
 
-              <div id="marketing-ops-inputs-wrapper-container" style="display: block;">
-                <div class="card-row" style="display: flex; gap: 12px; margin-top: 8px; margin-bottom: 16px;">
-                  <div class="card-box" id="dispatch-bill-upload-box" onclick="document.getElementById('dispatch-bill-raw-file').click()" style="padding: 24px; font-size: 0.9rem; flex: 1; min-height: 90px; display: flex; align-items: center; justify-content: center; flex-direction: column;">📋 Select Dispatched Bill</div>
-                  <div class="card-box" id="commissioning-report-upload-box" onclick="document.getElementById('commissioning-report-raw-file').click()" style="padding: 24px; font-size: 0.9rem; flex: 1; min-height: 90px; display: flex; align-items: center; justify-content: center; flex-direction: column;">🛠️ Select Commissioning Report</div>
-                </div>
-                
-                <input type="file" id="dispatch-bill-raw-file" accept="image/*,application/pdf" hidden />
-                <input type="file" id="commissioning-report-raw-file" accept="image/*,application/pdf" hidden />
+        <div id="workspace-commissioningReport" class="workspace-panel" style="display: none;">
+          <div class="section">
+            <div class="section-header">Upload Commissioning Report</div>
+            <div class="section-body" style="text-align: left; padding: 16px;">
+              <div class="card-box" id="commissioning-report-upload-box" onclick="document.getElementById('commissioning-report-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">🛠️ Select Commissioning Report</div>
+              <input type="file" id="commissioning-report-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'commissioning-report-upload-box', 'Report Document Added ✅')" />
+              <button class="btn btn-ai" style="margin-top: 14px;" onclick="executeMarketingOperationsDocumentCommit('COMMISSION')">Process Commissioning Report with AI</button>
+            </div>
+          </div>
+        </div>
 
-                <div style="display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 14px;">
-                  <button class="nav-btn-styled" id="btn-ops-dispatch-submit" onclick="executeMarketingOperationsDocumentCommit('DISPATCH')" style="background: var(--brand); flex: 1; padding: 10px; font-size: 0.85rem;">Process Dispatch Bill with AI</button>
-                  <button class="nav-btn-styled" id="btn-ops-commission-submit" onclick="executeMarketingOperationsDocumentCommit('COMMISSION')" style="background: var(--accent); flex: 1; padding: 10px; font-size: 0.85rem;">Process Commissioning Report with AI</button>
-                </div>
-              </div>
+        <div id="workspace-purchaseOrder" class="workspace-panel" style="display: none;">
+          <div class="section">
+            <div class="section-header">Upload Purchase Order (System Infrastructure Mock)</div>
+            <div class="section-body" style="text-align: left; padding: 16px;">
+              <div class="card-box" id="purchase-order-upload-box" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center; border-color: var(--muted); color: var(--muted); cursor: not-allowed;">⚙️ Purchase Order Processing Module coming soon</div>
             </div>
           </div>
         </div>
@@ -546,6 +568,9 @@
           <div class="section">
             <div class="section-header">Filter Leads by Location</div>
             <div class="section-body">
+              <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">Select Target Countries</label>
+              <div class="pill-group" id="location-country-checkboxes-mount" style="margin: 6px 0 14px;"></div>
+
               <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">Select Target States</label>
               <div class="pill-group" id="location-state-checkboxes-mount" style="margin: 6px 0 14px;"></div>
               
@@ -1030,7 +1055,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw7dKkZdVcqZm6ONd2HgsNpKm6BJbfmQfqTwa-J2Okq8Ls29qXKC21YzLThmCcqy1K9Yg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxnuhxNfKltVo3a6uUAyA6aw3ecSkljF_kPpszDp-sAML6YGU8SMqnz7UA3lFaAveZ80w/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -1383,11 +1408,15 @@ function formatCleanDateOnly(rawStr) {
 
 async function loadCityStateFilterOptions() {
   const btn = document.getElementById("city-state-search-submit-btn");
+  const countryMount = document.getElementById("location-country-checkboxes-mount");
   const stateMount = document.getElementById("location-state-checkboxes-mount");
+  const cityMount = document.getElementById("location-city-checkboxes-mount");
   
-  if (stateMount) {
-    stateMount.innerHTML = `<p style="font-size:0.75rem; color:var(--muted); padding:4px 0;">⏳ Loading authorized regional states mapping...</p>`;
+  if (countryMount) {
+    countryMount.innerHTML = `<p style="font-size:0.75rem; color:var(--muted); padding:4px 0;">⏳ Loading location criteria channels...</p>`;
   }
+  if (stateMount) stateMount.innerHTML = "";
+  if (cityMount) cityMount.innerHTML = "";
   if (btn) btn.disabled = true;
   
   try {
@@ -1401,72 +1430,121 @@ async function loadCityStateFilterOptions() {
     });
     const data = await res.json();
     if (data.success) {
-      // FIXED: Safely assign the downloaded database dictionary tree directly to your global map variable
+      // Safely assign the multi-tier nested database tree (Country -> State -> City)
       globalLocationDatabaseCacheMap = data.tree;
-      renderStateCheckboxPillElements();
+      renderCountryCheckboxPillElements();
     } else {
-      if (stateMount) stateMount.innerHTML = `<p style="font-size:0.75rem; color:var(--warn);">Failed to sync locations ledger: ${data.error}</p>`;
+      if (countryMount) countryMount.innerHTML = `<p style="font-size:0.75rem; color:var(--warn);">Failed to sync locations ledger: ${data.error}</p>`;
     }
   } catch (e) {
     console.error("Geographic dictionary fetch exception:", e);
-    if (stateMount) stateMount.innerHTML = `<p style="font-size:0.75rem; color:var(--warn);">Network Error loading location lookups</p>';`;
+    if (countryMount) countryMount.innerHTML = `<p style="font-size:0.75rem; color:var(--warn);">Network Error loading location lookups</p>`;
   } finally {
     if (btn) btn.disabled = false;
   }
 }
 
-function renderStateCheckboxPillElements() {
-  const mountPoint = document.getElementById("location-state-checkboxes-mount");
-  const cityMountPoint = document.getElementById("location-city-checkboxes-mount");
+function renderCountryCheckboxPillElements() {
+  const countryMount = document.getElementById("location-country-checkboxes-mount");
+  const stateMount = document.getElementById("location-state-checkboxes-mount");
+  const cityMount = document.getElementById("location-city-checkboxes-mount");
   
-  if (!mountPoint) return;
-  mountPoint.innerHTML = "";
+  if (!countryMount) return;
+  countryMount.innerHTML = "";
   
-  if (cityMountPoint) {
-    cityMountPoint.innerHTML = '<p style="font-size:0.75rem; color:var(--muted); font-weight:600;">Select at least one active state parameter above to unpack city filters...</p>';
+  if (stateMount) {
+    stateMount.innerHTML = '<p style="font-size:0.75rem; color:var(--muted); font-weight:600; margin:0;">Select a country above to generate state filters...</p>';
+  }
+  if (cityMount) {
+    cityMount.innerHTML = '<p style="font-size:0.75rem; color:var(--muted); font-weight:600; margin:0;">Select a state above to generate city filters...</p>';
   }
   
-  // FIXED: Robust lookups extraction checking if data exists inside global tracking cache maps
   if (!globalLocationDatabaseCacheMap || Object.keys(globalLocationDatabaseCacheMap).length === 0) {
-    mountPoint.innerHTML = '<p style="font-size:0.75rem; color:var(--muted);">No active geographic profiles mapped inside your database workbook tab yet.</p>';
+    countryMount.innerHTML = '<p style="font-size:0.75rem; color:var(--muted);">No geographic logs tracked inside records yet.</p>';
+    return;
+
+  }
+  
+  const countriesList = Object.keys(globalLocationDatabaseCacheMap).sort();
+  countriesList.forEach(country => {
+    const cleanCountryName = country.toString().trim();
+    const cleanId = "country_chk_" + cleanCountryName.replace(/\s+/g, '_');
+    
+    countryMount.innerHTML += `
+      <input type="checkbox" name="searchCountryFilter" value="${cleanCountryName}" id="${cleanId}" onchange="handleCountryPillSelectionChangeContext()">
+      <label for="${cleanId}">${cleanCountryName}</label>
+    `;
+  });
+}
+
+function handleCountryPillSelectionChangeContext() {
+  const selectedCountries = Array.from(document.querySelectorAll('input[name="searchCountryFilter"]:checked')).map(cb => cb.value);
+  const stateMount = document.getElementById("location-state-checkboxes-mount");
+  const cityMount = document.getElementById("location-city-checkboxes-mount");
+  
+  stateMount.innerHTML = "";
+  if (cityMount) {
+    cityMount.innerHTML = '<p style="font-size:0.75rem; color:var(--muted); font-weight:600; margin:0;">Select a state above to generate city filters...</p>';
+  }
+  
+  if (selectedCountries.length === 0) {
+    stateMount.innerHTML = '<p style="font-size:0.75rem; color:var(--muted); font-weight:600; margin:0;">Select a country above to generate state filters...</p>';
     return;
   }
   
-  const statesList = Object.keys(globalLocationDatabaseCacheMap).sort();
-  statesList.forEach(state => {
-     const cleanStateName = state.toString().trim();
-     const cleanId = "state_chk_" + cleanStateName.replace(/\s+/g, '_');
-     
-     // FIXED: Generates checkboxes explicitly pointing to your updated whitespace-insensitive methods names
-     mountPoint.innerHTML += `
-       <input type="checkbox" name="searchStateFilter" value="${cleanStateName}" id="${cleanId}" onchange="handleStatePillSelectionChangeContext()">
-       <label for="${cleanId}">${cleanStateName}</label>
-     `;
+  let aggregatedStates = new Set();
+  selectedCountries.forEach(country => {
+    if (globalLocationDatabaseCacheMap[country]) {
+      Object.keys(globalLocationDatabaseCacheMap[country]).forEach(state => aggregatedStates.add(state));
+    }
+  });
+  
+  const sortedStates = Array.from(aggregatedStates).sort();
+  if (sortedStates.length === 0) {
+    stateMount.innerHTML = '<p style="font-size:0.75rem; color:var(--muted); margin:0;">No states mapped for the selected country.</p>';
+    return;
+  }
+  
+  sortedStates.forEach(state => {
+    const cleanStateName = state.toString().trim();
+    const cleanId = "state_chk_" + cleanStateName.replace(/\s+/g, '_');
+    
+    stateMount.innerHTML += `
+      <input type="checkbox" name="searchStateFilter" value="${cleanStateName}" id="${cleanId}" onchange="handleStatePillSelectionChangeContext()">
+      <label for="${cleanId}">${cleanStateName}</label>
+    `;
   });
 }
 
 function handleStatePillSelectionChangeContext() {
+  const selectedCountries = Array.from(document.querySelectorAll('input[name="searchCountryFilter"]:checked')).map(cb => cb.value);
   const selectedStates = Array.from(document.querySelectorAll('input[name="searchStateFilter"]:checked')).map(cb => cb.value);
   const cityMountPoint = document.getElementById("location-city-checkboxes-mount");
+  
   cityMountPoint.innerHTML = "";
   
   if (selectedStates.length === 0) {
-    cityMountPoint.innerHTML = '<p style="font-size:0.75rem; color:var(--muted); font-weight:600;">Select at least one active state location region profile block above to generate city filters...</p>';
+    cityMountPoint.innerHTML = '<p style="font-size:0.75rem; color:var(--muted); font-weight:600; margin:0;">Select a state above to generate city filters...</p>';
     return;
   }
   
-  // Generate a distinct list of all cities bound within the chosen states
   let aggregatedCities = [];
-  selectedStates.forEach(state => {
-     if (globalLocationDatabaseCacheMap[state]) {
-       aggregatedCities = aggregatedCities.concat(globalLocationDatabaseCacheMap[state]);
-     }
+  selectedCountries.forEach(country => {
+    if (globalLocationDatabaseCacheMap[country]) {
+      selectedStates.forEach(state => {
+        if (globalLocationDatabaseCacheMap[country][state]) {
+          aggregatedCities = aggregatedCities.concat(globalLocationDatabaseCacheMap[country][state]);
+        }
+      });
+    }
   });
   
-  // Deduplicate and alphabetize city profiles cleanly
   aggregatedCities = [...new Set(aggregatedCities)].sort();
+  if (aggregatedCities.length === 0) {
+    cityMountPoint.innerHTML = '<p style="font-size:0.75rem; color:var(--muted); margin:0;">No cities mapped for the selected states.</p>';
+    return;
+  }
   
-  // Injected 'All Cities' structural modifier option matching layout rules
   const allId = "city_chk_ALL_INDICATOR";
   cityMountPoint.innerHTML += `
     <input type="checkbox" id="${allId}" value="ALL" onchange="handleAllCitiesCheckboxOverrideToggle(this)">
@@ -1684,7 +1762,7 @@ async function triggerCompanyDropdownArrayFetch() {
 
 async function navigateToModule(key) { 
     // 1. Core verification gateway check routing against userPermissions payload mapping
-    if (!userPermissions[key]) return alert("Access Denied: Missing permission"); 
+    if (!userPermissions[key]) return alert("Access Denied: Missing permission profile privileges."); 
     
     const canvas = document.getElementById("step2-inline-interaction-canvas");
     if (canvas) {
@@ -1696,10 +1774,16 @@ async function navigateToModule(key) {
     document.getElementById("module-workspace-container").style.display = "block"; 
     document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none"); 
     
-    // FIX: Translate 'emailLeads' context parameter mapping down to target workspace element panel ID matching
+    // Maps keys to the exact workspace element panel DOM IDs
     let targetPanelKeyIdStr = key;
     if (key === "emailLeads") {
         targetPanelKeyIdStr = "emailWhatsapp";
+    } else if (key === "dispatchBill") {
+        targetPanelKeyIdStr = "dispatchBill";
+    } else if (key === "commissioningReport") {
+        targetPanelKeyIdStr = "commissioningReport";
+    } else if (key === "purchaseOrder") {
+        targetPanelKeyIdStr = "purchaseOrder";
     }
 
     const targetWorkspacePanel = document.getElementById("workspace-" + targetPanelKeyIdStr);
@@ -1716,7 +1800,7 @@ async function navigateToModule(key) {
     currentActiveModuleContext = (key === "cardDetails") ? "CARD" : (key === "searchCompany" ? "DROPDOWN" : "FILTERS");
     resetSequentialFormState();
     
-    // SMART PERSISTENCE WORKSPACE FIX: Keeps panels updated without requiring hardware browser refreshes
+    // Runtime synchronization switches
     if (key === "searchCompany") {
       const companyDropdownNode = document.getElementById("lookup-module-company-dropdown");
       if (companyDropdownNode && companyDropdownNode.value) {
@@ -1747,18 +1831,18 @@ async function navigateToModule(key) {
       loadCityStateFilterOptions();
     } else if (key === "emailLeads") { 
       executeInboundEmailSyncPipelineFetch();
-    } else if (key === "dispatchCommissioning") {
-      document.getElementById("marketing-ops-inputs-wrapper-container").style.display = "block";
-      const banner = document.getElementById("marketing-ops-runtime-inline-feedback-banner");
-      if (banner) banner.style.display = "none";
-      
-      targetDispatchBillFileObj = null;
-      targetCommissioningReportFileObj = null;
-      const b1 = document.getElementById('dispatch-bill-upload-box');
-      const b2 = document.getElementById('commissioning-report-upload-box');
-      if (b1) { b1.textContent = "📋 Select Dispatched Bill"; b1.classList.remove('done'); }
-      if (b2) { b2.textContent = "🛠️ Select Commissioning Report"; b2.classList.remove('done'); }
     }
+}
+
+function handleOpsFileChange(inputNode, uploadBoxId, confirmationMsg) {
+  const fileObj = inputNode.files[0];
+  const box = document.getElementById(uploadBoxId);
+  if (box && fileObj) {
+    if (uploadBoxId === 'dispatch-bill-upload-box') targetDispatchBillFileObj = fileObj;
+    else if (uploadBoxId === 'commissioning-report-upload-box') targetCommissioningReportFileObj = fileObj;
+    box.textContent = confirmationMsg;
+    box.classList.add('done');
+  }
 }
 
 function returnToDashboard() { 
@@ -3878,9 +3962,12 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
         // Insert parsed parameters
         const dropCompanyLocked = document.getElementById("dropform-company-locked");
         const dropName = document.getElementById("dropform-name");
-        
+
         if (dropCompanyLocked) dropCompanyLocked.value = mailObject.extractedCompany;
         if (dropName) dropName.value = mailObject.extractedContactName;
+        
+        const dropEmailField = document.getElementById("dropform-email");
+        if (dropEmailField && mailObject.destinationInboxAccount) {dropEmailField.value = mailObject.destinationInboxAccount; }
         
         document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
         document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
@@ -3893,68 +3980,107 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
   }
 }
 
+/**
+ * DYNAMIC PLATFORM ROLE GATEWAY ENFORCER
+ * Evaluates active unauthenticated session token permissions matrices,
+ * mapping access flags precisely onto the updated subcategorized grid cards elements.
+ */
 function enforceDynamicModuleRoleGateways(userPermissionsObject) {
-  // 1. EXTRACT MARKETING ACCESS MATRIX FLAGS
+  // 1. EXTRACT MARKETING ACCESS MATRIX FLAGS (Aligned to renamed user sheet schemas)
   const canEnterCard               = userPermissionsObject.cardDetails === true;
-  const canSearchCompany           = userPermissionsObject.searchCompany === true;
   const canViewEmailLeads          = userPermissionsObject.emailLeads === true;
   
-  // FIXED: Extract the newly added permission index parameter
-  const canViewDispatchCommission  = userPermissionsObject.dispatchCommissioning === true;
+  const canUploadDispatchBill      = userPermissionsObject.dispatchBill === true;
+  const canUploadCommissioning     = userPermissionsObject.commissioningReport === true;
+  const canUploadPurchaseOrder     = userPermissionsObject.purchaseOrder === true;
   
+  const canSearchCompany           = userPermissionsObject.searchCompany === true;
   const canSearchTasks             = userPermissionsObject.searchTasks === true;
   const canSearchStatus            = userPermissionsObject.searchStatus === true;
-  const canSearchCityState         = userPermissionsObject.searchCityState === true;
   const canSearchQual              = userPermissionsObject.searchQualification === true;
+  const canSearchCityState         = userPermissionsObject.searchCityState === true;
 
-  // 2. EXTRACT STORE ACCESS MATRIX FLAGS
+  // 2. EXTRACT WAREHOUSE STORE ACCESS MATRIX FLAGS
   const canViewLiveStock           = userPermissionsObject.liveStoreStock === true;
   const canUploadInvoice           = userPermissionsObject.storeUploadInvoice === true;
   const canCreateTicket            = userPermissionsObject.storeCreateTicket === true;
   const canReleaseTicket           = userPermissionsObject.storeApproveTickets === true;
   const canSearchStoreMat          = userPermissionsObject.storeAdminMatrix === true;
 
-  const liveStockMenuCard = document.getElementById("mod-live-store-stock");
-  if (liveStockMenuCard) {
-    liveStockMenuCard.style.display = canViewLiveStock ? "block" : "none";
-  }
-
   // 3. SET INDIVIDUAL MARKETING SECTIONS CARDS VISIBILITY STATES
-  document.getElementById("mod-card").style.display                     = canEnterCard ? "block" : "none";
-  document.getElementById("mod-company").style.display                  = canSearchCompany ? "block" : "none";
-  document.getElementById("mod-email-whatsapp").style.display           = canViewEmailLeads ? "block" : "none";
-  
-  // FIXED: Controls menu visibility profile dynamically for your new module card
-  const dispatchCard = document.getElementById("mod-dispatch-commissioning");
-  if (dispatchCard) {
-    dispatchCard.style.display = canViewDispatchCommission ? "block" : "none";
+  // Subcategory 1: Lead Source
+  if (document.getElementById("mod-card")) {
+    document.getElementById("mod-card").style.display = canEnterCard ? "block" : "none";
+  }
+  if (document.getElementById("mod-email-whatsapp")) {
+    document.getElementById("mod-email-whatsapp").style.display = canViewEmailLeads ? "block" : "none";
   }
   
-  document.getElementById("mod-tasks").style.display                    = canSearchTasks ? "block" : "none";
-  document.getElementById("mod-status").style.display                   = canSearchStatus ? "block" : "none";
-  document.getElementById("mod-city-state").style.display               = canSearchCityState ? "block" : "none";
-  document.getElementById("mod-qual").style.display                     = canSearchQual ? "block" : "none";
+  // Subcategory 2: Upload Documents
+  if (document.getElementById("mod-dispatch-bill")) {
+    document.getElementById("mod-dispatch-bill").style.display = canUploadDispatchBill ? "block" : "none";
+  }
+  if (document.getElementById("mod-commissioning-report")) {
+    document.getElementById("mod-commissioning-report").style.display = canUploadCommissioning ? "block" : "none";
+  }
+  if (document.getElementById("mod-purchase-order")) {
+    document.getElementById("mod-purchase-order").style.display = canUploadPurchaseOrder ? "block" : "none";
+  }
+  
+  // Subcategory 3: Search
+  if (document.getElementById("mod-company")) {
+    document.getElementById("mod-company").style.display = canSearchCompany ? "block" : "none";
+  }
+  if (document.getElementById("mod-tasks")) {
+    document.getElementById("mod-tasks").style.display = canSearchTasks ? "block" : "none";
+  }
+  if (document.getElementById("mod-status")) {
+    document.getElementById("mod-status").style.display = canSearchStatus ? "block" : "none";
+  }
+  if (document.getElementById("mod-qual")) {
+    document.getElementById("mod-qual").style.display = canSearchQual ? "block" : "none";
+  }
+  if (document.getElementById("mod-city-state")) {
+    document.getElementById("mod-city-state").style.display = canSearchCityState ? "block" : "none";
+  }
 
   // 4. SET INDIVIDUAL STORE SECTIONS CARDS VISIBILITY STATES
-  document.getElementById("mod-store-upload").style.display    = canUploadInvoice ? "block" : "none";
-  document.getElementById("mod-store-ticket").style.display    = canCreateTicket ? "block" : "none";
-  document.getElementById("mod-store-approvals").style.display = canReleaseTicket ? "block" : "none";
-  document.getElementById("mod-store-matrix").style.display    = canSearchStoreMat ? "block" : "none";
-
-  // 5. EVALUATE COMPLETE INTERCEPT FOR MARKETING DEPARTMENT CONTAINER HEADER BLOCK
-  const marketingHeaderBlock = document.getElementById("dashboard-marketing-department-header-block");
-  if (canEnterCard || canSearchCompany || canViewEmailLeads || canViewDispatchCommission || canSearchTasks || canSearchStatus || canSearchCityState || canSearchQual) {
-    marketingHeaderBlock.style.display = "block";
-  } else {
-    marketingHeaderBlock.style.display = "none";
+  if (document.getElementById("mod-live-store-stock")) {
+    document.getElementById("mod-live-store-stock").style.display = canViewLiveStock ? "block" : "none";
+  }
+  if (document.getElementById("mod-store-upload")) {
+    document.getElementById("mod-store-upload").style.display = canUploadInvoice ? "block" : "none";
+  }
+  if (document.getElementById("mod-store-ticket")) {
+    document.getElementById("mod-store-ticket").style.display = canCreateTicket ? "block" : "none";
+  }
+  if (document.getElementById("mod-store-approvals")) {
+    document.getElementById("mod-store-approvals").style.display = canReleaseTicket ? "block" : "none";
+  }
+  if (document.getElementById("mod-store-matrix")) {
+    document.getElementById("mod-store-matrix").style.display = canSearchStoreMat ? "block" : "none";
   }
 
-  // 6. EVALUATE COMPLETE INTERCEPT FOR STORE DEPARTMENT CONTAINER HEADER BLOCK
+  // 5. EVALUATE ENTIRE OVERARCHING BLOCK INTERCEPT FOR MARKETING DEPARTMENT
+  const marketingHeaderBlock = document.getElementById("dashboard-marketing-department-header-block");
+  if (marketingHeaderBlock) {
+    if (canEnterCard || canViewEmailLeads || canUploadDispatchBill || canUploadCommissioning || 
+        canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || 
+        canSearchQual || canSearchCityState) {
+      marketingHeaderBlock.style.display = "block";
+    } else {
+      marketingHeaderBlock.style.display = "none";
+    }
+  }
+
+  // 6. EVALUATE ENTIRE OVERARCHING BLOCK INTERCEPT FOR STORE DEPARTMENT
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");
-  if (canViewLiveStock || canUploadInvoice || canCreateTicket || canReleaseTicket || canSearchStoreMat) {
-    storeHeaderBlock.style.display = "block";
-  } else {
-    storeHeaderBlock.style.display = "none";
+  if (storeHeaderBlock) {
+    if (canViewLiveStock || canUploadInvoice || canCreateTicket || canReleaseTicket || canSearchStoreMat) {
+      storeHeaderBlock.style.display = "block";
+    } else {
+      storeHeaderBlock.style.display = "none";
+    }
   }
 }
 
