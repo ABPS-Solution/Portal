@@ -5510,30 +5510,82 @@ async function parseGateDocumentsWithAI() {
   } catch(e) { alert(e.message); } finally { btn.disabled = false; btn.textContent = "Parse Documents with AI"; }
 }
 
+/**
+ * COMMIT GATE ENTRY PIPELINE STEP
+ * Safely aggregates frontend state metadata parameters, guards against null payload caches,
+ * and handles server transactional turnarounds gracefully without freezing.
+ */
 async function commitGateEntryRecordsToBackend() {
   const btn = document.getElementById('gate-submit-btn');
   const banner = document.getElementById('store-gate-runtime-feedback-banner');
-  btn.disabled = true; btn.textContent = 'Generating Gate Ticket...';
+  
+  // FIXED GATING CHECK: Pre-verify that parsed line items cache actually exists to stop the frontend freeze
+  if (!activeParsedGatePayloadCache || !activeParsedGatePayloadCache.lineItems) {
+    alert("Data Synchronization Error: Please parse your Invoice/Challan logistical documents using the AI engine before attempting to generate a gate entry.");
+    return;
+  }
+
+  if (banner) banner.style.display = "none";
+  
+  btn.disabled = true; 
+  btn.textContent = 'Generating Gate Ticket...';
+  
   try {
     const getBase64 = file => new Promise(res => {
-      if (!file) return res(""); const r = new FileReader();
-      r.onload = () => res(r.result.split(',')[1]); r.readAsDataURL(file);
+      if (!file) return res(""); 
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(',')[1]); 
+      r.readAsDataURL(file);
     });
-    const [inv64, chal64] = await Promise.all([getBase64(targetGateInvoiceFileObj), getBase64(targetGateChallanFileObj)]);
+    
+    const [inv64, chal64] = await Promise.all([
+      getBase64(targetGateInvoiceFileObj), 
+      getBase64(targetGateChallanFileObj)
+    ]);
+    
     const payload = {
-      action: "commitGateEntryPipelineStep", sessionToken: localStorage.getItem("sessionToken"), activeEngineer: appActiveOperatorIdentityString,
-      metadata: { invoiceNumber: document.getElementById('gate-meta-invoice').value, challanNumber: document.getElementById('gate-meta-challan').value, vendorName: document.getElementById('gate-meta-vendor').value, invoiceDate: document.getElementById('gate-meta-date').value, invoiceImageBase64Raw: inv64, challanImageBase64Raw: chal64 },
+      action: "commitGateEntryPipelineStep", 
+      sessionToken: localStorage.getItem("sessionToken"), 
+      activeEngineer: appActiveOperatorIdentityString,
+      metadata: { 
+        invoiceNumber: document.getElementById('gate-meta-invoice') ? document.getElementById('gate-meta-invoice').value.trim() : "", 
+        challanNumber: document.getElementById('gate-meta-challan') ? document.getElementById('gate-meta-challan').value.trim() : "", 
+        vendorName: document.getElementById('gate-meta-vendor') ? document.getElementById('gate-meta-vendor').value.trim() : "Unknown Vendor", 
+        invoiceDate: document.getElementById('gate-meta-date') ? document.getElementById('gate-meta-date').value.trim() : "" 
+      },
       lineItems: activeParsedGatePayloadCache.lineItems
     };
+    
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
     const data = await res.json();
+    
     if (data.success) {
-      banner.style.cssText = "display: block; background: #dcfce7; border-color: #15803d; color: #15803d; padding: 20px; border-left: 4px solid #15803d;";
-      banner.innerHTML = `<strong>Success! Gate Entry Generated Perfectly.</strong><br/>Assigned Tracking Code: <strong>${data.gateNumber}</strong>`;
+      if (banner) {
+        banner.style.cssText = "display: block; background: #dcfce7; border-color: #15803d; color: #15803d; padding: 20px; border-left: 4px solid #15803d;";
+        banner.innerHTML = `<strong>Success! Gate Entry Generated Perfectly.</strong><br/>Assigned Tracking Code Number: <span style="font-family:monospace; font-weight:800; background:#fff; padding:2px 6px; border-radius:4px; border:1px solid #15803d;">${data.gateNumber}</span>`;
+      }
+      
       document.getElementById('gate-ai-verification-workspace').style.display = "none";
-      setTimeout(() => { exitStoreWorkspacePanelBackToMenu(); location.reload(); }, 5000);
+      
+      // Clear local memory states clean
+      targetGateInvoiceFileObj = null;
+      targetGateChallanFileObj = null;
+      activeParsedGatePayloadCache = null;
+      
+      setTimeout(() => { 
+        exitStoreWorkspacePanelBackToMenu(); 
+        location.reload(); 
+      }, 5000);
+    } else {
+      alert("Pipeline Generation Rejected: " + (data.error || "Unknown server execution fault."));
+      btn.disabled = false; 
+      btn.textContent = "Generate Gate Entry";
     }
-  } catch(e) { alert(e.message); btn.disabled = false; btn.textContent = "Generate Gate Entry"; }
+  } catch(e) { 
+    alert("Network request execution failure: " + e.message); 
+    btn.disabled = false; 
+    btn.textContent = "Generate Gate Entry"; 
+  }
 }
 
 async function initializeStoreEntryWorkspaceQueue() {
