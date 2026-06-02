@@ -4601,25 +4601,29 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
 
 /**
  * NAVIGATE TO STORE PANEL CONTROLLER
- * Explicitly clears the workspace state frames and mounts the requested 
- * store inward, outward, or stock tracking canvases dynamically.
+ * Safely clears active workspace panels without tripping parent element visibility locks.
  */
 function navigateToStoreWorkspacePanel(targetPanelModuleId) {
+  // 1. Hide the primary dashboard landing grid menu card view
   document.getElementById("dashboard-view").style.display = "none";
+  
+  // 2. FIXED: Explicitly target and close only marketing sub-panels by scoping down to its container wrapper
+  document.querySelectorAll("#module-workspace-container .workspace-panel").forEach(p => p.style.display = "none");
   document.getElementById("module-workspace-container").style.display = "none";
 
-  // Collapse and hide all modular store view wrappers panels explicitly
-  document.getElementById("canvas-module-store-invoice-intake").style.display = "none";
-  document.getElementById("canvas-module-store-material-request").style.display = "none";
-  document.getElementById("canvas-module-store-manager-approvals").style.display = "none";
-  document.getElementById("canvas-module-store-history-matrix").style.display = "none";
-  document.getElementById("canvas-module-store-live-stock").style.display = "none";
+  // 3. Collapse and hide all modular store view wrappers panels explicitly to clear workspace footprints
+  if (document.getElementById("canvas-module-store-invoice-intake")) document.getElementById("canvas-module-store-invoice-intake").style.display = "none";
+  if (document.getElementById("canvas-module-store-material-request")) document.getElementById("canvas-module-store-material-request").style.display = "none";
+  if (document.getElementById("canvas-module-store-manager-approvals")) document.getElementById("canvas-module-store-manager-approvals").style.display = "none";
+  if (document.getElementById("canvas-module-store-history-matrix")) document.getElementById("canvas-module-store-history-matrix").style.display = "none";
+  if (document.getElementById("canvas-module-store-live-stock")) document.getElementById("canvas-module-store-live-stock").style.display = "none";
   
-  // Clean initialization passes over the new 3-Step Store Inward panel states
-  document.getElementById("canvas-module-store-gate-entry").style.display = "none";
-  document.getElementById("canvas-module-store-entry").style.display = "none";
-  document.getElementById("canvas-module-store-grn").style.display = "none";
+  // Clean initialization passes over the 3-Step Store Inward panel states
+  if (document.getElementById("canvas-module-store-gate-entry")) document.getElementById("canvas-module-store-gate-entry").style.display = "none";
+  if (document.getElementById("canvas-module-store-entry")) document.getElementById("canvas-module-store-entry").style.display = "none";
+  if (document.getElementById("canvas-module-store-grn")) document.getElementById("canvas-module-store-grn").style.display = "none";
 
+  // 4. Force reveal the parent enclosure wrapper canvas panel frame box
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
 
   // Toggle explicit synchronization controllers visibility rules only on live stock pane tracking
@@ -4629,7 +4633,7 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   if (leftControls) leftControls.style.visibility = isLiveStock ? "visible" : "hidden";
   if (centerTitle) centerTitle.style.visibility = isLiveStock ? "visible" : "hidden";
 
-  // CORE ROUTING GATEWAYS BRANCHING SWITCH
+  // 5. CORE STORE WORKSPACE ROUTING GATES SWITCH
   if (targetPanelModuleId === 'store-material-request') {
     document.getElementById("canvas-module-store-material-request").style.display = "block";
     initializeMaterialRequestWorkspace();
