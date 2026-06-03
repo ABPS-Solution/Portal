@@ -270,7 +270,7 @@
     
   </div> 
   
-  <div id="module-store-workspace-enclosure-panel" style="display: none; padding: 12px 10px;">
+  <div id="module-store-workspace-enclosure-panel" class="workspace-panel" style="display: none; padding: 12px 10px;">
 
     <div class="navigation-action-header-row" style="margin-bottom: 15px; position: relative; display: flex; align-items: center; justify-content: space-between;">
       <div id="store-panel-left-controls" style="visibility: hidden;">
@@ -294,11 +294,11 @@
         </div>
 
         <div id="gate-ai-verification-workspace" style="display: none; margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 15px;">
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px;">
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
             <div><label class="field-label">Invoice Number</label><input type="text" id="gate-meta-invoice" style="background:#f1f5f9;" /></div>
             <div><label class="field-label">Vendor Name</label><input type="text" id="gate-meta-vendor" style="background:#f1f5f9;" /></div>
             <div><label class="field-label">Date</label><input type="text" id="gate-meta-date" style="background:#f1f5f9;" /></div>
-            <div><label class="field-label">Time</label><input type="text" id="gate-meta-time" style="background:#f1f5f9;" /></div>
+            <input type="hidden" id="gate-meta-time" value="" />
           </div>
           <div style="margin-bottom: 16px; overflow-x: auto;">
             <table class="store-basket-data-table" style="width: 100%;">
@@ -328,10 +328,7 @@
       <div id="store-grn-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>  
 
-  </div>
-
-    <div id="canvas-module-store-material-request" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <!-- TOP NAVIGATION ACTION GRID WITH ACTION SELECTION DROPDOWN -->
+    <div id="canvas-module-store-material-request" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:2px solid var(--bg); padding-bottom:10px;">
         <h2 style="margin:0;">Store Create Ticket</h2>
         <div style="width:180px;">
@@ -341,24 +338,18 @@
           </select>
         </div>
       </div>
-
       <div id="store-ticket-runtime-inline-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid;"></div>    
-      
       <div class="section" style="background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
-        
         <div style="margin-bottom: 16px;">
-          <!-- DYNAMIC CONTENT TARGET LABELS MARKER -->
           <label class="field-label" id="lbl-dynamic-operator-signature-title" style="font-weight: 700; color: var(--brand);">Requested By *</label>
           <select id="ticket-requested-by-operator-dropdown" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);">
             <option value="">— Loading Authorized Store Staff —</option>
           </select>
         </div>
-
         <div style="margin-bottom: 16px;">
           <label class="field-label" style="font-weight: 700; color: var(--brand);">Select Project ID *</label>
           <select id="ticket-project-id-dropdown" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);"><option value="">— Loading Active Projects —</option></select>
         </div>
-
         <div style="background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: var(--radius); margin-bottom: 16px;">
           <span style="display: block; font-size: 0.72rem; font-weight: 800; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Add Item</span>
           <div style="display: flex; gap: 10px; align-items: flex-end;">
@@ -374,7 +365,6 @@
           </div>
           <div id="ticket-live-counter-pill-zone" style="margin-top: 8px; font-size: 0.8rem; min-height: 20px;"></div>
         </div>
-
         <div style="margin-bottom: 20px; overflow-x: auto;">
           <span style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--brand); text-transform: uppercase; margin-bottom: 6px;">Material Basket</span>
           <table class="store-basket-data-table" id="shopping-basket-preview-table">
@@ -386,7 +376,6 @@
             </tbody>
           </table>
         </div>
-
         <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border); padding-top: 14px;">
           <button class="nav-btn-styled" onclick="clearFullBasketDraftState()" style="background: #718096;">Clear Basket</button>
           <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="submitMaterialRequestTicketToBackend()" style="background: var(--accent); padding: 8px 20px; font-weight: 700;">Generate Material Ticket</button>
@@ -396,27 +385,25 @@
 
     <div id="canvas-module-store-manager-approvals" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
       <h2 style="margin-bottom: 16px;">Store Approve Tickets</h2>
-      
       <div id="store-approvals-runtime-inline-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
+      <div id="store-manager-approvals-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
+    </div>
 
-      <div id="store-manager-approvals-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;">
-        <div style="text-align: center; padding: 30px; color: var(--muted); background: #f8fafc; border: 1px dashed var(--border); border-radius: 6px;">
-          Synchronizing pending releases queue...
-        </div>
+    <div id="canvas-module-store-live-stock" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h2 style="margin:0;">Live Warehouse Stock Inventory Ledger</h2>
+        <button class="nav-btn-styled" id="live-stock-sync-btn" onclick="triggerLiveWarehouseStockMetricsSync()">🔄 Sync Stock Balances</button>
       </div>
+      <div class="dashboard-grid" id="dashboard-live-inventory-metrics-mount-zone" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap:10px; padding:0;"></div>
     </div>
 
     <div id="canvas-module-store-history-matrix" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      
       <h2 style="margin-bottom: 16px;">Search Store Tickets</h2>
-
       <div style="background: var(--highlight-bg); border: 1.5px solid var(--border); border-left: 4px solid var(--brand); padding: 16px; border-radius: var(--radius); margin-bottom: 16px; text-align: left;">
         <span style="display: block; font-size: 0.72rem; font-weight: 800; color: var(--brand); text-transform: uppercase; margin-bottom: 16px; letter-spacing: 0.5px;">Search Filter Parameters</span>  
-        
         <div style="display: flex; flex-wrap: wrap; gap: 24px; margin-bottom: 14px; width: 100%;">
-          
           <div style="flex: 1; min-width: 280px;">
-            <label class="field-label" style="font-size:0.8rem; color:var(--brand); margin-bottom:6px; margin-top:0;">Filter By Ticket Operation Type</label>
+            <label class="field-label">Filter By Ticket Operation Type</label>
             <div class="pill-group" style="margin-bottom:0;">
               <input type="checkbox" name="matrixTypeFilter" value="Request Material" id="mt_ty_req" onchange="executeClientSideStoreTicketFilterSearch()">
               <label for="mt_ty_req">Request Material</label>
@@ -424,9 +411,8 @@
               <label for="mt_ty_ret">Return Material</label>
             </div>
           </div>
-
           <div style="flex: 1; min-width: 280px;">
-            <label class="field-label" style="font-size:0.8rem; color:var(--brand); margin-bottom:6px; margin-top:0;">Filter By Verification Status</label>
+            <label class="field-label">Filter By Verification Status</label>
             <div class="pill-group" style="margin-bottom:0;">
               <input type="checkbox" name="matrixStatusFilter" value="Pending Approval" id="ms_st_pending" onchange="executeClientSideStoreTicketFilterSearch()">
               <label for="ms_st_pending">Pending Approval</label>
@@ -436,20 +422,16 @@
               <label for="ms_st_rejected">Rejected</label>
             </div>
           </div>
-
         </div>
-
         <div style="width: 100%; border-top: 1px dashed rgba(0, 86, 179, 0.15); padding-top: 12px; margin-top: 4px;">
-          <label class="field-label" style="font-size:0.8rem; color:var(--brand); margin-bottom:6px; margin-top:0;">Filter By Project ID</label>
-          <div class="pill-group" id="matrix-search-projects-checkbox-mount" style="margin-bottom:6px;">
-            <p style="font-size:0.75rem; color:var(--muted); margin:0;">Syncing Projects...</p>
-          </div>
+          <label class="field-label">Filter By Project ID</label>
+          <div class="pill-group" id="matrix-search-projects-checkbox-mount" style="margin-bottom:6px;"></div>
         </div>
-
       </div>
-
       <div id="store-historical-matrix-results-feed" style="display: flex; flex-direction: column; gap: 12px;"></div>
     </div>
+
+  </div>
 
     </div>
   </div>
@@ -5541,18 +5523,25 @@ async function commitGateEntryRecordsToBackend() {
   const banner = document.getElementById('store-gate-runtime-feedback-banner');
   const uploadWrapperBlock = document.getElementById('gate-upload-fields-wrapper-group');
   
-  if (!activeParsedGatePayloadCache || !activeParsedGatePayloadCache.lineItems) return alert("Verify line data first.");
-  btn.disabled = true; btn.innerHTML = 'Generating Gate Entry...';
+  if (!activeParsedGatePayloadCache || !activeParsedGatePayloadCache.lineItems) return alert("Parse data missing.");
+  btn.disabled = true; 
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Generating Gate Entry...';
   
   try {
-    const combinedTimestampString = document.getElementById('gate-meta-date').value + " " + document.getElementById('gate-meta-time').value;
     const payload = {
-      action: "commitGateEntryPipelineStep", sessionToken: localStorage.getItem("sessionToken"), activeEngineer: appActiveOperatorIdentityString,
-      metadata: { invoiceNumber: document.getElementById('gate-meta-invoice').value.trim(), invoiceDate: combinedTimestampString, vendorName: document.getElementById('gate-meta-vendor').value.trim() },
+      action: "commitGateEntryPipelineStep", 
+      sessionToken: localStorage.getItem("sessionToken"), 
+      activeEngineer: appActiveOperatorIdentityString,
+      metadata: { 
+        invoiceNumber: document.getElementById('gate-meta-invoice').value.trim(), 
+        vendorName: document.getElementById('gate-meta-vendor').value.trim() 
+      },
       lineItems: activeParsedGatePayloadCache.lineItems
     };
+    
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
     const data = await res.json();
+    
     if (data.success) {
       if (uploadWrapperBlock) uploadWrapperBlock.style.display = "none";
       document.getElementById('gate-ai-verification-workspace').style.display = "none";
@@ -5578,8 +5567,14 @@ async function initializeStoreEntryWorkspaceQueue() {
   const feed = document.getElementById("store-entry-queue-cards-feed");
   feed.innerHTML = `<p style="padding:20px;text-align:center;color:var(--muted);">Loading pending Gate entries...</p>`;
   try {
-    // FIXED: Switched payload step check parameter to point accurately to GATE_PENDING
-    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "fetchInwardWorkflowQueueStream", sessionToken: localStorage.getItem("sessionToken"), targetStep: "GATE_PENDING" }) });
+    const res = await fetch(GAS_URL, { 
+      method: "POST", 
+      body: JSON.stringify({ 
+        action: "fetchInwardWorkflowQueueStream", 
+        sessionToken: localStorage.getItem("sessionToken"), 
+        targetStep: "GATE_PENDING" 
+      }) 
+    });
     const data = await res.json();
     if (!data.success || data.queue.length === 0) {
       feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records waiting for Store Entry.</div>';
@@ -5590,28 +5585,34 @@ async function initializeStoreEntryWorkspaceQueue() {
       let trs = "";
       item.lineItems.forEach((line, idx) => {
         trs += `<tr>
-          <td>${line.mappedMaterialName}</td><td style="font-family:monospace;font-weight:700;">${line.extractedQuantity}</td>
-          <td><input type="number" min="0" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}" value="${line.extractedQuantity}" style="width:90px;border-color:var(--brand);font-weight:700;"></td>
-          <td><input type="text" class="se-damage-desc-${item.gateNumber}" data-idx="${idx}" placeholder="Enter transit damage notes..." style="font-size:0.8rem; padding:4px;"></td>
+          <td style="font-weight:600; color:var(--text);">${line.mappedMaterialName}</td>
+          <td style="font-family:monospace;font-weight:700; text-align:center;">${line.extractedQuantity}</td>
+          <td><input type="number" min="0" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}" value="${line.extractedQuantity}" style="width:90px;border-color:var(--brand);font-weight:700; text-align:center;"></td>
+          <td><input type="text" class="se-damage-desc-${item.gateNumber}" data-idx="${idx}" placeholder="Transit damage details..." style="font-size:0.8rem; padding:4px;"></td>
         </tr>`;
       });
       let card = document.createElement("div"); card.className = "contact-summary-card-parent";
       card.innerHTML = `
-        <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
-          <div class="contact-summary-title-info">
-            <div class="meta-row-line-block">
-              <span style="background:var(--brand);color:#fff;">GATE ID: ${item.gateNumber}</span>
-              <span style="background:#e0f2fe;color:#0369a1;font-weight:700;">INVOICE: ${item.invoiceNumber}</span>
-              <span style="background:#cbd5e1;color:#1e293b;font-weight:700;text-transform:none;">${item.invoiceDate}</span>
+        <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%; margin-bottom:0; padding-bottom:0;">
+          <div class="contact-summary-title-info" style="width:100%;">
+            <div class="meta-row-line-block" style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+              <div>
+                <span style="background:var(--brand);color:#fff; padding:3px 8px; font-weight:700;">GATE ID: ${item.gateNumber}</span>
+                <span style="background:#e0f2fe;color:#0369a1;font-weight:700; margin-left:4px;">INVOICE: ${item.invoiceNumber}</span>
+              </div>
+              <span style="background:#cbd5e1;color:#1e293b;font-weight:700;text-transform:none; font-size:0.8rem; padding:3px 8px;">🕒 ${item.invoiceDate}</span>
+            </div>
+            <div style="font-size:0.85rem; margin-top:8px; color:var(--muted); font-weight:600; padding-left:2px;">
+              Inbound Freight Vendor Profile: <strong style="color:var(--text); font-weight:700;">${item.vendorName || "Designated ABPS Supplier"}</strong>
             </div>
           </div>
         </div>
-        <div style="display:none; padding-top:10px; border-top:1px dashed var(--border); margin-top:8px;">
-          <table class="store-basket-data-table" style="width:100%;margin-bottom:12px;">
-            <thead><tr><th>Standard Material Name</th><th>Invoice Qty</th><th>Physically Received Qty *</th><th>Transit Damage Description</th></tr></thead>
+        <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
+          <table class="store-basket-data-table" style="width:100%; margin-bottom:12px;">
+            <thead><tr><th>Material Name Catalog Line</th><th style="text-align:center;">Billed Qty</th><th style="text-align:center;">Physically Received Qty *</th><th>Transit Damage Description / Notes</th></tr></thead>
             <tbody>${trs}</tbody>
           </table>
-          <div style="display:flex;justify-content:flex-end;"><button class="nav-btn-styled" style="background:var(--accent);" onclick="commitStoreEntryVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">Verify & Generate Store Entry</button></div>
+          <div style="display:flex;justify-content:flex-end;"><button class="nav-btn-styled" style="background:var(--accent); padding:6px 16px; font-weight:700;" onclick="commitStoreEntryVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">Verify & Generate Store Entry</button></div>
         </div>`;
       feed.appendChild(card);
     });
