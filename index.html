@@ -1048,7 +1048,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzweYUCKMo0PzTYrGtxMdbCtFssBrsMNBHZ8bwvJvv1MrmTDb4V2CsfazGUI-bppk4IUw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwVtUcdlTtDFcLEEsUH4cc4_Z_LfVX0GJqcklfSbokcwyE1_PAW8pYuq57hdfc6UfilRA/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -5464,19 +5464,21 @@ async function parseGateDocumentsWithAI() {
       }
     }
     
-    // Convert to target localized IST time values smoothly on client viewport
-    const formattedDateStr = rawDateObj.toLocaleDateString('en-CA'); // Outputs YYYY-MM-DD
-    const formattedTimeStr = rawDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase();
+    // Explicit format generation matches Indian Standard Time constraints locally
+    const formattedDateStr = rawDateObj.toLocaleDateString('en-CA'); 
+    const formattedTimeStr = rawDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
 
     document.getElementById('gate-meta-date').value = formattedDateStr;
     document.getElementById('gate-meta-time').value = formattedTimeStr;
     
     const tbody = document.getElementById('gate-verification-table-body'); tbody.innerHTML = "";
     activeParsedGatePayloadCache.lineItems.forEach(item => {
+      // FIXED GRID UI: Item Code field placed as the first column before description
       tbody.innerHTML += `<tr>
+        <td style="width:160px;"><input type="text" class="gate-row-item-code-input" value="${item.itemCode || ""}" placeholder="Item Code..." style="font-size:0.85rem; padding:4px; font-weight:700; border:1px solid var(--border); text-align:center;"></td>
         <td>${item.rawDescriptionLine || "Line Item Description"}</td>
-        <td><input type="text" class="gate-row-item-code-input" value="${item.itemCode || ""}" placeholder="Fill Item Code..." style="font-size:0.85rem; padding:4px; font-weight:700; border:1px solid var(--border);"></td>
-        <td style="font-family:monospace; font-weight:700; text-align:center;">${item.extractedQuantity}</td>
+        <td style="font-weight:600; color:var(--brand);">${item.mappedMaterialName}</td>
+        <td style="font-family:monospace; font-weight:700; text-align:center; width:100px;">${item.extractedQuantity}</td>
       </tr>`;
     });
     document.getElementById('gate-ai-verification-workspace').style.display = "block";
@@ -5554,19 +5556,21 @@ async function initializeStoreEntryWorkspaceQueue() {
           <td style="font-weight:600; color:var(--text); text-align:left; word-wrap:break-word; white-space:normal;">${line.mappedMaterialName}</td>
           <td style="font-family:monospace; font-weight:700; text-align:center; width:100px;">${line.extractedQuantity}</td>
           <td style="text-align:center; width:180px;"><input type="number" min="0" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}" value="${line.extractedQuantity}" style="width:100px; font-weight:700; text-align:center; border: 1.5px solid var(--brand);"></td>
-          <td><input type="text" class="se-damage-desc-${item.gateNumber}" data-idx="${idx}" placeholder="Transit damage description..." style="font-size:0.85rem; padding:6px;"></td>
+          <td><input type="text" class="se-damage-desc-${item.gateNumber}" data-idx="${idx}" placeholder="Transit damage details..." style="font-size:0.85rem; padding:6px;"></td>
         </tr>`;
       });
       
+      // PARSES TIMESTAMPS TO TARGET DESIGN: 2026-06-03 10:51 pm
       let cleanDateDisplay = item.invoiceDate || "";
       if (cleanDateDisplay.includes("T")) {
         let parts = cleanDateDisplay.split("T");
-        let tPart = parts[1].substring(0, 5);
+        let datePart = parts[0];
+        let timePart = parts[1].substring(0,5);
         let hr = parseInt(timePart.split(":")[0], 10);
         let mn = timePart.split(":")[1];
         let suf = hr >= 12 ? "pm" : "am";
         hr = hr % 12; hr = hr ? hr : 12;
-        cleanDateDisplay = parts[0] + " " + String(hr).padStart(2,'0') + ":" + mn + " " + suf;
+        cleanDateDisplay = datePart + " " + String(hr).padStart(2,'0') + ":" + mn + " " + suf;
       }
 
       let card = document.createElement("div"); card.className = "contact-summary-card-parent";
@@ -5581,7 +5585,7 @@ async function initializeStoreEntryWorkspaceQueue() {
               <span style="background:#cbd5e1;color:#1e293b;font-weight:700; font-size:0.8rem; padding:3px 8px;">🕒 ${cleanDateDisplay}</span>
             </div>
             <div style="font-size:0.85rem; margin-top:8px; color:var(--muted); font-weight:600; padding-left:2px;">
-              Inbound Logistical Freight Vendor Profile: <strong style="color:var(--text); font-weight:700;">${item.vendorName || "Designated ABPS Supplier Profile"}</strong>
+              Vendor Profile: <strong style="color:var(--text); font-weight:700;">${item.vendorName || "Designated ABPS Supplier Profile"}</strong>
             </div>
           </div>
         </div>
@@ -5705,7 +5709,7 @@ async function initializeStoreGrnWorkspaceQueue() {
               <span style="background:#cbd5e1; color:#1e293b; font-weight:700; text-transform:none; font-size:0.8rem; padding:3px 8px;">🕒 ${cleanDateDisplay}</span>
             </div>
             <div style="font-size:0.85rem; margin-top:8px; color:var(--muted); font-weight:600; padding-left:2px;">
-              Inbound Freight Vendor Profile: <strong style="color:var(--brand); font-weight:700;">${item.vendorName || "Designated ABPS Supplier Profile"}</strong> | Invoice No: <strong style="color:var(--text); font-weight:700;">${item.invoiceNumber}</strong>
+              Vendor Profile: <strong style="color:var(--brand); font-weight:700;">${item.vendorName || "Designated ABPS Supplier Profile"}</strong> | Invoice No: <strong style="color:var(--text); font-weight:700;">${item.invoiceNumber}</strong>
             </div>
           </div>
         </div>
@@ -5714,7 +5718,7 @@ async function initializeStoreGrnWorkspaceQueue() {
             <thead><tr><th style="width:150px;">Item Code Number</th><th>Description of Material</th><th style="width:100px; text-align:center;">Received Qty</th><th style="width:100px; text-align:center;">Q/A Done</th><th style="width:120px; text-align:center;">OK Qty *</th><th style="width:100px; text-align:center;">Not OK Qty</th><th>Rejection Details Description</th></tr></thead>
             <tbody>${trs}</tbody>
           </table>
-          <div style="display:flex;justify-content:flex-end;"><button class="nav-btn-styled" style="background:var(--brand);" onclick="commitGrnVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">Verify & Add Stock to Store</button></div>
+          <div style="display:flex;justify-content:flex-end;"><button class="nav-btn-styled" style="background:var(--brand);" onclick="commitGrnVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">Verify & Add Stock to Ledger</button></div>
         </div>`;
       feed.appendChild(card);
     });
