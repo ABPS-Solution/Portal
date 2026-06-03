@@ -1048,7 +1048,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxEZ7YsESHDvsdzNVUDu2kyOAVKt1sDaiMMUNODvT9wDl9vTp5UEggTMjPd0e6fNxF1SQ/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycby5s8KvlahtmmQ4kYCjd2_egjjVxSoFPOTO0ATGhUB-IxjPQdOunX0w8bC3AKiO01Fm1w/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -5476,7 +5476,7 @@ async function parseGateDocumentsWithAI() {
       tbody.innerHTML += `<tr>
         <td style="width:160px;"><input type="text" class="gate-row-item-code-input" value="${item.itemCode || ""}" placeholder="Item Code..." style="font-size:0.85rem; padding:4px; font-weight:700; border:1px solid var(--border); text-align:center;"></td>
         <td style="text-align:left; padding:8px;">${item.rawDescriptionLine || "Line Item Description"}</td>
-        <td style="font-weight:600; color:var(--brand); text-align:left; padding:8px;">${item.mappedMaterialName}</td>
+        <td style="font-weight:600; color:var(--brand); text-align:left; padding:8px;">${item.mappedMaterialName || item.rawDescriptionLine}</td>
         <td style="font-family:monospace; font-weight:700; text-align:center; width:140px;">${item.extractedQuantity}</td>
       </tr>`;
     });
@@ -5538,7 +5538,12 @@ async function commitGateEntryRecordsToBackend() {
 
 async function initializeStoreEntryWorkspaceQueue() {
   const feed = document.getElementById("store-entry-queue-cards-feed");
-  feed.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--brand);"><div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></div><span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Synchronizing Store Verification Queue...</span></div>`;
+  // FORCE WIPE old elements cards footprints instantly
+  feed.innerHTML = `
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--brand);">
+      <div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Synchronizing Store Verification Queue...</span>
+    </div>`;
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "fetchInwardWorkflowQueueStream", sessionToken: localStorage.getItem("sessionToken"), targetStep: "GATE_PENDING" }) });
     const data = await res.json();
@@ -5559,14 +5564,16 @@ async function initializeStoreEntryWorkspaceQueue() {
         </tr>`;
       });
       
-      // PARSES TIMESTAMPS BACK TO DYNAMIC LOCAL EXPRESSIONS
+      // FIXED: Convert Apps Script date string parameters to clean local IST layout string rules
       let cleanDateDisplay = item.invoiceDate || "";
-      if (cleanDateDisplay.includes("T")) {
-        let utcDateObj = new Date(cleanDateDisplay);
-        if (!isNaN(utcDateObj.getTime())) {
-          const dtStr = utcDateObj.toLocaleDateString('en-CA'); 
-          const tmStr = utcDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
-          cleanDateDisplay = dtStr + " " + tmStr;
+      if (cleanDateDisplay.includes(" ") || cleanDateDisplay.includes("am") || cleanDateDisplay.includes("pm")) {
+        // Already structured formatted cleanly from backend string conversion pass
+      } else {
+        let dateObj = new Date(cleanDateDisplay);
+        if (!isNaN(dateObj.getTime())) {
+          const dt = dateObj.toLocaleDateString('en-CA'); 
+          const tm = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
+          cleanDateDisplay = dt + " " + tm;
         }
       }
 
@@ -5658,9 +5665,14 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
 
 async function initializeStoreGrnWorkspaceQueue() {
   const feed = document.getElementById("store-grn-queue-cards-feed");
-  feed.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--accent);"><div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite;"></div><span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Synchronizing Active GRN Queue...</span></div>`;
+  // FORCE WIPE old elements cards footprints instantly
+  feed.innerHTML = `
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--accent);">
+      <div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Synchronizing Active GRN Queue...</span>
+    </div>`;
   try {
-    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "fetchInwardWorkflowQueueStream", sessionToken: localStorage.getItem("sessionToken"), targetStep: "STORE_PENDING" }) });
+    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "fetchInboundWorkflowQueueStream", sessionToken: localStorage.getItem("sessionToken"), targetStep: "STORE_PENDING" }) });
     const data = await res.json();
     if (!data.success || data.queue.length === 0) {
       feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records waiting for GRN.</div>';
@@ -5670,30 +5682,34 @@ async function initializeStoreGrnWorkspaceQueue() {
     data.queue.forEach(item => {
       let trs = "";
       item.lineItems.forEach((line, idx) => {
+        const activeReceivedQtyCount = parseInt(line.verifiedPhysicalQuantity, 10) || 0;
+        
         trs += `<tr>
           <td style="width:150px; padding:6px;"><input type="text" class="grn-item-code-${item.gateNumber}" data-idx="${idx}" value="${line.itemCodeNumber || ""}" placeholder="MANDATORY CODE *" style="padding:4px; font-weight:700; border: 1.5px solid var(--brand); background:#fffef0; text-align:center;"></td>
           <td style="font-weight:600; color:var(--text); text-align:left; padding:6px; word-wrap:break-word; white-space:normal;">${line.mappedMaterialName}</td>
-          <td style="font-family:monospace; font-weight:700; text-align:center; width:100px; padding:6px;">${line.extractedQuantity}</td>
+          <td style="font-family:monospace; font-weight:700; text-align:center; width:100px; padding:6px;">${activeReceivedQtyCount}</td>
           <td style="text-align:center; width:100px; padding:6px;"><select class="grn-qa-${item.gateNumber}" data-idx="${idx}" style="padding:4px; font-weight:700;"><option value="No" selected>No</option><option value="Yes">Yes</option></select></td>
-          <td style="text-align:center; width:120px; padding:6px;"><input type="number" min="0" class="grn-ok-${item.gateNumber}" data-idx="${idx}" data-max="${line.extractedQuantity}" value="${line.extractedQuantity}" style="width:90px; border-color:var(--brand); font-weight:700; text-align:center;" onchange="autoBalanceGrnQuantities(this, '${item.gateNumber}', ${idx})"></td>
+          <td style="text-align:center; width:120px; padding:6px;"><input type="number" min="0" class="grn-ok-${item.gateNumber}" data-idx="${idx}" data-max="${activeReceivedQtyCount}" value="${activeReceivedQtyCount}" style="width:90px; border-color:var(--brand); font-weight:700; text-align:center;" onchange="autoBalanceGrnQuantities(this, '${item.gateNumber}', ${idx})"></td>
           <td style="text-align:center; width:100px; padding:6px;"><input type="number" min="0" class="grn-notok-${item.gateNumber}" data-idx="${idx}" value="0" style="width:80px; background:#f1f5f9; text-align:center; font-weight:700;" readonly></td>
           <td style="padding:6px;"><input type="text" class="grn-rej-desc-${item.gateNumber}" data-idx="${idx}" placeholder="Provide rejection details..." style="font-size:0.85rem; padding:6px;"></td>
         </tr>`;
       });
 
       let cleanDateDisplay = item.invoiceDate || "";
-      if (cleanDateDisplay.includes("T")) {
-        let utcDateObj = new Date(cleanDateDisplay);
-        if (!isNaN(utcDateObj.getTime())) {
-          const dtStr = utcDateObj.toLocaleDateString('en-CA'); 
-          const tmStr = utcDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
-          cleanDateDisplay = dtStr + " " + tmStr;
+      if (cleanDateDisplay.includes(" ") || cleanDateDisplay.includes("am") || cleanDateDisplay.includes("pm")) {
+        // Already structured formatted cleanly from backend string conversion pass
+      } else {
+        let dateObj = new Date(cleanDateDisplay);
+        if (!isNaN(dateObj.getTime())) {
+          const dt = dateObj.toLocaleDateString('en-CA'); 
+          const tm = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
+          cleanDateDisplay = dt + " " + tm;
         }
       }
 
       let card = document.createElement("div"); card.className = "contact-summary-card-parent";
       card.innerHTML = `
-        <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%; padding-bottom:8px;">
+        <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
           <div class="contact-summary-title-info" style="width:100%;">
             <div class="meta-row-line-block" style="display:flex; justify-content:space-between; width:100%; align-items:center;">
               <div>
@@ -5703,16 +5719,16 @@ async function initializeStoreGrnWorkspaceQueue() {
               <span style="background:#cbd5e1; color:#1e293b; font-weight:700; text-transform:none; font-size:0.8rem; padding:3px 8px;">🕒 ${cleanDateDisplay}</span>
             </div>
             <div style="font-size:0.85rem; margin-top:8px; color:var(--muted); font-weight:600; padding-left:2px;">
-              Vendor Profile Name: <strong style="color:var(--brand); font-weight:700;">${item.vendorName || "Designated ABPS Supplier Profile"}</strong> | Invoice No: <strong style="color:var(--text); font-weight:700;">${item.invoiceNumber}</strong>
+              Vendor: <strong style="color:var(--brand); font-weight:700;">${item.vendorName || "Designated ABPS Supplier Profile"}</strong> | Invoice No: <strong style="color:var(--text); font-weight:700;">${item.invoiceNumber}</strong>
             </div>
           </div>
         </div>
         <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
           <table class="store-basket-data-table" style="width:100%; margin-bottom:12px; table-layout:fixed;">
-            <thead><tr><th style="width:150px; text-align:center;">Item Code Number</th><th style="text-align:left;">Description of Material</th><th style="width:100px; text-align:center;">Received Qty</th><th style="width:100px; text-align:center;">Q/A Done</th><th style="width:120px; text-align:center;">OK Qty *</th><th style="width:100px; text-align:center;">Not OK Qty</th><th>Rejection Details Description</th></tr></thead>
+            <thead><tr><th style="width:150px; text-align:center;">Item Code Number</th><th>Description of Material</th><th style="width:100px; text-align:center;">Received Qty</th><th style="width:100px; text-align:center;">Q/A Done</th><th style="width:120px; text-align:center;">OK Qty *</th><th style="width:100px; text-align:center;">Not OK Qty</th><th>Rejection Details Description</th></tr></thead>
             <tbody>${trs}</tbody>
           </table>
-          <div style="display:flex;justify-content:flex-end;"><button class="nav-btn-styled" style="background:var(--brand);" onclick="commitGrnVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">Verify & Add Stock to Store</button></div>
+          <div style="display:flex;justify-content:flex-end;"><button class="nav-btn-styled" style="background:var(--brand);" onclick="commitGrnVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">Verify & Add Stock to Ledger</button></div>
         </div>`;
       feed.appendChild(card);
     });
