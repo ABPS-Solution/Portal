@@ -1048,7 +1048,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwVtUcdlTtDFcLEEsUH4cc4_Z_LfVX0GJqcklfSbokcwyE1_PAW8pYuq57hdfc6UfilRA/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxEZ7YsESHDvsdzNVUDu2kyOAVKt1sDaiMMUNODvT9wDl9vTp5UEggTMjPd0e6fNxF1SQ/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -5470,15 +5470,14 @@ async function parseGateDocumentsWithAI() {
 
     document.getElementById('gate-meta-date').value = formattedDateStr;
     document.getElementById('gate-meta-time').value = formattedTimeStr;
-    
+
     const tbody = document.getElementById('gate-verification-table-body'); tbody.innerHTML = "";
     activeParsedGatePayloadCache.lineItems.forEach(item => {
-      // FIXED GRID UI: Item Code field placed as the first column before description
       tbody.innerHTML += `<tr>
         <td style="width:160px;"><input type="text" class="gate-row-item-code-input" value="${item.itemCode || ""}" placeholder="Item Code..." style="font-size:0.85rem; padding:4px; font-weight:700; border:1px solid var(--border); text-align:center;"></td>
-        <td>${item.rawDescriptionLine || "Line Item Description"}</td>
-        <td style="font-weight:600; color:var(--brand);">${item.mappedMaterialName}</td>
-        <td style="font-family:monospace; font-weight:700; text-align:center; width:100px;">${item.extractedQuantity}</td>
+        <td style="text-align:left; padding:8px;">${item.rawDescriptionLine || "Line Item Description"}</td>
+        <td style="font-weight:600; color:var(--brand); text-align:left; padding:8px;">${item.mappedMaterialName}</td>
+        <td style="font-family:monospace; font-weight:700; text-align:center; width:140px;">${item.extractedQuantity}</td>
       </tr>`;
     });
     document.getElementById('gate-ai-verification-workspace').style.display = "block";
@@ -5539,7 +5538,7 @@ async function commitGateEntryRecordsToBackend() {
 
 async function initializeStoreEntryWorkspaceQueue() {
   const feed = document.getElementById("store-entry-queue-cards-feed");
-  feed.innerHTML = `<p style="padding:20px;text-align:center;color:var(--muted);"><div class="spinner" style="display:inline-block; width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div>Synchronizing active store queue...</p>`;
+  feed.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--brand);"><div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></div><span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Synchronizing Store Verification Queue...</span></div>`;
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "fetchInwardWorkflowQueueStream", sessionToken: localStorage.getItem("sessionToken"), targetStep: "GATE_PENDING" }) });
     const data = await res.json();
@@ -5552,30 +5551,28 @@ async function initializeStoreEntryWorkspaceQueue() {
       let trs = "";
       item.lineItems.forEach((line, idx) => {
         trs += `<tr>
-          <td style="width:160px;"><input type="text" class="se-item-code-${item.gateNumber}" data-idx="${idx}" value="${line.itemCodeNumber || ""}" placeholder="Fill Item Code..." style="padding:4px; font-weight:700; border-color:var(--brand); text-align:center;"></td>
-          <td style="font-weight:600; color:var(--text); text-align:left; word-wrap:break-word; white-space:normal;">${line.mappedMaterialName}</td>
-          <td style="font-family:monospace; font-weight:700; text-align:center; width:100px;">${line.extractedQuantity}</td>
-          <td style="text-align:center; width:180px;"><input type="number" min="0" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}" value="${line.extractedQuantity}" style="width:100px; font-weight:700; text-align:center; border: 1.5px solid var(--brand);"></td>
-          <td><input type="text" class="se-damage-desc-${item.gateNumber}" data-idx="${idx}" placeholder="Transit damage details..." style="font-size:0.85rem; padding:6px;"></td>
+          <td style="width:160px; padding:6px;"><input type="text" class="se-item-code-${item.gateNumber}" data-idx="${idx}" value="${line.itemCodeNumber || ""}" placeholder="Item Code" style="padding:6px; font-weight:700; border-color:var(--brand); text-align:center;"></td>
+          <td style="font-weight:600; color:var(--text); text-align:left; padding:6px; word-wrap:break-word; white-space:normal;">${line.mappedMaterialName}</td>
+          <td style="font-family:monospace; font-weight:700; text-align:center; width:100px; padding:6px;">${line.extractedQuantity}</td>
+          <td style="text-align:center; width:180px; padding:6px;"><input type="number" min="0" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}" value="${line.extractedQuantity}" style="width:100px; font-weight:700; text-align:center; border: 1.5px solid var(--brand); padding:6px;"></td>
+          <td style="padding:6px;"><input type="text" class="se-damage-desc-${item.gateNumber}" data-idx="${idx}" placeholder="Transit damage details..." style="font-size:0.85rem; padding:6px;"></td>
         </tr>`;
       });
       
-      // PARSES TIMESTAMPS TO TARGET DESIGN: 2026-06-03 10:51 pm
+      // PARSES TIMESTAMPS BACK TO DYNAMIC LOCAL EXPRESSIONS
       let cleanDateDisplay = item.invoiceDate || "";
       if (cleanDateDisplay.includes("T")) {
-        let parts = cleanDateDisplay.split("T");
-        let datePart = parts[0];
-        let timePart = parts[1].substring(0,5);
-        let hr = parseInt(timePart.split(":")[0], 10);
-        let mn = timePart.split(":")[1];
-        let suf = hr >= 12 ? "pm" : "am";
-        hr = hr % 12; hr = hr ? hr : 12;
-        cleanDateDisplay = datePart + " " + String(hr).padStart(2,'0') + ":" + mn + " " + suf;
+        let utcDateObj = new Date(cleanDateDisplay);
+        if (!isNaN(utcDateObj.getTime())) {
+          const dtStr = utcDateObj.toLocaleDateString('en-CA'); 
+          const tmStr = utcDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
+          cleanDateDisplay = dtStr + " " + tmStr;
+        }
       }
 
       let card = document.createElement("div"); card.className = "contact-summary-card-parent";
       card.innerHTML = `
-        <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
+        <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%; padding-bottom:8px;">
           <div class="contact-summary-title-info" style="width:100%;">
             <div class="meta-row-line-block" style="display:flex; justify-content:space-between; width:100%; align-items:center;">
               <div>
@@ -5585,13 +5582,13 @@ async function initializeStoreEntryWorkspaceQueue() {
               <span style="background:#cbd5e1;color:#1e293b;font-weight:700; font-size:0.8rem; padding:3px 8px;">🕒 ${cleanDateDisplay}</span>
             </div>
             <div style="font-size:0.85rem; margin-top:8px; color:var(--muted); font-weight:600; padding-left:2px;">
-              Vendor Profile: <strong style="color:var(--text); font-weight:700;">${item.vendorName || "Designated ABPS Supplier Profile"}</strong>
+              Vendor: <strong style="color:var(--text); font-weight:700;">${item.vendorName || "Designated ABPS Supplier Profile"}</strong>
             </div>
           </div>
         </div>
         <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
           <table class="store-basket-data-table" style="width:100%; margin-bottom:12px; table-layout:fixed;">
-            <thead><tr><th style="width:160px;">Item Code Number</th><th style="text-align:left;">Description of Material</th><th style="text-align:center; width:100px;">Billed Qty</th><th style="text-align:center; width:180px;">Physically Received Qty *</th><th>Transit Damage Description</th></tr></thead>
+            <thead><tr><th style="width:160px; text-align:center;">Item Code Number</th><th style="text-align:left;">Description of Material</th><th style="text-align:center; width:100px;">Billed Qty</th><th style="text-align:center; width:180px;">Physically Received Qty *</th><th>Transit Damage Description</th></tr></thead>
             <tbody>${trs}</tbody>
           </table>
           <div style="display:flex;justify-content:flex-end;"><button class="nav-btn-styled" style="background:var(--accent);" onclick="commitStoreEntryVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">Verify & Generate Store Entry</button></div>
@@ -5661,7 +5658,7 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
 
 async function initializeStoreGrnWorkspaceQueue() {
   const feed = document.getElementById("store-grn-queue-cards-feed");
-  feed.innerHTML = `<p style="padding:20px;text-align:center;color:var(--muted);"><div class="spinner" style="display:inline-block; width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div>Synchronizing active GRN queue...</p>`;
+  feed.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--accent);"><div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite;"></div><span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Synchronizing Active GRN Queue...</span></div>`;
   try {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "fetchInwardWorkflowQueueStream", sessionToken: localStorage.getItem("sessionToken"), targetStep: "STORE_PENDING" }) });
     const data = await res.json();
@@ -5673,33 +5670,30 @@ async function initializeStoreGrnWorkspaceQueue() {
     data.queue.forEach(item => {
       let trs = "";
       item.lineItems.forEach((line, idx) => {
-        const activeReceivedQtyCount = parseInt(line.verifiedPhysicalQuantity, 10) || 0;
-        
         trs += `<tr>
-          <td style="width:150px;"><input type="text" class="grn-item-code-${item.gateNumber}" data-idx="${idx}" value="${line.itemCodeNumber || ""}" placeholder="MANDATORY CODE *" style="padding:4px; font-weight:700; border: 1.5px solid var(--brand); background:#fffef0; text-align:center;"></td>
-          <td style="font-weight:600; color:var(--text); text-align:left; word-wrap:break-word; white-space:normal;">${line.mappedMaterialName}</td>
-          <td style="font-family:monospace; font-weight:700; text-align:center; width:100px;">${activeReceivedQtyCount}</td>
-          <td style="text-align:center; width:100px;"><select class="grn-qa-${item.gateNumber}" data-idx="${idx}" style="padding:4px; font-weight:700;"><option value="Yes">Yes</option><option value="No">No</option></select></td>
-          <td style="text-align:center; width:120px;"><input type="number" min="0" class="grn-ok-${item.gateNumber}" data-idx="${idx}" data-max="${activeReceivedQtyCount}" value="${activeReceivedQtyCount}" style="width:90px; border-color:var(--brand); font-weight:700; text-align:center;" onchange="autoBalanceGrnQuantities(this, '${item.gateNumber}', ${idx})"></td>
-          <td style="text-align:center; width:100px;"><input type="number" min="0" class="grn-notok-${item.gateNumber}" data-idx="${idx}" value="0" style="width:80px; background:#f1f5f9; text-align:center; font-weight:700;" readonly></td>
-          <td><input type="text" class="grn-rej-desc-${item.gateNumber}" data-idx="${idx}" placeholder="Provide rejection details..." style="font-size:0.85rem; padding:6px;"></td>
+          <td style="width:150px; padding:6px;"><input type="text" class="grn-item-code-${item.gateNumber}" data-idx="${idx}" value="${line.itemCodeNumber || ""}" placeholder="MANDATORY CODE *" style="padding:4px; font-weight:700; border: 1.5px solid var(--brand); background:#fffef0; text-align:center;"></td>
+          <td style="font-weight:600; color:var(--text); text-align:left; padding:6px; word-wrap:break-word; white-space:normal;">${line.mappedMaterialName}</td>
+          <td style="font-family:monospace; font-weight:700; text-align:center; width:100px; padding:6px;">${line.extractedQuantity}</td>
+          <td style="text-align:center; width:100px; padding:6px;"><select class="grn-qa-${item.gateNumber}" data-idx="${idx}" style="padding:4px; font-weight:700;"><option value="No" selected>No</option><option value="Yes">Yes</option></select></td>
+          <td style="text-align:center; width:120px; padding:6px;"><input type="number" min="0" class="grn-ok-${item.gateNumber}" data-idx="${idx}" data-max="${line.extractedQuantity}" value="${line.extractedQuantity}" style="width:90px; border-color:var(--brand); font-weight:700; text-align:center;" onchange="autoBalanceGrnQuantities(this, '${item.gateNumber}', ${idx})"></td>
+          <td style="text-align:center; width:100px; padding:6px;"><input type="number" min="0" class="grn-notok-${item.gateNumber}" data-idx="${idx}" value="0" style="width:80px; background:#f1f5f9; text-align:center; font-weight:700;" readonly></td>
+          <td style="padding:6px;"><input type="text" class="grn-rej-desc-${item.gateNumber}" data-idx="${idx}" placeholder="Provide rejection details..." style="font-size:0.85rem; padding:6px;"></td>
         </tr>`;
       });
 
       let cleanDateDisplay = item.invoiceDate || "";
       if (cleanDateDisplay.includes("T")) {
-        let parts = cleanDateDisplay.split("T");
-        let timePart = parts[1].substring(0,5);
-        let hr = parseInt(timePart.split(":")[0], 10);
-        let mn = timePart.split(":")[1];
-        let suf = hr >= 12 ? "pm" : "am";
-        hr = hr % 12; hr = hr ? hr : 12;
-        cleanDateDisplay = parts[0] + " " + String(hr).padStart(2,'0') + ":" + mn + " " + suf;
+        let utcDateObj = new Date(cleanDateDisplay);
+        if (!isNaN(utcDateObj.getTime())) {
+          const dtStr = utcDateObj.toLocaleDateString('en-CA'); 
+          const tmStr = utcDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
+          cleanDateDisplay = dtStr + " " + tmStr;
+        }
       }
 
       let card = document.createElement("div"); card.className = "contact-summary-card-parent";
       card.innerHTML = `
-        <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
+        <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%; padding-bottom:8px;">
           <div class="contact-summary-title-info" style="width:100%;">
             <div class="meta-row-line-block" style="display:flex; justify-content:space-between; width:100%; align-items:center;">
               <div>
@@ -5709,16 +5703,16 @@ async function initializeStoreGrnWorkspaceQueue() {
               <span style="background:#cbd5e1; color:#1e293b; font-weight:700; text-transform:none; font-size:0.8rem; padding:3px 8px;">🕒 ${cleanDateDisplay}</span>
             </div>
             <div style="font-size:0.85rem; margin-top:8px; color:var(--muted); font-weight:600; padding-left:2px;">
-              Vendor Profile: <strong style="color:var(--brand); font-weight:700;">${item.vendorName || "Designated ABPS Supplier Profile"}</strong> | Invoice No: <strong style="color:var(--text); font-weight:700;">${item.invoiceNumber}</strong>
+              Vendor Profile Name: <strong style="color:var(--brand); font-weight:700;">${item.vendorName || "Designated ABPS Supplier Profile"}</strong> | Invoice No: <strong style="color:var(--text); font-weight:700;">${item.invoiceNumber}</strong>
             </div>
           </div>
         </div>
         <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
           <table class="store-basket-data-table" style="width:100%; margin-bottom:12px; table-layout:fixed;">
-            <thead><tr><th style="width:150px;">Item Code Number</th><th>Description of Material</th><th style="width:100px; text-align:center;">Received Qty</th><th style="width:100px; text-align:center;">Q/A Done</th><th style="width:120px; text-align:center;">OK Qty *</th><th style="width:100px; text-align:center;">Not OK Qty</th><th>Rejection Details Description</th></tr></thead>
+            <thead><tr><th style="width:150px; text-align:center;">Item Code Number</th><th style="text-align:left;">Description of Material</th><th style="width:100px; text-align:center;">Received Qty</th><th style="width:100px; text-align:center;">Q/A Done</th><th style="width:120px; text-align:center;">OK Qty *</th><th style="width:100px; text-align:center;">Not OK Qty</th><th>Rejection Details Description</th></tr></thead>
             <tbody>${trs}</tbody>
           </table>
-          <div style="display:flex;justify-content:flex-end;"><button class="nav-btn-styled" style="background:var(--brand);" onclick="commitGrnVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">Verify & Add Stock to Ledger</button></div>
+          <div style="display:flex;justify-content:flex-end;"><button class="nav-btn-styled" style="background:var(--brand);" onclick="commitGrnVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">Verify & Add Stock to Store</button></div>
         </div>`;
       feed.appendChild(card);
     });
@@ -5794,7 +5788,7 @@ async function commitGrnVerificationToBackend(gateNum, encodedItem) {
       banner.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; text-align:left;">
           <div>
-            <strong>Success! GRN Certified & Stock Balances Transmitted.</strong><br/>
+            <strong>Success! GRN Certified & Stock Balances Updated.</strong><br/>
             <span>System Entry Reference Code: <strong style="font-family: monospace; font-size: 1.05rem; color:#111827;">${data.grnNumber}</strong></span>
           </div>
           <button class="nav-btn-styled" onclick="
