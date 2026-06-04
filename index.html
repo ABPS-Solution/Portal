@@ -55,7 +55,7 @@
   
   /* --- DASHBOARD WRAPPER RESPONSIVE GRID FRAMES --- */
   .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 16px 12px; }
-  @media(min-width: 600px) { .dashboard-grid { grid-template-columns: repeat(2, 1fr) !important; } }
+  @media(min-width: 768px) { .dashboard-grid { grid-template-columns: repeat(3, 1fr) !important; } }
   .menu-card { background: var(--card); border: 1.5px solid var(--border); padding: 16px; border-radius: var(--radius); cursor: pointer; font-weight: 700; font-size: 0.95rem; text-align: center; min-height: 56px;}
   .menu-card.locked { opacity: 0.5; cursor: not-allowed; background: #e9ecef; }
   
@@ -342,16 +342,13 @@
         </div>
       </div>
       <div id="store-ticket-runtime-inline-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid;"></div>    
+      
       <div class="section" style="background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
-        <div style="margin-bottom: 16px;">
-          <label class="field-label" id="lbl-dynamic-operator-signature-title" style="font-weight: 700; color: var(--brand);">Requested By *</label>
-          <select id="ticket-requested-by-operator-dropdown" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);">
-            <option value="">— Loading Authorized Store Staff —</option>
-          </select>
-        </div>
+        
         <div style="margin-bottom: 16px;">
           <label class="field-label" style="font-weight: 700; color: var(--brand);">Department / Outgoing Use *</label>
-          <select id="ticket-department-outgoing-dropdown" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;">
+          <select id="ticket-department-outgoing-dropdown" onchange="handleCreateTicketDepartmentChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;">
+            <option value="">— Select Department —</option>
             <option value="Reactor">Reactor</option>
             <option value="Capacitor">Capacitor</option>
             <option value="Panel">Panel</option>
@@ -359,25 +356,37 @@
             <option value="Service">Service</option>
           </select>
         </div>
-        <div style="margin-bottom: 16px;">
-          <label class="field-label" style="font-weight: 700; color: var(--brand);">Select Project ID *</label>
-          <select id="ticket-project-id-dropdown" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);"><option value="">— Loading Active Projects —</option></select>
+
+        <div style="margin-bottom: 16px;" id="wrapper-ticket-requested-by">
+          <label class="field-label" id="lbl-dynamic-operator-signature-title" style="font-weight: 700; color: var(--muted);">Requested By *</label>
+          <select id="ticket-requested-by-operator-dropdown" onchange="handleCreateTicketOperatorChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>
+            <option value="">— Choose Department First —</option>
+          </select>
         </div>
-        <div style="background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: var(--radius); margin-bottom: 16px;">
+
+        <div style="margin-bottom: 16px;" id="wrapper-ticket-project-id">
+          <label class="field-label" style="font-weight: 700; color: var(--muted);">Select Project ID *</label>
+          <select id="ticket-project-id-dropdown" onchange="handleCreateTicketProjectChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>
+            <option value="">— Choose Operator First —</option>
+          </select>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: var(--radius); margin-bottom: 16px; opacity: 0.5;" id="wrapper-ticket-add-item-zone">
           <span style="display: block; font-size: 0.72rem; font-weight: 800; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Add Item</span>
           <div style="display: flex; gap: 10px; align-items: flex-end;">
             <div style="flex-grow: 1;">
               <label class="field-label" style="font-size: 0.75rem;">Material Description</label>
-              <select id="ticket-item-selection-dropdown" onchange="updateSelectedLiveStockPillCounter()" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);"><option value="">Loading Master Catalog...</option></select>
+              <select id="ticket-item-selection-dropdown" onchange="updateSelectedLiveStockPillCounter()" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled><option value="">Unlock Section First...</option></select>
             </div>
             <div style="width: 100px;">
               <label class="field-label" style="font-size: 0.75rem;">Quantity</label>
-              <input type="number" id="ticket-item-quantity-input" min="1" placeholder="Qty" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" />
+              <input type="number" id="ticket-item-quantity-input" min="1" placeholder="Qty" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled />
             </div>
-            <button class="nav-btn-styled" onclick="addItemToShoppingBasketRow()" style="background: var(--brand); padding: 9px 14px; font-weight: 600;">+ Add</button>
+            <button class="nav-btn-styled" id="ticket-add-item-action-btn" onclick="addItemToShoppingBasketRow()" style="background: var(--brand); padding: 9px 14px; font-weight: 600; cursor: not-allowed;" disabled>+ Add</button>
           </div>
           <div id="ticket-live-counter-pill-zone" style="margin-top: 8px; font-size: 0.8rem; min-height: 20px;"></div>
         </div>
+
         <div style="margin-bottom: 20px; overflow-x: auto;">
           <span style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--brand); text-transform: uppercase; margin-bottom: 6px;">Material Basket</span>
           <table class="store-basket-data-table" id="shopping-basket-preview-table">
@@ -1058,11 +1067,12 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwmF0xZ2DmoPKU9xDwCpZSnp-rusvOKlnTSWqOq0QpJa0wI0DKwsRkOZaa-n8WrJAffQg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxchscDyJPJY5KKpxF0DLyy88Y96PXMQ62wDArrXueUfivs4O955QiD_6XqvbxkruO0kQ/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
 let globalPersonnelAuthDirectoryTreePayloadCache = {};
+let globalOperatorsDatabasePayloadCache = []
 let appActiveOperatorIdentityString = "";
 let fileFront = null, fileBack = null;
 let userPermissions = { cardDetails: false, searchCompany: false, searchStatus: false, searchEngineer: false, searchTasks: false, emailWhatsapp: false, dispatchCommissioning: true }; 
@@ -5878,6 +5888,158 @@ function autoBalanceGrnQuantities(okInput, gateNum, idx) {
   if (okVal < 0) { okVal = 0; okInput.value = 0; }
   const notOkInput = document.querySelector(`.grn-notok-${gateNum}[data-idx="${idx}"]`);
   if (notOkInput) notOkInput.value = max - okVal;
+}
+
+/**
+ * OVERWRITE: initializeMaterialRequestWorkspace to remove direct mapping writes
+ */
+async function initializeMaterialRequestWorkspace() {
+  const deptDropdown = document.getElementById("ticket-department-outgoing-dropdown");
+  if (!deptDropdown) return;
+  
+  deptDropdown.value = ""; // Force clean initialization pass
+  resetMaterialRequestCascadingLockState();
+  clearFullBasketDraftState();
+  document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
+
+  try {
+    // Fire parallel requests down to sync items catalog, codes entries, and entire staff tree references list parameters
+    const [inventoryResponse, projectsResponse, staffResponse] = await Promise.all([
+      fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "pullLiveInventoryCounts", sessionToken: localStorage.getItem("sessionToken") }) }),
+      fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) }),
+      fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "getStoreOperatorsList", sessionToken: localStorage.getItem("sessionToken"), includeFullTreePayload: true }) })
+    ]);
+    
+    const inventoryData = await inventoryResponse.json();
+    const projectsData = await projectsResponse.json();
+    const staffData = await staffResponse.json();
+    
+    if (inventoryData.success && projectsData.success && staffData.success) {
+      cachedInventoryStockCollection = inventoryData.inventory;
+      globalOperatorsDatabasePayloadCache = staffData.fullPersonnelDataRecordsTree || []; 
+      
+      // A. Seed Material Options Box
+      const itemDropdown = document.getElementById("ticket-item-selection-dropdown");
+      itemDropdown.innerHTML = '<option value="">— Select Material —</option>';
+      cachedInventoryStockCollection.forEach(item => {
+        let opt = document.createElement("option"); opt.value = item.materialName; opt.textContent = item.materialName;
+        itemDropdown.appendChild(opt);
+      });
+
+      // B. Seed Active Project Choices
+      const projectDropdown = document.getElementById("ticket-project-id-dropdown");
+      projectDropdown.innerHTML = '<option value="">— Select Project ID —</option>';
+      projectsData.projects.forEach(code => {
+        let opt = document.createElement("option"); opt.value = code; opt.textContent = code;
+        projectDropdown.appendChild(opt);
+      });
+      
+      // C. Process autofill lookups
+      const activeDeptRawString = localStorage.getItem("abps_user_raw_departments") || ""; 
+      const lowerDeptsArray = activeDeptRawString.toLowerCase().split(",").map(d => d.trim());
+      const priorityChecks = ["reactor", "capacitor", "panel"];
+      let matchedDefault = "";
+      
+      for (let check of priorityChecks) {
+        if (lowerDeptsArray.indexOf(check) !== -1) {
+          matchedDefault = check.charAt(0).toUpperCase() + check.slice(1);
+          break;
+        }
+      }
+      if (matchedDefault) {
+        deptDropdown.value = matchedDefault;
+        handleCreateTicketDepartmentChange(matchedDefault);
+      }
+    }
+  } catch (error) { 
+    console.error("Matrices load fail exception dropped:", error); 
+  }
+}
+
+function resetMaterialRequestCascadingLockState() {
+  const staffDrop = document.getElementById("ticket-requested-by-operator-dropdown");
+  const projDrop = document.getElementById("ticket-project-id-dropdown");
+  const itemDrop = document.getElementById("ticket-item-selection-dropdown");
+  const qtyInp = document.getElementById("ticket-item-quantity-input");
+  const addBtn = document.getElementById("ticket-add-item-action-btn");
+  
+  staffDrop.innerHTML = '<option value="">— Choose Department First —</option>'; staffDrop.disabled = true;
+  projDrop.disabled = true;
+  itemDrop.disabled = true; qtyInp.disabled = true; addBtn.disabled = true;
+  
+  document.getElementById("lbl-dynamic-operator-signature-title").style.color = "var(--muted)";
+  document.getElementById("wrapper-ticket-project-id").querySelector("label").style.color = "var(--muted)";
+  document.getElementById("wrapper-ticket-add-item-zone").style.opacity = "0.5";
+  addBtn.style.cursor = "not-allowed";
+}
+
+/**
+ * STEP 1 CHANGE: Triggers dynamic staff filtration and unlocks Step 2 fields
+ */
+function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
+  const staffDrop = document.getElementById("ticket-requested-by-operator-dropdown");
+  const titleLbl = document.getElementById("lbl-dynamic-operator-signature-title");
+  
+  resetMaterialRequestCascadingLockState();
+  if (!chosenDepartmentVal) return;
+
+  staffDrop.innerHTML = '<option value="">— Select Your Name —</option>';
+  const cleanTargetDept = chosenDepartmentVal.toLowerCase().trim();
+
+  // Filter staff whose profiles match selected department, store department, or admin privileges
+  const filteredPersonnelList = globalOperatorsDatabasePayloadCache.filter(user => {
+    let userDepts = user.departmentsList.map(d => d.toLowerCase().trim());
+    return userDepts.indexOf(cleanTargetDept) !== -1 || userDepts.indexOf("store") !== -1 || userDepts.indexOf("admin") !== -1;
+  });
+
+  filteredPersonnelList.forEach(user => {
+    let opt = document.createElement("option"); opt.value = user.fullName; opt.textContent = user.fullName;
+    staffDrop.appendChild(opt);
+  });
+
+  titleLbl.style.color = "var(--brand)";
+  staffDrop.disabled = false;
+}
+
+/**
+ * STEP 2 CHANGE: Unlocks Step 3 Project Dropdown Field
+ */
+function handleCreateTicketOperatorChange(chosenOperatorVal) {
+  const projDrop = document.getElementById("ticket-project-id-dropdown");
+  const projLbl = document.getElementById("wrapper-ticket-project-id").querySelector("label");
+
+  projDrop.disabled = true;
+  document.getElementById("ticket-item-selection-dropdown").disabled = true;
+  document.getElementById("ticket-item-quantity-input").disabled = true;
+  document.getElementById("ticket-add-item-action-btn").disabled = true;
+  document.getElementById("wrapper-ticket-add-item-zone").style.opacity = "0.5";
+  document.getElementById("ticket-add-item-action-btn").style.cursor = "not-allowed";
+  projLbl.style.color = "var(--muted)";
+
+  if (!chosenOperatorVal) return;
+
+  projLbl.style.color = "var(--brand)";
+  projDrop.disabled = false;
+}
+
+/**
+ * STEP 3 CHANGE: Final cascade tier unlocks Step 4 Add Item Canvas Zone Box
+ */
+function handleCreateTicketProjectChange(chosenProjectVal) {
+  const itemDrop = document.getElementById("ticket-item-selection-dropdown");
+  const qtyInp = document.getElementById("ticket-item-quantity-input");
+  const addBtn = document.getElementById("ticket-add-item-action-btn");
+  const addZone = document.getElementById("wrapper-ticket-add-item-zone");
+
+  if (!chosenProjectVal) {
+    itemDrop.disabled = true; qtyInp.disabled = true; addBtn.disabled = true;
+    addZone.style.opacity = "0.5"; addBtn.style.cursor = "not-allowed";
+    return;
+  }
+
+  addZone.style.opacity = "1";
+  itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
+  addBtn.style.cursor = "pointer";
 }
 
 </script>
