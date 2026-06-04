@@ -1067,7 +1067,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxmaJLO-LJ75c--h9NW-HqUx_k2_0F_fpB_WQ0HFk0o2bo85Siub5heDpf5101q8Vo9mA/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyQOxq8RxThm72i_gR1c7cUQV_PH42D4XEVWVR5LXKw04HT7zhT9M5bueykBa90h9O9EA/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -4356,7 +4356,7 @@ async function submitMaterialRequestTicketToBackend() {
     <span>${ticketTypeVal === "Return Material" ? 'Generating Return Ticket...' : 'Generating Request Ticket...'}</span>
   `;
   
-  // Cache the inner template markup configuration completely before clearing for success screen view layout
+  // Cache the full starting markup content layout of the panel before structural injection sweeps run
   if (!window.storeCreateTicketOriginalTemplateCacheHTML) {
     window.storeCreateTicketOriginalTemplateCacheHTML = materialRequestPanelContainer.innerHTML;
   }
@@ -4372,17 +4372,14 @@ async function submitMaterialRequestTicketToBackend() {
       itemsClusterArray: dynamicTicketShoppingBasketArray
     };
     
-    const res = await fetch(GAS_URL, { 
-      method: "POST", 
-      body: JSON.stringify(payload) 
-    });
+    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
     const result = await res.json();
     
     if (result.success) {
-      // Wipes dynamic ticket material array draft states parameters securely
+      // Clear out client shopping draft arrays instantly
       dynamicTicketShoppingBasketArray = [];
       
-      // FIXED: Injects clean success panel callout banner card element container layout with a dynamic loop action handle button
+      // REMOVED 5s auto-return logic: Renders persistent layout card with clean "+ Create New Ticket" action button triggers
       materialRequestPanelContainer.style.padding = "20px";
       materialRequestPanelContainer.innerHTML = `
         <div style="background: #dcfce7; border: 1px solid #15803d; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin: 10px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
@@ -4420,16 +4417,15 @@ async function submitMaterialRequestTicketToBackend() {
 }
 
 /**
- * NEW WORKSPACE LOOP INITIALIZER ENGINE
- * Programmatically restores full form shell layout and pulls live dropdown metrics down instantly
+ * RE-INITIALIZATION LOOP ENGINE
+ * Wipes old success strings, restores native inputs layout, and triggers clean parallel dropdown downloads
  */
 function resetStoreCreateTicketToInitialState() {
   const materialRequestPanelContainer = document.getElementById("canvas-module-store-material-request");
   if (materialRequestPanelContainer && window.storeCreateTicketOriginalTemplateCacheHTML) {
-    // 1. Recover full native original HTML elements fields layouts structure structures template pass
     materialRequestPanelContainer.innerHTML = window.storeCreateTicketOriginalTemplateCacheHTML;
     
-    // 2. Re-fire initialization metrics to pull live inventory stock counts and operator signatures lists
+    // Fires dropdown fetch loops live to capture matching operators and fresh available warehouse stocks values
     initializeMaterialRequestWorkspace();
   }
 }
@@ -5969,7 +5965,7 @@ function resetMaterialRequestCascadingLockState() {
 
 /**
  * STEP 1 CHANGE: Dynamic personnel filtration for any chosen outgoing use case.
- * Populates options with personnel belonging to Store, Reactor, Capacitor, Panel, or Admin.
+ * Populates options with personnel belonging to Store, Production, or Admin.
  */
 function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
   const staffDrop = document.getElementById("ticket-requested-by-operator-dropdown");
@@ -5980,11 +5976,11 @@ function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
 
   staffDrop.innerHTML = '<option value="">— Select Your Name —</option>';
   
-  // Set up authorized containment check matches list
-  const authorizedRoles = ["store", "reactor", "capacitor", "panel", "admin"];
+  // Updated list of authorized department strings allowed to request/return materials
+  const authorizedRoles = ["store", "production", "admin"];
 
   const filteredPersonnelList = globalOperatorsDatabasePayloadCache.filter(user => {
-    // Check if any of the user's assigned departments match the authorized roles list
+    // Returns true if any of the user's assigned departments match Store, Production, or Admin
     return user.departmentsList.some(dept => authorizedRoles.includes(dept.toLowerCase().trim()));
   });
 
