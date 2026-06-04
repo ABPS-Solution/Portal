@@ -239,6 +239,7 @@
     </div>
 
     <!-- STORE DEPARTMENT BUTTONS INTERFACE GRID MAP -->
+
     <div id="dashboard-store-department-header-block" style="display: none;">
       <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--brand); margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Store Department</h2>
       
@@ -264,6 +265,19 @@
         <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
           <div class="menu-card" id="mod-live-store-stock" onclick="navigateToStoreWorkspacePanel('store-live-stock')">Live Store Stock</div>
           <div class="menu-card" id="mod-store-matrix" onclick="navigateToStoreWorkspacePanel('store-history-matrix')">Search Store Tickets</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STORE DEPARTMENT BUTTONS INTERFACE GRID MAP -->
+
+    <div id="dashboard-design-department-header-block" style="display: none;">
+      <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--brand); margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Design Department</h2>
+      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
+        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Bill of Quantity / Bill of Material</div>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-design-upload" onclick="navigateToDesignWorkspacePanel('design-upload')">Upload Bill of Quantity</div>
+          <div class="menu-card" id="mod-design-update" onclick="navigateToDesignWorkspacePanel('design-update')">Update Bill of Quantity</div>
         </div>
       </div>
     </div>
@@ -467,11 +481,69 @@
               <label for="m_dept_service">Service</label>
             </div>
           </div>
-          
         </div>
       </div>
       <div id="store-historical-matrix-results-feed" style="display: flex; flex-direction: column; gap: 12px;"></div>
     </div>
+
+    <div id="module-design-workspace-enclosure-panel" class="workspace-panel" style="display: none; padding: 12px 10px;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitDesignWorkspacePanelBackToMenu()" style="background:#4a5568;">Return to Main Dashboard</button>
+    </div>
+
+    <div id="canvas-module-design-upload" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <h2 style="margin-bottom:16px; color:var(--brand);">Upload Bill of Quantity</h2>
+      <div id="design-upload-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid;"></div>
+      
+      <div style="margin-bottom:12px;">
+        <label class="field-label">Design Engineer *</label>
+        <select id="boq-upload-staff-dropdown" style="font-weight:700; color:var(--brand);"></select>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label class="field-label">Select Project ID *</label>
+        <select id="boq-upload-project-dropdown"></select>
+      </div>
+      
+      <div class="card-box" id="boq-upload-file-dropzone" onclick="document.getElementById('boq-upload-file-raw').click()" style="padding:40px; border:2px dashed var(--brand); font-weight:700; color:var(--brand); margin-bottom:16px;">
+        📷 Select or Capture Bill of Quantity Document Page Image
+      </div>
+      <input type="file" id="boq-upload-file-raw" accept="image/*" hidden onchange="handleBOQFileSelection(this, 'boq-upload-file-dropzone')" />
+      
+      <button class="btn btn-sub" id="boq-upload-submit-action-btn" onclick="executeBOQDocumentUploadSubmit('NEW')" style="background:var(--brand); font-weight:700; padding:12px;">Parse Document & Seed Inventory Matrix</button>
+    </div>
+
+    <div id="canvas-module-design-update" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <h2 style="margin-bottom:16px; color:var(--brand);">Update Bill of Quantity</h2>
+      <div id="design-update-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid;"></div>
+      
+      <div style="display:flex; gap:10px; align-items:flex-end; margin-bottom:20px; background:#f8fafc; padding:12px; border:1px solid var(--border); border-radius:var(--radius);">
+        <div style="flex-grow:1;">
+          <label class="field-label" style="margin-top:0;">Search By Project ID *</label>
+          <select id="boq-update-project-search-dropdown"></select>
+        </div>
+        <button class="nav-btn-styled" onclick="executeBOQProjectQueryLookupSearch()" style="background:var(--brand); padding:10px 24px; font-weight:700;">Find BOQ Blueprint</button>
+      </div>
+
+      <div id="boq-update-search-results-viewport" style="margin-bottom:16px; display:none;">
+        <table class="store-basket-data-table" style="width:100%; margin-bottom:20px;">
+          <thead>
+            <tr><th>Department</th><th>Product Component Name</th><th>Rating Specifications</th><th>ERP Code</th><th>Total Project Requirement</th></tr>
+          </thead>
+          <tbody id="boq-update-table-body-view"></tbody>
+        </table>
+        
+        <div style="border-top:1px dashed var(--border); padding-top:16px; background:#fffef0; padding:12px; border:1.5px solid var(--brand); border-radius:var(--radius);">
+          <span style="display:block; font-size:0.8rem; font-weight:800; color:var(--brand); margin-bottom:10px; text-transform:uppercase;">Upload Revised Blueprint Sheet Version</span>
+          <div class="card-box" id="boq-revision-file-dropzone" onclick="document.getElementById('boq-revision-file-raw').click()" style="padding:20px; border:2px dashed var(--brand); font-weight:700; color:var(--brand); margin-bottom:12px; background:#fff;">
+            📷 Select Revised BOQ Document Page Image
+          </div>
+          <input type="file" id="boq-revision-file-raw" accept="image/*" hidden onchange="handleBOQFileSelection(this, 'boq-revision-file-dropzone')" />
+          <button class="btn btn-sub" id="boq-revision-submit-action-btn" onclick="executeBOQDocumentUploadSubmit('UPDATE')" style="background:var(--accent); font-weight:700;">Commit BOQ Change</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   </div>
 
@@ -1091,7 +1163,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwTAb1X09HT4icbRsvI-FPp4p8z5Uj_MNmdiQx3jyhxs18vMK73HH5xw0_384ZC9wdKeg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwYf_dvgwD1c9RZ9uTSRTRA0Mio3mqiDx1R0l_Wl7yXeGCyEavlEc_nF8pSl3Bt7Fyekg/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -1124,6 +1196,8 @@ let masterStoreTicketsHistoryCacheCollection = [];
 let targetGateInvoiceFileObj = null;
 let targetGateChallanFileObj = null;
 let activeParsedGatePayloadCache = null;
+
+let targetBOQUploadFileRawObject = null;
 
 window.onload = function() {
   const token = localStorage.getItem("sessionToken"); 
@@ -4178,6 +4252,10 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canReleaseTicket           = userPermissionsObject.storeApproveTickets === true;
   const canSearchStoreMat          = userPermissionsObject.storeAdminMatrix === true;
 
+  // NEW EXTRACTION: DESIGN DEPARTMENT ACCESS MATRIX FLAGS
+  const canUploadBOQ               = userPermissionsObject.uploadBOQ === true;
+  const canUpdateBOQ               = userPermissionsObject.updateBOQ === true;
+
   // 3. SET INDIVIDUAL MARKETING SECTIONS CARDS VISIBILITY STATES
   // Subcategory 1: Lead Source
   if (document.getElementById("mod-card")) {
@@ -4232,7 +4310,15 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     document.getElementById("mod-store-matrix").style.display = canSearchStoreMat ? "block" : "none";
   }
 
-  // 5. EVALUATE ENTIRE OVERARCHING BLOCK INTERCEPT FOR MARKETING DEPARTMENT
+  // 5. SET INDIVIDUAL DESIGN SECTIONS CARDS VISIBILITY STATES
+  if (document.getElementById("mod-design-upload")) {
+    document.getElementById("mod-design-upload").style.display = canUploadBOQ ? "block" : "none";
+  }
+  if (document.getElementById("mod-design-update")) {
+    document.getElementById("mod-design-update").style.display = canUpdateBOQ ? "block" : "none";
+  }
+
+  // 6. EVALUATE ENTIRE OVERARCHING BLOCK INTERCEPT FOR MARKETING DEPARTMENT
   const marketingHeaderBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingHeaderBlock) {
     if (canEnterCard || canViewEmailLeads || canUploadDispatchBill || canUploadCommissioning || 
@@ -4244,13 +4330,23 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     }
   }
 
-  // 6. EVALUATE ENTIRE OVERARCHING BLOCK INTERCEPT FOR STORE DEPARTMENT
+  // 7. EVALUATE ENTIRE OVERARCHING BLOCK INTERCEPT FOR STORE DEPARTMENT
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");
   if (storeHeaderBlock) {
     if (canViewLiveStock || canUploadInvoice || canCreateTicket || canReleaseTicket || canSearchStoreMat) {
       storeHeaderBlock.style.display = "block";
     } else {
       storeHeaderBlock.style.display = "none";
+    }
+  }
+
+  // 8. EVALUATE ENTIRE OVERARCHING BLOCK INTERCEPT FOR DESIGN DEPARTMENT
+  const designHeaderBlock = document.getElementById("dashboard-design-department-header-block");
+  if (designHeaderBlock) {
+    if (canUploadBOQ || canUpdateBOQ) {
+      designHeaderBlock.style.display = "block";
+    } else {
+      designHeaderBlock.style.display = "none";
     }
   }
 }
@@ -6106,6 +6202,160 @@ function handleCreateTicketProjectChange(chosenProjectVal) {
   addZone.style.opacity = "1";
   itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
   addBtn.style.cursor = "pointer";
+}
+
+function navigateToDesignWorkspacePanel(targetModuleId) {
+  document.getElementById("dashboard-view").style.display = "none";
+  document.getElementById("module-design-workspace-enclosure-panel").style.display = "block";
+  
+  document.getElementById("canvas-module-design-upload").style.display = "none";
+  document.getElementById("canvas-module-design-update").style.display = "none";
+  
+  document.getElementById("boq-upload-file-dropzone").textContent = "📷 Select or Capture Bill of Quantity Document Page Image";
+  document.getElementById("boq-upload-file-dropzone").classList.remove("done");
+  document.getElementById("boq-revision-file-dropzone").textContent = "📷 Select Revised BOQ Document Page Image";
+  document.getElementById("boq-revision-file-dropzone").classList.remove("done");
+  document.getElementById("boq-update-search-results-viewport").style.display = "none";
+  targetBOQUploadFileRawObject = null;
+
+  if (targetModuleId === 'design-upload') {
+    document.getElementById("canvas-module-design-upload").style.display = "block";
+    initializeDesignDepartmentUploadModule();
+  } else if (targetModuleId === 'design-update') {
+    document.getElementById("canvas-module-design-update").style.display = "block";
+    initializeDesignDepartmentUpdateModule();
+  }
+}
+
+function exitDesignWorkspacePanelBackToMenu() {
+  document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
+  document.getElementById("dashboard-view").style.display = "flex";
+}
+
+function handleBOQFileSelection(inputNode, zoneId) {
+  targetBOQUploadFileRawObject = inputNode.files[0];
+  if (targetBOQUploadFileRawObject) {
+    const box = document.getElementById(zoneId);
+    box.textContent = "BOQ Blueprint Page Attached ✅";
+    box.classList.add("done");
+  }
+}
+
+async function initializeDesignDepartmentUploadModule() {
+  const staffDrop = document.getElementById("boq-upload-staff-dropdown");
+  const projDrop = document.getElementById("boq-upload-project-dropdown");
+  
+  staffDrop.innerHTML = "<option>Syncing Design Personnel...</option>";
+  projDrop.innerHTML = "<option>Syncing Project ID Codes...</option>";
+  
+  const [staffRes, projRes] = await Promise.all([
+    fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "getStoreOperatorsList", sessionToken: localStorage.getItem("sessionToken") }) }),
+    fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) })
+  ]);
+  
+  const staffData = await staffRes.json();
+  const projData = await projRes.json();
+  
+  staffDrop.innerHTML = '<option value="">— Select Your Name —</option>';
+  staffData.operators.forEach(name => {
+    let opt = document.createElement("option"); opt.value = name; opt.textContent = name; staffDrop.appendChild(opt);
+  });
+  staffDrop.value = appActiveOperatorIdentityString;
+
+  projDrop.innerHTML = '<option value="">— Choose Target Project ID —</option>';
+  projData.projects.forEach(code => {
+    let opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
+  });
+}
+
+async function initializeDesignDepartmentUpdateModule() {
+  const projSearchDrop = document.getElementById("boq-update-project-search-dropdown");
+  projSearchDrop.innerHTML = "<option>Loading Project ID Codes...</option>";
+  
+  const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) });
+  const data = await res.json();
+  
+  projSearchDrop.innerHTML = '<option value="">— Choose Target Project ID —</option>';
+  data.projects.forEach(code => {
+    let opt = document.createElement("option"); opt.value = code; opt.textContent = code; projSearchDrop.appendChild(opt);
+  });
+}
+
+async function executeBOQProjectQueryLookupSearch() {
+  const projectId = document.getElementById("boq-update-project-search-dropdown").value;
+  const tbody = document.getElementById("boq-update-table-body-view");
+  const viewport = document.getElementById("boq-update-search-results-viewport");
+  
+  if (!projectId) return alert("Please select a target Project ID code first.");
+  
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--brand); font-weight:700;">Loading Blueprint Configuration Records...</td></tr>`;
+  viewport.style.display = "block";
+  
+  const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "fetchActiveBOQRecordsByProject", sessionToken: localStorage.getItem("sessionToken"), projectId: projectId }) });
+  const data = await res.json();
+  
+  if (data.success && data.records.length > 0) {
+    tbody.innerHTML = "";
+    data.records.forEach(r => {
+      tbody.innerHTML += `
+        <tr>
+          <td style="text-align:left; font-weight:bold; color:#475569;">${r.department}</td>
+          <td style="text-align:left; font-weight:600;">${r.productName}</td>
+          <td style="font-family:monospace; color:var(--brand);">${r.productRating}</td>
+          <td style="font-family:monospace; font-weight:700;">${r.itemCode || "UNCODED"}</td>
+          <td style="font-family:monospace; font-weight:800; text-align:right; padding-right:12px;">${r.totalRequirement} Pcs</td>
+        </tr>`;
+    });
+  } else {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">No active Bill of Quantity blueprint lines mapped to this project reference code yet.</td></tr>`;
+  }
+}
+
+async function executeBOQDocumentUploadSubmit(modeString) {
+  const isNew = modeString === "NEW";
+  const btn = document.getElementById(isNew ? "boq-upload-submit-action-btn" : "boq-revision-submit-action-btn");
+  const banner = document.getElementById(isNew ? "design-upload-feedback-banner" : "design-update-feedback-banner");
+  const projectId = document.getElementById(isNew ? "boq-upload-project-dropdown" : "boq-update-project-search-dropdown").value;
+  
+  if (!projectId) return alert("Compulsory Parameter Missing: Target Project ID code is blank.");
+  if (!targetBOQUploadFileRawObject) return alert("Compulsory Document Missing: Select or capture your document page blueprint image.");
+  
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div> AI Parsing Design Document...';
+  
+  const fileBase64Raw = await new Promise((resolve) => {
+    const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.readAsDataURL(targetBOQUploadFileRawObject);
+  });
+  
+  try {
+    const actionKey = isNew ? "processNewBOQUploadDocument" : "commitBOQUpdatePipelineStep";
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: actionKey,
+        sessionToken: localStorage.getItem("sessionToken"),
+        activeEngineer: appActiveOperatorIdentityString,
+        payload: { projectId: projectId, fileData64: fileBase64Raw }
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      banner.style.cssText = "display: block; background: #dcfce7; border-left: 4px solid #15803d; color: #15803d; padding: 16px; border-radius: var(--radius); margin-bottom:15px;";
+      banner.innerHTML = `<strong>Success! Bill of Quantity Processing Complete.</strong><br/>Project reference blueprint synchronized live onto ledger databases under version handle: <strong>v${data.version}</strong>`;
+      
+      if (isNew) {
+        document.getElementById("boq-upload-file-dropzone").textContent = "📷 Select or Capture Bill of Quantity Document Page Image";
+        document.getElementById("boq-upload-file-dropzone").classList.remove("done");
+      } else {
+        document.getElementById("boq-revision-file-dropzone").textContent = "📷 Select Revised BOQ Document Page Image";
+        document.getElementById("boq-revision-file-dropzone").classList.remove("done");
+        document.getElementById("boq-update-search-results-viewport").style.display = "none";
+      }
+      targetBOQUploadFileRawObject = null;
+    } else {
+      alert("Processing Error: " + data.error);
+    }
+  } catch(e) { alert("Network exception caught: " + e.message); } finally { btn.disabled = false; btn.textContent = isNew ? "Parse Document & Seed Inventory Matrix" : "Commit Overwrite Revision & Increment Version"; }
 }
 
 </script>
