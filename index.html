@@ -445,6 +445,26 @@
           <label class="field-label">Filter By Project ID</label>
           <div class="pill-group" id="matrix-search-projects-checkbox-mount" style="margin-bottom:6px;"></div>
         </div>
+
+        <div style="width: 100%; border-top: 1px dashed rgba(0, 86, 179, 0.15); padding-top: 12px; margin-top: 10px;">
+          <label class="field-label">Filter By Production Department / Outgoing Use</label>
+          <div class="pill-group" style="margin-bottom:6px;">
+            <input type="checkbox" name="matrixDepartmentFilter" value="Reactor" id="m_dept_reactor" onchange="executeClientSideStoreTicketFilterSearch()">
+            <label for="m_dept_reactor">Reactor</label>
+            
+            <input type="checkbox" name="matrixDepartmentFilter" value="Capacitor" id="m_dept_capacitor" onchange="executeClientSideStoreTicketFilterSearch()">
+            <label for="m_dept_capacitor">Capacitor</label>
+            
+            <input type="checkbox" name="matrixDepartmentFilter" value="Panel" id="m_dept_panel" onchange="executeClientSideStoreTicketFilterSearch()">
+            <label for="m_dept_panel">Panel</label>
+            
+            <input type="checkbox" name="matrixDepartmentFilter" value="Processing" id="m_dept_processing" onchange="executeClientSideStoreTicketFilterSearch()">
+            <label for="m_dept_processing">Processing</label>
+            
+            <input type="checkbox" name="matrixDepartmentFilter" value="Service" id="m_dept_service" onchange="executeClientSideStoreTicketFilterSearch()">
+            <label for="m_dept_service">Service</label>
+          </div>
+        </div>
       </div>
       <div id="store-historical-matrix-results-feed" style="display: flex; flex-direction: column; gap: 12px;"></div>
     </div>
@@ -5046,15 +5066,22 @@ function executeClientSideStoreTicketFilterSearch() {
   const checkedTypes = Array.from(document.querySelectorAll('input[name="matrixTypeFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
   const checkedProjects = Array.from(document.querySelectorAll('input[name="matrixProjectFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
   const checkedStatuses = Array.from(document.querySelectorAll('input[name="matrixStatusFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
+  // NEW ELEMENT ACQUISITION: Capture checking states for departments
+  const checkedDepartments = Array.from(document.querySelectorAll('input[name="matrixDepartmentFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
 
   resultsFeedZone.innerHTML = "";
 
   const filteredOutputList = masterStoreTicketsHistoryCacheCollection.filter(ticket => {
     const ticketTypeStr = ticket.ticketType || "Request Material";
+    const ticketDeptStr = ticket.department || "General Store";
+    
     const matchType    = (checkedTypes.length === 0 || checkedTypes.indexOf(ticketTypeStr.toLowerCase().trim()) !== -1);
     const matchProject = (checkedProjects.length === 0 || checkedProjects.indexOf(ticket.projectId.trim().toLowerCase()) !== -1);
     const matchStatus  = (checkedStatuses.length === 0 || checkedStatuses.indexOf(ticket.status.trim().toLowerCase()) !== -1);
-    return matchType && matchProject && matchStatus;
+    // NEW CONDITIONAL CRITERIA: Evaluates checked department values safely (Select All if empty)
+    const matchDept    = (checkedDepartments.length === 0 || checkedDepartments.indexOf(ticketDeptStr.toLowerCase().trim()) !== -1);
+    
+    return matchType && matchProject && matchStatus && matchDept;
   });
 
   if (filteredOutputList.length === 0) {
@@ -5068,7 +5095,6 @@ function executeClientSideStoreTicketFilterSearch() {
     
     let itemsArray = [];
     try { 
-      // FIXED RE-INDEX: Parses the correct mapped object stream parameter key cleanly
       itemsArray = JSON.parse(ticket.itemsJson); 
     } catch(e) { 
       itemsArray = []; 
@@ -5090,7 +5116,6 @@ function executeClientSideStoreTicketFilterSearch() {
     const typeLabel = ticket.ticketType || "Request Material";
     const typeLabelColorStyle = (typeLabel === "Return Material") ? "background:#e0f2fe; color:#0369a1;" : "background:#edf2f7; color:#1e293b;";
 
-    // TIME CLEANER: Strips off the ugly trailing "GMT+0530 (India Standard Time)" node blocks
     let cleanCreatedDate = ticket.dateCreated || "";
     if (cleanCreatedDate.indexOf(" GMT") !== -1) {
       cleanCreatedDate = cleanCreatedDate.split(" GMT")[0].trim();
@@ -5130,7 +5155,6 @@ function executeClientSideStoreTicketFilterSearch() {
     resultsFeedZone.appendChild(card);
   });
 }
-
 /**
  * 3. EXECUTE RELEASE DISPATCH ACTION CONTROL LOOP (UPDATED: CLICK ANIMATIONS ADDED)
  * Directly handles instant button transforms, text state loaders, and interface locking keys.
