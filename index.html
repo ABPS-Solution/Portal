@@ -1067,7 +1067,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwSZVKEP8htAXIiXkaXufylCG_6wvKLXqmJliPAAYXqldfiFRZ7xof2LvmGhYn4E8WWgA/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwTAb1X09HT4icbRsvI-FPp4p8z5Uj_MNmdiQx3jyhxs18vMK73HH5xw0_384ZC9wdKeg/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -4236,13 +4236,22 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
  * Synchronizes inventory counts, project codes, and authorized store operators simultaneously
  */
 async function initializeMaterialRequestWorkspace() {
+  const projectDropdown = document.getElementById("ticket-project-id-dropdown");
+  const itemDropdown = document.getElementById("ticket-item-selection-dropdown");
+  const storeStaffDropdown = document.getElementById("ticket-requested-by-operator-dropdown");
   const deptDropdown = document.getElementById("ticket-department-outgoing-dropdown");
-  if (!deptDropdown) return;
   
-  deptDropdown.value = ""; // Force clean initialization pass
+  if (!projectDropdown || !itemDropdown || !storeStaffDropdown || !deptDropdown) return;
+  
+  // Clean start state setup parameters
+  deptDropdown.value = ""; 
   resetMaterialRequestCascadingLockState();
   clearFullBasketDraftState();
   document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
+
+  projectDropdown.innerHTML = '<option value="">Syncing Active Projects...</option>';
+  itemDropdown.innerHTML = '<option value="">Syncing Material List...</option>';
+  storeStaffDropdown.innerHTML = '<option value="">Loading Authorized Staff List...</option>';
 
   try {
     const [inventoryResponse, projectsResponse, staffResponse] = await Promise.all([
@@ -4257,27 +4266,27 @@ async function initializeMaterialRequestWorkspace() {
     
     if (inventoryData.success && projectsData.success && staffData.success) {
       cachedInventoryStockCollection = inventoryData.inventory;
+      
+      // FIXED CACHE LOOKUP: Explicitly parse the structural personnel records tree cleanly
       globalOperatorsDatabasePayloadCache = staffData.fullPersonnelDataRecordsTree || []; 
       
-      // A. Populate Material Catalog choices showing the descriptive Material Name
-      const itemDropdown = document.getElementById("ticket-item-selection-dropdown");
+      // A. Populate Material Catalog choices
       itemDropdown.innerHTML = '<option value="">— Select Material —</option>';
       cachedInventoryStockCollection.forEach(item => {
         let opt = document.createElement("option"); 
         opt.value = item.materialName; 
-        opt.textContent = item.materialName; // FIXED: Shows text description, not the numeric code
+        opt.textContent = item.materialName; 
         itemDropdown.appendChild(opt);
       });
 
       // B. Seed Active Project Choices
-      const projectDropdown = document.getElementById("ticket-project-id-dropdown");
       projectDropdown.innerHTML = '<option value="">— Select Project ID —</option>';
       projectsData.projects.forEach(code => {
         let opt = document.createElement("option"); opt.value = code; opt.textContent = code;
         projectDropdown.appendChild(opt);
       });
       
-      // C. Process autofill lookups with instant evaluation execution
+      // C. Process autofill lookups safely without throwing fake background loops
       const activeDeptRawString = localStorage.getItem("abps_user_raw_departments") || ""; 
       const lowerDeptsArray = activeDeptRawString.toLowerCase().split(",").map(d => d.trim());
       const priorityChecks = ["reactor", "capacitor", "panel"];
@@ -4292,12 +4301,17 @@ async function initializeMaterialRequestWorkspace() {
       
       if (matchedDefault) {
         deptDropdown.value = matchedDefault;
-        // FIXED: Explicitly run the change handler here using the freshly cached dataset
+        // FIXED: Executes the filter immediately now that the data tree cache is 100% complete
         handleCreateTicketDepartmentChange(matchedDefault); 
+      } else {
+        deptDropdown.value = "";
+        resetMaterialRequestCascadingLockState();
       }
     }
   } catch (error) { 
     console.error("Matrices load fail exception dropped:", error); 
+    deptDropdown.value = "";
+    resetMaterialRequestCascadingLockState();
   }
 }
 
@@ -5053,10 +5067,20 @@ function executeClientSideStoreTicketFilterSearch() {
     card.className = "contact-summary-card-parent";
     
     let itemsArray = [];
-    try { itemsArray = JSON.parse(ticket.itemsJson); } catch(e) { itemsArray = []; }
+    try { 
+      // FIXED RE-INDEX: Parses the correct mapped object stream parameter key cleanly
+      itemsArray = JSON.parse(ticket.itemsJson); 
+    } catch(e) { 
+      itemsArray = []; 
+    }
+    
     let itemsTableRowsHtml = "";
     itemsArray.forEach(i => {
-      itemsTableRowsHtml += `<tr><td style="padding:4px; color:var(--text); font-weight:600;">${i.materialName}</td><td style="padding:4px; font-family:monospace; font-weight:700; text-align:right;">${i.quantity} ${i.unitType}</td></tr>`;
+      itemsTableRowsHtml += `
+        <tr>
+          <td style="padding:6px; color:var(--text); font-weight:600; text-align:left;">${i.materialName}</td>
+          <td style="padding:6px; font-family:monospace; font-weight:700; text-align:right; color:var(--brand);">${i.quantity} ${i.unitType || 'Pcs'}</td>
+        </tr>`;
     });
 
     let badgeColorStyle = "background:#fef3c7; color:#b45309;"; 
@@ -5066,27 +5090,46 @@ function executeClientSideStoreTicketFilterSearch() {
     const typeLabel = ticket.ticketType || "Request Material";
     const typeLabelColorStyle = (typeLabel === "Return Material") ? "background:#e0f2fe; color:#0369a1;" : "background:#edf2f7; color:#1e293b;";
 
+    // TIME CLEANER: Strips off the ugly trailing "GMT+0530 (India Standard Time)" node blocks
+    let cleanCreatedDate = ticket.dateCreated || "";
+    if (cleanCreatedDate.indexOf(" GMT") !== -1) {
+      cleanCreatedDate = cleanCreatedDate.split(" GMT")[0].trim();
+    }
+    
+    let cleanActionedDate = ticket.dateActioned || "Waiting Handover Verification";
+    if (cleanActionedDate.indexOf(" GMT") !== -1) {
+      cleanActionedDate = cleanActionedDate.split(" GMT")[0].trim();
+    }
+
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed var(--border); padding-bottom:6px; margin-bottom:8px;">
         <div>
           <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:2px 6px; border-radius:4px; font-size:0.8rem;">${ticket.ticketId}</span>
           <span style="font-size:0.65rem; font-weight:700; border-radius:3px; padding:1px 5px; margin-left:4px; ${typeLabelColorStyle}">${typeLabel.toUpperCase()}</span>
           <strong style="margin-left:8px; font-size:0.85rem; color:var(--brand);">Project ID: ${ticket.projectId}</strong>
+          <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Dept: ${ticket.department || "General Store"}</span>
         </div>
         <span style="font-size:0.68rem; font-weight:700; border-radius:4px; padding:2px 6px; ${badgeColorStyle}">${ticket.status.toUpperCase()}</span>
       </div>
-      <div style="font-size:0.8rem; line-height:1.4; margin-bottom:8px; color:#4a5568;">
-        <strong>Operator Account:</strong> ${ticket.requestedBy} | <strong>Actioned By:</strong> ${ticket.actionedBy || "Waiting Handover"}<br/>  
-        <strong>Created:</strong> ${ticket.dateCreated.split(" GMT")[0]}
+      <div style="font-size:0.8rem; line-height:1.5; margin-bottom:8px; color:#4a5568; text-align:left;">
+        <strong>Requested By:</strong> ${ticket.requestedBy} | <strong>Actioned By:</strong> ${ticket.actionedBy || "Pending Review"}<br/>  
+        <strong>Created On:</strong> ${cleanCreatedDate} | <strong>Actioned On:</strong> ${cleanActionedDate}
       </div>
       <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px;">
-        <table style="width:100%; font-size:0.78rem; border-collapse:collapse;"><tbody>${itemsTableRowsHtml}</tbody></table>
+        <table style="width:100%; font-size:0.82rem; border-collapse:collapse; table-layout:fixed;">
+          <thead>
+            <tr style="border-bottom:1px solid #e2e8f0; font-size:0.7rem; color:var(--muted); font-weight:bold; text-transform:uppercase;">
+              <th style="text-align:left; padding:4px;">Material Description</th>
+              <th style="text-align:right; padding:4px;">Quantity Mapped</th>
+            </tr>
+          </thead>
+          <tbody>${itemsTableRowsHtml}</tbody>
+        </table>
       </div>
     `;
     resultsFeedZone.appendChild(card);
   });
 }
-
 
 /**
  * 3. EXECUTE RELEASE DISPATCH ACTION CONTROL LOOP (UPDATED: CLICK ANIMATIONS ADDED)
