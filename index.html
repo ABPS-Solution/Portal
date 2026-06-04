@@ -1067,7 +1067,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyQOxq8RxThm72i_gR1c7cUQV_PH42D4XEVWVR5LXKw04HT7zhT9M5bueykBa90h9O9EA/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwSZVKEP8htAXIiXkaXufylCG_6wvKLXqmJliPAAYXqldfiFRZ7xof2LvmGhYn4E8WWgA/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -4356,7 +4356,7 @@ async function submitMaterialRequestTicketToBackend() {
     <span>${ticketTypeVal === "Return Material" ? 'Generating Return Ticket...' : 'Generating Request Ticket...'}</span>
   `;
   
-  // Cache the full starting markup content layout of the panel before structural injection sweeps run
+  // Cache the full primary HTML skeleton parameters map before clearing for success screen view layout
   if (!window.storeCreateTicketOriginalTemplateCacheHTML) {
     window.storeCreateTicketOriginalTemplateCacheHTML = materialRequestPanelContainer.innerHTML;
   }
@@ -4376,10 +4376,10 @@ async function submitMaterialRequestTicketToBackend() {
     const result = await res.json();
     
     if (result.success) {
-      // Clear out client shopping draft arrays instantly
+      // Clear current memory shopping draft arrays parameters instantly
       dynamicTicketShoppingBasketArray = [];
       
-      // REMOVED 5s auto-return logic: Renders persistent layout card with clean "+ Create New Ticket" action button triggers
+      // FIXED: Removed the 5-second automatic timeout return redirect entirely
       materialRequestPanelContainer.style.padding = "20px";
       materialRequestPanelContainer.innerHTML = `
         <div style="background: #dcfce7; border: 1px solid #15803d; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin: 10px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
@@ -4417,15 +4417,16 @@ async function submitMaterialRequestTicketToBackend() {
 }
 
 /**
- * RE-INITIALIZATION LOOP ENGINE
- * Wipes old success strings, restores native inputs layout, and triggers clean parallel dropdown downloads
+ * WORKSPACE LOOP ACTION RE-INITIALIZER
+ * Programmatically restores native inputs layout structure from cache and triggers parallel dropdown down sync paths
  */
 function resetStoreCreateTicketToInitialState() {
   const materialRequestPanelContainer = document.getElementById("canvas-module-store-material-request");
   if (materialRequestPanelContainer && window.storeCreateTicketOriginalTemplateCacheHTML) {
+    // Restores original HTML skeleton element properties safely
     materialRequestPanelContainer.innerHTML = window.storeCreateTicketOriginalTemplateCacheHTML;
     
-    // Fires dropdown fetch loops live to capture matching operators and fresh available warehouse stocks values
+    // Re-fire standard workflow bootloader tasks to sync operators and fresh available stocks live down to selects
     initializeMaterialRequestWorkspace();
   }
 }
