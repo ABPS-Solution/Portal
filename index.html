@@ -1060,7 +1060,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyjDzPwINXtfT9MrWRVlC5dmchG_hz1MDPWXWxQXxcXaOykx8A_MK3K2Yp2WeERfdJaCA/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzjEPDCp4gJF_3cjiTWSIgq9bcw4uFxYWmv2g26bT0C4fork98PMRP2knM_n_Y5CUS5pw/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -4683,6 +4683,11 @@ function clearFullBasketDraftState() {
   renderDraftBasketTableViewportRows();
 }
 
+/**
+ * EXECUTE BOQ LIMIT INCREASE REQUEST TRANSMISSION PIPELINE
+ * Compiles a flat JSON payload structure directly matching the backend doPost routers
+ * to transmit allotment overrun justification entries safely without dropping parameters.
+ */
 async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
   const notesField = document.getElementById("boq-increase-justification-notes-input");
   const projectId = document.getElementById("ticket-project-id-dropdown").value;
@@ -4696,10 +4701,12 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
   }
   
   const btn = document.getElementById("submit-ticket-final-btn");
-  btn.disabled = true; btn.innerHTML = "Transmitting Request to Admin...";
+  btn.disabled = true; 
+  btn.innerHTML = '<div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div> Transmitting Request to Admin...';
   
   try {
-    const payload = {
+    // FIXED FLAT PAYLOAD: Flattens parameters straight into the base object root to prevent router switch drops
+    const flatServerRequestPayload = {
       action: "commitBOQLimitIncreaseRequestTicket",
       sessionToken: localStorage.getItem("sessionToken"),
       activeEngineer: operatorName,
@@ -4709,22 +4716,40 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
       itemsClusterArray: dynamicTicketShoppingBasketArray
     };
     
-    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
+    const res = await fetch(GAS_URL, { 
+      method: "POST", 
+      body: JSON.stringify(flatServerRequestPayload) 
+    });
     const result = await res.json();
     
     if (result.success) {
       dynamicTicketShoppingBasketArray = [];
       materialRequestPanelContainer.style.padding = "20px";
       materialRequestPanelContainer.innerHTML = `
-        <div style="background: #e0f2fe; border: 1px solid #0369a1; border-left: 4px solid #0369a1; color: #0369a1; padding: 20px; border-radius: var(--radius); text-align: left;">
-          <h3 style="font-size: 1.1rem; margin: 0 0 6px 0; font-weight: 700;">Allotted BOQ Threshold Limit Breached!</h3>
-          <p style="font-size: 0.9rem; margin: 0 0 10px 0; font-weight:600;">An allocation review request has been safely compiled and dispatched to the System Administrator for approval verification.</p>
-          <div style="font-size: 0.85rem; font-weight: 700;">Assigned Audit Ticket ID: <span style="font-family: monospace; background: #fff; padding: 2px 6px; border: 1px solid #0369a1; border-radius: 4px; color:#111827;">${result.ticketId}</span></div>
+        <div style="background: #e0f2fe; border: 1px solid #0369a1; border-left: 4px solid #0369a1; color: #0369a1; padding: 20px; border-radius: var(--radius); text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin: 10px 0;">
+          <h3 style="font-size: 1.1rem; margin: 0 0 6px 0; font-weight: 700;">BOQ Threshold Limit Overrun Dispatched!</h3>
+          <p style="font-size: 0.92rem; margin: 0 0 12px 0; font-weight:600; line-height:1.4;">An allocation review request has been safely compiled and forwarded to the System Administrator for engineering verification checks.</p>
+          <div style="font-size: 0.92rem; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+            Assigned Audit Ticket ID: 
+            <span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #0369a1; color: #111827; margin-left: 4px; font-size: 1rem;">
+              ${result.ticketId}
+            </span>
+          </div>
         </div>
       `;
-      setTimeout(() => { location.reload(); }, 4000);
+      setTimeout(() => { 
+        exitStoreWorkspacePanelBackToMenu(); 
+      }, 4000);
+    } else {
+      alert("Submission Rejected by Server: " + result.error);
+      btn.disabled = false;
+      btn.textContent = "Send Approval Request to Admin";
     }
-  } catch(e) { alert("Transmission failed: " + e.message); }
+  } catch(e) { 
+    alert("Network request execution failure: " + e.message); 
+    btn.disabled = false;
+    btn.textContent = "Send Approval Request to Admin";
+  }
 }
 
 function switchActiveDashboardModule(targetCanvasModuleId) {
@@ -6433,7 +6458,7 @@ async function initializeDesignDepartmentUploadModule() {
   const staffDrop = document.getElementById("boq-upload-staff-dropdown");
   const projDrop = document.getElementById("boq-upload-project-dropdown");
   
-  staffDrop.innerHTML = "<option>Syncing Design Personnel...</option>";
+  staffDrop.innerHTML = "<option>Syncing Design Engineers...</option>";
   projDrop.innerHTML = "<option>Syncing Project ID Codes...</option>";
   
   const [staffRes, projRes] = await Promise.all([
@@ -6533,7 +6558,7 @@ async function executeBOQDocumentUploadSubmit(modeString) {
   btn.disabled = true;
   btn.innerHTML = `
     <div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div>
-    <span>AI Unpacking Multi-Product Workbook Sheets...</span>
+    <span>AI BOQ sheets...</span>
   `;
   
   // 2. CONVERT UPLOADED FILE TO BASE64 DATA STREAM STRING
