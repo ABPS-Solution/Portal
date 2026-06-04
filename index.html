@@ -4290,7 +4290,7 @@ async function initializeMaterialRequestWorkspace() {
       });
 
       // C. Populate Store/Admin Staff choices
-      storeStaffDropdown.innerHTML = '<option value="">— Select Your Name —</option>';
+      storeStaffDropdown.innerHTML = '<option value="">— Select Your —</option>';
       staffData.operators.forEach(name => {
         let opt = document.createElement("option");
         opt.value = name.trim(); opt.textContent = name.trim();
