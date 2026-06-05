@@ -235,10 +235,10 @@
       <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Store Department</h2>
       
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
-        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Store Inward</div>
+        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Raw Materials Store Inward</div>
         <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
           <div class="menu-card" id="mod-store-gate" onclick="navigateToStoreWorkspacePanel('store-gate-entry')">Gate Entry</div>
-          <div class="menu-card" id="mod-store-entry" onclick="navigateToStoreWorkspacePanel('store-entry')">Store Entry</div>
+          <div class="menu-card" id="mod-store-entry" onclick="navigateToStoreWorkspacePanel('store-entry')">Raw Materials Store Entry</div>
           <div class="menu-card" id="mod-store-grn" onclick="navigateToStoreWorkspacePanel('store-grn')">GRN (Goods Recieved Note)</div>
         </div>
       </div>
@@ -251,7 +251,7 @@
       </div>
 
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
-        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Store Outward</div>
+        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Raw Materials Store Outward</div>
         <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
           <div class="menu-card" id="mod-store-ticket" onclick="navigateToStoreWorkspacePanel('store-material-request')">Create Store Ticket</div>
           <div class="menu-card" id="mod-store-approvals" onclick="navigateToStoreWorkspacePanel('store-manager-approvals')">Approve Store Tickets</div>
@@ -332,7 +332,7 @@
     </div>
 
     <div id="canvas-module-store-entry" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 16px;">Store Entry Verification</h2>
+      <h2 style="margin-bottom: 16px;">Raw Materials Store Entry Verification</h2>
       <div id="store-entry-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="store-entry-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>
@@ -630,7 +630,7 @@
         <div class="section-body" style="text-align: left; padding: 16px;">
           <div id="commissioning-report-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
           <div id="commissioning-report-inputs-container" style="display: block;">
-            <div class="card-box" id="commissioning-report-upload-box" onclick="document.getElementById('commissioning-report-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">🛠️ Select Commissioning Report</div>
+            <div class="card-box" id="commissioning-report-upload-box" onclick="document.getElementById('commissioning-report-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Commissioning Report</div>
             <input type="file" id="commissioning-report-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'commissioning-report-upload-box', 'Commissioning Report Document Added ✅')" />
             <button class="nav-btn-styled" id="btn-ops-commission-submit" style="margin-top: 14px; width: 100%; padding: 10px;" onclick="executeMarketingOperationsDocumentCommit('COMMISSION')">Process Commissioning Report with AI</button>
           </div>
@@ -640,9 +640,14 @@
 
     <div id="workspace-purchaseOrder" class="workspace-panel" style="display: none;">
       <div class="section">
-        <div class="section-header">Upload Purchase Order (System Infrastructure Mock)</div>
+        <div class="section-header">Upload Purchase Order</div>
         <div class="section-body" style="text-align: left; padding: 16px;">
-          <div class="card-box" id="purchase-order-upload-box" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center; border-color: var(--muted); color: var(--muted); cursor: not-allowed;">⚙️ Purchase Order Processing Module coming soon</div>
+          <div id="purchase-order-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
+          <div id="purchase-order-inputs-container" style="display: block;">
+            <div class="card-box" id="purchase-order-upload-box" onclick="document.getElementById('purchase-order-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Purchase Order</div>
+            <input type="file" id="purchase-order-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'purchase-order-upload-box', 'Purchase Order Added ✅')" />
+            <button class="nav-btn-styled" id="btn-ops-purchase-order-submit" style="margin-top: 14px; width: 100%; padding: 10px;" onclick="executeMarketingOperationsDocumentCommit('PURCHASE_ORDER')">Process Purchase Order with AI</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1107,7 +1112,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw7w0xbGnu9smn0EZxLOVqMMGL2GsNftnGZ4eB58uoy_CsdkuMA3_PzRQRD9ro2zKfV/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzyDi2TaHyPfh9r78WdlbOhjZNxkuNI6pNgteM_LvbwIQiVsvRfccTcZp3dpto_HOgC0A/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -1123,6 +1128,7 @@ let currentFollowUpCount = 0;
 let currentActiveModuleContext = "CARD"; 
 let targetDispatchBillFileObj = null;
 let targetCommissioningReportFileObj = null;
+let targetPurchaseOrderFileObj = null;
 
 let globalFollowUpsCacheMap = {};
 let globalTasksCacheMap = {};
@@ -1910,6 +1916,7 @@ function handleOpsFileChange(inputNode, uploadBoxId, confirmationMsg) {
   if (box && fileObj) {
     if (uploadBoxId === 'dispatch-bill-upload-box') targetDispatchBillFileObj = fileObj;
     else if (uploadBoxId === 'commissioning-report-upload-box') targetCommissioningReportFileObj = fileObj;
+    else if (uploadBoxId === 'purchase-order-upload-box') targetPurchaseOrderFileObj = fileObj;
     box.textContent = confirmationMsg;
     box.classList.add('done');
   }
@@ -2411,7 +2418,8 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
     { type: "SEC2", keys: ["ABPS Business Vertical", "Type of Customer", "Type of Vendor"] }, 
     { type: "SEC3", keys: ["Low Power Factor Issue", "High Electricity Bill Issue", "Harmonics Issue", "Transformer Heating / Breakdown Issue", "Grid Stability Issue", "Tender Inquire", "Existing System Details", "Voltage Level Requirements", "Contract Demand (MVA)"] }, 
     { type: "SEC4", keys: ["Existing Project", "Products Discussed", "Expected Tender / RFQ Date", "Approx Requirement"] },
-    { type: "SEC5", keys: ["Send Company Profile", "Send Technical Presentation", "Arrange Site Visit", "Get Enquiry", "Send Offer", "Follow-Up Required"] }
+    { type: "SEC5", keys: ["Send Company Profile", "Send Technical Presentation", "Arrange Site Visit", "Get Enquiry", "Send Offer", "Follow-Up Required"] },
+    { type: "PO", keys: ["Purchase Order Summary"] }
   ];
 
   customSectionLayout.forEach((sec, secIdx) => {
@@ -2735,8 +2743,16 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
           mainWrapper.appendChild(txtBox);
         }
         cell.appendChild(mainWrapper);
-      } 
-      else if (["Technical Discussion Summary", "Company Address", "Company Name", "Problem Observed", "Existing System Details"].indexOf(key) !== -1) {
+      } else if (key === "Purchase Order Summary") {
+        // READ-ONLY: AI-populated field, not editable from this form
+        let poDisplay = document.createElement("textarea");
+        poDisplay.value = leadMap[key] || "No Purchase Order uploaded yet.";
+        poDisplay.readOnly = true;
+        poDisplay.style.cssText = "min-height: 70px; background: #f1f5f9; color: #475569; font-style: italic; font-size: 0.82rem; cursor: default; border-color: #cbd5e1;";
+        // No live-lead-field-input class — intentionally excluded from save payload
+        cell.appendChild(poDisplay);
+        cell.className += " span-two-units";
+      } else if (["Technical Discussion Summary", "Company Address", "Company Name", "Problem Observed", "Existing System Details"].indexOf(key) !== -1) {
         let inpTypeElement = (key === "Technical Discussion Summary" || key === "Company Address") ? document.createElement("textarea") : document.createElement("input");
         inpTypeElement.type = "text"; inpTypeElement.className = 'live-lead-field-input-' + leadRef; inpTypeElement.dataset.headerKey = key;
         inpTypeElement.value = leadMap[key] || ""; if (key === "Technical Discussion Summary" || key === "Company Address") inpTypeElement.style.minHeight = "45px"; 
@@ -4866,7 +4882,7 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   } else if (targetCanvasModuleId === 'marketing-tasks') {
     navigateToModule('searchTasks');
   } 
-  // Store Inward operations routing passes
+  // Raw Materials Store Inward operations routing passes
   else if (targetCanvasModuleId === 'store-gate-entry') {
     navigateToStoreWorkspacePanel('store-gate-entry');
   } else if (targetCanvasModuleId === 'store-entry') {
@@ -4874,7 +4890,7 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   } else if (targetCanvasModuleId === 'store-grn') {
     navigateToStoreWorkspacePanel('store-grn');
   }
-  // Store Outward operations routing passes
+  // Raw Materials Store Outward operations routing passes
   else if (targetCanvasModuleId === 'store-material-request') {
     navigateToStoreWorkspacePanel('store-material-request');
   } else if (targetCanvasModuleId === 'store-manager-approvals') {
@@ -5678,14 +5694,20 @@ document.getElementById('commissioning-report-raw-file').onchange = (e) => {
 };
 
 async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
-  // FIXED: Dynamically target the correct local banner, button, and input containers depending on document context module
+  
+  const isPO = opsFlagTypeString === "PURCHASE_ORDER";
   const isDispatch = opsFlagTypeString === "DISPATCH";
-  
-  const feedbackBanner = document.getElementById(isDispatch ? "dispatch-bill-feedback-banner" : "commissioning-report-feedback-banner");
-  const targetBtn = document.getElementById(isDispatch ? "btn-ops-dispatch-submit" : "btn-ops-commission-submit");
-  const inputsContainer = document.getElementById(isDispatch ? "dispatch-bill-inputs-container" : "commissioning-report-inputs-container");
-  
-  const activeWorkingFile = isDispatch ? targetDispatchBillFileObj : targetCommissioningReportFileObj;
+
+  const bannerIds   = { "DISPATCH": "dispatch-bill-feedback-banner", "COMMISSION": "commissioning-report-feedback-banner", "PURCHASE_ORDER": "purchase-order-feedback-banner" };
+  const btnIds      = { "DISPATCH": "btn-ops-dispatch-submit",       "COMMISSION": "btn-ops-commission-submit",            "PURCHASE_ORDER": "btn-ops-purchase-order-submit" };
+  const containerIds= { "DISPATCH": "dispatch-bill-inputs-container","COMMISSION": "commissioning-report-inputs-container", "PURCHASE_ORDER": "purchase-order-inputs-container" };
+  const fileObjects = { "DISPATCH": targetDispatchBillFileObj,        "COMMISSION": targetCommissioningReportFileObj,        "PURCHASE_ORDER": targetPurchaseOrderFileObj };
+  const defaultBtnLabels = { "DISPATCH": "Process Dispatched Bill with AI", "COMMISSION": "Process Commissioning Report with AI", "PURCHASE_ORDER": "Process Purchase Order with AI" };
+
+  const feedbackBanner  = document.getElementById(bannerIds[opsFlagTypeString]);
+  const targetBtn       = document.getElementById(btnIds[opsFlagTypeString]);
+  const inputsContainer = document.getElementById(containerIds[opsFlagTypeString]);
+  const activeWorkingFile = fileObjects[opsFlagTypeString];
   
   if (!activeWorkingFile) {
     alert(`Please capture or select the corresponding document before running the AI engine.`);
@@ -5736,18 +5758,22 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
             <button class="nav-btn-styled" onclick="
               targetDispatchBillFileObj = null;
               targetCommissioningReportFileObj = null;
+              targetPurchaseOrderFileObj = null;
               document.getElementById('dispatch-bill-raw-file').value = '';
               document.getElementById('commissioning-report-raw-file').value = '';
-              
+              document.getElementById('purchase-order-raw-file').value = '';
               const b1 = document.getElementById('dispatch-bill-upload-box');
               const b2 = document.getElementById('commissioning-report-upload-box');
+              const b3 = document.getElementById('purchase-order-upload-box');
               if (b1) { b1.textContent = '📋 Select Dispatched Bill'; b1.classList.remove('done'); }
-              if (b2) { b2.textContent = '🛠️ Select Commissioning Report'; b2.classList.remove('done'); }
-              
+              if (b2) { b2.textContent = '📋 Select Commissioning Report'; b2.classList.remove('done'); }
+              if (b3) { b3.textContent = '📋 Select Purchase Order'; b3.classList.remove('done'); }
               document.getElementById('dispatch-bill-feedback-banner').style.display = 'none';
               document.getElementById('commissioning-report-feedback-banner').style.display = 'none';
+              document.getElementById('purchase-order-feedback-banner').style.display = 'none';
               document.getElementById('dispatch-bill-inputs-container').style.display = 'block';
               document.getElementById('commissioning-report-inputs-container').style.display = 'block';
+              document.getElementById('purchase-order-inputs-container').style.display = 'block';
             " style="background:#15803d; color:white; padding:6px 12px; font-weight:700;">+ Process Another Document</button>
           </div>
         `;
@@ -5759,7 +5785,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
       }
       if (targetBtn) {
         targetBtn.disabled = false;
-        targetBtn.innerHTML = isDispatch ? "Process Dispatched Bill with AI" : "Process Commissioning Report with AI";
+        targetBtn.innerHTML = defaultBtnLabels[opsFlagTypeString];
       }
     }
   } catch(err) {
@@ -5769,7 +5795,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
     }
     if (targetBtn) {
       targetBtn.disabled = false;
-      targetBtn.innerHTML = isDispatch ? "Process Dispatched Bill with AI" : "Process Commissioning Report with AI";
+      targetBtn.innerHTML = defaultBtnLabels[opsFlagTypeString];
     }
   }
 }
@@ -5916,7 +5942,7 @@ async function initializeStoreEntryWorkspaceQueue() {
     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "fetchInwardWorkflowQueueStream", sessionToken: localStorage.getItem("sessionToken"), targetStep: "STORE pending" }) });
     const data = await res.json();
     if (!data.success || data.queue.length === 0) {
-      feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records waiting for Store Entry.</div>';
+      feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records waiting for Raw Materials Store Entry.</div>';
       return;
     }
     feed.innerHTML = "";
@@ -5966,7 +5992,7 @@ async function initializeStoreEntryWorkspaceQueue() {
             <thead><tr><th style="width:160px; text-align:center;">Item Code Number</th><th style="text-align:left;">Description of Material</th><th style="text-align:center; width:100px;">Billed Quantity</th><th style="text-align:center; width:180px;">Physically Received Quantity *</th><th>Transit Damage Description</th></tr></thead>
             <tbody>${trs}</tbody>
           </table>
-          <div style="display:flex;justify-content:flex-end;"><button class="nav-btn-styled" style="background:var(--accent);" onclick="commitStoreEntryVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">Verify & Generate Store Entry</button></div>
+          <div style="display:flex;justify-content:flex-end;"><button class="nav-btn-styled" style="background:var(--accent);" onclick="commitStoreEntryVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">Verify & Generate Raw Materials Store Entry</button></div>
         </div>`;
       feed.appendChild(card);
     });
@@ -6013,7 +6039,7 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
       banner.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; text-align:left;">
           <div>
-            <strong>Success! Store Entry Generated.</strong><br/>
+            <strong>Success! Raw Materials Store Entry Generated.</strong><br/>
             <span>Assigned Code Reference: <strong style="font-family:monospace; font-size:1.05rem; color:#111827;">${data.storeEntryNumber}</strong></span>
           </div>
           <button class="nav-btn-styled" onclick="
@@ -6023,11 +6049,11 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
         </div>`;
     } else {
       alert("Submission Rejected: " + data.error);
-      btn.disabled = false; btn.textContent = "Verify & Generate Store Entry";
+      btn.disabled = false; btn.textContent = "Verify & Generate Raw Materials Store Entry";
     }
   } catch(e) { 
     alert("Network request execution failure: " + e.message); 
-    btn.disabled = false; btn.textContent = "Verify & Generate Store Entry"; 
+    btn.disabled = false; btn.textContent = "Verify & Generate Raw Materials Store Entry"; 
   }
 }
 
