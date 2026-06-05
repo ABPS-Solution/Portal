@@ -1100,7 +1100,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzbN-uKLEcrl8u0WN_TgawVQsOxZbwNlSCUnr0UgjOBDMBSiRBV74Aerdl691DYY1Xdiw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbz0Uf5_aMlZhI9gKHiOWqHDXHCVQ_OVfiA00fbXiWBMSJy9WUCGhRj91KbRxCkPvQ2xIQ/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -1993,61 +1993,6 @@ function toggleDropdownNo(selectNode, inputId) {
   } else if (targetInput.value === "No") {
     targetInput.value = "";
   }
-}
-
-function revealNewEntryFormDropdown() { 
-  const container = (currentActiveModuleContext === "CARD") ? "workspace-cardDetails" : "workspace-searchCompany";
-  const dropdownEl = document.getElementById("step2-new-entry-dropdown");
-  
-  if (!dropdownEl) return;
-  document.getElementById(container).appendChild(dropdownEl);
-
-  let companyName = "";
-  let contactName = "";
-  
-  // FIXED: Ensure we target correct element references based on active context
-  if (currentActiveModuleContext === "CARD") {
-      companyName = document.getElementById("f-company") ? document.getElementById("f-company").value.trim() : "";
-      contactName = document.getElementById("f-name") ? document.getElementById("f-name").value.trim() : "";
-  } else if (currentActiveModuleContext === "DROPDOWN") {
-      companyName = activeSearchCompany || "";
-      // FIXED: Correctly capture what was typed in the primary search block name field before generating form
-      contactName = document.getElementById("f-name") ? document.getElementById("f-name").value.trim() : "";
-  } else {
-      const dropdown = document.getElementById("lookup-module-company-dropdown");
-      if (dropdown && dropdown.selectedIndex >= 0) {
-        companyName = dropdown.options[dropdown.selectedIndex].text.split(" (")[0].trim();
-      }
-  }
-  
-  const companyLockInp = document.getElementById("dropform-company-locked");
-  if (companyLockInp) {
-    companyLockInp.value = companyName || "No Company Specified";
-  }
-  
-  // FIXED: Lock variables into target dropform elements cleanly
-  if (document.getElementById("dropform-name")) {
-    document.getElementById("dropform-name").value = contactName;
-  }
-  
-  if (document.getElementById("dropform-position")) document.getElementById("dropform-position").value = "";
-  if (document.getElementById("dropform-phone")) document.getElementById("dropform-phone").value = (currentActiveModuleContext === "CARD" && document.getElementById("f-phone")) ? document.getElementById("f-phone").value : "";
-  if (document.getElementById("dropform-altphone")) document.getElementById("dropform-altphone").value = (currentActiveModuleContext === "CARD" && document.getElementById("f-altphone")) ? document.getElementById("f-altphone").value : "";
-  if (document.getElementById("dropform-email")) document.getElementById("dropform-email").value = (currentActiveModuleContext === "CARD" && document.getElementById("f-email")) ? document.getElementById("f-email").value : "";
-  if (document.getElementById("dropform-website")) document.getElementById("dropform-website").value = (currentActiveModuleContext === "CARD" && document.getElementById("f-website")) ? document.getElementById("f-website").value : "";
-  if (document.getElementById("dropform-city")) document.getElementById("dropform-city").value = (currentActiveModuleContext === "CARD" && document.getElementById("f-city")) ? document.getElementById("f-city").value : "";
-  if (document.getElementById("dropform-state")) document.getElementById("dropform-state").value = (currentActiveModuleContext === "CARD" && document.getElementById("f-state")) ? document.getElementById("f-state").value : "";
-  if (document.getElementById("dropform-country")) document.getElementById("dropform-country").value = (currentActiveModuleContext === "CARD" && document.getElementById("f-country")) ? document.getElementById("f-country").value : "";
-  if (document.getElementById("dropform-address")) document.getElementById("dropform-address").value = (currentActiveModuleContext === "CARD" && document.getElementById("f-address")) ? document.getElementById("f-address").value : "";
-
-  if (document.getElementById("global-direct-inline-create-entry-btn")) document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
-  if (document.getElementById("global-direct-inline-collapse-entry-btn")) document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "inline-flex";
-  
-  const rowNode = document.getElementById("staged-back-button-row");
-  if (rowNode) rowNode.style.display = "flex";
-
-  dropdownEl.style.display = "block"; 
-  window.scrollTo(0,0); 
 }
 
 function collapseNewEntryDropdownFormExplicitly() {
@@ -4446,7 +4391,7 @@ async function submitMaterialRequestTicketToBackend() {
   }
   
   try {
-    const payload = {+
+    const payload = {
       action: "submitEngineerMaterialTicket",
       sessionToken: localStorage.getItem("sessionToken"),
       activeEngineer: operatorSignatureName,
@@ -5277,17 +5222,6 @@ function handleStoreTicketTypeInterfaceLayoutChange(chosenModeString) {
     if (submitBtn) submitBtn.textContent = "Generate Material Ticket";
   }
 }
-
-// Update your submit Material Request method loop payload capture
-    const ticketTypeVal = document.getElementById("ticket-action-type-toggle-dropdown").value;
-    const payload = {
-      action: "submitEngineerMaterialTicket",
-      sessionToken: localStorage.getItem("sessionToken"),
-      activeEngineer: operatorSignatureName,
-      projectId: projectId,
-      ticketTypeCommandString: ticketTypeVal, 
-      itemsClusterArray: dynamicTicketShoppingBasketArray
-    };
 
 /**
  * RENDER STORE APPROVALS QUEUE CARDS FEED
@@ -6269,83 +6203,6 @@ function autoBalanceGrnQuantities(okInput, gateNum, idx) {
   if (okVal < 0) { okVal = 0; okInput.value = 0; }
   const notOkInput = document.querySelector(`.grn-notok-${gateNum}[data-idx="${idx}"]`);
   if (notOkInput) notOkInput.value = max - okVal;
-}
-
-async function initializeMaterialRequestWorkspace() {
-  const projectDropdown = document.getElementById("ticket-project-id-dropdown");
-  const itemDropdown = document.getElementById("ticket-item-selection-dropdown");
-  const storeStaffDropdown = document.getElementById("ticket-requested-by-operator-dropdown");
-  const deptDropdown = document.getElementById("ticket-department-outgoing-dropdown");
-  
-  if (!projectDropdown || !itemDropdown || !storeStaffDropdown || !deptDropdown) return;
-  
-  deptDropdown.value = ""; // Force clean initialization pass
-  resetMaterialRequestCascadingLockState();
-  clearFullBasketDraftState();
-  document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
-
-  try {
-    const [inventoryResponse, projectsResponse, staffResponse] = await Promise.all([
-      fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "pullLiveInventoryCounts", sessionToken: localStorage.getItem("sessionToken") }) }),
-      fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) }),
-      fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "getStoreOperatorsList", sessionToken: localStorage.getItem("sessionToken") }) })
-    ]);
-    
-    const inventoryData = await inventoryResponse.json();
-    const projectsData = await projectsResponse.json();
-    const staffData = await staffResponse.json();
-    
-    if (inventoryData.success && projectsData.success && staffData.success) {
-      cachedInventoryStockCollection = inventoryData.inventory;
-      globalOperatorsDatabasePayloadCache = staffData.fullPersonnelDataRecordsTree || []; 
-      
-      // A. Populate Material Catalog choices
-      itemDropdown.innerHTML = '<option value="">— Select Material —</option>';
-      cachedInventoryStockCollection.forEach(item => {
-        let opt = document.createElement("option"); 
-        opt.value = item.materialName; 
-        opt.textContent = item.materialName; 
-        itemDropdown.appendChild(opt);
-      });
-
-      // B. Seed Active Project Choices
-      projectDropdown.innerHTML = '<option value="">— Select Project ID —</option>';
-      projectsData.projects.forEach(code => {
-        let opt = document.createElement("option"); opt.value = code; opt.textContent = code;
-        projectDropdown.appendChild(opt);
-      });
-      
-      // C. Process autofill lookups with forced event dispatching
-      const activeDeptRawString = localStorage.getItem("abps_user_raw_departments") || ""; 
-      const lowerDeptsArray = activeDeptRawString.toLowerCase().split(",").map(d => d.trim());
-      const priorityChecks = ["reactor", "capacitor", "panel"];
-      let matchedDefault = "";
-      
-      for (let check of priorityChecks) {
-        if (lowerDeptsArray.indexOf(check) !== -1) {
-          matchedDefault = check.charAt(0).toUpperCase() + check.slice(1);
-          break;
-        }
-      }
-      
-      if (matchedDefault) {
-        deptDropdown.value = matchedDefault;
-        
-        // FIXED: Explicitly run the change handler using the freshly downloaded memory tree
-        handleCreateTicketDepartmentChange(matchedDefault);
-        
-        // FAIL-SAFE DISPATCH: Programmatically fire a native change event so the browser locks in the active selection state
-        const changeEvent = new Event('change', { bubbles: true });
-        deptDropdown.dispatchEvent(changeEvent);
-      } else {
-        // Fallback if no matching department tags are bound to the current employee session profile
-        deptDropdown.value = "";
-        resetMaterialRequestCascadingLockState();
-      }
-    }
-  } catch (error) { 
-    console.error("Matrices load fail exception dropped:", error); 
-  }
 }
 
 /**
