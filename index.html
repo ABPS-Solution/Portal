@@ -402,7 +402,7 @@
               <label class="field-label" style="font-size: 0.75rem;">Quantity</label>
               <input type="number" id="ticket-item-quantity-input" min="1" placeholder="Qty" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>
             </div>
-            <button class="nav-btn-styled" id="ticket-add-item-action-btn" onclick="addItemToShoppingBasketRow()" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>+ Add</button>
+            <button class="nav-btn-styled" id="ticket-add-item-action-btn" onclick="addItemToShoppingBasketRow()" style="width: 50%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>+ Add</button>
           </div>
           <div id="ticket-live-counter-pill-zone" style="margin-top: 8px; font-size: 0.8rem; min-height: 20px;"></div>
         </div>
@@ -4446,7 +4446,7 @@ async function submitMaterialRequestTicketToBackend() {
   }
   
   try {
-    const payload = {
+    const payload = {+
       action: "submitEngineerMaterialTicket",
       sessionToken: localStorage.getItem("sessionToken"),
       activeEngineer: operatorSignatureName,
