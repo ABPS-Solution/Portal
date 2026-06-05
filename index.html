@@ -4451,7 +4451,7 @@ async function submitMaterialRequestTicketToBackend() {
       sessionToken: localStorage.getItem("sessionToken"),
       activeEngineer: operatorSignatureName,
       projectId: projectId,
-      departmentOutgoing: departmentVal, 
+      departmentOutgoing: departmentVal,
       ticketTypeCommandString: ticketTypeVal,
       storeTargetScope: chosenStoreTargetScopeStr, 
       itemsClusterArray: dynamicTicketShoppingBasketArray
@@ -5279,7 +5279,6 @@ function handleStoreTicketTypeInterfaceLayoutChange(chosenModeString) {
 }
 
 // Update your submit Material Request method loop payload capture
-// Locate inside submitMaterialRequestTicketToBackend the payload building structure and change to:
     const ticketTypeVal = document.getElementById("ticket-action-type-toggle-dropdown").value;
     const payload = {
       action: "submitEngineerMaterialTicket",
@@ -6360,38 +6359,21 @@ function resetMaterialRequestCascadingLockState() {
   const itemDrop = document.getElementById("ticket-item-selection-dropdown");
   const qtyInp = document.getElementById("ticket-item-quantity-input");
   const addBtn = document.getElementById("ticket-add-item-action-btn");
+  const deptDrop = document.getElementById("ticket-department-outgoing-dropdown"); // Added reference
   
-  if (!staffDrop || !projDrop || !itemDrop || !qtyInp || !addBtn) {
-    console.error("UI Reference Error: Cascading lock fields are missing from the current layout DOM.");
-    return;
-  }
-  
-  // 1. Flush inner selection listings text strings elements parameters templates safely
-  staffDrop.innerHTML = '<option value="">— Choose Department First —</option>';
-  projDrop.innerHTML = '<option value="">— Choose Operator First —</option>';
-  itemDrop.innerHTML = '<option value="">Unlock Section First...</option>';
-  qtyInp.value = "";
+  // Ensure the dept dropdown is enabled by default unless locked by logic
+  deptDrop.disabled = false; 
 
-  // 2. Enforce strict sequential gating hardware fields element lock checks
+  staffDrop.innerHTML = '<option value="">— Choose Department First —</option>'; 
   staffDrop.disabled = true;
   projDrop.disabled = true;
-  itemDrop.disabled = true;
-  qtyInp.disabled = true;
+  itemDrop.disabled = true; 
+  qtyInp.disabled = true; 
   addBtn.disabled = true;
 
-  // 3. Reset decorative typography branding colors and container opacities layout states
   document.getElementById("lbl-dynamic-operator-signature-title").style.color = "var(--muted)";
-  
-  const wrapperProjectIdNode = document.getElementById("wrapper-ticket-project-id");
-  if (wrapperProjectIdNode && wrapperProjectIdNode.querySelector("label")) {
-    wrapperProjectIdNode.querySelector("label").style.color = "var(--muted)";
-  }
-  
-  const wrapperAddItemZoneNode = document.getElementById("wrapper-ticket-add-item-zone");
-  if (wrapperAddItemZoneNode) {
-    wrapperAddItemZoneNode.style.opacity = "0.5";
-  }
-  
+  document.getElementById("wrapper-ticket-project-id").querySelector("label").style.color = "var(--muted)";
+  document.getElementById("wrapper-ticket-add-item-zone").style.opacity = "0.5";
   addBtn.style.cursor = "not-allowed";
 }
 
@@ -6778,19 +6760,21 @@ async function executeBOQDocumentUploadSubmit(modeString) {
 function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
   const deptDropdown = document.getElementById("ticket-department-outgoing-dropdown");
   
-  // Clean down cascading child fields path state markers safely
+  // Clear basket and reset locks whenever the store changes
   clearFullBasketDraftState();
   resetMaterialRequestCascadingLockState();
   document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
 
   if (chosenStoreValue === "Finished Goods Store") {
-    // RULE GATE: Restrict and lock out outgoing category options strictly to 'Panel'
+    // LOCK: Set value to Panel and disable the dropdown
     deptDropdown.value = "Panel";
+    deptDropdown.disabled = true;
     
-    // Fire the downstream operator validation gateway path directly for Panel configuration
+    // Trigger the department change logic
     handleCreateTicketDepartmentChange("Panel");
   } else {
-    // Raw Material choice: Release constraints to let user determine choices cleanly
+    // UNLOCK: Enable for Raw Materials Store
+    deptDropdown.disabled = false;
     deptDropdown.value = "";
   }
 }
