@@ -367,8 +367,9 @@
           </div>
           <div>
             <label class="field-label" style="font-weight: 700; color: var(--brand);">Production Department / Outgoing Use *</label>
-            <select id="ticket-department-outgoing-dropdown" onchange="handleCreateTicketDepartmentChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;">
-              <option value="">— Select Department —</option>
+            <select id="ticket-department-outgoing-dropdown" onchange="handleCreateTicketDepartmentChange(this.value)" disabled style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600; opacity: 0.5; cursor: not-allowed;">
+              <option value="">— Choose Store First —</option>  
+              option value="">— Select Department —</option>
               <option value="Reactor">Reactor</option>
               <option value="Capacitor">Capacitor</option>
               <option value="Panel">Panel</option>
@@ -439,6 +440,51 @@
 
     <div id="canvas-module-store-finished-goods-live-stock" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
       <div class="dashboard-grid" id="dashboard-finished-goods-live-inventory-mount-zone" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap:10px; padding:0;"></div>
+    </div>
+
+    <div id="canvas-module-finished-goods-add" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <h2 style="margin-bottom: 20px; color: var(--brand);">Add to Finished Goods Store</h2>
+      <div id="finished-goods-add-feedback-banner" style="display:none; padding: 16px; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
+
+      <div id="finished-goods-add-form-wrapper">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+          <div>
+            <label class="field-label" style="color: var(--brand);">Item Code Number *</label>
+            <input type="text" id="fg-add-item-code" placeholder="e.g. FG1396" style="padding: 9px;" />
+          </div>
+          <div>
+            <label class="field-label" style="color: var(--brand);">Unit Type *</label>
+            <input type="text" id="fg-add-unit-type" placeholder="e.g. NOS, KG, MTR, SET" style="padding: 9px;" />
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <label class="field-label" style="color: var(--brand);">Material Name *</label>
+          <input type="text" id="fg-add-material-name" placeholder="Enter full material / product description..." style="padding: 9px;" />
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;">
+          <div>
+            <label class="field-label" style="color: var(--brand);">Total Stock *</label>
+            <input type="number" id="fg-add-total-stock" min="1" placeholder="Enter quantity" style="padding: 9px;" />
+          </div>
+          <div>
+            <label class="field-label" style="color: var(--brand);">Engineer Name *</label>
+            <select id="fg-add-engineer-name" style="padding: 9px; font-weight: 600;">
+              <option value="">— Select Engineer —</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; margin-bottom: 20px; font-size: 0.78rem; color: var(--muted);">
+          <strong style="color: var(--text);">Auto-filled on submit:</strong>
+          Reserved Stock = 0 &nbsp;·&nbsp; Available Stock = Total Stock &nbsp;·&nbsp; Reorder Level = N/A &nbsp;·&nbsp; Unit Price = N/A &nbsp;·&nbsp; BOQ Active = YES
+        </div>
+
+        <button class="btn btn-sub" id="fg-add-submit-btn" onclick="submitFinishedGoodsAddEntry()" style="background: var(--accent); padding: 12px; font-weight: 700;">
+          Add to Finished Goods Store
+        </button>
+      </div>
     </div>
 
     <div id="canvas-module-store-history-matrix" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
@@ -1112,7 +1158,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzyDi2TaHyPfh9r78WdlbOhjZNxkuNI6pNgteM_LvbwIQiVsvRfccTcZp3dpto_HOgC0A/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbz0Rl8i61D6AR5LXZhVScf3oWPOGVNvmDDf_4nczR5uttFoSwjglzMr5Cg6Vceo8kQBcQ/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -1939,7 +1985,8 @@ function returnToDashboard() {
   
   // FIXED REDIRECT RUNTIME REMOVES: Clear out the newly mounted Finished Goods view container as well
   if(document.getElementById("canvas-module-store-finished-goods-live-stock")) document.getElementById("canvas-module-store-finished-goods-live-stock").style.display = "none";
-  
+  if(document.getElementById("canvas-module-finished-goods-add")) document.getElementById("canvas-module-finished-goods-add").style.display = "none";
+
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("dashboard-view").style.display = "block"; 
   
@@ -4798,6 +4845,8 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   if (document.getElementById("canvas-module-store-history-matrix")) document.getElementById("canvas-module-store-history-matrix").style.display = "none";
   if (document.getElementById("canvas-module-store-live-stock")) document.getElementById("canvas-module-store-live-stock").style.display = "none";
   if (document.getElementById("canvas-module-store-finished-goods-live-stock")) document.getElementById("canvas-module-store-finished-goods-live-stock").style.display = "none";
+  if (document.getElementById("canvas-module-finished-goods-add")) document.getElementById("canvas-module-finished-goods-add").style.display = "none";
+  if (document.getElementById("canvas-module-finished-goods-add")) document.getElementById("canvas-module-finished-goods-add").style.display = "none";
   if (document.getElementById("canvas-module-store-gate-entry")) document.getElementById("canvas-module-store-gate-entry").style.display = "none";
   if (document.getElementById("canvas-module-store-entry")) document.getElementById("canvas-module-store-entry").style.display = "none";
   if (document.getElementById("canvas-module-store-grn")) document.getElementById("canvas-module-store-grn").style.display = "none";
@@ -4931,8 +4980,9 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   } else if (targetCanvasModuleId === 'design-update') {
     navigateToDesignWorkspacePanel('design-update');
   } else if (targetCanvasModuleId === 'finished-goods-add') {
-    alert("Add to Finished Goods function wrapper initialized.");
-    exitStoreWorkspacePanelBackToMenu();
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    document.getElementById("canvas-module-finished-goods-add").style.display = "block";
+    initializeFinishedGoodsAddWorkspace();
   }
 }
 
@@ -6259,7 +6309,7 @@ function resetMaterialRequestCascadingLockState() {
   const deptDrop = document.getElementById("ticket-department-outgoing-dropdown"); // Added reference
   
   // Ensure the dept dropdown is enabled by default unless locked by logic
-  deptDrop.disabled = false; 
+  // deptDrop.disabled = false; 
 
   staffDrop.innerHTML = '<option value="">— Choose Department First —</option>'; 
   staffDrop.disabled = true;
@@ -6728,22 +6778,35 @@ function resetBOQUploadWorkspaceToInitialState(modeString) {
 function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
   const deptDropdown = document.getElementById("ticket-department-outgoing-dropdown");
   
-  // Clear basket and reset locks whenever the store changes
+  // Clear basket and reset cascading locks whenever store changes
   clearFullBasketDraftState();
   resetMaterialRequestCascadingLockState();
   document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
 
+  if (!chosenStoreValue) {
+    // No store selected — keep department locked
+    deptDropdown.disabled = true;
+    deptDropdown.style.opacity = "0.5";
+    deptDropdown.style.cursor = "not-allowed";
+    deptDropdown.value = "";
+    deptDropdown.options[0].text = "— Choose Store First —";
+    return;
+  }
+
   if (chosenStoreValue === "Finished Goods Store") {
-    // LOCK: Set value to Panel and disable the dropdown
+    // Lock department to Panel only
     deptDropdown.value = "Panel";
     deptDropdown.disabled = true;
-    
-    // Trigger the department change logic
+    deptDropdown.style.opacity = "0.6";
+    deptDropdown.style.cursor = "not-allowed";
     handleCreateTicketDepartmentChange("Panel");
   } else {
-    // UNLOCK: Enable for Raw Materials Store
+    // Raw Materials Store — unlock department for free selection
     deptDropdown.disabled = false;
+    deptDropdown.style.opacity = "1";
+    deptDropdown.style.cursor = "pointer";
     deptDropdown.value = "";
+    deptDropdown.options[0].text = "— Select Department —";
   }
 }
 
@@ -6796,6 +6859,110 @@ async function triggerLiveFinishedGoodsStoreStockMetricsSync() {
       syncBtn.disabled = false; 
       syncBtn.innerHTML = "🔄 Sync Stock Balances"; 
     }
+  }
+}
+
+/**
+ * INITIALIZE FINISHED GOODS ADD WORKSPACE
+ * Populates engineer dropdown from cached staff list.
+ */
+function initializeFinishedGoodsAddWorkspace() {
+  const engDrop = document.getElementById("fg-add-engineer-name");
+  if (!engDrop) return;
+
+  engDrop.innerHTML = '<option value="">— Select Engineer —</option>';
+
+  // Use cached staff list, filter for Design/Store/Admin
+  const allowedRoles = ["design", "store", "admin", "production"];
+  const staffList = (globalOperatorsDatabasePayloadCache || []).filter(user =>
+    user.departmentsList.some(d => allowedRoles.includes(d.toLowerCase().trim()))
+  );
+
+  staffList.forEach(user => {
+    const opt = document.createElement("option");
+    opt.value = user.fullName;
+    opt.textContent = user.fullName;
+    engDrop.appendChild(opt);
+  });
+
+  // Default to logged-in user if present in list
+  if (appActiveOperatorIdentityString) engDrop.value = appActiveOperatorIdentityString;
+
+  // Reset form to clean state
+  document.getElementById("fg-add-item-code").value = "";
+  document.getElementById("fg-add-material-name").value = "";
+  document.getElementById("fg-add-total-stock").value = "";
+  document.getElementById("fg-add-unit-type").value = "";
+  document.getElementById("finished-goods-add-feedback-banner").style.display = "none";
+  document.getElementById("finished-goods-add-form-wrapper").style.display = "block";
+  const submitBtn = document.getElementById("fg-add-submit-btn");
+  if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Add to Finished Goods Store"; }
+}
+
+/**
+ * SUBMIT FINISHED GOODS ADD ENTRY
+ */
+async function submitFinishedGoodsAddEntry() {
+  const itemCode     = document.getElementById("fg-add-item-code").value.trim();
+  const materialName = document.getElementById("fg-add-material-name").value.trim();
+  const totalStock   = parseInt(document.getElementById("fg-add-total-stock").value, 10);
+  const unitType     = document.getElementById("fg-add-unit-type").value.trim();
+  const engineerName = document.getElementById("fg-add-engineer-name").value;
+  const banner       = document.getElementById("finished-goods-add-feedback-banner");
+  const submitBtn    = document.getElementById("fg-add-submit-btn");
+
+  if (!itemCode)     return alert("Item Code Number is required.");
+  if (!materialName) return alert("Material Name is required.");
+  if (!totalStock || totalStock <= 0) return alert("Total Stock must be greater than 0.");
+  if (!unitType)     return alert("Unit Type is required.");
+  if (!engineerName) return alert("Please select an Engineer Name.");
+
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Saving...';
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "addFinishedGoodsStoreItem",
+        sessionToken: localStorage.getItem("sessionToken"),
+        activeEngineer: appActiveOperatorIdentityString,
+        itemCode, materialName, totalStock, unitType, engineerName
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      const isIncrement = data.mode === "incremented";
+      document.getElementById("finished-goods-add-form-wrapper").style.display = "none";
+
+      banner.style.cssText = "display: block; background: #dcfce7; border-left: 4px solid #15803d; color: #15803d; padding: 16px; border-radius: var(--radius); margin-bottom: 15px; text-align: left;";
+      banner.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <strong style="font-size: 1rem;">
+              ${isIncrement ? "Stock Updated Successfully." : "Item Added to Finished Goods Store."}
+            </strong><br/>
+            <span style="font-size: 0.88rem; font-weight: 600;">
+              <span style="font-family: monospace; background: #fff; padding: 1px 6px; border-radius: 4px; border: 1px solid #15803d; color: #111827;">${itemCode}</span>
+              &nbsp;${materialName}&nbsp;·&nbsp;
+              ${isIncrement ? "New total: " + data.newTotal : totalStock} ${unitType}
+            </span>
+          </div>
+          <button class="nav-btn-styled" onclick="initializeFinishedGoodsAddWorkspace()" style="background: #15803d; color: white; padding: 10px 18px; font-weight: 700;">
+            + Add Another Material
+          </button>
+        </div>
+      `;
+    } else {
+      alert("Submission failed: " + (data.error || "Unknown server error."));
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Add to Finished Goods Store";
+    }
+  } catch (err) {
+    alert("Network error: " + err.message);
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Add to Finished Goods Store";
   }
 }
 
