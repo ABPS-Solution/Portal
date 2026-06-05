@@ -260,9 +260,10 @@
 
       <div class="nav-department-group-wrapper" style="margin-bottom: 8px;">
         <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Store Quantity and Tickets</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-live-store-stock" onclick="navigateToStoreWorkspacePanel('store-live-stock')">Live Store Stock</div>
-          <div class="menu-card" id="mod-store-matrix" onclick="navigateToStoreWorkspacePanel('store-history-matrix')">Search Store Tickets</div>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-live-store-stock" onclick="switchActiveDashboardModule('store-live-stock')">Live Store Stock</div>
+          <div class="menu-card" id="mod-live-finished-store-stock" onclick="switchActiveDashboardModule('store-live-finished-goods')">Live Finished Goods Store Stock</div>
+          <div class="menu-card" id="mod-store-matrix" onclick="switchActiveDashboardModule('store-history-matrix')">Search Store Tickets</div>
         </div>
       </div>
     </div>
@@ -1906,7 +1907,6 @@ function handleOpsFileChange(inputNode, uploadBoxId, confirmationMsg) {
 function returnToDashboard() { 
   collapseNewEntryDropdownFormExplicitly(); 
   
-  // FIXED: Hide the main parent store container explicitly by target ID instead of class
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
   
   // Hide all independent inward/outbound sub-modules views panels cleanly
@@ -1919,8 +1919,11 @@ function returnToDashboard() {
   if(document.getElementById("canvas-module-store-grn")) document.getElementById("canvas-module-store-grn").style.display = "none";
   if(document.getElementById("canvas-module-store-live-stock")) document.getElementById("canvas-module-store-live-stock").style.display = "none";
   
+  // FIXED REDIRECT RUNTIME REMOVES: Clear out the newly mounted Finished Goods view container as well
+  if(document.getElementById("canvas-module-store-finished-goods-live-stock")) document.getElementById("canvas-module-store-finished-goods-live-stock").style.display = "none";
+  
   document.getElementById("module-workspace-container").style.display = "none";
-  document.getElementById("dashboard-view").style.display = "block"; // Brings back home grid view
+  document.getElementById("dashboard-view").style.display = "block"; 
   
   const canvas = document.getElementById("step2-inline-interaction-canvas");
   if (canvas) canvas.style.display = "none";
@@ -1928,8 +1931,6 @@ function returnToDashboard() {
   document.getElementById("multi-contact-records-container").innerHTML = "";
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
   document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
-  
-  document.querySelectorAll("#module-workspace-container .workspace-panel").forEach(p => p.style.display = "none");
 }
 
 /**
@@ -4183,7 +4184,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canSearchStoreMat          = userPermissionsObject.storeAdminMatrix === true;
 
   // 3. EXTRACT FINISHED GOODS & DESIGN PRIVILEGES MATRIX MATRICES
-  const canAddToFinishedGoods     = userPermissionsObject.addFinishedGoods === true;
+  const canAddToFinishedGoods      = userPermissionsObject.addFinishedGoods === true;
   const canViewLiveFinishedStock   = userPermissionsObject.liveFinishedGoodsStoreStock === true;
   const canUploadBOQ               = userPermissionsObject.uploadBOQ === true;
   const canUpdateBOQ               = userPermissionsObject.updateBOQ === true;
@@ -4221,6 +4222,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   }
 
   // --- SET INDIVIDUAL VISIBILITY FOR STORE & FINISHED GOODS CARDS ---
+  // FIXED ALIGNMENT: Dynamically links your frontend layout element IDs perfectly with permissions criteria keys
   if (document.getElementById("mod-store-gate")) {
     document.getElementById("mod-store-gate").style.display = userPermissionsObject.gateEntry === true ? "block" : "none";
   }
@@ -4259,7 +4261,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     document.getElementById("mod-design-update").style.display = canUpdateBOQ ? "block" : "none";
   }
 
-  // --- EVALUATE DEPARTMENT HOOD BLOCK HEADERS OVERLAYS ---
+  // --- EVALUATE DEPARTMENT ENCLOSURE OVERLAYS ---
   const marketingHeaderBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingHeaderBlock) {
     marketingHeaderBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadDispatchBill || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState) ? "block" : "none";
