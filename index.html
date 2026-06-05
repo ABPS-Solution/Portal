@@ -357,38 +357,40 @@
       
       <div class="section" style="background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
         
-        <div style="margin-bottom: 16px;">
-          <label class="field-label" style="font-weight: 700; color: var(--brand);">Choose Store *</label>
-          <select id="ticket-selected-store-scope-toggle" onchange="handleTicketStoreScopeSelectionChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;">
-            <option value="Raw Materials Store">Raw Materials Store</option>
-            <option value="Finished Goods Store">Finished Goods Store</option>
-          </select>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div>
+            <label class="field-label" style="font-weight: 700; color: var(--brand);">Choose Store *</label>
+            <select id="ticket-selected-store-scope-toggle" onchange="handleTicketStoreScopeSelectionChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;">
+              <option value="Raw Materials Store">Raw Materials Store</option>
+              <option value="Finished Goods Store">Finished Goods Store</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" style="font-weight: 700; color: var(--brand);">Production Department / Outgoing Use *</label>
+            <select id="ticket-department-outgoing-dropdown" onchange="handleCreateTicketDepartmentChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;">
+              <option value="">— Select Department —</option>
+              <option value="Reactor">Reactor</option>
+              <option value="Capacitor">Capacitor</option>
+              <option value="Panel">Panel</option>
+              <option value="Processing">Processing</option>
+              <option value="Service">Service</option>
+            </select>
+          </div>
         </div>
 
-        <div style="margin-bottom: 16px;">
-          <label class="field-label" style="font-weight: 700; color: var(--brand);">Production Department / Outgoing Use *</label>
-          <select id="ticket-department-outgoing-dropdown" onchange="handleCreateTicketDepartmentChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;">
-            <option value="">— Select Department —</option>
-            <option value="Reactor">Reactor</option>
-            <option value="Capacitor">Capacitor</option>
-            <option value="Panel">Panel</option>
-            <option value="Processing">Processing</option>
-            <option value="Service">Service</option>
-          </select>
-        </div>
-
-        <div style="margin-bottom: 16px;" id="wrapper-ticket-requested-by">
-          <label class="field-label" id="lbl-dynamic-operator-signature-title" style="font-weight: 700; color: var(--muted);">Requested By *</label>
-          <select id="ticket-requested-by-operator-dropdown" onchange="handleCreateTicketOperatorChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>
-            <option value="">— Choose Department First —</option>
-          </select>
-        </div>
-
-        <div style="margin-bottom: 16px;" id="wrapper-ticket-project-id">
-          <label class="field-label" style="font-weight: 700; color: var(--muted);">Select Project ID *</label>
-          <select id="ticket-project-id-dropdown" onchange="handleCreateTicketProjectChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>
-            <option value="">— Choose Operator First —</option>
-          </select>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div id="wrapper-ticket-requested-by">
+            <label class="field-label" id="lbl-dynamic-operator-signature-title" style="font-weight: 700; color: var(--muted);">Requested By *</label>
+            <select id="ticket-requested-by-operator-dropdown" onchange="handleCreateTicketOperatorChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>
+              <option value="">— Choose Department First —</option>
+            </select>
+          </div>
+          <div id="wrapper-ticket-project-id">
+            <label class="field-label" style="font-weight: 700; color: var(--muted);">Select Project ID *</label>
+            <select id="ticket-project-id-dropdown" onchange="handleCreateTicketProjectChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>
+              <option value="">— Choose Operator First —</option>
+            </select>
+          </div>
         </div>
 
         <div style="background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: var(--radius); margin-bottom: 16px; opacity: 0.5;" id="wrapper-ticket-add-item-zone">
@@ -483,7 +485,12 @@
         <div style="display: flex; flex-wrap: wrap; gap: 24px; margin-top: 10px; border-top: 1px dashed rgba(0, 86, 179, 0.15); padding-top: 12px; width: 100%;">
           <div style="flex: 1; min-width: 280px;">
             <label class="field-label" style="margin-top: 0;">Filter By Project ID</label>
-            <div class="pill-group" id="matrix-search-projects-checkbox-mount" style="margin-bottom: 0;"></div>
+            <div class="pill-group" id="matrix-search-projects-checkbox-mount" style="margin-bottom: 0;">
+              <p style="font-size: 0.75rem; color: var(--muted); font-weight: 600; margin: 0; display: flex; align-items: center; gap: 6px;">
+                <span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span>
+                Loading Project IDs...
+              </p>
+            </div>
           </div>
           <div style="flex: 1; min-width: 280px;">
             <label class="field-label" style="margin-top: 0;">Filter By Production Department / Outgoing Use</label>
@@ -1100,7 +1107,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbz37hNpRlG3SQNxQvz7dpruaqDOu-2n0JmIhquXC9ukW4sN0aOPBQdWasXtIxbmJ70vGw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw7w0xbGnu9smn0EZxLOVqMMGL2GsNftnGZ4eB58uoy_CsdkuMA3_PzRQRD9ro2zKfV/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -4280,12 +4287,14 @@ async function initializeMaterialRequestWorkspace() {
       
       // A. Populate Material Select Catalog
       itemDropdown.innerHTML = '<option value="">— Select Material from Catalog —</option>';
-      targetedWarehouseCatalogFeed.forEach(item => {
-        let opt = document.createElement("option"); 
-        opt.value = item.materialName; 
-        opt.textContent = item.materialName; 
-        itemDropdown.appendChild(opt);
-      });
+      targetedWarehouseCatalogFeed
+        .filter(item => item.boqActive !== "NOT IN ACTIVE BOQ")
+        .forEach(item => {
+          let opt = document.createElement("option"); 
+          opt.value = item.materialName; 
+          opt.textContent = item.materialName; 
+          itemDropdown.appendChild(opt);
+        });
 
       // B. Seed Active Project Codes
       projectDropdown.innerHTML = '<option value="">— Select Project ID —</option>';
@@ -5291,7 +5300,7 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
           <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
             <span>Signee Signature:</span><strong style="margin-right:15px; color:#111827;">${ticket.requestedBy}</strong>
             <span>Project reference ID:</span><strong style="color:var(--brand);">${ticket.projectId}</strong>
-            <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Dept: ${ticket.department || "General Store"}</span>
+            <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Department: ${ticket.department || "General Store"}</span>
           </div>
         </div>
       </div>
@@ -5397,9 +5406,9 @@ function executeClientSideStoreTicketFilterSearch() {
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed var(--border); padding-bottom:6px; margin-bottom:8px;">
         <div>
           <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:2px 6px; border-radius:4px; font-size:0.8rem;">${ticket.ticketId}</span>
-          <span style="font-size:0.65rem; font-weight:700; border-radius:3px; padding:1px 5px; margin-left:4px; ${typeLabelColorStyle}">${typeLabel.toUpperCase()}</span>
           <strong style="margin-left:8px; font-size:0.85rem; color:var(--brand);">Project ID: ${ticket.projectId}</strong>
-          <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Dept: ${ticket.department || "General Store"}</span>
+          <span style="font-size:0.65rem; font-weight:700; border-radius:3px; padding:1px 5px; margin-left:4px; ${typeLabelColorStyle}">${typeLabel.toUpperCase()}</span>
+          <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Department: ${ticket.department || "General Store"}</span>
           <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Store: ${mappedStorageScope.toUpperCase()}</span>
         </div>
         <span style="font-size:0.68rem; font-weight:700; border-radius:4px; padding:2px 6px; ${badgeColorStyle}">${statusBadgeText}</span>
@@ -6558,10 +6567,15 @@ async function executeBOQDocumentUploadSubmit(modeString) {
   try {
     const actionKey = isNew ? "processNewBOQUploadDocument" : "commitBOQUpdatePipelineStep";
     
+    const designEngineerName = isNew 
+      ? (document.getElementById("boq-upload-staff-dropdown")?.value || appActiveOperatorIdentityString)
+      : appActiveOperatorIdentityString;
+
     const serverPayload = {
       action: actionKey,
       sessionToken: localStorage.getItem("sessionToken"),
       activeEngineer: appActiveOperatorIdentityString,
+      designEngineer: designEngineerName,
       projectId: projectId, 
       fileData64: fileBase64Raw,
       mimeType: fileMimeType
