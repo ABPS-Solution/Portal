@@ -4797,7 +4797,8 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   // Re-map sync action click listener attributes natively back to default
   const syncBtn = document.getElementById("live-stock-sync-btn");
   if (syncBtn && isLiveStock) {
-    syncBtn.setAttribute("onclick", "triggerLiveWarehouseStockMetricsSync()");
+    syncBtn.removeAttribute("onclick");
+    syncBtn.onclick = function() { triggerLiveWarehouseStockMetricsSync(); };
   }
 
   // 4. CORE STORE PIPELINE WORKSPACE GATING SWITCH
@@ -4874,6 +4875,7 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   else if (targetCanvasModuleId === 'store-live-stock') {
     navigateToStoreWorkspacePanel('store-live-stock');
   } else if (targetCanvasModuleId === 'store-live-finished-goods' || targetCanvasModuleId === 'live-finished-goods') {
+    // Force show parent enclosure FIRST
     document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
     document.getElementById("canvas-module-store-finished-goods-live-stock").style.display = "block";
     
@@ -4887,8 +4889,11 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
       centerTitle.style.visibility = "visible";
       centerTitle.textContent = "Live Finished Goods Store Stock";
     }
+    
+    // CRITICAL FIX: Remove the old attribute first, then rebind cleanly
     if (syncBtn) {
-      syncBtn.setAttribute("onclick", "triggerLiveFinishedGoodsStoreStockMetricsSync()");
+      syncBtn.removeAttribute("onclick");
+      syncBtn.onclick = function() { triggerLiveFinishedGoodsStoreStockMetricsSync(); };
     }
     
     triggerLiveFinishedGoodsStoreStockMetricsSync();
@@ -6640,6 +6645,12 @@ async function triggerLiveFinishedGoodsStoreStockMetricsSync() {
   const mountZone = document.getElementById("dashboard-finished-goods-live-inventory-mount-zone");
   const syncBtn = document.getElementById("live-stock-sync-btn");
   if (!mountZone) return;
+
+  if (syncBtn) {
+    syncBtn.disabled = true;
+    syncBtn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Syncing...';
+  }
+
   try {
     const res = await fetch(GAS_URL, {
       method: "POST",
@@ -6674,6 +6685,11 @@ async function triggerLiveFinishedGoodsStoreStockMetricsSync() {
     }
   } catch (error) {
     mountZone.innerHTML = `<p style="font-size: 0.8rem; color: var(--warn); grid-column: 1 / -1; text-align: center; padding:20px;">⚠️ Sync Exception: Couldn't fetch Finished Goods balances matrix logs.</p>`;
+  } finally {
+    if (syncBtn) { 
+      syncBtn.disabled = false; 
+      syncBtn.innerHTML = "🔄 Sync Stock Balances"; 
+    }
   }
 }
 
