@@ -244,6 +244,13 @@
       </div>
 
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
+        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Finished Goods Store</div>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-finished-goods-add" onclick="switchActiveDashboardModule('finished-goods-add')">Add to Finished Goods Store</div>
+        </div>
+      </div>
+
+      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
         <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Store Outward</div>
         <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
           <div class="menu-card" id="mod-store-ticket" onclick="navigateToStoreWorkspacePanel('store-material-request')">Create Store Ticket</div>
@@ -344,6 +351,15 @@
       <div id="store-ticket-runtime-inline-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid;"></div>    
       
       <div class="section" style="background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
+        
+        <div style="margin-bottom: 16px;">
+          <label class="field-label" style="font-weight: 700; color: var(--brand);">Choose Store *</label>
+          <select id="ticket-selected-store-scope-toggle" onchange="handleTicketStoreScopeSelectionChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;">
+            <option value="Raw Materials Store">Raw Materials Store</option>
+            <option value="Finished Goods Store">Finished Goods Store</option>
+          </select>
+        </div>
+
         <div style="margin-bottom: 16px;">
           <label class="field-label" style="font-weight: 700; color: var(--brand);">Production Department / Outgoing Use *</label>
           <select id="ticket-department-outgoing-dropdown" onchange="handleCreateTicketDepartmentChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;">
@@ -414,12 +430,29 @@
       <div class="dashboard-grid" id="dashboard-live-inventory-metrics-mount-zone" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap:10px; padding:0;"></div>
     </div>
 
+    <div id="canvas-module-store-finished-goods-live-stock" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <div class="dashboard-grid" id="dashboard-finished-goods-live-inventory-mount-zone" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap:10px; padding:0;"></div>
+    </div>
+
     <div id="canvas-module-store-history-matrix" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      
       <h2 style="margin-bottom: 16px;">Search Store Tickets</h2>
       <div style="background: var(--highlight-bg); border: 1.5px solid var(--border); border-left: 4px solid var(--brand); padding: 16px; border-radius: var(--radius); margin-bottom: 16px; text-align: left;">
         <span style="display: block; font-size: 0.72rem; font-weight: 800; color: var(--brand); text-transform: uppercase; margin-bottom: 16px; letter-spacing: 0.5px;">Search Filter Parameters</span>  
+        
         <div style="display: flex; flex-wrap: wrap; gap: 24px; margin-bottom: 14px; width: 100%;">
-          <div style="flex: 1; min-width: 280px;">
+          
+          <div style="flex: 1; min-width: 220px;">
+            <label class="field-label">Filter By Store</label>
+            <div class="pill-group" style="margin-bottom:0;">
+              <input type="checkbox" name="matrixStoreFilter" value="Raw Materials Store" id="ms_st_raw" onchange="executeClientSideStoreTicketFilterSearch()">
+              <label for="ms_st_raw">Raw Materials Store</label>
+              <input type="checkbox" name="matrixStoreFilter" value="Finished Goods Store" id="ms_st_fg" onchange="executeClientSideStoreTicketFilterSearch()">
+              <label for="ms_st_fg">Finished Goods Store</label>
+            </div>
+          </div>
+
+          <div style="flex: 1; min-width: 220px;">
             <label class="field-label">Filter By Ticket Operation Type</label>
             <div class="pill-group" style="margin-bottom:0;">
               <input type="checkbox" name="matrixTypeFilter" value="Request Material" id="mt_ty_req" onchange="executeClientSideStoreTicketFilterSearch()">
@@ -428,7 +461,8 @@
               <label for="mt_ty_ret">Return Material</label>
             </div>
           </div>
-          <div style="flex: 1; min-width: 280px;">
+
+          <div style="flex: 1; min-width: 220px;">
             <label class="field-label">Filter By Verification Status</label>
             <div class="pill-group" style="margin-bottom:0;">
               <input type="checkbox" name="matrixStatusFilter" value="Pending Approval" id="ms_st_pending" onchange="executeClientSideStoreTicketFilterSearch()">
@@ -440,6 +474,7 @@
             </div>
           </div>
         </div>
+
         <div style="display: flex; flex-wrap: wrap; gap: 24px; margin-top: 10px; border-top: 1px dashed rgba(0, 86, 179, 0.15); padding-top: 12px; width: 100%;">
           <div style="flex: 1; min-width: 280px;">
             <label class="field-label" style="margin-top: 0;">Filter By Project ID</label>
@@ -1060,7 +1095,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyeMbqgwPFwF3YlIqG-dcjaG6r7yFBQIfVql0Scf2N7Z_FFhY6ZJD6DRlZAokKH5gWovw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycby4bRV1h1KAS2LGSNV_H4OBZRMEKghwDG1oS_jvDs0shUj4PofPFI-ftoPX85CPMpFQLA/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -4124,45 +4159,42 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
 
 /**
  * DYNAMIC PLATFORM ROLE GATEWAY ENFORCER
- * Evaluates active unauthenticated session token permissions matrices,
- * mapping access flags precisely onto the updated subcategorized grid cards elements.
+ * Evaluates active session authorization permissions matrices,
+ * mapping structural visibility states safely across all dashboard grids rows.
  */
 function enforceDynamicModuleRoleGateways(userPermissionsObject) {
-  // 1. EXTRACT MARKETING ACCESS MATRIX FLAGS (Aligned to renamed user sheet schemas)
+  // 1. EXTRACT MARKETING ACCESS PRIVILEGES MATRIX
   const canEnterCard               = userPermissionsObject.cardDetails === true;
   const canViewEmailLeads          = userPermissionsObject.emailLeads === true;
-  
   const canUploadDispatchBill      = userPermissionsObject.dispatchBill === true;
   const canUploadCommissioning     = userPermissionsObject.commissioningReport === true;
   const canUploadPurchaseOrder     = userPermissionsObject.purchaseOrder === true;
-  
   const canSearchCompany           = userPermissionsObject.searchCompany === true;
   const canSearchTasks             = userPermissionsObject.searchTasks === true;
   const canSearchStatus            = userPermissionsObject.searchStatus === true;
   const canSearchQual              = userPermissionsObject.searchQualification === true;
   const canSearchCityState         = userPermissionsObject.searchCityState === true;
 
-  // 2. EXTRACT WAREHOUSE STORE ACCESS MATRIX FLAGS
+  // 2. EXTRACT RAW WAREHOUSE ACCESS PRIVILEGES MATRIX
   const canViewLiveStock           = userPermissionsObject.liveStoreStock === true;
   const canUploadInvoice           = userPermissionsObject.storeUploadInvoice === true;
   const canCreateTicket            = userPermissionsObject.storeCreateTicket === true;
   const canReleaseTicket           = userPermissionsObject.storeApproveTickets === true;
   const canSearchStoreMat          = userPermissionsObject.storeAdminMatrix === true;
 
-  // NEW EXTRACTION: DESIGN DEPARTMENT ACCESS MATRIX FLAGS
+  // 3. EXTRACT FINISHED GOODS & DESIGN PRIVILEGES MATRIX MATRICES
+  const canAddToFinishedGoods     = userPermissionsObject.addFinishedGoods === true;
+  const canViewLiveFinishedStock   = userPermissionsObject.liveFinishedGoodsStoreStock === true;
   const canUploadBOQ               = userPermissionsObject.uploadBOQ === true;
   const canUpdateBOQ               = userPermissionsObject.updateBOQ === true;
 
-  // 3. SET INDIVIDUAL MARKETING SECTIONS CARDS VISIBILITY STATES
-  // Subcategory 1: Lead Source
+  // --- SET INDIVIDUAL VISIBILITY FOR MARKETING TARGET CARDS ---
   if (document.getElementById("mod-card")) {
     document.getElementById("mod-card").style.display = canEnterCard ? "block" : "none";
   }
   if (document.getElementById("mod-email-whatsapp")) {
     document.getElementById("mod-email-whatsapp").style.display = canViewEmailLeads ? "block" : "none";
   }
-  
-  // Subcategory 2: Upload Documents
   if (document.getElementById("mod-dispatch-bill")) {
     document.getElementById("mod-dispatch-bill").style.display = canUploadDispatchBill ? "block" : "none";
   }
@@ -4172,8 +4204,6 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-purchase-order")) {
     document.getElementById("mod-purchase-order").style.display = canUploadPurchaseOrder ? "block" : "none";
   }
-  
-  // Subcategory 3: Search
   if (document.getElementById("mod-company")) {
     document.getElementById("mod-company").style.display = canSearchCompany ? "block" : "none";
   }
@@ -4190,12 +4220,15 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     document.getElementById("mod-city-state").style.display = canSearchCityState ? "block" : "none";
   }
 
-  // 4. SET INDIVIDUAL STORE SECTIONS CARDS VISIBILITY STATES
-  if (document.getElementById("mod-live-store-stock")) {
-    document.getElementById("mod-live-store-stock").style.display = canViewLiveStock ? "block" : "none";
+  // --- SET INDIVIDUAL VISIBILITY FOR STORE & FINISHED GOODS CARDS ---
+  if (document.getElementById("mod-store-gate")) {
+    document.getElementById("mod-store-gate").style.display = userPermissionsObject.gateEntry === true ? "block" : "none";
   }
-  if (document.getElementById("mod-store-upload")) {
-    document.getElementById("mod-store-upload").style.display = canUploadInvoice ? "block" : "none";
+  if (document.getElementById("mod-store-entry")) {
+    document.getElementById("mod-store-entry").style.display = userPermissionsObject.storeEntry === true ? "block" : "none";
+  }
+  if (document.getElementById("mod-store-grn")) {
+    document.getElementById("mod-store-grn").style.display = userPermissionsObject.grnNote === true ? "block" : "none";
   }
   if (document.getElementById("mod-store-ticket")) {
     document.getElementById("mod-store-ticket").style.display = canCreateTicket ? "block" : "none";
@@ -4203,11 +4236,22 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-store-approvals")) {
     document.getElementById("mod-store-approvals").style.display = canReleaseTicket ? "block" : "none";
   }
+  if (document.getElementById("mod-live-store-stock")) {
+    document.getElementById("mod-live-store-stock").style.display = canViewLiveStock ? "block" : "none";
+  }
   if (document.getElementById("mod-store-matrix")) {
     document.getElementById("mod-store-matrix").style.display = canSearchStoreMat ? "block" : "none";
   }
+  
+  // Finished Goods Card visibility state markers bindings
+  if (document.getElementById("mod-finished-goods-add")) {
+    document.getElementById("mod-finished-goods-add").style.display = canAddToFinishedGoods ? "block" : "none";
+  }
+  if (document.getElementById("mod-live-finished-store-stock")) {
+    document.getElementById("mod-live-finished-store-stock").style.display = canViewLiveFinishedStock ? "block" : "none";
+  }
 
-  // 5. SET INDIVIDUAL DESIGN SECTIONS CARDS VISIBILITY STATES
+  // --- SET INDIVIDUAL VISIBILITY FOR DESIGN CARDS ---
   if (document.getElementById("mod-design-upload")) {
     document.getElementById("mod-design-upload").style.display = canUploadBOQ ? "block" : "none";
   }
@@ -4215,42 +4259,27 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     document.getElementById("mod-design-update").style.display = canUpdateBOQ ? "block" : "none";
   }
 
-  // 6. EVALUATE ENTIRE OVERARCHING BLOCK INTERCEPT FOR MARKETING DEPARTMENT
+  // --- EVALUATE DEPARTMENT HOOD BLOCK HEADERS OVERLAYS ---
   const marketingHeaderBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingHeaderBlock) {
-    if (canEnterCard || canViewEmailLeads || canUploadDispatchBill || canUploadCommissioning || 
-        canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || 
-        canSearchQual || canSearchCityState) {
-      marketingHeaderBlock.style.display = "block";
-    } else {
-      marketingHeaderBlock.style.display = "none";
-    }
+    marketingHeaderBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadDispatchBill || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState) ? "block" : "none";
   }
 
-  // 7. EVALUATE ENTIRE OVERARCHING BLOCK INTERCEPT FOR STORE DEPARTMENT
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");
   if (storeHeaderBlock) {
-    if (canViewLiveStock || canUploadInvoice || canCreateTicket || canReleaseTicket || canSearchStoreMat) {
-      storeHeaderBlock.style.display = "block";
-    } else {
-      storeHeaderBlock.style.display = "none";
-    }
+    storeHeaderBlock.style.display = (canViewLiveStock || canCreateTicket || canReleaseTicket || canSearchStoreMat || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntry === true || userPermissionsObject.grnNote === true || canViewLiveFinishedStock || canAddToFinishedGoods) ? "block" : "none";
   }
 
-  // 8. EVALUATE ENTIRE OVERARCHING BLOCK INTERCEPT FOR DESIGN DEPARTMENT
   const designHeaderBlock = document.getElementById("dashboard-design-department-header-block");
   if (designHeaderBlock) {
-    if (canUploadBOQ || canUpdateBOQ) {
-      designHeaderBlock.style.display = "block";
-    } else {
-      designHeaderBlock.style.display = "none";
-    }
+    designHeaderBlock.style.display = (canUploadBOQ || canUpdateBOQ) ? "block" : "none";
   }
 }
 
 /**
- * 1. INITIALIZE OUTBOUND WORKSPACE (UPDATED: STAFF LOOKUP LOADED)
- * Synchronizes inventory counts, project codes, and authorized store operators simultaneously
+ * INITIALIZE MATERIAL REQUEST WORKSPACE
+ * Synchronizes warehouse quantities, active active projects list, and staff databases.
+ * Automatically respects the active "Choose Store" scope selection to feed the correct items catalog.
  */
 async function initializeMaterialRequestWorkspace() {
   const projectDropdown = document.getElementById("ticket-project-id-dropdown");
@@ -4260,7 +4289,7 @@ async function initializeMaterialRequestWorkspace() {
   
   if (!projectDropdown || !itemDropdown || !storeStaffDropdown || !deptDropdown) return;
   
-  // Clean start state setup parameters
+  // Enforce pristine starting conditions across cascading lock states parameters
   deptDropdown.value = ""; 
   resetMaterialRequestCascadingLockState();
   clearFullBasketDraftState();
@@ -4284,26 +4313,36 @@ async function initializeMaterialRequestWorkspace() {
     if (inventoryData.success && projectsData.success && staffData.success) {
       cachedInventoryStockCollection = inventoryData.inventory;
       
-      // FIXED CACHE LOOKUP: Explicitly parse the structural personnel records tree cleanly
+      window.cachedFinishedGoodsStoreStockCollection = inventoryData.finishedGoodsInventory || [];
+      
+      const activeStoreScope = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
+      let targetedWarehouseCatalogFeed = cachedInventoryStockCollection;
+      
+      if (activeStoreScope === "Finished Goods Store") {
+        targetedWarehouseCatalogFeed = window.cachedFinishedGoodsStoreStockCollection;
+      }
+      
       globalOperatorsDatabasePayloadCache = staffData.fullPersonnelDataRecordsTree || []; 
       
-      // A. Populate Material Catalog choices
-      itemDropdown.innerHTML = '<option value="">— Select Material —</option>';
-      cachedInventoryStockCollection.forEach(item => {
+      // A. Populate Material Select Catalog
+      itemDropdown.innerHTML = '<option value="">— Select Material from Catalog —</option>';
+      targetedWarehouseCatalogFeed.forEach(item => {
         let opt = document.createElement("option"); 
         opt.value = item.materialName; 
         opt.textContent = item.materialName; 
         itemDropdown.appendChild(opt);
       });
 
-      // B. Seed Active Project Choices
+      // B. Seed Active Project Codes
       projectDropdown.innerHTML = '<option value="">— Select Project ID —</option>';
       projectsData.projects.forEach(code => {
-        let opt = document.createElement("option"); opt.value = code; opt.textContent = code;
+        let opt = document.createElement("option"); 
+        opt.value = code; 
+        opt.textContent = code;
         projectDropdown.appendChild(opt);
       });
       
-      // C. Process autofill lookups safely without throwing fake background loops
+      // C. Process dynamic auto-fill lookups safely off user settings profile records
       const activeDeptRawString = localStorage.getItem("abps_user_raw_departments") || ""; 
       const lowerDeptsArray = activeDeptRawString.toLowerCase().split(",").map(d => d.trim());
       const priorityChecks = ["reactor", "capacitor", "panel"];
@@ -4316,9 +4355,13 @@ async function initializeMaterialRequestWorkspace() {
         }
       }
       
+      // If active store is Finished Goods, ignore user department lookup defaults and force lock to 'Panel'
+      if (activeStoreScope === "Finished Goods Store") {
+        matchedDefault = "Panel";
+      }
+      
       if (matchedDefault) {
         deptDropdown.value = matchedDefault;
-        // FIXED: Executes the filter immediately now that the data tree cache is 100% complete
         handleCreateTicketDepartmentChange(matchedDefault); 
       } else {
         deptDropdown.value = "";
@@ -4326,7 +4369,7 @@ async function initializeMaterialRequestWorkspace() {
       }
     }
   } catch (error) { 
-    console.error("Matrices load fail exception dropped:", error); 
+    console.error("Critical Matrix Load Failure:", error); 
     deptDropdown.value = "";
     resetMaterialRequestCascadingLockState();
   }
@@ -4345,6 +4388,7 @@ async function submitMaterialRequestTicketToBackend() {
   const feedbackBanner = document.getElementById("store-ticket-runtime-inline-feedback-banner");
   const departmentVal = document.getElementById("ticket-department-outgoing-dropdown").value;
   const materialRequestPanelContainer = document.getElementById("canvas-module-store-material-request");
+  const chosenStoreTargetScopeStr = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
   
   if (!projectIdField || !operatorDropdownField || !submitBtn || !materialRequestPanelContainer) {
     console.error("UI Reference Error: Compulsory form inputs missing from the DOM layout.");
@@ -4400,6 +4444,7 @@ async function submitMaterialRequestTicketToBackend() {
       projectId: projectId,
       departmentOutgoing: departmentVal, 
       ticketTypeCommandString: ticketTypeVal,
+      storeTargetScope: chosenStoreTargetScopeStr, 
       itemsClusterArray: dynamicTicketShoppingBasketArray
     };
     
@@ -4537,6 +4582,7 @@ async function addItemToShoppingBasketRow() {
   const itemSelect = document.getElementById("ticket-item-selection-dropdown");
   const qtyInput = document.getElementById("ticket-item-quantity-input");
   const projectId = document.getElementById("ticket-project-id-dropdown").value;
+  const activeStoreScope = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
   
   const materialName = itemSelect.value;
   const quantity = parseInt(qtyInput.value, 10);
@@ -4547,7 +4593,15 @@ async function addItemToShoppingBasketRow() {
   }
   
   const cleanSearchKey = materialName.replace(/\s+/g, '').toLowerCase();
-  const itemData = cachedInventoryStockCollection.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
+  
+  // CHANGED: Selects the correct frontend memory collection block cache before mapping
+  let activeCacheCollection = cachedInventoryStockCollection;
+  if (activeStoreScope === "Finished Goods Store") {
+     // Uses a fallback array variable look up to map newly added columns formats elements
+     activeCacheCollection = window.cachedFinishedGoodsStoreStockCollection || [];
+  }
+  
+  const itemData = activeCacheCollection.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
   
   // Pull design data to validate if request total breaks allocation boundaries
   const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "fetchActiveBOQRecordsByProject", sessionToken: localStorage.getItem("sessionToken"), projectId: projectId }) });
@@ -4752,24 +4806,33 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
   }
 }
 
+/**
+ * CENTRAL WORKSPACE INTERCEPT ROUTER
+ * Programmatically manages display visibility across marketing, warehouse inward, 
+ * warehouse outward, and engineering design canvas module containers cleanly.
+ */
 function switchActiveDashboardModule(targetCanvasModuleId) {
-  // 1. Hide the legacy homepage landing cards grid and all marketing popups
+  // 1. Hide the primary dashboard menu card view and inline popup filters
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("step2-inline-interaction-canvas").style.display = "none";
   
-  // 2. Hide all modular store dashboard section wrapper panels completely
-  if (document.getElementById("canvas-module-store-invoice-intake")) document.getElementById("canvas-module-store-invoice-intake").style.display = "none";
+  // 2. Hide all modular store sub-sections layout sheets containers
+  if (document.getElementById("canvas-module-store-gate-entry")) document.getElementById("canvas-module-store-gate-entry").style.display = "none";
+  if (document.getElementById("canvas-module-store-entry")) document.getElementById("canvas-module-store-entry").style.display = "none";
+  if (document.getElementById("canvas-module-store-grn")) document.getElementById("canvas-module-store-grn").style.display = "none";
   if (document.getElementById("canvas-module-store-material-request")) document.getElementById("canvas-module-store-material-request").style.display = "none";
   if (document.getElementById("canvas-module-store-manager-approvals")) document.getElementById("canvas-module-store-manager-approvals").style.display = "none";
+  if (document.getElementById("canvas-module-store-live-stock")) document.getElementById("canvas-module-store-live-stock").style.display = "none";
+  if (document.getElementById("canvas-module-store-finished-goods-live-stock")) document.getElementById("canvas-module-store-finished-goods-live-stock").style.display = "none";
   if (document.getElementById("canvas-module-store-history-matrix")) document.getElementById("canvas-module-store-history-matrix").style.display = "none";
   
-  // 3. CLEAN UP & HIDE ALL DESIGN DEPARTMENT PANELS ON SWITCH
+  // 3. Hide all design engineering sub-module views panels
   if (document.getElementById("module-design-workspace-enclosure-panel")) document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
   if (document.getElementById("canvas-module-design-upload")) document.getElementById("canvas-module-design-upload").style.display = "none";
   if (document.getElementById("canvas-module-design-update")) document.getElementById("canvas-module-design-update").style.display = "none";
 
-  // 4. SECURE REDIRECT ROUTING OVERRIDES
+  // 4. ROUTE CRITERIA SWITCH GATING HARNESS
   if (targetCanvasModuleId === 'marketing-leads') {
     navigateToModule('searchCompany');
   } else if (targetCanvasModuleId === 'marketing-email-leads') {
@@ -4777,25 +4840,39 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   } else if (targetCanvasModuleId === 'marketing-tasks') {
     navigateToModule('searchTasks');
   } 
-  // 5. STORE PIPELINE ROUTING SWITCHES
+  // Store Inward operations routing passes
+  else if (targetCanvasModuleId === 'store-gate-entry') {
+    navigateToStoreWorkspacePanel('store-gate-entry');
+  } else if (targetCanvasModuleId === 'store-entry') {
+    navigateToStoreWorkspacePanel('store-entry');
+  } else if (targetCanvasModuleId === 'store-grn') {
+    navigateToStoreWorkspacePanel('store-grn');
+  }
+  // Store Outward operations routing passes
   else if (targetCanvasModuleId === 'store-material-request') {
     navigateToStoreWorkspacePanel('store-material-request');
-  } else if (targetCanvasModuleId === 'store-invoice-intake') {
-    navigateToStoreWorkspacePanel('store-invoice-intake');
   } else if (targetCanvasModuleId === 'store-manager-approvals') {
     navigateToStoreWorkspacePanel('store-manager-approvals');
+  } 
+  // Reporting inventories metric sheets passes
+  else if (targetCanvasModuleId === 'store-live-stock') {
+    navigateToStoreWorkspacePanel('store-live-stock');
+  } else if (targetCanvasModuleId === 'store-live-finished-goods' || targetCanvasModuleId === 'live-finished-goods') {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    document.getElementById("canvas-module-store-finished-goods-live-stock").style.display = "block";
+    triggerLiveFinishedGoodsStoreStockMetricsSync();
   } else if (targetCanvasModuleId === 'store-history-matrix') {
     navigateToStoreWorkspacePanel('store-history-matrix');
   }
-  // FIXED DESIGN DEPARTMENT INTERCEPT ROUTERS: Activates parent layer before rendering child panels
+  // Design department blue-print modules routing paths
   else if (targetCanvasModuleId === 'design-upload') {
-    document.getElementById("module-design-workspace-enclosure-panel").style.display = "block";
-    document.getElementById("canvas-module-design-upload").style.display = "block";
-    initializeDesignDepartmentUploadModule();
+    navigateToDesignWorkspacePanel('design-upload');
   } else if (targetCanvasModuleId === 'design-update') {
-    document.getElementById("module-design-workspace-enclosure-panel").style.display = "block";
-    document.getElementById("canvas-module-design-update").style.display = "block";
-    initializeDesignDepartmentUpdateModule();
+    navigateToDesignWorkspacePanel('design-update');
+  } else if (targetCanvasModuleId === 'finished-goods-add') {
+    // Structural layout stub reservation placeholder for future FG addition workflow
+    alert("Add to Finished Goods function wrapper initialized.");
+    exitStoreWorkspacePanelBackToMenu();
   }
 }
 
@@ -5181,11 +5258,15 @@ function handleStoreTicketTypeInterfaceLayoutChange(chosenModeString) {
       sessionToken: localStorage.getItem("sessionToken"),
       activeEngineer: operatorSignatureName,
       projectId: projectId,
-      ticketTypeCommandString: ticketTypeVal, // Injected parameter pass rule
+      ticketTypeCommandString: ticketTypeVal, 
       itemsClusterArray: dynamicTicketShoppingBasketArray
     };
 
-// Reconstruct Approvals View Node Generator UI Engine Builder
+/**
+ * RENDER STORE APPROVALS QUEUE CARDS FEED
+ * Generates actionable entry cards for all unreleased material transaction tickets.
+ * Explicitly distinguishes and styles custom Admin BOQ limit overrun increase requests.
+ */
 function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
   const cardsFeedZone = document.getElementById("store-manager-approvals-queue-cards-feed");
   if (!cardsFeedZone) return;
@@ -5202,41 +5283,49 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
     cardWrapper.id = `store-pending-ticket-card-node-${ticket.ticketId}`;
     
     let itemsArray = [];
-    try { itemsArray = JSON.parse(ticket.itemsJson); } catch(e) { itemsArray = []; }
-    let itemRowsHtml = "";
+    try { 
+      itemsArray = JSON.parse(ticket.itemsJson); 
+    } catch(e) { 
+      itemsArray = []; 
+    }
     
+    let itemRowsHtml = "";
     itemsArray.forEach(item => {
-      // Highlights specific out-of-bounds materials if they are flag-marked inside an increase request basket array
-      const overrunHighlightStyle = item.requiresBOQIncreaseFlag === true ? 'color: var(--warn); font-weight: 800; background: #fff5f5; padding: 2px 4px; border-radius: 4px;' : '';
+      const overrunHighlightStyle = item.requiresBOQIncreaseFlag === true ? 'color: var(--warn); font-weight: 800; background: #fff5f2; padding: 2px 6px; border-radius: 4px; border: 1px solid #fca5a5;' : '';
       itemRowsHtml += `
         <tr>
-          <td style="padding:6px; font-weight:600; ${overrunHighlightStyle}">${item.materialName}</td>
-          <td style="padding:6px; font-family:monospace; font-weight:700; color:var(--brand);">${item.quantity}</td>
-          <td style="padding:6px; color:var(--muted); font-size:0.78rem;">${item.unitType}</td>
+          <td style="padding:6px; font-weight:600; text-align:left; ${overrunHighlightStyle}">
+            ${item.materialName}
+            ${item.requiresBOQIncreaseFlag ? '<span style="font-size:0.62rem; background:var(--warn); color:white; padding:1px 4px; border-radius:3px; margin-left:4px; font-weight:bold;">OVERRUN</span>' : ''}
+          </td>
+          <td style="padding:6px; font-family:monospace; font-weight:700; color:var(--brand); text-align:right;">${item.quantity}</td>
+          <td style="padding:6px; color:var(--muted); font-size:0.78rem; text-align:left; padding-left:10px;">${item.unitType || 'Pcs'}</td>
         </tr>`;
     });
     
-    const typeLabel = ticket.ticketType || "Request Material";
+    const typeLabel = (ticket.ticketType || "Request Material").toString().trim();
+    const isBoqInc = typeLabel === "BOQ INCREASE REQUEST";
     
-    // UPDATED INTERCEPTOR: Checks if this item represents a custom Admin BOQ Increase ticket pass
-    const isBoqInc = (typeLabel === "BOQ INCREASE REQUEST");
     const typeColorStyle = isBoqInc 
       ? "background:#fee2e2; color:#991b1b; border:1px solid #fca5a5;" 
       : ((typeLabel === "Return Material") ? "background:#e0f2fe; color:#0369a1;" : "background:#edf2f7; color:#1e293b;");
       
-    const statusBadgeText = isBoqInc ? "BOQ OVERRUN APPROVAL" : "PENDING RELEASE";
+    const statusBadgeText = isBoqInc ? "BOQ LIMIT OVERRUN" : "PENDING RELEASE";
+    const mappedStorageScope = ticket.storeTargetScope || "Raw Materials Store";
 
     cardWrapper.innerHTML = `
       <div class="contact-summary-header-row" style="margin-bottom:10px; padding-bottom:6px; border-bottom:1px dashed var(--border);">
         <div class="contact-summary-title-info" style="width:100%;">
           <div class="meta-row-line-block">
-            <span style="background:var(--brand); color:#fff; font-family:monospace; font-size:0.75rem; padding:3px 6px;">${ticket.ticketId}</span>
+            <span style="font-family:monospace; font-weight:800; background:var(--brand); color:#fff; font-size:0.75rem; padding:3px 6px;">${ticket.ticketId}</span>
             <span style="font-weight:800; font-size:0.72rem; padding:3px 6px; border-radius:4px; ${typeColorStyle}">${typeLabel.toUpperCase()}</span>
-            <span style="background:#fef3c7; color:#b45309; font-weight:700;">${statusBadgeText}</span>
+            <span style="background:#fef3c7; color:#b45309; font-weight:700; margin-left:4px;">${statusBadgeText}</span>
+            <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Store Mapped: ${mappedStorageScope.toUpperCase()}</span>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
-            <span>Operator:</span><strong style="margin-right:15px; color:#111827;">${ticket.requestedBy}</strong>
-            <span>Project ID:</span><strong style="color:var(--brand);">${ticket.projectId}</strong>
+            <span>Signee Signature:</span><strong style="margin-right:15px; color:#111827;">${ticket.requestedBy}</strong>
+            <span>Project reference ID:</span><strong style="color:var(--brand);">${ticket.projectId}</strong>
+            <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Dept: ${ticket.department || "General Store"}</span>
           </div>
         </div>
       </div>
@@ -5246,7 +5335,7 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
       <div style="display:flex; justify-content:flex-end; gap:8px;">
         <button class="nav-btn-styled" id="btn-reject-${ticket.ticketId}" style="background:#e53e3e; padding:6px 12px; font-size:0.75rem;" onclick="executeStoreManagerTicketActionDecision('${ticket.ticketId}', 'REJECT')">Reject</button>
         <button class="nav-btn-styled" id="btn-approve-${ticket.ticketId}" style="background:var(--accent); padding:6px 14px; font-size:0.78rem; font-weight:700;" onclick="executeStoreManagerTicketActionDecision('${ticket.ticketId}', 'APPROVE')">
-          ${isBoqInc ? 'Approve BOQ Increase' : 'Approve Action'}
+          ${isBoqInc ? 'Approve Allocation Overwrite' : 'Approve Action'}
         </button>
       </div>
     `;
@@ -5254,34 +5343,43 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
   });
 }
 
-// Reconstruct Historical Matrix Data Filtering Search Interface Nodes
+/**
+ * CLIENT HISTORICAL TICKET LOOKUP FILTER ENGINE
+ * Searches historical logs by mapping filter filters for stores, action types, 
+ * projects, departments, and statuses safely using type-guaranteed parameters lookups.
+ */
 function executeClientSideStoreTicketFilterSearch() {
   const resultsFeedZone = document.getElementById("store-historical-matrix-results-feed");
   if (!resultsFeedZone) return;
 
-  const checkedTypes = Array.from(document.querySelectorAll('input[name="matrixTypeFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
-  const checkedProjects = Array.from(document.querySelectorAll('input[name="matrixProjectFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
-  const checkedStatuses = Array.from(document.querySelectorAll('input[name="matrixStatusFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
-  // NEW ELEMENT ACQUISITION: Capture checking states for departments
+  // READ ALL ACTIVE INTERFACE CHECKED ELEMENTS PILLS CHANNELS
+  const checkedStores      = Array.from(document.querySelectorAll('input[name="matrixStoreFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
+  const checkedTypes       = Array.from(document.querySelectorAll('input[name="matrixTypeFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
+  const checkedStatuses    = Array.from(document.querySelectorAll('input[name="matrixStatusFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
+  const checkedProjects    = Array.from(document.querySelectorAll('input[name="matrixProjectFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
   const checkedDepartments = Array.from(document.querySelectorAll('input[name="matrixDepartmentFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
 
   resultsFeedZone.innerHTML = "";
 
   const filteredOutputList = masterStoreTicketsHistoryCacheCollection.filter(ticket => {
-    const ticketTypeStr = ticket.ticketType || "Request Material";
-    const ticketDeptStr = ticket.department || "General Store";
+    // FALLBACK PROTECTION NORMALIZATION: Eradicates undefined reading property execution errors
+    const ticketStoreStr = (ticket.storeTargetScope || "Raw Materials Store").toString().trim().toLowerCase();
+    const ticketTypeStr  = (ticket.ticketType || "Request Material").toString().trim().toLowerCase();
+    const ticketDeptStr  = (ticket.department || "General Store").toString().trim().toLowerCase();
+    const projectIdStr   = (ticket.projectId || "").toString().trim().toLowerCase();
+    const statusStr      = (ticket.status || "Pending Approval").toString().trim().toLowerCase();
     
-    const matchType    = (checkedTypes.length === 0 || checkedTypes.indexOf(ticketTypeStr.toLowerCase().trim()) !== -1);
-    const matchProject = (checkedProjects.length === 0 || checkedProjects.indexOf(ticket.projectId.trim().toLowerCase()) !== -1);
-    const matchStatus  = (checkedStatuses.length === 0 || checkedStatuses.indexOf(ticket.status.trim().toLowerCase()) !== -1);
-    // NEW CONDITIONAL CRITERIA: Evaluates checked department values safely (Select All if empty)
-    const matchDept    = (checkedDepartments.length === 0 || checkedDepartments.indexOf(ticketDeptStr.toLowerCase().trim()) !== -1);
+    const matchStore   = (checkedStores.length === 0 || checkedStores.indexOf(ticketStoreStr) !== -1);
+    const matchType    = (checkedTypes.length === 0 || checkedTypes.indexOf(ticketTypeStr) !== -1);
+    const matchProject = (checkedProjects.length === 0 || checkedProjects.indexOf(projectIdStr) !== -1);
+    const matchStatus  = (checkedStatuses.length === 0 || checkedStatuses.indexOf(statusStr) !== -1);
+    const matchDept    = (checkedDepartments.length === 0 || checkedDepartments.indexOf(ticketDeptStr) !== -1);
     
-    return matchType && matchProject && matchStatus && matchDept;
+    return matchStore && matchType && matchProject && matchStatus && matchDept;
   });
 
   if (filteredOutputList.length === 0) {
-    resultsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; background:#fff; border:1px solid var(--border); border-radius:4px; color:var(--muted); font-size:0.85rem;">No historical tickets matched your current combination.</div>`;
+    resultsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; background:#fff; border:1px solid var(--border); border-radius:4px; color:var(--muted); font-size:0.85rem;">No historical tickets matched your current criteria combination.</div>`;
     return;
   }
 
@@ -5306,11 +5404,18 @@ function executeClientSideStoreTicketFilterSearch() {
     });
 
     let badgeColorStyle = "background:#fef3c7; color:#b45309;"; 
-    if (ticket.status === "Approved & Released") badgeColorStyle = "background:#dcfce7; color:#15803d;";
-    if (ticket.status === "Rejected" || ticket.status === "Expired") badgeColorStyle = "background:#fee2e2; color:#b91c1c;";
+    const currentStatus = (ticket.status || "Pending Approval").toString().trim();
+    if (currentStatus === "Approved & Released") badgeColorStyle = "background:#dcfce7; color:#15803d;";
+    if (currentStatus === "Rejected" || currentStatus === "Expired" || currentStatus === "Rejected by Admin") badgeColorStyle = "background:#fee2e2; color:#b91c1c;";
 
     const typeLabel = ticket.ticketType || "Request Material";
-    const typeLabelColorStyle = (typeLabel === "Return Material") ? "background:#e0f2fe; color:#0369a1;" : "background:#edf2f7; color:#1e293b;";
+    const isBoqInc = typeLabel === "BOQ INCREASE REQUEST";
+    const typeLabelColorStyle = isBoqInc 
+      ? "background:#fee2e2; color:#991b1b; border:1px solid #fca5a5;" 
+      : ((typeLabel === "Return Material") ? "background:#e0f2fe; color:#0369a1;" : "background:#edf2f7; color:#1e293b;");
+      
+    const statusBadgeText = isBoqInc ? "BOQ LIMIT OVERRUN" : currentStatus.toUpperCase();
+    const mappedStorageScope = ticket.storeTargetScope || "Raw Materials Store";
 
     let cleanCreatedDate = ticket.dateCreated || "";
     if (cleanCreatedDate.indexOf(" GMT") !== -1) {
@@ -5328,9 +5433,10 @@ function executeClientSideStoreTicketFilterSearch() {
           <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:2px 6px; border-radius:4px; font-size:0.8rem;">${ticket.ticketId}</span>
           <span style="font-size:0.65rem; font-weight:700; border-radius:3px; padding:1px 5px; margin-left:4px; ${typeLabelColorStyle}">${typeLabel.toUpperCase()}</span>
           <strong style="margin-left:8px; font-size:0.85rem; color:var(--brand);">Project ID: ${ticket.projectId}</strong>
-          <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Department: ${ticket.department || "General Store"}</span>
+          <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Dept: ${ticket.department || "General Store"}</span>
+          <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Store: ${mappedStorageScope.toUpperCase()}</span>
         </div>
-        <span style="font-size:0.68rem; font-weight:700; border-radius:4px; padding:2px 6px; ${badgeColorStyle}">${ticket.status.toUpperCase()}</span>
+        <span style="font-size:0.68rem; font-weight:700; border-radius:4px; padding:2px 6px; ${badgeColorStyle}">${statusBadgeText}</span>
       </div>
       <div style="font-size:0.8rem; line-height:1.5; margin-bottom:8px; color:#4a5568; text-align:left;">
         <strong>Requested By:</strong> ${ticket.requestedBy} | <strong>Actioned By:</strong> ${ticket.actionedBy || "Pending Review"}<br/>  
@@ -5351,6 +5457,7 @@ function executeClientSideStoreTicketFilterSearch() {
     resultsFeedZone.appendChild(card);
   });
 }
+
 /**
  * 3. EXECUTE RELEASE DISPATCH ACTION CONTROL LOOP (UPDATED: CLICK ANIMATIONS ADDED)
  * Directly handles instant button transforms, text state loaders, and interface locking keys.
@@ -6558,7 +6665,7 @@ async function executeBOQDocumentUploadSubmit(modeString) {
   btn.disabled = true;
   btn.innerHTML = `
     <div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div>
-    <span>AI BOQ sheets...</span>
+    <span>AI Parsing BOQ sheets...</span>
   `;
   
   // 2. CONVERT UPLOADED FILE TO BASE64 DATA STREAM STRING
@@ -6633,6 +6740,70 @@ async function executeBOQDocumentUploadSubmit(modeString) {
       btn.disabled = false;
       btn.textContent = isNew ? "Parse BOQ Document" : "Commit BOQ Change";
     }
+  }
+}
+
+function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
+  const deptDropdown = document.getElementById("ticket-department-outgoing-dropdown");
+  
+  // Clean down cascading child fields path state markers safely
+  clearFullBasketDraftState();
+  resetMaterialRequestCascadingLockState();
+  document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
+
+  if (chosenStoreValue === "Finished Goods Store") {
+    // RULE GATE: Restrict and lock out outgoing category options strictly to 'Panel'
+    deptDropdown.value = "Panel";
+    
+    // Fire the downstream operator validation gateway path directly for Panel configuration
+    handleCreateTicketDepartmentChange("Panel");
+  } else {
+    // Raw Material choice: Release constraints to let user determine choices cleanly
+    deptDropdown.value = "";
+  }
+}
+
+async function triggerLiveFinishedGoodsStoreStockMetricsSync() {
+  const mountZone = document.getElementById("dashboard-finished-goods-live-inventory-mount-zone");
+  const syncBtn = document.getElementById("live-stock-sync-btn");
+  if (!mountZone) return;
+
+  mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--brand); font-weight:700;"><div class="spinner" style="display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></div>Syncing Live Finished Goods Ledger balances...</div>`;
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "pullLiveInventoryCounts", sessionToken: localStorage.getItem("sessionToken") })
+    });
+    const data = await res.json();
+    
+    if (data.success && data.finishedGoodsInventory) {
+      mountZone.innerHTML = "";
+      data.finishedGoodsInventory.forEach(item => {
+        const metricCard = document.createElement("div");
+        metricCard.style.cssText = "background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; min-width: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.02);";
+
+        let colorProfileStyle = "color: #15803d; background: #dcfce7;"; 
+        if (Number(item.availableStock) === 0) {
+          colorProfileStyle = "color: #b91c1c; background: #fee2e2;"; 
+        } else if (Number(item.availableStock) <= Number(item.reorderLevel)) {
+          colorProfileStyle = "color: #b45309; background: #fef3c7;"; 
+        }
+
+        metricCard.innerHTML = `
+          <div style="font-size: 0.82rem; font-weight: 700; color: #334155; line-height: 1.4; white-space: normal; word-break: break-word; min-height: 36px;">
+            ${item.materialName}
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px dashed #e2e8f0; padding-top: 8px; margin-top: 4px;">
+            <span style="font-family: monospace; font-size: 1.15rem; font-weight: 800; color: var(--text);">${item.availableStock}</span>
+            <span style="font-size: 0.68rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; ${colorProfileStyle}">${item.unitType.toUpperCase()}</span>
+          </div>
+        `;
+        mountZone.appendChild(metricCard);
+      });
+    }
+  } catch (error) {
+    mountZone.innerHTML = `<p style="font-size: 0.8rem; color: var(--warn); grid-column: 1 / -1; text-align: center; padding:20px;">⚠️ Sync Exception: Couldn't fetch Finished Goods balances matrix logs.</p>`;
   }
 }
 
