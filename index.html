@@ -1208,7 +1208,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw_e2SP_ND_VcF4MEv8lYrSy7vzsGYlayJKUNwXw67Qd-9LyoZQKw9c0jtXu9cFN7c1Fg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwe-xNzzOYBENcxRp0sUPQtY8-fpmNoqoKrZ7BAkD125vnQ48rq_Odxrfo8kLy8E80gjw/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -2485,7 +2485,7 @@ function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
 
   taskOpen.onclick = function() {
     taskForm.querySelector(".task-edit-id").value = ""; taskForm.querySelector(".task-desc-input").value = "";
-    taskForm.querySelector(".task-targetdate-input").value = ""; taskForm.querySelector(".task-status-select").value = "TS1";
+    taskForm.querySelector(".task-targetdate-input").value = ""; taskForm.querySelector(".task-status-select").value = "Assigned";
     taskForm.style.display = "grid"; taskOpen.style.display = "none"; taskClose.style.display = "inline-flex";
   };
   taskClose.onclick = function() { taskForm.style.display = "none"; taskOpen.style.display = "inline-flex"; taskClose.style.display = "none"; };
@@ -5841,10 +5841,10 @@ async function initializeStoreEntryWorkspaceQueue() {
       let trs = "";
       item.lineItems.forEach((line, idx) => {
         trs += `<tr>
-          <td style="width:160px; padding:6px;"><input type="text" class="se-item-code-${item.gateNumber}" data-idx="${idx}" value="${line.itemCodeNumber || ""}" placeholder="Item Code" style="padding:6px; font-weight:700; border-color:var(--brand); text-align:center;"></td>
-          <td style="font-weight:600; color:var(--text); text-align:left; padding:6px; word-wrap:break-word; white-space:normal;">${line.mappedMaterialName}</td>
-          <td style="font-family:monospace; font-weight:700; text-align:center; width:100px; padding:6px;">${line.extractedQuantity}</td>
-          <td style="text-align:center; width:180px; padding:6px;"><input type="number" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}" value="${line.extractedQuantity}" style="width:100px; font-weight:700; text-align:center; border: 1.5px solid var(--brand); padding:6px;"></td>
+          <td style="width:160px; padding:6px;"><input type="text" class="se-item-code-${item.gateNumber}" data-idx="${idx}" value="${line.itemCode || ""}" placeholder="Item Code" style="padding:6px; font-weight:700; border-color:var(--brand); text-align:center;"></td>
+          <td style="font-weight:600; color:var(--text); text-align:left; padding:6px; word-wrap:break-word; white-space:normal;">${line.materialName}</td>
+          <td style="font-family:monospace; font-weight:700; text-align:center; width:100px; padding:6px;">${line.gateQuantity}</td>
+          <td style="text-align:center; width:180px; padding:6px;"><input type="number" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}" value="${line.gateQuantity}" style="width:100px; font-weight:700; text-align:center; border: 1.5px solid var(--brand); padding:6px;"></td>
           <td style="padding:6px;"><input type="text" class="se-damage-desc-${item.gateNumber}" data-idx="${idx}" placeholder="Reason for short / missing supply..." style="font-size:0.85rem; padding:6px;"></td>
         </tr>`;
       });
@@ -5968,11 +5968,11 @@ async function initializeStoreGrnWorkspaceQueue() {
     data.queue.forEach(item => {
       let trs = "";
       item.lineItems.forEach((line, idx) => {
-        const activeReceivedQtyCount = parseInt(line.verifiedPhysicalQuantity, 10) || 0;
+        const activeReceivedQtyCount = parseInt(line.gateQuantity, 10) || 0;
         
         trs += `<tr>
-          <td style="width:140px; padding:5px;"><input type="text" class="grn-item-code-${item.gateNumber}" data-idx="${idx}" value="${line.itemCodeNumber || ""}" placeholder="CODE *" style="padding:4px; font-weight:700; border:1.5px solid var(--brand); background:#fffef0; text-align:center;"></td>
-          <td style="font-weight:600; color:var(--text); text-align:left; padding:6px; word-wrap:break-word; white-space:normal; font-size:0.82rem;">${line.mappedMaterialName}</td>
+          <td style="width:140px; padding:5px;"><input type="text" class="grn-item-code-${item.gateNumber}" data-idx="${idx}" value="${line.itemCode || ""}" placeholder="CODE *" style="padding:4px; font-weight:700; border:1.5px solid var(--brand); background:#fffef0; text-align:center;"></td>
+          <td style="font-weight:600; color:var(--text); text-align:left; padding:6px; word-wrap:break-word; white-space:normal; font-size:0.82rem;">${line.materialName}</td>
           <td style="font-family:monospace; font-weight:700; text-align:center; width:80px; padding:6px;">${activeReceivedQtyCount}</td>
           <td style="text-align:center; width:80px; padding:5px;"><select class="grn-qa-${item.gateNumber}" data-idx="${idx}" style="padding:4px; font-weight:700; font-size:0.82rem;"><option value="No" selected>No</option><option value="Yes">Yes</option></select></td>
           <td style="text-align:center; width:100px; padding:5px;"><input type="number" min="0" class="grn-ok-${item.gateNumber}" data-idx="${idx}" data-max="${activeReceivedQtyCount}" value="${activeReceivedQtyCount}" style="width:80px; border-color:var(--brand); font-weight:700; text-align:center;" onchange="autoBalanceGrnQuantities(this, '${item.gateNumber}', ${idx})"></td>
@@ -6112,9 +6112,9 @@ async function commitGrnVerificationToBackend(gateNum, encodedItem) {
     
     if (!itemCodeVal)            codeMissing = true;
     if (qa !== "Yes")            qaIncomplete = true;
-    if (ok + notOk !== line.verifiedPhysicalQuantity) validationError = true;
+    if (ok + notOk !== line.gateQuantity) validationError = true;
     
-    line.itemCodeNumber              = itemCodeVal;
+    line.itemCode                    = itemCodeVal;
     line.qaDoneOption                = qa;
     line.okQuantity                  = ok;
     line.notOkQuantity               = notOk;
@@ -6342,7 +6342,7 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
   }
   // 1. Un-nest and minimize homepage structures
   document.getElementById("dashboard-view").style.display = "none";
-
+  
   if (document.getElementById("module-workspace-container")) {
     document.getElementById("module-workspace-container").style.display = "none";
   }
