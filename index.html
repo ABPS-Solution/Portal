@@ -690,6 +690,12 @@
         <div class="section-body" style="text-align: left; padding: 16px;">
           <div id="purchase-order-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
           <div id="purchase-order-inputs-container" style="display: block;">
+            <div style="margin-bottom: 12px;">
+              <label class="field-label">Name of Owner of Order *</label>
+              <select id="po-owner-of-order-dropdown" style="padding: 8px; font-weight: 600; border: 1.5px solid var(--border); border-radius: var(--radius);">
+                <option value="">— Select Engineer —</option>
+              </select>
+            </div>
             <div class="card-box" id="purchase-order-upload-box" onclick="document.getElementById('purchase-order-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Purchase Order</div>
             <input type="file" id="purchase-order-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'purchase-order-upload-box', 'Purchase Order Added ✅')" />
             <button class="nav-btn-styled" id="btn-ops-purchase-order-submit" style="margin-top: 14px; width: 100%; padding: 10px;" onclick="executeMarketingOperationsDocumentCommit('PURCHASE_ORDER')">Process Purchase Order with AI</button>
@@ -1208,7 +1214,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwe-xNzzOYBENcxRp0sUPQtY8-fpmNoqoKrZ7BAkD125vnQ48rq_Odxrfo8kLy8E80gjw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzKpTnPBXpCQXp1HZ_YIBkuSZ5O7HbVPT1UZp2s-xxP87iykfJCg6Y0MZWnjKeapE4MAw/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -1954,6 +1960,17 @@ async function navigateToModule(key) {
         targetPanelKeyIdStr = "commissioningReport";
     } else if (key === "purchaseOrder") {
         targetPanelKeyIdStr = "purchaseOrder";
+        // Populate owner dropdown with marketing engineers
+        const poOwnerDrop = document.getElementById("po-owner-of-order-dropdown");
+        if (poOwnerDrop && cachedEngineers.length > 0) {
+          poOwnerDrop.innerHTML = '<option value="">— Select Engineer —</option>';
+          cachedEngineers.forEach(eng => {
+            const opt = document.createElement("option");
+            opt.value = eng; opt.textContent = eng;
+            poOwnerDrop.appendChild(opt);
+          });
+          if (appActiveOperatorIdentityString) poOwnerDrop.value = appActiveOperatorIdentityString;
+        }
     }
 
     const targetWorkspacePanel = document.getElementById("workspace-" + targetPanelKeyIdStr);
@@ -5589,6 +5606,9 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
 
     const isPdfFormat = activeWorkingFile.type === "application/pdf";
 
+    const poOwnerDropEl = document.getElementById("po-owner-of-order-dropdown");
+    const ownerOfOrder = (isPO && poOwnerDropEl) ? poOwnerDropEl.value.trim() : "";
+
     const res = await fetch(GAS_URL, {
       method: "POST",
       body: JSON.stringify({
@@ -5597,7 +5617,8 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
         activeEngineer: appActiveOperatorIdentityString,
         operationType: opsFlagTypeString,
         fileData64: fileBase64Raw,
-        isPdf: isPdfFormat
+        isPdf: isPdfFormat,
+        ownerOfOrder: ownerOfOrder
       })
     });
 
@@ -5613,6 +5634,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
             <div>
               <strong>Upload Successful!</strong><br/>
               <span><strong>${data.matchedCompany}</strong> status updated to <strong>${isDispatch ? 'Order Dispatched' : (opsFlagTypeString === 'PURCHASE_ORDER' ? 'Order Received' : 'Product Commissioned')}</strong>.</span>
+              ${isPO && data.generatedProjectId ? `<br/><span style="font-size:0.82rem; margin-top:4px; display:block;">Project ID assigned: <strong style="font-family:monospace; color:#111827;">${data.generatedProjectId}</strong></span>` : ''}
             </div>
             <button class="nav-btn-styled" onclick="
               targetDispatchBillFileObj = null;
@@ -5691,7 +5713,11 @@ async function parseGateDocumentsWithAI() {
     
     const lookupRes = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "pullLiveInventoryCounts", sessionToken: localStorage.getItem("sessionToken") })});
     const catalogData = await lookupRes.json();
-    const existingMaterialNamesList = catalogData.success ? catalogData.inventory.map(i => i.materialName) : [];
+    const existingMaterialNamesList = catalogData.success 
+      ? catalogData.inventory
+          .filter(i => i.boqActive === "YES")
+          .map(i => i.materialName)
+      : [];
 
     const res = await fetch(GAS_URL, {
       method: "POST",
@@ -5972,7 +5998,14 @@ async function initializeStoreGrnWorkspaceQueue() {
         
         trs += `<tr>
           <td style="width:140px; padding:5px;"><input type="text" class="grn-item-code-${item.gateNumber}" data-idx="${idx}" value="${line.itemCode || ""}" placeholder="CODE *" style="padding:4px; font-weight:700; border:1.5px solid var(--brand); background:#fffef0; text-align:center;"></td>
-          <td style="font-weight:600; color:var(--text); text-align:left; padding:6px; word-wrap:break-word; white-space:normal; font-size:0.82rem;">${line.materialName}</td>
+          <td style="text-align:left; padding:5px; min-width:180px;">
+            <input type="text" class="grn-mat-name-${item.gateNumber}" data-idx="${idx}"
+              value="${(line.materialName || '').replace(/"/g, '&quot;')}"
+              style="width:100%; font-weight:600; font-size:0.82rem; padding:5px; border:1.5px solid var(--border); border-radius:3px;"
+              oninput="checkGrnMaterialNameMatch(this, '${item.gateNumber}', ${idx})" />
+            <div id="grn-name-warn-${item.gateNumber}-${idx}"
+              style="display:none; font-size:0.75rem; color:#92400e; margin-top:4px; line-height:1.5;"></div>
+          </td>
           <td style="font-family:monospace; font-weight:700; text-align:center; width:80px; padding:6px;">${activeReceivedQtyCount}</td>
           <td style="text-align:center; width:80px; padding:5px;"><select class="grn-qa-${item.gateNumber}" data-idx="${idx}" style="padding:4px; font-weight:700; font-size:0.82rem;"><option value="No" selected>No</option><option value="Yes">Yes</option></select></td>
           <td style="text-align:center; width:100px; padding:5px;"><input type="number" min="0" class="grn-ok-${item.gateNumber}" data-idx="${idx}" data-max="${activeReceivedQtyCount}" value="${activeReceivedQtyCount}" style="width:80px; border-color:var(--brand); font-weight:700; text-align:center;" onchange="autoBalanceGrnQuantities(this, '${item.gateNumber}', ${idx})"></td>
@@ -6067,6 +6100,56 @@ function updateGrnRowCalculations(qaInput, idx) {
   updateGrnRowAmounts(idx);
 }
 
+function checkGrnMaterialNameMatch(inputEl, gateNum, idx) {
+  const typedName = inputEl.value.trim().toLowerCase().replace(/\s+/g, '');
+  if (!typedName) {
+    inputEl.style.borderColor = 'var(--border)';
+    inputEl.style.background = '#fff';
+    const warn = document.getElementById(`grn-name-warn-${gateNum}-${idx}`);
+    if (warn) warn.style.display = 'none';
+    return;
+  }
+
+  // Check against cachedInventoryStockCollection (already loaded in memory)
+  const exactMatch = cachedInventoryStockCollection.find(item =>
+    item.materialName.trim().toLowerCase().replace(/\s+/g, '') === typedName
+  );
+
+  const warnEl = document.getElementById(`grn-name-warn-${gateNum}-${idx}`);
+
+  if (exactMatch) {
+    // Exact match — green border, hide warning
+    inputEl.style.borderColor = '#15803d';
+    inputEl.style.background = '#f0fdf4';
+    if (warnEl) warnEl.style.display = 'none';
+  } else {
+    // No exact match — find closest suggestions
+    const suggestions = cachedInventoryStockCollection
+      .filter(item => {
+        const inv = item.materialName.trim().toLowerCase().replace(/\s+/g, '');
+        return inv.includes(typedName.substring(0, 6)) || typedName.includes(inv.substring(0, 6));
+      })
+      .slice(0, 3)
+      .map(item => item.materialName);
+
+    inputEl.style.borderColor = '#b45309';
+    inputEl.style.background = '#fffbeb';
+
+    if (warnEl) {
+      warnEl.style.display = 'block';
+      if (suggestions.length > 0) {
+        warnEl.innerHTML = `⚠️ No exact inventory match. Did you mean: <br/>` +
+          suggestions.map(s =>
+            `<span onclick="document.querySelector('.grn-mat-name-${gateNum}[data-idx=\\"${idx}\\"]').value='${s.replace(/'/g, "\\'")}'; checkGrnMaterialNameMatch(document.querySelector('.grn-mat-name-${gateNum}[data-idx=\\"${idx}\\"]'), '${gateNum}', ${idx});"
+              style="display:inline-block; margin:3px 4px 0 0; padding:2px 8px; background:#fff; border:1px solid #b45309; border-radius:4px; cursor:pointer; font-size:0.78rem; color:#92400e; font-weight:600;">${s}</span>`
+          ).join('');
+      } else {
+        warnEl.innerHTML = `⚠️ New item — will be added as a new inventory entry.`;
+      }
+    }
+  }
+}
+
 function updateGrnRowAmounts(gateNum, idx) {
   const okQty      = parseFloat(document.querySelector(`.grn-ok-${gateNum}[data-idx="${idx}"]`)?.value)          || 0;
   const rate       = parseFloat(document.querySelector(`.grn-rate-${gateNum}[data-idx="${idx}"]`)?.value)         || 0;
@@ -6115,6 +6198,8 @@ async function commitGrnVerificationToBackend(gateNum, encodedItem) {
     if (ok + notOk !== line.gateQuantity) validationError = true;
     
     line.itemCode                    = itemCodeVal;
+    const matNameInput = document.querySelector(`.grn-mat-name-${gateNum}[data-idx="${idx}"]`);
+    if (matNameInput && matNameInput.value.trim()) line.materialName = matNameInput.value.trim();
     line.qaDoneOption                = qa;
     line.okQuantity                  = ok;
     line.notOkQuantity               = notOk;
