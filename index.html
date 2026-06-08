@@ -239,7 +239,7 @@
         <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
           <div class="menu-card" id="mod-store-gate" onclick="navigateToStoreWorkspacePanel('store-gate-entry')">Gate Entry</div>
           <div class="menu-card" id="mod-store-entry" onclick="navigateToStoreWorkspacePanel('store-entry')">Raw Materials Store Entry</div>
-          <div class="menu-card" id="mod-store-grn" onclick="navigateToStoreWorkspacePanel('store-grn')">GRN (Goods Recieved Note)</div>
+          <div class="menu-card" id="mod-store-grn" onclick="navigateToStoreWorkspacePanel('store-grn')">GRN (Goods Received Note)</div>
         </div>
       </div>
 
@@ -339,7 +339,7 @@
     </div>
 
     <div id="canvas-module-store-grn" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 16px;">Goods Recieved Note (GRN)</h2>
+      <h2 style="margin-bottom: 16px;">Goods Received Note (GRN)</h2>
       <div id="store-grn-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="store-grn-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>  
@@ -777,13 +777,13 @@
           <div class="pill-group" id="lead-matrix-status-checkboxes-mount" style="margin:8px 0 16px;">
             <input type="checkbox" name="leadMatrixStatusFilter" value="New Lead" id="lms_st1" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st1">New Lead</label>
             <input type="checkbox" name="leadMatrixStatusFilter" value="Technical Discussion" id="lms_st2" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st2">Technical Discussion</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Inquire Recieved" id="lms_st3" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st3">Inquire Recieved</label>
+            <input type="checkbox" name="leadMatrixStatusFilter" value="Inquire Received" id="lms_st3" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st3">Inquire Received</label>
             <input type="checkbox" name="leadMatrixStatusFilter" value="Offer Sent" id="lms_st4" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st4">Offer Sent</label>
             <input type="checkbox" name="leadMatrixStatusFilter" value="Order Received" id="lms_st5" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st5">Order Received</label>
             <input type="checkbox" name="leadMatrixStatusFilter" value="Order Dispatched" id="lms_st6" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st6">Order Dispatched</label>
             <input type="checkbox" name="leadMatrixStatusFilter" value="Product Commissioned" id="lms_st7" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st7">Product Commissioned</label>
             <input type="checkbox" name="leadMatrixStatusFilter" value="Lead Failed" id="lms_st8" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st8">Lead Failed</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Order not Recieved" id="lms_st9" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st9">Order not Recieved</label>
+            <input type="checkbox" name="leadMatrixStatusFilter" value="Order not Received" id="lms_st9" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st9">Order not Received</label>
           </div>
           
           <button class="btn btn-sub" id="lead-matrix-search-submit-btn" onclick="executeLeadMatrixFilterSearch()">Run Leads Search</button>
@@ -1215,7 +1215,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycby-xbuAT90q1s8pe1nd_7IAc9vZb5dtDdyOA5YZUV0RV_Nr9drwPShFrnEBHDSH6atbPA/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyuGIi7bX5-siPQB1i8Jbv6fwmW59dz8JtwlicmQGgX22wjVzYFWbdYkVPu32tCY_AWSg/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -2576,8 +2576,8 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
       if (key === "Status") {
         let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
         [
-          "New Lead", "Technical Discussion", "Inquire recieved", "Offer Sent", 
-          "Order Received", "Order Dispatched", "Product Commissioned", "Lead Failed", "Order not Recieved"
+          "New Lead", "Technical Discussion", "Inquire Received", "Offer Sent", 
+          "Order Received", "Order Dispatched", "Product Commissioned", "Lead Failed", "Order not Received"
         ].forEach(st => {
           let op = document.createElement("option"); op.textContent = st; if(leadMap[key] === st) op.selected = true; sel.appendChild(op);
         });
