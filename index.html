@@ -872,9 +872,9 @@
           </div>
 
           <div style="margin-bottom: 12px;">
-            <label class="field-label" placeholder="— Select ABPS Engineer Name —"> Engineer Name *</label>
+            <label class="field-label" > Engineer Name *</label>
             <select id="engName" style="padding: 8px; font-weight: 600;">
-              <option value="">— Loading Engineers —</option>
+              <option value="">— Select Engineer Name —</option>
             </select>
           </div>
 
@@ -935,7 +935,7 @@
 
           <div style="margin-bottom: 12px;">
             <label class="field-label">Venue Name / City</label>
-            <input type="text" id="venueName" placeholder="Enter venue name / city details..." />
+            <input type="text" id="venueName">
           </div>
 
           <div style="margin-bottom: 12px;">
@@ -1114,7 +1114,7 @@
 
           <div class="section-divider-line" style="margin: 15px 0; background: var(--border); height: 1px;"></div>
 
-          <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--brand); margin-bottom: 8px; text-transform: uppercase;">Section 5: Actions Matrix Pipeline Tasks</h3>
+          <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--brand); margin-bottom: 8px; text-transform: uppercase;">Section 5: Actions Plan</h3>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 15px;">
             <div>
               <label class="field-label">Send Company Profile</label>
@@ -1865,7 +1865,7 @@ async function showAppView() {
       // 1. MASTER LEAD ENTRY DROPDOWN PATCH
       const targetFormEngSelector = document.getElementById("engName");
       if (targetFormEngSelector) {
-        targetFormEngSelector.innerHTML = '<option value="">— Select Your Name —</option>';
+        targetFormEngSelector.innerHTML = '<option value="">— Select Engineer Name —</option>';
         cachedEngineers.forEach(eng => {
           let opt = document.createElement("option");
           opt.value = eng; opt.textContent = eng;
@@ -2068,6 +2068,16 @@ function returnToDashboard() {
   if (canvas) canvas.style.display = "none";
   
   document.getElementById("multi-contact-records-container").innerHTML = "";
+  // Reset card scan fields for next use
+  fileFront = null; fileBack = null;
+  const fb = document.getElementById('front-box'); if (fb) { fb.textContent = '📷 Front Side '; fb.classList.remove('done'); }
+  const bb = document.getElementById('back-box'); if (bb) { bb.textContent = '📷 Back Side (Optional)'; bb.classList.remove('done'); }
+  const fi = document.getElementById('card-front'); if (fi) fi.value = '';
+  const bi = document.getElementById('card-back'); if (bi) bi.value = '';
+  ['f-company','f-name','f-position','f-phone','f-altphone','f-email','f-website','f-city','f-state','f-country','f-address'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const step1 = document.getElementById('step1-card-capture-block'); if (step1) step1.style.display = 'block';
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
   document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
 }
@@ -3417,6 +3427,9 @@ async function submitLead() {
       if (remainingFormBox) {
         remainingFormBox.style.display = "none";
       }
+
+      if (document.getElementById("missing-trigger-notice-block")) document.getElementById("missing-trigger-notice-block").style.display = "none";
+      if (document.getElementById("step2-inline-interaction-canvas")) document.getElementById("step2-inline-interaction-canvas").style.display = "none";
 
       // B. Inject full success element view with inline "+ Create New Entry" button action loop
       if (feedbackBanner) {
