@@ -311,7 +311,7 @@
         <div id="gate-ai-verification-workspace" style="display: none; margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 15px;">
           <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px;">
             <div><label class="field-label">Invoice Number</label><input type="text" id="gate-meta-invoice" style="background:#f1f5f9;" /></div>
-            <div><label class="field-label">Challan Number</label><input type="text" id="gate-meta-challan" placeholder="If available" style="background:#f1f5f9;" /></div>
+            <div><label class="field-label">Challan Number</label><input type="text" id="gate-meta-challan" style="background:#f1f5f9;" /></div>
             <div><label class="field-label">Vendor Name</label><input type="text" id="gate-meta-vendor" style="background:#f1f5f9;" /></div>
             <div><label class="field-label">Date</label><input type="text" id="gate-meta-date" style="background:#f1f5f9;" /></div>
             <input type="hidden" id="gate-meta-time" value="" />
@@ -5908,7 +5908,7 @@ async function commitGateEntryRecordsToBackend() {
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; text-align:left;">
           <div>
             <strong>Success! Gate Entry Generated.</strong><br/>
-            <span>Assigned Code Reference: <strong style="font-family:monospace; font-size:1.05rem; color:#111827;">${data.gateNumber}</strong></span>
+            <span>Assigned Reference Code: <strong style="font-family:monospace; font-size:1.05rem; color:#111827;">${data.gateNumber}</strong></span>
           </div>
           <button class="nav-btn-styled" onclick="
             document.getElementById('store-gate-runtime-feedback-banner').style.display = 'none';
@@ -6116,15 +6116,15 @@ async function initializeStoreGrnWorkspaceQueue() {
           <div class="contact-summary-title-info" style="width:100%;">
             <div class="meta-row-line-block" style="display:flex; justify-content:space-between; width:100%; align-items:center;">
               <div>
-                <span style="background:var(--accent); color:#fff; padding:3px 8px; font-weight:700;">INWARD: ${item.inwardNumber || "PENDING"}</span>
+                <span style="background:var(--accent); color:#fff; padding:3px 8px; font-weight:700;">INWARD Number: ${item.inwardNumber || "PENDING"}</span>
                 ${item.grnNumber ? `<span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px; margin-left:4px;">GRN: ${item.grnNumber}</span>` : ''}
-                <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">GATE ref: ${item.gateNumber}</span>
-                ${item.challanNumber ? `<span style="background:#f0fdf4;color:#15803d;font-weight:700; margin-left:4px;">CHALLAN: ${item.challanNumber}</span>` : ''}
+                <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">GATE Number: ${item.gateNumber}</span>
               </div>
               <span style="background:#cbd5e1; color:#1e293b; font-weight:700; text-transform:none; font-size:0.8rem; padding:3px 8px;">${cleanDateDisplay}</span>
             </div>
             <div style="font-size:0.85rem; margin-top:8px; color:var(--muted); font-weight:600; padding-left:2px;">
-              Vendor Name: <strong style="color:var(--brand); font-weight:700;">${item.vendorName}</strong> | Invoice No: <strong style="color:var(--text); font-weight:700;">${item.invoiceNumber}</strong>
+              Vendor Name: <strong style="color:var(--brand); font-weight:700;">${item.vendorName}</strong> | 
+              Invoice Number: <strong style="color:var(--text); font-weight:700;">${item.invoiceNumber}</strong>${item.challanNumber ? ' | <strong style="color:var(--text); font-weight:700;">CHALLAN Number: ' + item.challanNumber + '</strong>' : ''}
             </div>
           </div>
         </div>
