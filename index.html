@@ -916,9 +916,9 @@
 
           <div class="section-divider-line" style="margin: 15px 0; background: var(--border); height: 1px;"></div>
 
-          <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--brand); margin-bottom: 8px; text-transform: uppercase;">Section 1: Initial Handshake</h3>
+          <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--brand); margin-bottom: 8px; text-transform: uppercase;">Section 1: Meeting Information</h3>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-            <div><label class="field-label">Date of Meeting</label><input type="date" id="meetingDate" /></div>
+            <div><label class="field-label">Date of Meeting *</label><input type="date" id="meetingDate" /></div>
             <div><label class="field-label">Time of Meeting</label><input type="time" id="meetingTime" /></div>
           </div>
 
@@ -3317,6 +3317,9 @@ async function submitLead() {
   const engineerField = document.getElementById('engName');
   if (!engineerField || !engineerField.value) { alert("Engineer Name is a compulsory question."); return; }
 
+  const meetingDateField = document.getElementById('meetingDate');
+  if (!meetingDateField || !meetingDateField.value) { alert("Please select a Date of Meeting."); return; }
+
   if (feedbackBanner) {
     feedbackBanner.style.display = "none";
   }
@@ -3430,6 +3433,8 @@ async function submitLead() {
 
       if (document.getElementById("missing-trigger-notice-block")) document.getElementById("missing-trigger-notice-block").style.display = "none";
       if (document.getElementById("step2-inline-interaction-canvas")) document.getElementById("step2-inline-interaction-canvas").style.display = "none";
+      const step1CardBlock = document.getElementById("step1-card-capture-block");
+      if (step1CardBlock) step1CardBlock.style.display = "none";
 
       // B. Inject full success element view with inline "+ Create New Entry" button action loop
       if (feedbackBanner) {
@@ -3444,7 +3449,14 @@ async function submitLead() {
             </div>
             <button class="nav-btn-styled" onclick="
               document.getElementById('marketing-lead-creation-inline-feedback-banner').style.display = 'none';
+              document.getElementById('step1-card-capture-block').style.display = 'block';
               document.getElementById('remaining-sections-form').style.display = 'block';
+              fileFront = null; fileBack = null;
+              const fb = document.getElementById('front-box'); if (fb) { fb.textContent = '📷 Front Side '; fb.classList.remove('done'); }
+              const bb = document.getElementById('back-box'); if (bb) { bb.textContent = '📷 Back Side (Optional)'; bb.classList.remove('done'); }
+              const fi = document.getElementById('card-front'); if (fi) fi.value = '';
+              const bi = document.getElementById('card-back'); if (bi) bi.value = '';
+              ['f-company','f-name','f-position','f-phone','f-altphone','f-email','f-website','f-city','f-state','f-country','f-address'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
               resetSequentialFormState();
               revealNewEntryFormDropdown();
             " style="background: #166534; color: white; padding: 8px 16px; font-weight: 700;">
