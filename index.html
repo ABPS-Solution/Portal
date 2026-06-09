@@ -611,9 +611,9 @@
         </table>
         
         <div style="border-top:1px dashed var(--border); padding-top:16px; background:#fffef0; padding:12px; border:1.5px solid var(--brand); border-radius:var(--radius);">
-          <span style="display:block; font-size:0.8rem; font-weight:800; color:var(--brand); margin-bottom:10px; text-transform:uppercase;">Upload Revised Blueprint Sheet Version</span>
+          <span style="display:block; font-size:0.8rem; font-weight:800; color:var(--brand); margin-bottom:10px; text-transform:uppercase;">Upload Revised Bill of Quantity</span>
           <div class="card-box" id="boq-revision-file-dropzone" onclick="document.getElementById('boq-revision-file-raw').click()" style="padding:20px; border:2px dashed var(--brand); font-weight:700; color:var(--brand); margin-bottom:12px; background:#fff;">
-            📷 Select Revised BOQ Document Page Image
+            📷 Select Revised BOQ Document
           </div>
           <input type="file" id="boq-revision-file-raw" accept="image/*,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden onchange="handleBOQFileSelection(this, 'boq-revision-file-dropzone')" />
           <button class="btn btn-sub" id="boq-revision-submit-action-btn" onclick="executeBOQDocumentUploadSubmit('UPDATE')" style="background:var(--accent); font-weight:700;">Commit BOQ Change</button>
@@ -1173,6 +1173,7 @@
       <div id="split-missing-person-banner-hook"></div>
       <div id="multi-contact-records-container"></div>
     </div>
+
   </div>
 </div>
 
