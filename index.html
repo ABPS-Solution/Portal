@@ -3947,7 +3947,7 @@ function renderLeadMatrixEngineerCheckboxes() {
   const mountPoint = document.getElementById("lead-matrix-engineer-checkboxes-mount");
   if (!mountPoint) return;
   
-  mountPoint.innerHTML = "";
+  mountPoint.innerHTML = '<p style="font-size:0.75rem; color:var(--brand); font-weight:600; margin:0; display:flex; align-items:center; gap:6px;"><span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span> Loading Engineers...</p>';
   cachedEngineers.forEach(eng => {
      const cleanId = `chk_lm_eng_${eng.replace(/\s+/g, '_')}`;
      mountPoint.innerHTML += `
@@ -4003,6 +4003,11 @@ async function executeLeadMatrixFilterSearch() {
       globalTasksCacheMap = data.tasks;
 
       if (data.leads.length === 0) {
+        // Clear previous results so stale cards don't remain visible
+        document.getElementById("multi-contact-records-container").innerHTML = "";
+        const canvas = document.getElementById("step2-inline-interaction-canvas");
+        canvas.style.display = "none";
+
         const filterDisplay = document.getElementById("lead-matrix-active-filters-display");
         if (filterDisplay) {
           const parts = [];
