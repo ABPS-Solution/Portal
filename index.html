@@ -2122,7 +2122,7 @@ function returnToDashboard() {
   const qualDrawer = document.getElementById("custom-qualifications-sub-drawer"); if (qualDrawer) qualDrawer.style.display = "none";
   const taskOutput = document.getElementById("task-matrix-results-output-node"); if (taskOutput) taskOutput.innerHTML = "";
   const tfd = document.getElementById("task-matrix-active-filters-display"); if (tfd) { tfd.style.display = "none"; tfd.textContent = ""; }
-  
+
   // Restore search section input blocks that get hidden after a search runs
   const companyDropBlock = document.getElementById("company-dropdown-selector-block"); if (companyDropBlock) companyDropBlock.style.display = "block";
   const step1Card = document.getElementById("step1-card-capture-block"); if (step1Card) step1Card.style.display = "block";
@@ -3975,49 +3975,140 @@ async function removeMatrixTaskFromEngine(taskId, event) {
   }
 }
 
-function openCompanySearchFromTask(encodedCompany, encodedPerson) {
+async function openCompanySearchFromTask(encodedCompany, encodedPerson) {
   const companyName = decodeURIComponent(encodedCompany);
-  const personName = decodeURIComponent(encodedPerson);
+  const personName  = decodeURIComponent(encodedPerson);
 
-  // Navigate to searchCompany workspace
-  navigateToModule('searchCompany');
+  // Build modal overlay
+  const existing = document.getElementById("task-company-modal-overlay");
+  if (existing) existing.remove();
 
-  // Wait for dropdown to load then auto-search
-  const attemptSearch = (attemptsLeft) => {
-    const dropdown = document.getElementById("lookup-module-company-dropdown");
-    if (!dropdown || dropdown.options.length <= 1) {
-      if (attemptsLeft > 0) setTimeout(() => attemptSearch(attemptsLeft - 1), 300);
+  const overlay = document.createElement("div");
+  overlay.id = "task-company-modal-overlay";
+  overlay.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.55); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:60px;";
+
+  const modal = document.createElement("div");
+  modal.style.cssText = "background:#fff; border-radius:8px; width:90%; max-width:900px; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.3); overflow:hidden;";
+
+  modal.innerHTML = `
+    <div style="background:var(--brand); color:#fff; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+      <span style="font-weight:700; font-size:1rem;">📋 ${companyName}</span>
+      <button onclick="document.getElementById('task-company-modal-overlay').remove()" style="background:rgba(255,255,255,0.2); border:none; color:#fff; font-size:1.1rem; font-weight:700; cursor:pointer; padding:2px 10px; border-radius:4px;">✕</button>
+    </div>
+    <div id="task-company-modal-body" style="padding:14px; overflow-y:auto; flex:1;">
+      <div style="display:flex; align-items:center; gap:8px; color:var(--brand); font-size:0.85rem; font-weight:600;">
+        <span class="spinner" style="display:inline-block; width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span>
+        Loading company records...
+      </div>
+    </div>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  // Close on backdrop click
+  overlay.addEventListener("click", function(e) {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  // Fetch company data
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "searchCompanyData",
+        sessionToken: localStorage.getItem("sessionToken"),
+        activeEngineer: appActiveOperatorIdentityString,
+        companyName: companyName,
+        contactName: ""
+      })
+    });
+    const data = await res.json();
+    const body = document.getElementById("task-company-modal-body");
+    if (!body) return;
+
+    if (!data.success || !data.leads || data.leads.length === 0) {
+      body.innerHTML = `<p style="color:var(--warn); font-weight:700;">No records found for "${companyName}".</p>`;
       return;
     }
-    // Find matching option
-    let matched = false;
-    for (let i = 0; i < dropdown.options.length; i++) {
-      if (dropdown.options[i].value.toLowerCase().includes(companyName.toLowerCase()) ||
-          companyName.toLowerCase().includes(dropdown.options[i].value.toLowerCase())) {
-        dropdown.value = dropdown.options[i].value;
-        matched = true;
-        break;
+
+    globalFollowUpsCacheMap = data.followups;
+    globalTasksCacheMap = data.tasks;
+
+    // Sort — matching person first
+    const leads = data.leads.sort((a, b) => {
+      const aMatch = (a["Contact Person Name"] || "").toLowerCase() === personName.toLowerCase();
+      const bMatch = (b["Contact Person Name"] || "").toLowerCase() === personName.toLowerCase();
+      if (aMatch && !bMatch) return -1;
+      if (!aMatch && bMatch) return 1;
+      return 0;
+    });
+
+    body.innerHTML = "";
+
+    leads.forEach(lead => {
+      const tRef = lead["Lead ID"];
+      const isTarget = (lead["Contact Person Name"] || "").toLowerCase() === personName.toLowerCase();
+      const cardName = lead["Contact Person Name"] || "Unspecified";
+      const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
+      const deleteHtml = isAdminUser
+        ? `<button class="nav-btn-styled" style="font-size:0.82rem; padding:5px 12px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}')">Delete Record</button>`
+        : "";
+
+      const card = document.createElement("div");
+      card.className = "contact-summary-card-parent";
+      card.id = `modal-card-${tRef}`;
+      if (isTarget) {
+        card.style.cssText = "border:2.5px solid var(--brand) !important; background:var(--highlight-bg) !important; box-shadow:0 4px 12px rgba(0,86,179,0.15) !important;";
       }
-    }
-    if (matched) {
-      triggerSequentialSearch('DROPDOWN').then(() => {
-        // After results load, highlight the card matching the person name
-        setTimeout(() => {
-          const cards = document.querySelectorAll(".contact-summary-card-parent");
-          cards.forEach(card => {
-            const nameEl = card.querySelector('[id^="card-lbl-name-"]');
-            if (nameEl && nameEl.textContent.trim().toLowerCase() === personName.toLowerCase()) {
-              card.style.cssText += "; border: 2.5px solid var(--brand) !important; box-shadow: 0 4px 12px rgba(0,86,179,0.2) !important;";
-              card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          });
-        }, 800);
-      });
-    } else {
-      alert("Company '" + companyName + "' not found in dropdown. It may not exist in your leads yet.");
-    }
-  };
-  setTimeout(() => attemptSearch(10), 400);
+
+      card.innerHTML = `
+        <div class="contact-summary-header-row">
+          <div class="contact-summary-title-info">
+            <div class="meta-row-line-block" style="margin-bottom:6px;">
+              <span style="background:#e2e8f0;">Company:</span><strong style="margin-right:20px;">${lead["Company Name"] || companyName}</strong>
+              <span style="background:#edf2f7;">Status:</span><strong>${lead["Status"] || "N/A"}</strong>
+              ${isTarget ? '<span style="background:var(--brand); color:#fff; margin-left:8px; font-size:0.65rem; padding:2px 6px; border-radius:4px;">LINKED TO TASK</span>' : ''}
+            </div>
+            <div class="meta-row-line-block">
+              <span style="background:#e2e8f0;">Name:</span><strong style="margin-right:20px;">${cardName}</strong>
+              <span style="background:#edf2f7;">Position:</span><strong>${lead["Position"] || "Unspecified"}</strong>
+            </div>
+          </div>
+          <div class="directory-btn-actions-block">
+            <button class="nav-btn-styled" style="font-size:0.82rem; padding:5px 12px;" onclick="
+              document.getElementById('task-company-modal-overlay').remove();
+              setTimeout(() => {
+                navigateToModule('searchCompany');
+                setTimeout(() => {
+                  const dd = document.getElementById('lookup-module-company-dropdown');
+                  if (dd) {
+                    for (let i=0; i<dd.options.length; i++) {
+                      if (dd.options[i].value.toLowerCase().includes('${encodeURIComponent(companyName.toLowerCase())}') || '${encodeURIComponent(companyName.toLowerCase())}'.includes(dd.options[i].value.toLowerCase())) {
+                        dd.value = dd.options[i].value; break;
+                      }
+                    }
+                    triggerSequentialSearch('DROPDOWN');
+                  }
+                }, 600);
+              }, 100);
+            ">Open Full Profile</button>
+            ${deleteHtml}
+          </div>
+        </div>
+      `;
+      body.appendChild(card);
+
+      // Auto-scroll to highlighted card
+      if (isTarget) {
+        setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200);
+      }
+    });
+
+  } catch(e) {
+    const body = document.getElementById("task-company-modal-body");
+    if (body) body.innerHTML = `<p style="color:var(--warn);">Error loading company: ${e.message}</p>`;
+  }
 }
 
 function renderLeadMatrixEngineerCheckboxes() {
