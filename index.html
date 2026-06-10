@@ -1177,9 +1177,9 @@
 </div>
 
 <div id="reusable-child-modules-template" style="display:none;">
-  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
-    <button class="nav-btn-styled trigger-fup-open" style="background:var(--accent);">+ Log Follow-Up</button>
-    <button class="nav-btn-styled trigger-fup-close" style="display:none; background:#718096;">Cancel</button>
+  <div style="display:flex; gap:8px; margin-bottom:8px;">
+    <button class="nav-btn-styled trigger-fup-open" style="background:var(--accent); width:auto; padding:6px 20px;">+ Log Follow-Up</button>
+    <button class="nav-btn-styled trigger-fup-close" style="display:none; background:#718096; width:auto; padding:6px 20px;">Cancel</button>
   </div>
   
   <div class="template-fup-form" style="display:none; grid-template-columns:1fr 1fr; gap:8px; background:#f8fafc; padding:10px; border-radius:var(--radius); border:1px solid var(--border); margin-bottom:8px;">
@@ -1206,9 +1206,9 @@
 
   <div style="height:3px; background:var(--border); margin:8px 0;"></div>
   
-  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
-    <button class="nav-btn-styled trigger-task-open" style="background:var(--accent);">+ Add Task</button>
-    <button class="nav-btn-styled trigger-task-close" style="display:none; background:#718096;">Cancel</button>
+  <div style="display:flex; gap:8px; margin-bottom:8px;">
+    <button class="nav-btn-styled trigger-task-open" style="background:var(--accent); width:auto; padding:6px 20px;">+ Add Task</button>
+    <button class="nav-btn-styled trigger-task-close" style="display:none; background:#718096; width:auto; padding:6px 20px;">Cancel</button>
   </div>
 
   <div class="template-task-form" style="display:none; grid-template-columns:1fr 1fr; gap:8px; background:#f0fdf4; padding:10px; border-radius:var(--radius); border:1px solid var(--border); margin-bottom:8px;">
@@ -3598,8 +3598,7 @@ async function loadQualFilter() {
   const container = document.getElementById("qual-filter-checkboxes"); 
   if (!container) return;
   
-  // Clean initialization ensures old pills are dropped before hitting the server
-  container.innerHTML = "";
+  container.innerHTML = '<p style="font-size:0.75rem; color:var(--brand); font-weight:600; margin:0; display:flex; align-items:center; gap:6px;"><span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span> Loading Other Qualifications...</p>';
   
   try {
     const res = await fetch(GAS_URL, { 
