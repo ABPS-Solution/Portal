@@ -1233,7 +1233,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwDkJRGnkIuvExnnlEjc0vpVBCN3sLZlg1WBqxoespu6j26ZX6bm6vX4fzXlamk-zRp0w/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzlfb5e6KczRX-AnvCmbpfs_TygpC8A1aTlorOOe19FlIN2GWYC66nunk5WtBaaTil7-A/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -4502,7 +4502,7 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
     // --- SCENARIO A: COMPANY EXISTS IN DATABASE MATRIX ---
     if (data.success) {
       actionBtn.disabled = false;
-      actionBtn.textContent = "Collapse";
+      actionBtn.style.display = "none";
       nestedWorkspace.innerHTML = `
         <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--brand); margin-bottom:6px; padding-bottom:4px; border-bottom:1px solid var(--border);">
           🏢 Existing Database Records found for ${mailObject.extractedCompany}:
@@ -4528,7 +4528,7 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
     else {
       activeEmailLeadContextIndex = index;
       actionBtn.disabled = false;
-      actionBtn.textContent = "Collapse";
+      actionBtn.style.display = "none";
       
       nestedWorkspace.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:4px; border-bottom:1px solid var(--border);">
