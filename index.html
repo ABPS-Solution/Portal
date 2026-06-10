@@ -779,8 +779,6 @@
         <div class="section-body" style="text-align: left;">
           <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Filter By Engineers</label>
           <div class="pill-group" id="lead-matrix-engineer-checkboxes-mount" style="margin:8px 0 16px;"></div>
-          <div id="lead-matrix-active-filters-display" style="display:none; font-size:0.8rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-bottom:12px;"></div>
-          
           <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Filter By Lead Status</label>
           <div class="pill-group" id="lead-matrix-status-checkboxes-mount" style="margin:8px 0 16px;">
             <input type="checkbox" name="leadMatrixStatusFilter" value="New Lead" id="lms_st1"><label for="lms_st1">New Lead</label>
@@ -795,6 +793,7 @@
           </div>
           
           <button class="btn btn-sub" id="lead-matrix-search-submit-btn" onclick="executeLeadMatrixFilterSearch()">Run Leads Search</button>
+          <div id="lead-matrix-active-filters-display" style="display:none; font-size:0.78rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-top:8px;"></div>
         </div>
       </div>
     </div>
@@ -3979,6 +3978,9 @@ async function executeLeadMatrixFilterSearch() {
     if (checkedStatuses.length > 0) parts.push("Status: " + checkedStatuses.join(", "));
     filterDisplay.textContent = "Filtering for → " + parts.join(" | ");
     filterDisplay.style.display = "block";
+    filterDisplay.style.color = "var(--brand)";
+    filterDisplay.style.background = "var(--highlight-bg)";
+    filterDisplay.style.borderColor = "var(--border)";
   }
   
   try {
@@ -3999,6 +4001,23 @@ async function executeLeadMatrixFilterSearch() {
       
       globalFollowUpsCacheMap = data.followups;
       globalTasksCacheMap = data.tasks;
+
+      if (data.leads.length === 0) {
+        const filterDisplay = document.getElementById("lead-matrix-active-filters-display");
+        if (filterDisplay) {
+          const parts = [];
+          if (checkedEngineers.length > 0) parts.push("Engineers: " + checkedEngineers.join(", "));
+          if (checkedStatuses.length > 0) parts.push("Status: " + checkedStatuses.join(", "));
+          filterDisplay.textContent = "No entries found for → " + parts.join(" | ");
+          filterDisplay.style.display = "block";
+          filterDisplay.style.color = "var(--warn)";
+          filterDisplay.style.background = "#fff5f5";
+          filterDisplay.style.borderColor = "#fca5a5";
+        }
+        btn.classList.remove("loading"); btn.textContent = "Run Leads Search";
+        return;
+      }
+
       buildMultiContactDirectoryInterface(data.leads, "");
       document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `
         <button class="nav-btn-styled" onclick="exitCanvasToCardView()" style="background:#4a5568; margin-bottom: 10px; display:none;">Back to Search</button>
