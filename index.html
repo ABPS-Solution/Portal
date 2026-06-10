@@ -3657,7 +3657,7 @@ async function loadQualFilter() {
 
 function updateSelectedDisplay() {
   const checked = Array.from(document.querySelectorAll('input[name="searchQual"]:checked')).map(i => i.value);
-  document.getElementById("selected-quals-display").textContent = checked.length > 0 ? "Filtering for: " + checked.join(", ") : "";
+  document.getElementById("selected-quals-display").textContent = checked.length > 0 ? "Filtering for: " + checked.join(" and ") : "";
 }
 
 function handleOthersQualificationToggleDrawer(triggerNode) {
