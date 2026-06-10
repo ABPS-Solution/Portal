@@ -1988,14 +1988,27 @@ async function navigateToModule(key) {
         targetPanelKeyIdStr = "purchaseOrder";
         // Populate owner dropdown with marketing engineers
         const poOwnerDrop = document.getElementById("po-owner-of-order-dropdown");
-        if (poOwnerDrop && cachedEngineers.length > 0) {
-          poOwnerDrop.innerHTML = '<option value="">— Select Engineer —</option>';
-          cachedEngineers.forEach(eng => {
-            const opt = document.createElement("option");
-            opt.value = eng; opt.textContent = eng;
-            poOwnerDrop.appendChild(opt);
-          });
-          if (appActiveOperatorIdentityString) poOwnerDrop.value = appActiveOperatorIdentityString;
+        if (poOwnerDrop) {
+          const populatePOOwnerDrop = () => {
+            poOwnerDrop.innerHTML = '<option value="">— Select Engineer —</option>';
+            cachedEngineers.forEach(eng => {
+              const opt = document.createElement("option");
+              opt.value = eng; opt.textContent = eng;
+              poOwnerDrop.appendChild(opt);
+            });
+            if (appActiveOperatorIdentityString) poOwnerDrop.value = appActiveOperatorIdentityString;
+          };
+          if (cachedEngineers.length > 0) {
+            populatePOOwnerDrop();
+          } else {
+            poOwnerDrop.innerHTML = '<option value="">Loading engineers...</option>';
+            const waitForEngineers = setInterval(() => {
+              if (cachedEngineers.length > 0) {
+                clearInterval(waitForEngineers);
+                populatePOOwnerDrop();
+              }
+            }, 200);
+          }
         }
     }
 
@@ -4336,7 +4349,6 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
           </div>
         </div>
         <div class="directory-btn-actions-block" style="margin-top:4px;">
-          <a href="${mail.originalDeepLinkThreadUrl}" target="_blank" class="nav-btn-styled" style="background:#4a5568; text-decoration:none; font-size:0.75rem; padding:4px 8px; display:inline-flex; align-items:center;">Open Email ↗</a>
           ${deleteActionHtml}
         </div>
       </div>
@@ -4348,6 +4360,17 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
       <div style="font-size:0.72rem; font-weight:700; color:var(--muted); margin-bottom:8px;">
         📎 Attachments: <span style="color:#4a5568; font-family:monospace;">${attsLabel}</span>
       </div>
+
+      <div style="margin-top:8px; display:flex; align-items:flex-end; gap:8px;">
+        <div style="flex:1;">
+          <label style="font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:3px;">Notes</label>
+          <textarea id="email-note-${mIdx}" placeholder="Add notes about this email lead..." style="width:100%; min-height:38px; padding:5px 8px; font-size:0.82rem; border:1px solid var(--border); border-radius:4px; resize:vertical;">${mail.notes || ""}</textarea>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+          <button class="nav-btn-styled" style="background:var(--brand); font-size:0.75rem; padding:4px 10px; white-space:nowrap;" onclick="saveEmailLeadNote(${mIdx}, '${mail.messageIdReference}')">Save Note</button>
+          <a href="${mail.originalDeepLinkThreadUrl}" target="_blank" class="nav-btn-styled" style="background:#4a5568; text-decoration:none; font-size:0.75rem; padding:4px 8px; display:inline-flex; align-items:center; justify-content:center;">Open Email ↗</a>
+        </div>
+      </div>
       
       <div style="margin-top:10px;" id="email-action-response-mount-zone-${mIdx}">
         <button class="btn btn-sub" style="width:auto; font-size:0.78rem; padding:5px 12px;" onclick="triggerEmailLeadDatabaseActionPipeline(${mIdx})" id="email-form-toggle-btn-text-${mIdx}">Create New Entry</button>
@@ -4357,6 +4380,39 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
     `;
     canvas.appendChild(card);
   });
+}
+
+async function saveEmailLeadNote(idx, messageId) {
+  const noteText = document.getElementById(`email-note-${idx}`)?.value?.trim() || "";
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = "Saving...";
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "saveEmailLeadNote",
+        sessionToken: localStorage.getItem("sessionToken"),
+        activeEngineer: appActiveOperatorIdentityString,
+        messageId: messageId,
+        noteText: noteText
+      })
+    });
+    const d = await res.json();
+    if (d.success) {
+      btn.textContent = "Saved ✓";
+      btn.style.background = "var(--accent)";
+      // Update local cache
+      const mail = cachedInboundEmailLeadsArray.find(m => m.messageIdReference === messageId);
+      if (mail) { mail.notes = noteText; localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray)); }
+      setTimeout(() => { btn.textContent = "Save Note"; btn.style.background = "var(--brand)"; btn.disabled = false; }, 2000);
+    } else {
+      alert("Failed to save note: " + (d.error || "Unknown error"));
+      btn.disabled = false; btn.textContent = "Save Note";
+    }
+  } catch(e) {
+    alert("Error: " + e.message);
+    btn.disabled = false; btn.textContent = "Save Note";
+  }
 }
 
 // PERSISTENT ARCHIVE PIPELINE: Fires a network hit to log deletions, pulling them from future views permanently
@@ -4376,7 +4432,7 @@ async function archiveEmailLeadFromSystemDatabaseCache(messageId, elementIndex) 
         action: "saveFollowUp", 
         sessionToken: localStorage.getItem("sessionToken"),
         activeEngineer: appActiveOperatorIdentityString,
-        archiveTargetEmailIdString: messageId 
+        followUpData: { archiveTargetEmailIdString: messageId }
       })
     });
     const r = await res.json();
@@ -4446,7 +4502,7 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
     // --- SCENARIO A: COMPANY EXISTS IN DATABASE MATRIX ---
     if (data.success) {
       actionBtn.disabled = false;
-      actionBtn.textContent = "Collapse Form";
+      actionBtn.textContent = "Collapse";
       nestedWorkspace.innerHTML = `
         <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--brand); margin-bottom:6px; padding-bottom:4px; border-bottom:1px solid var(--border);">
           🏢 Existing Database Records found for ${mailObject.extractedCompany}:
@@ -4472,7 +4528,7 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
     else {
       activeEmailLeadContextIndex = index;
       actionBtn.disabled = false;
-      actionBtn.textContent = "Collapse Form";
+      actionBtn.textContent = "Collapse";
       
       nestedWorkspace.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:4px; border-bottom:1px solid var(--border);">
