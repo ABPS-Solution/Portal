@@ -3699,7 +3699,7 @@ async function triggerQualificationSearch() {
         const data = await res.json();
         if (data.success) {
             const canvas = document.getElementById("step2-inline-interaction-canvas");
-            document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `<div class="qualification-status-bar">Qualifications: ${selected.join(", ")}</div>`;
+            document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `<div class="qualification-status-bar">Types of Customer: ${selected.join(" and ")}</div>`;
             document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
             globalFollowUpsCacheMap = data.followups; globalTasksCacheMap = data.tasks;
             buildMultiContactDirectoryInterface(data.leads, "");
