@@ -1233,7 +1233,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxmkkcxCrVWnIGcH7dGYnTgYyOdf_7r-Qujy5fMBeTrhx88_4n-nVTU7VNr7uQohpxNtg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyvvFZbD-slzQNAXv_TNBZkZbuv8hgGIV9rosdNZbbswAD329cj1bmUDaU3Zrcbw7DB7w/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -4266,7 +4266,10 @@ async function executeInboundEmailSyncPipelineFetch() {
       try {
         const rawCache = localStorage.getItem("abps_active_email_leads_cache");
         if (rawCache) localSavedLeads = JSON.parse(rawCache);
-      } catch(cacheErr) { localSavedLeads = []; }
+      } catch(cacheErr) { 
+        localSavedLeads = [];
+        localStorage.removeItem("abps_active_email_leads_cache");
+      }
       
       const newIncomingLeads = data.emailLeads || [];
       
