@@ -744,7 +744,7 @@
           </div>
           
           <div id="custom-qualifications-sub-drawer" style="display: block; background: #f8fafc; border: 1px dashed var(--border); border-radius: var(--radius); padding: 10px; margin: 5px 0 15px; text-align: left;">
-            <span style="display: block; font-size: 0.65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 6px;">Other Qualifications</span>
+            <span style="display: block; font-size: 0.65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 6px;">Other Types of Customer</span>
              <div class="pill-group" id="qual-filter-checkboxes" style="margin: 0; gap: 6px;"></div>
           </div>
           
@@ -779,18 +779,19 @@
         <div class="section-body" style="text-align: left;">
           <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Filter By Engineers</label>
           <div class="pill-group" id="lead-matrix-engineer-checkboxes-mount" style="margin:8px 0 16px;"></div>
+          <div id="lead-matrix-active-filters-display" style="display:none; font-size:0.8rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-bottom:12px;"></div>
           
           <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Filter By Lead Status</label>
           <div class="pill-group" id="lead-matrix-status-checkboxes-mount" style="margin:8px 0 16px;">
-            <input type="checkbox" name="leadMatrixStatusFilter" value="New Lead" id="lms_st1" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st1">New Lead</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Technical Discussion" id="lms_st2" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st2">Technical Discussion</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Inquire Received" id="lms_st3" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st3">Inquire Received</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Offer Sent" id="lms_st4" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st4">Offer Sent</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Order Received" id="lms_st5" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st5">Order Received</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Order Dispatched" id="lms_st6" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st6">Order Dispatched</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Product Commissioned" id="lms_st7" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st7">Product Commissioned</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Lead Failed" id="lms_st8" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st8">Lead Failed</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Order not Received" id="lms_st9" onchange="executeLeadMatrixFilterSearch()"><label for="lms_st9">Order not Received</label>
+            <input type="checkbox" name="leadMatrixStatusFilter" value="New Lead" id="lms_st1"><label for="lms_st1">New Lead</label>
+            <input type="checkbox" name="leadMatrixStatusFilter" value="Technical Discussion" id="lms_st2"><label for="lms_st2">Technical Discussion</label>
+            <input type="checkbox" name="leadMatrixStatusFilter" value="Inquire Received" id="lms_st3"><label for="lms_st3">Inquire Received</label>
+            <input type="checkbox" name="leadMatrixStatusFilter" value="Offer Sent" id="lms_st4"><label for="lms_st4">Offer Sent</label>
+            <input type="checkbox" name="leadMatrixStatusFilter" value="Order Received" id="lms_st5"><label for="lms_st5">Order Received</label>
+            <input type="checkbox" name="leadMatrixStatusFilter" value="Order Dispatched" id="lms_st6"><label for="lms_st6">Order Dispatched</label>
+            <input type="checkbox" name="leadMatrixStatusFilter" value="Product Commissioned" id="lms_st7"><label for="lms_st7">Product Commissioned</label>
+            <input type="checkbox" name="leadMatrixStatusFilter" value="Lead Failed" id="lms_st8"><label for="lms_st8">Lead Failed</label>
+            <input type="checkbox" name="leadMatrixStatusFilter" value="Order not Received" id="lms_st9"><label for="lms_st9">Order not Received</label>
           </div>
           
           <button class="btn btn-sub" id="lead-matrix-search-submit-btn" onclick="executeLeadMatrixFilterSearch()">Run Leads Search</button>
@@ -1806,8 +1807,7 @@ async function triggerCityStateQuerySearchExecution() {
         document.getElementById("workspace-searchCityState").appendChild(canvas);
         
         document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `
-          <button class="nav-btn-styled" onclick="exitCanvasToCardView()" style="background:#4a5568; margin-bottom: 10px;">Back to Search</button>
-          <div class="qualification-status-bar" style="width:100%; text-align:center; font-size:0.75rem;">
+          <div class="qualification-status-bar" style="width:100%; text-align:center; font-size:0.75rem; margin-bottom:10px;">
              Location: [Countries: ${selectedCountries.join(", ")}] [States: ${selectedStates.join(", ")}] | [Cities: ${selectedCities.length > 5 ? 'Multi Selected (' + selectedCities.length + ')' : selectedCities.join(", ")}]
           </div>
         `;
@@ -2045,6 +2045,8 @@ async function navigateToModule(key) {
     } else if (key === "searchStatus") {
       document.querySelectorAll('input[name="leadMatrixStatusFilter"]').forEach(cb => cb.checked = false);
       renderLeadMatrixEngineerCheckboxes();
+      const fd = document.getElementById("lead-matrix-active-filters-display");
+      if (fd) { fd.style.display = "none"; fd.textContent = ""; }
     } else if (key === "searchEngineer") {
       const engineerSelectNode = document.getElementById("engineer-filter-select");
       if (engineerSelectNode && engineerSelectNode.value) triggerEngineerSearch();
@@ -3598,7 +3600,7 @@ async function loadQualFilter() {
   const container = document.getElementById("qual-filter-checkboxes"); 
   if (!container) return;
   
-  container.innerHTML = '<p style="font-size:0.75rem; color:var(--brand); font-weight:600; margin:0; display:flex; align-items:center; gap:6px;"><span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span> Loading Other Qualifications...</p>';
+  container.innerHTML = '<p style="font-size:0.75rem; color:var(--brand); font-weight:600; margin:0; display:flex; align-items:center; gap:6px;"><span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span> Loading Other Types of Customer...</p>';
   
   try {
     const res = await fetch(GAS_URL, { 
@@ -3647,7 +3649,7 @@ async function loadQualFilter() {
         container.innerHTML = '<p style="font-size:0.75rem; color:var(--muted); font-weight:600; padding:4px 0;">No unlisted custom Type of Customer stored in database yet.</p>';
       }
     }
-  } catch(e) { console.error("Custom qualifications load failed:", e.message); }
+  } catch(e) { console.error("Custom Types of Customer load failed:", e.message); }
 }
 
 function updateSelectedDisplay() {
@@ -3950,7 +3952,7 @@ function renderLeadMatrixEngineerCheckboxes() {
   cachedEngineers.forEach(eng => {
      const cleanId = `chk_lm_eng_${eng.replace(/\s+/g, '_')}`;
      mountPoint.innerHTML += `
-       <input type="checkbox" name="leadMatrixEngineerFilter" value="${eng}" id="${cleanId}" onchange="executeLeadMatrixFilterSearch()">
+       <input type="checkbox" name="leadMatrixEngineerFilter" value="${eng}" id="${cleanId}">
        <label for="${cleanId}">${eng}</label>
      `;
   });
@@ -3961,11 +3963,23 @@ async function executeLeadMatrixFilterSearch() {
   const checkedEngineers = Array.from(document.querySelectorAll('input[name="leadMatrixEngineerFilter"]:checked')).map(i => i.value);
   const checkedStatuses = Array.from(document.querySelectorAll('input[name="leadMatrixStatusFilter"]:checked')).map(i => i.value);
 
-  // If entering panel fresh with nothing selected, do not execute blank request hits
-  if (checkedEngineers.length === 0 && checkedStatuses.length === 0) return;
+  if (checkedEngineers.length === 0 && checkedStatuses.length === 0) {
+    alert("Please select at least one Engineer or Status filter before searching.");
+    return;
+  }
 
   btn.classList.add("loading"); btn.textContent = "Filtering Leads...";
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
+
+  // Show active filters summary
+  const filterDisplay = document.getElementById("lead-matrix-active-filters-display");
+  if (filterDisplay) {
+    const parts = [];
+    if (checkedEngineers.length > 0) parts.push("Engineers: " + checkedEngineers.join(", "));
+    if (checkedStatuses.length > 0) parts.push("Status: " + checkedStatuses.join(", "));
+    filterDisplay.textContent = "Filtering for → " + parts.join(" | ");
+    filterDisplay.style.display = "block";
+  }
   
   try {
     const res = await fetch(GAS_URL, {
