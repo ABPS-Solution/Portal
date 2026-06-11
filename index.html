@@ -1233,7 +1233,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzTkytavB-KTGWgnG4XLYQZ32S_nRQAPrpxBQ0IGjS8oMPwKjSJKolvia1MpFJ8zMurGg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyoe8LX0T1Ezvq8oZlNfrr_49Iupa66WhXbs1zSgn9CjJWikNvim9E1-_cfVjCtUXOz/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -3563,7 +3563,6 @@ async function submitLead() {
         const cardWrapperNode = document.getElementById(`email-lead-wrapper-node-${activeEmailLeadContextIndex}`);
         
         cachedInboundEmailLeadsArray = cachedInboundEmailLeadsArray.filter(item => item.messageIdReference !== targetMsgId);
-        localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray));
 
         const formTemplateSource = document.getElementById("step2-new-entry-dropdown");
         if (formTemplateSource) {
@@ -4275,13 +4274,6 @@ async function executeInboundEmailSyncPipelineFetch() {
     if (data.success) {
       // Pull old local storage cache if it exists, otherwise initialize an empty list
       let localSavedLeads = [];
-      try {
-        const rawCache = localStorage.getItem("abps_active_email_leads_cache");
-        if (rawCache) localSavedLeads = JSON.parse(rawCache);
-      } catch(cacheErr) { 
-        localSavedLeads = [];
-        localStorage.removeItem("abps_active_email_leads_cache");
-      }
       
       const newIncomingLeads = data.emailLeads || [];
       
@@ -4490,25 +4482,29 @@ function purgeEmailLeadCardViewFromScreen(index) {
   }
 }
 
-
 async function triggerEmailLeadDatabaseActionPipeline(index) {
   const mailObject = cachedInboundEmailLeadsArray[index];
-  const responseMountZone = document.getElementById(`email-action-response-mount-zone-${index}`);
   const nestedWorkspace = document.getElementById(`email-nested-inline-database-workspace-anchor-${index}`);
   const actionBtn = document.getElementById(`email-form-toggle-btn-text-${index}`);
-  
   if (!nestedWorkspace || !actionBtn) return;
-  
-  // TOGGLE CHECK: If it's already open, collapse it and toggle the text back
+
+  // Toggle: if already open, collapse
   if (nestedWorkspace.style.display === "block") {
     nestedWorkspace.style.display = "none";
+    nestedWorkspace.innerHTML = "";
     actionBtn.textContent = "Create New Entry";
+    actionBtn.style.display = "inline-flex";
+    actionBtn.disabled = false;
+    // Ensure global buttons stay hidden — email leads never use them
+    document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
+    document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
+    document.getElementById("canvas-back-btn-enclosure-row").innerHTML = "";
     return;
   }
 
-  actionBtn.disabled = true; 
-  actionBtn.textContent = "Verifying Spreadsheet Database...";
-  
+  actionBtn.disabled = true;
+  actionBtn.textContent = "Checking Database...";
+
   try {
     const res = await fetch(GAS_URL, {
       method: "POST",
@@ -4521,101 +4517,116 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
       })
     });
     const data = await res.json();
-    
-    // --- SCENARIO A: COMPANY EXISTS IN DATABASE MATRIX ---
+
+    // SCENARIO A: Company exists in database
     if (data.success) {
       actionBtn.disabled = false;
-      actionBtn.textContent = "Create New Entry";
-      actionBtn.style.display = "inline-flex";
-      nestedWorkspace.style.display = "none";
-      nestedWorkspace.innerHTML = "";
+      actionBtn.style.display = "none"; // hide while form is open
+
       nestedWorkspace.innerHTML = `
-        <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--brand); margin-bottom:6px; padding-bottom:4px; border-bottom:1px solid var(--border);">
-          🏢 Existing Database Records found for ${mailObject.extractedCompany}:
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:4px; border-bottom:1px solid var(--border);">
+          <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--brand);">🏢 Existing records for ${mailObject.extractedCompany}</span>
+          <button class="nav-btn-styled" style="background:#718096; font-size:0.72rem; padding:3px 10px;" onclick="
+            document.getElementById('email-nested-inline-database-workspace-anchor-${index}').style.display='none';
+            document.getElementById('email-nested-inline-database-workspace-anchor-${index}').innerHTML='';
+            const ab = document.getElementById('email-form-toggle-btn-text-${index}');
+            if(ab){ab.textContent='Create New Entry';ab.style.display='inline-flex';ab.disabled=false;}
+            document.getElementById('global-direct-inline-create-entry-btn').style.display='none';
+            document.getElementById('canvas-back-btn-enclosure-row').innerHTML='';
+          ">Collapse</button>
         </div>
-        <div id="nested-email-contacts-mount-canvas-${index}"></div>
+        <div id="nested-email-contacts-mount-canvas-${index}" style="max-height:500px; overflow-y:auto;"></div>
       `;
       nestedWorkspace.style.display = "block";
-      
+
       globalFollowUpsCacheMap = data.followups;
       globalTasksCacheMap = data.tasks;
-      
-      const oldCanvasNode = document.getElementById("step2-inline-interaction-canvas");
-      const oldDirectoryContainer = document.getElementById("multi-contact-records-container");
-      
-      if (oldCanvasNode) document.body.appendChild(oldCanvasNode);
+
+      // Build contacts inline WITHOUT moving the global canvas
       const targetSubMount = nestedWorkspace.querySelector(`#nested-email-contacts-mount-canvas-${index}`);
-      if (targetSubMount && oldDirectoryContainer) {
-        targetSubMount.appendChild(oldDirectoryContainer);
+      if (targetSubMount) {
+        const tempContainer = document.createElement("div");
+        tempContainer.id = "multi-contact-records-container";
+        targetSubMount.appendChild(tempContainer);
+        buildMultiContactDirectoryInterface(data.leads, mailObject.extractedContactName);
       }
-      buildMultiContactDirectoryInterface(data.leads, mailObject.extractedContactName);
-    } 
-    // --- SCENARIO B: BRAND NEW COMPANY — OPEN FULL FILE CREATION FORM ---
+
+      // Keep global buttons hidden
+      document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
+      document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
+      document.getElementById("canvas-back-btn-enclosure-row").innerHTML = "";
+
+    }
+    // SCENARIO B: New company — open creation form inline
     else {
       activeEmailLeadContextIndex = index;
       actionBtn.disabled = false;
-      actionBtn.style.display = "none";
-      
-      nestedWorkspace.innerHTML = `
-        <div id="nested-email-creation-form-mount-${index}" style="width: 100%;"></div>
-      `;
+      actionBtn.style.display = "none"; // hide while form is open
+
+      nestedWorkspace.innerHTML = `<div id="nested-email-creation-form-mount-${index}" style="width:100%;"></div>`;
       nestedWorkspace.style.display = "block";
-      
+
       const formTemplateSource = document.getElementById("step2-new-entry-dropdown");
       const targetFormMountNode = nestedWorkspace.querySelector(`#nested-email-creation-form-mount-${index}`);
-      
+
       if (formTemplateSource && targetFormMountNode) {
-        // FULL FILE REVEAL FIX: Force the complete display block window open wide
         formTemplateSource.style.display = "block";
         targetFormMountNode.appendChild(formTemplateSource);
-        
-        const remainingFormNode = document.getElementById('remaining-sections-form');
-        const successScreenNode = document.getElementById('success-screen');
-        
-        if (remainingFormNode) remainingFormNode.style.display = 'block';
-        if (successScreenNode) successScreenNode.style.display = 'none';
-        
-        // Clear old inputs to present a clean workspace sheet
-        const inputs = document.querySelectorAll('#remaining-sections-form input, #remaining-sections-form textarea, #remaining-sections-form select');
-        inputs.forEach(input => {
-          if (input.type === 'checkbox' || input.type === 'radio') {
+
+        const remainingFormNode = document.getElementById("remaining-sections-form");
+        const successScreenNode = document.getElementById("success-screen");
+        if (remainingFormNode) remainingFormNode.style.display = "block";
+        if (successScreenNode) successScreenNode.style.display = "none";
+
+        // Clear old inputs
+        document.querySelectorAll("#remaining-sections-form input, #remaining-sections-form textarea, #remaining-sections-form select").forEach(input => {
+          if (input.type === "checkbox" || input.type === "radio") {
             input.checked = false;
-          } else if (input.tagName === 'SELECT') {
-            if (['act1', 'act2', 'act3', 'act4', 'actOffer', 'act7'].includes(input.id)) {
-              input.value = 'No';
-            } else if (input.id !== 'dropform-status') {
-              input.value = ''; 
+          } else if (input.tagName === "SELECT") {
+            if (["act1","act2","act3","act4","actOffer","act7"].includes(input.id)) {
+              input.value = "No";
+            } else if (input.id !== "dropform-status") {
+              input.value = "";
             }
-          } else if (input.id !== 'dropform-company-locked') {
-            input.value = '';
+          } else if (input.id !== "dropform-company-locked") {
+            input.value = "";
           }
         });
 
-        const dropCity = document.getElementById("dropform-city");
-        const dropState = document.getElementById("dropform-state");
-        if (dropCity) dropCity.value = "";
-        if (dropState) dropState.value = "";
-        
-        document.querySelectorAll('.other-input, #vendor-fields').forEach(el => el.style.display = 'none');
-        
-        // Insert parsed parameters
+        document.querySelectorAll(".other-input, #vendor-fields").forEach(el => el.style.display = "none");
+
         const dropCompanyLocked = document.getElementById("dropform-company-locked");
         const dropName = document.getElementById("dropform-name");
-
+        const dropEmailField = document.getElementById("dropform-email");
         if (dropCompanyLocked) dropCompanyLocked.value = mailObject.extractedCompany;
         if (dropName) dropName.value = mailObject.extractedContactName;
-        
-        const dropEmailField = document.getElementById("dropform-email");
-        if (dropEmailField && mailObject.destinationInboxAccount) {dropEmailField.value = mailObject.destinationInboxAccount; }
-        
+        if (dropEmailField && mailObject.destinationInboxAccount) dropEmailField.value = mailObject.destinationInboxAccount;
+
+        // Always keep global nav buttons hidden
         document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
         document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
+        document.getElementById("canvas-back-btn-enclosure-row").innerHTML = "";
+
+        // Add a Collapse button at the top of the form
+        const collapseBar = document.createElement("div");
+        collapseBar.style.cssText = "display:flex; justify-content:flex-end; margin-bottom:8px;";
+        collapseBar.innerHTML = `<button class="nav-btn-styled" style="background:#718096; font-size:0.72rem; padding:3px 10px;" onclick="
+          document.getElementById('step2-new-entry-dropdown').style.display='none';
+          document.getElementById('email-nested-inline-database-workspace-anchor-${index}').style.display='none';
+          document.getElementById('email-nested-inline-database-workspace-anchor-${index}').innerHTML='';
+          const ab = document.getElementById('email-form-toggle-btn-text-${index}');
+          if(ab){ab.textContent='Create New Entry';ab.style.display='inline-flex';ab.disabled=false;}
+          document.getElementById('global-direct-inline-create-entry-btn').style.display='none';
+          document.getElementById('canvas-back-btn-enclosure-row').innerHTML='';
+        ">✕ Cancel</button>`;
+        formTemplateSource.prepend(collapseBar);
       }
     }
   } catch(e) {
-    alert("Email database assignment sync error: " + e.message);
-    actionBtn.disabled = false; 
+    alert("Error: " + e.message);
+    actionBtn.disabled = false;
     actionBtn.textContent = "Create New Entry";
+    actionBtn.style.display = "inline-flex";
   }
 }
 
