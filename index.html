@@ -323,9 +323,14 @@
             <input type="hidden" id="gate-meta-time" value="" />
           </div>
           <div style="margin-bottom: 16px; overflow-x: auto;">
-            <table class="store-basket-data-table" style="width: 100%;">
+            <table class="store-basket-data-table" style="width:100%; table-layout:fixed;">  
               <thead>
-                <tr><th>Item Code Number</th><th>Description of Material</th><th>Standard Material Name</th><th style="width: 140px; font-size:1.05rem; color:var(--brand);">Invoice Quantity</th></tr>
+                <tr>
+                  <th style="width:160px;">Item Code Number</th>
+                  <th>Description of Material</th>
+                  <th>Standard Material Name</th>
+                  <th style="width:120px; text-align:center; color:#64748b; font-size:0.75rem; font-weight:700; text-transform:uppercase;">Invoice Quantity</th>
+                </tr>
               </thead>
               <tbody id="gate-verification-table-body"></tbody>
             </table>
@@ -6165,10 +6170,10 @@ async function parseGateDocumentsWithAI() {
     const tbody = document.getElementById('gate-verification-table-body'); tbody.innerHTML = "";
     activeParsedGatePayloadCache.lineItems.forEach(item => {
       tbody.innerHTML += `<tr>
-        <td style="width:160px;"><input type="text" class="gate-row-item-code-input" value="${item.itemCode || ""}" placeholder="Item Code..." style="font-size:0.85rem; padding:4px; font-weight:700; border:1px solid var(--border); text-align:center;"></td>
-        <td style="text-align:left; padding:8px; font-size:0.82rem; color:var(--muted);">${item.rawDescriptionLine || "Line Item Description"}</td>
+        <td style="width:160px; padding:6px;"><input type="text" class="gate-row-item-code-input" value="${item.itemCode || ""}" placeholder="Item Code..." style="font-size:0.85rem; padding:4px; font-weight:700; border:1px solid var(--border); text-align:center; width:100%;"></td>
+        <td style="padding:8px; font-size:0.82rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word;">${item.rawDescriptionLine || "Line Item Description"}</td>
         <td style="padding:6px;"><input type="text" class="gate-row-material-name-input" value="${(item.mappedMaterialName || item.rawDescriptionLine || "").replace(/"/g, '&quot;')}" style="font-weight:600; color:var(--brand); font-size:0.88rem; padding:5px; border:1.5px solid var(--brand); border-radius:3px; width:100%;"></td>
-        <td style="font-family:monospace; font-weight:800; font-size:1.1rem; text-align:center; color:var(--brand);">${item.extractedQuantity}</td>
+        <td style="text-align:center; color:#64748b; font-weight:700; vertical-align:middle;">${item.extractedQuantity}</td>
       </tr>`;
     });
     document.getElementById('gate-ai-verification-workspace').style.display = "block";
