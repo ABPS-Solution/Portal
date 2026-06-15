@@ -1199,7 +1199,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbybRwXPmTFo17jcwCN_Q8FyvLzPQ2Lwl7ptmQKnNNjHmNlJWQIuH8g9fV71mGSElhXKiw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyCvGCLDPcuJbPgUKnL9bw_dT9SiD2JoYNC6Rd-oT-yhIGeT1unpwtGt5lEUWH63jMq0Q/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -6122,7 +6122,13 @@ async function parseGateDocumentsWithAI() {
     // Use whichever document is available, prefer invoice, fall back to challan
     const res = await fetch(GAS_URL, {
       method: "POST",
-      body: JSON.stringify({ action: "storeProcessAIInvoiceBlob", sessionToken: localStorage.getItem("sessionToken"), imageBlobBase64: inv64 || ch64, canonicalMaterialsCatalog: existingMaterialNamesList })
+      body: JSON.stringify({ 
+        action: "storeProcessAIInvoiceBlob", 
+        sessionToken: localStorage.getItem("sessionToken"), 
+        imageBlobBase64: inv64 || ch64,
+        challanImageBase64: (inv64 && ch64) ? ch64 : null,
+        canonicalMaterialsCatalog: existingMaterialNamesList 
+      })
     });
     const data = await res.json();
     if (!data.success) return alert("AI parsing failed: " + data.error);
@@ -6416,7 +6422,7 @@ async function initializeStoreGrnWorkspaceQueue() {
         
         trs += `<tr>
           <td style="width:140px; padding:5px;"><input type="text" class="grn-item-code-${item.gateNumber}" data-idx="${idx}" value="${line.itemCode || ""}" placeholder="CODE *" style="padding:4px; font-weight:700; border:1.5px solid var(--brand); background:#fffef0; text-align:center;"></td>
-          <td style="padding:5px; min-width:150px;"><input type="text" class="grn-mat-name-${item.gateNumber}" data-idx="${idx}" value="${line.materialName || ""}" style="font-size:0.82rem; padding:5px; font-weight:600; border:1.5px solid var(--brand); width:100%;"></td>
+          <td style="padding:5px; min-width:200px;"><textarea class="grn-mat-name-${item.gateNumber}" data-idx="${idx}" style="font-size:0.82rem; padding:5px; font-weight:600; border:1.5px solid var(--brand); width:100%; min-height:38px; resize:vertical; font-family:inherit;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea></td>
           <td style="font-family:monospace; font-weight:700; text-align:center; width:80px; padding:6px;">${activeReceivedQtyCount}</td>
           <td style="text-align:center; width:80px; padding:5px;"><select class="grn-qa-${item.gateNumber}" data-idx="${idx}" style="padding:4px; font-weight:700; font-size:0.82rem;"><option value="No" selected>No</option><option value="Yes">Yes</option></select></td>
           <td style="text-align:center; width:100px; padding:5px;"><input type="number" min="0" class="grn-ok-${item.gateNumber}" data-idx="${idx}" data-max="${activeReceivedQtyCount}" value="${activeReceivedQtyCount}" style="width:80px; border-color:var(--brand); font-weight:700; text-align:center;" onchange="autoBalanceGrnQuantities(this, '${item.gateNumber}', ${idx})"></td>
