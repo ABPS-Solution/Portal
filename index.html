@@ -6120,22 +6120,24 @@ function resetGateEntryWorkspaceState() {
 
 async function parseGateDocumentsWithAI() {
   const btn = document.getElementById('gate-parse-ai-btn');
-  if (!targetGateInvoiceFileObj) return alert("Please select your Invoice document image first.");
+  if (!targetGateInvoiceFileObj && !targetGateChallanFileObj) return alert("Please select at least one document (Invoice or Challan) before processing.");
   btn.disabled = true; btn.innerHTML = 'AI Parsing...';
   try {
     const convertToBase64 = file => new Promise(res => {
       if (!file) return res(null); const r = new FileReader();
       r.onload = () => res(r.result.split(',')[1]); r.readAsDataURL(file);
     });
-    const inv64 = await convertToBase64(targetGateInvoiceFileObj);
+    const inv64 = targetGateInvoiceFileObj ? await convertToBase64(targetGateInvoiceFileObj) : null;
+    const ch64  = targetGateChallanFileObj  ? await convertToBase64(targetGateChallanFileObj)  : null;
     
     const lookupRes = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "pullLiveInventoryCounts", sessionToken: localStorage.getItem("sessionToken") })});
     const catalogData = await lookupRes.json();
     const existingMaterialNamesList = catalogData.success ? catalogData.inventory.map(i => i.materialName) : [];
 
+    // Use whichever document is available, prefer invoice, fall back to challan
     const res = await fetch(GAS_URL, {
       method: "POST",
-      body: JSON.stringify({ action: "storeProcessAIInvoiceBlob", sessionToken: localStorage.getItem("sessionToken"), imageBlobBase64: inv64, canonicalMaterialsCatalog: existingMaterialNamesList })
+      body: JSON.stringify({ action: "storeProcessAIInvoiceBlob", sessionToken: localStorage.getItem("sessionToken"), imageBlobBase64: inv64 || ch64, canonicalMaterialsCatalog: existingMaterialNamesList })
     });
     const data = await res.json();
     if (!data.success) return alert("AI parsing failed: " + data.error);
