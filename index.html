@@ -5902,7 +5902,12 @@ async function triggerLiveWarehouseStockMetricsSync() {
 
       // Group items by Type of Material
       const typeGroups = {};
-      const typeOrder = ["A", "B", "C", "D", "Others", ""];
+      const typeOrder = [
+        "Conductor","Epoxy Resin","Insulating Materials","Paint","Bus Bars",
+        "Polypropylene Film","Alu Foil","Pxe Oil","Bushing","Kraft Insulation Paper",
+        "Assembly Materials","MS Box","Powder Coated Panel","Galvanising Structures",
+        "Switchgears","Cables","Hardwares","Lugs","Meters","Others","Uncategorized",""
+      ];
       
       cachedInventoryStockCollection.forEach(item => {
         const type = (item.typeOfMaterial || item.typematerial || "").toString().trim() || "Uncategorized";
@@ -5920,9 +5925,32 @@ async function triggerLiveWarehouseStockMetricsSync() {
         return ai - bi;
       });
 
+      const typeLabels = {
+        "Conductor":             "Conductor",
+        "Epoxy Resin":           "Epoxy Resin",
+        "Insulating Materials":  "Insulating Materials",
+        "Paint":                 "Paint",
+        "Bus Bars":              "Bus Bars",
+        "Polypropylene Film":    "Polypropylene Film",
+        "Alu Foil":              "Alu Foil",
+        "Pxe Oil":               "Pxe Oil",
+        "Bushing":               "Bushing",
+        "Kraft Insulation Paper":"Kraft Insulation Paper",
+        "Assembly Materials":    "Assembly Materials",
+        "MS Box":                "MS Box",
+        "Powder Coated Panel":   "Powder Coated Panel",
+        "Galvanising Structures":"Galvanising Structures",
+        "Switchgears":           "Switchgears",
+        "Cables":                "Cables",
+        "Hardwares":             "Hardwares",
+        "Lugs":                  "Lugs",
+        "Meters":                "Meters",
+        "Uncategorized":         "Uncategorized"
+      };
+
       sortedTypes.forEach(type => {
         const items = typeGroups[type];
-        const label = type === "Uncategorized" ? "Uncategorized" : ("Type " + type);
+        const label = typeLabels[type] || type;
         const sectionId = "rm-section-body-" + type.replace(/\s+/g, '_');
         const isCollapsed = localStorage.getItem("rm_section_" + type) === "collapsed";
 
@@ -6378,7 +6406,28 @@ async function initializeStoreEntryWorkspaceQueue() {
           <td style="font-family:monospace; font-weight:700; text-align:center; width:100px; padding:6px; font-size:1.1rem; color:#64748b;">${line.gateQuantity}</td>
           <td style="text-align:center; width:180px; padding:6px;"><input type="number" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}" value="${line.gateQuantity}" style="width:100px; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:6px; font-size:1.1rem;"></td>
           <td style="padding:6px;"><input type="text" class="se-damage-desc-${item.gateNumber}" data-idx="${idx}" placeholder="Reason for short / missing supply..." style="font-size:0.85rem; padding:6px;"></td>
-          <td style="text-align:center; width:130px; padding:6px;"><select class="se-material-type-${item.gateNumber}" data-idx="${idx}" style="padding:5px; font-weight:600; font-size:0.82rem; width:100%;"><option value="">— Type —</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="Others">Others</option></select></td>
+          <td style="text-align:center; width:130px; padding:6px;"><select class="se-material-type-${item.gateNumber}" data-idx="${idx}" style="padding:5px; font-weight:600; font-size:0.82rem; width:100%;">
+            <option value="">— Type —</option>
+            <option value="Conductor">Conductor</option>
+            <option value="Epoxy Resin">Epoxy Resin</option>
+            <option value="Insulating Materials">Insulating Materials</option>
+            <option value="Paint">Paint</option>
+            <option value="Bus Bars">Bus Bars</option>
+            <option value="Polypropylene Film">Polypropylene Film</option>
+            <option value="Alu Foil">Alu Foil</option>
+            <option value="Pxe Oil">Pxe Oil</option>
+            <option value="Bushing">Bushing</option>
+            <option value="Kraft Insulation Paper">Kraft Insulation Paper</option>
+            <option value="Assembly Materials">Assembly Materials</option>
+            <option value="MS Box">MS Box</option>
+            <option value="Powder Coated Panel">Powder Coated Panel</option>
+            <option value="Galvanising Structures">Galvanising Structures</option>
+            <option value="Switchgears">Switchgears</option>
+            <option value="Cables">Cables</option>
+            <option value="Hardwares">Hardwares</option>
+            <option value="Lugs">Lugs</option>
+            <option value="Meters">Meters</option>
+          </td>
         </tr>`;
       });
       
