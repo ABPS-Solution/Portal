@@ -5414,10 +5414,16 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   } else if (targetCanvasModuleId === 'design-update') {
     navigateToDesignWorkspacePanel('design-update');
   } else if (targetCanvasModuleId === 'fg-add-reactor' || targetCanvasModuleId === 'fg-add-capacitor' || targetCanvasModuleId === 'fg-add-panel') {
-    const deptMap = { 'fg-add-reactor': 'Reactor', 'fg-add-capacitor': 'Capacitor', 'fg-add-panel': 'Panel' };
+    const deptMap   = { 'fg-add-reactor': 'Reactor', 'fg-add-capacitor': 'Capacitor', 'fg-add-panel': 'Panel' };
     const canvasMap = { 'fg-add-reactor': 'canvas-module-fg-reactor', 'fg-add-capacitor': 'canvas-module-fg-capacitor', 'fg-add-panel': 'canvas-module-fg-panel' };
     document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
-    // Hide all three first
+
+    // HIDE header sync controls — not relevant for FG Add workspace
+    const leftControls = document.getElementById("store-panel-left-controls");
+    const centerTitle  = document.getElementById("store-panel-center-title");
+    if (leftControls) leftControls.style.visibility = "hidden";
+    if (centerTitle)  centerTitle.style.visibility  = "hidden";
+
     ["canvas-module-fg-reactor","canvas-module-fg-capacitor","canvas-module-fg-panel"].forEach(id => {
       document.getElementById(id).style.display = "none";
     });
@@ -5429,6 +5435,15 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
 
 function exitStoreWorkspacePanelBackToMenu() {
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
+
+  // Reset header controls to hidden default state
+  const leftControls = document.getElementById("store-panel-left-controls");
+  const centerTitle  = document.getElementById("store-panel-center-title");
+  const syncBtn      = document.getElementById("live-stock-sync-btn");
+  if (leftControls) leftControls.style.visibility = "hidden";
+  if (centerTitle)  { centerTitle.style.visibility = "hidden"; centerTitle.textContent = ""; }
+  if (syncBtn) { syncBtn.removeAttribute("onclick"); syncBtn.onclick = function() { triggerLiveWarehouseStockMetricsSync(); }; }
+
   enforceDynamicModuleRoleGateways(userPermissions);
 
   if(document.getElementById("canvas-module-fg-reactor"))   document.getElementById("canvas-module-fg-reactor").style.display   = "none";
@@ -5871,6 +5886,16 @@ async function triggerLiveWarehouseStockMetricsSync() {
     if (data.success && data.inventory) {
       cachedInventoryStockCollection = data.inventory;
       mountZone.innerHTML = "";
+
+      if (!cachedInventoryStockCollection || cachedInventoryStockCollection.length === 0) {
+        mountZone.innerHTML = `
+          <div style="grid-column:1/-1; text-align:center; padding:40px 20px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);">
+            <div style="font-size:2rem; margin-bottom:10px;">📦</div>
+            <div style="font-size:0.95rem; font-weight:700; color:var(--muted);">Raw Materials Store is Empty</div>
+            <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">No items have been added to the store yet.</div>
+          </div>`;
+        return;
+      }
 
       cachedInventoryStockCollection.forEach(item => {
         const metricCard = document.createElement("div");
@@ -7183,33 +7208,90 @@ async function triggerLiveFinishedGoodsStoreStockMetricsSync() {
       const fgData = data.finishedGoodsInventory;
       mountZone.innerHTML = "";
 
+      const cols = ["Product Serial Number","Job Card Number","Product Rating","Product Details","Product Quantity","Project ID","Customer Name","Additional Remarks"];
+
       ["reactor","capacitor","panel"].forEach(dept => {
         const rows = fgData[dept] || [];
         const deptLabel = dept.charAt(0).toUpperCase() + dept.slice(1);
+        const sectionId = "fg-section-body-" + dept;
+        const isCollapsed = localStorage.getItem("fg_section_" + dept) === "collapsed";
 
         const section = document.createElement("div");
-        section.style.cssText = "grid-column: 1 / -1; margin-bottom:20px;";
-        section.innerHTML = `<div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--brand); background:var(--highlight-bg); padding:6px 12px; border-radius:4px; margin-bottom:10px; letter-spacing:0.5px;">${deptLabel} Finished Goods</div>`;
+        section.style.cssText = "grid-column:1/-1; margin-bottom:16px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04);";
+
+        // Header row with collapse toggle
+        const headerDiv = document.createElement("div");
+        headerDiv.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:var(--highlight-bg); border-bottom:1px solid var(--border); cursor:pointer; user-select:none;";
+        headerDiv.onclick = () => {
+          const body = document.getElementById(sectionId);
+          const btn  = document.getElementById("fg-toggle-btn-" + dept);
+          if (body.style.display === "none") {
+            body.style.display = "block";
+            btn.textContent = "▲ Collapse";
+            localStorage.setItem("fg_section_" + dept, "expanded");
+          } else {
+            body.style.display = "none";
+            btn.textContent = "▼ Expand";
+            localStorage.setItem("fg_section_" + dept, "collapsed");
+          }
+        };
+        headerDiv.innerHTML = `
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">${deptLabel} Finished Goods</span>
+            <span style="font-size:0.72rem; font-weight:700; background:${rows.length > 0 ? '#dcfce7' : '#f1f5f9'}; color:${rows.length > 0 ? '#15803d' : '#64748b'}; padding:2px 8px; border-radius:10px;">${rows.length} ${rows.length === 1 ? 'record' : 'records'}</span>
+          </div>
+          <button id="fg-toggle-btn-${dept}" style="background:transparent; border:1px solid var(--border); color:var(--brand); font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:4px; cursor:pointer;">
+            ${isCollapsed ? '▼ Expand' : '▲ Collapse'}
+          </button>
+        `;
+
+        // Body
+        const bodyDiv = document.createElement("div");
+        bodyDiv.id = sectionId;
+        bodyDiv.style.display = isCollapsed ? "none" : "block";
+        bodyDiv.style.padding = "12px";
+        bodyDiv.style.overflowX = "auto";
 
         if (rows.length === 0) {
-          section.innerHTML += `<p style="font-size:0.82rem; color:var(--muted); padding:8px;">No items in ${deptLabel} FG Store.</p>`;
+          bodyDiv.innerHTML = `<p style="font-size:0.82rem; color:var(--muted); text-align:center; padding:20px 0;">No items in ${deptLabel} Finished Goods Store.</p>`;
         } else {
           const table = document.createElement("table");
           table.className = "store-basket-data-table";
-          table.style.width = "100%";
+          table.style.cssText = "width:100%; table-layout:auto; min-width:900px;";
 
-          const cols = ["Date","Product Serial Number","Job Card Number","Product Rating","Product Details","Product Quantity","Project ID","Customer Name","Production Department Responsible Person","Finished Goods Store Incharge Person","Additional Remarks"];
-          table.innerHTML = `<thead><tr>${cols.map(c => `<th style="text-align:left; white-space:nowrap;">${c}</th>`).join("")}</tr></thead>`;
+          table.innerHTML = `
+            <thead>
+              <tr>
+                ${cols.map(c => `<th style="text-align:left; white-space:nowrap; font-size:0.72rem; padding:8px 10px;">${c}</th>`).join("")}
+              </tr>
+            </thead>
+          `;
 
           const tbody = document.createElement("tbody");
-          rows.forEach(row => {
+          rows.forEach((row, rowIdx) => {
             const tr = document.createElement("tr");
-            tr.innerHTML = cols.map(c => `<td style="font-size:0.8rem; white-space:normal; word-break:break-word;">${row[c] || ""}</td>`).join("");
+            tr.style.background = rowIdx % 2 === 0 ? "#fff" : "#f8fafc";
+            tr.innerHTML = cols.map(c => {
+              let val = (row[c] || "").toString().trim();
+              let cellStyle = "font-size:0.83rem; padding:8px 10px; vertical-align:top; word-break:break-word;";
+              if (c === "Product Quantity") {
+                cellStyle += " font-family:monospace; font-weight:700; color:var(--brand); text-align:center;";
+              } else if (c === "Project ID") {
+                cellStyle += " font-family:monospace; font-weight:700; color:var(--accent);";
+              } else if (c === "Product Serial Number") {
+                cellStyle += " font-weight:700; color:var(--text);";
+              }
+              return `<td style="${cellStyle}">${val || '<span style="color:#cbd5e1;">—</span>'}</td>`;
+            }).join("");
             tbody.appendChild(tr);
           });
+
           table.appendChild(tbody);
-          section.appendChild(table);
+          bodyDiv.appendChild(table);
         }
+
+        section.appendChild(headerDiv);
+        section.appendChild(bodyDiv);
         mountZone.appendChild(section);
       });
     }
