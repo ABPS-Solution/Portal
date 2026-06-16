@@ -1199,7 +1199,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbypEGd-JeLFggqJi-AOh7tGQcNX5eP_FXH_XRIuwBQy0IGR6uEGPDicAMjbNWUymwcszw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwB8_gtK_DagdcMANWoHG8xr6C3W6piMDrTDgN05Asym08d_PzR-4MYOifnJK8RJCNCnQ/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -6303,6 +6303,7 @@ async function initializeStoreEntryWorkspaceQueue() {
         trs += `<tr>
           <td style="width:160px; padding:6px;"><input type="text" class="se-item-code-${item.gateNumber}" data-idx="${idx}" value="${line.itemCode || ""}" placeholder="Item Code" style="padding:6px; font-weight:700; border-color:var(--brand); text-align:center; width:100%;"></td>
           <td style="padding:6px;"><textarea class="se-mat-name-${item.gateNumber}" data-idx="${idx}" style="font-weight:600; color:var(--brand); font-size:0.88rem; padding:5px; border:1.5px solid var(--brand); border-radius:3px; width:100%; min-height:38px; resize:vertical; font-family:inherit;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea></td>
+          <td style="text-align:center; padding:6px; font-family:monospace; font-weight:700; font-size:0.85rem; color:#64748b;">${line.unitType || "NOS"}</td>
           <td style="font-family:monospace; font-weight:700; text-align:center; width:100px; padding:6px; font-size:1.1rem; color:#64748b;">${line.gateQuantity}</td>
           <td style="text-align:center; width:180px; padding:6px;"><input type="number" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}" value="${line.gateQuantity}" style="width:100px; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:6px; font-size:1.1rem;"></td>
           <td style="padding:6px;"><input type="text" class="se-damage-desc-${item.gateNumber}" data-idx="${idx}" placeholder="Reason for short / missing supply..." style="font-size:0.85rem; padding:6px;"></td>
@@ -6343,7 +6344,7 @@ async function initializeStoreEntryWorkspaceQueue() {
         <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
           <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
             <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:1200px; border-collapse:collapse;">
-            <thead><tr><th style="width:160px; text-align:center;">Item Code Number</th><th style="text-align:left;">Standard Material Name</th><th style="text-align:center; width:100px;">Invoice Quantity</th><th style="text-align:center; width:180px;">Physically Received Quantity *</th><th>Reason for Short Supply</th><th style="width:130px; text-align:center;">Type of Material *</th></tr></thead>
+            <thead><tr><th style="width:160px; text-align:center;">Item Code Number</th><th style="text-align:left;">Standard Material Name</th><th style="text-align:center; width:80px;">Unit Type</th><th style="text-align:center; width:100px;">Invoice Quantity</th><th style="text-align:center; width:180px;">Physically Received Quantity *</th><th>Reason for Short Supply</th><th style="width:130px; text-align:center;">Type of Material *</th></tr></thead>
             <tbody>${trs}</tbody>
             </table>
           </div>
@@ -6457,6 +6458,9 @@ async function initializeStoreGrnWorkspaceQueue() {
             <div class="grn-mat-name-display-${item.gateNumber}" style="font-size:0.8rem; font-weight:600; color:var(--brand); white-space:normal; word-break:break-word; line-height:1.5; padding:2px;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
             <input type="hidden" class="grn-mat-name-${item.gateNumber}" data-idx="${idx}" value="${(line.materialName || "").replace(/"/g,'&quot;')}" />
           </td>
+          <td style="width:55px; padding:5px 4px; text-align:center; vertical-align:middle; font-family:monospace; font-weight:700; font-size:0.82rem; color:#64748b;">
+            ${line.unitType || "NOS"}
+          </td>
           <td style="width:55px; padding:5px 4px; font-family:monospace; font-weight:700; text-align:center; vertical-align:middle; font-size:0.88rem;">
             ${activeReceivedQtyCount}
           </td>
@@ -6536,7 +6540,8 @@ async function initializeStoreGrnWorkspaceQueue() {
               <tr style="background:#f8fafc; border-bottom:2px solid var(--border);">
                 <th style="min-width:120px; width:120px; text-align:center; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Item Code</th>
                 <th style="min-width:200px; width:200px; text-align:left; padding:8px 6px; font-size:0.72rem;">Standard Material Name</th>
-                <th style="min-width:55px; width:55px; text-align:center; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Rcvd<br/>Qty</th>
+                <th style="min-width:55px; width:55px; text-align:center; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Unit<br/>Type</th>
+                <th style="min-width:55px; width:55px; text-align:center; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Received<br/>Qty</th>
                 <th style="min-width:65px; width:65px; text-align:center; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Q/A<br/>Done</th>
                 <th style="min-width:70px; width:70px; text-align:center; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">OK<br/>Qty *</th>
                 <th style="min-width:50px; width:50px; text-align:center; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Not<br/>OK</th>
@@ -6629,6 +6634,8 @@ async function commitGrnVerificationToBackend(gateNum, encodedItem) {
     line.totalBasicAmount            = totalBasic;
     line.totalInvoiceAmount          = totalInvoice;
     line.actionForRejectedMaterial   = actionFinal;
+    line.materialType                = (line.materialType || "").toString().trim();
+    line.unitType                    = (line.unitType || "NOS").toString().trim();
   });
   
   if (qaIncomplete) {
