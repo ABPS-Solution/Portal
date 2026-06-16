@@ -419,7 +419,7 @@
               <label class="field-label" style="font-size: 0.75rem;">Quantity</label>
               <input type="number" id="ticket-item-quantity-input" min="1" placeholder="Qty" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>
             </div>
-            <button class="nav-btn-styled" id="ticket-add-item-action-btn" onclick="addItemToShoppingBasketRow()" style="width: 15%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>+ Add</button>
+            <button class="nav-btn-styled" id="ticket-add-item-action-btn" onclick="addItemToShoppingBasketRow()" style="width: 15%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); transition: all 0.15s ease;" disabled>+ Add</button>
           </div>
           <div id="ticket-live-counter-pill-zone" style="margin-top: 8px; font-size: 0.8rem; min-height: 20px;"></div>
         </div>
@@ -572,12 +572,21 @@
       </div>
 
       <div id="boq-update-search-results-viewport" style="margin-bottom:16px; display:none;">
-        <table class="store-basket-data-table" style="width:100%; margin-bottom:20px;">
+        <div style="overflow-x:auto; margin-bottom:20px; border:1px solid var(--border); border-radius:var(--radius);">
+        <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:800px;">
           <thead>
-            <tr><th>Department</th><th>Product Component Name</th><th>Rating Specifications</th><th>ERP Code</th><th>Total Project Requirement</th></tr>
+            <tr style="background:#f8fafc;">
+              <th style="text-align:left; padding:8px 10px; white-space:nowrap; font-size:0.72rem;">Department</th>
+              <th style="text-align:left; padding:8px 10px; white-space:nowrap; font-size:0.72rem;">Product Name</th>
+              <th style="text-align:left; padding:8px 10px; white-space:nowrap; font-size:0.72rem;">Rating</th>
+              <th style="text-align:left; padding:8px 10px; white-space:nowrap; font-size:0.72rem;">ERP Code</th>
+              <th style="text-align:left; padding:8px 10px; min-width:200px; font-size:0.72rem;">Material Name</th>
+              <th style="text-align:right; padding:8px 10px; white-space:nowrap; font-size:0.72rem;">Order Qty</th>
+            </tr>
           </thead>
           <tbody id="boq-update-table-body-view"></tbody>
         </table>
+        </div>
         
         <div style="border-top:1px dashed var(--border); padding-top:16px; background:#fffef0; padding:12px; border:1.5px solid var(--brand); border-radius:var(--radius);">
           <span style="display:block; font-size:0.8rem; font-weight:800; color:var(--brand); margin-bottom:10px; text-transform:uppercase;">Upload Revised Bill of Quantity</span>
@@ -5043,6 +5052,14 @@ async function addItemToShoppingBasketRow() {
   
   const materialName = itemSelect.value;
   const quantity = parseInt(qtyInput.value, 10);
+
+  // Button press animation
+  const addBtn = document.getElementById("ticket-add-item-action-btn");
+  if (addBtn) {
+    addBtn.style.transform = "scale(0.93)";
+    addBtn.style.opacity = "0.7";
+    setTimeout(() => { addBtn.style.transform = "scale(1)"; addBtn.style.opacity = "1"; }, 200);
+  }
   
   if (!materialName || isNaN(quantity) || quantity <= 0) {
     alert("Please select a material item line and enter a valid quantity count.");
@@ -5050,27 +5067,57 @@ async function addItemToShoppingBasketRow() {
   }
   
   const cleanSearchKey = materialName.replace(/\s+/g, '').toLowerCase();
-  
-  // CHANGED: Selects the correct frontend memory collection block cache before mapping
-  let activeCacheCollection = cachedInventoryStockCollection;
+
+  // --- FINISHED GOODS STORE: no BOQ check, no inventory catalog check ---
   if (activeStoreScope === "Finished Goods Store") {
-     // Uses a fallback array variable look up to map newly added columns formats elements
-     activeCacheCollection = window.cachedFinishedGoodsStoreStockCollection || [];
+    const existingLineItem = dynamicTicketShoppingBasketArray.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
+    let totalRequestedQuantity = quantity;
+    if (existingLineItem) {
+      totalRequestedQuantity += existingLineItem.quantity;
+      existingLineItem.quantity = totalRequestedQuantity;
+      existingLineItem.requiresBOQIncreaseFlag = false;
+      existingLineItem.allottedRemainingLimit = 9999;
+    } else {
+      dynamicTicketShoppingBasketArray.push({
+        materialName: materialName,
+        quantity: totalRequestedQuantity,
+        unitType: "NOS",
+        requiresBOQIncreaseFlag: false,
+        allottedRemainingLimit: 9999
+      });
+    }
+    qtyInput.value = "";
+    renderDraftBasketTableViewportRows();
+    return;
   }
+
+  // --- RAW MATERIALS STORE: inventory + BOQ check ---
+  let activeCacheCollection = cachedInventoryStockCollection;
   
   const itemData = activeCacheCollection.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
     || activeCacheCollection.find(i => i.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
     || activeCacheCollection.find(i => cleanSearchKey.includes(i.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
-  
-  // Pull design data to validate if request total breaks allocation boundaries
-  const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "fetchActiveBOQRecordsByProject", sessionToken: localStorage.getItem("sessionToken"), projectId: projectId }) });
-  const boqData = await res.json();
-  const boqMatch = (boqData.records || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
-  
+
   if (!itemData) {
     alert("Material not found in inventory catalog. Please sync stock first.");
     return;
   }
+  
+  // Pull BOQ for this project to validate allocation boundaries
+  const res = await fetch(GAS_URL, { 
+    method: "POST", 
+    body: JSON.stringify({ 
+      action: "fetchActiveBOQRecordsByProject", 
+      sessionToken: localStorage.getItem("sessionToken"), 
+      projectId: projectId 
+    }) 
+  });
+  const boqData = await res.json();
+  
+  const boqMatch = (boqData.records || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
+    || (boqData.records || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
+    || (boqData.records || []).find(r => cleanSearchKey.includes(r.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+  
   if (!boqMatch) {
     alert("This material is not in the BOQ for project " + projectId + ". Please select the correct project or check the BOQ.");
     return;
@@ -5082,20 +5129,20 @@ async function addItemToShoppingBasketRow() {
     totalRequestedQuantity += existingLineItem.quantity;
   }
 
-  // FIXED CHECK GATES: Flag items requiring a BOQ limit increase directly inside your array tree properties
   const isOverAllottedBOQLimit = totalRequestedQuantity > Number(boqMatch.remainingQty);
-  
+  const allottedLimit = Number(boqMatch.remainingQty);
+
   if (existingLineItem) {
     existingLineItem.quantity = totalRequestedQuantity;
     existingLineItem.requiresBOQIncreaseFlag = isOverAllottedBOQLimit;
-    existingLineItem.allottedRemainingLimit = Number(boqMatch.remainingQty);
+    existingLineItem.allottedRemainingLimit = allottedLimit;
   } else {
     dynamicTicketShoppingBasketArray.push({
       materialName: itemData.materialName,
       quantity: totalRequestedQuantity,
-      unitType: itemData.unitType || "Pcs",
+      unitType: itemData.unitType || "NOS",
       requiresBOQIncreaseFlag: isOverAllottedBOQLimit,
-      allottedRemainingLimit: Number(boqMatch.remainingQty)
+      allottedRemainingLimit: allottedLimit
     });
   }
   
@@ -5575,10 +5622,10 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
             <span style="font-family:monospace; font-weight:800; background:var(--brand); color:#fff; font-size:0.75rem; padding:3px 6px;">${ticket.ticketId}</span>
             <span style="font-weight:800; font-size:0.72rem; padding:3px 6px; border-radius:4px; ${typeColorStyle}">${typeLabel.toUpperCase()}</span>
             <span style="background:#fef3c7; color:#b45309; font-weight:700; margin-left:4px;">${statusBadgeText}</span>
-            <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Store Mapped: ${mappedStorageScope.toUpperCase()}</span>
+            <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Store: ${mappedStorageScope.toUpperCase()}</span>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
-            <span>Signee Signature:</span><strong style="margin-right:15px; color:#111827;">${ticket.requestedBy}</strong>
+            <span>Ticket Created By:</span><strong style="margin-right:15px; color:#111827;">${ticket.requestedBy}</strong>
             <span>Project reference ID:</span><strong style="color:var(--brand);">${ticket.projectId}</strong>
             <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Department: ${ticket.department || "General Store"}</span>
           </div>
@@ -5969,7 +6016,7 @@ async function triggerLiveWarehouseStockMetricsSync() {
           const body = document.getElementById(sectionId);
           const btn  = document.getElementById("rm-toggle-btn-" + type.replace(/\s+/g,'_'));
           if (body.style.display === "none") {
-            body.style.display = "block";
+            body.style.display = "flex";
             btn.textContent = "▲ Collapse";
             localStorage.setItem("rm_section_" + type, "expanded");
           } else {
@@ -6941,10 +6988,44 @@ async function handleCreateTicketProjectChange(chosenProjectVal) {
     });
     const data = await res.json();
 
+    const activeStoreScope = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
+
+    if (activeStoreScope === "Finished Goods Store") {
+      // For FG Store — populate from cached FG inventory directly, no BOQ needed
+      const fgCache = window.cachedFinishedGoodsStoreStockCollection || {};
+      const allFGItems = [
+        ...(fgCache.reactor   || []),
+        ...(fgCache.capacitor || []),
+        ...(fgCache.panel     || [])
+      ];
+
+      itemDrop.innerHTML = '<option value="">— Select FG Item —</option>';
+
+      if (allFGItems.length === 0) {
+        itemDrop.innerHTML = '<option value="">⚠️ No items in Finished Goods Store</option>';
+      } else {
+        let seen = {};
+        allFGItems.forEach(item => {
+          const name = (item["Product Details"] || item["Product Serial Number"] || "").toString().trim();
+          if (name && !seen[name]) {
+            seen[name] = true;
+            const opt = document.createElement("option");
+            opt.value = name;
+            opt.textContent = name;
+            itemDrop.appendChild(opt);
+          }
+        });
+      }
+
+      addZone.style.opacity = "1";
+      itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
+      addBtn.style.cursor = "pointer";
+      return;
+    }
+
     if (data.success && data.records.length > 0) {
       itemDrop.innerHTML = '<option value="">— Select Material from BOQ —</option>';
       
-      // Filter out duplicate material line entries from the multi-sheet document tree
       let uniqueMaterialsMap = {};
       data.records.forEach(r => {
         if (!uniqueMaterialsMap[r.materialName]) {
@@ -6956,7 +7037,6 @@ async function handleCreateTicketProjectChange(chosenProjectVal) {
         }
       });
 
-      // Unlock operational fields input boxes markers
       addZone.style.opacity = "1";
       itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
       addBtn.style.cursor = "pointer";
@@ -7123,12 +7203,13 @@ async function executeBOQProjectQueryLookupSearch() {
     tbody.innerHTML = "";
     data.records.forEach(r => {
       tbody.innerHTML += `
-        <tr>
-          <td style="text-align:left; font-weight:bold; color:#475569;">${r.department || "—"}</td>
-          <td style="text-align:left; font-weight:600;">${r.productName}</td>
-          <td style="font-family:monospace; color:var(--brand);">${r.productRating}</td>
-          <td style="font-family:monospace; font-weight:700;">${r.itemCode || "UNCODED"}</td>
-          <td style="font-family:monospace; font-weight:800; text-align:right; padding-right:12px;">${r.orderQty || r.totalQty} ${r.unitType || "NOS"}</td>
+        <tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:8px 10px; text-align:left; font-weight:700; color:#475569; white-space:nowrap;">${r.department || "—"}</td>
+          <td style="padding:8px 10px; text-align:left; font-weight:600; white-space:nowrap;">${r.productName}</td>
+          <td style="padding:8px 10px; font-family:monospace; color:var(--brand); white-space:nowrap;">${r.productRating}</td>
+          <td style="padding:8px 10px; font-family:monospace; font-weight:700; white-space:nowrap;">${r.itemCode || "UNCODED"}</td>
+          <td style="padding:8px 10px; font-size:0.82rem; font-weight:600; color:var(--text); white-space:normal; word-break:break-word; min-width:200px; max-width:320px; line-height:1.4;">${r.materialName || "—"}</td>
+          <td style="padding:8px 10px; font-family:monospace; font-weight:800; text-align:right; white-space:nowrap;">${r.orderQty || r.totalQty} ${r.unitType || "NOS"}</td>
         </tr>`;
     });
   } else {
