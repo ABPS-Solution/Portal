@@ -280,9 +280,10 @@
       <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Design Department</h2>
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
         <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Bill of Quantity / Bill of Material</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
           <div class="menu-card" id="mod-design-upload" onclick="switchActiveDashboardModule('design-upload')">Upload Bill of Quantity</div>
           <div class="menu-card" id="mod-design-update" onclick="switchActiveDashboardModule('design-update')">Update Bill of Quantity</div>
+          <div class="menu-card" id="mod-design-itemcode" onclick="switchActiveDashboardModule('design-itemcode')">Add / Check Item Code Number</div>
         </div>
       </div>
     </div>
@@ -598,6 +599,131 @@
         </div>
       </div>
     </div>
+
+    <div id="canvas-module-design-itemcode" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="margin-bottom:6px; color:var(--brand);">Add / Check Item Code Number</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:20px;">Search the catalog to find an existing Item Code, or create a new one if the product doesn't exist yet.</p>
+      
+      <div id="itemcode-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <!-- SEARCH ZONE -->
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+        <label class="field-label" style="margin-top:0; color:var(--brand);">Search Product Name *</label>
+        <div style="display:flex; gap:10px; align-items:flex-end; margin-top:4px;">
+          <div style="flex-grow:1;">
+            <input type="text" id="itemcode-search-input" placeholder="e.g. HT Capacitor 413KVAR, Aluminum Busbar 40x10mm..." 
+              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius);"
+              onkeydown="if(event.key==='Enter') executeItemCodeSearch()" />
+          </div>
+          <button class="nav-btn-styled" id="itemcode-search-btn" onclick="executeItemCodeSearch()" 
+            style="padding:10px 24px; font-weight:700; background:var(--brand);">Search</button>
+        </div>
+      </div>
+
+      <!-- SEARCH RESULTS ZONE -->
+      <div id="itemcode-search-results-zone" style="display:none; margin-bottom:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">
+          Did you mean one of these?
+        </div>
+        <div id="itemcode-suggestions-mount" style="display:flex; flex-direction:column; gap:8px;"></div>
+        
+        <div style="margin-top:14px; padding:10px 14px; background:#fffbeb; border:1px solid #f59e0b; border-radius:var(--radius); font-size:0.82rem; color:#92400e; font-weight:600;">
+          None of these match your product? 
+          <button onclick="revealItemCodeCreateForm()" 
+            style="background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; font-size:0.78rem; font-weight:700; cursor:pointer; margin-left:8px;">
+            Create New Item Code
+          </button>
+        </div>
+      </div>
+
+      <!-- NO RESULTS ZONE -->
+      <div id="itemcode-no-results-zone" style="display:none; margin-bottom:16px; padding:14px; background:#fff5f5; border:1px solid #fca5a5; border-radius:var(--radius); font-size:0.85rem; color:#b91c1c; font-weight:600;">
+        No similar products found in the catalog.
+        <button onclick="revealItemCodeCreateForm()" 
+          style="background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; font-size:0.78rem; font-weight:700; cursor:pointer; margin-left:10px;">
+          Create New Item Code
+        </button>
+      </div>
+
+      <!-- SELECTED ITEM DETAIL VIEW -->
+      <div id="itemcode-selected-detail-zone" style="display:none; margin-bottom:16px; background:var(--highlight-bg); border:2px solid var(--brand); border-radius:var(--radius); padding:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">Existing Item Code Details</div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+          <div>
+            <div style="font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:3px;">Item Code Number</div>
+            <div id="itemcode-detail-code" style="font-family:monospace; font-size:1.1rem; font-weight:800; color:var(--brand);"></div>
+          </div>
+          <div>
+            <div style="font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:3px;">Product Name</div>
+            <div id="itemcode-detail-name" style="font-size:0.9rem; font-weight:700; color:var(--text); line-height:1.4;"></div>
+          </div>
+          <div>
+            <div style="font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:3px;">Type of Material</div>
+            <div id="itemcode-detail-type" style="font-size:0.9rem; font-weight:700; color:var(--accent);"></div>
+          </div>
+        </div>
+        <button onclick="document.getElementById('itemcode-selected-detail-zone').style.display='none';" 
+          style="margin-top:12px; background:transparent; border:1px solid var(--border); color:var(--muted); padding:3px 10px; border-radius:4px; font-size:0.75rem; cursor:pointer;">
+          ✕ Close
+        </button>
+      </div>
+
+      <!-- CREATE NEW FORM -->
+      <div id="itemcode-create-form-zone" style="display:none; background:#f0fdf4; border:2px solid var(--accent); border-radius:var(--radius); padding:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--accent); margin-bottom:14px; letter-spacing:0.5px;">Create New Item Code Number</div>
+        
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+          <div>
+            <label class="field-label" style="margin-top:0;">Item Code Number (Auto-assigned)</label>
+            <input type="text" id="itemcode-new-code" readonly 
+              style="padding:10px; font-family:monospace; font-size:1rem; font-weight:800; color:var(--brand); background:#e0f2fe; border:1.5px solid var(--brand); border-radius:var(--radius); cursor:not-allowed;" />
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Type of Material *</label>
+            <select id="itemcode-new-type" style="padding:10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+              <option value="">— Select Type —</option>
+              <option value="Conductor">Conductor</option>
+              <option value="Epoxy Resin">Epoxy Resin</option>
+              <option value="Insulating Materials">Insulating Materials</option>
+              <option value="Paint">Paint</option>
+              <option value="Bus Bars">Bus Bars</option>
+              <option value="Polypropylene Film">Polypropylene Film</option>
+              <option value="Alu Foil">Alu Foil</option>
+              <option value="Pxe Oil">Pxe Oil</option>
+              <option value="Bushing">Bushing</option>
+              <option value="Kraft Insulation Paper">Kraft Insulation Paper</option>
+              <option value="Assembly Materials">Assembly Materials</option>
+              <option value="MS Box">MS Box</option>
+              <option value="Powder Coated Panel">Powder Coated Panel</option>
+              <option value="Galvanising Structures">Galvanising Structures</option>
+              <option value="Switchgears">Switchgears</option>
+              <option value="Cables">Cables</option>
+              <option value="Hardwares">Hardwares</option>
+              <option value="Lugs">Lugs</option>
+              <option value="Meters">Meters</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label class="field-label" style="margin-top:0;">Product Name *</label>
+          <input type="text" id="itemcode-new-name" 
+            style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius);"
+            placeholder="Enter the full standard product name..." />
+          <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Use the full descriptive name as it should appear in your catalog. This cannot be changed later without admin access.</div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #86efac; padding-top:14px;">
+          <button onclick="document.getElementById('itemcode-create-form-zone').style.display='none';" 
+            style="background:#718096; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">Cancel</button>
+          <button id="itemcode-create-submit-btn" onclick="submitNewItemCodeNumber()" 
+            style="background:var(--accent); color:#fff; border:none; padding:8px 20px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">
+            Create Item Code
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <div id="module-workspace-container" style="display: none;">
@@ -1209,7 +1335,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbz74cNDFdVcZ2CL-IU2JA7o7zW7OPKb3w5kRiMkQnF7UayBaMfzqSZ7MXqArTPpYJRO/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbx53OamrN595bVgXivjgBnhapvAkP45SDYgup9EY96vcARM24cH2VyHCQhUE0_U6eiRfA/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -1545,6 +1671,55 @@ document.getElementById('card-back').onchange = (e) => {
   document.getElementById('back-box').classList.add('done');
 };
 
+/**
+ * CLIENT-SIDE FUZZY PRE-FILTER
+ * Scores catalog items against a query by word overlap.
+ * Used by both ItemCode Search and Store Entry matching.
+ * Returns top N candidates sorted by score descending.
+ */
+function fuzzyPreFilterCatalog(query, catalog, topN) {
+  if (!query || !catalog || catalog.length === 0) return [];
+  
+  const queryWords = query.toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 1);
+  
+  if (queryWords.length === 0) return catalog.slice(0, topN);
+  
+  const scored = catalog.map(item => {
+    const nameNorm = (item.productName || "").toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
+    const nameWords = nameNorm.split(/\s+/).filter(w => w.length > 1);
+    
+    let score = 0;
+    
+    queryWords.forEach(qw => {
+      // Exact word match — highest score
+      if (nameWords.includes(qw)) {
+        score += 10;
+        return;
+      }
+      // Partial match — query word starts with or contains name word
+      nameWords.forEach(nw => {
+        if (nw.startsWith(qw) || qw.startsWith(nw)) score += 6;
+        else if (nw.includes(qw) || qw.includes(nw)) score += 3;
+      });
+    });
+    
+    // Bonus: item code direct match
+    const codeNorm = (item.itemCode || "").toLowerCase();
+    if (codeNorm.includes(query.toLowerCase())) score += 20;
+    
+    return { ...item, _score: score };
+  });
+  
+  return scored
+    .filter(i => i._score > 0)
+    .sort((a, b) => b._score - a._score)
+    .slice(0, topN)
+    .map(({ _score, ...item }) => item);
+}
+
 function cleanISTTimestamp(rawStr) {
   if (!rawStr) return "";
   let str = rawStr.toString().trim();
@@ -1811,6 +1986,8 @@ async function showAppView() {
   document.getElementById("display-username").textContent = "@" + localStorage.getItem("sessionUser");
   
   enforceDynamicModuleRoleGateways(userPermissions);
+  // Pre-load ItemCodeNumbers catalog into memory
+  loadItemCodeCatalogIntoCache();
   
   loadQualFilter();
 
@@ -4718,6 +4895,11 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-design-update")) {
     document.getElementById("mod-design-update").style.display = canUpdateBOQ ? "block" : "none";
   }
+  if (document.getElementById("mod-design-itemcode")) {
+    // Search visible to Design, Store, Procurement — Create only for Design (handled in UI)
+    const canSeeItemCode = canUploadBOQ || canUpdateBOQ || userPermissionsObject.storeEntry === true || userPermissionsObject.grnNote === true;
+    document.getElementById("mod-design-itemcode").style.display = canSeeItemCode ? "block" : "none";
+  }
 
   // --- EVALUATE DEPARTMENT ENCLOSURE OVERLAYS ---
   const marketingHeaderBlock = document.getElementById("dashboard-marketing-department-header-block");
@@ -5506,12 +5688,12 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     triggerLiveFinishedGoodsStoreStockMetricsSync();
   } else if (targetCanvasModuleId === 'store-history-matrix') {
     navigateToStoreWorkspacePanel('store-history-matrix');
-  }
-  // Design department blue-print modules routing paths
-  else if (targetCanvasModuleId === 'design-upload') {
+  } else if (targetCanvasModuleId === 'design-upload') {
     navigateToDesignWorkspacePanel('design-upload');
   } else if (targetCanvasModuleId === 'design-update') {
     navigateToDesignWorkspacePanel('design-update');
+  } else if (targetCanvasModuleId === 'design-itemcode') {
+    navigateToDesignWorkspacePanel('design-itemcode');
   } else if (targetCanvasModuleId === 'fg-add-reactor' || targetCanvasModuleId === 'fg-add-capacitor' || targetCanvasModuleId === 'fg-add-panel') {
     const deptMap   = { 'fg-add-reactor': 'Reactor', 'fg-add-capacitor': 'Capacitor', 'fg-add-panel': 'Panel' };
     const canvasMap = { 'fg-add-reactor': 'canvas-module-fg-reactor', 'fg-add-capacitor': 'canvas-module-fg-capacitor', 'fg-add-panel': 'canvas-module-fg-panel' };
@@ -6492,55 +6674,157 @@ async function initializeStoreEntryWorkspaceQueue() {
       return;
     }
     feed.innerHTML = "";
-    data.queue.forEach(item => {
+
+    // Pre-run ItemCode matching for ALL line items across ALL pending cards at once
+    const allLineItemsFlat = [];
+    data.queue.forEach((item, cardIdx) => {
+      item.lineItems.forEach((line, lineIdx) => {
+        allLineItemsFlat.push({
+          cardIdx,
+          lineIdx,
+          rawDescription: line.materialName || line.rawDescriptionLine || ""
+        });
+      });
+    });
+
+    // Client-side fuzzy pre-filter for each line item → top 60
+    const catalog = window.itemCodeCatalogCache || [];
+    const lineItemsWithCandidates = allLineItemsFlat.map(li => ({
+      ...li,
+      candidatesTop60: fuzzyPreFilterCatalog(li.rawDescription, catalog, 60)
+    }));
+
+    // One Gemini call for all line items
+    let geminiMatchResults = [];
+    try {
+      const matchRes = await fetch(GAS_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "matchStoreEntryItemCodes",
+          sessionToken: localStorage.getItem("sessionToken"),
+          lineItems: lineItemsWithCandidates.map(li => ({
+            rawDescription: li.rawDescription,
+            candidatesTop60: li.candidatesTop60
+          }))
+        })
+      });
+      const matchData = await matchRes.json();
+      if (matchData.success) geminiMatchResults = matchData.matches;
+    } catch(e) {
+      console.error("Store Entry ItemCode matching failed:", e);
+    }
+
+    // Build a lookup map: cardIdx_lineIdx → matches array
+    const matchMap = {};
+    geminiMatchResults.forEach((result, flatIdx) => {
+      const li = lineItemsWithCandidates[flatIdx];
+      if (li) matchMap[`${li.cardIdx}_${li.lineIdx}`] = result.matches || [];
+    });
+
+    data.queue.forEach((item, cardIdx) => {
       let trs = "";
+      const matches = matchMap || {};
+
       item.lineItems.forEach((line, idx) => {
-        trs += `<tr>
-          <td style="width:160px; padding:6px;"><input type="text" class="se-item-code-${item.gateNumber}" data-idx="${idx}" value="${line.itemCode || ""}" placeholder="Item Code" style="padding:6px; font-weight:700; border-color:var(--brand); text-align:center; width:100%;"></td>
-          <td style="padding:6px;"><textarea class="se-mat-name-${item.gateNumber}" data-idx="${idx}" style="font-weight:600; color:var(--brand); font-size:0.88rem; padding:5px; border:1.5px solid var(--brand); border-radius:3px; width:100%; min-height:38px; resize:vertical; font-family:inherit;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea></td>
-          <td style="text-align:center; padding:6px; font-family:monospace; font-weight:700; font-size:0.85rem; color:#64748b;">${line.unitType || "NOS"}</td>
-          <td style="font-family:monospace; font-weight:700; text-align:center; width:100px; padding:6px; font-size:1.1rem; color:#64748b;">${line.gateQuantity}</td>
-          <td style="text-align:center; width:180px; padding:6px;"><input type="number" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}" value="${line.gateQuantity}" style="width:100px; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:6px; font-size:1.1rem;"></td>
-          <td style="padding:6px;"><input type="text" class="se-damage-desc-${item.gateNumber}" data-idx="${idx}" placeholder="Reason for short / missing supply..." style="font-size:0.85rem; padding:6px;"></td>
-          <td style="text-align:center; width:130px; padding:6px;"><select class="se-material-type-${item.gateNumber}" data-idx="${idx}" style="padding:5px; font-weight:600; font-size:0.82rem; width:100%;">
-            <option value="">— Type —</option>
-            <option value="Conductor">Conductor</option>
-            <option value="Epoxy Resin">Epoxy Resin</option>
-            <option value="Insulating Materials">Insulating Materials</option>
-            <option value="Paint">Paint</option>
-            <option value="Bus Bars">Bus Bars</option>
-            <option value="Polypropylene Film">Polypropylene Film</option>
-            <option value="Alu Foil">Alu Foil</option>
-            <option value="Pxe Oil">Pxe Oil</option>
-            <option value="Bushing">Bushing</option>
-            <option value="Kraft Insulation Paper">Kraft Insulation Paper</option>
-            <option value="Assembly Materials">Assembly Materials</option>
-            <option value="MS Box">MS Box</option>
-            <option value="Powder Coated Panel">Powder Coated Panel</option>
-            <option value="Galvanising Structures">Galvanising Structures</option>
-            <option value="Switchgears">Switchgears</option>
-            <option value="Cables">Cables</option>
-            <option value="Hardwares">Hardwares</option>
-            <option value="Lugs">Lugs</option>
-            <option value="Meters">Meters</option>
+        const lineMatches = matches[`${cardIdx}_${idx}`] || [];
+        const hasMatches = lineMatches.length > 0;
+        const rawDesc = (line.materialName || line.rawDescriptionLine || "").replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+        const confColors = {
+          high:   { bg:"#dcfce7", color:"#15803d", border:"#86efac" },
+          medium: { bg:"#fef3c7", color:"#b45309", border:"#fcd34d" },
+          low:    { bg:"#f1f5f9", color:"#64748b", border:"#cbd5e1" }
+        };
+
+        let suggestionHtml = "";
+        if (hasMatches) {
+          const pills = lineMatches.map((m) => {
+            const c = confColors[m.confidence] || confColors.low;
+            return `<div 
+              onclick="selectStoreEntryItemCodeMatch('${item.gateNumber}', ${idx}, '${m.itemCode}', \`${m.productName.replace(/`/g,"'")}\`, '${m.typeOfMaterial}', this)"
+              style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; border:1.5px solid ${c.border}; border-radius:4px; background:${c.bg}; cursor:pointer; margin-bottom:4px; transition:all 0.15s ease;"
+              onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+              <div style="flex:1; min-width:0;">
+                <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.78rem;">${m.itemCode}</span>
+                <span style="font-size:0.78rem; font-weight:600; color:#1e293b; margin-left:8px; word-break:break-word;">${m.productName}</span>
+                <span style="font-size:0.68rem; color:${c.color}; margin-left:6px; font-weight:700;">${m.typeOfMaterial}</span>
+              </div>
+              <span style="font-size:0.65rem; font-weight:700; color:${c.color}; padding:1px 5px; background:#fff; border-radius:3px; border:1px solid ${c.border}; white-space:nowrap; margin-left:8px; flex-shrink:0;">${(m.confidence||"low").toUpperCase()}</span>
+            </div>`;
+          }).join("");
+
+          suggestionHtml = `
+            <div style="margin-top:6px;">
+              <div style="font-size:0.62rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:4px; letter-spacing:0.4px;">Select matching product:</div>
+              ${pills}
+              <div style="font-size:0.7rem; color:#b45309; font-weight:600; margin-top:6px; padding:5px 8px; background:#fffbeb; border-radius:3px; border:1px solid #fcd34d;">
+                None match? Go to <strong>Add / Check Item Code Number</strong> in Design Department first, then return here.
+              </div>
+            </div>`;
+        } else {
+          suggestionHtml = `
+            <div style="margin-top:6px; font-size:0.72rem; color:#b91c1c; font-weight:600; padding:5px 8px; background:#fff5f5; border-radius:3px; border:1px solid #fca5a5;">
+              ⚠️ No matches found in ItemCodeNumbers catalog. Go to <strong>Add / Check Item Code Number</strong> in Design Department to create one first.
+            </div>`;
+        }
+
+        trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:top;">
+          <td style="padding:6px; width:130px;">
+            <input type="text" class="se-item-code-${item.gateNumber}" data-idx="${idx}"
+              value="" placeholder="Auto-filled on selection" readonly
+              style="font-size:0.78rem; padding:5px; font-weight:800; border:1.5px solid var(--border); text-align:center; width:100%; background:#f1f5f9; color:var(--brand); cursor:not-allowed; border-radius:3px;">
+          </td>
+          <td style="padding:8px; font-size:0.78rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:150px; max-width:200px; line-height:1.4;">
+            ${rawDesc}
+          </td>
+          <td style="padding:6px; min-width:280px;">
+            <div class="se-mat-name-display-${item.gateNumber}" data-idx="${idx}"
+              style="font-size:0.82rem; font-weight:600; color:var(--muted); padding:5px 6px; min-height:30px; border:1.5px dashed var(--border); border-radius:3px; background:#f8fafc; font-style:italic; line-height:1.4;">
+              — select a match below —
+            </div>
+            <input type="hidden" class="se-mat-name-${item.gateNumber}" data-idx="${idx}" value="" />
+            ${suggestionHtml}
+          </td>
+          <td style="padding:6px; width:60px; text-align:center; vertical-align:top; padding-top:10px;">
+            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Type</div>
+            <div class="se-material-type-display-${item.gateNumber}" data-idx="${idx}"
+              style="font-size:0.72rem; font-weight:700; color:var(--accent); text-align:center; min-height:20px; word-break:break-word; line-height:1.3;">
+              —
+            </div>
+            <input type="hidden" class="se-material-type-${item.gateNumber}" data-idx="${idx}" value="" />
+          </td>
+          <td style="text-align:center; color:#64748b; font-weight:700; vertical-align:top; padding-top:10px; width:60px; font-family:monospace; font-size:0.95rem;">
+            ${line.unitType || "NOS"}
+          </td>
+          <td style="text-align:center; color:#1e293b; font-weight:800; vertical-align:top; padding-top:10px; width:70px; font-family:monospace; font-size:1.05rem;">
+            ${line.gateQuantity}
+          </td>
+          <td style="text-align:center; width:160px; padding:6px; vertical-align:top;">
+            <input type="number" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}"
+              value="${line.gateQuantity}"
+              style="width:100%; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:6px; font-size:1rem; border-radius:3px;">
+          </td>
+          <td style="padding:6px; min-width:160px; vertical-align:top;">
+            <input type="text" class="se-damage-desc-${item.gateNumber}" data-idx="${idx}"
+              placeholder="Reason for short / missing supply..."
+              style="font-size:0.82rem; padding:6px; width:100%; border-radius:3px; border:1px solid var(--border);">
           </td>
         </tr>`;
       });
-      
-      // FIXED: Convert Apps Script date string parameters to clean local IST layout string rules
+
+      // Date formatting
       let cleanDateDisplay = item.invoiceDate || "";
-      if (cleanDateDisplay.includes(" ") || cleanDateDisplay.includes("am") || cleanDateDisplay.includes("pm")) {
-        // Already structured formatted cleanly from backend string conversion pass
-      } else {
+      if (!cleanDateDisplay.includes("am") && !cleanDateDisplay.includes("pm") && !cleanDateDisplay.includes(" ")) {
         let dateObj = new Date(cleanDateDisplay);
         if (!isNaN(dateObj.getTime())) {
-          const dt = dateObj.toLocaleDateString('en-CA'); 
+          const dt = dateObj.toLocaleDateString('en-CA');
           const tm = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
           cleanDateDisplay = dt + " " + tm;
         }
       }
 
-      let card = document.createElement("div"); card.className = "contact-summary-card-parent";
+      let card = document.createElement("div");
+      card.className = "contact-summary-card-parent";
       card.innerHTML = `
         <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%; padding-bottom:8px;">
           <div class="contact-summary-title-info" style="width:100%;">
@@ -6548,7 +6832,7 @@ async function initializeStoreEntryWorkspaceQueue() {
               <div>
                 <span style="background:var(--brand);color:#fff; padding:3px 8px; font-weight:700;">GATE ID: ${item.gateNumber}</span>
                 <span style="background:#e0f2fe;color:#0369a1;font-weight:700; margin-left:4px;">INVOICE: ${item.invoiceNumber}</span>
-              ${item.challanNumber ? `<span style="background:#f0fdf4;color:#15803d;font-weight:700; margin-left:4px;">CHALLAN: ${item.challanNumber}</span>` : ''}
+                ${item.challanNumber ? `<span style="background:#f0fdf4;color:#15803d;font-weight:700; margin-left:4px;">CHALLAN: ${item.challanNumber}</span>` : ''}
               </div>
               <span style="background:#cbd5e1;color:#1e293b;font-weight:700; font-size:0.8rem; padding:3px 8px;">${cleanDateDisplay}</span>
             </div>
@@ -6559,12 +6843,28 @@ async function initializeStoreEntryWorkspaceQueue() {
         </div>
         <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
           <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
-            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:1200px; border-collapse:collapse;">
-            <thead><tr><th style="width:160px; text-align:center;">Item Code Number</th><th style="text-align:left;">Standard Material Name</th><th style="text-align:center; width:80px;">Unit Type</th><th style="text-align:center; width:100px;">Invoice Quantity</th><th style="text-align:center; width:180px;">Physically Received Quantity *</th><th>Reason for Short Supply</th><th style="width:130px; text-align:center;">Type of Material *</th></tr></thead>
-            <tbody>${trs}</tbody>
+            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:1100px; border-collapse:collapse;">
+              <thead>
+                <tr style="background:#f8fafc;">
+                  <th style="width:130px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
+                  <th style="min-width:150px; max-width:200px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Description</th>
+                  <th style="min-width:280px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name *</th>
+                  <th style="width:60px; text-align:center; font-size:0.72rem; padding:8px 6px;">Type</th>
+                  <th style="width:60px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit</th>
+                  <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Invoice Qty</th>
+                  <th style="width:160px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Received Qty *</th>
+                  <th style="min-width:160px; text-align:left; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Reason for Short Supply</th>
+                </tr>
+              </thead>
+              <tbody>${trs}</tbody>
             </table>
           </div>
-          <div style="display:flex;justify-content:flex-end;"><button class="nav-btn-styled" style="background:var(--accent);" onclick="commitStoreEntryVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">Verify & Generate Raw Materials Store Entry</button></div>
+          <div style="display:flex; justify-content:flex-end;">
+            <button class="nav-btn-styled" style="background:var(--accent);" 
+              onclick="commitStoreEntryVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">
+              Verify & Generate Raw Materials Store Entry
+            </button>
+          </div>
         </div>`;
       feed.appendChild(card);
     });
@@ -6595,13 +6895,21 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
   });
 
   let materialTypeMissing = false;
+  let itemCodeMissing = false;
+
   document.querySelectorAll(`.se-material-type-${gateNum}`).forEach(inp => {
     const val = inp.value.trim();
     if (!val) materialTypeMissing = true;
     itemData.lineItems[parseInt(inp.dataset.idx, 10)].materialType = val;
   });
-  if (materialTypeMissing) {
-    alert("Compulsory Field Missing: Every line item must have a Type of Material selected before submitting Store Entry.");
+
+  document.querySelectorAll(`.se-item-code-${gateNum}`).forEach(inp => {
+    const val = inp.value.trim();
+    if (!val) itemCodeMissing = true;
+  });
+
+  if (itemCodeMissing || materialTypeMissing) {
+    alert("Compulsory Field Missing: Every line item must have a product selected from the ItemCodeNumbers suggestions. If no match exists, go to Add / Check Item Code Number in Design Department first.");
     btn.disabled = false;
     btn.textContent = "Verify & Generate Raw Materials Store Entry";
     return;
@@ -7018,23 +7326,12 @@ async function handleCreateTicketProjectChange(chosenProjectVal) {
     return;
   }
 
-  itemDrop.innerHTML = '<option value="">Syncing Project BOQ Catalog...</option>';
+  itemDrop.innerHTML = '<option value="">Syncing Catalog...</option>';
   if (feedbackBanner) feedbackBanner.style.display = "none";
 
+  const activeStoreScope = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
+
   try {
-    // Pull the active design blueprint specifications directly from the server
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "fetchActiveBOQRecordsByProject",
-        sessionToken: localStorage.getItem("sessionToken"),
-        projectId: chosenProjectVal
-      })
-    });
-    const data = await res.json();
-
-    const activeStoreScope = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
-
     if (activeStoreScope === "Finished Goods Store") {
       const fgCache = window.cachedFinishedGoodsStoreStockCollection || {};
       const allFGItems = [
@@ -7043,58 +7340,65 @@ async function handleCreateTicketProjectChange(chosenProjectVal) {
         ...(fgCache.panel     || [])
       ];
 
-      // Find matching item by serial number or product details
-      const fgItem = allFGItems.find(i => {
-        const serial = (i["Product Serial Number"] || "").toString().trim();
-        const details = (i["Product Details"] || "").toString().trim();
-        return serial === materialName || details === materialName;
-      });
+      // Filter to items matching this project
+      const projectItems = allFGItems.filter(i =>
+        (i["Project ID"] || "").toString().trim().toLowerCase() === chosenProjectVal.toLowerCase()
+      );
 
-      const availableQty = fgItem ? (parseInt(fgItem["Product Quantity"]) || 0) : 0;
-      const unitType = "NOS";
-
-      const existingLineItem = dynamicTicketShoppingBasketArray.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
-      let totalRequestedQuantity = quantity;
-      if (existingLineItem) {
-        totalRequestedQuantity += existingLineItem.quantity;
-        existingLineItem.quantity = totalRequestedQuantity;
-        existingLineItem.requiresBOQIncreaseFlag = totalRequestedQuantity > availableQty;
-        existingLineItem.allottedRemainingLimit = availableQty;
-      } else {
-        dynamicTicketShoppingBasketArray.push({
-          materialName: materialName,
-          quantity: totalRequestedQuantity,
-          unitType: unitType,
-          availableQty: availableQty,
-          requiresBOQIncreaseFlag: totalRequestedQuantity > availableQty,
-          allottedRemainingLimit: availableQty
-        });
+      if (projectItems.length === 0) {
+        itemDrop.innerHTML = '<option value="">⚠️ No Finished Goods found for this Project</option>';
+        alert("No Finished Goods items found for Project ID: " + chosenProjectVal);
+        return;
       }
-      qtyInput.value = "";
-      renderDraftBasketTableViewportRows();
-      return;
-    }
 
-    if (data.success && data.records.length > 0) {
-      itemDrop.innerHTML = '<option value="">— Select Material from BOQ —</option>';
-      
-      let uniqueMaterialsMap = {};
-      data.records.forEach(r => {
-        if (!uniqueMaterialsMap[r.materialName]) {
-          uniqueMaterialsMap[r.materialName] = true;
-          let opt = document.createElement("option");
-          opt.value = r.materialName;
-          opt.textContent = r.materialName;
-          itemDrop.appendChild(opt);
-        }
+      itemDrop.innerHTML = '<option value="">— Select Item from Finished Goods Store —</option>';
+      projectItems.forEach(i => {
+        const serial  = (i["Product Serial Number"] || "").toString().trim();
+        const rating  = (i["Product Rating"] || "").toString().trim();
+        const details = (i["Product Details"] || "").toString().trim();
+        const qty     = (i["Product Quantity"] || "0").toString().trim();
+        const label   = [serial, rating, details].filter(Boolean).join(" | ") + " (Qty: " + qty + ")";
+        let opt = document.createElement("option");
+        opt.value = serial || details;
+        opt.textContent = label;
+        itemDrop.appendChild(opt);
       });
 
       addZone.style.opacity = "1";
       itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
       addBtn.style.cursor = "pointer";
+
     } else {
-      itemDrop.innerHTML = '<option value="">⚠️ No BOQ Allotted for this Project</option>';
-      alert("Design Configuration Failure: This Project ID does not have an uploaded Bill of Quantity");
+      // Raw Materials Store — fetch from BOQ
+      const res = await fetch(GAS_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "fetchActiveBOQRecordsByProject",
+          sessionToken: localStorage.getItem("sessionToken"),
+          projectId: chosenProjectVal
+        })
+      });
+      const data = await res.json();
+
+      if (data.success && data.records.length > 0) {
+        itemDrop.innerHTML = '<option value="">— Select Material from BOQ —</option>';
+        let uniqueMaterialsMap = {};
+        data.records.forEach(r => {
+          if (!uniqueMaterialsMap[r.materialName]) {
+            uniqueMaterialsMap[r.materialName] = true;
+            let opt = document.createElement("option");
+            opt.value = r.materialName;
+            opt.textContent = r.materialName;
+            itemDrop.appendChild(opt);
+          }
+        });
+        addZone.style.opacity = "1";
+        itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
+        addBtn.style.cursor = "pointer";
+      } else {
+        itemDrop.innerHTML = '<option value="">⚠️ No BOQ Allotted for this Project</option>';
+        alert("Design Configuration Failure: This Project ID does not have an uploaded Bill of Quantity");
+      }
     }
   } catch(e) {
     console.error("BOQ filtration setup crash:", e);
@@ -7128,6 +7432,8 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
   
   if (uploadSubCanvas) uploadSubCanvas.style.display = "none";
   if (updateSubCanvas) updateSubCanvas.style.display = "none";
+  const itemcodeCanvas = document.getElementById("canvas-module-design-itemcode");
+  if (itemcodeCanvas) itemcodeCanvas.style.display = "none";
   
   // 4. Wipe operational dropzone feedback notes caches
   const dropzoneUpload = document.getElementById("boq-upload-file-dropzone");
@@ -7159,6 +7465,18 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
     if (updateSubCanvas) {
       updateSubCanvas.style.display = "block";
       initializeDesignDepartmentUpdateModule();
+    }
+  } else if (targetModuleId === 'design-itemcode') {
+    const itemcodeCanvas = document.getElementById("canvas-module-design-itemcode");
+    if (itemcodeCanvas) {
+      itemcodeCanvas.style.display = "block";
+      // Reset state on each open
+      document.getElementById("itemcode-search-input").value = "";
+      document.getElementById("itemcode-search-results-zone").style.display   = "none";
+      document.getElementById("itemcode-no-results-zone").style.display       = "none";
+      document.getElementById("itemcode-selected-detail-zone").style.display  = "none";
+      document.getElementById("itemcode-create-form-zone").style.display      = "none";
+      document.getElementById("itemcode-feedback-banner").style.display       = "none";
     }
   } else {
     console.warn("Design routing gateway parameter fallback unmapped: ", targetModuleId);
@@ -7804,6 +8122,25 @@ async function submitFinishedGoodsAddEntry(department, canvasId) {
   }
 }
 
+async function loadItemCodeCatalogIntoCache() {
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "fetchItemCodeCatalog",
+        sessionToken: localStorage.getItem("sessionToken")
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      window.itemCodeCatalogCache = data.catalog;
+    }
+  } catch(e) {
+    console.error("ItemCode catalog load failed:", e);
+    window.itemCodeCatalogCache = [];
+  }
+}
+
 async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
   const mount = scopeNode.querySelector(".doc-info-mount-point");
   if (!mount) return;
@@ -7908,6 +8245,249 @@ function handleFGProjectIdChange(selectedProjectId, canvasId) {
   if (!selectedProjectId || !window.fgProjectMetaCache) { customerInput.value = ""; return; }
   const meta = window.fgProjectMetaCache[selectedProjectId];
   customerInput.value = meta ? (meta.companyName || "") : "";
+}
+
+// ─── ITEM CODE NUMBER MODULE ───────────────────────────────────────────
+
+async function executeItemCodeSearch() {
+  const query = document.getElementById("itemcode-search-input").value.trim();
+  const btn   = document.getElementById("itemcode-search-btn");
+  const resultsZone  = document.getElementById("itemcode-search-results-zone");
+  const noResultsZone= document.getElementById("itemcode-no-results-zone");
+  const suggestMount = document.getElementById("itemcode-suggestions-mount");
+  const detailZone   = document.getElementById("itemcode-selected-detail-zone");
+  const createZone   = document.getElementById("itemcode-create-form-zone");
+  const banner       = document.getElementById("itemcode-feedback-banner");
+
+  if (!query) { alert("Please enter a product name to search."); return; }
+
+  // Reset zones
+  resultsZone.style.display   = "none";
+  noResultsZone.style.display = "none";
+  detailZone.style.display    = "none";
+  createZone.style.display    = "none";
+  banner.style.display        = "none";
+  suggestMount.innerHTML      = "";
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Searching...';
+
+  try {
+    const catalog = window.itemCodeCatalogCache || [];
+    if (catalog.length === 0) {
+      await loadItemCodeCatalogIntoCache();
+    }
+
+    // Step 1: client-side fuzzy pre-filter → top 30
+    const top30 = fuzzyPreFilterCatalog(query, window.itemCodeCatalogCache || [], 30);
+
+    if (top30.length === 0) {
+      noResultsZone.style.display = "block";
+      return;
+    }
+
+    // Step 2: Gemini semantic re-rank
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "searchItemCodeSemantic",
+        sessionToken: localStorage.getItem("sessionToken"),
+        query: query,
+        candidates: top30
+      })
+    });
+    const data = await res.json();
+
+    if (!data.success || !data.matches || data.matches.length === 0) {
+      noResultsZone.style.display = "block";
+      return;
+    }
+
+    // Step 3: Render suggestions
+    const confidenceColors = {
+      high:   { bg: "#dcfce7", color: "#15803d", label: "Strong Match" },
+      medium: { bg: "#fef3c7", color: "#b45309", label: "Possible Match" },
+      low:    { bg: "#f1f5f9", color: "#64748b", label: "Weak Match" }
+    };
+
+    data.matches.forEach((match, idx) => {
+      const conf   = confidenceColors[match.confidence] || confidenceColors.low;
+      const card   = document.createElement("div");
+      card.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#fff; border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 16px; cursor:pointer; transition:all 0.15s ease;";
+      card.onmouseover = () => { card.style.borderColor = "var(--brand)"; card.style.background = "var(--highlight-bg)"; };
+      card.onmouseout  = () => { card.style.borderColor = "var(--border)";  card.style.background = "#fff"; };
+      card.innerHTML = `
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+            <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${match.itemCode}</span>
+            <span style="font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:${conf.bg}; color:${conf.color};">${conf.label}</span>
+          </div>
+          <div style="font-size:0.88rem; font-weight:600; color:var(--text); line-height:1.4;">${match.productName}</div>
+          <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">${match.typeOfMaterial}</div>
+        </div>
+        <div style="font-size:0.75rem; font-weight:700; color:var(--brand); margin-left:12px; white-space:nowrap;">View Details →</div>
+      `;
+      card.onclick = () => showItemCodeDetail(match);
+      suggestMount.appendChild(card);
+    });
+
+    resultsZone.style.display = "block";
+
+  } catch(e) {
+    banner.style.cssText = "display:block; background:#fee2e2; border-color:#b91c1c; color:#b91c1c; padding:10px; border-left:4px solid #b91c1c;";
+    banner.textContent = "Search failed: " + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Search";
+  }
+}
+
+function showItemCodeDetail(match) {
+  document.getElementById("itemcode-detail-code").textContent = match.itemCode;
+  document.getElementById("itemcode-detail-name").textContent = match.productName;
+  document.getElementById("itemcode-detail-type").textContent = match.typeOfMaterial;
+  document.getElementById("itemcode-selected-detail-zone").style.display = "block";
+  document.getElementById("itemcode-selected-detail-zone").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+async function revealItemCodeCreateForm() {
+  const createZone = document.getElementById("itemcode-create-form-zone");
+  const codeInput  = document.getElementById("itemcode-new-code");
+  const nameInput  = document.getElementById("itemcode-new-name");
+  const typeSelect = document.getElementById("itemcode-new-type");
+  const banner     = document.getElementById("itemcode-feedback-banner");
+
+  // Pre-fill product name from search query
+  const query = document.getElementById("itemcode-search-input").value.trim();
+  nameInput.value  = query;
+  typeSelect.value = "";
+  codeInput.value  = "Loading...";
+  banner.style.display = "none";
+
+  createZone.style.display = "block";
+  createZone.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+  // Fetch next available code
+  try {
+    const res  = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "getNextItemCodeNumber",
+        sessionToken: localStorage.getItem("sessionToken")
+      })
+    });
+    const data = await res.json();
+    codeInput.value = data.success ? data.nextCode : "Error — refresh";
+  } catch(e) {
+    codeInput.value = "Error — refresh";
+  }
+}
+
+async function submitNewItemCodeNumber() {
+  const btn        = document.getElementById("itemcode-create-submit-btn");
+  const banner     = document.getElementById("itemcode-feedback-banner");
+  const itemCode   = document.getElementById("itemcode-new-code").value.trim();
+  const productName= document.getElementById("itemcode-new-name").value.trim();
+  const typeOfMat  = document.getElementById("itemcode-new-type").value.trim();
+
+  if (!productName) { alert("Product Name is required."); return; }
+  if (!typeOfMat)   { alert("Type of Material is required."); return; }
+  if (!itemCode || itemCode === "Loading..." || itemCode === "Error — refresh") {
+    alert("Item Code not loaded yet. Please wait or refresh.");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Creating...';
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "createItemCodeNumber",
+        sessionToken: localStorage.getItem("sessionToken"),
+        itemCode,
+        productName,
+        typeOfMaterial: typeOfMat,
+        createdBy: appActiveOperatorIdentityString
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      // Hide form
+      document.getElementById("itemcode-create-form-zone").style.display  = "none";
+      document.getElementById("itemcode-search-results-zone").style.display = "none";
+      document.getElementById("itemcode-no-results-zone").style.display    = "none";
+
+      // Show success banner
+      banner.style.cssText = "display:block; background:#dcfce7; border-color:#15803d; color:#15803d; padding:14px; border-left:4px solid #15803d; border-radius:var(--radius);";
+      banner.innerHTML = `
+        <strong style="font-size:0.95rem;">Item Code Created Successfully!</strong><br/>
+        <div style="margin-top:8px; display:flex; gap:16px; flex-wrap:wrap;">
+          <span>Code: <strong style="font-family:monospace; font-size:1rem; background:#fff; padding:2px 8px; border-radius:4px; border:1px solid #15803d;">${data.itemCode}</strong></span>
+          <span>Product: <strong>${data.productName}</strong></span>
+          <span>Type: <strong>${data.typeOfMaterial}</strong></span>
+        </div>
+        <button onclick="
+          document.getElementById('itemcode-feedback-banner').style.display='none';
+          document.getElementById('itemcode-search-input').value='';
+        " style="margin-top:10px; background:#15803d; color:#fff; border:none; padding:6px 14px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.8rem;">
+          + Search / Add Another
+        </button>
+      `;
+
+      // Refresh local catalog cache
+      await loadItemCodeCatalogIntoCache();
+
+      banner.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } else {
+      banner.style.cssText = "display:block; background:#fee2e2; border-color:#b91c1c; color:#b91c1c; padding:12px; border-left:4px solid #b91c1c; border-radius:var(--radius);";
+      banner.textContent = "Failed: " + data.error;
+    }
+  } catch(e) {
+    banner.style.cssText = "display:block; background:#fee2e2; border-color:#b91c1c; color:#b91c1c; padding:12px; border-left:4px solid #b91c1c; border-radius:var(--radius);";
+    banner.textContent = "Network error: " + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Create Item Code";
+  }
+}
+
+function selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, typeOfMaterial, clickedEl) {
+  const codeInput   = document.querySelector(`.se-item-code-${gateNum}[data-idx="${idx}"]`);
+  const nameInput   = document.querySelector(`.se-mat-name-${gateNum}[data-idx="${idx}"]`);
+  const typeInput   = document.querySelector(`.se-material-type-${gateNum}[data-idx="${idx}"]`);
+  const nameDisplay = document.querySelector(`.se-mat-name-display-${gateNum}[data-idx="${idx}"]`);
+  const typeDisplay = document.querySelector(`.se-material-type-display-${gateNum}[data-idx="${idx}"]`);
+
+  if (codeInput) codeInput.value = itemCode;
+  if (nameInput) nameInput.value = productName;
+  if (typeInput) typeInput.value = typeOfMaterial;
+
+  if (nameDisplay) {
+    nameDisplay.style.cssText = "font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; min-height:30px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4; font-style:normal; line-height:1.4;";
+    nameDisplay.textContent = productName;
+  }
+  if (typeDisplay) {
+    typeDisplay.textContent = typeOfMaterial;
+    typeDisplay.style.color = "var(--accent)";
+  }
+
+  // Dim all pills in this row, highlight selected
+  if (clickedEl) {
+    const parent = clickedEl.closest("td");
+    if (parent) {
+      parent.querySelectorAll("div[onclick]").forEach(pill => {
+        pill.style.opacity = "0.4";
+        pill.style.border  = "1.5px solid #e2e8f0";
+        pill.style.background = "#f8fafc";
+      });
+    }
+    clickedEl.style.opacity   = "1";
+    clickedEl.style.border    = "2px solid var(--accent)";
+    clickedEl.style.background = "#f0fdf4";
+  }
 }
 
 </script>
