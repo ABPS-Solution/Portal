@@ -1703,6 +1703,8 @@ function fuzzyPreFilterCatalog(query, catalog, topN) {
       nameWords.forEach(nw => {
         if (nw.startsWith(qw) || qw.startsWith(nw)) score += 6;
         else if (nw.includes(qw) || qw.includes(nw)) score += 3;
+        // Fuzzy: if words share first 4+ characters (handles plurals, typos)
+        else if (qw.length >= 4 && nw.length >= 4 && qw.substring(0, 4) === nw.substring(0, 4)) score += 4;
       });
     });
     
@@ -8271,14 +8273,18 @@ async function executeItemCodeSearch() {
   banner.style.display        = "none";
   suggestMount.innerHTML      = "";
 
+  // Reset create buttons visibility for fresh search
+  const nmBanner = document.getElementById("itemcode-none-match-banner");
+  const nrBtn    = document.getElementById("itemcode-no-results-create-btn");
+  if (nmBanner) nmBanner.style.display = "block";
+  if (nrBtn)    nrBtn.style.display    = "inline";
+
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Searching...';
 
   try {
-    const catalog = window.itemCodeCatalogCache || [];
-    if (catalog.length === 0) {
-      await loadItemCodeCatalogIntoCache();
-    }
+    // Always reload catalog before searching to ensure fresh data
+    await loadItemCodeCatalogIntoCache();
 
     // Step 1: client-side fuzzy pre-filter → top 30
     const top30 = fuzzyPreFilterCatalog(query, window.itemCodeCatalogCache || [], 30);
@@ -8440,8 +8446,14 @@ async function submitNewItemCodeNumber() {
         <button onclick="
           document.getElementById('itemcode-feedback-banner').style.display='none';
           document.getElementById('itemcode-search-input').value='';
+          document.getElementById('itemcode-search-results-zone').style.display='none';
+          document.getElementById('itemcode-no-results-zone').style.display='none';
+          document.getElementById('itemcode-selected-detail-zone').style.display='none';
+          document.getElementById('itemcode-create-form-zone').style.display='none';
+          const nm = document.getElementById('itemcode-none-match-banner'); if(nm) nm.style.display='block';
+          const nb = document.getElementById('itemcode-no-results-create-btn'); if(nb) nb.style.display='inline';
         " style="margin-top:10px; background:#15803d; color:#fff; border:none; padding:6px 14px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.8rem;">
-          + Search / Add Another
+          + Search / Add Another Item
         </button>
       `;
 
