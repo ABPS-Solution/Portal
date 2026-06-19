@@ -885,19 +885,10 @@
     <!-- AUTHORIZE BOQ -->
     <div id="canvas-module-design-auth-boq" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="margin-bottom:6px; color:var(--brand);">Authorize Bill of Quantity</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review, edit if needed, and authorize pending BOQs.</p>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Click a pending BOQ to review, edit if needed, and authorize.</p>
       <div id="auth-boq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
-      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
-        <label class="field-label" style="margin-top:0; color:var(--brand);">Select BOQ to Authorize *</label>
-        <select id="auth-boq-select" onchange="loadBOQForAuthorization(this.value, 'authorize')" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:4px;">
-          <option value="">— Select Pending BOQ —</option>
-        </select>
-      </div>
-
-      <div id="auth-boq-form" style="display:none;">
-        <!-- reuses shared BOQ edit form rendered by JS -->
-      </div>
+      <div id="auth-boq-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>
 
     <!-- UPDATE BOQ -->
@@ -929,25 +920,10 @@
     <!-- AUTHORIZE BOQ UPDATE -->
     <div id="canvas-module-design-auth-boq-upd" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="margin-bottom:6px; color:var(--brand);">Authorize Bill of Quantity Update</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review changes, see what was updated, edit if needed, then authorize.</p>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Click a pending BOQ update to review changes, edit if needed, then authorize.</p>
       <div id="auth-boq-upd-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
-      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
-        <label class="field-label" style="margin-top:0; color:var(--brand);">Select BOQ Update to Authorize *</label>
-        <select id="auth-boq-upd-select" onchange="loadBOQForAuthorization(this.value, 'authorize-update')" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:4px;">
-          <option value="">— Select Pending Update BOQ —</option>
-        </select>
-      </div>
-
-      <!-- AI Summary Banner — shown after BOQ is selected -->
-      <div id="auth-boq-upd-summary" style="display:none; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-bottom:16px;">
-        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:8px; letter-spacing:0.5px;">🔍 AI Change Summary</div>
-        <div id="auth-boq-upd-summary-text" style="font-size:0.85rem; color:#78350f; line-height:1.7; white-space:pre-line;"></div>
-      </div>
-
-      <div id="auth-boq-upd-form" style="display:none;">
-        <!-- rendered by JS -->
-      </div>
+      <div id="auth-boq-upd-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>
 
     <!-- UPLOAD DRAWINGS -->
@@ -7669,13 +7645,9 @@ function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
   if (!chosenDepartmentVal) return;
 
   staffDrop.innerHTML = '<option value="">— Select Your Name —</option>';
-  
-  // Updated list of authorized department strings allowed to request/return materials
-  const authorizedRoles = ["design", "store", "production", "admin"];
 
   const filteredPersonnelList = globalOperatorsDatabasePayloadCache.filter(user => {
-    // Returns true if any of the user's assigned departments match Store, Production, or Admin
-    return user.departmentsList.some(dept => authorizedRoles.includes(dept.toLowerCase().trim()));
+    return user.departmentsList.some(dept => dept.toLowerCase().trim() === "production");
   });
 
   filteredPersonnelList.forEach(user => {
@@ -8429,6 +8401,14 @@ async function submitFinishedGoodsAddEntry(department, canvasId) {
   }
 }
 
+function filterOutPureAdminPersonnel(personnelTree) {
+  return (personnelTree || []).filter(u => {
+    const depts = (u.departmentsList || []).map(d => d.toLowerCase().trim());
+    // Exclude only if Admin is their ONLY department
+    return !(depts.length === 1 && depts[0] === "admin");
+  });
+}
+
 async function loadItemCodeCatalogIntoCache() {
   try {
     const res = await fetch(GAS_URL, {
@@ -9098,67 +9078,124 @@ async function submitCreateBOQ() {
 let eboqMaterialRows = [];
 let eboqCurrentDraft = null;
 let eboqMode         = ""; // "authorize" or "authorize-update"
+let eboqExpandedCardBoqId = null;
 
 async function initializeAuthorizeBOQPanel(mode) {
   eboqMode = mode;
-  await loadItemCodeCatalogIntoCache();
-  const selectId  = mode === "authorize" ? "auth-boq-select" : "auth-boq-upd-select";
-  const formId    = mode === "authorize" ? "auth-boq-form"   : "auth-boq-upd-form";
-  const feedbackId= mode === "authorize" ? "auth-boq-feedback": "auth-boq-upd-feedback";
-  const status    = mode === "authorize" ? "Pending Authorization" : "Pending Authorization Update";
+  const cardsFeedId = mode === "authorize" ? "auth-boq-queue-cards-feed" : "auth-boq-upd-queue-cards-feed";
+  const feedbackId  = mode === "authorize" ? "auth-boq-feedback" : "auth-boq-upd-feedback";
+  const status      = mode === "authorize" ? "Pending Authorization" : "Pending Authorization Update";
 
-  document.getElementById(selectId).innerHTML = '<option value="">Loading...</option>';
-  document.getElementById(formId).style.display = "none";
+  const cardsFeed = document.getElementById(cardsFeedId);
+  cardsFeed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);"><div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>Loading Pending BOQs...</div>`;
   document.getElementById(feedbackId).style.display = "none";
-  if (mode === "authorize-update") document.getElementById("auth-boq-upd-summary").style.display = "none";
+  eboqExpandedCardBoqId = null;
 
   try {
     const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchBOQDraftsQueue", sessionToken: localStorage.getItem("sessionToken"), status }) });
     const data = await res.json();
-    const select = document.getElementById(selectId);
-    select.innerHTML = '<option value="">— Select Pending BOQ —</option>';
-    (data.drafts || []).forEach(draft => {
-      const opt = document.createElement("option");
-      opt.value = draft.boqId;
-      opt.textContent = `${draft.boqId} | ${draft.customerName} | ${draft.productName} | ${draft.productRating} | ${draft.department} | Qty: ${draft.orderQuantity} | ${draft.date} | By: ${draft.preparedBy}`;
-      select.appendChild(opt);
+    let drafts = data.drafts || [];
+
+    // Oldest first
+    drafts.sort((a, b) => a.createdTimestamp.localeCompare(b.createdTimestamp));
+
+    if (drafts.length === 0) {
+      cardsFeed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;"><h3 style="color:var(--accent);">No Pending BOQs</h3></div>`;
+      return;
+    }
+
+    cardsFeed.innerHTML = "";
+    drafts.forEach(draft => {
+      const card = document.createElement("div");
+      card.className = "contact-summary-card-parent";
+      card.id = `auth-boq-card-${mode}-${draft.boqId.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      card.innerHTML = `
+        <div class="contact-summary-header-row" onclick="toggleAuthBOQCardExpansion('${draft.boqId}', '${mode}')" style="cursor:pointer; width:100%; padding-bottom:8px;">
+          <div class="contact-summary-title-info" style="width:100%;">
+            <div class="meta-row-line-block" style="margin-bottom:6px;">
+              <span style="font-family:monospace; font-weight:800; background:var(--brand); color:#fff; font-size:0.72rem; padding:3px 6px;">${draft.boqId}</span>
+              <span style="background:#edf2f7;">Customer:</span><strong style="margin-right:15px;">${draft.customerName}</strong>
+              <span style="background:#edf2f7;">Project ID:</span><strong style="color:var(--brand);">${draft.projectId}</strong>
+            </div>
+            <div class="meta-row-line-block">
+              <span style="background:#e2e8f0;">Product:</span><strong style="margin-right:15px;">${draft.productName} ${draft.productRating}</strong>
+              <span style="background:#edf2f7;">Department:</span><strong style="margin-right:15px;">${draft.department}</strong>
+              <span style="background:#edf2f7;">Qty:</span><strong style="margin-right:15px;">${draft.orderQuantity}</strong>
+              <span style="background:#edf2f7;">Date:</span><strong style="margin-right:15px;">${draft.date}</strong>
+              <span style="background:#edf2f7;">Prepared By:</span><strong>${draft.preparedBy}</strong>
+            </div>
+          </div>
+        </div>
+        <div id="auth-boq-card-body-${mode}-${draft.boqId.replace(/[^a-zA-Z0-9]/g, '_')}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
+      `;
+      cardsFeed.appendChild(card);
     });
   } catch(e) {
-    document.getElementById(selectId).innerHTML = '<option value="">Error loading BOQs</option>';
+    cardsFeed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${e.message}</div>`;
   }
 }
 
-async function loadBOQForAuthorization(boqId, mode) {
-  if (!boqId) return;
+async function toggleAuthBOQCardExpansion(boqId, mode) {
+  const safeBoqId = boqId.replace(/[^a-zA-Z0-9]/g, '_');
+  const bodyEl = document.getElementById(`auth-boq-card-body-${mode}-${safeBoqId}`);
+  if (!bodyEl) return;
+
+  // Collapse if already open
+  if (eboqExpandedCardBoqId === boqId) {
+    bodyEl.style.display = "none";
+    bodyEl.innerHTML = "";
+    eboqExpandedCardBoqId = null;
+    return;
+  }
+
+  // Collapse any other open card first
+  if (eboqExpandedCardBoqId) {
+    const prevSafeId = eboqExpandedCardBoqId.replace(/[^a-zA-Z0-9]/g, '_');
+    const prevBody = document.getElementById(`auth-boq-card-body-${mode}-${prevSafeId}`);
+    if (prevBody) { prevBody.style.display = "none"; prevBody.innerHTML = ""; }
+  }
+
+  eboqExpandedCardBoqId = boqId;
   eboqMode = mode;
-  const formId    = mode === "authorize" ? "auth-boq-form"    : "auth-boq-upd-form";
-  const feedbackId= mode === "authorize" ? "auth-boq-feedback" : "auth-boq-upd-feedback";
+  bodyEl.innerHTML = `<div style="text-align:center; padding:16px; color:var(--muted);">Loading...</div>`;
+  bodyEl.style.display = "block";
 
-  document.getElementById(formId).style.display = "none";
-  document.getElementById(feedbackId).style.display = "none";
+  const feedbackId = mode === "authorize" ? "auth-boq-feedback" : "auth-boq-upd-feedback";
 
-  const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchBOQDraftById", sessionToken: localStorage.getItem("sessionToken"), boqId }) });
-  const data = await res.json();
-  if (!data.success) return showBOQBanner(feedbackId, data.error, "error");
+  try {
+    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchBOQDraftById", sessionToken: localStorage.getItem("sessionToken"), boqId }) });
+    const data = await res.json();
+    if (!data.success) { bodyEl.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
 
-  eboqCurrentDraft = data.draft;
-  eboqMaterialRows = (data.draft.materialRows || []).map(r => ({ ...r }));
-  eboqSpecFiles    = [];
+    eboqCurrentDraft = data.draft;
+    eboqMaterialRows = (data.draft.materialRows || []).map(r => ({ ...r }));
 
-  renderEBOQForm(formId);
-  document.getElementById(formId).style.display = "block";
-
-  // For Authorize Update — fetch AI summary
-  if (mode === "authorize-update") {
-    document.getElementById("auth-boq-upd-summary").style.display = "block";
-    document.getElementById("auth-boq-upd-summary-text").textContent = "Generating change summary...";
-    try {
-      const sumRes  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"generateBOQUpdateSummary", sessionToken: localStorage.getItem("sessionToken"), boqId, updatedRows: eboqMaterialRows }) });
-      const sumData = await sumRes.json();
-      document.getElementById("auth-boq-upd-summary-text").textContent = sumData.summary || "No changes detected.";
-    } catch(e) {
-      document.getElementById("auth-boq-upd-summary-text").textContent = "Could not generate summary.";
+    let summaryHtml = "";
+    if (mode === "authorize-update") {
+      summaryHtml = `
+        <div id="auth-boq-upd-summary-${safeBoqId}" style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-bottom:16px;">
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:8px; letter-spacing:0.5px;">🔍 AI Change Summary</div>
+          <div id="auth-boq-upd-summary-text-${safeBoqId}" style="font-size:0.85rem; color:#78350f; line-height:1.7; white-space:pre-line;">Generating change summary...</div>
+        </div>`;
     }
+
+    bodyEl.innerHTML = summaryHtml + `<div id="eboq-form-mount-${safeBoqId}"></div>`;
+
+    renderEBOQForm(`eboq-form-mount-${safeBoqId}`);
+
+    if (mode === "authorize-update") {
+      try {
+        const sumRes  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"generateBOQUpdateSummary", sessionToken: localStorage.getItem("sessionToken"), boqId, updatedRows: eboqMaterialRows }) });
+        const sumData = await sumRes.json();
+        const sumTextEl = document.getElementById(`auth-boq-upd-summary-text-${safeBoqId}`);
+        if (sumTextEl) sumTextEl.textContent = sumData.summary || "No changes detected.";
+      } catch(e) {
+        const sumTextEl = document.getElementById(`auth-boq-upd-summary-text-${safeBoqId}`);
+        if (sumTextEl) sumTextEl.textContent = "Could not generate summary.";
+      }
+    }
+  } catch(e) {
+    bodyEl.innerHTML = `<p style="color:var(--warn);">Error loading BOQ: ${e.message}</p>`;
   }
 }
 
@@ -9377,9 +9414,7 @@ async function submitEBOQAuthorize() {
       showBOQBanner(feedbackId, msg, "success");
       eboqCurrentDraft = null;
       eboqMaterialRows = [];
-      const formId = eboqMode === "authorize" ? "auth-boq-form" : "auth-boq-upd-form";
-      document.getElementById(formId).style.display = "none";
-      if (eboqMode === "authorize-update") document.getElementById("auth-boq-upd-summary").style.display = "none";
+      eboqExpandedCardBoqId = null;
       await initializeAuthorizeBOQPanel(eboqMode);
     } else {
       showBOQBanner(feedbackId, data.error || "Authorization failed.", "error");
@@ -9724,8 +9759,8 @@ async function initializeFGAddWorkspace() {
     const data = await res.json();
     const allPersonnel = data.fullPersonnelDataRecordsTree || [];
 
-    const prodPeople  = allPersonnel.filter(p => p.departmentsList.some(d => d === "production" || d === "admin"));
-    const storePeople = allPersonnel.filter(p => p.departmentsList.some(d => d === "store" || d === "admin"));
+    const prodPeople  = filterOutPureAdminPersonnel(allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().trim() === "production" || d.toLowerCase().trim() === "admin")));
+    const storePeople = allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().trim() === "store"));
 
     prodDrop.innerHTML  = '<option value="">— Select Person —</option>';
     storeDrop.innerHTML = '<option value="">— Select Person —</option>';
