@@ -530,10 +530,6 @@
       </div>
     </div>
 
-    <div id="canvas-module-store-finished-goods-live-stock" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <div class="dashboard-grid" id="dashboard-finished-goods-live-inventory-mount-zone" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap:10px; padding:0;"></div>
-    </div>
-
     <div id="canvas-module-fg-add" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="margin-bottom:16px; color:var(--brand);">Add to Finished Goods Store</h2>
       <div id="fg-add-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
@@ -5912,7 +5908,7 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   if (centerTitle) {
     centerTitle.style.visibility = isLiveStock ? "visible" : "hidden";
     if (isLiveStock) {
-      centerTitle.textContent = "Live Raw Materials Store Stock";
+      centerTitle.textContent = "Live Store Stock";
     }
   }
   
@@ -5998,28 +5994,7 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   else if (targetCanvasModuleId === 'store-live-stock') {
     navigateToStoreWorkspacePanel('store-live-stock');
   } else if (targetCanvasModuleId === 'store-live-finished-goods' || targetCanvasModuleId === 'live-finished-goods') {
-    // Force show parent enclosure FIRST
-    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
-    document.getElementById("canvas-module-store-finished-goods-live-stock").style.display = "block";
-    
-    // Dynamically reassign titles and synchronization parameters to context-target Finished Goods
-    const leftControls = document.getElementById("store-panel-left-controls");
-    const centerTitle = document.getElementById("store-panel-center-title");
-    const syncBtn = document.getElementById("live-stock-sync-btn");
-    
-    if (leftControls) leftControls.style.visibility = "visible";
-    if (centerTitle) {
-      centerTitle.style.visibility = "visible";
-      centerTitle.textContent = "Live Finished Goods Store Stock";
-    }
-    
-    // CRITICAL FIX: Remove the old attribute first, then rebind cleanly
-    if (syncBtn) {
-      syncBtn.removeAttribute("onclick");
-      syncBtn.onclick = function() { triggerLiveFinishedGoodsStoreStockMetricsSync(); };
-    }
-    
-    triggerLiveFinishedGoodsStoreStockMetricsSync();
+    navigateToStoreWorkspacePanel('store-live-stock');
   } else if (targetCanvasModuleId === 'store-history-matrix') {
     navigateToStoreWorkspacePanel('store-history-matrix');
   } else if (targetCanvasModuleId === 'design-itemcode') {
@@ -6495,6 +6470,8 @@ async function triggerLiveWarehouseStockMetricsSync() {
 
     if (data.success && data.inventory) {
       cachedInventoryStockCollection = data.inventory;
+      window.cachedFinishedGoodsStoreStockCollection = data.finishedGoodsInventory || {};
+      triggerLiveFinishedGoodsStoreStockMetricsSync();
       mountZone.innerHTML = "";
 
       if (!cachedInventoryStockCollection || cachedInventoryStockCollection.length === 0) {
@@ -7795,17 +7772,7 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
 
   // 5. STRICT ROUTING INTERCEPT SWEEP
   // Fixed mapping triggers to avoid string Processing dropouts or uppercase mismatch locks
-  if (targetModuleId === 'design-upload' || targetModuleId === 'mod-design-upload') {
-    if (uploadSubCanvas) {
-      uploadSubCanvas.style.display = "block";
-      initializeDesignDepartmentUploadModule();
-    }
-  } else if (targetModuleId === 'design-update' || targetModuleId === 'mod-design-update') {
-    if (updateSubCanvas) {
-      updateSubCanvas.style.display = "block";
-      initializeDesignDepartmentUpdateModule();
-    }
-  } else if (targetModuleId === 'design-itemcode') {
+  if (targetModuleId === 'design-itemcode') {
     const itemcodeCanvas = document.getElementById("canvas-module-design-itemcode");
     if (itemcodeCanvas) {
       itemcodeCanvas.style.display = "block";
@@ -8164,115 +8131,6 @@ function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
     deptDropdown.style.opacity = "1";
     deptDropdown.style.cursor = "pointer";
     deptDropdown.value = "";
-  }
-}
-
-async function triggerLiveFinishedGoodsStoreStockMetricsSync() {
-  const mountZone = document.getElementById("dashboard-finished-goods-live-inventory-mount-zone");
-  const syncBtn   = document.getElementById("live-stock-sync-btn");
-  if (!mountZone) return;
-
-  if (syncBtn) { syncBtn.disabled = true; syncBtn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Syncing...'; }
-
-  try {
-    const res = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"pullLiveInventoryCounts", sessionToken: localStorage.getItem("sessionToken") }) });
-    const data = await res.json();
-
-    if (data.success && data.finishedGoodsInventory) {
-      const fgData = data.finishedGoodsInventory;
-      mountZone.innerHTML = "";
-
-      const cols = ["Product Serial Number","Job Card Number","Product Rating","Product Details","Product Quantity","Project ID","Customer Name","Additional Remarks"];
-
-      ["reactor","capacitor","panel"].forEach(dept => {
-        const rows = fgData[dept] || [];
-        const deptLabel = dept.charAt(0).toUpperCase() + dept.slice(1);
-        const sectionId = "fg-section-body-" + dept;
-        const isCollapsed = localStorage.getItem("fg_section_" + dept) === "collapsed";
-
-        const section = document.createElement("div");
-        section.style.cssText = "grid-column:1/-1; margin-bottom:16px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04);";
-
-        // Header row with collapse toggle
-        const headerDiv = document.createElement("div");
-        headerDiv.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:var(--highlight-bg); border-bottom:1px solid var(--border); cursor:pointer; user-select:none;";
-        headerDiv.onclick = () => {
-          const body = document.getElementById(sectionId);
-          const btn  = document.getElementById("fg-toggle-btn-" + dept);
-          if (body.style.display === "none") {
-            body.style.display = "block";
-            btn.textContent = "▲ Collapse";
-            localStorage.setItem("fg_section_" + dept, "expanded");
-          } else {
-            body.style.display = "none";
-            btn.textContent = "▼ Expand";
-            localStorage.setItem("fg_section_" + dept, "collapsed");
-          }
-        };
-        headerDiv.innerHTML = `
-          <div style="display:flex; align-items:center; gap:10px;">
-            <span style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">${deptLabel} Finished Goods</span>
-            <span style="font-size:0.72rem; font-weight:700; background:${rows.length > 0 ? '#dcfce7' : '#f1f5f9'}; color:${rows.length > 0 ? '#15803d' : '#64748b'}; padding:2px 8px; border-radius:10px;">${rows.length} ${rows.length === 1 ? 'record' : 'records'}</span>
-          </div>
-          <button id="fg-toggle-btn-${dept}" style="background:transparent; border:1px solid var(--border); color:var(--brand); font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:4px; cursor:pointer;">
-            ${isCollapsed ? '▼ Expand' : '▲ Collapse'}
-          </button>
-        `;
-
-        // Body
-        const bodyDiv = document.createElement("div");
-        bodyDiv.id = sectionId;
-        bodyDiv.style.display = isCollapsed ? "none" : "block";
-        bodyDiv.style.padding = "12px";
-        bodyDiv.style.overflowX = "auto";
-
-        if (rows.length === 0) {
-          bodyDiv.innerHTML = `<p style="font-size:0.82rem; color:var(--muted); text-align:center; padding:20px 0;">No items in ${deptLabel} Finished Goods Store.</p>`;
-        } else {
-          const table = document.createElement("table");
-          table.className = "store-basket-data-table";
-          table.style.cssText = "width:100%; table-layout:auto; min-width:900px;";
-
-          table.innerHTML = `
-            <thead>
-              <tr>
-                ${cols.map(c => `<th style="text-align:left; white-space:nowrap; font-size:0.72rem; padding:8px 10px;">${c}</th>`).join("")}
-              </tr>
-            </thead>
-          `;
-
-          const tbody = document.createElement("tbody");
-          rows.forEach((row, rowIdx) => {
-            const tr = document.createElement("tr");
-            tr.style.background = rowIdx % 2 === 0 ? "#fff" : "#f8fafc";
-            tr.innerHTML = cols.map(c => {
-              let val = (row[c] || "").toString().trim();
-              let cellStyle = "font-size:0.83rem; padding:8px 10px; vertical-align:top; word-break:break-word;";
-              if (c === "Product Quantity") {
-                cellStyle += " font-family:monospace; font-weight:700; color:var(--brand); text-align:center;";
-              } else if (c === "Project ID") {
-                cellStyle += " font-family:monospace; font-weight:700; color:var(--accent);";
-              } else if (c === "Product Serial Number") {
-                cellStyle += " font-weight:700; color:var(--text);";
-              }
-              return `<td style="${cellStyle}">${val || '<span style="color:#cbd5e1;">—</span>'}</td>`;
-            }).join("");
-            tbody.appendChild(tr);
-          });
-
-          table.appendChild(tbody);
-          bodyDiv.appendChild(table);
-        }
-
-        section.appendChild(headerDiv);
-        section.appendChild(bodyDiv);
-        mountZone.appendChild(section);
-      });
-    }
-  } catch(err) {
-    mountZone.innerHTML = `<p style="color:var(--warn); grid-column:1/-1; text-align:center; padding:20px;">⚠️ Sync failed: ${err.message}</p>`;
-  } finally {
-    if (syncBtn) { syncBtn.disabled = false; syncBtn.innerHTML = "🔄 Sync Stock"; }
   }
 }
 
