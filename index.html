@@ -237,6 +237,34 @@
       </div>
     </div>
 
+    <div id="dashboard-design-department-header-block" style="display: none;">
+      <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Design Department</h2>
+      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
+        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Bill of Quantity</div>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0; margin-bottom: 12px;">
+          <div class="menu-card" id="mod-design-itemcode"        onclick="switchActiveDashboardModule('design-itemcode')">Add / Check Item Code Number</div>
+          <div class="menu-card" id="mod-design-upload-drawings" onclick="switchActiveDashboardModule('design-upload-drawings')">Upload Drawings</div>
+        </div>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-design-create-boq"   onclick="switchActiveDashboardModule('design-create-boq')">Create Bill of Quantity</div>
+          <div class="menu-card" id="mod-design-auth-boq"     onclick="switchActiveDashboardModule('design-auth-boq')">Authorize Bill of Quantity</div>
+          <div class="menu-card" id="mod-design-boq-costing"  onclick="switchActiveDashboardModule('coming-soon')">Bill of Quantity Costing</div>
+          <div class="menu-card" id="mod-design-update-boq"   onclick="switchActiveDashboardModule('design-update-boq')">Update Bill of Quantity</div>
+          <div class="menu-card" id="mod-design-auth-boq-upd" onclick="switchActiveDashboardModule('design-auth-boq-upd')">Authorize Bill of Quantity Update</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="dashboard-purchase-department-header-block" style="display: none;">
+      <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Purchase Department</h2>
+      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-purchase-request-note"  onclick="switchActiveDashboardModule('coming-soon')">Purchase Request Note</div>
+          <div class="menu-card" id="mod-purchase-upload-rm-po"  onclick="switchActiveDashboardModule('coming-soon')">Upload Raw Material Purchase Order</div>
+        </div>
+      </div>
+    </div>
+
     <div id="dashboard-store-department-header-block" style="display: none;">
       <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Store Department</h2>
       
@@ -250,45 +278,49 @@
       </div>
 
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
-        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Finished Goods Store</div>
+        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Raw Materials Store Outward</div>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-store-approvals" onclick="navigateToStoreWorkspacePanel('store-manager-approvals')">Approve Store Tickets</div>
+          <div class="menu-card" id="mod-store-matrix" onclick="switchActiveDashboardModule('store-history-matrix')">Search Store Tickets</div>
+        </div>
+      </div>
+
+      <div class="nav-department-group-wrapper" style="margin-bottom: 8px;">
+        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Store Quantity</div>
         <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-fg-add" onclick="if(!this.dataset.clicked){this.dataset.clicked=1; switchActiveDashboardModule('fg-add'); setTimeout(()=>delete this.dataset.clicked, 1000);}">Add to Finished Goods Store</div>
+          <div class="menu-card" id="mod-live-store-stock" onclick="switchActiveDashboardModule('store-live-stock')">Live Raw Materials Store Stock</div>
+          <div class="menu-card" id="mod-live-finished-store-stock" onclick="switchActiveDashboardModule('store-live-finished-goods')">Live Finished Goods Store Stock</div>
+          <div class="menu-card" id="mod-live-spare-store-stock" onclick="switchActiveDashboardModule('coming-soon')">Live Spare Store Stock</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="dashboard-production-department-header-block" style="display: none;">
+      <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Production Department</h2>
+
+      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
+        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Job Card Number</div>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-create-job-card" onclick="switchActiveDashboardModule('coming-soon')">Create Job Card Number</div>
         </div>
       </div>
 
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
         <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Raw Materials Store Outward</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
           <div class="menu-card" id="mod-store-ticket" onclick="navigateToStoreWorkspacePanel('store-material-request')">Create Store Ticket</div>
-          <div class="menu-card" id="mod-store-approvals" onclick="navigateToStoreWorkspacePanel('store-manager-approvals')">Approve Store Tickets</div>
         </div>
       </div>
 
       <div class="nav-department-group-wrapper" style="margin-bottom: 8px;">
-        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Store Quantity and Tickets</div>
+        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Finished Goods Store</div>
         <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-live-store-stock" onclick="switchActiveDashboardModule('store-live-stock')">Live Raw Materials Store Stock</div>
-          <div class="menu-card" id="mod-live-finished-store-stock" onclick="switchActiveDashboardModule('store-live-finished-goods')">Live Finished Goods Store Stock</div>
-          <div class="menu-card" id="mod-store-matrix" onclick="switchActiveDashboardModule('store-history-matrix')">Search Store Tickets</div>
+          <div class="menu-card" id="mod-fg-add" onclick="switchActiveDashboardModule('fg-add')">Add to Finished Goods Store</div>
+          <div class="menu-card" id="mod-fg-qa" onclick="switchActiveDashboardModule('coming-soon')">Finished Goods Store Q/A</div>
         </div>
       </div>
     </div>
-
-    <div id="dashboard-design-department-header-block" style="display: none;">
-      <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Design Department</h2>
-      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
-        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Bill of Quantity</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-                    <div class="menu-card" id="mod-design-itemcode"     onclick="switchActiveDashboardModule('design-itemcode')">Add / Check Item Code Number</div>
-          <div class="menu-card" id="mod-design-upload-drawings" onclick="switchActiveDashboardModule('design-upload-drawings')">Upload Drawings</div>
-          <div class="menu-card" id="mod-design-create-boq"   onclick="switchActiveDashboardModule('design-create-boq')">Create Bill of Quantity</div>
-          <div class="menu-card" id="mod-design-auth-boq"     onclick="switchActiveDashboardModule('design-auth-boq')">Authorize Bill of Quantity</div>
-          <div class="menu-card" id="mod-design-update-boq"   onclick="switchActiveDashboardModule('design-update-boq')">Update Bill of Quantity</div>
-          <div class="menu-card" id="mod-design-auth-boq-upd" onclick="switchActiveDashboardModule('design-auth-boq-upd')">Authorize Bill of Quantity Update</div>
-
-        </div>
-      </div>
-    </div>
+    
   </div> 
   
   <div id="module-store-workspace-enclosure-panel" class="workspace-panel" style="display: none; padding: 12px 10px;">
@@ -1082,6 +1114,12 @@
       </div>
       <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
     </div>
+
+    <div id="workspace-coming-soon" class="workspace-panel" style="display: none; padding: 40px 20px; text-align: center;">
+      <div style="font-size: 3rem; margin-bottom: 16px;">🚧</div>
+      <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--brand); margin-bottom: 8px;">Coming Soon</h2>
+      <p style="font-size: 0.9rem; color: var(--muted);">This feature is currently under development and will be available soon.</p>
+    </div>
     
     <div id="workspace-cardDetails" class="workspace-panel" style="display: none;">
       <div id="step1-card-capture-block" class="section">
@@ -1683,7 +1721,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxNE1wZHi02qmmgGtr7x_XHI-TJlXTea0tOT2l_xTskAyFcAyNV2wDWji_REtXZxdvYig/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzxlmmLkjcF_Q46xszjYcdkraDMD6Wosqr-f7yhAML_9e4pbcH_YKss8HUjT8tvJfZrcw/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -5172,9 +5210,15 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canAuthorizeBOQ     = userPermissionsObject.authorizeBOQ     === true;
   const canUpdateBOQ        = userPermissionsObject.updateBOQ        === true;
   const canAuthorizeBOQUpdate = userPermissionsObject.authorizeBOQUpdate === true;
-  const canUploadDrawings = userPermissionsObject.uploadDrawings === true;
   const canViewLiveFinishedStock   = userPermissionsObject.liveFinishedGoodsStoreStock === true;
   const canUploadBOQ               = userPermissionsObject.uploadBOQ === true;
+  const canUploadDrawings = userPermissionsObject.uploadDrawings === true;
+  const canBoqCosting = userPermissionsObject.boqCosting === true;
+  const canPurchaseRequestNote = userPermissionsObject.purchaseRequestNote === true;
+  const canUploadRMPurchaseOrder = userPermissionsObject.uploadRMPurchaseOrder === true;
+  const canCreateJobCardNumber = userPermissionsObject.createJobCardNumber === true;
+  const canFinishedGoodsQA = userPermissionsObject.finishedGoodsQA === true;
+  const canLiveSpareStoreStock = userPermissionsObject.liveSpareStoreStock === true;
 
   // --- SET INDIVIDUAL VISIBILITY FOR MARKETING TARGET CARDS ---
   if (document.getElementById("mod-card")) {
@@ -5243,22 +5287,42 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // --- SET INDIVIDUAL VISIBILITY FOR DESIGN CARDS ---
   if (document.getElementById("mod-design-create-boq"))   document.getElementById("mod-design-create-boq").style.display   = canCreateBOQ ? "block" : "none";
   if (document.getElementById("mod-design-auth-boq"))     document.getElementById("mod-design-auth-boq").style.display     = canAuthorizeBOQ ? "block" : "none";
+  if (document.getElementById("mod-design-boq-costing"))  document.getElementById("mod-design-boq-costing").style.display  = canBoqCosting ? "block" : "none";
   if (document.getElementById("mod-design-update-boq"))   document.getElementById("mod-design-update-boq").style.display   = canUpdateBOQ ? "block" : "none";
   if (document.getElementById("mod-design-auth-boq-upd")) document.getElementById("mod-design-auth-boq-upd").style.display = canAuthorizeBOQUpdate ? "block" : "none";
   if (document.getElementById("mod-design-upload-drawings")) document.getElementById("mod-design-upload-drawings").style.display = canUploadDrawings ? "block" : "none";
+  const canSeeItemCode = canCreateBOQ || canAuthorizeBOQ || canUpdateBOQ || canAuthorizeBOQUpdate || canUploadDrawings
+    || userPermissionsObject.storeEntry === true
+    || userPermissionsObject.grnNote === true
+    || userPermissionsObject.itemCodeAccess === true;
   if (document.getElementById("mod-design-itemcode")) {
-    const canSeeItemCode = canCreateBOQ || canAuthorizeBOQ || canUpdateBOQ || canAuthorizeBOQUpdate || canUploadDrawings
-      || userPermissionsObject.storeEntry === true
-      || userPermissionsObject.grnNote === true
-      || userPermissionsObject.itemCodeAccess === true;
     document.getElementById("mod-design-itemcode").style.display = canSeeItemCode ? "block" : "none";
   }
 
   // Design block visibility
   const designHeaderBlock = document.getElementById("dashboard-design-department-header-block");
   if (designHeaderBlock) {
-    designHeaderBlock.style.display = (canCreateBOQ || canAuthorizeBOQ || canUpdateBOQ || canAuthorizeBOQUpdate || canUploadDrawings || canSeeItemCode) ? "block" : "none";
+    designHeaderBlock.style.display = (canCreateBOQ || canAuthorizeBOQ || canBoqCosting || canUpdateBOQ || canAuthorizeBOQUpdate || canUploadDrawings || canSeeItemCode) ? "block" : "none";
   }
+
+  // Purchase Department block visibility
+  if (document.getElementById("mod-purchase-request-note")) document.getElementById("mod-purchase-request-note").style.display = canPurchaseRequestNote ? "block" : "none";
+  if (document.getElementById("mod-purchase-upload-rm-po")) document.getElementById("mod-purchase-upload-rm-po").style.display = canUploadRMPurchaseOrder ? "block" : "none";
+  const purchaseHeaderBlock = document.getElementById("dashboard-purchase-department-header-block");
+  if (purchaseHeaderBlock) {
+    purchaseHeaderBlock.style.display = (canPurchaseRequestNote || canUploadRMPurchaseOrder) ? "block" : "none";
+  }
+
+  // Production Department block visibility
+  if (document.getElementById("mod-create-job-card")) document.getElementById("mod-create-job-card").style.display = canCreateJobCardNumber ? "block" : "none";
+  if (document.getElementById("mod-fg-qa")) document.getElementById("mod-fg-qa").style.display = canFinishedGoodsQA ? "block" : "none";
+  const productionHeaderBlock = document.getElementById("dashboard-production-department-header-block");
+  if (productionHeaderBlock) {
+    productionHeaderBlock.style.display = (canCreateJobCardNumber || canCreateTicket || canAddFinishedGoods || canFinishedGoodsQA) ? "block" : "none";
+  }
+
+  // Live Spare Store Stock card visibility
+  if (document.getElementById("mod-live-spare-store-stock")) document.getElementById("mod-live-spare-store-stock").style.display = canLiveSpareStoreStock ? "block" : "none";
 
   // --- EVALUATE DEPARTMENT ENCLOSURE OVERLAYS ---
   const marketingHeaderBlock = document.getElementById("dashboard-marketing-department-header-block");
@@ -5268,7 +5332,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");
   if (storeHeaderBlock) {
-    storeHeaderBlock.style.display = (canViewLiveStock || canCreateTicket || canReleaseTicket || canSearchStoreMat || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntry === true || userPermissionsObject.grnNote === true || canViewLiveFinishedStock || canAddFinishedGoods) ? "block" : "none";
+    storeHeaderBlock.style.display = (canViewLiveStock || canReleaseTicket || canSearchStoreMat || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntry === true || userPermissionsObject.grnNote === true || canViewLiveFinishedStock || canLiveSpareStoreStock) ? "block" : "none";
   }
 }
 
@@ -6041,6 +6105,11 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     if (centerTitle)  centerTitle.style.visibility  = "hidden";
     document.getElementById("canvas-module-fg-add").style.display = "block";
     initializeFGAddWorkspace();
+  } else if (targetCanvasModuleId === 'coming-soon') {
+    document.getElementById("dashboard-view").style.display = "none";
+    document.getElementById("module-workspace-container").style.display = "block";
+    document.querySelectorAll("#module-workspace-container .workspace-panel").forEach(p => p.style.display = "none");
+    document.getElementById("workspace-coming-soon").style.display = "block";
   }
 }
 
