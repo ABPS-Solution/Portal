@@ -853,7 +853,7 @@
           <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">Material Rows *</span>
           <button class="nav-btn-styled" id="cboq-add-row-btn" disabled onclick="addCBOQMaterialRow()" style="background:var(--accent); padding:5px 14px; font-size:0.78rem; opacity:0.5; cursor:not-allowed;">+ Add Row</button>
         </div>
-        <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+        <div style="overflow-x:auto; overflow-y:visible; border:1px solid var(--border); border-radius:var(--radius); position:relative;">
           <table class="store-basket-data-table" style="width:100%; min-width:900px; border-collapse:collapse;">
             <thead>
               <tr style="background:#f8fafc;">
@@ -8935,6 +8935,23 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
   const dropdown   = document.getElementById(dropdownId);
   if (!dropdown) return;
 
+  // Open upward if this row is near the bottom of the visible table
+  const inputRect = dropdown.parentElement.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - inputRect.bottom;
+  if (spaceBelow < 200) {
+    dropdown.style.top = "auto";
+    dropdown.style.bottom = "100%";
+    dropdown.style.borderTop = "1.5px solid var(--brand)";
+    dropdown.style.borderBottom = "none";
+    dropdown.style.borderRadius = "4px 4px 0 0";
+  } else {
+    dropdown.style.top = "100%";
+    dropdown.style.bottom = "auto";
+    dropdown.style.borderTop = "none";
+    dropdown.style.borderBottom = "1.5px solid var(--brand)";
+    dropdown.style.borderRadius = "0 0 4px 4px";
+  }
+
   const catalog = window.itemCodeCatalogCache || [];
   if (!query || query.trim().length < 1) {
     dropdown.style.display = "none";
@@ -9247,7 +9264,7 @@ function renderEBOQForm(containerId) {
         <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand);">Material Rows *</span>
         <button class="nav-btn-styled" onclick="addEBOQMaterialRow()" style="background:var(--accent); padding:5px 14px; font-size:0.78rem;">+ Add Row</button>
       </div>
-      <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+      <div style="overflow-x:auto; overflow-y:visible; border:1px solid var(--border); border-radius:var(--radius); position:relative;">
         <table class="store-basket-data-table" style="width:100%; min-width:900px; border-collapse:collapse;">
           <thead>
             <tr style="background:#f8fafc;">
@@ -9536,7 +9553,7 @@ function renderUBOQForm() {
         <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand);">Material Rows *</span>
         <button class="nav-btn-styled" onclick="addUBOQMaterialRow()" style="background:var(--accent); padding:5px 14px; font-size:0.78rem;">+ Add Row</button>
       </div>
-      <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+      <div style="overflow-x:auto; overflow-y:visible; border:1px solid var(--border); border-radius:var(--radius); position:relative;">
         <table class="store-basket-data-table" style="width:100%; min-width:900px; border-collapse:collapse;">
           <thead>
             <tr style="background:#f8fafc;">
