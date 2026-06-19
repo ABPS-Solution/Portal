@@ -252,7 +252,7 @@
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
         <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Finished Goods Store</div>
         <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-fg-add" onclick="switchActiveDashboardModule('fg-add')">Add to Finished Goods Store</div>
+          <div class="menu-card" id="mod-fg-add" onclick="if(!this.dataset.clicked){this.dataset.clicked=1; switchActiveDashboardModule('fg-add'); setTimeout(()=>delete this.dataset.clicked, 1000);}">Add to Finished Goods Store</div>
         </div>
       </div>
 
@@ -279,11 +279,13 @@
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
         <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Bill of Quantity</div>
         <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
+                    <div class="menu-card" id="mod-design-itemcode"     onclick="switchActiveDashboardModule('design-itemcode')">Add / Check Item Code Number</div>
+          <div class="menu-card" id="mod-design-upload-drawings" onclick="switchActiveDashboardModule('design-upload-drawings')">Upload Drawings</div>
           <div class="menu-card" id="mod-design-create-boq"   onclick="switchActiveDashboardModule('design-create-boq')">Create Bill of Quantity</div>
           <div class="menu-card" id="mod-design-auth-boq"     onclick="switchActiveDashboardModule('design-auth-boq')">Authorize Bill of Quantity</div>
           <div class="menu-card" id="mod-design-update-boq"   onclick="switchActiveDashboardModule('design-update-boq')">Update Bill of Quantity</div>
           <div class="menu-card" id="mod-design-auth-boq-upd" onclick="switchActiveDashboardModule('design-auth-boq-upd')">Authorize Bill of Quantity Update</div>
-          <div class="menu-card" id="mod-design-itemcode"     onclick="switchActiveDashboardModule('design-itemcode')">Add / Check Item Code Number</div>
+
         </div>
       </div>
     </div>
@@ -586,12 +588,13 @@
           </div>
           <div>
             <label class="field-label" style="margin-top:0;">Unit *</label>
-            <select id="fg-add-unit" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <select id="fg-add-unit" onchange="document.getElementById('fg-add-unit-other').style.display = this.value === 'Others' ? 'block' : 'none';" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
               <option value="NOS">NOS</option>
               <option value="KG">KG</option>
               <option value="MTR">MTR</option>
               <option value="Others">Others</option>
             </select>
+            <input type="text" id="fg-add-unit-other" placeholder="Specify unit..." style="display:none; margin-top:6px; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
           </div>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
@@ -841,16 +844,6 @@
         </div>
       </div>
 
-      <!-- Spec Docs -->
-      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
-        <label class="field-label" style="margin-top:0; color:var(--brand);">Specification / Drawing Reference Documents</label>
-        <div class="card-box" id="cboq-spec-doc-dropzone" onclick="document.getElementById('cboq-spec-doc-input').click()" style="padding:20px; border:2px dashed var(--border); font-size:0.85rem; margin-top:6px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-          📎 Click to attach Specification / Drawing Reference files (any type, multiple allowed)
-        </div>
-        <input type="file" id="cboq-spec-doc-input" multiple hidden onchange="handleCBOQSpecDocSelection(this)" />
-        <div id="cboq-spec-doc-list" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;"></div>
-      </div>
-
       <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
         <button class="nav-btn-styled" onclick="resetCreateBOQForm()" style="background:#718096;">Clear Form</button>
         <button class="nav-btn-styled" id="cboq-submit-btn" onclick="submitCreateBOQ()" style="background:var(--accent); padding:8px 24px; font-weight:700;">Submit BOQ for Authorization</button>
@@ -922,6 +915,36 @@
 
       <div id="auth-boq-upd-form" style="display:none;">
         <!-- rendered by JS -->
+      </div>
+    </div>
+
+    <!-- UPLOAD DRAWINGS -->
+    <div id="canvas-module-design-upload-drawings" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="margin-bottom:6px; color:var(--brand);">Upload Drawings</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project ID, then upload drawing documents. Multiple uploads allowed.</p>
+      <div id="upload-drawings-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
+        <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
+        <select id="upload-drawings-project" onchange="handleUploadDrawingsProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:4px;">
+          <option value="">— Select Project ID —</option>
+        </select>
+      </div>
+
+      <div id="upload-drawings-existing-list" style="display:none; margin-bottom:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">Already Uploaded Documents</div>
+        <div id="upload-drawings-list-mount" style="display:flex; flex-direction:column; gap:6px;"></div>
+      </div>
+
+      <div id="upload-drawings-upload-zone" style="display:none; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+        <label class="field-label" style="margin-top:0; color:var(--brand);">Upload Drawing Document</label>
+        <div class="card-box" id="upload-drawings-dropzone" onclick="document.getElementById('upload-drawings-input').click()" style="padding:20px; border:2px dashed var(--border); font-size:0.85rem; margin-top:6px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+          📎 Click to select a drawing document
+        </div>
+        <input type="file" id="upload-drawings-input" hidden onchange="handleUploadDrawingsFileSelection(this)" />
+        <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+          <button class="nav-btn-styled" id="upload-drawings-submit-btn" onclick="submitUploadDrawing()" style="background:var(--accent); padding:8px 24px; font-weight:700;">Upload Document</button>
+        </div>
       </div>
     </div>
 
@@ -1660,7 +1683,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxJS92_9iTaaNUURVF6SJpLOoKL8h1rfxEqTn4tfcV-Ke7sC1RIjFev_kM6w_Z4mtY8mg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxNE1wZHi02qmmgGtr7x_XHI-TJlXTea0tOT2l_xTskAyFcAyNV2wDWji_REtXZxdvYig/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -1695,10 +1718,9 @@ let activeParsedGatePayloadCache = null;
 
 let targetBOQUploadFileRawObject = null;
 let cboqMaterialRows = [];
-let cboqSpecFiles    = [];
 let uboqMaterialRows = [];
-let uboqSpecFiles    = [];
 let uboqCurrentDraft = null;
+let uploadDrawingsSelectedFile = null;
 
 window.onload = function() {
   const token = localStorage.getItem("sessionToken"); 
@@ -5150,6 +5172,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canAuthorizeBOQ     = userPermissionsObject.authorizeBOQ     === true;
   const canUpdateBOQ        = userPermissionsObject.updateBOQ        === true;
   const canAuthorizeBOQUpdate = userPermissionsObject.authorizeBOQUpdate === true;
+  const canUploadDrawings = userPermissionsObject.uploadDrawings === true;
   const canViewLiveFinishedStock   = userPermissionsObject.liveFinishedGoodsStoreStock === true;
   const canUploadBOQ               = userPermissionsObject.uploadBOQ === true;
 
@@ -5222,8 +5245,9 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-design-auth-boq"))     document.getElementById("mod-design-auth-boq").style.display     = canAuthorizeBOQ ? "block" : "none";
   if (document.getElementById("mod-design-update-boq"))   document.getElementById("mod-design-update-boq").style.display   = canUpdateBOQ ? "block" : "none";
   if (document.getElementById("mod-design-auth-boq-upd")) document.getElementById("mod-design-auth-boq-upd").style.display = canAuthorizeBOQUpdate ? "block" : "none";
+  if (document.getElementById("mod-design-upload-drawings")) document.getElementById("mod-design-upload-drawings").style.display = canUploadDrawings ? "block" : "none";
   if (document.getElementById("mod-design-itemcode")) {
-    const canSeeItemCode = canCreateBOQ || canAuthorizeBOQ || canUpdateBOQ || canAuthorizeBOQUpdate
+    const canSeeItemCode = canCreateBOQ || canAuthorizeBOQ || canUpdateBOQ || canAuthorizeBOQUpdate || canUploadDrawings
       || userPermissionsObject.storeEntry === true
       || userPermissionsObject.grnNote === true
       || userPermissionsObject.itemCodeAccess === true;
@@ -5233,7 +5257,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // Design block visibility
   const designHeaderBlock = document.getElementById("dashboard-design-department-header-block");
   if (designHeaderBlock) {
-    designHeaderBlock.style.display = (canCreateBOQ || canAuthorizeBOQ || canUpdateBOQ || canAuthorizeBOQUpdate || canSeeItemCode) ? "block" : "none";
+    designHeaderBlock.style.display = (canCreateBOQ || canAuthorizeBOQ || canUpdateBOQ || canAuthorizeBOQUpdate || canUploadDrawings || canSeeItemCode) ? "block" : "none";
   }
 
   // --- EVALUATE DEPARTMENT ENCLOSURE OVERLAYS ---
@@ -6007,6 +6031,8 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     navigateToDesignWorkspacePanel('design-update-boq');
   } else if (targetCanvasModuleId === 'design-auth-boq-upd') {
     navigateToDesignWorkspacePanel('design-auth-boq-upd');
+  } else if (targetCanvasModuleId === 'design-upload-drawings') {
+    navigateToDesignWorkspacePanel('design-upload-drawings');
   } else if (targetCanvasModuleId === 'fg-add') {
     document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
     const leftControls = document.getElementById("store-panel-left-controls");
@@ -7744,7 +7770,8 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
     "canvas-module-design-create-boq",
     "canvas-module-design-auth-boq",
     "canvas-module-design-update-boq",
-    "canvas-module-design-auth-boq-upd"
+    "canvas-module-design-auth-boq-upd",
+    "canvas-module-design-upload-drawings"
   ];
   allDesignCanvases.forEach(id => {
     const el = document.getElementById(id);
@@ -7795,6 +7822,9 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
   } else if (targetModuleId === 'design-auth-boq-upd') {
     const el = document.getElementById("canvas-module-design-auth-boq-upd");
     if (el) { el.style.display = "block"; initializeAuthorizeBOQPanel('authorize-update'); }
+  } else if (targetModuleId === 'design-upload-drawings') {
+    const el = document.getElementById("canvas-module-design-upload-drawings");
+    if (el) { el.style.display = "block"; initializeUploadDrawingsPanel(); }
   } else {
     console.warn("Design routing gateway parameter fallback unmapped: ", targetModuleId);
   }
@@ -8764,6 +8794,9 @@ async function initializeCreateBOQPanel() {
   const today = new Date().toLocaleDateString('en-CA');
   document.getElementById("cboq-date").value = today;
 
+  // Ensure item code catalog is fresh before any material row search
+  await loadItemCodeCatalogIntoCache();
+
   // Load project IDs
   const projDrop = document.getElementById("cboq-project-id");
   projDrop.innerHTML = '<option value="">Loading projects...</option>';
@@ -8821,8 +8854,8 @@ function renderCBOQMaterialRows() {
       <td style="text-align:center; padding:6px; font-weight:700; color:var(--muted);">${idx + 1}</td>
       <td style="padding:4px;">
         <select onchange="cboqMaterialRows[${idx}].typeOfStore=this.value" style="padding:4px; font-size:0.8rem; width:100%;">
-          <option value="Raw Materials Store" ${row.typeOfStore==="Raw Materials Store"?"selected":""}>Raw Materials Store</option>
-          <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods Store</option>
+          <option value="Raw Materials Store" ${row.typeOfStore==="Raw Materials Store"?"selected":""}>Raw Materials</option>
+          <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods</option>
         </select>
       </td>
       <td style="padding:4px; position:relative;">
@@ -8927,35 +8960,9 @@ document.addEventListener("click", function(e) {
   }
 });
 
-function handleCBOQSpecDocSelection(input) {
-  Array.from(input.files).forEach(file => cboqSpecFiles.push(file));
-  renderCBOQSpecDocList();
-  input.value = ""; // reset so same file can be re-added if needed
-}
-
-function renderCBOQSpecDocList() {
-  const container = document.getElementById("cboq-spec-doc-list");
-  container.innerHTML = "";
-  cboqSpecFiles.forEach((file, idx) => {
-    const tag = document.createElement("div");
-    tag.style.cssText = "display:inline-flex; align-items:center; gap:6px; background:#e0f2fe; color:#0369a1; padding:3px 10px; border-radius:4px; font-size:0.75rem; font-weight:600;";
-    tag.innerHTML = `📎 ${file.name} <button onclick="cboqSpecFiles.splice(${idx},1); renderCBOQSpecDocList();" style="background:none; border:none; cursor:pointer; color:#b91c1c; font-weight:800; font-size:0.8rem; padding:0 2px;">✕</button>`;
-    container.appendChild(tag);
-  });
-  if (cboqSpecFiles.length > 0) {
-    document.getElementById("cboq-spec-doc-dropzone").textContent = cboqSpecFiles.length + " file(s) attached ✅";
-    document.getElementById("cboq-spec-doc-dropzone").classList.add("done");
-  } else {
-    document.getElementById("cboq-spec-doc-dropzone").textContent = "📎 Click to attach Specification / Drawing Reference files (any type, multiple allowed)";
-    document.getElementById("cboq-spec-doc-dropzone").classList.remove("done");
-  }
-}
-
 function resetCreateBOQForm() {
   cboqMaterialRows = [];
-  cboqSpecFiles    = [];
   renderCBOQMaterialRows();
-  renderCBOQSpecDocList();
   ["cboq-project-id","cboq-department"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   ["cboq-customer-name","cboq-product-name","cboq-product-rating"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   document.getElementById("cboq-order-qty").value = "1";
@@ -8986,18 +8993,6 @@ async function submitCreateBOQ() {
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
 
   try {
-    // Upload spec docs first if any
-    let specFolderUrl = "";
-    if (cboqSpecFiles.length > 0) {
-      const filesPayload = await Promise.all(cboqSpecFiles.map(async file => {
-        const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(file); });
-        return { fileName: file.name, base64Data: b64, mimeType: file.type || "application/octet-stream" };
-      }));
-      const uploadRes  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"uploadSpecDocs", sessionToken: localStorage.getItem("sessionToken"), projectId, files: filesPayload }) });
-      const uploadData = await uploadRes.json();
-      if (uploadData.success) specFolderUrl = uploadData.folderUrl || "";
-    }
-
     const res  = await fetch(GAS_URL, {
       method: "POST",
       body: JSON.stringify({
@@ -9005,8 +9000,7 @@ async function submitCreateBOQ() {
         sessionToken: localStorage.getItem("sessionToken"),
         projectId, customerName, productName, productRating,
         department, orderQuantity: orderQty,
-        materialRowsList: cboqMaterialRows,
-        specDocUrls: specFolderUrl
+        materialRowsList: cboqMaterialRows
       })
     });
     const data = await res.json();
@@ -9033,12 +9027,12 @@ async function submitCreateBOQ() {
 // ═══════════════════════════════════════════════════════
 
 let eboqMaterialRows = [];
-let eboqSpecFiles    = [];
 let eboqCurrentDraft = null;
 let eboqMode         = ""; // "authorize" or "authorize-update"
 
 async function initializeAuthorizeBOQPanel(mode) {
   eboqMode = mode;
+  await loadItemCodeCatalogIntoCache();
   const selectId  = mode === "authorize" ? "auth-boq-select" : "auth-boq-upd-select";
   const formId    = mode === "authorize" ? "auth-boq-form"   : "auth-boq-upd-form";
   const feedbackId= mode === "authorize" ? "auth-boq-feedback": "auth-boq-upd-feedback";
@@ -9147,7 +9141,7 @@ function renderEBOQForm(containerId) {
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <div>
-          <label class="field-label" style="margin-top:0;">Order Quantity (No. of Sets) *</label>
+          <label class="field-label" style="margin-top:0;">Order Quantity *</label>
           <input type="number" id="eboq-order-qty" value="${draft.orderQuantity}" min="1" style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
         </div>
         <div>
@@ -9180,17 +9174,6 @@ function renderEBOQForm(containerId) {
           <tbody id="eboq-material-rows-body"></tbody>
         </table>
       </div>
-    </div>
-
-    <!-- Spec Docs -->
-    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
-      <label class="field-label" style="margin-top:0; color:var(--brand);">Specification / Drawing Reference</label>
-      ${draft.specDocUrls ? `<div style="font-size:0.82rem; margin-top:6px;"><a href="${draft.specDocUrls}" target="_blank" style="color:var(--brand); font-weight:600;">📁 View existing spec docs folder</a></div>` : ""}
-      <div class="card-box" id="eboq-spec-doc-dropzone" onclick="document.getElementById('eboq-spec-doc-input').click()" style="padding:16px; border:2px dashed var(--border); font-size:0.82rem; margin-top:8px; cursor:pointer; text-align:center;">
-        📎 Attach additional Specification / Drawing Reference files
-      </div>
-      <input type="file" id="eboq-spec-doc-input" multiple hidden onchange="handleEBOQSpecDocSelection(this)" />
-      <div id="eboq-spec-doc-list" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;"></div>
     </div>
 
     <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
@@ -9239,8 +9222,8 @@ function renderEBOQMaterialRows() {
       <td style="text-align:center; padding:6px; font-weight:700; color:var(--muted);">${idx + 1}</td>
       <td style="padding:4px;">
         <select onchange="eboqMaterialRows[${idx}].typeOfStore=this.value" style="padding:4px; font-size:0.8rem; width:100%;">
-          <option value="Raw Materials Store" ${row.typeOfStore==="Raw Materials Store"?"selected":""}>Raw Materials Store</option>
-          <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods Store</option>
+          <option value="Raw Materials Store" ${row.typeOfStore==="Raw Materials Store"?"selected":""}>Raw Materials</option>
+          <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods</option>
         </select>
       </td>
       <td style="padding:4px; position:relative;">
@@ -9282,19 +9265,6 @@ function renderEBOQMaterialRows() {
   });
 }
 
-function handleEBOQSpecDocSelection(input) {
-  Array.from(input.files).forEach(file => eboqSpecFiles.push(file));
-  const list = document.getElementById("eboq-spec-doc-list");
-  list.innerHTML = "";
-  eboqSpecFiles.forEach((file, idx) => {
-    const tag = document.createElement("div");
-    tag.style.cssText = "display:inline-flex; align-items:center; gap:6px; background:#e0f2fe; color:#0369a1; padding:3px 10px; border-radius:4px; font-size:0.75rem; font-weight:600;";
-    tag.innerHTML = `📎 ${file.name} <button onclick="eboqSpecFiles.splice(${idx},1); handleEBOQSpecDocSelection({files:[]});" style="background:none; border:none; cursor:pointer; color:#b91c1c; font-size:0.8rem;">✕</button>`;
-    list.appendChild(tag);
-  });
-  input.value = "";
-}
-
 async function submitEBOQAuthorize() {
   const btn        = document.getElementById("eboq-submit-btn");
   const feedbackId = eboqMode === "authorize" ? "auth-boq-feedback" : "auth-boq-upd-feedback";
@@ -9318,18 +9288,6 @@ async function submitEBOQAuthorize() {
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Authorizing...';
 
   try {
-    // Upload any new spec docs
-    let specFolderUrl = eboqCurrentDraft.specDocUrls || "";
-    if (eboqSpecFiles.length > 0) {
-      const filesPayload = await Promise.all(eboqSpecFiles.map(async file => {
-        const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(file); });
-        return { fileName: file.name, base64Data: b64, mimeType: file.type || "application/octet-stream" };
-      }));
-      const uploadRes  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"uploadSpecDocs", sessionToken: localStorage.getItem("sessionToken"), projectId: eboqCurrentDraft.projectId, files: filesPayload }) });
-      const uploadData = await uploadRes.json();
-      if (uploadData.success) specFolderUrl = uploadData.folderUrl || specFolderUrl;
-    }
-
     const res  = await fetch(GAS_URL, {
       method: "POST",
       body: JSON.stringify({
@@ -9338,8 +9296,7 @@ async function submitEBOQAuthorize() {
         boqId: eboqCurrentDraft.boqId,
         productName, productRating, department,
         orderQuantity: orderQty,
-        materialRowsList: eboqMaterialRows,
-        specDocUrls: specFolderUrl
+        materialRowsList: eboqMaterialRows
       })
     });
     const data = await res.json();
@@ -9371,6 +9328,7 @@ async function submitEBOQAuthorize() {
 // ═══════════════════════════════════════════════════════
 
 async function initializeUpdateBOQPanel() {
+  await loadItemCodeCatalogIntoCache();
   const projDrop = document.getElementById("update-boq-project");
   projDrop.innerHTML = '<option value="">Loading...</option>';
   document.getElementById("update-boq-select").innerHTML = '<option value="">— Select Project First —</option>';
@@ -9509,17 +9467,6 @@ function renderUBOQForm() {
       </div>
     </div>
 
-    <!-- Spec Docs -->
-    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
-      <label class="field-label" style="margin-top:0; color:var(--brand);">Specification / Drawing Reference</label>
-      ${draft.specDocUrls ? `<div style="font-size:0.82rem; margin-top:6px;"><a href="${draft.specDocUrls}" target="_blank" style="color:var(--brand); font-weight:600;">📁 View existing spec docs folder</a></div>` : ""}
-      <div class="card-box" id="uboq-spec-dropzone" onclick="document.getElementById('uboq-spec-input').click()" style="padding:16px; border:2px dashed var(--border); font-size:0.82rem; margin-top:8px; cursor:pointer; text-align:center;">
-        📎 Attach additional Specification / Drawing Reference files
-      </div>
-      <input type="file" id="uboq-spec-input" multiple hidden onchange="handleUBOQSpecDocSelection(this)" />
-      <div id="uboq-spec-doc-list" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;"></div>
-    </div>
-
     <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
       <button class="nav-btn-styled" onclick="submitUpdateBOQ()" style="background:var(--accent); padding:8px 24px; font-weight:700;" id="uboq-submit-btn">Submit BOQ Update for Authorization</button>
     </div>
@@ -9553,8 +9500,8 @@ function renderUBOQMaterialRows() {
       <td style="text-align:center; padding:6px; font-weight:700; color:var(--muted);">${idx + 1}</td>
       <td style="padding:4px;">
         <select onchange="uboqMaterialRows[${idx}].typeOfStore=this.value" style="padding:4px; font-size:0.8rem; width:100%;">
-          <option value="Raw Materials Store" ${row.typeOfStore==="Raw Materials Store"?"selected":""}>Raw Materials Store</option>
-          <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods Store</option>
+          <option value="Raw Materials Store" ${row.typeOfStore==="Raw Materials Store"?"selected":""}>Raw Materials</option>
+          <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods</option>
         </select>
       </td>
       <td style="padding:4px; position:relative;">
@@ -9616,19 +9563,6 @@ function selectBOQRowMaterial(rowIdx, productName, itemCode, formPrefix) {
   if (dropdown) dropdown.style.display = "none";
 }
 
-function handleUBOQSpecDocSelection(input) {
-  Array.from(input.files).forEach(file => uboqSpecFiles.push(file));
-  const list = document.getElementById("uboq-spec-doc-list");
-  list.innerHTML = "";
-  uboqSpecFiles.forEach((file, idx) => {
-    const tag = document.createElement("div");
-    tag.style.cssText = "display:inline-flex; align-items:center; gap:6px; background:#e0f2fe; color:#0369a1; padding:3px 10px; border-radius:4px; font-size:0.75rem; font-weight:600;";
-    tag.innerHTML = `📎 ${file.name} <button onclick="uboqSpecFiles.splice(${idx},1); handleUBOQSpecDocSelection({files:[]});" style="background:none; border:none; cursor:pointer; color:#b91c1c; font-size:0.8rem;">✕</button>`;
-    list.appendChild(tag);
-  });
-  input.value = "";
-}
-
 async function submitUpdateBOQ() {
   const btn      = document.getElementById("uboq-submit-btn");
   const feedbackId = "update-boq-feedback";
@@ -9651,17 +9585,6 @@ async function submitUpdateBOQ() {
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
 
   try {
-    let specFolderUrl = uboqCurrentDraft.specDocUrls || "";
-    if (uboqSpecFiles.length > 0) {
-      const filesPayload = await Promise.all(uboqSpecFiles.map(async file => {
-        const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(file); });
-        return { fileName: file.name, base64Data: b64, mimeType: file.type || "application/octet-stream" };
-      }));
-      const uploadRes  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"uploadSpecDocs", sessionToken: localStorage.getItem("sessionToken"), projectId: uboqCurrentDraft.projectId, files: filesPayload }) });
-      const uploadData = await uploadRes.json();
-      if (uploadData.success) specFolderUrl = uploadData.folderUrl || specFolderUrl;
-    }
-
     const res  = await fetch(GAS_URL, {
       method: "POST",
       body: JSON.stringify({
@@ -9670,8 +9593,7 @@ async function submitUpdateBOQ() {
         boqId: uboqCurrentDraft.boqId,
         productName, productRating, department,
         orderQuantity: orderQty,
-        materialRowsList: uboqMaterialRows,
-        specDocUrls: specFolderUrl
+        materialRowsList: uboqMaterialRows
       })
     });
     const data = await res.json();
@@ -9701,7 +9623,10 @@ async function submitUpdateBOQ() {
 // ADD TO FINISHED GOODS STORE
 // ═══════════════════════════════════════════════════════
 
+let fgAddWorkspaceInitInProgress = false;
 async function initializeFGAddWorkspace() {
+  if (fgAddWorkspaceInitInProgress) return;
+  fgAddWorkspaceInitInProgress = true;
   document.getElementById("fg-add-feedback").style.display = "none";
   await loadItemCodeCatalogIntoCache();
 
@@ -9750,6 +9675,7 @@ async function initializeFGAddWorkspace() {
   }
 
   resetFGAddForm();
+  fgAddWorkspaceInitInProgress = false;
 }
 
 function handleFGAddProjectChange(projectId) {
@@ -9805,6 +9731,8 @@ function resetFGAddForm() {
     const el = document.getElementById(id); if (el) el.value = "";
   });
   document.getElementById("fg-add-unit").value = "NOS";
+  document.getElementById("fg-add-unit-other").value = "";
+  document.getElementById("fg-add-unit-other").style.display = "none";
   ["fg-add-customer","fg-add-product-search","fg-add-product-name","fg-add-item-code",
    "fg-add-rating","fg-add-jobcard","fg-add-remarks"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
@@ -9822,7 +9750,8 @@ async function submitFGAddItem() {
   const itemCode   = document.getElementById("fg-add-item-code").value.trim();
   const rating     = document.getElementById("fg-add-rating").value.trim();
   const jobCard    = document.getElementById("fg-add-jobcard").value.trim();
-  const unit       = document.getElementById("fg-add-unit").value.trim();
+  const unitSelect = document.getElementById("fg-add-unit").value.trim();
+  const unit        = unitSelect === "Others" ? document.getElementById("fg-add-unit-other").value.trim() : unitSelect;
   const prodPerson = document.getElementById("fg-add-prod-person").value.trim();
   const storePerson= document.getElementById("fg-add-store-person").value.trim();
   const remarks    = document.getElementById("fg-add-remarks").value.trim();
@@ -9944,6 +9873,120 @@ function showBOQBanner(elementId, message, type) {
   el.innerHTML  = message;
   el.style.display = "block";
   if (isSuccess) setTimeout(() => { el.style.display = "none"; }, 6000);
+}
+
+// ═══════════════════════════════════════════════════════
+// UPLOAD DRAWINGS
+// ═══════════════════════════════════════════════════════
+
+async function initializeUploadDrawingsPanel() {
+  const projDrop = document.getElementById("upload-drawings-project");
+  projDrop.innerHTML = '<option value="">Loading...</option>';
+  document.getElementById("upload-drawings-existing-list").style.display = "none";
+  document.getElementById("upload-drawings-upload-zone").style.display = "none";
+  document.getElementById("upload-drawings-feedback").style.display = "none";
+
+  try {
+    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) });
+    const data = await res.json();
+    projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
+    (data.projects || []).forEach(code => {
+      const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
+    });
+  } catch(e) {
+    projDrop.innerHTML = '<option value="">Error loading projects</option>';
+  }
+}
+
+async function handleUploadDrawingsProjectChange(projectId) {
+  const listZone = document.getElementById("upload-drawings-existing-list");
+  const uploadZone = document.getElementById("upload-drawings-upload-zone");
+
+  if (!projectId) {
+    listZone.style.display = "none";
+    uploadZone.style.display = "none";
+    return;
+  }
+
+  uploadZone.style.display = "block";
+  await refreshUploadDrawingsList(projectId);
+}
+
+async function refreshUploadDrawingsList(projectId) {
+  const listZone = document.getElementById("upload-drawings-existing-list");
+  const mount    = document.getElementById("upload-drawings-list-mount");
+
+  mount.innerHTML = '<div style="font-size:0.82rem; color:var(--muted);">Loading...</div>';
+  listZone.style.display = "block";
+
+  try {
+    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchDrawingDocumentsList", sessionToken: localStorage.getItem("sessionToken"), projectId }) });
+    const data = await res.json();
+
+    if (!data.success || !data.documents || data.documents.length === 0) {
+      mount.innerHTML = '<div style="font-size:0.82rem; color:var(--muted); font-style:italic; padding:10px; background:#f8fafc; border:1px dashed var(--border); border-radius:var(--radius);">No drawing documents uploaded yet for this project.</div>';
+      return;
+    }
+
+    mount.innerHTML = data.documents.map(doc => `
+      <a href="${doc.url}" target="_blank" style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:0.85rem; font-weight:600;">
+        <span>📄 ${doc.name}</span>
+        <span style="font-size:0.72rem; color:var(--muted); font-weight:400;">${doc.lastUpdated}</span>
+      </a>`).join("");
+  } catch(e) {
+    mount.innerHTML = '<div style="color:var(--warn); font-size:0.82rem;">Failed to load documents.</div>';
+  }
+}
+
+function handleUploadDrawingsFileSelection(input) {
+  uploadDrawingsSelectedFile = input.files[0];
+  if (uploadDrawingsSelectedFile) {
+    const box = document.getElementById("upload-drawings-dropzone");
+    box.textContent = uploadDrawingsSelectedFile.name + " ✅";
+    box.classList.add("done");
+  }
+}
+
+async function submitUploadDrawing() {
+  const projectId = document.getElementById("upload-drawings-project").value;
+  const btn       = document.getElementById("upload-drawings-submit-btn");
+
+  if (!projectId) return showBOQBanner("upload-drawings-feedback", "Select a Project ID first.", "error");
+  if (!uploadDrawingsSelectedFile) return showBOQBanner("upload-drawings-feedback", "Select a file to upload.", "error");
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Uploading...';
+
+  try {
+    const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(uploadDrawingsSelectedFile); });
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "uploadDrawingDocument",
+        sessionToken: localStorage.getItem("sessionToken"),
+        projectId,
+        file: { fileName: uploadDrawingsSelectedFile.name, base64Data: b64, mimeType: uploadDrawingsSelectedFile.type || "application/octet-stream" }
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showBOQBanner("upload-drawings-feedback", `<strong>${data.fileName}</strong> uploaded successfully.`, "success");
+      uploadDrawingsSelectedFile = null;
+      document.getElementById("upload-drawings-input").value = "";
+      const box = document.getElementById("upload-drawings-dropzone");
+      box.textContent = "📎 Click to select a drawing document";
+      box.classList.remove("done");
+      await refreshUploadDrawingsList(projectId);
+    } else {
+      showBOQBanner("upload-drawings-feedback", data.error || "Upload failed.", "error");
+    }
+  } catch(e) {
+    showBOQBanner("upload-drawings-feedback", "Network error: " + e.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Upload Document";
+  }
 }
 
 </script>
