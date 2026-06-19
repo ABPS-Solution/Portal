@@ -619,6 +619,12 @@
             <input type="text" id="fg-add-jobcard" disabled style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" placeholder="Enter job card number..." />
           </div>
           <div>
+            <label class="field-label" style="margin-top:0;">Product Serial Number</label>
+            <input type="text" id="fg-add-serial" disabled style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" placeholder="Enter product serial number..." />
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+          <div>
             <label class="field-label" style="margin-top:0;">Unit *</label>
             <select id="fg-add-unit" disabled onchange="document.getElementById('fg-add-unit-other').style.display = this.value === 'Others' ? 'block' : 'none';" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
               <option value="NOS">NOS</option>
@@ -1697,7 +1703,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzxlmmLkjcF_Q46xszjYcdkraDMD6Wosqr-f7yhAML_9e4pbcH_YKss8HUjT8tvJfZrcw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwCzAz6A_cw58hgSNf2CMl1F6lIvvszGBIQGhBuKhfSP7NclGL9Rdy_UgZCR3RkXhtRWw/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -9787,7 +9793,7 @@ function handleFGAddProjectChange(projectId) {
   const meta = window.fgAddProjectMeta && window.fgAddProjectMeta[projectId];
   document.getElementById("fg-add-customer").value = meta ? (meta.companyName || "") : "";
 
-  const fieldsToToggle = ["fg-add-department","fg-add-product-search","fg-add-rating","fg-add-jobcard","fg-add-unit","fg-add-prod-person","fg-add-store-person","fg-add-remarks"];
+  const fieldsToToggle = ["fg-add-department","fg-add-product-search","fg-add-rating","fg-add-jobcard","fg-add-serial","fg-add-unit","fg-add-prod-person","fg-add-store-person","fg-add-remarks"];
   const submitBtn = document.getElementById("fg-add-submit-btn");
 
   if (projectId) {
@@ -9850,7 +9856,7 @@ function resetFGAddForm() {
   document.getElementById("fg-add-unit-other").value = "";
   document.getElementById("fg-add-unit-other").style.display = "none";
   ["fg-add-customer","fg-add-product-search","fg-add-product-name","fg-add-item-code",
-   "fg-add-rating","fg-add-jobcard","fg-add-remarks"].forEach(id => {
+   "fg-add-rating","fg-add-jobcard","fg-add-serial","fg-add-remarks"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
   document.getElementById("fg-product-dropdown").style.display = "none";
@@ -9867,6 +9873,7 @@ async function submitFGAddItem() {
   const itemCode   = document.getElementById("fg-add-item-code").value.trim();
   const rating     = document.getElementById("fg-add-rating").value.trim();
   const jobCard    = document.getElementById("fg-add-jobcard").value.trim();
+  const serialNumber = document.getElementById("fg-add-serial").value.trim();
   const unitSelect = document.getElementById("fg-add-unit").value.trim();
   const unit        = unitSelect === "Others" ? document.getElementById("fg-add-unit-other").value.trim() : unitSelect;
   const prodPerson = document.getElementById("fg-add-prod-person").value.trim();
@@ -9889,6 +9896,7 @@ async function submitFGAddItem() {
         sessionToken: localStorage.getItem("sessionToken"),
         department, projectId, customerName, productName,
         itemCode, productRating: rating, jobCardNumber: jobCard,
+        productSerialNumber: serialNumber,
         unit, prodResponsible: prodPerson,
         storeIncharge: storePerson, additionalRemarks: remarks
       })
