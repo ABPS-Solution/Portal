@@ -316,7 +316,6 @@
         <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Finished Goods Store</div>
         <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
           <div class="menu-card" id="mod-fg-add" onclick="switchActiveDashboardModule('fg-add')">Add to Finished Goods Store</div>
-          <div class="menu-card" id="mod-fg-qa" onclick="switchActiveDashboardModule('coming-soon')">Finished Goods Store Q/A</div>
         </div>
       </div>
     </div>
@@ -653,6 +652,44 @@
           <label class="field-label" style="margin-top:0;">Additional Remarks</label>
           <input type="text" id="fg-add-remarks" disabled style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" placeholder="Any additional notes..." />
         </div>
+
+        <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-bottom:16px;">
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:12px; letter-spacing:0.5px;">Quality Assurance</div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Test Certificate</label>
+              <div class="card-box" id="fg-add-test-cert-dropzone" onclick="document.getElementById('fg-add-test-cert-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Test Certificate
+              </div>
+              <input type="file" id="fg-add-test-cert-input" hidden onchange="handleFGQAFileSelection(this, 'testCert')" />
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Inspection Clearance</label>
+              <div class="card-box" id="fg-add-inspection-dropzone" onclick="document.getElementById('fg-add-inspection-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Inspection Clearance
+              </div>
+              <input type="file" id="fg-add-inspection-input" hidden onchange="handleFGQAFileSelection(this, 'inspectionClearance')" />
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Q/A Person *</label>
+              <select id="fg-add-qa-person" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+                <option value="">— Select Person —</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Q/A Done *</label>
+              <select id="fg-add-qa-done" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
           <button class="nav-btn-styled" onclick="resetFGAddForm()" style="background:#718096;">Clear</button>
           <button class="nav-btn-styled" id="fg-add-submit-btn" disabled onclick="submitFGAddItem()" style="background:var(--accent); padding:8px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;">Add to Finished Goods Store</button>
@@ -1741,6 +1778,9 @@ let cboqMaterialRows = [];
 let uboqMaterialRows = [];
 let uboqCurrentDraft = null;
 let uploadDrawingsSelectedFile = null;
+
+let fgQATestCertFile = null;
+let fgQAInspectionFile = null;
 
 window.onload = function() {
   const token = localStorage.getItem("sessionToken"); 
@@ -5199,7 +5239,6 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canPurchaseRequestNote = userPermissionsObject.purchaseRequestNote === true;
   const canUploadRMPurchaseOrder = userPermissionsObject.uploadRMPurchaseOrder === true;
   const canCreateJobCardNumber = userPermissionsObject.createJobCardNumber === true;
-  const canFinishedGoodsQA = userPermissionsObject.finishedGoodsQA === true;
   const canLiveSpareStoreStock = userPermissionsObject.liveSpareStoreStock === true;
 
   // --- SET INDIVIDUAL VISIBILITY FOR MARKETING TARGET CARDS ---
@@ -5297,10 +5336,9 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 
   // Production Department block visibility
   if (document.getElementById("mod-create-job-card")) document.getElementById("mod-create-job-card").style.display = canCreateJobCardNumber ? "block" : "none";
-  if (document.getElementById("mod-fg-qa")) document.getElementById("mod-fg-qa").style.display = canFinishedGoodsQA ? "block" : "none";
   const productionHeaderBlock = document.getElementById("dashboard-production-department-header-block");
   if (productionHeaderBlock) {
-    productionHeaderBlock.style.display = (canCreateJobCardNumber || canCreateTicket || canAddFinishedGoods || canFinishedGoodsQA) ? "block" : "none";
+    productionHeaderBlock.style.display = (canCreateJobCardNumber || canCreateTicket || canAddFinishedGoods) ? "block" : "none";
   }
 
   // Live Spare Store Stock card visibility
@@ -9780,6 +9818,14 @@ async function initializeFGAddWorkspace() {
       const opt = document.createElement("option"); opt.value = p.fullName; opt.textContent = p.fullName;
       storeDrop.appendChild(opt);
     });
+
+    const qaPeople = allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().trim().includes("qa")));
+    const qaDrop = document.getElementById("fg-add-qa-person");
+    qaDrop.innerHTML = '<option value="">— Select Person —</option>';
+    qaPeople.forEach(p => {
+      const opt = document.createElement("option"); opt.value = p.fullName; opt.textContent = p.fullName;
+      qaDrop.appendChild(opt);
+    });
   } catch(e) {
     prodDrop.innerHTML  = '<option value="">Error loading personnel</option>';
     storeDrop.innerHTML = '<option value="">Error loading personnel</option>';
@@ -9859,6 +9905,14 @@ function resetFGAddForm() {
    "fg-add-rating","fg-add-jobcard","fg-add-serial","fg-add-remarks"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
+  document.getElementById("fg-add-qa-person").value = "";
+  document.getElementById("fg-add-qa-done").value = "No";
+  fgQATestCertFile = null;
+  fgQAInspectionFile = null;
+  const certBox = document.getElementById("fg-add-test-cert-dropzone");
+  if (certBox) { certBox.textContent = "📎 Click to attach Test Certificate"; certBox.classList.remove("done"); }
+  const inspBox = document.getElementById("fg-add-inspection-dropzone");
+  if (inspBox) { inspBox.textContent = "📎 Click to attach Inspection Clearance"; inspBox.classList.remove("done"); }
   document.getElementById("fg-product-dropdown").style.display = "none";
   document.getElementById("fg-add-feedback").style.display = "none";
   handleFGAddProjectChange(""); // re-lock fields
@@ -9879,16 +9933,37 @@ async function submitFGAddItem() {
   const prodPerson = document.getElementById("fg-add-prod-person").value.trim();
   const storePerson= document.getElementById("fg-add-store-person").value.trim();
   const remarks    = document.getElementById("fg-add-remarks").value.trim();
+  const qaPersonName = document.getElementById("fg-add-qa-person").value.trim();
+  const qaDone     = document.getElementById("fg-add-qa-done").value.trim();
 
   if (!department)  return showBOQBanner("fg-add-feedback", "Department is required.", "error");
   if (!projectId)   return showBOQBanner("fg-add-feedback", "Project ID is required.", "error");
   if (!productName) return showBOQBanner("fg-add-feedback", "Product Name is required.", "error");
   if (!storePerson) return showBOQBanner("fg-add-feedback", "Store Incharge Person is required.", "error");
+  if (!qaPersonName) return showBOQBanner("fg-add-feedback", "Q/A Person is required.", "error");
+  if (qaDone !== "Yes") return showBOQBanner("fg-add-feedback", "Q/A Done must be set to Yes before this item can be submitted.", "error");
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Adding...';
 
   try {
+    let testCertUrl = "";
+    let inspectionClearanceUrl = "";
+
+    if (fgQATestCertFile) {
+      const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(fgQATestCertFile); });
+      const upRes = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"uploadFinishedGoodsQADocument", sessionToken: localStorage.getItem("sessionToken"), projectId, file: { fileName: fgQATestCertFile.name, base64Data: b64, mimeType: fgQATestCertFile.type || "application/octet-stream" } }) });
+      const upData = await upRes.json();
+      if (upData.success) testCertUrl = upData.url;
+    }
+
+    if (fgQAInspectionFile) {
+      const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(fgQAInspectionFile); });
+      const upRes = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"uploadFinishedGoodsQADocument", sessionToken: localStorage.getItem("sessionToken"), projectId, file: { fileName: fgQAInspectionFile.name, base64Data: b64, mimeType: fgQAInspectionFile.type || "application/octet-stream" } }) });
+      const upData = await upRes.json();
+      if (upData.success) inspectionClearanceUrl = upData.url;
+    }
+
     const res  = await fetch(GAS_URL, {
       method: "POST",
       body: JSON.stringify({
@@ -9898,7 +9973,8 @@ async function submitFGAddItem() {
         itemCode, productRating: rating, jobCardNumber: jobCard,
         productSerialNumber: serialNumber,
         unit, prodResponsible: prodPerson,
-        storeIncharge: storePerson, additionalRemarks: remarks
+        storeIncharge: storePerson, additionalRemarks: remarks,
+        qaPersonName, qaDone, testCertUrl, inspectionClearanceUrl
       })
     });
     const data = await res.json();
@@ -10068,6 +10144,22 @@ function handleUploadDrawingsFileSelection(input) {
   if (uploadDrawingsSelectedFile) {
     const box = document.getElementById("upload-drawings-dropzone");
     box.textContent = uploadDrawingsSelectedFile.name + " ✅";
+    box.classList.add("done");
+  }
+}
+
+function handleFGQAFileSelection(input, type) {
+  const file = input.files[0];
+  if (!file) return;
+  if (type === "testCert") {
+    fgQATestCertFile = file;
+    const box = document.getElementById("fg-add-test-cert-dropzone");
+    box.textContent = file.name + " ✅";
+    box.classList.add("done");
+  } else {
+    fgQAInspectionFile = file;
+    const box = document.getElementById("fg-add-inspection-dropzone");
+    box.textContent = file.name + " ✅";
     box.classList.add("done");
   }
 }
