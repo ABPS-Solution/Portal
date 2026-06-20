@@ -6017,7 +6017,7 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   if (centerTitle) {
     centerTitle.style.visibility = isLiveStock ? "visible" : "hidden";
     if (isLiveStock) {
-      centerTitle.textContent = "Live Store Stock";
+      centerTitle.textContent = "Live Raw Materials Store Stock";
     }
   }
   
@@ -6104,13 +6104,22 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     navigateToStoreWorkspacePanel('store-live-stock');
   } else if (targetCanvasModuleId === 'store-live-finished-goods' || targetCanvasModuleId === 'live-finished-goods') {
     navigateToStoreWorkspacePanel('store-live-stock');
+    setTimeout(() => {
+      const centerTitle = document.getElementById("store-panel-center-title");
+      if (centerTitle) centerTitle.textContent = "Live Finished Goods Store Stock";
+    }, 0);
   } else if (targetCanvasModuleId === 'store-live-spare') {
     document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
     document.querySelectorAll("#module-store-workspace-enclosure-panel .workspace-panel").forEach(p => p.style.display = "none");
     const leftControls = document.getElementById("store-panel-left-controls");
     const centerTitle  = document.getElementById("store-panel-center-title");
-    if (leftControls) leftControls.style.visibility = "hidden";
-    if (centerTitle)  centerTitle.style.visibility  = "hidden";
+    const syncBtn      = document.getElementById("live-stock-sync-btn");
+    if (leftControls) leftControls.style.visibility = "visible";
+    if (centerTitle)  { centerTitle.style.visibility  = "visible"; centerTitle.textContent = "Live Spare Store Stock"; }
+    if (syncBtn) {
+      syncBtn.removeAttribute("onclick");
+      syncBtn.onclick = function() { triggerLiveSpareStoreStockMetricsSync(); };
+    }
     document.getElementById("canvas-module-store-live-spare").style.display = "block";
     triggerLiveSpareStoreStockMetricsSync();
   } else if (targetCanvasModuleId === 'store-history-matrix') {
