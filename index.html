@@ -485,83 +485,77 @@
     </div>
 
     <div id="canvas-module-store-live-stock" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      
-      <!-- Raw Materials Stock Metrics -->
-      <div class="dashboard-grid" id="dashboard-live-inventory-metrics-mount-zone" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap:10px; padding:0; margin-bottom:24px;"></div>
+      <div class="dashboard-grid" id="dashboard-live-inventory-metrics-mount-zone" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap:10px; padding:0;"></div>
+    </div>
 
-      <!-- Finished Goods Store Stock -->
-      <div style="margin-top:8px;">
-        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px; margin-bottom:14px; border-bottom:2px solid var(--border); padding-bottom:6px;">Finished Goods Store Stock</div>
-
-        <!-- Reactor -->
-        <div style="margin-bottom:20px;">
-          <div style="font-size:0.8rem; font-weight:700; color:#1a2332; margin-bottom:8px; padding:6px 10px; background:#f8fafc; border-radius:var(--radius); border-left:3px solid var(--brand);">⚡ Reactor</div>
-          <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-            <table style="width:100%; border-collapse:collapse; min-width:700px;">
-              <thead>
-                <tr style="background:#f8fafc;">
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Project ID</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Customer Name</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Item Code</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Rating</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Name</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Unit</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:center; font-weight:700; text-transform:uppercase; color:var(--muted);">Qty (In Stock)</th>
-                </tr>
-              </thead>
-              <tbody id="fg-stock-reactor-rows">
-                <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
+    <div id="canvas-module-store-live-fg" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <!-- Reactor -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:0.8rem; font-weight:700; color:#1a2332; margin-bottom:8px; padding:6px 10px; background:#f8fafc; border-radius:var(--radius); border-left:3px solid var(--brand);">⚡ Reactor</div>
+        <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+          <table style="width:100%; border-collapse:collapse; min-width:700px;">
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Project ID</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Customer Name</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Item Code</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Rating</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Name</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Unit</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; font-weight:700; text-transform:uppercase; color:var(--muted);">Qty (In Stock)</th>
+              </tr>
+            </thead>
+            <tbody id="fg-stock-reactor-rows">
+              <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">Loading...</td></tr>
+            </tbody>
+          </table>
         </div>
+      </div>
 
-        <!-- Capacitor -->
-        <div style="margin-bottom:20px;">
-          <div style="font-size:0.8rem; font-weight:700; color:#1a2332; margin-bottom:8px; padding:6px 10px; background:#f8fafc; border-radius:var(--radius); border-left:3px solid var(--brand);">🔋 Capacitor</div>
-          <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-            <table style="width:100%; border-collapse:collapse; min-width:700px;">
-              <thead>
-                <tr style="background:#f8fafc;">
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Project ID</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Customer Name</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Item Code</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Rating</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Name</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Unit</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:center; font-weight:700; text-transform:uppercase; color:var(--muted);">Qty (In Stock)</th>
-                </tr>
-              </thead>
-              <tbody id="fg-stock-capacitor-rows">
-                <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
+      <!-- Capacitor -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:0.8rem; font-weight:700; color:#1a2332; margin-bottom:8px; padding:6px 10px; background:#f8fafc; border-radius:var(--radius); border-left:3px solid var(--brand);">🔋 Capacitor</div>
+        <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+          <table style="width:100%; border-collapse:collapse; min-width:700px;">
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Project ID</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Customer Name</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Item Code</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Rating</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Name</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Unit</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; font-weight:700; text-transform:uppercase; color:var(--muted);">Qty (In Stock)</th>
+              </tr>
+            </thead>
+            <tbody id="fg-stock-capacitor-rows">
+              <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">Loading...</td></tr>
+            </tbody>
+          </table>
         </div>
+      </div>
 
-        <!-- Panel -->
-        <div style="margin-bottom:8px;">
-          <div style="font-size:0.8rem; font-weight:700; color:#1a2332; margin-bottom:8px; padding:6px 10px; background:#f8fafc; border-radius:var(--radius); border-left:3px solid var(--brand);">🗄️ Panel</div>
-          <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-            <table style="width:100%; border-collapse:collapse; min-width:700px;">
-              <thead>
-                <tr style="background:#f8fafc;">
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Project ID</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Customer Name</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Item Code</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Rating</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Name</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Unit</th>
-                  <th style="padding:8px; font-size:0.7rem; text-align:center; font-weight:700; text-transform:uppercase; color:var(--muted);">Qty (In Stock)</th>
-                </tr>
-              </thead>
-              <tbody id="fg-stock-panel-rows">
-                <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
+      <!-- Panel -->
+      <div style="margin-bottom:8px;">
+        <div style="font-size:0.8rem; font-weight:700; color:#1a2332; margin-bottom:8px; padding:6px 10px; background:#f8fafc; border-radius:var(--radius); border-left:3px solid var(--brand);">🗄️ Panel</div>
+        <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+          <table style="width:100%; border-collapse:collapse; min-width:700px;">
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Project ID</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Customer Name</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Item Code</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Rating</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Name</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Unit</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; font-weight:700; text-transform:uppercase; color:var(--muted);">Qty (In Stock)</th>
+              </tr>
+            </thead>
+            <tbody id="fg-stock-panel-rows">
+              <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">Loading...</td></tr>
+            </tbody>
+          </table>
         </div>
-
       </div>
     </div>
 
@@ -6101,11 +6095,19 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   else if (targetCanvasModuleId === 'store-live-stock') {
     navigateToStoreWorkspacePanel('store-live-stock');
   } else if (targetCanvasModuleId === 'store-live-finished-goods' || targetCanvasModuleId === 'live-finished-goods') {
-    navigateToStoreWorkspacePanel('store-live-stock');
-    setTimeout(() => {
-      const centerTitle = document.getElementById("store-panel-center-title");
-      if (centerTitle) centerTitle.textContent = "Live Finished Goods Store Stock";
-    }, 0);
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    document.querySelectorAll("#module-store-workspace-enclosure-panel .workspace-panel").forEach(p => p.style.display = "none");
+    const leftControls = document.getElementById("store-panel-left-controls");
+    const centerTitle  = document.getElementById("store-panel-center-title");
+    const syncBtn      = document.getElementById("live-stock-sync-btn");
+    if (leftControls) leftControls.style.visibility = "visible";
+    if (centerTitle)  { centerTitle.style.visibility = "visible"; centerTitle.textContent = "Live Finished Goods Store Stock"; }
+    if (syncBtn) {
+      syncBtn.removeAttribute("onclick");
+      syncBtn.onclick = function() { triggerLiveFinishedGoodsStoreStockMetricsSync(); };
+    }
+    document.getElementById("canvas-module-store-live-fg").style.display = "block";
+    triggerLiveFinishedGoodsStoreStockMetricsSync();
   } else if (targetCanvasModuleId === 'store-live-spare') {
     document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
     document.querySelectorAll("#module-store-workspace-enclosure-panel .workspace-panel").forEach(p => p.style.display = "none");
@@ -6603,7 +6605,6 @@ async function triggerLiveWarehouseStockMetricsSync() {
     if (data.success && data.inventory) {
       cachedInventoryStockCollection = data.inventory;
       window.cachedFinishedGoodsStoreStockCollection = data.finishedGoodsInventory || {};
-      triggerLiveFinishedGoodsStoreStockMetricsSync();
       mountZone.innerHTML = "";
 
       if (!cachedInventoryStockCollection || cachedInventoryStockCollection.length === 0) {
