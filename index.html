@@ -1039,7 +1039,7 @@
       <div id="itemcode-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
       <!-- SEARCH ZONE -->
-      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+      <div id="itemcode-search-zone-wrapper" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
         <label class="field-label" style="margin-top:0; color:var(--brand);">Search Product Name *</label>
         <div style="display:flex; gap:10px; align-items:flex-end; margin-top:4px;">
           <div style="flex-grow:1;">
@@ -1095,7 +1095,7 @@
           </div>
         </div>
         <button onclick="document.getElementById('itemcode-selected-detail-zone').style.display='none';" 
-          style="margin-top:12px; background:transparent; border:1px solid var(--border); color:var(--muted); padding:3px 10px; border-radius:4px; font-size:0.75rem; cursor:pointer;">
+          style="margin-top:12px; background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; padding:3px 10px; border-radius:4px; font-size:0.75rem; font-weight:700; cursor:pointer;">
           ✕ Close
         </button>
       </div>
@@ -1971,7 +1971,8 @@ function initializeGoogleAuthPlatformEngine() {
 
     // 2. INITIALIZE GOOGLE WITH MOBILE CACHE OVERRIDES
     google.accounts.id.initialize({
-      client_id: "374058137880-64dt8h9eem9impq61bpb0n9iselso76e.apps.googleusercontent.com",
+      // client_id: "374058137880-64dt8h9eem9impq61bpb0n9iselso76e.apps.googleusercontent.com",
+      client_id: "223982503901-jij5hbl0npjmbqnsgl352pvmq4sk75nt.apps.googleusercontent.com",
       callback: handleGooglePlatformCredentialResponse,
       ux_mode: "popup",
       use_fedcm_for_prompt: true
@@ -3084,8 +3085,8 @@ function returnToDirectoryCardsFromFormView() {
  * Generates interactive summary listings for all employee rows matched under target entities search routes,
  * explicitly pointing to updated column headers schemas.
  */
-function buildMultiContactDirectoryInterface(leadsList, targetSearchName) {
-  const container = document.getElementById("multi-contact-records-container");
+function buildMultiContactDirectoryInterface(leadsList, targetSearchName, containerId) {
+  const container = document.getElementById(containerId || "multi-contact-records-container");
   container.innerHTML = "";
   const sanitizedTargetName = targetSearchName ? targetSearchName.toString().replace(/\s+/g, '').toLowerCase() : "";
 
@@ -4043,6 +4044,18 @@ async function submitLead() {
 
   const meetingDateField = document.getElementById('meetingDate');
   if (!meetingDateField || !meetingDateField.value) { alert("Please select a Date of Meeting."); return; }
+
+  const companyNameCheck = document.getElementById('dropform-company-locked').value.trim();
+  if (!companyNameCheck) { alert("Company Name is compulsory."); return; }
+
+  const cityCheck = document.getElementById('dropform-city').value.trim() || (document.getElementById('f-city') ? document.getElementById('f-city').value.trim() : "");
+  if (!cityCheck) { alert("City is compulsory."); return; }
+
+  const stateCheck = document.getElementById('dropform-state').value.trim() || (document.getElementById('f-state') ? document.getElementById('f-state').value.trim() : "");
+  if (!stateCheck) { alert("State is compulsory."); return; }
+
+  const countryCheck = document.getElementById('dropform-country').value.trim() || (document.getElementById('f-country') ? document.getElementById('f-country').value.trim() : "");
+  if (!countryCheck) { alert("Country is compulsory."); return; }
 
   if (feedbackBanner) {
     feedbackBanner.style.display = "none";
@@ -5117,13 +5130,6 @@ async function archiveEmailLeadFromSystemDatabaseCache(messageId, elementIndex) 
   }
 }
 
-function purgeEmailLeadCardViewFromScreen(index) {
-  if (confirm("Remove this email lead from your visible staging feed?")) {
-    const cardNode = document.getElementById(`email-lead-wrapper-node-${index}`);
-    if (cardNode) cardNode.remove();
-  }
-}
-
 async function triggerEmailLeadDatabaseActionPipeline(index) {
   const mailObject = cachedInboundEmailLeadsArray[index];
   const nestedWorkspace = document.getElementById(`email-nested-inline-database-workspace-anchor-${index}`);
@@ -5188,9 +5194,9 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
       const targetSubMount = nestedWorkspace.querySelector(`#nested-email-contacts-mount-canvas-${index}`);
       if (targetSubMount) {
         const tempContainer = document.createElement("div");
-        tempContainer.id = "multi-contact-records-container";
+        tempContainer.id = `nested-multi-contact-records-container-${index}`;
         targetSubMount.appendChild(tempContainer);
-        buildMultiContactDirectoryInterface(data.leads, mailObject.extractedContactName);
+        buildMultiContactDirectoryInterface(data.leads, mailObject.extractedContactName, `nested-multi-contact-records-container-${index}`);
       }
 
       // Keep global buttons hidden
@@ -7194,8 +7200,16 @@ async function commitGateEntryRecordsToBackend() {
   const uploadWrapperBlock = document.getElementById('gate-upload-fields-wrapper-group');
   
   if (!activeParsedGatePayloadCache || !activeParsedGatePayloadCache.lineItems) return alert("Process data missing.");
-  
-  btn.disabled = true; 
+
+  if (!document.getElementById('gate-meta-vendor').value.trim()) return alert("Vendor Name is compulsory.");
+  if (!document.getElementById('gate-meta-invoice').value.trim()) return alert("Invoice Number is compulsory.");
+
+  const gateCodeInputsCheck = document.querySelectorAll('.gate-row-item-code-input');
+  for (let gi = 0; gi < gateCodeInputsCheck.length; gi++) {
+    if (!gateCodeInputsCheck[gi].value.trim()) return alert("Item Code Number is compulsory for every line item.");
+  }
+
+  btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Generating Gate Entry...';
   
   const codeInputs = document.querySelectorAll('.gate-row-item-code-input');
@@ -7273,6 +7287,7 @@ async function commitGateEntryRecordsToBackend() {
 }
 
 async function initializeStoreEntryWorkspaceQueue() {
+  await loadItemCodeCatalogIntoCache();
   const feed = document.getElementById("store-entry-queue-cards-feed");
   // FORCE WIPE old elements cards footprints instantly
   feed.innerHTML = `
@@ -8087,10 +8102,6 @@ async function loadItemCatalogForSelectedProjectAndStore() {
 }
 
 function navigateToDesignWorkspacePanel(targetModuleId) {
-  if (!userPermissions.uploadBOQ && !userPermissions.updateBOQ) {
-    alert("Access Denied: You do not have permission to access the Bill of Quantity workspace.");
-    return;
-  }
   // 1. Un-nest and minimize homepage structures
   document.getElementById("dashboard-view").style.display = "none";
   
@@ -9109,10 +9120,11 @@ async function submitNewItemCodeNumber() {
     const data = await res.json();
 
     if (data.success) {
-      // Hide form
+      // Hide form and search zone
       document.getElementById("itemcode-create-form-zone").style.display  = "none";
       document.getElementById("itemcode-search-results-zone").style.display = "none";
       document.getElementById("itemcode-no-results-zone").style.display    = "none";
+      document.getElementById("itemcode-search-zone-wrapper").style.display = "none";
 
       // Show success banner
       banner.style.cssText = "display:block; background:#dcfce7; border-color:#15803d; color:#15803d; padding:14px; border-left:4px solid #15803d; border-radius:var(--radius);";
@@ -9130,6 +9142,7 @@ async function submitNewItemCodeNumber() {
           document.getElementById('itemcode-no-results-zone').style.display='none';
           document.getElementById('itemcode-selected-detail-zone').style.display='none';
           document.getElementById('itemcode-create-form-zone').style.display='none';
+          document.getElementById('itemcode-search-zone-wrapper').style.display='block';
           const nm = document.getElementById('itemcode-none-match-banner'); if(nm) nm.style.display='block';
           const nb = document.getElementById('itemcode-no-results-create-btn'); if(nb) nb.style.display='inline';
         " style="margin-top:10px; background:#15803d; color:#fff; border:none; padding:6px 14px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.8rem;">
@@ -9398,23 +9411,6 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
   dropdown.style.display = "block";
 }
 
-function selectBOQRowMaterial(rowIdx, productName, itemCode, formPrefix) {
-  if (formPrefix === 'cboq') {
-    cboqMaterialRows[rowIdx].descriptionOfMaterial = productName;
-    cboqMaterialRows[rowIdx].itemCode = itemCode;
-  } else if (formPrefix === 'eboq') {
-    eboqMaterialRows[rowIdx].descriptionOfMaterial = productName;
-    eboqMaterialRows[rowIdx].itemCode = itemCode;
-  }
-
-  const dropdown = document.getElementById(formPrefix + "-mat-dropdown-" + rowIdx);
-  if (dropdown) dropdown.style.display = "none";
-
-  // Re-render to reflect selection
-  if (formPrefix === 'cboq') renderCBOQMaterialRows();
-  else renderEBOQMaterialRows();
-}
-
 // Close dropdowns when clicking outside
 document.addEventListener("click", function(e) {
   if (!e.target.closest("[id*='-mat-dropdown-']") && !e.target.closest("input")) {
@@ -9502,6 +9498,7 @@ let eboqMode         = ""; // "authorize" or "authorize-update"
 let eboqExpandedCardBoqId = null;
 
 async function initializeAuthorizeBOQPanel(mode) {
+  await loadItemCodeCatalogIntoCache();
   eboqMode = mode;
   const cardsFeedId = mode === "authorize" ? "auth-boq-queue-cards-feed" : "auth-boq-upd-queue-cards-feed";
   const feedbackId  = mode === "authorize" ? "auth-boq-feedback" : "auth-boq-upd-feedback";
