@@ -259,9 +259,10 @@
     <div id="dashboard-purchase-department-header-block" style="display: none;">
       <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Purchase Department</h2>
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-purchase-request-note"  onclick="switchActiveDashboardModule('coming-soon')">Purchase Request Note</div>
-          <div class="menu-card" id="mod-purchase-upload-rm-po"  onclick="switchActiveDashboardModule('coming-soon')">Upload Raw Material Purchase Order</div>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-purchase-request-note"  onclick="navigateToPurchaseWorkspacePanel('purchase-prn')">Create Purchase Request Note</div>
+          <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')">Material List for Purchase</div>
+          <div class="menu-card" id="mod-purchase-upload-rm-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-upload-rm-po')">Upload Raw Material Purchase Order</div>
         </div>
       </div>
     </div>
@@ -271,10 +272,18 @@
       
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
         <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Raw Materials Store Inward</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-store-gate" onclick="navigateToStoreWorkspacePanel('store-gate-entry')">Gate Entry</div>
-          <div class="menu-card" id="mod-store-entry" onclick="navigateToStoreWorkspacePanel('store-entry')">Raw Materials Store Entry</div>
-          <div class="menu-card" id="mod-store-grn" onclick="navigateToStoreWorkspacePanel('store-grn')">GRN (Goods Received Note)</div>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-store-gate"              onclick="navigateToStoreWorkspacePanel('store-gate-entry')">Gate Entry</div>
+          <div class="menu-card" id="mod-store-entry"             onclick="navigateToStoreWorkspacePanel('store-entry')">Raw Materials Store Entry</div>
+          <div class="menu-card" id="mod-store-grn"               onclick="navigateToStoreWorkspacePanel('store-grn')">GRN (Goods Received Note)</div>
+          <div class="menu-card" id="mod-expected-inbounds"       onclick="navigateToStoreWorkspacePanel('expected-inbounds')">Expected Inbounds</div>
+        </div>
+      </div>
+
+      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
+        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Stock Assignment</div>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-assign-current-stock" onclick="navigateToStoreWorkspacePanel('assign-current-stock')">Assign Current Stock</div>
         </div>
       </div>
 
@@ -781,6 +790,150 @@
       </div>
       <div id="store-historical-matrix-results-feed" style="display: flex; flex-direction: column; gap: 12px;"></div>
     </div>
+
+    <div id="canvas-module-assign-current-stock" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:10px;">
+        <h2 style="color:var(--brand); margin:0;">Assign Current Stock</h2>
+        <div style="display:flex; gap:8px;">
+          <button id="assign-mode-grn-btn" onclick="switchAssignStockMode('grn')" class="nav-btn-styled" style="background:var(--brand);">📦 Post-GRN Queue</button>
+          <button id="assign-mode-unassigned-btn" onclick="switchAssignStockMode('unassigned')" class="nav-btn-styled" style="background:#718096;">🔍 Unassigned Material</button>
+        </div>
+      </div>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Assign received stock to BOQ IDs. Any qty not assigned stays in the unassigned pool automatically.</p>
+      <div id="assign-stock-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <!-- MODE 1: POST-GRN QUEUE -->
+      <div id="assign-stock-grn-zone" style="display:block;">
+        <div id="assign-stock-grn-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
+      </div>
+
+      <!-- MODE 2: UNASSIGNED MATERIAL -->
+      <div id="assign-stock-unassigned-zone" style="display:none;">
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0; color:var(--brand);">Filter by Type of Material</label>
+              <select id="assign-type-filter" onchange="handleAssignTypeFilterChange(this.value)" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+                <option value="">— All Types —</option>
+                <option value="Conductor">Conductor</option>
+                <option value="Epoxy Resin">Epoxy Resin</option>
+                <option value="Insulating Materials">Insulating Materials</option>
+                <option value="Paint">Paint</option>
+                <option value="Bus Bars">Bus Bars</option>
+                <option value="Polypropylene Film">Polypropylene Film</option>
+                <option value="Alu Foil">Alu Foil</option>
+                <option value="Pxe Oil">Pxe Oil</option>
+                <option value="Bushing">Bushing</option>
+                <option value="Kraft Insulation Paper">Kraft Insulation Paper</option>
+                <option value="Assembly Materials">Assembly Materials</option>
+                <option value="MS Box">MS Box</option>
+                <option value="Powder Coated Panel">Powder Coated Panel</option>
+                <option value="Galvanising Structures">Galvanising Structures</option>
+                <option value="Switchgears">Switchgears</option>
+                <option value="Cables">Cables</option>
+                <option value="Hardwares">Hardwares</option>
+                <option value="Lugs">Lugs</option>
+                <option value="Meters">Meters</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0; color:var(--brand);">Or Search by Material Name</label>
+              <div style="position:relative;">
+                <input type="text" id="assign-material-search-input" placeholder="Type to search..." autocomplete="off"
+                  oninput="handleAssignMaterialSearch(this.value)"
+                  onfocus="handleAssignMaterialSearch(this.value)"
+                  style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
+                <div id="assign-material-search-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="assign-stock-unassigned-results" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+
+      <!-- SHARED ASSIGNMENT PANEL -->
+      <div id="assign-stock-assignment-panel" style="display:none; margin-top:20px; border-top:2px solid var(--border); padding-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+          <div>
+            <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--brand); margin-bottom:4px; letter-spacing:0.5px;">Assigning Stock For</div>
+            <div id="assign-panel-material-title" style="font-size:0.95rem; font-weight:700; color:var(--text);"></div>
+            <div id="assign-panel-item-code" style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.85rem;"></div>
+          </div>
+          <div style="text-align:right; background:var(--highlight-bg); border:1.5px solid var(--brand); border-radius:var(--radius); padding:10px 16px;">
+            <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Total Unassigned in Store</div>
+            <div id="assign-panel-total-unassigned" style="font-size:1.6rem; font-weight:800; color:var(--brand); font-family:monospace;"></div>
+            <div id="assign-panel-unit" style="font-size:0.72rem; color:var(--muted); font-weight:600;"></div>
+          </div>
+        </div>
+
+        <!-- Existing assignments -->
+        <div id="assign-panel-existing-zone" style="display:none; margin-bottom:14px; background:#f0fdf4; border:1px solid #86efac; border-radius:var(--radius); padding:12px;">
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#15803d; margin-bottom:8px; letter-spacing:0.5px;">Already Assigned to BOQs</div>
+          <div id="assign-panel-existing-list" style="display:flex; flex-direction:column; gap:6px;"></div>
+        </div>
+
+        <!-- New assignment targets -->
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:8px; letter-spacing:0.5px;">Assign to BOQ IDs</div>
+        <div id="assign-panel-no-targets" style="display:none; padding:12px; background:#fffbeb; border:1px solid #f59e0b; border-radius:var(--radius); font-size:0.85rem; color:#b45309; font-weight:600; margin-bottom:12px;">
+          No open PRN BOQs require this material right now. Any qty stays in the unassigned pool.
+        </div>
+        <div id="assign-panel-targets-table-wrapper" style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
+          <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:800px;">
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="padding:8px 10px; font-size:0.7rem; text-align:left; white-space:nowrap;">Project ID</th>
+                <th style="padding:8px 10px; font-size:0.7rem; text-align:left; min-width:180px;">BOQ ID</th>
+                <th style="padding:8px 10px; font-size:0.7rem; text-align:left; min-width:160px;">Product</th>
+                <th style="padding:8px 10px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#b91c1c;">Still Needed</th>
+                <th style="padding:8px 10px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#15803d;">Already Assigned</th>
+                <th style="padding:8px 10px; font-size:0.7rem; text-align:center; white-space:nowrap; color:var(--brand);">Assign Qty</th>
+              </tr>
+            </thead>
+            <tbody id="assign-panel-targets-body"></tbody>
+          </table>
+        </div>
+
+        <!-- Totals bar -->
+        <div style="background:var(--highlight-bg); border:1.5px solid var(--brand); border-radius:var(--radius); padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div style="text-align:center;">
+            <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Total Being Assigned</div>
+            <div id="assign-panel-total-assigning" style="font-size:1.2rem; font-weight:800; color:var(--accent); font-family:monospace;">0</div>
+          </div>
+          <div style="font-size:1.5rem; color:var(--border); font-weight:300;">+</div>
+          <div style="text-align:center;">
+            <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Remainder in Pool</div>
+            <div id="assign-panel-remainder" style="font-size:1.2rem; font-weight:800; color:var(--brand); font-family:monospace;">0</div>
+          </div>
+          <div style="font-size:1.5rem; color:var(--border); font-weight:300;">=</div>
+          <div style="text-align:center;">
+            <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Total Unassigned</div>
+            <div id="assign-panel-total-check" style="font-size:1.2rem; font-weight:800; color:var(--text); font-family:monospace;">0</div>
+          </div>
+        </div>
+
+        <!-- Assigned by + submit -->
+        <div style="display:grid; grid-template-columns:1fr auto; gap:14px; align-items:flex-end; border-top:1px solid var(--border); padding-top:14px;">
+          <div>
+            <label class="field-label" style="margin-top:0; color:var(--brand);">Assigned By *</label>
+            <select id="assign-panel-assigned-by" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+              <option value="">— Select Person —</option>
+            </select>
+          </div>
+          <button id="assign-panel-submit-btn" onclick="submitAssignCurrentStock()" class="nav-btn-styled" style="background:var(--accent); padding:10px 24px; font-weight:700;">Save Assignments</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="canvas-module-expected-inbounds" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:10px;">
+        <h2 style="color:var(--brand); margin:0;">Expected Inbounds</h2>
+        <button class="nav-btn-styled" onclick="loadExpectedInbounds()" style="background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Refresh</button>
+      </div>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Raw Material POs due for delivery. A PO disappears automatically once all its item codes are received via GRN from the same vendor.</p>
+      <div id="expected-inbounds-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="expected-inbounds-results" style="display:flex; flex-direction:column; gap:16px;"></div>
+    </div>
+
   </div>
 
   <div id="module-design-workspace-enclosure-panel" class="workspace-panel" style="display: none; padding: 12px 10px;">
@@ -1152,6 +1305,165 @@
             style="background:var(--accent); color:#fff; border:none; padding:8px 20px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">
             Create Item Code
           </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="module-purchase-workspace-enclosure-panel" class="workspace-panel" style="display: none; padding: 12px 10px;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitPurchaseWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
+    </div>
+
+    <!-- PRN CANVAS -->
+    <div id="canvas-module-purchase-prn" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="margin-bottom:6px; color:var(--brand);">Purchase Request Note</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project and authorized BOQ to view or create a Purchase Request Note.</p>
+      <div id="prn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
+          <select id="prn-project-select" onchange="handlePRNProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <option value="">— Select Project ID —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Select Authorized BOQ *</label>
+          <select id="prn-boq-select" onchange="handlePRNBOQChange(this.value)" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); opacity:0.5; cursor:not-allowed;">
+            <option value="">— Select Project First —</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="prn-details-zone" style="display:none;">
+        <div style="background:var(--highlight-bg); border:1.5px solid var(--brand); border-radius:var(--radius); padding:12px; margin-bottom:16px; display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start;">
+          <div>
+            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PRN ID</div>
+            <div id="prn-id-display" style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.88rem;"></div>
+          </div>
+          <div>
+            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Product</div>
+            <div id="prn-product-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
+          </div>
+          <div>
+            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Order Qty</div>
+            <div id="prn-orderqty-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
+          </div>
+          <div>
+            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Status</div>
+            <div id="prn-status-display" style="font-weight:700; color:var(--accent); font-size:0.85rem;"></div>
+          </div>
+          <div>
+            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PDF</div>
+            <div id="prn-pdf-link-display" style="font-size:0.82rem;"></div>
+          </div>
+        </div>
+
+        <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
+          <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1000px;">
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="padding:8px; font-size:0.7rem; text-align:left; white-space:nowrap;">Item Code</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:200px;">Material Name</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; white-space:nowrap;">Type</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap;">BOQ Req Qty</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#b45309;">Buffer %</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:var(--brand);">Buffered Purchase Qty</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#0369a1;">Current Unassigned Store Qty *</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#15803d;">Purchase Qty</th>
+              </tr>
+            </thead>
+            <tbody id="prn-material-rows-body"></tbody>
+          </table>
+        </div>
+
+        <div id="prn-store-qty-locked-notice" style="display:none; padding:8px 12px; background:#f0fdf4; border:1px solid #86efac; border-radius:var(--radius); font-size:0.82rem; color:#15803d; font-weight:600; margin-bottom:12px;">
+          ✅ Store quantities are locked — PDF has been generated. Contact an administrator to unlock.
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
+          <button class="nav-btn-styled" id="prn-save-store-qty-btn" onclick="savePRNStoreQuantities()" style="background:var(--brand); padding:8px 20px; font-weight:700;">Save Store Quantities</button>
+          <button class="nav-btn-styled" id="prn-generate-pdf-btn" onclick="generatePRNPDF()" style="background:var(--accent); padding:8px 20px; font-weight:700;">Generate & Save PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MATERIAL LIST CANVAS -->
+    <div id="canvas-module-purchase-material-list" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <h2 style="color:var(--brand); margin:0;">Material List for Purchase</h2>
+        <button class="nav-btn-styled" onclick="loadMaterialListForPurchase()" style="background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Refresh</button>
+      </div>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Live view of all materials needed across active PRNs. Items with Still To Order = 0 are hidden automatically.</p>
+      <div id="material-list-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:16px;">
+        <label class="field-label" style="margin-top:0; color:var(--brand);">Filter by Project ID</label>
+        <div class="pill-group" id="material-list-project-filter-pills" style="margin-top:6px; margin-bottom:0;"></div>
+      </div>
+
+      <div id="material-list-results-zone" style="display:flex; flex-direction:column; gap:12px;"></div>
+    </div>
+
+    <!-- RAW MATERIAL PO UPLOAD CANVAS -->
+    <div id="canvas-module-purchase-upload-rm-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="margin-bottom:6px; color:var(--brand);">Upload Raw Material Purchase Order</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Upload a Raw Material PO. AI will extract line items and match them to your Item Code catalog.</p>
+      <div id="rm-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div id="rm-po-upload-zone">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+          <div>
+            <label class="field-label" style="margin-top:0;">Vendor Name *</label>
+            <input type="text" id="rm-po-vendor-name" placeholder="Enter vendor name..." style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Uploaded By *</label>
+            <select id="rm-po-uploaded-by" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+              <option value="">— Select Person —</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card-box" id="rm-po-file-dropzone" onclick="document.getElementById('rm-po-file-input').click()" style="padding:40px; border:2px dashed var(--brand); font-weight:700; color:var(--brand); margin-bottom:16px; display:flex; align-items:center; justify-content:center;">
+          📄 Select Raw Material Purchase Order (PDF or Image)
+        </div>
+        <input type="file" id="rm-po-file-input" accept="image/*,application/pdf" hidden onchange="handleRMPOFileSelection(this)" />
+        <button class="btn btn-ai" id="rm-po-parse-btn" onclick="parseRawMaterialPOWithAI()">Process PO with AI</button>
+      </div>
+
+      <div id="rm-po-verification-zone" style="display:none; margin-top:16px; border-top:1px dashed var(--border); padding-top:16px;">
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px;">
+          <div><label class="field-label">PO Number</label><input type="text" id="rm-po-number" style="padding:6px; background:#f1f5f9;" /></div>
+          <div><label class="field-label">Order Date</label><input type="text" id="rm-po-order-date" style="padding:6px; background:#f1f5f9;" /></div>
+          <div><label class="field-label">Delivery Date</label><input type="text" id="rm-po-delivery-date" style="padding:6px; background:#f1f5f9;" /></div>
+          <div><label class="field-label">Grand Total (₹)</label><input type="text" id="rm-po-grand-total" style="padding:6px; background:#f1f5f9;" /></div>
+        </div>
+
+        <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
+          <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:900px;">
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="padding:8px; font-size:0.72rem; width:130px; text-align:center;">Item Code</th>
+                <th style="padding:8px; font-size:0.72rem; min-width:160px; text-align:left;">Invoice Description</th>
+                <th style="padding:8px; font-size:0.72rem; min-width:200px; text-align:left;">Standard Material Name</th>
+                <th style="padding:8px; font-size:0.72rem; text-align:center; width:70px;">Qty</th>
+                <th style="padding:8px; font-size:0.72rem; text-align:center; width:60px;">Unit</th>
+                <th style="padding:8px; font-size:0.72rem; text-align:right; width:90px;">Rate (₹)</th>
+                <th style="padding:8px; font-size:0.72rem; text-align:right; width:100px;">Amount (₹)</th>
+                <th style="padding:8px; font-size:0.72rem; text-align:center; width:110px;">Match Status</th>
+              </tr>
+            </thead>
+            <tbody id="rm-po-verification-table-body"></tbody>
+          </table>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button class="nav-btn-styled" onclick="resetRMPOUploadState()" style="background:#718096;">Cancel</button>
+          <button class="nav-btn-styled" id="rm-po-submit-btn" onclick="commitRawMaterialPOToBackend()" style="background:var(--accent); padding:8px 24px; font-weight:700;">Submit Purchase Order</button>
         </div>
       </div>
     </div>
@@ -1808,7 +2120,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxwA2fki6q70icFNxE-4XjAdQnQXYt_tOto6cJZP_SJ45D_24W8QSBKEgvWRfMLYbJl/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwT-19sFOcb00gspwTtwbfsPP7P4gasbpaJZnjNPDossIc1-3aFqHbViii87oqNsFxL/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -2727,6 +3039,7 @@ function returnToDashboard() {
   collapseNewEntryDropdownFormExplicitly(); 
   
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
+  if (document.getElementById("module-purchase-workspace-enclosure-panel")) document.getElementById("module-purchase-workspace-enclosure-panel").style.display = "none";
   
   // Hide all independent inward/outbound sub-modules views panels cleanly
   if(document.getElementById("canvas-module-store-material-request")) document.getElementById("canvas-module-store-material-request").style.display = "none";
@@ -5312,10 +5625,12 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canViewLiveFinishedStock   = userPermissionsObject.liveFinishedGoodsStoreStock === true;
   const canUploadBOQ               = userPermissionsObject.uploadBOQ === true;
   const canUploadDrawings = userPermissionsObject.uploadDrawings === true;
-  const canPurchaseRequestNote = userPermissionsObject.purchaseRequestNote === true;
-  const canUploadRMPurchaseOrder = userPermissionsObject.uploadRMPurchaseOrder === true;
+  const canPurchaseRequestNote     = userPermissionsObject.purchaseRequestNote === true;
+  const canViewMaterialListPurchase= userPermissionsObject.viewMaterialListForPurchase === true;
+  const canUploadRMPurchaseOrder   = userPermissionsObject.uploadRMPurchaseOrder === true;
   const canCreateJobCardNumber = userPermissionsObject.createJobCardNumber === true;
-  const canLiveSpareStoreStock = userPermissionsObject.liveSpareStoreStock === true;
+  const canAssignCurrentStock  = userPermissionsObject.assignCurrentStock  === true;
+  const canExpectedInbounds = userPermissionsObject.gateEntry === true || userPermissionsObject.grnNote === true || userPermissionsObject.storeEntry === true;
 
   // --- SET INDIVIDUAL VISIBILITY FOR MARKETING TARGET CARDS ---
   if (document.getElementById("mod-card")) {
@@ -5402,11 +5717,12 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   }
 
   // Purchase Department block visibility
-  if (document.getElementById("mod-purchase-request-note")) document.getElementById("mod-purchase-request-note").style.display = canPurchaseRequestNote ? "block" : "none";
-  if (document.getElementById("mod-purchase-upload-rm-po")) document.getElementById("mod-purchase-upload-rm-po").style.display = canUploadRMPurchaseOrder ? "block" : "none";
+  if (document.getElementById("mod-purchase-request-note"))  document.getElementById("mod-purchase-request-note").style.display  = canPurchaseRequestNote      ? "block" : "none";
+  if (document.getElementById("mod-purchase-material-list")) document.getElementById("mod-purchase-material-list").style.display = canViewMaterialListPurchase  ? "block" : "none";
+  if (document.getElementById("mod-purchase-upload-rm-po"))  document.getElementById("mod-purchase-upload-rm-po").style.display  = canUploadRMPurchaseOrder     ? "block" : "none";
   const purchaseHeaderBlock = document.getElementById("dashboard-purchase-department-header-block");
   if (purchaseHeaderBlock) {
-    purchaseHeaderBlock.style.display = (canPurchaseRequestNote || canUploadRMPurchaseOrder) ? "block" : "none";
+    purchaseHeaderBlock.style.display = (canPurchaseRequestNote || canViewMaterialListPurchase || canUploadRMPurchaseOrder) ? "block" : "none";
   }
 
   // Production Department block visibility
@@ -5417,7 +5733,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   }
 
   // Live Spare Store Stock card visibility
-  if (document.getElementById("mod-live-spare-store-stock")) document.getElementById("mod-live-spare-store-stock").style.display = canLiveSpareStoreStock ? "block" : "none";
+  if (document.getElementById("mod-assign-current-stock")) document.getElementById("mod-assign-current-stock").style.display = canAssignCurrentStock ? "block" : "none";
+  if (document.getElementById("mod-expected-inbounds")) document.getElementById("mod-expected-inbounds").style.display = canExpectedInbounds ? "block" : "none";
 
   // --- EVALUATE DEPARTMENT ENCLOSURE OVERLAYS ---
   const marketingHeaderBlock = document.getElementById("dashboard-marketing-department-header-block");
@@ -5427,7 +5744,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");
   if (storeHeaderBlock) {
-    storeHeaderBlock.style.display = (canViewLiveStock || canReleaseTicket || canSearchStoreMat || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntry === true || userPermissionsObject.grnNote === true || canViewLiveFinishedStock || canLiveSpareStoreStock) ? "block" : "none";
+    storeHeaderBlock.style.display = (canViewLiveStock || canReleaseTicket || canSearchStoreMat || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntry === true || userPermissionsObject.grnNote === true || canViewLiveFinishedStock || canLiveSpareStoreStock || canAssignCurrentStock) ? "block" : "none";
   }
 }
 
@@ -6117,6 +6434,8 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   if (document.getElementById("canvas-module-store-gate-entry")) document.getElementById("canvas-module-store-gate-entry").style.display = "none";
   if (document.getElementById("canvas-module-store-entry")) document.getElementById("canvas-module-store-entry").style.display = "none";
   if (document.getElementById("canvas-module-store-grn")) document.getElementById("canvas-module-store-grn").style.display = "none";
+  if (document.getElementById("canvas-module-assign-current-stock")) document.getElementById("canvas-module-assign-current-stock").style.display = "none";
+  if (document.getElementById("canvas-module-expected-inbounds")) document.getElementById("canvas-module-expected-inbounds").style.display = "none";
 
   // 3. Force reveal the parent enclosure panel wrapper canvas box wide
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
@@ -6164,6 +6483,12 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   } else if (targetPanelModuleId === 'store-grn') {
     document.getElementById("canvas-module-store-grn").style.display = "block";
     initializeStoreGrnWorkspaceQueue();
+  } else if (targetPanelModuleId === 'assign-current-stock') {
+    document.getElementById("canvas-module-assign-current-stock").style.display = "block";
+    initializeAssignCurrentStockPanel();
+  } else if (targetPanelModuleId === 'expected-inbounds') {
+    document.getElementById("canvas-module-expected-inbounds").style.display = "block";
+    initializeExpectedInboundsPanel();  
   }
 }
 
@@ -6295,7 +6620,8 @@ function exitStoreWorkspacePanelBackToMenu() {
 
   if(document.getElementById("canvas-module-fg-reactor"))   document.getElementById("canvas-module-fg-reactor").style.display   = "none";
   if(document.getElementById("canvas-module-fg-capacitor")) document.getElementById("canvas-module-fg-capacitor").style.display = "none";
-  if(document.getElementById("canvas-module-fg-panel"))     document.getElementById("canvas-module-fg-panel").style.display     = "none";
+  if(document.getElementById("canvas-module-assign-current-stock")) document.getElementById("canvas-module-assign-current-stock").style.display = "none";
+  if(document.getElementById("canvas-module-expected-inbounds")) document.getElementById("canvas-module-expected-inbounds").style.display = "none";
 
   document.getElementById("dashboard-view").style.display = "flex"; 
   triggerCompanyDropdownArrayFetch(); 
@@ -10981,6 +11307,1198 @@ async function submitJobCardForm() {
     btn.disabled = false;
     btn.textContent = "Save Job Card Numbers";
   }
+}
+
+// ═══════════════════════════════════════════════════════
+// PURCHASE WORKSPACE NAVIGATION
+// ═══════════════════════════════════════════════════════
+
+function navigateToPurchaseWorkspacePanel(targetModuleId) {
+  document.getElementById("dashboard-view").style.display = "none";
+  document.getElementById("module-workspace-container").style.display = "none";
+  document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
+  document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
+
+  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = "none";
+  });
+
+  document.getElementById("module-purchase-workspace-enclosure-panel").style.display = "block";
+
+  if (targetModuleId === "purchase-prn") {
+    document.getElementById("canvas-module-purchase-prn").style.display = "block";
+    initializePRNPanel();
+  } else if (targetModuleId === "purchase-material-list") {
+    document.getElementById("canvas-module-purchase-material-list").style.display = "block";
+    initializeMaterialListPanel();
+  } else if (targetModuleId === "purchase-upload-rm-po") {
+    document.getElementById("canvas-module-purchase-upload-rm-po").style.display = "block";
+    initializeRMPOUploadPanel();
+  }
+}
+
+function exitPurchaseWorkspacePanelBackToMenu() {
+  document.getElementById("module-purchase-workspace-enclosure-panel").style.display = "none";
+  enforceDynamicModuleRoleGateways(userPermissions);
+  document.getElementById("dashboard-view").style.display = "flex";
+  triggerCompanyDropdownArrayFetch();
+}
+
+// ═══════════════════════════════════════════════════════
+// PURCHASE REQUEST NOTE (PRN)
+// ═══════════════════════════════════════════════════════
+
+let prnCurrentData = null;
+let prnStoreQtyLocked = false;
+
+async function initializePRNPanel() {
+  const projDrop = document.getElementById("prn-project-select");
+  const boqDrop  = document.getElementById("prn-boq-select");
+  projDrop.innerHTML = '<option value="">Loading...</option>';
+  boqDrop.innerHTML  = '<option value="">— Select Project First —</option>';
+  boqDrop.disabled   = true;
+  boqDrop.style.opacity  = "0.5";
+  boqDrop.style.cursor   = "not-allowed";
+  document.getElementById("prn-details-zone").style.display = "none";
+  document.getElementById("prn-feedback").style.display     = "none";
+  prnCurrentData    = null;
+  prnStoreQtyLocked = false;
+
+  try {
+    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) });
+    const data = await res.json();
+    projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
+    (data.projects || []).forEach(code => {
+      const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
+    });
+  } catch(e) {
+    projDrop.innerHTML = '<option value="">Error loading projects</option>';
+  }
+}
+
+async function handlePRNProjectChange(projectId) {
+  const boqDrop = document.getElementById("prn-boq-select");
+  document.getElementById("prn-details-zone").style.display = "none";
+  document.getElementById("prn-feedback").style.display     = "none";
+  prnCurrentData = null;
+
+  if (!projectId) {
+    boqDrop.innerHTML = '<option value="">— Select Project First —</option>';
+    boqDrop.disabled  = true; boqDrop.style.opacity = "0.5"; boqDrop.style.cursor = "not-allowed";
+    return;
+  }
+
+  boqDrop.innerHTML = '<option value="">Loading...</option>';
+  boqDrop.disabled  = true;
+
+  try {
+    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchAuthorizedBOQsForUpdate", sessionToken: localStorage.getItem("sessionToken"), projectId }) });
+    const data = await res.json();
+    boqDrop.innerHTML = '<option value="">— Select BOQ —</option>';
+    (data.drafts || []).forEach(draft => {
+      const opt = document.createElement("option");
+      opt.value = draft.boqId;
+      opt.textContent = `${draft.boqId} | ${draft.productName} ${draft.productRating} | Qty: ${draft.orderQuantity}`;
+      boqDrop.appendChild(opt);
+    });
+    boqDrop.disabled = false; boqDrop.style.opacity = "1"; boqDrop.style.cursor = "pointer";
+  } catch(e) {
+    boqDrop.innerHTML = '<option value="">Error loading BOQs</option>';
+  }
+}
+
+async function handlePRNBOQChange(boqId) {
+  document.getElementById("prn-details-zone").style.display = "none";
+  document.getElementById("prn-feedback").style.display     = "none";
+  prnCurrentData = null;
+  if (!boqId) return;
+
+  const projectId = document.getElementById("prn-project-select").value;
+  document.getElementById("prn-details-zone").style.display = "block";
+  document.getElementById("prn-material-rows-body").innerHTML = `
+    <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--muted);">
+      <div class="spinner" style="display:inline-block; width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>
+      Loading PRN data...
+    </td></tr>`;
+  document.getElementById("prn-id-display").textContent = "Loading...";
+
+  try {
+    const res  = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "createPurchaseRequestNote",
+        sessionToken: localStorage.getItem("sessionToken"),
+        activeEngineer: appActiveOperatorIdentityString,
+        projectId, boqId
+      })
+    });
+    const data = await res.json();
+
+    if (!data.success) {
+      document.getElementById("prn-details-zone").style.display = "none";
+      showPurchaseFeedback("prn-feedback", data.error || "Failed to load PRN.", "error");
+      return;
+    }
+
+    prnCurrentData    = data;
+    prnStoreQtyLocked = data.storeQtyLocked === true;
+    renderPRNDetails(data);
+
+  } catch(e) {
+    document.getElementById("prn-details-zone").style.display = "none";
+    showPurchaseFeedback("prn-feedback", "Network error: " + e.message, "error");
+  }
+}
+
+function renderPRNDetails(data) {
+  document.getElementById("prn-id-display").textContent      = data.prnId;
+  document.getElementById("prn-product-display").textContent = (data.productName || "") + " " + (data.productRating || "");
+  document.getElementById("prn-orderqty-display").textContent= (data.orderQuantity || "—") + " Sets";
+  document.getElementById("prn-status-display").textContent  = data.status || "Open";
+
+  const pdfEl = document.getElementById("prn-pdf-link-display");
+  if (data.pdfUrl) {
+    pdfEl.innerHTML = `<a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700; font-size:0.82rem;">View PDF ↗</a>`;
+  } else {
+    pdfEl.textContent = "Not generated yet";
+    pdfEl.style.cssText = "color:var(--muted); font-size:0.8rem;";
+  }
+
+  const saveBtn    = document.getElementById("prn-save-store-qty-btn");
+  const lockedNote = document.getElementById("prn-store-qty-locked-notice");
+  if (prnStoreQtyLocked) {
+    lockedNote.style.display = "block";
+    saveBtn.disabled = true; saveBtn.style.opacity = "0.5"; saveBtn.style.cursor = "not-allowed";
+  } else {
+    lockedNote.style.display = "none";
+    saveBtn.disabled = false; saveBtn.style.opacity = "1"; saveBtn.style.cursor = "pointer";
+  }
+
+  const tbody = document.getElementById("prn-material-rows-body");
+  const items  = data.lineItems || [];
+
+  if (items.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--muted);">No material rows found in BOQ.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = "";
+  items.forEach((item, idx) => {
+    const bufferedQty = Number(item.bufferedPurchaseQty)        || 0;
+    const storeQty    = Number(item.currentUnassignedStoreQty)  || 0;
+    const purchaseQty = Math.max(0, bufferedQty - storeQty);
+
+    const tr = document.createElement("tr");
+    tr.style.borderBottom = "1px solid #f1f5f9";
+    tr.innerHTML = `
+      <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode || "—"}</td>
+      <td style="padding:8px; font-size:0.82rem; font-weight:600; word-break:break-word; line-height:1.4;">${item.materialName}</td>
+      <td style="padding:8px; font-size:0.75rem; color:var(--muted); white-space:nowrap;">${item.typeOfMaterial || "—"}</td>
+      <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${Number(item.boqRequiredQty).toFixed(2)}</td>
+      <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPercent}%</td>
+      <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; color:var(--brand);">${bufferedQty.toFixed(2)}</td>
+      <td style="padding:8px; text-align:center;">
+        ${prnStoreQtyLocked
+          ? `<span style="font-family:monospace; font-weight:700;">${storeQty}</span>`
+          : `<input type="number" min="0" value="${storeQty}" class="prn-store-qty-input" data-idx="${idx}"
+               oninput="updatePRNPurchaseQtyCell(this, ${idx})"
+               style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />`
+        }
+      </td>
+      <td id="prn-purchase-qty-cell-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:${purchaseQty > 0 ? '#b91c1c' : 'var(--accent)'};">
+        ${purchaseQty.toFixed(2)}
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function updatePRNPurchaseQtyCell(inputEl, idx) {
+  if (!prnCurrentData || !prnCurrentData.lineItems[idx]) return;
+  const bufferedQty = Number(prnCurrentData.lineItems[idx].bufferedPurchaseQty) || 0;
+  const storeQty    = parseFloat(inputEl.value) || 0;
+  const purchaseQty = Math.max(0, bufferedQty - storeQty);
+  prnCurrentData.lineItems[idx].currentUnassignedStoreQty = storeQty;
+  const cell = document.getElementById(`prn-purchase-qty-cell-${idx}`);
+  if (cell) { cell.textContent = purchaseQty.toFixed(2); cell.style.color = purchaseQty > 0 ? "#b91c1c" : "var(--accent)"; }
+}
+
+async function savePRNStoreQuantities() {
+  if (!prnCurrentData) return;
+  const btn = document.getElementById("prn-save-store-qty-btn");
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Saving...';
+
+  document.querySelectorAll(".prn-store-qty-input").forEach(inp => {
+    const idx = parseInt(inp.dataset.idx, 10);
+    if (prnCurrentData.lineItems[idx]) prnCurrentData.lineItems[idx].currentUnassignedStoreQty = parseFloat(inp.value) || 0;
+  });
+
+  try {
+    const res  = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "savePRNStoreQuantities",
+        sessionToken: localStorage.getItem("sessionToken"),
+        activeEngineer: appActiveOperatorIdentityString,
+        prnId: prnCurrentData.prnId,
+        lineItems: prnCurrentData.lineItems
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showPurchaseFeedback("prn-feedback", "Store quantities saved successfully.", "success");
+    } else {
+      showPurchaseFeedback("prn-feedback", data.error || "Failed to save.", "error");
+    }
+  } catch(e) {
+    showPurchaseFeedback("prn-feedback", "Network error: " + e.message, "error");
+  } finally {
+    btn.disabled = false; btn.textContent = "Save Store Quantities";
+  }
+}
+
+async function generatePRNPDF() {
+  if (!prnCurrentData) return;
+  const btn = document.getElementById("prn-generate-pdf-btn");
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Generating PDF...';
+
+  // Capture any unsaved store qty inputs first
+  document.querySelectorAll(".prn-store-qty-input").forEach(inp => {
+    const idx = parseInt(inp.dataset.idx, 10);
+    if (prnCurrentData.lineItems[idx]) prnCurrentData.lineItems[idx].currentUnassignedStoreQty = parseFloat(inp.value) || 0;
+  });
+
+  try {
+    const res  = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "generateAndSavePRNPdf",
+        sessionToken: localStorage.getItem("sessionToken"),
+        activeEngineer: appActiveOperatorIdentityString,
+        prnId: prnCurrentData.prnId,
+        lineItems: prnCurrentData.lineItems
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      prnStoreQtyLocked = true;
+      prnCurrentData.pdfUrl = data.pdfUrl;
+      prnCurrentData.storeQtyLocked = true;
+      renderPRNDetails(prnCurrentData);
+      showPurchaseFeedback("prn-feedback", `PDF generated! <a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700;">Open PDF ↗</a>`, "success");
+    } else {
+      showPurchaseFeedback("prn-feedback", data.error || "PDF generation failed.", "error");
+    }
+  } catch(e) {
+    showPurchaseFeedback("prn-feedback", "Network error: " + e.message, "error");
+  } finally {
+    btn.disabled = false; btn.textContent = "Generate & Save PDF";
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// MATERIAL LIST FOR PURCHASE
+// ═══════════════════════════════════════════════════════
+
+let materialListCache = [];
+let materialListActiveProjectFilters = new Set();
+
+async function initializeMaterialListPanel() {
+  const filterPills = document.getElementById("material-list-project-filter-pills");
+  filterPills.innerHTML = '<p style="font-size:0.75rem; color:var(--muted);">Loading...</p>';
+  document.getElementById("material-list-results-zone").innerHTML = "";
+  document.getElementById("material-list-feedback").style.display = "none";
+  materialListActiveProjectFilters = new Set();
+
+  try {
+    const projRes  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) });
+    const projData = await projRes.json();
+    filterPills.innerHTML = "";
+    (projData.projects || []).forEach(code => {
+      const cleanId = "ml_prj_" + code.replace(/[^a-zA-Z0-9]/g, '_');
+      filterPills.innerHTML += `<input type="checkbox" id="${cleanId}" value="${code}" onchange="handleMaterialListProjectFilterChange()"><label for="${cleanId}">${code}</label>`;
+    });
+    if ((projData.projects || []).length === 0) {
+      filterPills.innerHTML = '<p style="font-size:0.75rem; color:var(--muted);">No active projects.</p>';
+    }
+  } catch(e) {
+    filterPills.innerHTML = '<p style="font-size:0.75rem; color:var(--warn);">Error loading projects.</p>';
+  }
+
+  await loadMaterialListForPurchase();
+}
+
+function handleMaterialListProjectFilterChange() {
+  materialListActiveProjectFilters = new Set(
+    Array.from(document.querySelectorAll('#material-list-project-filter-pills input[type="checkbox"]:checked')).map(cb => cb.value)
+  );
+  renderMaterialListFiltered();
+}
+
+function renderMaterialListFiltered() {
+  const filtered = materialListActiveProjectFilters.size === 0
+    ? materialListCache
+    : materialListCache.filter(item => materialListActiveProjectFilters.has(item.projectId));
+  renderMaterialListByType(filtered);
+}
+
+async function loadMaterialListForPurchase() {
+  const zone = document.getElementById("material-list-results-zone");
+  zone.innerHTML = `<div style="text-align:center; padding:30px; color:var(--brand); font-weight:600;">
+    <div class="spinner" style="display:inline-block; width:18px; height:18px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:10px; vertical-align:middle;"></div>
+    Loading Material List...
+  </div>`;
+
+  try {
+    const res  = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "fetchMaterialListForPurchase", sessionToken: localStorage.getItem("sessionToken") })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error || "Failed to load."}</div>`;
+      return;
+    }
+    materialListCache = data.materials || [];
+    renderMaterialListFiltered();
+  } catch(e) {
+    zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${e.message}</div>`;
+  }
+}
+
+function renderMaterialListByType(materials) {
+  const zone = document.getElementById("material-list-results-zone");
+  const active = materials.filter(m => (Number(m.stillToOrderQty) || 0) > 0);
+
+  if (active.length === 0) {
+    zone.innerHTML = `<div style="text-align:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted);">
+      <div style="font-size:2rem; margin-bottom:10px;">✅</div>
+      <div style="font-weight:700; color:var(--accent);">All materials fully covered!</div>
+      <div style="font-size:0.82rem; margin-top:4px;">No items with Still To Order quantity greater than zero.</div>
+    </div>`;
+    return;
+  }
+
+  const typeGroups = {};
+  active.forEach(item => {
+    const type = (item.typeOfMaterial || "Uncategorized").trim();
+    if (!typeGroups[type]) typeGroups[type] = [];
+    typeGroups[type].push(item);
+  });
+  Object.values(typeGroups).forEach(g => g.sort((a, b) => (Number(b.stillToOrderQty) || 0) - (Number(a.stillToOrderQty) || 0)));
+
+  zone.innerHTML = "";
+  Object.keys(typeGroups).sort().forEach(type => {
+    const items  = typeGroups[type];
+    const section = document.createElement("div");
+    section.style.cssText = "background:#fff; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04);";
+
+    const rowsHtml = items.map(item => {
+      const sto     = Number(item.stillToOrderQty) || 0;
+      const stoBg   = sto > 0 ? "#fee2e2" : "#dcfce7";
+      const stoColor= sto > 0 ? "#b91c1c" : "#15803d";
+      return `<tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:8px 10px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand); white-space:nowrap;">${item.itemCode || "—"}</td>
+        <td style="padding:8px 10px; font-size:0.82rem; font-weight:600; line-height:1.4;">${item.materialName}</td>
+        <td style="padding:8px 10px; font-size:0.78rem; color:#475569; white-space:nowrap;">${item.projectId || "—"}</td>
+        <td style="padding:8px 10px; text-align:center; font-family:monospace; font-weight:700;">${Number(item.boqRequiredQty || 0).toFixed(2)}</td>
+        <td style="padding:8px 10px; text-align:center; font-size:0.8rem; color:#b45309; font-weight:700;">${item.bufferPercent || 0}%</td>
+        <td style="padding:8px 10px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${Number(item.bufferedPurchaseQty || 0).toFixed(2)}</td>
+        <td style="padding:8px 10px; text-align:center; font-family:monospace; font-weight:700; color:#15803d;">${Number(item.assignedQty || 0).toFixed(2)}</td>
+        <td style="padding:8px 10px; text-align:center; font-family:monospace; font-weight:700; color:#0369a1;">${Number(item.onOrderQty || 0).toFixed(2)}</td>
+        <td style="padding:8px 10px; text-align:center;">
+          <span style="font-family:monospace; font-weight:800; font-size:0.88rem; background:${stoBg}; color:${stoColor}; padding:3px 8px; border-radius:4px; display:inline-block;">${sto.toFixed(2)}</span>
+        </td>
+      </tr>`;
+    }).join("");
+
+    section.innerHTML = `
+      <div style="padding:10px 16px; background:var(--highlight-bg); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">${type}</span>
+        <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:10px;">${items.length} pending</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; min-width:950px;">
+          <thead>
+            <tr style="background:#f8fafc; border-bottom:1px solid var(--border);">
+              <th style="padding:8px 10px; font-size:0.7rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Item Code</th>
+              <th style="padding:8px 10px; font-size:0.7rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase; min-width:200px;">Material Name</th>
+              <th style="padding:8px 10px; font-size:0.7rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Project ID</th>
+              <th style="padding:8px 10px; font-size:0.7rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">BOQ Req Qty</th>
+              <th style="padding:8px 10px; font-size:0.7rem; text-align:center; color:#b45309; font-weight:700; text-transform:uppercase; white-space:nowrap;">Buffer %</th>
+              <th style="padding:8px 10px; font-size:0.7rem; text-align:center; color:var(--brand); font-weight:700; text-transform:uppercase; white-space:nowrap;">Buffered Qty</th>
+              <th style="padding:8px 10px; font-size:0.7rem; text-align:center; color:#15803d; font-weight:700; text-transform:uppercase; white-space:nowrap;">Assigned</th>
+              <th style="padding:8px 10px; font-size:0.7rem; text-align:center; color:#0369a1; font-weight:700; text-transform:uppercase; white-space:nowrap;">On Order</th>
+              <th style="padding:8px 10px; font-size:0.7rem; text-align:center; color:#b91c1c; font-weight:700; text-transform:uppercase; white-space:nowrap;">Still To Order</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>`;
+    zone.appendChild(section);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// RAW MATERIAL PO UPLOAD
+// ═══════════════════════════════════════════════════════
+
+let targetRMPOFileObj       = null;
+let activeParsedRMPOPayload = null;
+
+async function initializeRMPOUploadPanel() {
+  resetRMPOUploadState();
+  document.getElementById("rm-po-feedback").style.display = "none";
+  document.getElementById("rm-po-upload-zone").style.display = "block";
+
+  const uploadedByDrop = document.getElementById("rm-po-uploaded-by");
+  uploadedByDrop.innerHTML = '<option value="">Loading...</option>';
+  try {
+    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"getStoreOperatorsList", sessionToken: localStorage.getItem("sessionToken") }) });
+    const data = await res.json();
+    const purchasePeople = (data.fullPersonnelDataRecordsTree || []).filter(p =>
+      p.departmentsList.some(d => ["purchase","admin"].includes(d.toLowerCase().trim()))
+    );
+    uploadedByDrop.innerHTML = '<option value="">— Select Person —</option>';
+    purchasePeople.forEach(p => {
+      const opt = document.createElement("option"); opt.value = p.fullName; opt.textContent = p.fullName;
+      uploadedByDrop.appendChild(opt);
+    });
+    if (appActiveOperatorIdentityString) uploadedByDrop.value = appActiveOperatorIdentityString;
+  } catch(e) {
+    uploadedByDrop.innerHTML = '<option value="">Error loading personnel</option>';
+  }
+}
+
+function handleRMPOFileSelection(input) {
+  targetRMPOFileObj = input.files[0];
+  if (targetRMPOFileObj) {
+    const box = document.getElementById("rm-po-file-dropzone");
+    box.textContent = "📄 " + targetRMPOFileObj.name + " ✅";
+    box.classList.add("done");
+  }
+}
+
+function resetRMPOUploadState() {
+  targetRMPOFileObj       = null;
+  activeParsedRMPOPayload = null;
+  const fileInput = document.getElementById("rm-po-file-input");
+  if (fileInput) fileInput.value = "";
+  const box = document.getElementById("rm-po-file-dropzone");
+  if (box) { box.textContent = "📄 Select Raw Material Purchase Order (PDF or Image)"; box.classList.remove("done"); }
+  document.getElementById("rm-po-verification-zone").style.display = "none";
+  document.getElementById("rm-po-verification-table-body").innerHTML = "";
+  ["rm-po-number","rm-po-order-date","rm-po-delivery-date","rm-po-grand-total"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = "";
+  });
+}
+
+async function parseRawMaterialPOWithAI() {
+  if (!targetRMPOFileObj) return alert("Please select a PO document first.");
+  const btn = document.getElementById("rm-po-parse-btn");
+  btn.disabled = true; btn.innerHTML = 'AI Processing...';
+
+  try {
+    const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(targetRMPOFileObj); });
+    await loadItemCodeCatalogIntoCache();
+    const catalog = window.itemCodeCatalogCache || [];
+
+    const res  = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "parseRawMaterialPurchaseOrder",
+        sessionToken: localStorage.getItem("sessionToken"),
+        fileData64: b64,
+        mimeType: targetRMPOFileObj.type || "application/pdf",
+        canonicalMaterialsCatalog: catalog
+      })
+    });
+    const data = await res.json();
+    if (!data.success) return alert("AI Processing failed: " + (data.error || "Unknown error"));
+
+    activeParsedRMPOPayload = data.extractedData;
+
+    document.getElementById("rm-po-number").value        = data.extractedData.poNumber    || "";
+    document.getElementById("rm-po-order-date").value    = data.extractedData.orderDate   || "";
+    document.getElementById("rm-po-delivery-date").value = data.extractedData.deliveryDate|| "";
+    document.getElementById("rm-po-grand-total").value   = data.extractedData.grandTotal  || "";
+
+    const vendorInput = document.getElementById("rm-po-vendor-name");
+    if (data.extractedData.vendorName && !vendorInput.value.trim()) vendorInput.value = data.extractedData.vendorName;
+
+    const matchColors = {
+      high:      { bg:"#dcfce7", color:"#15803d", label:"High Match" },
+      medium:    { bg:"#fef3c7", color:"#b45309", label:"Possible Match" },
+      low:       { bg:"#fee2e2", color:"#b91c1c", label:"Low Match" },
+      unmatched: { bg:"#f1f5f9", color:"#64748b", label:"Unmatched" }
+    };
+
+    const tbody = document.getElementById("rm-po-verification-table-body");
+    tbody.innerHTML = "";
+    (data.extractedData.lineItems || []).forEach((item, idx) => {
+      const mc = matchColors[item.matchConfidence || "unmatched"] || matchColors.unmatched;
+      tbody.innerHTML += `<tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:6px;">
+          <input type="text" class="rm-po-item-code-input" data-idx="${idx}" value="${item.itemCode || ""}"
+            placeholder="Item Code..."
+            style="font-weight:700; color:var(--brand); font-size:0.8rem; padding:4px; border:1.5px solid var(--border); text-align:center; width:100%; border-radius:3px;" />
+        </td>
+        <td style="padding:6px; font-size:0.8rem; color:#64748b; word-break:break-word; min-width:140px;">${item.rawDescription || ""}</td>
+        <td style="padding:6px; min-width:180px;">
+          <input type="text" class="rm-po-mat-name-input" data-idx="${idx}" value="${item.materialName || item.rawDescription || ""}"
+            style="font-size:0.82rem; font-weight:600; padding:4px; border:1px solid var(--border); width:100%; border-radius:3px;" />
+        </td>
+        <td style="padding:6px; text-align:center; font-weight:700; font-family:monospace;">${item.orderedQty || 0}</td>
+        <td style="padding:6px; text-align:center; color:var(--muted); font-size:0.8rem;">${item.unit || "NOS"}</td>
+        <td style="padding:6px; text-align:right; font-family:monospace; font-size:0.82rem;">₹${Number(item.rate || 0).toFixed(2)}</td>
+        <td style="padding:6px; text-align:right; font-family:monospace; font-size:0.82rem;">₹${Number(item.amount || 0).toFixed(2)}</td>
+        <td style="padding:6px; text-align:center;">
+          <span style="font-size:0.68rem; font-weight:700; padding:2px 6px; border-radius:3px; background:${mc.bg}; color:${mc.color};">${mc.label}</span>
+        </td>
+      </tr>`;
+    });
+
+    document.getElementById("rm-po-verification-zone").style.display = "block";
+
+  } catch(e) {
+    alert("Parse error: " + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = "Process PO with AI";
+  }
+}
+
+async function commitRawMaterialPOToBackend() {
+  if (!activeParsedRMPOPayload) return alert("Process a PO document first.");
+  const vendorName   = document.getElementById("rm-po-vendor-name").value.trim();
+  const uploadedBy   = document.getElementById("rm-po-uploaded-by").value.trim();
+  const poNumber     = document.getElementById("rm-po-number").value.trim();
+  const orderDate    = document.getElementById("rm-po-order-date").value.trim();
+  const deliveryDate = document.getElementById("rm-po-delivery-date").value.trim();
+  const grandTotal   = document.getElementById("rm-po-grand-total").value.trim();
+  const btn          = document.getElementById("rm-po-submit-btn");
+  const feedback     = document.getElementById("rm-po-feedback");
+
+  if (!vendorName) return alert("Vendor Name is required.");
+  if (!uploadedBy) return alert("Uploaded By is required.");
+  if (!poNumber)   return alert("PO Number is required.");
+
+  const codeInputs = document.querySelectorAll(".rm-po-item-code-input");
+  const nameInputs = document.querySelectorAll(".rm-po-mat-name-input");
+  (activeParsedRMPOPayload.lineItems || []).forEach((item, idx) => {
+    item.itemCode     = codeInputs[idx] ? codeInputs[idx].value.trim() : item.itemCode;
+    item.materialName = nameInputs[idx] ? nameInputs[idx].value.trim() : item.materialName;
+  });
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
+
+  let fileBase64 = "";
+  let fileName   = "";
+  if (targetRMPOFileObj) {
+    fileBase64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(targetRMPOFileObj); });
+    fileName = targetRMPOFileObj.name;
+  }
+
+  try {
+    const res  = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "uploadRawMaterialPurchaseOrder",
+        sessionToken: localStorage.getItem("sessionToken"),
+        activeEngineer: appActiveOperatorIdentityString,
+        vendorName, uploadedBy, poNumber, orderDate, deliveryDate, grandTotal,
+        lineItems: activeParsedRMPOPayload.lineItems || [],
+        fileData64: fileBase64, fileName,
+        mimeType: targetRMPOFileObj ? targetRMPOFileObj.type : ""
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      document.getElementById("rm-po-upload-zone").style.display = "none";
+      document.getElementById("rm-po-verification-zone").style.display = "none";
+      feedback.style.cssText = "display:block; background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:16px; border-radius:var(--radius); margin-bottom:12px;";
+      feedback.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <strong>PO uploaded successfully!</strong><br/>
+            <span style="font-size:0.88rem; font-weight:600;">PO ID: <strong style="font-family:monospace;">${data.purchaseOrderId}</strong> | On Order quantities updated.</span>
+          </div>
+          <button class="nav-btn-styled" onclick="
+            document.getElementById('rm-po-upload-zone').style.display='block';
+            document.getElementById('rm-po-feedback').style.display='none';
+            resetRMPOUploadState();
+          " style="background:#15803d; padding:8px 16px; font-weight:700;">+ Upload Another PO</button>
+        </div>`;
+    } else {
+      feedback.style.cssText = "display:block; background:#fee2e2; border-left:4px solid #b91c1c; color:#b91c1c; padding:12px; border-radius:var(--radius); margin-bottom:12px;";
+      feedback.textContent = "Failed: " + (data.error || "Unknown error.");
+    }
+  } catch(e) {
+    feedback.style.cssText = "display:block; background:#fee2e2; border-left:4px solid #b91c1c; color:#b91c1c; padding:12px; border-radius:var(--radius); margin-bottom:12px;";
+    feedback.textContent = "Network error: " + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = "Submit Purchase Order";
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// SHARED PURCHASE FEEDBACK HELPER
+// ═══════════════════════════════════════════════════════
+
+function showPurchaseFeedback(elementId, message, type) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const ok = type === "success";
+  el.style.cssText = `display:block; background:${ok ? '#dcfce7' : '#fee2e2'}; border-left:4px solid ${ok ? '#15803d' : '#b91c1c'}; color:${ok ? '#15803d' : '#b91c1c'}; padding:12px; margin-bottom:12px; border-radius:var(--radius);`;
+  el.innerHTML = message;
+  if (ok) setTimeout(() => { el.style.display = "none"; }, 6000);
+}
+
+// ═══════════════════════════════════════════════════════
+// ASSIGN CURRENT STOCK
+// ═══════════════════════════════════════════════════════
+
+let assignStockCurrentMode     = "grn";
+let assignStockCurrentItemCode = "";
+let assignStockCurrentMaterial = null;
+let assignStockUnassignedCache = [];
+
+async function initializeAssignCurrentStockPanel() {
+  assignStockCurrentMode     = "grn";
+  assignStockCurrentItemCode = "";
+  assignStockCurrentMaterial = null;
+  document.getElementById("assign-stock-feedback").style.display          = "none";
+  document.getElementById("assign-stock-assignment-panel").style.display  = "none";
+  document.getElementById("assign-mode-grn-btn").style.background         = "var(--brand)";
+  document.getElementById("assign-mode-unassigned-btn").style.background  = "#718096";
+  document.getElementById("assign-stock-grn-zone").style.display          = "block";
+  document.getElementById("assign-stock-unassigned-zone").style.display   = "none";
+
+  await loadAssignStockPersonnel();
+  await loadAssignStockGRNQueue();
+}
+
+async function loadAssignStockPersonnel() {
+  const select = document.getElementById("assign-panel-assigned-by");
+  try {
+    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"getStoreOperatorsList", sessionToken: localStorage.getItem("sessionToken") }) });
+    const data = await res.json();
+    const people = (data.fullPersonnelDataRecordsTree || []).filter(p =>
+      p.departmentsList.some(d => ["store","admin","purchase"].includes(d.toLowerCase().trim()))
+    );
+    select.innerHTML = '<option value="">— Select Person —</option>';
+    people.forEach(p => {
+      const opt = document.createElement("option"); opt.value = p.fullName; opt.textContent = p.fullName;
+      select.appendChild(opt);
+    });
+    if (appActiveOperatorIdentityString) select.value = appActiveOperatorIdentityString;
+  } catch(e) { select.innerHTML = '<option value="">Error loading personnel</option>'; }
+}
+
+function switchAssignStockMode(mode) {
+  assignStockCurrentMode     = mode;
+  assignStockCurrentItemCode = "";
+  assignStockCurrentMaterial = null;
+  document.getElementById("assign-stock-assignment-panel").style.display = "none";
+  document.getElementById("assign-stock-feedback").style.display         = "none";
+
+  const isGrn = mode === "grn";
+  document.getElementById("assign-mode-grn-btn").style.background        = isGrn ? "var(--brand)" : "#718096";
+  document.getElementById("assign-mode-unassigned-btn").style.background = isGrn ? "#718096" : "var(--brand)";
+  document.getElementById("assign-stock-grn-zone").style.display         = isGrn ? "block" : "none";
+  document.getElementById("assign-stock-unassigned-zone").style.display  = isGrn ? "none"  : "block";
+
+  if (isGrn) {
+    loadAssignStockGRNQueue();
+  } else {
+    document.getElementById("assign-type-filter").value                  = "";
+    document.getElementById("assign-material-search-input").value        = "";
+    document.getElementById("assign-material-search-dropdown").style.display = "none";
+    loadAssignStockUnassignedMaterials();
+  }
+}
+
+async function loadAssignStockGRNQueue() {
+  const feed = document.getElementById("assign-stock-grn-feed");
+  feed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--brand); font-weight:600;">
+    <div class="spinner" style="display:inline-block; width:18px; height:18px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:10px; vertical-align:middle;"></div>
+    Loading GRN Queue...
+  </div>`;
+  try {
+    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchAssignCurrentStockData", sessionToken: localStorage.getItem("sessionToken"), mode:"grn-queue" }) });
+    const data = await res.json();
+    if (!data.success) { feed.innerHTML = `<div style="color:var(--warn); padding:20px; text-align:center; font-weight:700;">${data.error}</div>`; return; }
+
+    const grns = data.grns || [];
+    if (grns.length === 0) {
+      feed.innerHTML = `<div style="text-align:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted);">
+        <div style="font-size:2rem; margin-bottom:10px;">✅</div>
+        <div style="font-weight:700; color:var(--accent); font-size:0.95rem;">All received stock has been assigned!</div>
+        <div style="font-size:0.82rem; margin-top:4px;">No pending GRN materials awaiting assignment.</div>
+      </div>`;
+      return;
+    }
+
+    feed.innerHTML = "";
+    grns.forEach(grn => {
+      const card = document.createElement("div");
+      card.className   = "contact-summary-card-parent";
+      card.style.cssText = "border-left:4px solid var(--accent);";
+
+      const materialsHtml = grn.materials.map(mat => `
+        <div onclick="openAssignStockPanel('${mat.itemCode}', \`${mat.materialName.replace(/`/g,"'")}\`, '${mat.unitType}')"
+          style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; margin-bottom:6px; transition:all 0.15s ease;"
+          onmouseover="this.style.borderColor='var(--brand)'; this.style.background='var(--highlight-bg)';"
+          onmouseout="this.style.borderColor='var(--border)'; this.style.background='#fff';">
+          <div style="flex:1; min-width:0;">
+            <div style="font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${mat.itemCode}</div>
+            <div style="font-size:0.88rem; font-weight:600; color:var(--text); line-height:1.4;">${mat.materialName}</div>
+            <div style="font-size:0.72rem; color:var(--muted);">${mat.typeOfMaterial}</div>
+          </div>
+          <div style="text-align:right; flex-shrink:0; margin-left:16px;">
+            <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Unassigned</div>
+            <div style="font-size:1.2rem; font-weight:800; color:#b91c1c; font-family:monospace;">${Number(mat.unassignedQty).toFixed(2)}</div>
+            <div style="font-size:0.7rem; color:var(--muted);">${mat.unitType}</div>
+          </div>
+          <div style="font-size:0.75rem; font-weight:700; color:var(--brand); margin-left:14px; white-space:nowrap;">Assign →</div>
+        </div>`).join("");
+
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:8px; border-bottom:1px dashed var(--border);">
+          <div>
+            <span style="font-family:monospace; font-weight:800; background:var(--accent); color:#fff; padding:3px 8px; font-size:0.78rem; border-radius:3px;">${grn.grnNumber}</span>
+            <span style="font-size:0.82rem; font-weight:600; color:var(--muted); margin-left:8px;">${grn.vendorName}</span>
+            <span style="font-size:0.72rem; color:var(--muted); margin-left:6px;">Inward: ${grn.inwardNumber}</span>
+          </div>
+          <span style="font-size:0.78rem; color:var(--muted); font-weight:600;">${grn.date}</span>
+        </div>
+        ${materialsHtml}`;
+      feed.appendChild(card);
+    });
+  } catch(e) {
+    feed.innerHTML = `<div style="color:var(--warn); padding:20px; text-align:center;">Error: ${e.message}</div>`;
+  }
+}
+
+async function loadAssignStockUnassignedMaterials() {
+  const zone = document.getElementById("assign-stock-unassigned-results");
+  zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">
+    <div class="spinner" style="display:inline-block; width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>
+    Loading unassigned materials...
+  </div>`;
+  try {
+    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchAssignCurrentStockData", sessionToken: localStorage.getItem("sessionToken"), mode:"unassigned-browse" }) });
+    const data = await res.json();
+    if (!data.success) { zone.innerHTML = `<div style="color:var(--warn); padding:16px; font-weight:700;">${data.error}</div>`; return; }
+    assignStockUnassignedCache = data.materials || [];
+    renderAssignStockUnassignedList(assignStockUnassignedCache);
+  } catch(e) {
+    zone.innerHTML = `<div style="color:var(--warn); padding:16px;">Error: ${e.message}</div>`;
+  }
+}
+
+function renderAssignStockUnassignedList(materials) {
+  const zone = document.getElementById("assign-stock-unassigned-results");
+  if (materials.length === 0) {
+    zone.innerHTML = `<div style="text-align:center; padding:30px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted);">
+      <div style="font-size:2rem; margin-bottom:8px;">✅</div>
+      <div style="font-weight:700; color:var(--accent);">No unassigned materials found.</div>
+    </div>`;
+    return;
+  }
+  zone.innerHTML = "";
+  materials.forEach(mat => {
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; transition:all 0.15s ease;";
+    row.onclick       = () => openAssignStockPanel(mat.itemCode, mat.materialName, mat.unitType);
+    row.onmouseover   = () => { row.style.borderColor = "var(--brand)"; row.style.background = "var(--highlight-bg)"; };
+    row.onmouseout    = () => { row.style.borderColor = "var(--border)";  row.style.background = "#fff"; };
+    row.innerHTML = `
+      <div style="flex:1; min-width:0;">
+        <div style="font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${mat.itemCode}</div>
+        <div style="font-size:0.88rem; font-weight:600; color:var(--text);">${mat.materialName}</div>
+        <div style="font-size:0.72rem; color:var(--muted);">${mat.typeOfMaterial}</div>
+      </div>
+      <div style="text-align:right; flex-shrink:0; margin-left:16px;">
+        <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Unassigned</div>
+        <div style="font-size:1.2rem; font-weight:800; color:#b91c1c; font-family:monospace;">${Number(mat.unassignedQty).toFixed(2)}</div>
+        <div style="font-size:0.7rem; color:var(--muted);">${mat.unitType}</div>
+      </div>
+      <div style="font-size:0.75rem; font-weight:700; color:var(--brand); margin-left:14px; white-space:nowrap;">Assign →</div>`;
+    zone.appendChild(row);
+  });
+}
+
+function handleAssignTypeFilterChange(typeValue) {
+  document.getElementById("assign-material-search-input").value            = "";
+  document.getElementById("assign-material-search-dropdown").style.display = "none";
+  const filtered = typeValue ? assignStockUnassignedCache.filter(m => m.typeOfMaterial === typeValue) : assignStockUnassignedCache;
+  renderAssignStockUnassignedList(filtered);
+}
+
+function handleAssignMaterialSearch(query) {
+  const dropdown = document.getElementById("assign-material-search-dropdown");
+  if (!query || query.trim().length < 1) { dropdown.style.display = "none"; return; }
+  const catalog = window.itemCodeCatalogCache || [];
+  const q       = query.toLowerCase();
+  const matches = catalog.filter(item => (item.productName || "").toLowerCase().includes(q)).slice(0, 10);
+  if (matches.length === 0) { dropdown.style.display = "none"; return; }
+  dropdown.innerHTML = matches.map(item => `
+    <div onclick="selectAssignMaterialFromSearch('${item.itemCode}', \`${item.productName.replace(/`/g,"'")}\`)"
+      style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>
+      ${item.productName}
+      <span style="font-size:0.7rem; color:var(--muted); margin-left:6px;">(${item.typeOfMaterial})</span>
+    </div>`).join("");
+  dropdown.style.display = "block";
+}
+
+function selectAssignMaterialFromSearch(itemCode, materialName) {
+  document.getElementById("assign-material-search-input").value            = materialName;
+  document.getElementById("assign-material-search-dropdown").style.display = "none";
+  const inv     = (window.itemCodeCatalogCache || []).find(i => i.itemCode === itemCode);
+  const unitType= (cachedInventoryStockCollection.find(i => (i.itemCode || "").toUpperCase() === itemCode.toUpperCase()) || {}).unitType || "NOS";
+  openAssignStockPanel(itemCode, materialName, unitType);
+}
+
+async function openAssignStockPanel(itemCode, materialName, unitType) {
+  assignStockCurrentItemCode = itemCode;
+  const panel = document.getElementById("assign-stock-assignment-panel");
+  panel.style.display = "block";
+  panel.scrollIntoView({ behavior:"smooth", block:"start" });
+
+  document.getElementById("assign-panel-material-title").textContent  = materialName;
+  document.getElementById("assign-panel-item-code").textContent       = itemCode;
+  document.getElementById("assign-panel-unit").textContent            = unitType;
+  document.getElementById("assign-panel-total-unassigned").textContent= "...";
+  document.getElementById("assign-panel-existing-zone").style.display = "none";
+  document.getElementById("assign-panel-no-targets").style.display    = "none";
+  document.getElementById("assign-panel-targets-table-wrapper").style.display = "block";
+  document.getElementById("assign-stock-feedback").style.display      = "none";
+  document.getElementById("assign-panel-targets-body").innerHTML = `
+    <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">
+      <div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:6px; vertical-align:middle;"></div>
+      Loading BOQ targets...
+    </td></tr>`;
+
+  try {
+    const res  = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({ action:"fetchAssignCurrentStockData", sessionToken: localStorage.getItem("sessionToken"), mode:"item-detail", itemCode })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      document.getElementById("assign-panel-targets-body").innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error}</td></tr>`;
+      return;
+    }
+
+    assignStockCurrentMaterial = data;
+    const unassignedQty        = Number(data.unassignedQty) || 0;
+    document.getElementById("assign-panel-total-unassigned").textContent = unassignedQty.toFixed(2);
+    document.getElementById("assign-panel-total-check").textContent      = unassignedQty.toFixed(2);
+    document.getElementById("assign-panel-remainder").textContent        = unassignedQty.toFixed(2);
+    document.getElementById("assign-panel-total-assigning").textContent  = "0";
+
+    // Existing assignments
+    const existingList = data.existingAssignments || [];
+    if (existingList.length > 0) {
+      document.getElementById("assign-panel-existing-list").innerHTML = existingList.map(a => `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #86efac; border-radius:4px; padding:6px 10px; font-size:0.82rem; flex-wrap:wrap; gap:6px;">
+          <div>
+            <span style="font-family:monospace; font-weight:700; color:var(--brand);">${a.boqId}</span>
+            <span style="color:var(--muted); margin-left:6px; font-size:0.75rem;">${a.projectId}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-family:monospace; font-weight:800; color:#15803d;">${a.assignedQty} ${unitType}</span>
+            <span style="font-size:0.7rem; color:var(--muted);">${a.assignedDate} — ${a.assignedBy}</span>
+            <button onclick="openUnassignStockDialog('${a.assignmentId}', '${a.boqId}', ${a.assignedQty}, '${unitType}')"
+              style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:2px 8px; border-radius:3px; font-size:0.72rem; font-weight:700; cursor:pointer;">
+              Reduce
+            </button>
+          </div>
+        </div>`).join("");
+      document.getElementById("assign-panel-existing-zone").style.display = "block";
+    }
+
+    // BOQ targets
+    const targets = data.boqTargets || [];
+    const tbody   = document.getElementById("assign-panel-targets-body");
+    if (targets.length === 0) {
+      document.getElementById("assign-panel-no-targets").style.display            = "block";
+      document.getElementById("assign-panel-targets-table-wrapper").style.display = "none";
+      tbody.innerHTML = "";
+    } else {
+      document.getElementById("assign-panel-no-targets").style.display            = "none";
+      document.getElementById("assign-panel-targets-table-wrapper").style.display = "block";
+      tbody.innerHTML = "";
+      targets.forEach((target, idx) => {
+        const tr = document.createElement("tr");
+        tr.style.borderBottom = "1px solid #f1f5f9";
+        tr.innerHTML = `
+          <td style="padding:8px 10px; font-family:monospace; font-size:0.78rem; font-weight:700; color:#475569; white-space:nowrap;">${target.projectId}</td>
+          <td style="padding:8px 10px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand); white-space:nowrap;">${target.boqId}</td>
+          <td style="padding:8px 10px; font-size:0.82rem; font-weight:600; line-height:1.4;">${target.productName} <span style="color:var(--muted); font-weight:400;">${target.productRating}</span></td>
+          <td style="padding:8px 10px; text-align:center; font-family:monospace; font-weight:700; color:#b91c1c;">${Number(target.stillNeeded).toFixed(2)}</td>
+          <td style="padding:8px 10px; text-align:center; font-family:monospace; font-weight:700; color:#15803d;">${Number(target.assignedQty).toFixed(2)}</td>
+          <td style="padding:8px 10px; text-align:center;">
+            <input type="number" min="0" value="" placeholder="0"
+              class="assign-qty-input"
+              data-idx="${idx}" data-prnid="${target.prnId}" data-boqid="${target.boqId}" data-projectid="${target.projectId}"
+              oninput="updateAssignPanelTotals(${unassignedQty})"
+              style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    }
+  } catch(e) {
+    document.getElementById("assign-panel-targets-body").innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--warn);">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function updateAssignPanelTotals(totalUnassigned) {
+  let totalAssigning = 0;
+  document.querySelectorAll(".assign-qty-input").forEach(inp => { totalAssigning += parseFloat(inp.value) || 0; });
+  const remainder   = Math.max(0, totalUnassigned - totalAssigning);
+  const isOverLimit = totalAssigning > totalUnassigned;
+
+  document.getElementById("assign-panel-total-assigning").textContent = totalAssigning.toFixed(2);
+  document.getElementById("assign-panel-remainder").textContent       = remainder.toFixed(2);
+  document.getElementById("assign-panel-total-assigning").style.color = isOverLimit ? "#b91c1c" : "var(--accent)";
+
+  const btn = document.getElementById("assign-panel-submit-btn");
+  btn.disabled          = isOverLimit;
+  btn.style.opacity     = isOverLimit ? "0.5" : "1";
+  btn.style.cursor      = isOverLimit ? "not-allowed" : "pointer";
+}
+
+async function submitAssignCurrentStock() {
+  const assignedBy = document.getElementById("assign-panel-assigned-by").value.trim();
+  if (!assignedBy) return alert("Please select Assigned By before saving.");
+
+  const assignments = [];
+  document.querySelectorAll(".assign-qty-input").forEach(inp => {
+    const qty = parseFloat(inp.value) || 0;
+    if (qty > 0) assignments.push({ prnId: inp.dataset.prnid, boqId: inp.dataset.boqid, projectId: inp.dataset.projectid, assignQty: qty });
+  });
+  if (assignments.length === 0) return alert("Enter a quantity for at least one BOQ row before saving.");
+
+  const totalUnassigned = Number(assignStockCurrentMaterial?.unassignedQty) || 0;
+  const totalAssigning  = assignments.reduce((s, a) => s + a.assignQty, 0);
+  if (totalAssigning > totalUnassigned) return alert("Total assigned (" + totalAssigning + ") exceeds available unassigned stock (" + totalUnassigned + ").");
+
+  const btn = document.getElementById("assign-panel-submit-btn");
+  btn.disabled  = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Saving...';
+
+  try {
+    const res  = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "submitStockAssignment",
+        sessionToken: localStorage.getItem("sessionToken"),
+        itemCode:     assignStockCurrentItemCode,
+        materialName: document.getElementById("assign-panel-material-title").textContent,
+        assignments, assignedBy
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showPurchaseFeedback("assign-stock-feedback", `${assignments.length} BOQ assignment(s) saved successfully.`, "success");
+      const unitType = document.getElementById("assign-panel-unit").textContent;
+      await openAssignStockPanel(assignStockCurrentItemCode, document.getElementById("assign-panel-material-title").textContent, unitType);
+      if (assignStockCurrentMode === "grn") loadAssignStockGRNQueue();
+      else loadAssignStockUnassignedMaterials();
+    } else {
+      showPurchaseFeedback("assign-stock-feedback", data.error || "Failed to save.", "error");
+    }
+  } catch(e) {
+    showPurchaseFeedback("assign-stock-feedback", "Network error: " + e.message, "error");
+  } finally {
+    btn.disabled  = false;
+    btn.textContent = "Save Assignments";
+  }
+}
+
+function openUnassignStockDialog(assignmentId, boqId, currentQty, unitType) {
+  const input = parseFloat(prompt(`Reduce assignment for BOQ: ${boqId}\nCurrently assigned: ${currentQty} ${unitType}\n\nEnter quantity to REMOVE:`));
+  if (isNaN(input) || input <= 0) return;
+  if (input > currentQty) return alert("Cannot reduce by more than the current assigned qty (" + currentQty + ").");
+  executeUnassignStock(assignmentId, input);
+}
+
+async function executeUnassignStock(assignmentId, reduceQty) {
+  try {
+    const res  = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({ action:"unassignStock", sessionToken: localStorage.getItem("sessionToken"), activeEngineer: appActiveOperatorIdentityString, assignmentId, reduceQty })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showPurchaseFeedback("assign-stock-feedback", "Assignment reduced successfully.", "success");
+      const unitType = document.getElementById("assign-panel-unit").textContent;
+      await openAssignStockPanel(assignStockCurrentItemCode, document.getElementById("assign-panel-material-title").textContent, unitType);
+      if (assignStockCurrentMode === "grn") loadAssignStockGRNQueue();
+      else loadAssignStockUnassignedMaterials();
+    } else {
+      showPurchaseFeedback("assign-stock-feedback", data.error || "Failed to reduce assignment.", "error");
+    }
+  } catch(e) {
+    showPurchaseFeedback("assign-stock-feedback", "Network error: " + e.message, "error");
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// EXPECTED INBOUNDS
+// ═══════════════════════════════════════════════════════
+
+function initializeExpectedInboundsPanel() {
+  document.getElementById("expected-inbounds-feedback").style.display = "none";
+  loadExpectedInbounds();
+}
+
+async function loadExpectedInbounds() {
+  const zone = document.getElementById("expected-inbounds-results");
+  zone.innerHTML = `<div style="text-align:center; padding:30px; color:var(--brand); font-weight:600;">
+    <div class="spinner" style="display:inline-block; width:18px; height:18px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:10px; vertical-align:middle;"></div>
+    Loading Expected Inbounds...
+  </div>`;
+
+  try {
+    const res  = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "fetchExpectedInbounds", sessionToken: localStorage.getItem("sessionToken") })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error}</div>`;
+      return;
+    }
+
+    zone.innerHTML = "";
+    const totalCount = (data.today || []).length + (data.overdue || []).length + (data.upcoming || []).length;
+
+    if (totalCount === 0) {
+      zone.innerHTML = `<div style="text-align:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted);">
+        <div style="font-size:2.5rem; margin-bottom:12px;">📦</div>
+        <div style="font-weight:700; color:var(--accent); font-size:0.95rem;">No pending inbounds!</div>
+        <div style="font-size:0.82rem; margin-top:4px;">All POs in the current window have been received or have no upcoming delivery dates.</div>
+      </div>`;
+      return;
+    }
+
+    const schemeDueToday = { sectionBg: "#fff7ed", sectionBorder: "#f59e0b", headerColor: "#b45309", badgeBg: "#fef3c7", badgeColor: "#b45309", icon: "🕐" };
+    const schemeOverdue  = { sectionBg: "#fff5f5", sectionBorder: "#fca5a5", headerColor: "#b91c1c", badgeBg: "#fee2e2", badgeColor: "#b91c1c", icon: "🚨" };
+    const schemeUpcoming = { sectionBg: "#f0fdf4", sectionBorder: "#86efac", headerColor: "#15803d", badgeBg: "#dcfce7", badgeColor: "#15803d", icon: "📅" };
+
+    if ((data.today || []).length > 0)    zone.appendChild(renderExpectedInboundsSection("Due Today",     data.today,    schemeDueToday));
+    if ((data.overdue || []).length > 0)  zone.appendChild(renderExpectedInboundsSection("Overdue",       data.overdue,  schemeOverdue));
+    if ((data.upcoming || []).length > 0) zone.appendChild(renderExpectedInboundsSection("Next 7 Days",   data.upcoming, schemeUpcoming));
+
+  } catch(e) {
+    zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${e.message}</div>`;
+  }
+}
+
+function renderExpectedInboundsSection(title, poList, scheme) {
+  const sectionEl = document.createElement("div");
+  sectionEl.style.cssText = `background:#fff; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;`;
+
+  const safeSectionId = "ei-section-" + title.replace(/\s+/g, "_").toLowerCase();
+
+  sectionEl.innerHTML = `
+    <div onclick="toggleEISection('${safeSectionId}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:${scheme.sectionBg}; border-bottom:1.5px solid ${scheme.sectionBorder}; cursor:pointer; user-select:none;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:1.1rem;">${scheme.icon}</span>
+        <span style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:${scheme.headerColor}; letter-spacing:0.5px;">${title}</span>
+        <span style="font-size:0.72rem; font-weight:700; background:${scheme.badgeBg}; color:${scheme.badgeColor}; padding:2px 8px; border-radius:10px;">${poList.length} PO${poList.length !== 1 ? "s" : ""}</span>
+      </div>
+      <span id="${safeSectionId}-toggle-btn" style="font-size:0.72rem; font-weight:700; color:${scheme.headerColor}; border:1px solid ${scheme.sectionBorder}; padding:3px 10px; border-radius:4px; background:#fff;">▲ Collapse</span>
+    </div>
+    <div id="${safeSectionId}-body" style="display:flex; flex-direction:column; gap:10px; padding:12px;">
+      ${poList.map(po => renderExpectedInboundsPOCard(po, scheme)).join("")}
+    </div>`;
+
+  return sectionEl;
+}
+
+function toggleEISection(sectionId) {
+  const body   = document.getElementById(sectionId + "-body");
+  const btn    = document.getElementById(sectionId + "-toggle-btn");
+  if (!body || !btn) return;
+  const isOpen = body.style.display !== "none";
+  body.style.display = isOpen ? "none" : "flex";
+  btn.textContent    = isOpen ? "▼ Expand" : "▲ Collapse";
+}
+
+function renderExpectedInboundsPOCard(po, scheme) {
+  const receivedPct  = po.totalCount > 0 ? Math.round((po.receivedCount / po.totalCount) * 100) : 0;
+  const allPending   = po.receivedCount === 0;
+  const partial      = po.receivedCount > 0 && po.receivedCount < po.totalCount;
+
+  let daysLabel = "";
+  if (po.daysOverdue > 0)     daysLabel = `<span style="font-size:0.72rem; font-weight:800; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:4px;">${po.daysOverdue} day${po.daysOverdue !== 1 ? "s" : ""} overdue</span>`;
+  else if (po.daysRemaining > 0) daysLabel = `<span style="font-size:0.72rem; font-weight:800; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:4px;">${po.daysRemaining} day${po.daysRemaining !== 1 ? "s" : ""} remaining</span>`;
+  else daysLabel = `<span style="font-size:0.72rem; font-weight:800; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:4px;">Due Today</span>`;
+
+  const progressColor = allPending ? "#b91c1c" : partial ? "#b45309" : "#15803d";
+
+  const lineItemsHtml = po.lineItems.map(item => `
+    <tr style="border-bottom:1px solid #f1f5f9;">
+      <td style="padding:6px 8px; font-family:monospace; font-size:0.75rem; font-weight:700; color:var(--brand); white-space:nowrap;">${item.itemCode || "—"}</td>
+      <td style="padding:6px 8px; font-size:0.8rem; font-weight:600; line-height:1.4;">${item.materialName}</td>
+      <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; white-space:nowrap;">${item.orderedQty} ${item.unit}</td>
+      <td style="padding:6px 8px; text-align:center;">
+        ${item.received
+          ? `<span style="font-size:0.7rem; font-weight:700; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:3px;">✅ Received</span>`
+          : `<span style="font-size:0.7rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:3px;">⏳ Pending</span>`
+        }
+      </td>
+    </tr>`).join("");
+
+  return `
+    <div style="background:#fff; border:1px solid ${scheme.sectionBorder}; border-radius:var(--radius); overflow:hidden;">
+      <div style="padding:10px 14px; background:${scheme.sectionBg}; border-bottom:1px solid ${scheme.sectionBorder};">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+          <div>
+            <span style="font-family:monospace; font-weight:800; background:var(--brand); color:#fff; font-size:0.72rem; padding:3px 8px; border-radius:3px; margin-right:6px;">${po.purchaseOrderId}</span>
+            <span style="font-size:0.78rem; font-weight:700; color:var(--muted);">PO No: <strong style="color:var(--text);">${po.poNumber || "—"}</strong></span>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+            ${daysLabel}
+          </div>
+        </div>
+        <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.78rem; color:var(--muted);">
+          <span>🏭 <strong style="color:var(--text);">${po.vendorName}</strong></span>
+          <span>📅 Order: <strong>${po.orderDate || "—"}</strong></span>
+          <span>🚚 Delivery: <strong>${po.deliveryDate || "—"}</strong></span>
+          ${po.grandTotal > 0 ? `<span>💰 ₹${Number(po.grandTotal).toLocaleString("en-IN", {minimumFractionDigits:0, maximumFractionDigits:0})}</span>` : ""}
+        </div>
+      </div>
+
+      <div style="padding:6px 14px; background:#f8fafc; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px;">
+        <div style="flex:1; background:#e2e8f0; border-radius:4px; height:6px; overflow:hidden;">
+          <div style="height:100%; width:${receivedPct}%; background:${progressColor}; border-radius:4px; transition:width 0.3s ease;"></div>
+        </div>
+        <span style="font-size:0.72rem; font-weight:700; color:${progressColor}; white-space:nowrap;">${po.receivedCount} / ${po.totalCount} items received</span>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; min-width:600px;">
+          <thead>
+            <tr style="background:#f8fafc; border-bottom:1px solid var(--border);">
+              <th style="padding:6px 8px; font-size:0.68rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Item Code</th>
+              <th style="padding:6px 8px; font-size:0.68rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase; min-width:200px;">Material Name</th>
+              <th style="padding:6px 8px; font-size:0.68rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Ordered Qty</th>
+              <th style="padding:6px 8px; font-size:0.68rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Status</th>
+            </tr>
+          </thead>
+          <tbody>${lineItemsHtml}</tbody>
+        </table>
+      </div>
+    </div>`;
 }
 
 </script>
