@@ -942,67 +942,6 @@
       <button class="nav-btn-styled" onclick="exitDesignWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
     </div>
 
-    <div id="canvas-module-design-upload" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom:16px; color:var(--brand);">Upload Bill of Quantity</h2>
-      <div id="design-upload-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid;"></div>
-      
-      <div style="margin-bottom:12px;">
-        <label class="field-label">Design Engineer *</label>
-        <select id="boq-upload-staff-dropdown" style="font-weight:700; color:var(--brand);"></select>
-      </div>
-      <div style="margin-bottom:16px;">
-        <label class="field-label">Select Project ID *</label>
-        <select id="boq-upload-project-dropdown"></select>
-      </div>
-      
-      <div class="card-box" id="boq-upload-file-dropzone" onclick="document.getElementById('boq-upload-file-raw').click()" style="padding:40px; border:2px dashed var(--brand); font-weight:700; color:var(--brand); margin-bottom:16px;">
-        📷 Select or Capture Bill of Quantity Document Page Image
-      </div>
-      <input type="file" id="boq-upload-file-raw" accept="image/*,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden onchange="handleBOQFileSelection(this, 'boq-upload-file-dropzone')" />
-
-      <button class="btn btn-sub" id="boq-upload-submit-action-btn" onclick="executeBOQDocumentUploadSubmit('NEW')" style="background:var(--brand); font-weight:700; padding:12px;">Process BOQ Document</button>
-    </div>
-
-    <div id="canvas-module-design-update" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom:16px; color:var(--brand);">Update Bill of Quantity</h2>
-      <div id="design-update-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid;"></div>
-      
-      <div style="display:flex; gap:10px; align-items:flex-end; margin-bottom:20px; background:#f8fafc; padding:12px; border:1px solid var(--border); border-radius:var(--radius);">
-        <div style="flex-grow:1;">
-          <label class="field-label" style="margin-top:0;">Search By Project ID *</label>
-          <select id="boq-update-project-search-dropdown"></select>
-        </div>
-        <button class="nav-btn-styled" onclick="executeBOQProjectQueryLookupSearch()" style="background:var(--brand); padding:10px 24px; font-weight:700;">Find Bill of Quantity</button>
-      </div>
-
-      <div id="boq-update-search-results-viewport" style="margin-bottom:16px; display:none;">
-        <div style="overflow-x:auto; margin-bottom:20px; border:1px solid var(--border); border-radius:var(--radius);">
-        <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:800px;">
-          <thead>
-            <tr style="background:#f8fafc;">
-              <th style="text-align:left; padding:8px 10px; white-space:nowrap; font-size:0.72rem;">Department</th>
-              <th style="text-align:left; padding:8px 10px; white-space:nowrap; font-size:0.72rem;">Product Name</th>
-              <th style="text-align:left; padding:8px 10px; white-space:nowrap; font-size:0.72rem;">Rating</th>
-              <th style="text-align:left; padding:8px 10px; white-space:nowrap; font-size:0.72rem;">ERP Code</th>
-              <th style="text-align:left; padding:8px 10px; min-width:200px; font-size:0.72rem;">Material Name</th>
-              <th style="text-align:right; padding:8px 10px; white-space:nowrap; font-size:0.72rem;">Order Qty</th>
-            </tr>
-          </thead>
-          <tbody id="boq-update-table-body-view"></tbody>
-        </table>
-        </div>
-        
-        <div style="border-top:1px dashed var(--border); padding-top:16px; background:#fffef0; padding:12px; border:1.5px solid var(--brand); border-radius:var(--radius);">
-          <span style="display:block; font-size:0.8rem; font-weight:800; color:var(--brand); margin-bottom:10px; text-transform:uppercase;">Upload Revised Bill of Quantity</span>
-          <div class="card-box" id="boq-revision-file-dropzone" onclick="document.getElementById('boq-revision-file-raw').click()" style="padding:20px; border:2px dashed var(--brand); font-weight:700; color:var(--brand); margin-bottom:12px; background:#fff;">
-            📷 Select Revised BOQ Document
-          </div>
-          <input type="file" id="boq-revision-file-raw" accept="image/*,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden onchange="handleBOQFileSelection(this, 'boq-revision-file-dropzone')" />
-          <button class="btn btn-sub" id="boq-revision-submit-action-btn" onclick="executeBOQDocumentUploadSubmit('UPDATE')" style="background:var(--accent); font-weight:700;">Commit BOQ Change</button>
-        </div>
-      </div>
-    </div>
-
     <!-- CREATE BOQ -->
     <div id="canvas-module-design-create-boq" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="margin-bottom:6px; color:var(--brand);">Create Bill of Quantity</h2>
@@ -2117,7 +2056,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwV7mJPiv47puF_wC_tNFxVVoYxRhVUqP5hxZTcTuPeXrV3TUKEFdi4N9DTZzOhIw4m/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwbNOKEIdIfbeaw08uRdx_iPuFGiqGO3Oup69qtpcrYo0P6JtkrDofCsp8hXo1OdL8/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -6510,8 +6449,6 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   
   // 3. Hide all design engineering sub-module views panels
   if (document.getElementById("module-design-workspace-enclosure-panel")) document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
-  if (document.getElementById("canvas-module-design-upload")) document.getElementById("canvas-module-design-upload").style.display = "none";
-  if (document.getElementById("canvas-module-design-update")) document.getElementById("canvas-module-design-update").style.display = "none";
 
   // 4. ROUTE CRITERIA SWITCH GATING HARNESS
   if (targetCanvasModuleId === 'marketing-leads') {
@@ -8443,8 +8380,6 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
   
   // 3. Isolate child views to prevent element draw overlap anomalies
   const allDesignCanvases = [
-    "canvas-module-design-upload",
-    "canvas-module-design-update",
     "canvas-module-design-itemcode",
     "canvas-module-design-create-boq",
     "canvas-module-design-auth-boq",
@@ -8522,273 +8457,10 @@ function exitDesignWorkspacePanelBackToMenu() {
   triggerCompanyDropdownArrayFetch(); 
 }
 
-function handleBOQFileSelection(inputNode, zoneId) {
-  targetBOQUploadFileRawObject = inputNode.files[0];
-  if (targetBOQUploadFileRawObject) {
-    const box = document.getElementById(zoneId);
-    box.textContent = "BOQ Document Attached ✅";
-    box.classList.add("done");
-  }
-}
-
 /**
  * NEW INITIALIZATION GATING: Filters personnel tree data explicitly for the Design Department.
  * Populates options with personnel belonging strictly to Design or Admin.
  */
-async function initializeDesignDepartmentUploadModule() {
-  const staffDrop = document.getElementById("boq-upload-staff-dropdown");
-  const projDrop = document.getElementById("boq-upload-project-dropdown");
-  
-  staffDrop.innerHTML = "<option>Syncing Design Engineers...</option>";
-  projDrop.innerHTML = "<option>Syncing Project ID Codes...</option>";
-  
-  const [staffRes, projRes] = await Promise.all([
-    fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "getStoreOperatorsList", sessionToken: localStorage.getItem("sessionToken") }) }),
-    fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) })
-  ]);
-  
-  const staffData = await staffRes.json();
-  const projData = await projRes.json();
-  
-  staffDrop.innerHTML = '<option value="">— Select Your Name —</option>';
-  
-  // STRICT FILTER: Restricts access selections strictly to Design or Admin profiles
-  const allowedDesignRoles = ["design", "admin"];
-  const designStaffList = (staffData.fullPersonnelDataRecordsTree || []).filter(user => 
-    user.departmentsList.some(dept => allowedDesignRoles.includes(dept.toLowerCase().trim()))
-  );
-
-  designStaffList.forEach(user => {
-    let opt = document.createElement("option"); opt.value = user.fullName; opt.textContent = user.fullName; staffDrop.appendChild(opt);
-  });
-  staffDrop.value = appActiveOperatorIdentityString;
-
-  projDrop.innerHTML = '<option value="">— Choose Target Project ID —</option>';
-  projData.projects.forEach(code => {
-    let opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
-  });
-}
-
-async function initializeDesignDepartmentUpdateModule() {
-  const projSearchDrop = document.getElementById("boq-update-project-search-dropdown");
-  projSearchDrop.innerHTML = "<option>Loading Project ID Codes...</option>";
-  
-  const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) });
-  const data = await res.json();
-  
-  projSearchDrop.innerHTML = '<option value="">— Choose Target Project ID —</option>';
-  data.projects.forEach(code => {
-    let opt = document.createElement("option"); opt.value = code; opt.textContent = code; projSearchDrop.appendChild(opt);
-  });
-}
-
-async function executeBOQProjectQueryLookupSearch() {
-  const projectId = document.getElementById("boq-update-project-search-dropdown").value;
-  const tbody = document.getElementById("boq-update-table-body-view");
-  const viewport = document.getElementById("boq-update-search-results-viewport");
-  
-  if (!projectId) return alert("Please select a target Project ID code first.");
-  
-  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--brand); font-weight:700;">Loading BOQ Records...</td></tr>`;
-  viewport.style.display = "block";
-  
-  const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "fetchActiveBOQRecordsByProject", sessionToken: localStorage.getItem("sessionToken"), projectId: projectId }) });
-  const data = await res.json();
-  
-  if (data.success && data.records.length > 0) {
-    tbody.innerHTML = "";
-    data.records.forEach(r => {
-      tbody.innerHTML += `
-        <tr style="border-bottom:1px solid #f1f5f9;">
-          <td style="padding:8px 10px; text-align:left; font-weight:700; color:#475569; white-space:nowrap;">${r.department || "—"}</td>
-          <td style="padding:8px 10px; text-align:left; font-weight:600; white-space:nowrap;">${r.productName}</td>
-          <td style="padding:8px 10px; font-family:monospace; color:var(--brand); white-space:nowrap;">${r.productRating}</td>
-          <td style="padding:8px 10px; font-family:monospace; font-weight:700; white-space:nowrap;">${r.itemCode || "UNCODED"}</td>
-          <td style="padding:8px 10px; font-size:0.82rem; font-weight:600; color:var(--text); white-space:normal; word-break:break-word; min-width:200px; max-width:320px; line-height:1.4;">${r.materialName || "—"}</td>
-          <td style="padding:8px 10px; font-family:monospace; font-weight:800; text-align:right; white-space:nowrap;">${r.orderQty || r.totalQty} ${r.unitType || "NOS"}</td>
-        </tr>`;
-    });
-  } else {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">No active Bill of Quantity for this Project ID</td></tr>`;
-  }
-}
-
-/**
- * EXECUTE BOQ DOCUMENT UPLOAD & REVISION SUBMIT
- * Extracts raw base64 data payloads, detects input MIME types (images, PDFs, Excel),
- * maps requests context parameters onto backend routing endpoints, and updates the viewports.
- */
-async function executeBOQDocumentUploadSubmit(modeString) {
-  const isNew = modeString === "NEW";
-  const btn = document.getElementById(isNew ? "boq-upload-submit-action-btn" : "boq-revision-submit-action-btn");
-  const banner = document.getElementById(isNew ? "design-upload-feedback-banner" : "design-update-feedback-banner");
-  const projectId = document.getElementById(isNew ? "boq-upload-project-dropdown" : "boq-update-project-search-dropdown").value;
-  
-  if (!projectId) {
-    alert("Compulsory Parameter Missing: Target Project ID code must be selected first.");
-    return;
-  }
-  if (!targetBOQUploadFileRawObject) {
-    alert("Compulsory Document Missing: Please select or capture a valid sheet document asset page first.");
-    return;
-  }
-  
-  // Wipe legacy layout runtime notifications out of sight completely
-  if (banner) banner.style.display = "none";
-  
-  // 1. ACTIVATE HARDWARE MULTI-TAP GHOST PROTECTION LOCK
-  btn.disabled = true;
-  btn.innerHTML = `
-    <div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div>
-    <span>AI Processing BOQ sheets...</span>
-  `;
-  
-  // 2. CONVERT UPLOADED FILE TO BASE64 DATA STREAM STRING
-  const fileBase64Raw = await new Promise((resolve, reject) => {
-    const reader = new FileReader(); 
-    reader.onload = () => resolve(reader.result.split(',')[1]); 
-    reader.onerror = error => reject(error);
-    reader.readAsDataURL(targetBOQUploadFileRawObject);
-  });
-  
-  // 3. CAPTURE DISPATCH ASSET EXTENSION FILE TYPE METADATA
-  const fileMimeType = targetBOQUploadFileRawObject.type;
-  
-  try {
-    const actionKey = isNew ? "processNewBOQUploadDocument" : "commitBOQUpdatePipelineStep";
-    
-    const designEngineerName = isNew 
-      ? (document.getElementById("boq-upload-staff-dropdown")?.value || appActiveOperatorIdentityString)
-      : appActiveOperatorIdentityString;
-
-    const serverPayload = {
-      action: actionKey,
-      sessionToken: localStorage.getItem("sessionToken"),
-      activeEngineer: appActiveOperatorIdentityString,
-      designEngineer: designEngineerName,
-      projectId: projectId, 
-      fileData64: fileBase64Raw,
-      mimeType: fileMimeType,
-      isUpdate: !isNew
-    };
-    
-    const response = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify(serverPayload)
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      // Hide input fields explicitly for the active mode container box
-      if (isNew) {
-        document.getElementById("boq-upload-staff-dropdown").parentNode.style.display = "none";
-        document.getElementById("boq-upload-project-dropdown").parentNode.style.display = "none";
-        document.getElementById("boq-upload-file-dropzone").style.display = "none";
-        btn.style.display = "none";
-      } else {
-        document.getElementById("boq-update-search-results-viewport").style.display = "none";
-        const updateSearchRow = document.querySelector("#canvas-module-design-update div[style*='display:flex']");
-        if (updateSearchRow) updateSearchRow.style.display = "none";
-      }
-      
-      // DISPLAY PERSISTENT BANNER WITH ADD-ANOTHER ACTION BUTTON
-      banner.style.cssText = "display: block; background: #dcfce7; border-left: 4px solid #15803d; color: #15803d; padding: 16px; border-radius: var(--radius); margin-bottom: 15px; text-align: left;";
-      banner.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-          <div>
-            <strong style="font-size: 1rem;">Success! Bill of Quantity Processing Complete.</strong><br/>
-            <span style="font-size: 0.9rem; font-weight: 600;">Project ID <strong>${projectId}</strong> Bill of Quantity version: 
-              <span style="font-family: monospace; font-weight: 800; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #15803d; color: #111827; margin-left: 4px;">v${data.version}</span>
-            </span>
-          </div>
-          <button class="nav-btn-styled" onclick="resetBOQUploadWorkspaceToInitialState('${isNew ? 'NEW' : 'UPDATE'}')" style="background: #15803d; color: white; padding: 10px 18px; font-weight: 700;">
-            + Add Another BOQ Document
-          </button>
-        </div>
-      `;
-      
-      // Free file pointer memory
-      targetBOQUploadFileRawObject = null;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    else {
-      alert("Processing Error: " + (data.error || "The server rejected this document structure layout format parameters."));
-      btn.disabled = false;
-      btn.textContent = isNew ? "Process BOQ Document" : "Commit BOQ Change";
-    }
-  } catch (error) {
-    alert("Network request execution failure: " + error.message);
-    btn.disabled = false;
-    btn.textContent = isNew ? "Process BOQ Document" : "Commit BOQ Change";
-  } finally {
-    // Failsafe rollback button state visibility styles if Processing drops connections out mid-way
-    if (btn.disabled && !targetBOQUploadFileRawObject) {
-      btn.disabled = false;
-      btn.textContent = isNew ? "Process BOQ Document" : "Commit BOQ Change";
-    }
-  }
-}
-
-/**
- * RESET BOQ UPLOAD WORKSPACE TO INITIAL STATE
- * Restores all hidden form elements, clears file pointers, and re-syncs dropdowns 
- * to prepare the workspace for a fresh new BOQ document upload submission.
- */
-function resetBOQUploadWorkspaceToInitialState(modeString) {
-  const isNew = modeString === "NEW";
-  const banner = document.getElementById(isNew ? "design-upload-feedback-banner" : "design-update-feedback-banner");
-  const btn = document.getElementById(isNew ? "boq-upload-submit-action-btn" : "boq-revision-submit-action-btn");
-  
-  // 1. Wipe the success message banner panel
-  if (banner) {
-    banner.style.display = "none";
-    banner.innerHTML = "";
-  }
-  
-  // 2. Restore input form field visibility states
-  if (isNew) {
-    document.getElementById("boq-upload-staff-dropdown").parentNode.style.display = "block";
-    document.getElementById("boq-upload-project-dropdown").parentNode.style.display = "block";
-    
-    const dropzone = document.getElementById("boq-upload-file-dropzone");
-    dropzone.style.display = "block";
-    dropzone.textContent = "📷 Select or Capture Bill of Quantity Document Page Image";
-    dropzone.classList.remove("done");
-    
-    document.getElementById("boq-upload-file-raw").value = "";
-    
-    if (btn) {
-      btn.style.display = "block";
-      btn.disabled = false;
-      btn.textContent = "Process BOQ Document";
-    }
-  } else {
-    const dropzone = document.getElementById("boq-revision-file-dropzone");
-    dropzone.style.display = "block";
-    dropzone.textContent = "📷 Select Revised BOQ Document Page Image";
-    dropzone.classList.remove("done");
-    
-    document.getElementById("boq-revision-file-raw").value = "";
-    
-    if (btn) {
-      btn.style.display = "block";
-      btn.disabled = false;
-      btn.textContent = "Commit BOQ Change";
-    }
-    
-    const updateSearchRow = document.querySelector("#canvas-module-design-update div[style*='display:flex']");
-    if (updateSearchRow) updateSearchRow.style.display = "flex";
-    
-    // Refresh the viewport with latest BOQ
-    executeBOQProjectQueryLookupSearch();
-  }
-  
-  // 3. Free file pointer memory
-  targetBOQUploadFileRawObject = null;
-  
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
 
 function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
   const deptDropdown = document.getElementById("ticket-department-outgoing-dropdown");
@@ -11801,16 +11473,15 @@ async function parseRawMaterialPOWithAI() {
     await loadItemCodeCatalogIntoCache();
     const catalog = window.itemCodeCatalogCache || [];
 
-    const res  = await fetch(GAS_URL, {
-      method: "POST",
+    const res  = await fetch(GAS_URL, { 
+      method:"POST", 
       body: JSON.stringify({
         action: "parseRawMaterialPurchaseOrder",
         sessionToken: localStorage.getItem("sessionToken"),
-        fileData64: b64,
-        mimeType: targetRMPOFileObj.type || "application/pdf",
-        canonicalMaterialsCatalog: catalog
-      })
-    });
+        fileData64: base64Data,
+        mimeType: file.type || "application/pdf"
+    })});
+
     const data = await res.json();
     if (!data.success) return alert("AI Processing failed: " + (data.error || "Unknown error"));
 
@@ -11834,26 +11505,45 @@ async function parseRawMaterialPOWithAI() {
     const tbody = document.getElementById("rm-po-verification-table-body");
     tbody.innerHTML = "";
     (data.extractedData.lineItems || []).forEach((item, idx) => {
-      const mc = matchColors[item.matchConfidence || "unmatched"] || matchColors.unmatched;
+      // Step 1: exact item code match from catalog
+      const rawCode = (item.itemCode || "").toString().trim().toUpperCase();
+      let matchedItem = rawCode ? catalog.find(c => (c.itemCode || "").toUpperCase() === rawCode) : null;
+      let matchConfidence = matchedItem ? "high" : "unmatched";
+      let resolvedCode = matchedItem ? matchedItem.itemCode : (item.itemCode || "");
+      let resolvedName = matchedItem ? matchedItem.productName : "";
+
+      // Step 2: fuzzy fallback on raw description if no code match
+      if (!matchedItem && item.rawDescription) {
+        const q = item.rawDescription.toLowerCase();
+        const fuzzy = catalog.filter(c => (c.productName || "").toLowerCase().includes(q.substring(0, 15)));
+        if (fuzzy.length === 1) {
+          matchedItem = fuzzy[0];
+          resolvedCode = fuzzy[0].itemCode;
+          resolvedName = fuzzy[0].productName;
+          matchConfidence = "low";
+        }
+      }
+
+      const mc = matchColors[matchConfidence] || matchColors.unmatched;
       tbody.innerHTML += `<tr style="border-bottom:1px solid #f1f5f9;">
-        <td style="padding:6px;">
-          <input type="text" class="rm-po-item-code-input" data-idx="${idx}" value="${item.itemCode || ""}"
-            placeholder="Item Code..."
-            style="font-weight:700; color:var(--brand); font-size:0.8rem; padding:4px; border:1.5px solid var(--border); text-align:center; width:100%; border-radius:3px;" />
-        </td>
-        <td style="padding:6px; font-size:0.8rem; color:#64748b; word-break:break-word; min-width:140px;">${item.rawDescription || ""}</td>
-        <td style="padding:6px; min-width:180px;">
-          <input type="text" class="rm-po-mat-name-input" data-idx="${idx}" value="${item.materialName || item.rawDescription || ""}"
-            style="font-size:0.82rem; font-weight:600; padding:4px; border:1px solid var(--border); width:100%; border-radius:3px;" />
-        </td>
-        <td style="padding:6px; text-align:center; font-weight:700; font-family:monospace;">${item.orderedQty || 0}</td>
-        <td style="padding:6px; text-align:center; color:var(--muted); font-size:0.8rem;">${item.unit || "NOS"}</td>
-        <td style="padding:6px; text-align:right; font-family:monospace; font-size:0.82rem;">₹${Number(item.rate || 0).toFixed(2)}</td>
-        <td style="padding:6px; text-align:right; font-family:monospace; font-size:0.82rem;">₹${Number(item.amount || 0).toFixed(2)}</td>
-        <td style="padding:6px; text-align:center;">
-          <span style="font-size:0.68rem; font-weight:700; padding:2px 6px; border-radius:3px; background:${mc.bg}; color:${mc.color};">${mc.label}</span>
-        </td>
-      </tr>`;
+    <td style="padding:6px;">
+      <input type="text" class="rm-po-item-code-input" data-idx="${idx}" value="${resolvedCode}"
+        placeholder="Item Code..."
+        style="font-weight:700; color:var(--brand); font-size:0.8rem; padding:4px; border:1.5px solid var(--border); text-align:center; width:100%; border-radius:3px;" />
+    </td>
+    <td style="padding:6px; font-size:0.8rem; color:#64748b; word-break:break-word; min-width:140px;">${item.rawDescription || ""}</td>
+    <td style="padding:6px; min-width:180px;">
+      <input type="text" class="rm-po-mat-name-input" data-idx="${idx}" value="${resolvedName || item.rawDescription || ""}"
+        style="font-size:0.82rem; font-weight:600; padding:4px; border:1px solid var(--border); width:100%; border-radius:3px;" />
+    </td>
+    <td style="padding:6px; text-align:center; font-weight:700; font-family:monospace;">${item.orderedQty || 0}</td>
+    <td style="padding:6px; text-align:center; color:var(--muted); font-size:0.8rem;">${item.unit || "NOS"}</td>
+    <td style="padding:6px; text-align:right; font-family:monospace; font-size:0.82rem;">₹${Number(item.rate || 0).toFixed(2)}</td>
+    <td style="padding:6px; text-align:right; font-family:monospace; font-size:0.82rem;">₹${Number(item.amount || 0).toFixed(2)}</td>
+    <td style="padding:6px; text-align:center;">
+      <span style="font-size:0.68rem; font-weight:700; padding:2px 6px; border-radius:3px; background:${mc.bg}; color:${mc.color};">${mc.label}</span>
+    </td>
+  </tr>`;
     });
 
     document.getElementById("rm-po-verification-zone").style.display = "block";
