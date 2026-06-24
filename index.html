@@ -1417,10 +1417,6 @@
       <div id="rm-po-upload-zone">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
           <div>
-            <label class="field-label" style="margin-top:0;">Vendor Name *</label>
-            <input type="text" id="rm-po-vendor-name" placeholder="Enter vendor name..." style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
-          </div>
-          <div>
             <label class="field-label" style="margin-top:0;">Uploaded By *</label>
             <select id="rm-po-uploaded-by" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
               <option value="">— Select Person —</option>
@@ -1436,7 +1432,8 @@
       </div>
 
       <div id="rm-po-verification-zone" style="display:none; margin-top:16px; border-top:1px dashed var(--border); padding-top:16px;">
-        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:16px;">
+          <div><label class="field-label">Vendor Name</label><input type="text" id="rm-po-vendor-name" readonly style="padding:6px; background:#f1f5f9; color:var(--brand); font-weight:700;" /></div>
           <div><label class="field-label">PO Number</label><input type="text" id="rm-po-number" style="padding:6px; background:#f1f5f9;" /></div>
           <div><label class="field-label">Order Date</label><input type="text" id="rm-po-order-date" style="padding:6px; background:#f1f5f9;" /></div>
           <div><label class="field-label">Delivery Date</label><input type="text" id="rm-po-delivery-date" style="padding:6px; background:#f1f5f9;" /></div>
@@ -2120,7 +2117,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwT-19sFOcb00gspwTtwbfsPP7P4gasbpaJZnjNPDossIc1-3aFqHbViii87oqNsFxL/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwV7mJPiv47puF_wC_tNFxVVoYxRhVUqP5hxZTcTuPeXrV3TUKEFdi4N9DTZzOhIw4m/exec";
 const CLOUD_NAME   = "dcdhahrhz";              
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -5630,7 +5627,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canUploadRMPurchaseOrder   = userPermissionsObject.uploadRMPurchaseOrder === true;
   const canCreateJobCardNumber = userPermissionsObject.createJobCardNumber === true;
   const canAssignCurrentStock  = userPermissionsObject.assignCurrentStock  === true;
-  const canExpectedInbounds = userPermissionsObject.gateEntry === true || userPermissionsObject.grnNote === true || userPermissionsObject.storeEntry === true;
+  const canExpectedInbounds = userPermissionsObject.expectedInbounds === true;
 
   // --- SET INDIVIDUAL VISIBILITY FOR MARKETING TARGET CARDS ---
   if (document.getElementById("mod-card")) {
@@ -11758,7 +11755,7 @@ async function initializeRMPOUploadPanel() {
     const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"getStoreOperatorsList", sessionToken: localStorage.getItem("sessionToken") }) });
     const data = await res.json();
     const purchasePeople = (data.fullPersonnelDataRecordsTree || []).filter(p =>
-      p.departmentsList.some(d => ["purchase","admin"].includes(d.toLowerCase().trim()))
+      p.departmentsList.some(d => d.toLowerCase().trim() === "purchase")
     );
     uploadedByDrop.innerHTML = '<option value="">— Select Person —</option>';
     purchasePeople.forEach(p => {
@@ -11789,7 +11786,7 @@ function resetRMPOUploadState() {
   if (box) { box.textContent = "📄 Select Raw Material Purchase Order (PDF or Image)"; box.classList.remove("done"); }
   document.getElementById("rm-po-verification-zone").style.display = "none";
   document.getElementById("rm-po-verification-table-body").innerHTML = "";
-  ["rm-po-number","rm-po-order-date","rm-po-delivery-date","rm-po-grand-total"].forEach(id => {
+  ["rm-po-vendor-name","rm-po-number","rm-po-order-date","rm-po-delivery-date","rm-po-grand-total"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
 }
@@ -11825,7 +11822,7 @@ async function parseRawMaterialPOWithAI() {
     document.getElementById("rm-po-grand-total").value   = data.extractedData.grandTotal  || "";
 
     const vendorInput = document.getElementById("rm-po-vendor-name");
-    if (data.extractedData.vendorName && !vendorInput.value.trim()) vendorInput.value = data.extractedData.vendorName;
+    if (vendorInput) vendorInput.value = data.extractedData.vendorName || "";
 
     const matchColors = {
       high:      { bg:"#dcfce7", color:"#15803d", label:"High Match" },
@@ -11870,16 +11867,16 @@ async function parseRawMaterialPOWithAI() {
 
 async function commitRawMaterialPOToBackend() {
   if (!activeParsedRMPOPayload) return alert("Process a PO document first.");
-  const vendorName   = document.getElementById("rm-po-vendor-name").value.trim();
-  const uploadedBy   = document.getElementById("rm-po-uploaded-by").value.trim();
-  const poNumber     = document.getElementById("rm-po-number").value.trim();
-  const orderDate    = document.getElementById("rm-po-order-date").value.trim();
-  const deliveryDate = document.getElementById("rm-po-delivery-date").value.trim();
-  const grandTotal   = document.getElementById("rm-po-grand-total").value.trim();
+  const vendorName   = (document.getElementById("rm-po-vendor-name")?.value   || "").trim();
+  const uploadedBy   = (document.getElementById("rm-po-uploaded-by")?.value   || "").trim();
+  const poNumber     = (document.getElementById("rm-po-number")?.value        || "").trim();
+  const orderDate    = (document.getElementById("rm-po-order-date")?.value    || "").trim();
+  const deliveryDate = (document.getElementById("rm-po-delivery-date")?.value || "").trim();
+  const grandTotal   = (document.getElementById("rm-po-grand-total")?.value   || "").trim();
   const btn          = document.getElementById("rm-po-submit-btn");
   const feedback     = document.getElementById("rm-po-feedback");
 
-  if (!vendorName) return alert("Vendor Name is required.");
+  if (!vendorName) return alert("Vendor Name could not be extracted from the document. Please re-process the PO.");
   if (!uploadedBy) return alert("Uploaded By is required.");
   if (!poNumber)   return alert("PO Number is required.");
 
