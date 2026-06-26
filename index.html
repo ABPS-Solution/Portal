@@ -171,7 +171,7 @@
 
     <div style="text-align: left; background: #f8fafc; padding: 15px; border: 1px dashed var(--border); border-radius: 8px; margin-bottom: 20px;">
       <label class="field-label" style="margin-top: 0; margin-bottom: 4px; color: var(--brand);">1. Select Your Department *</label>
-      <select id="app-auth-active-department-identity" onchange="handleLoginDepartmentSelectionChangeChange(this.value)" style="padding: 10px; font-weight: 600; font-size: 0.9rem; margin-bottom: 12px;">
+      <select id="app-auth-active-department-identity" onchange="handleLoginDepartmentSelectionChange(this.value)" style="padding: 10px; font-weight: 600; font-size: 0.9rem; margin-bottom: 12px;">
         <option value="">— Select Department —</option>
       </select>
 
@@ -289,7 +289,8 @@
 
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
         <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Raw Materials Store Outward</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-boq-increase-approvals" onclick="navigateToStoreWorkspacePanel('boq-increase-approvals')">Approve BOQ Increase</div>
           <div class="menu-card" id="mod-store-approvals" onclick="navigateToStoreWorkspacePanel('store-manager-approvals')">Approve Store Tickets</div>
           <div class="menu-card" id="mod-store-matrix" onclick="switchActiveDashboardModule('store-history-matrix')">Search Store Tickets</div>
         </div>
@@ -495,6 +496,13 @@
           <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="submitMaterialRequestTicketToBackend()" style="background: var(--accent); padding: 8px 20px; font-weight: 700;">Generate Material Ticket</button>
         </div>
       </div>
+    </div>
+
+    <div id="canvas-module-boq-increase-approvals" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <h2 style="margin-bottom: 16px;">Approve BOQ Increase Requests</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review tickets where engineers requested materials exceeding BOQ limits. You can accept, partially accept, or reject each exceeded item.</p>
+      <div id="boq-increase-approvals-feedback" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
+      <div id="boq-increase-approvals-queue-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>
 
     <div id="canvas-module-store-manager-approvals" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
@@ -1296,6 +1304,14 @@
             <div id="prn-status-display" style="font-weight:700; color:var(--accent); font-size:0.85rem;"></div>
           </div>
           <div>
+            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Store Person</div>
+            <div id="prn-store-person-display" style="font-weight:700; color:var(--text); font-size:0.85rem;">—</div>
+          </div>
+          <div>
+            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Purchase Person</div>
+            <div id="prn-purchase-person-display" style="font-weight:700; color:var(--text); font-size:0.85rem;">—</div>
+          </div>
+          <div>
             <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PDF</div>
             <div id="prn-pdf-link-display" style="font-size:0.82rem;"></div>
           </div>
@@ -2057,8 +2073,65 @@
 <script>
 
 const GAS_URL = "https://script.google.com/macros/s/AKfycbwbNOKEIdIfbeaw08uRdx_iPuFGiqGO3Oup69qtpcrYo0P6JtkrDofCsp8hXo1OdL8/exec";
-const CLOUD_NAME   = "dcdhahrhz";              
+const CLOUD_NAME    = "dcdhahrhz";
 const UPLOAD_PRESET = "ABPS Leads Form";
+
+/**
+ * CENTRAL FETCH WRAPPER
+ * All backend calls go through this. Handles session expiry globally.
+ */
+async function apFetch(payload) {
+  payload.sessionToken = localStorage.getItem("sessionToken");
+  const res  = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
+  const data = await res.json();
+  if (!data.success && data.code === "SESSION_EXPIRED") {
+    localStorage.clear();
+    document.getElementById("app-container").style.display   = "none";
+    document.getElementById("auth-container").style.display  = "flex";
+    // Show a clean message on the auth card
+    const authCard = document.querySelector(".auth-card");
+    if (authCard) {
+      const msg = document.createElement("div");
+      msg.style.cssText = "background:#fff3cd; border:1px solid #ffc107; color:#856404; padding:10px 14px; border-radius:6px; font-size:0.85rem; font-weight:700; margin-bottom:16px; text-align:center;";
+      msg.textContent   = "Your session has expired. Please log in again.";
+      authCard.insertBefore(msg, authCard.firstChild);
+      setTimeout(() => msg.remove(), 6000);
+    }
+    initializeGoogleAuthPlatformEngine();
+    throw new Error("SESSION_EXPIRED");
+  }
+  return data;
+}
+
+/**
+ * GLOBAL JS ERROR BOUNDARY
+ * Prevents silent UI freezes on uncaught errors.
+ */
+
+window.addEventListener("beforeunload", function(e) {
+  if (boqFormIsDirty || boqUpdateIsDirty) {
+    e.preventDefault();
+    e.returnValue = "You have unsaved changes in a BOQ form. Are you sure you want to leave?";
+    return e.returnValue;
+  }
+});
+
+window.onerror = function(message, source, lineno, colno, error) {
+  if (message === "SESSION_EXPIRED" || (error && error.message === "SESSION_EXPIRED")) return true;
+  console.error("Uncaught error:", message, "at", source, lineno);
+  // Only show UI alert for errors that aren't network/session related
+  if (!message.includes("fetch") && !message.includes("network")) {
+    const appContainer = document.getElementById("app-container");
+    if (appContainer && appContainer.style.display !== "none") {
+      const banner = document.createElement("div");
+      banner.style.cssText = "position:fixed; top:60px; left:50%; transform:translateX(-50%); background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; padding:10px 20px; border-radius:6px; font-size:0.85rem; font-weight:700; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.1);";
+      banner.textContent   = "Something went wrong. Please refresh the page if this persists.";
+      document.body.appendChild(banner);
+      setTimeout(() => banner.remove(), 5000);
+    }
+  }
+  return false;
+};
 
 let globalPersonnelAuthDirectoryTreePayloadCache = {};
 let globalOperatorsDatabasePayloadCache = []
@@ -2076,6 +2149,9 @@ let targetCommissioningReportFileObj = null;
 let targetPurchaseOrderFileObj = null;
 
 let globalFollowUpsCacheMap = {};
+let cboqSpecFiles = [];
+let uboqSpecFiles = [];
+let liveStockSyncIntervalId = null;
 let globalTasksCacheMap = {};
 let globalLocationDatabaseCacheMap = {};
 let cachedInboundEmailLeadsArray = [];
@@ -2101,10 +2177,10 @@ let fgQAInspectionFile = null;
 let jobCardBOQGroups = [];
 let jobCardExisting = {};
 
-window.onload = function() {
-  const token = localStorage.getItem("sessionToken"); 
-  const expires = localStorage.getItem("sessionExpiry"); 
-  const savedPerms = localStorage.getItem("userPermissions");
+window.onload = async function() {
+  const token          = localStorage.getItem("sessionToken");
+  const expires        = localStorage.getItem("sessionExpiry");
+  const savedPerms     = localStorage.getItem("userPermissions");
   const cachedOperator = localStorage.getItem("activeOperatorSignature");
 
   if (localStorage.getItem("abps_active_email_leads_cache")) {
@@ -2112,12 +2188,30 @@ window.onload = function() {
       cachedInboundEmailLeadsArray = JSON.parse(localStorage.getItem("abps_active_email_leads_cache"));
     } catch(e) { cachedInboundEmailLeadsArray = []; }
   }
-    
-  if (token && expires && new Date() < new Date(expires) && savedPerms && cachedOperator) { 
-    userPermissions = JSON.parse(savedPerms); 
+
+  if (token && expires && new Date() < new Date(expires) && cachedOperator) {
     appActiveOperatorIdentityString = cachedOperator;
-    showAppView(); 
+    try {
+      // D1 — Always fetch permissions fresh from server, never trust localStorage
+      const permData = await apFetch({ action: "getSessionPermissions" });
+      if (permData.success) {
+        userPermissions = permData.permissions;
+        // Refresh localStorage with the server's authoritative copy
+        localStorage.setItem("userPermissions", JSON.stringify(userPermissions));
+        showAppView();
+      } else {
+        localStorage.clear();
+        syncPlatformPersonnelDropdownOptionsList();
+        initializeGoogleAuthPlatformEngine();
+      }
+    } catch(e) {
+      if (e.message === "SESSION_EXPIRED") return; // apFetch already handled redirect + clear
+      localStorage.clear();
+      syncPlatformPersonnelDropdownOptionsList();
+      initializeGoogleAuthPlatformEngine();
+    }
   } else {
+    localStorage.clear();
     syncPlatformPersonnelDropdownOptionsList();
     initializeGoogleAuthPlatformEngine();
   }
@@ -2167,7 +2261,7 @@ async function syncPlatformPersonnelDropdownOptionsList() {
  * INTERACTIVE DROPDOWN CHANGE LISTENER
  * Filters names instantly based on selected department string variables key
  */
-function handleLoginDepartmentSelectionChangeChange(selectedDepartmentNameString) {
+function handleLoginDepartmentSelectionChange(selectedDepartmentNameString) {
   const nameSelect = document.getElementById("app-auth-active-engineer-identity");
   if (!nameSelect) return;
   
@@ -2264,14 +2358,16 @@ async function handleGooglePlatformCredentialResponse(response) {
     const data = await res.json();
     
     if (data.success) {
-      localStorage.setItem("sessionToken", data.sessionToken);
-      localStorage.setItem("sessionExpiry", data.expires);
-      localStorage.setItem("sessionUser", data.email);
-      localStorage.setItem("userFirstName", data.firstName);
-      localStorage.setItem("userLastName", data.lastName);
-      localStorage.setItem("userPermissions", JSON.stringify(data.permissions));
+      localStorage.setItem("sessionToken",    data.sessionToken);
+      localStorage.setItem("sessionExpiry",   data.expires);
+      localStorage.setItem("sessionUser",     data.email);
+      localStorage.setItem("userFirstName",   data.firstName);
+      localStorage.setItem("userLastName",    data.lastName);
       localStorage.setItem("activeOperatorSignature", selectedEngineer);
       localStorage.setItem("abps_user_raw_departments", data.rawDepartmentsString || "");
+      // Write permissions to localStorage only as a session bootstrap cache.
+      // On every subsequent page load, permissions are re-fetched from the server (D1).
+      localStorage.setItem("userPermissions", JSON.stringify(data.permissions));
       appActiveOperatorIdentityString = selectedEngineer;
       userPermissions = data.permissions;
 
@@ -2297,6 +2393,9 @@ async function handleGooglePlatformCredentialResponse(response) {
 async function parseCard() {
   const btn = document.getElementById('parse-btn');
   if (!fileFront) return alert("Please capture or select the Front Side of the business card first.");
+  const MAX_CLOUDINARY = 10 * 1024 * 1024; // 10MB
+  if (fileFront.size > MAX_CLOUDINARY) return alert("Front image is too large (max 10MB). Please use a smaller image.");
+  if (fileBack && fileBack.size > MAX_CLOUDINARY) return alert("Back image is too large (max 10MB). Please use a smaller image.");
   
   btn.disabled = true;
   btn.classList.add("loading");
@@ -2370,7 +2469,8 @@ async function parseCard() {
   }
 }
 
-function executeLogout() { 
+function executeLogout() {
+  if (liveStockSyncIntervalId) { clearInterval(liveStockSyncIntervalId); liveStockSyncIntervalId = null; }
   // 1. Force the Google Identity library script to kill any cached silent-sign-in listeners on phones
   try {
     if (google && google.accounts && google.accounts.id) {
@@ -2490,15 +2590,10 @@ async function loadCityStateFilterOptions() {
   if (btn) btn.disabled = true;
   
   try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "getUniqueCityStatePayloadTree",
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString
-      })
+    const data = await apFetch({
+      action: "getUniqueCityStatePayloadTree",
+      activeEngineer: appActiveOperatorIdentityString
     });
-    const data = await res.json();
     if (data.success) {
       // Safely assign the multi-tier nested database tree (Country -> State -> City)
       globalLocationDatabaseCacheMap = data.tree;
@@ -2666,18 +2761,13 @@ async function triggerCityStateQuerySearchExecution() {
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
   
   try {
-     const res = await fetch(GAS_URL, {
-       method: "POST",
-       body: JSON.stringify({
-         action: "searchLeadsByCityStateMatrix",
-         sessionToken: localStorage.getItem("sessionToken"),
-         activeEngineer: appActiveOperatorIdentityString,
-         countries: selectedCountries,
-         states: selectedStates,
-         cities: selectedCities
-       })
+     const data = await apFetch({
+       action: "searchLeadsByCityStateMatrix",
+       activeEngineer: appActiveOperatorIdentityString,
+       countries: selectedCountries,
+       states: selectedStates,
+       cities: selectedCities
      });
-     const data = await res.json();
      if (data.success) {
         const canvas = document.getElementById("step2-inline-interaction-canvas");
         
@@ -2742,18 +2832,13 @@ async function showAppView() {
   });
 
   try {
-    const res = await fetch(GAS_URL, { 
-      method: "POST", 
-      body: JSON.stringify({ 
-        action: "getEngineers",
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString
-      }) 
+    const data = await apFetch({ 
+      action: "getEngineers",
+      activeEngineer: appActiveOperatorIdentityString
     });
-    const data = await res.json();
     
     if (data.success) { 
-      cachedEngineers = data.engineers; 
+      cachedEngineers = data.engineers;
       populateEngineerDropdowns(); 
       
       // 1. MASTER LEAD ENTRY DROPDOWN PATCH
@@ -2817,15 +2902,10 @@ async function triggerCompanyDropdownArrayFetch() {
     // Cache the currently selected value before the network request drops
     const previousSelectedValue = dropdown ? dropdown.value : "";
 
-    const res = await fetch(GAS_URL, { 
-      method: "POST", 
-      body: JSON.stringify({ 
-        action: "getUniqueCompaniesList",
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString
-      }) 
+    const d = await apFetch({ 
+      action: "getUniqueCompaniesList",
+      activeEngineer: appActiveOperatorIdentityString
     });
-    const d = await res.json();
     if (d.success && dropdown) {
       dropdown.innerHTML = '<option value="">— Select Company —</option>';
       d.companies.forEach(item => {
@@ -2882,10 +2962,12 @@ async function navigateToModule(key) {
             populatePOOwnerDrop();
           } else {
             poOwnerDrop.innerHTML = '<option value="">Loading engineers...</option>';
+            let waitAttempts = 0;
             const waitForEngineers = setInterval(() => {
-              if (cachedEngineers.length > 0) {
+              waitAttempts++;
+              if (cachedEngineers.length > 0 || waitAttempts > 25) {
                 clearInterval(waitForEngineers);
-                populatePOOwnerDrop();
+                if (cachedEngineers.length > 0) populatePOOwnerDrop();
               }
             }, 200);
           }
@@ -2971,7 +3053,9 @@ function handleOpsFileChange(inputNode, uploadBoxId, confirmationMsg) {
   }
 }
 
-function returnToDashboard() { 
+function returnToDashboard() {
+  boqFormIsDirty   = false;
+  boqUpdateIsDirty = false;
   collapseNewEntryDropdownFormExplicitly(); 
   
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
@@ -3145,17 +3229,12 @@ async function triggerSequentialSearch(triggerSourceMode) {
     const headerRowEnclosure = document.getElementById("canvas-back-btn-enclosure-row");
     if (headerRowEnclosure) headerRowEnclosure.innerHTML = "";
 
-    const res = await fetch(GAS_URL, { 
-      method: "POST", 
-      body: JSON.stringify({ 
-        action: "searchCompanyData", 
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        companyName: comp, 
-        contactName: targetName 
-      }) 
+    const data = await apFetch({ 
+      action: "searchCompanyData", 
+      activeEngineer: appActiveOperatorIdentityString,
+      companyName: comp, 
+      contactName: targetName 
     });
-    const data = await res.json();
     
     // FIXED: Uniform parent element resolution targeting rules
     const activePanelId = (triggerSourceMode === "CARD") ? "workspace-cardDetails" : "workspace-searchCompany";
@@ -3900,17 +3979,12 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
   });
 
   try {
-    const res = await fetch(GAS_URL, { 
-      method: "POST", 
-      body: JSON.stringify({ 
-        action: "updateLeadFull", 
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        leadRef: leadRef, 
-        fields: fieldsPayload 
-      }) 
+    const r = await apFetch({ 
+      action: "updateLeadFull", 
+      activeEngineer: appActiveOperatorIdentityString,
+      leadRef: leadRef, 
+      fields: fieldsPayload 
     });
-    const r = await res.json(); 
     if (r.success) {
       alert("Modifications Saved Successfully.");
       // FIXED: Point to renamed structural data attributes identifiers
@@ -3932,28 +4006,11 @@ async function removeLeadRowEntirely(leadRef) {
     btn.innerHTML = 'Deleting...';
     
     try {
-        const res = await fetch(GAS_URL, { 
-          method: "POST", 
-          body: JSON.stringify({ 
-            action: "deleteLeadRow", 
-            sessionToken: localStorage.getItem("sessionToken"),
-            activeEngineer: appActiveOperatorIdentityString,
-            leadRef: leadRef 
-          }) 
+        const r = await apFetch({ 
+          action: "deleteLeadRow", 
+          activeEngineer: appActiveOperatorIdentityString,
+          leadRef: leadRef 
         });
-        
-        // SAFE CONTEXT intercept check guards against empty or un-parseable HTML error strings
-        const textRawDataStreamResponse = await res.text();
-        let r;
-        try {
-          r = JSON.parse(textRawDataStreamResponse);
-        } catch(parseError) {
-          console.error("Malformed server text payload:", textRawDataStreamResponse);
-          alert("Server Communication Failure: System modifications applied to the spreadsheet columns rows ledger but response confirmation was corrupted.");
-          // Instantly refresh workspace view context layout map to apply changes anyway
-          triggerSequentialSearch(currentActiveModuleContext);
-          return;
-        }
         
         if (!r.success) {
             alert(r.error || "An unexpected error occurred.");
@@ -4016,7 +4073,7 @@ function renderIsolatedFollowUpTimeline(leadRef, list, scopeNode) {
     const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
     const deleteActionHtml = isAdminUser 
       ? `<button class="nav-btn-styled" id="trigger-inner-delete-fup-${leadRef}-${f.num}" style="font-size:0.7rem; background:var(--warn); padding:4px 8px;">Delete Follow-Up</button>` 
-      : "";
+      : `<span id="trigger-inner-delete-fup-${leadRef}-${f.num}" style="display:none;"></span>`;
 
     card.innerHTML = `
       <div class="fup-item-header" onclick="toggleFollowUpAccordion(this)">
@@ -4082,16 +4139,11 @@ async function commitIsolatedFollowUpItem(leadRef, scopeNode) {
   
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...';
   try {
-    const res = await fetch(GAS_URL, { 
-      method: "POST", 
-      body: JSON.stringify({ 
-        action: "saveFollowUp", 
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        followUpData 
-      }) 
+    const r = await apFetch({ 
+      action: "saveFollowUp", 
+      activeEngineer: appActiveOperatorIdentityString,
+      followUpData 
     });
-    const r = await res.json();
     if (r.success) { 
       form.style.display = "none"; 
       scopeNode.querySelector(".trigger-fup-open").style.display = "inline-flex"; 
@@ -4112,16 +4164,11 @@ async function removeIsolatedFollowUpItem(leadRef, fNum, event) {
   
   const fupId = leadRef + "||" + fNum;
   try {
-    const res = await fetch(GAS_URL, { 
-      method: "POST", 
-      body: JSON.stringify({ 
-        action: "deleteFollowUp", 
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        fupId: fupId 
-      }) 
+    const r = await apFetch({ 
+      action: "deleteFollowUp", 
+      activeEngineer: appActiveOperatorIdentityString,
+      fupId: fupId 
     });
-    const r = await res.json();
     
     // FIXED: Catch backend authorization block
     if (!r.success) {
@@ -4149,7 +4196,7 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
     const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
     const deleteActionHtml = isAdminUser 
       ? `<button class="nav-btn-styled" id="trigger-inner-delete-task-${leadRef}-${t.id}" style="font-size:0.75rem; background:var(--warn); padding:2px 6px;">Delete</button>` 
-      : "";
+      : `<span id="trigger-inner-delete-task-${leadRef}-${t.id}" style="display:none;"></span>`;
 
     div.innerHTML = `<strong>${t.type}</strong> - ${t.eng}<br/><small>Time: ${t.shift} | Target Date: ${formatCleanDateOnly(t.targetDate)}</small>
                      <p style="font-size:0.82rem; margin-top:4px; color:var(--text); word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"><strong>Desc:</strong> ${t.desc || 'None'}</p>
@@ -4199,16 +4246,11 @@ async function commitIsolatedTaskItem(leadRef, scopeNode) {
   if (!taskData.assigner || !taskData.assigner.trim()) return alert("Assigned By is a compulsory field.");
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...';
   try {
-    const res = await fetch(GAS_URL, { 
-      method: "POST", 
-      body: JSON.stringify({ 
-        action: "saveTask", 
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        taskData 
-      }) 
+    const r = await apFetch({ 
+      action: "saveTask", 
+      activeEngineer: appActiveOperatorIdentityString,
+      taskData 
     });
-    const r = await res.json();
     if (r.success) { 
       form.style.display = "none"; 
       scopeNode.querySelector(".trigger-task-open").style.display = "inline-flex"; 
@@ -4228,16 +4270,11 @@ async function removeIsolatedTaskItem(leadRef, taskId, event) {
   btn.textContent = "Deleting...";
   
   try {
-    const res = await fetch(GAS_URL, { 
-      method: "POST", 
-      body: JSON.stringify({ 
-        action: "deleteTask", 
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        taskId: taskId 
-      }) 
+    const r = await apFetch({ 
+      action: "deleteTask", 
+      activeEngineer: appActiveOperatorIdentityString,
+      taskId: taskId 
     });
-    const r = await res.json();
     
     // FIXED: Catch backend authorization block
     if (!r.success) {
@@ -4259,16 +4296,11 @@ async function removeIsolatedTaskItem(leadRef, taskId, event) {
 
 async function globalExecutionScopeReloader(leadRef, scopeNode) {
   try {
-    const res = await fetch(GAS_URL, { 
-      method: "POST", 
-      body: JSON.stringify({ 
-        action: "searchCompanyData", 
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        companyName: activeSearchCompany 
-      }) 
+    const data = await apFetch({ 
+      action: "searchCompanyData", 
+      activeEngineer: appActiveOperatorIdentityString,
+      companyName: activeSearchCompany 
     });
-    const data = await res.json();
     if (data.success) { globalFollowUpsCacheMap = data.followups; globalTasksCacheMap = data.tasks; currentFollowUpCount = data.followups[leadRef] ? data.followups[leadRef].length : 0; renderIsolatedFollowUpTimeline(leadRef, data.followups[leadRef] || [], scopeNode); renderIsolatedTaskItemsList(leadRef, data.tasks[leadRef] || [], scopeNode); }
   } catch(e) { console.error(e.message); }
 }
@@ -4483,17 +4515,12 @@ async function submitLead() {
           const compParamValue = fields["Company Name"]; 
           const targetPersonNameParam = fields["Contact Person Name"];
           
-          const refreshRes = await fetch(GAS_URL, { 
-            method: "POST", 
-            body: JSON.stringify({ 
-              action: "searchCompanyData",
-              sessionToken: localStorage.getItem("sessionToken"),
-              activeEngineer: appActiveOperatorIdentityString, 
-              companyName: compParamValue, 
-              contactName: targetPersonNameParam 
-            }) 
+          const refreshData = await apFetch({ 
+            action: "searchCompanyData",
+            activeEngineer: appActiveOperatorIdentityString, 
+            companyName: compParamValue, 
+            contactName: targetPersonNameParam 
           });
-          const refreshData = await refreshRes.json();
           if (refreshData.success) {
             globalFollowUpsCacheMap = refreshData.followups; 
             globalTasksCacheMap = refreshData.tasks;
@@ -4530,15 +4557,10 @@ async function loadQualFilter() {
   container.innerHTML = '<p style="font-size:0.75rem; color:var(--brand); font-weight:600; margin:0; display:flex; align-items:center; gap:6px;"><span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span> Loading Other Types of Customer...</p>';
   
   try {
-    const res = await fetch(GAS_URL, { 
-      method: "POST", 
-      body: JSON.stringify({ 
-        action: "getUniqueQualifications",
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString
-      }) 
+    const data = await apFetch({ 
+      action: "getUniqueQualifications",
+      activeEngineer: appActiveOperatorIdentityString
     });
-    const data = await res.json();
     if (data.success) {
       // Baseline core options to strip from the 'Others' sub-drawer completely
       const baselineCoreQualifications = [
@@ -4611,16 +4633,11 @@ async function triggerQualificationSearch() {
     if(selected.length === 0) return alert("Select at least one qualification.");
     btn.classList.add("loading"); btn.textContent = "Searching...";
     try {
-        const res = await fetch(GAS_URL, { 
-          method: "POST", 
-          body: JSON.stringify({ 
-            action: "searchByQualifications", 
-            sessionToken: localStorage.getItem("sessionToken"),
-            activeEngineer: appActiveOperatorIdentityString,
-            qualifications: selected 
-          }) 
+        const data = await apFetch({ 
+          action: "searchByQualifications", 
+          activeEngineer: appActiveOperatorIdentityString,
+          qualifications: selected 
         });
-        const data = await res.json();
         if (data.success) {
             const canvas = document.getElementById("step2-inline-interaction-canvas");
             document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `<div class="qualification-status-bar">Types of Customer: ${selected.join(" and ")}</div>`;
@@ -4640,16 +4657,7 @@ async function triggerStatusSearch() {
     if(!statusVal) return alert("Please select a status.");
     btn.classList.add("loading"); btn.textContent = "Searching...";
     try {
-        const res = await fetch(GAS_URL, { 
-          method: "POST", 
-          body: JSON.stringify({ 
-            action: "searchByStatus", 
-            sessionToken: localStorage.getItem("sessionToken"),
-            activeEngineer: appActiveOperatorIdentityString,
-            statusValue: statusVal 
-          }) 
-        });
-        const data = await res.json();
+        const data = await apFetch({ action: "searchByStatus", activeEngineer: appActiveOperatorIdentityString, statusValue: statusVal });
         if (data.success) {
             const canvas = document.getElementById("step2-inline-interaction-canvas");
             document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `<div class="qualification-status-bar">Status: ${statusVal}</div>`;
@@ -4668,16 +4676,7 @@ async function triggerEngineerSearch() {
     if(!engVal) return alert("Please select an engineer.");
     btn.classList.add("loading"); btn.textContent = "Searching...";
     try {
-        const res = await fetch(GAS_URL, { 
-          method: "POST", 
-          body: JSON.stringify({ 
-            action: "searchByEngineer", 
-            sessionToken: localStorage.getItem("sessionToken"),
-            activeEngineer: appActiveOperatorIdentityString,
-            engName: engVal 
-          }) 
-        });
-        const data = await res.json();
+        const data = await apFetch({ action: "searchByEngineer", activeEngineer: appActiveOperatorIdentityString, engName: engVal });
         if (data.success) {
           const canvas = document.getElementById("step2-inline-interaction-canvas");
           document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `<div class="qualification-status-bar" style="width: 100%;">Engineer: ${engVal}</div>`;
@@ -4719,17 +4718,12 @@ async function executeTaskMatrixSearch() {
   }
 
   try {
-    const res = await fetch(GAS_URL, { 
-      method: "POST", 
-      body: JSON.stringify({ 
-        action: "searchTasksMatrix", 
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        engineers: checkedEngineers, 
-        statuses: checkedStatuses 
-      }) 
+    const data = await apFetch({ 
+      action: "searchTasksMatrix", 
+      activeEngineer: appActiveOperatorIdentityString,
+      engineers: checkedEngineers, 
+      statuses: checkedStatuses 
     });
-    const data = await res.json();
 
     if (data.success) {
       outputNode.innerHTML = "";
@@ -4856,16 +4850,11 @@ async function commitMatrixTaskMutations(formNode, fallbackLeadId, btnNode) {
 
   btnNode.disabled = true; btnNode.innerHTML = 'Saving Changes...';
   try {
-    const res = await fetch(GAS_URL, { 
-      method: "POST", 
-      body: JSON.stringify({ 
-        action: "saveTask", 
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        taskData 
-      }) 
+    const r = await apFetch({ 
+      action: "saveTask", 
+      activeEngineer: appActiveOperatorIdentityString,
+      taskData 
     });
-    const r = await res.json();
     if (r.success) {
       alert("Task modifications saved successfully.");
       executeTaskMatrixSearch(); 
@@ -4881,16 +4870,11 @@ async function removeMatrixTaskFromEngine(taskId, event) {
   btn.textContent = "Deleting...";
   
   try {
-    const res = await fetch(GAS_URL, { 
-      method: "POST", 
-      body: JSON.stringify({ 
-        action: "deleteTask", 
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        taskId: taskId 
-      }) 
+    const r = await apFetch({ 
+      action: "deleteTask", 
+      activeEngineer: appActiveOperatorIdentityString,
+      taskId: taskId 
     });
-    const r = await res.json();
     if (r.success) { executeTaskMatrixSearch(); }
   } catch(e) { 
     alert(e.message); 
@@ -4919,17 +4903,12 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
   btn.disabled = true;
 
   try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "searchCompanyData",
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        companyName: companyName,
-        contactName: ""
-      })
+    const data = await apFetch({
+      action: "searchCompanyData",
+      activeEngineer: appActiveOperatorIdentityString,
+      companyName: companyName,
+      contactName: ""
     });
-    const data = await res.json();
 
     if (!data.success || !data.leads || data.leads.length === 0) {
       expandDiv.innerHTML = `<p style="color:var(--warn); font-size:0.85rem; font-weight:700;">No records found for "${companyName}".</p>`;
@@ -5053,17 +5032,12 @@ async function executeLeadMatrixFilterSearch() {
   }
   
   try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "searchLeadsMatrixCombination",
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        engineers: checkedEngineers,
-        statuses: checkedStatuses
-      })
+    const data = await apFetch({
+      action: "searchLeadsMatrixCombination",
+      activeEngineer: appActiveOperatorIdentityString,
+      engineers: checkedEngineers,
+      statuses: checkedStatuses
     });
-    const data = await res.json();
     
     if (data.success) {
       const canvas = document.getElementById("step2-inline-interaction-canvas");
@@ -5163,16 +5137,10 @@ async function executeInboundEmailSyncPipelineFetch() {
   
   try {
     // 3. Fire the secure fetch request payload down to your backend doPost router
-    const response = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "fetchAndProcessInboundEmailLeads",
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString
-      })
+    const data = await apFetch({
+      action: "fetchAndProcessInboundEmailLeads",
+      activeEngineer: appActiveOperatorIdentityString
     });
-    
-    const data = await response.json();
     
     // 4. Handle response success states and mount elements to your interface canvas
     if (data.success) {
@@ -5191,7 +5159,15 @@ async function executeInboundEmailSyncPipelineFetch() {
       
       // Update global application session scope data array
       cachedInboundEmailLeadsArray = localSavedLeads;
-      localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray));
+      try {
+        localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray));
+      } catch(storageErr) {
+        // localStorage quota exceeded — trim oldest 20 entries and retry
+        if (cachedInboundEmailLeadsArray.length > 20) {
+          cachedInboundEmailLeadsArray = cachedInboundEmailLeadsArray.slice(0, 20);
+        }
+        try { localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray)); } catch(e2) { /* silent fail */ }
+      }
       
       renderEmailLeadsFeedInterface(cachedInboundEmailLeadsArray);
       feedbackNode.style.display = "none";
@@ -5299,17 +5275,12 @@ async function saveEmailLeadNote(idx, messageId) {
   const btn = event.target;
   btn.disabled = true; btn.textContent = "Saving...";
   try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "saveEmailLeadNote",
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        messageId: messageId,
-        noteText: noteText
-      })
+    const d = await apFetch({
+      action: "saveEmailLeadNote",
+      activeEngineer: appActiveOperatorIdentityString,
+      messageId: messageId,
+      noteText: noteText
     });
-    const d = await res.json();
     if (d.success) {
       btn.textContent = "Saved ✓";
       btn.style.background = "var(--accent)";
@@ -5345,16 +5316,11 @@ async function archiveEmailLeadFromSystemDatabaseCache(messageId, elementIndex) 
   deleteBtn.textContent = "Processing...";
   
   try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "saveFollowUp", 
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        followUpData: { archiveTargetEmailIdString: messageId }
-      })
+    const r = await apFetch({
+      action: "saveFollowUp", 
+      activeEngineer: appActiveOperatorIdentityString,
+      followUpData: { archiveTargetEmailIdString: messageId }
     });
-    const r = await res.json();
     
     // FIXED: Catch backend authorization block
     if (!r.success) {
@@ -5367,7 +5333,7 @@ async function archiveEmailLeadFromSystemDatabaseCache(messageId, elementIndex) 
     if (cardNode) cardNode.remove();
     
     cachedInboundEmailLeadsArray = cachedInboundEmailLeadsArray.filter(item => item.messageIdReference !== messageId);
-    localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray));
+    try { localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray)); } catch(e) { /* quota — ok */ }
 
     const remainingCards = document.getElementById("email-leads-inbound-feed-canvas").children.length;
     if (remainingCards === 0) { renderEmailLeadsFeedInterface([]); }
@@ -5403,17 +5369,12 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
   actionBtn.textContent = "Checking Database...";
 
   try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "searchCompanyData",
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        companyName: mailObject.extractedCompany,
-        contactName: mailObject.extractedContactName
-      })
+    const data = await apFetch({
+      action: "searchCompanyData",
+      activeEngineer: appActiveOperatorIdentityString,
+      companyName: mailObject.extractedCompany,
+      contactName: mailObject.extractedContactName
     });
-    const data = await res.json();
 
     // SCENARIO A: Company exists in database
     if (data.success) {
@@ -5617,6 +5578,10 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   
   if (document.getElementById("mod-fg-add")) document.getElementById("mod-fg-add").style.display = canAddFinishedGoods ? "block" : "none";
 
+  const canApproveBOQIncrease = userPermissionsObject.approveBOQIncrease === true;
+  if (document.getElementById("mod-boq-increase-approvals")) {
+    document.getElementById("mod-boq-increase-approvals").style.display = canApproveBOQIncrease ? "block" : "none";
+  }
   if (document.getElementById("mod-store-approvals")) {
     document.getElementById("mod-store-approvals").style.display = canReleaseTicket ? "block" : "none";
   }
@@ -5669,6 +5634,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   }
 
   // Live Spare Store Stock card visibility
+  const canLiveSpareStoreStock = userPermissionsObject.liveSpareStoreStock === true;
+  if (document.getElementById("mod-live-spare-store-stock")) document.getElementById("mod-live-spare-store-stock").style.display = canLiveSpareStoreStock ? "block" : "none";
   if (document.getElementById("mod-assign-current-stock")) document.getElementById("mod-assign-current-stock").style.display = canAssignCurrentStock ? "block" : "none";
   if (document.getElementById("mod-expected-inbounds")) document.getElementById("mod-expected-inbounds").style.display = canExpectedInbounds ? "block" : "none";
 
@@ -5680,7 +5647,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");
   if (storeHeaderBlock) {
-    storeHeaderBlock.style.display = (canViewLiveStock || canReleaseTicket || canSearchStoreMat || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntry === true || userPermissionsObject.grnNote === true || canViewLiveFinishedStock || canLiveSpareStoreStock || canAssignCurrentStock) ? "block" : "none";
+    storeHeaderBlock.style.display = (canViewLiveStock || canReleaseTicket || canSearchStoreMat || canApproveBOQIncrease || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntry === true || userPermissionsObject.grnNote === true || canViewLiveFinishedStock || canLiveSpareStoreStock || canAssignCurrentStock) ? "block" : "none";
   }
 }
 
@@ -5718,15 +5685,11 @@ async function initializeMaterialRequestWorkspace() {
   storeStaffDropdown.innerHTML = '<option value="">— Choose Department First —</option>';
 
   try {
-    const [inventoryResponse, projectsResponse, staffResponse] = await Promise.all([
-      fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "pullLiveInventoryCounts", sessionToken: localStorage.getItem("sessionToken") }) }),
-      fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) }),
-      fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "getStoreOperatorsList", sessionToken: localStorage.getItem("sessionToken") }) })
+    const [inventoryData, projectsData, staffData] = await Promise.all([
+      apFetch({ action: "pullLiveInventoryCounts" }),
+      apFetch({ action: "pullLiveActiveProjectCodes" }),
+      apFetch({ action: "getStoreOperatorsList" })
     ]);
-    
-    const inventoryData = await inventoryResponse.json();
-    const projectsData = await projectsResponse.json();
-    const staffData = await staffResponse.json();
     
     if (inventoryData.success && projectsData.success && staffData.success) {
       cachedInventoryStockCollection = inventoryData.inventory;
@@ -5823,7 +5786,6 @@ async function submitMaterialRequestTicketToBackend() {
     const jobCardNumberVal = document.getElementById("ticket-job-card-dropdown")?.value || "";
     const payload = {
       action: "submitEngineerMaterialTicket",
-      sessionToken: localStorage.getItem("sessionToken"),
       activeEngineer: operatorSignatureName,
       projectId: projectId,
       jobCardNumber: jobCardNumberVal,
@@ -5833,8 +5795,7 @@ async function submitMaterialRequestTicketToBackend() {
       itemsClusterArray: dynamicTicketShoppingBasketArray
     };
     
-    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
-    const result = await res.json();
+    const result = await apFetch(payload);
     
     if (result.success) {
       // Clear current memory shopping draft arrays parameters instantly
@@ -5941,15 +5902,10 @@ async function updateSelectedLiveStockPillCounter() {
   counterZone.innerHTML = `<span style="font-size:0.75rem; color:var(--brand); font-weight:700;">🔄 Evaluating Real-Time Project BOQ Allocations...</span>`;
   
   try {
-    const response = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "fetchActiveBOQRecordsByProject",
-        sessionToken: localStorage.getItem("sessionToken"),
-        projectId: projectId
-      })
+    const boqData = await apFetch({
+      action: "fetchActiveBOQRecordsByProject",
+      projectId: projectId
     });
-    const boqData = await response.json();
     
     const cleanSearchKey = selectedMaterial.replace(/\s+/g, '').toLowerCase();
     
@@ -6136,15 +6092,10 @@ async function addItemToShoppingBasketRow() {
   }
   
   // Pull BOQ for this project to validate allocation boundaries
-  const res = await fetch(GAS_URL, { 
-    method: "POST", 
-    body: JSON.stringify({ 
-      action: "fetchActiveBOQRecordsByProject", 
-      sessionToken: localStorage.getItem("sessionToken"), 
-      projectId: projectId 
-    }) 
+  const boqData = await apFetch({ 
+    action: "fetchActiveBOQRecordsByProject", 
+    projectId: projectId 
   });
-  const boqData = await res.json();
   
   const boqMatch = (boqData.records || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
     || (boqData.records || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
@@ -6307,7 +6258,6 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
     // FIXED FLAT PAYLOAD: Flattens parameters straight into the base object root to prevent router switch drops
     const flatServerRequestPayload = {
       action: "commitBOQLimitIncreaseRequestTicket",
-      sessionToken: localStorage.getItem("sessionToken"),
       activeEngineer: operatorName,
       projectId: projectId,
       jobCardNumber: document.getElementById("ticket-job-card-dropdown")?.value || "",
@@ -6316,11 +6266,7 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
       itemsClusterArray: dynamicTicketShoppingBasketArray
     };
     
-    const res = await fetch(GAS_URL, { 
-      method: "POST", 
-      body: JSON.stringify(flatServerRequestPayload) 
-    });
-    const result = await res.json();
+    const result = await apFetch(flatServerRequestPayload);
     
     if (result.success) {
       dynamicTicketShoppingBasketArray = [];
@@ -6360,6 +6306,7 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
 
   // 2. Hide all store sub-modules panels explicitly to ensure no element blending artifact drops
   if (document.getElementById("canvas-module-store-material-request")) document.getElementById("canvas-module-store-material-request").style.display = "none";
+  if (document.getElementById("canvas-module-boq-increase-approvals")) document.getElementById("canvas-module-boq-increase-approvals").style.display = "none";
   if (document.getElementById("canvas-module-store-manager-approvals")) document.getElementById("canvas-module-store-manager-approvals").style.display = "none";
   if (document.getElementById("canvas-module-store-history-matrix")) document.getElementById("canvas-module-store-history-matrix").style.display = "none";
   if (document.getElementById("canvas-module-store-live-stock")) document.getElementById("canvas-module-store-live-stock").style.display = "none";
@@ -6401,6 +6348,9 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   if (targetPanelModuleId === 'store-material-request') {
     document.getElementById("canvas-module-store-material-request").style.display = "block";
     initializeMaterialRequestWorkspace();
+  } else if (targetPanelModuleId === 'boq-increase-approvals') {
+    document.getElementById("canvas-module-boq-increase-approvals").style.display = "block";
+    initializeBOQIncreaseApprovalsWorkspace();
   } else if (targetPanelModuleId === 'store-manager-approvals') {
     document.getElementById("canvas-module-store-manager-approvals").style.display = "block";
     initializeStoreManagerApprovalsWorkspace();
@@ -6439,6 +6389,7 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   if (document.getElementById("canvas-module-store-entry")) document.getElementById("canvas-module-store-entry").style.display = "none";
   if (document.getElementById("canvas-module-store-grn")) document.getElementById("canvas-module-store-grn").style.display = "none";
   if (document.getElementById("canvas-module-store-material-request")) document.getElementById("canvas-module-store-material-request").style.display = "none";
+  if (document.getElementById("canvas-module-boq-increase-approvals")) document.getElementById("canvas-module-boq-increase-approvals").style.display = "none";
   if (document.getElementById("canvas-module-store-manager-approvals")) document.getElementById("canvas-module-store-manager-approvals").style.display = "none";
   if (document.getElementById("canvas-module-store-live-stock")) document.getElementById("canvas-module-store-live-stock").style.display = "none";
   if (document.getElementById("canvas-module-store-finished-goods-live-stock")) document.getElementById("canvas-module-store-finished-goods-live-stock").style.display = "none";
@@ -6561,6 +6512,195 @@ function exitStoreWorkspacePanelBackToMenu() {
   triggerCompanyDropdownArrayFetch(); 
 }
 
+async function initializeBOQIncreaseApprovalsWorkspace() {
+  const feed     = document.getElementById("boq-increase-approvals-queue-feed");
+  const feedback = document.getElementById("boq-increase-approvals-feedback");
+  feedback.style.display = "none";
+  feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">
+    <div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>
+    Loading BOQ Increase Requests...
+  </div>`;
+
+  try {
+    const data = await apFetch({ action: "fetchPendingBOQIncreaseTickets" });
+    if (!data.success) {
+      feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error}</div>`;
+      return;
+    }
+    if (!data.tickets || data.tickets.length === 0) {
+      feed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;">
+        <h3 style="color:var(--accent);">No Pending BOQ Increase Requests</h3>
+      </div>`;
+      return;
+    }
+    feed.innerHTML = "";
+    data.tickets.forEach(ticket => {
+      feed.appendChild(renderBOQIncreaseTicketCard(ticket));
+    });
+  } catch(e) {
+    if (e.message !== "SESSION_EXPIRED") {
+      feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${e.message}</div>`;
+    }
+  }
+}
+
+function renderBOQIncreaseTicketCard(ticket) {
+  const card = document.createElement("div");
+  card.className = "contact-summary-card-parent";
+  card.id = `boq-increase-card-${ticket.ticketId}`;
+  card.style.borderLeft = "4px solid #f59e0b";
+
+  const exceededItemsHtml = (ticket.exceededItems || []).map(item => `
+    <div style="background:#fffbeb; border:1px solid #fcd34d; border-radius:var(--radius); padding:14px; margin-bottom:10px;" id="boq-item-card-${ticket.ticketId}-${item.itemCode.replace(/[^a-zA-Z0-9]/g,'_')}">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+        <div>
+          <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.82rem;">${item.itemCode}</span>
+          <span style="font-weight:700; color:var(--text); font-size:0.88rem; margin-left:8px;">${item.itemDescription || ""}</span>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; font-size:0.75rem; font-weight:700;">
+          <span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:4px;">BOQ Remaining: ${item.boqRemainingQty || 0} ${item.unitType || ""}</span>
+          <span style="background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:4px;">Requested: ${item.requestedQty || 0} ${item.unitType || ""}</span>
+          <span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:4px;">Exceeds by: ${item.boqExceedAmount || 0} ${item.unitType || ""}</span>
+        </div>
+      </div>
+      ${item.boqIncreaseNotes ? `<div style="font-size:0.82rem; color:#78350f; background:#fffef0; border:1px solid #fcd34d; border-radius:4px; padding:8px 10px; margin-bottom:10px;"><strong>Engineer's Justification:</strong> ${item.boqIncreaseNotes}</div>` : ""}
+      <div style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;">
+        <div>
+          <label style="font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:3px;">Admin Decision</label>
+          <select id="boq-decision-${ticket.ticketId}-${item.itemCode.replace(/[^a-zA-Z0-9]/g,'_')}"
+            data-itemcode="${item.itemCode}"
+            onchange="handleBOQItemDecisionChange('${ticket.ticketId}', '${item.itemCode}')"
+            style="padding:6px 10px; font-weight:700; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.82rem;">
+            <option value="">— Choose Action —</option>
+            <option value="accept">Accept Full Increase (${item.requestedQty} ${item.unitType || ""})</option>
+            <option value="partial">Partially Accept</option>
+            <option value="reject">Reject Increase</option>
+          </select>
+        </div>
+        <div id="boq-partial-qty-zone-${ticket.ticketId}-${item.itemCode.replace(/[^a-zA-Z0-9]/g,'_')}" style="display:none;">
+          <label style="font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:3px;">Permitted Qty (max ${item.requestedQty})</label>
+          <input type="number" min="1" max="${item.requestedQty}"
+            id="boq-partial-qty-${ticket.ticketId}-${item.itemCode.replace(/[^a-zA-Z0-9]/g,'_')}"
+            placeholder="Enter qty..."
+            style="padding:6px 10px; font-weight:700; border:1.5px solid var(--brand); border-radius:var(--radius); font-size:0.82rem; width:120px;" />
+        </div>
+      </div>
+    </div>`).join("");
+
+  card.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; padding-bottom:8px; border-bottom:1px dashed var(--border); flex-wrap:wrap; gap:8px;">
+      <div>
+        <span style="font-family:monospace; font-weight:800; background:#fef3c7; color:#b45309; padding:3px 8px; font-size:0.78rem; border-radius:3px;">⚠️ ${ticket.ticketId}</span>
+        <strong style="margin-left:8px; color:var(--brand);">${ticket.projectId}</strong>
+        <span style="font-size:0.72rem; color:var(--muted); margin-left:8px;">By: ${ticket.requestedBy} | ${ticket.dateCreated}</span>
+        <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:6px;">Dept: ${ticket.department || "—"} | Store: ${ticket.storeType || "—"}</span>
+      </div>
+      <span style="font-size:0.7rem; font-weight:700; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:4px;">Pending BOQ Increase Review</span>
+    </div>
+    <div style="margin-bottom:14px;">${exceededItemsHtml}</div>
+    <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:12px;">
+      <button class="nav-btn-styled" onclick="submitBOQIncreaseDecision('${ticket.ticketId}')"
+        style="background:var(--accent); padding:8px 20px; font-weight:700;">
+        Submit Decision for This Ticket
+      </button>
+    </div>
+  `;
+  return card;
+}
+
+function handleBOQItemDecisionChange(ticketId, itemCode) {
+  const safeCode = itemCode.replace(/[^a-zA-Z0-9]/g,'_');
+  const decision = document.getElementById(`boq-decision-${ticketId}-${safeCode}`)?.value;
+  const partialZone = document.getElementById(`boq-partial-qty-zone-${ticketId}-${safeCode}`);
+  if (partialZone) partialZone.style.display = decision === "partial" ? "block" : "none";
+}
+
+async function submitBOQIncreaseDecision(ticketId) {
+  const card     = document.getElementById(`boq-increase-card-${ticketId}`);
+  const feedback = document.getElementById("boq-increase-approvals-feedback");
+
+  // Collect all item decisions from this card
+  const itemDecisions = [];
+  let allDecided = true;
+  let hasPartial = false;
+  let hasReject  = false;
+  let hasAccept  = false;
+
+  card.querySelectorAll("select[id^='boq-decision-']").forEach(sel => {
+    const parts    = sel.id.split(`boq-decision-${ticketId}-`);
+    const safeCode = parts[1];
+    const decision = sel.value;
+
+    if (!decision) { allDecided = false; return; }
+
+    const permQtyInput = document.getElementById(`boq-partial-qty-${ticketId}-${safeCode}`);
+    const permittedQty = decision === "partial" ? (parseFloat(permQtyInput?.value) || 0) : null;
+
+    if (decision === "partial" && (!permittedQty || permittedQty <= 0)) {
+      allDecided = false; return;
+    }
+
+    // Reverse-map safeCode back to itemCode stored in data attribute
+    const origItemCode = sel.id.replace(`boq-decision-${ticketId}-`, "").replace(/_/g, match => {
+      // We can't reverse underscore substitution perfectly, so store itemCode in a data attribute
+      return match;
+    });
+
+    // Use a data attribute on the select to store the original itemCode
+    itemDecisions.push({
+      itemCode: sel.dataset.itemcode || safeCode,
+      decision,
+      permittedQty
+    });
+
+    if (decision === "partial") hasPartial = true;
+    if (decision === "reject")  hasReject  = true;
+    if (decision === "accept")  hasAccept  = true;
+  });
+
+  if (!allDecided) {
+    feedback.style.cssText = "display:block; background:#fff3c7; border-left:4px solid #b45309; color:#b45309; padding:12px; margin-bottom:12px;";
+    feedback.textContent   = "Please select a decision for every exceeded item, and enter a permitted quantity for any partially accepted items.";
+    return;
+  }
+
+  // Determine overall adminAction
+  let adminAction = "accept";
+  if (hasReject && !hasAccept && !hasPartial) adminAction = "reject";
+  else if (hasPartial || (hasReject && (hasAccept || hasPartial))) adminAction = "partial";
+
+  const submitBtn = card.querySelector("button[onclick^='submitBOQIncreaseDecision']");
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...'; }
+
+  try {
+    const data = await apFetch({
+      action:          "commitBOQLimitIncreaseRequestTicket",
+      activeEngineer:  appActiveOperatorIdentityString,
+      ticketId,
+      adminAction,
+      itemDecisions
+    });
+
+    if (data.success) {
+      feedback.style.cssText = "display:block; background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:12px; margin-bottom:12px; font-weight:700;";
+      feedback.textContent   = `Ticket ${ticketId} actioned: ${adminAction.toUpperCase()}. Ticket moved to ${data.newStatus}.`;
+      card.remove();
+      const remainingCards = document.getElementById("boq-increase-approvals-queue-feed").children.length;
+      if (remainingCards === 0) initializeBOQIncreaseApprovalsWorkspace();
+    } else {
+      feedback.style.cssText = "display:block; background:#fee2e2; border-left:4px solid #b91c1c; color:#b91c1c; padding:12px; margin-bottom:12px;";
+      feedback.textContent   = data.error || "Submission failed.";
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Submit Decision for This Ticket"; }
+    }
+  } catch(e) {
+    if (e.message !== "SESSION_EXPIRED") {
+      feedback.style.cssText = "display:block; background:#fee2e2; border-left:4px solid #b91c1c; color:#b91c1c; padding:12px; margin-bottom:12px;";
+      feedback.textContent   = "Network error: " + e.message;
+    }
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Submit Decision for This Ticket"; }
+  }
+}
+
 /**
  * 1. INITIALIZE APPROVALS WORKSPACE LOCK
  * Fetches all un-actioned pending tickets directly from the warehouse ledger
@@ -6573,15 +6713,9 @@ async function initializeStoreManagerApprovalsWorkspace() {
   cardsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);"><div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>Loading Un-Actioned Request Tickets...</div>`;
 
   try {
-    const response = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "fetchPendingTicketsQueueStream",
-        sessionToken: localStorage.getItem("sessionToken")
-      })
+    const data = await apFetch({
+      action: "fetchPendingTicketsQueueStream"
     });
-    
-    const data = await response.json();
     if (!data.success) {
       cardsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${data.error}</div>`;
       return;
@@ -6856,18 +6990,12 @@ async function executeStoreManagerTicketActionDecision(ticketId, decisionString)
   }
 
   try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "actionTicketReleaseApproval",
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        ticketId: ticketId,
-        managerDecisionCommand: decisionString 
-      })
+    const result = await apFetch({
+      action: "actionTicketReleaseApproval",
+      activeEngineer: appActiveOperatorIdentityString,
+      ticketId: ticketId,
+      managerDecisionCommand: decisionString 
     });
-
-    const result = await res.json();
     if (result.success) {
       if (feedbackBanner) {
         // SILENT METRICS RE-INDEX: Instantly refresh home dashboard widgets states counters fields
@@ -6927,19 +7055,10 @@ async function initializeStoreHistoryMatrixWorkspace() {
   if (resultsFeedZone) resultsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Loading...</div>`;
 
   try {
-    const [ticketsResponse, projectsResponse] = await Promise.all([
-      fetch(GAS_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "fetchAllHistoricalStoreTicketsStream", sessionToken: localStorage.getItem("sessionToken") })
-      }),
-      fetch(GAS_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") })
-      })
+    const [ticketsData, projectsData] = await Promise.all([
+      apFetch({ action: "fetchAllHistoricalStoreTicketsStream" }),
+      apFetch({ action: "pullLiveActiveProjectCodes" })
     ]);
-
-    const ticketsData = await ticketsResponse.json();
-    const projectsData = await projectsResponse.json();
 
     if (!ticketsData.success || !projectsData.success) {
       if (resultsFeedZone) resultsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn);">Verification Failure: Sync dropped from database workbook targets.</div>`;
@@ -6984,11 +7103,7 @@ async function triggerLiveWarehouseStockMetricsSync() {
   }
 
   try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "pullLiveInventoryCounts", sessionToken: localStorage.getItem("sessionToken") })
-    });
-    const data = await res.json();
+    const data = await apFetch({ action: "pullLiveInventoryCounts" });
 
     if (data.success && data.inventory) {
       cachedInventoryStockCollection = data.inventory;
@@ -7139,8 +7254,7 @@ async function triggerLiveSpareStoreStockMetricsSync() {
   mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--muted);"><div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>Loading Spare Store...</div>`;
 
   try {
-    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "getSpareStoreStock", sessionToken: localStorage.getItem("sessionToken") }) });
-    const data = await res.json();
+    const data = await apFetch({ action: "getSpareStoreStock" });
 
     if (!data.success || !data.stock || data.stock.length === 0) {
       mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px 20px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);"><div style="font-size:2rem; margin-bottom:10px;">📦</div><div style="font-size:0.95rem; font-weight:700; color:var(--muted);">Spare Store is Empty</div></div>`;
@@ -7189,19 +7303,15 @@ async function triggerLiveSpareStoreStockMetricsSync() {
 const parentShowAppView = showAppView;
 showAppView = async function() {
   await parentShowAppView();
-  
+
   if (userPermissions && userPermissions.liveStoreStock === true) {
-    // Background polling routine tracks panel visibility status keys before hitting server
-    setInterval(() => {
-    const liveStockPanel = document.getElementById("canvas-module-store-live-stock");
-    const liveFinishedPanel = document.getElementById("canvas-module-store-finished-goods-live-stock");
-    
-    if (liveStockPanel && liveStockPanel.style.display === "block") {
-      triggerLiveWarehouseStockMetricsSync();
-    } else if (liveFinishedPanel && liveFinishedPanel.style.display === "block") {
-      triggerLiveFinishedGoodsStoreStockMetricsSync();
-    }
-  }, 30000);// Polls every 30 seconds to lock real-time stock balances parity
+    if (liveStockSyncIntervalId) clearInterval(liveStockSyncIntervalId);
+    liveStockSyncIntervalId = setInterval(() => {
+      const liveStockPanel    = document.getElementById("canvas-module-store-live-stock");
+      const liveFinishedPanel = document.getElementById("canvas-module-store-live-fg");
+      if (liveStockPanel    && liveStockPanel.style.display    === "block") triggerLiveWarehouseStockMetricsSync();
+      else if (liveFinishedPanel && liveFinishedPanel.style.display === "block") triggerLiveFinishedGoodsStoreStockMetricsSync();
+    }, 30000);
   }
 };
 
@@ -7266,20 +7376,14 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
     const poOwnerDropEl = document.getElementById("po-owner-of-order-dropdown");
     const ownerOfOrder = (isPO && poOwnerDropEl) ? poOwnerDropEl.value.trim() : "";
 
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "commitMarketingOperationsDocument",
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        operationType: opsFlagTypeString,
-        fileData64: fileBase64Raw,
-        isPdf: isPdfFormat,
-        ownerOfOrder: ownerOfOrder
-      })
+    const data = await apFetch({
+      action: "commitMarketingOperationsDocument",
+      activeEngineer: appActiveOperatorIdentityString,
+      operationType: opsFlagTypeString,
+      fileData64: fileBase64Raw,
+      isPdf: isPdfFormat,
+      ownerOfOrder: ownerOfOrder
     });
-
-    const data = await res.json();
     if (data.success) {
       // Hide the file picker input controls on success
       if (inputsContainer) inputsContainer.style.display = "none";
@@ -7397,24 +7501,17 @@ async function parseGateDocumentsWithAI() {
     const inv64 = targetGateInvoiceFileObj ? await convertToBase64(targetGateInvoiceFileObj) : null;
     const ch64  = targetGateChallanFileObj  ? await convertToBase64(targetGateChallanFileObj)  : null;
     
-    const lookupRes = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "pullLiveInventoryCounts", sessionToken: localStorage.getItem("sessionToken") })});
-    const catalogData = await lookupRes.json();
-    const existingMaterialNamesList = catalogData.success ? catalogData.inventory.map(i => i.materialName) : [];
+    const existingMaterialNamesList = (window.itemCodeCatalogCache || []).map(i => i.productName);
 
     // Use whichever document is available, prefer invoice, fall back to challan
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({ 
-        action: "storeProcessAIInvoiceBlob", 
-        sessionToken: localStorage.getItem("sessionToken"), 
-        imageBlobBase64: inv64 || ch64,
-        invoiceMimeType: targetGateInvoiceFileObj ? targetGateInvoiceFileObj.type : "image/jpeg",
-        challanImageBase64: (inv64 && ch64) ? ch64 : null,
-        challanMimeType: targetGateChallanFileObj ? targetGateChallanFileObj.type : "image/jpeg",
-        canonicalMaterialsCatalog: existingMaterialNamesList 
-      })
+    const data = await apFetch({ 
+      action: "storeProcessAIInvoiceBlob", 
+      imageBlobBase64: inv64 || ch64,
+      invoiceMimeType: targetGateInvoiceFileObj ? targetGateInvoiceFileObj.type : "image/jpeg",
+      challanImageBase64: (inv64 && ch64) ? ch64 : null,
+      challanMimeType: targetGateChallanFileObj ? targetGateChallanFileObj.type : "image/jpeg",
+      canonicalMaterialsCatalog: existingMaterialNamesList 
     });
-    const data = await res.json();
     if (!data.success) return alert("AI Processing failed: " + data.error);
     activeParsedGatePayloadCache = data.extractedData;
     
@@ -7509,7 +7606,7 @@ async function commitGateEntryRecordsToBackend() {
 
     const combinedTimestampString = document.getElementById('gate-meta-date').value.trim() + " " + document.getElementById('gate-meta-time').value.trim();
     const payload = {
-      action: "commitGateEntryPipelineStep", sessionToken: localStorage.getItem("sessionToken"), activeEngineer: appActiveOperatorIdentityString,
+      action: "commitGateEntryPipelineStep", activeEngineer: appActiveOperatorIdentityString,
       metadata: {
         invoiceNumber: cleanInvoiceNumber,
         challanNumber: cleanChallanNumber,
@@ -7520,8 +7617,7 @@ async function commitGateEntryRecordsToBackend() {
       },
       lineItems: activeParsedGatePayloadCache.lineItems
     };
-    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
-    const data = await res.json();
+    const data = await apFetch(payload);
     if (data.success) {
       if (uploadWrapperBlock) uploadWrapperBlock.style.display = "none";
       document.getElementById('gate-ai-verification-workspace').style.display = "none";
@@ -7556,8 +7652,7 @@ async function initializeStoreEntryWorkspaceQueue() {
       <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Syncing Store Verification Queue...</span>
     </div>`;
   try {
-    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "fetchInwardWorkflowQueueStream", sessionToken: localStorage.getItem("sessionToken"), targetStep: "STORE pending" }) });
-    const data = await res.json();
+    const data = await apFetch({ action: "fetchInwardWorkflowQueueStream", targetStep: "STORE pending" });
     if (!data.success || data.queue.length === 0) {
       feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records waiting for Raw Materials Store Entry.</div>';
       return;
@@ -7586,18 +7681,13 @@ async function initializeStoreEntryWorkspaceQueue() {
     // One Gemini call for all line items
     let geminiMatchResults = [];
     try {
-      const matchRes = await fetch(GAS_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "matchStoreEntryItemCodes",
-          sessionToken: localStorage.getItem("sessionToken"),
-          lineItems: lineItemsWithCandidates.map(li => ({
-            rawDescription: li.rawDescription,
-            candidatesTop60: li.candidatesTop60
-          }))
-        })
+      const matchData = await apFetch({
+        action: "matchStoreEntryItemCodes",
+        lineItems: lineItemsWithCandidates.map(li => ({
+          rawDescription: li.rawDescription,
+          candidatesTop60: li.candidatesTop60
+        }))
       });
-      const matchData = await matchRes.json();
       if (matchData.success) geminiMatchResults = matchData.matches;
     } catch(e) {
       console.error("Store Entry ItemCode matching failed:", e);
@@ -7805,16 +7895,11 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
   }
 
   try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({ 
-        action: "commitStoreEntryPipelineStep", 
-        sessionToken: localStorage.getItem("sessionToken"), 
-        activeEngineer: appActiveOperatorIdentityString, 
-        payload: itemData 
-      })
+    const data = await apFetch({ 
+      action: "commitStoreEntryPipelineStep", 
+      activeEngineer: appActiveOperatorIdentityString, 
+      payload: itemData 
     });
-    const data = await res.json();
     
     if (data.success) {
       // Clear current row staging queue card objects feed out of sight completely
@@ -7851,8 +7936,7 @@ async function initializeStoreGrnWorkspaceQueue() {
       <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Syncing Active GRN Queue...</span>
     </div>`;
   try {
-    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "fetchInwardWorkflowQueueStream", sessionToken: localStorage.getItem("sessionToken"), targetStep: "GRN pending" }) });
-    const data = await res.json();
+    const data = await apFetch({ action: "fetchInwardWorkflowQueueStream", targetStep: "GRN pending" });
     if (!data.success || data.queue.length === 0) {
       feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records waiting for GRN.</div>';
       return;
@@ -8070,16 +8154,11 @@ async function commitGrnVerificationToBackend(gateNum, encodedItem) {
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Certifying GRN Note...';
   
   try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({ 
-        action: "commitGrnPipelineStep", 
-        sessionToken: localStorage.getItem("sessionToken"), 
-        activeEngineer: appActiveOperatorIdentityString, 
-        payload: itemData 
-      })
+    const data = await apFetch({ 
+      action: "commitGrnPipelineStep", 
+      activeEngineer: appActiveOperatorIdentityString, 
+      payload: { ...itemData, vendorName: itemData.vendorName || document.getElementById("store-grn-queue-cards-feed").querySelector(`[data-vendor]`)?.dataset.vendor || "" }
     });
-    const data = await res.json();
     if (data.success) {
       document.getElementById("store-grn-queue-cards-feed").innerHTML = "";
       banner.style.cssText = "display: block; background: #dcfce7; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); margin-bottom:15px;";
@@ -8218,8 +8297,7 @@ async function handleCreateTicketProjectChange(chosenProjectVal) {
 
   jobCardDropdown.innerHTML = '<option value="">Loading...</option>';
   try {
-    const res = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchJobCardsForProject", sessionToken: localStorage.getItem("sessionToken"), projectId: chosenProjectVal }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"fetchJobCardsForProject", projectId: chosenProjectVal });
     jobCardDropdown.innerHTML = '<option value="">— Select Job Card Number —</option>';
     (data.jobCards || []).forEach(jc => {
       const opt = document.createElement("option");
@@ -8257,8 +8335,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
 
   try {
     if (activeStoreScope === "Spare Store") {
-      const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "getSpareStoreStock", sessionToken: localStorage.getItem("sessionToken") }) });
-      const data = await res.json();
+      const data = await apFetch({ action: "getSpareStoreStock" });
       window.cachedSpareStoreStock = data.stock || [];
 
       if (window.cachedSpareStoreStock.length === 0) {
@@ -8322,19 +8399,11 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       addBtn.style.cursor = "pointer";
     } else {
       // Pre-fetch spare store stock for the suggestion banner
-      fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "getSpareStoreStock", sessionToken: localStorage.getItem("sessionToken") }) })
-        .then(r => r.json()).then(d => { window.cachedSpareStoreStock = d.stock || []; }).catch(() => {});
+      apFetch({ action: "getSpareStoreStock" })
+        .then(d => { window.cachedSpareStoreStock = d.stock || []; }).catch(() => {});
 
       // Raw Materials Store — fetch from BOQ
-      const res = await fetch(GAS_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "fetchActiveBOQRecordsByProject",
-          sessionToken: localStorage.getItem("sessionToken"),
-          projectId: chosenProjectVal
-        })
-      });
-      const data = await res.json();
+      const data = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: chosenProjectVal });
 
       if (data.success && data.records.length > 0) {
         itemDrop.innerHTML = '<option value="">— Select Material from BOQ —</option>';
@@ -8629,12 +8698,10 @@ async function initializeFinishedGoodsAddWorkspace(department, canvasId) {
   if (dateEl) dateEl.value = new Date().toISOString().split("T")[0];
 
   // Fetch projects and staff in parallel
-  const [projRes, staffRes] = await Promise.all([
-    fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) }),
-    fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"getStoreOperatorsList",     sessionToken: localStorage.getItem("sessionToken") }) })
+  const [projData, staffData] = await Promise.all([
+    apFetch({ action:"pullLiveActiveProjectCodes" }),
+    apFetch({ action:"getStoreOperatorsList" })
   ]);
-  const projData  = await projRes.json();
-  const staffData = await staffRes.json();
 
   window.fgProjectMetaCache = projData.projectMeta || {};
 
@@ -8704,18 +8771,13 @@ async function submitFinishedGoodsAddEntry(department, canvasId) {
   submitBtn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Saving...';
 
   try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action:           "addFinishedGoodsStoreItem",
-        sessionToken:     localStorage.getItem("sessionToken"),
-        activeEngineer:   appActiveOperatorIdentityString,
-        department, entryDate, serialNumber, jobCardNumber,
-        productRating, productDetails, totalStock, projectId,
-        customerName, prodResponsible, storeIncharge, additionalRemarks
-      })
+    const data = await apFetch({
+      action:           "addFinishedGoodsStoreItem",
+      activeEngineer:   appActiveOperatorIdentityString,
+      department, entryDate, serialNumber, jobCardNumber,
+      productRating, productDetails, totalStock, projectId,
+      customerName, prodResponsible, storeIncharge, additionalRemarks
     });
-    const data = await res.json();
 
     if (data.success) {
       document.getElementById(`fg-form-${canvasId}`).style.display = "none";
@@ -8752,14 +8814,9 @@ function filterOutPureAdminPersonnel(personnelTree) {
 
 async function loadItemCodeCatalogIntoCache() {
   try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "fetchItemCodeCatalog",
-        sessionToken: localStorage.getItem("sessionToken")
-      })
+    const data = await apFetch({
+      action: "fetchItemCodeCatalog"
     });
-    const data = await res.json();
     console.log("ItemCode catalog response:", data);  // ADD THIS
     if (data.success) {
       window.itemCodeCatalogCache = data.catalog;
@@ -8780,8 +8837,7 @@ async function loadDesignPersonnelIntoSelect(selectId) {
   selectEl.innerHTML = '<option value="">Loading...</option>';
 
   try {
-    const res = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"getStoreOperatorsList", sessionToken: localStorage.getItem("sessionToken") }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"getStoreOperatorsList" });
     const allPersonnel = data.fullPersonnelDataRecordsTree || [];
     const designPeople = allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().trim().includes("design")));
 
@@ -8801,11 +8857,7 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
   mount.innerHTML = '<p style="color:var(--muted); font-size:0.82rem; padding:8px 0;">Loading Document Information...</p>';
 
   try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "fetchUploadedDocumentInfo", sessionToken: localStorage.getItem("sessionToken"), leadId: leadId })
-    });
-    const data = await res.json();
+    const data = await apFetch({ action: "fetchUploadedDocumentInfo", leadId: leadId });
 
     if (!data.success || !data.row) {
       const renderEmptyPlaceholder = (title, color) => `
@@ -8968,16 +9020,11 @@ async function executeItemCodeSearch() {
       }));
     } else {
       // Step 2: Gemini semantic re-rank for larger catalogs
-      const res = await fetch(GAS_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "searchItemCodeSemantic",
-          sessionToken: localStorage.getItem("sessionToken"),
-          query: query,
-          candidates: candidatesToUse
-        })
+      const data = await apFetch({
+        action: "searchItemCodeSemantic",
+        query: query,
+        candidates: candidatesToUse
       });
-      const data = await res.json();
 
       if (!data.success || !data.matches || data.matches.length === 0) {
         // Gemini failed — fall back to showing direct matches
@@ -9069,14 +9116,9 @@ async function revealItemCodeCreateForm() {
 
   // Fetch next available code
   try {
-    const res  = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "getNextItemCodeNumber",
-        sessionToken: localStorage.getItem("sessionToken")
-      })
+    const data = await apFetch({
+      action: "getNextItemCodeNumber"
     });
-    const data = await res.json();
     codeInput.value = data.success ? data.nextCode : "Error — refresh";
   } catch(e) {
     codeInput.value = "Error — refresh";
@@ -9101,18 +9143,13 @@ async function submitNewItemCodeNumber() {
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Creating...';
 
   try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "createItemCodeNumber",
-        sessionToken: localStorage.getItem("sessionToken"),
-        itemCode,
-        productName,
-        typeOfMaterial: typeOfMat,
-        createdBy: appActiveOperatorIdentityString
-      })
+    const data = await apFetch({
+      action: "createItemCodeNumber",
+      itemCode,
+      productName,
+      typeOfMaterial: typeOfMat,
+      createdBy: appActiveOperatorIdentityString
     });
-    const data = await res.json();
 
     if (data.success) {
       // Hide form and search zone
@@ -9215,8 +9252,7 @@ async function initializeCreateBOQPanel() {
   const projDrop = document.getElementById("cboq-project-id");
   projDrop.innerHTML = '<option value="">Loading projects...</option>';
   try {
-    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"pullLiveActiveProjectCodes" });
     projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
     (data.projects || []).forEach(code => {
       const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
@@ -9453,18 +9489,13 @@ async function submitCreateBOQ() {
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
 
   try {
-    const res  = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "createBOQDraft",
-        sessionToken: localStorage.getItem("sessionToken"),
-        projectId, customerName, productName, productRating,
-        department, orderQuantity: orderQty,
-        materialRowsList: cboqMaterialRows,
-        preparedBy
-      })
+    const data = await apFetch({
+      action: "createBOQDraft",
+      projectId, customerName, productName, productRating,
+      department, orderQuantity: orderQty,
+      materialRowsList: cboqMaterialRows,
+      preparedBy
     });
-    const data = await res.json();
 
     if (data.success) {
       showBOQBanner("cboq-feedback",
@@ -9505,8 +9536,7 @@ async function initializeAuthorizeBOQPanel(mode) {
   eboqExpandedCardBoqId = null;
 
   try {
-    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchBOQDraftsQueue", sessionToken: localStorage.getItem("sessionToken"), status }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"fetchBOQDraftsQueue", status });
     let drafts = data.drafts || [];
 
     // Oldest first
@@ -9576,8 +9606,7 @@ async function toggleAuthBOQCardExpansion(boqId, mode) {
   const feedbackId = mode === "authorize" ? "auth-boq-feedback" : "auth-boq-upd-feedback";
 
   try {
-    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchBOQDraftById", sessionToken: localStorage.getItem("sessionToken"), boqId }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"fetchBOQDraftById", boqId });
     if (!data.success) { bodyEl.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
 
     eboqCurrentDraft = data.draft;
@@ -9598,8 +9627,7 @@ async function toggleAuthBOQCardExpansion(boqId, mode) {
 
     if (mode === "authorize-update") {
       try {
-        const sumRes  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"generateBOQUpdateSummary", sessionToken: localStorage.getItem("sessionToken"), boqId, updatedRows: eboqMaterialRows }) });
-        const sumData = await sumRes.json();
+        const sumData = await apFetch({ action:"generateBOQUpdateSummary", boqId, updatedRows: eboqMaterialRows });
         const sumTextEl = document.getElementById(`auth-boq-upd-summary-text-${safeBoqId}`);
         if (sumTextEl) sumTextEl.textContent = sumData.summary || "No changes detected.";
       } catch(e) {
@@ -9828,7 +9856,10 @@ function updateEBOQTotals() {
   if (totalEl)  totalEl.textContent  = "₹" + totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+let _submitBOQAuthorizeInProgress = false;
 async function submitEBOQAuthorize() {
+  if (_submitBOQAuthorizeInProgress) return;
+  _submitBOQAuthorizeInProgress = true;
   const btn        = document.getElementById("eboq-submit-btn");
   const feedbackId = eboqMode === "authorize" ? "auth-boq-feedback" : "auth-boq-upd-feedback";
   const action     = eboqMode === "authorize" ? "submitBOQAuthorize" : "submitBOQUpdateAuthorize";
@@ -9853,19 +9884,14 @@ async function submitEBOQAuthorize() {
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Authorizing...';
 
   try {
-    const res  = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action,
-        sessionToken: localStorage.getItem("sessionToken"),
-        boqId: eboqCurrentDraft.boqId,
-        productName, productRating, department,
-        orderQuantity: orderQty,
-        materialRowsList: eboqMaterialRows,
-        authorizedBy
-      })
+    const data = await apFetch({
+      action,
+      boqId: eboqCurrentDraft.boqId,
+      productName, productRating, department,
+      orderQuantity: orderQty,
+      materialRowsList: eboqMaterialRows,
+      authorizedBy
     });
-    const data = await res.json();
 
     if (data.success) {
       const msg = eboqMode === "authorize"
@@ -9882,6 +9908,7 @@ async function submitEBOQAuthorize() {
   } catch(e) {
     showBOQBanner(feedbackId, "Network error: " + e.message, "error");
   } finally {
+    _submitBOQAuthorizeInProgress = false;
     btn.disabled = false;
     btn.textContent = eboqMode === "authorize" ? "Authorize BOQ" : "Authorize BOQ Update";
   }
@@ -9901,8 +9928,7 @@ async function initializeUpdateBOQPanel() {
   document.getElementById("update-boq-feedback").style.display = "none";
 
   try {
-    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"pullLiveActiveProjectCodes" });
     projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
     (data.projects || []).forEach(code => {
       const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
@@ -9922,8 +9948,7 @@ async function loadAuthorizedBOQsForProject(projectId) {
   boqDrop.disabled  = true;
 
   try {
-    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchAuthorizedBOQsForUpdate", sessionToken: localStorage.getItem("sessionToken"), projectId }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"fetchAuthorizedBOQsForUpdate", projectId });
     boqDrop.innerHTML = '<option value="">— Select BOQ —</option>';
     (data.drafts || []).forEach(draft => {
       const opt = document.createElement("option");
@@ -9940,8 +9965,7 @@ async function loadAuthorizedBOQsForProject(projectId) {
 async function loadBOQForUpdate(boqId) {
   if (!boqId) { document.getElementById("update-boq-form").style.display = "none"; return; }
 
-  const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchBOQDraftById", sessionToken: localStorage.getItem("sessionToken"), boqId }) });
-  const data = await res.json();
+  const data = await apFetch({ action:"fetchBOQDraftById", boqId });
   if (!data.success) return showBOQBanner("update-boq-feedback", data.error, "error");
 
   uboqCurrentDraft = data.draft;
@@ -10180,7 +10204,10 @@ function selectBOQRowMaterial(rowIdx, productName, itemCode, formPrefix) {
   if (dropdown) dropdown.style.display = "none";
 }
 
+let _submitUpdateBOQInProgress = false;
 async function submitUpdateBOQ() {
+  if (_submitUpdateBOQInProgress) return;
+  _submitUpdateBOQInProgress = true;
   const btn      = document.getElementById("uboq-submit-btn");
   const feedbackId = "update-boq-feedback";
 
@@ -10202,18 +10229,13 @@ async function submitUpdateBOQ() {
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
 
   try {
-    const res  = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "submitBOQUpdate",
-        sessionToken: localStorage.getItem("sessionToken"),
-        boqId: uboqCurrentDraft.boqId,
-        productName, productRating, department,
-        orderQuantity: orderQty,
-        materialRowsList: uboqMaterialRows
-      })
+    const data = await apFetch({
+      action: "submitBOQUpdate",
+      boqId: uboqCurrentDraft.boqId,
+      productName, productRating, department,
+      orderQuantity: orderQty,
+      materialRowsList: uboqMaterialRows
     });
-    const data = await res.json();
 
     if (data.success) {
       showBOQBanner(feedbackId,
@@ -10231,6 +10253,7 @@ async function submitUpdateBOQ() {
   } catch(e) {
     showBOQBanner(feedbackId, "Network error: " + e.message, "error");
   } finally {
+    _submitUpdateBOQInProgress = false;
     btn.disabled = false;
     btn.textContent = "Submit BOQ Update for Authorization";
   }
@@ -10241,18 +10264,20 @@ async function submitUpdateBOQ() {
 // ═══════════════════════════════════════════════════════
 
 let fgAddWorkspaceInitInProgress = false;
+let boqFormIsDirty    = false;
+let boqUpdateIsDirty  = false;
 async function initializeFGAddWorkspace() {
   if (fgAddWorkspaceInitInProgress) return;
   fgAddWorkspaceInitInProgress = true;
   document.getElementById("fg-add-feedback").style.display = "none";
+  try {
   await loadItemCodeCatalogIntoCache();
 
   // Load projects
   const projDrop = document.getElementById("fg-add-project");
   projDrop.innerHTML = '<option value="">Loading...</option>';
   try {
-    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"pullLiveActiveProjectCodes" });
     projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
     (data.projects || []).forEach(code => {
       const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
@@ -10268,8 +10293,7 @@ async function initializeFGAddWorkspace() {
   prodDrop.innerHTML  = '<option value="">Loading...</option>';
   storeDrop.innerHTML = '<option value="">Loading...</option>';
   try {
-    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"getStoreOperatorsList", sessionToken: localStorage.getItem("sessionToken") }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"getStoreOperatorsList" });
     const allPersonnel = data.fullPersonnelDataRecordsTree || [];
 
     const prodPeople  = filterOutPureAdminPersonnel(allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().trim() === "production" || d.toLowerCase().trim() === "admin")));
@@ -10300,7 +10324,11 @@ async function initializeFGAddWorkspace() {
   }
 
   resetFGAddForm();
-  fgAddWorkspaceInitInProgress = false;
+  } catch(e) {
+    console.error("initializeFGAddWorkspace error:", e);
+  } finally {
+    fgAddWorkspaceInitInProgress = false;
+  }
 }
 
 async function handleFGAddProjectChange(projectId) {
@@ -10318,8 +10346,7 @@ async function handleFGAddProjectChange(projectId) {
     jobCardDrop.innerHTML = '<option value="">Loading...</option>';
     jobCardDrop.disabled = true;
     try {
-      const res = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchJobCardsForProject", sessionToken: localStorage.getItem("sessionToken"), projectId }) });
-      const data = await res.json();
+      const data = await apFetch({ action:"fetchJobCardsForProject", projectId });
       jobCardDrop.innerHTML = '<option value="">— Select Job Card Number —</option>';
       (data.jobCards || []).forEach(jc => {
         const opt = document.createElement("option");
@@ -10406,15 +10433,10 @@ async function triggerFGBOQValidation() {
   zone.innerHTML = `<div style="text-align:center; padding:14px; color:var(--muted); font-size:0.85rem;">Checking BOQ material consumption for this Job Card...</div>`;
 
   try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "validateJobCardBOQConsumption",
-        sessionToken: localStorage.getItem("sessionToken"),
-        projectId, jobCardNumber, productName, productRating
-      })
+    const data = await apFetch({
+      action: "validateJobCardBOQConsumption",
+      projectId, jobCardNumber, productName, productRating
     });
-    const data = await res.json();
 
     if (!data.success) {
       zone.innerHTML = `<div style="padding:12px; background:#fff5f5; border:1.5px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-size:0.85rem; font-weight:600;">⚠️ ${data.error || "Validation failed."}</div>`;
@@ -10502,7 +10524,10 @@ function resetFGAddForm() {
   handleFGAddProjectChange(""); // re-lock fields
 }
 
+let _submitFGAddItemInProgress = false;
 async function submitFGAddItem() {
+  if (_submitFGAddItemInProgress) return;
+  _submitFGAddItemInProgress = true;
   const btn        = document.getElementById("fg-add-submit-btn");
   const department = document.getElementById("fg-add-department").value.trim();
   const projectId  = document.getElementById("fg-add-project").value.trim();
@@ -10537,32 +10562,25 @@ async function submitFGAddItem() {
 
     if (fgQATestCertFile) {
       const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(fgQATestCertFile); });
-      const upRes = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"uploadFinishedGoodsQADocument", sessionToken: localStorage.getItem("sessionToken"), projectId, file: { fileName: fgQATestCertFile.name, base64Data: b64, mimeType: fgQATestCertFile.type || "application/octet-stream" } }) });
-      const upData = await upRes.json();
+      const upData = await apFetch({ action:"uploadFinishedGoodsQADocument", projectId, file: { fileName: fgQATestCertFile.name, base64Data: b64, mimeType: fgQATestCertFile.type || "application/octet-stream" } });
       if (upData.success) testCertUrl = upData.url;
     }
 
     if (fgQAInspectionFile) {
       const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(fgQAInspectionFile); });
-      const upRes = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"uploadFinishedGoodsQADocument", sessionToken: localStorage.getItem("sessionToken"), projectId, file: { fileName: fgQAInspectionFile.name, base64Data: b64, mimeType: fgQAInspectionFile.type || "application/octet-stream" } }) });
-      const upData = await upRes.json();
+      const upData = await apFetch({ action:"uploadFinishedGoodsQADocument", projectId, file: { fileName: fgQAInspectionFile.name, base64Data: b64, mimeType: fgQAInspectionFile.type || "application/octet-stream" } });
       if (upData.success) inspectionClearanceUrl = upData.url;
     }
 
-    const res  = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "addFinishedGoodsItem",
-        sessionToken: localStorage.getItem("sessionToken"),
-        department, projectId, customerName, productName,
-        itemCode, productRating: rating, jobCardNumber: jobCard,
-        productSerialNumber: serialNumber,
-        unit, prodResponsible: prodPerson,
-        storeIncharge: storePerson, additionalRemarks: remarks,
-        qaPersonName, qaDone, testCertUrl, inspectionClearanceUrl
-      })
+    const data = await apFetch({
+      action: "addFinishedGoodsItem",
+      department, projectId, customerName, productName,
+      itemCode, productRating: rating, jobCardNumber: jobCard,
+      productSerialNumber: serialNumber,
+      unit, prodResponsible: prodPerson,
+      storeIncharge: storePerson, additionalRemarks: remarks,
+      qaPersonName, qaDone, testCertUrl, inspectionClearanceUrl
     });
-    const data = await res.json();
 
     if (data.success) {
       showBOQBanner("fg-add-feedback", `<strong>${productName}</strong> added to Finished Goods Store (${department}) successfully!`, "success");
@@ -10573,6 +10591,7 @@ async function submitFGAddItem() {
   } catch(e) {
     showBOQBanner("fg-add-feedback", "Network error: " + e.message, "error");
   } finally {
+    _submitFGAddItemInProgress = false;
     btn.disabled = false;
     btn.textContent = "Add to Finished Goods Store";
   }
@@ -10583,6 +10602,16 @@ async function submitFGAddItem() {
 // ═══════════════════════════════════════════════════════
 
 async function triggerLiveFinishedGoodsStoreStockMetricsSync() {
+  // Always fetch fresh data — don't rely only on the raw materials sync cache
+  try {
+    const data = await apFetch({ action: "pullLiveInventoryCounts" });
+    if (data.success) {
+      window.cachedFinishedGoodsStoreStockCollection = data.finishedGoodsInventory || {};
+      cachedInventoryStockCollection = data.inventory || cachedInventoryStockCollection;
+    }
+  } catch(e) {
+    console.error("FG stock sync error:", e);
+  }
   const cached = window.cachedFinishedGoodsStoreStockCollection;
   if (!cached) return;
 
@@ -10673,8 +10702,7 @@ async function initializeUploadDrawingsPanel() {
   document.getElementById("upload-drawings-feedback").style.display = "none";
 
   try {
-    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"pullLiveActiveProjectCodes" });
     projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
     (data.projects || []).forEach(code => {
       const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
@@ -10706,8 +10734,7 @@ async function refreshUploadDrawingsList(projectId) {
   listZone.style.display = "block";
 
   try {
-    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchDrawingDocumentsList", sessionToken: localStorage.getItem("sessionToken"), projectId }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"fetchDrawingDocumentsList", projectId });
 
     if (!data.success || !data.documents || data.documents.length === 0) {
       mount.innerHTML = '<div style="font-size:0.82rem; color:var(--muted); font-style:italic; padding:10px; background:#f8fafc; border:1px dashed var(--border); border-radius:var(--radius);">No drawing documents uploaded yet for this project.</div>';
@@ -10761,16 +10788,11 @@ async function submitUploadDrawing() {
 
   try {
     const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(uploadDrawingsSelectedFile); });
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "uploadDrawingDocument",
-        sessionToken: localStorage.getItem("sessionToken"),
-        projectId,
-        file: { fileName: uploadDrawingsSelectedFile.name, base64Data: b64, mimeType: uploadDrawingsSelectedFile.type || "application/octet-stream" }
-      })
+    const data = await apFetch({
+      action: "uploadDrawingDocument",
+      projectId,
+      file: { fileName: uploadDrawingsSelectedFile.name, base64Data: b64, mimeType: uploadDrawingsSelectedFile.type || "application/octet-stream" }
     });
-    const data = await res.json();
 
     if (data.success) {
       showBOQBanner("upload-drawings-feedback", `<strong>${data.fileName}</strong> uploaded successfully.`, "success");
@@ -10801,8 +10823,7 @@ async function initializeJobCardPanel() {
   document.getElementById("job-card-feedback").style.display = "none";
 
   try {
-    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"pullLiveActiveProjectCodes" });
     projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
     (data.projects || []).forEach(code => {
       const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
@@ -10816,8 +10837,7 @@ async function initializeJobCardPanel() {
   const createdByDrop = document.getElementById("job-card-created-by");
   createdByDrop.innerHTML = '<option value="">Loading...</option>';
   try {
-    const res = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"getStoreOperatorsList", sessionToken: localStorage.getItem("sessionToken") }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"getStoreOperatorsList" });
     const allPersonnel = data.fullPersonnelDataRecordsTree || [];
     const prodPeople = filterOutPureAdminPersonnel(allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().trim() === "production" || d.toLowerCase().trim() === "admin")));
     createdByDrop.innerHTML = '<option value="">— Select Person —</option>';
@@ -10854,12 +10874,10 @@ async function loadJobCardBOQGroups(projectId) {
   mount.style.display = "block";
 
   try {
-    const [boqRes, jcRes] = await Promise.all([
-      fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchBOQProductsForJobCard", sessionToken: localStorage.getItem("sessionToken"), projectId }) }),
-      fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchJobCardsForProject", sessionToken: localStorage.getItem("sessionToken"), projectId }) })
+    const [boqData, jcData] = await Promise.all([
+      apFetch({ action:"fetchBOQProductsForJobCard", projectId }),
+      apFetch({ action:"fetchJobCardsForProject", projectId })
     ]);
-    const boqData = await boqRes.json();
-    const jcData  = await jcRes.json();
 
     jobCardBOQGroups = boqData.boqGroups || [];
 
@@ -10924,7 +10942,10 @@ async function loadJobCardBOQGroups(projectId) {
   }
 }
 
+let _submitJobCardFormInProgress = false;
 async function submitJobCardForm() {
+  if (_submitJobCardFormInProgress) return;
+  _submitJobCardFormInProgress = true;
   const projectId = document.getElementById("job-card-project").value;
   const customerName = document.getElementById("job-card-customer").value;
   const createdBy = document.getElementById("job-card-created-by").value.trim();
@@ -10958,11 +10979,7 @@ async function submitJobCardForm() {
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Saving...';
 
   try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "submitJobCardNumbers", sessionToken: localStorage.getItem("sessionToken"), entries, createdBy, projectId })
-    });
-    const data = await res.json();
+    const data = await apFetch({ action: "submitJobCardNumbers", entries, createdBy, projectId });
 
     if (data.success) {
       showBOQBanner("job-card-feedback", `${data.count} Job Card Number(s) saved successfully.`, "success");
@@ -10973,6 +10990,7 @@ async function submitJobCardForm() {
   } catch(e) {
     showBOQBanner("job-card-feedback", "Network error: " + e.message, "error");
   } finally {
+    _submitJobCardFormInProgress = false;
     btn.disabled = false;
     btn.textContent = "Save Job Card Numbers";
   }
@@ -11034,8 +11052,7 @@ async function initializePRNPanel() {
   prnStoreQtyLocked = false;
 
   try {
-    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"pullLiveActiveProjectCodes" });
     projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
     (data.projects || []).forEach(code => {
       const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
@@ -11061,8 +11078,7 @@ async function handlePRNProjectChange(projectId) {
   boqDrop.disabled  = true;
 
   try {
-    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchAuthorizedBOQsForUpdate", sessionToken: localStorage.getItem("sessionToken"), projectId }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"fetchAuthorizedBOQsForUpdate", projectId });
     boqDrop.innerHTML = '<option value="">— Select BOQ —</option>';
     (data.drafts || []).forEach(draft => {
       const opt = document.createElement("option");
@@ -11092,26 +11108,53 @@ async function handlePRNBOQChange(boqId) {
   document.getElementById("prn-id-display").textContent = "Loading...";
 
   try {
-    const res  = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "createPurchaseRequestNote",
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        projectId, boqId
-      })
-    });
-    const data = await res.json();
+    // Step 1: Check if a PRN already exists for this BOQ
+    const fetchData = await apFetch({ action: "fetchPRNsForProject", projectId });
 
-    if (!data.success) {
+    if (!fetchData.success) {
       document.getElementById("prn-details-zone").style.display = "none";
-      showPurchaseFeedback("prn-feedback", data.error || "Failed to load PRN.", "error");
+      showPurchaseFeedback("prn-feedback", fetchData.error || "Failed to load PRNs.", "error");
       return;
     }
 
-    prnCurrentData    = data;
-    prnStoreQtyLocked = data.storeQtyLocked === true;
-    renderPRNDetails(data);
+    const existingPRN = (fetchData.prns || []).find(p => p.boqId === boqId && p.status !== "Closed");
+
+    if (existingPRN) {
+      // PRN already exists — load it directly
+      prnCurrentData    = existingPRN;
+      prnStoreQtyLocked = (existingPRN.lineItems || []).some(li => li.isLocked);
+      renderPRNDetails(existingPRN);
+      return;
+    }
+
+    // Step 2: No existing PRN — create one now
+    const createData = await apFetch({
+      action: "createPurchaseRequestNote",
+      activeEngineer: appActiveOperatorIdentityString,
+      projectId, boqId,
+      storePerson: appActiveOperatorIdentityString,
+      purchasePerson: appActiveOperatorIdentityString
+    });
+
+    if (!createData.success) {
+      document.getElementById("prn-details-zone").style.display = "none";
+      showPurchaseFeedback("prn-feedback", createData.error || "Failed to create PRN.", "error");
+      return;
+    }
+
+    // Step 3: Fetch the newly created PRN to get full line item details
+    const refetchData = await apFetch({ action: "fetchPRNsForProject", projectId });
+    const newPRN = (refetchData.prns || []).find(p => p.boqId === boqId && p.status !== "Closed");
+
+    if (!newPRN) {
+      document.getElementById("prn-details-zone").style.display = "none";
+      showPurchaseFeedback("prn-feedback", "PRN created but could not be loaded. Please reopen this panel.", "error");
+      return;
+    }
+
+    prnCurrentData    = newPRN;
+    prnStoreQtyLocked = false;
+    renderPRNDetails(newPRN);
 
   } catch(e) {
     document.getElementById("prn-details-zone").style.display = "none";
@@ -11123,7 +11166,9 @@ function renderPRNDetails(data) {
   document.getElementById("prn-id-display").textContent      = data.prnId;
   document.getElementById("prn-product-display").textContent = (data.productName || "") + " " + (data.productRating || "");
   document.getElementById("prn-orderqty-display").textContent= (data.orderQuantity || "—") + " Sets";
-  document.getElementById("prn-status-display").textContent  = data.status || "Open";
+  document.getElementById("prn-status-display").textContent  = data.status || "Active";
+  document.getElementById("prn-store-person-display").textContent    = data.storePerson    || "—";
+  document.getElementById("prn-purchase-person-display").textContent = data.purchasePerson || "—";
 
   const pdfEl = document.getElementById("prn-pdf-link-display");
   if (data.pdfUrl) {
@@ -11203,17 +11248,12 @@ async function savePRNStoreQuantities() {
   });
 
   try {
-    const res  = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "savePRNStoreQuantities",
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        prnId: prnCurrentData.prnId,
-        lineItems: prnCurrentData.lineItems
-      })
+    const data = await apFetch({
+      action: "savePRNStoreQuantities",
+      activeEngineer: appActiveOperatorIdentityString,
+      prnId: prnCurrentData.prnId,
+      lineItems: prnCurrentData.lineItems
     });
-    const data = await res.json();
     if (data.success) {
       showPurchaseFeedback("prn-feedback", "Store quantities saved successfully.", "success");
     } else {
@@ -11239,17 +11279,12 @@ async function generatePRNPDF() {
   });
 
   try {
-    const res  = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "generateAndSavePRNPdf",
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        prnId: prnCurrentData.prnId,
-        lineItems: prnCurrentData.lineItems
-      })
+    const data = await apFetch({
+      action: "generateAndSavePRNPdf",
+      activeEngineer: appActiveOperatorIdentityString,
+      prnId: prnCurrentData.prnId,
+      lineItems: prnCurrentData.lineItems
     });
-    const data = await res.json();
     if (data.success) {
       prnStoreQtyLocked = true;
       prnCurrentData.pdfUrl = data.pdfUrl;
@@ -11281,8 +11316,7 @@ async function initializeMaterialListPanel() {
   materialListActiveProjectFilters = new Set();
 
   try {
-    const projRes  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"pullLiveActiveProjectCodes", sessionToken: localStorage.getItem("sessionToken") }) });
-    const projData = await projRes.json();
+    const projData = await apFetch({ action:'pullLiveActiveProjectCodes' });
     filterPills.innerHTML = "";
     (projData.projects || []).forEach(code => {
       const cleanId = "ml_prj_" + code.replace(/[^a-zA-Z0-9]/g, '_');
@@ -11320,11 +11354,7 @@ async function loadMaterialListForPurchase() {
   </div>`;
 
   try {
-    const res  = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "fetchMaterialListForPurchase", sessionToken: localStorage.getItem("sessionToken") })
-    });
-    const data = await res.json();
+    const data = await apFetch({ action: "fetchMaterialListForPurchase" });
     if (!data.success) {
       zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error || "Failed to load."}</div>`;
       return;
@@ -11465,6 +11495,8 @@ function resetRMPOUploadState() {
 
 async function parseRawMaterialPOWithAI() {
   if (!targetRMPOFileObj) return alert("Please select a PO document first.");
+  const MAX_RMPO = 15 * 1024 * 1024; // 15MB
+  if (targetRMPOFileObj.size > MAX_RMPO) return alert("PO file is too large (max 15MB). Please use a compressed PDF or image.");
   const btn = document.getElementById("rm-po-parse-btn");
   btn.disabled = true; btn.innerHTML = 'AI Processing...';
 
@@ -11473,16 +11505,13 @@ async function parseRawMaterialPOWithAI() {
     await loadItemCodeCatalogIntoCache();
     const catalog = window.itemCodeCatalogCache || [];
 
-    const res  = await fetch(GAS_URL, { 
-      method:"POST", 
-      body: JSON.stringify({
-        action: "parseRawMaterialPurchaseOrder",
-        sessionToken: localStorage.getItem("sessionToken"),
-        fileData64: base64Data,
-        mimeType: file.type || "application/pdf"
-    })});
+    const res  = await apFetch({
+      action: "parseRawMaterialPurchaseOrder",
+      fileData64: b64,
+      mimeType: targetRMPOFileObj.type || "application/pdf"
+    });
+    const data = res;
 
-    const data = await res.json();
     if (!data.success) return alert("AI Processing failed: " + (data.error || "Unknown error"));
 
     activeParsedRMPOPayload = data.extractedData;
@@ -11588,19 +11617,14 @@ async function commitRawMaterialPOToBackend() {
   }
 
   try {
-    const res  = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "uploadRawMaterialPurchaseOrder",
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        vendorName, uploadedBy, poNumber, orderDate, deliveryDate, grandTotal,
-        lineItems: activeParsedRMPOPayload.lineItems || [],
-        fileData64: fileBase64, fileName,
-        mimeType: targetRMPOFileObj ? targetRMPOFileObj.type : ""
-      })
+    const data = await apFetch({
+      action: "uploadRawMaterialPurchaseOrder",
+      activeEngineer: appActiveOperatorIdentityString,
+      vendorName, uploadedBy, poNumber, orderDate, deliveryDate, grandTotal,
+      lineItems: activeParsedRMPOPayload.lineItems || [],
+      fileData64: fileBase64, fileName,
+      mimeType: targetRMPOFileObj ? targetRMPOFileObj.type : ""
     });
-    const data = await res.json();
 
     if (data.success) {
       document.getElementById("rm-po-upload-zone").style.display = "none";
@@ -11670,8 +11694,7 @@ async function initializeAssignCurrentStockPanel() {
 async function loadAssignStockPersonnel() {
   const select = document.getElementById("assign-panel-assigned-by");
   try {
-    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"getStoreOperatorsList", sessionToken: localStorage.getItem("sessionToken") }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"getStoreOperatorsList" });
     const people = (data.fullPersonnelDataRecordsTree || []).filter(p =>
       p.departmentsList.some(d => ["store","admin","purchase"].includes(d.toLowerCase().trim()))
     );
@@ -11714,8 +11737,7 @@ async function loadAssignStockGRNQueue() {
     Loading GRN Queue...
   </div>`;
   try {
-    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchAssignCurrentStockData", sessionToken: localStorage.getItem("sessionToken"), mode:"grn-queue" }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"fetchAssignCurrentStockData", mode:"grn-queue" });
     if (!data.success) { feed.innerHTML = `<div style="color:var(--warn); padding:20px; text-align:center; font-weight:700;">${data.error}</div>`; return; }
 
     const grns = data.grns || [];
@@ -11776,8 +11798,7 @@ async function loadAssignStockUnassignedMaterials() {
     Loading unassigned materials...
   </div>`;
   try {
-    const res  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"fetchAssignCurrentStockData", sessionToken: localStorage.getItem("sessionToken"), mode:"unassigned-browse" }) });
-    const data = await res.json();
+    const data = await apFetch({ action:"fetchAssignCurrentStockData", mode:"unassigned-browse" });
     if (!data.success) { zone.innerHTML = `<div style="color:var(--warn); padding:16px; font-weight:700;">${data.error}</div>`; return; }
     assignStockUnassignedCache = data.materials || [];
     renderAssignStockUnassignedList(assignStockUnassignedCache);
@@ -11872,11 +11893,7 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
     </td></tr>`;
 
   try {
-    const res  = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({ action:"fetchAssignCurrentStockData", sessionToken: localStorage.getItem("sessionToken"), mode:"item-detail", itemCode })
-    });
-    const data = await res.json();
+    const data = await apFetch({ action:"fetchAssignCurrentStockData", mode:"item-detail", itemCode });
     if (!data.success) {
       document.getElementById("assign-panel-targets-body").innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error}</td></tr>`;
       return;
@@ -11981,17 +11998,12 @@ async function submitAssignCurrentStock() {
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Saving...';
 
   try {
-    const res  = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "submitStockAssignment",
-        sessionToken: localStorage.getItem("sessionToken"),
-        itemCode:     assignStockCurrentItemCode,
-        materialName: document.getElementById("assign-panel-material-title").textContent,
-        assignments, assignedBy
-      })
+    const data = await apFetch({
+      action: "submitStockAssignment",
+      itemCode:     assignStockCurrentItemCode,
+      materialName: document.getElementById("assign-panel-material-title").textContent,
+      assignments, assignedBy
     });
-    const data = await res.json();
     if (data.success) {
       showPurchaseFeedback("assign-stock-feedback", `${assignments.length} BOQ assignment(s) saved successfully.`, "success");
       const unitType = document.getElementById("assign-panel-unit").textContent;
@@ -12018,11 +12030,7 @@ function openUnassignStockDialog(assignmentId, boqId, currentQty, unitType) {
 
 async function executeUnassignStock(assignmentId, reduceQty) {
   try {
-    const res  = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({ action:"unassignStock", sessionToken: localStorage.getItem("sessionToken"), activeEngineer: appActiveOperatorIdentityString, assignmentId, reduceQty })
-    });
-    const data = await res.json();
+    const data = await apFetch({ action:"unassignStock", activeEngineer: appActiveOperatorIdentityString, assignmentId, reduceQty });
     if (data.success) {
       showPurchaseFeedback("assign-stock-feedback", "Assignment reduced successfully.", "success");
       const unitType = document.getElementById("assign-panel-unit").textContent;
@@ -12054,11 +12062,7 @@ async function loadExpectedInbounds() {
   </div>`;
 
   try {
-    const res  = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "fetchExpectedInbounds", sessionToken: localStorage.getItem("sessionToken") })
-    });
-    const data = await res.json();
+    const data = await apFetch({ action: "fetchExpectedInbounds" });
     if (!data.success) {
       zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error}</div>`;
       return;
