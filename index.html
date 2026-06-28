@@ -9436,7 +9436,7 @@ function renderCBOQMaterialRows() {
   }
   tbody.innerHTML = "";
   cboqMaterialRows.forEach((row, idx) => {
-    const isRawMaterial = row.typeOfStore === "Raw Materials Store";
+    const isRawMaterial = row.typeOfStore !== "Spare Store";
     const totalMaterialRate = isRawMaterial ? ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0)) : 0;
     const tr = document.createElement("tr");
     tr.style.borderBottom = "1px solid #f1f5f9";
@@ -9919,7 +9919,7 @@ function renderEBOQMaterialRows() {
     return;
   }
   eboqMaterialRows.forEach((row, idx) => {
-    const isRawMaterial = row.typeOfStore === "Raw Materials Store";
+    const isRawMaterial = row.typeOfStore !== "Spare Store";
     const totalMaterialRate = isRawMaterial ? ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0)) : 0;
     const tr = document.createElement("tr");
     tr.style.borderBottom = "1px solid #f1f5f9";
@@ -10247,7 +10247,7 @@ function renderUBOQMaterialRows() {
     return;
   }
   uboqMaterialRows.forEach((row, idx) => {
-    const isRawMaterial = row.typeOfStore === "Raw Materials Store";
+    const isRawMaterial = row.typeOfStore !== "Spare Store";
     const totalMaterialRate = isRawMaterial ? ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0)) : 0;
     const tr = document.createElement("tr");
     tr.style.borderBottom = "1px solid #f1f5f9";
