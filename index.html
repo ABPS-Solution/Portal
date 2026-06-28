@@ -1039,7 +1039,7 @@
               <tr style="background:#f8fafc;">
                 <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
                 <th style="width:130px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-                <th style="min-width:190px; width:190px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+                <th style="width:190px; padding:8px; font-size:0.7rem;">Description of Material *</th>
                 <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
                 <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
                 <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
@@ -9360,15 +9360,21 @@ async function initializeCreateBOQPanel() {
     preparedByEl.style.opacity = "0.5";
   }
 
-  // Load Project IDs + item code catalog in parallel
+  // Load Project IDs + item code catalog + personnel all in parallel
   const projDrop = _g("cboq-project-id");
   if (!projDrop) return;
   projDrop.innerHTML = '<option value="">Loading projects...</option>';
 
-  const [projResult] = await Promise.allSettled([
+  const [projResult, , personnelResult] = await Promise.allSettled([
     apFetch({ action: "pullLiveActiveProjectCodes" }),
-    loadItemCodeCatalogIntoCache()
+    loadItemCodeCatalogIntoCache(),
+    apFetch({ action: "getStoreOperatorsList" })
   ]);
+
+  // Cache personnel for Prepared By (used when department is selected)
+  if (personnelResult.status === "fulfilled" && personnelResult.value.fullPersonnelDataRecordsTree) {
+    window.cboqAllPersonnel = personnelResult.value.fullPersonnelDataRecordsTree;
+  }
 
   if (projResult.status === "fulfilled" && projResult.value && projResult.value.projects) {
     projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
@@ -9439,7 +9445,7 @@ function renderCBOQMaterialRows() {
           oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'cboq')"
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'cboq')"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px;" />
-        <div id="cboq-mat-dropdown-${idx}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:160px; overflow-y:auto; z-index:200; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+        <div id="cboq-mat-dropdown-${idx}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 6px 6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.15);"></div>
       </td>
       <td style="padding:4px;">
         <input type="text" value="${row.itemCode || ""}" readonly 
@@ -9505,22 +9511,15 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
   const dropdown   = document.getElementById(dropdownId);
   if (!dropdown) return;
 
-  // Open upward if this row is near the bottom of the visible table
+  // Always open downward, stretch to available viewport space
   const inputRect = dropdown.parentElement.getBoundingClientRect();
-  const spaceBelow = window.innerHeight - inputRect.bottom;
-  if (spaceBelow < 200) {
-    dropdown.style.top = "auto";
-    dropdown.style.bottom = "100%";
-    dropdown.style.borderTop = "1.5px solid var(--brand)";
-    dropdown.style.borderBottom = "none";
-    dropdown.style.borderRadius = "4px 4px 0 0";
-  } else {
-    dropdown.style.top = "100%";
-    dropdown.style.bottom = "auto";
-    dropdown.style.borderTop = "none";
-    dropdown.style.borderBottom = "1.5px solid var(--brand)";
-    dropdown.style.borderRadius = "0 0 4px 4px";
-  }
+  const availableHeight = window.innerHeight - inputRect.bottom - 12;
+  dropdown.style.top = "100%";
+  dropdown.style.bottom = "auto";
+  dropdown.style.borderTop = "none";
+  dropdown.style.borderBottom = "1.5px solid var(--brand)";
+  dropdown.style.borderRadius = "0 0 6px 6px";
+  dropdown.style.maxHeight = Math.max(availableHeight, 220) + "px";
 
   const catalog = window.itemCodeCatalogCache || [];
   if (!query || query.trim().length < 1) {
@@ -9817,7 +9816,7 @@ function renderEBOQForm(containerId) {
             <tr style="background:#f8fafc;">
               <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
               <th style="width:130px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-              <th style="min-width:190px; width:190px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+              <th style="width:190px; padding:8px; font-size:0.7rem;">Description of Material *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
               <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
@@ -9906,7 +9905,7 @@ function renderEBOQMaterialRows() {
           oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'eboq')"
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'eboq')"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px;" />
-        <div id="eboq-mat-dropdown-${idx}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:160px; overflow-y:auto; z-index:200; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+        <div id="eboq-mat-dropdown-${idx}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 6px 6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.15);"></div>
       </td>
       <td style="padding:4px;">
         <input type="text" value="${row.itemCode || ""}" readonly 
@@ -10162,7 +10161,7 @@ function renderUBOQForm() {
             <tr style="background:#f8fafc;">
               <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
               <th style="width:130px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-              <th style="min-width:190px; width:190px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+              <th style="width:190px; padding:8px; font-size:0.7rem;">Description of Material *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
               <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
@@ -10234,7 +10233,7 @@ function renderUBOQMaterialRows() {
           oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'uboq')"
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'uboq')"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px;" />
-        <div id="uboq-mat-dropdown-${idx}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:160px; overflow-y:auto; z-index:200; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+        <div id="uboq-mat-dropdown-${idx}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 6px 6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.15);"></div>
       </td>
       <td style="padding:4px;">
         <input type="text" value="${row.itemCode || ""}" readonly
