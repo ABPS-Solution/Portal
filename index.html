@@ -8559,16 +8559,16 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
     }
   } else if (targetModuleId === 'design-create-boq') {
     const el = document.getElementById("canvas-module-design-create-boq");
-    if (el) { el.style.display = "block"; initializeCreateBOQPanel(); }
+    if (el) { el.style.display = "block"; initializeCreateBOQPanel().catch(e => { if (e.message !== "SESSION_EXPIRED") console.error("BOQ init error:", e); }); }
   } else if (targetModuleId === 'design-auth-boq') {
     const el = document.getElementById("canvas-module-design-auth-boq");
-    if (el) { el.style.display = "block"; initializeAuthorizeBOQPanel('authorize'); }
+    if (el) { el.style.display = "block"; initializeAuthorizeBOQPanel('authorize').catch(e => { if (e.message !== "SESSION_EXPIRED") console.error("Auth BOQ init error:", e); }); }
   } else if (targetModuleId === 'design-update-boq') {
     const el = document.getElementById("canvas-module-design-update-boq");
-    if (el) { el.style.display = "block"; initializeUpdateBOQPanel(); }
+    if (el) { el.style.display = "block"; initializeUpdateBOQPanel().catch(e => { if (e.message !== "SESSION_EXPIRED") console.error("Update BOQ init error:", e); }); }
   } else if (targetModuleId === 'design-auth-boq-upd') {
     const el = document.getElementById("canvas-module-design-auth-boq-upd");
-    if (el) { el.style.display = "block"; initializeAuthorizeBOQPanel('authorize-update'); }
+    if (el) { el.style.display = "block"; initializeAuthorizeBOQPanel('authorize-update').catch(e => { if (e.message !== "SESSION_EXPIRED") console.error("Auth BOQ upd init error:", e); }); }
   } else if (targetModuleId === 'design-upload-drawings') {
     const el = document.getElementById("canvas-module-design-upload-drawings");
     if (el) { el.style.display = "block"; initializeUploadDrawingsPanel(); }
