@@ -1038,8 +1038,8 @@
             <thead>
               <tr style="background:#f8fafc;">
                 <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
-                <th style="width:130px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-                <th style="width:220px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+                <th style="width:110px; padding:8px; font-size:0.7rem;">Type of Store *</th>
+                <th style="width:240px; padding:8px; font-size:0.7rem;">Description of Material *</th>
                 <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
                 <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
                 <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
@@ -9518,7 +9518,7 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
   dropdown.style.left      = inputRect.left + "px";
   dropdown.style.top       = inputRect.bottom + "px";
   dropdown.style.width     = Math.max(inputRect.width, 320) + "px";
-  dropdown.style.maxHeight = Math.max(availableHeight, 220) + "px";
+  dropdown.style.maxHeight = Math.min(Math.max(availableHeight, 180), 280) + "px";
 
   const catalog = window.itemCodeCatalogCache || [];
   if (!query || query.trim().length < 1) {
@@ -9588,8 +9588,8 @@ async function submitCreateBOQ() {
   if (!preparedBy)   return showBOQBanner("cboq-feedback", "Prepared By is required.", "error");
   if (cboqMaterialRows.length === 0) return showBOQBanner("cboq-feedback", "Add at least one material row.", "error");
 
-  const invalidRow = cboqMaterialRows.find(r => !r.descriptionOfMaterial || !r.quantityFor1Set);
-  if (invalidRow) return showBOQBanner("cboq-feedback", "All material rows must have a Description of Material and Quantity for 1 Set.", "error");
+  const invalidRow = cboqMaterialRows.find(r => !r.descriptionOfMaterial || !r.quantityFor1Set || !r.unit);
+  if (invalidRow) return showBOQBanner("cboq-feedback", "All material rows must have a Description of Material, Qty / Set, and Unit filled in.", "error");
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
@@ -9813,8 +9813,8 @@ function renderEBOQForm(containerId) {
           <thead>
             <tr style="background:#f8fafc;">
               <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
-              <th style="width:130px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-              <th style="width:220px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+              <th style="width:110px; padding:8px; font-size:0.7rem;">Type of Store *</th>
+              <th style="width:240px; padding:8px; font-size:0.7rem;">Description of Material *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
               <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
@@ -10158,8 +10158,8 @@ function renderUBOQForm() {
           <thead>
             <tr style="background:#f8fafc;">
               <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
-              <th style="width:130px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-              <th style="width:220px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+              <th style="width:110px; padding:8px; font-size:0.7rem;">Type of Store *</th>
+              <th style="width:240px; padding:8px; font-size:0.7rem;">Description of Material *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
               <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
