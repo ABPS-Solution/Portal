@@ -9357,7 +9357,7 @@ async function initializeCreateBOQPanel() {
   if (_g("cboq-department"))     _g("cboq-department").value     = "";
   if (_g("cboq-order-qty"))      _g("cboq-order-qty").value      = "1";
   if (_g("cboq-spec-doc-list"))  _g("cboq-spec-doc-list").innerHTML = "";
-  if (_g("cboq-feedback"))       _g("cboq-feedback").style.display = "none";
+  if (_g("create-boq-feedback")) _g("create-boq-feedback").style.display = "none";
 
   // Lock Prepared By until Department is selected
   const preparedByEl = _g("cboq-prepared-by");
@@ -9579,13 +9579,13 @@ function resetCreateBOQForm() {
   ["cboq-project-id","cboq-department"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   ["cboq-customer-name","cboq-product-name","cboq-product-rating","cboq-prepared-by"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   document.getElementById("cboq-order-qty").value = "1";
-  document.getElementById("cboq-feedback").style.display = "none";
+  const fbEl = document.getElementById("create-boq-feedback"); if (fbEl) fbEl.style.display = "none";
   handleCBOQProjectChange(""); // re-lock fields
 }
 
 async function submitCreateBOQ() {
   const btn      = document.getElementById("cboq-submit-btn");
-  const banner   = document.getElementById("cboq-feedback");
+  const banner   = document.getElementById("create-boq-feedback");
   const projectId   = document.getElementById("cboq-project-id").value.trim();
   const productName = document.getElementById("cboq-product-name").value.trim();
   const productRating=document.getElementById("cboq-product-rating").value.trim();
@@ -9594,16 +9594,16 @@ async function submitCreateBOQ() {
   const customerName= document.getElementById("cboq-customer-name").value.trim();
   const preparedBy  = document.getElementById("cboq-prepared-by").value.trim();
 
-  if (!projectId)    return showBOQBanner("cboq-feedback", "Project ID is required.", "error");
-  if (!productName)  return showBOQBanner("cboq-feedback", "Product Name is required.", "error");
-  if (!productRating)return showBOQBanner("cboq-feedback", "Product Rating is required.", "error");
-  if (!department)   return showBOQBanner("cboq-feedback", "Department is required.", "error");
-  if (orderQty < 1)  return showBOQBanner("cboq-feedback", "Order Quantity must be at least 1.", "error");
-  if (!preparedBy)   return showBOQBanner("cboq-feedback", "Prepared By is required.", "error");
-  if (cboqMaterialRows.length === 0) return showBOQBanner("cboq-feedback", "Add at least one material row.", "error");
+  if (!projectId)    return showBOQBanner("create-boq-feedback", "⚠️ Project ID is required.", "error");
+  if (!productName)  return showBOQBanner("create-boq-feedback", "⚠️ Product Name is required.", "error");
+  if (!productRating)return showBOQBanner("create-boq-feedback", "⚠️ Product Rating is required.", "error");
+  if (!department)   return showBOQBanner("create-boq-feedback", "⚠️ Department is required.", "error");
+  if (orderQty < 1)  return showBOQBanner("create-boq-feedback", "⚠️ Order Quantity must be at least 1.", "error");
+  if (!preparedBy)   return showBOQBanner("create-boq-feedback", "⚠️ Prepared By is required — select a Department first.", "error");
+  if (cboqMaterialRows.length === 0) return showBOQBanner("create-boq-feedback", "⚠️ Add at least one material row.", "error");
 
   const invalidRow = cboqMaterialRows.find(r => !r.descriptionOfMaterial || !r.quantityFor1Set || !r.unit);
-  if (invalidRow) return showBOQBanner("cboq-feedback", "All material rows must have a Description of Material, Qty / Set, and Unit filled in.", "error");
+  if (invalidRow) return showBOQBanner("create-boq-feedback", "⚠️ All material rows must have Description of Material, Qty / Set, and Unit filled in.", "error");
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
@@ -9618,16 +9618,32 @@ async function submitCreateBOQ() {
     });
 
     if (data.success) {
-      showBOQBanner("cboq-feedback",
-        `BOQ Created Successfully! BOQ ID: <strong style="font-family:monospace;">${data.boqId}</strong>. Submitted for Authorization.`,
-        "success");
-      resetCreateBOQForm();
-      await initializeCreateBOQPanel();
+      const fb = document.getElementById("create-boq-feedback");
+      if (fb) {
+        fb.style.borderLeftColor = "var(--accent)";
+        fb.style.background      = "#f0fff4";
+        fb.style.color           = "#276749";
+        fb.style.display         = "block";
+        fb.innerHTML = `
+          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ BOQ Submitted for Authorization!</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">BOQ ID</span><span style="font-family:monospace; font-weight:800;">${data.boqId}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Project ID</span><span style="font-weight:700;">${projectId}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Customer</span><span style="font-weight:700;">${customerName}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Name</span><span style="font-weight:700;">${productName}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Rating</span><span style="font-weight:700;">${productRating}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Order Qty (Sets)</span><span style="font-weight:700;">${orderQty}</span></div>
+          </div>
+          <button onclick="resetCreateBOQForm(); initializeCreateBOQPanel().catch(()=>{});" 
+            style="background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
+            + Create New Bill of Quantity
+          </button>`;
+      }
     } else {
-      showBOQBanner("cboq-feedback", data.error || "Submission failed.", "error");
+      showBOQBanner("create-boq-feedback", data.error || "Submission failed.", "error");
     }
   } catch(e) {
-    showBOQBanner("cboq-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("create-boq-feedback", "Network error: " + e.message, "error");
   } finally {
     btn.disabled = false;
     btn.textContent = "Submit BOQ for Authorization";
