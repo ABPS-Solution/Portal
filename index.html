@@ -999,7 +999,7 @@
           </div>
           <div>
             <label class="field-label" style="margin-top:0;">Department *</label>
-            <select id="cboq-department" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <select id="cboq-department" disabled onchange="handleCBOQDepartmentChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
               <option value="">— Select —</option>
               <option value="Reactor">Reactor</option>
               <option value="Capacitor">Capacitor</option>
@@ -1039,13 +1039,13 @@
               <tr style="background:#f8fafc;">
                 <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
                 <th style="width:130px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-                <th style="min-width:150px; width:150px; padding:8px; font-size:0.7rem;">Description of Material *</th>
-                <th style="width:110px; padding:8px; font-size:0.7rem;">Item Code</th>
-                <th style="width:120px; padding:8px; font-size:0.7rem;">Make</th>
-                <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
-                <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
-                <th style="width:120px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
-                <th style="width:120px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
+                <th style="min-width:190px; width:190px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+                <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
+                <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
+                <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
+                <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
+                <th style="width:110px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
+                <th style="width:110px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
                 <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
               </tr>
             </thead>
@@ -8913,17 +8913,51 @@ async function loadDesignPersonnelIntoSelect(selectId) {
 
   try {
     const data = await apFetch({ action:"getStoreOperatorsList" });
-    const allPersonnel = data.fullPersonnelDataRecordsTree || [];
-    const designPeople = allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().trim().includes("design")));
-
-    selectEl.innerHTML = '<option value="">— Select Person —</option>';
-    designPeople.forEach(p => {
-      const opt = document.createElement("option"); opt.value = p.fullName; opt.textContent = p.fullName;
-      selectEl.appendChild(opt);
-    });
+    window.cboqAllPersonnel = data.fullPersonnelDataRecordsTree || [];
+    // Don't populate yet — wait for department selection
+    selectEl.innerHTML = '<option value="">— Select Department First —</option>';
   } catch(e) {
     selectEl.innerHTML = '<option value="">Error loading personnel</option>';
   }
+}
+
+function handleCBOQDepartmentChange(department) {
+  const preparedByEl = document.getElementById("cboq-prepared-by");
+  if (!department) {
+    preparedByEl.innerHTML = '<option value="">— Select Department First —</option>';
+    preparedByEl.disabled = true;
+    preparedByEl.style.opacity = "0.5";
+    return;
+  }
+
+  const allPersonnel = window.cboqAllPersonnel || [];
+  if (allPersonnel.length === 0) {
+    // Personnel not yet cached — fetch now
+    apFetch({ action:"getStoreOperatorsList" }).then(data => {
+      window.cboqAllPersonnel = data.fullPersonnelDataRecordsTree || [];
+      populateCBOQPreparedBy(department);
+    }).catch(() => {
+      preparedByEl.innerHTML = '<option value="">Error loading personnel</option>';
+    });
+  } else {
+    populateCBOQPreparedBy(department);
+  }
+}
+
+function populateCBOQPreparedBy(department) {
+  const preparedByEl = document.getElementById("cboq-prepared-by");
+  const allPersonnel = window.cboqAllPersonnel || [];
+  const deptLower = department.toLowerCase();
+  const filtered = allPersonnel.filter(p =>
+    p.departmentsList.some(d => d.toLowerCase().trim().includes("design") || d.toLowerCase().trim() === "admin")
+  );
+  preparedByEl.innerHTML = '<option value="">— Select Person —</option>';
+  filtered.forEach(p => {
+    const opt = document.createElement("option"); opt.value = p.fullName; opt.textContent = p.fullName;
+    preparedByEl.appendChild(opt);
+  });
+  preparedByEl.disabled = false;
+  preparedByEl.style.opacity = "1";
 }
 
 async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
@@ -9302,46 +9336,52 @@ function selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, type
 // ═══════════════════════════════════════════════════════
 
 async function initializeCreateBOQPanel() {
-  // Set today's date
   const today = new Date().toLocaleDateString('en-CA');
   document.getElementById("cboq-date").value = today;
 
-  // Ensure item code catalog is fresh before any material row search
-  await loadItemCodeCatalogIntoCache();
-  await loadDesignPersonnelIntoSelect("cboq-prepared-by");
-
-  // Load project IDs
-  const projDrop = document.getElementById("cboq-project-id");
-  projDrop.innerHTML = '<option value="">Loading projects...</option>';
-  try {
-    const data = await apFetch({ action:"pullLiveActiveProjectCodes" });
-    projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
-    (data.projects || []).forEach(code => {
-      const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
-    });
-    window.cboqProjectMeta = data.projectMeta || {};
-  } catch(e) {
-    projDrop.innerHTML = '<option value="">Error loading projects</option>';
-  }
-
-  // Reset form
+  // Reset form immediately
   cboqMaterialRows = [];
   cboqSpecFiles    = [];
   renderCBOQMaterialRows();
-  document.getElementById("cboq-customer-name").value = "";
-  document.getElementById("cboq-product-name").value  = "";
-  document.getElementById("cboq-product-rating").value= "";
-  document.getElementById("cboq-department").value    = "";
-  document.getElementById("cboq-order-qty").value     = "1";
+  document.getElementById("cboq-customer-name").value  = "";
+  document.getElementById("cboq-product-name").value   = "";
+  document.getElementById("cboq-product-rating").value = "";
+  document.getElementById("cboq-department").value     = "";
+  document.getElementById("cboq-order-qty").value      = "1";
   document.getElementById("cboq-spec-doc-list").innerHTML = "";
   document.getElementById("cboq-feedback").style.display = "none";
+
+  // Lock Prepared By until Department is selected
+  const preparedByEl = document.getElementById("cboq-prepared-by");
+  preparedByEl.innerHTML = '<option value="">— Select Department First —</option>';
+  preparedByEl.disabled = true;
+  preparedByEl.style.opacity = "0.5";
+
+  // Load Project IDs + item code catalog in parallel
+  const projDrop = document.getElementById("cboq-project-id");
+  projDrop.innerHTML = '<option value="">Loading projects...</option>';
+
+  const [projResult] = await Promise.allSettled([
+    apFetch({ action: "pullLiveActiveProjectCodes" }),
+    loadItemCodeCatalogIntoCache()
+  ]);
+
+  if (projResult.status === "fulfilled" && projResult.value.projects) {
+    projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
+    projResult.value.projects.forEach(code => {
+      const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
+    });
+    window.cboqProjectMeta = projResult.value.projectMeta || {};
+  } else {
+    projDrop.innerHTML = '<option value="">Error loading projects</option>';
+  }
 }
 
 function handleCBOQProjectChange(projectId) {
   const meta = window.cboqProjectMeta && window.cboqProjectMeta[projectId];
   document.getElementById("cboq-customer-name").value = meta ? (meta.companyName || "") : "";
 
-  const fieldsToToggle = ["cboq-product-name", "cboq-product-rating", "cboq-department", "cboq-order-qty", "cboq-prepared-by"];
+  const fieldsToToggle = ["cboq-product-name", "cboq-product-rating", "cboq-department", "cboq-order-qty"];
   const addRowBtn = document.getElementById("cboq-add-row-btn");
   const submitBtn = document.getElementById("cboq-submit-btn");
 
@@ -9351,6 +9391,8 @@ function handleCBOQProjectChange(projectId) {
     if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
   } else {
     fieldsToToggle.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = true; });
+    const pb = document.getElementById("cboq-prepared-by");
+    if (pb) { pb.disabled = true; pb.style.opacity = "0.5"; pb.innerHTML = '<option value="">— Select Department First —</option>'; }
     if (addRowBtn) { addRowBtn.disabled = true; addRowBtn.style.opacity = "0.5"; addRowBtn.style.cursor = "not-allowed"; }
     if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = "0.5"; submitBtn.style.cursor = "not-allowed"; }
   }
@@ -9771,13 +9813,13 @@ function renderEBOQForm(containerId) {
             <tr style="background:#f8fafc;">
               <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
               <th style="width:130px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-              <th style="min-width:150px; width:150px; padding:8px; font-size:0.7rem;">Description of Material *</th>
-              <th style="width:110px; padding:8px; font-size:0.7rem;">Item Code</th>
-              <th style="width:120px; padding:8px; font-size:0.7rem;">Make</th>
-              <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
-              <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
-              <th style="width:120px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
-              <th style="width:120px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
+              <th style="min-width:190px; width:190px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+              <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
+              <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
+              <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
+              <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
+              <th style="width:110px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
+              <th style="width:110px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
               <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
             </tr>
           </thead>
@@ -10116,13 +10158,13 @@ function renderUBOQForm() {
             <tr style="background:#f8fafc;">
               <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
               <th style="width:130px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-              <th style="min-width:150px; width:150px; padding:8px; font-size:0.7rem;">Description of Material *</th>
-              <th style="width:110px; padding:8px; font-size:0.7rem;">Item Code</th>
-              <th style="width:120px; padding:8px; font-size:0.7rem;">Make</th>
-              <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
-              <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
-              <th style="width:120px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
-              <th style="width:120px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
+              <th style="min-width:190px; width:190px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+              <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
+              <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
+              <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
+              <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
+              <th style="width:110px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
+              <th style="width:110px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
               <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
             </tr>
           </thead>
