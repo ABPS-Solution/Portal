@@ -1126,6 +1126,13 @@
       <div id="upload-drawings-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
+        <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project Status *</label>
+        <select id="upload-drawings-status" onchange="handleUploadDrawingsStatusChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:4px;">
+          <option value="Active">Active</option>
+        </select>
+      </div>
+
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
         <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
         <select id="upload-drawings-project" onchange="handleUploadDrawingsProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:4px;">
           <option value="">— Select Project ID —</option>
@@ -2066,7 +2073,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzv_96W0z2ajI22BjdPiGjV5U-wFofo-9wP8Tq52tYn0WLBtO3jMI6FBaywEcxf8H9b/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzW0bdeCMgcc16MdZ3s7EDzu3iYlodsYbVdUe4iEIYRv42Z_Yrcc5TTIa62zOKze6In/exec";
 const CLOUD_NAME    = "dcdhahrhz";
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -10749,18 +10756,56 @@ function showBOQBanner(elementId, message, type) {
 // ═══════════════════════════════════════════════════════
 
 async function initializeUploadDrawingsPanel() {
-  const projDrop = document.getElementById("upload-drawings-project");
-  projDrop.innerHTML = '<option value="">Loading...</option>';
+  const projDrop   = document.getElementById("upload-drawings-project");
+  const statusDrop = document.getElementById("upload-drawings-status");
+  projDrop.innerHTML   = '<option value="">— Select Project ID —</option>';
+  statusDrop.innerHTML = '<option value="Active">Active</option>';
   document.getElementById("upload-drawings-existing-list").style.display = "none";
   document.getElementById("upload-drawings-upload-zone").style.display = "none";
   document.getElementById("upload-drawings-feedback").style.display = "none";
 
   try {
-    const data = await apFetch({ action:"pullLiveActiveProjectCodes" });
+    const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: "Active" });
+
+    // Populate status dropdown from all statuses returned
+    if (data.allStatuses && data.allStatuses.length > 0) {
+      statusDrop.innerHTML = "";
+      data.allStatuses.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s; opt.textContent = s;
+        if (s === "Active") opt.selected = true;
+        statusDrop.appendChild(opt);
+      });
+    }
+
+    // Populate projects for Active (default)
     projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
     (data.projects || []).forEach(code => {
       const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
     });
+  } catch(e) {
+    projDrop.innerHTML = '<option value="">Error loading projects</option>';
+  }
+}
+
+async function handleUploadDrawingsStatusChange(selectedStatus) {
+  const projDrop = document.getElementById("upload-drawings-project");
+  const listZone = document.getElementById("upload-drawings-existing-list");
+  const uploadZone = document.getElementById("upload-drawings-upload-zone");
+
+  projDrop.innerHTML = '<option value="">Loading...</option>';
+  listZone.style.display = "none";
+  uploadZone.style.display = "none";
+
+  try {
+    const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: selectedStatus });
+    projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
+    (data.projects || []).forEach(code => {
+      const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
+    });
+    if ((data.projects || []).length === 0) {
+      projDrop.innerHTML = '<option value="">No projects with status: ' + selectedStatus + '</option>';
+    }
   } catch(e) {
     projDrop.innerHTML = '<option value="">Error loading projects</option>';
   }
