@@ -1039,13 +1039,13 @@
               <tr style="background:#f8fafc;">
                 <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
                 <th style="width:130px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-                <th style="min-width:200px; padding:8px; font-size:0.7rem;">Description of Material *</th>
-                <th style="width:100px; padding:8px; font-size:0.7rem;">Item Code</th>
-                <th style="width:100px; padding:8px; font-size:0.7rem;">Make</th>
-                <th style="width:70px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
-                <th style="width:70px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
-                <th style="width:100px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
-                <th style="width:100px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
+                <th style="min-width:150px; width:150px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+                <th style="width:110px; padding:8px; font-size:0.7rem;">Item Code</th>
+                <th style="width:120px; padding:8px; font-size:0.7rem;">Make</th>
+                <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
+                <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
+                <th style="width:120px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
+                <th style="width:120px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
                 <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
               </tr>
             </thead>
@@ -2127,7 +2127,7 @@ window.onerror = function(message, source, lineno, colno, error) {
     if (appContainer && appContainer.style.display !== "none") {
       const banner = document.createElement("div");
       banner.style.cssText = "position:fixed; top:60px; left:50%; transform:translateX(-50%); background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; padding:10px 20px; border-radius:6px; font-size:0.85rem; font-weight:700; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.1);";
-      banner.textContent   = "Something went wrong. Please refresh the page if this persists.";
+      banner.textContent   = "Something went wrong. Please refresh the page if this keeps happening.";
       document.body.appendChild(banner);
       setTimeout(() => banner.remove(), 5000);
     }
@@ -9357,7 +9357,7 @@ function handleCBOQProjectChange(projectId) {
 }
 
 function addCBOQMaterialRow() {
-  cboqMaterialRows.push({ typeOfStore: "Raw Materials Store", descriptionOfMaterial: "", itemCode: "", make: "", quantityFor1Set: "", unit: "NOS", designRatePerQuantity: "" });
+  cboqMaterialRows.push({ typeOfStore: "Raw Materials Store", descriptionOfMaterial: "", itemCode: "", make: "", quantityFor1Set: "", unit: "", designRatePerQuantity: "" });
   renderCBOQMaterialRows();
 }
 
@@ -9406,11 +9406,12 @@ function renderCBOQMaterialRows() {
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
-          oninput="cboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateCBOQTotals();"
+          oninput="cboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateCBOQTotals(); const r=document.getElementById('cboq-rate-${idx}'); if(r) r.value=(cboqMaterialRows[${idx}].quantityFor1Set*(Number(cboqMaterialRows[${idx}].designRatePerQuantity)||0)).toFixed(2);"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center;">
         <select onchange="cboqMaterialRows[${idx}].unit=this.value" style="padding:4px; font-size:0.8rem; width:100%;">
+          <option value="" ${!row.unit?"selected":""} disabled>— Unit —</option>
           <option value="NOS" ${row.unit==="NOS"?"selected":""}>NOS</option>
           <option value="KG" ${row.unit==="KG"?"selected":""}>KG</option>
           <option value="MTR" ${row.unit==="MTR"?"selected":""}>MTR</option>
@@ -9422,12 +9423,12 @@ function renderCBOQMaterialRows() {
       <td style="padding:4px; text-align:center;">
         ${isRawMaterial ? `
         <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
-          oninput="cboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateCBOQTotals();"
+          oninput="cboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateCBOQTotals(); const r=document.getElementById('cboq-rate-${idx}'); if(r) r.value=((Number(cboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0)).toFixed(2);"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       </td>
       <td style="padding:4px; text-align:center;">
-        <input type="text" value="${isRawMaterial ? totalMaterialRate.toFixed(2) : '—'}" readonly
+        <input type="text" id="cboq-rate-${idx}" value="${isRawMaterial ? totalMaterialRate.toFixed(2) : '—'}" readonly
           style="padding:5px; font-size:0.85rem; font-weight:700; text-align:center; width:100%; background:#f0fdf4; color:var(--accent); cursor:not-allowed; border-radius:3px; border:1px solid #86efac;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -9770,13 +9771,13 @@ function renderEBOQForm(containerId) {
             <tr style="background:#f8fafc;">
               <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
               <th style="width:130px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-              <th style="min-width:200px; padding:8px; font-size:0.7rem;">Description of Material *</th>
-              <th style="width:100px; padding:8px; font-size:0.7rem;">Item Code</th>
-              <th style="width:100px; padding:8px; font-size:0.7rem;">Make</th>
-              <th style="width:70px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
-              <th style="width:70px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
-              <th style="width:100px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
-              <th style="width:100px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
+              <th style="min-width:150px; width:150px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+              <th style="width:110px; padding:8px; font-size:0.7rem;">Item Code</th>
+              <th style="width:120px; padding:8px; font-size:0.7rem;">Make</th>
+              <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
+              <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
+              <th style="width:120px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
+              <th style="width:120px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
               <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
             </tr>
           </thead>
@@ -9893,7 +9894,7 @@ function renderEBOQMaterialRows() {
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       </td>
       <td style="padding:4px; text-align:center;">
-        <input type="text" value="${isRawMaterial ? totalMaterialRate.toFixed(2) : '—'}" readonly
+        <input type="text" id="cboq-rate-${idx}" value="${isRawMaterial ? totalMaterialRate.toFixed(2) : '—'}" readonly
           style="padding:5px; font-size:0.85rem; font-weight:700; text-align:center; width:100%; background:#f0fdf4; color:var(--accent); cursor:not-allowed; border-radius:3px; border:1px solid #86efac;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -10115,13 +10116,13 @@ function renderUBOQForm() {
             <tr style="background:#f8fafc;">
               <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
               <th style="width:130px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-              <th style="min-width:200px; padding:8px; font-size:0.7rem;">Description of Material *</th>
-              <th style="width:100px; padding:8px; font-size:0.7rem;">Item Code</th>
-              <th style="width:100px; padding:8px; font-size:0.7rem;">Make</th>
-              <th style="width:70px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
-              <th style="width:70px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
-              <th style="width:100px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
-              <th style="width:100px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
+              <th style="min-width:150px; width:150px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+              <th style="width:110px; padding:8px; font-size:0.7rem;">Item Code</th>
+              <th style="width:120px; padding:8px; font-size:0.7rem;">Make</th>
+              <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
+              <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
+              <th style="width:120px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
+              <th style="width:120px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
               <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
             </tr>
           </thead>
@@ -10221,7 +10222,7 @@ function renderUBOQMaterialRows() {
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       </td>
       <td style="padding:4px; text-align:center;">
-        <input type="text" value="${isRawMaterial ? totalMaterialRate.toFixed(2) : '—'}" readonly
+        <input type="text" id="cboq-rate-${idx}" value="${isRawMaterial ? totalMaterialRate.toFixed(2) : '—'}" readonly
           style="padding:5px; font-size:0.85rem; font-weight:700; text-align:center; width:100%; background:#f0fdf4; color:var(--accent); cursor:not-allowed; border-radius:3px; border:1px solid #86efac;" />
       </td>
       <td style="padding:4px; text-align:center;">
