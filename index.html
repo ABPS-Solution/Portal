@@ -9028,7 +9028,6 @@ async function executeItemCodeSearch() {
   const resultsZone  = document.getElementById("itemcode-search-results-zone");
   const noResultsZone= document.getElementById("itemcode-no-results-zone");
   const suggestMount = document.getElementById("itemcode-suggestions-mount");
-  const detailZone   = document.getElementById("itemcode-selected-detail-zone");
   const createZone   = document.getElementById("itemcode-create-form-zone");
   const banner       = document.getElementById("itemcode-feedback-banner");
 
@@ -9037,7 +9036,6 @@ async function executeItemCodeSearch() {
   // Reset zones
   resultsZone.style.display   = "none";
   noResultsZone.style.display = "none";
-  detailZone.style.display    = "none";
   createZone.style.display    = "none";
   banner.style.display        = "none";
   suggestMount.innerHTML      = "";
