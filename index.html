@@ -1187,7 +1187,7 @@
 
       <!-- NO RESULTS ZONE -->
       <div id="itemcode-no-results-zone" style="display:none; margin-bottom:16px; padding:14px; background:#fff5f5; border:1px solid #fca5a5; border-radius:var(--radius); font-size:0.85rem; color:#b91c1c; font-weight:600;">
-        No similar products found in the catalog.
+        No similar materials found in the catalog.
         <button id="itemcode-no-results-create-btn" onclick="revealItemCodeCreateForm()" 
           style="background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; font-size:0.78rem; font-weight:700; cursor:pointer; margin-left:10px;">
           Create New Item Code
@@ -2066,7 +2066,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyrI3-4CiFAOL6X1_mK2EMsJvCDQNkul7D5sXbaNsd26mVotVE0KERg6A0F7w2KDw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxzjaKl1aKxXoYmftixLdUmvoiy2LnFBi-tAEr2hrwnMh1n2resd6emYtNksy7sDfKK/exec";
 const CLOUD_NAME    = "dcdhahrhz";
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -9031,7 +9031,7 @@ async function executeItemCodeSearch() {
   const createZone   = document.getElementById("itemcode-create-form-zone");
   const banner       = document.getElementById("itemcode-feedback-banner");
 
-  if (!query) { alert("Please enter a product name to search."); return; }
+  if (!query) { alert("Please enter a material name to search."); return; }
 
   // Reset zones
   resultsZone.style.display   = "none";
