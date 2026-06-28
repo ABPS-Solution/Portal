@@ -1046,7 +1046,7 @@
                 <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
                 <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
                 <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
-                <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
+                <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Cost</th>
                 <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
               </tr>
             </thead>
@@ -9704,7 +9704,7 @@ async function initializeAuthorizeBOQPanel(mode) {
               <span style="background:#e2e8f0;">Product:</span><strong style="margin-right:15px;">${draft.productName} ${draft.productRating}</strong>
               <span style="background:#edf2f7;">Department:</span><strong style="margin-right:15px;">${draft.department}</strong>
               <span style="background:#edf2f7;">Qty:</span><strong style="margin-right:15px;">${draft.orderQuantity}</strong>
-              <span style="background:#edf2f7;">Date:</span><strong style="margin-right:15px;">${draft.date}</strong>
+              <span style="background:#edf2f7;">Date:</span><strong style="margin-right:15px;">${draft.date ? new Date(draft.date).toDateString().replace(/^\S+\s/, '') : ''}</strong>
               <span style="background:#edf2f7;">Prepared By:</span><strong>${draft.preparedBy}</strong>
             </div>
           </div>
@@ -9831,7 +9831,7 @@ function renderEBOQForm(containerId) {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Date</label>
-          <input type="text" value="${draft.date}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" value="${draft.date ? new Date(draft.date).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) : ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
       </div>
     </div>
@@ -9854,7 +9854,7 @@ function renderEBOQForm(containerId) {
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
-              <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
+              <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Cost</th>
               <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
             </tr>
           </thead>
@@ -9937,7 +9937,7 @@ function renderEBOQMaterialRows() {
           oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'eboq')"
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'eboq')"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px;" />
-        <div id="eboq-mat-dropdown-${idx}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 6px 6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.15);"></div>
+        <div id="eboq-mat-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
       </td>
       <td style="padding:4px;">
         <input type="text" value="${row.itemCode || ""}" readonly 
@@ -10167,7 +10167,7 @@ function renderUBOQForm() {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Date</label>
-          <input type="text" value="${draft.date}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" value="${draft.date ? new Date(draft.date).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) : ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
       </div>
       ${eboqMode === "authorize" ? `
@@ -10199,7 +10199,7 @@ function renderUBOQForm() {
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
               <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
-              <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
+              <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Cost</th>
               <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
             </tr>
           </thead>
