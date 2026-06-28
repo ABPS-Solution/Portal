@@ -2825,8 +2825,8 @@ async function showAppView() {
   document.getElementById("display-username").textContent = "@" + localStorage.getItem("sessionUser");
   
   enforceDynamicModuleRoleGateways(userPermissions);
-  // Pre-load ItemCodeNumbers catalog into memory
-  loadItemCodeCatalogIntoCache();
+  // Pre-load ItemCodeNumbers catalog into memory (fire-and-forget, suppress unhandled rejection)
+  loadItemCodeCatalogIntoCache().catch(() => {});
   
   loadQualFilter();
 
