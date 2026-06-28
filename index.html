@@ -1122,7 +1122,7 @@
     <!-- UPLOAD DRAWINGS -->
     <div id="canvas-module-design-upload-drawings" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="margin-bottom:6px; color:var(--brand);">Upload Drawings</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project ID, then upload drawing documents. Multiple uploads allowed.</p>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project ID, then upload drawing documents. Multiple uploads possible.</p>
       <div id="upload-drawings-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
@@ -2066,7 +2066,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxzjaKl1aKxXoYmftixLdUmvoiy2LnFBi-tAEr2hrwnMh1n2resd6emYtNksy7sDfKK/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzv_96W0z2ajI22BjdPiGjV5U-wFofo-9wP8Tq52tYn0WLBtO3jMI6FBaywEcxf8H9b/exec";
 const CLOUD_NAME    = "dcdhahrhz";
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -10835,7 +10835,7 @@ async function submitUploadDrawing() {
   const btn       = document.getElementById("upload-drawings-submit-btn");
 
   if (!projectId) return showBOQBanner("upload-drawings-feedback", "Select a Project ID first.", "error");
-  if (!uploadDrawingsSelectedFile) return showBOQBanner("upload-drawings-feedback", "Select a file to upload.", "error");
+  if (!uploadDrawingsSelectedFile) return showBOQBanner("upload-drawings-feedback", "Select a file to upload first.", "error");
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Uploading...';
