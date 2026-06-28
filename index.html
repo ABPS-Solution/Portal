@@ -8571,13 +8571,13 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
     if (el) { el.style.display = "block"; initializeCreateBOQPanel().catch(e => { if (e.message !== "SESSION_EXPIRED") console.error("BOQ init error:", e); }); }
   } else if (targetModuleId === 'design-auth-boq') {
     const el = document.getElementById("canvas-module-design-auth-boq");
-    if (el) { el.style.display = "block"; initializeAuthorizeBOQPanel('authorize').catch(e => { if (e.message !== "SESSION_EXPIRED") console.error("Auth BOQ init error:", e); }); }
+    if (el) { el.style.display = "block"; initializeAuthorizeBOQPanel('authorize').catch(e => { if (e?.message !== "SESSION_EXPIRED") console.error("Auth BOQ init error:", e); }); }
   } else if (targetModuleId === 'design-update-boq') {
     const el = document.getElementById("canvas-module-design-update-boq");
     if (el) { el.style.display = "block"; initializeUpdateBOQPanel().catch(e => { if (e.message !== "SESSION_EXPIRED") console.error("Update BOQ init error:", e); }); }
   } else if (targetModuleId === 'design-auth-boq-upd') {
     const el = document.getElementById("canvas-module-design-auth-boq-upd");
-    if (el) { el.style.display = "block"; initializeAuthorizeBOQPanel('authorize-update').catch(e => { if (e.message !== "SESSION_EXPIRED") console.error("Auth BOQ upd init error:", e); }); }
+    if (el) { el.style.display = "block"; initializeAuthorizeBOQPanel('authorize-update').catch(e => { if (e?.message !== "SESSION_EXPIRED") console.error("Auth BOQ upd init error:", e); }); }
   } else if (targetModuleId === 'design-upload-drawings') {
     const el = document.getElementById("canvas-module-design-upload-drawings");
     if (el) { el.style.display = "block"; initializeUploadDrawingsPanel(); }
@@ -9664,15 +9664,17 @@ let eboqMode         = ""; // "authorize" or "authorize-update"
 let eboqExpandedCardBoqId = null;
 
 async function initializeAuthorizeBOQPanel(mode) {
-  await loadItemCodeCatalogIntoCache();
+  await loadItemCodeCatalogIntoCache().catch(() => {});
   eboqMode = mode;
+  eboqCurrentDraft = null;
   const cardsFeedId = mode === "authorize" ? "auth-boq-queue-cards-feed" : "auth-boq-upd-queue-cards-feed";
   const feedbackId  = mode === "authorize" ? "auth-boq-feedback" : "auth-boq-upd-feedback";
   const status      = mode === "authorize" ? "Pending Authorization" : "Pending Authorization Update";
 
   const cardsFeed = document.getElementById(cardsFeedId);
+  if (!cardsFeed) return;
   cardsFeed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);"><div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>Loading Pending BOQs...</div>`;
-  document.getElementById(feedbackId).style.display = "none";
+  const fbEl = document.getElementById(feedbackId); if (fbEl) fbEl.style.display = "none";
   eboqExpandedCardBoqId = null;
 
   try {
