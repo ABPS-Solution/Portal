@@ -1033,19 +1033,19 @@
           <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">Material Rows *</span>
           <button class="nav-btn-styled" id="cboq-add-row-btn" disabled onclick="addCBOQMaterialRow()" style="background:var(--accent); padding:5px 14px; font-size:0.78rem; opacity:0.5; cursor:not-allowed;">+ Add Row</button>
         </div>
-        <div style="overflow-x:auto; overflow-y:visible; border:1px solid var(--border); border-radius:var(--radius); position:relative;">
-          <table class="store-basket-data-table" style="width:100%; min-width:900px; border-collapse:collapse;">
+        <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+          <table class="store-basket-data-table" style="width:100%; min-width:900px; border-collapse:collapse; overflow:visible;">
             <thead>
               <tr style="background:#f8fafc;">
                 <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
                 <th style="width:130px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-                <th style="width:190px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+                <th style="width:220px; padding:8px; font-size:0.7rem;">Description of Material *</th>
                 <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
                 <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
                 <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
                 <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
-                <th style="width:110px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
-                <th style="width:110px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
+                <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
+                <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
                 <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
               </tr>
             </thead>
@@ -8949,7 +8949,7 @@ function populateCBOQPreparedBy(department) {
   const allPersonnel = window.cboqAllPersonnel || [];
   const deptLower = department.toLowerCase();
   const filtered = allPersonnel.filter(p =>
-    p.departmentsList.some(d => d.toLowerCase().trim().includes("design") || d.toLowerCase().trim() === "admin")
+    p.departmentsList.some(d => d.toLowerCase().trim().includes("design"))
   );
   preparedByEl.innerHTML = '<option value="">— Select Person —</option>';
   filtered.forEach(p => {
@@ -9445,7 +9445,7 @@ function renderCBOQMaterialRows() {
           oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'cboq')"
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'cboq')"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px;" />
-        <div id="cboq-mat-dropdown-${idx}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 6px 6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.15);"></div>
+        <div id="cboq-mat-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
       </td>
       <td style="padding:4px;">
         <input type="text" value="${row.itemCode || ""}" readonly 
@@ -9511,14 +9511,13 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
   const dropdown   = document.getElementById(dropdownId);
   if (!dropdown) return;
 
-  // Always open downward, stretch to available viewport space
-  const inputRect = dropdown.parentElement.getBoundingClientRect();
+  // Position fixed dropdown under the input, stretching to viewport bottom
+  const inputEl   = dropdown.previousElementSibling;
+  const inputRect = (inputEl || dropdown.parentElement).getBoundingClientRect();
   const availableHeight = window.innerHeight - inputRect.bottom - 12;
-  dropdown.style.top = "100%";
-  dropdown.style.bottom = "auto";
-  dropdown.style.borderTop = "none";
-  dropdown.style.borderBottom = "1.5px solid var(--brand)";
-  dropdown.style.borderRadius = "0 0 6px 6px";
+  dropdown.style.left      = inputRect.left + "px";
+  dropdown.style.top       = inputRect.bottom + "px";
+  dropdown.style.width     = Math.max(inputRect.width, 320) + "px";
   dropdown.style.maxHeight = Math.max(availableHeight, 220) + "px";
 
   const catalog = window.itemCodeCatalogCache || [];
@@ -9543,7 +9542,6 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
     <div onclick="selectBOQRowMaterial(${rowIdx}, '${item.productName.replace(/'/g,"\\'")}', '${item.itemCode}', '${formPrefix}')"
       style="padding:9px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; display:flex; align-items:center; gap:10px; background:#fff; transition:background 0.1s;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; font-size:0.75rem; color:#fff; background:var(--brand); padding:2px 7px; border-radius:4px; font-weight:700; white-space:nowrap; flex-shrink:0;">${item.itemCode}</span>
       <span style="font-weight:600; color:var(--text); flex:1;">${item.productName}</span>
       <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px; white-space:nowrap; flex-shrink:0;">${item.typeOfMaterial}</span>
     </div>`).join("");
@@ -9816,13 +9814,13 @@ function renderEBOQForm(containerId) {
             <tr style="background:#f8fafc;">
               <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
               <th style="width:130px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-              <th style="width:190px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+              <th style="width:220px; padding:8px; font-size:0.7rem;">Description of Material *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
               <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
-              <th style="width:110px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
-              <th style="width:110px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
+              <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
+              <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
               <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
             </tr>
           </thead>
@@ -10161,13 +10159,13 @@ function renderUBOQForm() {
             <tr style="background:#f8fafc;">
               <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
               <th style="width:130px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-              <th style="width:190px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+              <th style="width:220px; padding:8px; font-size:0.7rem;">Description of Material *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
               <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
-              <th style="width:110px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
-              <th style="width:110px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
+              <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
+              <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Rate</th>
               <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
             </tr>
           </thead>
