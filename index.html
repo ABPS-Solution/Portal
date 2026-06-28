@@ -8887,6 +8887,13 @@ function filterOutPureAdminPersonnel(personnelTree) {
   });
 }
 
+// Silently refresh item code catalog when user returns to this tab (e.g. after adding a new item code)
+document.addEventListener("visibilitychange", function() {
+  if (document.visibilityState === "visible" && localStorage.getItem("sessionToken")) {
+    loadItemCodeCatalogIntoCache().catch(() => {});
+  }
+});
+
 async function loadItemCodeCatalogIntoCache() {
   try {
     const data = await apFetch({
@@ -9533,7 +9540,7 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
     dropdown.style.display = "block";
     dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">
       No matching product found. 
-      <a href="#" onclick="switchActiveDashboardModule('design-itemcode'); return false;" style="color:var(--brand);">Create Item Code first →</a>
+      <a href="${window.location.href.split('#')[0]}#design-itemcode" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first ↗</a>
     </div>`;
     return;
   }
@@ -10489,7 +10496,7 @@ function handleFGProductSearch(query) {
   if (matches.length === 0) {
     dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">
       No matching product found.
-      <a href="#" onclick="switchActiveDashboardModule('design-itemcode'); return false;" style="color:var(--brand);">Create Item Code first →</a>
+      <a href="${window.location.href.split('#')[0]}#design-itemcode" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first ↗</a>
     </div>`;
     dropdown.style.display = "block";
     document.getElementById("fg-add-product-name").value = "";
