@@ -970,7 +970,7 @@
     <!-- CREATE BOQ -->
     <div id="canvas-module-design-create-boq" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="margin-bottom:6px; color:var(--brand);">Create Bill of Quantity</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:20px;">Fill in the BOQ details and add material rows. Submit when complete — it will go for Authorization.</p>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:20px;">Fill in the BOQ details and add material rows. Submit when complete and it will go for Authorization.</p>
       <div id="create-boq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
       <!-- Header Fields -->
@@ -9406,7 +9406,7 @@ function renderCBOQMaterialRows() {
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
-          oninput="cboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; renderCBOQMaterialRows();"
+          oninput="cboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateCBOQTotals();"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -9422,7 +9422,7 @@ function renderCBOQMaterialRows() {
       <td style="padding:4px; text-align:center;">
         ${isRawMaterial ? `
         <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
-          oninput="cboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; renderCBOQMaterialRows();"
+          oninput="cboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateCBOQTotals();"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       </td>
@@ -9495,11 +9495,11 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
 
   dropdown.innerHTML = matches.map(item => `
     <div onclick="selectBOQRowMaterial(${rowIdx}, '${item.productName.replace(/'/g,"\\'")}', '${item.itemCode}', '${formPrefix}')"
-      style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
-      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>
-      ${item.productName}
-      <span style="font-size:0.7rem; color:var(--muted); margin-left:6px;">(${item.typeOfMaterial})</span>
+      style="padding:9px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; display:flex; align-items:center; gap:10px; background:#fff; transition:background 0.1s;"
+      onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
+      <span style="font-family:monospace; font-size:0.75rem; color:#fff; background:var(--brand); padding:2px 7px; border-radius:4px; font-weight:700; white-space:nowrap; flex-shrink:0;">${item.itemCode}</span>
+      <span style="font-weight:600; color:var(--text); flex:1;">${item.productName}</span>
+      <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px; white-space:nowrap; flex-shrink:0;">${item.typeOfMaterial}</span>
     </div>`).join("");
   dropdown.style.display = "block";
 }
@@ -9872,7 +9872,7 @@ function renderEBOQMaterialRows() {
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
-          oninput="eboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; renderEBOQMaterialRows();"
+          oninput="eboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateCBOQTotals();"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -9888,7 +9888,7 @@ function renderEBOQMaterialRows() {
       <td style="padding:4px; text-align:center;">
         ${isRawMaterial ? `
         <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
-          oninput="eboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; renderEBOQMaterialRows();"
+          oninput="eboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateCBOQTotals();"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       </td>
@@ -10200,7 +10200,7 @@ function renderUBOQMaterialRows() {
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
-          oninput="uboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; renderUBOQMaterialRows();"
+          oninput="uboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateCBOQTotals();"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -10216,7 +10216,7 @@ function renderUBOQMaterialRows() {
       <td style="padding:4px; text-align:center;">
         ${isRawMaterial ? `
         <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
-          oninput="uboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; renderUBOQMaterialRows();"
+          oninput="uboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateCBOQTotals();"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       </td>
