@@ -770,6 +770,23 @@
         </div>
 
         <div style="display: flex; flex-wrap: wrap; gap: 24px; margin-top: 10px; border-top: 1px dashed rgba(0, 86, 179, 0.15); padding-top: 12px; width: 100%;">
+
+          <div style="flex: 0 0 100%; width: 100%;">
+            <label class="field-label" style="margin-top: 0;">Search by Material Name / Item Code</label>
+            <div style="position: relative;">
+              <input
+                type="text"
+                id="matrix-material-name-search-input"
+                placeholder="Type material name or item code (e.g. Copper Bus Bar, IC-0042)..."
+                autocomplete="off"
+                oninput="handleMatrixMaterialSearchInput(this.value)"
+                style="width: 100%; padding: 9px 36px 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius); font-size: 0.88rem; background: var(--card); color: var(--text); box-sizing: border-box;"
+              />
+              <span id="matrix-material-search-clear-btn" onclick="clearMatrixMaterialSearch()" style="display:none; position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer; color:var(--muted); font-size:1rem; font-weight:700; line-height:1;">✕</span>
+            </div>
+            <div id="matrix-material-search-active-pill" style="display:none; margin-top:6px; font-size:0.78rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:4px 10px; display:inline-block;"></div>
+          </div>
+
           <div style="flex: 1; min-width: 280px;">
             <label class="field-label" style="margin-top: 0;">Filter By Project ID</label>
             <div class="pill-group" id="matrix-search-projects-checkbox-mount" style="margin-bottom: 0;">
@@ -2427,52 +2444,51 @@ async function parseCard() {
     const base64Front = await getBase64(fileFront);
     const base64Back = fileBack ? await getBase64(fileBack) : null;
     
-    // 2. Fire payload hit directly to your Apps Script doPost endpoint
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "parse",
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        image: base64Front,
-        imageBack: base64Back
-      })
+    // 2. Route through apFetch so SESSION_EXPIRED is caught globally
+    const data = await apFetch({
+      action: "parse",
+      activeEngineer: appActiveOperatorIdentityString,
+      image: base64Front,
+      imageBack: base64Back
     });
-    
-    const data = await res.json();
-    
-    // 3. Drill down into the Gemini API raw response text node wrapper
-    if (data && data.error) {
-      alert("AI Processing failed: " + data.error.message);
+
+    // 3. Response is raw Gemini JSON passed through from the backend
+    // Check for doPost-level errors (string) first, then Gemini API errors (object)
+    if (data && data.success === false) {
+      alert("Card processing failed: " + (data.error || "Unknown server error."));
       return;
     }
-    if (data && data.candidates && data.candidates[0].content.parts[0].text) {
+    if (data && data.error) {
+      // Gemini API error object: { error: { code, message, status } }
+      alert("AI Processing failed: " + (data.error.message || JSON.stringify(data.error)));
+      return;
+    }
+    if (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0].text) {
       let rawText = data.candidates[0].content.parts[0].text;
-      
-      // Clean markdown code blocks if Gemini accidentally wraps its response in ```json
+
+      // Clean markdown code blocks if Gemini wraps response in ```json
       if (rawText.includes("```")) {
-        rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+        rawText = rawText.replace(/```json/gi, "").replace(/```/gi, "").trim();
       }
-      
+
       const resultData = JSON.parse(rawText);
-      
-      // 4. DESTINATION HANDLER: Inject properties directly into your frontend inputs
-      document.getElementById("f-company").value = resultData.company || "";
-      document.getElementById("f-name").value = resultData.name || "";
+
+      // 4. Inject extracted fields into form inputs
+      document.getElementById("f-company").value  = resultData.company  || "";
+      document.getElementById("f-name").value     = resultData.name     || "";
       document.getElementById("f-position").value = resultData.position || "";
-      document.getElementById("f-phone").value = resultData.phone || "";
+      document.getElementById("f-phone").value    = resultData.phone    || "";
       document.getElementById("f-altphone").value = (resultData.altPhone || "").replace(/,/g, ", ");
-      document.getElementById("f-email").value = resultData.email || "";
-      document.getElementById("f-website").value = resultData.website || "";
-      document.getElementById("f-address").value = resultData.address || "";
-      
-      // Injected clean target location assignments
+      document.getElementById("f-email").value    = resultData.email    || "";
+      document.getElementById("f-website").value  = resultData.website  || "";
+      document.getElementById("f-address").value  = resultData.address  || "";
+
       if (document.getElementById("f-city"))    document.getElementById("f-city").value    = resultData.city    || "";
       if (document.getElementById("f-state"))   document.getElementById("f-state").value   = resultData.state   || "";
       if (document.getElementById("f-country")) document.getElementById("f-country").value = resultData.country || "";
-      
+
     } else {
-      alert("AI Processing failed");
+      alert("AI could not read the card. Please try a clearer image.");
     }
   } catch (e) {
     alert("Card Processing network execution crash: " + e.message);
@@ -5190,7 +5206,13 @@ async function executeInboundEmailSyncPipelineFetch() {
       }
       
       renderEmailLeadsFeedInterface(cachedInboundEmailLeadsArray);
-      feedbackNode.style.display = "none";
+
+      if (data.partial) {
+        feedbackNode.style.cssText = "display:block; padding:10px 14px; border-radius:var(--radius); background:#fffbeb; border:1px solid #f59e0b; color:#92400e; font-weight:700; font-size:0.82rem; margin-bottom:16px; text-align:center;";
+        feedbackNode.innerHTML = `⚡ Processed ${data.newProcessed || 0} emails this run — inbox still has more. <button onclick="executeInboundEmailSyncPipelineFetch()" style="margin-left:10px; padding:4px 12px; background:#f59e0b; color:#fff; border:none; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.8rem;">Continue Sync</button>`;
+      } else {
+        feedbackNode.style.display = "none";
+      }
     } else {
       feedbackNode.style.cssText = "display: block; padding: 12px; border-radius: var(--radius); background: #fff5f5; border: 1px solid var(--warn); color: var(--warn); font-weight: 700; text-align: center; margin-bottom: 16px;";
       feedbackNode.textContent = "Sync failed: " + (data.error || "Unknown backend error context.");
@@ -6853,9 +6875,47 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
 }
 
 /**
+ * MATERIAL NAME SEARCH INPUT HANDLER
+ * Debounced handler for the material search input — triggers filter on each keystroke.
+ */
+let matrixMaterialSearchDebounceTimer = null;
+let matrixActiveMaterialSearchQuery = "";
+
+function handleMatrixMaterialSearchInput(rawValue) {
+  clearTimeout(matrixMaterialSearchDebounceTimer);
+  matrixMaterialSearchDebounceTimer = setTimeout(() => {
+    matrixActiveMaterialSearchQuery = rawValue.trim().toLowerCase();
+    const clearBtn = document.getElementById("matrix-material-search-clear-btn");
+    const activePill = document.getElementById("matrix-material-search-active-pill");
+    if (matrixActiveMaterialSearchQuery) {
+      if (clearBtn) clearBtn.style.display = "block";
+      if (activePill) {
+        activePill.style.display = "inline-block";
+        activePill.textContent = "Filtering by material: \"" + rawValue.trim() + "\"";
+      }
+    } else {
+      if (clearBtn) clearBtn.style.display = "none";
+      if (activePill) activePill.style.display = "none";
+    }
+    executeClientSideStoreTicketFilterSearch();
+  }, 280);
+}
+
+function clearMatrixMaterialSearch() {
+  const input = document.getElementById("matrix-material-name-search-input");
+  if (input) input.value = "";
+  matrixActiveMaterialSearchQuery = "";
+  const clearBtn = document.getElementById("matrix-material-search-clear-btn");
+  const activePill = document.getElementById("matrix-material-search-active-pill");
+  if (clearBtn) clearBtn.style.display = "none";
+  if (activePill) activePill.style.display = "none";
+  executeClientSideStoreTicketFilterSearch();
+}
+
+/**
  * CLIENT HISTORICAL TICKET LOOKUP FILTER ENGINE
  * Searches historical logs by mapping filter filters for stores, action types, 
- * projects, departments, and statuses safely using type-guaranteed parameters lookups.
+ * projects, departments, statuses, and material name/item code safely using type-guaranteed parameters lookups.
  */
 function executeClientSideStoreTicketFilterSearch() {
   const resultsFeedZone = document.getElementById("store-historical-matrix-results-feed");
