@@ -1157,7 +1157,7 @@
 
       <!-- SEARCH ZONE -->
       <div id="itemcode-search-zone-wrapper" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
-        <label class="field-label" style="margin-top:0; color:var(--brand);">Search Product Name *</label>
+        <label class="field-label" style="margin-top:0; color:var(--brand);">Search Material Name *</label>
         <div style="display:flex; gap:10px; align-items:flex-end; margin-top:4px;">
           <div style="flex-grow:1;">
             <input type="text" id="itemcode-search-input" placeholder="e.g. HT Capacitor 413KVAR, Aluminum Busbar 40x10mm..." 
@@ -1255,7 +1255,7 @@
         </div>
 
         <div style="margin-bottom:14px;">
-          <label class="field-label" style="margin-top:0;">Product Name *</label>
+          <label class="field-label" style="margin-top:0;">Material Name *</label>
           <input type="text" id="itemcode-new-name" 
             style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius);"
             placeholder="Enter the full standard product name..." />
@@ -2089,7 +2089,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwiOf_jzYMS-oGRCg-07ntqBFqBtmQkgXOdq9yX-l5lLwov-bcc7FHyP2Lbiv5x0lNr/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyrI3-4CiFAOL6X1_mK2EMsJvCDQNkul7D5sXbaNsd26mVotVE0KERg6A0F7w2KDw/exec";
 const CLOUD_NAME    = "dcdhahrhz";
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -9176,7 +9176,7 @@ async function executeItemCodeSearch() {
 
 function showItemCodeDetail(match) {
   document.getElementById("itemcode-detail-code").textContent = match.itemCode;
-  document.getElementById("itemcode-detail-name").textContent = match.productName;
+  document.getElementById("itemcode-detail-name").textContent = match.materialName;
   document.getElementById("itemcode-detail-type").textContent = match.typeOfMaterial;
   document.getElementById("itemcode-selected-detail-zone").style.display = "block";
   document.getElementById("itemcode-selected-detail-zone").scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -9220,10 +9220,10 @@ async function submitNewItemCodeNumber() {
   const btn        = document.getElementById("itemcode-create-submit-btn");
   const banner     = document.getElementById("itemcode-feedback-banner");
   const itemCode   = document.getElementById("itemcode-new-code").value.trim();
-  const productName= document.getElementById("itemcode-new-name").value.trim();
+  const materialName= document.getElementById("itemcode-new-name").value.trim();
   const typeOfMat  = document.getElementById("itemcode-new-type").value.trim();
 
-  if (!productName) { alert("Product Name is required."); return; }
+  if (!materialName) { alert("Material Name is required."); return; }
   if (!typeOfMat)   { alert("Type of Material is required."); return; }
   if (!itemCode || itemCode === "Loading..." || itemCode === "Error — refresh") {
     alert("Item Code not loaded yet. Please wait or refresh.");
@@ -9237,7 +9237,7 @@ async function submitNewItemCodeNumber() {
     const data = await apFetch({
       action: "createItemCodeNumber",
       itemCode,
-      productName,
+      materialName,
       typeOfMaterial: typeOfMat,
       createdBy: appActiveOperatorIdentityString
     });
