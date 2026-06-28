@@ -9337,28 +9337,32 @@ function selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, type
 
 async function initializeCreateBOQPanel() {
   const today = new Date().toLocaleDateString('en-CA');
-  document.getElementById("cboq-date").value = today;
+  const dateEl = document.getElementById("cboq-date"); if (dateEl) dateEl.value = today;
 
-  // Reset form immediately
+  // Reset form immediately — guard every getElementById
   cboqMaterialRows = [];
   cboqSpecFiles    = [];
   renderCBOQMaterialRows();
-  document.getElementById("cboq-customer-name").value  = "";
-  document.getElementById("cboq-product-name").value   = "";
-  document.getElementById("cboq-product-rating").value = "";
-  document.getElementById("cboq-department").value     = "";
-  document.getElementById("cboq-order-qty").value      = "1";
-  const specDocList = document.getElementById("cboq-spec-doc-list"); if (specDocList) specDocList.innerHTML = "";
-  document.getElementById("cboq-feedback").style.display = "none";
+  const _g = id => document.getElementById(id);
+  if (_g("cboq-customer-name"))  _g("cboq-customer-name").value  = "";
+  if (_g("cboq-product-name"))   _g("cboq-product-name").value   = "";
+  if (_g("cboq-product-rating")) _g("cboq-product-rating").value = "";
+  if (_g("cboq-department"))     _g("cboq-department").value     = "";
+  if (_g("cboq-order-qty"))      _g("cboq-order-qty").value      = "1";
+  if (_g("cboq-spec-doc-list"))  _g("cboq-spec-doc-list").innerHTML = "";
+  if (_g("cboq-feedback"))       _g("cboq-feedback").style.display = "none";
 
   // Lock Prepared By until Department is selected
-  const preparedByEl = document.getElementById("cboq-prepared-by");
-  preparedByEl.innerHTML = '<option value="">— Select Department First —</option>';
-  preparedByEl.disabled = true;
-  preparedByEl.style.opacity = "0.5";
+  const preparedByEl = _g("cboq-prepared-by");
+  if (preparedByEl) {
+    preparedByEl.innerHTML = '<option value="">— Select Department First —</option>';
+    preparedByEl.disabled = true;
+    preparedByEl.style.opacity = "0.5";
+  }
 
   // Load Project IDs + item code catalog in parallel
-  const projDrop = document.getElementById("cboq-project-id");
+  const projDrop = _g("cboq-project-id");
+  if (!projDrop) return;
   projDrop.innerHTML = '<option value="">Loading projects...</option>';
 
   const [projResult] = await Promise.allSettled([
@@ -9366,7 +9370,7 @@ async function initializeCreateBOQPanel() {
     loadItemCodeCatalogIntoCache()
   ]);
 
-  if (projResult.status === "fulfilled" && projResult.value.projects) {
+  if (projResult.status === "fulfilled" && projResult.value && projResult.value.projects) {
     projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
     projResult.value.projects.forEach(code => {
       const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
