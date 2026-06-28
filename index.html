@@ -1151,7 +1151,7 @@
 
     <div id="canvas-module-design-itemcode" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="margin-bottom:6px; color:var(--brand);">Add / Check Item Code Number</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:20px;">Search the catalog to find an existing Item Code, or create a new one if the product doesn't exist yet.</p>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:20px;">Search the catalog to find an existing Item Code, or create a new one if the material doesn't exist.</p>
       
       <div id="itemcode-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -1191,29 +1191,6 @@
         <button id="itemcode-no-results-create-btn" onclick="revealItemCodeCreateForm()" 
           style="background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; font-size:0.78rem; font-weight:700; cursor:pointer; margin-left:10px;">
           Create New Item Code
-        </button>
-      </div>
-
-      <!-- SELECTED ITEM DETAIL VIEW -->
-      <div id="itemcode-selected-detail-zone" style="display:none; margin-bottom:16px; background:var(--highlight-bg); border:2px solid var(--brand); border-radius:var(--radius); padding:16px;">
-        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">Existing Item Code Details</div>
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
-          <div>
-            <div style="font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:3px;">Item Code Number</div>
-            <div id="itemcode-detail-code" style="font-family:monospace; font-size:1.1rem; font-weight:800; color:var(--brand);"></div>
-          </div>
-          <div>
-            <div style="font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:3px;">Product Name</div>
-            <div id="itemcode-detail-name" style="font-size:0.9rem; font-weight:700; color:var(--text); line-height:1.4;"></div>
-          </div>
-          <div>
-            <div style="font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:3px;">Type of Material</div>
-            <div id="itemcode-detail-type" style="font-size:0.9rem; font-weight:700; color:var(--accent);"></div>
-          </div>
-        </div>
-        <button onclick="document.getElementById('itemcode-selected-detail-zone').style.display='none';" 
-          style="margin-top:12px; background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; padding:3px 10px; border-radius:4px; font-size:0.75rem; font-weight:700; cursor:pointer;">
-          ✕ Close
         </button>
       </div>
 
@@ -8569,7 +8546,6 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
       document.getElementById("itemcode-search-input").value = "";
       document.getElementById("itemcode-search-results-zone").style.display   = "none";
       document.getElementById("itemcode-no-results-zone").style.display       = "none";
-      document.getElementById("itemcode-selected-detail-zone").style.display  = "none";
       document.getElementById("itemcode-create-form-zone").style.display      = "none";
       document.getElementById("itemcode-feedback-banner").style.display       = "none";
     }
@@ -9157,9 +9133,7 @@ async function executeItemCodeSearch() {
           <div style="font-size:0.88rem; font-weight:600; color:var(--text); line-height:1.4;">${match.productName}</div>
           <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">${match.typeOfMaterial}</div>
         </div>
-        <div style="font-size:0.75rem; font-weight:700; color:var(--brand); margin-left:12px; white-space:nowrap;">View Details →</div>
       `;
-      card.onclick = () => showItemCodeDetail(match);
       suggestMount.appendChild(card);
     });
 
@@ -9172,14 +9146,6 @@ async function executeItemCodeSearch() {
     btn.disabled = false;
     btn.textContent = "Search";
   }
-}
-
-function showItemCodeDetail(match) {
-  document.getElementById("itemcode-detail-code").textContent = match.itemCode;
-  document.getElementById("itemcode-detail-name").textContent = match.materialName;
-  document.getElementById("itemcode-detail-type").textContent = match.typeOfMaterial;
-  document.getElementById("itemcode-selected-detail-zone").style.display = "block";
-  document.getElementById("itemcode-selected-detail-zone").scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 async function revealItemCodeCreateForm() {
@@ -9263,7 +9229,6 @@ async function submitNewItemCodeNumber() {
           document.getElementById('itemcode-search-input').value='';
           document.getElementById('itemcode-search-results-zone').style.display='none';
           document.getElementById('itemcode-no-results-zone').style.display='none';
-          document.getElementById('itemcode-selected-detail-zone').style.display='none';
           document.getElementById('itemcode-create-form-zone').style.display='none';
           document.getElementById('itemcode-search-zone-wrapper').style.display='block';
           const nm = document.getElementById('itemcode-none-match-banner'); if(nm) nm.style.display='block';
