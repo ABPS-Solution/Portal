@@ -1125,18 +1125,19 @@
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project ID, then upload drawing documents. Multiple uploads possible.</p>
       <div id="upload-drawings-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
-      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
-        <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project Status *</label>
-        <select id="upload-drawings-status" onchange="handleUploadDrawingsStatusChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:4px;">
-          <option value="Active">Active</option>
-        </select>
-      </div>
-
-      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
-        <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
-        <select id="upload-drawings-project" onchange="handleUploadDrawingsProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:4px;">
-          <option value="">— Select Project ID —</option>
-        </select>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project Status *</label>
+          <select id="upload-drawings-status" onchange="handleUploadDrawingsStatusChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:4px;">
+            <option value="Active">Active</option>
+          </select>
+        </div>
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
+          <select id="upload-drawings-project" onchange="handleUploadDrawingsProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:4px;">
+            <option value="">— Select Project ID —</option>
+          </select>
+        </div>
       </div>
 
       <div id="upload-drawings-existing-list" style="display:none; margin-bottom:16px;">
@@ -2073,7 +2074,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzW0bdeCMgcc16MdZ3s7EDzu3iYlodsYbVdUe4iEIYRv42Z_Yrcc5TTIa62zOKze6In/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxSyeJSUPwj7M1077rw_H6Zzm70-wlN9rw_CSJzI2q85zPIYtKkeJDbWQefj_9V9-7L/exec";
 const CLOUD_NAME    = "dcdhahrhz";
 const UPLOAD_PRESET = "ABPS Leads Form";
 
