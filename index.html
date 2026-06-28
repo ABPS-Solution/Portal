@@ -9502,7 +9502,7 @@ function renderCBOQMaterialRows() {
 
 function updateCBOQTotals() {
   const totalPerSet = cboqMaterialRows.reduce((sum, row) => {
-    if (row.typeOfStore !== "Raw Materials Store") return sum;
+    if (row.typeOfStore === "Spare Store") return sum;
     return sum + ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0));
   }, 0);
   const orderQty = parseInt(document.getElementById("cboq-order-qty")?.value) || 0;
@@ -9874,6 +9874,17 @@ function renderEBOQForm(containerId) {
       </div>
     </div>
 
+    ${eboqMode === "authorize" ? `
+    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
+      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px;">Authorization</div>
+      <div style="max-width:400px;">
+        <label class="field-label" style="margin-top:0;">Authorized By *</label>
+        <select id="eboq-authorized-by" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+          <option value="">Loading...</option>
+        </select>
+      </div>
+    </div>` : ``}
+
     <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
       <button class="nav-btn-styled" onclick="submitEBOQAuthorize()" style="background:var(--accent); padding:8px 24px; font-weight:700;" id="eboq-submit-btn">
         ${eboqMode === "authorize" ? "Authorize BOQ" : "Authorize BOQ Update"}
@@ -9984,7 +9995,7 @@ function renderEBOQMaterialRows() {
 
 function updateEBOQTotals() {
   const totalPerSet = eboqMaterialRows.reduce((sum, row) => {
-    if (row.typeOfStore !== "Raw Materials Store") return sum;
+    if (row.typeOfStore === "Spare Store") return sum;
     return sum + ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0));
   }, 0);
   const orderQty = parseInt(document.getElementById("eboq-order-qty")?.value) || 0;
@@ -10312,7 +10323,7 @@ function renderUBOQMaterialRows() {
 
 function updateUBOQTotals() {
   const totalPerSet = uboqMaterialRows.reduce((sum, row) => {
-    if (row.typeOfStore !== "Raw Materials Store") return sum;
+    if (row.typeOfStore === "Spare Store") return sum;
     return sum + ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0));
   }, 0);
   const orderQty = parseInt(document.getElementById("uboq-order-qty")?.value) || 0;
