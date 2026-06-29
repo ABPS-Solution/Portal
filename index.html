@@ -2082,7 +2082,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyqSxiR14ydGRFUaoahmF2bOk8sj_NfOIDvq147oitFkmAZ7gj3qYLZnjXf3EEMCDGi/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw-EzWs0CXxfKpvtnJa3SCQUYsCVCovA4oJcV9EZS2YlaW6tcOFt9WjvowRzdeYcsc7/exec";
 const CLOUD_NAME    = "dcdhahrhz";
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -4335,11 +4335,66 @@ async function globalExecutionScopeReloader(leadRef, scopeNode) {
   } catch(e) { console.error(e.message); }
 }
 
-async function uploadToCloudinary(file) {
-  if (!file) return "";
-  const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', UPLOAD_PRESET);
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
-  const d = await res.json(); return d.secure_url || "";
+async function combineAndUploadCardToDrive(fileFrontImg, fileBackImg, companyName, contactName) {
+  if (!fileFrontImg) return "";
+
+  const sanitize = s => (s || "").replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_").trim();
+  const cName = sanitize(companyName);
+  const pName = sanitize(contactName);
+  const fileName = (cName && pName) ? `${cName}_${pName}.jpg` : `${cName || "VisitingCard"}.jpg`;
+
+  // Load images onto canvas
+  const loadImage = file => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  let base64;
+  try {
+    const frontImg = await loadImage(fileFrontImg);
+
+    if (fileBackImg) {
+      const backImg  = await loadImage(fileBackImg);
+      const gap      = 12;
+      const canvasH  = Math.max(frontImg.naturalHeight, backImg.naturalHeight);
+      const canvasW  = frontImg.naturalWidth + gap + backImg.naturalWidth;
+      const canvas   = document.createElement("canvas");
+      canvas.width   = canvasW;
+      canvas.height  = canvasH;
+      const ctx      = canvas.getContext("2d");
+      ctx.fillStyle  = "#ffffff";
+      ctx.fillRect(0, 0, canvasW, canvasH);
+      ctx.drawImage(frontImg, 0, 0);
+      ctx.drawImage(backImg, frontImg.naturalWidth + gap, 0);
+      base64 = canvas.toDataURL("image/jpeg", 0.92).split(",")[1];
+    } else {
+      // Front only — just convert to base64
+      const canvas  = document.createElement("canvas");
+      canvas.width  = frontImg.naturalWidth;
+      canvas.height = frontImg.naturalHeight;
+      const ctx     = canvas.getContext("2d");
+      ctx.drawImage(frontImg, 0, 0);
+      base64 = canvas.toDataURL("image/jpeg", 0.92).split(",")[1];
+    }
+  } catch(e) {
+    console.error("Card image processing failed:", e);
+    return "";
+  }
+
+  try {
+    const data = await apFetch({ action: "uploadVisitingCardToDrive", base64, fileName, mimeType: "image/jpeg" });
+    return data.fileUrl || "";
+  } catch(e) {
+    console.error("Drive upload failed:", e);
+    return "";
+  }
 }
 
 async function submitLead() {
@@ -4382,11 +4437,9 @@ async function submitLead() {
   const getRadio  = n => (activeFormContainerScopeNode.querySelector(`input[name="${n}"]:checked`) || {}).value || "No";
   
   try {
-    const [url1, url2] = await Promise.all([
-      uploadToCloudinary(fileFront),
-      uploadToCloudinary(fileBack)
-    ]);
-    const imageUrl = [url1, url2].filter(u => u).join(", ");
+    const companyVal = document.getElementById('dropform-company-locked')?.value.trim() || document.getElementById('f-company')?.value.trim() || "";
+    const contactVal = document.getElementById('f-name')?.value.trim() || "";
+    const imageUrl   = await combineAndUploadCardToDrive(fileFront, fileBack, companyVal, contactVal);
     
     const lpiNode  = document.getElementById("lpi");  const selLpiNode  = document.getElementById("sel-lpi");
     const hbiNode  = document.getElementById("hbi");  const selHbiNode  = document.getElementById("sel-hbi");
