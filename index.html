@@ -2082,7 +2082,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw-EzWs0CXxfKpvtnJa3SCQUYsCVCovA4oJcV9EZS2YlaW6tcOFt9WjvowRzdeYcsc7/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw2N0r4zCXay7irqzdqPN9Pq2dOXv9ixGK17Ff5rvsBbx-3PXFtJ0cZo0VfQCNei-vf/exec";
 const CLOUD_NAME    = "dcdhahrhz";
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -9828,7 +9828,13 @@ async function toggleAuthBOQCardExpansion(boqId, mode) {
 
     if (mode === "authorize-update") {
       try {
-        const sumData = await apFetch({ action:"generateBOQUpdateSummary", boqId, updatedRows: eboqMaterialRows });
+        const sumData = await apFetch({
+          action: "generateBOQUpdateSummary",
+          boqId,
+          updatedRows: eboqMaterialRows,
+          updatedDepartment:  document.getElementById("eboq-department")?.value.trim()  || "",
+          updatedOrderQty:    parseInt(document.getElementById("eboq-order-qty")?.value) || 0
+        });
         const sumTextEl = document.getElementById(`auth-boq-upd-summary-text-${safeBoqId}`);
         if (sumTextEl) sumTextEl.textContent = sumData.summary || "No changes detected.";
       } catch(e) {
