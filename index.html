@@ -10196,12 +10196,14 @@ async function initializeUpdateBOQPanel() {
   uboqMaterialRows = [];
 
   // Reset DOM immediately — before any async calls
-  const projDrop   = document.getElementById("update-boq-project");
-  const statusDrop = document.getElementById("update-boq-status");
-  const boqDrop    = document.getElementById("update-boq-select");
-  const formEl     = document.getElementById("update-boq-form");
-  const fbEl       = document.getElementById("update-boq-feedback");
+  const selectorZone = document.getElementById("update-boq-selector-zone");
+  const projDrop     = document.getElementById("update-boq-project");
+  const statusDrop   = document.getElementById("update-boq-status");
+  const boqDrop      = document.getElementById("update-boq-select");
+  const formEl       = document.getElementById("update-boq-form");
+  const fbEl         = document.getElementById("update-boq-feedback");
 
+  if (selectorZone) { selectorZone.style.display = ""; }
   if (projDrop)   projDrop.innerHTML  = '<option value="">Loading...</option>';
   if (boqDrop)  { boqDrop.innerHTML   = '<option value="">— Select Project First —</option>'; boqDrop.disabled = true; }
   if (formEl)     formEl.style.display  = "none";
