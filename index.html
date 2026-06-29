@@ -9723,18 +9723,22 @@ let eboqMode         = ""; // "authorize" or "authorize-update"
 let eboqExpandedCardBoqId = null;
 
 async function initializeAuthorizeBOQPanel(mode) {
-  await loadItemCodeCatalogIntoCache().catch(() => {});
   eboqMode = mode;
   eboqCurrentDraft = null;
+  eboqExpandedCardBoqId = null;
+
   const cardsFeedId = mode === "authorize" ? "auth-boq-queue-cards-feed" : "auth-boq-upd-queue-cards-feed";
   const feedbackId  = mode === "authorize" ? "auth-boq-feedback" : "auth-boq-upd-feedback";
   const status      = mode === "authorize" ? "Pending Authorization" : "Pending Authorization Update";
 
+  // Reset DOM immediately — before any async calls
   const cardsFeed = document.getElementById(cardsFeedId);
   if (!cardsFeed) return;
+  cardsFeed.style.display = "";
   cardsFeed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);"><div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>Loading Pending BOQs...</div>`;
-  const fbEl = document.getElementById(feedbackId); if (fbEl) fbEl.style.display = "none";
-  eboqExpandedCardBoqId = null;
+  const fbEl = document.getElementById(feedbackId); if (fbEl) { fbEl.style.display = "none"; fbEl.innerHTML = ""; }
+
+  await loadItemCodeCatalogIntoCache().catch(() => {});
 
   try {
     const data = await apFetch({ action:"fetchBOQDraftsQueue", status });
@@ -10149,7 +10153,7 @@ async function submitEBOQAuthorize() {
         fb.style.color           = "#276749";
         fb.style.display         = "block";
         fb.innerHTML = `
-          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ BOQ ${eboqMode === "authorize" ? "Authorized" : "Update Authorized"} Successfully!</div>
+          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ Bill of Quantity ${eboqMode === "authorize" ? "Authorized" : "Update Authorized"} Successfully!</div>
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">BOQ ID</span><span style="font-family:monospace; font-weight:800;">${data.boqId}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Project ID</span><span style="font-weight:700;">${_lastDraft?.projectId || ""}</span></div>
@@ -10571,7 +10575,7 @@ async function submitUpdateBOQ() {
         fb.style.color           = "#276749";
         fb.style.display         = "block";
         fb.innerHTML = `
-          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ BOQ Update Submitted for Re-Authorization!</div>
+          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ Bill of Quantity Update Submitted for Re-Authorization!</div>
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">BOQ ID</span><span style="font-family:monospace; font-weight:800;">${data.boqId}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Version</span><span style="font-weight:700;">v${data.newVersion}</span></div>
@@ -10802,7 +10806,7 @@ async function triggerFGBOQValidation() {
 
     if (data.matched) {
       zone.innerHTML = `
-        <div style="padding:10px 12px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:var(--radius) var(--radius) 0 0; color:#15803d; font-size:0.85rem; font-weight:700;">✅ BOQ material consumption matches for this Job Card.</div>
+        <div style="padding:10px 12px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:var(--radius) var(--radius) 0 0; color:#15803d; font-size:0.85rem; font-weight:700;">✅ Bill of Quantity material consumption matches for this Job Card.</div>
         <div style="border:1px solid var(--border); border-top:none; padding:10px; border-radius:0 0 var(--radius) var(--radius);">${rowsHtml}</div>`;
     } else {
       zone.innerHTML = `
