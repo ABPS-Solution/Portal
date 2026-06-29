@@ -1276,11 +1276,11 @@
 
     <!-- PRN CANVAS -->
     <div id="canvas-module-purchase-prn" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin-bottom:6px; color:var(--brand);">Purchase Request Note</h2>
+      <h2 style="margin-bottom:6px; color:var(--brand);">Create Purchase Request Note</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project and authorized BOQ to view or create a Purchase Request Note.</p>
       <div id="prn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
           <select id="prn-project-select" onchange="handlePRNProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
@@ -1291,6 +1291,18 @@
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select Authorized BOQ *</label>
           <select id="prn-boq-select" onchange="handlePRNBOQChange(this.value)" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); opacity:0.5; cursor:not-allowed;">
             <option value="">— Select Project First —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Store Person *</label>
+          <select id="prn-store-person-select" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); opacity:0.5; cursor:not-allowed;">
+            <option value="">— Select BOQ First —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Purchase Person *</label>
+          <select id="prn-purchase-person-select" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); opacity:0.5; cursor:not-allowed;">
+            <option value="">— Select BOQ First —</option>
           </select>
         </div>
       </div>
@@ -1322,7 +1334,7 @@
             <div id="prn-purchase-person-display" style="font-weight:700; color:var(--text); font-size:0.85rem;">—</div>
           </div>
           <div>
-            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PDF</div>
+            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PRN PDF</div>
             <div id="prn-pdf-link-display" style="font-size:0.82rem;"></div>
           </div>
         </div>
@@ -1350,8 +1362,7 @@
         </div>
 
         <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
-          <button class="nav-btn-styled" id="prn-save-store-qty-btn" onclick="savePRNStoreQuantities()" style="background:var(--brand); padding:8px 20px; font-weight:700;">Save Store Quantities</button>
-          <button class="nav-btn-styled" id="prn-generate-pdf-btn" onclick="generatePRNPDF()" style="background:var(--accent); padding:8px 20px; font-weight:700;">Generate & Save PDF</button>
+          <button class="nav-btn-styled" id="prn-generate-pdf-btn" onclick="generatePRNPDF()" style="background:var(--accent); padding:8px 20px; font-weight:700;">Generate & Save PRN PDF</button>
         </div>
       </div>
     </div>
@@ -2082,7 +2093,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxotEPACFirJB-6icLyLM7vliaFfcaWgeWK8tt9BBH331VJxz26CiyQBm5KmHNqw9zH/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzQ9WHMZW8FSEPrK3juExoRLDunZA-r0TVxXJeKvRKOMVa0EPN3q_ZTLZrK09DPFF4e/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -11525,13 +11536,30 @@ async function handlePRNBOQChange(boqId) {
       return;
     }
 
+    // Populate Store Person (Store dept) and Purchase Person (Purchase dept) dropdowns
+    const personnelData = await apFetch({ action: "getStoreOperatorsList" });
+    const allPersonnel  = personnelData.fullPersonnelDataRecordsTree || [];
+    const storePeopleDrop    = document.getElementById("prn-store-person-select");
+    const purchasePeopleDrop = document.getElementById("prn-purchase-person-select");
+
+    const populate = (drop, deptKeyword) => {
+      drop.innerHTML = '<option value="">— Select Person —</option>';
+      allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().includes(deptKeyword)))
+        .forEach(p => { const o = document.createElement("option"); o.value = p.fullName; o.textContent = p.fullName; drop.appendChild(o); });
+      drop.disabled = false; drop.style.opacity = "1"; drop.style.cursor = "pointer";
+    };
+    populate(storePeopleDrop, "store");
+    populate(purchasePeopleDrop, "purchase");
+
+    const storePerson    = storePeopleDrop.value || appActiveOperatorIdentityString;
+    const purchasePerson = purchasePeopleDrop.value || appActiveOperatorIdentityString;
+
     // Step 2: No existing PRN — create one now
     const createData = await apFetch({
       action: "createPurchaseRequestNote",
       activeEngineer: appActiveOperatorIdentityString,
       projectId, boqId,
-      storePerson: appActiveOperatorIdentityString,
-      purchasePerson: appActiveOperatorIdentityString
+      storePerson, purchasePerson
     });
 
     if (!createData.success) {
@@ -11572,11 +11600,10 @@ function renderPRNDetails(data) {
   if (data.pdfUrl) {
     pdfEl.innerHTML = `<a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700; font-size:0.82rem;">View PDF ↗</a>`;
   } else {
-    pdfEl.textContent = "Not generated yet";
+    pdfEl.textContent = "PRN PDF not generated yet";
     pdfEl.style.cssText = "color:var(--muted); font-size:0.8rem;";
   }
 
-  const saveBtn    = document.getElementById("prn-save-store-qty-btn");
   const lockedNote = document.getElementById("prn-store-qty-locked-notice");
   if (prnStoreQtyLocked) {
     lockedNote.style.display = "block";
@@ -11612,7 +11639,7 @@ function renderPRNDetails(data) {
       <td style="padding:8px; text-align:center;">
         ${prnStoreQtyLocked
           ? `<span style="font-family:monospace; font-weight:700;">${storeQty}</span>`
-          : `<input type="number" min="0" value="${storeQty}" class="prn-store-qty-input" data-idx="${idx}"
+          : `<input type="number" min="0" max="${bufferedQty}" value="${storeQty || ""}" placeholder="0" class="prn-store-qty-input" data-idx="${idx}" data-max="${bufferedQty}"
                oninput="updatePRNPurchaseQtyCell(this, ${idx})"
                style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />`
         }
@@ -11627,7 +11654,14 @@ function renderPRNDetails(data) {
 function updatePRNPurchaseQtyCell(inputEl, idx) {
   if (!prnCurrentData || !prnCurrentData.lineItems[idx]) return;
   const bufferedQty = Number(prnCurrentData.lineItems[idx].bufferedPurchaseQty) || 0;
-  const storeQty    = parseFloat(inputEl.value) || 0;
+  let storeQty    = parseFloat(inputEl.value) || 0;
+  if (storeQty > bufferedQty) {
+    storeQty = bufferedQty;
+    inputEl.value = storeQty;
+    inputEl.style.border = "1.5px solid #ef4444";
+  } else {
+    inputEl.style.border = "1.5px solid var(--brand)";
+  }
   const purchaseQty = Math.max(0, bufferedQty - storeQty);
   prnCurrentData.lineItems[idx].currentUnassignedStoreQty = storeQty;
   const cell = document.getElementById(`prn-purchase-qty-cell-${idx}`);
