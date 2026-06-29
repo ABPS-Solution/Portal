@@ -1092,7 +1092,7 @@
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project ID, then select the BOQ to update. Changes will go for re-authorization.</p>
       <div id="update-boq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+      <div id="update-boq-selector-zone" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project Status *</label>
           <select id="update-boq-status" onchange="handleUpdateBOQStatusChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
@@ -9764,7 +9764,7 @@ async function toggleAuthBOQCardExpansion(boqId, mode) {
     if (mode === "authorize-update") {
       summaryHtml = `
         <div id="auth-boq-upd-summary-${safeBoqId}" style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-bottom:16px;">
-          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:8px; letter-spacing:0.5px;">🔍 AI Change Summary</div>
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:8px; letter-spacing:0.5px;">AI Change Summary</div>
           <div id="auth-boq-upd-summary-text-${safeBoqId}" style="font-size:0.85rem; color:#78350f; line-height:1.7; white-space:pre-line;">Generating change summary...</div>
         </div>`;
     }
@@ -9816,13 +9816,12 @@ function renderEBOQForm(containerId) {
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
-          <label class="field-label" style="margin-top:0;">Product Name *</label>
-          <input type="text" id="eboq-product-name" value="${draft.productName}" oninput="updateEBOQId()" style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          <label class="field-label" style="margin-top:0;">${eboqMode === "authorize-update" ? "Product Name (locked)" : "Product Name *"}</label>
+          <input type="text" id="eboq-product-name" value="${draft.productName}" ${eboqMode === "authorize-update" ? 'readonly' : 'oninput="updateEBOQId()"'} style="padding:8px; ${eboqMode === "authorize-update" ? 'background:#f1f5f9; color:var(--muted); cursor:not-allowed;' : 'border:1.5px solid var(--border);'} border-radius:var(--radius);" />
         </div>
         <div>
-          <label class="field-label" style="margin-top:0;">Product Rating *</label>
-          <input type="text" id="eboq-product-rating" value="${draft.productRating}" oninput="updateEBOQId()" style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
-        </div>
+          <label class="field-label" style="margin-top:0;">${eboqMode === "authorize-update" ? "Product Rating (locked)" : "Product Rating *"}</label>
+          <input type="text" id="eboq-product-rating" value="${draft.productRating}" ${eboqMode === "authorize-update" ? 'readonly' : 'oninput="updateEBOQId()"'} style="padding:8px; ${eboqMode === "authorize-update" ? 'background:#f1f5f9; color:var(--muted); cursor:not-allowed;' : 'border:1.5px solid var(--border);'} border-radius:var(--radius);" /></div>
         <div>
           <label class="field-label" style="margin-top:0;">Department *</label>
           <select id="eboq-department" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
@@ -9935,7 +9934,7 @@ function updateEBOQId() {
 }
 
 function addEBOQMaterialRow() {
-  eboqMaterialRows.push({ typeOfStore:"Raw Materials Store", descriptionOfMaterial:"", itemCode:"", make:"", quantityFor1Set:"", unit:"NOS", designRatePerQuantity:"" });
+  eboqMaterialRows.push({ typeOfStore:"Raw Materials Store", descriptionOfMaterial:"", itemCode:"", make:"", quantityFor1Set:"", unit:"", designRatePerQuantity:"" });
   renderEBOQMaterialRows();
 }
 
@@ -9990,6 +9989,7 @@ function renderEBOQMaterialRows() {
       </td>
       <td style="padding:4px; text-align:center;">
         <select onchange="eboqMaterialRows[${idx}].unit=this.value" style="padding:4px; font-size:0.8rem; width:100%;">
+          <option value="" ${!row.unit?"selected":""} disabled>— Unit —</option>
           <option value="NOS" ${row.unit==="NOS"?"selected":""}>NOS</option>
           <option value="KG"  ${row.unit==="KG" ?"selected":""}>KG</option>
           <option value="MTR" ${row.unit==="MTR"?"selected":""}>MTR</option>
@@ -10500,6 +10500,9 @@ async function submitUpdateBOQ() {
       const formEl = document.getElementById("update-boq-form");
       if (formEl) formEl.style.display = "none";
 
+      const selectorZone = document.getElementById("update-boq-selector-zone");
+      if (selectorZone) selectorZone.style.display = "none";
+
       const fb = document.getElementById(feedbackId);
       if (fb) {
         fb.style.borderLeftColor = "var(--accent)";
@@ -10516,7 +10519,7 @@ async function submitUpdateBOQ() {
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Name</span><span style="font-weight:700;">${_lastDraft?.productName || ""}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Rating</span><span style="font-weight:700;">${_lastDraft?.productRating || ""}</span></div>
           </div>
-          <button onclick="initializeUpdateBOQPanel().catch(()=>{});"
+          <button onclick="const sz=document.getElementById('update-boq-selector-zone'); if(sz) sz.style.display=''; initializeUpdateBOQPanel().catch(()=>{});"
             style="background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
             + Update Another Bill of Quantity
           </button>`;
