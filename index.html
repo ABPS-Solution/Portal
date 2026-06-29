@@ -10259,12 +10259,12 @@ function renderUBOQForm() {
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
-          <label class="field-label" style="margin-top:0;">Product Name *</label>
-          <input type="text" id="uboq-product-name" value="${draft.productName}" style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          <label class="field-label" style="margin-top:0;">Product Name (locked)</label>
+          <input type="text" id="uboq-product-name" value="${draft.productName}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
-          <label class="field-label" style="margin-top:0;">Product Rating *</label>
-          <input type="text" id="uboq-product-rating" value="${draft.productRating}" style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          <label class="field-label" style="margin-top:0;">Product Rating (locked)</label>
+          <input type="text" id="uboq-product-rating" value="${draft.productRating}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Department *</label>
@@ -10343,7 +10343,7 @@ function renderUBOQForm() {
 }
 
 function addUBOQMaterialRow() {
-  uboqMaterialRows.push({ typeOfStore:"Raw Materials Store", descriptionOfMaterial:"", itemCode:"", make:"", quantityFor1Set:"", unit:"NOS", designRatePerQuantity:"" });
+  uboqMaterialRows.push({ typeOfStore:"Raw Materials Store", descriptionOfMaterial:"", itemCode:"", make:"", quantityFor1Set:"", unit:"", designRatePerQuantity:"" });
   renderUBOQMaterialRows();
 }
 
@@ -10380,7 +10380,7 @@ function renderUBOQMaterialRows() {
           oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'uboq')"
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'uboq')"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px;" />
-        <div id="uboq-mat-dropdown-${idx}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 6px 6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.15);"></div>
+        <div id="uboq-mat-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
       </td>
       <td style="padding:4px;">
         <input type="text" value="${row.itemCode || ""}" readonly
@@ -10393,11 +10393,12 @@ function renderUBOQMaterialRows() {
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
-          oninput="uboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateCBOQTotals();"
+          oninput="uboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateUBOQTotals(); const r=document.getElementById('uboq-rate-${idx}'); if(r) r.value=(uboqMaterialRows[${idx}].quantityFor1Set*(Number(uboqMaterialRows[${idx}].designRatePerQuantity)||0)).toFixed(2);"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center;">
         <select onchange="uboqMaterialRows[${idx}].unit=this.value" style="padding:4px; font-size:0.8rem; width:100%;">
+          <option value="" ${!row.unit?"selected":""} disabled>— Unit —</option>
           <option value="NOS" ${row.unit==="NOS"?"selected":""}>NOS</option>
           <option value="KG"  ${row.unit==="KG" ?"selected":""}>KG</option>
           <option value="MTR" ${row.unit==="MTR"?"selected":""}>MTR</option>
@@ -10409,12 +10410,12 @@ function renderUBOQMaterialRows() {
       <td style="padding:4px; text-align:center;">
         ${isRawMaterial ? `
         <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
-          oninput="uboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateCBOQTotals();"
+          oninput="uboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateUBOQTotals(); const r=document.getElementById('uboq-rate-${idx}'); if(r) r.value=((Number(uboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0)).toFixed(2);"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       </td>
       <td style="padding:4px; text-align:center;">
-        <input type="text" id="cboq-rate-${idx}" value="${isRawMaterial ? totalMaterialRate.toFixed(2) : '—'}" readonly
+        <input type="text" id="uboq-rate-${idx}" value="${isRawMaterial ? totalMaterialRate.toFixed(2) : '—'}" readonly
           style="padding:5px; font-size:0.85rem; font-weight:700; text-align:center; width:100%; background:#f0fdf4; color:var(--accent); cursor:not-allowed; border-radius:3px; border:1px solid #86efac;" />
       </td>
       <td style="padding:4px; text-align:center;">
