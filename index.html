@@ -2082,7 +2082,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbz2qJQ2jC5OtpBWHZObsBYN8ko-S4CBc9S0PUNeJESDpsx9GCOSn0ct928gVMEdctKs/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwt4nOt_80GFoN9rtLGCskFWOuaxet9APTPyxKYcStxFnhb_rYd3XlKlQs-BUZVBIcw/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -9405,7 +9405,9 @@ async function initializeCreateBOQPanel() {
   const today = new Date().toLocaleDateString('en-CA');
   const dateEl = document.getElementById("cboq-date"); if (dateEl) dateEl.value = today;
 
-  // Reset form immediately — guard every getElementById
+  // Reset DOM immediately — guard every getElementById
+  const formBody = document.getElementById("cboq-form-body");
+  if (formBody) formBody.style.display = "";
   cboqMaterialRows = [];
   cboqSpecFiles    = [];
   renderCBOQMaterialRows();
