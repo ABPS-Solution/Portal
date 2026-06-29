@@ -2082,7 +2082,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw2N0r4zCXay7irqzdqPN9Pq2dOXv9ixGK17Ff5rvsBbx-3PXFtJ0cZo0VfQCNei-vf/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw1Y4x__9DTUgmoSZpcYqxcN4WKwSh6qmf3O0pziRqDRd7Cq8tsIPT26R6VsqEEjWqX/exec";
 const CLOUD_NAME    = "dcdhahrhz";
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -10164,7 +10164,8 @@ async function submitEBOQAuthorize() {
           </div>
           ${pdfNote}
           <button onclick="
-            document.getElementById('${cardsFeedId}').style.display='';
+            const _cf=document.getElementById('${cardsFeedId}');
+            if(_cf){_cf.innerHTML='';_cf.style.display='';}
             document.getElementById('${feedbackId}').style.display='none';
             initializeAuthorizeBOQPanel('${eboqMode}').catch(()=>{});"
             style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
