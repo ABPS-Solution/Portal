@@ -10511,19 +10511,30 @@ function updateUBOQTotals() {
 // Add uboq to selectBOQRowMaterial
 // Find existing selectBOQRowMaterial and add uboq branch:
 function selectBOQRowMaterial(rowIdx, productName, itemCode, formPrefix) {
-  if (formPrefix === 'cboq') {
-    cboqMaterialRows[rowIdx].descriptionOfMaterial = productName;
-    cboqMaterialRows[rowIdx].itemCode = itemCode;
-    renderCBOQMaterialRows();
-  } else if (formPrefix === 'eboq') {
-    eboqMaterialRows[rowIdx].descriptionOfMaterial = productName;
-    eboqMaterialRows[rowIdx].itemCode = itemCode;
-    renderEBOQMaterialRows();
-  } else if (formPrefix === 'uboq') {
-    uboqMaterialRows[rowIdx].descriptionOfMaterial = productName;
-    uboqMaterialRows[rowIdx].itemCode = itemCode;
-    renderUBOQMaterialRows();
+  const rowsMap = { cboq: cboqMaterialRows, eboq: eboqMaterialRows, uboq: uboqMaterialRows };
+  const renderMap = { cboq: renderCBOQMaterialRows, eboq: renderEBOQMaterialRows, uboq: renderUBOQMaterialRows };
+  const feedbackMap = { cboq: "create-boq-feedback", eboq: "auth-boq-feedback", uboq: "update-boq-feedback" };
+
+  const rows = rowsMap[formPrefix];
+  if (rows) {
+    // Check for duplicate item code in same store type
+    const thisStoreType = rows[rowIdx].typeOfStore;
+    const duplicate = rows.find((r, i) =>
+      i !== rowIdx && r.itemCode === itemCode && r.typeOfStore === thisStoreType
+    );
+    if (duplicate) {
+      showBOQBanner(feedbackMap[formPrefix],
+        `⚠️ "${productName}" (${itemCode}) is already added in row ${rows.indexOf(duplicate) + 1} with the same store type. Consider updating that row's quantity instead.`,
+        "error");
+      const dropdown = document.getElementById(formPrefix + "-mat-dropdown-" + rowIdx);
+      if (dropdown) dropdown.style.display = "none";
+      return; // Block the selection
+    }
+    rows[rowIdx].descriptionOfMaterial = productName;
+    rows[rowIdx].itemCode = itemCode;
+    renderMap[formPrefix]();
   }
+
   const dropdown = document.getElementById(formPrefix + "-mat-dropdown-" + rowIdx);
   if (dropdown) dropdown.style.display = "none";
 }
