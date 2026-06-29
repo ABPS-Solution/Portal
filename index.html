@@ -11495,11 +11495,13 @@ async function handlePRNProjectChange(projectId) {
   try {
     const data = await apFetch({ action:"fetchAuthorizedBOQsForUpdate", projectId });
     boqDrop.innerHTML = '<option value="">— Select BOQ —</option>';
+    window.prnBOQMeta = {};
     (data.drafts || []).forEach(draft => {
       const opt = document.createElement("option");
       opt.value = draft.boqId;
       opt.textContent = `${draft.boqId} | ${draft.productName} ${draft.productRating} | Qty: ${draft.orderQuantity}`;
       boqDrop.appendChild(opt);
+      window.prnBOQMeta[draft.boqId] = { productName: draft.productName, productRating: draft.productRating, orderQuantity: draft.orderQuantity };
     });
     boqDrop.disabled = false; boqDrop.style.opacity = "1"; boqDrop.style.cursor = "pointer";
   } catch(e) {
@@ -11561,10 +11563,14 @@ async function handlePRNBOQChange(boqId) {
     const purchasePerson = purchasePeopleDrop.value || appActiveOperatorIdentityString;
 
     // Step 2: No existing PRN — create one now
+    const boqMeta = (window.prnBOQMeta || {})[boqId] || {};
     const createData = await apFetch({
       action: "createPurchaseRequestNote",
       activeEngineer: appActiveOperatorIdentityString,
       projectId, boqId,
+      productName:    boqMeta.productName    || "",
+      productRating:  boqMeta.productRating  || "",
+      orderQuantity:  boqMeta.orderQuantity  || 0,
       storePerson, purchasePerson
     });
 
@@ -11636,7 +11642,7 @@ function renderPRNDetails(data) {
       <td style="padding:8px; font-size:0.82rem; font-weight:600; word-break:break-word; line-height:1.4;">${item.materialName}</td>
       <td style="padding:8px; font-size:0.75rem; color:var(--muted); white-space:nowrap;">${item.typeOfMaterial || "—"}</td>
       <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${Number(item.boqRequiredQty).toFixed(2)}</td>
-      <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPercent}%</td>
+      <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct !== undefined ? item.bufferPct : (item.bufferPercent || 0)}%</td>
       <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; color:var(--brand);">${bufferedQty.toFixed(2)}</td>
       <td style="padding:8px; text-align:center;">
         ${prnStoreQtyLocked
