@@ -10179,7 +10179,10 @@ async function submitEBOQAuthorize() {
 
 async function initializeUpdateBOQPanel() {
   eboqMode = "";
-  await loadItemCodeCatalogIntoCache().catch(() => {});
+  uboqCurrentDraft = null;
+  uboqMaterialRows = [];
+
+  // Reset DOM immediately — before any async calls
   const projDrop   = document.getElementById("update-boq-project");
   const statusDrop = document.getElementById("update-boq-status");
   const boqDrop    = document.getElementById("update-boq-select");
@@ -10189,8 +10192,9 @@ async function initializeUpdateBOQPanel() {
   if (projDrop)   projDrop.innerHTML  = '<option value="">Loading...</option>';
   if (boqDrop)  { boqDrop.innerHTML   = '<option value="">— Select Project First —</option>'; boqDrop.disabled = true; }
   if (formEl)     formEl.style.display  = "none";
-  if (fbEl)       fbEl.style.display    = "none";
+  if (fbEl)     { fbEl.style.display    = "none"; fbEl.innerHTML = ""; }
 
+  await loadItemCodeCatalogIntoCache().catch(() => {});
   try {
     const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: "Active" });
 
