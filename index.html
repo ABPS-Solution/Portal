@@ -10035,9 +10035,10 @@ let _submitBOQAuthorizeInProgress = false;
 async function submitEBOQAuthorize() {
   if (_submitBOQAuthorizeInProgress) return;
   _submitBOQAuthorizeInProgress = true;
-  const btn        = document.getElementById("eboq-submit-btn");
-  const feedbackId = eboqMode === "authorize" ? "auth-boq-feedback" : "auth-boq-upd-feedback";
-  const action     = eboqMode === "authorize" ? "submitBOQAuthorize" : "submitBOQUpdateAuthorize";
+  const btn         = document.getElementById("eboq-submit-btn");
+  const feedbackId  = eboqMode === "authorize" ? "auth-boq-feedback" : "auth-boq-upd-feedback";
+  const cardsFeedId = eboqMode === "authorize" ? "auth-boq-queue-cards-feed" : "auth-boq-upd-queue-cards-feed";
+  const action      = eboqMode === "authorize" ? "submitBOQAuthorize" : "submitBOQUpdateAuthorize";
 
   const productName  = document.getElementById("eboq-product-name")?.value.trim() || "";
   const productRating= document.getElementById("eboq-product-rating")?.value.trim() || "";
@@ -10053,7 +10054,7 @@ async function submitEBOQAuthorize() {
   if (eboqMode === "authorize" && !authorizedBy) return showBOQBanner(feedbackId, "Authorized By is required.", "error");
 
   const invalidRow = eboqMaterialRows.find(r => !r.descriptionOfMaterial || !r.quantityFor1Set);
-  if (invalidRow) return showBOQBanner(feedbackId, "All rows must have Description and Quantity.", "error");
+  if (invalidRow) return showBOQBanner(feedbackId, "All rows must have Material Description and Quantity.", "error");
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Authorizing...';
