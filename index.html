@@ -10109,15 +10109,17 @@ async function submitEBOQAuthorize() {
   const orderQty     = parseInt(document.getElementById("eboq-order-qty")?.value) || 0;
   const authorizedBy = eboqMode === "authorize" ? (document.getElementById("eboq-authorized-by")?.value.trim() || "") : "";
 
-  if (!productName)   return showBOQBanner(feedbackId, "Product Name is required.", "error");
-  if (!productRating) return showBOQBanner(feedbackId, "Product Rating is required.", "error");
-  if (!department)    return showBOQBanner(feedbackId, "Department is required.", "error");
-  if (orderQty < 1)   return showBOQBanner(feedbackId, "Order Quantity must be at least 1.", "error");
-  if (eboqMaterialRows.length === 0) return showBOQBanner(feedbackId, "At least one material row is required.", "error");
-  if (eboqMode === "authorize" && !authorizedBy) return showBOQBanner(feedbackId, "Authorized By is required.", "error");
+  const _validationFail = (msg) => { _submitBOQAuthorizeInProgress = false; showBOQBanner(feedbackId, msg, "error"); };
+
+  if (!productName)   { _validationFail("⚠️ Product Name is required."); return; }
+  if (!productRating) { _validationFail("⚠️ Product Rating is required."); return; }
+  if (!department)    { _validationFail("⚠️ Department is required."); return; }
+  if (orderQty < 1)   { _validationFail("⚠️ Order Quantity must be at least 1."); return; }
+  if (eboqMaterialRows.length === 0) { _validationFail("⚠️ At least one material row is required."); return; }
+  if (eboqMode === "authorize" && !authorizedBy) { _validationFail("⚠️ Authorized By is required."); return; }
 
   const invalidRow = eboqMaterialRows.find(r => !r.descriptionOfMaterial || !r.quantityFor1Set);
-  if (invalidRow) return showBOQBanner(feedbackId, "All rows must have Material Description and Quantity.", "error");
+  if (invalidRow) { _validationFail("⚠️ All rows must have Material Description and Quantity."); return; }
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Authorizing...';
@@ -10538,14 +10540,16 @@ async function submitUpdateBOQ() {
   const department   = document.getElementById("uboq-department")?.value.trim() || "";
   const orderQty     = parseInt(document.getElementById("uboq-order-qty")?.value) || 0;
 
-  if (!productName)   return showBOQBanner(feedbackId, "Product Name is required.", "error");
-  if (!productRating) return showBOQBanner(feedbackId, "Product Rating is required.", "error");
-  if (!department)    return showBOQBanner(feedbackId, "Department is required.", "error");
-  if (orderQty < 1)   return showBOQBanner(feedbackId, "Order Quantity must be at least 1.", "error");
-  if (uboqMaterialRows.length === 0) return showBOQBanner(feedbackId, "At least one material row is required.", "error");
+  const _uValidationFail = (msg) => { _submitUpdateBOQInProgress = false; showBOQBanner(feedbackId, msg, "error"); };
+
+  if (!productName)   { _uValidationFail("⚠️ Product Name is required."); return; }
+  if (!productRating) { _uValidationFail("⚠️ Product Rating is required."); return; }
+  if (!department)    { _uValidationFail("⚠️ Department is required."); return; }
+  if (orderQty < 1)   { _uValidationFail("⚠️ Order Quantity must be at least 1."); return; }
+  if (uboqMaterialRows.length === 0) { _uValidationFail("⚠️ At least one material row is required."); return; }
 
   const invalidRow = uboqMaterialRows.find(r => !r.descriptionOfMaterial || !r.quantityFor1Set);
-  if (invalidRow) return showBOQBanner(feedbackId, "All rows must have Description and Quantity.", "error");
+  if (invalidRow) { _uValidationFail("⚠️ All rows must have Description and Quantity."); return; }
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
