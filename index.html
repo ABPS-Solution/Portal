@@ -1308,34 +1308,40 @@
       </div>
 
       <div id="prn-details-zone" style="display:none;">
-        <div style="background:var(--highlight-bg); border:1.5px solid var(--brand); border-radius:var(--radius); padding:12px; margin-bottom:16px; display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start;">
-          <div>
-            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PRN ID</div>
-            <div id="prn-id-display" style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.88rem;"></div>
-          </div>
-          <div>
-            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Product</div>
-            <div id="prn-product-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
-          </div>
-          <div>
-            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Order Qty</div>
-            <div id="prn-orderqty-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
-          </div>
-          <div>
-            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Status</div>
-            <div id="prn-status-display" style="font-weight:700; color:var(--accent); font-size:0.85rem;"></div>
-          </div>
-          <div>
-            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Store Person</div>
-            <div id="prn-store-person-display" style="font-weight:700; color:var(--text); font-size:0.85rem;">—</div>
-          </div>
-          <div>
-            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Purchase Person</div>
-            <div id="prn-purchase-person-display" style="font-weight:700; color:var(--text); font-size:0.85rem;">—</div>
-          </div>
-          <div>
-            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PRN PDF</div>
-            <div id="prn-pdf-link-display" style="font-size:0.82rem;"></div>
+        <div style="background:var(--highlight-bg); border:1.5px solid var(--brand); border-radius:var(--radius); padding:12px; margin-bottom:16px;">
+          <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; margin-bottom:8px;">
+            <div>
+              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PRN ID</div>
+              <div id="prn-id-display" style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.88rem;"></div>
+            </div>
+            <div>
+              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Customer Name</div>
+              <div id="prn-customer-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
+            </div>
+            <div>
+              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Product Name</div>
+              <div id="prn-productname-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
+            </div>
+            <div>
+              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Product Rating</div>
+              <div id="prn-productrating-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
+            </div>
+            <div>
+              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Order Quantity</div>
+              <div id="prn-orderqty-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
+            </div>
+            <div>
+              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">BOQ Prepared By</div>
+              <div id="prn-preparedby-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
+            </div>
+            <div>
+              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">BOQ Last Updated</div>
+              <div id="prn-lastupdated-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
+            </div>
+            <div>
+              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PRN PDF</div>
+              <div id="prn-pdf-link-display" style="font-size:0.82rem;"></div>
+            </div>
           </div>
         </div>
 
@@ -2093,7 +2099,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzQ9WHMZW8FSEPrK3juExoRLDunZA-r0TVxXJeKvRKOMVa0EPN3q_ZTLZrK09DPFF4e/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzCSO1Ezq8SopHS78v6I690_U4EsnuzSCathMFMOISZPjd5dsF8gk1rqfZu9rnSJwHz/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -11589,12 +11595,14 @@ async function handlePRNBOQChange(boqId) {
 }
 
 function renderPRNDetails(data) {
-  document.getElementById("prn-id-display").textContent      = data.prnId;
-  document.getElementById("prn-product-display").textContent = (data.productName || "") + " " + (data.productRating || "");
-  document.getElementById("prn-orderqty-display").textContent= (data.orderQuantity || "—") + " Sets";
-  document.getElementById("prn-status-display").textContent  = data.status || "Active";
-  document.getElementById("prn-store-person-display").textContent    = data.storePerson    || "—";
-  document.getElementById("prn-purchase-person-display").textContent = data.purchasePerson || "—";
+  document.getElementById("prn-id-display").textContent           = data.prnId;
+  document.getElementById("prn-customer-display").textContent     = data.customerName   || "—";
+  document.getElementById("prn-productname-display").textContent  = data.productName    || "—";
+  document.getElementById("prn-productrating-display").textContent= data.productRating  || "—";
+  document.getElementById("prn-orderqty-display").textContent     = (data.orderQuantity || "—") + " Sets";
+  document.getElementById("prn-preparedby-display").textContent   = data.preparedBy     || "—";
+  const rawDate = data.lastUpdatedDate || "";
+  document.getElementById("prn-lastupdated-display").textContent  = rawDate ? new Date(rawDate).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) : "—";
 
   const pdfEl = document.getElementById("prn-pdf-link-display");
   if (data.pdfUrl) {
@@ -11605,13 +11613,7 @@ function renderPRNDetails(data) {
   }
 
   const lockedNote = document.getElementById("prn-store-qty-locked-notice");
-  if (prnStoreQtyLocked) {
-    lockedNote.style.display = "block";
-    saveBtn.disabled = true; saveBtn.style.opacity = "0.5"; saveBtn.style.cursor = "not-allowed";
-  } else {
-    lockedNote.style.display = "none";
-    saveBtn.disabled = false; saveBtn.style.opacity = "1"; saveBtn.style.cursor = "pointer";
-  }
+  if (lockedNote) lockedNote.style.display = prnStoreQtyLocked ? "block" : "none";
 
   const tbody = document.getElementById("prn-material-rows-body");
   const items  = data.lineItems || [];
