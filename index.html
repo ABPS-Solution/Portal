@@ -1092,7 +1092,13 @@
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project ID, then select the BOQ to update. Changes will go for re-authorization.</p>
       <div id="update-boq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project Status *</label>
+          <select id="update-boq-status" onchange="handleUpdateBOQStatusChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <option value="Active">Active</option>
+          </select>
+        </div>
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
           <select id="update-boq-project" onchange="loadAuthorizedBOQsForProject(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
@@ -2076,7 +2082,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzYTp9EW7ejOdVHmeTWg8OZJpx5rs0bhnomMfqks_SS0y1mcqw9QnMUEW2wBOHwD5MU/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzHnf7VZPnjYx1w6cnOwj9tKLMepdlRCUSH9EkYuQJ-gjRfj-DpawT5Zr1ZT70VNJM9/exec";
 const CLOUD_NAME    = "dcdhahrhz";
 const UPLOAD_PRESET = "ABPS Leads Form";
 
@@ -10063,14 +10069,48 @@ async function submitEBOQAuthorize() {
     });
 
     if (data.success) {
-      const msg = eboqMode === "authorize"
-        ? `BOQ Authorized Successfully! BOQ ID: <strong style="font-family:monospace;">${data.boqId}</strong>. PDF saved to Drive.`
-        : `BOQ Update Authorized! New version saved. BOQ ID: <strong style="font-family:monospace;">${data.boqId}</strong>.`;
-      showBOQBanner(feedbackId, msg, "success");
+      const _lastDraft = eboqCurrentDraft;
       eboqCurrentDraft = null;
       eboqMaterialRows = [];
       eboqExpandedCardBoqId = null;
-      await initializeAuthorizeBOQPanel(eboqMode);
+
+      // Hide the cards feed (all pending BOQ cards + expanded forms)
+      const cardsFeedEl = document.getElementById(cardsFeedId);
+      if (cardsFeedEl) cardsFeedEl.style.display = "none";
+
+      const pdfNote = data.pdfWarning
+        ? `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — BOQ is authorized. Contact admin to verify Drive folder setup.</div>`
+        : (data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">View PDF in Drive</a></div>` : ``);
+
+      const draft = eboqMode === "authorize"
+        ? { boqId: data.boqId, projectId: eboqCurrentProjectId, customerName: eboqCurrentCustomer, productName: eboqCurrentProductName, productRating: eboqCurrentProductRating, orderQuantity: eboqCurrentOrderQty }
+        : {};
+
+      const fb = document.getElementById(feedbackId);
+      if (fb) {
+        fb.style.borderLeftColor = "var(--accent)";
+        fb.style.background      = "#f0fff4";
+        fb.style.color           = "#276749";
+        fb.style.display         = "block";
+        fb.innerHTML = `
+          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ BOQ ${eboqMode === "authorize" ? "Authorized" : "Update Authorized"} Successfully!</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">BOQ ID</span><span style="font-family:monospace; font-weight:800;">${data.boqId}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Project ID</span><span style="font-weight:700;">${_lastDraft?.projectId || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Customer</span><span style="font-weight:700;">${_lastDraft?.customerName || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Name</span><span style="font-weight:700;">${_lastDraft?.productName || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Rating</span><span style="font-weight:700;">${_lastDraft?.productRating || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Order Qty (Sets)</span><span style="font-weight:700;">${_lastDraft?.orderQuantity || ""}</span></div>
+          </div>
+          ${pdfNote}
+          <button onclick="
+            document.getElementById('${cardsFeedId}').style.display='';
+            document.getElementById('${feedbackId}').style.display='none';
+            initializeAuthorizeBOQPanel('${eboqMode}').catch(()=>{});"
+            style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
+            ${eboqMode === "authorize" ? "Authorize Another Bill of Quantity" : "Authorize Another BOQ Update"}
+          </button>`;
+      }
     } else {
       showBOQBanner(feedbackId, data.error || "Authorization failed.", "error");
     }
@@ -10088,23 +10128,64 @@ async function submitEBOQAuthorize() {
 // ═══════════════════════════════════════════════════════
 
 async function initializeUpdateBOQPanel() {
-  await loadItemCodeCatalogIntoCache();
-  const projDrop = document.getElementById("update-boq-project");
-  projDrop.innerHTML = '<option value="">Loading...</option>';
-  document.getElementById("update-boq-select").innerHTML = '<option value="">— Select Project First —</option>';
-  document.getElementById("update-boq-select").disabled  = true;
-  document.getElementById("update-boq-form").style.display = "none";
-  document.getElementById("update-boq-feedback").style.display = "none";
+  await loadItemCodeCatalogIntoCache().catch(() => {});
+  const projDrop   = document.getElementById("update-boq-project");
+  const statusDrop = document.getElementById("update-boq-status");
+  const boqDrop    = document.getElementById("update-boq-select");
+  const formEl     = document.getElementById("update-boq-form");
+  const fbEl       = document.getElementById("update-boq-feedback");
+
+  if (projDrop)   projDrop.innerHTML  = '<option value="">Loading...</option>';
+  if (boqDrop)  { boqDrop.innerHTML   = '<option value="">— Select Project First —</option>'; boqDrop.disabled = true; }
+  if (formEl)     formEl.style.display  = "none";
+  if (fbEl)       fbEl.style.display    = "none";
 
   try {
-    const data = await apFetch({ action:"pullLiveActiveProjectCodes" });
-    projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
-    (data.projects || []).forEach(code => {
-      const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
-    });
+    const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: "Active" });
+
+    if (statusDrop && data.allStatuses && data.allStatuses.length > 0) {
+      statusDrop.innerHTML = "";
+      data.allStatuses.forEach(s => {
+        const opt = document.createElement("option"); opt.value = s; opt.textContent = s;
+        if (s === "Active") opt.selected = true;
+        statusDrop.appendChild(opt);
+      });
+    }
+
+    if (projDrop) {
+      projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
+      (data.projects || []).forEach(code => {
+        const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
+      });
+    }
     window.uboqProjectMeta = data.projectMeta || {};
   } catch(e) {
-    projDrop.innerHTML = '<option value="">Error loading projects</option>';
+    if (projDrop) projDrop.innerHTML = '<option value="">Error loading projects</option>';
+  }
+}
+
+async function handleUpdateBOQStatusChange(selectedStatus) {
+  const projDrop = document.getElementById("update-boq-project");
+  const boqDrop  = document.getElementById("update-boq-select");
+  const formEl   = document.getElementById("update-boq-form");
+
+  if (projDrop) projDrop.innerHTML = '<option value="">Loading...</option>';
+  if (boqDrop)  { boqDrop.innerHTML = '<option value="">— Select Project First —</option>'; boqDrop.disabled = true; }
+  if (formEl)   formEl.style.display = "none";
+
+  try {
+    const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: selectedStatus });
+    if (projDrop) {
+      projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
+      (data.projects || []).forEach(code => {
+        const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
+      });
+      if ((data.projects || []).length === 0)
+        projDrop.innerHTML = `<option value="">No projects with status: ${selectedStatus}</option>`;
+    }
+    window.uboqProjectMeta = data.projectMeta || {};
+  } catch(e) {
+    if (projDrop) projDrop.innerHTML = '<option value="">Error loading projects</option>';
   }
 }
 
@@ -10122,7 +10203,8 @@ async function loadAuthorizedBOQsForProject(projectId) {
     (data.drafts || []).forEach(draft => {
       const opt = document.createElement("option");
       opt.value = draft.boqId;
-      opt.textContent = `${draft.boqId} | ${draft.customerName} | ${draft.productName} | ${draft.productRating} | ${draft.department} | Qty: ${draft.orderQuantity} | ${draft.date} | By: ${draft.preparedBy}`;
+      const cleanDate = draft.date ? new Date(draft.date).toDateString().replace(/^\S+\s/, '') : '';
+      opt.textContent = `${draft.boqId} | ${draft.department} | Qty: ${draft.orderQuantity} | ${cleanDate} | By: ${draft.preparedBy}`;
       boqDrop.appendChild(opt);
     });
     boqDrop.disabled = false;
@@ -10132,7 +10214,11 @@ async function loadAuthorizedBOQsForProject(projectId) {
 }
 
 async function loadBOQForUpdate(boqId) {
-  if (!boqId) { document.getElementById("update-boq-form").style.display = "none"; return; }
+  const formEl = document.getElementById("update-boq-form");
+  const fbEl   = document.getElementById("update-boq-feedback");
+  if (!boqId) { if (formEl) formEl.style.display = "none"; return; }
+
+  if (formEl) { formEl.style.display = "block"; formEl.innerHTML = '<div style="padding:20px; text-align:center; color:var(--muted);"><div class="spinner" style="display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin 0.8s linear infinite;margin-right:8px;vertical-align:middle;"></div>Loading BOQ...</div>'; }
 
   const data = await apFetch({ action:"fetchBOQDraftById", boqId });
   if (!data.success) return showBOQBanner("update-boq-feedback", data.error, "error");
@@ -10407,15 +10493,33 @@ async function submitUpdateBOQ() {
     });
 
     if (data.success) {
-      showBOQBanner(feedbackId,
-        `BOQ Update submitted for Authorization! BOQ ID: <strong style="font-family:monospace;">${data.boqId}</strong>. Version: v${data.newVersion}.`,
-        "success");
+      const _lastDraft = uboqCurrentDraft;
       uboqCurrentDraft = null;
       uboqMaterialRows = [];
-      document.getElementById("update-boq-form").style.display = "none";
-      document.getElementById("update-boq-select").innerHTML   = '<option value="">— Select Project First —</option>';
-      document.getElementById("update-boq-select").disabled    = true;
-      document.getElementById("update-boq-project").value      = "";
+      const formEl = document.getElementById("update-boq-form");
+      if (formEl) formEl.style.display = "none";
+
+      const fb = document.getElementById(feedbackId);
+      if (fb) {
+        fb.style.borderLeftColor = "var(--accent)";
+        fb.style.background      = "#f0fff4";
+        fb.style.color           = "#276749";
+        fb.style.display         = "block";
+        fb.innerHTML = `
+          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ BOQ Update Submitted for Re-Authorization!</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">BOQ ID</span><span style="font-family:monospace; font-weight:800;">${data.boqId}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Version</span><span style="font-weight:700;">v${data.newVersion}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Project ID</span><span style="font-weight:700;">${_lastDraft?.projectId || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Customer</span><span style="font-weight:700;">${_lastDraft?.customerName || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Name</span><span style="font-weight:700;">${_lastDraft?.productName || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Rating</span><span style="font-weight:700;">${_lastDraft?.productRating || ""}</span></div>
+          </div>
+          <button onclick="initializeUpdateBOQPanel().catch(()=>{});"
+            style="background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
+            + Update Another Bill of Quantity
+          </button>`;
+      }
     } else {
       showBOQBanner(feedbackId, data.error || "Update submission failed.", "error");
     }
