@@ -1251,8 +1251,9 @@
       <h2 style="margin-bottom:6px; color:var(--brand);">Create Purchase Request Note (PRN)</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project and authorized BOQ to view or create a Purchase Request Note.</p>
       <div id="prn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="prn-success-zone" style="display:none;"></div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+      <div id="prn-body-zone" style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
           <select id="prn-project-select" onchange="handlePRNProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
@@ -1340,6 +1341,7 @@
         </div>
         </div> <!-- end prn-expanded-zone -->
       </div>
+      </div> <!-- end prn-body-zone -->
     </div>
 
     <!-- MATERIAL LIST CANVAS -->
@@ -11407,6 +11409,7 @@ let prnStoreQtyLocked = false;
 
 async function initializePRNPanel() {
   if (window._prnStockRefreshInterval) { clearInterval(window._prnStockRefreshInterval); window._prnStockRefreshInterval = null; }
+  if (window._prnCreateStockInterval)  { clearInterval(window._prnCreateStockInterval);  window._prnCreateStockInterval  = null; }
   const projDrop = document.getElementById("prn-project-select");
   const boqDrop  = document.getElementById("prn-boq-select");
   projDrop.innerHTML = '<option value="">Loading...</option>';
@@ -11416,6 +11419,10 @@ async function initializePRNPanel() {
   boqDrop.style.cursor   = "not-allowed";
   document.getElementById("prn-details-zone").style.display = "none";
   document.getElementById("prn-feedback").style.display     = "none";
+  const bodyZoneInit = document.getElementById("prn-body-zone");
+  if (bodyZoneInit) bodyZoneInit.style.display = "grid";
+  const successZoneInit = document.getElementById("prn-success-zone");
+  if (successZoneInit) { successZoneInit.style.display = "none"; successZoneInit.innerHTML = ""; }
   const createZoneInit = document.getElementById("prn-create-zone");
   if (createZoneInit) createZoneInit.style.display = "none";
   window.prnPendingCreate = null;
@@ -11457,7 +11464,7 @@ async function handlePRNProjectChange(projectId) {
       opt.value = draft.boqId;
       opt.textContent = `${draft.boqId} | ${draft.productName} ${draft.productRating} | Qty: ${draft.orderQuantity}`;
       boqDrop.appendChild(opt);
-      window.prnBOQMeta[draft.boqId] = { productName: draft.productName, productRating: draft.productRating, orderQuantity: draft.orderQuantity };
+      window.prnBOQMeta[draft.boqId] = { productName: draft.productName, productRating: draft.productRating, orderQuantity: draft.orderQuantity, customerName: draft.customerName };
     });
     boqDrop.disabled = false; boqDrop.style.opacity = "1"; boqDrop.style.cursor = "pointer";
   } catch(e) {
@@ -11767,20 +11774,40 @@ async function submitNewPRNCreation() {
     // Refresh and show the newly created PRN in the summary view
     const refetchData = await apFetch({ action: "fetchPRNsForProject", projectId: pending.projectId });
     const newPRN = (refetchData.prns || []).find(p => p.boqId === pending.boqId && p.status !== "Closed");
-    if (newPRN) {
-      document.getElementById("prn-details-zone").style.display = "block";
-      prnCurrentData    = newPRN;
-      prnStoreQtyLocked = (newPRN.lineItems || []).some(li => li.isLocked);
-      renderPRNDetails(newPRN);
-    }
+    const bodyZone    = document.getElementById("prn-body-zone");
+    const successZone = document.getElementById("prn-success-zone");
+    if (bodyZone) bodyZone.style.display = "none";
 
-    const pdfNote = data.pdfWarning ? " ⚠️ PDF could not be generated." : " 📄 PDF generated successfully.";
-    showPurchaseFeedback("prn-feedback", `✅ PRN ${data.prnId} created.${pdfNote}`, data.pdfWarning ? "error" : "success");
+    const pdfNote = data.pdfWarning
+      ? `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — PRN is saved. Contact admin to verify Drive folder setup.</div>`
+      : (data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a></div>` : "");
+
+    if (successZone) {
+      successZone.style.display = "block";
+      successZone.innerHTML = `
+        <div style="background:#f0fff4; border-left:4px solid var(--accent); border-radius:var(--radius); padding:14px 16px; margin-bottom:16px;">
+          <div style="font-size:0.85rem; font-weight:800; color:#276749; margin-bottom:8px;">✅ PRN Created Successfully!</div>
+          <div style="font-size:0.82rem; color:#276749; font-family:monospace; font-weight:700;">${data.prnId}</div>
+          ${pdfNote}
+          <button onclick="resetPRNPanelForNewEntry();" 
+            style="margin-top:12px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
+            + Create New PRN for this BOQ
+          </button>
+        </div>`;
+    }
 
   } catch(e) {
     showPurchaseFeedback("prn-feedback", "Network error: " + e.message, "error");
     btn.disabled = false; btn.textContent = "Generate & Save PRN PDF";
   }
+}
+
+function resetPRNPanelForNewEntry() {
+  const successZone = document.getElementById("prn-success-zone");
+  const bodyZone     = document.getElementById("prn-body-zone");
+  if (successZone) { successZone.style.display = "none"; successZone.innerHTML = ""; }
+  if (bodyZone) bodyZone.style.display = "grid";
+  initializePRNPanel();
 }
 
 function renderPRNDetails(data) {
@@ -11791,9 +11818,13 @@ function renderPRNDetails(data) {
   document.getElementById("prn-productname-display").textContent  = data.productName    || "—";
   document.getElementById("prn-productrating-display").textContent= data.productRating  || "—";
   document.getElementById("prn-orderqty-display").textContent     = (data.orderQuantity || "—") + " Sets";
-  document.getElementById("prn-preparedby-display").textContent   = data.preparedBy     || "—";
-  const rawDate = data.lastUpdatedDate || "";
-  document.getElementById("prn-lastupdated-display").textContent  = rawDate ? new Date(rawDate).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) : "—";
+  const preparedByEl = document.getElementById("prn-preparedby-display");
+  if (preparedByEl) preparedByEl.textContent = data.preparedBy || "—";
+  const lastUpdatedEl = document.getElementById("prn-lastupdated-display");
+  if (lastUpdatedEl) {
+    const rawDate = data.lastUpdatedDate || "";
+    lastUpdatedEl.textContent = rawDate ? new Date(rawDate).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) : "—";
+  }
 
   document.getElementById("prn-storeperson-display").textContent    = data.storePerson    || "—";
 
