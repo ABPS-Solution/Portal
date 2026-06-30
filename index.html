@@ -11506,6 +11506,8 @@ function startNewPRNCreation() {
 
   document.getElementById("prn-details-zone").style.display = "none";
   document.getElementById("prn-feedback").style.display     = "none";
+  const noPrnZoneInit = document.getElementById("prn-none-found-zone");
+  if (noPrnZoneInit) noPrnZoneInit.style.display = "none";
 
   const personnelPromise = apFetch({ action: "getStoreOperatorsList" });
   personnelPromise.then(personnelData => {
