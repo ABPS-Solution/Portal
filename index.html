@@ -1279,7 +1279,12 @@
         </div>
       </div>
 
-      <div id="prn-details-zone" style="display:none;">
+      <div id="prn-create-zone" style="display:none; background:#fff7ed; border:1.5px solid #fb923c; border-radius:var(--radius); padding:16px; margin-bottom:16px; text-align:center;">
+          <div style="font-size:0.85rem; font-weight:700; color:#9a3412; margin-bottom:10px;">No PRN exists for this BOQ yet. Confirm Store Person and Purchase Person above, then create one.</div>
+          <button class="nav-btn-styled" id="prn-create-confirm-btn" onclick="createPRNFromSelectedPersons()" style="background:var(--brand); padding:8px 24px; font-weight:700;">Create PRN</button>
+        </div>
+
+        <div id="prn-details-zone" style="display:none;">
         <div style="background:var(--highlight-bg); border:1.5px solid var(--brand); border-radius:var(--radius); padding:12px; margin-bottom:16px;">
           <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; margin-bottom:8px;">
             <div>
@@ -1338,7 +1343,7 @@
         </div>
 
         <div id="prn-store-qty-locked-notice" style="display:none; padding:8px 12px; background:#f0fdf4; border:1px solid #86efac; border-radius:var(--radius); font-size:0.82rem; color:#15803d; font-weight:600; margin-bottom:12px;">
-          ✅ Store quantities are locked — PDF has been generated. Contact an administrator to unlock.
+          ✅ Store quantities are locked — PDF has been generated. 
         </div>
 
         <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
@@ -11421,6 +11426,9 @@ async function initializePRNPanel() {
   boqDrop.style.cursor   = "not-allowed";
   document.getElementById("prn-details-zone").style.display = "none";
   document.getElementById("prn-feedback").style.display     = "none";
+  const createZoneInit = document.getElementById("prn-create-zone");
+  if (createZoneInit) createZoneInit.style.display = "none";
+  window.prnPendingCreate = null;
   prnCurrentData    = null;
   prnStoreQtyLocked = false;
 
@@ -11517,15 +11525,37 @@ async function handlePRNBOQChange(boqId) {
     populate(storePeopleDrop, "store");
     populate(purchasePeopleDrop, "purchase");
 
-    const storePerson    = storePeopleDrop.value || appActiveOperatorIdentityString;
-    const purchasePerson = purchasePeopleDrop.value || appActiveOperatorIdentityString;
+    // No existing PRN — wait for user to pick Store/Purchase Person, then show Create button
+    window.prnPendingCreate = { projectId, boqId };
+    const createZone = document.getElementById("prn-create-zone");
+    if (createZone) createZone.style.display = "block";
+    return;
+  } catch(e) {
+    document.getElementById("prn-feedback").style.display = "block";
+    document.getElementById("prn-feedback").textContent = "Network error: " + e.message;
+  }
+}
 
-    // Step 2: No existing PRN — create one now
-    const boqMeta = (window.prnBOQMeta || {})[boqId] || {};
+async function createPRNFromSelectedPersons() {
+  const pending = window.prnPendingCreate;
+  if (!pending) return;
+  const storePeopleDrop    = document.getElementById("prn-store-person-select");
+  const purchasePeopleDrop = document.getElementById("prn-purchase-person-select");
+  const storePerson    = storePeopleDrop.value;
+  const purchasePerson = purchasePeopleDrop.value;
+
+  if (!storePerson)    return showPurchaseFeedback("prn-feedback", "⚠️ Please select a Store Person.", "error");
+  if (!purchasePerson) return showPurchaseFeedback("prn-feedback", "⚠️ Please select a Purchase Person.", "error");
+
+  const createBtn = document.getElementById("prn-create-confirm-btn");
+  if (createBtn) { createBtn.disabled = true; createBtn.textContent = "Creating..."; }
+
+  try {
+    const boqMeta = (window.prnBOQMeta || {})[pending.boqId] || {};
     const createData = await apFetch({
       action: "createPurchaseRequestNote",
       activeEngineer: appActiveOperatorIdentityString,
-      projectId, boqId,
+      projectId: pending.projectId, boqId: pending.boqId,
       productName:    boqMeta.productName    || "",
       productRating:  boqMeta.productRating  || "",
       orderQuantity:  boqMeta.orderQuantity  || 0,
@@ -11533,28 +11563,32 @@ async function handlePRNBOQChange(boqId) {
     });
 
     if (!createData.success) {
-      document.getElementById("prn-details-zone").style.display = "none";
       showPurchaseFeedback("prn-feedback", createData.error || "Failed to create PRN.", "error");
+      if (createBtn) { createBtn.disabled = false; createBtn.textContent = "Create PRN"; }
       return;
     }
 
-    // Step 3: Fetch the newly created PRN to get full line item details
-    const refetchData = await apFetch({ action: "fetchPRNsForProject", projectId });
-    const newPRN = (refetchData.prns || []).find(p => p.boqId === boqId && p.status !== "Closed");
+    // Fetch the newly created PRN to get full line item details
+    const refetchData = await apFetch({ action: "fetchPRNsForProject", projectId: pending.projectId });
+    const newPRN = (refetchData.prns || []).find(p => p.boqId === pending.boqId && p.status !== "Closed");
 
     if (!newPRN) {
-      document.getElementById("prn-details-zone").style.display = "none";
       showPurchaseFeedback("prn-feedback", "PRN created but could not be loaded. Please reopen this panel.", "error");
+      if (createBtn) { createBtn.disabled = false; createBtn.textContent = "Create PRN"; }
       return;
     }
+
+    const createZone = document.getElementById("prn-create-zone");
+    if (createZone) createZone.style.display = "none";
+    window.prnPendingCreate = null;
 
     prnCurrentData    = newPRN;
     prnStoreQtyLocked = false;
     renderPRNDetails(newPRN);
 
   } catch(e) {
-    document.getElementById("prn-details-zone").style.display = "none";
     showPurchaseFeedback("prn-feedback", "Network error: " + e.message, "error");
+    if (createBtn) { createBtn.disabled = false; createBtn.textContent = "Create PRN"; }
   }
 }
 
