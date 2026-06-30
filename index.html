@@ -1252,7 +1252,7 @@
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project and authorized BOQ to view or create a Purchase Request Note.</p>
       <div id="prn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
           <select id="prn-project-select" onchange="handlePRNProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
@@ -1269,18 +1269,7 @@
 
       <div id="prn-none-found-zone" style="display:none; margin-bottom:16px;"></div>
 
-        <div id="prn-create-zone" style="display:none; background:#fff7ed; border:1.5px solid #fb923c; border-radius:var(--radius); padding:16px; margin-bottom:16px;">
-          <div style="font-size:0.85rem; font-weight:700; color:#9a3412; margin-bottom:12px;">Create New Purchase Request Note</div>
-          <div style="max-width:400px; margin-bottom:14px;">
-            <label class="field-label" style="margin-top:0;">Store Person *</label>
-            <select id="prn-store-person-select" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-              <option value="">— Select Person —</option>
-            </select>
-          </div>
-          <div style="text-align:center;">
-            <button class="nav-btn-styled" id="prn-create-confirm-btn" onclick="createPRNFromSelectedPersons()" style="background:var(--brand); padding:8px 24px; font-weight:700;">Create PRN</button>
-          </div>
-        </div>
+        <div id="prn-create-zone" style="display:none;"></div>
 
         <div id="prn-details-zone" style="display:none;">
         <div id="prn-summary-card" onclick="togglePRNExpanded()" style="cursor:pointer; background:var(--highlight-bg); border:1.5px solid var(--brand); border-radius:var(--radius); padding:12px; margin-bottom:16px;">
@@ -2079,7 +2068,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxTND5OFlGJQWwi2phj1YqyyA2REYYuvAB_Pc5hV2ZzQP2ybpcItlDdVE3ZMSRK5EBY/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbycyf5v7DHfeN4TLgBDWXS5m2A_s-BcomeadqAEJMIiVx5nGQZuVxFZTjVEGd8Y8kxG/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -11485,7 +11474,7 @@ function togglePRNExpanded() {
   if (toggleText) toggleText.textContent = isOpen ? "expand and view materials" : "collapse";
 }
 
-function startNewPRNCreation() {
+async function startNewPRNCreation() {
   const projDrop = document.getElementById("prn-project-select");
   const boqDrop  = document.getElementById("prn-boq-select");
   const projectId = projDrop ? projDrop.value : "";
@@ -11497,21 +11486,38 @@ function startNewPRNCreation() {
   const noPrnZoneInit = document.getElementById("prn-none-found-zone");
   if (noPrnZoneInit) noPrnZoneInit.style.display = "none";
 
-  const personnelPromise = apFetch({ action: "getStoreOperatorsList" });
-  personnelPromise.then(personnelData => {
-    const allPersonnel = personnelData.fullPersonnelDataRecordsTree || [];
-    const storePeopleDrop = document.getElementById("prn-store-person-select");
-    storePeopleDrop.innerHTML = '<option value="">— Select Person —</option>';
-    allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().includes("store")))
-      .forEach(p => { const o = document.createElement("option"); o.value = p.fullName; o.textContent = p.fullName; storePeopleDrop.appendChild(o); });
-    storePeopleDrop.disabled = false; storePeopleDrop.style.opacity = "1"; storePeopleDrop.style.cursor = "pointer";
+  const createZone = document.getElementById("prn-create-zone");
+  createZone.style.display = "block";
+  createZone.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">
+    <div class="spinner" style="display:inline-block; width:18px; height:18px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:10px; vertical-align:middle;"></div>
+    Loading materials for this BOQ...
+  </div>`;
 
-    window.prnPendingCreate = { projectId, boqId };
-    const createZone = document.getElementById("prn-create-zone");
-    if (createZone) createZone.style.display = "block";
-  }).catch(() => {
-    showPurchaseFeedback("prn-feedback", "Could not load personnel list.", "error");
-  });
+  try {
+    const [previewData, personnelData, boqMetaCheck] = await Promise.all([
+      apFetch({ action: "previewPRNMaterials", projectId, boqId }),
+      apFetch({ action: "getStoreOperatorsList" }),
+      Promise.resolve((window.prnBOQMeta || {})[boqId] || {})
+    ]);
+
+    if (!previewData.success) {
+      createZone.innerHTML = `<div style="padding:16px; background:#fef2f2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-weight:600;">${previewData.error || "Failed to load preview."}</div>`;
+      return;
+    }
+
+    window.prnPendingCreate = {
+      projectId, boqId,
+      lineItems: previewData.lineItems,
+      isDeltaPRN: previewData.isDeltaPRN,
+      nextVersion: previewData.nextVersion,
+      orderQty: previewData.orderQty
+    };
+    window.prnAllPersonnel = personnelData.fullPersonnelDataRecordsTree || [];
+
+    renderPRNCreateTable();
+  } catch(e) {
+    createZone.innerHTML = `<div style="padding:16px; background:#fef2f2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-weight:600;">Network error: ${e.message}</div>`;
+  }
 }
 
 async function handlePRNBOQChange(boqId) {
@@ -11577,57 +11583,203 @@ async function handlePRNBOQChange(boqId) {
   }
 }
 
-async function createPRNFromSelectedPersons() {
+function renderPRNCreateTable() {
   const pending = window.prnPendingCreate;
   if (!pending) return;
-  const fbEl = document.getElementById("prn-feedback"); if (fbEl) fbEl.style.display = "none";
-  const storePeopleDrop = document.getElementById("prn-store-person-select");
-  const storePerson     = storePeopleDrop.value;
+  const createZone = document.getElementById("prn-create-zone");
 
+  const deltaBadge = pending.isDeltaPRN
+    ? `<span style="background:#fb923c; color:#fff; font-size:0.62rem; padding:2px 6px; border-radius:3px; font-weight:800; margin-left:8px;">DELTA — NEW/INCREASED ITEMS ONLY</span>`
+    : "";
+
+  const boqMeta = (window.prnBOQMeta || {})[pending.boqId] || {};
+
+  let rowsHtml = "";
+  pending.lineItems.forEach((item, idx) => {
+    const bufferedQty = Number(item.bufferedPurchQty) || 0;
+    rowsHtml += `
+      <tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
+        <td style="padding:8px; font-size:0.82rem; font-weight:600;">${item.materialName}</td>
+        <td style="padding:8px; font-size:0.75rem; color:var(--muted);">${item.typeOfMaterial || "—"}</td>
+        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${Number(item.boqReqQty).toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct}%</td>
+        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${bufferedQty.toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="prn-create-livestock" data-itemcode="${item.itemCode}">…</span></td>
+        <td style="padding:8px; text-align:center;">
+          <select class="prn-create-checked" data-idx="${idx}" style="padding:5px; font-weight:700; border:1.5px solid #9333ea; border-radius:3px; font-size:0.85rem; color:#b91c1c;">
+            <option value="No" selected>No</option>
+            <option value="Yes">Yes</option>
+          </select>
+        </td>
+        <td style="padding:8px; text-align:center;">
+          <input type="number" min="0" max="${bufferedQty}" value="" placeholder="0" class="prn-create-storeqty" data-idx="${idx}" disabled
+            style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem; opacity:0.5;" />
+        </td>
+        <td id="prn-create-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">${bufferedQty.toFixed(2)}</td>
+      </tr>`;
+  });
+
+  createZone.innerHTML = `
+    <div style="font-size:0.85rem; font-weight:700; color:var(--brand); margin-bottom:12px;">New Purchase Request Note for ${pending.boqId} ${deltaBadge}</div>
+    <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
+      <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1000px;">
+        <thead>
+          <tr style="background:#f8fafc;">
+            <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:240px;">Material Name</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:left;">Type</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Req Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered Purchase Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:130px;">Store Available Stock</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:90px;">Checked by Store Person *</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1;">Store Quantity *</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d;">Purchase Qty</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; display:flex; justify-content:space-between; align-items:flex-end; gap:14px;">
+      <div style="max-width:340px; flex:1;">
+        <label class="field-label" style="margin-top:0;">Store Person *</label>
+        <select id="prn-create-store-person" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+          <option value="">Loading...</option>
+        </select>
+      </div>
+      <button class="nav-btn-styled" id="prn-create-generate-btn" onclick="submitNewPRNCreation()" style="background:var(--accent); padding:8px 24px; font-weight:700;">Generate & Save PRN PDF</button>
+    </div>
+  `;
+
+  // Populate Store Person dropdown
+  const storeDrop = document.getElementById("prn-create-store-person");
+  storeDrop.innerHTML = '<option value="">— Select Person —</option>';
+  (window.prnAllPersonnel || []).filter(p => p.departmentsList.some(d => d.toLowerCase().includes("store")))
+    .forEach(p => { const o = document.createElement("option"); o.value = p.fullName; o.textContent = p.fullName; storeDrop.appendChild(o); });
+
+  // Wire up checked-select → enable store qty input
+  document.querySelectorAll(".prn-create-checked").forEach(sel => {
+    sel.addEventListener("change", function() {
+      const idx = this.dataset.idx;
+      const input = document.querySelector(`.prn-create-storeqty[data-idx="${idx}"]`);
+      this.style.color = this.value === "Yes" ? "#15803d" : "#b91c1c";
+    });
+  });
+
+  document.querySelectorAll(".prn-create-storeqty").forEach(inp => {
+    inp.addEventListener("input", function() {
+      const idx = this.dataset.idx;
+      const item = pending.lineItems[idx];
+      const bufferedQty = Number(item.bufferedPurchQty) || 0;
+      const liveSpan = document.querySelector(`.prn-create-livestock[data-itemcode="${item.itemCode}"]`);
+      const liveMax  = (liveSpan && liveSpan.dataset.liveTotal !== undefined) ? Number(liveSpan.dataset.liveTotal) || 0 : 0;
+      const cap = Math.min(bufferedQty, liveMax);
+      let val = parseFloat(this.value) || 0;
+      if (val > cap) { val = cap; this.value = val; this.style.border = "1.5px solid #ef4444"; }
+      else { this.style.border = "1.5px solid var(--brand)"; }
+      const purchaseQty = Math.max(0, bufferedQty - val);
+      const cell = document.getElementById(`prn-create-purchaseqty-${idx}`);
+      if (cell) cell.textContent = purchaseQty.toFixed(2);
+    });
+  });
+
+  refreshPRNCreateLiveStock();
+  if (window._prnCreateStockInterval) clearInterval(window._prnCreateStockInterval);
+  window._prnCreateStockInterval = setInterval(refreshPRNCreateLiveStock, 8000);
+}
+
+async function refreshPRNCreateLiveStock() {
+  const pending = window.prnPendingCreate;
+  if (!pending) { if (window._prnCreateStockInterval) clearInterval(window._prnCreateStockInterval); return; }
+  const itemCodes = pending.lineItems.map(it => it.itemCode).filter(Boolean);
+  if (itemCodes.length === 0) return;
+  try {
+    const data = await apFetch({ action: "fetchLiveMaterialStock", itemCodes });
+    if (!data.success) return;
+    document.querySelectorAll(".prn-create-livestock").forEach(span => {
+      const code = span.dataset.itemcode;
+      const s = data.stock[code.toUpperCase()] || { raw: 0, spare: 0 };
+      const total = s.raw + s.spare;
+      span.textContent = `${total} (Raw: ${s.raw}, Spare: ${s.spare})`;
+      span.dataset.liveTotal = total;
+      const tr = span.closest("tr");
+      const inp = tr ? tr.querySelector(".prn-create-storeqty") : null;
+      if (inp) {
+        if (inp.disabled) { inp.disabled = false; inp.style.opacity = "1"; }
+        inp.max = total;
+        const currentVal = parseFloat(inp.value) || 0;
+        if (currentVal > total) { inp.value = total; inp.dispatchEvent(new Event("input")); }
+      }
+    });
+  } catch(e) { /* silent, retry next interval */ }
+}
+
+async function submitNewPRNCreation() {
+  const pending = window.prnPendingCreate;
+  if (!pending) return;
+
+  const storePerson = document.getElementById("prn-create-store-person").value;
   if (!storePerson) return showPurchaseFeedback("prn-feedback", "⚠️ Please select a Store Person.", "error");
 
-  const createBtn = document.getElementById("prn-create-confirm-btn");
-  if (createBtn) { createBtn.disabled = true; createBtn.textContent = "Creating..."; }
+  const checkedSelects = document.querySelectorAll(".prn-create-checked");
+  const storeQtyInputs = document.querySelectorAll(".prn-create-storeqty");
+
+  const submittedItems = pending.lineItems.map((item, idx) => {
+    const checkedVal = checkedSelects[idx] ? checkedSelects[idx].value : "No";
+    const storeQty    = storeQtyInputs[idx] ? (parseFloat(storeQtyInputs[idx].value) || 0) : 0;
+    return {
+      itemCode: item.itemCode, materialName: item.materialName, typeOfMaterial: item.typeOfMaterial,
+      boqRequiredQty: item.boqReqQty, bufferPct: item.bufferPct, bufferedPurchaseQty: item.bufferedPurchQty,
+      currentUnassignedStoreQty: storeQty, checkedByStorePerson: checkedVal
+    };
+  });
+
+  const unchecked = submittedItems.find(it => it.checkedByStorePerson !== "Yes");
+  if (unchecked) return showPurchaseFeedback("prn-feedback", `⚠️ All rows must be marked "Checked by Store Person = Yes". "${unchecked.materialName}" is not checked yet.`, "error");
+
+  const btn = document.getElementById("prn-create-generate-btn");
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Creating PRN...';
 
   try {
     const boqMeta = (window.prnBOQMeta || {})[pending.boqId] || {};
-    const createData = await apFetch({
+    const data = await apFetch({
       action: "createPurchaseRequestNote",
       activeEngineer: appActiveOperatorIdentityString,
       projectId: pending.projectId, boqId: pending.boqId,
-      productName:    boqMeta.productName    || "",
-      productRating:  boqMeta.productRating  || "",
-      orderQuantity:  boqMeta.orderQuantity  || 0,
-      storePerson
+      productName: boqMeta.productName || "", productRating: boqMeta.productRating || "",
+      orderQuantity: boqMeta.orderQuantity || pending.orderQty || 0,
+      customerName: boqMeta.customerName || "",
+      storePerson, lineItems: submittedItems
     });
 
-    if (!createData.success) {
-      showPurchaseFeedback("prn-feedback", createData.error || "Failed to create PRN.", "error");
-      if (createBtn) { createBtn.disabled = false; createBtn.textContent = "Create PRN"; }
+    if (!data.success) {
+      showPurchaseFeedback("prn-feedback", data.error || "Failed to create PRN.", "error");
+      btn.disabled = false; btn.textContent = "Generate & Save PRN PDF";
       return;
     }
 
-    // Fetch the newly created PRN to get full line item details
+    if (window._prnCreateStockInterval) clearInterval(window._prnCreateStockInterval);
+    window.prnPendingCreate = null;
+    document.getElementById("prn-create-zone").style.display = "none";
+
+    // Refresh and show the newly created PRN in the summary view
     const refetchData = await apFetch({ action: "fetchPRNsForProject", projectId: pending.projectId });
     const newPRN = (refetchData.prns || []).find(p => p.boqId === pending.boqId && p.status !== "Closed");
-
-    if (!newPRN) {
-      showPurchaseFeedback("prn-feedback", "PRN created but could not be loaded. Please reopen this panel.", "error");
-      if (createBtn) { createBtn.disabled = false; createBtn.textContent = "Create PRN"; }
-      return;
+    if (newPRN) {
+      document.getElementById("prn-details-zone").style.display = "block";
+      prnCurrentData    = newPRN;
+      prnStoreQtyLocked = (newPRN.lineItems || []).some(li => li.isLocked);
+      renderPRNDetails(newPRN);
     }
 
-    const createZone = document.getElementById("prn-create-zone");
-    if (createZone) createZone.style.display = "none";
-    window.prnPendingCreate = null;
-
-    prnCurrentData    = newPRN;
-    prnStoreQtyLocked = false;
-    renderPRNDetails(newPRN);
+    const pdfNote = data.pdfWarning ? " ⚠️ PDF could not be generated." : " 📄 PDF generated successfully.";
+    showPurchaseFeedback("prn-feedback", `✅ PRN ${data.prnId} created.${pdfNote}`, data.pdfWarning ? "error" : "success");
 
   } catch(e) {
     showPurchaseFeedback("prn-feedback", "Network error: " + e.message, "error");
-    if (createBtn) { createBtn.disabled = false; createBtn.textContent = "Create PRN"; }
+    btn.disabled = false; btn.textContent = "Generate & Save PRN PDF";
   }
 }
 
