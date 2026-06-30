@@ -7245,10 +7245,7 @@ async function triggerLiveWarehouseStockMetricsSync() {
       // Group items by Type of Material
       const typeGroups = {};
       const typeOrder = [
-        "Conductor","Epoxy Resin","Insulating Materials","Paint","Bus Bars",
-        "Polypropylene Film","Alu Foil","Pxe Oil","Bushing","Kraft Insulation Paper",
-        "Assembly Materials","MS Box","Powder Coated Panel","Galvanising Structures",
-        "Switchgears","Cables","Hardwares","Lugs","Meters","Others","Uncategorized",""
+        "A","B","C","D","E","Uncategorized",""
       ];
       
       cachedInventoryStockCollection.forEach(item => {
@@ -7268,26 +7265,12 @@ async function triggerLiveWarehouseStockMetricsSync() {
       });
 
       const typeLabels = {
-        "Conductor":             "Conductor",
-        "Epoxy Resin":           "Epoxy Resin",
-        "Insulating Materials":  "Insulating Materials",
-        "Paint":                 "Paint",
-        "Bus Bars":              "Bus Bars",
-        "Polypropylene Film":    "Polypropylene Film",
-        "Alu Foil":              "Alu Foil",
-        "Pxe Oil":               "Pxe Oil",
-        "Bushing":               "Bushing",
-        "Kraft Insulation Paper":"Kraft Insulation Paper",
-        "Assembly Materials":    "Assembly Materials",
-        "MS Box":                "MS Box",
-        "Powder Coated Panel":   "Powder Coated Panel",
-        "Galvanising Structures":"Galvanising Structures",
-        "Switchgears":           "Switchgears",
-        "Cables":                "Cables",
-        "Hardwares":             "Hardwares",
-        "Lugs":                  "Lugs",
-        "Meters":                "Meters",
-        "Uncategorized":         "Uncategorized"
+        "A": "A",
+        "B": "B",
+        "C": "C",
+        "D": "D",
+        "E": "E",
+        "Uncategorized": "Uncategorized"
       };
 
       sortedTypes.forEach(type => {
