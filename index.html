@@ -1279,8 +1279,10 @@
         </div>
       </div>
 
-      <div id="prn-create-zone" style="display:none; background:#fff7ed; border:1.5px solid #fb923c; border-radius:var(--radius); padding:16px; margin-bottom:16px; text-align:center;">
-          <div style="font-size:0.85rem; font-weight:700; color:#9a3412; margin-bottom:10px;">No PRN exists for this BOQ yet. Confirm Store Person and Purchase Person above, then create one.</div>
+      <div id="prn-none-found-zone" style="display:none; margin-bottom:16px;"></div>
+
+        <div id="prn-create-zone" style="display:none; background:#fff7ed; border:1.5px solid #fb923c; border-radius:var(--radius); padding:16px; margin-bottom:16px; text-align:center;">
+          <div style="font-size:0.85rem; font-weight:700; color:#9a3412; margin-bottom:10px;">Confirm Store Person and Purchase Person above, then create the PRN.</div>
           <button class="nav-btn-styled" id="prn-create-confirm-btn" onclick="createPRNFromSelectedPersons()" style="background:var(--brand); padding:8px 24px; font-weight:700;">Create PRN</button>
         </div>
 
@@ -11524,39 +11526,59 @@ function startNewPRNCreation() {
 }
 
 async function handlePRNBOQChange(boqId) {
-  document.getElementById("prn-details-zone").style.display = "none";
-  document.getElementById("prn-feedback").style.display     = "none";
+  const detailsZone = document.getElementById("prn-details-zone");
+  const createZone  = document.getElementById("prn-create-zone");
+  const noPrnZone   = document.getElementById("prn-none-found-zone");
+
+  detailsZone.style.display = "none";
+  if (createZone) createZone.style.display = "none";
+  if (noPrnZone)  noPrnZone.style.display  = "none";
+  document.getElementById("prn-feedback").style.display = "none";
   prnCurrentData = null;
+  window.prnPendingCreate = null;
   if (!boqId) return;
 
   const projectId = document.getElementById("prn-project-select").value;
-  document.getElementById("prn-details-zone").style.display = "block";
-  document.getElementById("prn-material-rows-body").innerHTML = `
-    <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--muted);">
+
+  // Show a loading indicator while we check for an existing PRN
+  if (noPrnZone) {
+    noPrnZone.style.display = "block";
+    noPrnZone.innerHTML = `<div style="text-align:center; padding:16px; color:var(--muted);">
       <div class="spinner" style="display:inline-block; width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>
-      Loading PRN data...
-    </td></tr>`;
-  document.getElementById("prn-id-display").textContent = "Loading...";
+      Checking for existing PRN...
+    </div>`;
+  }
 
   try {
     // Step 1: Check if a PRN already exists for this BOQ
     const fetchData = await apFetch({ action: "fetchPRNsForProject", projectId });
 
     if (!fetchData.success) {
-      document.getElementById("prn-details-zone").style.display = "none";
+      if (noPrnZone) noPrnZone.style.display = "none";
       showPurchaseFeedback("prn-feedback", fetchData.error || "Failed to load PRNs.", "error");
       return;
     }
 
     const existingPRN = (fetchData.prns || []).find(p => p.boqId === boqId && p.status !== "Closed");
 
+    if (noPrnZone) noPrnZone.style.display = "none";
+
     if (existingPRN) {
       // PRN already exists — load it directly
+      detailsZone.style.display = "block";
       prnCurrentData    = existingPRN;
       prnStoreQtyLocked = (existingPRN.lineItems || []).some(li => li.isLocked);
       renderPRNDetails(existingPRN);
       return;
     }
+
+    // No PRN exists — show "No PRN" message + populate Store/Purchase Person dropdowns + reveal Create button
+    if (noPrnZone) {
+      noPrnZone.style.display = "block";
+      noPrnZone.innerHTML = `<div style="text-align:center; padding:16px; color:var(--muted); font-weight:600;">No PRN exists yet for this BOQ ID. Select Store Person and Purchase Person above, then click below to create one.</div>`;
+    }
+
+    window.prnPendingCreate = { projectId, boqId };
 
     // Populate Store Person (Store dept) and Purchase Person (Purchase dept) dropdowns
     const personnelData = await apFetch({ action: "getStoreOperatorsList" });
@@ -11573,16 +11595,9 @@ async function handlePRNBOQChange(boqId) {
     populate(storePeopleDrop, "store");
     populate(purchasePeopleDrop, "purchase");
 
-    // No existing PRN — wait for user to pick Store/Purchase Person, then show Create button
-    window.prnPendingCreate = { projectId, boqId };
-    const createZone = document.getElementById("prn-create-zone");
+    // Only now — after the existence check AND personnel load are both done — reveal the Create button
     if (createZone) createZone.style.display = "block";
     return;
-  } catch(e) {
-    document.getElementById("prn-feedback").style.display = "block";
-    document.getElementById("prn-feedback").textContent = "Network error: " + e.message;
-  }
-}
 
 async function createPRNFromSelectedPersons() {
   const pending = window.prnPendingCreate;
