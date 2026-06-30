@@ -1285,8 +1285,8 @@
         </div>
 
         <div id="prn-details-zone" style="display:none;">
-        <div style="background:var(--highlight-bg); border:1.5px solid var(--brand); border-radius:var(--radius); padding:12px; margin-bottom:16px;">
-          <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; margin-bottom:8px;">
+        <div id="prn-summary-card" onclick="togglePRNExpanded()" style="cursor:pointer; background:var(--highlight-bg); border:1.5px solid var(--brand); border-radius:var(--radius); padding:12px; margin-bottom:16px;">
+          <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; margin-bottom:4px;">
             <div>
               <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PRN ID</div>
               <div id="prn-id-display" style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.88rem;"></div>
@@ -1308,20 +1308,26 @@
               <div id="prn-orderqty-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
             </div>
             <div>
-              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">BOQ Prepared By</div>
-              <div id="prn-preparedby-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
+              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Store Person</div>
+              <div id="prn-storeperson-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
             </div>
             <div>
-              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">BOQ Last Updated</div>
-              <div id="prn-lastupdated-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
+              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Purchase Person</div>
+              <div id="prn-purchaseperson-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
             </div>
             <div>
               <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PRN PDF</div>
-              <div id="prn-pdf-link-display" style="font-size:0.82rem;"></div>
+              <div id="prn-pdf-link-display" style="font-size:0.82rem;" onclick="event.stopPropagation();"></div>
             </div>
           </div>
+          <div style="font-size:0.72rem; color:var(--brand); font-weight:700;">▾ Click to <span id="prn-expand-toggle-text">expand and view materials</span></div>
         </div>
 
+        <div style="margin-bottom:16px; text-align:right;">
+          <button class="nav-btn-styled" onclick="event.stopPropagation(); startNewPRNCreation();" style="background:#fb923c; padding:7px 18px; font-weight:700; font-size:0.82rem;">+ Create New PRN for this BOQ</button>
+        </div>
+
+        <div id="prn-expanded-zone" style="display:none;">
         <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
           <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1000px;">
             <thead>
@@ -1349,6 +1355,7 @@
         <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
           <button class="nav-btn-styled" id="prn-generate-pdf-btn" onclick="generatePRNPDF()" style="background:var(--accent); padding:8px 20px; font-weight:700;">Generate & Save PRN PDF</button>
         </div>
+        </div> <!-- end prn-expanded-zone -->
       </div>
     </div>
 
@@ -11475,6 +11482,47 @@ async function handlePRNProjectChange(projectId) {
   }
 }
 
+function togglePRNExpanded() {
+  const expandedZone = document.getElementById("prn-expanded-zone");
+  const toggleText    = document.getElementById("prn-expand-toggle-text");
+  if (!expandedZone) return;
+  const isOpen = expandedZone.style.display !== "none";
+  expandedZone.style.display = isOpen ? "none" : "block";
+  if (toggleText) toggleText.textContent = isOpen ? "expand and view materials" : "collapse";
+}
+
+function startNewPRNCreation() {
+  const projDrop = document.getElementById("prn-project-select");
+  const boqDrop  = document.getElementById("prn-boq-select");
+  const projectId = projDrop ? projDrop.value : "";
+  const boqId     = boqDrop  ? boqDrop.value  : "";
+  if (!projectId || !boqId) return;
+
+  document.getElementById("prn-details-zone").style.display = "none";
+  document.getElementById("prn-feedback").style.display     = "none";
+
+  const personnelPromise = apFetch({ action: "getStoreOperatorsList" });
+  personnelPromise.then(personnelData => {
+    const allPersonnel = personnelData.fullPersonnelDataRecordsTree || [];
+    const storePeopleDrop    = document.getElementById("prn-store-person-select");
+    const purchasePeopleDrop = document.getElementById("prn-purchase-person-select");
+    const populate = (drop, deptKeyword) => {
+      drop.innerHTML = '<option value="">— Select Person —</option>';
+      allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().includes(deptKeyword)))
+        .forEach(p => { const o = document.createElement("option"); o.value = p.fullName; o.textContent = p.fullName; drop.appendChild(o); });
+      drop.disabled = false; drop.style.opacity = "1"; drop.style.cursor = "pointer";
+    };
+    populate(storePeopleDrop, "store");
+    populate(purchasePeopleDrop, "purchase");
+
+    window.prnPendingCreate = { projectId, boqId };
+    const createZone = document.getElementById("prn-create-zone");
+    if (createZone) createZone.style.display = "block";
+  }).catch(() => {
+    showPurchaseFeedback("prn-feedback", "Could not load personnel list.", "error");
+  });
+}
+
 async function handlePRNBOQChange(boqId) {
   document.getElementById("prn-details-zone").style.display = "none";
   document.getElementById("prn-feedback").style.display     = "none";
@@ -11539,6 +11587,7 @@ async function handlePRNBOQChange(boqId) {
 async function createPRNFromSelectedPersons() {
   const pending = window.prnPendingCreate;
   if (!pending) return;
+  const fbEl = document.getElementById("prn-feedback"); if (fbEl) fbEl.style.display = "none";
   const storePeopleDrop    = document.getElementById("prn-store-person-select");
   const purchasePeopleDrop = document.getElementById("prn-purchase-person-select");
   const storePerson    = storePeopleDrop.value;
@@ -11602,6 +11651,9 @@ function renderPRNDetails(data) {
   const rawDate = data.lastUpdatedDate || "";
   document.getElementById("prn-lastupdated-display").textContent  = rawDate ? new Date(rawDate).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) : "—";
 
+  document.getElementById("prn-storeperson-display").textContent    = data.storePerson    || "—";
+  document.getElementById("prn-purchaseperson-display").textContent = data.purchasePerson || "—";
+
   const pdfEl = document.getElementById("prn-pdf-link-display");
   if (data.pdfUrl) {
     pdfEl.innerHTML = `<a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700; font-size:0.82rem;">View PDF ↗</a>`;
@@ -11609,6 +11661,12 @@ function renderPRNDetails(data) {
     pdfEl.textContent = "PRN PDF not generated yet";
     pdfEl.style.cssText = "color:var(--muted); font-size:0.8rem;";
   }
+
+  // Collapse by default each time details are rendered
+  const expandedZone = document.getElementById("prn-expanded-zone");
+  if (expandedZone) expandedZone.style.display = "none";
+  const toggleText = document.getElementById("prn-expand-toggle-text");
+  if (toggleText) toggleText.textContent = "expand and view materials";
 
   const lockedNote = document.getElementById("prn-store-qty-locked-notice");
   if (lockedNote) lockedNote.style.display = prnStoreQtyLocked ? "block" : "none";
@@ -11653,9 +11711,9 @@ function renderPRNDetails(data) {
       <td style="padding:8px; text-align:center;">
         ${prnStoreQtyLocked
           ? `<span style="font-family:monospace; font-weight:700;">${storeQty}</span>`
-          : `<input type="number" min="0" max="${bufferedQty}" value="${storeQty || ""}" placeholder="0" class="prn-store-qty-input" data-idx="${idx}" data-max="${bufferedQty}"
+          : `<input type="number" min="0" max="${bufferedQty}" value="${storeQty || ""}" placeholder="0" class="prn-store-qty-input" data-idx="${idx}" data-max="${bufferedQty}" disabled
                oninput="updatePRNPurchaseQtyCell(this, ${idx})"
-               style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />`
+               style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem; opacity:0.5;" />`
         }
       </td>
       <td id="prn-purchase-qty-cell-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">
@@ -11692,6 +11750,7 @@ async function refreshPRNLiveStock() {
       // If the currently entered Store Quantity exceeds the new live stock, clamp it down
       const idxAttr = span.closest("tr")?.querySelector(".prn-store-qty-input");
       if (idxAttr) {
+        if (idxAttr.disabled) { idxAttr.disabled = false; idxAttr.style.opacity = "1"; }
         const currentVal = parseFloat(idxAttr.value) || 0;
         if (currentVal > total) {
           idxAttr.value = total;
@@ -11707,7 +11766,8 @@ function updatePRNPurchaseQtyCell(inputEl, idx) {
   if (!prnCurrentData || !prnCurrentData.lineItems[idx]) return;
   const bufferedQty = Number(prnCurrentData.lineItems[idx].bufferedPurchaseQty) || 0;
   const liveStockSpan = document.querySelector(`.prn-livestock-total[data-itemcode="${prnCurrentData.lineItems[idx].itemCode}"]`);
-  const liveStockMax  = liveStockSpan ? (Number(liveStockSpan.dataset.liveTotal) || 0) : Infinity;
+  // Default to 0 (not Infinity) until live stock has actually loaded, so nothing can be over-entered in the gap
+  const liveStockMax  = (liveStockSpan && liveStockSpan.dataset.liveTotal !== undefined) ? (Number(liveStockSpan.dataset.liveTotal) || 0) : 0;
   const cap = Math.min(bufferedQty, liveStockMax);
 
   let storeQty = parseFloat(inputEl.value) || 0;
