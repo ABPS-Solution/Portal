@@ -11687,6 +11687,18 @@ async function refreshPRNLiveStock() {
       const s = data.stock[code.toUpperCase()] || { raw: 0, spare: 0 };
       const total = s.raw + s.spare;
       span.textContent = `${total} (Raw: ${s.raw}, Spare: ${s.spare})`;
+      span.dataset.liveTotal = total;
+
+      // If the currently entered Store Quantity exceeds the new live stock, clamp it down
+      const idxAttr = span.closest("tr")?.querySelector(".prn-store-qty-input");
+      if (idxAttr) {
+        const currentVal = parseFloat(idxAttr.value) || 0;
+        if (currentVal > total) {
+          idxAttr.value = total;
+          idxAttr.dispatchEvent(new Event("input"));
+        }
+        idxAttr.max = total;
+      }
     });
   } catch(e) { /* silent fail, retry on next interval */ }
 }
@@ -11694,9 +11706,13 @@ async function refreshPRNLiveStock() {
 function updatePRNPurchaseQtyCell(inputEl, idx) {
   if (!prnCurrentData || !prnCurrentData.lineItems[idx]) return;
   const bufferedQty = Number(prnCurrentData.lineItems[idx].bufferedPurchaseQty) || 0;
-  let storeQty    = parseFloat(inputEl.value) || 0;
-  if (storeQty > bufferedQty) {
-    storeQty = bufferedQty;
+  const liveStockSpan = document.querySelector(`.prn-livestock-total[data-itemcode="${prnCurrentData.lineItems[idx].itemCode}"]`);
+  const liveStockMax  = liveStockSpan ? (Number(liveStockSpan.dataset.liveTotal) || 0) : Infinity;
+  const cap = Math.min(bufferedQty, liveStockMax);
+
+  let storeQty = parseFloat(inputEl.value) || 0;
+  if (storeQty > cap) {
+    storeQty = cap;
     inputEl.value = storeQty;
     inputEl.style.border = "1.5px solid #ef4444";
   } else {
