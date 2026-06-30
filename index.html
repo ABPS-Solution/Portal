@@ -1322,13 +1322,13 @@
             <thead>
               <tr style="background:#f8fafc;">
                 <th style="padding:8px; font-size:0.7rem; text-align:left; white-space:nowrap;">Item Code</th>
-                <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:200px;">Material Name</th>
-                <th style="padding:8px; font-size:0.7rem; text-align:left; white-space:nowrap;">Type</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:240px;">Material Name</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; white-space:nowrap; min-width:60px;">Type</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap;">BOQ Req Qty</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#b45309;">Buffer %</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:var(--brand);">Buffered Purchase Qty</th>
-                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#6b7a8d;">Store Available Stock</th>
-                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#9333ea;">Checked by Store Person *</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#6b7a8d; min-width:130px;">Store Available Stock</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#9333ea; width:90px;">Checked by Store Person *</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#0369a1;">Store Quantity *</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#15803d;">Purchase Qty</th>
               </tr>
@@ -11602,7 +11602,7 @@ function renderPRNDetails(data) {
       <td style="padding:8px; font-size:0.75rem; color:var(--muted); white-space:nowrap;">${item.typeOfMaterial || "—"}</td>
       <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${Number(item.boqRequiredQty).toFixed(2)}</td>
       <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct !== undefined ? item.bufferPct : (item.bufferPercent || 0)}%</td>
-      <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; color:var(--brand);">${bufferedQty.toFixed(2)}</td>
+      <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${bufferedQty.toFixed(2)}</td>
       <td id="prn-livestock-cell-${idx}" style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;">
         <span class="prn-livestock-total" data-itemcode="${item.itemCode}">…</span>
       </td>
@@ -11624,7 +11624,7 @@ function renderPRNDetails(data) {
                style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />`
         }
       </td>
-      <td id="prn-purchase-qty-cell-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:${purchaseQty > 0 ? '#b91c1c' : 'var(--accent)'};">
+      <td id="prn-purchase-qty-cell-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">
         ${purchaseQty.toFixed(2)}
       </td>`;
     tbody.appendChild(tr);
@@ -11671,7 +11671,7 @@ function updatePRNPurchaseQtyCell(inputEl, idx) {
   const purchaseQty = Math.max(0, bufferedQty - storeQty);
   prnCurrentData.lineItems[idx].currentUnassignedStoreQty = storeQty;
   const cell = document.getElementById(`prn-purchase-qty-cell-${idx}`);
-  if (cell) { cell.textContent = purchaseQty.toFixed(2); cell.style.color = purchaseQty > 0 ? "#b91c1c" : "var(--accent)"; }
+  if (cell) { cell.textContent = purchaseQty.toFixed(2); cell.style.color = "#1a2332"; }
 }
 
 async function generatePRNPDF() {
