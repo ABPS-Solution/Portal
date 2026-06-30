@@ -1265,25 +1265,29 @@
             <option value="">— Select Project First —</option>
           </select>
         </div>
-        <div>
-          <label class="field-label" style="margin-top:0; color:var(--brand);">Store Person *</label>
-          <select id="prn-store-person-select" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); opacity:0.5; cursor:not-allowed;">
-            <option value="">— Select BOQ First —</option>
-          </select>
-        </div>
-        <div>
-          <label class="field-label" style="margin-top:0; color:var(--brand);">Purchase Person *</label>
-          <select id="prn-purchase-person-select" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); opacity:0.5; cursor:not-allowed;">
-            <option value="">— Select BOQ First —</option>
-          </select>
-        </div>
       </div>
 
       <div id="prn-none-found-zone" style="display:none; margin-bottom:16px;"></div>
 
-        <div id="prn-create-zone" style="display:none; background:#fff7ed; border:1.5px solid #fb923c; border-radius:var(--radius); padding:16px; margin-bottom:16px; text-align:center;">
-          <div style="font-size:0.85rem; font-weight:700; color:#9a3412; margin-bottom:10px;">Confirm Store Person and Purchase Person above, then create the PRN.</div>
-          <button class="nav-btn-styled" id="prn-create-confirm-btn" onclick="createPRNFromSelectedPersons()" style="background:var(--brand); padding:8px 24px; font-weight:700;">Create PRN</button>
+        <div id="prn-create-zone" style="display:none; background:#fff7ed; border:1.5px solid #fb923c; border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+          <div style="font-size:0.85rem; font-weight:700; color:#9a3412; margin-bottom:12px;">Create New Purchase Request Note</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Store Person *</label>
+              <select id="prn-store-person-select" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+                <option value="">— Select Person —</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Purchase Person *</label>
+              <select id="prn-purchase-person-select" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+                <option value="">— Select Person —</option>
+              </select>
+            </div>
+          </div>
+          <div style="text-align:center;">
+            <button class="nav-btn-styled" id="prn-create-confirm-btn" onclick="createPRNFromSelectedPersons()" style="background:var(--brand); padding:8px 24px; font-weight:700;">Create PRN</button>
+          </div>
         </div>
 
         <div id="prn-details-zone" style="display:none;">
@@ -11572,32 +11576,21 @@ async function handlePRNBOQChange(boqId) {
       return;
     }
 
-    // No PRN exists — show "No PRN" message + populate Store/Purchase Person dropdowns + reveal Create button
+    // No PRN exists — just show the message; user clicks "+ Create New PRN for this BOQ" to proceed
+    window.prnPendingCreate = { projectId, boqId };
     if (noPrnZone) {
       noPrnZone.style.display = "block";
-      noPrnZone.innerHTML = `<div style="text-align:center; padding:16px; color:var(--muted); font-weight:600;">No PRN exists yet for this BOQ ID. Select Store Person and Purchase Person above, then click below to create one.</div>`;
+      noPrnZone.innerHTML = `<div style="text-align:center; padding:16px; background:#fff7ed; border:1.5px solid #fb923c; border-radius:var(--radius); color:#9a3412; font-weight:700;">No PRN exists yet for this BOQ ID.</div>
+        <div style="text-align:center; margin-top:12px;">
+          <button class="nav-btn-styled" onclick="startNewPRNCreation();" style="background:#fb923c; padding:8px 24px; font-weight:700;">+ Create New PRN for this BOQ</button>
+        </div>`;
     }
-
-    window.prnPendingCreate = { projectId, boqId };
-
-    // Populate Store Person (Store dept) and Purchase Person (Purchase dept) dropdowns
-    const personnelData = await apFetch({ action: "getStoreOperatorsList" });
-    const allPersonnel  = personnelData.fullPersonnelDataRecordsTree || [];
-    const storePeopleDrop    = document.getElementById("prn-store-person-select");
-    const purchasePeopleDrop = document.getElementById("prn-purchase-person-select");
-
-    const populate = (drop, deptKeyword) => {
-      drop.innerHTML = '<option value="">— Select Person —</option>';
-      allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().includes(deptKeyword)))
-        .forEach(p => { const o = document.createElement("option"); o.value = p.fullName; o.textContent = p.fullName; drop.appendChild(o); });
-      drop.disabled = false; drop.style.opacity = "1"; drop.style.cursor = "pointer";
-    };
-    populate(storePeopleDrop, "store");
-    populate(purchasePeopleDrop, "purchase");
-
-    // Only now — after the existence check AND personnel load are both done — reveal the Create button
-    if (createZone) createZone.style.display = "block";
     return;
+  } catch(e) {
+    document.getElementById("prn-feedback").style.display = "block";
+    document.getElementById("prn-feedback").textContent = "Network error: " + e.message;
+  }
+}
 
 async function createPRNFromSelectedPersons() {
   const pending = window.prnPendingCreate;
