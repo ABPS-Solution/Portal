@@ -11534,7 +11534,7 @@ async function handlePRNBOQChange(boqId) {
     noPrnZone.style.display = "block";
     noPrnZone.innerHTML = `<div style="text-align:center; padding:16px; color:var(--muted);">
       <div class="spinner" style="display:inline-block; width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>
-      Checking for existing PRN...
+      Checking for existing PRNs...
     </div>`;
   }
 
@@ -11632,7 +11632,9 @@ async function createPRNFromSelectedPersons() {
 }
 
 function renderPRNDetails(data) {
-  document.getElementById("prn-id-display").textContent           = data.prnId;
+  const isDelta = (Number(data.version) || 1) > 1;
+  document.getElementById("prn-id-display").innerHTML = data.prnId +
+    (isDelta ? ` <span style="background:#fb923c; color:#fff; font-size:0.62rem; padding:2px 6px; border-radius:3px; font-weight:800; vertical-align:middle;">DELTA — NEW/INCREASED ITEMS ONLY</span>` : "");
   document.getElementById("prn-customer-display").textContent     = data.customerName   || "—";
   document.getElementById("prn-productname-display").textContent  = data.productName    || "—";
   document.getElementById("prn-productrating-display").textContent= data.productRating  || "—";
