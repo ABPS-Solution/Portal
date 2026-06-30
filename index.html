@@ -840,25 +840,11 @@
               <label class="field-label" style="margin-top:0; color:var(--brand);">Filter by Type of Material</label>
               <select id="assign-type-filter" onchange="handleAssignTypeFilterChange(this.value)" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
                 <option value="">— All Types —</option>
-                <option value="Conductor">Conductor</option>
-                <option value="Epoxy Resin">Epoxy Resin</option>
-                <option value="Insulating Materials">Insulating Materials</option>
-                <option value="Paint">Paint</option>
-                <option value="Bus Bars">Bus Bars</option>
-                <option value="Polypropylene Film">Polypropylene Film</option>
-                <option value="Alu Foil">Alu Foil</option>
-                <option value="Pxe Oil">Pxe Oil</option>
-                <option value="Bushing">Bushing</option>
-                <option value="Kraft Insulation Paper">Kraft Insulation Paper</option>
-                <option value="Assembly Materials">Assembly Materials</option>
-                <option value="MS Box">MS Box</option>
-                <option value="Powder Coated Panel">Powder Coated Panel</option>
-                <option value="Galvanising Structures">Galvanising Structures</option>
-                <option value="Switchgears">Switchgears</option>
-                <option value="Cables">Cables</option>
-                <option value="Hardwares">Hardwares</option>
-                <option value="Lugs">Lugs</option>
-                <option value="Meters">Meters</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+                <option value="E">E</option>
               </select>
             </div>
             <div>
@@ -1224,25 +1210,11 @@
             <label class="field-label" style="margin-top:0;">Type of Material *</label>
             <select id="itemcode-new-type" style="padding:10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
               <option value="">— Select Type —</option>
-              <option value="Conductor">Conductor</option>
-              <option value="Epoxy Resin">Epoxy Resin</option>
-              <option value="Insulating Materials">Insulating Materials</option>
-              <option value="Paint">Paint</option>
-              <option value="Bus Bars">Bus Bars</option>
-              <option value="Polypropylene Film">Polypropylene Film</option>
-              <option value="Alu Foil">Alu Foil</option>
-              <option value="Pxe Oil">Pxe Oil</option>
-              <option value="Bushing">Bushing</option>
-              <option value="Kraft Insulation Paper">Kraft Insulation Paper</option>
-              <option value="Assembly Materials">Assembly Materials</option>
-              <option value="MS Box">MS Box</option>
-              <option value="Powder Coated Panel">Powder Coated Panel</option>
-              <option value="Galvanising Structures">Galvanising Structures</option>
-              <option value="Switchgears">Switchgears</option>
-              <option value="Cables">Cables</option>
-              <option value="Hardwares">Hardwares</option>
-              <option value="Lugs">Lugs</option>
-              <option value="Meters">Meters</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="E">E</option>
             </select>
           </div>
         </div>
@@ -1355,7 +1327,9 @@
                 <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap;">BOQ Req Qty</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#b45309;">Buffer %</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:var(--brand);">Buffered Purchase Qty</th>
-                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#0369a1;">Current Unassigned Store Qty *</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#6b7a8d;">Store Available Stock</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#9333ea;">Checked by Store Person *</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#0369a1;">Store Quantity *</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#15803d;">Purchase Qty</th>
               </tr>
             </thead>
@@ -11454,6 +11428,7 @@ let prnCurrentData = null;
 let prnStoreQtyLocked = false;
 
 async function initializePRNPanel() {
+  if (window._prnStockRefreshInterval) { clearInterval(window._prnStockRefreshInterval); window._prnStockRefreshInterval = null; }
   const projDrop = document.getElementById("prn-project-select");
   const boqDrop  = document.getElementById("prn-boq-select");
   projDrop.innerHTML = '<option value="">Loading...</option>';
@@ -11634,6 +11609,7 @@ function renderPRNDetails(data) {
     const bufferedQty = Number(item.bufferedPurchaseQty)        || 0;
     const storeQty    = Number(item.currentUnassignedStoreQty)  || 0;
     const purchaseQty = Math.max(0, bufferedQty - storeQty);
+    const checkedVal  = (item.checkedByStorePerson || "No").toString().trim();
 
     const tr = document.createElement("tr");
     tr.style.borderBottom = "1px solid #f1f5f9";
@@ -11644,6 +11620,19 @@ function renderPRNDetails(data) {
       <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${Number(item.boqRequiredQty).toFixed(2)}</td>
       <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct !== undefined ? item.bufferPct : (item.bufferPercent || 0)}%</td>
       <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; color:var(--brand);">${bufferedQty.toFixed(2)}</td>
+      <td id="prn-livestock-cell-${idx}" style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;">
+        <span class="prn-livestock-total" data-itemcode="${item.itemCode}">…</span>
+      </td>
+      <td style="padding:8px; text-align:center;">
+        ${prnStoreQtyLocked
+          ? `<span style="font-weight:700; color:${checkedVal==='Yes'?'#15803d':'#b91c1c'};">${checkedVal}</span>`
+          : `<select class="prn-checked-select" data-idx="${idx}" onchange="updatePRNCheckedByStorePerson(this, ${idx})"
+               style="padding:5px; font-weight:700; border:1.5px solid #9333ea; border-radius:3px; font-size:0.85rem; color:${checkedVal==='Yes'?'#15803d':'#b91c1c'};">
+               <option value="No" ${checkedVal==='No'?'selected':''}>No</option>
+               <option value="Yes" ${checkedVal==='Yes'?'selected':''}>Yes</option>
+             </select>`
+        }
+      </td>
       <td style="padding:8px; text-align:center;">
         ${prnStoreQtyLocked
           ? `<span style="font-family:monospace; font-weight:700;">${storeQty}</span>`
@@ -11657,6 +11646,32 @@ function renderPRNDetails(data) {
       </td>`;
     tbody.appendChild(tr);
   });
+
+  refreshPRNLiveStock();
+  if (window._prnStockRefreshInterval) clearInterval(window._prnStockRefreshInterval);
+  window._prnStockRefreshInterval = setInterval(refreshPRNLiveStock, 8000);
+}
+
+function updatePRNCheckedByStorePerson(selectEl, idx) {
+  if (!prnCurrentData || !prnCurrentData.lineItems[idx]) return;
+  prnCurrentData.lineItems[idx].checkedByStorePerson = selectEl.value;
+  selectEl.style.color = selectEl.value === "Yes" ? "#15803d" : "#b91c1c";
+}
+
+async function refreshPRNLiveStock() {
+  if (!prnCurrentData || !prnCurrentData.lineItems) return;
+  const itemCodes = prnCurrentData.lineItems.map(it => it.itemCode).filter(Boolean);
+  if (itemCodes.length === 0) return;
+  try {
+    const data = await apFetch({ action: "fetchLiveMaterialStock", itemCodes });
+    if (!data.success) return;
+    document.querySelectorAll(".prn-livestock-total").forEach(span => {
+      const code = span.dataset.itemcode;
+      const s = data.stock[code.toUpperCase()] || { raw: 0, spare: 0 };
+      const total = s.raw + s.spare;
+      span.textContent = `${total} (Raw: ${s.raw}, Spare: ${s.spare})`;
+    });
+  } catch(e) { /* silent fail, retry on next interval */ }
 }
 
 function updatePRNPurchaseQtyCell(inputEl, idx) {
@@ -11676,47 +11691,28 @@ function updatePRNPurchaseQtyCell(inputEl, idx) {
   if (cell) { cell.textContent = purchaseQty.toFixed(2); cell.style.color = purchaseQty > 0 ? "#b91c1c" : "var(--accent)"; }
 }
 
-async function savePRNStoreQuantities() {
-  if (!prnCurrentData) return;
-  const btn = document.getElementById("prn-save-store-qty-btn");
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Saving...';
-
-  document.querySelectorAll(".prn-store-qty-input").forEach(inp => {
-    const idx = parseInt(inp.dataset.idx, 10);
-    if (prnCurrentData.lineItems[idx]) prnCurrentData.lineItems[idx].currentUnassignedStoreQty = parseFloat(inp.value) || 0;
-  });
-
-  try {
-    const data = await apFetch({
-      action: "savePRNStoreQuantities",
-      activeEngineer: appActiveOperatorIdentityString,
-      prnId: prnCurrentData.prnId,
-      lineItems: prnCurrentData.lineItems
-    });
-    if (data.success) {
-      showPurchaseFeedback("prn-feedback", "Store quantities saved successfully.", "success");
-    } else {
-      showPurchaseFeedback("prn-feedback", data.error || "Failed to save.", "error");
-    }
-  } catch(e) {
-    showPurchaseFeedback("prn-feedback", "Network error: " + e.message, "error");
-  } finally {
-    btn.disabled = false; btn.textContent = "Save Store Quantities";
-  }
-}
-
 async function generatePRNPDF() {
   if (!prnCurrentData) return;
   const btn = document.getElementById("prn-generate-pdf-btn");
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Generating PDF...';
 
-  // Capture any unsaved store qty inputs first
+  // Capture any unsaved store qty + checked-by inputs first
   document.querySelectorAll(".prn-store-qty-input").forEach(inp => {
     const idx = parseInt(inp.dataset.idx, 10);
     if (prnCurrentData.lineItems[idx]) prnCurrentData.lineItems[idx].currentUnassignedStoreQty = parseFloat(inp.value) || 0;
   });
+  document.querySelectorAll(".prn-checked-select").forEach(sel => {
+    const idx = parseInt(sel.dataset.idx, 10);
+    if (prnCurrentData.lineItems[idx]) prnCurrentData.lineItems[idx].checkedByStorePerson = sel.value;
+  });
+
+  const uncheckedRow = prnCurrentData.lineItems.find(it => (it.checkedByStorePerson || "No") !== "Yes");
+  if (uncheckedRow) {
+    showPurchaseFeedback("prn-feedback", `⚠️ All rows must be marked "Checked by Store Person = Yes" before submitting. "${uncheckedRow.materialName}" is not checked yet.`, "error");
+    btn.disabled = false; btn.textContent = "Generate & Save PRN PDF";
+    return;
+  }
 
   try {
     const data = await apFetch({
