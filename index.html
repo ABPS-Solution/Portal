@@ -1308,7 +1308,7 @@
         </div>
 
         <div style="margin-bottom:16px; display:flex; justify-content:flex-end; align-items:center; gap:12px;">
-          <span id="prn-boq-updated-badge" style="display:none; background:#fef3c7; border:1px solid #f59e0b; color:#92400e; font-size:0.75rem; font-weight:700; padding:4px 10px; border-radius:4px;">⚠️ BOQ was updated — a new Delta PRN may be needed</span>
+          <span id="prn-boq-updated-badge" style="display:none; background:#fef3c7; border:1px solid #f59e0b; color:#92400e; font-size:0.75rem; font-weight:700; padding:4px 10px; border-radius:4px;">⚠️ BOQ was updated — an Additional PRN may be needed</span>
           <button class="nav-btn-styled" onclick="event.stopPropagation(); startNewPRNCreation();" style="background:var(--brand); padding:7px 18px; font-weight:700; font-size:0.82rem;">+ Create New PRN for this BOQ</button>
         </div>
 
@@ -1331,9 +1331,6 @@
           </table>
         </div>
 
-        <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
-          <button class="nav-btn-styled" id="prn-generate-pdf-btn" onclick="generatePRNPDF()" style="background:var(--accent); padding:8px 20px; font-weight:700;">Generate & Save PRN PDF</button>
-        </div>
         </div> <!-- end prn-expanded-zone -->
       </div>
       </div> <!-- end prn-body-zone -->
@@ -11746,6 +11743,8 @@ async function submitNewPRNCreation() {
   const unchecked = submittedItems.find(it => it.checkedByStorePerson !== "Yes");
   if (unchecked) return showPurchaseFeedback("prn-feedback", `⚠️ All rows must be marked "Checked by Store Person = Yes". "${unchecked.materialName}" is not checked yet.`, "error");
 
+  const bodyZone = document.getElementById("prn-body-zone");
+  if (bodyZone) bodyZone.style.display = "none";
   const btn = document.getElementById("prn-create-generate-btn");
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Creating PRN...';
@@ -11798,6 +11797,7 @@ async function submitNewPRNCreation() {
     }
 
   } catch(e) {
+    if (bodyZone) bodyZone.style.display = "grid";
     showPurchaseFeedback("prn-feedback", "Network error: " + e.message, "error");
     btn.disabled = false; btn.textContent = "Generate & Save PRN PDF";
   }
@@ -11829,7 +11829,23 @@ function renderPRNDetails(data) {
 
   document.getElementById("prn-storeperson-display").textContent    = data.storePerson    || "—";
   const boqUpdatedBadge = document.getElementById("prn-boq-updated-badge");
-  if (boqUpdatedBadge) boqUpdatedBadge.style.display = data.boqUpdatedSincePRN ? "inline-block" : "none";
+  if (boqUpdatedBadge) {
+    if (data.boqUpdatedSincePRN && data.boqStatus === "Pending Authorization Update") {
+      boqUpdatedBadge.style.display = "inline-block";
+      boqUpdatedBadge.textContent = "⏳ BOQ update pending authorization — create new PRN after it is authorized";
+      boqUpdatedBadge.style.background = "#fef9c3";
+      boqUpdatedBadge.style.borderColor = "#ca8a04";
+      boqUpdatedBadge.style.color = "#713f12";
+    } else if (data.boqUpdatedSincePRN) {
+      boqUpdatedBadge.style.display = "inline-block";
+      boqUpdatedBadge.textContent = "⚠️ BOQ was updated — a new Additional PRN may be needed";
+      boqUpdatedBadge.style.background = "#fef3c7";
+      boqUpdatedBadge.style.borderColor = "#f59e0b";
+      boqUpdatedBadge.style.color = "#92400e";
+    } else {
+      boqUpdatedBadge.style.display = "none";
+    }
+  }
 
   const pdfEl = document.getElementById("prn-pdf-link-display");
   if (data.pdfUrl) {
