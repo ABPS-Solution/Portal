@@ -2062,7 +2062,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwSm2tGita0nY7lFxt3HeJEZir4FGdeNiYcLPLsfWeU47tgtR7haNMWbmiN7NCtToiH/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw3kxApgfvXdyeqEYFeBqSWrPBhJ2abOc5HUA-fdcfSgR8SL4lwGWyxFNw2ygRFA5Wm/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -11812,7 +11812,10 @@ function resetPRNPanelForNewEntry() {
 }
 
 function renderPRNDetails(data) {
-  const isDelta = (Number(data.version) || 1) > 1;
+  // Explicitly ensure that if the version is v1, 1, "1", or "1.0", it's never treated as a Delta additional PRN
+  const cleanVersionStr = String(data.version || "1").toLowerCase().replace("v", "").trim();
+  const isDelta = cleanVersionStr !== "1" && cleanVersionStr !== "1.0" && (parseFloat(cleanVersionStr) > 1);
+  
   document.getElementById("prn-id-display").innerHTML = data.prnId +
     (isDelta ? ` <span style="background:#fb923c; color:#fff; font-size:0.62rem; padding:2px 6px; border-radius:3px; font-weight:800; vertical-align:middle;">ADDITIONAL PRN — NEW/INCREASED ITEMS ONLY</span>` : "");
   document.getElementById("prn-customer-display").textContent     = data.customerName   || "—";
