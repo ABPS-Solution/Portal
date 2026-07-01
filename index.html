@@ -1242,7 +1242,10 @@
 
   <div id="module-purchase-workspace-enclosure-panel" class="workspace-panel" style="display: none; padding: 12px 10px;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
-      <div></div>
+      <div id="purchase-top-bar-left" style="display:flex; align-items:center; gap:10px;">
+        <button class="nav-btn-styled" id="material-list-sync-btn" onclick="loadMaterialListForPurchase()" style="display:none; background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Refresh</button>
+        <span id="purchase-top-bar-title" style="display:none; font-size:1rem; font-weight:700; color:var(--text);">Material List for Purchase</span>
+      </div>
       <button class="nav-btn-styled" onclick="exitPurchaseWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
     </div>
 
@@ -1283,13 +1286,7 @@
     </div>
 
     <!-- MATERIAL LIST CANVAS -->
-    <div id="canvas-module-purchase-material-list" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:0;">
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:var(--card); border-bottom:1px solid var(--border); border-radius:var(--radius) var(--radius) 0 0; position:sticky; top:0; z-index:10;">
-        <button class="nav-btn-styled" onclick="loadMaterialListForPurchase()" id="material-list-sync-btn" style="background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Refresh</button>
-        <h2 style="color:var(--text); font-size:1rem; font-weight:700; margin:0; position:absolute; left:50%; transform:translateX(-50%);">Material List for Purchase</h2>
-        <button class="nav-btn-styled" onclick="showDashboard()" style="background:var(--brand); padding:6px 16px; font-size:0.78rem;">Return to Main Dashboard</button>
-      </div>
-      <div style="padding:20px;">
+    <div id="canvas-module-purchase-material-list" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Live view of all materials needed across active PRNs. Items with Still To Order = 0 are hidden automatically.</p>
       <div id="material-list-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -11366,6 +11363,8 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
     initializePRNPanel().catch(e => { if (e?.message !== "SESSION_EXPIRED") console.error("PRN panel init error:", e); });
   } else if (targetModuleId === "purchase-material-list") {
     document.getElementById("canvas-module-purchase-material-list").style.display = "block";
+    document.getElementById("material-list-sync-btn").style.display = "inline-flex";
+    document.getElementById("purchase-top-bar-title").style.display = "inline";
     initializeMaterialListPanel();
   } else if (targetModuleId === "purchase-upload-rm-po") {
     document.getElementById("canvas-module-purchase-upload-rm-po").style.display = "block";
@@ -11374,6 +11373,8 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
 }
 
 function exitPurchaseWorkspacePanelBackToMenu() {
+  document.getElementById("material-list-sync-btn").style.display = "none";
+  document.getElementById("purchase-top-bar-title").style.display = "none";
   document.getElementById("module-purchase-workspace-enclosure-panel").style.display = "none";
   ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po"].forEach(id => {
     const el = document.getElementById(id);
