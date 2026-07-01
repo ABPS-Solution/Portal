@@ -1284,6 +1284,10 @@
 
     <!-- MATERIAL LIST CANVAS -->
     <div id="canvas-module-purchase-material-list" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <div class="navigation-action-header-row" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between;">
+        <div></div>
+        <button class="nav-btn-styled" onclick="exitPurchaseWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
+      </div>
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <h2 style="color:var(--brand); margin:0;">Material List for Purchase</h2>
         <button class="nav-btn-styled" onclick="loadMaterialListForPurchase()" style="background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Refresh</button>
@@ -2008,7 +2012,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzJJ6qfNmYCtPreZLl83R-r7sCjCY8UZpuTNrvziUd_HkfRDAl4b1tbNSVwPCWMv-bm/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwTnBl5mRvZMl_PfjeqNxDdbMWz_TKYZwpek3gV4Wj1XJ5If7Qy7XartGt6K9Q3pTsf/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -11795,8 +11799,8 @@ function renderAllPRNCards(prns, boqId) {
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${Number(li.boqRequiredQty).toFixed(2)}</td>
         <td style="padding:8px; text-align:center; font-weight:700; color:#b45309;">${li.bufferPct}%</td>
         <td style="padding:8px; text-align:center; font-weight:800; color:var(--brand); font-family:monospace;">${Number(li.bufferedPurchaseQty).toFixed(2)}</td>
-        <td style="padding:8px; text-align:center; font-family:monospace;">${li.currentUnassignedStoreQty !== "" ? li.currentUnassignedStoreQty : "0"}</td>
-        <td style="padding:8px; text-align:center; font-weight:800; font-family:monospace; color:#15803d;">${li.purchaseQty !== "" ? Number(li.purchaseQty).toFixed(2) : "—"}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.92rem; font-weight:700;">${li.currentUnassignedStoreQty !== "" ? li.currentUnassignedStoreQty : "0"}</td>
+        <td style="padding:8px; text-align:center; font-weight:800; font-family:monospace; font-size:0.95rem; color:#15803d;">${li.purchaseQty !== "" ? Number(li.purchaseQty).toFixed(2) : "—"}</td>
       </tr>`;
     });
 
@@ -12075,73 +12079,69 @@ async function loadMaterialListForPurchase() {
 
 function renderMaterialListByType(materials) {
   const zone = document.getElementById("material-list-results-zone");
-  const active = materials.filter(m => (Number(m.stillToOrderQty) || 0) > 0);
+
+  // Aggregate by itemCode across all projects — sum purchase qty
+  const aggregated = {};
+  materials.forEach(item => {
+    const code = (item.itemCode || "").trim();
+    if (!code) return;
+    const purchaseQty = Number(item.bufferedPurchaseQty || 0) - Number(item.assignedQty || 0) - Number(item.onOrderQty || 0) - Number(item.storeQty || 0);
+    const qty = Math.max(0, purchaseQty);
+    if (!aggregated[code]) {
+      aggregated[code] = {
+        itemCode:       code,
+        materialName:   item.materialName || "—",
+        typeOfMaterial: (item.typeOfMaterial || "Uncategorized").trim(),
+        totalPurchaseQty: 0
+      };
+    }
+    aggregated[code].totalPurchaseQty += qty;
+  });
+
+  const active = Object.values(aggregated).filter(m => m.totalPurchaseQty > 0);
 
   if (active.length === 0) {
     zone.innerHTML = `<div style="text-align:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted);">
       <div style="font-size:2rem; margin-bottom:10px;">✅</div>
       <div style="font-weight:700; color:var(--accent);">All materials fully covered!</div>
-      <div style="font-size:0.82rem; margin-top:4px;">No items with Still To Order quantity greater than zero.</div>
+      <div style="font-size:0.82rem; margin-top:4px;">No items with purchase quantity greater than zero.</div>
     </div>`;
     return;
   }
 
+  // Group by type
   const typeGroups = {};
   active.forEach(item => {
-    const type = (item.typeOfMaterial || "Uncategorized").trim();
+    const type = item.typeOfMaterial;
     if (!typeGroups[type]) typeGroups[type] = [];
     typeGroups[type].push(item);
   });
-  Object.values(typeGroups).forEach(g => g.sort((a, b) => (Number(b.stillToOrderQty) || 0) - (Number(a.stillToOrderQty) || 0)));
+  Object.values(typeGroups).forEach(g => g.sort((a, b) => b.totalPurchaseQty - a.totalPurchaseQty));
 
   zone.innerHTML = "";
   Object.keys(typeGroups).sort().forEach(type => {
-    const items  = typeGroups[type];
+    const items = typeGroups[type];
     const section = document.createElement("div");
     section.style.cssText = "background:#fff; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04);";
 
-    const rowsHtml = items.map(item => {
-      const sto     = Number(item.stillToOrderQty) || 0;
-      const stoBg   = sto > 0 ? "#fee2e2" : "#dcfce7";
-      const stoColor= sto > 0 ? "#b91c1c" : "#15803d";
-      return `<tr style="border-bottom:1px solid #f1f5f9;">
-        <td style="padding:8px 10px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand); white-space:nowrap;">${item.itemCode || "—"}</td>
-        <td style="padding:8px 10px; font-size:0.82rem; font-weight:600; line-height:1.4;">${item.materialName}</td>
-        <td style="padding:8px 10px; font-size:0.78rem; color:#475569; white-space:nowrap;">${item.projectId || "—"}</td>
-        <td style="padding:8px 10px; text-align:center; font-family:monospace; font-weight:700;">${Number(item.boqRequiredQty || 0).toFixed(2)}</td>
-        <td style="padding:8px 10px; text-align:center; font-size:0.8rem; color:#b45309; font-weight:700;">${item.bufferPercent || 0}%</td>
-        <td style="padding:8px 10px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${Number(item.bufferedPurchaseQty || 0).toFixed(2)}</td>
-        <td style="padding:8px 10px; text-align:center; font-family:monospace; font-weight:700; color:#15803d;">${Number(item.assignedQty || 0).toFixed(2)}</td>
-        <td style="padding:8px 10px; text-align:center; font-family:monospace; font-weight:700; color:#0369a1;">${Number(item.onOrderQty || 0).toFixed(2)}</td>
-        <td style="padding:8px 10px; text-align:center;">
-          <span style="font-family:monospace; font-weight:800; font-size:0.88rem; background:${stoBg}; color:${stoColor}; padding:3px 8px; border-radius:4px; display:inline-block;">${sto.toFixed(2)}</span>
-        </td>
-      </tr>`;
-    }).join("");
+    const cardsHtml = items.map(item => `
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:6px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="flex:1; min-width:0;">
+          <div style="font-family:monospace; font-size:0.75rem; font-weight:700; color:var(--brand); margin-bottom:3px;">${item.itemCode}</div>
+          <div style="font-size:0.88rem; font-weight:700; color:var(--text); line-height:1.4;">${item.materialName}</div>
+        </div>
+        <div style="text-align:right; white-space:nowrap; padding-left:16px;">
+          <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:2px;">Purchase Qty</div>
+          <div style="font-size:1.15rem; font-weight:800; font-family:monospace; color:#b91c1c; background:#fee2e2; padding:3px 12px; border-radius:5px; display:inline-block;">${item.totalPurchaseQty.toFixed(2)}</div>
+        </div>
+      </div>`).join("");
 
     section.innerHTML = `
       <div style="padding:10px 16px; background:var(--highlight-bg); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
         <span style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">${type}</span>
-        <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:10px;">${items.length} pending</span>
+        <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:10px;">${items.length} item${items.length > 1 ? "s" : ""}</span>
       </div>
-      <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; min-width:950px;">
-          <thead>
-            <tr style="background:#f8fafc; border-bottom:1px solid var(--border);">
-              <th style="padding:8px 10px; font-size:0.7rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Item Code</th>
-              <th style="padding:8px 10px; font-size:0.7rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase; min-width:200px;">Material Name</th>
-              <th style="padding:8px 10px; font-size:0.7rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Project ID</th>
-              <th style="padding:8px 10px; font-size:0.7rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">BOQ Req Qty</th>
-              <th style="padding:8px 10px; font-size:0.7rem; text-align:center; color:#b45309; font-weight:700; text-transform:uppercase; white-space:nowrap;">Buffer %</th>
-              <th style="padding:8px 10px; font-size:0.7rem; text-align:center; color:var(--brand); font-weight:700; text-transform:uppercase; white-space:nowrap;">Buffered Qty</th>
-              <th style="padding:8px 10px; font-size:0.7rem; text-align:center; color:#15803d; font-weight:700; text-transform:uppercase; white-space:nowrap;">Assigned</th>
-              <th style="padding:8px 10px; font-size:0.7rem; text-align:center; color:#0369a1; font-weight:700; text-transform:uppercase; white-space:nowrap;">On Order</th>
-              <th style="padding:8px 10px; font-size:0.7rem; text-align:center; color:#b91c1c; font-weight:700; text-transform:uppercase; white-space:nowrap;">Still To Order</th>
-            </tr>
-          </thead>
-          <tbody>${rowsHtml}</tbody>
-        </table>
-      </div>`;
+      <div style="display:flex; flex-direction:column; gap:8px; padding:12px;">${cardsHtml}</div>`;
     zone.appendChild(section);
   });
 }
