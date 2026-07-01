@@ -1078,7 +1078,7 @@
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project ID, then select the BOQ to update. Changes will go for re-authorization.</p>
       <div id="update-boq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
-      <div id="update-boq-selector-zone" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+      <div id="update-boq-selector-zone" style="display:grid; grid-template-columns:1fr 1fr 2fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;"></div>
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project Status *</label>
           <select id="update-boq-status" onchange="handleUpdateBOQStatusChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
@@ -10239,7 +10239,7 @@ async function loadAuthorizedBOQsForProject(projectId) {
       const opt = document.createElement("option");
       opt.value = draft.boqId;
       const cleanDate = draft.date ? new Date(draft.date).toDateString().replace(/^\S+\s/, '') : '';
-      opt.textContent = `${draft.boqId} | ${draft.department} | Qty: ${draft.orderQuantity} | ${cleanDate} | By: ${draft.preparedBy}`;
+      opt.textContent = `${draft.customerName} | ${draft.boqId} | ${draft.department} | Qty: ${draft.orderQuantity} | ${cleanDate} | By: ${draft.preparedBy}`;
       boqDrop.appendChild(opt);
     });
     boqDrop.disabled = false;
@@ -11784,7 +11784,7 @@ async function submitNewPRNCreation() {
       successZone.style.display = "block";
       successZone.innerHTML = `
         <div style="background:#f0fff4; border-left:4px solid var(--accent); border-radius:var(--radius); padding:14px 16px; margin-bottom:16px;">
-          <div style="font-size:0.85rem; font-weight:800; color:#276749; margin-bottom:8px;">✅ PRN Created Successfully!</div>
+          <div style="font-size:0.85rem; font-weight:800; color:#276749; margin-bottom:8px;">✅ PRN Created Successfully for ${boqMeta.customerName || "this customer"}!</div>
           <div style="font-size:0.82rem; color:#276749; font-family:monospace; font-weight:700;">${data.prnId}</div>
           ${pdfNote}
           <button onclick="resetPRNPanelForNewEntry();" 
