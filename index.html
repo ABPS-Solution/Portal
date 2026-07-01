@@ -1340,9 +1340,8 @@
                 <th style="padding:8px; font-size:0.72rem; min-width:200px; text-align:left;">Standard Material Name</th>
                 <th style="padding:8px; font-size:0.72rem; text-align:center; width:70px;">Qty</th>
                 <th style="padding:8px; font-size:0.72rem; text-align:center; width:60px;">Unit</th>
-                <th style="padding:8px; font-size:0.72rem; text-align:right; width:90px;">Rate (₹)</th>
-                <th style="padding:8px; font-size:0.72rem; text-align:right; width:100px;">Amount (₹)</th>
-                <th style="padding:8px; font-size:0.72rem; text-align:center; width:110px;">Match Status</th>
+                <th style="padding:8px; font-size:0.72rem; text-align:right; width:90px;">Rate / Qty</th>
+                <th style="padding:8px; font-size:0.72rem; text-align:right; width:100px;">Total Amount (₹)</th>
               </tr>
             </thead>
             <tbody id="rm-po-verification-table-body"></tbody>
@@ -12311,54 +12310,70 @@ async function parseRawMaterialPOWithAI() {
     const vendorInput = document.getElementById("rm-po-vendor-name");
     if (vendorInput) vendorInput.value = data.extractedData.vendorName || "";
 
-    const matchColors = {
-      high:      { bg:"#dcfce7", color:"#15803d", label:"High Match" },
-      medium:    { bg:"#fef3c7", color:"#b45309", label:"Possible Match" },
-      low:       { bg:"#fee2e2", color:"#b91c1c", label:"Low Match" },
-      unmatched: { bg:"#f1f5f9", color:"#64748b", label:"Unmatched" }
-    };
+    // match colors removed — status column replaced with inline indicators
 
     const tbody = document.getElementById("rm-po-verification-table-body");
     tbody.innerHTML = "";
     (data.extractedData.lineItems || []).forEach((item, idx) => {
-      // Step 1: exact item code match from catalog
-      const rawCode = (item.itemCode || "").toString().trim().toUpperCase();
-      let matchedItem = rawCode ? catalog.find(c => (c.itemCode || "").toUpperCase() === rawCode) : null;
-      let matchConfidence = matchedItem ? "high" : "unmatched";
-      let resolvedCode = matchedItem ? matchedItem.itemCode : (item.itemCode || "");
-      let resolvedName = matchedItem ? matchedItem.productName : "";
+      // Resolve item code: printed on doc > catalog match from AI > empty
+      const rawCode     = (item.itemCode    || "").toString().trim();
+      const matchedName = (item.matchedName || "").toString().trim();
+      const matchSource = (item.matchSource || "none");
 
-      // Step 2: fuzzy fallback on raw description if no code match
-      if (!matchedItem && item.rawDescription) {
-        const q = item.rawDescription.toLowerCase();
-        const fuzzy = catalog.filter(c => (c.productName || "").toLowerCase().includes(q.substring(0, 15)));
-        if (fuzzy.length === 1) {
-          matchedItem = fuzzy[0];
-          resolvedCode = fuzzy[0].itemCode;
-          resolvedName = fuzzy[0].productName;
-          matchConfidence = "low";
+      // Verify printed code still exists in our local catalog
+      let resolvedCode = "";
+      let resolvedName = "";
+      if (rawCode) {
+        const catalogHit = catalog.find(c => (c.itemCode || "").toUpperCase() === rawCode.toUpperCase());
+        if (catalogHit) {
+          resolvedCode = catalogHit.itemCode;
+          resolvedName = catalogHit.productName;
+        } else {
+          resolvedCode = rawCode; // keep what AI extracted, user can verify
+          resolvedName = matchedName;
+        }
+      } else if (matchedName) {
+        const nameHit = catalog.find(c => (c.productName || "").toLowerCase() === matchedName.toLowerCase());
+        if (nameHit) {
+          resolvedCode = nameHit.itemCode;
+          resolvedName = nameHit.productName;
         }
       }
 
-      const mc = matchColors[matchConfidence] || matchColors.unmatched;
-      tbody.innerHTML += `<tr style="border-bottom:1px solid #f1f5f9;">
-    <td style="padding:6px;">
-      <input type="text" class="rm-po-item-code-input" data-idx="${idx}" value="${resolvedCode}"
-        placeholder="Item Code..."
-        style="font-weight:700; color:var(--brand); font-size:0.8rem; padding:4px; border:1.5px solid var(--border); text-align:center; width:100%; border-radius:3px;" />
-    </td>
+      const notFound = !resolvedCode;
+      const itemCodeCellContent = notFound
+        ? `<div style="font-size:0.72rem; color:#b91c1c; font-weight:600; margin-bottom:4px;">⚠ Item code not found</div>
+           <input type="text" class="rm-po-item-code-input" data-idx="${idx}" value=""
+             placeholder="Will auto-fill on name select"
+             style="font-weight:700; color:var(--brand); font-size:0.78rem; padding:4px; border:1.5px solid #fca5a5; text-align:center; width:100%; border-radius:3px; background:#fff7f7;" readonly />`
+        : `<input type="text" class="rm-po-item-code-input" data-idx="${idx}" value="${resolvedCode}"
+             placeholder="Item Code..."
+             style="font-weight:700; color:var(--brand); font-size:0.8rem; padding:4px; border:1.5px solid #86efac; text-align:center; width:100%; border-radius:3px; background:#f0fdf4;" readonly />`;
+
+      const createItemCodeUrl = window.location.pathname + "?module=design-itemcode";
+      const nameSearchCell = notFound
+        ? `<div style="position:relative;">
+             <input type="text" class="rm-po-mat-name-input rm-po-name-search" data-idx="${idx}" value=""
+               placeholder="Type to search material name..."
+               oninput="handleRMPONameSearch(this, ${idx})"
+               autocomplete="off"
+               style="font-size:0.82rem; font-weight:600; padding:4px; border:1.5px solid #fca5a5; width:100%; border-radius:3px; background:#fff7f7;" />
+             <div id="rmpo-name-dropdown-${idx}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:4px; z-index:100; max-height:160px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+             <div style="margin-top:4px; font-size:0.7rem;">
+               <a href="${createItemCodeUrl}" target="_blank" style="color:var(--brand); font-weight:700; text-decoration:underline;">+ Create new Item Code →</a>
+             </div>
+           </div>`
+        : `<input type="text" class="rm-po-mat-name-input" data-idx="${idx}" value="${resolvedName}"
+             style="font-size:0.82rem; font-weight:600; padding:4px; border:1px solid #86efac; width:100%; border-radius:3px; background:#f0fdf4;" readonly />`;
+
+      tbody.innerHTML += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:top;">
+    <td style="padding:6px; width:130px;">${itemCodeCellContent}</td>
     <td style="padding:6px; font-size:0.8rem; color:#64748b; word-break:break-word; min-width:140px;">${item.rawDescription || ""}</td>
-    <td style="padding:6px; min-width:180px;">
-      <input type="text" class="rm-po-mat-name-input" data-idx="${idx}" value="${resolvedName || item.rawDescription || ""}"
-        style="font-size:0.82rem; font-weight:600; padding:4px; border:1px solid var(--border); width:100%; border-radius:3px;" />
-    </td>
+    <td style="padding:6px; min-width:220px;">${nameSearchCell}</td>
     <td style="padding:6px; text-align:center; font-weight:700; font-family:monospace;">${item.orderedQty || 0}</td>
     <td style="padding:6px; text-align:center; color:var(--muted); font-size:0.8rem;">${item.unit || "NOS"}</td>
     <td style="padding:6px; text-align:right; font-family:monospace; font-size:0.82rem;">₹${Number(item.rate || 0).toFixed(2)}</td>
     <td style="padding:6px; text-align:right; font-family:monospace; font-size:0.82rem;">₹${Number(item.amount || 0).toFixed(2)}</td>
-    <td style="padding:6px; text-align:center;">
-      <span style="font-size:0.68rem; font-weight:700; padding:2px 6px; border-radius:3px; background:${mc.bg}; color:${mc.color};">${mc.label}</span>
-    </td>
   </tr>`;
     });
 
@@ -12444,6 +12459,53 @@ async function commitRawMaterialPOToBackend() {
     btn.disabled = false; btn.textContent = "Submit Purchase Order";
   }
 }
+
+// ═══════════════════════════════════════════════════════
+// RMPO NAME SEARCH (for unmatched rows)
+// ═══════════════════════════════════════════════════════
+function handleRMPONameSearch(inputEl, idx) {
+  const query    = inputEl.value.trim().toLowerCase();
+  const dropdown = document.getElementById("rmpo-name-dropdown-" + idx);
+  const catalog  = window.itemCodeCatalogCache || [];
+  if (!dropdown) return;
+  if (query.length < 2) { dropdown.style.display = "none"; return; }
+
+  const matches = catalog.filter(c => (c.productName || "").toLowerCase().includes(query)).slice(0, 10);
+  if (matches.length === 0) {
+    dropdown.innerHTML = `<div style="padding:8px; font-size:0.78rem; color:var(--muted);">No match found. <a href="${window.location.pathname}?module=design-itemcode" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code →</a></div>`;
+    dropdown.style.display = "block";
+    return;
+  }
+  dropdown.innerHTML = matches.map(c => `
+    <div onclick="selectRMPONameMatch(${idx}, '${c.itemCode}', '${c.productName.replace(/'/g, "\\'")}')"
+      style="padding:8px 10px; cursor:pointer; font-size:0.8rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;"
+      onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
+      <span style="font-weight:600;">${c.productName}</span>
+      <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px;">${c.itemCode}</span>
+    </div>`).join("");
+  dropdown.style.display = "block";
+}
+
+function selectRMPONameMatch(idx, itemCode, productName) {
+  const dropdown  = document.getElementById("rmpo-name-dropdown-" + idx);
+  const nameInput = document.querySelector(`.rm-po-mat-name-input[data-idx="${idx}"]`);
+  const codeInput = document.querySelector(`.rm-po-item-code-input[data-idx="${idx}"]`);
+  if (nameInput) { nameInput.value = productName; nameInput.style.border = "1.5px solid #86efac"; nameInput.style.background = "#f0fdf4"; }
+  if (codeInput) { codeInput.value = itemCode;    codeInput.style.border = "1.5px solid #86efac"; codeInput.style.background = "#f0fdf4"; }
+  if (dropdown)  dropdown.style.display = "none";
+  // Update the payload cache
+  if (activeParsedRMPOPayload && activeParsedRMPOPayload.lineItems && activeParsedRMPOPayload.lineItems[idx]) {
+    activeParsedRMPOPayload.lineItems[idx].itemCode     = itemCode;
+    activeParsedRMPOPayload.lineItems[idx].materialName = productName;
+  }
+}
+
+// Close RMPO dropdowns when clicking outside
+document.addEventListener("click", function(e) {
+  if (!e.target.classList.contains("rm-po-name-search")) {
+    document.querySelectorAll("[id^='rmpo-name-dropdown-']").forEach(d => d.style.display = "none");
+  }
+});
 
 // ═══════════════════════════════════════════════════════
 // SHARED PURCHASE FEEDBACK HELPER
