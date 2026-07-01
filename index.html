@@ -1284,13 +1284,9 @@
 
     <!-- MATERIAL LIST CANVAS -->
     <div id="canvas-module-purchase-material-list" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <div class="navigation-action-header-row" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between;">
-        <div></div>
-        <button class="nav-btn-styled" onclick="exitPurchaseWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
-      </div>
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <h2 style="color:var(--brand); margin:0;">Material List for Purchase</h2>
-        <button class="nav-btn-styled" onclick="loadMaterialListForPurchase()" style="background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Refresh</button>
+        <button class="nav-btn-styled" id="material-list-sync-btn" onclick="loadMaterialListForPurchase()" style="background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Sync</button>
       </div>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Live view of all materials needed across active PRNs. Items with Still To Order = 0 are hidden automatically.</p>
       <div id="material-list-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
@@ -11337,6 +11333,10 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
 
 function exitPurchaseWorkspacePanelBackToMenu() {
   document.getElementById("module-purchase-workspace-enclosure-panel").style.display = "none";
+  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
   enforceDynamicModuleRoleGateways(userPermissions);
   document.getElementById("dashboard-view").style.display = "flex";
   triggerCompanyDropdownArrayFetch();
@@ -12058,7 +12058,9 @@ function renderMaterialListFiltered() {
 }
 
 async function loadMaterialListForPurchase() {
-  const zone = document.getElementById("material-list-results-zone");
+  const zone    = document.getElementById("material-list-results-zone");
+  const syncBtn = document.getElementById("material-list-sync-btn");
+  if (syncBtn) { syncBtn.disabled = true; syncBtn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Syncing...'; }
   zone.innerHTML = `<div style="text-align:center; padding:30px; color:var(--brand); font-weight:600;">
     <div class="spinner" style="display:inline-block; width:18px; height:18px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:10px; vertical-align:middle;"></div>
     Loading Material List...
@@ -12074,6 +12076,8 @@ async function loadMaterialListForPurchase() {
     renderMaterialListFiltered();
   } catch(e) {
     zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${e.message}</div>`;
+  } finally {
+    if (syncBtn) { syncBtn.disabled = false; syncBtn.innerHTML = "🔄 Sync"; }
   }
 }
 
@@ -12085,13 +12089,13 @@ function renderMaterialListByType(materials) {
   materials.forEach(item => {
     const code = (item.itemCode || "").trim();
     if (!code) return;
-    const purchaseQty = Number(item.bufferedPurchaseQty || 0) - Number(item.assignedQty || 0) - Number(item.onOrderQty || 0) - Number(item.storeQty || 0);
-    const qty = Math.max(0, purchaseQty);
+    const qty = Math.max(0, (Number(item.bufferedPurchaseQty) || 0) - (Number(item.assignedQty) || 0) - (Number(item.onOrderQty) || 0) - (Number(item.storeQty) || 0));
     if (!aggregated[code]) {
       aggregated[code] = {
-        itemCode:       code,
-        materialName:   item.materialName || "—",
-        typeOfMaterial: (item.typeOfMaterial || "Uncategorized").trim(),
+        itemCode:         code,
+        materialName:     item.materialName || "—",
+        typeOfMaterial:   (item.typeOfMaterial || "Uncategorized").trim(),
+        unit:             item.unit || item.unitType || "NOS",
         totalPurchaseQty: 0
       };
     }
@@ -12120,28 +12124,61 @@ function renderMaterialListByType(materials) {
 
   zone.innerHTML = "";
   Object.keys(typeGroups).sort().forEach(type => {
-    const items = typeGroups[type];
+    const items     = typeGroups[type];
+    const sectionId = "ml-section-body-" + type.replace(/\s+/g, '_');
+    const toggleId  = "ml-toggle-btn-" + type.replace(/\s+/g, '_');
+    const isCollapsed = localStorage.getItem("ml_section_" + type) === "collapsed";
+
     const section = document.createElement("div");
-    section.style.cssText = "background:#fff; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04);";
+    section.style.cssText = "margin-bottom:16px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04);";
 
-    const cardsHtml = items.map(item => `
-      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:6px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
-        <div style="flex:1; min-width:0;">
-          <div style="font-family:monospace; font-size:0.75rem; font-weight:700; color:var(--brand); margin-bottom:3px;">${item.itemCode}</div>
-          <div style="font-size:0.88rem; font-weight:700; color:var(--text); line-height:1.4;">${item.materialName}</div>
-        </div>
-        <div style="text-align:right; white-space:nowrap; padding-left:16px;">
-          <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:2px;">Purchase Qty</div>
-          <div style="font-size:1.15rem; font-weight:800; font-family:monospace; color:#b91c1c; background:#fee2e2; padding:3px 12px; border-radius:5px; display:inline-block;">${item.totalPurchaseQty.toFixed(2)}</div>
-        </div>
-      </div>`).join("");
-
-    section.innerHTML = `
-      <div style="padding:10px 16px; background:var(--highlight-bg); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+    const headerDiv = document.createElement("div");
+    headerDiv.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:var(--highlight-bg); border-bottom:1px solid var(--border); cursor:pointer; user-select:none;";
+    headerDiv.onclick = () => {
+      const body = document.getElementById(sectionId);
+      const btn  = document.getElementById(toggleId);
+      if (body.style.display === "none") {
+        body.style.display = "flex";
+        btn.textContent = "▲ Collapse";
+        localStorage.setItem("ml_section_" + type, "expanded");
+      } else {
+        body.style.display = "none";
+        btn.textContent = "▼ Expand";
+        localStorage.setItem("ml_section_" + type, "collapsed");
+      }
+    };
+    headerDiv.innerHTML = `
+      <div style="display:flex; align-items:center; gap:10px;">
         <span style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">${type}</span>
-        <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:10px;">${items.length} item${items.length > 1 ? "s" : ""}</span>
+        <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:10px;">${items.length} ${items.length === 1 ? 'item' : 'items'}</span>
       </div>
-      <div style="display:flex; flex-direction:column; gap:8px; padding:12px;">${cardsHtml}</div>`;
+      <button id="${toggleId}" style="background:transparent; border:1px solid var(--border); color:var(--brand); font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:4px; cursor:pointer;">
+        ${isCollapsed ? '▼ Expand' : '▲ Collapse'}
+      </button>`;
+
+    const bodyDiv = document.createElement("div");
+    bodyDiv.id = sectionId;
+    bodyDiv.style.cssText = `display:${isCollapsed ? 'none' : 'flex'}; flex-wrap:wrap; gap:10px; padding:14px;`;
+
+    items.forEach(item => {
+      const card = document.createElement("div");
+      card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; justify-content:space-between; gap:8px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; height:160px; flex-shrink:0; overflow:hidden;";
+      card.innerHTML = `
+        <div style="font-size:0.78rem; font-weight:700; color:#334155; line-height:1.35; word-break:break-word; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; flex:1;">
+          ${item.materialName}
+        </div>
+        <div style="border-top:1px dashed #e2e8f0; padding-top:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:monospace; font-size:1.2rem; font-weight:800; color:#b91c1c;">${item.totalPurchaseQty.toFixed(2)}</span>
+            <span style="font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:#fee2e2; color:#b91c1c;">${(item.unit || "NOS").toUpperCase()}</span>
+          </div>
+          <div style="font-size:0.65rem; color:var(--muted); font-weight:600; margin-top:2px;">To Purchase</div>
+        </div>`;
+      bodyDiv.appendChild(card);
+    });
+
+    section.appendChild(headerDiv);
+    section.appendChild(bodyDiv);
     zone.appendChild(section);
   });
 }
