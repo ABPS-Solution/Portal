@@ -2062,7 +2062,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyWij5T_p-wXexndPmezk4yvle8kDaxDVGqkmgjp7kOYD3bhpw1wws7kRq3uKB4zNlZ/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzJJ6qfNmYCtPreZLl83R-r7sCjCY8UZpuTNrvziUd_HkfRDAl4b1tbNSVwPCWMv-bm/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -11593,7 +11593,7 @@ function renderPRNCreateTable() {
   if (!pending) return;
   const createZone = document.getElementById("prn-create-zone");
 
-  const deltaBadge = pending.isDeltaPRN
+  const deltaBadge = false
     ? `<span style="background:#fb923c; color:#fff; font-size:0.62rem; padding:2px 6px; border-radius:3px; font-weight:800; margin-left:8px;">ADDITIONAL PRN — NEW/INCREASED ITEMS ONLY</span>`
     : "";
 
@@ -11769,13 +11769,13 @@ async function submitNewPRNCreation() {
 
     if (window._prnCreateStockInterval) clearInterval(window._prnCreateStockInterval);
     window.prnPendingCreate = null;
-    document.getElementById("prn-create-zone").style.display = "none";
 
     // Refresh and show the newly created PRN in the summary view
     const refetchData = await apFetch({ action: "fetchPRNsForProject", projectId: pending.projectId });
     const newPRN = (refetchData.prns || []).find(p => p.boqId === pending.boqId && p.status !== "Closed");
     const bodyZone    = document.getElementById("prn-body-zone");
     const successZone = document.getElementById("prn-success-zone");
+    document.getElementById("prn-create-zone").style.display = "none";
     if (bodyZone) bodyZone.style.display = "none";
 
     const pdfNote = data.pdfWarning
@@ -11814,7 +11814,7 @@ function resetPRNPanelForNewEntry() {
 function renderPRNDetails(data) {
   // Explicitly ensure that if the version is v1, 1, "1", or "1.0", it's never treated as a Delta additional PRN
   const cleanVersionStr = String(data.version || "1").toLowerCase().replace("v", "").trim();
-  const isDelta = cleanVersionStr !== "1" && cleanVersionStr !== "1.0" && (parseFloat(cleanVersionStr) > 1);
+  const isDelta = false;
   
   document.getElementById("prn-id-display").innerHTML = data.prnId +
     (isDelta ? ` <span style="background:#fb923c; color:#fff; font-size:0.62rem; padding:2px 6px; border-radius:3px; font-weight:800; vertical-align:middle;">ADDITIONAL PRN — NEW/INCREASED ITEMS ONLY</span>` : "");
