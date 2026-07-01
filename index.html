@@ -2062,13 +2062,13 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbz9QesF16YC7cQhlQfHsrYz_hACEEWWaSGBM6l-5tS2XPt-KZZHhuaqWorK1moB5z1r/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyWij5T_p-wXexndPmezk4yvle8kDaxDVGqkmgjp7kOYD3bhpw1wws7kRq3uKB4zNlZ/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
  * All backend calls go through this. Handles session expiry globally.
  */
-async function apFetch(payload) { 
+async function apFetch(payload) {
   payload.sessionToken = localStorage.getItem("sessionToken");
   const res  = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
   const data = await res.json();
@@ -11633,7 +11633,7 @@ function renderPRNCreateTable() {
           <tr style="background:#f8fafc;">
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
             <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:240px;">Material Name</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:left;">Type of Material</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:left;">Type</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Req Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered Purchase Qty</th>
