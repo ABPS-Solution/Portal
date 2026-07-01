@@ -1273,66 +1273,12 @@
         <div id="prn-create-zone" style="display:none;"></div>
 
         <div id="prn-details-zone" style="display:none;">
-        <div id="prn-summary-card" onclick="togglePRNExpanded()" style="cursor:pointer; background:var(--highlight-bg); border:1.5px solid var(--brand); border-radius:var(--radius); padding:12px; margin-bottom:16px;">
-          <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; margin-bottom:4px;">
-            <div>
-              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PRN ID</div>
-              <div id="prn-id-display" style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.88rem;"></div>
-            </div>
-            <div>
-              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Customer Name</div>
-              <div id="prn-customer-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
-            </div>
-            <div>
-              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Product Name</div>
-              <div id="prn-productname-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
-            </div>
-            <div>
-              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Product Rating</div>
-              <div id="prn-productrating-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
-            </div>
-            <div>
-              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Order Quantity</div>
-              <div id="prn-orderqty-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
-            </div>
-            <div>
-              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Store Person</div>
-              <div id="prn-storeperson-display" style="font-weight:700; color:var(--text); font-size:0.85rem;"></div>
-            </div>
-            <div>
-              <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PRN PDF</div>
-              <div id="prn-pdf-link-display" style="font-size:0.82rem;" onclick="event.stopPropagation();"></div>
-            </div>
+          <div id="prn-cards-feed" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;"></div>
+          <div id="prn-bottom-action-bar" style="display:none; justify-content:flex-end; align-items:center; gap:12px; margin-bottom:16px;">
+            <span id="prn-boq-updated-badge" style="display:none; background:#fef3c7; border:1px solid #f59e0b; color:#92400e; font-size:0.75rem; font-weight:700; padding:4px 10px; border-radius:4px;"></span>
+            <button class="nav-btn-styled" id="prn-create-new-btn" onclick="event.stopPropagation(); startNewPRNCreation();" style="background:var(--brand); padding:7px 18px; font-weight:700; font-size:0.82rem;">+ Create New PRN for this BOQ</button>
           </div>
-          <div style="font-size:0.72rem; color:var(--brand); font-weight:700;">▾ Click to <span id="prn-expand-toggle-text">expand and view materials</span></div>
         </div>
-
-        <div style="margin-bottom:16px; display:flex; justify-content:flex-end; align-items:center; gap:12px;">
-          <span id="prn-boq-updated-badge" style="display:none; background:#fef3c7; border:1px solid #f59e0b; color:#92400e; font-size:0.75rem; font-weight:700; padding:4px 10px; border-radius:4px;">⚠️ BOQ was updated — an Additional PRN may be needed</span>
-          <button class="nav-btn-styled" onclick="event.stopPropagation(); startNewPRNCreation();" style="background:var(--brand); padding:7px 18px; font-weight:700; font-size:0.82rem;">+ Create New PRN for this BOQ</button>
-        </div>
-
-        <div id="prn-expanded-zone" style="display:none;">
-        <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
-          <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1000px;">
-            <thead>
-              <tr style="background:#f8fafc;">
-                <th style="padding:8px; font-size:0.7rem; text-align:left; white-space:nowrap;">Item Code</th>
-                <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:240px;">Material Name</th>
-                <th style="padding:8px; font-size:0.7rem; text-align:left; white-space:nowrap; min-width:60px;">Type</th>
-                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap;">BOQ Req Qty</th>
-                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#b45309;">Buffer %</th>
-                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:var(--brand);">Buffered Purchase Qty</th>
-                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#0369a1;">Store Quantity</th>
-                <th style="padding:8px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#15803d;">Purchase Qty</th>
-              </tr>
-            </thead>
-            <tbody id="prn-material-rows-body"></tbody>
-          </table>
-        </div>
-
-        </div> <!-- end prn-expanded-zone -->
-      </div>
       </div> <!-- end prn-body-zone -->
     </div>
 
@@ -11470,6 +11416,15 @@ async function handlePRNProjectChange(projectId) {
   }
 }
 
+function togglePRNCardExpanded(expandId, toggleTextId) {
+  const zone = document.getElementById(expandId);
+  const txt  = document.getElementById(toggleTextId);
+  if (!zone) return;
+  const isOpen = zone.style.display !== "none";
+  zone.style.display = isOpen ? "none" : "block";
+  if (txt) txt.textContent = isOpen ? "expand and view materials" : "collapse";
+}
+
 function togglePRNExpanded() {
   const expandedZone = document.getElementById("prn-expanded-zone");
   const toggleText    = document.getElementById("prn-expand-toggle-text");
@@ -11563,12 +11518,12 @@ async function handlePRNBOQChange(boqId) {
 
     if (noPrnZone) noPrnZone.style.display = "none";
 
-    if (existingPRN) {
-      // PRN already exists — load it directly
+    const activePRNs = (fetchData.prns || []).filter(p => p.boqId === boqId && p.status !== "Closed");
+
+    if (activePRNs.length > 0) {
       detailsZone.style.display = "block";
-      prnCurrentData    = existingPRN;
-      prnStoreQtyLocked = (existingPRN.lineItems || []).some(li => li.isLocked);
-      renderPRNDetails(existingPRN);
+      prnCurrentData = activePRNs[activePRNs.length - 1]; // latest is the anchor for delta
+      renderAllPRNCards(activePRNs, boqId);
       return;
     }
 
@@ -11803,6 +11758,11 @@ async function submitNewPRNCreation() {
   }
 }
 
+function renderPRNDetails(data) {
+  // Legacy stub — multi-card view now handled by renderAllPRNCards
+  if (data) renderAllPRNCards([data], data.boqId);
+}
+
 function resetPRNPanelForNewEntry() {
   const successZone = document.getElementById("prn-success-zone");
   const bodyZone     = document.getElementById("prn-body-zone");
@@ -11811,58 +11771,101 @@ function resetPRNPanelForNewEntry() {
   initializePRNPanel();
 }
 
-function renderPRNDetails(data) {
-  // Explicitly ensure that if the version is v1, 1, "1", or "1.0", it's never treated as a Delta additional PRN
-  const cleanVersionStr = String(data.version || "1").toLowerCase().replace("v", "").trim();
-  const isDelta = false;
-  
-  document.getElementById("prn-id-display").innerHTML = data.prnId +
-    (isDelta ? ` <span style="background:#fb923c; color:#fff; font-size:0.62rem; padding:2px 6px; border-radius:3px; font-weight:800; vertical-align:middle;">ADDITIONAL PRN — NEW/INCREASED ITEMS ONLY</span>` : "");
-  document.getElementById("prn-customer-display").textContent     = data.customerName   || "—";
-  document.getElementById("prn-productname-display").textContent  = data.productName    || "—";
-  document.getElementById("prn-productrating-display").textContent= data.productRating  || "—";
-  document.getElementById("prn-orderqty-display").textContent     = (data.orderQuantity || "—") + " Sets";
-  const preparedByEl = document.getElementById("prn-preparedby-display");
-  if (preparedByEl) preparedByEl.textContent = data.preparedBy || "—";
-  const lastUpdatedEl = document.getElementById("prn-lastupdated-display");
-  if (lastUpdatedEl) {
-    const rawDate = data.lastUpdatedDate || "";
-    lastUpdatedEl.textContent = rawDate ? new Date(rawDate).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) : "—";
-  }
+function renderAllPRNCards(prns, boqId) {
+  const feed = document.getElementById("prn-cards-feed");
+  const actionBar = document.getElementById("prn-bottom-action-bar");
+  const badge = document.getElementById("prn-boq-updated-badge");
+  if (!feed) return;
+  feed.innerHTML = "";
 
-  document.getElementById("prn-storeperson-display").textContent    = data.storePerson    || "—";
-  const boqUpdatedBadge = document.getElementById("prn-boq-updated-badge");
-  if (boqUpdatedBadge) {
-    if (data.boqUpdatedSincePRN && data.boqStatus === "Pending Authorization Update") {
-      boqUpdatedBadge.style.display = "inline-block";
-      boqUpdatedBadge.textContent = "⏳ BOQ update pending authorization — create new PRN after it is authorized";
-      boqUpdatedBadge.style.background = "#fef9c3";
-      boqUpdatedBadge.style.borderColor = "#ca8a04";
-      boqUpdatedBadge.style.color = "#713f12";
-    } else if (data.boqUpdatedSincePRN) {
-      boqUpdatedBadge.style.display = "inline-block";
-      boqUpdatedBadge.textContent = "⚠️ BOQ was updated — a new Additional PRN may be needed";
-      boqUpdatedBadge.style.background = "#fef3c7";
-      boqUpdatedBadge.style.borderColor = "#f59e0b";
-      boqUpdatedBadge.style.color = "#92400e";
+  prns.forEach((data, idx) => {
+    const cardId = "prn-card-" + idx;
+    const expandId = "prn-expand-" + idx;
+    const toggleId = "prn-toggle-text-" + idx;
+    const pdfHtml = data.pdfUrl
+      ? `<a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700; font-size:0.82rem;" onclick="event.stopPropagation();">View PDF ↗</a>`
+      : `<span style="color:var(--muted); font-size:0.8rem;">Not generated</span>`;
+
+    let rowsHtml = "";
+    (data.lineItems || []).forEach(li => {
+      rowsHtml += `<tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${li.itemCode}</td>
+        <td style="padding:8px; font-size:0.82rem; font-weight:600;">${li.materialName}</td>
+        <td style="padding:8px; font-size:0.75rem; color:var(--muted);">${li.typeOfMaterial || "—"}</td>
+        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${Number(li.boqRequiredQty).toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; font-weight:700; color:#b45309;">${li.bufferPct}%</td>
+        <td style="padding:8px; text-align:center; font-weight:800; color:var(--brand); font-family:monospace;">${Number(li.bufferedPurchaseQty).toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace;">${li.currentUnassignedStoreQty !== "" ? li.currentUnassignedStoreQty : "0"}</td>
+        <td style="padding:8px; text-align:center; font-weight:800; font-family:monospace; color:#15803d;">${li.purchaseQty !== "" ? Number(li.purchaseQty).toFixed(2) : "—"}</td>
+      </tr>`;
+    });
+
+    const card = document.createElement("div");
+    card.innerHTML = `
+      <div id="${cardId}" onclick="togglePRNCardExpanded('${expandId}','${toggleId}')" style="cursor:pointer; background:var(--highlight-bg); border:1.5px solid var(--brand); border-radius:var(--radius); padding:12px;">
+        <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; margin-bottom:4px;">
+          <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PRN ID</div>
+            <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.88rem;">${data.prnId}</div></div>
+          <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Customer Name</div>
+            <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${data.customerName || "—"}</div></div>
+          <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Product Name</div>
+            <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${data.productName || "—"}</div></div>
+          <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Product Rating</div>
+            <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${data.productRating || "—"}</div></div>
+          <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Order Quantity</div>
+            <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${(data.orderQuantity || "—") + " Sets"}</div></div>
+          <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Store Person</div>
+            <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${data.storePerson || "—"}</div></div>
+          <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PRN PDF</div>
+            <div style="font-size:0.82rem;" onclick="event.stopPropagation();">${pdfHtml}</div></div>
+        </div>
+        <div style="font-size:0.72rem; color:var(--brand); font-weight:700;">▾ Click to <span id="${toggleId}">expand and view materials</span></div>
+        <div id="${expandId}" style="display:none; margin-top:12px;">
+          <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+            <table style="width:100%; border-collapse:collapse; min-width:1000px;">
+              <thead><tr style="background:#f8fafc;">
+                <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:240px;">Material Name</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:60px;">Type</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Req Qty</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered Purchase Qty</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1;">Store Quantity</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d;">Purchase Qty</th>
+              </tr></thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+    feed.appendChild(card);
+  });
+
+  // Bottom action bar — only show if latest PRN's BOQ was updated after it
+  const latest = prns[prns.length - 1];
+  const boqUpdatedAfterLatestPRN = latest.boqUpdatedSincePRN && latest.boqStatus !== "Pending Authorization Update";
+  const boqPendingAuth = latest.boqUpdatedSincePRN && latest.boqStatus === "Pending Authorization Update";
+
+  if (actionBar) {
+    if (boqUpdatedAfterLatestPRN || boqPendingAuth) {
+      actionBar.style.display = "flex";
+      if (badge) {
+        badge.style.display = "inline-block";
+        if (boqPendingAuth) {
+          badge.textContent = "⏳ BOQ update pending authorization — create new PRN after it is authorized";
+          badge.style.background = "#fef9c3"; badge.style.borderColor = "#ca8a04"; badge.style.color = "#713f12";
+        } else {
+          badge.textContent = "⚠️ BOQ was updated — a new Additional PRN may be needed";
+          badge.style.background = "#fef3c7"; badge.style.borderColor = "#f59e0b"; badge.style.color = "#92400e";
+        }
+      }
+      const createBtn = document.getElementById("prn-create-new-btn");
+      if (createBtn) createBtn.style.display = boqPendingAuth ? "none" : "inline-block";
     } else {
-      boqUpdatedBadge.style.display = "none";
+      actionBar.style.display = "none";
+      if (badge) badge.style.display = "none";
     }
   }
-
-  const pdfEl = document.getElementById("prn-pdf-link-display");
-  if (data.pdfUrl) {
-    pdfEl.innerHTML = `<a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700; font-size:0.82rem;">View PDF ↗</a>`;
-  } else {
-    pdfEl.textContent = "PRN PDF not generated yet";
-    pdfEl.style.cssText = "color:var(--muted); font-size:0.8rem;";
-  }
-
-  // Collapse by default each time details are rendered
-  const expandedZone = document.getElementById("prn-expanded-zone");
-  if (expandedZone) expandedZone.style.display = "none";
-  const toggleText = document.getElementById("prn-expand-toggle-text");
-  if (toggleText) toggleText.textContent = "expand and view materials";
 
   const lockedNote = document.getElementById("prn-store-qty-locked-notice");
   if (lockedNote) lockedNote.style.display = "none";
