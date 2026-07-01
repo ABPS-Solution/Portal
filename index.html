@@ -1308,7 +1308,7 @@
         </div>
 
         <div style="margin-bottom:16px; text-align:right;">
-          <button class="nav-btn-styled" onclick="event.stopPropagation(); startNewPRNCreation();" style="background:#fb923c; padding:7px 18px; font-weight:700; font-size:0.82rem;">+ Create New PRN for this BOQ</button>
+          <button class="nav-btn-styled" onclick="event.stopPropagation(); startNewPRNCreation();" style="background:var(--brand); padding:7px 18px; font-weight:700; font-size:0.82rem;">+ Create New PRN for this BOQ</button>
         </div>
 
         <div id="prn-expanded-zone" style="display:none;">
@@ -11377,7 +11377,7 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
 
   if (targetModuleId === "purchase-prn") {
     document.getElementById("canvas-module-purchase-prn").style.display = "block";
-    initializePRNPanel();
+    initializePRNPanel().catch(e => { if (e?.message !== "SESSION_EXPIRED") console.error("PRN panel init error:", e); });
   } else if (targetModuleId === "purchase-material-list") {
     document.getElementById("canvas-module-purchase-material-list").style.display = "block";
     initializeMaterialListPanel();
@@ -11418,8 +11418,12 @@ async function initializePRNPanel() {
   const successZoneInit = document.getElementById("prn-success-zone");
   if (successZoneInit) { successZoneInit.style.display = "none"; successZoneInit.innerHTML = ""; }
   const createZoneInit = document.getElementById("prn-create-zone");
-  if (createZoneInit) createZoneInit.style.display = "none";
+  if (createZoneInit) { createZoneInit.style.display = "none"; createZoneInit.innerHTML = ""; }
+  const noPrnZoneInit2 = document.getElementById("prn-none-found-zone");
+  if (noPrnZoneInit2) { noPrnZoneInit2.style.display = "none"; noPrnZoneInit2.innerHTML = ""; }
   window.prnPendingCreate = null;
+  window.prnBOQMeta = {};
+  window.prnAllPersonnel = [];
   prnCurrentData    = null;
   prnStoreQtyLocked = false;
 
@@ -11784,7 +11788,7 @@ async function submitNewPRNCreation() {
           <div style="font-size:0.82rem; color:#276749; font-family:monospace; font-weight:700;">${data.prnId}</div>
           ${pdfNote}
           <button onclick="resetPRNPanelForNewEntry();" 
-            style="margin-top:12px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
+            style="margin-top:12px; background:var(--brand); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
             + Create New PRN for this BOQ
           </button>
         </div>`;
