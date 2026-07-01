@@ -2008,7 +2008,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwTnBl5mRvZMl_PfjeqNxDdbMWz_TKYZwpek3gV4Wj1XJ5If7Qy7XartGt6K9Q3pTsf/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbye7k3Py3HGA5kXWdU_ROiqiKYNS1GPx5ao95nbS3uLjiAX5AxKm9KhRFHJpSUxFqEv/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -12417,11 +12417,15 @@ async function commitRawMaterialPOToBackend() {
       document.getElementById("rm-po-upload-zone").style.display = "none";
       document.getElementById("rm-po-verification-zone").style.display = "none";
       feedback.style.cssText = "display:block; background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:16px; border-radius:var(--radius); margin-bottom:12px;";
+      const unmatchedWarning = (data.unmatchedCount > 0)
+        ? `<br/><span style="color:#b45309; font-size:0.82rem;">⚠️ ${data.unmatchedCount} item(s) had no Item Code match and were not tracked against any PRN: <em>${data.unmatchedItems.join(", ")}</em>. Please assign item codes manually.</span>`
+        : "";
       feedback.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div>
             <strong>PO uploaded successfully!</strong><br/>
             <span style="font-size:0.88rem; font-weight:600;">PO ID: <strong style="font-family:monospace;">${data.purchaseOrderId}</strong> | On Order quantities updated.</span>
+            ${unmatchedWarning}
           </div>
           <button class="nav-btn-styled" onclick="
             document.getElementById('rm-po-upload-zone').style.display='block';
