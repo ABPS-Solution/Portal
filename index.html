@@ -1307,7 +1307,8 @@
           <div style="font-size:0.72rem; color:var(--brand); font-weight:700;">▾ Click to <span id="prn-expand-toggle-text">expand and view materials</span></div>
         </div>
 
-        <div style="margin-bottom:16px; text-align:right;">
+        <div style="margin-bottom:16px; display:flex; justify-content:flex-end; align-items:center; gap:12px;">
+          <span id="prn-boq-updated-badge" style="display:none; background:#fef3c7; border:1px solid #f59e0b; color:#92400e; font-size:0.75rem; font-weight:700; padding:4px 10px; border-radius:4px;">⚠️ BOQ was updated — a new Delta PRN may be needed</span>
           <button class="nav-btn-styled" onclick="event.stopPropagation(); startNewPRNCreation();" style="background:var(--brand); padding:7px 18px; font-weight:700; font-size:0.82rem;">+ Create New PRN for this BOQ</button>
         </div>
 
@@ -2064,7 +2065,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwm2vta7T_jedNQwkmvmuXgpTnmA0fJ9pNspBuWg6j88WgpAJoORp6u6mrnXqW0Cj15/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw5G2lcvSbMfBCHt_egR5e-Cm_LyrBuCLUCQQb5rWIHNUHvP5DK2mDn_IX2tvXybBk5/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -11421,6 +11422,8 @@ async function initializePRNPanel() {
   if (createZoneInit) { createZoneInit.style.display = "none"; createZoneInit.innerHTML = ""; }
   const noPrnZoneInit2 = document.getElementById("prn-none-found-zone");
   if (noPrnZoneInit2) { noPrnZoneInit2.style.display = "none"; noPrnZoneInit2.innerHTML = ""; }
+  const boqUpdatedBadgeInit = document.getElementById("prn-boq-updated-badge");
+  if (boqUpdatedBadgeInit) boqUpdatedBadgeInit.style.display = "none";
   window.prnPendingCreate = null;
   window.prnBOQMeta = {};
   window.prnAllPersonnel = [];
@@ -11594,7 +11597,7 @@ function renderPRNCreateTable() {
   const createZone = document.getElementById("prn-create-zone");
 
   const deltaBadge = pending.isDeltaPRN
-    ? `<span style="background:#fb923c; color:#fff; font-size:0.62rem; padding:2px 6px; border-radius:3px; font-weight:800; margin-left:8px;">DELTA — NEW/INCREASED ITEMS ONLY</span>`
+    ? `<span style="background:#fb923c; color:#fff; font-size:0.62rem; padding:2px 6px; border-radius:3px; font-weight:800; margin-left:8px;">ADDITIONAL PRN — NEW/INCREASED ITEMS ONLY</span>`
     : "";
 
   const boqMeta = (window.prnBOQMeta || {})[pending.boqId] || {};
@@ -11811,7 +11814,7 @@ function resetPRNPanelForNewEntry() {
 function renderPRNDetails(data) {
   const isDelta = (Number(data.version) || 1) > 1;
   document.getElementById("prn-id-display").innerHTML = data.prnId +
-    (isDelta ? ` <span style="background:#fb923c; color:#fff; font-size:0.62rem; padding:2px 6px; border-radius:3px; font-weight:800; vertical-align:middle;">DELTA — NEW/INCREASED ITEMS ONLY</span>` : "");
+    (isDelta ? ` <span style="background:#fb923c; color:#fff; font-size:0.62rem; padding:2px 6px; border-radius:3px; font-weight:800; vertical-align:middle;">ADDITIONAL PRN — NEW/INCREASED ITEMS ONLY</span>` : "");
   document.getElementById("prn-customer-display").textContent     = data.customerName   || "—";
   document.getElementById("prn-productname-display").textContent  = data.productName    || "—";
   document.getElementById("prn-productrating-display").textContent= data.productRating  || "—";
@@ -11825,6 +11828,8 @@ function renderPRNDetails(data) {
   }
 
   document.getElementById("prn-storeperson-display").textContent    = data.storePerson    || "—";
+  const boqUpdatedBadge = document.getElementById("prn-boq-updated-badge");
+  if (boqUpdatedBadge) boqUpdatedBadge.style.display = data.boqUpdatedSincePRN ? "inline-block" : "none";
 
   const pdfEl = document.getElementById("prn-pdf-link-display");
   if (data.pdfUrl) {
