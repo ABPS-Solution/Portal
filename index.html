@@ -1283,11 +1283,13 @@
     </div>
 
     <!-- MATERIAL LIST CANVAS -->
-    <div id="canvas-module-purchase-material-list" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <h2 style="color:var(--brand); margin:0;">Material List for Purchase</h2>
-        <button class="nav-btn-styled" id="material-list-sync-btn" onclick="loadMaterialListForPurchase()" style="background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Sync</button>
+    <div id="canvas-module-purchase-material-list" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:0;">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:var(--card); border-bottom:1px solid var(--border); border-radius:var(--radius) var(--radius) 0 0; position:sticky; top:0; z-index:10;">
+        <button class="nav-btn-styled" onclick="loadMaterialListForPurchase()" id="material-list-sync-btn" style="background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Refresh</button>
+        <h2 style="color:var(--text); font-size:1rem; font-weight:700; margin:0; position:absolute; left:50%; transform:translateX(-50%);">Material List for Purchase</h2>
+        <button class="nav-btn-styled" onclick="showDashboard()" style="background:var(--brand); padding:6px 16px; font-size:0.78rem;">Return to Main Dashboard</button>
       </div>
+      <div style="padding:20px;">
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Live view of all materials needed across active PRNs. Items with Still To Order = 0 are hidden automatically.</p>
       <div id="material-list-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -1297,6 +1299,7 @@
       </div>
 
       <div id="material-list-results-zone" style="display:flex; flex-direction:column; gap:12px;"></div>
+      </div><!-- end padding wrapper -->
     </div>
 
     <!-- RAW MATERIAL PO UPLOAD CANVAS -->
@@ -12116,7 +12119,7 @@ async function loadMaterialListForPurchase() {
   } catch(e) {
     zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${e.message}</div>`;
   } finally {
-    if (syncBtn) { syncBtn.disabled = false; syncBtn.innerHTML = "🔄 Sync"; }
+    if (syncBtn) { syncBtn.disabled = false; syncBtn.innerHTML = "🔄 Refresh"; }
   }
 }
 
