@@ -10168,7 +10168,7 @@ async function initializeUpdateBOQPanel() {
   const formEl       = document.getElementById("update-boq-form");
   const fbEl         = document.getElementById("update-boq-feedback");
 
-  if (selectorZone) { selectorZone.style.display = "grid"; }
+  if (selectorZone) { selectorZone.style.display = "grid"; selectorZone.style.gridTemplateColumns = "1fr 1fr 2fr"; }
   if (projDrop)   projDrop.innerHTML  = '<option value="">Loading...</option>';
   if (boqDrop)  { boqDrop.innerHTML   = '<option value="">— Select Project First —</option>'; boqDrop.disabled = true; }
   if (formEl)     formEl.style.display  = "none";
