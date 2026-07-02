@@ -13133,7 +13133,7 @@ async function pdLoadDashboard(customVal) {
 }
 
 function pdRenderDashboard(data) {
-  const { stats, prnTrend, ageBuckets, byType, projectCoverageList, noPoItems, overdueList, showTrend } = data;
+  const { stats, prnTrend, ageBuckets, byType, deliveryTimeline, poValueTrend, projectCoverageList, noPoItems, overdueList, showTrend } = data;
   const fmtNum = n => "₹" + Number(n).toLocaleString("en-IN", { maximumFractionDigits:0 });
 
   // Stat cards
