@@ -68,6 +68,19 @@
   /* --- DYNAMIC DIVISION LABELS & DEPARTMENT SIDEBAR NAVIGATION --- */
   .nav-department-group-wrapper { padding: 6px 4px; }
   .nav-group-title-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: var(--muted); letter-spacing: 0.8px; margin-bottom: 8px; padding-left: 4px; }
+
+  /* ── DESIGN DASHBOARD ── */
+  .dd-stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:8px 12px; display:flex; flex-direction:column; gap:2px; }
+  .dd-stat-label { font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .dd-stat-val { font-size:1.45rem; font-weight:800; color:var(--text); line-height:1.2; }
+  .dd-stat-sub { font-size:0.65rem; color:var(--muted); }
+  .dd-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); }
+  .dd-card-title { font-size:0.7rem; font-weight:800; color:var(--brand); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px; }
+  .dd-period-btn { font-size:0.68rem; font-weight:700; padding:3px 8px; border:1.5px solid var(--border); border-radius:4px; cursor:pointer; background:var(--card); color:var(--text); transition:all 0.15s; }
+  .dd-period-btn.active { background:var(--brand); color:#fff; border-color:var(--brand); }
+  .dd-period-btn:hover:not(.active) { border-color:var(--brand); color:var(--brand); }
+  .dd-pending-row { display:flex; justify-content:space-between; align-items:center; padding:3px 4px; border-bottom:1px solid #f1f5f9; }
+  .dd-age-badge { font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:8px; }
   .nav-links-list-stack li { list-style: none; }
   .nav-links-list-stack li a { display: block; padding: 8px 12px; color: var(--text); text-decoration: none; font-size: 0.88rem; border-radius: var(--radius); margin-bottom: 3px; transition: all 0.2s ease; }
   .nav-links-list-stack li a:hover { background: var(--highlight-bg); color: var(--brand); font-weight: 600; }
@@ -161,6 +174,7 @@
 
 </style>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 
 <body>
@@ -1322,8 +1336,127 @@
     </div>
 
     <!-- DESIGN DASHBOARD CANVAS -->
-    <div id="canvas-module-design-dashboard" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <p style="color:var(--muted); font-size:0.85rem;">Design Dashboard — coming soon.</p>
+    <div id="canvas-module-design-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
+
+      <!-- TOP BAR -->
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <!-- Period Selector -->
+          <div id="dd-period-btns" style="display:flex; gap:4px; flex-wrap:wrap;">
+            <button class="dd-period-btn active" data-period="today"       onclick="ddSetPeriod(this)">Today</button>
+            <button class="dd-period-btn"        data-period="yesterday"   onclick="ddSetPeriod(this)">Yesterday</button>
+            <button class="dd-period-btn"        data-period="thisweek"    onclick="ddSetPeriod(this)">This Week</button>
+            <button class="dd-period-btn"        data-period="thismonth"   onclick="ddSetPeriod(this)">This Month</button>
+            <button class="dd-period-btn"        data-period="thisquarter" onclick="ddSetPeriod(this)">This Quarter</button>
+            <button class="dd-period-btn"        data-period="thisyear"    onclick="ddSetPeriod(this)">This Year</button>
+            <button class="dd-period-btn"        data-period="custom"      onclick="ddSetPeriod(this)">Custom ▾</button>
+          </div>
+          <!-- Custom picker (hidden until Custom clicked) -->
+          <div id="dd-custom-zone" style="display:none; gap:6px; align-items:center;">
+            <select id="dd-custom-type" onchange="ddCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
+              <option value="customday">Day</option>
+              <option value="customweek">Week</option>
+              <option value="custommonth">Month</option>
+              <option value="customquarter">Quarter</option>
+              <option value="customyear">Year</option>
+            </select>
+            <input id="dd-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
+            <button onclick="ddLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:3px 10px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
+          </div>
+        </div>
+        <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">📊 Design Dashboard</span>
+        <button class="nav-btn-styled" onclick="exitDesignWorkspacePanelBackToMenu()" style="font-size:0.75rem;">Return to Main Dashboard</button>
+      </div>
+
+      <!-- DASHBOARD BODY -->
+      <div id="dd-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
+
+        <!-- ROW 1: 4 Stat Cards -->
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">BOQs Created</div>
+            <div class="dd-stat-val" id="dd-s-created">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Authorized</div>
+            <div class="dd-stat-val" id="dd-s-authorized" style="color:#15803d;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Pending Authorization</div>
+            <div class="dd-stat-val" id="dd-s-pending" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Avg. Auth Time</div>
+            <div class="dd-stat-val" id="dd-s-authtime">—</div>
+            <div class="dd-stat-sub">days</div>
+          </div>
+        </div>
+
+        <!-- ROW 2: Value card + Item Codes + By Dept table -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 2fr; gap:8px;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Total Authorized BOQ Value</div>
+            <div class="dd-stat-val" id="dd-s-value" style="font-size:1.1rem; color:var(--brand);">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">New Item Codes Added</div>
+            <div class="dd-stat-val" id="dd-s-itemcodes">—</div>
+          </div>
+          <div class="dd-card" style="padding:8px 10px;">
+            <div class="dd-card-title">BOQ Value by Department</div>
+            <table style="width:100%; border-collapse:collapse; font-size:0.75rem;" id="dd-dept-table">
+              <thead><tr style="color:var(--muted); font-size:0.68rem;">
+                <th style="text-align:left; padding:2px 4px; font-weight:700;">Department</th>
+                <th style="text-align:center; padding:2px 4px; font-weight:700;">BOQs</th>
+                <th style="text-align:right; padding:2px 4px; font-weight:700;">Value (₹)</th>
+              </tr></thead>
+              <tbody id="dd-dept-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ROW 3: Chart 2 + Chart 3 -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div class="dd-card" style="padding:8px 10px;">
+            <div class="dd-card-title">BOQs by Department</div>
+            <canvas id="dd-chart-dept" style="max-height:130px;"></canvas>
+          </div>
+          <div class="dd-card" style="padding:8px 10px;">
+            <div class="dd-card-title">BOQ Version Distribution</div>
+            <canvas id="dd-chart-version" style="max-height:130px;"></canvas>
+          </div>
+        </div>
+
+        <!-- ROW 4: Chart 1 (trend) — hidden for Today/Yesterday -->
+        <div class="dd-card" id="dd-trend-row" style="padding:8px 10px;">
+          <div class="dd-card-title">Authorized BOQ Value Trend</div>
+          <canvas id="dd-chart-trend" style="max-height:120px;"></canvas>
+        </div>
+
+        <!-- ROW 5: Pending Actions + Project Health -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div class="dd-card" style="padding:8px 10px; overflow:hidden;">
+            <div class="dd-card-title">⏳ Awaiting Authorization <span id="dd-pending-count" style="background:#fef3c7; color:#b45309; font-size:0.65rem; padding:1px 6px; border-radius:8px; margin-left:4px;"></span></div>
+            <div id="dd-pending-list" style="font-size:0.72rem; overflow-y:auto; max-height:110px;"></div>
+          </div>
+          <div class="dd-card" style="padding:8px 10px; overflow:hidden;">
+            <div class="dd-card-title">🏗 Project Health Snapshot</div>
+            <div style="overflow-x:auto; max-height:120px; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.7rem;" id="dd-health-table">
+                <thead><tr style="color:var(--muted); font-size:0.65rem; position:sticky; top:0; background:var(--card);">
+                  <th style="text-align:left; padding:2px 4px;">Project</th>
+                  <th style="text-align:center; padding:2px 4px;">BOQs</th>
+                  <th style="text-align:center; padding:2px 4px;">Auth</th>
+                  <th style="text-align:right; padding:2px 4px;">Value (₹)</th>
+                  <th style="text-align:center; padding:2px 4px;">PRN</th>
+                </tr></thead>
+                <tbody id="dd-health-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end dd-body -->
     </div>
 
     <!-- PURCHASE DASHBOARD CANVAS -->
@@ -2054,7 +2187,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyRDc40Xq6Rvmhm2LBOPTJYVruw3yM95iUUItGJP5CeysA3oZ0Fm5W-RoIrJy7vsSlX/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyZ8LzsKISobvBNpR2nGyET2-8HSDA8gNGVTJqDQLcfKnJYrVwRiiYas3VCyAPmV_GE/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -11446,6 +11579,184 @@ function navigateToDesignDashboard() {
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   const c = document.getElementById("canvas-module-design-dashboard");
   if (c) c.style.display = "block";
+  ddLoadDashboard();
+}
+
+// ═══════════════════════════════════════════════════════
+// DESIGN DASHBOARD ENGINE
+// ═══════════════════════════════════════════════════════
+let ddCurrentPeriod = "today";
+let ddCurrentCustomType = "customday";
+let ddChartDept = null, ddChartVersion = null, ddChartTrend = null;
+
+function ddSetPeriod(btn) {
+  document.querySelectorAll(".dd-period-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  const p = btn.dataset.period;
+  ddCurrentPeriod = p;
+  const customZone = document.getElementById("dd-custom-zone");
+  if (p === "custom") { customZone.style.display = "flex"; return; }
+  customZone.style.display = "none";
+  ddLoadDashboard();
+}
+
+function ddCustomTypeChange() {
+  const type = document.getElementById("dd-custom-type").value;
+  ddCurrentCustomType = type;
+  const valInput = document.getElementById("dd-custom-val");
+  if (type === "customday")     { valInput.type = "date";  valInput.placeholder = ""; }
+  else if (type === "customweek")  { valInput.type = "date";  valInput.placeholder = "Pick any day in the week"; }
+  else if (type === "custommonth") { valInput.type = "month"; }
+  else if (type === "customquarter") { valInput.type = "text"; valInput.placeholder = "e.g. 2025-Q2"; }
+  else if (type === "customyear")  { valInput.type = "number"; valInput.placeholder = "e.g. 2025"; }
+}
+
+function ddLoadCustom() {
+  const val = document.getElementById("dd-custom-val").value.trim();
+  if (!val) return alert("Please enter a value for the custom period.");
+  ddCurrentPeriod = ddCurrentCustomType;
+  ddLoadDashboard(val);
+}
+
+async function ddLoadDashboard(customVal) {
+  const body = document.getElementById("dd-body");
+  if (!body) return;
+  // Show loading state on stat cards
+  ["dd-s-created","dd-s-authorized","dd-s-pending","dd-s-authtime","dd-s-value","dd-s-itemcodes"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = "…";
+  });
+
+  try {
+    const data = await apFetch({
+      action:      "fetchDesignDashboardData",
+      periodType:  ddCurrentPeriod,
+      periodValue: customVal || ""
+    });
+    if (!data.success) { alert("Dashboard load failed: " + data.error); return; }
+    ddRenderDashboard(data);
+  } catch(e) {
+    alert("Dashboard error: " + e.message);
+  }
+}
+
+function ddRenderDashboard(data) {
+  const { stats, byDept, versionDist, trendData, pendingList, updatePendingList, projectHealth, showTrend } = data;
+  const fmt = n => "₹" + Number(n).toLocaleString("en-IN", { maximumFractionDigits:0 });
+
+  // Stat cards
+  document.getElementById("dd-s-created").textContent    = stats.totalCreated;
+  document.getElementById("dd-s-authorized").textContent = stats.totalAuthorized;
+  document.getElementById("dd-s-pending").textContent    = stats.totalPending;
+  document.getElementById("dd-s-authtime").textContent   = stats.avgAuthTime !== null ? stats.avgAuthTime : "—";
+  document.getElementById("dd-s-value").textContent      = fmt(stats.totalAuthValue);
+  document.getElementById("dd-s-itemcodes").textContent  = stats.newItemCodes;
+
+  // By dept table
+  const tbody = document.getElementById("dd-dept-tbody");
+  tbody.innerHTML = "";
+  const depts = Object.keys(byDept).sort();
+  if (depts.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="3" style="color:var(--muted); font-size:0.72rem; padding:4px;">No data for period</td></tr>`;
+  } else {
+    depts.forEach(d => {
+      tbody.innerHTML += `<tr style="border-top:1px solid #f1f5f9;">
+        <td style="padding:2px 4px; font-weight:600;">${d}</td>
+        <td style="padding:2px 4px; text-align:center;">${byDept[d].count}</td>
+        <td style="padding:2px 4px; text-align:right;">${fmt(byDept[d].value)}</td>
+      </tr>`;
+    });
+  }
+
+  // Trend chart
+  const trendRow = document.getElementById("dd-trend-row");
+  trendRow.style.display = showTrend ? "block" : "none";
+  if (showTrend) {
+    if (ddChartTrend) ddChartTrend.destroy();
+    const ctx = document.getElementById("dd-chart-trend").getContext("2d");
+    ddChartTrend = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: trendData.map(t => t.label),
+        datasets: [{ label:"BOQ Value (₹)", data: trendData.map(t => t.value),
+          backgroundColor: "rgba(37,99,235,0.7)", borderRadius: 4 }]
+      },
+      options: { responsive:true, plugins:{ legend:{ display:false } },
+        scales:{ y:{ ticks:{ callback: v => "₹"+Number(v).toLocaleString("en-IN",{notation:"compact"}) }, grid:{ color:"#f1f5f9" } },
+                 x:{ grid:{ display:false } } } }
+    });
+  }
+
+  // Chart 2 — BOQs by dept
+  if (ddChartDept) ddChartDept.destroy();
+  const deptLabels = Object.keys(byDept);
+  const ctx2 = document.getElementById("dd-chart-dept").getContext("2d");
+  ddChartDept = new Chart(ctx2, {
+    type: "bar",
+    data: {
+      labels: deptLabels,
+      datasets: [{ label:"BOQs", data: deptLabels.map(d => byDept[d].count),
+        backgroundColor: ["rgba(37,99,235,0.7)","rgba(16,185,129,0.7)","rgba(245,158,11,0.7)","rgba(239,68,68,0.7)","rgba(139,92,246,0.7)"],
+        borderRadius: 4 }]
+    },
+    options: { indexAxis:"y", responsive:true, plugins:{ legend:{ display:false } },
+      scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false } } } }
+  });
+
+  // Chart 3 — Version distribution
+  if (ddChartVersion) ddChartVersion.destroy();
+  const ctx3 = document.getElementById("dd-chart-version").getContext("2d");
+  ddChartVersion = new Chart(ctx3, {
+    type: "bar",
+    data: {
+      labels: ["v1","v2","v3+"],
+      datasets: [{ label:"BOQs", data: [versionDist["v1"], versionDist["v2"], versionDist["v3+"]],
+        backgroundColor: ["rgba(16,185,129,0.7)","rgba(245,158,11,0.7)","rgba(239,68,68,0.7)"],
+        borderRadius: 4 }]
+    },
+    options: { responsive:true, plugins:{ legend:{ display:false } },
+      scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false } } } }
+  });
+
+  // Pending list
+  const pendingEl = document.getElementById("dd-pending-list");
+  document.getElementById("dd-pending-count").textContent = pendingList.length + updatePendingList.length;
+  const allPending = [
+    ...pendingList.map(p => ({ ...p, type:"auth" })),
+    ...updatePendingList.map(p => ({ ...p, type:"update" }))
+  ].sort((a,b) => b.age - a.age);
+  if (allPending.length === 0) {
+    pendingEl.innerHTML = `<div style="color:var(--muted); font-size:0.72rem; padding:4px;">✅ No pending items</div>`;
+  } else {
+    pendingEl.innerHTML = allPending.map(p => {
+      const ageBg = p.age <= 2 ? "#dcfce7" : p.age <= 5 ? "#fef3c7" : "#fee2e2";
+      const ageColor = p.age <= 2 ? "#15803d" : p.age <= 5 ? "#b45309" : "#b91c1c";
+      const tag = p.type === "update" ? `<span style="font-size:0.6rem; background:#ede9fe; color:#7c3aed; padding:1px 4px; border-radius:3px; margin-left:3px;">UPD v${p.version}</span>` : "";
+      return `<div class="dd-pending-row">
+        <div><span style="font-weight:700;">${p.boqId}</span>${tag}<br/>
+        <span style="color:var(--muted);">${p.product} ${p.rating} · ${p.projId}</span></div>
+        <span class="dd-age-badge" style="background:${ageBg}; color:${ageColor};">${p.age}d</span>
+      </div>`;
+    }).join("");
+  }
+
+  // Project health table
+  const healthTbody = document.getElementById("dd-health-tbody");
+  healthTbody.innerHTML = "";
+  if (projectHealth.length === 0) {
+    healthTbody.innerHTML = `<tr><td colspan="5" style="color:var(--muted); font-size:0.72rem; padding:4px;">No projects found</td></tr>`;
+  } else {
+    projectHealth.forEach(p => {
+      const prnBg    = p.prnRaised ? "#dcfce7" : "#fee2e2";
+      const prnColor = p.prnRaised ? "#15803d" : "#b91c1c";
+      healthTbody.innerHTML += `<tr style="border-top:1px solid #f1f5f9;">
+        <td style="padding:2px 4px; font-weight:600; font-size:0.68rem;">${p.projId}</td>
+        <td style="padding:2px 4px; text-align:center;">${p.total}</td>
+        <td style="padding:2px 4px; text-align:center; color:#15803d; font-weight:700;">${p.authorized}</td>
+        <td style="padding:2px 4px; text-align:right;">${fmt(p.value)}</td>
+        <td style="padding:2px 4px; text-align:center;"><span style="font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:8px; background:${prnBg}; color:${prnColor};">${p.prnRaised ? "Yes":"No"}</span></td>
+      </tr>`;
+    });
+  }
 }
 
 function navigateToPurchaseDashboard() {
