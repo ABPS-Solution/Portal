@@ -11720,25 +11720,9 @@ function ddRenderDashboard(data) {
     });
   }
 
-  // Trend chart
-  const trendRow = document.getElementById("dd-trend-row");
-  trendRow.style.display = showTrend ? "block" : "none";
-  if (showTrend) {
-    if (ddChartTrend) ddChartTrend.destroy();
-    const ctx = document.getElementById("dd-chart-trend").getContext("2d");
-    ddChartTrend = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: trendData.map(t => t.label),
-        datasets: [{ label:"BOQ Value (₹)", data: trendData.map(t => t.value),
-          backgroundColor: "rgba(37,99,235,0.7)", borderRadius: 4 }]
-      },
-      options: { responsive:true, plugins:{ legend:{ display:false } },
-        scales:{ y:{ ticks:{ callback: v => "₹"+Number(v).toLocaleString("en-IN",{notation:"compact"}) }, grid:{ color:"#f1f5f9" } },
-                 x:{ grid:{ display:false } } } }
-    });
-  }
-
+  // Trend chart removed from layout
+  if (ddChartTrend) { ddChartTrend.destroy(); ddChartTrend = null; }
+  
   // Chart 2 — BOQs by dept
   if (ddChartDept) ddChartDept.destroy();
   const deptLabels = Object.keys(byDept);
