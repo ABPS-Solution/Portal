@@ -1511,11 +1511,11 @@
               <tr style="background:#f8fafc;">
                 <th style="padding:8px; font-size:0.72rem; width:140px; text-align:center;">Item Code Number</th>
                 <th style="padding:8px; font-size:0.72rem; width:180px; text-align:left;">Invoice Description</th>
-                <th style="padding:8px; font-size:0.72rem; min-width:260px; text-align:left;">Standard Material Name</th>
+                <th style="padding:8px; font-size:0.72rem; min-width:180px; text-align:left;">Standard Material Name</th>
                 <th style="padding:8px; font-size:0.72rem; text-align:center; width:80px;">Qty</th>
                 <th style="padding:8px; font-size:0.72rem; text-align:center; width:70px;">Unit</th>
                 <th style="padding:8px; font-size:0.72rem; text-align:right; width:100px;">Rate / Qty</th>
-                <th style="padding:8px; font-size:0.72rem; text-align:right; width:120px;">Total Amount (₹)</th>
+                <th style="padding:8px; font-size:0.72rem; text-align:right; width:130px;">Total Amount (₹)</th>
               </tr>
             </thead>
             <tbody id="rm-po-verification-table-body"></tbody>
@@ -12783,7 +12783,6 @@ async function parseRawMaterialPOWithAI() {
         : `<input type="text" class="rm-po-item-code-input" data-idx="${idx}" value="${resolvedCode}"
              style="font-weight:700; color:var(--brand); font-size:0.8rem; padding:6px 4px; border:1.5px solid #86efac; text-align:center; width:100%; border-radius:3px; background:#f0fdf4;" readonly />`;
 
-      const createItemCodeUrl = window.location.pathname + "?module=design-itemcode";
       const nameSearchCell = notFound
         ? `<div style="position:relative;">
              <input type="text" class="rm-po-mat-name-input rm-po-name-search" data-idx="${idx}" value=""
@@ -12792,9 +12791,6 @@ async function parseRawMaterialPOWithAI() {
                autocomplete="off"
                style="font-size:0.82rem; font-weight:600; padding:4px; border:1.5px solid #fca5a5; width:100%; border-radius:3px; background:#fff7f7;" />
              <div id="rmpo-name-dropdown-${idx}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:4px; z-index:100; max-height:160px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
-             <div style="margin-top:4px; font-size:0.7rem;">
-               <a href="${createItemCodeUrl}" target="_blank" style="color:var(--brand); font-weight:700; text-decoration:underline;">+ Create new Item Code →</a>
-             </div>
            </div>`
         : `<input type="text" class="rm-po-mat-name-input" data-idx="${idx}" value="${resolvedName}"
              style="font-size:0.82rem; font-weight:600; padding:4px; border:1px solid #86efac; width:100%; border-radius:3px; background:#f0fdf4;" readonly />`;
@@ -12905,7 +12901,10 @@ function handleRMPONameSearch(inputEl, idx) {
 
   const matches = catalog.filter(c => (c.productName || "").toLowerCase().includes(query)).slice(0, 10);
   if (matches.length === 0) {
-    dropdown.innerHTML = `<div style="padding:8px; font-size:0.78rem; color:var(--muted);">No match found. <a href="${window.location.pathname}?module=design-itemcode" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code →</a></div>`;
+    dropdown.innerHTML = `<div style="padding:8px 10px; font-size:0.78rem; color:var(--muted); display:flex; justify-content:space-between; align-items:center;">
+      <span>No match found</span>
+      <a href="${window.location.pathname}?module=design-itemcode" target="_blank" style="color:var(--brand); font-weight:700; font-size:0.75rem; white-space:nowrap; margin-left:8px;">+ Create Item Code →</a>
+    </div>`;
     dropdown.style.display = "block";
     return;
   }
