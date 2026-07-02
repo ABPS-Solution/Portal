@@ -945,7 +945,7 @@
         </div>
 
         <!-- Totals bar -->
-        <div style="background:var(--highlight-bg); border:1.5px solid var(--brand); border-radius:var(--radius); padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div id="assign-panel-totals-bar" style="background:var(--highlight-bg); border:1.5px solid var(--brand); border-radius:var(--radius); padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div style="text-align:center;">
             <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Total Being Assigned</div>
             <div id="assign-panel-total-assigning" style="font-size:1.2rem; font-weight:800; color:var(--accent); font-family:monospace;">0</div>
@@ -958,7 +958,7 @@
         </div>
 
         <!-- Assigned by + submit -->
-        <div style="display:grid; grid-template-columns:1fr auto; gap:14px; align-items:flex-end; border-top:1px solid var(--border); padding-top:14px;">
+        <div id="assign-panel-bottom-row" style="display:grid; grid-template-columns:1fr auto; gap:14px; align-items:flex-end; border-top:1px solid var(--border); padding-top:14px;">
           <div>
             <label class="field-label" style="margin-top:0; color:var(--brand);">Assigned By *</label>
             <select id="assign-panel-assigned-by" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
@@ -13792,45 +13792,36 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
   const panel = document.getElementById("assign-stock-assignment-panel");
   panel.style.display = "block";
 
-  // Move panel to top anchor for both modes
   const anchorId = assignStockCurrentMode === "grn"
     ? "assign-stock-grn-assignment-anchor"
     : "assign-stock-unassigned-assignment-anchor";
   const anchor = document.getElementById(anchorId);
-  if (!anchor) {
-    console.error("openAssignStockPanel: anchor not found — " + anchorId);
-    return;
-  }
-
-  // Remove any previously appended floating panel to avoid stale DOM
-  const existingFloating = anchor.querySelector(".assign-floating-panel");
-  if (existingFloating) existingFloating.remove();
+  if (!anchor) { console.error("openAssignStockPanel: anchor not found — " + anchorId); return; }
 
   anchor.appendChild(panel);
   panel.scrollIntoView({ behavior:"smooth", block:"start" });
 
-  // Query IDs from the STATIC assign panel HTML (not the floating panel)
-  const staticPanel = document.getElementById("canvas-module-assign-current-stock");
-  if (!staticPanel) {
-    console.error("openAssignStockPanel: canvas-module-assign-current-stock not in DOM");
-    return;
-  }
-  const _safe = (id) => staticPanel.querySelector("#" + id) || document.getElementById(id);
-
-  if (!_safe("assign-panel-material-title")) {
-    console.error("openAssignStockPanel: assign panel IDs not found — module may not be visible");
+  if (!document.getElementById("assign-panel-material-title")) {
+    console.error("openAssignStockPanel: assign panel IDs not in DOM");
     return;
   }
 
-  _safe("assign-panel-material-title").textContent  = materialName;
-  _safe("assign-panel-item-code").textContent       = itemCode;
-  _safe("assign-panel-unit").textContent            = unitType;
-  _safe("assign-panel-total-unassigned").textContent= "...";
-  _safe("assign-panel-no-targets").style.display    = "none";
-  _safe("assign-panel-targets-table-wrapper").style.display = "block";
-  _safe("assign-stock-feedback").style.display      = "none";
+  document.getElementById("assign-panel-material-title").textContent  = materialName;
+  document.getElementById("assign-panel-item-code").textContent       = itemCode;
+  document.getElementById("assign-panel-unit").textContent            = unitType;
+  document.getElementById("assign-panel-total-unassigned").textContent= "...";
+  document.getElementById("assign-panel-no-targets").style.display    = "none";
+  document.getElementById("assign-panel-targets-table-wrapper").style.display = "block";
+  document.getElementById("assign-stock-feedback").style.display      = "none";
+
+  // Ensure totals bar and bottom row are visible while loading
+  const totalsBar = document.getElementById("assign-panel-totals-bar");
+  const bottomRow = document.getElementById("assign-panel-bottom-row");
+  if (totalsBar) totalsBar.style.display = "";
+  if (bottomRow) bottomRow.style.display = "";
+
   document.getElementById("assign-panel-targets-body").innerHTML = `
-    <tr><td colspan="5" style="text-align:center; padding:20px; color:var(--muted);">
+    <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">
       <div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:6px; vertical-align:middle;"></div>
       Loading BOQ targets...
     </td></tr>`;
@@ -13838,54 +13829,43 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
   try {
     const data = await apFetch({ action:"fetchAssignCurrentStockData", mode:"item-detail", itemCode });
     if (!data.success) {
-      document.getElementById("assign-panel-targets-body").innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error}</td></tr>`;
+      document.getElementById("assign-panel-targets-body").innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error}</td></tr>`;
       return;
     }
 
     assignStockCurrentMaterial = data;
-    const unassignedQty        = Number(data.unassignedQty) || 0;
+    const unassignedQty = Number(data.unassignedQty) || 0;
+    const noTargets     = document.getElementById("assign-panel-no-targets");
+    const tbody         = document.getElementById("assign-panel-targets-body");
+    const targets       = data.boqTargets || [];
+
     document.getElementById("assign-panel-total-unassigned").textContent = unassignedQty.toFixed(2);
     document.getElementById("assign-panel-remainder").textContent        = unassignedQty.toFixed(2);
     document.getElementById("assign-panel-total-assigning").textContent  = "0";
 
     if (unassignedQty === 0) {
+      // All stock already assigned to BOQs — hide table, totals bar, save button
+      tbody.innerHTML = "";
       document.getElementById("assign-panel-targets-table-wrapper").style.display = "none";
-      document.getElementById("assign-panel-no-targets").style.display    = "block";
-      document.getElementById("assign-panel-no-targets").style.background = "#f0fdf4";
-      document.getElementById("assign-panel-no-targets").style.borderColor= "#86efac";
-      document.getElementById("assign-panel-no-targets").style.color      = "#15803d";
-      document.getElementById("assign-panel-no-targets").textContent      = "✅ All current stock for this material is already assigned to BOQs. No unassigned quantity remaining.";
-      // Hide totals bar, assigned by, and save button
-      const panel = document.getElementById("assign-stock-assignment-panel");
-      if (panel) {
-        const totalsBar  = panel.querySelector("[style*='TOTAL BEING ASSIGNED']")
-                        || panel.querySelector("div[style*='highlight-bg']");
-        const bottomRow  = document.getElementById("assign-panel-submit-btn")?.closest("div[style*='grid']")
-                        || document.getElementById("assign-panel-submit-btn")?.parentElement?.parentElement;
-        if (totalsBar)  totalsBar.style.display  = "none";
-        if (bottomRow)  bottomRow.style.display  = "none";
-      }
+      noTargets.style.cssText = "display:block; padding:12px; background:#f0fdf4; border:1px solid #86efac; border-radius:var(--radius); font-size:0.85rem; color:#15803d; font-weight:600; margin-bottom:12px;";
+      noTargets.textContent   = "✅ All current stock for this material is already assigned to BOQs. No unassigned quantity remaining.";
+      if (totalsBar) totalsBar.style.display = "none";
+      if (bottomRow) bottomRow.style.display = "none";
       return;
     }
 
-    // Restore visibility when unassigned > 0
-    const panel = document.getElementById("assign-stock-assignment-panel");
-    if (panel) {
-      const totalsBar = panel.querySelector("[style*='highlight-bg']");
-      const bottomRow = document.getElementById("assign-panel-submit-btn")?.parentElement?.parentElement;
-      if (totalsBar) totalsBar.style.display = "";
-      if (bottomRow) bottomRow.style.display = "";
-    }
+    // Unassigned stock exists — keep totals bar and save button visible
+    if (totalsBar) totalsBar.style.display = "";
+    if (bottomRow) bottomRow.style.display = "";
 
-    // BOQ targets
-    const targets = data.boqTargets || [];
-    const tbody   = document.getElementById("assign-panel-targets-body");
     if (targets.length === 0) {
-      document.getElementById("assign-panel-no-targets").style.display            = "block";
-      document.getElementById("assign-panel-targets-table-wrapper").style.display = "none";
+      // Stock available but no active PRN BOQ needs it
       tbody.innerHTML = "";
+      document.getElementById("assign-panel-targets-table-wrapper").style.display = "none";
+      noTargets.style.cssText = "display:block; padding:12px; background:#fffbeb; border:1px solid #f59e0b; border-radius:var(--radius); font-size:0.85rem; color:#b45309; font-weight:600; margin-bottom:12px;";
+      noTargets.textContent   = "⚠ No open PRN BOQs require this material right now. The unassigned stock remains in the pool.";
     } else {
-      document.getElementById("assign-panel-no-targets").style.display            = "none";
+      noTargets.style.display = "none";
       document.getElementById("assign-panel-targets-table-wrapper").style.display = "block";
       tbody.innerHTML = "";
       targets.forEach((target, idx) => {
@@ -13911,6 +13891,7 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
     document.getElementById("assign-panel-targets-body").innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--warn);">Error: ${e.message}</td></tr>`;
   }
 }
+
 
 function clampAndUpdateAssignQty(inp, stillNeeded, totalUnassigned) {
   let val = parseFloat(inp.value) || 0;
