@@ -1370,7 +1370,7 @@
       </div>
 
       <!-- DASHBOARD BODY -->
-      <div id="dd-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 96px); box-sizing:border-box;">
+      <div id="dd-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: 5 Stat Cards -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex-shrink:0;">
@@ -1425,7 +1425,7 @@
         </div>
 
         <!-- ROW 3: Project Health — full width, paginated -->
-        <div class="dd-card" style="padding:12px 14px; flex:1; min-height:0;">
+        <div class="dd-card" style="padding:12px 16px; flex:1; min-height:0; display:flex; flex-direction:column;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
             <div class="dd-card-title" style="margin-bottom:0;">🏗 Project Health Snapshot</div>
             <div style="display:flex; align-items:center; gap:8px;">
@@ -1436,8 +1436,8 @@
               <button onclick="ddHealthPage(1)"  class="dd-period-btn" style="padding:2px 7px;">›</button>
             </div>
           </div>
-          <table style="width:100%; border-collapse:collapse; font-size:0.72rem;">
-            <thead><tr style="color:var(--muted); font-size:0.67rem; border-bottom:1.5px solid var(--border);">
+          <table style="width:100%; border-collapse:collapse; font-size:0.78rem; flex:1;">
+            <thead><tr style="color:var(--muted); font-size:0.72rem; border-bottom:1.5px solid var(--border);">
               <th style="text-align:left; padding:3px 6px; font-weight:700;">Project ID</th>
               <th style="text-align:left; padding:3px 6px; font-weight:700;">Customer</th>
               <th style="text-align:center; padding:3px 6px; font-weight:700;">Total BOQs</th>
@@ -11615,13 +11615,13 @@ function ddRenderHealthTable() {
     const prnColor = p.prnRaised ? "#15803d" : "#b91c1c";
     const rowBg    = i % 2 === 0 ? "var(--card)" : "#f8fafc";
     return `<tr style="background:${rowBg}; border-bottom:1px solid #f1f5f9;">
-      <td style="padding:3px 6px; font-weight:700; font-family:monospace; font-size:0.7rem;">${p.projId}</td>
-      <td style="padding:3px 6px; font-size:0.7rem;">${p.customer}</td>
-      <td style="padding:3px 6px; text-align:center;">${p.total}</td>
-      <td style="padding:3px 6px; text-align:center; color:#15803d; font-weight:700;">${p.authorized}</td>
-      <td style="padding:3px 6px; text-align:center; color:${p.pending > 0 ? "#b45309" : "var(--muted)"}; font-weight:${p.pending > 0 ? "700" : "400"};">${p.pending}</td>
-      <td style="padding:3px 6px; text-align:right; font-family:monospace;">${fmt(p.value)}</td>
-      <td style="padding:3px 6px; text-align:center;"><span style="font-size:0.62rem; font-weight:700; padding:1px 6px; border-radius:8px; background:${prnBg}; color:${prnColor};">${p.prnRaised ? "Yes" : "No"}</span></td>
+      <td style="padding:10px 8px; font-weight:700; font-family:monospace; font-size:0.78rem;">${p.projId}</td>
+      <td style="padding:10px 8px; font-size:0.78rem;">${p.customer}</td>
+      <td style="padding:10px 8px; text-align:center; font-size:0.78rem;">${p.total}</td>
+      <td style="padding:10px 8px; text-align:center; color:#15803d; font-weight:700; font-size:0.78rem;">${p.authorized}</td>
+      <td style="padding:10px 8px; text-align:center; color:${p.pending > 0 ? "#b45309" : "var(--muted)"}; font-weight:${p.pending > 0 ? "700" : "400"}; font-size:0.78rem;">${p.pending}</td>
+      <td style="padding:10px 8px; text-align:right; font-family:monospace; font-size:0.78rem;">${fmt(p.value)}</td>
+      <td style="padding:10px 8px; text-align:center;"><span style="font-size:0.72rem; font-weight:700; padding:2px 10px; border-radius:8px; background:${prnBg}; color:${prnColor};">${p.prnRaised ? "Yes" : "No"}</span></td>
     </tr>`;
   }).join("");
 }
