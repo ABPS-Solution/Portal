@@ -1566,7 +1566,7 @@
           <!-- Overdue POs -->
           <div class="dd-card" style="padding:10px 12px; display:flex; flex-direction:column; min-height:0;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-shrink:0;">
-              <div class="dd-card-title" style="margin:0;">🔴 Overdue POs</div>
+              <div class="dd-card-title" style="margin:0;">🔴 Overdue Purchase Orders</div>
               <span id="pd-overdue-count" style="font-size:0.68rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:1px 7px; border-radius:8px;"></span>
             </div>
             <div style="overflow-y:auto; flex:1;">
@@ -13203,12 +13203,20 @@ function pdRenderDashboard(data) {
       data:{
         labels: types,
         datasets:[
-          { label:"On Order",      data:types.map(t=>byType[t].onOrder),     backgroundColor:"rgba(37,99,235,0.7)",  borderRadius:3, barThickness:14 },
-          { label:"Still To Order",data:types.map(t=>byType[t].stillToOrder),backgroundColor:"rgba(239,68,68,0.65)", borderRadius:3, barThickness:14 }
+          { label:"On Order",       data:types.map(t=>byType[t].onOrder),      backgroundColor:"rgba(37,99,235,0.75)",  borderRadius:3, barPercentage:0.4, categoryPercentage:0.8 },
+          { label:"Still To Order", data:types.map(t=>byType[t].stillToOrder), backgroundColor:"rgba(239,68,68,0.7)",   borderRadius:3, barPercentage:0.4, categoryPercentage:0.8 }
         ]
       },
-      options:{ indexAxis:"y", responsive:true, plugins:{ legend:{ position:"bottom", labels:{ boxWidth:10, font:{ size:9 } } } },
-        scales:{ x:{ stacked:false, grid:{ color:"#f1f5f9" } }, y:{ grid:{ display:false } } } }
+      options:{
+        indexAxis:"y",
+        responsive:true,
+        grouped:true,
+        plugins:{ legend:{ position:"bottom", labels:{ boxWidth:10, font:{ size:9 } } } },
+        scales:{
+          x:{ grid:{ color:"#f1f5f9" } },
+          y:{ grid:{ display:false }, ticks:{ font:{ size:9 } } }
+        }
+      }
     });
   }
 
