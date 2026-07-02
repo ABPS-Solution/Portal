@@ -6212,12 +6212,15 @@ async function refreshLiveStockForSelectedMaterial() {
   const selectedMaterial   = document.getElementById("ticket-item-selection-dropdown")?.value;
   if (!selectedMaterial) { stopLiveStockPolling(); return; }
 
+  // Strip any appended stock count suffix e.g. " (0 NOS available)" from Spare Store dropdown labels
+  const cleanMaterialName = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim();
+
   try {
-    const data = await apFetch({ action: "getLiveStockForItem", materialName: selectedMaterial });
+    const data = await apFetch({ action: "getLiveStockForItem", materialName: cleanMaterialName });
     if (!data.success) return;
 
     // Patch only the selected item in the local caches — no full reload
-    const cleanKey = selectedMaterial.replace(/\s+/g,"").toLowerCase();
+    const cleanKey = cleanMaterialName.replace(/\s+/g,"").toLowerCase();
 
     const existing = cachedInventoryStockCollection.find(i =>
       (i.materialName||"").replace(/\s+/g,"").toLowerCase() === cleanKey
@@ -6281,15 +6284,19 @@ async function updateSelectedLiveStockPillCounter() {
   }
 
   // --- RAW MATERIALS STORE: show inventory + BOQ allocation ---
-  counterZone.innerHTML = `<span style="font-size:0.75rem; color:var(--brand); font-weight:700;">🔄 Evaluating Real-Time Project BOQ Allocations...</span>`;
-  
+  // Only show loading text on first load, not on poll refreshes
+  if (!window._ticketBOQCache || window._ticketBOQCache.projectId !== projectId) {
+    counterZone.innerHTML = `<span style="font-size:0.75rem; color:var(--brand); font-weight:700;">🔄 Evaluating Real-Time Project BOQ Allocations...</span>`;
+  }
+
   try {
-    const boqData = await apFetch({
-      action: "fetchActiveBOQRecordsByProject",
-      projectId: projectId
-    });
-    
-    const cleanSearchKey = selectedMaterial.replace(/\s+/g, '').toLowerCase();
+    if (!window._ticketBOQCache || window._ticketBOQCache.projectId !== projectId) {
+      const boqData = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: projectId });
+      window._ticketBOQCache = { projectId: projectId, records: boqData.records || [] };
+    }
+    const boqData = window._ticketBOQCache;
+
+    const cleanSearchKey = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim().replace(/\s+/g, '').toLowerCase();
     
     const inventoryMatch = cachedInventoryStockCollection.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
       || cachedInventoryStockCollection.find(i => i.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
@@ -6409,7 +6416,7 @@ async function addItemToShoppingBasketRow() {
     const availableQty = spareMatch ? spareMatch.availableStock : 0;
 
     if (quantity > availableQty) {
-      alert(`Spare Store Lockout: Only ${availableQty} ${spareMatch ? spareMatch.unitType : 'units'} of ${materialName} available in Spare Store. Please request from Raw Materials Store instead — this material is not currently available in sufficient quantity in Spare Store.`);
+      alert(`Spare Store Lockout: Only ${availableQty} ${spareMatch ? spareMatch.unitType : 'units'} of ${materialName} available in Spare Store. Please request from Raw Materials Store instead. This material is not currently available in sufficient quantity in Spare Store.`);
       return;
     }
 
@@ -8916,6 +8923,8 @@ async function handleCreateTicketProjectChange(chosenProjectVal) {
   boqDropdown.disabled  = true;
   boqDropdown.style.opacity = "0.5";
 
+  // Clear BOQ cache when project changes
+  window._ticketBOQCache = null;
   // Reset job card downstream
   jobCardDropdown.innerHTML = '<option value="">— Choose BOQ First —</option>';
   jobCardDropdown.disabled  = true;
