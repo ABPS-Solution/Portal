@@ -944,28 +944,15 @@
           </table>
         </div>
 
-        <!-- Totals bar -->
-        <div id="assign-panel-totals-bar" style="background:var(--highlight-bg); border:1.5px solid var(--brand); border-radius:var(--radius); padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-          <div style="text-align:center;">
-            <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Total Being Assigned</div>
-            <div id="assign-panel-total-assigning" style="font-size:1.2rem; font-weight:800; color:var(--accent); font-family:monospace;">0</div>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Remaining as Unassigned</div>
-            <div id="assign-panel-remainder" style="font-size:1.2rem; font-weight:800; color:var(--brand); font-family:monospace;">0</div>
-          </div>
-          <div style="font-size:1.5rem; color:var(--border); font-weight:300;">=</div>
-        </div>
-
         <!-- Assigned by + submit -->
-        <div id="assign-panel-bottom-row" style="display:grid; grid-template-columns:1fr auto; gap:14px; align-items:flex-end; border-top:1px solid var(--border); padding-top:14px;">
-          <div>
+        <div id="assign-panel-bottom-row" style="display:flex; align-items:flex-end; gap:14px; border-top:1px solid var(--border); padding-top:14px;">
+          <div style="flex:1;">
             <label class="field-label" style="margin-top:0; color:var(--brand);">Assigned By *</label>
             <select id="assign-panel-assigned-by" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
               <option value="">— Select Person —</option>
             </select>
           </div>
-          <button id="assign-panel-submit-btn" onclick="submitAssignCurrentStock()" class="nav-btn-styled" style="background:var(--accent); padding:10px 24px; font-weight:700;">Save Assignments</button>
+          <button id="assign-panel-submit-btn" onclick="submitAssignCurrentStock()" class="nav-btn-styled" style="background:var(--accent); padding:10px 24px; font-weight:700; flex-shrink:0;">Save Assignments</button>
         </div>
       </div>
     </div>
@@ -13815,9 +13802,7 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
   document.getElementById("assign-stock-feedback").style.display      = "none";
 
   // Ensure totals bar and bottom row are visible while loading
-  const totalsBar = document.getElementById("assign-panel-totals-bar");
   const bottomRow = document.getElementById("assign-panel-bottom-row");
-  if (totalsBar) totalsBar.style.display = "";
   if (bottomRow) bottomRow.style.display = "";
 
   document.getElementById("assign-panel-targets-body").innerHTML = `
@@ -13840,22 +13825,25 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
     const targets       = data.boqTargets || [];
 
     document.getElementById("assign-panel-total-unassigned").textContent = unassignedQty.toFixed(2);
-    document.getElementById("assign-panel-remainder").textContent        = unassignedQty.toFixed(2);
-    document.getElementById("assign-panel-total-assigning").textContent  = "0";
 
     if (unassignedQty === 0) {
-      // All stock already assigned to BOQs — hide table, totals bar, save button
       tbody.innerHTML = "";
       document.getElementById("assign-panel-targets-table-wrapper").style.display = "none";
-      noTargets.style.cssText = "display:block; padding:12px; background:#f0fdf4; border:1px solid #86efac; border-radius:var(--radius); font-size:0.85rem; color:#15803d; font-weight:600; margin-bottom:12px;";
-      noTargets.textContent   = "✅ All current stock for this material is already assigned to BOQs. No unassigned quantity remaining.";
-      if (totalsBar) totalsBar.style.display = "none";
       if (bottomRow) bottomRow.style.display = "none";
+
+      if (targets.length > 0) {
+        // Stock fully assigned — BOQs still have open need, awaiting next GRN
+        noTargets.style.cssText = "display:block; padding:12px; background:#f0fdf4; border:1px solid #86efac; border-radius:var(--radius); font-size:0.85rem; color:#15803d; font-weight:600; margin-bottom:12px;";
+        noTargets.textContent   = "✅ All current stock for this material is fully assigned to BOQs. BOQs still need more — stock will auto-assign on the next GRN.";
+      } else {
+        // No stock and no open BOQ needs it
+        noTargets.style.cssText = "display:block; padding:12px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:0.85rem; color:var(--muted); font-weight:600; margin-bottom:12px;";
+        noTargets.textContent   = "No unassigned stock and no open BOQs currently require this material.";
+      }
       return;
     }
 
-    // Unassigned stock exists — keep totals bar and save button visible
-    if (totalsBar) totalsBar.style.display = "";
+    // Unassigned stock exists — keep save button visible
     if (bottomRow) bottomRow.style.display = "";
 
     if (targets.length === 0) {
@@ -13910,17 +13898,12 @@ function clampAndUpdateAssignQty(inp, stillNeeded, totalUnassigned) {
 function updateAssignPanelTotals(totalUnassigned) {
   let totalAssigning = 0;
   document.querySelectorAll(".assign-qty-input").forEach(inp => { totalAssigning += parseFloat(inp.value) || 0; });
-  const remainder   = Math.max(0, totalUnassigned - totalAssigning);
   const isOverLimit = totalAssigning > totalUnassigned;
 
-  document.getElementById("assign-panel-total-assigning").textContent = totalAssigning.toFixed(2);
-  document.getElementById("assign-panel-remainder").textContent       = remainder.toFixed(2);
-  document.getElementById("assign-panel-total-assigning").style.color = isOverLimit ? "#b91c1c" : "var(--accent)";
-
   const btn = document.getElementById("assign-panel-submit-btn");
-  btn.disabled          = isOverLimit;
-  btn.style.opacity     = isOverLimit ? "0.5" : "1";
-  btn.style.cursor      = isOverLimit ? "not-allowed" : "pointer";
+  btn.disabled      = isOverLimit;
+  btn.style.opacity = isOverLimit ? "0.5" : "1";
+  btn.style.cursor  = isOverLimit ? "not-allowed" : "pointer";
 }
 
 async function submitAssignCurrentStock() {
