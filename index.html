@@ -8244,8 +8244,7 @@ async function initializeStoreEntryWorkspaceQueue() {
               <tbody>${trs}</tbody>
             </table>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-            <span style="font-size:0.78rem; color:var(--muted);">Store Person: <strong style="color:var(--text);">${appActiveOperatorIdentityString || "Current User"}</strong></span>
+          <div style="display:flex; justify-content:flex-end; margin-top:10px;">
             <button class="nav-btn-styled" style="background:var(--accent);" 
               onclick="commitStoreEntryVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">
               Verify & Generate Raw Materials Store Entry
