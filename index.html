@@ -13636,6 +13636,8 @@ function switchAssignStockMode(mode) {
   assignStockCurrentMaterial = null;
   document.getElementById("assign-stock-assignment-panel").style.display = "none";
   document.getElementById("assign-stock-feedback").style.display         = "none";
+  // Restore all hidden material rows when switching modes
+  document.querySelectorAll("#assign-stock-unassigned-results [data-itemcode]").forEach(r => { r.style.display = ""; });
 
   const isGrn = mode === "grn";
   document.getElementById("assign-mode-grn-btn").style.background        = isGrn ? "var(--brand)" : "#718096";
@@ -13724,9 +13726,10 @@ function renderAssignStockUnassignedList(materials) {
   zone.innerHTML = "";
   materials.forEach(mat => {
     const row = document.createElement("div");
+    row.dataset.itemcode = mat.itemCode;
     row.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; transition:all 0.15s ease;";
     row.onclick       = () => openAssignStockPanel(mat.itemCode, mat.materialName, mat.unitType);
-    row.onmouseover   = () => { row.style.borderColor = "var(--brand)"; row.style.background = "var(--highlight-bg)"; };
+    row.onmouseover   = () => { if (row.style.display !== "none") { row.style.borderColor = "var(--brand)"; row.style.background = "var(--highlight-bg)"; } };
     row.onmouseout    = () => { row.style.borderColor = "var(--border)";  row.style.background = "#fff"; };
     row.innerHTML = `
       <div style="flex:1; min-width:0;">
@@ -13799,6 +13802,13 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
     : "assign-stock-unassigned-assignment-anchor";
   const anchor = document.getElementById(anchorId);
   if (!anchor) { console.error("openAssignStockPanel: anchor not found — " + anchorId); return; }
+
+  // In unassigned mode: hide the active row, restore all others
+  if (assignStockCurrentMode === "unassigned") {
+    document.querySelectorAll("#assign-stock-unassigned-results [data-itemcode]").forEach(r => {
+      r.style.display = r.dataset.itemcode === itemCode ? "none" : "";
+    });
+  }
 
   anchor.appendChild(panel);
   panel.scrollIntoView({ behavior:"smooth", block:"start" });
