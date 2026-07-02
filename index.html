@@ -1508,7 +1508,7 @@
             <div class="dd-stat-sub">days (active)</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">POs Uploaded</div>
+            <div class="dd-stat-label">PO Uploaded</div>
             <div class="dd-stat-val" id="pd-s-pos">—</div>
           </div>
           <div class="dd-stat-card">
@@ -1516,8 +1516,11 @@
             <div class="dd-stat-val" id="pd-s-poval" style="font-size:1rem; color:var(--brand);">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Line Items Ordered</div>
-            <div class="dd-stat-val" id="pd-s-li">—</div>
+            <div class="dd-stat-label">Materials Covered</div>
+            <div style="display:flex; align-items:baseline; gap:4px;">
+              <div class="dd-stat-val" id="pd-s-matcov" style="color:var(--brand);">—</div>
+              <div class="dd-stat-sub" id="pd-s-matcov-total" style="font-size:0.75rem;"></div>
+            </div>
           </div>
         </div>
 
@@ -1532,8 +1535,8 @@
             <canvas id="pd-chart-coverage" style="max-height:130px;"></canvas>
           </div>
           <div class="dd-card" style="padding:8px 10px;">
-            <div class="dd-card-title">Active PRN Age Distribution</div>
-            <canvas id="pd-chart-age" style="max-height:130px;"></canvas>
+            <div class="dd-card-title">PO Delivery Timeline</div>
+            <canvas id="pd-chart-delivery" style="max-height:130px;"></canvas>
           </div>
         </div>
 
@@ -1549,11 +1552,11 @@
             <div style="overflow-y:auto; flex:1;">
               <table style="width:100%; border-collapse:collapse; font-size:0.72rem;">
                 <thead><tr style="color:var(--muted); font-size:0.67rem; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
-                  <th style="text-align:left; padding:3px 5px;">Item</th>
-                  <th style="text-align:left; padding:3px 5px;">PRN</th>
-                  <th style="text-align:left; padding:3px 5px;">Project</th>
+                  <th style="text-align:left; padding:3px 5px;">Material</th>
+                  <th style="text-align:left; padding:3px 5px;">Item Code</th>
+                  <th style="text-align:center; padding:3px 5px;">PRNs</th>
                   <th style="text-align:right; padding:3px 5px;">Still To Order</th>
-                  <th style="text-align:center; padding:3px 5px;">Age</th>
+                  <th style="text-align:center; padding:3px 5px;">Oldest Age</th>
                 </tr></thead>
                 <tbody id="pd-nopo-tbody"></tbody>
               </table>
@@ -13113,7 +13116,7 @@ function pdLoadCustom() {
 }
 
 async function pdLoadDashboard(customVal) {
-  ["pd-s-prns","pd-s-active","pd-s-closed","pd-s-age","pd-s-pos","pd-s-poval","pd-s-li"].forEach(id => {
+  ["pd-s-prns","pd-s-active","pd-s-closed","pd-s-age","pd-s-pos","pd-s-poval","pd-s-matcov"].forEach(id => {  
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
   try {
@@ -13140,12 +13143,13 @@ function pdRenderDashboard(data) {
   document.getElementById("pd-s-age").textContent    = stats.avgPRNAgeDays !== null ? stats.avgPRNAgeDays : "—";
   document.getElementById("pd-s-pos").textContent    = stats.totalPOs;
   document.getElementById("pd-s-poval").textContent  = fmtNum(stats.totalPOValue);
-  document.getElementById("pd-s-li").textContent     = stats.totalLineItems;
+  document.getElementById("pd-s-matcov").textContent       = stats.materialsCovered;
+  document.getElementById("pd-s-matcov-total").textContent = "/ " + stats.materialsTotal + " total";
 
   // Chart 1 — PRN trend (stacked bar)
   if (pdChartPrnTrend) pdChartPrnTrend.destroy();
   const titleEl = document.getElementById("pd-chart2-title");
-  if (titleEl) titleEl.textContent = showTrend ? "PRN Status Over Time" : "PRN Status (Period)";
+  if (titleEl) titleEl.textContent = showTrend ? "PRN Status Over Time" : "PRN Status";
   const ctx1 = document.getElementById("pd-chart-prn-trend").getContext("2d");
   if (prnTrend.length === 0) {
     pdChartPrnTrend = new Chart(ctx1, { type:"bar", data:{ labels:["No data"], datasets:[{ data:[0], backgroundColor:"#f1f5f9" }] }, options:{ plugins:{ legend:{ display:false } } } });
@@ -13176,8 +13180,8 @@ function pdRenderDashboard(data) {
       data:{
         labels: types,
         datasets:[
-          { label:"On Order",      data:types.map(t=>byType[t].onOrder),     backgroundColor:"rgba(37,99,235,0.7)",  borderRadius:3 },
-          { label:"Still To Order",data:types.map(t=>byType[t].stillToOrder),backgroundColor:"rgba(239,68,68,0.65)", borderRadius:3 }
+          { label:"On Order",      data:types.map(t=>byType[t].onOrder),     backgroundColor:"rgba(37,99,235,0.7)",  borderRadius:3, barThickness:14 },
+          { label:"Still To Order",data:types.map(t=>byType[t].stillToOrder),backgroundColor:"rgba(239,68,68,0.65)", borderRadius:3, barThickness:14 }
         ]
       },
       options:{ indexAxis:"y", responsive:true, plugins:{ legend:{ position:"bottom", labels:{ boxWidth:10, font:{ size:9 } } } },
@@ -13185,19 +13189,34 @@ function pdRenderDashboard(data) {
     });
   }
 
-  // Chart 3 — PRN age distribution
+  // Chart 3 — PO Delivery Timeline (live)
   if (pdChartAge) pdChartAge.destroy();
-  const ctx3 = document.getElementById("pd-chart-age").getContext("2d");
+  const ctx3 = document.getElementById("pd-chart-delivery").getContext("2d");
+  const dl = deliveryTimeline;
   pdChartAge = new Chart(ctx3, {
-    type:"bar",
-    data:{
-      labels:["0-7d","8-14d","15-30d","30+d"],
-      datasets:[{ label:"Active PRNs", data:[ageBuckets["0-7"],ageBuckets["8-14"],ageBuckets["15-30"],ageBuckets["30+"]],
-        backgroundColor:["rgba(16,185,129,0.7)","rgba(245,158,11,0.7)","rgba(239,68,68,0.65)","rgba(139,92,246,0.7)"],
-        borderRadius:4 }]
+    type: "bar",
+    data: {
+      labels: ["Overdue", "Due This Week", "Due This Month", "Due Later"],
+      datasets: [{
+        data: [dl.overdue, dl.thisWeek, dl.thisMonth, dl.later],
+        backgroundColor: [
+          "rgba(239,68,68,0.75)",
+          "rgba(245,158,11,0.75)",
+          "rgba(37,99,235,0.7)",
+          "rgba(16,185,129,0.7)"
+        ],
+        borderRadius: 4,
+        barThickness: 28
+      }]
     },
-    options:{ responsive:true, plugins:{ legend:{ display:false } },
-      scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false } } } }
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { stepSize:1 }, grid: { color:"#f1f5f9" } },
+        x: { grid: { display:false } }
+      }
+    }
   });
 
   // No PO items table
@@ -13207,14 +13226,14 @@ function pdRenderDashboard(data) {
     ? `<tr><td colspan="5" style="padding:8px; color:var(--muted); font-size:0.72rem;">✅ All materials have POs</td></tr>`
     : noPoItems.map((item, i) => {
         const rowBg = i%2===0?"var(--card)":"#f8fafc";
-        const ageBg = item.ageDays<=7?"#dcfce7":item.ageDays<=14?"#fef3c7":"#fee2e2";
-        const ageColor = item.ageDays<=7?"#15803d":item.ageDays<=14?"#b45309":"#b91c1c";
+        const ageBg = item.maxAge<=7?"#dcfce7":item.maxAge<=14?"#fef3c7":"#fee2e2";
+        const ageColor = item.maxAge<=7?"#15803d":item.maxAge<=14?"#b45309":"#b91c1c";
         return `<tr style="border-bottom:1px solid #f1f5f9; background:${rowBg};">
           <td style="padding:4px 5px; font-weight:600;">${item.matName}</td>
-          <td style="padding:4px 5px; font-family:monospace; font-size:0.68rem;">${item.prnId}</td>
-          <td style="padding:4px 5px; font-size:0.68rem;">${item.projId}</td>
+          <td style="padding:4px 5px; font-family:monospace; font-size:0.68rem;">${item.itemCode}</td>
+          <td style="padding:4px 5px; text-align:center; font-size:0.68rem;">${item.prnCount} PRN${item.prnCount>1?"s":""}</td>
           <td style="padding:4px 5px; text-align:right; font-weight:700;">${item.stillToOrder}</td>
-          <td style="padding:4px 5px; text-align:center;"><span style="font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:8px; background:${ageBg}; color:${ageColor};">${item.ageDays}d</span></td>
+          <td style="padding:4px 5px; text-align:center;"><span style="font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:8px; background:${ageBg}; color:${ageColor};">${item.maxAge}d</span></td>
         </tr>`;
       }).join("");
 
@@ -13222,7 +13241,7 @@ function pdRenderDashboard(data) {
   const overdueTbody = document.getElementById("pd-overdue-tbody");
   document.getElementById("pd-overdue-count").textContent = overdueList.length;
   overdueTbody.innerHTML = overdueList.length === 0
-    ? `<tr><td colspan="5" style="padding:8px; color:var(--muted); font-size:0.72rem;">✅ No overdue POs</td></tr>`
+    ? `<tr><td colspan="5" style="padding:8px; color:var(--muted); font-size:0.72rem;">✅ No overdue Purchase Orders</td></tr>`
     : overdueList.map((po, i) => {
         const rowBg = i%2===0?"var(--card)":"#f8fafc";
         const overdueBg = po.daysOverdue<=3?"#fef3c7":po.daysOverdue<=7?"#fee2e2":"#fecaca";
