@@ -68,8 +68,7 @@
   .dept-name { font-size: 1rem; font-weight: 800; color: var(--text); flex: 1; }
   .dept-dash-pill { font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:10px; cursor:pointer; border:none; }
   .dept-header > div[id$="-dashboard-wrapper"] { display:none; }
-  .dept-header > div[id$="-dashboard-wrapper"][style*="display: block"],
-  .dept-header > div[id$="-dashboard-wrapper"][style*="display:block"] { display:inline-flex !important; align-items:center; }
+  .dept-dash-pill-visible { display:inline-flex !important; align-items:center; }
   .sec-label { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:var(--muted); margin:8px 0 6px; }
   
   /* --- WORKSPACE BLOCK WRAPPERS --- */
@@ -5956,7 +5955,14 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   };
   Object.keys(dashMap).forEach(function(id) {
     const el = document.getElementById(id);
-    if (el) el.style.display = dashMap[id] === true ? "block" : "none";
+    if (!el) return;
+    if (dashMap[id] === true) {
+      el.style.display = "";
+      el.classList.add("dept-dash-pill-visible");
+    } else {
+      el.style.display = "none";
+      el.classList.remove("dept-dash-pill-visible");
+    }
   });
 
   // --- EVALUATE DEPARTMENT ENCLOSURE OVERLAYS ---
@@ -13418,7 +13424,7 @@ async function loadAssignStockGRNQueue() {
   const feed = document.getElementById("assign-stock-grn-feed");
   feed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--brand); font-weight:600;">
     <div class="spinner" style="display:inline-block; width:18px; height:18px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:10px; vertical-align:middle;"></div>
-    Loading GRN Queue...
+    Loading Recently Completed GRNs...
   </div>`;
   try {
     const data = await apFetch({ action:"fetchAssignCurrentStockData", mode:"grn-queue" });
