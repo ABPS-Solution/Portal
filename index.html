@@ -944,9 +944,23 @@
           </table>
         </div>
 
+        <!-- Totals bar -->
+        <div id="assign-panel-totals-bar" style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+          <div style="flex:1; background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); padding:8px 14px; display:flex; justify-content:space-between; align-items:center; gap:16px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Assigning:</span>
+              <span id="assign-panel-total-assigning" style="font-size:0.95rem; font-weight:800; color:var(--accent); font-family:monospace;">0</span>
+            </div>
+            <div style="width:1px; height:20px; background:var(--border);"></div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Remaining:</span>
+              <span id="assign-panel-remainder" style="font-size:0.95rem; font-weight:800; color:var(--brand); font-family:monospace;">0</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Assigned by + submit -->
         <div id="assign-panel-bottom-row" style="display:grid; grid-template-columns:1fr auto; gap:14px; align-items:flex-end; border-top:1px solid var(--border); padding-top:14px;">
-        <!-- <div id="assign-panel-bottom-row" style="display:flex; align-items:flex-end; gap:14px; border-top:1px solid var(--border); padding-top:14px; margin-top:4px;"></div> -->
           <div style="flex:1;">
             <label class="field-label" style="margin-top:0; color:var(--brand);">Assigned By *</label>
             <select id="assign-panel-assigned-by" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
@@ -13826,6 +13840,8 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
     const targets       = data.boqTargets || [];
 
     document.getElementById("assign-panel-total-unassigned").textContent = unassignedQty.toFixed(2);
+    document.getElementById("assign-panel-total-assigning").textContent  = "0";
+    document.getElementById("assign-panel-remainder").textContent        = unassignedQty.toFixed(2);
 
     if (unassignedQty === 0) {
       tbody.innerHTML = "";
@@ -13899,7 +13915,12 @@ function clampAndUpdateAssignQty(inp, stillNeeded, totalUnassigned) {
 function updateAssignPanelTotals(totalUnassigned) {
   let totalAssigning = 0;
   document.querySelectorAll(".assign-qty-input").forEach(inp => { totalAssigning += parseFloat(inp.value) || 0; });
+  const remainder   = Math.max(0, totalUnassigned - totalAssigning);
   const isOverLimit = totalAssigning > totalUnassigned;
+
+  document.getElementById("assign-panel-total-assigning").textContent = totalAssigning.toFixed(2);
+  document.getElementById("assign-panel-remainder").textContent       = remainder.toFixed(2);
+  document.getElementById("assign-panel-total-assigning").style.color = isOverLimit ? "#b91c1c" : "var(--accent)";
 
   const btn = document.getElementById("assign-panel-submit-btn");
   btn.disabled      = isOverLimit;
