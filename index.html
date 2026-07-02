@@ -12960,12 +12960,35 @@ async function commitRawMaterialPOToBackend() {
   if (!uploadedBy) return alert("Uploaded By is required.");
   if (!poNumber)   return alert("PO Number is required.");
 
+  // Sync current input values back into payload
   const codeInputs = document.querySelectorAll(".rm-po-item-code-input");
   const nameInputs = document.querySelectorAll(".rm-po-mat-name-input");
   (activeParsedRMPOPayload.lineItems || []).forEach((item, idx) => {
     item.itemCode     = codeInputs[idx] ? codeInputs[idx].value.trim() : item.itemCode;
     item.materialName = nameInputs[idx] ? nameInputs[idx].value.trim() : item.materialName;
   });
+
+  // Validate all rows have item code and material name
+  const incompleteRows = (activeParsedRMPOPayload.lineItems || []).reduce((acc, item, idx) => {
+    const missingCode = !item.itemCode;
+    const missingName = !item.materialName;
+    if (missingCode || missingName) {
+      const desc = item.rawDescription || ("Row " + (idx + 1));
+      const what = missingCode && missingName ? "Item Code Number and Standard Material Name"
+                 : missingCode ? "Item Code Number"
+                 : "Standard Material Name";
+      acc.push("• Row " + (idx+1) + " (" + desc.substring(0,40) + "…): missing " + what);
+      // Highlight the offending inputs in red
+      if (missingCode && codeInputs[idx]) { codeInputs[idx].style.border = "2px solid #b91c1c"; codeInputs[idx].style.background = "#fff7f7"; }
+      if (missingName && nameInputs[idx]) { nameInputs[idx].style.border = "2px solid #b91c1c"; nameInputs[idx].style.background = "#fff7f7"; }
+    }
+    return acc;
+  }, []);
+
+  if (incompleteRows.length > 0) {
+    alert("Cannot submit — the following rows are incomplete:\n\n" + incompleteRows.join("\n") + "\n\nPlease search and select the Standard Material Name for each incomplete row.");
+    return;
+  }
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
