@@ -13429,8 +13429,8 @@ async function loadAssignStockGRNQueue() {
     const data = await apFetch({ action:"fetchAssignCurrentStockData", mode:"grn-queue" });
     if (!data.success) { feed.innerHTML = `<div style="color:var(--warn); padding:20px; text-align:center; font-weight:700;">${data.error}</div>`; return; }
 
-    const grns = data.grns || [];
-    if (grns.length === 0) {
+    const materials = data.materials || [];
+    if (materials.length === 0) {
       feed.innerHTML = `<div style="text-align:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted);">
         <div style="font-size:2rem; margin-bottom:10px;">✅</div>
         <div style="font-weight:700; color:var(--accent); font-size:0.95rem;">All received stock has been assigned!</div>
@@ -13439,7 +13439,6 @@ async function loadAssignStockGRNQueue() {
       return;
     }
 
-    const materials = data.materials || [];
     feed.innerHTML = "";
     materials.forEach(mat => {
       const row = document.createElement("div");
