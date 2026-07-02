@@ -836,7 +836,7 @@
           <button id="assign-mode-unassigned-btn" onclick="switchAssignStockMode('unassigned')" class="nav-btn-styled" style="background:#718096;">🔍 Unassigned Material</button>
         </div>
       </div>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Assign received stock to BOQ IDs. Any qty not assigned stays in the unassigned pool automatically.</p>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Assign received stock to BOQ IDs. Any quantity not assigned stays in the unassigned automatically.</p>
       <div id="assign-stock-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
       <!-- MODE 1: POST-GRN QUEUE -->
@@ -860,7 +860,7 @@
               </select>
             </div>
             <div>
-              <label class="field-label" style="margin-top:0; color:var(--brand);">Or Search by Material Name</label>
+              <label class="field-label" style="margin-top:0; color:var(--brand);">Search by Material Name</label>
               <div style="position:relative;">
                 <input type="text" id="assign-material-search-input" placeholder="Type to search..." autocomplete="off"
                   oninput="handleAssignMaterialSearch(this.value)"
@@ -898,7 +898,7 @@
         <!-- New assignment targets -->
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:8px; letter-spacing:0.5px;">Assign to BOQ IDs</div>
         <div id="assign-panel-no-targets" style="display:none; padding:12px; background:#fffbeb; border:1px solid #f59e0b; border-radius:var(--radius); font-size:0.85rem; color:#b45309; font-weight:600; margin-bottom:12px;">
-          No open PRN BOQs require this material right now. Any qty stays in the unassigned pool.
+          No open PRN BOQs require this material right now. Any quantity stays in the unassigned.
         </div>
         <div id="assign-panel-targets-table-wrapper" style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
           <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:800px;">
@@ -2285,7 +2285,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxl2sZtxhbiq2M-he-gzwhp8I4O_hCED_syPVJlPBw4dbhrgELoNBUd8Lspa6bWA-pU/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwQFNs4z6DwmF1GqzaIL7NbXNjdDkHNcz_CZ9LbrNkt7hoQHp-1Uc4fqQOt92kFCnQq/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -13376,7 +13376,7 @@ async function loadAssignStockPersonnel() {
   try {
     const data = await apFetch({ action:"getStoreOperatorsList" });
     const people = (data.fullPersonnelDataRecordsTree || []).filter(p =>
-      p.departmentsList.some(d => ["store","admin","purchase"].includes(d.toLowerCase().trim()))
+      p.departmentsList.some(d => ["store","purchase"].includes(d.toLowerCase().trim()))
     );
     select.innerHTML = '<option value="">— Select Person —</option>';
     people.forEach(p => {
@@ -13447,8 +13447,10 @@ async function loadAssignStockGRNQueue() {
             <div style="font-size:0.72rem; color:var(--muted);">${mat.typeOfMaterial}</div>
           </div>
           <div style="text-align:right; flex-shrink:0; margin-left:16px;">
-            <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Unassigned</div>
-            <div style="font-size:1.2rem; font-weight:800; color:#b91c1c; font-family:monospace;">${Number(mat.unassignedQty).toFixed(2)}</div>
+            <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">This GRN</div>
+            <div style="font-size:1.2rem; font-weight:800; color:#0056b3; font-family:monospace;">${Number(mat.thisGrnQty).toFixed(2)}</div>
+            <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-top:4px;">Total Unassigned</div>
+            <div style="font-size:0.88rem; font-weight:800; color:#b91c1c; font-family:monospace;">${Number(mat.unassignedQty).toFixed(2)}</div>
             <div style="font-size:0.7rem; color:var(--muted);">${mat.unitType}</div>
           </div>
           <div style="font-size:0.75rem; font-weight:700; color:var(--brand); margin-left:14px; white-space:nowrap;">Assign →</div>
@@ -13663,10 +13665,13 @@ async function submitAssignCurrentStock() {
   if (!assignedBy) return alert("Please select Assigned By before saving.");
 
   const assignments = [];
+  let hasInvalidQty = false;
   document.querySelectorAll(".assign-qty-input").forEach(inp => {
-    const qty = parseFloat(inp.value) || 0;
+    const qty = parseFloat(inp.value);
+    if (inp.value.trim() !== "" && (isNaN(qty) || qty <= 0)) { hasInvalidQty = true; return; }
     if (qty > 0) assignments.push({ prnId: inp.dataset.prnid, boqId: inp.dataset.boqid, projectId: inp.dataset.projectid, assignQty: qty });
   });
+  if (hasInvalidQty) return alert("All entered quantities must be greater than 0. Remove or correct invalid entries.");
   if (assignments.length === 0) return alert("Enter a quantity for at least one BOQ row before saving.");
 
   const totalUnassigned = Number(assignStockCurrentMaterial?.unassignedQty) || 0;
