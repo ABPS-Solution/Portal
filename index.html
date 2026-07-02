@@ -437,14 +437,20 @@
             </select>
           </div>
           <div>
-            <label class="field-label" id="lbl-job-card-title" style="font-weight: 700; color: var(--muted);">Select Job Card Number *</label>
-            <select id="ticket-job-card-dropdown" onchange="handleTicketJobCardChange(this.value)" disabled style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600; opacity: 0.5; cursor: not-allowed;">
+            <label class="field-label" id="lbl-ticket-boq-title" style="font-weight: 700; color: var(--muted);">Select BOQ ID *</label>
+            <select id="ticket-boq-dropdown" onchange="handleCreateTicketBOQChange(this.value)" disabled style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600; opacity: 0.5; cursor: not-allowed;">
               <option value="">— Choose Project First —</option>
             </select>
           </div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div>
+            <label class="field-label" id="lbl-job-card-title" style="font-weight: 700; color: var(--muted);">Select Job Card Number *</label>
+            <select id="ticket-job-card-dropdown" onchange="handleTicketJobCardChange(this.value)" disabled style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600; opacity: 0.5; cursor: not-allowed;">
+              <option value="">— Choose BOQ First —</option>
+            </select>
+          </div>
           <div>
             <label class="field-label" id="lbl-store-scope-title" style="font-weight: 700; color: var(--muted);">Choose Store *</label>
             <select id="ticket-selected-store-scope-toggle" onchange="handleTicketStoreScopeSelectionChange(this.value)" disabled style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600; opacity: 0.5; cursor: not-allowed;">
@@ -5976,12 +5982,21 @@ async function initializeMaterialRequestWorkspace() {
   projectDropdown.value = "";
   deptDropdown.value = ""; 
   if (storeScopeDropdown) storeScopeDropdown.value = "";
+  const boqDropdown = document.getElementById("ticket-boq-dropdown");
+  if (boqDropdown) {
+    boqDropdown.value    = "";
+    boqDropdown.disabled = true;
+    boqDropdown.style.opacity = "0.5";
+    boqDropdown.innerHTML = '<option value="">— Choose Project First —</option>';
+  }
   const jobCardDropdown = document.getElementById("ticket-job-card-dropdown");
   if (jobCardDropdown) {
     jobCardDropdown.value = "";
     jobCardDropdown.disabled = true;
-    jobCardDropdown.innerHTML = '<option value="">— Choose Project First —</option>';
+    jobCardDropdown.style.opacity = "0.5";
+    jobCardDropdown.innerHTML = '<option value="">— Choose BOQ First —</option>';
   }
+  window.ticketJobCardsCache = [];
   resetMaterialRequestCascadingLockState();
   
   clearFullBasketDraftState();
@@ -8833,23 +8848,79 @@ async function handleCreateTicketProjectChange(chosenProjectVal) {
     return;
   }
 
-  jobCardDropdown.innerHTML = '<option value="">Loading...</option>';
+  const boqDropdown = document.getElementById("ticket-boq-dropdown");
+  const boqLabel    = document.getElementById("lbl-ticket-boq-title");
+
+  boqDropdown.innerHTML = '<option value="">Loading...</option>';
+  boqDropdown.disabled  = true;
+  boqDropdown.style.opacity = "0.5";
+
+  // Reset job card downstream
+  jobCardDropdown.innerHTML = '<option value="">— Choose BOQ First —</option>';
+  jobCardDropdown.disabled  = true;
+  jobCardDropdown.style.opacity = "0.5";
+  jobCardDropdown.style.cursor  = "not-allowed";
+  if (jobCardLabel) jobCardLabel.style.color = "var(--muted)";
+
   try {
     const data = await apFetch({ action:"fetchJobCardsForProject", projectId: chosenProjectVal });
-    jobCardDropdown.innerHTML = '<option value="">— Select Job Card Number —</option>';
+    // Extract unique BOQ IDs from job cards
+    const boqMap = {};
     (data.jobCards || []).forEach(jc => {
-      const opt = document.createElement("option");
-      opt.value = jc.jobCardNumber;
-      opt.textContent = `${jc.jobCardNumber} | ${jc.productName} ${jc.productRating}`;
-      jobCardDropdown.appendChild(opt);
+      if (jc.boqId && !boqMap[jc.boqId]) {
+        boqMap[jc.boqId] = `${jc.boqId} | ${jc.productName} ${jc.productRating}`;
+      }
     });
-    jobCardDropdown.disabled = false;
-    jobCardDropdown.style.opacity = "1";
-    jobCardDropdown.style.cursor = "pointer";
-    if (jobCardLabel) jobCardLabel.style.color = "var(--brand)";
+    // Cache job cards for BOQ filtering
+    window.ticketJobCardsCache = data.jobCards || [];
+
+    boqDropdown.innerHTML = '<option value="">— Select BOQ ID —</option>';
+    Object.entries(boqMap).forEach(([boqId, label]) => {
+      const opt = document.createElement("option");
+      opt.value = boqId;
+      opt.textContent = label;
+      boqDropdown.appendChild(opt);
+    });
+    boqDropdown.disabled = false;
+    boqDropdown.style.opacity = "1";
+    boqDropdown.style.cursor  = "pointer";
+    if (boqLabel) boqLabel.style.color = "var(--brand)";
   } catch(e) {
-    jobCardDropdown.innerHTML = '<option value="">Error loading job cards</option>';
+    boqDropdown.innerHTML = '<option value="">Error loading BOQs</option>';
   }
+}
+
+function handleCreateTicketBOQChange(chosenBoqId) {
+  const jobCardDropdown = document.getElementById("ticket-job-card-dropdown");
+  const jobCardLabel    = document.getElementById("lbl-job-card-title");
+
+  // Reset downstream
+  resetMaterialRequestCascadingLockState();
+  document.getElementById("ticket-selected-store-scope-toggle").value = "";
+  document.getElementById("ticket-selected-store-scope-toggle").disabled = true;
+  document.getElementById("ticket-selected-store-scope-toggle").style.opacity = "0.5";
+
+  if (!chosenBoqId) {
+    jobCardDropdown.innerHTML = '<option value="">— Choose BOQ First —</option>';
+    jobCardDropdown.disabled  = true;
+    jobCardDropdown.style.opacity = "0.5";
+    jobCardDropdown.style.cursor  = "not-allowed";
+    if (jobCardLabel) jobCardLabel.style.color = "var(--muted)";
+    return;
+  }
+
+  const filtered = (window.ticketJobCardsCache || []).filter(jc => jc.boqId === chosenBoqId);
+  jobCardDropdown.innerHTML = '<option value="">— Select Job Card Number —</option>';
+  filtered.forEach(jc => {
+    const opt = document.createElement("option");
+    opt.value = jc.jobCardNumber;
+    opt.textContent = `${jc.jobCardNumber} (Set ${jc.setNumber})`;
+    jobCardDropdown.appendChild(opt);
+  });
+  jobCardDropdown.disabled  = false;
+  jobCardDropdown.style.opacity = "1";
+  jobCardDropdown.style.cursor  = "pointer";
+  if (jobCardLabel) jobCardLabel.style.color = "var(--brand)";
 }
 
 async function loadItemCatalogForSelectedProjectAndStore() {
