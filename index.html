@@ -9021,21 +9021,28 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       apFetch({ action: "getSpareStoreStock" })
         .then(d => { window.cachedSpareStoreStock = d.stock || []; }).catch(() => {});
 
-      // Raw Materials Store — fetch from BOQ
+      // Raw Materials Store & Spare Store — fetch from BOQ
+      // Raw Materials Store: show only items where typeOfStore = "Raw Materials Store"
+      // Spare Store: also show only Raw Materials Store BOQ lines (spare is drawn from raw stock)
       const data = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: chosenProjectVal });
 
       if (data.success && data.records.length > 0) {
         itemDrop.innerHTML = '<option value="">— Select Material from BOQ —</option>';
         let uniqueMaterialsMap = {};
-        data.records.forEach(r => {
-          if (!uniqueMaterialsMap[r.materialName]) {
-            uniqueMaterialsMap[r.materialName] = true;
-            let opt = document.createElement("option");
-            opt.value = r.materialName;
-            opt.textContent = r.materialName;
-            itemDrop.appendChild(opt);
-          }
-        });
+        data.records
+          .filter(r => {
+            const store = (r.typeOfStore || "Raw Materials Store").toString().trim().toLowerCase().replace(/\s+/g, "");
+            return store === "rawmaterialsstore" || store === "rawmaterial" || store === "";
+          })
+          .forEach(r => {
+            if (!uniqueMaterialsMap[r.materialName]) {
+              uniqueMaterialsMap[r.materialName] = true;
+              let opt = document.createElement("option");
+              opt.value = r.materialName;
+              opt.textContent = r.materialName;
+              itemDrop.appendChild(opt);
+            }
+          });
         addZone.style.opacity = "1";
         itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
         addBtn.style.cursor = "pointer";
@@ -13669,8 +13676,7 @@ async function loadAssignStockGRNQueue() {
     if (materials.length === 0) {
       feed.innerHTML = `<div style="text-align:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted);">
         <div style="font-size:2rem; margin-bottom:10px;">✅</div>
-        <div style="font-weight:700; color:var(--accent); font-size:0.95rem;">All received stock has been assigned!</div>
-        <div style="font-size:0.82rem; margin-top:4px;">No pending GRN materials awaiting assignment.</div>
+        <div style="font-weight:700; color:var(--accent); font-size:0.95rem;">All GRN Received Stock has been assigned</div>
       </div>`;
       return;
     }
