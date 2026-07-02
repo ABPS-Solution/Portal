@@ -841,7 +841,8 @@
 
       <!-- MODE 1: POST-GRN QUEUE -->
       <div id="assign-stock-grn-zone" style="display:block;">
-        <div id="assign-stock-grn-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
+        <div id="assign-stock-grn-assignment-anchor"></div>
+        <div id="assign-stock-grn-feed" style="display:flex; flex-direction:column; gap:8px;"></div>
       </div>
 
       <!-- MODE 2: UNASSIGNED MATERIAL -->
@@ -904,12 +905,12 @@
           <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:800px;">
             <thead>
               <tr style="background:#f8fafc;">
+                <th style="padding:8px 10px; font-size:0.7rem; text-align:left; min-width:140px;">Customer</th>
                 <th style="padding:8px 10px; font-size:0.7rem; text-align:left; white-space:nowrap;">Project ID</th>
-                <th style="padding:8px 10px; font-size:0.7rem; text-align:left; min-width:180px;">BOQ ID</th>
                 <th style="padding:8px 10px; font-size:0.7rem; text-align:left; min-width:160px;">Product</th>
                 <th style="padding:8px 10px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#b91c1c;">Still Needed</th>
                 <th style="padding:8px 10px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#15803d;">Already Assigned</th>
-                <th style="padding:8px 10px; font-size:0.7rem; text-align:center; white-space:nowrap; color:var(--brand);">Assign Qty</th>
+                <th style="padding:8px 10px; font-size:0.7rem; text-align:center; white-space:nowrap; color:var(--brand);">Assign Quantity</th>
               </tr>
             </thead>
             <tbody id="assign-panel-targets-body"></tbody>
@@ -2285,7 +2286,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwQFNs4z6DwmF1GqzaIL7NbXNjdDkHNcz_CZ9LbrNkt7hoQHp-1Uc4fqQOt92kFCnQq/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyHylsAfORde-D3M7OgKCnJOM71rTFOvu1_WPJg3S-pKiyKMm-LU1dPbTOhMxxcz5_Y/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -13430,43 +13431,27 @@ async function loadAssignStockGRNQueue() {
       return;
     }
 
+    const materials = data.materials || [];
     feed.innerHTML = "";
-    grns.forEach(grn => {
-      const card = document.createElement("div");
-      card.className   = "contact-summary-card-parent";
-      card.style.cssText = "border-left:4px solid var(--accent);";
-
-      const materialsHtml = grn.materials.map(mat => `
-        <div onclick="openAssignStockPanel('${mat.itemCode}', \`${mat.materialName.replace(/`/g,"'")}\`, '${mat.unitType}')"
-          style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; margin-bottom:6px; transition:all 0.15s ease;"
-          onmouseover="this.style.borderColor='var(--brand)'; this.style.background='var(--highlight-bg)';"
-          onmouseout="this.style.borderColor='var(--border)'; this.style.background='#fff';">
-          <div style="flex:1; min-width:0;">
-            <div style="font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${mat.itemCode}</div>
-            <div style="font-size:0.88rem; font-weight:600; color:var(--text); line-height:1.4;">${mat.materialName}</div>
-            <div style="font-size:0.72rem; color:var(--muted);">${mat.typeOfMaterial}</div>
-          </div>
-          <div style="text-align:right; flex-shrink:0; margin-left:16px;">
-            <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">This GRN</div>
-            <div style="font-size:1.2rem; font-weight:800; color:#0056b3; font-family:monospace;">${Number(mat.thisGrnQty).toFixed(2)}</div>
-            <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-top:4px;">Total Unassigned</div>
-            <div style="font-size:0.88rem; font-weight:800; color:#b91c1c; font-family:monospace;">${Number(mat.unassignedQty).toFixed(2)}</div>
-            <div style="font-size:0.7rem; color:var(--muted);">${mat.unitType}</div>
-          </div>
-          <div style="font-size:0.75rem; font-weight:700; color:var(--brand); margin-left:14px; white-space:nowrap;">Assign →</div>
-        </div>`).join("");
-
-      card.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:8px; border-bottom:1px dashed var(--border);">
-          <div>
-            <span style="font-family:monospace; font-weight:800; background:var(--accent); color:#fff; padding:3px 8px; font-size:0.78rem; border-radius:3px;">${grn.grnNumber}</span>
-            <span style="font-size:0.82rem; font-weight:600; color:var(--muted); margin-left:8px;">${grn.vendorName}</span>
-            <span style="font-size:0.72rem; color:var(--muted); margin-left:6px;">Inward: ${grn.inwardNumber}</span>
-          </div>
-          <span style="font-size:0.78rem; color:var(--muted); font-weight:600;">${grn.date}</span>
+    materials.forEach(mat => {
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; transition:all 0.15s ease;";
+      row.onclick     = () => openAssignStockPanel(mat.itemCode, mat.materialName, mat.unitType);
+      row.onmouseover = () => { row.style.borderColor = "var(--brand)"; row.style.background = "var(--highlight-bg)"; };
+      row.onmouseout  = () => { row.style.borderColor = "var(--border)";  row.style.background = "#fff"; };
+      row.innerHTML = `
+        <div style="flex:1; min-width:0;">
+          <div style="font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${mat.itemCode}</div>
+          <div style="font-size:0.88rem; font-weight:600; color:var(--text);">${mat.materialName}</div>
+          <div style="font-size:0.72rem; color:var(--muted);">${mat.typeOfMaterial}</div>
         </div>
-        ${materialsHtml}`;
-      feed.appendChild(card);
+        <div style="text-align:right; flex-shrink:0; margin-left:16px;">
+          <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Available Stock</div>
+          <div style="font-size:1.2rem; font-weight:800; color:#15803d; font-family:monospace;">${Number(mat.availableStock).toFixed(2)}</div>
+          <div style="font-size:0.7rem; color:var(--muted);">${mat.unitType}</div>
+        </div>
+        <div style="font-size:0.75rem; font-weight:700; color:var(--brand); margin-left:14px; white-space:nowrap;">Assign →</div>`;
+      feed.appendChild(row);
     });
   } catch(e) {
     feed.innerHTML = `<div style="color:var(--warn); padding:20px; text-align:center;">Error: ${e.message}</div>`;
@@ -13558,6 +13543,12 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
   assignStockCurrentItemCode = itemCode;
   const panel = document.getElementById("assign-stock-assignment-panel");
   panel.style.display = "block";
+
+  // Move panel to top anchor in GRN mode, otherwise leave it in its default position
+  if (assignStockCurrentMode === "grn") {
+    const anchor = document.getElementById("assign-stock-grn-assignment-anchor");
+    if (anchor) anchor.appendChild(panel);
+  }
   panel.scrollIntoView({ behavior:"smooth", block:"start" });
 
   document.getElementById("assign-panel-material-title").textContent  = materialName;
@@ -13569,7 +13560,7 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
   document.getElementById("assign-panel-targets-table-wrapper").style.display = "block";
   document.getElementById("assign-stock-feedback").style.display      = "none";
   document.getElementById("assign-panel-targets-body").innerHTML = `
-    <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">
+    <tr><td colspan="5" style="text-align:center; padding:20px; color:var(--muted);">
       <div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:6px; vertical-align:middle;"></div>
       Loading BOQ targets...
     </td></tr>`;
@@ -13577,7 +13568,7 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
   try {
     const data = await apFetch({ action:"fetchAssignCurrentStockData", mode:"item-detail", itemCode });
     if (!data.success) {
-      document.getElementById("assign-panel-targets-body").innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error}</td></tr>`;
+      document.getElementById("assign-panel-targets-body").innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error}</td></tr>`;
       return;
     }
 
@@ -13624,8 +13615,8 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
         const tr = document.createElement("tr");
         tr.style.borderBottom = "1px solid #f1f5f9";
         tr.innerHTML = `
+          <td style="padding:8px 10px; font-size:0.82rem; font-weight:600; color:var(--text);">${target.customerName || "—"}</td>
           <td style="padding:8px 10px; font-family:monospace; font-size:0.78rem; font-weight:700; color:#475569; white-space:nowrap;">${target.projectId}</td>
-          <td style="padding:8px 10px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand); white-space:nowrap;">${target.boqId}</td>
           <td style="padding:8px 10px; font-size:0.82rem; font-weight:600; line-height:1.4;">${target.productName} <span style="color:var(--muted); font-weight:400;">${target.productRating}</span></td>
           <td style="padding:8px 10px; text-align:center; font-family:monospace; font-weight:700; color:#b91c1c;">${Number(target.stillNeeded).toFixed(2)}</td>
           <td style="padding:8px 10px; text-align:center; font-family:monospace; font-weight:700; color:#15803d;">${Number(target.assignedQty).toFixed(2)}</td>
