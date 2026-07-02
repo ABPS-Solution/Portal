@@ -7912,16 +7912,9 @@ async function parseGateDocumentsWithAI() {
     document.getElementById('gate-meta-vendor').value = activeParsedGatePayloadCache.vendorName || "";
     document.getElementById('gate-meta-challan').value = activeParsedGatePayloadCache.challanNumber || "";
     
-    let rawDateObj = new Date();
-    if (activeParsedGatePayloadCache.invoiceDate) {
-      let parsedTimeNode = new Date(activeParsedGatePayloadCache.invoiceDate);
-      if (!isNaN(parsedTimeNode.getTime())) {
-        rawDateObj = parsedTimeNode;
-      }
-    }
-    
-    // Explicit format generation matches Indian Standard Time constraints locally
-    const formattedDateStr = rawDateObj.toLocaleDateString('en-CA'); 
+    // Always use today's upload date — not the date on the document
+    const rawDateObj      = new Date();
+    const formattedDateStr = rawDateObj.toLocaleDateString('en-CA');
     const formattedTimeStr = rawDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
 
     document.getElementById('gate-meta-date').value = formattedDateStr;
