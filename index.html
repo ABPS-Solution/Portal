@@ -8104,43 +8104,43 @@ async function initializeStoreEntryWorkspaceQueue() {
           low:    { bg:"#f1f5f9", color:"#64748b", border:"#cbd5e1" }
         };
 
+        // Search input for manual name lookup (same pattern as PO)
+        const searchId = `se-search-${item.gateNumber}-${idx}`;
+        const dropId   = `se-drop-${item.gateNumber}-${idx}`;
+        const createUrl = window.location.pathname + "?module=design-itemcode";
+
         let suggestionHtml = "";
         if (hasMatches) {
           const pills = lineMatches.map((m) => {
             const c = confColors[m.confidence] || confColors.low;
             return `<div 
               onclick="selectStoreEntryItemCodeMatch('${item.gateNumber}', ${idx}, '${m.itemCode}', \`${m.productName.replace(/`/g,"'")}\`, '${m.typeOfMaterial}', this)"
-              style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; border:1.5px solid ${c.border}; border-radius:4px; background:${c.bg}; cursor:pointer; margin-bottom:4px; transition:all 0.15s ease;"
+              style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; border:1.5px solid ${c.border}; border-radius:4px; background:${c.bg}; cursor:pointer; margin-bottom:3px; transition:all 0.15s ease;"
               onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
               <div style="flex:1; min-width:0;">
-                <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.78rem;">${m.itemCode}</span>
-                <span style="font-size:0.78rem; font-weight:600; color:#1e293b; margin-left:8px; word-break:break-word;">${m.productName}</span>
-                <span style="font-size:0.68rem; color:${c.color}; margin-left:6px; font-weight:700;">${m.typeOfMaterial}</span>
+                <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.75rem;">${m.itemCode}</span>
+                <span style="font-size:0.75rem; font-weight:600; color:#1e293b; margin-left:6px; word-break:break-word;">${m.productName}</span>
               </div>
-              <span style="font-size:0.65rem; font-weight:700; color:${c.color}; padding:1px 5px; background:#fff; border-radius:3px; border:1px solid ${c.border}; white-space:nowrap; margin-left:8px; flex-shrink:0;">${(m.confidence||"low").toUpperCase()}</span>
+              <span style="font-size:0.63rem; font-weight:700; color:${c.color}; padding:1px 4px; background:#fff; border-radius:3px; border:1px solid ${c.border}; white-space:nowrap; margin-left:6px; flex-shrink:0;">${(m.confidence||"low").toUpperCase()}</span>
             </div>`;
           }).join("");
-
-          suggestionHtml = `
-            <div style="margin-top:6px;">
-              <div style="font-size:0.62rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:4px; letter-spacing:0.4px;">Select matching product:</div>
+          suggestionHtml = `<div style="margin-top:5px;">
+              <div style="font-size:0.6rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:3px; letter-spacing:0.4px;">Suggested matches:</div>
               ${pills}
-              <div style="font-size:0.7rem; color:#b45309; font-weight:600; margin-top:6px; padding:5px 8px; background:#fffbeb; border-radius:3px; border:1px solid #fcd34d;">
-                None match? Go to <strong>Add / Check Item Code Number</strong> in Design Department first, then return here.
-              </div>
+              <div style="font-size:0.68rem; color:#b45309; margin-top:4px;">None match? <a href="${createUrl}" target="_blank" style="color:var(--brand); font-weight:700;">+ Create Item Code →</a></div>
             </div>`;
         } else {
-          suggestionHtml = `
-            <div style="margin-top:6px; font-size:0.72rem; color:#b91c1c; font-weight:600; padding:5px 8px; background:#fff5f5; border-radius:3px; border:1px solid #fca5a5;">
-              ⚠️ No matches found in ItemCodeNumbers catalog. Go to <strong>Add / Check Item Code Number</strong> in Design Department to create one first.
+          suggestionHtml = `<div style="margin-top:4px; font-size:0.7rem; color:#b91c1c; font-weight:600;">
+              No AI match. <a href="${createUrl}" target="_blank" style="color:var(--brand); font-weight:700;">+ Create Item Code →</a>
             </div>`;
         }
 
         trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:top;">
-          <td style="padding:6px; width:130px;">
+          <td style="padding:6px; width:140px; vertical-align:middle;">
             <input type="text" class="se-item-code-${item.gateNumber}" data-idx="${idx}"
-              value="" placeholder="Auto-filled on selection" readonly
-              style="font-size:0.78rem; padding:5px; font-weight:800; border:1.5px solid var(--border); text-align:center; width:100%; background:#f1f5f9; color:var(--brand); cursor:not-allowed; border-radius:3px;">
+              value="" placeholder="Not found"
+              readonly
+              style="font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #fca5a5; text-align:center; width:100%; background:#fff7f7; color:#b91c1c; border-radius:3px;">
           </td>
           <td style="padding:8px; font-size:0.78rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:150px; max-width:200px; line-height:1.4;">
             ${rawDesc}
@@ -8151,15 +8151,16 @@ async function initializeStoreEntryWorkspaceQueue() {
               — select a match below —
             </div>
             <input type="hidden" class="se-mat-name-${item.gateNumber}" data-idx="${idx}" value="" />
-            ${suggestionHtml}
-          </td>
-          <td style="padding:6px; width:60px; text-align:center; vertical-align:top; padding-top:10px;">
-            <div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Type</div>
-            <div class="se-material-type-display-${item.gateNumber}" data-idx="${idx}"
-              style="font-size:0.72rem; font-weight:700; color:var(--accent); text-align:center; min-height:20px; word-break:break-word; line-height:1.3;">
-              —
-            </div>
             <input type="hidden" class="se-material-type-${item.gateNumber}" data-idx="${idx}" value="" />
+            <div style="position:relative; margin-top:5px;">
+              <input type="text" id="${searchId}"
+                placeholder="Type to search material name..."
+                oninput="handleSENameSearch(this, '${item.gateNumber}', ${idx})"
+                autocomplete="off"
+                style="font-size:0.78rem; padding:4px 6px; border:1px solid var(--border); width:100%; border-radius:3px;" />
+              <div id="${dropId}" style="display:none; position:fixed; background:#fff; border:1px solid var(--border); border-radius:4px; z-index:9999; max-height:180px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,0.15); min-width:240px;"></div>
+            </div>
+            ${suggestionHtml}
           </td>
           <td style="text-align:center; color:#64748b; font-weight:700; vertical-align:top; padding-top:10px; width:60px; font-family:monospace; font-size:0.95rem;">
             ${line.unitType || "NOS"}
@@ -8167,10 +8168,10 @@ async function initializeStoreEntryWorkspaceQueue() {
           <td style="text-align:center; color:#1e293b; font-weight:800; vertical-align:top; padding-top:10px; width:70px; font-family:monospace; font-size:1.05rem;">
             ${line.gateQuantity}
           </td>
-          <td style="text-align:center; width:160px; padding:6px; vertical-align:top;">
+          <td style="text-align:center; width:110px; padding:6px; vertical-align:top;">
             <input type="number" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}"
               value="${line.gateQuantity}"
-              style="width:100%; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:6px; font-size:1rem; border-radius:3px;">
+              style="width:100%; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:5px; font-size:0.95rem; border-radius:3px;">
           </td>
           <td style="padding:6px; min-width:160px; vertical-align:top;">
             <input type="text" class="se-damage-desc-${item.gateNumber}" data-idx="${idx}"
@@ -8214,20 +8215,26 @@ async function initializeStoreEntryWorkspaceQueue() {
             <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:1100px; border-collapse:collapse;">
               <thead>
                 <tr style="background:#f8fafc;">
-                  <th style="width:130px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
+                  <th style="width:140px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code Number</th>
                   <th style="min-width:150px; max-width:200px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Description</th>
                   <th style="min-width:280px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name *</th>
-                  <th style="width:60px; text-align:center; font-size:0.72rem; padding:8px 6px;">Type</th>
                   <th style="width:60px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit</th>
                   <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Invoice Qty</th>
-                  <th style="width:160px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Received Qty *</th>
+                  <th style="width:110px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Received Qty *</th>
                   <th style="min-width:160px; text-align:left; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Reason for Short Supply</th>
                 </tr>
               </thead>
               <tbody>${trs}</tbody>
             </table>
           </div>
-          <div style="display:flex; justify-content:flex-end;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:16px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <label style="font-size:0.78rem; font-weight:700; color:var(--text); white-space:nowrap;">Store Person *</label>
+              <select class="se-store-person-${item.gateNumber}"
+                style="padding:7px 10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); min-width:200px;">
+                <option value="">— Select Store Person —</option>
+              </select>
+            </div>
             <button class="nav-btn-styled" style="background:var(--accent);" 
               onclick="commitStoreEntryVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">
               Verify & Generate Raw Materials Store Entry
@@ -8235,6 +8242,23 @@ async function initializeStoreEntryWorkspaceQueue() {
           </div>
         </div>`;
       feed.appendChild(card);
+
+      // Populate Store Person dropdown for this card
+      try {
+        const spRes  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"getStoreOperatorsList", sessionToken: localStorage.getItem("sessionToken") }) });
+        const spData = await spRes.json();
+        const storePeople = (spData.fullPersonnelDataRecordsTree || []).filter(p =>
+          p.departmentsList.some(d => ["store","stores"].includes(d.toLowerCase().trim()))
+        );
+        const spDrop = card.querySelector(`.se-store-person-${item.gateNumber}`);
+        if (spDrop) {
+          storePeople.forEach(p => {
+            const opt = document.createElement("option");
+            opt.value = p.fullName; opt.textContent = p.fullName;
+            spDrop.appendChild(opt);
+          });
+        }
+      } catch(spErr) { console.warn("Store person load error:", spErr); }
     });
   } catch(e) { feed.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
 }
@@ -8276,8 +8300,16 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
     if (!val) itemCodeMissing = true;
   });
 
+  const spDrop = document.querySelector(`.se-store-person-${gateNum}`);
+  const storePerson = spDrop ? spDrop.value.trim() : "";
+  if (!storePerson) {
+    alert("Store Person is required.");
+    btn.disabled = false; btn.textContent = "Verify & Generate Raw Materials Store Entry"; return;
+  }
+  itemData.storePerson = storePerson;
+
   if (itemCodeMissing || materialTypeMissing) {
-    alert("Compulsory Field Missing: Every line item must have a product selected from the ItemCodeNumbers suggestions. If no match exists, go to Add / Check Item Code Number in Design Department first.");
+    alert("Every line item must have a material selected. If no match exists, create the Item Code first in Design Department.");
     btn.disabled = false;
     btn.textContent = "Verify & Generate Raw Materials Store Entry";
     return;
@@ -9621,6 +9653,53 @@ async function submitNewItemCodeNumber() {
   }
 }
 
+function handleSENameSearch(inputEl, gateNum, idx) {
+  const query   = inputEl.value.trim().toLowerCase();
+  const dropId  = `se-drop-${gateNum}-${idx}`;
+  const dropdown = document.getElementById(dropId);
+  const catalog  = window.itemCodeCatalogCache || [];
+  if (!dropdown) return;
+
+  const rect = inputEl.getBoundingClientRect();
+  dropdown.style.top   = (rect.bottom + 2) + "px";
+  dropdown.style.left  = rect.left + "px";
+  dropdown.style.width = rect.width + "px";
+
+  if (query.length < 2) { dropdown.style.display = "none"; return; }
+  const matches = catalog.filter(c => (c.productName || "").toLowerCase().includes(query)).slice(0, 10);
+  if (matches.length === 0) {
+    const createUrl = window.location.pathname + "?module=design-itemcode";
+    dropdown.innerHTML = `<div style="padding:8px 10px; font-size:0.78rem; color:var(--muted); display:flex; justify-content:space-between; align-items:center;">
+      <span>No match found</span>
+      <a href="${createUrl}" target="_blank" style="color:var(--brand); font-weight:700; font-size:0.75rem;">+ Create Item Code →</a>
+    </div>`;
+    dropdown.style.display = "block"; return;
+  }
+  dropdown.innerHTML = matches.map(c => `
+    <div onclick="selectSENameMatch('${gateNum}', ${idx}, '${c.itemCode}', '${c.productName.replace(/'/g,"\\'")}', '${c.typeOfMaterial || ""}')"
+      style="padding:7px 10px; cursor:pointer; font-size:0.78rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;"
+      onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
+      <span style="font-weight:600;">${c.productName}</span>
+      <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px;">${c.itemCode}</span>
+    </div>`).join("");
+  dropdown.style.display = "block";
+}
+
+function selectSENameMatch(gateNum, idx, itemCode, productName, typeOfMaterial) {
+  const dropdown = document.getElementById(`se-drop-${gateNum}-${idx}`);
+  const searchInput = document.getElementById(`se-search-${gateNum}-${idx}`);
+  selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, typeOfMaterial, null);
+  if (searchInput) searchInput.value = productName;
+  if (dropdown)    dropdown.style.display = "none";
+}
+
+// Close SE dropdowns on outside click
+document.addEventListener("click", function(e) {
+  if (!e.target.id || !e.target.id.startsWith("se-search-")) {
+    document.querySelectorAll("[id^='se-drop-']").forEach(d => d.style.display = "none");
+  }
+});
+
 function selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, typeOfMaterial, clickedEl) {
   const codeInput   = document.querySelector(`.se-item-code-${gateNum}[data-idx="${idx}"]`);
   const nameInput   = document.querySelector(`.se-mat-name-${gateNum}[data-idx="${idx}"]`);
@@ -9628,7 +9707,13 @@ function selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, type
   const nameDisplay = document.querySelector(`.se-mat-name-display-${gateNum}[data-idx="${idx}"]`);
   const typeDisplay = document.querySelector(`.se-material-type-display-${gateNum}[data-idx="${idx}"]`);
 
-  if (codeInput) codeInput.value = itemCode;
+  if (codeInput) {
+    codeInput.value = itemCode;
+    codeInput.placeholder = "";
+    codeInput.style.border = "1.5px solid #86efac";
+    codeInput.style.background = "#f0fdf4";
+    codeInput.style.color = "var(--brand)";
+  }
   if (nameInput) nameInput.value = productName;
   if (typeInput) typeInput.value = typeOfMaterial;
 
