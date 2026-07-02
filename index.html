@@ -13771,7 +13771,6 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
     assignStockCurrentMaterial = data;
     const unassignedQty        = Number(data.unassignedQty) || 0;
     document.getElementById("assign-panel-total-unassigned").textContent = unassignedQty.toFixed(2);
-    document.getElementById("assign-panel-total-check").textContent      = unassignedQty.toFixed(2);
     document.getElementById("assign-panel-remainder").textContent        = unassignedQty.toFixed(2);
     document.getElementById("assign-panel-total-assigning").textContent  = "0";
 
