@@ -13603,8 +13603,13 @@ async function initializeAssignCurrentStockPanel() {
   document.getElementById("assign-stock-grn-zone").style.display          = "block";
   document.getElementById("assign-stock-unassigned-zone").style.display   = "none";
 
-  await loadAssignStockPersonnel();
-  await loadAssignStockGRNQueue();
+  // Show spinner immediately before any async calls
+  document.getElementById("assign-stock-grn-feed").innerHTML = `<div style="text-align:center; padding:30px; color:var(--brand); font-weight:600;">
+    <div class="spinner" style="display:inline-block; width:18px; height:18px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:10px; vertical-align:middle;"></div>
+    Loading Recently Completed GRNs...
+  </div>`;
+
+  await Promise.all([loadAssignStockPersonnel(), loadAssignStockGRNQueue()]);
 }
 
 async function loadAssignStockPersonnel() {
@@ -13711,10 +13716,7 @@ async function loadAssignStockUnassignedMaterials() {
 function renderAssignStockUnassignedList(materials) {
   const zone = document.getElementById("assign-stock-unassigned-results");
   if (materials.length === 0) {
-    zone.innerHTML = `<div style="text-align:center; padding:30px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted);">
-      <div style="font-size:2rem; margin-bottom:8px;">✅</div>
-      <div style="font-weight:700; color:var(--accent);">No unassigned materials found.</div>
-    </div>`;
+    zone.innerHTML = "";
     return;
   }
   zone.innerHTML = "";
@@ -13848,12 +13850,31 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
 
     if (unassignedQty === 0) {
       document.getElementById("assign-panel-targets-table-wrapper").style.display = "none";
-      document.getElementById("assign-panel-no-targets").style.display = "block";
+      document.getElementById("assign-panel-no-targets").style.display    = "block";
       document.getElementById("assign-panel-no-targets").style.background = "#f0fdf4";
-      document.getElementById("assign-panel-no-targets").style.borderColor = "#86efac";
-      document.getElementById("assign-panel-no-targets").style.color = "#15803d";
-      document.getElementById("assign-panel-no-targets").textContent = "✅ All current stock for this material is already assigned to BOQs. No unassigned quantity remaining.";
+      document.getElementById("assign-panel-no-targets").style.borderColor= "#86efac";
+      document.getElementById("assign-panel-no-targets").style.color      = "#15803d";
+      document.getElementById("assign-panel-no-targets").textContent      = "✅ All current stock for this material is already assigned to BOQs. No unassigned quantity remaining.";
+      // Hide totals bar, assigned by, and save button
+      const panel = document.getElementById("assign-stock-assignment-panel");
+      if (panel) {
+        const totalsBar  = panel.querySelector("[style*='TOTAL BEING ASSIGNED']")
+                        || panel.querySelector("div[style*='highlight-bg']");
+        const bottomRow  = document.getElementById("assign-panel-submit-btn")?.closest("div[style*='grid']")
+                        || document.getElementById("assign-panel-submit-btn")?.parentElement?.parentElement;
+        if (totalsBar)  totalsBar.style.display  = "none";
+        if (bottomRow)  bottomRow.style.display  = "none";
+      }
       return;
+    }
+
+    // Restore visibility when unassigned > 0
+    const panel = document.getElementById("assign-stock-assignment-panel");
+    if (panel) {
+      const totalsBar = panel.querySelector("[style*='highlight-bg']");
+      const bottomRow = document.getElementById("assign-panel-submit-btn")?.parentElement?.parentElement;
+      if (totalsBar) totalsBar.style.display = "";
+      if (bottomRow) bottomRow.style.display = "";
     }
 
     // BOQ targets
