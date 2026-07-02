@@ -1412,7 +1412,7 @@
             <div class="dd-stat-label">Total Authorized BOQ Value</div>
             <div class="dd-stat-val" id="dd-s-value" style="font-size:1.05rem; color:var(--brand);">—</div>
           </div>
-          <div class="dd-card" style="padding:8px 10px;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
             <div class="dd-card-title">BOQ Value by Department</div>
             <table style="width:100%; border-collapse:collapse; font-size:0.74rem;">
               <thead><tr style="color:var(--muted); font-size:0.67rem;">
@@ -1423,11 +1423,11 @@
               <tbody id="dd-dept-tbody"></tbody>
             </table>
           </div>
-          <div class="dd-card" style="padding:8px 10px;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
             <div class="dd-card-title">BOQs by Department</div>
             <canvas id="dd-chart-dept" style="max-height:90px;"></canvas>
           </div>
-          <div class="dd-card" style="padding:8px 10px;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
             <div class="dd-card-title">Version Distribution</div>
             <canvas id="dd-chart-version" style="max-height:90px;"></canvas>
           </div>
@@ -6200,7 +6200,7 @@ function startLiveStockPolling() {
     const selectedMaterial = document.getElementById("ticket-item-selection-dropdown")?.value;
     if (!selectedMaterial) { stopLiveStockPolling(); return; }
     await refreshLiveStockForSelectedMaterial();
-  }, 5000); // refresh every 5 seconds
+  }, 8000); // refresh every 8 seconds
 }
 
 function stopLiveStockPolling() {
