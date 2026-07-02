@@ -13726,12 +13726,24 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
     console.error("openAssignStockPanel: anchor not found — " + anchorId);
     return;
   }
+
+  // Remove any previously appended floating panel to avoid stale DOM
+  const existingFloating = anchor.querySelector(".assign-floating-panel");
+  if (existingFloating) existingFloating.remove();
+
   anchor.appendChild(panel);
   panel.scrollIntoView({ behavior:"smooth", block:"start" });
 
-  const _safe = (id) => document.getElementById(id);
+  // Query IDs from the STATIC assign panel HTML (not the floating panel)
+  const staticPanel = document.getElementById("canvas-module-assign-current-stock");
+  if (!staticPanel) {
+    console.error("openAssignStockPanel: canvas-module-assign-current-stock not in DOM");
+    return;
+  }
+  const _safe = (id) => staticPanel.querySelector("#" + id) || document.getElementById(id);
+
   if (!_safe("assign-panel-material-title")) {
-    console.error("openAssignStockPanel: assign panel elements not in DOM after append");
+    console.error("openAssignStockPanel: assign panel IDs not found — module may not be visible");
     return;
   }
 
