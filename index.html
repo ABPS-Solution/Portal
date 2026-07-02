@@ -70,10 +70,10 @@
   .nav-group-title-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: var(--muted); letter-spacing: 0.8px; margin-bottom: 8px; padding-left: 4px; }
 
   /* ── DESIGN DASHBOARD ── */
-  .dd-stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:8px 12px; display:flex; flex-direction:column; gap:2px; }
-  .dd-stat-label { font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
-  .dd-stat-val { font-size:1.45rem; font-weight:800; color:var(--text); line-height:1.2; }
-  .dd-stat-sub { font-size:0.65rem; color:var(--muted); }
+  .dd-stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; display:flex; flex-direction:column; gap:4px; justify-content:center; }
+  .dd-stat-label { font-size:0.7rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .dd-stat-val { font-size:1.7rem; font-weight:800; color:var(--text); line-height:1.2; }
+  .dd-stat-sub { font-size:0.7rem; color:var(--muted); }
   .dd-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); }
   .dd-card-title { font-size:0.7rem; font-weight:800; color:var(--brand); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px; }
   .dd-period-btn { font-size:0.68rem; font-weight:700; padding:3px 8px; border:1.5px solid var(--border); border-radius:4px; cursor:pointer; background:var(--card); color:var(--text); transition:all 0.15s; }
@@ -1370,10 +1370,10 @@
       </div>
 
       <!-- DASHBOARD BODY -->
-      <div id="dd-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
+      <div id="dd-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 96px); box-sizing:border-box;">
 
         <!-- ROW 1: 5 Stat Cards -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex-shrink:0;">
           <div class="dd-stat-card">
             <div class="dd-stat-label">BOQs Created</div>
             <div class="dd-stat-val" id="dd-s-created">—</div>
@@ -1398,7 +1398,7 @@
         </div>
 
         <!-- ROW 2: Value card + By Dept table + Charts -->
-        <div style="display:grid; grid-template-columns:1fr 1.5fr 1fr 1fr; gap:8px;">
+        <div style="display:grid; grid-template-columns:1fr 1.5fr 1fr 1fr; gap:10px; flex-shrink:0;">
           <div class="dd-stat-card">
             <div class="dd-stat-label">Total Authorized BOQ Value</div>
             <div class="dd-stat-val" id="dd-s-value" style="font-size:1.05rem; color:var(--brand);">—</div>
@@ -1425,7 +1425,7 @@
         </div>
 
         <!-- ROW 3: Project Health — full width, paginated -->
-        <div class="dd-card" style="padding:8px 10px; flex:1;">
+        <div class="dd-card" style="padding:12px 14px; flex:1; min-height:0;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
             <div class="dd-card-title" style="margin-bottom:0;">🏗 Project Health Snapshot</div>
             <div style="display:flex; align-items:center; gap:8px;">
@@ -11569,7 +11569,7 @@ let ddChartDept = null, ddChartVersion = null, ddChartTrend = null;
 let ddHealthData = [];
 let ddHealthFiltered = [];
 let ddHealthCurrentPage = 1;
-const DD_HEALTH_PAGE_SIZE = 8;
+const DD_HEALTH_PAGE_SIZE = 5;
 
 function ddFilterHealth() {
   const q = (document.getElementById("dd-health-search")?.value || "").toLowerCase();
@@ -11722,7 +11722,7 @@ function ddRenderDashboard(data) {
 
   // Trend chart removed from layout
   if (ddChartTrend) { ddChartTrend.destroy(); ddChartTrend = null; }
-  
+
   // Chart 2 — BOQs by dept
   if (ddChartDept) ddChartDept.destroy();
   const deptLabels = Object.keys(byDept);
