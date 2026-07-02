@@ -11579,7 +11579,7 @@ function navigateToDesignDashboard() {
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   const c = document.getElementById("canvas-module-design-dashboard");
   if (c) c.style.display = "block";
-  ddLoadDashboard();
+  if (typeof ddLoadDashboard === "function") ddLoadDashboard();
 }
 
 // ═══════════════════════════════════════════════════════
