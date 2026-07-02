@@ -856,7 +856,7 @@
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:10px;">
         <h2 style="color:var(--brand); margin:0;">Assign Current Stock</h2>
         <div style="display:flex; gap:8px;">
-          <button id="assign-mode-grn-btn" onclick="switchAssignStockMode('grn')" class="nav-btn-styled" style="background:var(--brand);">📦 Post-GRN Queue</button>
+          <button id="assign-mode-grn-btn" onclick="switchAssignStockMode('grn')" class="nav-btn-styled" style="background:var(--brand);">📦 Post-GRN List</button>
           <button id="assign-mode-unassigned-btn" onclick="switchAssignStockMode('unassigned')" class="nav-btn-styled" style="background:#718096;">🔍 Unassigned Material</button>
         </div>
       </div>
@@ -951,7 +951,7 @@
             <div id="assign-panel-total-assigning" style="font-size:1.2rem; font-weight:800; color:var(--accent); font-family:monospace;">0</div>
           </div>
           <div style="text-align:center;">
-            <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Remainder in Pool</div>
+            <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Remaining as Unassigned</div>
             <div id="assign-panel-remainder" style="font-size:1.2rem; font-weight:800; color:var(--brand); font-family:monospace;">0</div>
           </div>
           <div style="font-size:1.5rem; color:var(--border); font-weight:300;">=</div>
@@ -2273,7 +2273,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxYYQz38sXlHQxXVjEDWKuPSEtVwPlV8yjWqkLqw-mMG_5QoP7e7lyJxzw1fQBjuqpy/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyE-U2sFf2y8T6nvPxRiIE47qUgaQDFN-p3ZN5jHHO5up1rUeQ5pIr94NozzqZJaPKO/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
