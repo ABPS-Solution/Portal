@@ -952,7 +952,6 @@
         <h2 style="color:var(--brand); margin:0;">Expected Inbounds</h2>
         <button class="nav-btn-styled" onclick="loadExpectedInbounds()" style="background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Refresh</button>
       </div>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Raw Material POs due for delivery. A PO disappears automatically once all its item codes are received via GRN from the same vendor.</p>
       <div id="expected-inbounds-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="expected-inbounds-results" style="display:flex; flex-direction:column; gap:16px;"></div>
     </div>
@@ -2286,7 +2285,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbztUtE3rtqrL-GiWvWOsZs3J8ZyJEg5wyNGuCWuOzh8BI2hljHWuUiDyc01C7i3wpaI/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxl2sZtxhbiq2M-he-gzwhp8I4O_hCED_syPVJlPBw4dbhrgELoNBUd8Lspa6bWA-pU/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -13806,29 +13805,33 @@ function toggleEISection(sectionId) {
 }
 
 function renderExpectedInboundsPOCard(po, scheme) {
-  const receivedPct  = po.totalCount > 0 ? Math.round((po.receivedCount / po.totalCount) * 100) : 0;
-  const allPending   = po.receivedCount === 0;
-  const partial      = po.receivedCount > 0 && po.receivedCount < po.totalCount;
+  const receivedPct   = po.totalCount > 0 ? Math.round((po.receivedCount / po.totalCount) * 100) : 0;
+  const hasPartial    = po.lineItems.some(i => i.partialReceived);
+  const allPending    = po.receivedCount === 0 && !hasPartial;
+  const partial       = po.receivedCount > 0 || hasPartial;
+  const progressColor = allPending ? "#b91c1c" : partial ? "#b45309" : "#15803d";
 
   let daysLabel = "";
   if (po.daysOverdue > 0)     daysLabel = `<span style="font-size:0.72rem; font-weight:800; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:4px;">${po.daysOverdue} day${po.daysOverdue !== 1 ? "s" : ""} overdue</span>`;
   else if (po.daysRemaining > 0) daysLabel = `<span style="font-size:0.72rem; font-weight:800; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:4px;">${po.daysRemaining} day${po.daysRemaining !== 1 ? "s" : ""} remaining</span>`;
   else daysLabel = `<span style="font-size:0.72rem; font-weight:800; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:4px;">Due Today</span>`;
 
-  const progressColor = allPending ? "#b91c1c" : partial ? "#b45309" : "#15803d";
-
-  const lineItemsHtml = po.lineItems.map(item => `
-    <tr style="border-bottom:1px solid #f1f5f9;">
+  const lineItemsHtml = po.lineItems.map(item => {
+    let statusBadge;
+    if (item.fullyReceived) {
+      statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:3px;">✅ Fully Received</span>`;
+    } else if (item.partialReceived) {
+      statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:3px;">⚠ Partial (${item.receivedQty} / ${item.orderedQty})</span>`;
+    } else {
+      statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:3px;">⏳ Pending</span>`;
+    }
+    return `<tr style="border-bottom:1px solid #f1f5f9;">
       <td style="padding:6px 8px; font-family:monospace; font-size:0.75rem; font-weight:700; color:var(--brand); white-space:nowrap;">${item.itemCode || "—"}</td>
       <td style="padding:6px 8px; font-size:0.8rem; font-weight:600; line-height:1.4;">${item.materialName}</td>
       <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; white-space:nowrap;">${item.orderedQty} ${item.unit}</td>
-      <td style="padding:6px 8px; text-align:center;">
-        ${item.received
-          ? `<span style="font-size:0.7rem; font-weight:700; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:3px;">✅ Received</span>`
-          : `<span style="font-size:0.7rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:3px;">⏳ Pending</span>`
-        }
-      </td>
-    </tr>`).join("");
+      <td style="padding:6px 8px; text-align:center;">${statusBadge}</td>
+    </tr>`;
+  }).join("");
 
   return `
     <div style="background:#fff; border:1px solid ${scheme.sectionBorder}; border-radius:var(--radius); overflow:hidden;">
