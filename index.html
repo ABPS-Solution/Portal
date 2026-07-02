@@ -61,15 +61,14 @@
   .menu-card:hover { box-shadow:0 3px 10px rgba(0,0,0,0.1); border-color:var(--dept-accent, var(--brand)); }
   .menu-card.locked { opacity: 0.5; cursor: not-allowed; background: #e9ecef; }
   .menu-card .mc-icon { font-size:1.1rem; flex-shrink:0; }
-  .menu-card .mc-label { font-size:0.82rem; font-weight:700; color:var(--text); text-align:center; white-space:normal; line-height:1.35; display:block; }
+  .menu-card .mc-label { font-size:0.82rem; font-weight:700; color:var(--text); text-align:center; white-space:normal; line-height:1.35; display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
   .dept-block { border-top:1px solid var(--border); padding-top:10px; margin-bottom:10px; }
   .dept-header { display: flex; align-items: center; gap: 10px; padding: 10px 12px 8px; }
   .dept-bar { width: 4px; height: 20px; border-radius: 2px; flex-shrink: 0; }
   .dept-name { font-size: 1rem; font-weight: 800; color: var(--text); flex: 1; }
   .dept-dash-pill { font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:10px; cursor:pointer; border:none; }
   .dept-header > div[id$="-dashboard-wrapper"] { display:none; }
-  .dept-dash-pill-visible { display:inline-flex !important; align-items:center; }
-  .sec-label { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:var(--muted); margin:8px 0 6px; }
+  .dept-header > div[id$="-dashboard-wrapper"].dept-dash-pill-visible { display:inline-flex; align-items:center; }
   
   /* --- WORKSPACE BLOCK WRAPPERS --- */
   .workspace-panel { padding: 4px 10px; }
@@ -5957,7 +5956,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     const el = document.getElementById(id);
     if (!el) return;
     if (dashMap[id] === true) {
-      el.style.display = "";
+      el.style.removeProperty("display");
       el.classList.add("dept-dash-pill-visible");
     } else {
       el.style.display = "none";
