@@ -427,7 +427,7 @@
     </div>
 
     <div id="canvas-module-store-entry" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 16px;">Raw Materials Store Entry Verification</h2>
+      <h2 style="margin-bottom: 16px;">Raw Materials Store Entry</h2>
       <div id="store-entry-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="store-entry-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>
@@ -6021,7 +6021,7 @@ async function initializeMaterialRequestWorkspace() {
   clearFullBasketDraftState();
   document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
 
-  projectDropdown.innerHTML = '<option value="">Syncing Active Projects...</option>';
+  projectDropdown.innerHTML = '<option value="">Loading Active Projects...</option>';
   itemDropdown.innerHTML = '<option value="">— Select Material —</option>';
   storeStaffDropdown.innerHTML = '<option value="">— Choose Department First —</option>';
 
@@ -8044,7 +8044,7 @@ async function initializeStoreEntryWorkspaceQueue() {
   feed.innerHTML = `
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--brand);">
       <div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
-      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Syncing Store Entry Queue...</span>
+      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading Store Entry Queue...</span>
     </div>`;
   await loadItemCodeCatalogIntoCache();
   try {
@@ -8139,31 +8139,45 @@ async function initializeStoreEntryWorkspaceQueue() {
           suggestionHtml = "";
         }
 
+        // Pre-resolve if item code already exists from gate entry
+        const existingCode = (line.itemCode || "").toString().trim();
+        const catalogHit   = existingCode
+          ? catalog.find(c => (c.itemCode || "").toUpperCase() === existingCode.toUpperCase())
+          : null;
+        const preFilledName = catalogHit ? catalogHit.productName : (line.materialName || "");
+        const preFilledType = catalogHit ? (catalogHit.typeOfMaterial || "") : "";
+        const isPreFilled   = !!existingCode;
+
+        const codeStyle = isPreFilled
+          ? "font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #86efac; text-align:center; width:100%; background:#f0fdf4; color:var(--brand); border-radius:3px;"
+          : "font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #fca5a5; text-align:center; width:100%; background:#fff7f7; color:#b91c1c; border-radius:3px;";
+
         trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:top;">
           <td style="padding:6px; width:140px; vertical-align:middle;">
             <input type="text" class="se-item-code-${item.gateNumber}" data-idx="${idx}"
-              value="" placeholder="Not found"
+              value="${existingCode}" placeholder="Not found"
               readonly
-              style="font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #fca5a5; text-align:center; width:100%; background:#fff7f7; color:#b91c1c; border-radius:3px;">
+              style="${codeStyle}">
           </td>
           <td style="padding:8px; font-size:0.78rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:150px; max-width:200px; line-height:1.4;">
             ${rawDesc}
           </td>
           <td style="padding:6px; min-width:280px;">
             <div class="se-mat-name-display-${item.gateNumber}" data-idx="${idx}"
-              style="display:none; font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; min-height:30px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4; line-height:1.4;">
+              style="${isPreFilled ? 'display:block; font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; min-height:30px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4; line-height:1.4;' : 'display:none; font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; min-height:30px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4; line-height:1.4;'}">
+              ${preFilledName}
             </div>
-            <input type="hidden" class="se-mat-name-${item.gateNumber}" data-idx="${idx}" value="" />
-            <input type="hidden" class="se-material-type-${item.gateNumber}" data-idx="${idx}" value="" />
-            <div style="position:relative; margin-top:0;">
+            <input type="hidden" class="se-mat-name-${item.gateNumber}" data-idx="${idx}" value="${preFilledName}" />
+            <input type="hidden" class="se-material-type-${item.gateNumber}" data-idx="${idx}" value="${preFilledType}" />
+            <div style="position:relative; margin-top:${isPreFilled ? '4px' : '0'};">
               <input type="text" id="${searchId}"
-                placeholder="Type to search material name..."
+                placeholder="${isPreFilled ? 'Search to change...' : 'Type to search material name...'}"
                 oninput="handleSENameSearch(this, '${item.gateNumber}', ${idx})"
                 autocomplete="off"
-                style="font-size:0.78rem; padding:4px 6px; border:1px solid var(--border); width:100%; border-radius:3px;" />
+                style="font-size:0.78rem; padding:4px 6px; border:1px solid var(--border); width:100%; border-radius:3px; ${isPreFilled ? 'display:none;' : ''}" />
               <div id="${dropId}" style="display:none; position:fixed; background:#fff; border:1px solid var(--border); border-radius:4px; z-index:9999; max-height:180px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,0.15); min-width:240px;"></div>
             </div>
-            ${suggestionHtml}
+            ${isPreFilled ? '' : suggestionHtml}
           </td>
           <td style="text-align:center; color:#64748b; font-weight:700; vertical-align:top; padding-top:10px; width:60px; font-family:monospace; font-size:0.95rem;">
             ${line.unitType || "NOS"}
@@ -8329,7 +8343,7 @@ async function initializeStoreGrnWorkspaceQueue() {
   feed.innerHTML = `
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--accent);">
       <div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
-      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Syncing Active GRN Queue...</span>
+      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading Active GRN Queue...</span>
     </div>`;
   try {
     const data = await apFetch({ action: "fetchInwardWorkflowQueueStream", targetStep: "GRN pending" });
@@ -8724,7 +8738,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
     return;
   }
 
-  itemDrop.innerHTML = '<option value="">Syncing Catalog...</option>';
+  itemDrop.innerHTML = '<option value="">Loading Catalog...</option>';
   if (feedbackBanner) feedbackBanner.style.display = "none";
 
   const activeStoreScope = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
