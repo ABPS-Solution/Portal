@@ -41,7 +41,8 @@
   label.field-label { display: block; font-size: .68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin: 8px 0 2px; }
 
   /* --- SECURE AUTHENTICATION CONTAINER WINDOW --- */
-  #auth-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, var(--brand-dk), var(--brand)); }
+  #auth-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; height: 100vh; overflow: hidden; background: linear-gradient(135deg, var(--brand-dk), var(--brand)); }
+  html, body { height: 100%; overflow-x: hidden; scroll-behavior: auto; }
   .auth-card { background: var(--card); width: 100%; max-width: 400px; padding: 25px; border-radius: var(--radius); box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
   .auth-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 25px; }
   
@@ -2426,7 +2427,14 @@ let fgQAInspectionFile = null;
 let jobCardBOQGroups = [];
 let jobCardExisting = {};
 
+// Force scroll to top immediately — before anything renders
+window.scrollTo(0, 0);
+document.documentElement.scrollTop = 0;
+document.body.scrollTop = 0;
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+
 window.onload = async function() {
+  window.scrollTo(0, 0);
   const token          = localStorage.getItem("sessionToken");
   const expires        = localStorage.getItem("sessionExpiry");
   const savedPerms     = localStorage.getItem("userPermissions");
@@ -8242,15 +8250,16 @@ async function initializeStoreEntryWorkspaceQueue() {
           </div>
         </div>`;
       feed.appendChild(card);
+    });
 
-      // Populate Store Person dropdown for this card
-      try {
-        const spRes  = await fetch(GAS_URL, { method:"POST", body: JSON.stringify({ action:"getStoreOperatorsList", sessionToken: localStorage.getItem("sessionToken") }) });
-        const spData = await spRes.json();
-        const storePeople = (spData.fullPersonnelDataRecordsTree || []).filter(p =>
-          p.departmentsList.some(d => ["store","stores"].includes(d.toLowerCase().trim()))
-        );
-        const spDrop = card.querySelector(`.se-store-person-${item.gateNumber}`);
+    // Populate all Store Person dropdowns in one fetch after all cards are rendered
+    try {
+      const spRes    = await apFetch({ action: "getStoreOperatorsList" });
+      const storePeople = (spRes.fullPersonnelDataRecordsTree || []).filter(p =>
+        p.departmentsList.some(d => ["store","stores"].includes(d.toLowerCase().trim()))
+      );
+      data.queue.forEach(item => {
+        const spDrop = feed.querySelector(`.se-store-person-${item.gateNumber}`);
         if (spDrop) {
           storePeople.forEach(p => {
             const opt = document.createElement("option");
@@ -8258,8 +8267,9 @@ async function initializeStoreEntryWorkspaceQueue() {
             spDrop.appendChild(opt);
           });
         }
-      } catch(spErr) { console.warn("Store person load error:", spErr); }
-    });
+      });
+    } catch(spErr) { console.warn("Store person load error:", spErr); }
+
   } catch(e) { feed.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
 }
 
