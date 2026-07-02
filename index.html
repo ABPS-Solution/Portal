@@ -960,7 +960,7 @@
         </div>
 
         <!-- Assigned by + submit -->
-        <div id="assign-panel-bottom-row" style="display:grid; grid-template-columns:1fr auto; gap:14px; align-items:flex-end; border-top:1px solid var(--border); padding-top:14px;">
+        <div id="assign-panel-bottom-row" style="display:grid; grid-template-columns:1fr auto; gap:14px; align-items:end; border-top:1px solid var(--border); padding-top:14px;">
           <div>
             <label class="field-label" style="margin-top:0; color:var(--brand);">Assigned By *</label>
             <select id="assign-panel-assigned-by" style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
@@ -13805,8 +13805,9 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
 
   // In unassigned mode: hide the active row, restore all others
   if (assignStockCurrentMode === "unassigned") {
+    const activeCode = itemCode.toUpperCase();
     document.querySelectorAll("#assign-stock-unassigned-results [data-itemcode]").forEach(r => {
-      r.style.display = r.dataset.itemcode === itemCode ? "none" : "";
+      r.style.display = (r.dataset.itemcode || "").toUpperCase() === activeCode ? "none" : "";
     });
   }
 
