@@ -269,9 +269,9 @@
 
     <div id="dashboard-purchase-department-header-block" style="display: none;">
       <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Purchase Department</h2>
-      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
+      <div class="nav-department-group-wrapper" id="mod-purchase-dashboard-wrapper" style="margin-bottom: 16px; display:none;">
         <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-purchase-dashboard" onclick="navigateToPurchaseDashboard()" style="display:none; background:linear-gradient(135deg,var(--brand-dk),var(--brand)); color:#fff; font-weight:700;">📊 Purchase Dashboard</div>
+          <div class="menu-card" id="mod-purchase-dashboard" onclick="navigateToPurchaseDashboard()" style="background:linear-gradient(135deg,var(--brand-dk),var(--brand)); color:#fff; font-weight:700;">📊 Purchase Dashboard</div>
           <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')">Material List for Purchase</div>
           <div class="menu-card" id="mod-purchase-upload-rm-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-upload-rm-po')">Upload Raw Material Purchase Order</div>
         </div>
@@ -326,9 +326,9 @@
 
     <div id="dashboard-production-department-header-block" style="display: none;">
       <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Production Department</h2>
-      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
+      <div class="nav-department-group-wrapper" id="mod-production-dashboard-wrapper" style="margin-bottom: 16px; display:none;">
         <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-production-dashboard" onclick="navigateToProductionDashboard()" style="display:none; background:linear-gradient(135deg,var(--brand-dk),var(--brand)); color:#fff; font-weight:700;">📊 Production Dashboard</div>
+          <div class="menu-card" id="mod-production-dashboard" onclick="navigateToProductionDashboard()" style="background:linear-gradient(135deg,var(--brand-dk),var(--brand)); color:#fff; font-weight:700;">📊 Production Dashboard</div>
         </div>
       </div>
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
