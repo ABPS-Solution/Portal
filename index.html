@@ -6706,11 +6706,6 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
     resetGateEntryWorkspaceState();
   } else if (targetPanelModuleId === 'store-entry') {
     document.getElementById("canvas-module-store-entry").style.display = "block";
-    document.getElementById("store-entry-queue-cards-feed").innerHTML = `
-      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--brand);">
-        <div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
-        <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading Store Entry Queue...</span>
-      </div>`;
     initializeStoreEntryWorkspaceQueue();
   } else if (targetPanelModuleId === 'store-grn') {
     document.getElementById("canvas-module-store-grn").style.display = "block";
@@ -8045,9 +8040,13 @@ async function commitGateEntryRecordsToBackend() {
 }
 
 async function initializeStoreEntryWorkspaceQueue() {
-  await loadItemCodeCatalogIntoCache();
   const feed = document.getElementById("store-entry-queue-cards-feed");
-  // FORCE WIPE old elements cards footprints instantly
+  feed.innerHTML = `
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--brand);">
+      <div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Syncing Store Entry Queue...</span>
+    </div>`;
+  await loadItemCodeCatalogIntoCache();
   try {
     const data = await apFetch({ action: "fetchInwardWorkflowQueueStream", targetStep: "STORE pending" });
     if (!data.success || data.queue.length === 0) {
@@ -8231,14 +8230,8 @@ async function initializeStoreEntryWorkspaceQueue() {
               <tbody>${trs}</tbody>
             </table>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:16px;">
-            <div style="display:flex; align-items:center; gap:10px;">
-              <label style="font-size:0.78rem; font-weight:700; color:var(--text); white-space:nowrap;">Store Person *</label>
-              <select class="se-store-person-${item.gateNumber}"
-                style="padding:7px 10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); min-width:200px;">
-                <option value="">— Select Store Person —</option>
-              </select>
-            </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+            <span style="font-size:0.78rem; color:var(--muted);">Store Person: <strong style="color:var(--text);">${appActiveOperatorIdentityString || "Current User"}</strong></span>
             <button class="nav-btn-styled" style="background:var(--accent);" 
               onclick="commitStoreEntryVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">
               Verify & Generate Raw Materials Store Entry
@@ -8247,24 +8240,6 @@ async function initializeStoreEntryWorkspaceQueue() {
         </div>`;
       feed.appendChild(card);
     });
-
-    // Populate all Store Person dropdowns in one fetch after all cards are rendered
-    try {
-      const spRes    = await apFetch({ action: "getStoreOperatorsList" });
-      const storePeople = (spRes.fullPersonnelDataRecordsTree || []).filter(p =>
-        p.departmentsList.some(d => ["store","stores"].includes(d.toLowerCase().trim()))
-      );
-      data.queue.forEach(item => {
-        const spDrop = feed.querySelector(`.se-store-person-${item.gateNumber}`);
-        if (spDrop) {
-          storePeople.forEach(p => {
-            const opt = document.createElement("option");
-            opt.value = p.fullName; opt.textContent = p.fullName;
-            spDrop.appendChild(opt);
-          });
-        }
-      });
-    } catch(spErr) { console.warn("Store person load error:", spErr); }
 
   } catch(e) { feed.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
 }
@@ -8306,13 +8281,7 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
     if (!val) itemCodeMissing = true;
   });
 
-  const spDrop = document.querySelector(`.se-store-person-${gateNum}`);
-  const storePerson = spDrop ? spDrop.value.trim() : "";
-  if (!storePerson) {
-    alert("Store Person is required.");
-    btn.disabled = false; btn.textContent = "Verify & Generate Raw Materials Store Entry"; return;
-  }
-  itemData.storePerson = storePerson;
+  itemData.storePerson = appActiveOperatorIdentityString || "";
 
   if (itemCodeMissing || materialTypeMissing) {
     alert("Every line item must have a material selected. If no match exists, create the Item Code first in Design Department.");
@@ -8472,7 +8441,7 @@ async function initializeStoreGrnWorkspaceQueue() {
                 <th style="min-width:80px; width:80px; text-align:right; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Rate/<br/>Unit (₹)</th>
                 <th style="min-width:42px; width:42px; text-align:center; white-space:nowrap; padding:8px 4px; font-size:0.72rem;">GST<br/>%</th>
                 <th style="min-width:85px; width:85px; text-align:right; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Basic<br/>Amt (₹)</th>
-                <th style="min-width:85px; width:85px; text-align:right; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Incl<br/>GST (₹)</th>
+                <th style="min-width:85px; width:85px; text-align:right; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Including<br/>GST (₹)</th>
                 <th style="min-width:140px; width:140px; text-align:left; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Rejection Details</th>
                 <th style="min-width:155px; width:155px; text-align:left; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Action for Rejected</th>
               </tr>
