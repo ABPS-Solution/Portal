@@ -701,20 +701,43 @@
         <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-bottom:16px;">
           <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:12px; letter-spacing:0.5px;">Quality Assurance</div>
 
+          <!-- Production uploads -->
+          <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:#7c3aed; letter-spacing:0.5px; margin-bottom:8px;">Production Documents</div>
+          <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Job Card Sheet * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="fg-add-jobcard-sheet-dropzone" onclick="document.getElementById('fg-add-jobcard-sheet-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Job Card Sheet
+              </div>
+              <input type="file" id="fg-add-jobcard-sheet-input" hidden onchange="handleFGFileSelection(this, 'jobCardSheet')" />
+            </div>
+          </div>
+
+          <!-- QA uploads -->
+          <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:#0056b3; letter-spacing:0.5px; margin-bottom:8px;">Quality Assurance Documents</div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
-              <label class="field-label" style="margin-top:0;">Test Certificate</label>
+              <label class="field-label" style="margin-top:0;">Test Certificate * <span style="color:#b91c1c;">(required)</span></label>
               <div class="card-box" id="fg-add-test-cert-dropzone" onclick="document.getElementById('fg-add-test-cert-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Test Certificate
               </div>
-              <input type="file" id="fg-add-test-cert-input" hidden onchange="handleFGQAFileSelection(this, 'testCert')" />
+              <input type="file" id="fg-add-test-cert-input" hidden onchange="handleFGFileSelection(this, 'testCert')" />
             </div>
             <div>
-              <label class="field-label" style="margin-top:0;">Inspection Clearance</label>
+              <label class="field-label" style="margin-top:0;">In Process Inspection Sheet * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="fg-add-inprocess-dropzone" onclick="document.getElementById('fg-add-inprocess-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach In Process Inspection Sheet
+              </div>
+              <input type="file" id="fg-add-inprocess-input" hidden onchange="handleFGFileSelection(this, 'inProcessInspection')" />
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Inspection Clearance * <span style="color:#b91c1c;">(required)</span></label>
               <div class="card-box" id="fg-add-inspection-dropzone" onclick="document.getElementById('fg-add-inspection-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Inspection Clearance
               </div>
-              <input type="file" id="fg-add-inspection-input" hidden onchange="handleFGQAFileSelection(this, 'inspectionClearance')" />
+              <input type="file" id="fg-add-inspection-input" hidden onchange="handleFGFileSelection(this, 'inspectionClearance')" />
             </div>
           </div>
 
@@ -2286,7 +2309,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwq5syNhvyiW_B1HLYCknJ75jgPTSkb0S583p_msJ8fd9CU4qwnIuGnifaRyw2UODM0/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxD-gs_OSeJhx2TGx4GxyibtSqE9S8fnelxXslUmVjS4HwzenQTpxh2qxPIp1Vvxvvy/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -2397,8 +2420,10 @@ let uboqMaterialRows = [];
 let uboqCurrentDraft = null;
 let uploadDrawingsSelectedFile = null;
 
-let fgQATestCertFile = null;
-let fgQAInspectionFile = null;
+let fgJobCardSheetFile    = null;
+let fgQATestCertFile      = null;
+let fgInProcessInspFile   = null;
+let fgQAInspectionFile    = null;
 
 let jobCardBOQGroups = [];
 let jobCardExisting = {};
@@ -7147,7 +7172,7 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
       </div>
       <div style="display:flex; justify-content:flex-end; gap:8px;">
         <button class="nav-btn-styled" id="btn-reject-${ticket.ticketId}" style="background:#e53e3e; padding:6px 12px; font-size:0.75rem;" onclick="executeStoreManagerTicketActionDecision('${ticket.ticketId}', 'REJECT')">Reject</button>
-        <button class="nav-btn-styled" id="btn-approve-${ticket.ticketId}" style="background:var(--accent); padding:6px 14px; font-size:0.78rem; font-weight:700;" onclick="executeStoreManagerTicketActionDecision('${ticket.ticketId}', 'APPROVE')">
+          <button class="nav-btn-styled" id="btn-approve-${ticket.ticketId}" style="background:var(--accent); padding:6px 14px; font-size:0.78rem; font-weight:700;" onclick="checkCoverageAndApprove('${ticket.ticketId}', '${ticket.projectId}', this)">
           ${isBoqInc ? 'Approve Allocation Overwrite' : 'Approve Action'}
         </button>
       </div>
@@ -7313,6 +7338,175 @@ function executeClientSideStoreTicketFilterSearch() {
  * 3. EXECUTE RELEASE DISPATCH ACTION CONTROL LOOP (UPDATED: CLICK ANIMATIONS ADDED)
  * Directly handles instant button transforms, text state loaders, and interface locking keys.
  */
+async function checkCoverageAndApprove(ticketId, projectId, btn) {
+  const rejectBtn = document.getElementById(`btn-reject-${ticketId}`);
+  btn.disabled = true;
+  if (rejectBtn) rejectBtn.disabled = true;
+  btn.innerHTML = `<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Checking stock...`;
+
+  try {
+    const data = await apFetch({ action: "checkStockCoverageForTicket", ticketId });
+
+    if (!data.success) {
+      btn.disabled = false; if (rejectBtn) rejectBtn.disabled = false;
+      btn.innerHTML = `<span>Approve & Release Items</span>`;
+      return alert("Coverage check failed: " + data.error);
+    }
+
+    if (!data.hasShortfall) {
+      // No shortfall — go straight to standard approve
+      btn.disabled = false; if (rejectBtn) rejectBtn.disabled = false;
+      btn.innerHTML = `<span>Approve & Release Items</span>`;
+      executeStoreManagerTicketActionDecision(ticketId, "APPROVE");
+      return;
+    }
+
+    // Has shortfall — restore button and show modal
+    btn.disabled = false; if (rejectBtn) rejectBtn.disabled = false;
+    btn.innerHTML = `<span>Approve & Release Items</span>`;
+    showShortfallResolutionModal(ticketId, projectId, data.coverageReport);
+
+  } catch(e) {
+    btn.disabled = false; if (rejectBtn) rejectBtn.disabled = false;
+    btn.innerHTML = `<span>Approve & Release Items</span>`;
+    alert("Network error: " + e.message);
+  }
+}
+
+function showShortfallResolutionModal(ticketId, projectId, coverageReport) {
+  const shortfallItems = coverageReport.filter(r => r.shortfall > 0);
+
+  const itemsHtml = shortfallItems.map(item => {
+    const reallOpts = (item.reallocationOptions || []).length > 0
+      ? (item.reallocationOptions || []).map(opt => `
+          <label style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:0.82rem;flex-wrap:wrap;">
+            <input type="checkbox" class="realloc-check"
+              data-itemcode="${item.itemCode}" data-material="${(item.materialName||'').replace(/"/g,'&quot;')}"
+              data-donor="${opt.boqId}" data-surplus="${opt.surplusQty}"
+              onchange="updateReallocQtyInput(this)" style="width:auto;flex-shrink:0;" />
+            <span>From <strong>${opt.boqId}</strong> — surplus: <strong style="color:#15803d;">${opt.surplusQty}</strong></span>
+            <input type="number" class="realloc-qty-input"
+              data-itemcode="${item.itemCode}" data-donor="${opt.boqId}"
+              min="0" max="${Math.min(opt.surplusQty, item.shortfall)}" value="0"
+              style="width:70px;padding:3px 6px;font-weight:700;border:1.5px solid var(--brand);border-radius:3px;flex-shrink:0;" />
+          </label>`).join("")
+      : `<div style="font-size:0.8rem;color:var(--muted);font-style:italic;">No other BOQs have surplus assigned stock for this material.</div>`;
+
+    return `
+      <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px;">
+        <div style="font-family:monospace;font-size:0.78rem;color:var(--brand);font-weight:700;">${item.itemCode}</div>
+        <div style="font-weight:700;font-size:0.88rem;margin-bottom:8px;">${item.materialName}</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">
+          <div style="background:#f0fdf4;padding:6px;border-radius:4px;text-align:center;">
+            <div style="color:var(--muted);font-size:0.62rem;font-weight:700;text-transform:uppercase;">Requested</div>
+            <div style="font-weight:800;color:var(--text);">${item.requestedQty}</div>
+          </div>
+          <div style="background:#f0fdf4;padding:6px;border-radius:4px;text-align:center;">
+            <div style="color:var(--muted);font-size:0.62rem;font-weight:700;text-transform:uppercase;">Assigned Remaining</div>
+            <div style="font-weight:800;color:#15803d;">${item.remainingAssigned}</div>
+          </div>
+          <div style="background:#f0f7ff;padding:6px;border-radius:4px;text-align:center;">
+            <div style="color:var(--muted);font-size:0.62rem;font-weight:700;text-transform:uppercase;">Pool Available</div>
+            <div style="font-weight:800;color:var(--brand);">${item.unassignedPool}</div>
+          </div>
+          <div style="background:#fff5f5;padding:6px;border-radius:4px;text-align:center;">
+            <div style="color:var(--muted);font-size:0.62rem;font-weight:700;text-transform:uppercase;">Shortfall</div>
+            <div style="font-weight:800;color:#b91c1c;">${item.shortfall}</div>
+          </div>
+        </div>
+        <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;color:var(--brand);margin-bottom:6px;letter-spacing:0.5px;">Option B — Reallocate from another BOQ:</div>
+        ${reallOpts}
+      </div>`;
+  }).join("");
+
+  const existing = document.getElementById("shortfall-modal-overlay");
+  if (existing) existing.remove();
+
+  const modal = document.createElement("div");
+  modal.id = "shortfall-modal-overlay";
+  modal.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;";
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:var(--radius);padding:24px;max-width:700px;width:94%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;border-bottom:2px solid var(--border);padding-bottom:12px;">
+        <div>
+          <div style="font-size:1rem;font-weight:800;color:#b91c1c;">⚠️ Stock Shortfall Detected</div>
+          <div style="font-size:0.8rem;color:var(--muted);margin-top:3px;">Ticket: <strong>${ticketId}</strong> · Project: <strong>${projectId}</strong></div>
+        </div>
+      </div>
+      <div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:var(--radius);padding:10px 12px;margin-bottom:14px;font-size:0.82rem;color:#92400e;">
+        <strong>Option A — Partial Release:</strong> Release whatever stock is available now. The shortfall is logged as a backorder and flagged on the next GRN.<br/>
+        <strong>Option B — Reallocate:</strong> Transfer surplus assigned stock from another BOQ to cover this shortfall, then do a full release.
+      </div>
+      ${itemsHtml}
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;border-top:1px solid var(--border);padding-top:14px;flex-wrap:wrap;">
+        <button class="nav-btn-styled" style="background:#718096;" onclick="document.getElementById('shortfall-modal-overlay').remove()">Cancel</button>
+        <button class="nav-btn-styled" style="background:#b45309;" onclick="executeShortfallResolution('${ticketId}', '${projectId}', 'partial')">⚡ Option A — Partial Release</button>
+        <button class="nav-btn-styled" style="background:var(--brand);" onclick="executeShortfallResolution('${ticketId}', '${projectId}', 'reallocate')">🔄 Option B — Reallocate & Release</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function updateReallocQtyInput(checkbox) {
+  const qtyInput = document.querySelector(`.realloc-qty-input[data-itemcode="${checkbox.dataset.itemcode}"][data-donor="${checkbox.dataset.donor}"]`);
+  if (qtyInput) qtyInput.value = checkbox.checked ? Math.min(parseFloat(checkbox.dataset.surplus) || 0, parseFloat(qtyInput.max) || 0) : 0;
+}
+
+async function executeShortfallResolution(ticketId, projectId, resolutionType) {
+  const overlay = document.getElementById("shortfall-modal-overlay");
+
+  let reallocations = [];
+  if (resolutionType === "reallocate") {
+    document.querySelectorAll(".realloc-check:checked").forEach(cb => {
+      const qtyEl = document.querySelector(`.realloc-qty-input[data-itemcode="${cb.dataset.itemcode}"][data-donor="${cb.dataset.donor}"]`);
+      const qty   = parseFloat(qtyEl?.value) || 0;
+      if (qty > 0) reallocations.push({
+        itemCode:          cb.dataset.itemcode,
+        materialName:      cb.dataset.material,
+        donorBoqId:        cb.dataset.donor,
+        recipientProjectId: projectId,
+        transferQty:       qty
+      });
+    });
+    if (reallocations.length === 0) return alert("Select at least one reallocation source and enter a quantity greater than 0.");
+  }
+
+  if (overlay) overlay.remove();
+
+  const feedbackBanner = document.getElementById("store-approvals-runtime-inline-feedback-banner");
+
+  try {
+    const data = await apFetch({
+      action:          "resolveTicketShortfall",
+      ticketId,
+      resolutionType,
+      approverName:    appActiveOperatorIdentityString,
+      reallocations
+    });
+
+    if (data.success) {
+      if (feedbackBanner) {
+        feedbackBanner.style.cssText = "display:block;background:#dcfce7;border-left:4px solid #15803d;color:#15803d;padding:12px;margin-bottom:12px;font-weight:700;";
+        feedbackBanner.textContent = resolutionType === "partial"
+          ? "✅ Partial release completed. Backorder logged for shortfall quantities — will surface on next GRN."
+          : "✅ Stock reallocated and ticket fully released.";
+      }
+      const card = document.getElementById(`store-pending-ticket-card-node-${ticketId}`);
+      if (card) card.remove();
+      setTimeout(() => {
+        if (feedbackBanner) feedbackBanner.style.display = "none";
+        if (document.getElementById("store-manager-approvals-queue-cards-feed")?.children.length === 0) {
+          initializeStoreManagerApprovalsWorkspace();
+        }
+      }, 3500);
+    } else {
+      alert("Resolution failed: " + (data.error || "Unknown error."));
+    }
+  } catch(e) {
+    alert("Network error: " + e.message);
+  }
+}
+
 async function executeStoreManagerTicketActionDecision(ticketId, decisionString) {
   const feedbackBanner = document.getElementById("store-approvals-runtime-inline-feedback-banner");
   const cardNode = document.getElementById(`store-pending-ticket-card-node-${ticketId}`);
@@ -10206,12 +10400,15 @@ function renderEBOQForm(containerId) {
           <label class="field-label" style="margin-top:0;">${eboqMode === "authorize-update" ? "Product Rating (locked)" : "Product Rating *"}</label>
           <input type="text" id="eboq-product-rating" value="${draft.productRating}" ${eboqMode === "authorize-update" ? 'readonly' : 'oninput="updateEBOQId()"'} style="padding:8px; ${eboqMode === "authorize-update" ? 'background:#f1f5f9; color:var(--muted); cursor:not-allowed;' : 'border:1.5px solid var(--border);'} border-radius:var(--radius);" /></div>
         <div>
-          <label class="field-label" style="margin-top:0;">Department *</label>
-          <select id="eboq-department" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-            <option value="Reactor" ${draft.department==="Reactor"?"selected":""}>Reactor</option>
-            <option value="Capacitor" ${draft.department==="Capacitor"?"selected":""}>Capacitor</option>
-            <option value="Panel" ${draft.department==="Panel"?"selected":""}>Panel</option>
-          </select>
+          <label class="field-label" style="margin-top:0;">Department ${eboqMode === "authorize-update" ? "(locked)" : "*"}</label>
+          ${eboqMode === "authorize-update"
+            ? `<input type="text" id="eboq-department" value="${draft.department}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />`
+            : `<select id="eboq-department" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+                <option value="Reactor" ${draft.department==="Reactor"?"selected":""}>Reactor</option>
+                <option value="Capacitor" ${draft.department==="Capacitor"?"selected":""}>Capacitor</option>
+                <option value="Panel" ${draft.department==="Panel"?"selected":""}>Panel</option>
+              </select>`
+          }
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
@@ -10657,12 +10854,8 @@ function renderUBOQForm() {
           <input type="text" id="uboq-product-rating" value="${draft.productRating}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
-          <label class="field-label" style="margin-top:0;">Department *</label>
-          <select id="uboq-department" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-            <option value="Reactor"    ${draft.department==="Reactor"   ?"selected":""}>Reactor</option>
-            <option value="Capacitor"  ${draft.department==="Capacitor" ?"selected":""}>Capacitor</option>
-            <option value="Panel"      ${draft.department==="Panel"     ?"selected":""}>Panel</option>
-          </select>
+          <label class="field-label" style="margin-top:0;">Department (locked)</label>
+          <input type="text" id="uboq-department" value="${draft.department}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
@@ -11190,12 +11383,12 @@ function resetFGAddForm() {
   });
   document.getElementById("fg-add-qa-person").value = "";
   document.getElementById("fg-add-qa-done").value = "No";
-  fgQATestCertFile = null;
-  fgQAInspectionFile = null;
-  const certBox = document.getElementById("fg-add-test-cert-dropzone");
-  if (certBox) { certBox.textContent = "📎 Click to attach Test Certificate"; certBox.classList.remove("done"); }
-  const inspBox = document.getElementById("fg-add-inspection-dropzone");
-  if (inspBox) { inspBox.textContent = "📎 Click to attach Inspection Clearance"; inspBox.classList.remove("done"); }
+  fgJobCardSheetFile = null; fgQATestCertFile = null; fgInProcessInspFile = null; fgQAInspectionFile = null;
+  [["fg-add-jobcard-sheet-dropzone","📎 Click to attach Job Card Sheet"],
+   ["fg-add-test-cert-dropzone","📎 Click to attach Test Certificate"],
+   ["fg-add-inprocess-dropzone","📎 Click to attach In Process Inspection Sheet"],
+   ["fg-add-inspection-dropzone","📎 Click to attach Inspection Clearance"]
+  ].forEach(([id, label]) => { const b = document.getElementById(id); if (b) { b.textContent = label; b.classList.remove("done"); } });
   document.getElementById("fg-product-dropdown").style.display = "none";
   document.getElementById("fg-add-feedback").style.display = "none";
   const validationZone = document.getElementById("fg-boq-validation-zone");
@@ -11232,25 +11425,28 @@ async function submitFGAddItem() {
   if (!window.fgBOQValidationPassed) return showBOQBanner("fg-add-feedback", "Material consumption for this Job Card does not match the BOQ. Resolve the mismatch before submitting.", "error");
   if (!qaPersonName) return showBOQBanner("fg-add-feedback", "Q/A Person is required.", "error");
   if (qaDone !== "Yes") return showBOQBanner("fg-add-feedback", "Q/A Done must be set to Yes before this item can be submitted.", "error");
+  if (!fgJobCardSheetFile)  return showBOQBanner("fg-add-feedback", "Job Card Sheet document is required (Production).", "error");
+  if (!fgQATestCertFile)    return showBOQBanner("fg-add-feedback", "Test Certificate is required (Q/A).", "error");
+  if (!fgInProcessInspFile) return showBOQBanner("fg-add-feedback", "In Process Inspection Sheet is required (Q/A).", "error");
+  if (!fgQAInspectionFile)  return showBOQBanner("fg-add-feedback", "Inspection Clearance is required (Q/A).", "error");
 
   btn.disabled = true;
-  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Adding...';
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Uploading documents...';
+
+  async function uploadFGDoc(file, docLabel, jobCardNum) {
+    const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(file); });
+    const fileName = docLabel + " " + jobCardNum;
+    const upData = await apFetch({ action: "uploadProductionJobCardDocument", projectId, customerName, boqId: document.getElementById("fg-add-item-code").value.trim() || "", jobCardNumber: jobCardNum, docLabel, fileName, file: { fileName: fileName + "." + (file.name.split(".").pop() || "pdf"), base64Data: b64, mimeType: file.type || "application/octet-stream" } });
+    return upData.success ? upData.url : "";
+  }
 
   try {
-    let testCertUrl = "";
-    let inspectionClearanceUrl = "";
+    const jobCardSheetUrl    = await uploadFGDoc(fgJobCardSheetFile,    "Job Card Sheet",             jobCard);
+    const testCertUrl        = await uploadFGDoc(fgQATestCertFile,      "Test Certificate",           jobCard);
+    const inProcessInspUrl   = await uploadFGDoc(fgInProcessInspFile,   "In Process Inspection Sheet",jobCard);
+    const inspectionClearanceUrl = await uploadFGDoc(fgQAInspectionFile,"Inspection Clearance",       jobCard);
 
-    if (fgQATestCertFile) {
-      const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(fgQATestCertFile); });
-      const upData = await apFetch({ action:"uploadFinishedGoodsQADocument", projectId, file: { fileName: fgQATestCertFile.name, base64Data: b64, mimeType: fgQATestCertFile.type || "application/octet-stream" } });
-      if (upData.success) testCertUrl = upData.url;
-    }
-
-    if (fgQAInspectionFile) {
-      const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(fgQAInspectionFile); });
-      const upData = await apFetch({ action:"uploadFinishedGoodsQADocument", projectId, file: { fileName: fgQAInspectionFile.name, base64Data: b64, mimeType: fgQAInspectionFile.type || "application/octet-stream" } });
-      if (upData.success) inspectionClearanceUrl = upData.url;
-    }
+    btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Adding to Finished Goods...';
 
     const data = await apFetch({
       action: "addFinishedGoodsItem",
@@ -11259,7 +11455,8 @@ async function submitFGAddItem() {
       productSerialNumber: serialNumber,
       unit, prodResponsible: prodPerson,
       storeIncharge: storePerson, additionalRemarks: remarks,
-      qaPersonName, qaDone, testCertUrl, inspectionClearanceUrl
+      qaPersonName, qaDone,
+      testCertUrl, inspectionClearanceUrl, inProcessInspUrl, jobCardSheetUrl
     });
 
     if (data.success) {
@@ -11478,20 +11675,20 @@ function handleUploadDrawingsFileSelection(input) {
   }
 }
 
-function handleFGQAFileSelection(input, type) {
+function handleFGFileSelection(input, type) {
   const file = input.files[0];
   if (!file) return;
-  if (type === "testCert") {
-    fgQATestCertFile = file;
-    const box = document.getElementById("fg-add-test-cert-dropzone");
-    box.textContent = file.name + " ✅";
-    box.classList.add("done");
-  } else {
-    fgQAInspectionFile = file;
-    const box = document.getElementById("fg-add-inspection-dropzone");
-    box.textContent = file.name + " ✅";
-    box.classList.add("done");
-  }
+  const map = {
+    jobCardSheet:        { varSetter: f => fgJobCardSheetFile  = f, boxId: "fg-add-jobcard-sheet-dropzone" },
+    testCert:            { varSetter: f => fgQATestCertFile    = f, boxId: "fg-add-test-cert-dropzone" },
+    inProcessInspection: { varSetter: f => fgInProcessInspFile = f, boxId: "fg-add-inprocess-dropzone" },
+    inspectionClearance: { varSetter: f => fgQAInspectionFile  = f, boxId: "fg-add-inspection-dropzone" }
+  };
+  const entry = map[type];
+  if (!entry) return;
+  entry.varSetter(file);
+  const box = document.getElementById(entry.boxId);
+  if (box) { box.textContent = "✅ " + file.name; box.classList.add("done"); }
 }
 
 async function submitUploadDrawing() {
