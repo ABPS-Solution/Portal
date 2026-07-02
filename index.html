@@ -862,8 +862,8 @@
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:10px;">
         <h2 style="color:var(--brand); margin:0;">Assign Current Stock</h2>
         <div style="display:flex; gap:8px;">
-          <button id="assign-mode-grn-btn" onclick="switchAssignStockMode('grn')" class="nav-btn-styled" style="background:var(--brand);">📦 Post-GRN List</button>
-          <button id="assign-mode-unassigned-btn" onclick="switchAssignStockMode('unassigned')" class="nav-btn-styled" style="background:#718096;">🔍 Unassigned Material</button>
+          <button id="assign-mode-grn-btn" onclick="switchAssignStockMode('grn')" class="nav-btn-styled" style="background:var(--brand);">Post-GRN List</button>
+          <button id="assign-mode-unassigned-btn" onclick="switchAssignStockMode('unassigned')" class="nav-btn-styled" style="background:#718096;">Unassigned Materials</button>
         </div>
       </div>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Assign received stock to BOQ IDs. Any quantity not assigned stays in the unassigned automatically.</p>
@@ -926,7 +926,7 @@
         <!-- New assignment targets -->
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:8px; letter-spacing:0.5px;">Assign to BOQ IDs</div>
         <div id="assign-panel-no-targets" style="display:none; padding:12px; background:#fffbeb; border:1px solid #f59e0b; border-radius:var(--radius); font-size:0.85rem; color:#b45309; font-weight:600; margin-bottom:12px;">
-          No open PRN BOQs require this material right now. Any quantity stays in the unassigned.
+          No open PRN BOQs require this material right now.
         </div>
         <div id="assign-panel-targets-table-wrapper" style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
           <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:800px;">
@@ -13837,6 +13837,16 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
     document.getElementById("assign-panel-total-unassigned").textContent = unassignedQty.toFixed(2);
     document.getElementById("assign-panel-remainder").textContent        = unassignedQty.toFixed(2);
     document.getElementById("assign-panel-total-assigning").textContent  = "0";
+
+    if (unassignedQty === 0) {
+      document.getElementById("assign-panel-targets-table-wrapper").style.display = "none";
+      document.getElementById("assign-panel-no-targets").style.display = "block";
+      document.getElementById("assign-panel-no-targets").style.background = "#f0fdf4";
+      document.getElementById("assign-panel-no-targets").style.borderColor = "#86efac";
+      document.getElementById("assign-panel-no-targets").style.color = "#15803d";
+      document.getElementById("assign-panel-no-targets").textContent = "✅ All current stock for this material is already assigned to BOQs. No unassigned quantity remaining.";
+      return;
+    }
 
     // BOQ targets
     const targets = data.boqTargets || [];
