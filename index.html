@@ -8785,6 +8785,8 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
 
 function exitDesignWorkspacePanelBackToMenu() {
   document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
+  const dd = document.getElementById("canvas-module-design-dashboard");
+  if (dd) dd.style.display = "none";
   
   // Re-sync visibility rules matrices before showing menu elements
   enforceDynamicModuleRoleGateways(userPermissions);
@@ -11565,24 +11567,6 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
 }
 
 // ═══════════════════════════════════════════════════════
-// DEPARTMENT DASHBOARD NAVIGATION
-// ═══════════════════════════════════════════════════════
-function navigateToMarketingDashboard() {
-  showDashboard();
-  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
-  const c = document.getElementById("canvas-module-marketing-dashboard");
-  if (c) c.style.display = "block";
-}
-
-function navigateToDesignDashboard() {
-  showDashboard();
-  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
-  const c = document.getElementById("canvas-module-design-dashboard");
-  if (c) c.style.display = "block";
-  if (typeof ddLoadDashboard === "function") ddLoadDashboard();
-}
-
-// ═══════════════════════════════════════════════════════
 // DESIGN DASHBOARD ENGINE
 // ═══════════════════════════════════════════════════════
 let ddCurrentPeriod = "today";
@@ -11759,24 +11743,44 @@ function ddRenderDashboard(data) {
   }
 }
 
+function navigateToDesignDashboard() {
+  document.getElementById("dashboard-view").style.display = "none";
+  document.getElementById("module-workspace-container").style.display = "none";
+  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+  const c = document.getElementById("canvas-module-design-dashboard");
+  if (c) c.style.display = "block";
+  if (typeof ddLoadDashboard === "function") ddLoadDashboard();
+}
+
 function navigateToPurchaseDashboard() {
-  showDashboard();
+  document.getElementById("dashboard-view").style.display = "none";
+  document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   const c = document.getElementById("canvas-module-purchase-dashboard");
   if (c) c.style.display = "block";
 }
 
 function navigateToStoreDashboard() {
-  showDashboard();
+  document.getElementById("dashboard-view").style.display = "none";
+  document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   const c = document.getElementById("canvas-module-store-dashboard");
   if (c) c.style.display = "block";
 }
 
 function navigateToProductionDashboard() {
-  showDashboard();
+  document.getElementById("dashboard-view").style.display = "none";
+  document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   const c = document.getElementById("canvas-module-production-dashboard");
+  if (c) c.style.display = "block";
+}
+
+function navigateToMarketingDashboard() {
+  document.getElementById("dashboard-view").style.display = "none";
+  document.getElementById("module-workspace-container").style.display = "none";
+  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+  const c = document.getElementById("canvas-module-marketing-dashboard");
   if (c) c.style.display = "block";
 }
 
