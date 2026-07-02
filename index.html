@@ -340,7 +340,6 @@
         </div>
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-create-job-card" onclick="switchActiveDashboardModule('create-job-card')"><span class="mc-label">Create Job Card Number</span></div>
         <div class="menu-card" id="mod-store-ticket" onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Store Ticket</span></div>
         <div class="menu-card" id="mod-fg-add" onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
       </div>
@@ -1672,41 +1671,6 @@
       <div style="font-size: 3rem; margin-bottom: 16px;">🚧</div>
       <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--brand); margin-bottom: 8px;">Coming Soon</h2>
       <p style="font-size: 0.9rem; color: var(--muted);">This feature is currently under development and will be available soon.</p>
-    </div>
-
-    <div id="workspace-create-job-card" class="workspace-panel" style="display: none; padding: 16px;">
-      <h2 style="margin-bottom:6px; color:var(--brand);">Create Job Card Number</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project ID, then assign Job Card Numbers to each unit of every authorized product.</p>
-      <div id="job-card-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
-        <div>
-          <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
-          <select id="job-card-project" onchange="handleJobCardProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-            <option value="">— Select Project ID —</option>
-          </select>
-        </div>
-        <div>
-          <label class="field-label" style="margin-top:0;">Customer Name</label>
-          <input type="text" id="job-card-customer" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
-        </div>
-      </div>
-
-      <div id="job-card-boq-groups-mount" style="display:none;"></div>
-
-      <div id="job-card-bottom-controls" style="display:none; margin-top:16px;">
-        <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
-          <div>
-            <label class="field-label" style="margin-top:0; color:var(--brand);">Job Card Number Created By *</label>
-            <select id="job-card-created-by" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-              <option value="">— Select Person —</option>
-            </select>
-          </div>
-        </div>
-        <div style="display:flex; justify-content:flex-end;">
-          <button class="nav-btn-styled" id="job-card-submit-btn" onclick="submitJobCardForm()" style="background:var(--accent); padding:8px 24px; font-weight:700;">Save Job Card Numbers</button>
-        </div>
-      </div>
     </div>
     
     <div id="workspace-cardDetails" class="workspace-panel" style="display: none;">
@@ -6830,13 +6794,6 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     document.getElementById("module-workspace-container").style.display = "block";
     document.querySelectorAll("#module-workspace-container .workspace-panel").forEach(p => p.style.display = "none");
     document.getElementById("workspace-coming-soon").style.display = "block";
-  } else if (targetCanvasModuleId === 'create-job-card') {
-    document.getElementById("dashboard-view").style.display = "none";
-    document.getElementById("module-workspace-container").style.display = "block";
-    document.querySelectorAll("#module-workspace-container .workspace-panel").forEach(p => p.style.display = "none");
-    document.getElementById("workspace-create-job-card").style.display = "block";
-    initializeJobCardPanel();
-  }
 }
 
 function exitStoreWorkspacePanelBackToMenu() {
