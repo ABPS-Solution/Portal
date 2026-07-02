@@ -9692,10 +9692,10 @@ function handleSENameSearch(inputEl, gateNum, idx) {
 }
 
 function selectSENameMatch(gateNum, idx, itemCode, productName, typeOfMaterial) {
-  const dropdown = document.getElementById(`se-drop-${gateNum}-${idx}`);
+  const dropdown    = document.getElementById(`se-drop-${gateNum}-${idx}`);
   const searchInput = document.getElementById(`se-search-${gateNum}-${idx}`);
   selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, typeOfMaterial, null);
-  if (searchInput) searchInput.value = productName;
+  if (searchInput) searchInput.style.display = "none";
   if (dropdown)    dropdown.style.display = "none";
 }
 
@@ -9712,6 +9712,10 @@ function selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, type
   const typeInput   = document.querySelector(`.se-material-type-${gateNum}[data-idx="${idx}"]`);
   const nameDisplay = document.querySelector(`.se-mat-name-display-${gateNum}[data-idx="${idx}"]`);
   const typeDisplay = document.querySelector(`.se-material-type-display-${gateNum}[data-idx="${idx}"]`);
+  const searchInput = document.getElementById(`se-search-${gateNum}-${idx}`);
+  const dropdown    = document.getElementById(`se-drop-${gateNum}-${idx}`);
+  if (searchInput) searchInput.style.display = "none";
+  if (dropdown)    dropdown.style.display    = "none";
 
   if (codeInput) {
     codeInput.value = itemCode;
