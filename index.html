@@ -55,10 +55,19 @@
   .logout-btn { background: transparent; border: 1px solid rgba(255,255,255,0.4); color: white; padding: 2px 5px; border-radius: 4px; cursor: pointer; font-size: 0.65rem; margin-top: 1px; text-transform: uppercase; }
   
   /* --- DASHBOARD WRAPPER RESPONSIVE GRID FRAMES --- */
-  .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 16px 12px; }
-  @media(min-width: 768px) { .dashboard-grid { grid-template-columns: repeat(3, 1fr) !important; } }
-  .menu-card { background: var(--card); border: 1.5px solid var(--border); padding: 16px; border-radius: var(--radius); cursor: pointer; font-weight: 700; font-size: 0.95rem; text-align: center; min-height: 56px;}
+  .dashboard-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+  .menu-card { background: var(--card); border: 1.5px solid var(--border); padding: 0 14px; border-radius: 7px; cursor: pointer; font-weight: 700; font-size: 0.88rem; height: 64px; display:flex; align-items:center; gap:10px; box-shadow:0 1px 2px rgba(0,0,0,0.04); transition:box-shadow 0.15s, border-color 0.15s; position:relative; overflow:hidden; }
+  .menu-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--dept-accent, var(--brand)); border-radius:7px 7px 0 0; }
+  .menu-card:hover { box-shadow:0 3px 10px rgba(0,0,0,0.1); border-color:var(--dept-accent, var(--brand)); }
   .menu-card.locked { opacity: 0.5; cursor: not-allowed; background: #e9ecef; }
+  .menu-card .mc-icon { font-size:1.1rem; flex-shrink:0; }
+  .menu-card .mc-label { font-size:0.82rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dept-block { border-top:1px solid var(--border); padding-top:10px; margin-bottom:10px; }
+  .dept-header { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .dept-bar { width:4px; height:26px; border-radius:2px; flex-shrink:0; }
+  .dept-name { font-size:0.92rem; font-weight:800; color:var(--text); }
+  .dept-dash-pill { font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:10px; cursor:pointer; border:none; }
+  .sec-label { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:var(--muted); margin:8px 0 6px; }
   
   /* --- WORKSPACE BLOCK WRAPPERS --- */
   .workspace-panel { padding: 4px 10px; }
@@ -218,153 +227,120 @@
     </div>
   </header>
 
-  <div id="dashboard-view" style="padding: 16px 12px; display: flex; flex-direction: column; gap: 20px;">
-    
-    <div id="dashboard-marketing-department-header-block">
-      <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 16px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Marketing Department</h2>
-      
-      <div class="nav-department-group-wrapper" id="mod-marketing-dashboard-wrapper" style="margin-bottom: 16px; display:none;">
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-marketing-dashboard" onclick="navigateToMarketingDashboard()" style="background:linear-gradient(135deg,var(--brand-dk),var(--brand)); color:#fff; font-weight:700;">📊 Marketing Dashboard</div>
+  <div id="dashboard-view" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 0;">
+
+    <!-- ── MARKETING ──────────────────────────────────────────────────────── -->
+    <div id="dashboard-marketing-department-header-block" class="dept-block" style="--dept-accent:#be185d;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#be185d;"></div>
+        <span class="dept-name">Marketing Department</span>
+        <div id="mod-marketing-dashboard-wrapper" style="display:none;">
+          <button class="dept-dash-pill" id="mod-marketing-dashboard" onclick="navigateToMarketingDashboard()" style="background:#fdf2f8; color:#be185d;">📊 Dashboard</button>
         </div>
       </div>
-
-      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
-        <div class="nav-group-title-label" style="font-size: 0.8rem; color: var(--brand); font-weight: 800; margin-bottom: 8px;">Lead Source</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-card" onclick="navigateToModule('cardDetails')">Enter Visiting Card Details</div>
-          <div class="menu-card" id="mod-email-whatsapp" onclick="navigateToModule('emailLeads')">Leads Received through Email</div>
-        </div>
+      <div class="sec-label">Lead Source</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-card" onclick="navigateToModule('cardDetails')"><span class="mc-icon">🪪</span><span class="mc-label">Enter Visiting Card Details</span></div>
+        <div class="menu-card" id="mod-email-whatsapp" onclick="navigateToModule('emailLeads')"><span class="mc-icon">📧</span><span class="mc-label">Leads Received through Email</span></div>
       </div>
-
-      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
-        <div class="nav-group-title-label" style="font-size: 0.8rem; color: var(--brand); font-weight: 800; margin-bottom: 8px;">Upload Documents</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-                    <div class="menu-card" id="mod-purchase-order" onclick="navigateToModule('purchaseOrder')">Upload Purchase Order</div>
-          <div class="menu-card" id="mod-dispatch-bill" onclick="navigateToModule('dispatchBill')">Upload Dispatch Bill</div>
-          <div class="menu-card" id="mod-commissioning-report" onclick="navigateToModule('commissioningReport')">Upload Commissioning Report</div>
-        </div>
+      <div class="sec-label">Upload Documents</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-purchase-order" onclick="navigateToModule('purchaseOrder')"><span class="mc-icon">📄</span><span class="mc-label">Upload Purchase Order</span></div>
+        <div class="menu-card" id="mod-dispatch-bill" onclick="navigateToModule('dispatchBill')"><span class="mc-icon">🚚</span><span class="mc-label">Upload Dispatch Bill</span></div>
+        <div class="menu-card" id="mod-commissioning-report" onclick="navigateToModule('commissioningReport')"><span class="mc-icon">🔧</span><span class="mc-label">Upload Commissioning Report</span></div>
       </div>
-
-      <div class="nav-department-group-wrapper" style="margin-bottom: 8px;">
-        <div class="nav-group-title-label" style="font-size: 0.8rem; color: var(--brand); font-weight: 800; margin-bottom: 8px;">Search</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-company" onclick="navigateToModule('searchCompany')">Search by Company Name</div>
-          <div class="menu-card" id="mod-qual" onclick="navigateToModule('searchQualification')">Search by Type of Customer</div>
-          <div class="menu-card" id="mod-status" onclick="navigateToModule('searchStatus')">Search Leads by ABPS Engineer Name and Status</div>
-          <div class="menu-card" id="mod-city-state" onclick="navigateToModule('searchCityState')">Search by City, State and Country</div>
-          <div class="menu-card" id="mod-tasks" onclick="navigateToModule('searchTasks')">Search Tasks by ABPS Engineer Name and Status</div>
-        </div>
+      <div class="sec-label">Search</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-company" onclick="navigateToModule('searchCompany')"><span class="mc-icon">🏢</span><span class="mc-label">Search by Company Name</span></div>
+        <div class="menu-card" id="mod-qual" onclick="navigateToModule('searchQualification')"><span class="mc-icon">🎯</span><span class="mc-label">Search by Type of Customer</span></div>
+        <div class="menu-card" id="mod-city-state" onclick="navigateToModule('searchCityState')"><span class="mc-icon">🌍</span><span class="mc-label">Search by City, State and Country</span></div>
+        <div class="menu-card" id="mod-status" onclick="navigateToModule('searchStatus')"><span class="mc-icon">📊</span><span class="mc-label">Search Leads by ABPS Engineer Name and Status</span></div>
+        <div class="menu-card" id="mod-tasks" onclick="navigateToModule('searchTasks')"><span class="mc-icon">📋</span><span class="mc-label">Search Tasks by ABPS Engineer Name and Status</span></div>
       </div>
     </div>
 
-    <div id="dashboard-design-department-header-block" style="display: none;">
-      <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Design Department</h2>
-      <div class="nav-department-group-wrapper" id="mod-design-dashboard-wrapper" style="margin-bottom: 16px; display:none;">
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-design-dashboard" onclick="navigateToDesignDashboard()" style="background:linear-gradient(135deg,var(--brand-dk),var(--brand)); color:#fff; font-weight:700;">📊 Design Dashboard</div>
+    <!-- ── DESIGN ─────────────────────────────────────────────────────────── -->
+    <div id="dashboard-design-department-header-block" class="dept-block" style="display:none; --dept-accent:#2563eb;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#2563eb;"></div>
+        <span class="dept-name">Design Department</span>
+        <div id="mod-design-dashboard-wrapper" style="display:none;">
+          <button class="dept-dash-pill" id="mod-design-dashboard" onclick="navigateToDesignDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Dashboard</button>
         </div>
       </div>
-      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
-        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Bill of Quantity</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0; margin-bottom: 12px;">
-          <div class="menu-card" id="mod-design-itemcode"        onclick="switchActiveDashboardModule('design-itemcode')">Add / Check Item Code Number</div>
-          <div class="menu-card" id="mod-design-upload-drawings" onclick="switchActiveDashboardModule('design-upload-drawings')">Upload Drawings</div>
-        </div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0; margin-bottom: 12px;">
-          <div class="menu-card" id="mod-design-create-boq"   onclick="switchActiveDashboardModule('design-create-boq')">Create Bill of Quantity</div>
-          <div class="menu-card" id="mod-design-auth-boq"     onclick="switchActiveDashboardModule('design-auth-boq')">Authorize Bill of Quantity</div>
-        </div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0; margin-bottom: 12px;">
-          <div class="menu-card" id="mod-design-update-boq"   onclick="switchActiveDashboardModule('design-update-boq')">Update Bill of Quantity</div>
-          <div class="menu-card" id="mod-design-auth-boq-upd" onclick="switchActiveDashboardModule('design-auth-boq-upd')">Authorize Bill of Quantity Update</div>
-        </div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-design-create-boq"   onclick="switchActiveDashboardModule('design-create-boq')"><span class="mc-icon">📋</span><span class="mc-label">Create Bill of Quantity</span></div>
+        <div class="menu-card" id="mod-design-auth-boq"     onclick="switchActiveDashboardModule('design-auth-boq')"><span class="mc-icon">✅</span><span class="mc-label">Authorize Bill of Quantity</span></div>
+        <div class="menu-card" id="mod-design-update-boq"   onclick="switchActiveDashboardModule('design-update-boq')"><span class="mc-icon">✏️</span><span class="mc-label">Update Bill of Quantity</span></div>
+        <div class="menu-card" id="mod-design-auth-boq-upd" onclick="switchActiveDashboardModule('design-auth-boq-upd')"><span class="mc-icon">✅</span><span class="mc-label">Authorize Bill of Quantity Update</span></div>
+        <div class="menu-card" id="mod-design-itemcode"        onclick="switchActiveDashboardModule('design-itemcode')"><span class="mc-icon">🔢</span><span class="mc-label">Add / Check Item Code Number</span></div>
+        <div class="menu-card" id="mod-design-upload-drawings" onclick="switchActiveDashboardModule('design-upload-drawings')"><span class="mc-icon">📐</span><span class="mc-label">Upload Drawings</span></div>
       </div>
     </div>
 
-    <div id="dashboard-purchase-department-header-block" style="display: none;">
-      <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Purchase Department</h2>
-      <div class="nav-department-group-wrapper" id="mod-purchase-dashboard-wrapper" style="margin-bottom: 16px; display:none;">
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-purchase-dashboard" onclick="navigateToPurchaseDashboard()" style="background:linear-gradient(135deg,var(--brand-dk),var(--brand)); color:#fff; font-weight:700;">📊 Purchase Dashboard</div>
-          <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')">Material List for Purchase</div>
-          <div class="menu-card" id="mod-purchase-upload-rm-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-upload-rm-po')">Upload Raw Material Purchase Order</div>
+    <!-- ── PURCHASE ───────────────────────────────────────────────────────── -->
+    <div id="dashboard-purchase-department-header-block" class="dept-block" style="display:none; --dept-accent:#7c3aed;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#7c3aed;"></div>
+        <span class="dept-name">Purchase Department</span>
+        <div id="mod-purchase-dashboard-wrapper" style="display:none;">
+          <button class="dept-dash-pill" id="mod-purchase-dashboard" onclick="navigateToPurchaseDashboard()" style="background:#f5f3ff; color:#7c3aed;">📊 Dashboard</button>
         </div>
+      </div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')"><span class="mc-icon">📦</span><span class="mc-label">Material List for Purchase</span></div>
+        <div class="menu-card" id="mod-purchase-upload-rm-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-upload-rm-po')"><span class="mc-icon">📤</span><span class="mc-label">Upload Raw Material Purchase Order</span></div>
       </div>
     </div>
 
-    <div id="dashboard-store-department-header-block" style="display: none;">
-      <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Store Department</h2>
-
-      <div class="nav-department-group-wrapper" id="mod-store-dashboard-wrapper" style="margin-bottom: 16px; display:none;">
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-store-dashboard" onclick="navigateToStoreDashboard()" style="background:linear-gradient(135deg,var(--brand-dk),var(--brand)); color:#fff; font-weight:700;">📊 Store Dashboard</div>
+    <!-- ── STORE ──────────────────────────────────────────────────────────── -->
+    <div id="dashboard-store-department-header-block" class="dept-block" style="display:none; --dept-accent:#0369a1;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#0369a1;"></div>
+        <span class="dept-name">Store Department</span>
+        <div id="mod-store-dashboard-wrapper" style="display:none;">
+          <button class="dept-dash-pill" id="mod-store-dashboard" onclick="navigateToStoreDashboard()" style="background:#eff8ff; color:#0369a1;">📊 Dashboard</button>
         </div>
       </div>
-
-      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
-        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">PRN & Stock Assignment</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-purchase-request-note" onclick="navigateToPurchaseWorkspacePanel('purchase-prn')">Create Purchase Request Note</div>
-          <div class="menu-card" id="mod-assign-current-stock"  onclick="navigateToStoreWorkspacePanel('assign-current-stock')">Assign Current Stock</div>
-        </div>
+      <div class="sec-label">PRN & Stock Assignment</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-purchase-request-note" onclick="navigateToPurchaseWorkspacePanel('purchase-prn')"><span class="mc-icon">📝</span><span class="mc-label">Create Purchase Request Note</span></div>
+        <div class="menu-card" id="mod-assign-current-stock"  onclick="navigateToStoreWorkspacePanel('assign-current-stock')"><span class="mc-icon">🔄</span><span class="mc-label">Assign Current Stock</span></div>
       </div>
-
-      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
-        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Raw Materials Store Inward</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-store-gate"        onclick="navigateToStoreWorkspacePanel('store-gate-entry')">Gate Entry</div>
-          <div class="menu-card" id="mod-store-entry"       onclick="navigateToStoreWorkspacePanel('store-entry')">Raw Materials Store Entry</div>
-          <div class="menu-card" id="mod-store-grn"         onclick="navigateToStoreWorkspacePanel('store-grn')">GRN (Goods Received Note)</div>
-          <div class="menu-card" id="mod-expected-inbounds" onclick="navigateToStoreWorkspacePanel('expected-inbounds')">Expected Inbounds</div>
-        </div>
+      <div class="sec-label">Raw Materials Store Inward</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-store-gate"        onclick="navigateToStoreWorkspacePanel('store-gate-entry')"><span class="mc-icon">🚪</span><span class="mc-label">Gate Entry</span></div>
+        <div class="menu-card" id="mod-store-entry"       onclick="navigateToStoreWorkspacePanel('store-entry')"><span class="mc-icon">📥</span><span class="mc-label">Raw Materials Store Entry</span></div>
+        <div class="menu-card" id="mod-store-grn"         onclick="navigateToStoreWorkspacePanel('store-grn')"><span class="mc-icon">📋</span><span class="mc-label">GRN (Goods Received Note)</span></div>
+        <div class="menu-card" id="mod-expected-inbounds" onclick="navigateToStoreWorkspacePanel('expected-inbounds')"><span class="mc-icon">📅</span><span class="mc-label">Expected Inbounds</span></div>
       </div>
-
-      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
-        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Raw Materials Store Outward</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-boq-increase-approvals" onclick="navigateToStoreWorkspacePanel('boq-increase-approvals')">Approve BOQ Increase</div>
-          <div class="menu-card" id="mod-store-approvals" onclick="navigateToStoreWorkspacePanel('store-manager-approvals')">Approve Store Tickets</div>
-          <div class="menu-card" id="mod-store-matrix" onclick="switchActiveDashboardModule('store-history-matrix')">Search Store Tickets</div>
-        </div>
+      <div class="sec-label">Raw Materials Store Outward</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-boq-increase-approvals" onclick="navigateToStoreWorkspacePanel('boq-increase-approvals')"><span class="mc-icon">⬆️</span><span class="mc-label">Approve BOQ Increase</span></div>
+        <div class="menu-card" id="mod-store-approvals" onclick="navigateToStoreWorkspacePanel('store-manager-approvals')"><span class="mc-icon">✅</span><span class="mc-label">Approve Store Tickets</span></div>
+        <div class="menu-card" id="mod-store-matrix" onclick="switchActiveDashboardModule('store-history-matrix')"><span class="mc-icon">🔍</span><span class="mc-label">Search Store Tickets</span></div>
       </div>
-
-      <div class="nav-department-group-wrapper" style="margin-bottom: 8px;">
-        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Store Quantity</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-live-store-stock" onclick="switchActiveDashboardModule('store-live-stock')">Live Raw Materials Store Stock</div>
-          <div class="menu-card" id="mod-live-finished-store-stock" onclick="switchActiveDashboardModule('store-live-finished-goods')">Live Finished Goods Store Stock</div>
-          <div class="menu-card" id="mod-live-spare-store-stock" onclick="switchActiveDashboardModule('store-live-spare')">Live Spare Store Stock</div>
-        </div>
+      <div class="sec-label">Store Quantity</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-live-store-stock" onclick="switchActiveDashboardModule('store-live-stock')"><span class="mc-icon">📊</span><span class="mc-label">Live Raw Materials Store Stock</span></div>
+        <div class="menu-card" id="mod-live-finished-store-stock" onclick="switchActiveDashboardModule('store-live-finished-goods')"><span class="mc-icon">📊</span><span class="mc-label">Live Finished Goods Store Stock</span></div>
+        <div class="menu-card" id="mod-live-spare-store-stock" onclick="switchActiveDashboardModule('store-live-spare')"><span class="mc-icon">📊</span><span class="mc-label">Live Spare Store Stock</span></div>
       </div>
     </div>
 
-    <div id="dashboard-production-department-header-block" style="display: none;">
-      <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Production Department</h2>
-      <div class="nav-department-group-wrapper" id="mod-production-dashboard-wrapper" style="margin-bottom: 16px; display:none;">
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-production-dashboard" onclick="navigateToProductionDashboard()" style="background:linear-gradient(135deg,var(--brand-dk),var(--brand)); color:#fff; font-weight:700;">📊 Production Dashboard</div>
+    <!-- ── PRODUCTION ─────────────────────────────────────────────────────── -->
+    <div id="dashboard-production-department-header-block" class="dept-block" style="display:none; --dept-accent:#b45309;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#b45309;"></div>
+        <span class="dept-name">Production Department</span>
+        <div id="mod-production-dashboard-wrapper" style="display:none;">
+          <button class="dept-dash-pill" id="mod-production-dashboard" onclick="navigateToProductionDashboard()" style="background:#fffbeb; color:#b45309;">📊 Dashboard</button>
         </div>
       </div>
-      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
-        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Job Card Number</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-create-job-card" onclick="switchActiveDashboardModule('create-job-card')">Create Job Card Number</div>
-        </div>
-      </div>
-
-      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
-        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Raw Materials Store Outward</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-store-ticket" onclick="navigateToStoreWorkspacePanel('store-material-request')">Create Store Ticket</div>
-        </div>
-      </div>
-
-      <div class="nav-department-group-wrapper" style="margin-bottom: 8px;">
-        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Finished Goods Store</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-fg-add" onclick="switchActiveDashboardModule('fg-add')">Add to Finished Goods Store</div>
-        </div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-create-job-card" onclick="switchActiveDashboardModule('create-job-card')"><span class="mc-icon">🪪</span><span class="mc-label">Create Job Card Number</span></div>
+        <div class="menu-card" id="mod-store-ticket" onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-icon">🏭</span><span class="mc-label">Create Store Ticket</span></div>
+        <div class="menu-card" id="mod-fg-add" onclick="switchActiveDashboardModule('fg-add')"><span class="mc-icon">✅</span><span class="mc-label">Add to Finished Goods Store</span></div>
       </div>
     </div>
     
