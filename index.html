@@ -1339,10 +1339,10 @@
     <div id="canvas-module-design-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- TOP BAR -->
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <!-- Period Selector -->
-          <div id="dd-period-btns" style="display:flex; gap:4px; flex-wrap:wrap;">
+      <div style="background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10;">
+        <!-- Row 1: period buttons + title + return -->
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; position:relative;">
+          <div id="dd-period-btns" style="display:flex; gap:4px; flex-wrap:nowrap;">
             <button class="dd-period-btn active" data-period="today"       onclick="ddSetPeriod(this)">Today</button>
             <button class="dd-period-btn"        data-period="yesterday"   onclick="ddSetPeriod(this)">Yesterday</button>
             <button class="dd-period-btn"        data-period="thisweek"    onclick="ddSetPeriod(this)">This Week</button>
@@ -1351,28 +1351,29 @@
             <button class="dd-period-btn"        data-period="thisyear"    onclick="ddSetPeriod(this)">This Year</button>
             <button class="dd-period-btn"        data-period="custom"      onclick="ddSetPeriod(this)">Custom ▾</button>
           </div>
-          <!-- Custom picker (hidden until Custom clicked) -->
-          <div id="dd-custom-zone" style="display:none; gap:6px; align-items:center;">
-            <select id="dd-custom-type" onchange="ddCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
-              <option value="customday">Day</option>
-              <option value="customweek">Week</option>
-              <option value="custommonth">Month</option>
-              <option value="customquarter">Quarter</option>
-              <option value="customyear">Year</option>
-            </select>
-            <input id="dd-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
-            <button onclick="ddLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:3px 10px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
-          </div>
+          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">📊 Design Dashboard</span>
+          <button class="nav-btn-styled" onclick="exitDesignWorkspacePanelBackToMenu()" style="font-size:0.75rem;">Return to Main Dashboard</button>
         </div>
-        <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">📊 Design Dashboard</span>
-        <button class="nav-btn-styled" onclick="exitDesignWorkspacePanelBackToMenu()" style="font-size:0.75rem;">Return to Main Dashboard</button>
+        <!-- Row 2: custom picker — drops below, hidden by default -->
+        <div id="dd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
+          <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
+          <select id="dd-custom-type" onchange="ddCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
+            <option value="customday">Day</option>
+            <option value="customweek">Week</option>
+            <option value="custommonth">Month</option>
+            <option value="customquarter">Quarter</option>
+            <option value="customyear">Year</option>
+          </select>
+          <input id="dd-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
+          <button onclick="ddLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
+        </div>
       </div>
 
       <!-- DASHBOARD BODY -->
       <div id="dd-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
 
-        <!-- ROW 1: 4 Stat Cards -->
-        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px;">
+        <!-- ROW 1: 5 Stat Cards -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px;">
           <div class="dd-stat-card">
             <div class="dd-stat-label">BOQs Created</div>
             <div class="dd-stat-val" id="dd-s-created">—</div>
@@ -1386,26 +1387,26 @@
             <div class="dd-stat-val" id="dd-s-pending" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Avg. Auth Time</div>
+            <div class="dd-stat-label">Avg. Authorized Time</div>
             <div class="dd-stat-val" id="dd-s-authtime">—</div>
-            <div class="dd-stat-sub">days</div>
-          </div>
-        </div>
-
-        <!-- ROW 2: Value card + Item Codes + By Dept table -->
-        <div style="display:grid; grid-template-columns:1fr 1fr 2fr; gap:8px;">
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Total Authorized BOQ Value</div>
-            <div class="dd-stat-val" id="dd-s-value" style="font-size:1.1rem; color:var(--brand);">—</div>
+            <div class="dd-stat-sub" id="dd-s-authtime-unit">—</div>
           </div>
           <div class="dd-stat-card">
             <div class="dd-stat-label">New Item Codes Added</div>
             <div class="dd-stat-val" id="dd-s-itemcodes">—</div>
           </div>
+        </div>
+
+        <!-- ROW 2: Value card + By Dept table + Charts -->
+        <div style="display:grid; grid-template-columns:1fr 1.5fr 1fr 1fr; gap:8px;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Total Authorized BOQ Value</div>
+            <div class="dd-stat-val" id="dd-s-value" style="font-size:1.05rem; color:var(--brand);">—</div>
+          </div>
           <div class="dd-card" style="padding:8px 10px;">
             <div class="dd-card-title">BOQ Value by Department</div>
-            <table style="width:100%; border-collapse:collapse; font-size:0.75rem;" id="dd-dept-table">
-              <thead><tr style="color:var(--muted); font-size:0.68rem;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.74rem;">
+              <thead><tr style="color:var(--muted); font-size:0.67rem;">
                 <th style="text-align:left; padding:2px 4px; font-weight:700;">Department</th>
                 <th style="text-align:center; padding:2px 4px; font-weight:700;">BOQs</th>
                 <th style="text-align:right; padding:2px 4px; font-weight:700;">Value (₹)</th>
@@ -1413,47 +1414,40 @@
               <tbody id="dd-dept-tbody"></tbody>
             </table>
           </div>
-        </div>
-
-        <!-- ROW 3: Chart 2 + Chart 3 -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
           <div class="dd-card" style="padding:8px 10px;">
             <div class="dd-card-title">BOQs by Department</div>
-            <canvas id="dd-chart-dept" style="max-height:130px;"></canvas>
+            <canvas id="dd-chart-dept" style="max-height:110px;"></canvas>
           </div>
           <div class="dd-card" style="padding:8px 10px;">
-            <div class="dd-card-title">BOQ Version Distribution</div>
-            <canvas id="dd-chart-version" style="max-height:130px;"></canvas>
+            <div class="dd-card-title">Version Distribution</div>
+            <canvas id="dd-chart-version" style="max-height:110px;"></canvas>
           </div>
         </div>
 
-        <!-- ROW 4: Chart 1 (trend) — hidden for Today/Yesterday -->
-        <div class="dd-card" id="dd-trend-row" style="padding:8px 10px;">
-          <div class="dd-card-title">Authorized BOQ Value Trend</div>
-          <canvas id="dd-chart-trend" style="max-height:120px;"></canvas>
-        </div>
-
-        <!-- ROW 5: Pending Actions + Project Health -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-          <div class="dd-card" style="padding:8px 10px; overflow:hidden;">
-            <div class="dd-card-title">⏳ Awaiting Authorization <span id="dd-pending-count" style="background:#fef3c7; color:#b45309; font-size:0.65rem; padding:1px 6px; border-radius:8px; margin-left:4px;"></span></div>
-            <div id="dd-pending-list" style="font-size:0.72rem; overflow-y:auto; max-height:110px;"></div>
-          </div>
-          <div class="dd-card" style="padding:8px 10px; overflow:hidden;">
-            <div class="dd-card-title">🏗 Project Health Snapshot</div>
-            <div style="overflow-x:auto; max-height:120px; overflow-y:auto;">
-              <table style="width:100%; border-collapse:collapse; font-size:0.7rem;" id="dd-health-table">
-                <thead><tr style="color:var(--muted); font-size:0.65rem; position:sticky; top:0; background:var(--card);">
-                  <th style="text-align:left; padding:2px 4px;">Project</th>
-                  <th style="text-align:center; padding:2px 4px;">BOQs</th>
-                  <th style="text-align:center; padding:2px 4px;">Auth</th>
-                  <th style="text-align:right; padding:2px 4px;">Value (₹)</th>
-                  <th style="text-align:center; padding:2px 4px;">PRN</th>
-                </tr></thead>
-                <tbody id="dd-health-tbody"></tbody>
-              </table>
+        <!-- ROW 3: Project Health — full width, paginated -->
+        <div class="dd-card" style="padding:8px 10px; flex:1;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+            <div class="dd-card-title" style="margin-bottom:0;">🏗 Project Health Snapshot</div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <input id="dd-health-search" type="text" placeholder="Search project..." oninput="ddFilterHealth()"
+                style="font-size:0.72rem; padding:3px 8px; border:1px solid var(--border); border-radius:4px; width:140px;" />
+              <span id="dd-health-page-info" style="font-size:0.68rem; color:var(--muted); white-space:nowrap;"></span>
+              <button onclick="ddHealthPage(-1)" class="dd-period-btn" style="padding:2px 7px;">‹</button>
+              <button onclick="ddHealthPage(1)"  class="dd-period-btn" style="padding:2px 7px;">›</button>
             </div>
           </div>
+          <table style="width:100%; border-collapse:collapse; font-size:0.72rem;">
+            <thead><tr style="color:var(--muted); font-size:0.67rem; border-bottom:1.5px solid var(--border);">
+              <th style="text-align:left; padding:3px 6px; font-weight:700;">Project ID</th>
+              <th style="text-align:left; padding:3px 6px; font-weight:700;">Customer</th>
+              <th style="text-align:center; padding:3px 6px; font-weight:700;">Total BOQs</th>
+              <th style="text-align:center; padding:3px 6px; font-weight:700;">Authorized</th>
+              <th style="text-align:center; padding:3px 6px; font-weight:700;">Pending</th>
+              <th style="text-align:right; padding:3px 6px; font-weight:700;">Authorized Value (₹)</th>
+              <th style="text-align:center; padding:3px 6px; font-weight:700;">PRN Raised</th>
+            </tr></thead>
+            <tbody id="dd-health-tbody"></tbody>
+          </table>
         </div>
 
       </div><!-- end dd-body -->
@@ -2187,7 +2181,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbx7ybvwRxwe8UXqSv7kh9buLWyQxNq3AvA9UUkqPLL_ajBf13rwFbqT_yj--9doigRy/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxyKOu75G_E7bF00mNJMo9Qezk2VKW740ezEY2hoDqjohTP8IfWhRF5OReQeR00Op3I/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -11572,6 +11566,65 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
 let ddCurrentPeriod = "today";
 let ddCurrentCustomType = "customday";
 let ddChartDept = null, ddChartVersion = null, ddChartTrend = null;
+let ddHealthData = [];
+let ddHealthFiltered = [];
+let ddHealthCurrentPage = 1;
+const DD_HEALTH_PAGE_SIZE = 8;
+
+function ddFilterHealth() {
+  const q = (document.getElementById("dd-health-search")?.value || "").toLowerCase();
+  ddHealthFiltered = q
+    ? ddHealthData.filter(p => p.projId.toLowerCase().includes(q) || p.customer.toLowerCase().includes(q))
+    : [...ddHealthData];
+  ddHealthCurrentPage = 1;
+  ddRenderHealthTable();
+}
+
+function ddHealthPage(dir) {
+  const totalPages = Math.ceil(ddHealthFiltered.length / DD_HEALTH_PAGE_SIZE);
+  ddHealthCurrentPage = Math.max(1, Math.min(totalPages, ddHealthCurrentPage + dir));
+  ddRenderHealthTable();
+}
+
+function ddRenderHealthTable() {
+  const fmt = n => "₹" + Number(n).toLocaleString("en-IN", { maximumFractionDigits:0 });
+  const tbody = document.getElementById("dd-health-tbody");
+  const total = ddHealthFiltered.length;
+  const totalPages = Math.max(1, Math.ceil(total / DD_HEALTH_PAGE_SIZE));
+  const start = (ddHealthCurrentPage - 1) * DD_HEALTH_PAGE_SIZE;
+  const page  = ddHealthFiltered.slice(start, start + DD_HEALTH_PAGE_SIZE);
+
+  const pageInfo = document.getElementById("dd-health-page-info");
+  if (pageInfo) pageInfo.textContent = total > DD_HEALTH_PAGE_SIZE
+    ? `${start+1}–${Math.min(start+DD_HEALTH_PAGE_SIZE, total)} of ${total}`
+    : `${total} project${total !== 1 ? "s" : ""}`;
+
+  // Toggle prev/next buttons
+  const prevBtn = document.querySelector("[onclick=\"ddHealthPage(-1)\"]");
+  const nextBtn = document.querySelector("[onclick=\"ddHealthPage(1)\"]");
+  if (prevBtn) prevBtn.disabled = ddHealthCurrentPage <= 1;
+  if (nextBtn) nextBtn.disabled = ddHealthCurrentPage >= totalPages;
+
+  if (!tbody) return;
+  if (page.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--muted); font-size:0.72rem; padding:6px;">No projects found</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = page.map((p, i) => {
+    const prnBg    = p.prnRaised ? "#dcfce7" : "#fee2e2";
+    const prnColor = p.prnRaised ? "#15803d" : "#b91c1c";
+    const rowBg    = i % 2 === 0 ? "var(--card)" : "#f8fafc";
+    return `<tr style="background:${rowBg}; border-bottom:1px solid #f1f5f9;">
+      <td style="padding:3px 6px; font-weight:700; font-family:monospace; font-size:0.7rem;">${p.projId}</td>
+      <td style="padding:3px 6px; font-size:0.7rem;">${p.customer}</td>
+      <td style="padding:3px 6px; text-align:center;">${p.total}</td>
+      <td style="padding:3px 6px; text-align:center; color:#15803d; font-weight:700;">${p.authorized}</td>
+      <td style="padding:3px 6px; text-align:center; color:${p.pending > 0 ? "#b45309" : "var(--muted)"}; font-weight:${p.pending > 0 ? "700" : "400"};">${p.pending}</td>
+      <td style="padding:3px 6px; text-align:right; font-family:monospace;">${fmt(p.value)}</td>
+      <td style="padding:3px 6px; text-align:center;"><span style="font-size:0.62rem; font-weight:700; padding:1px 6px; border-radius:8px; background:${prnBg}; color:${prnColor};">${p.prnRaised ? "Yes" : "No"}</span></td>
+    </tr>`;
+  }).join("");
+}
 
 function ddSetPeriod(btn) {
   document.querySelectorAll(".dd-period-btn").forEach(b => b.classList.remove("active"));
@@ -11631,7 +11684,23 @@ function ddRenderDashboard(data) {
   document.getElementById("dd-s-created").textContent    = stats.totalCreated;
   document.getElementById("dd-s-authorized").textContent = stats.totalAuthorized;
   document.getElementById("dd-s-pending").textContent    = stats.totalPending;
-  document.getElementById("dd-s-authtime").textContent   = stats.avgAuthTime !== null ? stats.avgAuthTime : "—";
+  // Smart auth time formatting
+  if (stats.avgAuthTime !== null) {
+    const mins = stats.avgAuthTime;
+    if (mins < 60) {
+      document.getElementById("dd-s-authtime").textContent      = mins;
+      document.getElementById("dd-s-authtime-unit").textContent = "minutes";
+    } else if (mins < 1440) {
+      document.getElementById("dd-s-authtime").textContent      = (mins / 60).toFixed(1);
+      document.getElementById("dd-s-authtime-unit").textContent = "hours";
+    } else {
+      document.getElementById("dd-s-authtime").textContent      = (mins / 1440).toFixed(1);
+      document.getElementById("dd-s-authtime-unit").textContent = "days";
+    }
+  } else {
+    document.getElementById("dd-s-authtime").textContent      = "—";
+    document.getElementById("dd-s-authtime-unit").textContent = "";
+  }
   document.getElementById("dd-s-value").textContent      = fmt(stats.totalAuthValue);
   document.getElementById("dd-s-itemcodes").textContent  = stats.newItemCodes;
 
@@ -11701,46 +11770,15 @@ function ddRenderDashboard(data) {
       scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false } } } }
   });
 
-  // Pending list
-  const pendingEl = document.getElementById("dd-pending-list");
-  document.getElementById("dd-pending-count").textContent = pendingList.length + updatePendingList.length;
-  const allPending = [
-    ...pendingList.map(p => ({ ...p, type:"auth" })),
-    ...updatePendingList.map(p => ({ ...p, type:"update" }))
-  ].sort((a,b) => b.age - a.age);
-  if (allPending.length === 0) {
-    pendingEl.innerHTML = `<div style="color:var(--muted); font-size:0.72rem; padding:4px;">✅ No pending items</div>`;
-  } else {
-    pendingEl.innerHTML = allPending.map(p => {
-      const ageBg = p.age <= 2 ? "#dcfce7" : p.age <= 5 ? "#fef3c7" : "#fee2e2";
-      const ageColor = p.age <= 2 ? "#15803d" : p.age <= 5 ? "#b45309" : "#b91c1c";
-      const tag = p.type === "update" ? `<span style="font-size:0.6rem; background:#ede9fe; color:#7c3aed; padding:1px 4px; border-radius:3px; margin-left:3px;">UPD v${p.version}</span>` : "";
-      return `<div class="dd-pending-row">
-        <div><span style="font-weight:700;">${p.boqId}</span>${tag}<br/>
-        <span style="color:var(--muted);">${p.product} ${p.rating} · ${p.projId}</span></div>
-        <span class="dd-age-badge" style="background:${ageBg}; color:${ageColor};">${p.age}d</span>
-      </div>`;
-    }).join("");
-  }
+  // Pending list removed from this dashboard
 
-  // Project health table
-  const healthTbody = document.getElementById("dd-health-tbody");
-  healthTbody.innerHTML = "";
-  if (projectHealth.length === 0) {
-    healthTbody.innerHTML = `<tr><td colspan="5" style="color:var(--muted); font-size:0.72rem; padding:4px;">No projects found</td></tr>`;
-  } else {
-    projectHealth.forEach(p => {
-      const prnBg    = p.prnRaised ? "#dcfce7" : "#fee2e2";
-      const prnColor = p.prnRaised ? "#15803d" : "#b91c1c";
-      healthTbody.innerHTML += `<tr style="border-top:1px solid #f1f5f9;">
-        <td style="padding:2px 4px; font-weight:600; font-size:0.68rem;">${p.projId}</td>
-        <td style="padding:2px 4px; text-align:center;">${p.total}</td>
-        <td style="padding:2px 4px; text-align:center; color:#15803d; font-weight:700;">${p.authorized}</td>
-        <td style="padding:2px 4px; text-align:right;">${fmt(p.value)}</td>
-        <td style="padding:2px 4px; text-align:center;"><span style="font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:8px; background:${prnBg}; color:${prnColor};">${p.prnRaised ? "Yes":"No"}</span></td>
-      </tr>`;
-    });
-  }
+  // Project health — load into pagination engine
+  ddHealthData     = projectHealth;
+  ddHealthFiltered = [...projectHealth];
+  ddHealthCurrentPage = 1;
+  const searchEl = document.getElementById("dd-health-search");
+  if (searchEl) searchEl.value = "";
+  ddRenderHealthTable();
 }
 
 function navigateToDesignDashboard() {
