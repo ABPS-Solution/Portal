@@ -1454,8 +1454,134 @@
     </div>
 
     <!-- PURCHASE DASHBOARD CANVAS -->
-    <div id="canvas-module-purchase-dashboard" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <p style="color:var(--muted); font-size:0.85rem;">Purchase Dashboard — coming soon.</p>
+    <div id="canvas-module-purchase-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
+
+      <!-- TOP BAR -->
+      <div style="background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; position:relative;">
+          <div id="pd-period-btns" style="display:flex; gap:4px; flex-wrap:nowrap;">
+            <button class="dd-period-btn active" data-period="today"       onclick="pdSetPeriod(this)">Today</button>
+            <button class="dd-period-btn"        data-period="yesterday"   onclick="pdSetPeriod(this)">Yesterday</button>
+            <button class="dd-period-btn"        data-period="thisweek"    onclick="pdSetPeriod(this)">This Week</button>
+            <button class="dd-period-btn"        data-period="thismonth"   onclick="pdSetPeriod(this)">This Month</button>
+            <button class="dd-period-btn"        data-period="thisquarter" onclick="pdSetPeriod(this)">This Quarter</button>
+            <button class="dd-period-btn"        data-period="thisyear"    onclick="pdSetPeriod(this)">This Year</button>
+            <button class="dd-period-btn"        data-period="custom"      onclick="pdSetPeriod(this)">Custom ▾</button>
+          </div>
+          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">📦 Purchase Dashboard</span>
+          <button class="nav-btn-styled" onclick="pdReturnToMain()" style="font-size:0.75rem;">Return to Main Dashboard</button>
+        </div>
+        <div id="pd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
+          <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
+          <select id="pd-custom-type" onchange="pdCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
+            <option value="customday">Day</option>
+            <option value="customweek">Week</option>
+            <option value="custommonth">Month</option>
+            <option value="customquarter">Quarter</option>
+            <option value="customyear">Year</option>
+          </select>
+          <input id="pd-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
+          <button onclick="pdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
+        </div>
+      </div>
+
+      <!-- BODY -->
+      <div id="pd-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+
+        <!-- ROW 1: 7 stat cards -->
+        <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:8px; flex:0 0 18%;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">PRNs Created</div>
+            <div class="dd-stat-val" id="pd-s-prns">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Active PRNs</div>
+            <div class="dd-stat-val" id="pd-s-active" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Closed PRNs</div>
+            <div class="dd-stat-val" id="pd-s-closed" style="color:#15803d;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Avg PRN Age</div>
+            <div class="dd-stat-val" id="pd-s-age">—</div>
+            <div class="dd-stat-sub">days (active)</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">POs Uploaded</div>
+            <div class="dd-stat-val" id="pd-s-pos">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Total PO Value</div>
+            <div class="dd-stat-val" id="pd-s-poval" style="font-size:1rem; color:var(--brand);">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Line Items Ordered</div>
+            <div class="dd-stat-val" id="pd-s-li">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 2: Charts -->
+        <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 34%;">
+          <div class="dd-card" style="padding:8px 10px;">
+            <div class="dd-card-title" id="pd-chart2-title">PRN Status Over Time</div>
+            <canvas id="pd-chart-prn-trend" style="max-height:130px;"></canvas>
+          </div>
+          <div class="dd-card" style="padding:8px 10px;">
+            <div class="dd-card-title">Still To Order vs On Order (by Type)</div>
+            <canvas id="pd-chart-coverage" style="max-height:130px;"></canvas>
+          </div>
+          <div class="dd-card" style="padding:8px 10px;">
+            <div class="dd-card-title">Active PRN Age Distribution</div>
+            <canvas id="pd-chart-age" style="max-height:130px;"></canvas>
+          </div>
+        </div>
+
+        <!-- ROW 3: Pending actions — 2 columns -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:0 0 40%;">
+
+          <!-- Materials with no PO yet -->
+          <div class="dd-card" style="padding:10px 12px; display:flex; flex-direction:column; min-height:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-shrink:0;">
+              <div class="dd-card-title" style="margin:0;">⚠ Materials Needed — No PO Yet</div>
+              <span id="pd-nopo-count" style="font-size:0.68rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:1px 7px; border-radius:8px;"></span>
+            </div>
+            <div style="overflow-y:auto; flex:1;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.72rem;">
+                <thead><tr style="color:var(--muted); font-size:0.67rem; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
+                  <th style="text-align:left; padding:3px 5px;">Item</th>
+                  <th style="text-align:left; padding:3px 5px;">PRN</th>
+                  <th style="text-align:left; padding:3px 5px;">Project</th>
+                  <th style="text-align:right; padding:3px 5px;">Still To Order</th>
+                  <th style="text-align:center; padding:3px 5px;">Age</th>
+                </tr></thead>
+                <tbody id="pd-nopo-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Overdue POs -->
+          <div class="dd-card" style="padding:10px 12px; display:flex; flex-direction:column; min-height:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-shrink:0;">
+              <div class="dd-card-title" style="margin:0;">🔴 Overdue POs</div>
+              <span id="pd-overdue-count" style="font-size:0.68rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:1px 7px; border-radius:8px;"></span>
+            </div>
+            <div style="overflow-y:auto; flex:1;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.72rem;">
+                <thead><tr style="color:var(--muted); font-size:0.67rem; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
+                  <th style="text-align:left; padding:3px 5px;">PO ID</th>
+                  <th style="text-align:left; padding:3px 5px;">Vendor</th>
+                  <th style="text-align:center; padding:3px 5px;">Delivery Date</th>
+                  <th style="text-align:center; padding:3px 5px;">Days Overdue</th>
+                  <th style="text-align:right; padding:3px 5px;">Value (₹)</th>
+                </tr></thead>
+                <tbody id="pd-overdue-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
     </div>
 
     <!-- STORE DASHBOARD CANVAS -->
@@ -1505,13 +1631,13 @@
           <div><label class="field-label">Grand Total (₹)</label><input type="text" id="rm-po-grand-total" style="padding:6px; background:#f1f5f9;" /></div>
         </div>
 
-        <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
+        <div style="overflow:visible; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
           <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:900px;">
             <thead>
               <tr style="background:#f8fafc;">
                 <th style="padding:8px; font-size:0.72rem; width:140px; text-align:center;">Item Code Number</th>
-                <th style="padding:8px; font-size:0.72rem; min-width:220px; text-align:left;">Invoice Description</th>
-                <th style="padding:8px; font-size:0.72rem; min-width:180px; text-align:left;">Standard Material Name</th>
+                <th style="padding:8px; font-size:0.72rem; width:260px; text-align:left;">Invoice Description</th>
+                <th style="padding:8px; font-size:0.72rem; width:200px; text-align:left;">Standard Material Name</th>
                 <th style="padding:8px; font-size:0.72rem; text-align:center; width:80px;">Qty</th>
                 <th style="padding:8px; font-size:0.72rem; text-align:center; width:70px;">Unit</th>
                 <th style="padding:8px; font-size:0.72rem; text-align:right; width:100px;">Rate / Qty</th>
@@ -2181,7 +2307,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbz1Uddo1oczkvcfKLcfFlb0G0NPl_4eplvhWXK7Wljt7AllVQDvvbwduUUCsp-OV2cw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw97jR_iP8E8PRUvFOsV_3B8D-yeAoXOzripDW1TI7oHVCikb0I0q9RGU4dx68YrZ7I/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -11780,6 +11906,7 @@ function navigateToPurchaseDashboard() {
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   const c = document.getElementById("canvas-module-purchase-dashboard");
   if (c) c.style.display = "block";
+  if (typeof pdLoadDashboard === "function") pdLoadDashboard();
 }
 
 function navigateToStoreDashboard() {
@@ -12790,15 +12917,15 @@ async function parseRawMaterialPOWithAI() {
                oninput="handleRMPONameSearch(this, ${idx})"
                autocomplete="off"
                style="font-size:0.82rem; font-weight:600; padding:4px; border:1.5px solid #fca5a5; width:100%; border-radius:3px; background:#fff7f7;" />
-             <div id="rmpo-name-dropdown-${idx}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:4px; z-index:100; max-height:160px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+             <div id="rmpo-name-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1px solid var(--border); border-radius:4px; z-index:9999; max-height:200px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,0.15); min-width:280px;"></div>
            </div>`
         : `<input type="text" class="rm-po-mat-name-input" data-idx="${idx}" value="${resolvedName}"
              style="font-size:0.82rem; font-weight:600; padding:4px; border:1px solid #86efac; width:100%; border-radius:3px; background:#f0fdf4;" readonly />`;
 
       tbody.innerHTML += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
     <td style="padding:6px; width:140px;">${itemCodeCellContent}</td>
-    <td style="padding:6px; font-size:0.78rem; color:#64748b; word-break:break-word; width:180px;">${item.rawDescription || ""}</td>
-    <td style="padding:6px; min-width:260px;">${nameSearchCell}</td>
+    <td style="padding:6px; font-size:0.78rem; color:#64748b; word-break:break-word; width:260px;">${item.rawDescription || ""}</td>
+    <td style="padding:6px; width:200px;">${nameSearchCell}</td>
     <td style="padding:6px; text-align:center; font-weight:700; font-family:monospace; width:80px;">${item.orderedQty || 0}</td>
     <td style="padding:6px; text-align:center; color:var(--muted); font-size:0.8rem; width:70px;">${item.unit || "NOS"}</td>
     <td style="padding:6px; text-align:right; font-family:monospace; font-size:0.82rem; width:100px;">₹${Number(item.rate || 0).toFixed(2)}</td>
@@ -12899,6 +13026,12 @@ function handleRMPONameSearch(inputEl, idx) {
   if (!dropdown) return;
   if (query.length < 2) { dropdown.style.display = "none"; return; }
 
+  // Position dropdown using fixed coordinates from input rect
+  const rect = inputEl.getBoundingClientRect();
+  dropdown.style.top    = (rect.bottom + 2) + "px";
+  dropdown.style.left   = rect.left + "px";
+  dropdown.style.width  = rect.width + "px";
+
   const matches = catalog.filter(c => (c.productName || "").toLowerCase().includes(query)).slice(0, 10);
   if (matches.length === 0) {
     dropdown.innerHTML = `<div style="padding:8px 10px; font-size:0.78rem; color:var(--muted); display:flex; justify-content:space-between; align-items:center;">
@@ -12938,6 +13071,171 @@ document.addEventListener("click", function(e) {
     document.querySelectorAll("[id^='rmpo-name-dropdown-']").forEach(d => d.style.display = "none");
   }
 });
+
+// ═══════════════════════════════════════════════════════
+// PURCHASE DASHBOARD ENGINE
+// ═══════════════════════════════════════════════════════
+let pdCurrentPeriod = "today";
+let pdCurrentCustomType = "customday";
+let pdChartPrnTrend = null, pdChartCoverage = null, pdChartAge = null;
+
+function pdReturnToMain() {
+  const c = document.getElementById("canvas-module-purchase-dashboard");
+  if (c) c.style.display = "none";
+  enforceDynamicModuleRoleGateways(userPermissions);
+  document.getElementById("dashboard-view").style.display = "flex";
+}
+
+function pdSetPeriod(btn) {
+  document.querySelectorAll("#pd-period-btns .dd-period-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  pdCurrentPeriod = btn.dataset.period;
+  const cz = document.getElementById("pd-custom-zone");
+  if (pdCurrentPeriod === "custom") { cz.style.display = "flex"; return; }
+  cz.style.display = "none";
+  pdLoadDashboard();
+}
+
+function pdCustomTypeChange() {
+  pdCurrentCustomType = document.getElementById("pd-custom-type").value;
+  const v = document.getElementById("pd-custom-val");
+  if (pdCurrentCustomType === "custommonth") v.type = "month";
+  else if (pdCurrentCustomType === "customquarter") { v.type = "text"; v.placeholder = "e.g. 2025-Q2"; }
+  else if (pdCurrentCustomType === "customyear") { v.type = "number"; v.placeholder = "e.g. 2025"; }
+  else v.type = "date";
+}
+
+function pdLoadCustom() {
+  const val = document.getElementById("pd-custom-val").value.trim();
+  if (!val) return alert("Please enter a value for the custom period.");
+  pdCurrentPeriod = pdCurrentCustomType;
+  pdLoadDashboard(val);
+}
+
+async function pdLoadDashboard(customVal) {
+  ["pd-s-prns","pd-s-active","pd-s-closed","pd-s-age","pd-s-pos","pd-s-poval","pd-s-li"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = "…";
+  });
+  try {
+    const data = await apFetch({
+      action:      "fetchPurchaseDashboardData",
+      periodType:  pdCurrentPeriod,
+      periodValue: customVal || ""
+    });
+    if (!data.success) { alert("Dashboard load failed: " + data.error); return; }
+    pdRenderDashboard(data);
+  } catch(e) {
+    alert("Dashboard error: " + e.message);
+  }
+}
+
+function pdRenderDashboard(data) {
+  const { stats, prnTrend, ageBuckets, byType, projectCoverageList, noPoItems, overdueList, showTrend } = data;
+  const fmtNum = n => "₹" + Number(n).toLocaleString("en-IN", { maximumFractionDigits:0 });
+
+  // Stat cards
+  document.getElementById("pd-s-prns").textContent   = stats.totalPRNs;
+  document.getElementById("pd-s-active").textContent = stats.activePRNs;
+  document.getElementById("pd-s-closed").textContent = stats.closedPRNs;
+  document.getElementById("pd-s-age").textContent    = stats.avgPRNAgeDays !== null ? stats.avgPRNAgeDays : "—";
+  document.getElementById("pd-s-pos").textContent    = stats.totalPOs;
+  document.getElementById("pd-s-poval").textContent  = fmtNum(stats.totalPOValue);
+  document.getElementById("pd-s-li").textContent     = stats.totalLineItems;
+
+  // Chart 1 — PRN trend (stacked bar)
+  if (pdChartPrnTrend) pdChartPrnTrend.destroy();
+  const titleEl = document.getElementById("pd-chart2-title");
+  if (titleEl) titleEl.textContent = showTrend ? "PRN Status Over Time" : "PRN Status (Period)";
+  const ctx1 = document.getElementById("pd-chart-prn-trend").getContext("2d");
+  if (prnTrend.length === 0) {
+    pdChartPrnTrend = new Chart(ctx1, { type:"bar", data:{ labels:["No data"], datasets:[{ data:[0], backgroundColor:"#f1f5f9" }] }, options:{ plugins:{ legend:{ display:false } } } });
+  } else {
+    pdChartPrnTrend = new Chart(ctx1, {
+      type:"bar",
+      data:{
+        labels: prnTrend.map(t=>t.label),
+        datasets:[
+          { label:"Active",  data:prnTrend.map(t=>t.active),  backgroundColor:"rgba(245,158,11,0.75)", borderRadius:3 },
+          { label:"Closed",  data:prnTrend.map(t=>t.closed),  backgroundColor:"rgba(16,185,129,0.75)", borderRadius:3 }
+        ]
+      },
+      options:{ responsive:true, plugins:{ legend:{ position:"bottom", labels:{ boxWidth:10, font:{ size:9 } } } },
+        scales:{ x:{ stacked:true, grid:{ display:false } }, y:{ stacked:true, ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } } } }
+    });
+  }
+
+  // Chart 2 — Still To Order vs On Order by material type
+  if (pdChartCoverage) pdChartCoverage.destroy();
+  const types = Object.keys(byType).sort();
+  const ctx2  = document.getElementById("pd-chart-coverage").getContext("2d");
+  if (types.length === 0) {
+    pdChartCoverage = new Chart(ctx2, { type:"bar", data:{ labels:["No data"], datasets:[{ data:[0], backgroundColor:"#f1f5f9" }] }, options:{ plugins:{ legend:{ display:false } } } });
+  } else {
+    pdChartCoverage = new Chart(ctx2, {
+      type:"bar",
+      data:{
+        labels: types,
+        datasets:[
+          { label:"On Order",      data:types.map(t=>byType[t].onOrder),     backgroundColor:"rgba(37,99,235,0.7)",  borderRadius:3 },
+          { label:"Still To Order",data:types.map(t=>byType[t].stillToOrder),backgroundColor:"rgba(239,68,68,0.65)", borderRadius:3 }
+        ]
+      },
+      options:{ indexAxis:"y", responsive:true, plugins:{ legend:{ position:"bottom", labels:{ boxWidth:10, font:{ size:9 } } } },
+        scales:{ x:{ stacked:false, grid:{ color:"#f1f5f9" } }, y:{ grid:{ display:false } } } }
+    });
+  }
+
+  // Chart 3 — PRN age distribution
+  if (pdChartAge) pdChartAge.destroy();
+  const ctx3 = document.getElementById("pd-chart-age").getContext("2d");
+  pdChartAge = new Chart(ctx3, {
+    type:"bar",
+    data:{
+      labels:["0-7d","8-14d","15-30d","30+d"],
+      datasets:[{ label:"Active PRNs", data:[ageBuckets["0-7"],ageBuckets["8-14"],ageBuckets["15-30"],ageBuckets["30+"]],
+        backgroundColor:["rgba(16,185,129,0.7)","rgba(245,158,11,0.7)","rgba(239,68,68,0.65)","rgba(139,92,246,0.7)"],
+        borderRadius:4 }]
+    },
+    options:{ responsive:true, plugins:{ legend:{ display:false } },
+      scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false } } } }
+  });
+
+  // No PO items table
+  const noPoTbody = document.getElementById("pd-nopo-tbody");
+  document.getElementById("pd-nopo-count").textContent = noPoItems.length;
+  noPoTbody.innerHTML = noPoItems.length === 0
+    ? `<tr><td colspan="5" style="padding:8px; color:var(--muted); font-size:0.72rem;">✅ All materials have POs</td></tr>`
+    : noPoItems.map((item, i) => {
+        const rowBg = i%2===0?"var(--card)":"#f8fafc";
+        const ageBg = item.ageDays<=7?"#dcfce7":item.ageDays<=14?"#fef3c7":"#fee2e2";
+        const ageColor = item.ageDays<=7?"#15803d":item.ageDays<=14?"#b45309":"#b91c1c";
+        return `<tr style="border-bottom:1px solid #f1f5f9; background:${rowBg};">
+          <td style="padding:4px 5px; font-weight:600;">${item.matName}</td>
+          <td style="padding:4px 5px; font-family:monospace; font-size:0.68rem;">${item.prnId}</td>
+          <td style="padding:4px 5px; font-size:0.68rem;">${item.projId}</td>
+          <td style="padding:4px 5px; text-align:right; font-weight:700;">${item.stillToOrder}</td>
+          <td style="padding:4px 5px; text-align:center;"><span style="font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:8px; background:${ageBg}; color:${ageColor};">${item.ageDays}d</span></td>
+        </tr>`;
+      }).join("");
+
+  // Overdue POs table
+  const overdueTbody = document.getElementById("pd-overdue-tbody");
+  document.getElementById("pd-overdue-count").textContent = overdueList.length;
+  overdueTbody.innerHTML = overdueList.length === 0
+    ? `<tr><td colspan="5" style="padding:8px; color:var(--muted); font-size:0.72rem;">✅ No overdue POs</td></tr>`
+    : overdueList.map((po, i) => {
+        const rowBg = i%2===0?"var(--card)":"#f8fafc";
+        const overdueBg = po.daysOverdue<=3?"#fef3c7":po.daysOverdue<=7?"#fee2e2":"#fecaca";
+        const overdueColor = po.daysOverdue<=3?"#b45309":"#b91c1c";
+        return `<tr style="border-bottom:1px solid #f1f5f9; background:${rowBg};">
+          <td style="padding:4px 5px; font-family:monospace; font-size:0.68rem; font-weight:700;">${po.poId}</td>
+          <td style="padding:4px 5px; font-size:0.7rem;">${po.vendor}</td>
+          <td style="padding:4px 5px; text-align:center; font-size:0.68rem;">${po.deliveryDate}</td>
+          <td style="padding:4px 5px; text-align:center;"><span style="font-size:0.62rem; font-weight:700; padding:1px 6px; border-radius:8px; background:${overdueBg}; color:${overdueColor};">${po.daysOverdue}d</span></td>
+          <td style="padding:4px 5px; text-align:right; font-family:monospace; font-size:0.7rem;">${fmtNum(po.grand)}</td>
+        </tr>`;
+      }).join("");
+}
 
 // ═══════════════════════════════════════════════════════
 // SHARED PURCHASE FEEDBACK HELPER
