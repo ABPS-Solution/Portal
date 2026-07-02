@@ -917,12 +917,6 @@
           </div>
         </div>
 
-        <!-- Existing assignments -->
-        <div id="assign-panel-existing-zone" style="display:none; margin-bottom:14px; background:#f0fdf4; border:1px solid #86efac; border-radius:var(--radius); padding:12px;">
-          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#15803d; margin-bottom:8px; letter-spacing:0.5px;">Already Assigned to BOQs</div>
-          <div id="assign-panel-existing-list" style="display:flex; flex-direction:column; gap:6px;"></div>
-        </div>
-
         <!-- New assignment targets -->
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:8px; letter-spacing:0.5px;">Assign to BOQ IDs</div>
         <div id="assign-panel-no-targets" style="display:none; padding:12px; background:#fffbeb; border:1px solid #f59e0b; border-radius:var(--radius); font-size:0.85rem; color:#b45309; font-weight:600; margin-bottom:12px;">
@@ -13751,7 +13745,6 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
   _safe("assign-panel-item-code").textContent       = itemCode;
   _safe("assign-panel-unit").textContent            = unitType;
   _safe("assign-panel-total-unassigned").textContent= "...";
-  _safe("assign-panel-existing-zone").style.display = "none";
   _safe("assign-panel-no-targets").style.display    = "none";
   _safe("assign-panel-targets-table-wrapper").style.display = "block";
   _safe("assign-stock-feedback").style.display      = "none";
@@ -13773,27 +13766,6 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
     document.getElementById("assign-panel-total-unassigned").textContent = unassignedQty.toFixed(2);
     document.getElementById("assign-panel-remainder").textContent        = unassignedQty.toFixed(2);
     document.getElementById("assign-panel-total-assigning").textContent  = "0";
-
-    // Existing assignments
-    const existingList = data.existingAssignments || [];
-    if (existingList.length > 0) {
-      document.getElementById("assign-panel-existing-list").innerHTML = existingList.map(a => `
-        <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #86efac; border-radius:4px; padding:6px 10px; font-size:0.82rem; flex-wrap:wrap; gap:6px;">
-          <div>
-            <span style="font-family:monospace; font-weight:700; color:var(--brand);">${a.boqId}</span>
-            <span style="color:var(--muted); margin-left:6px; font-size:0.75rem;">${a.projectId}</span>
-          </div>
-          <div style="display:flex; align-items:center; gap:12px;">
-            <span style="font-family:monospace; font-weight:800; color:#15803d;">${a.assignedQty} ${unitType}</span>
-            <span style="font-size:0.7rem; color:var(--muted);">${a.assignedDate} — ${a.assignedBy}</span>
-            <button onclick="openUnassignStockDialog('${a.assignmentId}', '${a.boqId}', ${a.assignedQty}, '${unitType}')"
-              style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:2px 8px; border-radius:3px; font-size:0.72rem; font-weight:700; cursor:pointer;">
-              Reduce
-            </button>
-          </div>
-        </div>`).join("");
-      document.getElementById("assign-panel-existing-zone").style.display = "block";
-    }
 
     // BOQ targets
     const targets = data.boqTargets || [];
