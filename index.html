@@ -868,12 +868,15 @@
                 <input type="text" id="assign-material-search-input" placeholder="Type to search..." autocomplete="off"
                   oninput="handleAssignMaterialSearch(this.value)"
                   onfocus="handleAssignMaterialSearch(this.value)"
+                  onkeydown="if(event.key==='Enter'){const first=document.querySelector('#assign-material-search-dropdown div');if(first)first.click();}"
                   style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
                 <div id="assign-material-search-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+                <span onclick="clearAssignMaterialSearch()" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer; color:var(--muted); font-size:0.9rem; font-weight:700; line-height:1;" title="Clear search">✕</span>
               </div>
             </div>
           </div>
         </div>
+        <div id="assign-stock-unassigned-assignment-anchor"></div>
         <div id="assign-stock-unassigned-results" style="display:flex; flex-direction:column; gap:8px;"></div>
       </div>
 
@@ -925,15 +928,11 @@
             <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Total Being Assigned</div>
             <div id="assign-panel-total-assigning" style="font-size:1.2rem; font-weight:800; color:var(--accent); font-family:monospace;">0</div>
           </div>
-          <div style="font-size:1.5rem; color:var(--border); font-weight:300;">+</div>
           <div style="text-align:center;">
             <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Remainder in Pool</div>
             <div id="assign-panel-remainder" style="font-size:1.2rem; font-weight:800; color:var(--brand); font-family:monospace;">0</div>
           </div>
           <div style="font-size:1.5rem; color:var(--border); font-weight:300;">=</div>
-          <div style="display:none;">
-            <div id="assign-panel-total-check"></div>
-          </div>
         </div>
 
         <!-- Assigned by + submit -->
@@ -2287,7 +2286,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwCJMHykqHqFwoFmSlihn6dEhTWOEEu9vG9v2hkiH1uXB7GJ18QdwIEXVOOlCQdeTTQ/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwq5syNhvyiW_B1HLYCknJ75jgPTSkb0S583p_msJ8fd9CU4qwnIuGnifaRyw2UODM0/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -13513,6 +13512,13 @@ function renderAssignStockUnassignedList(materials) {
   });
 }
 
+function clearAssignMaterialSearch() {
+  document.getElementById("assign-material-search-input").value            = "";
+  document.getElementById("assign-material-search-dropdown").style.display = "none";
+  renderAssignStockUnassignedList(assignStockUnassignedCache);
+  document.getElementById("assign-stock-assignment-panel").style.display   = "none";
+}
+
 function handleAssignTypeFilterChange(typeValue) {
   document.getElementById("assign-material-search-input").value            = "";
   document.getElementById("assign-material-search-dropdown").style.display = "none";
@@ -13541,8 +13547,13 @@ function handleAssignMaterialSearch(query) {
 function selectAssignMaterialFromSearch(itemCode, materialName) {
   document.getElementById("assign-material-search-input").value            = materialName;
   document.getElementById("assign-material-search-dropdown").style.display = "none";
-  const inv     = (window.itemCodeCatalogCache || []).find(i => i.itemCode === itemCode);
-  const unitType= (cachedInventoryStockCollection.find(i => (i.itemCode || "").toUpperCase() === itemCode.toUpperCase()) || {}).unitType || "NOS";
+
+  // Filter the visible list to only this material
+  const filtered = assignStockUnassignedCache.filter(m => m.itemCode.toUpperCase() === itemCode.toUpperCase());
+  renderAssignStockUnassignedList(filtered);
+
+  const inv      = (window.itemCodeCatalogCache || []).find(i => i.itemCode === itemCode);
+  const unitType = (cachedInventoryStockCollection.find(i => (i.itemCode || "").toUpperCase() === itemCode.toUpperCase()) || {}).unitType || (filtered[0] && filtered[0].unitType) || "NOS";
   openAssignStockPanel(itemCode, materialName, unitType);
 }
 
@@ -13551,11 +13562,12 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
   const panel = document.getElementById("assign-stock-assignment-panel");
   panel.style.display = "block";
 
-  // Move panel to top anchor in GRN mode, otherwise leave it in its default position
-  if (assignStockCurrentMode === "grn") {
-    const anchor = document.getElementById("assign-stock-grn-assignment-anchor");
-    if (anchor) anchor.appendChild(panel);
-  }
+  // Move panel to top anchor for both modes
+  const anchorId = assignStockCurrentMode === "grn"
+    ? "assign-stock-grn-assignment-anchor"
+    : "assign-stock-unassigned-assignment-anchor";
+  const anchor = document.getElementById(anchorId);
+  if (anchor) anchor.appendChild(panel);
   panel.scrollIntoView({ behavior:"smooth", block:"start" });
 
   document.getElementById("assign-panel-material-title").textContent  = materialName;
@@ -13630,7 +13642,7 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
           <td style="padding:8px 10px; text-align:center;">
             <input type="number" min="0" value="" placeholder="0"
               class="assign-qty-input"
-              data-idx="${idx}" data-prnid="${target.prnId}" data-boqid="${target.boqId}" data-projectid="${target.projectId}"
+              data-idx="${idx}" data-prnids="${(target.prnIds||[target.prnId]||[]).join(',')}" data-boqid="${target.boqId}" data-projectid="${target.projectId}"
               oninput="clampAndUpdateAssignQty(this, ${target.stillNeeded}, ${unassignedQty})"
               style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
           </td>`;
@@ -13681,7 +13693,7 @@ async function submitAssignCurrentStock() {
   document.querySelectorAll(".assign-qty-input").forEach(inp => {
     const qty = parseFloat(inp.value);
     if (inp.value.trim() !== "" && (isNaN(qty) || qty <= 0)) { hasInvalidQty = true; return; }
-    if (qty > 0) assignments.push({ prnId: inp.dataset.prnid, boqId: inp.dataset.boqid, projectId: inp.dataset.projectid, assignQty: qty });
+    if (qty > 0) assignments.push({ prnIds: (inp.dataset.prnids || inp.dataset.prnid || "").split(',').filter(Boolean), boqId: inp.dataset.boqid, projectId: inp.dataset.projectid, assignQty: qty });
   });
   if (hasInvalidQty) return alert("All entered quantities must be greater than 0. Remove or correct invalid entries.");
   if (assignments.length === 0) return alert("Enter a quantity for at least one BOQ row before saving.");
