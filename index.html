@@ -487,7 +487,7 @@
           <div style="display: flex; gap: 10px; align-items: flex-end;">
             <div style="flex-grow: 1;">
               <label class="field-label" style="font-size: 0.75rem;">Material Description</label>
-              <select id="ticket-item-selection-dropdown" onchange="updateSelectedLiveStockPillCounter()" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled><option value="">Unlock Section First...</option></select>
+              <select id="ticket-item-selection-dropdown" onchange="updateSelectedLiveStockPillCounter(); startLiveStockPolling();" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled></select>
             </div>
             <div style="width: 100px;">
               <label class="field-label" style="font-size: 0.75rem;">Quantity</label>
@@ -2284,7 +2284,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxek0QFJ391bPOs7mEH9QKceQ61jWsieZAMtEYimNR5nRQG4nOSzjOu5PHeXz5uk0Hx/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycby7b-QvQ4vOwi_8ac53Ee5-aomR2jJSX63VmOBzvScUO2V247b9F9brp8im5jlzI_U_/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -6176,6 +6176,7 @@ async function submitMaterialRequestTicketToBackend() {
  * Programmatically restores native inputs layout structure from cache and triggers parallel dropdown down sync paths
  */
 function resetStoreCreateTicketToInitialState() {
+  stopLiveStockPolling();
   const materialRequestPanelContainer = document.getElementById("canvas-module-store-material-request");
   if (materialRequestPanelContainer && window.storeCreateTicketOriginalTemplateCacheHTML) {
     // Restores original HTML skeleton element properties safely
@@ -6190,6 +6191,54 @@ function resetStoreCreateTicketToInitialState() {
  * 2. LIVE SELECTION STOCK COUNTER LOOKUP PILL
  * Scans cache maps instantly as the user clicks options to show stock states
  */
+
+let _liveStockPollTimer = null;
+
+function startLiveStockPolling() {
+  stopLiveStockPolling();
+  _liveStockPollTimer = setInterval(async () => {
+    const selectedMaterial = document.getElementById("ticket-item-selection-dropdown")?.value;
+    if (!selectedMaterial) { stopLiveStockPolling(); return; }
+    await refreshLiveStockForSelectedMaterial();
+  }, 5000); // refresh every 5 seconds
+}
+
+function stopLiveStockPolling() {
+  if (_liveStockPollTimer) { clearInterval(_liveStockPollTimer); _liveStockPollTimer = null; }
+}
+
+async function refreshLiveStockForSelectedMaterial() {
+  const activeStoreScope   = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
+  const selectedMaterial   = document.getElementById("ticket-item-selection-dropdown")?.value;
+  if (!selectedMaterial) { stopLiveStockPolling(); return; }
+
+  try {
+    const data = await apFetch({ action: "getLiveStockForItem", materialName: selectedMaterial });
+    if (!data.success) return;
+
+    // Patch only the selected item in the local caches — no full reload
+    const cleanKey = selectedMaterial.replace(/\s+/g,"").toLowerCase();
+
+    const existing = cachedInventoryStockCollection.find(i =>
+      (i.materialName||"").replace(/\s+/g,"").toLowerCase() === cleanKey
+    );
+    if (existing) {
+      existing.availableStock = data.availableStock;
+      existing.reservedStock  = data.reservedStock;
+      existing.unitType       = data.unitType;
+    }
+
+    const spareExisting = (window.cachedSpareStoreStock||[]).find(i =>
+      (i.materialName||"").replace(/\s+/g,"").toLowerCase() === cleanKey
+    );
+    if (spareExisting) {
+      spareExisting.availableStock = data.spareStock;
+    }
+
+    await updateSelectedLiveStockPillCounter();
+  } catch(e) { /* silent */ }
+}
+
 async function updateSelectedLiveStockPillCounter() {
   const selectedMaterial = document.getElementById("ticket-item-selection-dropdown").value;
   const projectId = document.getElementById("ticket-project-id-dropdown").value;
@@ -6632,6 +6681,7 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
 }
 
 function navigateToStoreWorkspacePanel(targetPanelModuleId) {
+  stopLiveStockPolling();
   // 1. Hide the primary dashboard menu grid view and the global marketing containers completely
   document.getElementById("dashboard-view").style.display = "none";
   document.querySelectorAll("#module-workspace-container .workspace-panel").forEach(p => p.style.display = "none");
@@ -9171,7 +9221,8 @@ function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
   const deptDropdown = document.getElementById("ticket-department-outgoing-dropdown");
   const deptLabel = document.getElementById("lbl-dept-outgoing-title");
   
-  // Clear basket and reset cascading locks whenever store changes
+  // Clear basket, stop polling, reset cascading locks whenever store changes
+  stopLiveStockPolling();
   clearFullBasketDraftState();
   resetMaterialRequestCascadingLockState();
   document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
