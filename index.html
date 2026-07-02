@@ -878,7 +878,7 @@
       </div>
 
       <!-- SHARED ASSIGNMENT PANEL -->
-      <div id="assign-stock-assignment-panel" style="display:none; margin-top:20px; border-top:2px solid var(--border); padding-top:16px;">
+      <div id="assign-stock-assignment-panel" style="display:none; margin-top:20px; border-top:2px solid var(--border); padding-top:16px; margin-bottom:24px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
           <div>
             <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--brand); margin-bottom:4px; letter-spacing:0.5px;">Assigning Stock For</div>
@@ -907,7 +907,7 @@
           <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:800px;">
             <thead>
               <tr style="background:#f8fafc;">
-                <th style="padding:8px 10px; font-size:0.7rem; text-align:left; min-width:140px;">Customer</th>
+                <th style="padding:8px 10px; font-size:0.7rem; text-align:left; min-width:140px;">Customer Name</th>
                 <th style="padding:8px 10px; font-size:0.7rem; text-align:left; white-space:nowrap;">Project ID</th>
                 <th style="padding:8px 10px; font-size:0.7rem; text-align:left; min-width:160px;">Product</th>
                 <th style="padding:8px 10px; font-size:0.7rem; text-align:center; white-space:nowrap; color:#b91c1c;">Still Needed</th>
@@ -931,9 +931,8 @@
             <div id="assign-panel-remainder" style="font-size:1.2rem; font-weight:800; color:var(--brand); font-family:monospace;">0</div>
           </div>
           <div style="font-size:1.5rem; color:var(--border); font-weight:300;">=</div>
-          <div style="text-align:center;">
-            <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Total Unassigned</div>
-            <div id="assign-panel-total-check" style="font-size:1.2rem; font-weight:800; color:var(--text); font-family:monospace;">0</div>
+          <div style="display:none;">
+            <div id="assign-panel-total-check"></div>
           </div>
         </div>
 
@@ -2288,7 +2287,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyHylsAfORde-D3M7OgKCnJOM71rTFOvu1_WPJg3S-pKiyKMm-LU1dPbTOhMxxcz5_Y/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwCJMHykqHqFwoFmSlihn6dEhTWOEEu9vG9v2hkiH1uXB7GJ18QdwIEXVOOlCQdeTTQ/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -13632,7 +13631,7 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
             <input type="number" min="0" value="" placeholder="0"
               class="assign-qty-input"
               data-idx="${idx}" data-prnid="${target.prnId}" data-boqid="${target.boqId}" data-projectid="${target.projectId}"
-              oninput="updateAssignPanelTotals(${unassignedQty})"
+              oninput="clampAndUpdateAssignQty(this, ${target.stillNeeded}, ${unassignedQty})"
               style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
           </td>`;
         tbody.appendChild(tr);
@@ -13641,6 +13640,20 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
   } catch(e) {
     document.getElementById("assign-panel-targets-body").innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--warn);">Error: ${e.message}</td></tr>`;
   }
+}
+
+function clampAndUpdateAssignQty(inp, stillNeeded, totalUnassigned) {
+  let val = parseFloat(inp.value) || 0;
+  // Calculate remainder excluding this input's current contribution
+  let otherAssigning = 0;
+  document.querySelectorAll(".assign-qty-input").forEach(function(other) {
+    if (other !== inp) otherAssigning += parseFloat(other.value) || 0;
+  });
+  const remainderForThis = Math.max(0, totalUnassigned - otherAssigning);
+  const cap = Math.min(stillNeeded, remainderForThis);
+  if (val > cap) { val = cap; inp.value = cap; }
+  if (val < 0)   { val = 0;   inp.value = 0; }
+  updateAssignPanelTotals(totalUnassigned);
 }
 
 function updateAssignPanelTotals(totalUnassigned) {
