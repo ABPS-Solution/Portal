@@ -410,9 +410,8 @@
               <thead>
                 <tr>
                   <th style="width:160px;">Item Code Number</th>
-                  <th style="min-width:280px;">Description of Material</th>
-                  <th style="min-width:280px;">Standard Material Name</th>
-                  <th style="width:120px; text-align:center; color:#64748b; font-size:0.75rem; font-weight:700; text-transform:uppercase;">Invoice Quantity</th>
+                  <th style="min-width:400px;">Description of Material</th>
+                  <th style="width:140px; text-align:center; color:#64748b; font-size:0.75rem; font-weight:700; text-transform:uppercase;">Invoice Quantity</th>
                 </tr>
               </thead>
               <tbody id="gate-verification-table-body"></tbody>
@@ -2310,7 +2309,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw97jR_iP8E8PRUvFOsV_3B8D-yeAoXOzripDW1TI7oHVCikb0I0q9RGU4dx68YrZ7I/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbztUtE3rtqrL-GiWvWOsZs3J8ZyJEg5wyNGuCWuOzh8BI2hljHWuUiDyc01C7i3wpaI/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -7930,11 +7929,18 @@ async function parseGateDocumentsWithAI() {
 
     const tbody = document.getElementById('gate-verification-table-body'); tbody.innerHTML = "";
     activeParsedGatePayloadCache.lineItems.forEach(item => {
+      const hasCode   = (item.itemCode || "").toString().trim().toUpperCase().startsWith("ABPS");
+      const codeBorder = hasCode ? "1.5px solid #86efac" : "1.5px solid #fca5a5";
+      const codeBg     = hasCode ? "#f0fdf4"             : "#fff7f7";
+      const codeColor  = hasCode ? "var(--brand)"        : "#b91c1c";
       tbody.innerHTML += `<tr>
-        <td style="width:160px; padding:6px;"><input type="text" class="gate-row-item-code-input" value="${item.itemCode || ""}" placeholder="Item Code..." style="font-size:0.85rem; padding:4px; font-weight:700; border:1px solid var(--border); text-align:center; width:100%;"></td>
-        <td style="padding:8px; font-size:0.82rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word;">${item.rawDescriptionLine || "Line Item Description"}</td>
-        <td style="padding:6px;"><textarea class="gate-row-material-name-input" style="font-weight:600; color:var(--brand); font-size:0.88rem; padding:5px; border:1.5px solid var(--brand); border-radius:3px; width:100%; min-height:38px; resize:vertical; font-family:inherit;">${(item.mappedMaterialName || item.rawDescriptionLine || "").replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea></td>
-        <td style="text-align:center; color:#64748b; font-weight:700; vertical-align:middle;">${item.extractedQuantity}</td>
+        <td style="width:160px; padding:6px; vertical-align:middle;">
+          <input type="text" class="gate-row-item-code-input" value="${item.itemCode || ""}"
+            placeholder="Not found"
+            style="font-size:0.85rem; padding:5px 4px; font-weight:700; color:${codeColor}; border:${codeBorder}; background:${codeBg}; text-align:center; width:100%; border-radius:3px;">
+        </td>
+        <td style="padding:8px; font-size:0.82rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:400px;">${item.rawDescriptionLine || "Line Item Description"}</td>
+        <td style="text-align:center; color:#64748b; font-weight:700; vertical-align:middle; width:140px;">${item.extractedQuantity}</td>
       </tr>`;
     });
     document.getElementById('gate-ai-verification-workspace').style.display = "block";
@@ -7966,12 +7972,8 @@ async function commitGateEntryRecordsToBackend() {
   const codeInputs = document.querySelectorAll('.gate-row-item-code-input');
   const tableRows = document.querySelectorAll('#gate-verification-table-body tr');
 
-  const materialInputs = document.querySelectorAll('.gate-row-material-name-input');
   activeParsedGatePayloadCache.lineItems.forEach((item, idx) => {
     item.itemCode = codeInputs[idx] ? codeInputs[idx].value.trim() : "";
-    if (materialInputs[idx] && materialInputs[idx].value.trim()) {
-      item.mappedMaterialName = materialInputs[idx].value.trim();
-    }
     if (!item.rawDescriptionLine && tableRows[idx]) {
       item.rawDescriptionLine = tableRows[idx].cells[1].textContent.trim();
     }
