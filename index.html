@@ -8881,10 +8881,18 @@ async function handleCreateTicketProjectChange(chosenProjectVal) {
       opt.textContent = label;
       boqDropdown.appendChild(opt);
     });
-    boqDropdown.disabled = false;
-    boqDropdown.style.opacity = "1";
-    boqDropdown.style.cursor  = "pointer";
-    if (boqLabel) boqLabel.style.color = "var(--brand)";
+
+    if (Object.keys(boqMap).length === 0) {
+      boqDropdown.innerHTML = '<option value="">⚠ No BOQ IDs found for this project</option>';
+      boqDropdown.disabled = true;
+      boqDropdown.style.opacity = "0.5";
+      if (boqLabel) boqLabel.style.color = "var(--warn)";
+    } else {
+      boqDropdown.disabled = false;
+      boqDropdown.style.opacity = "1";
+      boqDropdown.style.cursor  = "pointer";
+      if (boqLabel) boqLabel.style.color = "var(--brand)";
+    }
   } catch(e) {
     boqDropdown.innerHTML = '<option value="">Error loading BOQs</option>';
   }
