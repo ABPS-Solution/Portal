@@ -240,6 +240,11 @@
     <div id="dashboard-design-department-header-block" style="display: none;">
       <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Design Department</h2>
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-design-dashboard" onclick="navigateToDesignDashboard()" style="display:none; background:linear-gradient(135deg,var(--brand-dk),var(--brand)); color:#fff; font-weight:700;">📊 Design Dashboard</div>
+        </div>
+      </div>
+      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
         <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Bill of Quantity</div>
         <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0; margin-bottom: 12px;">
           <div class="menu-card" id="mod-design-itemcode"        onclick="switchActiveDashboardModule('design-itemcode')">Add / Check Item Code Number</div>
@@ -260,7 +265,7 @@
       <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Purchase Department</h2>
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
         <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-purchase-request-note"  onclick="navigateToPurchaseWorkspacePanel('purchase-prn')">Create Purchase Request Note</div>
+          <div class="menu-card" id="mod-purchase-dashboard" onclick="navigateToPurchaseDashboard()" style="display:none; background:linear-gradient(135deg,var(--brand-dk),var(--brand)); color:#fff; font-weight:700;">📊 Purchase Dashboard</div>
           <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')">Material List for Purchase</div>
           <div class="menu-card" id="mod-purchase-upload-rm-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-upload-rm-po')">Upload Raw Material Purchase Order</div>
         </div>
@@ -269,21 +274,29 @@
 
     <div id="dashboard-store-department-header-block" style="display: none;">
       <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Store Department</h2>
-      
+
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
-        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Raw Materials Store Inward</div>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-store-gate"              onclick="navigateToStoreWorkspacePanel('store-gate-entry')">Gate Entry</div>
-          <div class="menu-card" id="mod-store-entry"             onclick="navigateToStoreWorkspacePanel('store-entry')">Raw Materials Store Entry</div>
-          <div class="menu-card" id="mod-store-grn"               onclick="navigateToStoreWorkspacePanel('store-grn')">GRN (Goods Received Note)</div>
-          <div class="menu-card" id="mod-expected-inbounds"       onclick="navigateToStoreWorkspacePanel('expected-inbounds')">Expected Inbounds</div>
+        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">📊 Dashboard</div>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-store-dashboard" onclick="navigateToStoreDashboard()" style="display:none; background:linear-gradient(135deg,var(--brand-dk),var(--brand)); color:#fff; font-weight:700;">📊 Store Dashboard</div>
         </div>
       </div>
 
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
-        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Stock Assignment</div>
+        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">PRN & Stock Assignment</div>
         <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0;">
-          <div class="menu-card" id="mod-assign-current-stock" onclick="navigateToStoreWorkspacePanel('assign-current-stock')">Assign Current Stock</div>
+          <div class="menu-card" id="mod-purchase-request-note" onclick="navigateToPurchaseWorkspacePanel('purchase-prn')">Create Purchase Request Note</div>
+          <div class="menu-card" id="mod-assign-current-stock"  onclick="navigateToStoreWorkspacePanel('assign-current-stock')">Assign Current Stock</div>
+        </div>
+      </div>
+
+      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
+        <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Raw Materials Store Inward</div>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-store-gate"        onclick="navigateToStoreWorkspacePanel('store-gate-entry')">Gate Entry</div>
+          <div class="menu-card" id="mod-store-entry"       onclick="navigateToStoreWorkspacePanel('store-entry')">Raw Materials Store Entry</div>
+          <div class="menu-card" id="mod-store-grn"         onclick="navigateToStoreWorkspacePanel('store-grn')">GRN (Goods Received Note)</div>
+          <div class="menu-card" id="mod-expected-inbounds" onclick="navigateToStoreWorkspacePanel('expected-inbounds')">Expected Inbounds</div>
         </div>
       </div>
 
@@ -308,7 +321,11 @@
 
     <div id="dashboard-production-department-header-block" style="display: none;">
       <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">Production Department</h2>
-
+      <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
+          <div class="menu-card" id="mod-production-dashboard" onclick="navigateToProductionDashboard()" style="display:none; background:linear-gradient(135deg,var(--brand-dk),var(--brand)); color:#fff; font-weight:700;">📊 Production Dashboard</div>
+        </div>
+      </div>
       <div class="nav-department-group-wrapper" style="margin-bottom: 16px;">
         <div class="nav-group-title-label" style="font-size:0.8rem; color:var(--brand); font-weight:800; margin-bottom:6px;">Job Card Number</div>
         <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0;">
@@ -1299,6 +1316,31 @@
       </div><!-- end padding wrapper -->
     </div>
 
+    <!-- DESIGN DASHBOARD CANVAS -->
+    <div id="canvas-module-design-dashboard" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <p style="color:var(--muted); font-size:0.85rem;">Design Dashboard — coming soon.</p>
+    </div>
+
+    <!-- PURCHASE DASHBOARD CANVAS -->
+    <div id="canvas-module-purchase-dashboard" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <p style="color:var(--muted); font-size:0.85rem;">Purchase Dashboard — coming soon.</p>
+    </div>
+
+    <!-- STORE DASHBOARD CANVAS -->
+    <div id="canvas-module-store-dashboard" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <p style="color:var(--muted); font-size:0.85rem;">Store Dashboard — coming soon.</p>
+    </div>
+
+    <!-- PRODUCTION DASHBOARD CANVAS -->
+    <div id="canvas-module-production-dashboard" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <p style="color:var(--muted); font-size:0.85rem;">Production Dashboard — coming soon.</p>
+    </div>
+
+    <!-- MARKETING DASHBOARD CANVAS -->
+    <div id="canvas-module-marketing-dashboard" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <p style="color:var(--muted); font-size:0.85rem;">Marketing Dashboard — coming soon.</p>
+    </div>
+
     <!-- RAW MATERIAL PO UPLOAD CANVAS -->
     <div id="canvas-module-purchase-upload-rm-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="margin-bottom:6px; color:var(--brand);">Upload Raw Material Purchase Order</h2>
@@ -2007,7 +2049,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbye7k3Py3HGA5kXWdU_ROiqiKYNS1GPx5ao95nbS3uLjiAX5AxKm9KhRFHJpSUxFqEv/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxVO1qasdOIyL0tkly1KNEDvNiZq3CKTs1iSDpe76LmVYza0tfuZuHnC-UbGOgsbrS7/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -5641,7 +5683,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-purchase-upload-rm-po"))  document.getElementById("mod-purchase-upload-rm-po").style.display  = canUploadRMPurchaseOrder     ? "block" : "none";
   const purchaseHeaderBlock = document.getElementById("dashboard-purchase-department-header-block");
   if (purchaseHeaderBlock) {
-    purchaseHeaderBlock.style.display = (canPurchaseRequestNote || canViewMaterialListPurchase || canUploadRMPurchaseOrder) ? "block" : "none";
+    purchaseHeaderBlock.style.display = (canViewMaterialListPurchase || canUploadRMPurchaseOrder || userPermissionsObject.viewPurchaseDashboard === true) ? "block" : "none";
   }
 
   // Production Department block visibility
@@ -5657,6 +5699,16 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-assign-current-stock")) document.getElementById("mod-assign-current-stock").style.display = canAssignCurrentStock ? "block" : "none";
   if (document.getElementById("mod-expected-inbounds")) document.getElementById("mod-expected-inbounds").style.display = canExpectedInbounds ? "block" : "none";
 
+  // --- DASHBOARD CARD VISIBILITY ---
+  const el_dd = document.getElementById("mod-design-dashboard");
+  const el_pd = document.getElementById("mod-purchase-dashboard");
+  const el_sd = document.getElementById("mod-store-dashboard");
+  const el_prdd = document.getElementById("mod-production-dashboard");
+  if (el_dd)   el_dd.style.display   = userPermissionsObject.viewDesignDashboard     === true ? "block" : "none";
+  if (el_pd)   el_pd.style.display   = userPermissionsObject.viewPurchaseDashboard   === true ? "block" : "none";
+  if (el_sd)   el_sd.style.display   = userPermissionsObject.viewStoreDashboard      === true ? "block" : "none";
+  if (el_prdd) el_prdd.style.display = userPermissionsObject.viewProductionDashboard === true ? "block" : "none";
+
   // --- EVALUATE DEPARTMENT ENCLOSURE OVERLAYS ---
   const marketingHeaderBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingHeaderBlock) {
@@ -5665,7 +5717,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");
   if (storeHeaderBlock) {
-    storeHeaderBlock.style.display = (canViewLiveStock || canReleaseTicket || canSearchStoreMat || canApproveBOQIncrease || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntry === true || userPermissionsObject.grnNote === true || canViewLiveFinishedStock || canLiveSpareStoreStock || canAssignCurrentStock) ? "block" : "none";
+    storeHeaderBlock.style.display = (canViewLiveStock || canReleaseTicket || canSearchStoreMat || canApproveBOQIncrease || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntry === true || userPermissionsObject.grnNote === true || canViewLiveFinishedStock || canLiveSpareStoreStock || canAssignCurrentStock || canPurchaseRequestNote) ? "block" : "none";
   }
 }
 
@@ -11369,6 +11421,37 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
     document.getElementById("canvas-module-purchase-upload-rm-po").style.display = "block";
     initializeRMPOUploadPanel();
   }
+}
+
+// ═══════════════════════════════════════════════════════
+// DEPARTMENT DASHBOARD NAVIGATION
+// ═══════════════════════════════════════════════════════
+function navigateToDesignDashboard() {
+  showDashboard();
+  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+  const c = document.getElementById("canvas-module-design-dashboard");
+  if (c) c.style.display = "block";
+}
+
+function navigateToPurchaseDashboard() {
+  showDashboard();
+  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+  const c = document.getElementById("canvas-module-purchase-dashboard");
+  if (c) c.style.display = "block";
+}
+
+function navigateToStoreDashboard() {
+  showDashboard();
+  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+  const c = document.getElementById("canvas-module-store-dashboard");
+  if (c) c.style.display = "block";
+}
+
+function navigateToProductionDashboard() {
+  showDashboard();
+  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+  const c = document.getElementById("canvas-module-production-dashboard");
+  if (c) c.style.display = "block";
 }
 
 function exitPurchaseWorkspacePanelBackToMenu() {
