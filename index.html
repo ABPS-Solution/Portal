@@ -2573,7 +2573,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxSdAltIfZxkIemRDpoKeC5SGYIc_E5UgzPeHLNw48umQO3kRElXNriTWyNbfsGDbhN/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxrGKH6oQJPqw6sLczJyeUANeEIkooiIxW8lPeu_OYP7ydGssvwTYugdb5BDICnZtla/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -6535,12 +6535,36 @@ async function refreshLiveStockForSelectedMaterial() {
       existing.reservedStock  = data.reservedStock;
       existing.unitType       = data.unitType;
     }
+    // Keep module-level variable in sync with window-level patch
+    if (typeof cachedInventoryStockCollection !== "undefined" && cachedInventoryStockCollection !== window.cachedInventoryStockCollection) {
+      const localExisting = cachedInventoryStockCollection.find(i =>
+        (i.materialName||"").replace(/\s+/g,"").toLowerCase() === cleanKey
+      );
+      if (localExisting) {
+        localExisting.availableStock = data.availableStock;
+        localExisting.reservedStock  = data.reservedStock;
+        localExisting.unitType       = data.unitType;
+      }
+    }
 
     const spareExisting = (window.cachedSpareStoreStock||[]).find(i =>
       (i.materialName||"").replace(/\s+/g,"").toLowerCase() === cleanKey
     );
     if (spareExisting) {
       spareExisting.availableStock = data.spareStock;
+
+      // FIX: Rebuild the spare store dropdown option text with the fresh count
+      if (activeStoreScope === "Spare Store") {
+        const itemDrop = document.getElementById("ticket-item-selection-dropdown");
+        if (itemDrop) {
+          Array.from(itemDrop.options).forEach(opt => {
+            const optCleanKey = opt.value.replace(/\s+/g,"").toLowerCase();
+            if (optCleanKey === cleanKey) {
+              opt.textContent = `${spareExisting.materialName} (${data.spareStock} ${spareExisting.unitType} available)`;
+            }
+          });
+        }
+      }
     }
 
     // Patch BOQ cache with fresh remaining quantities
