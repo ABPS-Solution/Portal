@@ -10122,8 +10122,14 @@ async function executeItemCodeSearch() {
       low:    { bg: "#f1f5f9", color: "#64748b", label: "Weak Match" }
     };
 
+    const catalogUnitLookup = {};
+    (window.itemCodeCatalogCache || []).forEach(c => {
+      if (c.itemCode) catalogUnitLookup[c.itemCode.toUpperCase()] = c.unit || "";
+    });
+
     finalMatches.forEach((match, idx) => {
       const conf   = confidenceColors[match.confidence] || confidenceColors.low;
+      const unit   = catalogUnitLookup[(match.itemCode || "").toUpperCase()] || match.unit || "";
       const card   = document.createElement("div");
       card.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#fff; border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 16px; cursor:pointer; transition:all 0.15s ease;";
       card.onmouseover = () => { card.style.borderColor = "var(--brand)"; card.style.background = "var(--highlight-bg)"; };
@@ -10135,7 +10141,7 @@ async function executeItemCodeSearch() {
             <span style="font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:${conf.bg}; color:${conf.color};">${conf.label}</span>
           </div>
           <div style="font-size:0.88rem; font-weight:600; color:var(--text); line-height:1.4;">${match.productName}</div>
-          <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">${match.typeOfMaterial}${match.unit ? ` &nbsp;·&nbsp; <strong style="color:var(--text);">Unit: ${match.unit}</strong>` : ""}</div>
+          <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">${match.typeOfMaterial}${unit ? ` &nbsp;·&nbsp; <strong style="color:var(--text);">Unit: ${unit}</strong>` : ""}</div>
         </div>
       `;
       suggestMount.appendChild(card);
