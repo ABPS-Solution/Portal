@@ -9862,17 +9862,25 @@ function filterOutPureAdminPersonnel(personnelTree) {
   });
 }
 
-async function loadItemCodeCatalogIntoCache() {
+async function loadItemCodeCatalogIntoCache(forceRefresh = false) {
+  const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+  const now = Date.now();
+  if (
+    !forceRefresh &&
+    window.itemCodeCatalogCache &&
+    window.itemCodeCatalogCache.length > 0 &&
+    window._itemCodeCacheLoadedAt &&
+    (now - window._itemCodeCacheLoadedAt) < CACHE_TTL_MS
+  ) {
+    return; // Cache is fresh — skip backend hit
+  }
   try {
-    const data = await apFetch({
-      action: "fetchItemCodeCatalog"
-    });
-    console.log("ItemCode catalog response:", data);  // ADD THIS
+    const data = await apFetch({ action: "fetchItemCodeCatalog" });
     if (data.success) {
       window.itemCodeCatalogCache = data.catalog;
-      console.log("ItemCode catalog loaded:", data.catalog.length, "items", data.catalog[0]);  // ADD THIS
+      window._itemCodeCacheLoadedAt = Date.now();
     } else {
-      console.error("ItemCode catalog failed:", data.error);  // ADD THIS
+      console.error("ItemCode catalog failed:", data.error);
       window.itemCodeCatalogCache = [];
     }
   } catch(e) {
