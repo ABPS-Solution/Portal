@@ -6410,11 +6410,14 @@ async function submitMaterialRequestTicketToBackend() {
     const payload = {
       action: "submitEngineerMaterialTicket",
       activeEngineer: operatorSignatureName,
+      operatorName: operatorSignatureName,
+      requestedBy: operatorSignatureName,
       projectId: projectId,
       jobCardNumber: jobCardNumberVal,
       departmentOutgoing: departmentVal,
       ticketTypeCommandString: ticketTypeVal,
-      storeTargetScope: chosenStoreTargetScopeStr, 
+      storeTargetScope: chosenStoreTargetScopeStr,
+      items: dynamicTicketShoppingBasketArray,
       itemsClusterArray: dynamicTicketShoppingBasketArray
     };
     
@@ -6516,8 +6519,15 @@ async function refreshLiveStockForSelectedMaterial() {
     if (projectId && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Spare Store")) {
       try {
         boqData = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: projectId });
+        if (boqData && boqData.success) {
+          window._ticketBOQCache = { projectId: projectId, records: boqData.records || [] };
+        }
       } catch(boqErr) {
         console.warn("BOQ refresh failed (non-fatal):", boqErr.message);
+        // Guarantee cache exists so updateSelectedLiveStockPillCounter doesn't re-fetch and fail again
+        if (!window._ticketBOQCache || window._ticketBOQCache.projectId !== projectId) {
+          window._ticketBOQCache = { projectId: projectId, records: [] };
+        }
       }
     }
 
@@ -6738,7 +6748,26 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
     }
   } catch(err) {
     console.error("Pill allocation tracking crash:", err);
-    counterZone.innerHTML = "";
+    // Don't blank the zone — if we have live stock data, show it even without BOQ
+    if (liveStockOverride) {
+      const availableCount = Number(liveStockOverride.availableStock) || 0;
+      const reservedCount  = Number(liveStockOverride.reservedStock)  || 0;
+      const unitToken      = (liveStockOverride.unitType || "NOS").toUpperCase();
+      const styleClass     = availableCount === 0 ? "pill-stock-empty" : availableCount <= 5 ? "pill-stock-low" : "pill-stock-healthy";
+      counterZone.innerHTML = `
+        <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
+          <div>
+            Real-time Raw Material Store Count:
+            <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
+              ${availableCount} ${unitToken} AVAILABLE
+            </span>
+            <span style="font-size:0.78rem; color:var(--muted); margin-left:6px; font-weight:normal;">
+              (Reserved: ${reservedCount} ${unitToken})
+            </span>
+          </div>
+          <div style="margin-top:4px; font-size:0.72rem; color:var(--warn);">⚠️ BOQ data could not be loaded. Retry by reselecting the item.</div>
+        </div>`;
+    }
   }
 }
 
