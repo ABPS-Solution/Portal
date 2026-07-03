@@ -6503,34 +6503,6 @@ async function refreshLiveStockForSelectedMaterial() {
   const projectId          = document.getElementById("ticket-project-id-dropdown")?.value;
   if (!selectedMaterial) { stopLiveStockPolling(); return; }
 
-  // Live fetch from backend to bust stale cache on every poll tick
-  if (activeStoreScope === "Raw Materials Store") {
-    try {
-      const cleanKey = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim();
-      const liveData = await apFetch({ action: "fetchLiveMaterialStock", itemCodes: [] });
-      // fetchLiveMaterialStock needs itemCode — resolve from local cache
-      const catalogHit = (window.itemCodeCatalogCache || []).find(c =>
-        (c.productName || "").replace(/\s+/g, '').toLowerCase() === cleanKey.replace(/\s+/g, '').toLowerCase()
-      );
-      if (catalogHit && catalogHit.itemCode) {
-        const stockData = await apFetch({ action: "fetchLiveMaterialStock", itemCodes: [catalogHit.itemCode] });
-        if (stockData.success && stockData.stock) {
-          const s = stockData.stock[catalogHit.itemCode.toUpperCase()];
-          if (s && window.cachedInventoryStockCollection) {
-            const idx = window.cachedInventoryStockCollection.findIndex(i =>
-              (i.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanKey.replace(/\s+/g, '').toLowerCase()
-            );
-            if (idx !== -1) {
-              window.cachedInventoryStockCollection[idx].availableStock = s.raw;
-              window.cachedInventoryStockCollection[idx].reservedStock  =
-                (window.cachedInventoryStockCollection[idx].totalStock || 0) - s.raw;
-            }
-          }
-        }
-      }
-    } catch(_) { /* silent — fall through to render with whatever cache has */ }
-  }
-
   // Strip any appended stock count suffix e.g. " (0 NOS available)" from Spare Store dropdown labels
   const cleanMaterialName = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim();
 
@@ -6591,7 +6563,7 @@ async function refreshLiveStockForSelectedMaterial() {
     }
 
     await updateSelectedLiveStockPillCounter();
-  } catch(e) { /* silent — polling failure should not disrupt UX */ }
+  } catch(e) { console.warn("refreshLiveStockForSelectedMaterial error:", e.message); }
 }
 
 async function updateSelectedLiveStockPillCounter() {
