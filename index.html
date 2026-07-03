@@ -6315,6 +6315,7 @@ async function initializeMaterialRequestWorkspace() {
     
     if (inventoryData.success && projectsData.success && staffData.success) {
       cachedInventoryStockCollection = inventoryData.inventory;
+      window.cachedInventoryStockCollection = cachedInventoryStockCollection;
       window.cachedFinishedGoodsStoreStockCollection = inventoryData.finishedGoodsInventory || [];
       globalOperatorsDatabasePayloadCache = staffData.fullPersonnelDataRecordsTree || []; 
 
@@ -6525,7 +6526,8 @@ async function refreshLiveStockForSelectedMaterial() {
     // Patch inventory counts in local cache
     const cleanKey = cleanMaterialName.replace(/\s+/g,"").toLowerCase();
 
-    const existing = cachedInventoryStockCollection.find(i =>
+    const _invCache = window.cachedInventoryStockCollection || cachedInventoryStockCollection || [];
+    const existing = _invCache.find(i =>
       (i.materialName||"").replace(/\s+/g,"").toLowerCase() === cleanKey
     );
     if (existing) {
@@ -6622,9 +6624,10 @@ async function updateSelectedLiveStockPillCounter() {
 
     const cleanSearchKey = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim().replace(/\s+/g, '').toLowerCase();
     
-    const inventoryMatch = cachedInventoryStockCollection.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
-      || cachedInventoryStockCollection.find(i => i.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
-      || cachedInventoryStockCollection.find(i => cleanSearchKey.includes(i.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+    const _inv = window.cachedInventoryStockCollection || cachedInventoryStockCollection || [];
+    const inventoryMatch = _inv.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
+      || _inv.find(i => i.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
+      || _inv.find(i => cleanSearchKey.includes(i.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
 
     const boqMatch = (boqData.records || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
       || (boqData.records || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
