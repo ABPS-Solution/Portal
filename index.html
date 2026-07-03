@@ -9595,16 +9595,13 @@ function exitDesignWorkspacePanelBackToMenu() {
  */
 
 function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
-  const deptDropdown = document.getElementById("ticket-department-outgoing-dropdown");
-  const deptLabel = document.getElementById("lbl-dept-outgoing-title");
-  
-  // Clear basket and BOQ cache when store changes — but do NOT reset Dept/RequestedBy (they come before store now)
+  // Clear basket and BOQ cache only — Department and Requested By are upstream, never touch them
   stopLiveStockPolling();
   window._ticketBOQCache = null;
   clearFullBasketDraftState();
   document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
 
-  // Only reset the Add Item zone below Choose Store
+  // Reset only the Add Item zone below Choose Store
   const itemDrop = document.getElementById("ticket-item-selection-dropdown");
   const qtyInp   = document.getElementById("ticket-item-quantity-input");
   const addBtn   = document.getElementById("ticket-add-item-action-btn");
@@ -9614,47 +9611,7 @@ function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
   if (addBtn)   { addBtn.disabled = true; addBtn.style.cursor = "not-allowed"; }
   if (addZone)  addZone.style.opacity = "0.5";
 
-  if (!chosenStoreValue) {
-    return;
-  } else if (chosenStoreValue === "Finished Goods Store") {
-    deptDropdown.innerHTML = `
-      <option value="">— Select Department —</option>
-      <option value="Panel">Panel</option>
-      <option value="Dispatch">Dispatch</option>
-    `;
-    deptDropdown.disabled = false;
-    deptDropdown.style.opacity = "1";
-    deptDropdown.style.cursor = "pointer";
-    deptDropdown.value = "";
-  } else if (chosenStoreValue === "Spare Store") {
-    deptDropdown.innerHTML = `
-      <option value="">— Select Department —</option>
-      <option value="Reactor">Reactor</option>
-      <option value="Capacitor">Capacitor</option>
-      <option value="Panel">Panel</option>
-      <option value="Processing">Processing</option>
-      <option value="Service">Service</option>
-    `;
-    deptDropdown.disabled = false;
-    deptDropdown.style.opacity = "1";
-    deptDropdown.style.cursor = "pointer";
-    deptDropdown.value = "";
-  } else {
-    // Restore full department options for Raw Materials Store
-    deptDropdown.innerHTML = `
-      <option value="">— Select Department —</option>
-      <option value="Reactor">Reactor</option>
-      <option value="Capacitor">Capacitor</option>
-      <option value="Panel">Panel</option>
-      <option value="Processing">Processing</option>
-      <option value="Service">Service</option>
-    `;
-    deptDropdown.disabled = false;
-    deptDropdown.style.opacity = "1";
-    deptDropdown.style.cursor = "pointer";
-    deptDropdown.value = "";
-  }
-  if (deptLabel) deptLabel.style.color = "var(--brand)";
+  if (!chosenStoreValue) return;
 
   // Pre-load item catalog now that store scope is known
   loadItemCatalogForSelectedProjectAndStore();
