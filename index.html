@@ -487,7 +487,7 @@
           <div style="display: flex; gap: 10px; align-items: flex-end;">
             <div style="flex-grow: 1;">
               <label class="field-label" style="font-size: 0.75rem;">Material Description</label>
-              <select id="ticket-item-selection-dropdown" onchange="updateSelectedLiveStockPillCounter(); startLiveStockPolling();" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled></select>
+              <select id="ticket-item-selection-dropdown" onchange="refreshLiveStockForSelectedMaterial(); startLiveStockPolling();" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled></select>
             </div>
             <div style="width: 100px;">
               <label class="field-label" style="font-size: 0.75rem;">Quantity</label>
@@ -6620,11 +6620,23 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
     return;
   }
 
-  // --- SPARE STORE: show live spare stock count ---
+  // --- SPARE STORE: show live spare stock count + BOQ pills ---
   if (activeStoreScope === "Spare Store") {
     const cleanSpareKey = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim().replace(/\s+/g, "").toLowerCase();
     const spareCache    = window.cachedSpareStoreStock || [];
     const spareMatch    = spareCache.find(i => (i.materialName || "").replace(/\s+/g, "").toLowerCase() === cleanSpareKey);
+
+    // Resolve BOQ for this material from cache
+    if (!window._ticketBOQCache || window._ticketBOQCache.projectId !== projectId) {
+      try {
+        const boqFetch = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: projectId });
+        window._ticketBOQCache = { projectId: projectId, records: boqFetch.records || [] };
+      } catch(e) { window._ticketBOQCache = { projectId: projectId, records: [] }; }
+    }
+    const spareBoqMatch = (window._ticketBOQCache.records || []).find(r => r.materialName.replace(/\s+/g,"").toLowerCase() === cleanSpareKey)
+      || (window._ticketBOQCache.records || []).find(r => r.materialName.replace(/\s+/g,"").toLowerCase().includes(cleanSpareKey.substring(0,20)))
+      || (window._ticketBOQCache.records || []).find(r => cleanSpareKey.includes(r.materialName.replace(/\s+/g,"").toLowerCase().substring(0,20)));
+
     if (spareMatch) {
       const qty       = liveStockOverride ? Number(liveStockOverride.spareStock) : (Number(spareMatch.availableStock) || 0);
       const unitToken = (spareMatch.unitType || "NOS").toUpperCase();
@@ -6637,6 +6649,12 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
               ${qty} ${unitToken} AVAILABLE
             </span>
           </div>
+          ${spareBoqMatch ? `
+          <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED BOQ: ${spareBoqMatch.totalQty || 0} ${unitToken}</span>
+            <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED BOQ: ${spareBoqMatch.usedQty || 0} ${unitToken}</span>
+            <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING BOQ: ${spareBoqMatch.remainingQty || 0} ${unitToken}</span>
+          </div>` : `<div style="margin-top:4px; font-size:0.72rem; color:var(--warn);">⚠️ Not in BOQ for this project</div>`}
         </div>`;
     } else {
       counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Item not found in Spare Store cache.</span>`;
