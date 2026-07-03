@@ -9188,7 +9188,21 @@ function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
   const staffDrop = document.getElementById("ticket-requested-by-operator-dropdown");
   const titleLbl = document.getElementById("lbl-dynamic-operator-signature-title");
   
-  resetMaterialRequestCascadingLockState();
+  // Only reset below Department — not the full cascade
+  const staffDrop2 = document.getElementById("ticket-requested-by-operator-dropdown");
+  const storeScopeDrop2 = document.getElementById("ticket-selected-store-scope-toggle");
+  const storeScopeLabel2 = document.getElementById("lbl-store-scope-title");
+  const itemDrop2 = document.getElementById("ticket-item-selection-dropdown");
+  const qtyInp2 = document.getElementById("ticket-item-quantity-input");
+  const addBtn2 = document.getElementById("ticket-add-item-action-btn");
+  if (staffDrop2) { staffDrop2.innerHTML = '<option value="">— Choose Department First —</option>'; staffDrop2.disabled = true; }
+  if (storeScopeDrop2) { storeScopeDrop2.disabled = true; storeScopeDrop2.style.opacity = "0.5"; storeScopeDrop2.style.cursor = "not-allowed"; storeScopeDrop2.value = ""; if (storeScopeDrop2.options[0]) storeScopeDrop2.options[0].text = "— Choose Requested By First —"; }
+  if (storeScopeLabel2) storeScopeLabel2.style.color = "var(--muted)";
+  if (itemDrop2) itemDrop2.disabled = true;
+  if (qtyInp2) qtyInp2.disabled = true;
+  if (addBtn2) { addBtn2.disabled = true; addBtn2.style.cursor = "not-allowed"; }
+  document.getElementById("wrapper-ticket-add-item-zone").style.opacity = "0.5";
+  document.getElementById("lbl-dynamic-operator-signature-title").style.color = "var(--muted)";
   if (!chosenDepartmentVal) return;
 
   staffDrop.innerHTML = '<option value="">— Select Your Name —</option>';
@@ -9601,12 +9615,6 @@ function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
   if (addZone)  addZone.style.opacity = "0.5";
 
   if (!chosenStoreValue) {
-    deptDropdown.disabled = true;
-    deptDropdown.style.opacity = "0.5";
-    deptDropdown.style.cursor = "not-allowed";
-    deptDropdown.value = "";
-    deptDropdown.options[0].text = "— Choose Store First —";
-    if (deptLabel) deptLabel.style.color = "var(--muted)";
     return;
   } else if (chosenStoreValue === "Finished Goods Store") {
     deptDropdown.innerHTML = `
