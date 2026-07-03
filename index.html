@@ -6508,20 +6508,18 @@ async function refreshLiveStockForSelectedMaterial() {
   const cleanMaterialName = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim();
 
   try {
-    // Fetch inventory counts and BOQ remaining in parallel
-    const fetchPromises = [
-      apFetch({ action: "getLiveStockForItem", materialName: cleanMaterialName })
-    ];
-    // Also re-fetch BOQ data if we have a project — BOQ remaining changes when other tickets are approved
-    if (projectId && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Spare Store")) {
-      fetchPromises.push(apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: projectId }));
-    }
-
-    const results = await Promise.all(fetchPromises);
-    const data    = results[0];
-    const boqData = results[1] || null;
-
+    // Fetch stock and BOQ independently — never let a BOQ failure kill the stock refresh
+    const data = await apFetch({ action: "getLiveStockForItem", materialName: cleanMaterialName });
     if (!data.success) return;
+
+    let boqData = null;
+    if (projectId && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Spare Store")) {
+      try {
+        boqData = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: projectId });
+      } catch(boqErr) {
+        console.warn("BOQ refresh failed (non-fatal):", boqErr.message);
+      }
+    }
 
     // Patch inventory counts in local cache
     const cleanKey = cleanMaterialName.replace(/\s+/g,"").toLowerCase();
@@ -6534,17 +6532,6 @@ async function refreshLiveStockForSelectedMaterial() {
       existing.availableStock = data.availableStock;
       existing.reservedStock  = data.reservedStock;
       existing.unitType       = data.unitType;
-    }
-    // Keep module-level variable in sync with window-level patch
-    if (typeof cachedInventoryStockCollection !== "undefined" && cachedInventoryStockCollection !== window.cachedInventoryStockCollection) {
-      const localExisting = cachedInventoryStockCollection.find(i =>
-        (i.materialName||"").replace(/\s+/g,"").toLowerCase() === cleanKey
-      );
-      if (localExisting) {
-        localExisting.availableStock = data.availableStock;
-        localExisting.reservedStock  = data.reservedStock;
-        localExisting.unitType       = data.unitType;
-      }
     }
 
     const spareExisting = (window.cachedSpareStoreStock||[]).find(i =>
@@ -6588,11 +6575,11 @@ async function refreshLiveStockForSelectedMaterial() {
       }
     }
 
-    await updateSelectedLiveStockPillCounter();
+    await updateSelectedLiveStockPillCounter(data);
   } catch(e) { console.warn("refreshLiveStockForSelectedMaterial error:", e.message); }
 }
 
-async function updateSelectedLiveStockPillCounter() {
+async function updateSelectedLiveStockPillCounter(liveStockOverride) {
   const selectedMaterial = document.getElementById("ticket-item-selection-dropdown").value;
   const projectId = document.getElementById("ticket-project-id-dropdown").value;
   const counterZone = document.getElementById("ticket-live-counter-pill-zone");
@@ -6639,7 +6626,7 @@ async function updateSelectedLiveStockPillCounter() {
     const spareCache    = window.cachedSpareStoreStock || [];
     const spareMatch    = spareCache.find(i => (i.materialName || "").replace(/\s+/g, "").toLowerCase() === cleanSpareKey);
     if (spareMatch) {
-      const qty       = Number(spareMatch.availableStock) || 0;
+      const qty       = liveStockOverride ? Number(liveStockOverride.spareStock) : (Number(spareMatch.availableStock) || 0);
       const unitToken = (spareMatch.unitType || "NOS").toUpperCase();
       const styleClass = qty === 0 ? "pill-stock-empty" : qty <= 5 ? "pill-stock-low" : "pill-stock-healthy";
       counterZone.innerHTML = `
@@ -6672,10 +6659,15 @@ async function updateSelectedLiveStockPillCounter() {
 
     const cleanSearchKey = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim().replace(/\s+/g, '').toLowerCase();
     
-    const _inv = window.cachedInventoryStockCollection || cachedInventoryStockCollection || [];
-    const inventoryMatch = _inv.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
-      || _inv.find(i => i.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
-      || _inv.find(i => cleanSearchKey.includes(i.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+    let inventoryMatch;
+    if (liveStockOverride) {
+      inventoryMatch = { availableStock: liveStockOverride.availableStock, reservedStock: liveStockOverride.reservedStock, unitType: liveStockOverride.unitType };
+    } else {
+      const _inv = window.cachedInventoryStockCollection || cachedInventoryStockCollection || [];
+      inventoryMatch = _inv.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
+        || _inv.find(i => i.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
+        || _inv.find(i => cleanSearchKey.includes(i.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+    }
 
     const boqMatch = (boqData.records || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
       || (boqData.records || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
