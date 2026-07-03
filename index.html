@@ -6564,27 +6564,6 @@ async function refreshLiveStockForSelectedMaterial() {
       }
     }
 
-    // Patch BOQ cache with fresh remaining quantities
-    if (boqData && boqData.success && boqData.records) {
-      if (window._ticketBOQCache && window._ticketBOQCache.projectId === projectId) {
-        // Update individual record quantities in place — don't replace entire cache
-        boqData.records.forEach(freshRecord => {
-          const freshKey = (freshRecord.materialName||"").replace(/\s+/g,"").toLowerCase();
-          const cached   = window._ticketBOQCache.records.find(r =>
-            (r.materialName||"").replace(/\s+/g,"").toLowerCase() === freshKey
-          );
-          if (cached) {
-            cached.totalQty     = freshRecord.totalQty;
-            cached.usedQty      = freshRecord.usedQty;
-            cached.remainingQty = freshRecord.remainingQty;
-          }
-        });
-      } else {
-        // No cache yet — set it now so updateSelectedLiveStockPillCounter doesn't re-fetch
-        window._ticketBOQCache = { projectId: projectId, records: boqData.records };
-      }
-    }
-
     await updateSelectedLiveStockPillCounter(data);
   } catch(e) { console.warn("refreshLiveStockForSelectedMaterial error:", e.message); }
 }
