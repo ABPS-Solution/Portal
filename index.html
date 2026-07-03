@@ -1263,6 +1263,19 @@
           <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Use the full descriptive name as it should appear in your catalog. This cannot be changed later without admin access.</div>
         </div>
 
+        <div style="margin-bottom:14px;">
+          <label class="field-label" style="margin-top:0;">Unit *</label>
+          <select id="itemcode-new-unit" style="padding:10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <option value="">— Select Unit —</option>
+            <option value="NOS">NOS — Numbers</option>
+            <option value="KG"> KG — Kilograms</option>
+            <option value="MTR">MTR — Metres</option>
+            <option value="SET">SET — Sets</option>
+            <option value="LTR">LTR — Litres</option>
+            <option value="ROL">ROL — Rolls</option>
+          </select>
+        </div>
+
         <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #86efac; padding-top:14px;">
           <button onclick="document.getElementById('itemcode-create-form-zone').style.display='none';" 
             style="background:#718096; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">Cancel</button>
@@ -1597,13 +1610,289 @@
     </div>
 
     <!-- STORE DASHBOARD CANVAS -->
-    <div id="canvas-module-store-dashboard" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <p style="color:var(--muted); font-size:0.85rem;">Store Dashboard — coming soon.</p>
+    <div id="canvas-module-store-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
+
+      <!-- TOP BAR -->
+      <div style="background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; position:relative;">
+          <div id="sd-period-btns" style="display:flex; gap:4px; flex-wrap:nowrap;">
+            <button class="dd-period-btn active" data-period="today"       onclick="sdSetPeriod(this)">Today</button>
+            <button class="dd-period-btn"        data-period="yesterday"   onclick="sdSetPeriod(this)">Yesterday</button>
+            <button class="dd-period-btn"        data-period="thisweek"    onclick="sdSetPeriod(this)">This Week</button>
+            <button class="dd-period-btn"        data-period="thismonth"   onclick="sdSetPeriod(this)">This Month</button>
+            <button class="dd-period-btn"        data-period="thisquarter" onclick="sdSetPeriod(this)">This Quarter</button>
+            <button class="dd-period-btn"        data-period="thisyear"    onclick="sdSetPeriod(this)">This Year</button>
+            <button class="dd-period-btn"        data-period="custom"      onclick="sdSetPeriod(this)">Custom ▾</button>
+          </div>
+          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">🏪 Store Dashboard</span>
+          <button class="nav-btn-styled" onclick="exitStoreWorkspacePanelBackToMenu()" style="font-size:0.75rem;">Return to Main Dashboard</button>
+        </div>
+        <div id="sd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
+          <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
+          <select id="sd-custom-type" onchange="sdCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
+            <option value="customday">Day</option>
+            <option value="customweek">Week</option>
+            <option value="custommonth">Month</option>
+            <option value="customquarter">Quarter</option>
+            <option value="customyear">Year</option>
+          </select>
+          <input id="sd-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
+          <button onclick="sdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
+        </div>
+      </div>
+
+      <!-- DASHBOARD BODY -->
+      <div id="sd-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+
+        <!-- ROW 1: Operational Pulse -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 16%;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Tickets</div>
+            <div class="dd-stat-val" id="sd-s-tickets">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Pending Approvals</div>
+            <div class="dd-stat-val" id="sd-s-pending" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Avg. Approval Time</div>
+            <div class="dd-stat-val" id="sd-s-avgtime">—</div>
+            <div class="dd-stat-sub" id="sd-s-avgtime-unit">minutes</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">GRNs</div>
+            <div class="dd-stat-val" id="sd-s-grns">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Total Items in Stock</div>
+            <div class="dd-stat-val" id="sd-s-itemcount">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 2: Stock Health -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 16%;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Spare Store Items</div>
+            <div class="dd-stat-val" id="sd-s-spare">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Finished Goods Ready</div>
+            <div class="dd-stat-val" id="sd-s-fgready" style="color:#15803d;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Pending BOQ Increases</div>
+            <div class="dd-stat-val" id="sd-s-boqinc" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Return Tickets</div>
+            <div class="dd-stat-val" id="sd-s-returns">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">BOQ Overrun Incidents</div>
+            <div class="dd-stat-val" id="sd-s-overruns" style="color:#b91c1c;">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 3: Charts -->
+        <div style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 26%;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+            <div class="dd-card-title">Tickets by Department</div>
+            <canvas id="sd-chart-dept" style="max-height:100px;"></canvas>
+          </div>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+            <div class="dd-card-title">Daily Ticket Volume</div>
+            <canvas id="sd-chart-trend" style="max-height:100px;"></canvas>
+          </div>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+            <div class="dd-card-title">GRN Volume by Material Type</div>
+            <canvas id="sd-chart-grn-type" style="max-height:100px;"></canvas>
+          </div>
+        </div>
+
+        <!-- ROW 4: Project Health + Recent Activity -->
+        <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:10px; flex:1; min-height:0;">
+
+          <!-- Project Stock Health -->
+          <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <div class="dd-card-title" style="margin-bottom:0;">📦 Project Stock Health</div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <input id="sd-health-search" type="text" placeholder="Search project..." oninput="sdFilterHealth()"
+                  style="font-size:0.72rem; padding:3px 8px; border:1px solid var(--border); border-radius:4px; width:130px;" />
+                <span id="sd-health-page-info" style="font-size:0.68rem; color:var(--muted); white-space:nowrap;"></span>
+                <button onclick="sdHealthPage(-1)" class="dd-period-btn" style="padding:2px 7px;">‹</button>
+                <button onclick="sdHealthPage(1)"  class="dd-period-btn" style="padding:2px 7px;">›</button>
+              </div>
+            </div>
+            <div style="overflow-y:auto; flex:1;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead><tr style="color:var(--muted); font-size:0.68rem; border-bottom:1.5px solid var(--border); position:sticky; top:0; background:var(--card);">
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Project ID</th>
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Customer</th>
+                  <th style="text-align:center; padding:3px 6px; font-weight:700;">Tickets</th>
+                  <th style="text-align:center; padding:3px 6px; font-weight:700;">Approved</th>
+                  <th style="text-align:center; padding:3px 6px; font-weight:700;">Pending</th>
+                  <th style="text-align:center; padding:3px 6px; font-weight:700;">Qty Consumed</th>
+                </tr></thead>
+                <tbody id="sd-health-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Recent Ticket Activity -->
+          <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title" style="margin-bottom:6px;">🕐 Recent Ticket Activity</div>
+            <div id="sd-recent-feed" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex:1;"></div>
+          </div>
+
+        </div>
+      </div>
     </div>
 
     <!-- PRODUCTION DASHBOARD CANVAS -->
-    <div id="canvas-module-production-dashboard" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <p style="color:var(--muted); font-size:0.85rem;">Production Dashboard — coming soon.</p>
+    <div id="canvas-module-production-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
+
+      <!-- TOP BAR -->
+      <div style="background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; position:relative;">
+          <div id="pd2-period-btns" style="display:flex; gap:4px; flex-wrap:nowrap;">
+            <button class="dd-period-btn active" data-period="today"       onclick="pd2SetPeriod(this)">Today</button>
+            <button class="dd-period-btn"        data-period="yesterday"   onclick="pd2SetPeriod(this)">Yesterday</button>
+            <button class="dd-period-btn"        data-period="thisweek"    onclick="pd2SetPeriod(this)">This Week</button>
+            <button class="dd-period-btn"        data-period="thismonth"   onclick="pd2SetPeriod(this)">This Month</button>
+            <button class="dd-period-btn"        data-period="thisquarter" onclick="pd2SetPeriod(this)">This Quarter</button>
+            <button class="dd-period-btn"        data-period="thisyear"    onclick="pd2SetPeriod(this)">This Year</button>
+            <button class="dd-period-btn"        data-period="custom"      onclick="pd2SetPeriod(this)">Custom ▾</button>
+          </div>
+          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">🏭 Production Dashboard</span>
+          <button class="nav-btn-styled" onclick="exitToMainDashboard();" style="font-size:0.75rem;">Return to Main Dashboard</button>
+        </div>
+        <div id="pd2-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
+          <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
+          <select id="pd2-custom-type" onchange="pd2CustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
+            <option value="customday">Day</option>
+            <option value="customweek">Week</option>
+            <option value="custommonth">Month</option>
+            <option value="customquarter">Quarter</option>
+            <option value="customyear">Year</option>
+          </select>
+          <input id="pd2-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
+          <button onclick="pd2LoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
+        </div>
+      </div>
+
+      <!-- DASHBOARD BODY -->
+      <div id="pd2-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+
+        <!-- ROW 1: Job Card Pulse — 5 cards (3 real + 2 upcoming) -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 16%;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Active Job Cards</div>
+            <div class="dd-stat-val" id="pd2-s-activejcn">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Finished This Period</div>
+            <div class="dd-stat-val" id="pd2-s-finished" style="color:#15803d;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">In Progress</div>
+            <div class="dd-stat-val" id="pd2-s-inprogress" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub">tickets raised, no FG entry</div>
+          </div>
+          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
+            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          </div>
+          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
+            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 2: Material & BOQ — 5 cards (2 real + 3 upcoming) -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 16%;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Store Tickets Raised</div>
+            <div class="dd-stat-val" id="pd2-s-tickets">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">BOQ Utilization</div>
+            <div class="dd-stat-val" id="pd2-s-boqutil">—</div>
+            <div class="dd-stat-sub" id="pd2-s-boqutil-sub">avg across active projects</div>
+          </div>
+          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
+            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          </div>
+          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
+            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          </div>
+          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
+            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 3: Charts — 2 real + 1 upcoming -->
+        <div style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 26%;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+            <div class="dd-card-title">Finished Goods by Department</div>
+            <canvas id="pd2-chart-dept" style="max-height:100px;"></canvas>
+          </div>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+            <div class="dd-card-title">Job Card Completion Trend</div>
+            <canvas id="pd2-chart-trend" style="max-height:100px;"></canvas>
+          </div>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center; opacity:0.45;">
+            <div class="dd-card-title" style="color:var(--muted);">Coming Soon</div>
+            <div style="font-size:0.75rem; color:var(--muted); margin-top:12px; text-align:center;">Additional chart will appear here</div>
+          </div>
+        </div>
+
+        <!-- ROW 4: Two Tables -->
+        <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:10px; flex:1; min-height:0;">
+
+          <!-- In Progress Job Cards -->
+          <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+              <div class="dd-card-title" style="margin-bottom:0;">⚙️ In Progress Job Cards</div>
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <input id="pd2-jcn-search" type="text" placeholder="Search JCN / project..."
+                  oninput="pd2FilterJCN()"
+                  style="font-size:0.72rem; padding:3px 8px; border:1px solid var(--border); border-radius:4px; width:150px;" />
+                <select id="pd2-jcn-dept-filter" onchange="pd2FilterJCN()"
+                  style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
+                  <option value="">All Departments</option>
+                </select>
+                <span id="pd2-jcn-page-info" style="font-size:0.68rem; color:var(--muted); white-space:nowrap;"></span>
+                <button onclick="pd2JCNPage(-1)" class="dd-period-btn" style="padding:2px 7px;">‹</button>
+                <button onclick="pd2JCNPage(1)"  class="dd-period-btn" style="padding:2px 7px;">›</button>
+              </div>
+            </div>
+            <div style="overflow-y:auto; flex:1;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead><tr style="color:var(--muted); font-size:0.68rem; border-bottom:1.5px solid var(--border); position:sticky; top:0; background:var(--card);">
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Job Card</th>
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Project</th>
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Product</th>
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Department</th>
+                  <th style="text-align:center; padding:3px 6px; font-weight:700;">Tickets</th>
+                  <th style="text-align:center; padding:3px 6px; font-weight:700;">Last Activity</th>
+                </tr></thead>
+                <tbody id="pd2-jcn-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Recent Finished Goods Activity -->
+          <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title" style="margin-bottom:6px;">✅ Recent Finished Goods</div>
+            <div id="pd2-fg-feed" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex:1;"></div>
+          </div>
+
+        </div>
+      </div>
     </div>
 
     <!-- MARKETING DASHBOARD CANVAS -->
@@ -6177,6 +6466,7 @@ async function submitMaterialRequestTicketToBackend() {
  */
 function resetStoreCreateTicketToInitialState() {
   stopLiveStockPolling();
+  window._ticketBOQCache = null;
   const materialRequestPanelContainer = document.getElementById("canvas-module-store-material-request");
   if (materialRequestPanelContainer && window.storeCreateTicketOriginalTemplateCacheHTML) {
     // Restores original HTML skeleton element properties safely
@@ -6210,16 +6500,29 @@ function stopLiveStockPolling() {
 async function refreshLiveStockForSelectedMaterial() {
   const activeStoreScope   = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
   const selectedMaterial   = document.getElementById("ticket-item-selection-dropdown")?.value;
+  const projectId          = document.getElementById("ticket-project-id-dropdown")?.value;
   if (!selectedMaterial) { stopLiveStockPolling(); return; }
 
   // Strip any appended stock count suffix e.g. " (0 NOS available)" from Spare Store dropdown labels
   const cleanMaterialName = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim();
 
   try {
-    const data = await apFetch({ action: "getLiveStockForItem", materialName: cleanMaterialName });
+    // Fetch inventory counts and BOQ remaining in parallel
+    const fetchPromises = [
+      apFetch({ action: "getLiveStockForItem", materialName: cleanMaterialName })
+    ];
+    // Also re-fetch BOQ data if we have a project — BOQ remaining changes when other tickets are approved
+    if (projectId && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Spare Store")) {
+      fetchPromises.push(apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: projectId }));
+    }
+
+    const results = await Promise.all(fetchPromises);
+    const data    = results[0];
+    const boqData = results[1] || null;
+
     if (!data.success) return;
 
-    // Patch only the selected item in the local caches — no full reload
+    // Patch inventory counts in local cache
     const cleanKey = cleanMaterialName.replace(/\s+/g,"").toLowerCase();
 
     const existing = cachedInventoryStockCollection.find(i =>
@@ -6238,8 +6541,29 @@ async function refreshLiveStockForSelectedMaterial() {
       spareExisting.availableStock = data.spareStock;
     }
 
+    // Patch BOQ cache with fresh remaining quantities
+    if (boqData && boqData.success && boqData.records) {
+      if (window._ticketBOQCache && window._ticketBOQCache.projectId === projectId) {
+        // Update individual record quantities in place — don't replace entire cache
+        boqData.records.forEach(freshRecord => {
+          const freshKey = (freshRecord.materialName||"").replace(/\s+/g,"").toLowerCase();
+          const cached   = window._ticketBOQCache.records.find(r =>
+            (r.materialName||"").replace(/\s+/g,"").toLowerCase() === freshKey
+          );
+          if (cached) {
+            cached.totalQty     = freshRecord.totalQty;
+            cached.usedQty      = freshRecord.usedQty;
+            cached.remainingQty = freshRecord.remainingQty;
+          }
+        });
+      } else {
+        // No cache yet — set it now so updateSelectedLiveStockPillCounter doesn't re-fetch
+        window._ticketBOQCache = { projectId: projectId, records: boqData.records };
+      }
+    }
+
     await updateSelectedLiveStockPillCounter();
-  } catch(e) { /* silent */ }
+  } catch(e) { /* silent — polling failure should not disrupt UX */ }
 }
 
 async function updateSelectedLiveStockPillCounter() {
@@ -6455,10 +6779,14 @@ async function addItemToShoppingBasketRow() {
       existingLineItem.requiresBOQIncreaseFlag = false;
       existingLineItem.allottedRemainingLimit = 9999;
     } else {
+      // Auto-fill unit from catalog cache for Finished Goods Store items
+      const fgCatalogEntry = (window.itemCodeCatalogCache || []).find(c =>
+        (c.productName || "").replace(/\s+/g, "").toLowerCase() === cleanSearchKey
+      );
       dynamicTicketShoppingBasketArray.push({
         materialName: materialName,
         quantity: totalRequestedQuantity,
-        unitType: "NOS",
+        unitType: (fgCatalogEntry && fgCatalogEntry.unit) ? fgCatalogEntry.unit : "NOS",
         requiresBOQIncreaseFlag: false,
         allottedRemainingLimit: 9999
       });
@@ -8972,6 +9300,9 @@ function handleCreateTicketBOQChange(chosenBoqId) {
   const jobCardDropdown = document.getElementById("ticket-job-card-dropdown");
   const jobCardLabel    = document.getElementById("lbl-job-card-title");
 
+  // Clear BOQ cache — different BOQ means different material allocations
+  window._ticketBOQCache = null;
+
   // Reset downstream
   resetMaterialRequestCascadingLockState();
   document.getElementById("ticket-selected-store-scope-toggle").value = "";
@@ -9230,8 +9561,9 @@ function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
   const deptDropdown = document.getElementById("ticket-department-outgoing-dropdown");
   const deptLabel = document.getElementById("lbl-dept-outgoing-title");
   
-  // Clear basket, stop polling, reset cascading locks whenever store changes
+  // Clear basket, BOQ cache, stop polling, reset cascading locks whenever store changes
   stopLiveStockPolling();
+  window._ticketBOQCache = null;
   clearFullBasketDraftState();
   resetMaterialRequestCascadingLockState();
   document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
@@ -9860,9 +10192,11 @@ async function submitNewItemCodeNumber() {
   const itemCode   = document.getElementById("itemcode-new-code").value.trim();
   const materialName= document.getElementById("itemcode-new-name").value.trim();
   const typeOfMat  = document.getElementById("itemcode-new-type").value.trim();
+  const unit       = document.getElementById("itemcode-new-unit").value.trim();
 
   if (!materialName) { alert("Material Name is required."); return; }
-  if (!typeOfMat)   { alert("Type of Material is required."); return; }
+  if (!typeOfMat)    { alert("Type of Material is required."); return; }
+  if (!unit)         { alert("Unit is required."); return; }
   if (!itemCode || itemCode === "Loading..." || itemCode === "Error — refresh") {
     alert("Item Code not loaded yet. Please wait or refresh.");
     return;
@@ -9877,6 +10211,7 @@ async function submitNewItemCodeNumber() {
       itemCode,
       materialName,
       typeOfMaterial: typeOfMat,
+      unit,
       createdBy: appActiveOperatorIdentityString
     });
 
@@ -9895,6 +10230,7 @@ async function submitNewItemCodeNumber() {
           <span>Code: <strong style="font-family:monospace; font-size:1rem; background:#fff; padding:2px 8px; border-radius:4px; border:1px solid #15803d;">${data.itemCode}</strong></span>
           <span>Product: <strong>${data.productName}</strong></span>
           <span>Type: <strong>${data.typeOfMaterial}</strong></span>
+          <span>Unit: <strong>${data.unit}</strong></span>
         </div>
         <button onclick="
           document.getElementById('itemcode-feedback-banner').style.display='none';
@@ -10156,11 +10492,11 @@ function renderCBOQMaterialRows() {
         <select onchange="cboqMaterialRows[${idx}].unit=this.value" style="padding:4px; font-size:0.8rem; width:100%;">
           <option value="" ${!row.unit?"selected":""} disabled>— Unit —</option>
           <option value="NOS" ${row.unit==="NOS"?"selected":""}>NOS</option>
-          <option value="KG" ${row.unit==="KG"?"selected":""}>KG</option>
+          <option value="KG"  ${row.unit==="KG"?"selected":""}>KG</option>
           <option value="MTR" ${row.unit==="MTR"?"selected":""}>MTR</option>
           <option value="SET" ${row.unit==="SET"?"selected":""}>SET</option>
           <option value="LTR" ${row.unit==="LTR"?"selected":""}>LTR</option>
-          <option value="PKT" ${row.unit==="PKT"?"selected":""}>PKT</option>
+          <option value="ROL" ${row.unit==="ROL"?"selected":""}>ROL</option>
         </select>
       </td>
       <td style="padding:4px; text-align:center;">
@@ -10684,7 +11020,7 @@ function renderEBOQMaterialRows() {
           <option value="MTR" ${row.unit==="MTR"?"selected":""}>MTR</option>
           <option value="SET" ${row.unit==="SET"?"selected":""}>SET</option>
           <option value="LTR" ${row.unit==="LTR"?"selected":""}>LTR</option>
-          <option value="PKT" ${row.unit==="PKT"?"selected":""}>PKT</option>
+          <option value="ROL" ${row.unit==="ROL"?"selected":""}>ROL</option>
         </select>
       </td>
       <td style="padding:4px; text-align:center;">
@@ -11096,7 +11432,7 @@ function renderUBOQMaterialRows() {
           <option value="MTR" ${row.unit==="MTR"?"selected":""}>MTR</option>
           <option value="SET" ${row.unit==="SET"?"selected":""}>SET</option>
           <option value="LTR" ${row.unit==="LTR"?"selected":""}>LTR</option>
-          <option value="PKT" ${row.unit==="PKT"?"selected":""}>PKT</option>
+          <option value="ROL" ${row.unit==="ROL"?"selected":""}>ROL</option>
         </select>
       </td>
       <td style="padding:4px; text-align:center;">
@@ -11156,6 +11492,11 @@ function selectBOQRowMaterial(rowIdx, productName, itemCode, formPrefix) {
     }
     rows[rowIdx].descriptionOfMaterial = productName;
     rows[rowIdx].itemCode = itemCode;
+    // Auto-fill unit from catalog cache
+    const catalogEntry = (window.itemCodeCatalogCache || []).find(c => c.itemCode === itemCode);
+    if (catalogEntry && catalogEntry.unit) {
+      rows[rowIdx].unit = catalogEntry.unit;
+    }
     renderMap[formPrefix]();
   }
 
@@ -12279,6 +12620,222 @@ function navigateToStoreDashboard() {
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   const c = document.getElementById("canvas-module-store-dashboard");
   if (c) c.style.display = "block";
+  if (typeof sdLoadDashboard === "function") sdLoadDashboard();
+}
+
+// ═══════════════════════════════════════════════════════
+// STORE DASHBOARD ENGINE
+// ═══════════════════════════════════════════════════════
+let sdCurrentPeriod = "today";
+let sdCurrentCustomType = "customday";
+let sdChartDept = null, sdChartTrend = null, sdChartGrnType = null;
+let sdHealthData = [], sdHealthFiltered = [], sdHealthCurrentPage = 1;
+const SD_HEALTH_PAGE_SIZE = 5;
+
+function sdSetPeriod(btn) {
+  document.querySelectorAll("#sd-period-btns .dd-period-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  sdCurrentPeriod = btn.dataset.period;
+  const customZone = document.getElementById("sd-custom-zone");
+  if (sdCurrentPeriod === "custom") { customZone.style.display = "flex"; return; }
+  customZone.style.display = "none";
+  sdLoadDashboard();
+}
+
+function sdCustomTypeChange() {
+  const type = document.getElementById("sd-custom-type").value;
+  sdCurrentCustomType = type;
+  const valInput = document.getElementById("sd-custom-val");
+  if (type === "customday")      { valInput.type = "date"; valInput.placeholder = ""; }
+  else if (type === "customweek")  { valInput.type = "date"; valInput.placeholder = "Pick any day in the week"; }
+  else if (type === "custommonth") { valInput.type = "month"; }
+  else if (type === "customquarter") { valInput.type = "text"; valInput.placeholder = "e.g. 2025-Q2"; }
+  else if (type === "customyear")  { valInput.type = "number"; valInput.placeholder = "e.g. 2025"; }
+}
+
+function sdLoadCustom() {
+  const val = document.getElementById("sd-custom-val").value.trim();
+  if (!val) return alert("Please enter a value for the custom period.");
+  sdCurrentPeriod = sdCurrentCustomType;
+  sdLoadDashboard(val);
+}
+
+async function sdLoadDashboard(customVal) {
+  ["sd-s-tickets","sd-s-pending","sd-s-avgtime","sd-s-grns","sd-s-itemcount",
+   "sd-s-spare","sd-s-fgready","sd-s-boqinc","sd-s-returns","sd-s-overruns"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = "…";
+  });
+  try {
+    const data = await apFetch({
+      action:      "fetchStoreDashboardData",
+      periodType:  sdCurrentPeriod,
+      periodValue: customVal || ""
+    });
+    if (!data.success) { alert("Store Dashboard load failed: " + data.error); return; }
+    sdRenderDashboard(data);
+  } catch(e) {
+    alert("Store Dashboard error: " + e.message);
+  }
+}
+
+function sdRenderDashboard(data) {
+  const { stats, byDept, dailyTrend, grnByType, projectHealth, recentTickets } = data;
+
+  // Row 1 stat cards
+  document.getElementById("sd-s-tickets").textContent   = stats.totalTickets;
+  document.getElementById("sd-s-pending").textContent   = stats.pendingApprovals;
+  document.getElementById("sd-s-grns").textContent      = stats.totalGRNs;
+  document.getElementById("sd-s-itemcount").textContent = stats.totalItemsInStock;
+
+  if (stats.avgApprovalMins !== null) {
+    document.getElementById("sd-s-avgtime").textContent      = stats.avgApprovalMins;
+    document.getElementById("sd-s-avgtime-unit").textContent = "minutes";
+  } else {
+    document.getElementById("sd-s-avgtime").textContent      = "—";
+    document.getElementById("sd-s-avgtime-unit").textContent = "";
+  }
+
+  // Row 2 stat cards
+  document.getElementById("sd-s-spare").textContent    = stats.spareStoreItems;
+  document.getElementById("sd-s-fgready").textContent  = stats.fgReady;
+  document.getElementById("sd-s-boqinc").textContent   = stats.pendingBOQIncrease;
+  document.getElementById("sd-s-returns").textContent  = stats.returnTickets;
+  document.getElementById("sd-s-overruns").textContent = stats.boqOverruns;
+
+  // Chart 1 — Tickets by Department (horizontal bar)
+  if (sdChartDept) sdChartDept.destroy();
+  const deptLabels = Object.keys(byDept);
+  const ctx1 = document.getElementById("sd-chart-dept").getContext("2d");
+  sdChartDept = new Chart(ctx1, {
+    type: "bar",
+    data: {
+      labels: deptLabels,
+      datasets: [{ label:"Tickets", data: deptLabels.map(d => byDept[d]),
+        backgroundColor: ["rgba(37,99,235,0.7)","rgba(16,185,129,0.7)","rgba(245,158,11,0.7)","rgba(239,68,68,0.7)","rgba(139,92,246,0.7)","rgba(236,72,153,0.7)"],
+        borderRadius: 4 }]
+    },
+    options: { indexAxis:"y", responsive:true, plugins:{ legend:{ display:false } },
+      scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false } } } }
+  });
+
+  // Chart 2 — Daily Ticket Volume (line)
+  if (sdChartTrend) sdChartTrend.destroy();
+  const ctx2 = document.getElementById("sd-chart-trend").getContext("2d");
+  sdChartTrend = new Chart(ctx2, {
+    type: "line",
+    data: {
+      labels: dailyTrend.map(d => d.label),
+      datasets: [{ label:"Tickets", data: dailyTrend.map(d => d.count),
+        borderColor: "rgba(37,99,235,0.8)", backgroundColor: "rgba(37,99,235,0.08)",
+        pointRadius: 3, fill: true, tension: 0.3 }]
+    },
+    options: { responsive:true, plugins:{ legend:{ display:false } },
+      scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
+  });
+
+  // Chart 3 — GRN Volume by Material Type (bar)
+  if (sdChartGrnType) sdChartGrnType.destroy();
+  const grnLabels = Object.keys(grnByType);
+  const ctx3 = document.getElementById("sd-chart-grn-type").getContext("2d");
+  sdChartGrnType = new Chart(ctx3, {
+    type: "bar",
+    data: {
+      labels: grnLabels,
+      datasets: [{ label:"Qty", data: grnLabels.map(t => grnByType[t]),
+        backgroundColor: ["rgba(16,185,129,0.7)","rgba(37,99,235,0.7)","rgba(245,158,11,0.7)","rgba(139,92,246,0.7)","rgba(239,68,68,0.7)"],
+        borderRadius: 4 }]
+    },
+    options: { responsive:true, plugins:{ legend:{ display:false } },
+      scales:{ y:{ grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false } } } }
+  });
+
+  // Row 4 left — Project Health
+  sdHealthData        = projectHealth;
+  sdHealthFiltered    = [...projectHealth];
+  sdHealthCurrentPage = 1;
+  const searchEl = document.getElementById("sd-health-search");
+  if (searchEl) searchEl.value = "";
+  sdRenderHealthTable();
+
+  // Row 4 right — Recent Ticket Activity
+  const feed = document.getElementById("sd-recent-feed");
+  if (feed) {
+    if (recentTickets.length === 0) {
+      feed.innerHTML = `<div style="font-size:0.75rem; color:var(--muted); padding:8px;">No recent ticket activity.</div>`;
+    } else {
+      const statusColors = {
+        "Pending Approval":           { bg:"#fef9c3", color:"#854d0e" },
+        "Approved & Released":        { bg:"#dcfce7", color:"#15803d" },
+        "Rejected":                   { bg:"#fee2e2", color:"#b91c1c" },
+        "Pending BOQ Increase Review":{ bg:"#ede9fe", color:"#6d28d9" },
+        "Return Complete":            { bg:"#e0f2fe", color:"#0369a1" }
+      };
+      feed.innerHTML = recentTickets.map(t => {
+        const sc = statusColors[t.status] || { bg:"#f1f5f9", color:"#475569" };
+        return `<div style="display:flex; justify-content:space-between; align-items:flex-start; padding:6px 8px; background:#fff; border:1px solid var(--border); border-radius:4px; gap:8px;">
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:0.72rem; font-weight:700; font-family:monospace; color:var(--brand); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.ticketId}</div>
+            <div style="font-size:0.68rem; color:var(--muted);">${t.projectId} · ${t.department} · ${t.requestedBy}</div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
+            <span style="font-size:0.65rem; font-weight:700; padding:1px 7px; border-radius:6px; background:${sc.bg}; color:${sc.color};">${t.status}</span>
+            <span style="font-size:0.62rem; color:var(--muted);">${t.dateCreated}</span>
+          </div>
+        </div>`;
+      }).join("");
+    }
+  }
+}
+
+function sdFilterHealth() {
+  const q = (document.getElementById("sd-health-search")?.value || "").toLowerCase();
+  sdHealthFiltered = q
+    ? sdHealthData.filter(p => p.projId.toLowerCase().includes(q) || p.customer.toLowerCase().includes(q))
+    : [...sdHealthData];
+  sdHealthCurrentPage = 1;
+  sdRenderHealthTable();
+}
+
+function sdHealthPage(dir) {
+  const total = sdHealthFiltered.length;
+  const totalPages = Math.max(1, Math.ceil(total / SD_HEALTH_PAGE_SIZE));
+  sdHealthCurrentPage = Math.min(Math.max(1, sdHealthCurrentPage + dir), totalPages);
+  sdRenderHealthTable();
+}
+
+function sdRenderHealthTable() {
+  const tbody = document.getElementById("sd-health-tbody");
+  const total = sdHealthFiltered.length;
+  const totalPages = Math.max(1, Math.ceil(total / SD_HEALTH_PAGE_SIZE));
+  const start = (sdHealthCurrentPage - 1) * SD_HEALTH_PAGE_SIZE;
+  const page  = sdHealthFiltered.slice(start, start + SD_HEALTH_PAGE_SIZE);
+
+  const pageInfo = document.getElementById("sd-health-page-info");
+  if (pageInfo) pageInfo.textContent = total > SD_HEALTH_PAGE_SIZE
+    ? `${start+1}–${Math.min(start+SD_HEALTH_PAGE_SIZE, total)} of ${total}`
+    : `${total} project${total !== 1 ? "s" : ""}`;
+
+  const prevBtn = document.querySelector("[onclick=\"sdHealthPage(-1)\"]");
+  const nextBtn = document.querySelector("[onclick=\"sdHealthPage(1)\"]");
+  if (prevBtn) prevBtn.disabled = sdHealthCurrentPage <= 1;
+  if (nextBtn) nextBtn.disabled = sdHealthCurrentPage >= totalPages;
+
+  if (!tbody) return;
+  if (page.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--muted); font-size:0.72rem; padding:6px;">No projects found</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = page.map((p, i) => {
+    const rowBg = i % 2 === 0 ? "var(--card)" : "#f8fafc";
+    return `<tr style="background:${rowBg}; border-bottom:1px solid #f1f5f9;">
+      <td style="padding:8px 6px; font-weight:700; font-family:monospace; font-size:0.75rem;">${p.projId}</td>
+      <td style="padding:8px 6px; font-size:0.75rem;">${p.customer}</td>
+      <td style="padding:8px 6px; text-align:center; font-size:0.75rem;">${p.totalTickets}</td>
+      <td style="padding:8px 6px; text-align:center; color:#15803d; font-weight:700; font-size:0.75rem;">${p.approved}</td>
+      <td style="padding:8px 6px; text-align:center; color:${p.pending > 0 ? "#b45309" : "var(--muted)"}; font-weight:${p.pending > 0 ? "700" : "400"}; font-size:0.75rem;">${p.pending}</td>
+      <td style="padding:8px 6px; text-align:center; font-family:monospace; font-size:0.75rem;">${p.qtyConsumed}</td>
+    </tr>`;
+  }).join("");
 }
 
 function navigateToProductionDashboard() {
@@ -12287,6 +12844,206 @@ function navigateToProductionDashboard() {
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   const c = document.getElementById("canvas-module-production-dashboard");
   if (c) c.style.display = "block";
+  if (typeof pd2LoadDashboard === "function") pd2LoadDashboard();
+}
+
+// ═══════════════════════════════════════════════════════
+// PRODUCTION DASHBOARD ENGINE
+// ═══════════════════════════════════════════════════════
+let pd2CurrentPeriod     = "today";
+let pd2CurrentCustomType = "customday";
+let pd2ChartDept = null, pd2ChartTrend = null;
+let pd2JCNData = [], pd2JCNFiltered = [], pd2JCNCurrentPage = 1;
+const PD2_JCN_PAGE_SIZE = 8;
+
+function pd2SetPeriod(btn) {
+  document.querySelectorAll("#pd2-period-btns .dd-period-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  pd2CurrentPeriod = btn.dataset.period;
+  const customZone = document.getElementById("pd2-custom-zone");
+  if (pd2CurrentPeriod === "custom") { customZone.style.display = "flex"; return; }
+  customZone.style.display = "none";
+  pd2LoadDashboard();
+}
+
+function pd2CustomTypeChange() {
+  const type = document.getElementById("pd2-custom-type").value;
+  pd2CurrentCustomType = type;
+  const valInput = document.getElementById("pd2-custom-val");
+  if (type === "customday")        { valInput.type = "date";   valInput.placeholder = ""; }
+  else if (type === "customweek")  { valInput.type = "date";   valInput.placeholder = "Pick any day in the week"; }
+  else if (type === "custommonth") { valInput.type = "month"; }
+  else if (type === "customquarter") { valInput.type = "text"; valInput.placeholder = "e.g. 2025-Q2"; }
+  else if (type === "customyear")  { valInput.type = "number"; valInput.placeholder = "e.g. 2025"; }
+}
+
+function pd2LoadCustom() {
+  const val = document.getElementById("pd2-custom-val").value.trim();
+  if (!val) return alert("Please enter a value for the custom period.");
+  pd2CurrentPeriod = pd2CurrentCustomType;
+  pd2LoadDashboard(val);
+}
+
+async function pd2LoadDashboard(customVal) {
+  ["pd2-s-activejcn","pd2-s-finished","pd2-s-inprogress","pd2-s-tickets","pd2-s-boqutil"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = "…";
+  });
+  try {
+    const data = await apFetch({
+      action:      "fetchProductionDashboardData",
+      periodType:  pd2CurrentPeriod,
+      periodValue: customVal || ""
+    });
+    if (!data.success) { alert("Production Dashboard load failed: " + data.error); return; }
+    pd2RenderDashboard(data);
+  } catch(e) {
+    alert("Production Dashboard error: " + e.message);
+  }
+}
+
+function pd2RenderDashboard(data) {
+  const { stats, byDept, dailyTrend, inProgressJCNs, recentFG } = data;
+
+  // Row 1
+  document.getElementById("pd2-s-activejcn").textContent  = stats.activeJCNs;
+  document.getElementById("pd2-s-finished").textContent   = stats.finishedThisPeriod;
+  document.getElementById("pd2-s-inprogress").textContent = stats.inProgress;
+
+  // Row 2
+  document.getElementById("pd2-s-tickets").textContent = stats.storeTickets;
+  if (stats.boqUtilPct !== null) {
+    document.getElementById("pd2-s-boqutil").textContent     = stats.boqUtilPct + "%";
+    document.getElementById("pd2-s-boqutil-sub").textContent = "avg across active projects";
+  } else {
+    document.getElementById("pd2-s-boqutil").textContent     = "—";
+    document.getElementById("pd2-s-boqutil-sub").textContent = "no active BOQ data";
+  }
+
+  // Chart 1 — FG by Department (bar)
+  if (pd2ChartDept) pd2ChartDept.destroy();
+  const deptLabels = Object.keys(byDept);
+  const ctx1 = document.getElementById("pd2-chart-dept").getContext("2d");
+  pd2ChartDept = new Chart(ctx1, {
+    type: "bar",
+    data: {
+      labels: deptLabels,
+      datasets: [{ label:"FG Items", data: deptLabels.map(d => byDept[d]),
+        backgroundColor: ["rgba(37,99,235,0.7)","rgba(16,185,129,0.7)","rgba(245,158,11,0.7)","rgba(139,92,246,0.7)","rgba(239,68,68,0.7)"],
+        borderRadius: 4 }]
+    },
+    options: { responsive:true, plugins:{ legend:{ display:false } },
+      scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false } } } }
+  });
+
+  // Chart 2 — Job Card Completion Trend (line)
+  if (pd2ChartTrend) pd2ChartTrend.destroy();
+  const ctx2 = document.getElementById("pd2-chart-trend").getContext("2d");
+  pd2ChartTrend = new Chart(ctx2, {
+    type: "line",
+    data: {
+      labels: dailyTrend.map(d => d.label),
+      datasets: [{ label:"Completed", data: dailyTrend.map(d => d.count),
+        borderColor: "rgba(16,185,129,0.85)", backgroundColor: "rgba(16,185,129,0.08)",
+        pointRadius: 3, fill: true, tension: 0.3 }]
+    },
+    options: { responsive:true, plugins:{ legend:{ display:false } },
+      scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
+  });
+
+  // Row 4 left — In Progress JCN table
+  // Populate department filter dropdown
+  const deptFilter = document.getElementById("pd2-jcn-dept-filter");
+  const existingDepts = new Set([...deptFilter.options].map(o => o.value).filter(Boolean));
+  const newDepts = [...new Set(inProgressJCNs.map(j => j.department).filter(Boolean))];
+  newDepts.forEach(d => {
+    if (!existingDepts.has(d)) {
+      const opt = document.createElement("option");
+      opt.value = d; opt.textContent = d;
+      deptFilter.appendChild(opt);
+    }
+  });
+
+  pd2JCNData        = inProgressJCNs;
+  pd2JCNFiltered    = [...inProgressJCNs];
+  pd2JCNCurrentPage = 1;
+  const searchEl = document.getElementById("pd2-jcn-search");
+  if (searchEl) searchEl.value = "";
+  pd2RenderJCNTable();
+
+  // Row 4 right — Recent FG feed
+  const feed = document.getElementById("pd2-fg-feed");
+  if (feed) {
+    if (recentFG.length === 0) {
+      feed.innerHTML = `<div style="font-size:0.75rem; color:var(--muted); padding:8px;">No finished goods entries yet.</div>`;
+    } else {
+      feed.innerHTML = recentFG.map(fg => `
+        <div style="padding:7px 10px; background:#fff; border:1px solid var(--border); border-radius:4px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px;">
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:0.75rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fg.productName} <span style="color:var(--muted); font-weight:400;">${fg.productRating}</span></div>
+              <div style="font-size:0.67rem; color:var(--muted);">${fg.projectId} · ${fg.department} · ${fg.jobCardNumber}</div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
+              <span style="font-size:0.65rem; font-weight:700; padding:1px 7px; border-radius:6px; background:${fg.qaDone === 'Yes' ? '#dcfce7' : '#fef9c3'}; color:${fg.qaDone === 'Yes' ? '#15803d' : '#854d0e'};">QA ${fg.qaDone === 'Yes' ? '✓' : 'Pending'}</span>
+              <span style="font-size:0.62rem; color:var(--muted);">${fg.date}</span>
+            </div>
+          </div>
+        </div>`).join("");
+    }
+  }
+}
+
+function pd2FilterJCN() {
+  const q    = (document.getElementById("pd2-jcn-search")?.value || "").toLowerCase();
+  const dept = document.getElementById("pd2-jcn-dept-filter")?.value || "";
+  pd2JCNFiltered = pd2JCNData.filter(j => {
+    const matchQ    = !q    || j.jcn.toLowerCase().includes(q) || j.projectId.toLowerCase().includes(q);
+    const matchDept = !dept || j.department === dept;
+    return matchQ && matchDept;
+  });
+  pd2JCNCurrentPage = 1;
+  pd2RenderJCNTable();
+}
+
+function pd2JCNPage(dir) {
+  const totalPages = Math.max(1, Math.ceil(pd2JCNFiltered.length / PD2_JCN_PAGE_SIZE));
+  pd2JCNCurrentPage = Math.min(Math.max(1, pd2JCNCurrentPage + dir), totalPages);
+  pd2RenderJCNTable();
+}
+
+function pd2RenderJCNTable() {
+  const tbody = document.getElementById("pd2-jcn-tbody");
+  const total = pd2JCNFiltered.length;
+  const totalPages = Math.max(1, Math.ceil(total / PD2_JCN_PAGE_SIZE));
+  const start = (pd2JCNCurrentPage - 1) * PD2_JCN_PAGE_SIZE;
+  const page  = pd2JCNFiltered.slice(start, start + PD2_JCN_PAGE_SIZE);
+
+  const pageInfo = document.getElementById("pd2-jcn-page-info");
+  if (pageInfo) pageInfo.textContent = total > PD2_JCN_PAGE_SIZE
+    ? `${start+1}–${Math.min(start+PD2_JCN_PAGE_SIZE, total)} of ${total}`
+    : `${total} job card${total !== 1 ? "s" : ""}`;
+
+  const prevBtn = document.querySelector("[onclick=\"pd2JCNPage(-1)\"]");
+  const nextBtn = document.querySelector("[onclick=\"pd2JCNPage(1)\"]");
+  if (prevBtn) prevBtn.disabled = pd2JCNCurrentPage <= 1;
+  if (nextBtn) nextBtn.disabled = pd2JCNCurrentPage >= totalPages;
+
+  if (!tbody) return;
+  if (page.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--muted); font-size:0.72rem; padding:10px;">No in-progress job cards found.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = page.map((j, i) => {
+    const rowBg = i % 2 === 0 ? "var(--card)" : "#f8fafc";
+    return `<tr style="background:${rowBg}; border-bottom:1px solid #f1f5f9;">
+      <td style="padding:7px 6px; font-family:monospace; font-size:0.72rem; font-weight:700; color:var(--brand);">${j.jcn}</td>
+      <td style="padding:7px 6px; font-size:0.72rem; font-weight:600;">${j.projectId}</td>
+      <td style="padding:7px 6px; font-size:0.72rem;">${j.productName} <span style="color:var(--muted);">${j.productRating}</span></td>
+      <td style="padding:7px 6px; font-size:0.72rem;">${j.department}</td>
+      <td style="padding:7px 6px; text-align:center; font-size:0.72rem; font-weight:700; color:var(--brand);">${j.ticketCount}</td>
+      <td style="padding:7px 6px; text-align:center; font-size:0.68rem; color:var(--muted);">${j.lastActivity}</td>
+    </tr>`;
+  }).join("");
 }
 
 function navigateToMarketingDashboard() {
