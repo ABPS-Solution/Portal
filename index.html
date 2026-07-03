@@ -9584,12 +9584,21 @@ function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
   const deptDropdown = document.getElementById("ticket-department-outgoing-dropdown");
   const deptLabel = document.getElementById("lbl-dept-outgoing-title");
   
-  // Clear basket, BOQ cache, stop polling, reset cascading locks whenever store changes
+  // Clear basket and BOQ cache when store changes — but do NOT reset Dept/RequestedBy (they come before store now)
   stopLiveStockPolling();
   window._ticketBOQCache = null;
   clearFullBasketDraftState();
-  resetMaterialRequestCascadingLockState();
   document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
+
+  // Only reset the Add Item zone below Choose Store
+  const itemDrop = document.getElementById("ticket-item-selection-dropdown");
+  const qtyInp   = document.getElementById("ticket-item-quantity-input");
+  const addBtn   = document.getElementById("ticket-add-item-action-btn");
+  const addZone  = document.getElementById("wrapper-ticket-add-item-zone");
+  if (itemDrop) { itemDrop.disabled = true; itemDrop.innerHTML = '<option value="">— Select Material —</option>'; }
+  if (qtyInp)   qtyInp.disabled = true;
+  if (addBtn)   { addBtn.disabled = true; addBtn.style.cursor = "not-allowed"; }
+  if (addZone)  addZone.style.opacity = "0.5";
 
   if (!chosenStoreValue) {
     deptDropdown.disabled = true;
