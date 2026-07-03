@@ -9673,26 +9673,37 @@ function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
 }
 
 function handleTicketJobCardChange(chosenJobCard) {
-  const storeScopeDropdown = document.getElementById("ticket-selected-store-scope-toggle");
+  const deptDropdown   = document.getElementById("ticket-department-outgoing-dropdown");
+  const deptLabel      = document.getElementById("lbl-dept-outgoing-title");
+  const storeScopeDrop = document.getElementById("ticket-selected-store-scope-toggle");
   const storeScopeLabel = document.getElementById("lbl-store-scope-title");
 
   resetMaterialRequestCascadingLockState();
-  storeScopeDropdown.value = "";
+
+  // Always keep Choose Store locked at this stage
+  if (storeScopeDrop) {
+    storeScopeDrop.disabled = true;
+    storeScopeDrop.style.opacity = "0.5";
+    storeScopeDrop.style.cursor = "not-allowed";
+    storeScopeDrop.value = "";
+    storeScopeDrop.innerHTML = '<option value="">— Choose Requested By First —</option><option value="Raw Materials Store">Raw Materials Store</option><option value="Finished Goods Store">Finished Goods Store</option><option value="Spare Store">Spare Store</option>';
+  }
+  if (storeScopeLabel) storeScopeLabel.style.color = "var(--muted)";
 
   if (!chosenJobCard) {
-    storeScopeDropdown.disabled = true;
-    storeScopeDropdown.style.opacity = "0.5";
-    storeScopeDropdown.style.cursor = "not-allowed";
-    storeScopeDropdown.innerHTML = '<option value="">— Choose Job Card First —</option><option value="Raw Materials Store">Raw Materials Store</option><option value="Finished Goods Store">Finished Goods Store</option><option value="Spare Store">Spare Store</option>';
-    if (storeScopeLabel) storeScopeLabel.style.color = "var(--muted)";
+    if (deptLabel) deptLabel.style.color = "var(--muted)";
     return;
   }
 
-  storeScopeDropdown.disabled = false;
-  storeScopeDropdown.style.opacity = "1";
-  storeScopeDropdown.style.cursor = "pointer";
-  storeScopeDropdown.innerHTML = '<option value="">— Choose Store —</option><option value="Raw Materials Store">Raw Materials Store</option><option value="Finished Goods Store">Finished Goods Store</option><option value="Spare Store">Spare Store</option>';
-  if (storeScopeLabel) storeScopeLabel.style.color = "var(--brand)";
+  // Unlock Production Department only
+  if (deptDropdown) {
+    deptDropdown.disabled = false;
+    deptDropdown.style.opacity = "1";
+    deptDropdown.style.cursor = "pointer";
+    deptDropdown.value = "";
+    if (deptDropdown.options[0]) deptDropdown.options[0].text = "— Select Department —";
+  }
+  if (deptLabel) deptLabel.style.color = "var(--brand)";
 }
 
 /**
