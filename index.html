@@ -6491,7 +6491,7 @@ function startLiveStockPolling() {
     const selectedMaterial = document.getElementById("ticket-item-selection-dropdown")?.value;
     if (!selectedMaterial) { stopLiveStockPolling(); return; }
     await refreshLiveStockForSelectedMaterial();
-  }, 15000); // refresh every 15 seconds (live backend fetch — don't hammer Apps Script)
+  }, 8000); // refresh every 8 seconds
 }
 
 function stopLiveStockPolling() {
@@ -6623,10 +6623,8 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
   // --- SPARE STORE: show live spare stock count + BOQ pills ---
   if (activeStoreScope === "Spare Store") {
     const cleanSpareKey = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim().replace(/\s+/g, "").toLowerCase();
-    const spareCache    = window.cachedSpareStoreStock || [];
-    const spareMatch    = spareCache.find(i => (i.materialName || "").replace(/\s+/g, "").toLowerCase() === cleanSpareKey);
 
-    // Resolve BOQ for this material from cache
+    // Resolve BOQ cache
     if (!window._ticketBOQCache || window._ticketBOQCache.projectId !== projectId) {
       try {
         const boqFetch = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: projectId });
@@ -6637,16 +6635,24 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       || (window._ticketBOQCache.records || []).find(r => r.materialName.replace(/\s+/g,"").toLowerCase().includes(cleanSpareKey.substring(0,20)))
       || (window._ticketBOQCache.records || []).find(r => cleanSpareKey.includes(r.materialName.replace(/\s+/g,"").toLowerCase().substring(0,20)));
 
-    if (spareMatch) {
-      const qty       = liveStockOverride ? Number(liveStockOverride.spareStock) : (Number(spareMatch.availableStock) || 0);
-      const unitToken = (spareMatch.unitType || "NOS").toUpperCase();
-      const styleClass = qty === 0 ? "pill-stock-empty" : qty <= 5 ? "pill-stock-low" : "pill-stock-healthy";
+    // Resolve qty: use live override if available, else fall back to cache
+    const spareCache = window.cachedSpareStoreStock || [];
+    const spareMatch = spareCache.find(i => (i.materialName || "").replace(/\s+/g, "").toLowerCase() === cleanSpareKey);
+    const qty        = liveStockOverride ? Number(liveStockOverride.spareStock)
+                     : spareMatch        ? Number(spareMatch.availableStock)
+                     : null;
+    const unitToken  = (spareMatch?.unitType || spareBoqMatch?.unitType || "NOS").toUpperCase();
+
+    // Render as long as we have qty from either live data or BOQ match — don't gate on spareMatch alone
+    if (qty !== null || spareBoqMatch) {
+      const displayQty = qty ?? 0;
+      const styleClass = displayQty === 0 ? "pill-stock-empty" : displayQty <= 5 ? "pill-stock-low" : "pill-stock-healthy";
       counterZone.innerHTML = `
         <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
           <div>
             Real-time Spare Store Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
-              ${qty} ${unitToken} AVAILABLE
+              ${displayQty} ${unitToken} AVAILABLE
             </span>
           </div>
           ${spareBoqMatch ? `
@@ -6657,7 +6663,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
           </div>` : `<div style="margin-top:4px; font-size:0.72rem; color:var(--warn);">⚠️ Not in BOQ for this project</div>`}
         </div>`;
     } else {
-      counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Item not found in Spare Store cache.</span>`;
+      counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Item not found in Spare Store or BOQ.</span>`;
     }
     return;
   }
