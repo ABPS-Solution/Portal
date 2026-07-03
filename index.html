@@ -451,13 +451,10 @@
               <option value="">— Choose BOQ First —</option>
             </select>
           </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
           <div>
             <label class="field-label" id="lbl-dept-outgoing-title" style="font-weight: 700; color: var(--muted);">Production Department / Outgoing Use *</label>
             <select id="ticket-department-outgoing-dropdown" onchange="handleCreateTicketDepartmentChange(this.value)" disabled style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600; opacity: 0.5; cursor: not-allowed;">
-              <option value="">— Choose Store First —</option>
+              <option value="">— Choose Job Card First —</option>
               <option value="Reactor">Reactor</option>
               <option value="Capacitor">Capacitor</option>
               <option value="Panel">Panel</option>
@@ -465,19 +462,19 @@
               <option value="Service">Service</option>
             </select>
           </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
           <div id="wrapper-ticket-requested-by">
             <label class="field-label" id="lbl-dynamic-operator-signature-title" style="font-weight: 700; color: var(--muted);">Requested By *</label>
             <select id="ticket-requested-by-operator-dropdown" onchange="handleCreateTicketOperatorChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>
               <option value="">— Choose Department First —</option>
             </select>
           </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
           <div>
             <label class="field-label" id="lbl-store-scope-title" style="font-weight: 700; color: var(--muted);">Choose Store *</label>
             <select id="ticket-selected-store-scope-toggle" onchange="handleTicketStoreScopeSelectionChange(this.value)" disabled style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600; opacity: 0.5; cursor: not-allowed;">
-              <option value="">— Choose Job Card First —</option>
+              <option value="">— Choose Requested By First —</option>
               <option value="Raw Materials Store">Raw Materials Store</option>
               <option value="Finished Goods Store">Finished Goods Store</option>
               <option value="Spare Store">Spare Store</option>
@@ -9186,7 +9183,9 @@ function resetMaterialRequestCascadingLockState() {
   const qtyInp = document.getElementById("ticket-item-quantity-input");
   const addBtn = document.getElementById("ticket-add-item-action-btn");
 
-  staffDrop.innerHTML = '<option value="">— Choose Department First —</option>'; 
+  staffDrop.innerHTML = '<option value="">— Choose Department First —</option>';
+  const deptDrop = document.getElementById("ticket-department-outgoing-dropdown");
+  if (deptDrop && deptDrop.options[0]) deptDrop.options[0].text = "— Choose Job Card First —";
   staffDrop.disabled = true;
   itemDrop.disabled = true; 
   qtyInp.disabled = true; 
