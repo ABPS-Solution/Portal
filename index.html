@@ -451,15 +451,6 @@
               <option value="">— Choose BOQ First —</option>
             </select>
           </div>
-          <div>
-            <label class="field-label" id="lbl-store-scope-title" style="font-weight: 700; color: var(--muted);">Choose Store *</label>
-            <select id="ticket-selected-store-scope-toggle" onchange="handleTicketStoreScopeSelectionChange(this.value)" disabled style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600; opacity: 0.5; cursor: not-allowed;">
-              <option value="">— Choose Job Card First —</option>
-              <option value="Raw Materials Store">Raw Materials Store</option>
-              <option value="Finished Goods Store">Finished Goods Store</option>
-              <option value="Spare Store">Spare Store</option>
-            </select>
-          </div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
@@ -478,6 +469,18 @@
             <label class="field-label" id="lbl-dynamic-operator-signature-title" style="font-weight: 700; color: var(--muted);">Requested By *</label>
             <select id="ticket-requested-by-operator-dropdown" onchange="handleCreateTicketOperatorChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>
               <option value="">— Choose Department First —</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div>
+            <label class="field-label" id="lbl-store-scope-title" style="font-weight: 700; color: var(--muted);">Choose Store *</label>
+            <select id="ticket-selected-store-scope-toggle" onchange="handleTicketStoreScopeSelectionChange(this.value)" disabled style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600; opacity: 0.5; cursor: not-allowed;">
+              <option value="">— Choose Job Card First —</option>
+              <option value="Raw Materials Store">Raw Materials Store</option>
+              <option value="Finished Goods Store">Finished Goods Store</option>
+              <option value="Spare Store">Spare Store</option>
             </select>
           </div>
         </div>
@@ -9189,6 +9192,18 @@ function resetMaterialRequestCascadingLockState() {
   qtyInp.disabled = true; 
   addBtn.disabled = true;
 
+  // Re-lock Choose Store on any cascade reset
+  const storeScopeDrop = document.getElementById("ticket-selected-store-scope-toggle");
+  const storeScopeLabel = document.getElementById("lbl-store-scope-title");
+  if (storeScopeDrop) {
+    storeScopeDrop.disabled = true;
+    storeScopeDrop.style.opacity = "0.5";
+    storeScopeDrop.style.cursor = "not-allowed";
+    storeScopeDrop.value = "";
+    storeScopeDrop.options[0].text = "— Choose Requested By First —";
+  }
+  if (storeScopeLabel) storeScopeLabel.style.color = "var(--muted)";
+
   document.getElementById("lbl-dynamic-operator-signature-title").style.color = "var(--muted)";
   document.getElementById("wrapper-ticket-add-item-zone").style.opacity = "0.5";
   addBtn.style.cursor = "not-allowed";
@@ -9237,8 +9252,15 @@ function handleCreateTicketOperatorChange(chosenOperatorVal) {
     return;
   }
 
-  itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
-  addZone.style.opacity = "1"; addBtn.style.cursor = "pointer";
+  // Unlock Choose Store next — not the item/qty fields yet
+  const storeScopeDrop = document.getElementById("ticket-selected-store-scope-toggle");
+  const storeScopeLabel = document.getElementById("lbl-store-scope-title");
+  if (storeScopeDrop) {
+    storeScopeDrop.disabled = false;
+    storeScopeDrop.style.opacity = "1";
+    storeScopeDrop.style.cursor = "pointer";
+  }
+  if (storeScopeLabel) storeScopeLabel.style.color = "var(--brand)";
 }
 
 /**
