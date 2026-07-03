@@ -6633,6 +6633,30 @@ async function updateSelectedLiveStockPillCounter() {
     return;
   }
 
+  // --- SPARE STORE: show live spare stock count ---
+  if (activeStoreScope === "Spare Store") {
+    const cleanSpareKey = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim().replace(/\s+/g, "").toLowerCase();
+    const spareCache    = window.cachedSpareStoreStock || [];
+    const spareMatch    = spareCache.find(i => (i.materialName || "").replace(/\s+/g, "").toLowerCase() === cleanSpareKey);
+    if (spareMatch) {
+      const qty       = Number(spareMatch.availableStock) || 0;
+      const unitToken = (spareMatch.unitType || "NOS").toUpperCase();
+      const styleClass = qty === 0 ? "pill-stock-empty" : qty <= 5 ? "pill-stock-low" : "pill-stock-healthy";
+      counterZone.innerHTML = `
+        <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
+          <div>
+            Real-time Spare Store Count:
+            <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
+              ${qty} ${unitToken} AVAILABLE
+            </span>
+          </div>
+        </div>`;
+    } else {
+      counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Item not found in Spare Store cache.</span>`;
+    }
+    return;
+  }
+
   // --- RAW MATERIALS STORE: show inventory + BOQ allocation ---
   // Only show loading text on first load, not on poll refreshes
   if (!window._ticketBOQCache || window._ticketBOQCache.projectId !== projectId) {
