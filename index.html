@@ -6769,15 +6769,29 @@ async function addItemToShoppingBasketRow() {
   const materialName = itemSelect.value;
   const quantity = parseInt(qtyInput.value, 10);
 
-  // Button press animation
+  // Button loading state
   const addBtn = document.getElementById("ticket-add-item-action-btn");
+  const addBtnOriginalText = addBtn ? addBtn.innerHTML : "+ Add";
   if (addBtn) {
-    addBtn.style.transform = "scale(0.93)";
-    addBtn.style.opacity = "0.7";
-    setTimeout(() => { addBtn.style.transform = "scale(1)"; addBtn.style.opacity = "1"; }, 200);
+    addBtn.disabled = true;
+    addBtn.style.cursor = "not-allowed";
+    addBtn.style.opacity = "0.75";
+    addBtn.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;">
+      <svg style="animation:spin 0.7s linear infinite;width:13px;height:13px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke-linecap="round"/>
+      </svg>Adding...</span>`;
   }
+  const restoreAddBtn = () => {
+    if (addBtn) {
+      addBtn.disabled = false;
+      addBtn.style.cursor = "pointer";
+      addBtn.style.opacity = "1";
+      addBtn.innerHTML = addBtnOriginalText;
+    }
+  };
   
   if (!materialName || isNaN(quantity) || quantity <= 0) {
+    restoreAddBtn();
     alert("Please select a material item line and enter a valid quantity count.");
     return;
   }
@@ -6855,6 +6869,7 @@ async function addItemToShoppingBasketRow() {
     || activeCacheCollection.find(i => cleanSearchKey.includes(i.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
 
   if (!itemData) {
+    restoreAddBtn();
     alert("Material not found in inventory catalog. Please sync stock first.");
     return;
   }
@@ -6870,6 +6885,7 @@ async function addItemToShoppingBasketRow() {
     || (boqData.records || []).find(r => cleanSearchKey.includes(r.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
   
   if (!boqMatch) {
+    restoreAddBtn();
     alert("This material is not in the BOQ for project " + projectId + ". Please select the correct project or check the BOQ.");
     return;
   }
@@ -6898,6 +6914,7 @@ async function addItemToShoppingBasketRow() {
   }
   
   qtyInput.value = "";
+  restoreAddBtn();
   renderDraftBasketTableViewportRows();
 }
 
