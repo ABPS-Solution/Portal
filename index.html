@@ -9251,18 +9251,17 @@ function handleCreateTicketOperatorChange(chosenOperatorVal) {
     return;
   }
 
-  // Unlock Choose Store next — not the item/qty fields yet
+  // Unlock Choose Store after Requested By is selected
   const storeScopeDrop = document.getElementById("ticket-selected-store-scope-toggle");
   const storeScopeLabel = document.getElementById("lbl-store-scope-title");
-  // Store scope unlocks only after Requested By — lock it here
   if (storeScopeDrop) {
-    storeScopeDrop.disabled = true;
-    storeScopeDrop.style.opacity = "0.5";
-    storeScopeDrop.style.cursor = "not-allowed";
+    storeScopeDrop.disabled = false;
+    storeScopeDrop.style.opacity = "1";
+    storeScopeDrop.style.cursor = "pointer";
     storeScopeDrop.value = "";
-    if (storeScopeDrop.options[0]) storeScopeDrop.options[0].text = "— Choose Requested By First —";
+    if (storeScopeDrop.options[0]) storeScopeDrop.options[0].text = "— Choose Store —";
   }
-  if (storeScopeLabel) storeScopeLabel.style.color = "var(--muted)";
+  if (storeScopeLabel) storeScopeLabel.style.color = "var(--brand)";
 }
 
 /**
