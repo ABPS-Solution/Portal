@@ -6558,7 +6558,7 @@ async function refreshLiveStockForSelectedMaterial() {
           Array.from(itemDrop.options).forEach(opt => {
             const optCleanKey = opt.value.replace(/\s+/g,"").toLowerCase();
             if (optCleanKey === cleanKey) {
-              opt.textContent = `${spareExisting.materialName} (${data.spareStock} ${spareExisting.unitType}`;
+              opt.textContent = `${spareExisting.materialName}`;
             }
           });
         }
@@ -6830,6 +6830,7 @@ async function addItemToShoppingBasketRow() {
     const availableQty = spareMatch ? spareMatch.availableStock : 0;
 
     if (quantity > availableQty) {
+      restoreAddBtn();
       alert(`Spare Store Lockout: Only ${availableQty} ${spareMatch ? spareMatch.unitType : 'units'} of ${materialName} available in Spare Store. Please request from Raw Materials Store instead. This material is not currently available in sufficient quantity in Spare Store.`);
       return;
     }
@@ -6839,6 +6840,7 @@ async function addItemToShoppingBasketRow() {
     if (existingLineItem) {
       totalRequestedQuantity += existingLineItem.quantity;
       if (totalRequestedQuantity > availableQty) {
+        restoreAddBtn();
         alert(`Spare Store Lockout: Combined requested quantity (${totalRequestedQuantity}) exceeds available Spare Store stock (${availableQty}) for ${materialName}. Please request the remainder from Raw Materials Store instead.`);
         return;
       }
@@ -9496,7 +9498,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       window.cachedSpareStoreStock.forEach(item => {
         const opt = document.createElement("option");
         opt.value = item.materialName;
-        opt.textContent = `${item.materialName} (${item.availableStock} ${item.unitType}`;
+        opt.textContent = `${item.materialName}`;
         itemDrop.appendChild(opt);
       });
 
