@@ -9554,6 +9554,11 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       // Spare Store: also show only Raw Materials Store BOQ lines (spare is drawn from raw stock)
       const data = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: chosenProjectVal });
 
+      // Cache BOQ immediately — pill counter reads from here, no second round-trip needed
+      if (data.success) {
+        window._ticketBOQCache = { projectId: chosenProjectVal, records: data.records || [] };
+      }
+
       if (data.success && data.records.length > 0) {
         itemDrop.innerHTML = '<option value="">— Select Material from BOQ —</option>';
         let uniqueMaterialsMap = {};
