@@ -10627,11 +10627,11 @@ function renderCBOQMaterialRows() {
         </select>
       </td>
       <td style="padding:4px; position:relative;">
-        <input type="text" value="${row.descriptionOfMaterial || ""}" 
-          placeholder="Type to search..." autocomplete="off"
-          oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'cboq')"
-          onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'cboq')"
-          style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px;" />
+        <textarea rows="1" placeholder="Type to search..." autocomplete="off"
+          oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'cboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+          onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'cboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+          style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; display:block;"
+        >${row.descriptionOfMaterial || ""}</textarea>
         <div id="cboq-mat-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
       </td>
       <td style="padding:4px;">
@@ -10675,6 +10675,13 @@ function renderCBOQMaterialRows() {
       </td>`;
     tbody.appendChild(tr);
   });
+
+  // Auto-size all description textareas to fit existing content on initial render
+  tbody.querySelectorAll("textarea").forEach(ta => {
+    ta.style.height = "auto";
+    ta.style.height = ta.scrollHeight + "px";
+  });
+
   updateCBOQTotals();
 }
 
