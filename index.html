@@ -6511,25 +6511,26 @@ async function refreshLiveStockForSelectedMaterial() {
   const cleanMaterialName = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim();
 
   try {
-    // Fetch stock and BOQ independently — never let a BOQ failure kill the stock refresh
-    const data = await apFetch({ action: "getLiveStockForItem", materialName: cleanMaterialName });
-    if (!data.success) return;
-
-    let boqData = null;
+    // PERF: Render pill immediately from cache — no network wait for BOQ
+    // BOQ is already cached by loadItemCatalogForSelectedProjectAndStore; skip the round-trip
     if (projectId && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Spare Store")) {
-      try {
-        boqData = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: projectId });
-        if (boqData && boqData.success) {
-          window._ticketBOQCache = { projectId: projectId, records: boqData.records || [] };
-        }
-      } catch(boqErr) {
-        console.warn("BOQ refresh failed (non-fatal):", boqErr.message);
-        // Guarantee cache exists so updateSelectedLiveStockPillCounter doesn't re-fetch and fail again
-        if (!window._ticketBOQCache || window._ticketBOQCache.projectId !== projectId) {
-          window._ticketBOQCache = { projectId: projectId, records: [] };
+      if (!window._ticketBOQCache || window._ticketBOQCache.projectId !== projectId) {
+        // Cache miss (edge case: project changed without store reload) — fetch once and cache silently
+        try {
+          const boqData = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId });
+          window._ticketBOQCache = { projectId, records: boqData?.records || [] };
+        } catch(boqErr) {
+          window._ticketBOQCache = { projectId, records: [] };
+          console.warn("BOQ cache fill failed (non-fatal):", boqErr.message);
         }
       }
+      // BOQ is now guaranteed in cache — render pill immediately from cache before stock fetch
+      await updateSelectedLiveStockPillCounter(null);
     }
+
+    // NOW fire the single network call for live stock counts
+    const data = await apFetch({ action: "getLiveStockForItem", materialName: cleanMaterialName });
+    if (!data.success) return;
 
     // Patch inventory counts in local cache
     const cleanKey = cleanMaterialName.replace(/\s+/g,"").toLowerCase();
@@ -6557,7 +6558,7 @@ async function refreshLiveStockForSelectedMaterial() {
           Array.from(itemDrop.options).forEach(opt => {
             const optCleanKey = opt.value.replace(/\s+/g,"").toLowerCase();
             if (optCleanKey === cleanKey) {
-              opt.textContent = `${spareExisting.materialName} (${data.spareStock} ${spareExisting.unitType} available)`;
+              opt.textContent = `${spareExisting.materialName} (${data.spareStock} ${spareExisting.unitType}`;
             }
           });
         }
@@ -9495,7 +9496,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       window.cachedSpareStoreStock.forEach(item => {
         const opt = document.createElement("option");
         opt.value = item.materialName;
-        opt.textContent = `${item.materialName} (${item.availableStock} ${item.unitType} available)`;
+        opt.textContent = `${item.materialName} (${item.availableStock} ${item.unitType}`;
         itemDrop.appendChild(opt);
       });
 
