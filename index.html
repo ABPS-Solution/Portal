@@ -1642,7 +1642,7 @@
             <button class="dd-period-btn"        data-period="custom"      onclick="sdSetPeriod(this)">Custom ▾</button>
           </div>
           <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">🏪 Store Dashboard</span>
-          <button class="nav-btn-styled" onclick="exitStoreWorkspacePanelBackToMenu()" style="font-size:0.75rem;">Return to Main Dashboard</button>
+          <button class="nav-btn-styled" onclick="sdReturnToMain()" style="font-size:0.75rem;">Return to Main Dashboard</button>
         </div>
         <div id="sd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
           <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
@@ -1784,7 +1784,7 @@
             <button class="dd-period-btn"        data-period="custom"      onclick="pd2SetPeriod(this)">Custom ▾</button>
           </div>
           <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">🏭 Production Dashboard</span>
-          <button class="nav-btn-styled" onclick="exitToMainDashboard();" style="font-size:0.75rem;">Return to Main Dashboard</button>
+          <button class="nav-btn-styled" onclick="pd2ReturnToMain();" style="font-size:0.75rem;">Return to Main Dashboard</button>
         </div>
         <div id="pd2-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
           <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
@@ -2595,7 +2595,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzA4IYWfSaQg_FRpl3s1xkYRcQcO4563AdbctJ0ziy5Qy-n2Hwn5A_RNljXgYyaomm1/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzaObXVy62sML7uwQP7whdrzpQxj_M8_jXKB2UUemoLmmPlHof1XYQU4bbWyAM2qfGg/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -12783,9 +12783,30 @@ function navigateToStoreDashboard() {
   if (typeof sdLoadDashboard === "function") sdLoadDashboard();
 }
 
+function sdReturnToMain() {
+  const c = document.getElementById("canvas-module-store-dashboard");
+  if (c) c.style.display = "none";
+  enforceDynamicModuleRoleGateways(userPermissions);
+  document.getElementById("dashboard-view").style.display = "flex";
+}
+
+function pd2ReturnToMain() {
+  const c = document.getElementById("canvas-module-production-dashboard");
+  if (c) c.style.display = "none";
+  enforceDynamicModuleRoleGateways(userPermissions);
+  document.getElementById("dashboard-view").style.display = "flex";
+}
+
 // ═══════════════════════════════════════════════════════
 // STORE DASHBOARD ENGINE
 // ═══════════════════════════════════════════════════════
+let sdCurrentPeriod     = "today";
+let sdCurrentCustomType = "customday";
+let sdChartDept = null, sdChartTrend = null, sdChartGrnType = null;
+
+// NOTE: pd2ChartDept/pd2ChartTrend/pd2ChartCompletion belong to the Production
+// Dashboard Engine (used further down) but are declared here since this was the
+// surviving declaration site after a prior duplicate-fix. Left in place intentionally.
 let pd2ChartDept = null, pd2ChartTrend = null, pd2ChartCompletion = null;
 
 let sdHealthData = [], sdHealthFiltered = [], sdHealthCurrentPage = 1;
