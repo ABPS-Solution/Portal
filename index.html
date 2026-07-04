@@ -318,7 +318,7 @@
       </div>
       <div class="sec-label">Raw Materials Store Outward</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-boq-increase-approvals" onclick="navigateToStoreWorkspacePanel('boq-increase-approvals')"><span class="mc-label">Approve BOQ Increase</span></div>
+        <div class="menu-card" id="mod-boq-increase-approvals" onclick="navigateToStoreWorkspacePanel('boq-increase-approvals')"><span class="mc-label">Approve Job Card Increase</span></div>
         <div class="menu-card" id="mod-store-approvals" onclick="navigateToStoreWorkspacePanel('store-manager-approvals')"><span class="mc-label">Approve Store Tickets</span></div>
         <div class="menu-card" id="mod-store-matrix" onclick="switchActiveDashboardModule('store-history-matrix')"><span class="mc-label">Search Store Tickets</span></div>
       </div>
@@ -518,8 +518,8 @@
     </div>
 
     <div id="canvas-module-boq-increase-approvals" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 16px;">Approve BOQ Increase Requests</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review tickets where engineers requested materials exceeding BOQ limits. You can accept, partially accept, or reject each exceeded item.</p>
+      <h2 style="margin-bottom: 16px;">Approve Job Card Increase Requests</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review tickets where engineers requested materials exceeding the Job Card allotted quantity. You can accept, partially accept, or reject each exceeded item.</p>
       <div id="boq-increase-approvals-feedback" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="boq-increase-approvals-queue-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>
@@ -1410,13 +1410,30 @@
           </div>
         </div>
 
-        <!-- ROW 2: 5 Blank Stat Cards (to be filled) -->
+        <!-- ROW 2: PRN Assignment Health -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 18%;">
-          <div class="dd-stat-card" id="dd-r2-card-1"> New Ideas </div>
-          <div class="dd-stat-card" id="dd-r2-card-2"> New Ideas </div>
-          <div class="dd-stat-card" id="dd-r2-card-3"> New Ideas </div>
-          <div class="dd-stat-card" id="dd-r2-card-4"> New Ideas </div>
-          <div class="dd-stat-card" id="dd-r2-card-5"> New Ideas </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">PRNs Pending Assignment</div>
+            <div class="dd-stat-val" id="pd-s-prn-pending" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub">line items under-assigned</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Fully Covered PRNs</div>
+            <div class="dd-stat-val" id="pd-s-prn-covered" style="color:#15803d;">—</div>
+            <div class="dd-stat-sub">all line items assigned</div>
+          </div>
+          <div class="dd-stat-card" id="dd-r2-card-3" style="opacity:0.45; pointer-events:none;">
+            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          </div>
+          <div class="dd-stat-card" id="dd-r2-card-4" style="opacity:0.45; pointer-events:none;">
+            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          </div>
+          <div class="dd-stat-card" id="dd-r2-card-5" style="opacity:0.45; pointer-events:none;">
+            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          </div>
         </div>
 
         <!-- ROW 3: Value card + By Dept table + Charts -->
@@ -1664,23 +1681,25 @@
             <div class="dd-stat-val" id="sd-s-grns">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Total Items in Stock</div>
-            <div class="dd-stat-val" id="sd-s-itemcount">—</div>
-          </div>
-        </div>
-
-        <!-- ROW 2: Stock Health -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 16%;">
-          <div class="dd-stat-card">
             <div class="dd-stat-label">Spare Store Items</div>
             <div class="dd-stat-val" id="sd-s-spare">—</div>
           </div>
+        </div>
+
+        <!-- ROW 2: Assignment Health -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 16%;">
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Finished Goods Ready</div>
-            <div class="dd-stat-val" id="sd-s-fgready" style="color:#15803d;">—</div>
+            <div class="dd-stat-label">Items Pending Assignment</div>
+            <div class="dd-stat-val" id="sd-s-pending-assign" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub">have BOQ need, stock available</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Pending BOQ Increases</div>
+            <div class="dd-stat-label">Items Fully Assigned</div>
+            <div class="dd-stat-val" id="sd-s-fully-assigned" style="color:#15803d;">—</div>
+            <div class="dd-stat-sub">all available stock assigned</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Pending Job Card Increases</div>
             <div class="dd-stat-val" id="sd-s-boqinc" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card">
@@ -1688,7 +1707,7 @@
             <div class="dd-stat-val" id="sd-s-returns">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">BOQ Overrun Incidents</div>
+            <div class="dd-stat-label">Job Card Overrun Incidents</div>
             <div class="dd-stat-val" id="sd-s-overruns" style="color:#b91c1c;">—</div>
           </div>
         </div>
@@ -1784,7 +1803,7 @@
       <!-- DASHBOARD BODY -->
       <div id="pd2-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
-        <!-- ROW 1: Job Card Pulse — 5 cards (3 real + 2 upcoming) -->
+        <!-- ROW 1: Job Card Pulse — 5 cards -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 16%;">
           <div class="dd-stat-card">
             <div class="dd-stat-label">Active Job Cards</div>
@@ -1799,17 +1818,19 @@
             <div class="dd-stat-val" id="pd2-s-inprogress" style="color:#b45309;">—</div>
             <div class="dd-stat-sub">tickets raised, no FG entry</div>
           </div>
-          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
-            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Pending Store Approvals</div>
+            <div class="dd-stat-val" id="pd2-s-store-approvals" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub">live · all projects</div>
           </div>
-          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
-            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Unique Projects Active</div>
+            <div class="dd-stat-val" id="pd2-s-unique-proj">—</div>
+            <div class="dd-stat-sub">with active job cards</div>
           </div>
         </div>
 
-        <!-- ROW 2: Material & BOQ — 5 cards (2 real + 3 upcoming) -->
+        <!-- ROW 2: Material & Operations — 5 cards -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 16%;">
           <div class="dd-stat-card">
             <div class="dd-stat-label">Store Tickets Raised</div>
@@ -1820,9 +1841,10 @@
             <div class="dd-stat-val" id="pd2-s-boqutil">—</div>
             <div class="dd-stat-sub" id="pd2-s-boqutil-sub">avg across active projects</div>
           </div>
-          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
-            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">JC Increase Requests Pending</div>
+            <div class="dd-stat-val" id="pd2-s-jc-increase" style="color:#b91c1c;">—</div>
+            <div class="dd-stat-sub">live · all projects</div>
           </div>
           <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
             <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
@@ -1844,9 +1866,9 @@
             <div class="dd-card-title">Job Card Completion Trend</div>
             <canvas id="pd2-chart-trend" style="max-height:100px;"></canvas>
           </div>
-          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center; opacity:0.45;">
-            <div class="dd-card-title" style="color:var(--muted);">Coming Soon</div>
-            <div style="font-size:0.75rem; color:var(--muted); margin-top:12px; text-align:center;">Additional chart will appear here</div>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+            <div class="dd-card-title">Project Completion Progress</div>
+            <canvas id="pd2-chart-completion" style="max-height:100px;"></canvas>
           </div>
         </div>
 
@@ -6902,30 +6924,37 @@ async function addItemToShoppingBasketRow() {
     return;
   }
   
-  // Pull BOQ for this project to validate allocation boundaries
-  const boqData = await apFetch({ 
-    action: "fetchActiveBOQRecordsByProject", 
-    projectId: projectId 
-  });
-  
-  const boqMatch = (boqData.records || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
-    || (boqData.records || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
-    || (boqData.records || []).find(r => cleanSearchKey.includes(r.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
-  
-  if (!boqMatch) {
+  // Pull JobCardMaterials for this specific job card — source of truth for per-card allotment
+  const jobCardNumberVal = document.getElementById("ticket-job-card-dropdown")?.value || "";
+  const cacheKey = jobCardNumberVal + "|" + projectId;
+
+  if (!window._ticketJobCardMaterialsCache || window._ticketJobCardMaterialsCache.key !== cacheKey) {
+    try {
+      const jcmData = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberVal, projectId: projectId });
+      window._ticketJobCardMaterialsCache = { key: cacheKey, records: jcmData.records || [] };
+    } catch(e) {
+      window._ticketJobCardMaterialsCache = { key: cacheKey, records: [] };
+    }
+  }
+
+  const jcmRecords = window._ticketJobCardMaterialsCache.records || [];
+  const jcmMatch = jcmRecords.find(r => (r.itemCode || "").replace(/\s+/g, '').toLowerCase() === (itemData.itemCode || "").replace(/\s+/g, '').toLowerCase())
+    || jcmRecords.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
+
+  if (!jcmMatch) {
     restoreAddBtn();
-    alert("This material is not in the BOQ for project " + projectId + ". Please select the correct project or check the BOQ.");
+    alert("This material has no Job Card allotment for " + jobCardNumberVal + ". Ensure the BOQ is authorized and the Job Card is saved.");
     return;
   }
-  
+
   const existingLineItem = dynamicTicketShoppingBasketArray.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
   let totalRequestedQuantity = quantity;
   if (existingLineItem) {
     totalRequestedQuantity += existingLineItem.quantity;
   }
 
-  const isOverAllottedBOQLimit = totalRequestedQuantity > Number(boqMatch.remainingQty);
-  const allottedLimit = Number(boqMatch.remainingQty);
+  const isOverAllottedBOQLimit = totalRequestedQuantity > Number(jcmMatch.remainingQty);
+  const allottedLimit = Number(jcmMatch.remainingQty);
 
   if (existingLineItem) {
     existingLineItem.quantity = totalRequestedQuantity;
@@ -6938,8 +6967,8 @@ async function addItemToShoppingBasketRow() {
       unitType: itemData.unitType || "NOS",
       requiresBOQIncreaseFlag: isOverAllottedBOQLimit,
       allottedRemainingLimit: allottedLimit,
-      itemCode: boqMatch.itemCode || itemData.itemCode || "",
-      boqId: boqMatch.boqId || ""
+      itemCode: jcmMatch.itemCode || itemData.itemCode || "",
+      boqId: jcmMatch.boqId || ""
     });
   }
   
@@ -7328,7 +7357,7 @@ async function initializeBOQIncreaseApprovalsWorkspace() {
   feedback.style.display = "none";
   feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">
     <div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>
-    Loading BOQ Increase Requests...
+    Loading Job Card Increase Requests...
   </div>`;
 
   try {
@@ -7339,7 +7368,7 @@ async function initializeBOQIncreaseApprovalsWorkspace() {
     }
     if (!data.tickets || data.tickets.length === 0) {
       feed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;">
-        <h3 style="color:var(--accent);">No Pending BOQ Increase Requests</h3>
+        <h3 style="color:var(--accent);">No Pending Job Card Increase Requests</h3>
       </div>`;
       return;
     }
@@ -12757,9 +12786,8 @@ function navigateToStoreDashboard() {
 // ═══════════════════════════════════════════════════════
 // STORE DASHBOARD ENGINE
 // ═══════════════════════════════════════════════════════
-let sdCurrentPeriod = "today";
-let sdCurrentCustomType = "customday";
-let sdChartDept = null, sdChartTrend = null, sdChartGrnType = null;
+let pd2ChartDept = null, pd2ChartTrend = null, pd2ChartCompletion = null;
+
 let sdHealthData = [], sdHealthFiltered = [], sdHealthCurrentPage = 1;
 const SD_HEALTH_PAGE_SIZE = 5;
 
@@ -12792,8 +12820,8 @@ function sdLoadCustom() {
 }
 
 async function sdLoadDashboard(customVal) {
-  ["sd-s-tickets","sd-s-pending","sd-s-avgtime","sd-s-grns","sd-s-itemcount",
-   "sd-s-spare","sd-s-fgready","sd-s-boqinc","sd-s-returns","sd-s-overruns"].forEach(id => {
+  ["sd-s-tickets","sd-s-pending","sd-s-avgtime","sd-s-grns","sd-s-spare",
+   "sd-s-pending-assign","sd-s-fully-assigned","sd-s-boqinc","sd-s-returns","sd-s-overruns"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
   try {
@@ -12816,7 +12844,7 @@ function sdRenderDashboard(data) {
   document.getElementById("sd-s-tickets").textContent   = stats.totalTickets;
   document.getElementById("sd-s-pending").textContent   = stats.pendingApprovals;
   document.getElementById("sd-s-grns").textContent      = stats.totalGRNs;
-  document.getElementById("sd-s-itemcount").textContent = stats.totalItemsInStock;
+  document.getElementById("sd-s-spare").textContent     = stats.spareStoreItems;
 
   if (stats.avgApprovalMins !== null) {
     document.getElementById("sd-s-avgtime").textContent      = stats.avgApprovalMins;
@@ -12827,11 +12855,11 @@ function sdRenderDashboard(data) {
   }
 
   // Row 2 stat cards
-  document.getElementById("sd-s-spare").textContent    = stats.spareStoreItems;
-  document.getElementById("sd-s-fgready").textContent  = stats.fgReady;
-  document.getElementById("sd-s-boqinc").textContent   = stats.pendingBOQIncrease;
-  document.getElementById("sd-s-returns").textContent  = stats.returnTickets;
-  document.getElementById("sd-s-overruns").textContent = stats.boqOverruns;
+  document.getElementById("sd-s-pending-assign").textContent  = stats.itemsPendingAssignment;
+  document.getElementById("sd-s-fully-assigned").textContent  = stats.itemsFullyAssigned;
+  document.getElementById("sd-s-boqinc").textContent          = stats.pendingBOQIncrease;
+  document.getElementById("sd-s-returns").textContent         = stats.returnTickets;
+  document.getElementById("sd-s-overruns").textContent        = stats.boqOverruns;
 
   // Chart 1 — Tickets by Department (horizontal bar)
   if (sdChartDept) sdChartDept.destroy();
@@ -12983,7 +13011,6 @@ function navigateToProductionDashboard() {
 // ═══════════════════════════════════════════════════════
 let pd2CurrentPeriod     = "today";
 let pd2CurrentCustomType = "customday";
-let pd2ChartDept = null, pd2ChartTrend = null;
 let pd2JCNData = [], pd2JCNFiltered = [], pd2JCNCurrentPage = 1;
 const PD2_JCN_PAGE_SIZE = 8;
 
@@ -13016,7 +13043,8 @@ function pd2LoadCustom() {
 }
 
 async function pd2LoadDashboard(customVal) {
-  ["pd2-s-activejcn","pd2-s-finished","pd2-s-inprogress","pd2-s-tickets","pd2-s-boqutil"].forEach(id => {
+  ["pd2-s-activejcn","pd2-s-finished","pd2-s-inprogress","pd2-s-store-approvals","pd2-s-unique-proj",
+   "pd2-s-tickets","pd2-s-boqutil","pd2-s-jc-increase"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
   try {
@@ -13033,15 +13061,18 @@ async function pd2LoadDashboard(customVal) {
 }
 
 function pd2RenderDashboard(data) {
-  const { stats, byDept, dailyTrend, inProgressJCNs, recentFG } = data;
+  const { stats, byDept, dailyTrend, inProgressJCNs, recentFG, projectCompletion } = data;
 
   // Row 1
-  document.getElementById("pd2-s-activejcn").textContent  = stats.activeJCNs;
-  document.getElementById("pd2-s-finished").textContent   = stats.finishedThisPeriod;
-  document.getElementById("pd2-s-inprogress").textContent = stats.inProgress;
+  document.getElementById("pd2-s-activejcn").textContent      = stats.activeJCNs;
+  document.getElementById("pd2-s-finished").textContent       = stats.finishedThisPeriod;
+  document.getElementById("pd2-s-inprogress").textContent     = stats.inProgress;
+  document.getElementById("pd2-s-store-approvals").textContent= stats.pendingStoreApprovals ?? "—";
+  document.getElementById("pd2-s-unique-proj").textContent    = stats.uniqueProjectsActive  ?? "—";
 
   // Row 2
-  document.getElementById("pd2-s-tickets").textContent = stats.storeTickets;
+  document.getElementById("pd2-s-tickets").textContent    = stats.storeTickets;
+  document.getElementById("pd2-s-jc-increase").textContent= stats.jcIncreaseRequestsPending ?? "—";
   if (stats.boqUtilPct !== null) {
     document.getElementById("pd2-s-boqutil").textContent     = stats.boqUtilPct + "%";
     document.getElementById("pd2-s-boqutil-sub").textContent = "avg across active projects";
@@ -13080,6 +13111,43 @@ function pd2RenderDashboard(data) {
     options: { responsive:true, plugins:{ legend:{ display:false } },
       scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
   });
+
+  // Chart 3 — Project Completion Progress (horizontal stacked bar)
+  if (pd2ChartCompletion) pd2ChartCompletion.destroy();
+  const ctx3el = document.getElementById("pd2-chart-completion");
+  if (ctx3el && projectCompletion && projectCompletion.length > 0) {
+    const compLabels   = projectCompletion.map(p => p.customerName.length > 18 ? p.customerName.substring(0, 16) + "…" : p.customerName);
+    const finishedData = projectCompletion.map(p => p.finished);
+    const inProgData   = projectCompletion.map(p => p.inProgress);
+    pd2ChartCompletion = new Chart(ctx3el.getContext("2d"), {
+      type: "bar",
+      data: {
+        labels: compLabels,
+        datasets: [
+          { label: "Finished",    data: finishedData, backgroundColor: "rgba(16,185,129,0.75)", borderRadius: 3 },
+          { label: "In Progress", data: inProgData,   backgroundColor: "rgba(245,158,11,0.75)", borderRadius: 3 }
+        ]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        plugins: {
+          legend: { display: true, position: "bottom", labels: { font: { size: 9 }, boxWidth: 10, padding: 6 } }
+        },
+        scales: {
+          x: { stacked: true, ticks: { stepSize: 1 }, grid: { color: "#f1f5f9" } },
+          y: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 } } }
+        }
+      }
+    });
+  } else if (ctx3el) {
+    // No data state
+    const c = ctx3el.getContext("2d");
+    c.fillStyle = "#94a3b8";
+    c.font = "11px sans-serif";
+    c.textAlign = "center";
+    c.fillText("No active projects with job cards", ctx3el.width / 2, ctx3el.height / 2);
+  }
 
   // Row 4 left — In Progress JCN table
   // Populate department filter dropdown
@@ -14417,6 +14485,10 @@ function pdRenderDashboard(data) {
   document.getElementById("pd-s-poval").textContent  = fmtNum(stats.totalPOValue);
   document.getElementById("pd-s-matcov").textContent       = stats.materialsCovered;
   document.getElementById("pd-s-matcov-total").textContent = "/ " + stats.materialsTotal + " total";
+  const ppEl = document.getElementById("pd-s-prn-pending");
+  const pcEl = document.getElementById("pd-s-prn-covered");
+  if (ppEl) ppEl.textContent = stats.prnPendingAssignment ?? "—";
+  if (pcEl) pcEl.textContent = stats.prnFullyCovered      ?? "—";
 
   // Chart 1 — PRN trend (stacked bar)
   if (pdChartPrnTrend) pdChartPrnTrend.destroy();
