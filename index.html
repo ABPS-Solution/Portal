@@ -6427,6 +6427,7 @@ async function submitMaterialRequestTicketToBackend() {
     window.storeCreateTicketOriginalTemplateCacheHTML = materialRequestPanelContainer.innerHTML;
   }
   
+  showBlockingOverlay("Submitting Store Ticket...");
   try {
     const jobCardNumberVal = document.getElementById("ticket-job-card-dropdown")?.value || "";
     const payload = {
@@ -6445,6 +6446,7 @@ async function submitMaterialRequestTicketToBackend() {
     };
     
     const result = await apFetch(payload);
+    hideBlockingOverlay();
     
     if (result.success) {
       // Clear current memory shopping draft arrays parameters instantly
@@ -6478,6 +6480,7 @@ async function submitMaterialRequestTicketToBackend() {
       submitBtn.textContent = ticketTypeVal === "Return Material" ? "Generate Return Ticket" : "Generate Material Ticket";
     }
   } catch (err) {
+    hideBlockingOverlay();
     if (feedbackBanner) {
       feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 12px; margin-bottom: 12px; border-left: 4px solid #b91c1c; text-align: left;";
       feedbackBanner.innerHTML = `<strong>Network Request Connection Error:</strong> ${err.message}`;
@@ -8636,6 +8639,7 @@ async function commitGateEntryRecordsToBackend() {
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Generating Gate Entry...';
+  showBlockingOverlay("Recording Gate Entry...");
   
   const codeInputs = document.querySelectorAll('.gate-row-item-code-input');
   const tableRows = document.querySelectorAll('#gate-verification-table-body tr');
@@ -8682,6 +8686,7 @@ async function commitGateEntryRecordsToBackend() {
       lineItems: activeParsedGatePayloadCache.lineItems
     };
     const data = await apFetch(payload);
+    hideBlockingOverlay();
     if (data.success) {
       if (uploadWrapperBlock) uploadWrapperBlock.style.display = "none";
       document.getElementById('gate-ai-verification-workspace').style.display = "none";
@@ -8703,7 +8708,7 @@ async function commitGateEntryRecordsToBackend() {
       alert("Submission Error: " + data.error);
       btn.disabled = false; btn.textContent = "Generate Gate Entry";
     }
-  } catch(e) { alert(e.message); btn.disabled = false; btn.textContent = "Generate Gate Entry"; }
+  } catch(e) { hideBlockingOverlay(); alert(e.message); btn.disabled = false; btn.textContent = "Generate Gate Entry"; }
 }
 
 async function initializeStoreEntryWorkspaceQueue() {
@@ -8970,12 +8975,14 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
     return;
   }
 
+  showBlockingOverlay("Verifying Store Entry...");
   try {
     const data = await apFetch({ 
       action: "commitStoreEntryPipelineStep", 
       activeEngineer: appActiveOperatorIdentityString, 
       payload: itemData 
     });
+    hideBlockingOverlay();
     
     if (data.success) {
       // Clear current row staging queue card objects feed out of sight completely
@@ -8998,6 +9005,7 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
       btn.disabled = false; btn.textContent = "Verify & Generate Raw Materials Store Entry";
     }
   } catch(e) { 
+    hideBlockingOverlay();
     alert("Network request execution failure: " + e.message); 
     btn.disabled = false; btn.textContent = "Verify & Generate Raw Materials Store Entry"; 
   }
@@ -9229,12 +9237,14 @@ async function commitGrnVerificationToBackend(gateNum, encodedItem) {
   btn.disabled = true; 
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Certifying GRN Note...';
   
+  showBlockingOverlay("Verifying GRN...");
   try {
     const data = await apFetch({ 
       action: "commitGrnPipelineStep", 
       activeEngineer: appActiveOperatorIdentityString, 
       payload: { ...itemData, vendorName: itemData.vendorName || document.getElementById("store-grn-queue-cards-feed").querySelector(`[data-vendor]`)?.dataset.vendor || "" }
     });
+    hideBlockingOverlay();
     if (data.success) {
       document.getElementById("store-grn-queue-cards-feed").innerHTML = "";
       banner.style.cssText = "display: block; background: #dcfce7; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); margin-bottom:15px;";
@@ -9256,6 +9266,7 @@ async function commitGrnVerificationToBackend(gateNum, encodedItem) {
       btn.disabled = false; btn.textContent = "Verify & Add Stock to Store";
     }
   } catch(e) { 
+    hideBlockingOverlay();
     alert("Network request execution failure: " + e.message); 
     btn.disabled = false; btn.textContent = "Verify & Add Stock to Store"; 
   }
@@ -10794,6 +10805,7 @@ async function submitCreateBOQ() {
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
+  showBlockingOverlay("Saving Bill of Quantity Draft...");
 
   try {
     const data = await apFetch({
@@ -10803,6 +10815,7 @@ async function submitCreateBOQ() {
       materialRowsList: cboqMaterialRows,
       preparedBy
     });
+    hideBlockingOverlay();
 
     if (data.success) {
       const fb = document.getElementById("create-boq-feedback");
@@ -10832,6 +10845,7 @@ async function submitCreateBOQ() {
       showBOQBanner("create-boq-feedback", data.error || "Submission failed.", "error");
     }
   } catch(e) {
+    hideBlockingOverlay();
     showBOQBanner("create-boq-feedback", "Network error: " + e.message, "error");
   } finally {
     btn.disabled = false;
@@ -11230,24 +11244,25 @@ function updateEBOQTotals() {
 }
 
 let _submitBOQAuthorizeInProgress = false;
-function showBOQAuthorizingOverlay() {
-  let ov = document.getElementById("boq-authorizing-overlay");
-  if (ov) { ov.style.display = "flex"; return; }
+function showBlockingOverlay(text) {
+  let ov = document.getElementById("app-blocking-overlay");
+  const msgEl = () => document.getElementById("app-blocking-overlay-text");
+  if (ov) { ov.style.display = "flex"; if (msgEl()) msgEl().textContent = text || "Processing..."; return; }
   ov = document.createElement("div");
-  ov.id = "boq-authorizing-overlay";
+  ov.id = "app-blocking-overlay";
   ov.style.cssText = "position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.35); backdrop-filter:blur(1px); z-index:99999; display:flex; align-items:center; justify-content:center; cursor:wait;";
   ov.innerHTML = `
     <div style="background:rgba(255,255,255,0.9); border:1px solid var(--border); border-radius:var(--radius); padding:22px 32px; box-shadow:0 8px 28px rgba(0,0,0,0.18); display:flex; align-items:center; gap:14px;">
       <div class="spinner" style="width:22px; height:22px; border:3px solid rgba(0,0,0,0.12); border-top-color:var(--accent); border-radius:50%; animation:spin 0.6s linear infinite;"></div>
-      <span style="font-weight:700; font-size:0.92rem; color:var(--text);">Authorizing Bill of Quantity...</span>
+      <span id="app-blocking-overlay-text" style="font-weight:700; font-size:0.92rem; color:var(--text);">${text || "Processing..."}</span>
     </div>`;
   // Block all clicks/keys from reaching the page underneath while visible
   ov.addEventListener("click", e => e.stopPropagation());
   document.body.appendChild(ov);
 }
 
-function hideBOQAuthorizingOverlay() {
-  const ov = document.getElementById("boq-authorizing-overlay");
+function hideBlockingOverlay() {
+  const ov = document.getElementById("app-blocking-overlay");
   if (ov) ov.style.display = "none";
 }
 
@@ -11279,7 +11294,7 @@ async function submitEBOQAuthorize() {
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Authorizing...';
-  showBOQAuthorizingOverlay();
+  showBlockingOverlay(eboqMode === "authorize" ? "Authorizing Bill of Quantity..." : "Authorizing Bill of Quantity Update...");
 
   try {
     const data = await apFetch({
@@ -11290,7 +11305,7 @@ async function submitEBOQAuthorize() {
       materialRowsList: eboqMaterialRows,
       authorizedBy
     });
-    hideBOQAuthorizingOverlay();
+    hideBlockingOverlay();
 
     if (data.success) {
       const _lastDraft = eboqCurrentDraft;
@@ -11336,7 +11351,7 @@ async function submitEBOQAuthorize() {
       showBOQBanner(feedbackId, data.error || "Authorization failed.", "error");
     }
   } catch(e) {
-    hideBOQAuthorizingOverlay();
+    hideBlockingOverlay();
     showBOQBanner(feedbackId, "Network error: " + e.message, "error");
   } finally {
     _submitBOQAuthorizeInProgress = false;
@@ -11732,6 +11747,7 @@ async function submitUpdateBOQ() {
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
+  showBlockingOverlay("Saving Bill of Quantity Update...");
 
   try {
     const data = await apFetch({
@@ -11741,6 +11757,7 @@ async function submitUpdateBOQ() {
       orderQuantity: orderQty,
       materialRowsList: uboqMaterialRows
     });
+    hideBlockingOverlay();
 
     if (data.success) {
       const _lastDraft = uboqCurrentDraft;
@@ -11777,6 +11794,7 @@ async function submitUpdateBOQ() {
       showBOQBanner(feedbackId, data.error || "Update submission failed.", "error");
     }
   } catch(e) {
+    hideBlockingOverlay();
     showBOQBanner(feedbackId, "Network error: " + e.message, "error");
   } finally {
     _submitUpdateBOQInProgress = false;
@@ -12093,6 +12111,7 @@ async function submitFGAddItem() {
     return upData.success ? upData.url : "";
   }
 
+  showBlockingOverlay("Adding to Finished Goods Store...");
   try {
     const jobCardSheetUrl    = await uploadFGDoc(fgJobCardSheetFile,    "Job Card Sheet",             jobCard);
     const testCertUrl        = await uploadFGDoc(fgQATestCertFile,      "Test Certificate",           jobCard);
@@ -12112,6 +12131,7 @@ async function submitFGAddItem() {
       testCertUrl, inspectionClearanceUrl, inProcessInspUrl, jobCardSheetUrl
     });
 
+    hideBlockingOverlay();
     if (data.success) {
       showBOQBanner("fg-add-feedback", `<strong>${productName}</strong> added to Finished Goods Store (${department}) successfully!`, "success");
       resetFGAddForm();
@@ -12119,6 +12139,7 @@ async function submitFGAddItem() {
       showBOQBanner("fg-add-feedback", data.error || "Failed to add item.", "error");
     }
   } catch(e) {
+    hideBlockingOverlay();
     showBOQBanner("fg-add-feedback", "Network error: " + e.message, "error");
   } finally {
     _submitFGAddItemInProgress = false;
@@ -13695,6 +13716,7 @@ async function submitNewPRNCreation() {
   const btn = document.getElementById("prn-create-generate-btn");
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Creating PRN...';
+  showBlockingOverlay("Creating Purchase Request Note...");
 
   try {
     const boqMeta = (window.prnBOQMeta || {})[pending.boqId] || {};
@@ -13709,10 +13731,12 @@ async function submitNewPRNCreation() {
     });
 
     if (!data.success) {
+      hideBlockingOverlay();
       showPurchaseFeedback("prn-feedback", data.error || "Failed to create PRN.", "error");
       btn.disabled = false; btn.textContent = "Generate & Save PRN PDF";
       return;
     }
+    hideBlockingOverlay();
 
     if (window._prnCreateStockInterval) clearInterval(window._prnCreateStockInterval);
     window.prnPendingCreate = null;
@@ -13744,6 +13768,7 @@ async function submitNewPRNCreation() {
     }
 
   } catch(e) {
+    hideBlockingOverlay();
     if (bodyZone) bodyZone.style.display = "grid";
     showPurchaseFeedback("prn-feedback", "Network error: " + e.message, "error");
     btn.disabled = false; btn.textContent = "Generate & Save PRN PDF";
@@ -14373,6 +14398,7 @@ async function commitRawMaterialPOToBackend() {
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
+  showBlockingOverlay("Saving Purchase Order...");
 
   let fileBase64 = "";
   let fileName   = "";
@@ -14391,6 +14417,7 @@ async function commitRawMaterialPOToBackend() {
       mimeType: targetRMPOFileObj ? targetRMPOFileObj.type : ""
     });
 
+    hideBlockingOverlay();
     if (data.success) {
       document.getElementById("rm-po-upload-zone").style.display = "none";
       document.getElementById("rm-po-verification-zone").style.display = "none";
@@ -14416,6 +14443,7 @@ async function commitRawMaterialPOToBackend() {
       feedback.textContent = "Failed: " + (data.error || "Unknown error.");
     }
   } catch(e) {
+    hideBlockingOverlay();
     feedback.style.cssText = "display:block; background:#fee2e2; border-left:4px solid #b91c1c; color:#b91c1c; padding:12px; border-radius:var(--radius); margin-bottom:12px;";
     feedback.textContent = "Network error: " + e.message;
   } finally {
