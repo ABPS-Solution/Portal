@@ -977,6 +977,14 @@
         <h2 style="color:var(--brand); margin:0;">Expected Inbounds</h2>
         <button class="nav-btn-styled" onclick="loadExpectedInbounds()" style="background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Refresh</button>
       </div>
+      <div id="expected-inbounds-window-toggle" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
+        <button class="ei-filter-btn" data-mode="overdue" onclick="setExpectedInboundsFilter('overdue')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">Overdue</button>
+        <button class="ei-filter-btn" data-mode="today" onclick="setExpectedInboundsFilter('today')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">Today</button>
+        <button class="ei-filter-btn" data-mode="7" onclick="setExpectedInboundsFilter('7')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">7 Days</button>
+        <button class="ei-filter-btn" data-mode="30" onclick="setExpectedInboundsFilter('30')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">30 Days</button>
+        <button class="ei-filter-btn" data-mode="90" onclick="setExpectedInboundsFilter('90')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">90 Days</button>
+        <button class="ei-filter-btn" data-mode="all" onclick="setExpectedInboundsFilter('all')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">All</button>
+      </div>
       <div id="expected-inbounds-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="expected-inbounds-results" style="display:flex; flex-direction:column; gap:16px;"></div>
     </div>
@@ -15219,8 +15227,21 @@ async function executeUnassignStock(assignmentId, reduceQty) {
 // EXPECTED INBOUNDS
 // ═══════════════════════════════════════════════════════
 
+let expectedInboundsFilterMode = "all";
+
 function initializeExpectedInboundsPanel() {
   document.getElementById("expected-inbounds-feedback").style.display = "none";
+  setExpectedInboundsFilter("30");
+}
+
+function setExpectedInboundsFilter(mode) {
+  expectedInboundsFilterMode = mode;
+  document.querySelectorAll(".ei-filter-btn").forEach(btn => {
+    const active = btn.dataset.mode === mode;
+    btn.style.background  = active ? "var(--brand)" : "#fff";
+    btn.style.color       = active ? "#fff" : "var(--text)";
+    btn.style.borderColor = active ? "var(--brand)" : "var(--border)";
+  });
   loadExpectedInbounds();
 }
 
@@ -15232,7 +15253,7 @@ async function loadExpectedInbounds() {
   </div>`;
 
   try {
-    const data = await apFetch({ action: "fetchExpectedInbounds" });
+    const data = await apFetch({ action: "fetchExpectedInbounds", filterMode: expectedInboundsFilterMode });
     if (!data.success) {
       zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error}</div>`;
       return;
@@ -15245,7 +15266,7 @@ async function loadExpectedInbounds() {
       zone.innerHTML = `<div style="text-align:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted);">
         <div style="font-size:2.5rem; margin-bottom:12px;">📦</div>
         <div style="font-weight:700; color:var(--accent); font-size:0.95rem;">No pending inbounds!</div>
-        <div style="font-size:0.82rem; margin-top:4px;">All POs in the current window have been received or have no upcoming delivery dates.</div>
+        <div style="font-size:0.82rem; margin-top:4px;">No unreceived POs match the selected window.</div>
       </div>`;
       return;
     }
@@ -15254,9 +15275,11 @@ async function loadExpectedInbounds() {
     const schemeOverdue  = { sectionBg: "#fff5f5", sectionBorder: "#fca5a5", headerColor: "#b91c1c", badgeBg: "#fee2e2", badgeColor: "#b91c1c", icon: "🚨" };
     const schemeUpcoming = { sectionBg: "#f0fdf4", sectionBorder: "#86efac", headerColor: "#15803d", badgeBg: "#dcfce7", badgeColor: "#15803d", icon: "📅" };
 
-    if ((data.today || []).length > 0)    zone.appendChild(renderExpectedInboundsSection("Due Today",     data.today,    schemeDueToday));
-    if ((data.overdue || []).length > 0)  zone.appendChild(renderExpectedInboundsSection("Overdue",       data.overdue,  schemeOverdue));
-    if ((data.upcoming || []).length > 0) zone.appendChild(renderExpectedInboundsSection("Next 7 Days",   data.upcoming, schemeUpcoming));
+    // Overdue/Today called out first regardless of window; Upcoming is already
+    // sorted ascending by daysRemaining from the backend.
+    if ((data.overdue || []).length > 0)  zone.appendChild(renderExpectedInboundsSection("Overdue",   data.overdue,  schemeOverdue));
+    if ((data.today || []).length > 0)    zone.appendChild(renderExpectedInboundsSection("Due Today", data.today,    schemeDueToday));
+    if ((data.upcoming || []).length > 0) zone.appendChild(renderExpectedInboundsSection("Upcoming",  data.upcoming, schemeUpcoming));
 
   } catch(e) {
     zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${e.message}</div>`;
