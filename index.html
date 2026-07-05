@@ -1305,6 +1305,8 @@
       <div id="prn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="prn-success-zone" style="display:none;"></div>
 
+      <div id="prn-needqueue-zone" style="margin-bottom:16px;"></div>
+
       <div id="prn-body-zone" style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
@@ -1672,9 +1674,8 @@
             <div class="dd-stat-val" id="sd-s-pending" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Avg. Approval Time</div>
-            <div class="dd-stat-val" id="sd-s-avgtime">—</div>
-            <div class="dd-stat-sub" id="sd-s-avgtime-unit">minutes</div>
+            <div class="dd-stat-label">BOQs Needing PRN</div>
+            <div class="dd-stat-val" id="sd-s-boqneedprn" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card">
             <div class="dd-stat-label">GRNs</div>
@@ -2595,7 +2596,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxHYh-PVu-4yNJCHbji79VM4kPA8QznXJ3Jkg8F6PFmr4hbjSLJcOM2zARpcSXg_RjO/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycby9Vw-9ZxMIRch5cLFqRal53J-Wt2QlJNVVCFhXfgCtCaAgOxszBiiRHRLz1PSJnz0f/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -12905,7 +12906,7 @@ function sdLoadCustom() {
 }
 
 async function sdLoadDashboard(customVal) {
-  ["sd-s-tickets","sd-s-pending","sd-s-avgtime","sd-s-grns","sd-s-spare",
+  ["sd-s-tickets","sd-s-pending","sd-s-boqneedprn","sd-s-grns","sd-s-spare",
    "sd-s-pending-assign","sd-s-fully-assigned","sd-s-boqinc","sd-s-returns","sd-s-overruns"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
@@ -12930,14 +12931,7 @@ function sdRenderDashboard(data) {
   document.getElementById("sd-s-pending").textContent   = stats.pendingApprovals;
   document.getElementById("sd-s-grns").textContent      = stats.totalGRNs;
   document.getElementById("sd-s-spare").textContent     = stats.spareStoreItems;
-
-  if (stats.avgApprovalMins !== null) {
-    document.getElementById("sd-s-avgtime").textContent      = stats.avgApprovalMins;
-    document.getElementById("sd-s-avgtime-unit").textContent = "minutes";
-  } else {
-    document.getElementById("sd-s-avgtime").textContent      = "—";
-    document.getElementById("sd-s-avgtime-unit").textContent = "";
-  }
+  document.getElementById("sd-s-boqneedprn").textContent = stats.boqsNeedingPRN ?? "—";
 
   // Row 2 stat cards
   document.getElementById("sd-s-pending-assign").textContent  = stats.itemsPendingAssignment;
@@ -13401,6 +13395,66 @@ async function initializePRNPanel() {
     projDrop.innerHTML = '<option value="">Error loading projects</option>';
     showPurchaseFeedback("prn-feedback", "Failed to load project list: " + e.message, "error");
   }
+
+  loadPRNNeedQueue();
+}
+
+async function loadPRNNeedQueue() {
+  const zone = document.getElementById("prn-needqueue-zone");
+  if (!zone) return;
+  zone.innerHTML = `<div style="text-align:center; padding:12px; color:var(--muted); font-size:0.8rem;">
+    <div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>
+    Checking which BOQs need a PRN...
+  </div>`;
+  try {
+    const data = await apFetch({ action: "fetchBOQsNeedingPRNQueue" });
+    if (!data.success) { zone.innerHTML = ""; return; }
+    const queue = data.queue || [];
+    if (queue.length === 0) {
+      zone.innerHTML = `<div style="padding:10px 14px; background:#f0fff4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-size:0.8rem; font-weight:600;">✅ All authorized BOQs are covered by an up-to-date PRN.</div>`;
+      return;
+    }
+    const rows = queue.map(item => {
+      const badgeColor = item.badge === "New" ? "#b91c1c" : "#b45309";
+      const badgeBg     = item.badge === "New" ? "#fee2e2" : "#fef3c7";
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #f1f5f9;">
+          <div style="min-width:0;">
+            <span style="font-size:0.68rem; font-weight:800; background:${badgeBg}; color:${badgeColor}; padding:2px 7px; border-radius:4px; margin-right:8px;">${item.badge}</span>
+            <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${item.boqId}</span>
+            <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} — ${item.productName || ""} ${item.productRating || ""}</div>
+          </div>
+          <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
+            onclick="jumpToPRNFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.boqId.replace(/'/g, "\\'")}')">
+            Create PRN →
+          </button>
+        </div>`;
+    }).join("");
+
+    zone.innerHTML = `
+      <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); overflow:hidden;">
+        <div style="padding:10px 14px; font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; letter-spacing:0.5px; background:#fef3c7;">
+          ⚠️ BOQs Needing a PRN (${queue.length})
+        </div>
+        ${rows}
+      </div>`;
+  } catch(e) {
+    zone.innerHTML = "";
+  }
+}
+
+async function jumpToPRNFromQueue(projectId, boqId) {
+  const projDrop = document.getElementById("prn-project-select");
+  const boqDrop  = document.getElementById("prn-boq-select");
+  if (!projDrop) return;
+  projDrop.value = projectId;
+  await handlePRNProjectChange(projectId);
+  if (boqDrop) {
+    boqDrop.value = boqId;
+    await handlePRNBOQChange(boqId);
+  }
+  const bodyZone = document.getElementById("prn-body-zone");
+  if (bodyZone) bodyZone.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 async function handlePRNProjectChange(projectId) {
