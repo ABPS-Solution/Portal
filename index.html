@@ -13388,12 +13388,18 @@ async function initializePRNPanel() {
 
   try {
     const data = await apFetch({ action:"pullLiveActiveProjectCodes" });
+    if (!data || !data.success) {
+      projDrop.innerHTML = '<option value="">Error loading projects</option>';
+      showPurchaseFeedback("prn-feedback", (data && data.error) ? data.error : "Failed to load project list. Please refresh.", "error");
+      return;
+    }
     projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
     (data.projects || []).forEach(code => {
       const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
     });
   } catch(e) {
     projDrop.innerHTML = '<option value="">Error loading projects</option>';
+    showPurchaseFeedback("prn-feedback", "Failed to load project list: " + e.message, "error");
   }
 }
 
