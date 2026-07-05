@@ -314,7 +314,7 @@
         <div class="menu-card" id="mod-store-gate"        onclick="navigateToStoreWorkspacePanel('store-gate-entry')"><span class="mc-label">Gate Entry</span></div>
         <div class="menu-card" id="mod-store-entry"       onclick="navigateToStoreWorkspacePanel('store-entry')"><span class="mc-label">Raw Materials Store Entry</span></div>
         <div class="menu-card" id="mod-store-grn"         onclick="navigateToStoreWorkspacePanel('store-grn')"><span class="mc-label">GRN (Goods Received Note)</span></div>
-        <div class="menu-card" id="mod-expected-inbounds" onclick="navigateToStoreWorkspacePanel('expected-inbounds')"><span class="mc-label">Expected Inbounds</span></div>
+        <div class="menu-card" id="mod-expected-inbounds" onclick="navigateToStoreWorkspacePanel('expected-inbounds')"><span class="mc-label">Expected Deliveries</span></div>
       </div>
       <div class="sec-label">Raw Materials Store Outward</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -974,7 +974,7 @@
 
     <div id="canvas-module-expected-inbounds" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:10px;">
-        <h2 style="color:var(--brand); margin:0;">Expected Inbounds</h2>
+        <h2 style="color:var(--brand); margin:0;">Expected Deliveries</h2>
         <button class="nav-btn-styled" onclick="loadExpectedInbounds()" style="background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Refresh</button>
       </div>
       <div id="expected-inbounds-window-toggle" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
@@ -2604,7 +2604,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxEFyF4EWx10cSLy_iUKkr7sw5w6rO911Ocn9xqCNVltgdCp4FzvsLUzruOajcBEa-j/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwl7GBzPLwI-NMeiWDQ63Cc9RGCw6rJ23y-AlhxhYJlJaJbyi98QgcmIoj5uSrsJRA/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -6151,7 +6151,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canUploadRMPurchaseOrder   = userPermissionsObject.uploadRMPurchaseOrder === true;
   const canCreateJobCardNumber = userPermissionsObject.createJobCardNumber === true;
   const canAssignCurrentStock  = userPermissionsObject.assignCurrentStock  === true;
-  const canExpectedInbounds = userPermissionsObject.expectedInbounds === true;
+  const canExpectedInbounds = userPermissionsObject.expectedDeliveries === true;
 
   // --- SET INDIVIDUAL VISIBILITY FOR MARKETING TARGET CARDS ---
   if (document.getElementById("mod-card")) {
@@ -15224,7 +15224,7 @@ async function executeUnassignStock(assignmentId, reduceQty) {
 }
 
 // ═══════════════════════════════════════════════════════
-// EXPECTED INBOUNDS
+// EXPECTED Deliveries
 // ═══════════════════════════════════════════════════════
 
 let expectedInboundsFilterMode = "all";
@@ -15249,11 +15249,11 @@ async function loadExpectedInbounds() {
   const zone = document.getElementById("expected-inbounds-results");
   zone.innerHTML = `<div style="text-align:center; padding:30px; color:var(--brand); font-weight:600;">
     <div class="spinner" style="display:inline-block; width:18px; height:18px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:10px; vertical-align:middle;"></div>
-    Loading Expected Inbounds...
+    Loading Expected Deliveries...
   </div>`;
 
   try {
-    const data = await apFetch({ action: "fetchExpectedInbounds", filterMode: expectedInboundsFilterMode });
+    const data = await apFetch({ action: "fetchExpectedDeliveries", filterMode: expectedInboundsFilterMode });
     if (!data.success) {
       zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error}</div>`;
       return;
@@ -15266,7 +15266,6 @@ async function loadExpectedInbounds() {
       zone.innerHTML = `<div style="text-align:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted);">
         <div style="font-size:2.5rem; margin-bottom:12px;">📦</div>
         <div style="font-weight:700; color:var(--accent); font-size:0.95rem;">No pending inbounds!</div>
-        <div style="font-size:0.82rem; margin-top:4px;">No unreceived POs match the selected window.</div>
       </div>`;
       return;
     }
@@ -15293,13 +15292,12 @@ function renderExpectedInboundsSection(title, poList, scheme) {
   const safeSectionId = "ei-section-" + title.replace(/\s+/g, "_").toLowerCase();
 
   sectionEl.innerHTML = `
-    <div onclick="toggleEISection('${safeSectionId}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:${scheme.sectionBg}; border-bottom:1.5px solid ${scheme.sectionBorder}; cursor:pointer; user-select:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:${scheme.sectionBg}; border-bottom:1.5px solid ${scheme.sectionBorder};">
       <div style="display:flex; align-items:center; gap:10px;">
         <span style="font-size:1.1rem;">${scheme.icon}</span>
         <span style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:${scheme.headerColor}; letter-spacing:0.5px;">${title}</span>
         <span style="font-size:0.72rem; font-weight:700; background:${scheme.badgeBg}; color:${scheme.badgeColor}; padding:2px 8px; border-radius:10px;">${poList.length} PO${poList.length !== 1 ? "s" : ""}</span>
       </div>
-      <span id="${safeSectionId}-toggle-btn" style="font-size:0.72rem; font-weight:700; color:${scheme.headerColor}; border:1px solid ${scheme.sectionBorder}; padding:3px 10px; border-radius:4px; background:#fff;">▲ Collapse</span>
     </div>
     <div id="${safeSectionId}-body" style="display:flex; flex-direction:column; gap:10px; padding:12px;">
       ${poList.map(po => renderExpectedInboundsPOCard(po, scheme)).join("")}
@@ -15360,7 +15358,7 @@ function renderExpectedInboundsPOCard(po, scheme) {
         </div>
         <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.78rem; color:var(--muted);">
           <span><strong style="color:var(--text);">${po.vendorName}</strong></span>
-          <span>📅 Order: <strong>${po.orderDate || "—"}</strong></span>
+          <span>📅 Order Date: <strong>${po.orderDate || "—"}</strong></span>
           <span>🚚 Delivery Date: <strong>${po.deliveryDate || "—"}</strong></span>
           ${po.grandTotal > 0 ? `<span>₹${Number(po.grandTotal).toLocaleString("en-IN", {minimumFractionDigits:0, maximumFractionDigits:0})}</span>` : ""}
         </div>
