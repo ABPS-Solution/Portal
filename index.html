@@ -13569,7 +13569,7 @@ function renderPRNCreateTable() {
 
   let rowsHtml = "";
   pending.lineItems.forEach((item, idx) => {
-    const bufferedQty = Number(item.bufferedPurchQty) || 0;
+    const bufferedQty = Math.round((Number(item.bufferedPurchQty) || 0) * 100) / 100;
     rowsHtml += `
       <tr style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
@@ -13646,11 +13646,14 @@ function renderPRNCreateTable() {
     inp.addEventListener("input", function() {
       const idx = this.dataset.idx;
       const item = pending.lineItems[idx];
-      const bufferedQty = Number(item.bufferedPurchQty) || 0;
+      // Round to 2dp to match the displayed "Buffered Qty" column — the raw stored value can
+      // legitimately carry 3dp precision (e.g. 4.8 * 1.16 = 5.568), but every input/display in
+      // this row must agree on 2dp so the user never sees a mismatch like Buffered=5.57 / Store=5.568.
+      const bufferedQty = Math.round((Number(item.bufferedPurchQty) || 0) * 100) / 100;
       const liveSpan = document.querySelector(`.prn-create-livestock[data-itemcode="${item.itemCode}"]`);
       const liveMax  = (liveSpan && liveSpan.dataset.liveTotal !== undefined) ? Number(liveSpan.dataset.liveTotal) || 0 : 0;
-      const cap = Math.min(bufferedQty, liveMax);
-      let val = parseFloat(this.value) || 0;
+      const cap = Math.round(Math.min(bufferedQty, liveMax) * 100) / 100;
+      let val = Math.round((parseFloat(this.value) || 0) * 100) / 100;
       if (val > cap) { val = cap; this.value = val; this.style.border = "1.5px solid #ef4444"; }
       else { this.style.border = "1.5px solid var(--brand)"; }
       const purchaseQty = Math.max(0, bufferedQty - val);
@@ -13658,7 +13661,7 @@ function renderPRNCreateTable() {
       if (cell) cell.textContent = purchaseQty.toFixed(2);
     });
   });
-
+  
   refreshPRNCreateLiveStock();
   if (window._prnCreateStockInterval) clearInterval(window._prnCreateStockInterval);
   window._prnCreateStockInterval = setInterval(refreshPRNCreateLiveStock, 8000);
@@ -13683,8 +13686,8 @@ async function refreshPRNCreateLiveStock() {
       if (inp) {
         if (inp.disabled) { inp.disabled = false; inp.style.opacity = "1"; }
         inp.max = total;
-        const currentVal = parseFloat(inp.value) || 0;
-        if (currentVal > total) { inp.value = total; inp.dispatchEvent(new Event("input")); }
+        const currentVal = Math.round((parseFloat(inp.value) || 0) * 100) / 100;
+        if (currentVal > total) { inp.value = Math.round(total * 100) / 100; inp.dispatchEvent(new Event("input")); }
       }
     });
   } catch(e) { /* silent, retry next interval */ }
