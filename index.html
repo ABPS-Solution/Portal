@@ -14556,8 +14556,8 @@ function handleRMPONameSearch(inputEl, idx) {
     <div onclick="selectRMPONameMatch(${idx}, '${c.itemCode}', '${c.productName.replace(/'/g, "\\'")}', '${(c.unit || '').replace(/'/g, "\\'")}')"
       style="padding:8px 10px; cursor:pointer; font-size:0.8rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
-      <​span style="font-weight:600;">${c.productName}<​/span>
-      <​span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px;">${c.itemCode}<​/span>
+      <span style="font-weight:600;">${c.productName}</span>
+      <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px;">${c.itemCode}</span>
     </div>`).join("");
   dropdown.style.display = "block";
 }
