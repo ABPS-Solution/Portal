@@ -13754,19 +13754,22 @@ async function submitNewPRNCreation() {
       btn.disabled = false; btn.textContent = "Generate & Save PRN PDF";
       return;
     }
-    hideBlockingOverlay();
     document.getElementById("prn-feedback").style.display = "none";
 
     if (window._prnCreateStockInterval) clearInterval(window._prnCreateStockInterval);
     window.prnPendingCreate = null;
 
-    // Refresh and show the newly created PRN in the summary view
-    const refetchData = await apFetch({ action: "fetchPRNsForProject", projectId: pending.projectId });
-    const newPRN = (refetchData.prns || []).find(p => p.boqId === pending.boqId && p.status !== "Closed");
+    // Refresh the newly created PRN data WHILE the overlay is still up —
+    // hide table + create-zone now so nothing stale is visible once overlay drops
     const bodyZone    = document.getElementById("prn-body-zone");
     const successZone = document.getElementById("prn-success-zone");
     document.getElementById("prn-create-zone").style.display = "none";
     if (bodyZone) bodyZone.style.display = "none";
+
+    const refetchData = await apFetch({ action: "fetchPRNsForProject", projectId: pending.projectId });
+    const newPRN = (refetchData.prns || []).find(p => p.boqId === pending.boqId && p.status !== "Closed");
+
+    hideBlockingOverlay(); // only now — table is already hidden, success zone renders next
 
     const pdfNote = data.pdfWarning
       ? `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — PRN is saved. Contact admin to verify Drive folder setup.</div>`
