@@ -13961,13 +13961,16 @@ async function refreshPRNLiveStock() {
 
 function updatePRNPurchaseQtyCell(inputEl, idx) {
   if (!prnCurrentData || !prnCurrentData.lineItems[idx]) return;
-  const bufferedQty = Number(prnCurrentData.lineItems[idx].bufferedPurchaseQty) || 0;
+  // Round to 2dp defensively — floating point math upstream (e.g. 48 * 1.16) can produce
+  // values like 55.67999999999999 instead of 55.68, which would otherwise silently clamp
+  // a user's valid, exact-match entry down to an ugly long-decimal value.
+  const bufferedQty = Math.round((Number(prnCurrentData.lineItems[idx].bufferedPurchaseQty) || 0) * 100) / 100;
   const liveStockSpan = document.querySelector(`.prn-livestock-total[data-itemcode="${prnCurrentData.lineItems[idx].itemCode}"]`);
   // Default to 0 (not Infinity) until live stock has actually loaded, so nothing can be over-entered in the gap
   const liveStockMax  = (liveStockSpan && liveStockSpan.dataset.liveTotal !== undefined) ? (Number(liveStockSpan.dataset.liveTotal) || 0) : 0;
-  const cap = Math.min(bufferedQty, liveStockMax);
+  const cap = Math.round(Math.min(bufferedQty, liveStockMax) * 100) / 100;
 
-  let storeQty = parseFloat(inputEl.value) || 0;
+  let storeQty = Math.round((parseFloat(inputEl.value) || 0) * 100) / 100;
   if (storeQty > cap) {
     storeQty = cap;
     inputEl.value = storeQty;
