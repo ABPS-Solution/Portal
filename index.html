@@ -13854,6 +13854,12 @@ async function submitNewPRNCreation() {
         </div>`;
     }
 
+    // Hide the stale "Needing a PRN" queue now that this BOQ is fulfilled —
+    // it will re-fetch fresh (correctly excluding this BOQ) next time the
+    // panel initializes, via resetPRNPanelForNewEntry → initializePRNPanel.
+    const needQueueZone = document.getElementById("prn-needqueue-zone");
+    if (needQueueZone) { needQueueZone.style.display = "none"; needQueueZone.innerHTML = ""; }
+
   } catch(e) {
     hideBlockingOverlay();
     if (bodyZone) bodyZone.style.display = "grid";
