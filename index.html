@@ -13970,7 +13970,7 @@ function renderAllPRNCards(prns, boqId) {
       if (badge) {
         if (boqPendingAuth) {
           badge.style.display = "inline-block";
-          badge.textContent = "⏳ BOQ update pending authorization — create new PRN after it is authorized";
+          badge.textContent = "BOQ update pending authorization — create new PRN after it is authorized";
           badge.style.background = "#fef9c3"; badge.style.borderColor = "#ca8a04"; badge.style.color = "#713f12";
         } else {
           badge.style.display = "none";
@@ -15336,7 +15336,7 @@ function renderExpectedInboundsPOCard(po, scheme) {
     } else if (item.partialReceived) {
       statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:3px;">⚠ Partial (${item.receivedQty} / ${item.orderedQty})</span>`;
     } else {
-      statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:3px;">⏳ Pending</span>`;
+      statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:3px;">Pending</span>`;
     }
     return `<tr style="border-bottom:1px solid #f1f5f9;">
       <td style="padding:6px 8px; font-family:monospace; font-size:0.75rem; font-weight:700; color:var(--brand); white-space:nowrap;">${item.itemCode || "—"}</td>
@@ -15352,17 +15352,17 @@ function renderExpectedInboundsPOCard(po, scheme) {
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
           <div>
             <span style="font-family:monospace; font-weight:800; background:var(--brand); color:#fff; font-size:0.72rem; padding:3px 8px; border-radius:3px; margin-right:6px;">${po.purchaseOrderId}</span>
-            <span style="font-size:0.78rem; font-weight:700; color:var(--muted);">PO No: <strong style="color:var(--text);">${po.poNumber || "—"}</strong></span>
+            <span style="font-size:0.78rem; font-weight:700; color:var(--muted);">Purchase Order Number: <strong style="color:var(--text);">${po.poNumber || "—"}</strong></span>
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
             ${daysLabel}
           </div>
         </div>
         <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.78rem; color:var(--muted);">
-          <span>🏭 <strong style="color:var(--text);">${po.vendorName}</strong></span>
+          <span><strong style="color:var(--text);">${po.vendorName}</strong></span>
           <span>📅 Order: <strong>${po.orderDate || "—"}</strong></span>
-          <span>🚚 Delivery: <strong>${po.deliveryDate || "—"}</strong></span>
-          ${po.grandTotal > 0 ? `<span>💰 ₹${Number(po.grandTotal).toLocaleString("en-IN", {minimumFractionDigits:0, maximumFractionDigits:0})}</span>` : ""}
+          <span>🚚 Delivery Date: <strong>${po.deliveryDate || "—"}</strong></span>
+          ${po.grandTotal > 0 ? `<span>₹${Number(po.grandTotal).toLocaleString("en-IN", {minimumFractionDigits:0, maximumFractionDigits:0})}</span>` : ""}
         </div>
       </div>
 
