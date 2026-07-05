@@ -14279,7 +14279,8 @@ async function initializeRMPOUploadPanel() {
       const opt = document.createElement("option"); opt.value = p.fullName; opt.textContent = p.fullName;
       uploadedByDrop.appendChild(opt);
     });
-    if (appActiveOperatorIdentityString) uploadedByDrop.value = appActiveOperatorIdentityString;
+    const matchExists = purchasePeople.some(p => p.fullName === appActiveOperatorIdentityString);
+    uploadedByDrop.value = (appActiveOperatorIdentityString && matchExists) ? appActiveOperatorIdentityString : "";
   } catch(e) {
     uploadedByDrop.innerHTML = '<option value="">Error loading personnel</option>';
   }
