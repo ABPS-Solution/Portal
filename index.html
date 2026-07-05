@@ -2595,7 +2595,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzMlt01xh1etlA0UugFrrrLl_eIz7Jm_DzwPXN4zMBs-DSpeNIuc5EzX0vpkcFBPHSS/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw_o3Xn3w307TkedMxVIaCqu6t8b0s9mlqtqNHP7BixLkeVMiSG4gJ4mD1N2STnE8Yf/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -13578,6 +13578,7 @@ function renderPRNCreateTable() {
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${Number(item.boqReqQty).toFixed(2)}</td>
         <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct}%</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${bufferedQty.toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="prn-create-livestock" data-itemcode="${item.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
           <select class="prn-create-checked" data-idx="${idx}" style="padding:5px; font-weight:700; border:1.5px solid #9333ea; border-radius:3px; font-size:0.85rem; color:#b91c1c;">
@@ -13605,6 +13606,7 @@ function renderPRNCreateTable() {
             <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Req Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered Purchase Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:130px;">Store Available Stock</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:90px;">Checked by Store Person *</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1;">Store Quantity *</th>
