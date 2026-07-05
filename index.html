@@ -13425,7 +13425,7 @@ async function loadPRNNeedQueue() {
             <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} — ${item.productName || ""} ${item.productRating || ""}</div>
           </div>
           <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
-            onclick="jumpToPRNFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.boqId.replace(/'/g, "\\'")}')">
+            onclick="jumpToPRNFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.boqId.replace(/'/g, "\\'")}', this)">
             Create PRN →
           </button>
         </div>`;
@@ -13443,18 +13443,29 @@ async function loadPRNNeedQueue() {
   }
 }
 
-async function jumpToPRNFromQueue(projectId, boqId) {
+async function jumpToPRNFromQueue(projectId, boqId, btn) {
   const projDrop = document.getElementById("prn-project-select");
   const boqDrop  = document.getElementById("prn-boq-select");
   if (!projDrop) return;
-  projDrop.value = projectId;
-  await handlePRNProjectChange(projectId);
-  if (boqDrop) {
-    boqDrop.value = boqId;
-    await handlePRNBOQChange(boqId);
+
+  const originalHtml = btn ? btn.innerHTML : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="display:inline-block;width:10px;height:10px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Loading...';
   }
-  const bodyZone = document.getElementById("prn-body-zone");
-  if (bodyZone) bodyZone.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  try {
+    projDrop.value = projectId;
+    await handlePRNProjectChange(projectId);
+    if (boqDrop) {
+      boqDrop.value = boqId;
+      await handlePRNBOQChange(boqId);
+    }
+    const bodyZone = document.getElementById("prn-body-zone");
+    if (bodyZone) bodyZone.scrollIntoView({ behavior: "smooth", block: "start" });
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+  }
 }
 
 async function handlePRNProjectChange(projectId) {
@@ -13943,13 +13954,12 @@ function renderAllPRNCards(prns, boqId) {
     if (boqUpdatedAfterLatestPRN || boqPendingAuth) {
       actionBar.style.display = "flex";
       if (badge) {
-        badge.style.display = "inline-block";
         if (boqPendingAuth) {
+          badge.style.display = "inline-block";
           badge.textContent = "⏳ BOQ update pending authorization — create new PRN after it is authorized";
           badge.style.background = "#fef9c3"; badge.style.borderColor = "#ca8a04"; badge.style.color = "#713f12";
         } else {
-          badge.textContent = "⚠️ BOQ was updated — a new Additional PRN may be needed";
-          badge.style.background = "#fef3c7"; badge.style.borderColor = "#f59e0b"; badge.style.color = "#92400e";
+          badge.style.display = "none";
         }
       }
       const createBtn = document.getElementById("prn-create-new-btn");
@@ -13959,43 +13969,6 @@ function renderAllPRNCards(prns, boqId) {
       if (badge) badge.style.display = "none";
     }
   }
-
-  const lockedNote = document.getElementById("prn-store-qty-locked-notice");
-  if (lockedNote) lockedNote.style.display = "none";
-
-  const tbody = document.getElementById("prn-material-rows-body");
-  const items  = data.lineItems || [];
-
-  if (items.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--muted);">No material rows found in BOQ.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = "";
-  items.forEach((item, idx) => {
-    const bufferedQty = Number(item.bufferedPurchaseQty)        || 0;
-    const storeQty    = Number(item.currentUnassignedStoreQty)  || 0;
-    const purchaseQty = Math.max(0, bufferedQty - storeQty);
-    const checkedVal  = (item.checkedByStorePerson || "No").toString().trim();
-
-    const tr = document.createElement("tr");
-    tr.style.borderBottom = "1px solid #f1f5f9";
-    tr.innerHTML = `
-      <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode || "—"}</td>
-      <td style="padding:8px; font-size:0.82rem; font-weight:600; word-break:break-word; line-height:1.4;">${item.materialName}</td>
-      <td style="padding:8px; font-size:0.75rem; color:var(--muted); white-space:nowrap;">${item.typeOfMaterial || "—"}</td>
-      <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${Number(item.boqRequiredQty).toFixed(2)}</td>
-      <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct !== undefined ? item.bufferPct : (item.bufferPercent || 0)}%</td>
-      <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${bufferedQty.toFixed(2)}</td>
-      <td style="padding:8px; text-align:center;">
-        <span style="font-family:monospace; font-weight:700;">${storeQty}</span>
-      </td>
-      <td id="prn-purchase-qty-cell-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">
-        ${purchaseQty.toFixed(2)}
-      </td>`;
-    tbody.appendChild(tr);
-  });
-  window._prnStockRefreshInterval = setInterval(refreshPRNLiveStock, 8000);
 }
 
 function updatePRNCheckedByStorePerson(selectEl, idx) {
