@@ -2595,7 +2595,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw_o3Xn3w307TkedMxVIaCqu6t8b0s9mlqtqNHP7BixLkeVMiSG4gJ4mD1N2STnE8Yf/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwz7vB8fazeSpOREDq8Rv8KiGWo3pu_iX9yW6luKDuLfH2n3fh6XXVjnivO0FHqYhYK/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -13739,6 +13739,7 @@ async function submitNewPRNCreation() {
       return;
     }
     hideBlockingOverlay();
+    document.getElementById("prn-feedback").style.display = "none";
 
     if (window._prnCreateStockInterval) clearInterval(window._prnCreateStockInterval);
     window.prnPendingCreate = null;
