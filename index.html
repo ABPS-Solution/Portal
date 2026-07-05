@@ -13408,7 +13408,10 @@ async function loadPRNNeedQueue() {
   </div>`;
   try {
     const data = await apFetch({ action: "fetchBOQsNeedingPRNQueue" });
-    if (!data.success) { zone.innerHTML = ""; return; }
+    if (!data.success) {
+      zone.innerHTML = `<div style="padding:10px 14px; background:#fee2e2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-size:0.8rem; font-weight:600;">BOQ-needing-PRN check failed: ${data.error || "Unknown error"}</div>`;
+      return;
+    }
     const queue = data.queue || [];
     if (queue.length === 0) {
       zone.innerHTML = `<div style="padding:10px 14px; background:#f0fff4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-size:0.8rem; font-weight:600;">✅ All authorized BOQs are covered by an up-to-date PRN.</div>`;
@@ -13439,7 +13442,7 @@ async function loadPRNNeedQueue() {
         ${rows}
       </div>`;
   } catch(e) {
-    zone.innerHTML = "";
+    zone.innerHTML = `<div style="padding:10px 14px; background:#fee2e2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-size:0.8rem; font-weight:600;">Network error: ${e.message}</div>`;
   }
 }
 
