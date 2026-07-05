@@ -14354,14 +14354,17 @@ async function parseRawMaterialPOWithAI() {
 
       let resolvedCode = "";
       let resolvedName = "";
+      let resolvedUnit = "";
       if (rawCode && matchSource === "printed") {
         // Strict match first, loose fallback for OCR errors
         const strictHit = catalog.find(c => (c.itemCode || "").toUpperCase() === rawCode.toUpperCase());
-        const looseHit  = strictHit ? null : catalog.find(c => normalizeCode(c.itemCode) === normalizeCode(rawCode));
+        const looseHit  = strictHit ?
+          null : catalog.find(c => normalizeCode(c.itemCode) === normalizeCode(rawCode));
         const hit = strictHit || looseHit;
         if (hit) {
           resolvedCode = hit.itemCode;
           resolvedName = hit.productName;
+          resolvedUnit = hit.unit || "";
         } else {
           // Printed but not in catalog — show as-is, user must verify
           resolvedCode = rawCode;
@@ -14369,6 +14372,7 @@ async function parseRawMaterialPOWithAI() {
         }
       }
       // Note: matchSource "catalog" is no longer used — AI no longer does catalog lookup
+      // Unit is ALWAYS sourced from the Item Code Number catalog, never from the PO
 
       const notFound = !resolvedCode;
       const itemCodeCellContent = notFound
@@ -14395,7 +14399,11 @@ async function parseRawMaterialPOWithAI() {
     <td style="padding:6px; font-size:0.78rem; color:#64748b; word-break:break-word; width:260px;">${item.rawDescription || ""}</td>
     <td style="padding:6px; width:200px;">${nameSearchCell}</td>
     <td style="padding:6px; text-align:center; font-weight:700; font-family:monospace; width:80px;">${item.orderedQty || 0}</td>
-    <td style="padding:6px; text-align:center; color:var(--muted); font-size:0.8rem; width:70px;">${item.unit || "NOS"}</td>
+    <td style="padding:6px; text-align:center; width:70px;">
+      <input type="text" class="rm-po-unit-input" data-idx="${idx}" value="${resolvedUnit}" readonly
+        placeholder="—"
+        style="font-size:0.78rem; font-weight:700; padding:4px 2px; text-align:center; width:100%; border-radius:3px; border:1px solid ${resolvedUnit ? '#86efac' : '#fca5a5'}; background:${resolvedUnit ? '#f0fdf4' : '#fff7f7'}; color:${resolvedUnit ? 'var(--brand)' : '#b91c1c'};" />
+    </td>
     <td style="padding:6px; text-align:right; font-family:monospace; font-size:0.82rem; width:100px;">₹${Number(item.rate || 0).toFixed(2)}</td>
     <td style="padding:6px; text-align:right; font-family:monospace; font-size:0.82rem; width:120px;">₹${Number(item.amount || 0).toFixed(2)}</td>
   </tr>`;
@@ -14428,24 +14436,32 @@ async function commitRawMaterialPOToBackend() {
   // Sync current input values back into payload
   const codeInputs = document.querySelectorAll(".rm-po-item-code-input");
   const nameInputs = document.querySelectorAll(".rm-po-mat-name-input");
+  const unitInputs = document.querySelectorAll(".rm-po-unit-input");
   (activeParsedRMPOPayload.lineItems || []).forEach((item, idx) => {
     item.itemCode     = codeInputs[idx] ? codeInputs[idx].value.trim() : item.itemCode;
     item.materialName = nameInputs[idx] ? nameInputs[idx].value.trim() : item.materialName;
+    // Unit always comes from the Item Code catalog resolution, never the PO document itself
+    item.unit         = unitInputs[idx] ? unitInputs[idx].value.trim() : item.unit;
   });
 
-  // Validate all rows have item code and material name
+  // Validate all rows have item code, material name, AND a resolved unit — unit
+  // is never typed manually, so a blank unit here means the Item Code Number
+  // sheet's Unit column is blank for that material and needs fixing at the source.
   const incompleteRows = (activeParsedRMPOPayload.lineItems || []).reduce((acc, item, idx) => {
     const missingCode = !item.itemCode;
     const missingName = !item.materialName;
-    if (missingCode || missingName) {
+    const missingUnit = !item.unit;
+    if (missingCode || missingName || missingUnit) {
       const desc = item.rawDescription || ("Row " + (idx + 1));
-      const what = missingCode && missingName ? "Item Code Number and Standard Material Name"
-                 : missingCode ? "Item Code Number"
-                 : "Standard Material Name";
-      acc.push("• Row " + (idx+1) + " (" + desc.substring(0,40) + "…): missing " + what);
+      const missingLabels = [];
+      if (missingCode) missingLabels.push("Item Code Number");
+      if (missingName) missingLabels.push("Standard Material Name");
+      if (missingUnit) missingLabels.push("Unit (check Item Code sheet — this material's Unit column may be blank)");
+      acc.push("• Row " + (idx+1) + " (" + desc.substring(0,40) + "…): missing " + missingLabels.join(" and "));
       // Highlight the offending inputs in red
       if (missingCode && codeInputs[idx]) { codeInputs[idx].style.border = "2px solid #b91c1c"; codeInputs[idx].style.background = "#fff7f7"; }
       if (missingName && nameInputs[idx]) { nameInputs[idx].style.border = "2px solid #b91c1c"; nameInputs[idx].style.background = "#fff7f7"; }
+      if (missingUnit && unitInputs[idx]) { unitInputs[idx].style.border = "2px solid #b91c1c"; unitInputs[idx].style.background = "#fff7f7"; }
     }
     return acc;
   }, []);
@@ -14537,26 +14553,29 @@ function handleRMPONameSearch(inputEl, idx) {
     return;
   }
   dropdown.innerHTML = matches.map(c => `
-    <div onclick="selectRMPONameMatch(${idx}, '${c.itemCode}', '${c.productName.replace(/'/g, "\\'")}')"
+    <div onclick="selectRMPONameMatch(${idx}, '${c.itemCode}', '${c.productName.replace(/'/g, "\\'")}', '${(c.unit || '').replace(/'/g, "\\'")}')"
       style="padding:8px 10px; cursor:pointer; font-size:0.8rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
-      <span style="font-weight:600;">${c.productName}</span>
-      <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px;">${c.itemCode}</span>
+      <​span style="font-weight:600;">${c.productName}<​/span>
+      <​span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px;">${c.itemCode}<​/span>
     </div>`).join("");
   dropdown.style.display = "block";
 }
 
-function selectRMPONameMatch(idx, itemCode, productName) {
+function selectRMPONameMatch(idx, itemCode, productName, unit) {
   const dropdown  = document.getElementById("rmpo-name-dropdown-" + idx);
   const nameInput = document.querySelector(`.rm-po-mat-name-input[data-idx="${idx}"]`);
   const codeInput = document.querySelector(`.rm-po-item-code-input[data-idx="${idx}"]`);
+  const unitInput = document.querySelector(`.rm-po-unit-input[data-idx="${idx}"]`);
   if (nameInput) { nameInput.value = productName; nameInput.style.border = "1.5px solid #86efac"; nameInput.style.background = "#f0fdf4"; nameInput.style.color = "var(--text)"; }
   if (codeInput) { codeInput.value = itemCode; codeInput.placeholder = ""; codeInput.style.border = "1.5px solid #86efac"; codeInput.style.background = "#f0fdf4"; codeInput.style.color = "var(--brand)"; }
+  if (unitInput) { unitInput.value = unit || ""; unitInput.style.border = "1px solid #86efac"; unitInput.style.background = "#f0fdf4"; unitInput.style.color = "var(--brand)"; }
   if (dropdown)  dropdown.style.display = "none";
   // Update the payload cache
   if (activeParsedRMPOPayload && activeParsedRMPOPayload.lineItems && activeParsedRMPOPayload.lineItems[idx]) {
     activeParsedRMPOPayload.lineItems[idx].itemCode     = itemCode;
     activeParsedRMPOPayload.lineItems[idx].materialName = productName;
+    activeParsedRMPOPayload.lineItems[idx].unit         = unit || "";
   }
 }
 
