@@ -14310,9 +14310,9 @@ function resetRMPOUploadState() {
 }
 
 async function parseRawMaterialPOWithAI() {
-  if (!targetRMPOFileObj) return alert("Please select a PO document first.");
+  if (!targetRMPOFileObj) { showPurchaseFeedback("rm-po-feedback", "⚠️ Please select a PO document first.", "error"); return; }
   const MAX_RMPO = 15 * 1024 * 1024; // 15MB
-  if (targetRMPOFileObj.size > MAX_RMPO) return alert("PO file is too large (max 15MB). Please use a compressed PDF or image.");
+  if (targetRMPOFileObj.size > MAX_RMPO) { showPurchaseFeedback("rm-po-feedback", "⚠️ PO file is too large (max 15MB). Please use a compressed PDF or image.", "error"); return; }
   const btn = document.getElementById("rm-po-parse-btn");
   btn.disabled = true; btn.innerHTML = 'AI Processing...';
 
@@ -14328,7 +14328,7 @@ async function parseRawMaterialPOWithAI() {
     });
     const data = res;
 
-    if (!data.success) return alert("AI Processing failed: " + (data.error || "Unknown error"));
+    if (!data.success) { showPurchaseFeedback("rm-po-feedback", "⚠️ AI Processing failed: " + (data.error || "Unknown error"), "error"); return; }
 
     activeParsedRMPOPayload = data.extractedData;
 
@@ -14404,14 +14404,14 @@ async function parseRawMaterialPOWithAI() {
     document.getElementById("rm-po-verification-zone").style.display = "block";
 
   } catch(e) {
-    alert("Parse error: " + e.message);
+    showPurchaseFeedback("rm-po-feedback", "⚠️ Parse error: " + e.message, "error");
   } finally {
     btn.disabled = false; btn.textContent = "Process PO with AI";
   }
 }
 
 async function commitRawMaterialPOToBackend() {
-  if (!activeParsedRMPOPayload) return alert("Process a PO document first.");
+  if (!activeParsedRMPOPayload) { showPurchaseFeedback("rm-po-feedback", "⚠️ Please process a PO document first.", "error"); return; }
   const vendorName   = (document.getElementById("rm-po-vendor-name")?.value   || "").trim();
   const uploadedBy   = (document.getElementById("rm-po-uploaded-by")?.value   || "").trim();
   const poNumber     = (document.getElementById("rm-po-number")?.value        || "").trim();
@@ -14421,9 +14421,9 @@ async function commitRawMaterialPOToBackend() {
   const btn          = document.getElementById("rm-po-submit-btn");
   const feedback     = document.getElementById("rm-po-feedback");
 
-  if (!vendorName) return alert("Vendor Name could not be extracted from the document. Please re-process the PO.");
-  if (!uploadedBy) return alert("Uploaded By is required.");
-  if (!poNumber)   return alert("PO Number is required.");
+  if (!vendorName) { showPurchaseFeedback("rm-po-feedback", "⚠️ Vendor Name could not be extracted from the document. Please re-process the PO.", "error"); return; }
+  if (!uploadedBy) { showPurchaseFeedback("rm-po-feedback", "⚠️ Uploaded By is required.", "error"); return; }
+  if (!poNumber)   { showPurchaseFeedback("rm-po-feedback", "⚠️ PO Number is required.", "error"); return; }
 
   // Sync current input values back into payload
   const codeInputs = document.querySelectorAll(".rm-po-item-code-input");
@@ -14451,7 +14451,8 @@ async function commitRawMaterialPOToBackend() {
   }, []);
 
   if (incompleteRows.length > 0) {
-    alert("Cannot submit — the following rows are incomplete:\n\n" + incompleteRows.join("\n") + "\n\nPlease search and select the Standard Material Name for each incomplete row.");
+    const rowSummary = incompleteRows.map(r => r.replace(/^•\s*/, "")).join(" | ");
+    showPurchaseFeedback("rm-po-feedback", "⚠️ Cannot submit — incomplete rows: " + rowSummary + ". Please search and select the Standard Material Name for each incomplete row.", "error");
     return;
   }
 
