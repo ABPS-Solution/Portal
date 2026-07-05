@@ -14127,7 +14127,7 @@ function renderMaterialListByType(materials) {
   materials.forEach(item => {
     const code = (item.itemCode || "").trim();
     if (!code) return;
-    const qty = Math.max(0, (Number(item.bufferedPurchaseQty) || 0) - (Number(item.assignedQty) || 0) - (Number(item.onOrderQty) || 0) - (Number(item.storeQty) || 0));
+    const qty = Math.max(0, Number(item.stillToOrderQty) || 0);
     if (!aggregated[code]) {
       aggregated[code] = {
         itemCode:         code,
