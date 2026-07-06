@@ -172,6 +172,29 @@
   .card-row { display: flex; gap: 6px; margin-bottom: 4px; }
   .card-box { flex: 1; border: 2px dashed var(--border); padding: 6px; text-align: center; font-size: .75rem; cursor: pointer; border-radius: 4px; }
   .card-box.done { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+
+  /* --- GATE ENTRY MOBILE RESPONSIVENESS (scoped to #canvas-module-store-gate-entry only) --- */
+  .gate-upload-row { display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+  .gate-upload-row .card-box { flex:1 1 200px; }
+  .gate-meta-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:15px; }
+  .gate-verification-footer { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
+
+  @media(max-width:640px) {
+    #canvas-module-store-gate-entry { padding:12px !important; }
+    #canvas-module-store-gate-entry h2 { font-size:1.05rem; }
+    .gate-upload-row { flex-direction:column; }
+    .gate-upload-row .card-box { min-height:64px !important; padding:16px !important; font-size:0.9rem !important; }
+    .gate-meta-grid { grid-template-columns:repeat(2,1fr); }
+    .gate-verification-footer { flex-direction:column-reverse; }
+    .gate-verification-footer .nav-btn-styled { width:100%; padding:12px !important; font-size:0.95rem; }
+    #canvas-module-store-gate-entry table.store-basket-data-table th,
+    #canvas-module-store-gate-entry table.store-basket-data-table td { font-size:0.75rem; padding:6px 4px; }
+    #canvas-module-store-gate-entry table.store-basket-data-table th:nth-child(2),
+    #canvas-module-store-gate-entry table.store-basket-data-table td:nth-child(2) { min-width:220px !important; }
+  }
+  @media(max-width:400px) {
+    .gate-meta-grid { grid-template-columns:1fr; }
+  }
   
   .fup-item-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 4px; text-align: left; overflow: hidden; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
   .fup-item-header { padding: 8px; background: #edf2f7; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600; align-items: center; }
@@ -366,36 +389,36 @@
       
       <div class="section" style="padding: 16px;">
         <div id="gate-upload-fields-wrapper-group" style="display: block;">
-          <div class="card-row" style="display: flex; gap: 10px; margin-bottom: 12px;">
-            <div class="card-box" id="gate-invoice-box" onclick="document.getElementById('gate-invoice-file').click()" style="padding: 24px; font-size: 0.95rem; flex: 1; min-height: 80px; display: flex; align-items: center; justify-content: center;">📷 Select Invoice Image</div>
-            <div class="card-box" id="gate-challan-box" onclick="document.getElementById('gate-challan-file').click()" style="padding: 24px; font-size: 0.95rem; flex: 1; min-height: 80px; display: flex; align-items: center; justify-content: center;">📷 Select Challan Image</div>
+          <div class="card-row gate-upload-row">
+            <div class="card-box" id="gate-invoice-box" onclick="document.getElementById('gate-invoice-file').click()" style="padding: 24px; font-size: 0.95rem; min-height: 80px; display: flex; align-items: center; justify-content: center;">📷 Select Invoice Image</div>
+            <div class="card-box" id="gate-challan-box" onclick="document.getElementById('gate-challan-file').click()" style="padding: 24px; font-size: 0.95rem; min-height: 80px; display: flex; align-items: center; justify-content: center;">📷 Select Challan Image</div>
           </div>
           <input type="file" id="gate-invoice-file" accept="image/*,application/pdf" hidden onchange="handleGateFileSelectionChange(this, 'gate-invoice-box', 'Invoice Attached ✅')" />
           <input type="file" id="gate-challan-file" accept="image/*,application/pdf" hidden onchange="handleGateFileSelectionChange(this, 'gate-challan-box', 'Challan Attached ✅')" />
-          <button class="btn btn-ai" id="gate-parse-ai-btn" onclick="parseGateDocumentsWithAI()">Process Documents with AI</button>
+          <button class="btn btn-ai" id="gate-parse-ai-btn" onclick="parseGateDocumentsWithAI()" style="width:100%;">Process Documents with AI</button>
         </div>
 
         <div id="gate-ai-verification-workspace" style="display: none; margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 15px;">
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px;">
+          <div class="gate-meta-grid">
             <div><label class="field-label">Invoice Number</label><input type="text" id="gate-meta-invoice" style="background:#f1f5f9;" /></div>
             <div><label class="field-label">Challan Number</label><input type="text" id="gate-meta-challan" style="background:#f1f5f9;" /></div>
             <div><label class="field-label">Vendor Name</label><input type="text" id="gate-meta-vendor" style="background:#f1f5f9;" /></div>
             <div><label class="field-label">Date</label><input type="text" id="gate-meta-date" style="background:#f1f5f9;" /></div>
             <input type="hidden" id="gate-meta-time" value="" />
           </div>
-          <div style="margin-bottom: 16px; overflow-x: auto;">
-            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; word-wrap:break-word;">
+          <div style="margin-bottom: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; word-wrap:break-word; min-width:560px;">
               <thead>
                 <tr>
                   <th style="width:160px;">Item Code Number</th>
-                  <th style="min-width:400px;">Description of Material</th>
+                  <th style="min-width:280px;">Description of Material</th>
                   <th style="width:140px; text-align:center; color:#64748b; font-size:0.75rem; font-weight:700; text-transform:uppercase;">Invoice Quantity</th>
                 </tr>
               </thead>
               <tbody id="gate-verification-table-body"></tbody>
             </table>
           </div>
-          <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <div class="gate-verification-footer">
             <button class="nav-btn-styled" onclick="resetGateEntryWorkspaceState()" style="background: #718096;">Cancel</button>
             <button class="nav-btn-styled" id="gate-submit-btn" onclick="commitGateEntryRecordsToBackend()" style="background: var(--brand); padding: 8px 25px; font-weight: 700;">Generate Gate Entry</button>
           </div>
@@ -15259,7 +15282,7 @@ let expectedInboundsFilterMode = "all";
 
 function initializeExpectedInboundsPanel() {
   document.getElementById("expected-inbounds-feedback").style.display = "none";
-  setExpectedInboundsFilter("30");
+  setExpectedInboundsFilter("7");
 }
 
 function setExpectedInboundsFilter(mode) {
