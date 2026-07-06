@@ -72,7 +72,7 @@
   .sec-label { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:var(--brand); background:var(--highlight-bg); border-left:3px solid var(--dept-accent, var(--brand)); padding:4px 10px; border-radius:0 4px 4px 0; margin:10px 0 8px; display:inline-block; }
   
   /* --- WORKSPACE BLOCK WRAPPERS --- */
-  .workspace-panel { padding: 4px 10px; }
+  .workspace-panel { padding: 4px 10px; min-width: 0; max-width: 100%; box-sizing: border-box; }
   .section { background: var(--card); border-radius: var(--radius); margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); overflow: hidden; }
   .section-header { background: var(--brand); color: #fff; padding: 5px 12px; font-size: .75rem; font-weight: 700; text-transform: uppercase; }
   .section-body { padding: 10px; }
@@ -951,7 +951,7 @@
         <div id="assign-panel-no-targets" style="display:none; padding:12px; background:#fffbeb; border:1px solid #f59e0b; border-radius:var(--radius); font-size:0.85rem; color:#b45309; font-weight:600; margin-bottom:12px;">
           No open PRN BOQs require this material right now.
         </div>
-        <div id="assign-panel-targets-table-wrapper" style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
+        <div id="assign-panel-targets-table-wrapper" style="overflow-x:auto; overflow-y:hidden; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px; width:100%; max-width:100%; box-sizing:border-box;">
           <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:800px;">
             <thead>
               <tr style="background:#f8fafc;">
