@@ -983,14 +983,14 @@
         </div>
 
         <!-- Assigned by + submit -->
-        <div id="assign-panel-bottom-row" style="display:grid; grid-template-columns:1fr auto; gap:14px; align-items:end; border-top:1px solid var(--border); padding-top:14px;">
-          <div>
+        <div id="assign-panel-bottom-row" style="display:flex; flex-direction:row; flex-wrap:nowrap; align-items:flex-end; gap:14px; border-top:1px solid var(--border); padding-top:14px;">
+          <div style="flex:1 1 auto; min-width:0;">
             <label class="field-label" style="margin-top:0; color:var(--brand);">Assigned By *</label>
             <select id="assign-panel-assigned-by" style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
               <option value="">— Select Person —</option>
             </select>
           </div>
-          <button id="assign-panel-submit-btn" onclick="submitAssignCurrentStock()" class="nav-btn-styled" style="background:var(--accent); padding:10px 24px; font-weight:700; flex-shrink:0; align-self:flex-end;">Save Assignments</button>
+          <button id="assign-panel-submit-btn" onclick="submitAssignCurrentStock()" class="nav-btn-styled" style="background:var(--accent); padding:10px 24px; font-weight:700; flex:0 0 auto; white-space:nowrap;">Save Assignments</button>
         </div>
       </div>
     </div>
