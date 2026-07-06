@@ -2627,7 +2627,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwdw5kROPmrVCucgImpcVJE6_iRjUCGlc9MB6eFUqOxTIVfyZPN445Zmb2aA4jp96VW/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycby1ZOap5mwS-Q3e9m7uVwEG1casnthhpeyiyKBoGawftWmjWwdl5bdrQT8dsBC5Bc8J/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -6630,12 +6630,12 @@ async function refreshLiveStockForSelectedMaterial() {
       );
 
       if (!boqItem) {
-        pillZone.innerHTML = `Real-time Raw Material Store Count: <span class="live-counter-pill pill-stock-healthy">${available}</span> <strong>${unit}</strong> <span style="color:var(--warn); font-weight:700;">⚠️ Not in BOQ for this project</span>`;
+        pillZone.innerHTML = `Raw Material Store Count: <span class="live-counter-pill pill-stock-healthy">${available}</span> <strong>${unit}</strong> <span style="color:var(--warn); font-weight:700;">⚠️ Not in BOQ for this project</span>`;
       } else {
         const allotted = boqItem.allottedQty || boqItem.totalQty || 0;
         const used = boqItem.usedQty || 0;
         const remaining = boqItem.remainingQty || 0;
-        pillZone.innerHTML = `Real-time Raw Material Store Count: <span class="live-counter-pill pill-stock-healthy">${available}</span> <strong>${unit}</strong> | Allotted: <strong>${allotted}</strong> | Used: <strong>${used}</strong> | Remaining: <strong>${remaining}</strong>`;
+        pillZone.innerHTML = `Raw Material Store Count: <span class="live-counter-pill pill-stock-healthy">${available}</span> <strong>${unit}</strong> | Allotted: <strong>${allotted}</strong> | Used: <strong>${used}</strong> | Remaining: <strong>${remaining}</strong>`;
       }
     }
   } catch(e) { console.warn("refreshLiveStockForSelectedMaterial error:", e.message); }
@@ -6712,7 +6712,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       counterZone.innerHTML = `
         <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
           <div>
-            Real-time Spare Store Count:
+            Spare Store Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
               ${displayQty} ${unitToken} AVAILABLE
             </span>
@@ -6791,7 +6791,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       counterZone.innerHTML = `
         <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
           <div>
-            Real-time Raw Material Store Count:
+            Raw Material Store Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
               ${availableCount} ${unitToken} AVAILABLE
             </span>
@@ -6829,7 +6829,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       counterZone.innerHTML = `
         <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
           <div>
-            Real-time Raw Material Store Count:
+            Raw Material Store Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
               ${availableCount} ${unitToken} AVAILABLE
             </span>
