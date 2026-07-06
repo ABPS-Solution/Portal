@@ -14943,9 +14943,10 @@ async function loadAssignStockGRNQueue() {
     feed.innerHTML = "";
     materials.forEach(mat => {
       const row = document.createElement("div");
+      row.dataset.itemcode = mat.itemCode;
       row.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; transition:all 0.15s ease;";
       row.onclick     = () => openAssignStockPanel(mat.itemCode, mat.materialName, mat.unitType);
-      row.onmouseover = () => { row.style.borderColor = "var(--brand)"; row.style.background = "var(--highlight-bg)"; };
+      row.onmouseover = () => { if (row.style.display !== "none") { row.style.borderColor = "var(--brand)"; row.style.background = "var(--highlight-bg)"; } };
       row.onmouseout  = () => { row.style.borderColor = "var(--border)";  row.style.background = "#fff"; };
       row.innerHTML = `
         <div style="flex:1; min-width:0;">
@@ -15068,10 +15069,15 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
   const anchor = document.getElementById(anchorId);
   if (!anchor) { console.error("openAssignStockPanel: anchor not found — " + anchorId); return; }
 
-  // In unassigned mode: hide the active row, restore all others
-  if (assignStockCurrentMode === "unassigned") {
-    const activeCode = itemCode.toUpperCase();
-    document.querySelectorAll("#assign-stock-unassigned-results [data-itemcode]").forEach(r => {
+  // Hide the actively-selected material's row from the list below it, and restore
+  // any previously-hidden row from a prior selection. Works for both GRN Queue
+  // and Unassigned Materials lists — whichever is currently active.
+  {
+    const activeCode   = itemCode.toUpperCase();
+    const listSelector = assignStockCurrentMode === "grn"
+      ? "#assign-stock-grn-feed [data-itemcode]"
+      : "#assign-stock-unassigned-results [data-itemcode]";
+    document.querySelectorAll(listSelector).forEach(r => {
       r.style.display = (r.dataset.itemcode || "").toUpperCase() === activeCode ? "none" : "";
     });
   }
@@ -15316,7 +15322,7 @@ async function loadExpectedInbounds() {
     if (totalCount === 0) {
       zone.innerHTML = `<div style="text-align:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted);">
         <div style="font-size:2.5rem; margin-bottom:12px;">📦</div>
-        <div style="font-weight:700; color:var(--accent); font-size:0.95rem;">No pending inbounds!</div>
+        <div style="font-weight:700; color:var(--accent); font-size:0.95rem;">No Pending Deliveries</div>
       </div>`;
       return;
     }
