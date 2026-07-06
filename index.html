@@ -15143,7 +15143,7 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
     }
 
     // Unassigned stock exists — keep save button visible
-    if (bottomRow) bottomRow.style.display = "";
+    if (bottomRow) bottomRow.style.display = "flex";
 
     if (targets.length === 0) {
       // Stock available but no active PRN BOQ needs it
