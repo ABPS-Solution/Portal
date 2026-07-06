@@ -8594,11 +8594,17 @@ async function parseGateDocumentsWithAI() {
     });
     if (!data.success) return alert("AI Processing failed: " + data.error);
     activeParsedGatePayloadCache = data.extractedData;
-    
+
+    if (!activeParsedGatePayloadCache || !Array.isArray(activeParsedGatePayloadCache.lineItems)) {
+      activeParsedGatePayloadCache = activeParsedGatePayloadCache || {};
+      activeParsedGatePayloadCache.lineItems = [];
+      alert("AI could not detect any line items on this document. Please try a clearer scan or a different document.");
+    }
+
     document.getElementById('gate-meta-invoice').value = activeParsedGatePayloadCache.invoiceNumber || "";
     document.getElementById('gate-meta-vendor').value = activeParsedGatePayloadCache.vendorName || "";
     document.getElementById('gate-meta-challan').value = activeParsedGatePayloadCache.challanNumber || "";
-    
+
     // Always use today's upload date — not the date on the document
     const rawDateObj      = new Date();
     const formattedDateStr = rawDateObj.toLocaleDateString('en-CA');
