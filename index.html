@@ -6225,7 +6225,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   
   if (document.getElementById("mod-fg-add")) document.getElementById("mod-fg-add").style.display = canAddFinishedGoods ? "block" : "none";
 
-  const canApproveBOQIncrease = userPermissionsObject.approveBOQIncrease === true;
+  const canApproveBOQIncrease = userPermissionsObject.approveJCIncrease === true;
   if (document.getElementById("mod-boq-increase-approvals")) {
     document.getElementById("mod-boq-increase-approvals").style.display = canApproveBOQIncrease ? "block" : "none";
   }
