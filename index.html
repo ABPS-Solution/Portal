@@ -2627,7 +2627,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycby1ZOap5mwS-Q3e9m7uVwEG1casnthhpeyiyKBoGawftWmjWwdl5bdrQT8dsBC5Bc8J/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxNbkA9fKDfRgtHYVv8On6ycSMW82WrgtD7BzyGTcRYYIlyNyWx1OluD6IuEASt5z0/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -9449,7 +9449,7 @@ function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
   if (staffDrop2) { staffDrop2.innerHTML = '<option value="">— Choose Department First —</option>'; staffDrop2.disabled = true; }
   if (storeScopeDrop2) { storeScopeDrop2.disabled = true; storeScopeDrop2.style.opacity = "0.5"; storeScopeDrop2.style.cursor = "not-allowed"; storeScopeDrop2.value = ""; if (storeScopeDrop2.options[0]) storeScopeDrop2.options[0].text = "— Choose Requested By First —"; }
   if (storeScopeLabel2) storeScopeLabel2.style.color = "var(--muted)";
-  if (itemDrop2) itemDrop2.disabled = true;
+  if (itemDrop2) { itemDrop2.disabled = true; itemDrop2.innerHTML = ''; }
   if (qtyInp2) qtyInp2.disabled = true;
   if (addBtn2) { addBtn2.disabled = true; addBtn2.style.cursor = "not-allowed"; }
   document.getElementById("wrapper-ticket-add-item-zone").style.opacity = "0.5";
@@ -9458,8 +9458,9 @@ function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
 
   staffDrop.innerHTML = '<option value="">— Select Your Name —</option>';
 
+  // Allow production staff or admins
   const filteredPersonnelList = globalOperatorsDatabasePayloadCache.filter(user => {
-    return user.departmentsList.some(dept => dept.toLowerCase().trim() === "production");
+    return user.departmentsList.some(dept => ["production", "admin"].includes(dept.toLowerCase().trim()));
   });
 
   filteredPersonnelList.forEach(user => {
@@ -9471,6 +9472,14 @@ function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
 
   titleLbl.style.color = "var(--brand)";
   staffDrop.disabled = false;
+  
+  // TRIGGER: Now enable the Store Scope dropdown
+  const storeScopeDrop = document.getElementById("ticket-selected-store-scope-toggle");
+  if (storeScopeDrop) {
+      storeScopeDrop.disabled = false;
+      storeScopeDrop.style.opacity = "1";
+      storeScopeDrop.style.cursor = "pointer";
+  }
 }
 
 /**
