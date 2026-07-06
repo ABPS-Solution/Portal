@@ -15100,7 +15100,7 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
 
   // Ensure totals bar and bottom row are visible while loading
   const bottomRow = document.getElementById("assign-panel-bottom-row");
-  if (bottomRow) bottomRow.style.display = "";
+  if (bottomRow) bottomRow.style.display = "flex";
 
   document.getElementById("assign-panel-targets-body").innerHTML = `
     <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">
