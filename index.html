@@ -8735,48 +8735,11 @@ async function initializeStoreEntryWorkspaceQueue() {
       feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records waiting for Raw Materials Store Entry.</div>';
       return;
     }
+
+    // ── PASS 1: Render cards immediately with empty matchMap ──────────────
     feed.innerHTML = "";
-
-    // Pre-run ItemCode matching for ALL line items across ALL pending cards at once
-    const allLineItemsFlat = [];
-    data.queue.forEach((item, cardIdx) => {
-      item.lineItems.forEach((line, lineIdx) => {
-        allLineItemsFlat.push({
-          cardIdx,
-          lineIdx,
-          rawDescription: line.materialName || line.rawDescriptionLine || ""
-        });
-      });
-    });
-
-    // Client-side fuzzy pre-filter for each line item → top 60
     const catalog = window.itemCodeCatalogCache || [];
-    const lineItemsWithCandidates = allLineItemsFlat.map(li => ({
-      ...li,
-      candidatesTop60: fuzzyPreFilterCatalog(li.rawDescription, catalog, 60)
-    }));
-
-    // One Gemini call for all line items
-    let geminiMatchResults = [];
-    try {
-      const matchData = await apFetch({
-        action: "matchStoreEntryItemCodes",
-        lineItems: lineItemsWithCandidates.map(li => ({
-          rawDescription: li.rawDescription,
-          candidatesTop60: li.candidatesTop60
-        }))
-      });
-      if (matchData.success) geminiMatchResults = matchData.matches;
-    } catch(e) {
-      console.error("Store Entry ItemCode matching failed:", e);
-    }
-
-    // Build a lookup map: cardIdx_lineIdx → matches array
     const matchMap = {};
-    geminiMatchResults.forEach((result, flatIdx) => {
-      const li = lineItemsWithCandidates[flatIdx];
-      if (li) matchMap[`${li.cardIdx}_${li.lineIdx}`] = result.matches || [];
-    });
 
     data.queue.forEach((item, cardIdx) => {
       let trs = "";
@@ -8935,6 +8898,66 @@ async function initializeStoreEntryWorkspaceQueue() {
         </div>`;
       feed.appendChild(card);
     });
+
+    // ── PASS 2: Gemini matching in background — inject pills when ready ───
+    const allLineItemsFlat = [];
+    data.queue.forEach((item, cardIdx) => {
+      item.lineItems.forEach((line, lineIdx) => {
+        allLineItemsFlat.push({ cardIdx, lineIdx, gateNumber: item.gateNumber, rawDescription: line.materialName || line.rawDescriptionLine || "" });
+      });
+    });
+    const lineItemsWithCandidates = allLineItemsFlat.map(li => ({
+      ...li,
+      candidatesTop60: fuzzyPreFilterCatalog(li.rawDescription, catalog, 60)
+    }));
+    try {
+      const matchData = await apFetch({
+        action: "matchStoreEntryItemCodes",
+        lineItems: lineItemsWithCandidates.map(li => ({ rawDescription: li.rawDescription, candidatesTop60: li.candidatesTop60 }))
+      });
+      if (matchData.success) {
+        const confColors = {
+          high:   { bg:"#dcfce7", color:"#15803d", border:"#86efac" },
+          medium: { bg:"#fef3c7", color:"#b45309", border:"#fcd34d" },
+          low:    { bg:"#f1f5f9", color:"#64748b", border:"#cbd5e1" }
+        };
+        matchData.matches.forEach((result, flatIdx) => {
+          const li = lineItemsWithCandidates[flatIdx];
+          if (!li || !result.matches || result.matches.length === 0) return;
+          // Only inject into rows that are NOT already pre-filled
+          const codeInput = document.querySelector(`.se-item-code-${li.gateNumber}[data-idx="${li.lineIdx}"]`);
+          if (codeInput && codeInput.value.trim()) return; // already has a code
+          // Find the suggestion slot in the rendered card
+          const searchInput = document.getElementById(`se-search-${li.gateNumber}-${li.lineIdx}`);
+          if (!searchInput) return;
+          const nameCell = searchInput.closest("td");
+          if (!nameCell) return;
+          // Remove any existing suggestion block first
+          const existing = nameCell.querySelector(".se-suggestion-block");
+          if (existing) existing.remove();
+          const pills = result.matches.map((m) => {
+            const c = confColors[m.confidence] || confColors.low;
+            return `<div 
+              onclick="selectStoreEntryItemCodeMatch('${li.gateNumber}', ${li.lineIdx}, '${m.itemCode}', \`${m.productName.replace(/`/g,"'")}\`, '${m.typeOfMaterial}', this)"
+              style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; border:1.5px solid ${c.border}; border-radius:4px; background:${c.bg}; cursor:pointer; margin-bottom:3px; transition:all 0.15s ease;"
+              onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+              <div style="flex:1; min-width:0;">
+                <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.75rem;">${m.itemCode}</span>
+                <span style="font-size:0.75rem; font-weight:600; color:#1e293b; margin-left:6px; word-break:break-word;">${m.productName}</span>
+              </div>
+              <span style="font-size:0.63rem; font-weight:700; color:${c.color}; padding:1px 4px; background:#fff; border-radius:3px; border:1px solid ${c.border}; white-space:nowrap; margin-left:6px; flex-shrink:0;">${(m.confidence||"low").toUpperCase()}</span>
+            </div>`;
+          }).join("");
+          const suggBlock = document.createElement("div");
+          suggBlock.className = "se-suggestion-block";
+          suggBlock.style.cssText = "margin-top:5px;";
+          suggBlock.innerHTML = `<div style="font-size:0.6rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:3px; letter-spacing:0.4px;">Suggested matches:</div>${pills}`;
+          nameCell.appendChild(suggBlock);
+        });
+      }
+    } catch(e) {
+      console.error("Store Entry ItemCode background matching failed:", e);
+    }
 
   } catch(e) { feed.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
 }
