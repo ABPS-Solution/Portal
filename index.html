@@ -2627,7 +2627,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzPWmz-HID3aVo67SmmP82XCuHDN8vE7M57ObV70Cutfu_vMoX1dsyh7exSn58IHlxI/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwdw5kROPmrVCucgImpcVJE6_iRjUCGlc9MB6eFUqOxTIVfyZPN445Zmb2aA4jp96VW/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -6741,9 +6741,16 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
         || _inv.find(i => cleanSearchKey.includes(i.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
     }
 
-    const boqMatch = (boqData.records || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
-      || (boqData.records || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
-      || (boqData.records || []).find(r => cleanSearchKey.includes(r.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+    // Job-card-scoped allotment is the correct source for this pill — NOT the project-wide
+    // BillOfQuantity total. A ticket is raised against one specific Job Card (one Set), so the
+    // Allotted/Used/Remaining shown here must reflect that one card, not all Sets combined.
+    const jobCardNumberValForPill = document.getElementById("ticket-job-card-dropdown")?.value || "";
+    const jcmCacheForPill = (window._ticketJobCardMaterialsCache && window._ticketJobCardMaterialsCache.key === (jobCardNumberValForPill + "|" + projectId))
+      ? window._ticketJobCardMaterialsCache.records
+      : [];
+    const boqMatch = jcmCacheForPill.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
+      || jcmCacheForPill.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
+      || jcmCacheForPill.find(r => cleanSearchKey.includes((r.materialName || "").replace(/\s+/g, '').toLowerCase().substring(0, 20)));
     
     if (inventoryMatch && boqMatch) {
       let styleClass = "pill-stock-healthy";
@@ -6766,9 +6773,9 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
             </span>
           </div>
           <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED BOQ: ${boqMatch.totalQty || 0} ${unitToken}</span>
-            <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED BOQ: ${boqMatch.usedQty || 0} ${unitToken}</span>
-            <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING BOQ: ${boqMatch.remainingQty || 0} ${unitToken}</span>
+            <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${boqMatch.allottedQty || 0} ${unitToken}</span>
+            <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED: ${boqMatch.usedQty || 0} ${unitToken}</span>
+            <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING: ${boqMatch.remainingQty || 0} ${unitToken}</span>
           </div>
         </div>
       `;
@@ -15133,7 +15140,7 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
       if (targets.length > 0) {
         // Stock fully assigned — BOQs still have open need, awaiting next GRN
         noTargets.style.cssText = "display:block; padding:12px; background:#f0fdf4; border:1px solid #86efac; border-radius:var(--radius); font-size:0.85rem; color:#15803d; font-weight:600; margin-bottom:12px;";
-        noTargets.textContent   = "✅ All current stock for this material is fully assigned to BOQs. BOQs still need more — stock will auto-assign on the next GRN.";
+        noTargets.textContent   = "✅ All current stock for this material is fully assigned to BOQs.";
       } else {
         // No stock and no open BOQ needs it
         noTargets.style.cssText = "display:block; padding:12px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:0.85rem; color:var(--muted); font-weight:600; margin-bottom:12px;";
