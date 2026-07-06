@@ -9043,7 +9043,7 @@ async function initializeStoreGrnWorkspaceQueue() {
         
         trs += `<tr style="border-bottom:1px solid #f1f5f9;">
           <td style="width:120px; padding:5px 6px; vertical-align:middle;">
-            <input type="text" class="grn-item-code-${item.gateNumber}" data-idx="${idx}" value="${line.itemCode || ""}" placeholder="CODE *" style="padding:4px 5px; font-weight:700; border:1.5px solid var(--brand); background:#fffef0; text-align:center; width:100%; font-size:0.8rem;">
+            <input type="text" class="grn-item-code-${item.gateNumber}" data-idx="${idx}" value="${line.itemCode || ""}" placeholder="CODE *" readonly style="padding:4px 5px; font-weight:700; border:1.5px solid var(--brand); background:#e0f2fe; color:var(--brand); text-align:center; width:100%; font-size:0.8rem; cursor:not-allowed;">
           </td>
           <td style="width:200px; padding:5px 6px; vertical-align:top;">
             <div class="grn-mat-name-display-${item.gateNumber}" style="font-size:0.8rem; font-weight:600; color:var(--brand); white-space:normal; word-break:break-word; line-height:1.5; padding:2px;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
