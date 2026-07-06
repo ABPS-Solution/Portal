@@ -8622,7 +8622,7 @@ async function parseGateDocumentsWithAI() {
       tbody.innerHTML += `<tr>
         <td style="width:160px; padding:6px; vertical-align:middle;">
           <input type="text" class="gate-row-item-code-input" value="${item.itemCode || ""}"
-            placeholder="Not found — filled in Store Entry" readonly
+            placeholder="Not found" readonly
             style="font-size:0.85rem; padding:5px 4px; font-weight:700; color:${codeColor}; border:${codeBorder}; background:${codeBg}; text-align:center; width:100%; border-radius:3px; cursor:not-allowed;">
         </td>
         <td style="padding:8px; font-size:0.82rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:400px;">${item.rawDescriptionLine || "Line Item Description"}</td>
