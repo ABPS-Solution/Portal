@@ -8616,8 +8616,8 @@ async function parseGateDocumentsWithAI() {
       tbody.innerHTML += `<tr>
         <td style="width:160px; padding:6px; vertical-align:middle;">
           <input type="text" class="gate-row-item-code-input" value="${item.itemCode || ""}"
-            placeholder="Not found"
-            style="font-size:0.85rem; padding:5px 4px; font-weight:700; color:${codeColor}; border:${codeBorder}; background:${codeBg}; text-align:center; width:100%; border-radius:3px;">
+            placeholder="Not found — filled in Store Entry" readonly
+            style="font-size:0.85rem; padding:5px 4px; font-weight:700; color:${codeColor}; border:${codeBorder}; background:${codeBg}; text-align:center; width:100%; border-radius:3px; cursor:not-allowed;">
         </td>
         <td style="padding:8px; font-size:0.82rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:400px;">${item.rawDescriptionLine || "Line Item Description"}</td>
         <td style="text-align:center; color:#64748b; font-weight:700; vertical-align:middle; width:140px;">${item.extractedQuantity}</td>
@@ -8640,11 +8640,6 @@ async function commitGateEntryRecordsToBackend() {
 
   if (!document.getElementById('gate-meta-vendor').value.trim()) return alert("Vendor Name is compulsory.");
   if (!document.getElementById('gate-meta-invoice').value.trim()) return alert("Invoice Number is compulsory.");
-
-  const gateCodeInputsCheck = document.querySelectorAll('.gate-row-item-code-input');
-  for (let gi = 0; gi < gateCodeInputsCheck.length; gi++) {
-    if (!gateCodeInputsCheck[gi].value.trim()) return alert("Item Code Number is compulsory for every line item.");
-  }
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Generating Gate Entry...';
@@ -15360,7 +15355,6 @@ function renderExpectedInboundsPOCard(po, scheme) {
           <span><strong style="color:var(--text);">${po.vendorName}</strong></span>
           <span>📅 Order Date: <strong>${po.orderDate || "—"}</strong></span>
           <span>🚚 Delivery Date: <strong>${po.deliveryDate || "—"}</strong></span>
-          ${po.grandTotal > 0 ? `<span>₹${Number(po.grandTotal).toLocaleString("en-IN", {minimumFractionDigits:0, maximumFractionDigits:0})}</span>` : ""}
         </div>
       </div>
 
