@@ -14902,8 +14902,8 @@ function switchAssignStockMode(mode) {
   assignStockCurrentMaterial = null;
   document.getElementById("assign-stock-assignment-panel").style.display = "none";
   document.getElementById("assign-stock-feedback").style.display         = "none";
-  // Restore all hidden material rows when switching modes
-  document.querySelectorAll("#assign-stock-unassigned-results [data-itemcode]").forEach(r => { r.style.display = ""; });
+  // Restore all hidden material rows when switching modes (explicit "flex" — see note above)
+  document.querySelectorAll("#assign-stock-unassigned-results [data-itemcode]").forEach(r => { r.style.display = "flex"; });
 
   const isGrn = mode === "grn";
   document.getElementById("assign-mode-grn-btn").style.background        = isGrn ? "var(--brand)" : "#718096";
@@ -15078,7 +15078,7 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
       ? "#assign-stock-grn-feed [data-itemcode]"
       : "#assign-stock-unassigned-results [data-itemcode]";
     document.querySelectorAll(listSelector).forEach(r => {
-      r.style.display = (r.dataset.itemcode || "").toUpperCase() === activeCode ? "none" : "";
+      r.style.display = (r.dataset.itemcode || "").toUpperCase() === activeCode ? "none" : "flex";
     });
   }
 
