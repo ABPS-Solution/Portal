@@ -7222,6 +7222,8 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
     resetGateEntryWorkspaceState();
   } else if (targetPanelModuleId === 'store-entry') {
     document.getElementById("canvas-module-store-entry").style.display = "block";
+    const seBanner = document.getElementById("store-entry-runtime-feedback-banner");
+    if (seBanner) { seBanner.style.display = "none"; seBanner.innerHTML = ""; }
     initializeStoreEntryWorkspaceQueue();
   } else if (targetPanelModuleId === 'store-grn') {
     document.getElementById("canvas-module-store-grn").style.display = "block";
@@ -8649,7 +8651,7 @@ async function commitGateEntryRecordsToBackend() {
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Generating Gate Entry...';
-  showBlockingOverlay("Recording Gate Entry...");
+  showBlockingOverlay("Saving Gate Entry...");
   
   const codeInputs = document.querySelectorAll('.gate-row-item-code-input');
   const tableRows = document.querySelectorAll('#gate-verification-table-body tr');
@@ -8728,9 +8730,11 @@ async function initializeStoreEntryWorkspaceQueue() {
       <div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
       <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading Store Entry Queue...</span>
     </div>`;
-  await loadItemCodeCatalogIntoCache();
   try {
-    const data = await apFetch({ action: "fetchInwardWorkflowQueueStream", targetStep: "STORE pending" });
+    const [, data] = await Promise.all([
+      loadItemCodeCatalogIntoCache(),
+      apFetch({ action: "fetchInwardWorkflowQueueStream", targetStep: "STORE pending" })
+    ]);
     if (!data.success || data.queue.length === 0) {
       feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records waiting for Raw Materials Store Entry.</div>';
       return;
@@ -15356,7 +15360,7 @@ function renderExpectedInboundsPOCard(po, scheme) {
     if (item.fullyReceived) {
       statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:3px;">✅ Fully Received</span>`;
     } else if (item.partialReceived) {
-      statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:3px;">⚠ Partial (${item.receivedQty} / ${item.orderedQty})</span>`;
+      statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:3px;">Partial (${item.receivedQty} / ${item.orderedQty})</span>`;
     } else {
       statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:3px;">Pending</span>`;
     }
