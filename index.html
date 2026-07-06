@@ -6727,7 +6727,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       const boqData = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: projectId });
       window._ticketBOQCache = { projectId: projectId, records: boqData.records || [] };
     }
-    const boqData = window._ticketBOQCache;
+    let boqData = window._ticketBOQCache;
 
     const cleanSearchKey = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim().replace(/\s+/g, '').toLowerCase();
     
@@ -6741,16 +6741,29 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
         || _inv.find(i => cleanSearchKey.includes(i.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
     }
 
-    // Job-card-scoped allotment is the correct source for this pill — NOT the project-wide
-    // BillOfQuantity total. A ticket is raised against one specific Job Card (one Set), so the
-    // Allotted/Used/Remaining shown here must reflect that one card, not all Sets combined.
-    const jobCardNumberValForPill = document.getElementById("ticket-job-card-dropdown")?.value || "";
-    const jcmCacheForPill = (window._ticketJobCardMaterialsCache && window._ticketJobCardMaterialsCache.key === (jobCardNumberValForPill + "|" + projectId))
-      ? window._ticketJobCardMaterialsCache.records
-      : [];
-    const boqMatch = jcmCacheForPill.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
-      || jcmCacheForPill.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
-      || jcmCacheForPill.find(r => cleanSearchKey.includes((r.materialName || "").replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+    function findBoqMatch_(recs) {
+      return (recs || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
+        || (recs || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
+        || (recs || []).find(r => cleanSearchKey.includes(r.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+    }
+
+    let boqMatch = findBoqMatch_(boqData.records);
+
+    // SELF-HEAL: a cache miss here is ambiguous — either the material genuinely isn't
+    // in this BOQ, or this project's cache was populated before the sheet had every row
+    // (e.g. a concurrent BOQ authorization mid-demo). Force ONE fresh, uncached re-fetch
+    // before concluding the material is really missing, so a stale snapshot can never
+    // masquerade as "not in BOQ" for the rest of the session.
+    if (!boqMatch) {
+      try {
+        const freshBoqData = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: projectId });
+        window._ticketBOQCache = { projectId: projectId, records: freshBoqData.records || [] };
+        boqData = window._ticketBOQCache;
+        boqMatch = findBoqMatch_(boqData.records);
+      } catch(refreshErr) {
+        console.error("BOQ cache self-heal refetch failed:", refreshErr);
+      }
+    }
     
     if (inventoryMatch && boqMatch) {
       let styleClass = "pill-stock-healthy";
@@ -6785,7 +6798,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       let styleClass = availableCount === 0 ? "pill-stock-empty" : availableCount <= 5 ? "pill-stock-low" : "pill-stock-healthy";
       counterZone.innerHTML = `
         <div style="margin:8px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text);">
-          Warehouse: <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${availableCount} ${unitToken}</span>
+          Raw Material Store: <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${availableCount} ${unitToken}</span>
           <span style="font-size:0.75rem; color:var(--warn); margin-left:8px;">⚠️ Not in BOQ for this project</span>
         </div>`;
     } else {
@@ -6979,9 +6992,28 @@ async function addItemToShoppingBasketRow() {
     }
   }
 
+  function findJcmMatch_(recs) {
+    return (recs || []).find(r => (r.itemCode || "").replace(/\s+/g, '').toLowerCase() === (itemData.itemCode || "").replace(/\s+/g, '').toLowerCase())
+      || (recs || []).find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
+  }
+
+  let jcmMatch = findJcmMatch_(window._ticketJobCardMaterialsCache.records);
+
+  // SELF-HEAL: same rationale as the BOQ cache above — a miss here could mean this cache
+  // was populated before seedJobCardMaterials_ finished writing this row (e.g. right after
+  // a BOQ authorize/update in another tab). Force one fresh, uncached re-fetch before
+  // blocking the user with a hard "no allotment" error.
+  if (!jcmMatch) {
+    try {
+      const freshJcmData = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberVal, projectId: projectId });
+      window._ticketJobCardMaterialsCache = { key: cacheKey, records: freshJcmData.records || [] };
+      jcmMatch = findJcmMatch_(window._ticketJobCardMaterialsCache.records);
+    } catch(refreshErr) {
+      console.error("JobCardMaterials cache self-heal refetch failed:", refreshErr);
+    }
+  }
+
   const jcmRecords = window._ticketJobCardMaterialsCache.records || [];
-  const jcmMatch = jcmRecords.find(r => (r.itemCode || "").replace(/\s+/g, '').toLowerCase() === (itemData.itemCode || "").replace(/\s+/g, '').toLowerCase())
-    || jcmRecords.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
 
   if (!jcmMatch) {
     restoreAddBtn();
