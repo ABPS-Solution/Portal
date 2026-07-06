@@ -6561,19 +6561,21 @@ function stopLiveStockPolling() {
 
 async function refreshLiveStockForSelectedMaterial() {
   const activeStoreScope   = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
-  const selectedMaterial   = document.getElementById("ticket-item-selection-dropdown")?.value;
+  const itemDropdown       = document.getElementById("ticket-item-selection-dropdown");
+  const selectedMaterial   = itemDropdown?.value;
+  const selectedOption     = itemDropdown?.options[itemDropdown.selectedIndex];
+  const itemCode           = selectedOption ? selectedOption.getAttribute("data-item-code") : "";
   const projectId          = document.getElementById("ticket-project-id-dropdown")?.value;
-  if (!selectedMaterial) { stopLiveStockPolling(); return; }
+  const pillZone           = document.getElementById("ticket-live-counter-pill-zone");
+  
+  if (!selectedMaterial) { stopLiveStockPolling(); if(pillZone) pillZone.innerHTML = ""; return; }
 
-  // Strip any appended stock count suffix e.g. " (0 NOS available)" from Spare Store dropdown labels
   const cleanMaterialName = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim();
+  const cleanKey = cleanMaterialName.replace(/\s+/g,"").toLowerCase();
 
   try {
-    // PERF: Render pill immediately from cache — no network wait for BOQ
-    // BOQ is already cached by loadItemCatalogForSelectedProjectAndStore; skip the round-trip
     if (projectId && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Spare Store")) {
       if (!window._ticketBOQCache || window._ticketBOQCache.projectId !== projectId) {
-        // Cache miss (edge case: project changed without store reload) — fetch once and cache silently
         try {
           const boqData = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId });
           window._ticketBOQCache = { projectId, records: boqData?.records || [] };
@@ -6582,20 +6584,16 @@ async function refreshLiveStockForSelectedMaterial() {
           console.warn("BOQ cache fill failed (non-fatal):", boqErr.message);
         }
       }
-      // BOQ is now guaranteed in cache — render pill immediately from cache before stock fetch
-      await updateSelectedLiveStockPillCounter(null);
     }
 
-    // NOW fire the single network call for live stock counts
+    // Fire the network call for live stock counts
     const data = await apFetch({ action: "getLiveStockForItem", materialName: cleanMaterialName });
     if (!data.success) return;
 
     // Patch inventory counts in local cache
-    const cleanKey = cleanMaterialName.replace(/\s+/g,"").toLowerCase();
-
     const _invCache = window.cachedInventoryStockCollection || cachedInventoryStockCollection || [];
     const existing = _invCache.find(i =>
-      (i.materialName||"").replace(/\s+/g,"").toLowerCase() === cleanKey
+      (itemCode && i.itemCode === itemCode) || (i.materialName||"").replace(/\s+/g,"").toLowerCase() === cleanKey
     );
     if (existing) {
       existing.availableStock = data.availableStock;
@@ -6604,26 +6602,42 @@ async function refreshLiveStockForSelectedMaterial() {
     }
 
     const spareExisting = (window.cachedSpareStoreStock||[]).find(i =>
-      (i.materialName||"").replace(/\s+/g,"").toLowerCase() === cleanKey
+      (itemCode && i.itemCode === itemCode) || (i.materialName||"").replace(/\s+/g,"").toLowerCase() === cleanKey
     );
     if (spareExisting) {
       spareExisting.availableStock = data.spareStock;
-
-      // FIX: Rebuild the spare store dropdown option text with the fresh count
-      if (activeStoreScope === "Spare Store") {
-        const itemDrop = document.getElementById("ticket-item-selection-dropdown");
-        if (itemDrop) {
-          Array.from(itemDrop.options).forEach(opt => {
-            const optCleanKey = opt.value.replace(/\s+/g,"").toLowerCase();
-            if (optCleanKey === cleanKey) {
-              opt.textContent = `${spareExisting.materialName}`;
-            }
-          });
-        }
+      if (activeStoreScope === "Spare Store" && itemDropdown) {
+        Array.from(itemDropdown.options).forEach(opt => {
+          const optCode = opt.getAttribute("data-item-code");
+          const optCleanKey = opt.value.replace(/\s+/g,"").toLowerCase();
+          if ((itemCode && optCode === itemCode) || optCleanKey === cleanKey) {
+            opt.textContent = `${spareExisting.materialName}`;
+          }
+        });
       }
     }
 
-    await updateSelectedLiveStockPillCounter(data);
+    // Render directly to UI element to bypass hidden external string components bugs
+    if (pillZone) {
+      const available = data.availableStock || 0;
+      const unit = data.unitType || "NOS";
+      
+      // Multi-tier defensive matching fallback logic against the project BOQ allotment cache
+      const boqRecords = window._ticketBOQCache?.records || window.jobCardBOQGroups || jobCardBOQGroups || [];
+      const boqItem = boqRecords.find(b => 
+        (itemCode && b.itemCode === itemCode) || 
+        (b.materialName || "").replace(/\s+/g,"").toLowerCase() === cleanKey
+      );
+
+      if (!boqItem) {
+        pillZone.innerHTML = `Real-time Raw Material Store Count: <span class="live-counter-pill pill-stock-healthy">${available}</span> <strong>${unit}</strong> <span style="color:var(--warn); font-weight:700;">⚠️ Not in BOQ for this project</span>`;
+      } else {
+        const allotted = boqItem.allottedQty || boqItem.totalQty || 0;
+        const used = boqItem.usedQty || 0;
+        const remaining = boqItem.remainingQty || 0;
+        pillZone.innerHTML = `Real-time Raw Material Store Count: <span class="live-counter-pill pill-stock-healthy">${available}</span> <strong>${unit}</strong> | Allotted: <strong>${allotted}</strong> | Used: <strong>${used}</strong> | Remaining: <strong>${remaining}</strong>`;
+      }
+    }
   } catch(e) { console.warn("refreshLiveStockForSelectedMaterial error:", e.message); }
 }
 
