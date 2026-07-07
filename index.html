@@ -2627,7 +2627,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyeq07vJkCWmMe9IStjLLHNo4gXQtQHdJAFUkoQYC2_INrYwmPPr3S2WJy8kcVZCK1w/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyrfhMpmXuNHFoToSlb7eCeVFmtPCV31R2TjJHONskeVHfzFRYN1HkisM472WFZbJkf/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -6636,6 +6636,11 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
     counterZone.innerHTML = ""; return;
   }
 
+  // Show an immediate loading state the instant a material is picked, regardless of cache
+  // state below — closes the visible gap between selecting a material and the pill actually
+  // rendering, even on a cache hit where the "Evaluating..." message further down never fires.
+  counterZone.innerHTML = `<span style="font-size:0.75rem; color:var(--muted); font-weight:600;">🔄 Loading stock &amp; allotment…</span>`;
+
   const activeStoreScope = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
 
   // --- FINISHED GOODS STORE: show FG item details ---
@@ -8098,6 +8103,7 @@ async function executeStoreManagerTicketActionDecision(ticketId, decisionString)
   const activeTargetBtn = decisionString === 'APPROVE' ? approveBtn : rejectBtn;
 
   if (feedbackBanner) feedbackBanner.style.display = "none";
+  showBlockingOverlay(decisionString === 'APPROVE' ? "Releasing Stock..." : "Freeing Reserved Stock...");
 
   // --- TRIGGER CLICK ANIMATIONS ENGINE MATRIX ---
   if (approveBtn && rejectBtn && activeTargetBtn) {
@@ -8144,6 +8150,7 @@ async function executeStoreManagerTicketActionDecision(ticketId, decisionString)
       // Remove visual panel node block smoothly out of sight matching flow constraints
       if (cardNode) cardNode.remove();
 
+      hideBlockingOverlay();
       setTimeout(() => {
         if (feedbackBanner) feedbackBanner.style.display = "none";
         const remainingQueueItems = document.getElementById("store-manager-approvals-queue-cards-feed").children.length;
@@ -8153,6 +8160,7 @@ async function executeStoreManagerTicketActionDecision(ticketId, decisionString)
       }, 3000);
 
     } else {
+      hideBlockingOverlay();
       if (feedbackBanner) {
         feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 12px; margin-bottom: 14px; border-left: 4px solid #b91c1c;";
         feedbackBanner.innerHTML = `<strong>Action Rejected:</strong> ${result.error}`;
@@ -8167,6 +8175,7 @@ async function executeStoreManagerTicketActionDecision(ticketId, decisionString)
     }
 
   } catch (error) {
+    hideBlockingOverlay();
     if (feedbackBanner) {
       feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 12px; margin-bottom: 14px; border-left: 4px solid #b91c1c;";
       feedbackBanner.innerHTML = `<strong>Network Exception Failure:</strong> ${error.message}`;
