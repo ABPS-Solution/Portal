@@ -2627,7 +2627,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxw4VfgD1sbPvAnQ0ofsrmCWbQ-YL0hYFAtalv0IfMf2bHjnugUpnMKHu44O2nVIRs/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyeq07vJkCWmMe9IStjLLHNo4gXQtQHdJAFUkoQYC2_INrYwmPPr3S2WJy8kcVZCK1w/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -7095,7 +7095,7 @@ function renderDraftBasketTableViewportRows() {
     tr.innerHTML = `
       <td style="font-weight:600; padding:10px 8px;">
         ${rowItem.materialName} 
-        ${rowItem.requiresBOQIncreaseFlag ? '<span style="font-size:0.65rem; background:#fef3c7; color:#b45309; padding:1px 4px; border-radius:3px; font-weight:bold; margin-left:4px;">⚠️ EXCEEDS BOQ LIMIT</span>' : ''}
+        ${rowItem.requiresBOQIncreaseFlag ? '<span style="font-size:0.65rem; background:#fef3c7; color:#b45309; padding:1px 4px; border-radius:3px; font-weight:bold; margin-left:4px;">⚠️ EXCEEDS JOB CARD LIMIT</span>' : ''}
       </td>
       <td style="font-family:monospace; font-weight:700;">${rowItem.quantity}</td>
       <td style="color:var(--muted); font-size:0.8rem;">${rowItem.unitType}</td>
@@ -9409,7 +9409,15 @@ function resetMaterialRequestCascadingLockState() {
 
   staffDrop.innerHTML = '<option value="">— Choose Department First —</option>';
   const deptDrop = document.getElementById("ticket-department-outgoing-dropdown");
-  if (deptDrop && deptDrop.options[0]) deptDrop.options[0].text = "— Choose Job Card First —";
+  if (deptDrop) {
+    if (deptDrop.options[0]) deptDrop.options[0].text = "— Choose Job Card First —";
+    deptDrop.value = "";
+    deptDrop.disabled = true;
+    deptDrop.style.opacity = "0.5";
+    deptDrop.style.cursor = "not-allowed";
+  }
+  const deptLabelReset = document.getElementById("lbl-dept-outgoing-title");
+  if (deptLabelReset) deptLabelReset.style.color = "var(--muted)";
   staffDrop.disabled = true;
   itemDrop.disabled = true; 
   qtyInp.disabled = true; 
