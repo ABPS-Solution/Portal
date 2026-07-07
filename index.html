@@ -9723,8 +9723,10 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       let jcmFetch;
       try {
         jcmFetch = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: chosenJobCardVal, projectId: chosenProjectVal });
+        console.log("fetchJobCardMaterials response for", chosenJobCardVal, "/", chosenProjectVal, ":", jcmFetch);
       } catch(e) {
-        jcmFetch = { success: false, records: [] };
+        console.error("fetchJobCardMaterials threw:", e);
+        jcmFetch = { success: false, records: [], error: e.message };
       }
 
       // Warm the same cache the pill and Add-button already use — avoids a duplicate fetch
