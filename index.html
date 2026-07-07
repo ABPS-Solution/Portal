@@ -7230,6 +7230,7 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
 }
 
 function navigateToStoreWorkspacePanel(targetPanelModuleId) {
+  window.scrollTo(0, 0);
   stopLiveStockPolling();
   // 1. Hide the primary dashboard menu grid view and the global marketing containers completely
   document.getElementById("dashboard-view").style.display = "none";
@@ -7313,6 +7314,7 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
 }
 
 function switchActiveDashboardModule(targetCanvasModuleId) {
+  window.scrollTo(0, 0);
   // 1. Hide the primary dashboard menu card view and inline popup filters
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
@@ -9707,39 +9709,51 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       apFetch({ action: "getSpareStoreStock" })
         .then(d => { window.cachedSpareStoreStock = d.stock || []; }).catch(() => {});
 
-      // Raw Materials Store & Spare Store — fetch from BOQ
-      // Raw Materials Store: show only items where typeOfStore = "Raw Materials Store"
-      // Spare Store: also show only Raw Materials Store BOQ lines (spare is drawn from raw stock)
-      const data = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: chosenProjectVal });
-
-      // Cache BOQ immediately — pill counter reads from here, no second round-trip needed
-      if (data.success) {
-        window._ticketBOQCache = { projectId: chosenProjectVal, records: data.records || [] };
+      // Raw Materials Store — scoped to the SELECTED JOB CARD, not the whole project.
+      // Tickets are Job-Card-scoped everywhere else (pill, Add validation) — this dropdown
+      // must match, or it offers materials the selected Job Card was never allotted at all.
+      const chosenJobCardVal = document.getElementById("ticket-job-card-dropdown")?.value || "";
+      if (!chosenJobCardVal) {
+        itemDrop.innerHTML = '<option value="">⚠️ Select a Job Card Number first</option>';
+        addZone.style.opacity = "0.5";
+        return;
       }
 
-      if (data.success && data.records.length > 0) {
-        itemDrop.innerHTML = '<option value="">— Select Material from BOQ —</option>';
+      const jcmCacheKey = chosenJobCardVal + "|" + chosenProjectVal;
+      let jcmFetch;
+      try {
+        jcmFetch = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: chosenJobCardVal, projectId: chosenProjectVal });
+      } catch(e) {
+        jcmFetch = { success: false, records: [] };
+      }
+
+      // Warm the same cache the pill and Add-button already use — avoids a duplicate fetch
+      // the moment a material is selected.
+      window._ticketJobCardMaterialsCache = { key: jcmCacheKey, records: jcmFetch.records || [] };
+
+      const rawRecordsForCard = (jcmFetch.records || []).filter(r => {
+        const store = (r.typeOfStore || "Raw Materials Store").toString().trim().toLowerCase().replace(/\s+/g, "");
+        return store === "rawmaterialsstore" || store === "rawmaterial" || store === "";
+      });
+
+      if (jcmFetch.success && rawRecordsForCard.length > 0) {
+        itemDrop.innerHTML = '<option value="">— Select Material from Job Card —</option>';
         let uniqueMaterialsMap = {};
-        data.records
-          .filter(r => {
-            const store = (r.typeOfStore || "Raw Materials Store").toString().trim().toLowerCase().replace(/\s+/g, "");
-            return store === "rawmaterialsstore" || store === "rawmaterial" || store === "";
-          })
-          .forEach(r => {
-            if (!uniqueMaterialsMap[r.materialName]) {
-              uniqueMaterialsMap[r.materialName] = true;
-              let opt = document.createElement("option");
-              opt.value = r.materialName;
-              opt.textContent = r.materialName;
-              itemDrop.appendChild(opt);
-            }
-          });
+        rawRecordsForCard.forEach(r => {
+          if (!uniqueMaterialsMap[r.materialName]) {
+            uniqueMaterialsMap[r.materialName] = true;
+            let opt = document.createElement("option");
+            opt.value = r.materialName;
+            opt.textContent = r.materialName;
+            itemDrop.appendChild(opt);
+          }
+        });
         addZone.style.opacity = "1";
         itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
         addBtn.style.cursor = "pointer";
       } else {
-        itemDrop.innerHTML = '<option value="">⚠️ No BOQ Allotted for this Project</option>';
-        alert("Design Configuration Failure: This Project ID does not have an uploaded Bill of Quantity");
+        itemDrop.innerHTML = '<option value="">⚠️ No materials allotted to this Job Card</option>';
+        addZone.style.opacity = "0.5";
       }
     }
   } catch(e) {
@@ -9748,6 +9762,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
 }
 
 function navigateToDesignWorkspacePanel(targetModuleId) {
+  window.scrollTo(0, 0);
   // 1. Un-nest and minimize homepage structures
   document.getElementById("dashboard-view").style.display = "none";
   
@@ -12702,6 +12717,7 @@ async function submitJobCardForm() {
 // ═══════════════════════════════════════════════════════
 
 function navigateToPurchaseWorkspacePanel(targetModuleId) {
+  window.scrollTo(0, 0);
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
