@@ -1298,12 +1298,12 @@
           <label class="field-label" style="margin-top:0;">Unit *</label>
           <select id="itemcode-new-unit" style="padding:10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
             <option value="">— Select Unit —</option>
-            <option value="NOS">NOS — Numbers</option>
-            <option value="KG"> KG — Kilograms</option>
-            <option value="MTR">MTR — Metres</option>
-            <option value="SET">SET — Sets</option>
-            <option value="LTR">LTR — Litres</option>
-            <option value="ROL">ROL — Rolls</option>
+            <option value="NOS">NOS (Numbers)</option>
+            <option value="KG"> KG (Kilograms)</option>
+            <option value="MTR">MTR (Metres)</option>
+            <option value="SET">SET (Sets)</option>
+            <option value="LTR">LTR (Litres)</option>
+            <option value="ROL">ROL (Rolls)</option>
           </select>
         </div>
 
@@ -1433,7 +1433,7 @@
             <div class="dd-stat-val" id="dd-s-pending" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Avg. Authorization Time</div>
+            <div class="dd-stat-label">Average Authorization Time</div>
             <div class="dd-stat-val" id="dd-s-authtime">—</div>
             <div class="dd-stat-sub" id="dd-s-authtime-unit">—</div>
           </div>
@@ -1499,7 +1499,7 @@
         <!-- ROW 4: Project Health — full width, paginated -->
         <div class="dd-card" style="padding:12px 16px; flex:1; min-height:0; display:flex; flex-direction:column;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-            <div class="dd-card-title" style="margin-bottom:0;">🏗 Project Health Snapshot</div>
+            <div class="dd-card-title" style="margin-bottom:0;">Project Health Summary</div>
             <div style="display:flex; align-items:center; gap:8px;">
               <input id="dd-health-search" type="text" placeholder="Search project..." oninput="ddFilterHealth()"
                 style="font-size:0.72rem; padding:3px 8px; border:1px solid var(--border); border-radius:4px; width:140px;" />
@@ -1575,7 +1575,7 @@
             <div class="dd-stat-val" id="pd-s-closed" style="color:#15803d;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Avg PRN Age</div>
+            <div class="dd-stat-label">Average PRN Age</div>
             <div class="dd-stat-val" id="pd-s-age">—</div>
             <div class="dd-stat-sub">days (active)</div>
           </div>
@@ -1603,11 +1603,11 @@
             <canvas id="pd-chart-prn-trend" style="max-height:130px;"></canvas>
           </div>
           <div class="dd-card" style="padding:8px 10px;">
-            <div class="dd-card-title">Still To Order vs On Order (by Type)</div>
+            <div class="dd-card-title">Still To Order vs On Order (by Type of Material)</div>
             <canvas id="pd-chart-coverage" style="max-height:130px;"></canvas>
           </div>
           <div class="dd-card" style="padding:8px 10px;">
-            <div class="dd-card-title">PO Delivery Timeline</div>
+            <div class="dd-card-title">Purchase Order Delivery Timeline</div>
             <canvas id="pd-chart-delivery" style="max-height:130px;"></canvas>
           </div>
         </div>
@@ -1618,7 +1618,7 @@
           <!-- Materials with no PO yet -->
           <div class="dd-card" style="padding:10px 12px; display:flex; flex-direction:column; min-height:0;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-shrink:0;">
-              <div class="dd-card-title" style="margin:0;">⚠ Materials Needed — No PO Yet</div>
+              <div class="dd-card-title" style="margin:0;">Materials Needed (No Purchase Order Yet)</div>
               <span id="pd-nopo-count" style="font-size:0.68rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:1px 7px; border-radius:8px;"></span>
             </div>
             <div style="overflow-y:auto; flex:1;">
@@ -1766,7 +1766,7 @@
           <!-- Project Stock Health -->
           <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <div class="dd-card-title" style="margin-bottom:0;">📦 Project Stock Health</div>
+              <div class="dd-card-title" style="margin-bottom:0;">Project Stock Health</div>
               <div style="display:flex; align-items:center; gap:6px;">
                 <input id="sd-health-search" type="text" placeholder="Search project..." oninput="sdFilterHealth()"
                   style="font-size:0.72rem; padding:3px 8px; border:1px solid var(--border); border-radius:4px; width:130px;" />
@@ -1792,7 +1792,7 @@
 
           <!-- Recent Ticket Activity -->
           <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
-            <div class="dd-card-title" style="margin-bottom:6px;">🕐 Recent Ticket Activity</div>
+            <div class="dd-card-title" style="margin-bottom:6px;">Recent Ticket Activity</div>
             <div id="sd-recent-feed" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex:1;"></div>
           </div>
 
@@ -2627,7 +2627,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxG8QNs-OWTz_zUpRX8EYebsnXoXRExDNX1aadeU7oaOCsDyiWty-hwiAkuTXccq5Gw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbx14nHQ8XhZD7urAdOurSBSC1Ayw0OY3iXU_KfymFSjfBx20yzsmB40CzYNCgpx-0M0/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -6698,7 +6698,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       counterZone.innerHTML = `
         <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
           <div>
-            Real-time Spare Store Count:
+            Spare Store Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
               ${displayQty} ${unitToken} AVAILABLE
             </span>
@@ -6716,18 +6716,30 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
     return;
   }
 
-  // --- RAW MATERIALS STORE: show inventory + BOQ allocation ---
+  // --- RAW MATERIALS STORE: show inventory + JobCardMaterials allocation ---
+  // Tickets are Job-Card-scoped, never BOQ-scoped — this pill must read JobCardMaterials
+  // (per-Job-Card Allotted/Used/Remaining), not BillOfQuantity (project-wide total across
+  // every Set). BillOfQuantity is background bookkeeping only; the ticket workflow never
+  // reads it directly.
+  const jobCardNumberValForPill = document.getElementById("ticket-job-card-dropdown")?.value || "";
+  const jcmCacheKeyForPill = jobCardNumberValForPill + "|" + projectId;
+
   // Only show loading text on first load, not on poll refreshes
-  if (!window._ticketBOQCache || window._ticketBOQCache.projectId !== projectId) {
-    counterZone.innerHTML = `<span style="font-size:0.75rem; color:var(--brand); font-weight:700;">🔄 Evaluating Real-Time Project BOQ Allocations...</span>`;
+  if (!window._ticketJobCardMaterialsCache || window._ticketJobCardMaterialsCache.key !== jcmCacheKeyForPill) {
+    counterZone.innerHTML = `<span style="font-size:0.75rem; color:var(--brand); font-weight:700;">🔄 Evaluating Real-Time Job Card Allocations...</span>`;
   }
 
   try {
-    if (!window._ticketBOQCache || window._ticketBOQCache.projectId !== projectId) {
-      const boqData = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: projectId });
-      window._ticketBOQCache = { projectId: projectId, records: boqData.records || [] };
+    if (!jobCardNumberValForPill) {
+      counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Select a Job Card Number first.</span>`;
+      return;
     }
-    let boqData = window._ticketBOQCache;
+
+    if (!window._ticketJobCardMaterialsCache || window._ticketJobCardMaterialsCache.key !== jcmCacheKeyForPill) {
+      const jcmFetch = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValForPill, projectId: projectId });
+      window._ticketJobCardMaterialsCache = { key: jcmCacheKeyForPill, records: jcmFetch.records || [] };
+    }
+    let jcmCacheData = window._ticketJobCardMaterialsCache;
 
     const cleanSearchKey = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim().replace(/\s+/g, '').toLowerCase();
     
@@ -6741,31 +6753,32 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
         || _inv.find(i => cleanSearchKey.includes(i.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
     }
 
-    function findBoqMatch_(recs) {
-      return (recs || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
-        || (recs || []).find(r => r.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
-        || (recs || []).find(r => cleanSearchKey.includes(r.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+    function findJcmMatchForPill_(recs) {
+      return (recs || []).find(r => (r.itemCode || "").replace(/\s+/g, '').toLowerCase() === (inventoryMatch?.itemCode || "").replace(/\s+/g, '').toLowerCase() && inventoryMatch?.itemCode)
+        || (recs || []).find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
+        || (recs || []).find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
+        || (recs || []).find(r => cleanSearchKey.includes((r.materialName || "").replace(/\s+/g, '').toLowerCase().substring(0, 20)));
     }
 
-    let boqMatch = findBoqMatch_(boqData.records);
+    let jcmMatch = findJcmMatchForPill_(jcmCacheData.records);
 
-    // SELF-HEAL: a cache miss here is ambiguous — either the material genuinely isn't
-    // in this BOQ, or this project's cache was populated before the sheet had every row
-    // (e.g. a concurrent BOQ authorization mid-demo). Force ONE fresh, uncached re-fetch
-    // before concluding the material is really missing, so a stale snapshot can never
-    // masquerade as "not in BOQ" for the rest of the session.
-    if (!boqMatch) {
+    // SELF-HEAL: a cache miss here is ambiguous — either this material genuinely isn't
+    // allotted on this Job Card, or the cache was populated before seedJobCardMaterials_
+    // finished writing this row (e.g. right after a BOQ authorize/update in another tab).
+    // Force ONE fresh, uncached re-fetch before concluding it's really missing, so a stale
+    // snapshot can never masquerade as "no allotment" for the rest of the session.
+    if (!jcmMatch) {
       try {
-        const freshBoqData = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: projectId });
-        window._ticketBOQCache = { projectId: projectId, records: freshBoqData.records || [] };
-        boqData = window._ticketBOQCache;
-        boqMatch = findBoqMatch_(boqData.records);
+        const freshJcmData = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValForPill, projectId: projectId });
+        window._ticketJobCardMaterialsCache = { key: jcmCacheKeyForPill, records: freshJcmData.records || [] };
+        jcmCacheData = window._ticketJobCardMaterialsCache;
+        jcmMatch = findJcmMatchForPill_(jcmCacheData.records);
       } catch(refreshErr) {
-        console.error("BOQ cache self-heal refetch failed:", refreshErr);
+        console.error("JobCardMaterials cache self-heal refetch failed:", refreshErr);
       }
     }
     
-    if (inventoryMatch && boqMatch) {
+    if (inventoryMatch && jcmMatch) {
       let styleClass = "pill-stock-healthy";
       const availableCount = Number(inventoryMatch.availableStock) || 0;
       const reservedCount  = Number(inventoryMatch.reservedStock)  || 0;
@@ -6777,7 +6790,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       counterZone.innerHTML = `
         <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
           <div>
-            Real-time Raw Material Store Count:
+            Raw Material Store Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
               ${availableCount} ${unitToken} AVAILABLE
             </span>
@@ -6786,20 +6799,20 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
             </span>
           </div>
           <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${boqMatch.allottedQty || 0} ${unitToken}</span>
-            <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED: ${boqMatch.usedQty || 0} ${unitToken}</span>
-            <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING: ${boqMatch.remainingQty || 0} ${unitToken}</span>
+            <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${jcmMatch.allottedQty || 0} ${unitToken}</span>
+            <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED: ${jcmMatch.usedQty || 0} ${unitToken}</span>
+            <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING: ${jcmMatch.remainingQty || 0} ${unitToken}</span>
           </div>
         </div>
       `;
-    } else if (inventoryMatch && !boqMatch) {
+    } else if (inventoryMatch && !jcmMatch) {
       const availableCount = Number(inventoryMatch.availableStock) || 0;
       const unitToken = (inventoryMatch.unitType || "NOS").toUpperCase();
       let styleClass = availableCount === 0 ? "pill-stock-empty" : availableCount <= 5 ? "pill-stock-low" : "pill-stock-healthy";
       counterZone.innerHTML = `
         <div style="margin:8px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text);">
           Raw Material Store: <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${availableCount} ${unitToken}</span>
-          <span style="font-size:0.75rem; color:var(--warn); margin-left:8px;">⚠️ Not in BOQ for this project</span>
+          <span style="font-size:0.75rem; color:var(--warn); margin-left:8px;">⚠️ No allotment for this Job Card</span>
         </div>`;
     } else {
       counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Selected item missing configuration parameters.</span>`;
@@ -6815,7 +6828,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       counterZone.innerHTML = `
         <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
           <div>
-            Real-time Raw Material Store Count:
+            Raw Material Store Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
               ${availableCount} ${unitToken} AVAILABLE
             </span>
