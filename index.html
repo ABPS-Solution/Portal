@@ -6388,6 +6388,12 @@ async function initializeMaterialRequestWorkspace() {
   }
 
   resetMaterialRequestCascadingLockState();
+
+  // Defensive second reset — the scroll-to-top at navigation time can be undone if the page's
+  // height changes once the dropdowns above actually populate (e.g. arriving from a long,
+  // deeply-scrolled screen like the Store Dashboard). requestAnimationFrame waits for this
+  // function's DOM writes to actually paint before resetting, instead of racing them.
+  requestAnimationFrame(() => window.scrollTo(0, 0));
 }
 
 /**
@@ -6569,20 +6575,10 @@ async function refreshLiveStockForSelectedMaterial() {
   const cleanMaterialName = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim();
 
   try {
-    // PERF: Render pill immediately from cache — no network wait for BOQ
-    // BOQ is already cached by loadItemCatalogForSelectedProjectAndStore; skip the round-trip
+    // PERF: render the pill immediately from whatever's already cached (JobCardMaterials was
+    // warmed the moment Store was selected, well before this material-pick moment) — no BOQ
+    // round-trip needed here anymore, that cache is no longer what the pill reads from.
     if (projectId && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Spare Store")) {
-      if (!window._ticketBOQCache || window._ticketBOQCache.projectId !== projectId) {
-        // Cache miss (edge case: project changed without store reload) — fetch once and cache silently
-        try {
-          const boqData = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId });
-          window._ticketBOQCache = { projectId, records: boqData?.records || [] };
-        } catch(boqErr) {
-          window._ticketBOQCache = { projectId, records: [] };
-          console.warn("BOQ cache fill failed (non-fatal):", boqErr.message);
-        }
-      }
-      // BOQ is now guaranteed in cache — render pill immediately from cache before stock fetch
       await updateSelectedLiveStockPillCounter(null);
     }
 
@@ -6673,50 +6669,104 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
     return;
   }
 
-  // --- SPARE STORE: show live spare stock count + BOQ pills ---
+  // --- SPARE STORE: show live spare stock count + JobCardMaterials allocation ---
+  // Same allotment source and logic as Raw Materials Store below — Raw and Spare draws share
+  // one unified JobCardMaterials row per Job Card + material. Only the physical stock count
+  // itself differs (SpareInventory here, MasterInventory for Raw).
   if (activeStoreScope === "Spare Store") {
-    const cleanSpareKey = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim().replace(/\s+/g, "").toLowerCase();
+    const jobCardNumberValForPillSpare = document.getElementById("ticket-job-card-dropdown")?.value || "";
+    const jcmCacheKeyForPillSpare = jobCardNumberValForPillSpare + "|" + projectId;
 
-    // Resolve BOQ cache
-    if (!window._ticketBOQCache || window._ticketBOQCache.projectId !== projectId) {
-      try {
-        const boqFetch = await apFetch({ action: "fetchActiveBOQRecordsByProject", projectId: projectId });
-        window._ticketBOQCache = { projectId: projectId, records: boqFetch.records || [] };
-      } catch(e) { window._ticketBOQCache = { projectId: projectId, records: [] }; }
+    if (!window._ticketJobCardMaterialsCache || window._ticketJobCardMaterialsCache.key !== jcmCacheKeyForPillSpare) {
+      counterZone.innerHTML = `<span style="font-size:0.75rem; color:var(--brand); font-weight:700;">🔄 Evaluating Real-Time Job Card Allocations...</span>`;
     }
-    const spareBoqMatch = (window._ticketBOQCache.records || []).find(r => r.materialName.replace(/\s+/g,"").toLowerCase() === cleanSpareKey)
-      || (window._ticketBOQCache.records || []).find(r => r.materialName.replace(/\s+/g,"").toLowerCase().includes(cleanSpareKey.substring(0,20)))
-      || (window._ticketBOQCache.records || []).find(r => cleanSpareKey.includes(r.materialName.replace(/\s+/g,"").toLowerCase().substring(0,20)));
 
-    // Resolve qty: use live override if available, else fall back to cache
-    const spareCache = window.cachedSpareStoreStock || [];
-    const spareMatch = spareCache.find(i => (i.materialName || "").replace(/\s+/g, "").toLowerCase() === cleanSpareKey);
-    const qty        = liveStockOverride ? Number(liveStockOverride.spareStock)
-                     : spareMatch        ? Number(spareMatch.availableStock)
-                     : null;
-    const unitToken  = (spareMatch?.unitType || spareBoqMatch?.unitType || "NOS").toUpperCase();
+    try {
+      if (!jobCardNumberValForPillSpare) {
+        counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Select a Job Card Number first.</span>`;
+        return;
+      }
 
-    // Render as long as we have qty from either live data or BOQ match — don't gate on spareMatch alone
-    if (qty !== null || spareBoqMatch) {
-      const displayQty = qty ?? 0;
-      const styleClass = displayQty === 0 ? "pill-stock-empty" : displayQty <= 5 ? "pill-stock-low" : "pill-stock-healthy";
-      counterZone.innerHTML = `
-        <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
-          <div>
-            Spare Store Count:
-            <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
-              ${displayQty} ${unitToken} AVAILABLE
-            </span>
+      if (!window._ticketJobCardMaterialsCache || window._ticketJobCardMaterialsCache.key !== jcmCacheKeyForPillSpare) {
+        const jcmFetchS = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValForPillSpare, projectId: projectId });
+        window._ticketJobCardMaterialsCache = { key: jcmCacheKeyForPillSpare, records: jcmFetchS.records || [] };
+      }
+      let jcmCacheDataSpare = window._ticketJobCardMaterialsCache;
+
+      const cleanSearchKeySpare = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim().replace(/\s+/g, '').toLowerCase();
+
+      let spareInventoryMatch;
+      if (liveStockOverride) {
+        spareInventoryMatch = { availableStock: liveStockOverride.spareStock, reservedStock: liveStockOverride.spareReservedStock, unitType: liveStockOverride.unitType };
+      } else {
+        const _spare = window.cachedSpareStoreStock || [];
+        spareInventoryMatch = _spare.find(i => (i.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKeySpare)
+          || _spare.find(i => (i.materialName || "").replace(/\s+/g, '').toLowerCase().includes(cleanSearchKeySpare.substring(0, 20)))
+          || _spare.find(i => cleanSearchKeySpare.includes((i.materialName || "").replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+      }
+
+      function findJcmMatchForPillSpare_(recs) {
+        return (recs || []).find(r => (r.itemCode || "").replace(/\s+/g, '').toLowerCase() === (spareInventoryMatch?.itemCode || "").replace(/\s+/g, '').toLowerCase() && spareInventoryMatch?.itemCode)
+          || (recs || []).find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKeySpare)
+          || (recs || []).find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase().includes(cleanSearchKeySpare.substring(0, 20)))
+          || (recs || []).find(r => cleanSearchKeySpare.includes((r.materialName || "").replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+      }
+
+      let jcmMatchSpare = findJcmMatchForPillSpare_(jcmCacheDataSpare.records);
+
+      if (!jcmMatchSpare) {
+        try {
+          const freshJcmDataSpare = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValForPillSpare, projectId: projectId });
+          window._ticketJobCardMaterialsCache = { key: jcmCacheKeyForPillSpare, records: freshJcmDataSpare.records || [] };
+          jcmCacheDataSpare = window._ticketJobCardMaterialsCache;
+          jcmMatchSpare = findJcmMatchForPillSpare_(jcmCacheDataSpare.records);
+        } catch(refreshErrSpare) {
+          console.error("JobCardMaterials cache self-heal refetch failed (Spare):", refreshErrSpare);
+        }
+      }
+
+      if (spareInventoryMatch && jcmMatchSpare) {
+        let styleClassSpare = "pill-stock-healthy";
+        const availableCountSpare = Number(spareInventoryMatch.availableStock) || 0;
+        const reservedCountSpare  = Number(spareInventoryMatch.reservedStock)  || 0;
+        const unitTokenSpare = (spareInventoryMatch.unitType || "NOS").toUpperCase();
+
+        if (availableCountSpare === 0)  styleClassSpare = "pill-stock-empty";
+        else if (availableCountSpare <= 5) styleClassSpare = "pill-stock-low";
+
+        counterZone.innerHTML = `
+          <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
+            <div>
+              Spare Store Count:
+              <span class="live-counter-pill ${styleClassSpare}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
+                ${availableCountSpare} ${unitTokenSpare} AVAILABLE
+              </span>
+              <span style="font-size:0.78rem; color:var(--muted); margin-left:6px; font-weight:normal;">
+                (Reserved: ${reservedCountSpare} ${unitTokenSpare})
+              </span>
+            </div>
+            <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
+              <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${jcmMatchSpare.allottedQty || 0} ${unitTokenSpare}</span>
+              <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED: ${jcmMatchSpare.usedQty || 0} ${unitTokenSpare}</span>
+              <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING: ${jcmMatchSpare.remainingQty || 0} ${unitTokenSpare}</span>
+            </div>
           </div>
-          ${spareBoqMatch ? `
-          <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED BOQ: ${spareBoqMatch.totalQty || 0} ${unitToken}</span>
-            <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED BOQ: ${spareBoqMatch.usedQty || 0} ${unitToken}</span>
-            <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING BOQ: ${spareBoqMatch.remainingQty || 0} ${unitToken}</span>
-          </div>` : `<div style="margin-top:4px; font-size:0.72rem; color:var(--warn);">⚠️ Not in BOQ for this project</div>`}
-        </div>`;
-    } else {
-      counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Item not found in Spare Store or BOQ.</span>`;
+        `;
+      } else if (spareInventoryMatch && !jcmMatchSpare) {
+        const availableCountSpare = Number(spareInventoryMatch.availableStock) || 0;
+        const unitTokenSpare = (spareInventoryMatch.unitType || "NOS").toUpperCase();
+        let styleClassSpare = availableCountSpare === 0 ? "pill-stock-empty" : availableCountSpare <= 5 ? "pill-stock-low" : "pill-stock-healthy";
+        counterZone.innerHTML = `
+          <div style="margin:8px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text);">
+            Spare Store: <span class="live-counter-pill ${styleClassSpare}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${availableCountSpare} ${unitTokenSpare}</span>
+            <span style="font-size:0.75rem; color:var(--warn); margin-left:8px;">⚠️ No allotment for this Job Card</span>
+          </div>`;
+      } else {
+        counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Selected item missing configuration parameters.</span>`;
+      }
+    } catch(errSpare) {
+      console.error("Spare pill allocation tracking crash:", errSpare);
+      counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Could not load Spare stock/allotment.</span>`;
     }
     return;
   }
@@ -9659,29 +9709,64 @@ async function loadItemCatalogForSelectedProjectAndStore() {
 
   try {
     if (activeStoreScope === "Spare Store") {
-      const data = await apFetch({ action: "getSpareStoreStock" });
-      window.cachedSpareStoreStock = data.stock || [];
+      // Spare Store now shows exactly the same Job-Card-allotted material list as Raw Materials
+      // Store — the two share one unified JobCardMaterials row per material (see architecture
+      // note: a Spare draw and a Raw draw on the same Job Card + item both update the same row).
+      // Physical Spare stock is pre-fetched here in the background for the Store Count pill —
+      // it does not gate which materials are selectable, only how much of each is available.
+      apFetch({ action: "getSpareStoreStock" })
+        .then(d => { window.cachedSpareStoreStock = d.stock || []; }).catch(() => {});
 
-      if (window.cachedSpareStoreStock.length === 0) {
-        itemDrop.innerHTML = '<option value="">⚠️ Spare Store is empty</option>';
+      const chosenJobCardValSpare = document.getElementById("ticket-job-card-dropdown")?.value || "";
+      if (!chosenJobCardValSpare) {
+        itemDrop.innerHTML = '<option value="">⚠️ Select a Job Card Number first</option>';
         addZone.style.opacity = "0.5";
         return;
       }
 
-      itemDrop.innerHTML = '<option value="">— Select Material from Spare Store —</option>';
-      window.cachedSpareStoreStock.forEach(item => {
-        const opt = document.createElement("option");
-        opt.value = item.materialName;
-        opt.textContent = `${item.materialName}`;
-        itemDrop.appendChild(opt);
-      });
+      const jcmCacheKeySpare = chosenJobCardValSpare + "|" + chosenProjectVal;
+      let jcmFetchSpare;
+      try {
+        jcmFetchSpare = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: chosenJobCardValSpare, projectId: chosenProjectVal });
+      } catch(e) {
+        jcmFetchSpare = { success: false, records: [], error: e.message };
+      }
 
-      addZone.style.opacity = "1";
-      itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
-      addBtn.style.cursor = "pointer";
+      // Warm the same cache the pill and Add-button use — no duplicate fetch when a material is picked.
+      window._ticketJobCardMaterialsCache = { key: jcmCacheKeySpare, records: jcmFetchSpare.records || [] };
+
+      if (jcmFetchSpare.success && (jcmFetchSpare.records || []).length > 0) {
+        itemDrop.innerHTML = '<option value="" style="font-weight:700;">— Select Material from Job Card —</option>';
+        let uniqueMaterialsMapSpare = {};
+        jcmFetchSpare.records.forEach(r => {
+          if (!uniqueMaterialsMapSpare[r.materialName]) {
+            uniqueMaterialsMapSpare[r.materialName] = true;
+            let opt = document.createElement("option");
+            opt.value = r.materialName;
+            opt.textContent = r.materialName;
+            itemDrop.appendChild(opt);
+          }
+        });
+        addZone.style.opacity = "1";
+        itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
+        addBtn.style.cursor = "pointer";
+      } else {
+        itemDrop.innerHTML = '<option value="">⚠️ No materials allotted to this Job Card</option>';
+        addZone.style.opacity = "0.5";
+      }
       return;
     }
     if (activeStoreScope === "Finished Goods Store") {
+      // Scoped to the selected Job Card, same principle as Raw and Spare — a Finished Goods
+      // ticket should only ever offer the specific product(s) that Job Card actually produced,
+      // not every in-stock item across the whole project.
+      const chosenJobCardValFG = document.getElementById("ticket-job-card-dropdown")?.value || "";
+      if (!chosenJobCardValFG) {
+        itemDrop.innerHTML = '<option value="">⚠️ Select a Job Card Number first</option>';
+        addZone.style.opacity = "0.5";
+        return;
+      }
+
       const fgCache = window.cachedFinishedGoodsStoreStockCollection || {};
       const allFGItems = [
         ...(fgCache.reactor   || []),
@@ -9691,17 +9776,18 @@ async function loadItemCatalogForSelectedProjectAndStore() {
 
       const projectItems = allFGItems.filter(i =>
         (i["Project ID"] || "").toString().trim().toLowerCase() === chosenProjectVal.toLowerCase()
+        && (i["Job Card Number"] || "").toString().trim().toLowerCase() === chosenJobCardValFG.toLowerCase()
       );
 
       if (projectItems.length === 0) {
-        itemDrop.innerHTML = '<option value="">⚠️ No In-Stock Finished Goods found for this Project</option>';
+        itemDrop.innerHTML = '<option value="">⚠️ No In-Stock Finished Goods found for this Job Card</option>';
         addZone.style.opacity = "0.5";
         return;
       }
 
       // Group by Product Name + Rating + Item Code to show unique options
       const seen = {};
-      itemDrop.innerHTML = '<option value="">— Select Item from Finished Goods Store —</option>';
+      itemDrop.innerHTML = '<option value="" style="font-weight:700;">— Select Item from Job Card —</option>';
       projectItems.forEach(i => {
         const pname  = (i["Product Name"]    || "").trim();
         const rating = (i["Product Rating"]  || "").trim();
@@ -9750,13 +9836,12 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       // the moment a material is selected.
       window._ticketJobCardMaterialsCache = { key: jcmCacheKey, records: jcmFetch.records || [] };
 
-      const rawRecordsForCard = (jcmFetch.records || []).filter(r => {
-        const store = (r.typeOfStore || "Raw Materials Store").toString().trim().toLowerCase().replace(/\s+/g, "");
-        return store === "rawmaterialsstore" || store === "rawmaterial" || store === "";
-      });
+      // No Type of Store filter — Raw and Spare draws share one unified row per Job Card +
+      // material, so both dropdowns must list the exact same set of allotted materials.
+      const rawRecordsForCard = jcmFetch.records || [];
 
       if (jcmFetch.success && rawRecordsForCard.length > 0) {
-        itemDrop.innerHTML = '<option value="">— Select Material from Job Card —</option>';
+        itemDrop.innerHTML = '<option value="" style="font-weight:700;">— Select Material from Job Card —</option>';
         let uniqueMaterialsMap = {};
         rawRecordsForCard.forEach(r => {
           if (!uniqueMaterialsMap[r.materialName]) {
