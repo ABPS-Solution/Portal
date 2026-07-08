@@ -914,11 +914,11 @@
               <label class="field-label" style="margin-top:0; color:var(--brand);">Filter by Type of Material</label>
               <select id="assign-type-filter" onchange="handleAssignTypeFilterChange(this.value)" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
                 <option value="">— All Types —</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="D">D</option>
-                <option value="E">E</option>
+                <option value="A">Material A</option>
+                <option value="B">Material B</option>
+                <option value="C">Material C</option>
+                <option value="D">Material D</option>
+                <option value="E">Material E</option>
               </select>
             </div>
             <div>
@@ -1285,11 +1285,11 @@
             <label class="field-label" style="margin-top:0;">Type of Material *</label>
             <select id="itemcode-new-type" style="padding:10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
               <option value="">— Select Type —</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
+              <option value="A">Material A</option>
+              <option value="B">Material B</option>
+              <option value="C">Material C</option>
+              <option value="D">Material D</option>
+              <option value="E">Material E</option>
             </select>
           </div>
         </div>
@@ -2739,7 +2739,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyDhyXOTRfktYwz2u5LmiZXnKabuL42lhIyq2oYLUK1UCMJns3klYmz34XL3cfXB-fK/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwDvptMv_7NNWOLy3GnFEPZ0idx3DGNGhu_mbBjVMRwkmVp2flWzobxMMSNwIpFoR5l/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -5958,7 +5958,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
   if (emailLeadsList.length === 0) {
     canvas.innerHTML = `
       <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;">
-        <h3 style="color: var(--accent);">All Email Leads are dealt with</h3>
+        <h3 style="color: var(--accent);">All Email Leads are Handled</h3>
       </div>
     `;
     return;
@@ -8556,6 +8556,13 @@ async function triggerLiveWarehouseStockMetricsSync() {
       const typeOrder = [
         "A","B","C","D","E","Uncategorized",""
       ];
+      // Shared display helper — stored values stay bare letters (A-E) everywhere: sheets, PDFs,
+      // filters, matching logic. Only presentational text (headings, search-result badges) shows
+      // "Material A" etc. Defined once here since this is the first place it's needed.
+      window.typeLabelDisplay_ = window.typeLabelDisplay_ || function(t) {
+        const clean = (t || "").toString().trim();
+        return /^[A-E]$/.test(clean) ? ("Material " + clean) : (clean || "Uncategorized");
+      };
       
       cachedInventoryStockCollection.forEach(item => {
         const type = (item.typeOfMaterial || item.typematerial || "").toString().trim() || "Uncategorized";
@@ -8573,18 +8580,9 @@ async function triggerLiveWarehouseStockMetricsSync() {
         return ai - bi;
       });
 
-      const typeLabels = {
-        "A": "A",
-        "B": "B",
-        "C": "C",
-        "D": "D",
-        "E": "E",
-        "Uncategorized": "Uncategorized"
-      };
-
       sortedTypes.forEach(type => {
         const items = typeGroups[type];
-        const label = typeLabels[type] || type;
+        const label = window.typeLabelDisplay_(type);
         const sectionId = "rm-section-body-" + type.replace(/\s+/g, '_');
         const isCollapsed = localStorage.getItem("rm_section_" + type) === "collapsed";
 
@@ -8710,7 +8708,7 @@ async function triggerLiveSpareStoreStockMetricsSync() {
       };
       headerDiv.innerHTML = `
         <div style="display:flex; align-items:center; gap:10px;">
-          <span style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">${type}</span>
+          <span style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">${window.typeLabelDisplay_(type)}</span>
           <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:10px;">${items.length} ${items.length === 1 ? 'item' : 'items'}</span>
         </div>
         <button id="${toggleId}" style="background:transparent; border:1px solid var(--border); color:var(--brand); font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:4px; cursor:pointer;">
@@ -8860,9 +8858,15 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
                   <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Line Items Captured</span><br/><strong style="color:#111827;">${data.extractedLineItemCount || 0} items</strong></div>
                   <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Project ID Assigned</span><br/><strong style="font-family:monospace; color:#111827;">${data.generatedProjectId || '—'}</strong></div>
                 </div>
-                <div style="margin-top:8px; font-size:0.75rem; color:#15803d; border-top:1px dashed #86efac; padding-top:6px;">
-                  ✓ All data has been saved to the Purchase Order sheets. If anything looks wrong, check the UploadedDocumentInformation and PurchaseOrderInformation sheets.
+                <div style="margin-top:8px; font-size:0.75rem; color:${data.partialWriteWarning ? '#b45309' : '#15803d'}; border-top:1px dashed ${data.partialWriteWarning ? '#fcd34d' : '#86efac'}; padding-top:6px;">
+                  ${data.partialWriteWarning ? '⚠ Core PO data was saved, but see the warning above — some downstream records may be incomplete.' : '✓ All data has been saved to the Purchase Order sheets. If anything looks wrong, check the UploadedDocumentInformation and PurchaseOrderInformation sheets.'}
                 </div>
+              </div>` : ''}
+
+              ${data.partialWriteWarning ? `
+              <div style="margin-top:10px; background:#fffbeb; border:1px solid #fcd34d; border-radius:6px; padding:10px; font-size:0.82rem; color:#92400e;">
+                <div style="font-weight:700; font-size:0.78rem; text-transform:uppercase; color:#b45309; margin-bottom:4px; letter-spacing:0.3px;">⚠ Partial Save Warning</div>
+                ${data.partialWriteWarning}
               </div>` : ''}
             </div>
             <button class="nav-btn-styled" onclick="
@@ -11486,7 +11490,7 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
       style="padding:9px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; display:flex; align-items:center; gap:10px; background:#fff; transition:background 0.1s;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:600; color:var(--text); flex:1;">${item.combinedName || item.productName}</span>
-      <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px; white-space:nowrap; flex-shrink:0;">${item.typeOfMaterial}</span>
+      <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px; white-space:nowrap; flex-shrink:0;">${window.typeLabelDisplay_(item.typeOfMaterial)}</span>
     </div>`).join("");
   dropdown.style.display = "block";
 }
@@ -12718,7 +12722,7 @@ function handleFGProductSearch(query) {
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>
       ${item.displayName}
-      ${item.typeOfMaterial ? `<span style="font-size:0.7rem; color:var(--muted); margin-left:6px;">(${item.typeOfMaterial})</span>` : ""}
+      ${item.typeOfMaterial ? `<span style="font-size:0.7rem; color:var(--muted); margin-left:6px;">(${window.typeLabelDisplay_(item.typeOfMaterial)})</span>` : ""}
     </div>`).join("");
   dropdown.style.display = "block";
 }
@@ -14426,7 +14430,7 @@ function renderPRNCreateTable() {
       <tr style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${item.materialName}</td>
-        <td style="padding:8px; font-size:0.75rem; color:var(--muted);">${item.typeOfMaterial || "—"}</td>
+        <td style="padding:8px; font-size:0.75rem; color:var(--muted);">${item.typeOfMaterial ? window.typeLabelDisplay_(item.typeOfMaterial) : "—"}</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${Number(item.boqReqQty).toFixed(2)}</td>
         <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct}%</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${bufferedQty.toFixed(2)}</td>
@@ -15001,7 +15005,7 @@ function renderMaterialListByType(materials) {
     };
     headerDiv.innerHTML = `
       <div style="display:flex; align-items:center; gap:10px;">
-        <span style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">${type}</span>
+        <span style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">${window.typeLabelDisplay_(type)}</span>
         <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:10px;">${items.length} ${items.length === 1 ? 'item' : 'items'}</span>
       </div>
       <button id="${toggleId}" style="background:transparent; border:1px solid var(--border); color:var(--brand); font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:4px; cursor:pointer;">
@@ -15762,7 +15766,7 @@ function handleAssignMaterialSearch(query) {
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>
       ${item.productName}
-      <span style="font-size:0.7rem; color:var(--muted); margin-left:6px;">(${item.typeOfMaterial})</span>
+      <span style="font-size:0.7rem; color:var(--muted); margin-left:6px;">(${window.typeLabelDisplay_(item.typeOfMaterial)})</span>
     </div>`).join("");
   dropdown.style.display = "block";
 }
