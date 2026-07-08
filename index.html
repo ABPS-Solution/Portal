@@ -1533,7 +1533,7 @@
             <button class="dd-period-btn"        data-period="thisyear"    onclick="ddSetPeriod(this)">This Year</button>
             <button class="dd-period-btn"        data-period="custom"      onclick="ddSetPeriod(this)">Custom ▾</button>
           </div>
-          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">📊 Design Dashboard</span>
+          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">Design Dashboard</span>
           <button class="nav-btn-styled" onclick="exitDesignWorkspacePanelBackToMenu()" style="font-size:0.75rem;">Return to Main Dashboard</button>
         </div>
         <!-- Row 2: custom picker — drops below, hidden by default -->
@@ -1676,7 +1676,7 @@
             <button class="dd-period-btn"        data-period="thisyear"    onclick="pdSetPeriod(this)">This Year</button>
             <button class="dd-period-btn"        data-period="custom"      onclick="pdSetPeriod(this)">Custom ▾</button>
           </div>
-          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">📦 Purchase Dashboard</span>
+          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">Purchase Dashboard</span>
           <button class="nav-btn-styled" onclick="pdReturnToMain()" style="font-size:0.75rem;">Return to Main Dashboard</button>
         </div>
         <div id="pd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
@@ -1810,7 +1810,7 @@
             <button class="dd-period-btn"        data-period="thisyear"    onclick="sdSetPeriod(this)">This Year</button>
             <button class="dd-period-btn"        data-period="custom"      onclick="sdSetPeriod(this)">Custom ▾</button>
           </div>
-          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">🏪 Store Dashboard</span>
+          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">Store Dashboard</span>
           <button class="nav-btn-styled" onclick="sdReturnToMain()" style="font-size:0.75rem;">Return to Main Dashboard</button>
         </div>
         <div id="sd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
@@ -1951,7 +1951,7 @@
             <button class="dd-period-btn"        data-period="thisyear"    onclick="pd2SetPeriod(this)">This Year</button>
             <button class="dd-period-btn"        data-period="custom"      onclick="pd2SetPeriod(this)">Custom ▾</button>
           </div>
-          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">🏭 Production Dashboard</span>
+          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">Production Dashboard</span>
           <button class="nav-btn-styled" onclick="pd2ReturnToMain();" style="font-size:0.75rem;">Return to Main Dashboard</button>
         </div>
         <div id="pd2-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
@@ -2086,8 +2086,142 @@
     </div>
 
     <!-- MARKETING DASHBOARD CANVAS -->
-    <div id="canvas-module-marketing-dashboard" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <p style="color:var(--muted); font-size:0.85rem;">Marketing Dashboard — coming soon.</p>
+    <!-- MARKETING DASHBOARD CANVAS -->
+    <div id="canvas-module-marketing-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
+
+      <!-- TOP BAR -->
+      <div style="background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; position:relative;">
+          <div id="md-period-btns" style="display:flex; gap:4px; flex-wrap:nowrap;">
+            <button class="dd-period-btn active" data-period="today"       onclick="mdSetPeriod(this)">Today</button>
+            <button class="dd-period-btn"        data-period="yesterday"   onclick="mdSetPeriod(this)">Yesterday</button>
+            <button class="dd-period-btn"        data-period="thisweek"    onclick="mdSetPeriod(this)">This Week</button>
+            <button class="dd-period-btn"        data-period="thismonth"   onclick="mdSetPeriod(this)">This Month</button>
+            <button class="dd-period-btn"        data-period="thisquarter" onclick="mdSetPeriod(this)">This Quarter</button>
+            <button class="dd-period-btn"        data-period="thisyear"    onclick="mdSetPeriod(this)">This Year</button>
+            <button class="dd-period-btn"        data-period="custom"      onclick="mdSetPeriod(this)">Custom ▾</button>
+          </div>
+          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">📈 Marketing Dashboard</span>
+          <button class="nav-btn-styled" onclick="exitMarketingDashboardBackToMenu()" style="font-size:0.75rem;">Return to Main Dashboard</button>
+        </div>
+        <div id="md-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
+          <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
+          <select id="md-custom-type" onchange="mdCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
+            <option value="customday">Day</option>
+            <option value="customweek">Week</option>
+            <option value="custommonth">Month</option>
+            <option value="customquarter">Quarter</option>
+            <option value="customyear">Year</option>
+          </select>
+          <input id="md-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
+          <button onclick="mdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
+        </div>
+      </div>
+
+      <!-- DASHBOARD BODY -->
+      <div id="md-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box;">
+
+        <!-- ROW 1: Lead Funnel Pulse -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">New Leads</div>
+            <div class="dd-stat-val" id="md-s-newleads">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">In Progress</div>
+            <div class="dd-stat-val" id="md-s-inprogress" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Orders Received</div>
+            <div class="dd-stat-val" id="md-s-ordersreceived" style="color:#15803d;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Lead Failed / Not Received</div>
+            <div class="dd-stat-val" id="md-s-failed" style="color:#b91c1c;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Avg. Days: Lead → Order</div>
+            <div class="dd-stat-val" id="md-s-avgdays">—</div>
+            <div class="dd-stat-sub">days</div>
+          </div>
+        </div>
+
+        <!-- ROW 2: Activity & Engagement Health -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Follow-Ups Due/Overdue</div>
+            <div class="dd-stat-val" id="md-s-followupsdue" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Open Tasks</div>
+            <div class="dd-stat-val" id="md-s-opentasks">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Leads — Zero Follow-Up</div>
+            <div class="dd-stat-val" id="md-s-zerofollowup" style="color:#b91c1c;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">PO Uploads</div>
+            <div class="dd-stat-val" id="md-s-pouploads" style="color:#15803d;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Distinct Offers Sent</div>
+            <div class="dd-stat-val" id="md-s-offerssent">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 3: 3 Charts -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+          <div class="dd-stat-card" style="min-height:200px;">
+            <div class="dd-stat-label" style="margin-bottom:6px;">Lead Status Funnel</div>
+            <canvas id="md-chart-funnel" style="max-height:170px;"></canvas>
+          </div>
+          <div class="dd-stat-card" style="min-height:200px;">
+            <div class="dd-stat-label" style="margin-bottom:6px;">New Leads vs Orders Received</div>
+            <canvas id="md-chart-trend" style="max-height:170px;"></canvas>
+          </div>
+          <div class="dd-stat-card" style="min-height:200px;">
+            <div class="dd-stat-label" style="margin-bottom:6px;">Lead Status Distribution</div>
+            <canvas id="md-chart-donut" style="max-height:170px;"></canvas>
+          </div>
+        </div>
+
+        <!-- ROW 4: Stale Leads + Recent Wins -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="dd-stat-card" style="min-height:220px;">
+            <div class="dd-stat-label" style="margin-bottom:8px;">⚠ Stale Leads Needing Attention (7+ days, current)</div>
+            <div style="max-height:260px; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead>
+                  <tr style="text-align:left; border-bottom:1px solid var(--border);">
+                    <th style="padding:4px;">Company</th>
+                    <th style="padding:4px;">Engineer</th>
+                    <th style="padding:4px;">Status</th>
+                    <th style="padding:4px; text-align:right;">Days Idle</th>
+                  </tr>
+                </thead>
+                <tbody id="md-stale-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="dd-stat-card" style="min-height:220px;">
+            <div class="dd-stat-label" style="margin-bottom:8px;">🏆 Recent Wins (Orders Received in period)</div>
+            <div style="max-height:260px; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead>
+                  <tr style="text-align:left; border-bottom:1px solid var(--border);">
+                    <th style="padding:4px;">Company</th>
+                    <th style="padding:4px;">Engineer</th>
+                    <th style="padding:4px; text-align:right;">Date</th>
+                  </tr>
+                </thead>
+                <tbody id="md-wins-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end md-body -->
     </div>
 
     <!-- RAW MATERIAL PO UPLOAD CANVAS -->
@@ -13453,6 +13587,8 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
 let ddCurrentPeriod = "today";
 let ddCurrentCustomType = "customday";
 let ddChartDept = null, ddChartVersion = null, ddChartTrend = null;
+let mdChartFunnel = null, mdChartTrend = null, mdChartDonut = null;
+let mdCurrentPeriod = "today", mdCurrentCustomType = "customday";
 let ddHealthData = [];
 let ddHealthFiltered = [];
 let ddHealthCurrentPage = 1;
@@ -13650,6 +13786,145 @@ function ddRenderDashboard(data) {
   const searchEl = document.getElementById("dd-health-search");
   if (searchEl) searchEl.value = "";
   ddRenderHealthTable();
+}
+
+function mdSetPeriod(btn) {
+  document.querySelectorAll("#md-period-btns .dd-period-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  const p = btn.dataset.period;
+  mdCurrentPeriod = p;
+  const customZone = document.getElementById("md-custom-zone");
+  if (p === "custom") { customZone.style.display = "flex"; return; }
+  customZone.style.display = "none";
+  mdLoadDashboard();
+}
+
+function mdCustomTypeChange() {
+  const type = document.getElementById("md-custom-type").value;
+  mdCurrentCustomType = type;
+  const valInput = document.getElementById("md-custom-val");
+  if (type === "customday")     { valInput.type = "date";  valInput.placeholder = ""; }
+  else if (type === "customweek")  { valInput.type = "date";  valInput.placeholder = "Pick any day in the week"; }
+  else if (type === "custommonth") { valInput.type = "month"; }
+  else if (type === "customquarter") { valInput.type = "text"; valInput.placeholder = "e.g. 2025-Q2"; }
+  else if (type === "customyear")  { valInput.type = "number"; valInput.placeholder = "e.g. 2025"; }
+}
+
+function mdLoadCustom() {
+  const val = document.getElementById("md-custom-val").value.trim();
+  if (!val) return alert("Please enter a value for the custom period.");
+  mdCurrentPeriod = mdCurrentCustomType;
+  mdLoadDashboard(val);
+}
+
+async function mdLoadDashboard(customVal) {
+  const body = document.getElementById("md-body");
+  if (!body) return;
+  ["md-s-newleads","md-s-inprogress","md-s-ordersreceived","md-s-failed","md-s-avgdays",
+   "md-s-followupsdue","md-s-opentasks","md-s-zerofollowup","md-s-pouploads","md-s-offerssent"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = "…";
+  });
+
+  try {
+    const data = await apFetch({
+      action:      "fetchMarketingDashboardData",
+      periodType:  mdCurrentPeriod,
+      periodValue: customVal || ""
+    });
+    if (!data.success) { alert("Dashboard load failed: " + data.error); return; }
+    mdRenderDashboard(data);
+  } catch(e) {
+    alert("Dashboard error: " + e.message);
+  }
+}
+
+function mdRenderDashboard(data) {
+  const { stats, statusCounts, trendData, staleLeads, recentWins } = data;
+
+  document.getElementById("md-s-newleads").textContent       = stats.newLeads;
+  document.getElementById("md-s-inprogress").textContent     = stats.inProgress;
+  document.getElementById("md-s-ordersreceived").textContent = stats.ordersReceived;
+  document.getElementById("md-s-failed").textContent         = stats.leadsFailed;
+  document.getElementById("md-s-avgdays").textContent        = stats.avgConversionDays !== null ? stats.avgConversionDays : "—";
+  document.getElementById("md-s-followupsdue").textContent   = stats.followUpsDueOverdue;
+  document.getElementById("md-s-opentasks").textContent      = stats.openTasks;
+  document.getElementById("md-s-zerofollowup").textContent   = stats.zeroFollowUpLeads;
+  document.getElementById("md-s-pouploads").textContent      = stats.poUploads;
+  document.getElementById("md-s-offerssent").textContent     = stats.distinctOffersSent;
+
+  // Chart 1 — Lead Status Funnel (bar)
+  if (mdChartFunnel) mdChartFunnel.destroy();
+  const funnelLabels = Object.keys(statusCounts);
+  const ctxFunnel = document.getElementById("md-chart-funnel").getContext("2d");
+  mdChartFunnel = new Chart(ctxFunnel, {
+    type: "bar",
+    data: {
+      labels: funnelLabels,
+      datasets: [{ label:"Leads", data: funnelLabels.map(k => statusCounts[k]),
+        backgroundColor: "rgba(37,99,235,0.7)", borderRadius: 4 }]
+    },
+    options: { indexAxis:"y", responsive:true, plugins:{ legend:{ display:false } },
+      scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false } } } }
+  });
+
+  // Chart 2 — New Leads vs Orders Received (dual line)
+  if (mdChartTrend) mdChartTrend.destroy();
+  const ctxTrend = document.getElementById("md-chart-trend").getContext("2d");
+  mdChartTrend = new Chart(ctxTrend, {
+    type: "line",
+    data: {
+      labels: trendData.map(t => t.label),
+      datasets: [
+        { label:"New Leads",       data: trendData.map(t => t.newLeads),       borderColor:"rgba(37,99,235,0.9)",  backgroundColor:"rgba(37,99,235,0.15)", tension:0.3, fill:true },
+        { label:"Orders Received", data: trendData.map(t => t.ordersReceived), borderColor:"rgba(21,128,61,0.9)",  backgroundColor:"rgba(21,128,61,0.15)", tension:0.3, fill:true }
+      ]
+    },
+    options: { responsive:true, plugins:{ legend:{ display:true, labels:{ font:{ size:9 } } } },
+      scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
+  });
+
+  // Chart 3 — Lead Status Distribution (donut)
+  if (mdChartDonut) mdChartDonut.destroy();
+  const donutLabels = Object.keys(statusCounts);
+  const donutColors = ["#2563eb","#15803d","#b45309","#b91c1c","#7c3aed","#0891b2","#c026d3","#65a30d","#dc2626"];
+  const ctxDonut = document.getElementById("md-chart-donut").getContext("2d");
+  mdChartDonut = new Chart(ctxDonut, {
+    type: "doughnut",
+    data: {
+      labels: donutLabels,
+      datasets: [{ data: donutLabels.map(k => statusCounts[k]), backgroundColor: donutLabels.map((_,i) => donutColors[i % donutColors.length]) }]
+    },
+    options: { responsive:true, plugins:{ legend:{ display:true, position:"bottom", labels:{ font:{ size:8 }, boxWidth:8 } } } }
+  });
+
+  // Stale Leads table
+  const staleTbody = document.getElementById("md-stale-tbody");
+  staleTbody.innerHTML = staleLeads.length === 0
+    ? `<tr><td colspan="4" style="color:var(--muted); padding:6px;">No stale leads — nice work.</td></tr>`
+    : staleLeads.map(l => `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px;">${l.company}</td>
+          <td style="padding:4px;">${l.engineer}</td>
+          <td style="padding:4px;">${l.status}</td>
+          <td style="padding:4px; text-align:right; color:#b91c1c; font-weight:700;">${l.daysSince}d</td>
+        </tr>`).join("");
+
+  // Recent Wins table
+  const winsTbody = document.getElementById("md-wins-tbody");
+  winsTbody.innerHTML = recentWins.length === 0
+    ? `<tr><td colspan="3" style="color:var(--muted); padding:6px;">No orders received in this period.</td></tr>`
+    : recentWins.map(w => `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px;">${w.company}</td>
+          <td style="padding:4px;">${w.engineer}</td>
+          <td style="padding:4px; text-align:right;">${w.date}</td>
+        </tr>`).join("");
+}
+
+function exitMarketingDashboardBackToMenu() {
+  document.getElementById("canvas-module-marketing-dashboard").style.display = "none";
+  enforceDynamicModuleRoleGateways(userPermissions);
+  document.getElementById("dashboard-view").style.display = "flex";
 }
 
 function navigateToDesignDashboard() {
@@ -14161,6 +14436,7 @@ function navigateToMarketingDashboard() {
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   const c = document.getElementById("canvas-module-marketing-dashboard");
   if (c) c.style.display = "block";
+  mdLoadDashboard();
 }
 
 function exitPurchaseWorkspacePanelBackToMenu() {
