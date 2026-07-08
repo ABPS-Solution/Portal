@@ -753,7 +753,7 @@
 
           <!-- QA uploads -->
           <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:#0056b3; letter-spacing:0.5px; margin-bottom:8px;">Quality Assurance Documents</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Test Certificate * <span style="color:#b91c1c;">(required)</span></label>
               <div class="card-box" id="fg-add-test-cert-dropzone" onclick="document.getElementById('fg-add-test-cert-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
@@ -768,10 +768,8 @@
               </div>
               <input type="file" id="fg-add-inprocess-input" hidden onchange="handleFGFileSelection(this, 'inProcessInspection')" />
             </div>
-          </div>
-          <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
             <div>
-              <label class="field-label" style="margin-top:0;">Inspection Clearance * <span style="color:#b91c1c;">(required)</span></label>
+              <label class="field-label" style="margin-top:0;">Inspection Clearance <span style="color:var(--muted);">(optional)</span></label>
               <div class="card-box" id="fg-add-inspection-dropzone" onclick="document.getElementById('fg-add-inspection-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Inspection Clearance
               </div>
@@ -1702,7 +1700,7 @@
             <div class="dd-stat-val" id="pd-s-poval" style="font-size:1rem; color:var(--brand);">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Materials Covered</div>
+            <div class="dd-stat-label">Materials Ordered</div>
             <div style="display:flex; align-items:baseline; gap:4px;">
               <div class="dd-stat-val" id="pd-s-matcov" style="color:var(--brand);">—</div>
               <div class="dd-stat-sub" id="pd-s-matcov-total" style="font-size:0.75rem;"></div>
@@ -12869,12 +12867,13 @@ async function submitFGAddItem() {
   if (!fgJobCardSheetFile)  return showBOQBanner("fg-add-feedback", "Job Card Sheet document is required (Production).", "error");
   if (!fgQATestCertFile)    return showBOQBanner("fg-add-feedback", "Test Certificate is required (Q/A).", "error");
   if (!fgInProcessInspFile) return showBOQBanner("fg-add-feedback", "In Process Inspection Sheet is required (Q/A).", "error");
-  if (!fgQAInspectionFile)  return showBOQBanner("fg-add-feedback", "Inspection Clearance is required (Q/A).", "error");
+  // Inspection Clearance is optional — no validation block.
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Uploading documents...';
 
   async function uploadFGDoc(file, docLabel, jobCardNum) {
+    if (!file) return ""; // Inspection Clearance is optional — skip cleanly if not attached.
     const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(file); });
     const fileName = docLabel + " " + jobCardNum;
     const upData = await apFetch({ action: "uploadProductionJobCardDocument", projectId, customerName, boqId: document.getElementById("fg-add-item-code").value.trim() || "", jobCardNumber: jobCardNum, docLabel, fileName, file: { fileName: fileName + "." + (file.name.split(".").pop() || "pdf"), base64Data: b64, mimeType: file.type || "application/octet-stream" } });
@@ -15527,7 +15526,7 @@ function pdRenderDashboard(data) {
           <td style="padding:4px 5px; font-weight:600;">${item.matName}</td>
           <td style="padding:4px 5px; font-family:monospace; font-size:0.68rem;">${item.itemCode}</td>
           <td style="padding:4px 5px; text-align:center; font-size:0.68rem;">${item.prnCount} PRN${item.prnCount>1?"s":""}</td>
-          <td style="padding:4px 5px; text-align:right; font-weight:700;">${item.stillToOrder}</td>
+          <td style="padding:4px 5px; text-align:right; font-weight:700;">${(Math.round((item.stillToOrder || 0) * 100) / 100).toFixed(2)}</td>
           <td style="padding:4px 5px; text-align:center;"><span style="font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:8px; background:${ageBg}; color:${ageColor};">${item.maxAge}d</span></td>
         </tr>`;
       }).join("");
