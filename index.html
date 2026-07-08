@@ -2167,7 +2167,7 @@
           </div>
           <label class="field-label">Address</label><textarea id="f-address" style="min-height:28px;"></textarea>
           
-          <button class="btn btn-sub" id="gate-search-btn" onclick="triggerSequentialSearch('CARD')" style="margin-top:6px;">Search Database</button>
+          <button class="btn btn-sub" id="gate-search-btn" onclick="triggerSequentialSearch('CARD')" style="margin-top:6px;">Search Marketing Database</button>
         </div>
       </div>
     </div>
@@ -2511,34 +2511,29 @@
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; display:flex; flex-direction:column; gap:6px;">
               <label class="field-label" style="margin:0;">Low Power Factor Issue</label>
-              <select id="sel-lpi" onchange="toggleDropdownNo(this, 'lpi')"><option value="">— Select —</option><option value="No">No</option><option value="Yes">Yes</option></select>
-              <input type="text" id="lpi" value="" />
+              <input type="text" id="lpi" value="" placeholder="Describe the issue, if any" />
             </div>
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; display:flex; flex-direction:column; gap:6px;">
               <label class="field-label" style="margin:0;">High Electricity Bill Issue</label>
-              <select id="sel-hbi" onchange="toggleDropdownNo(this, 'hbi')"><option value="">— Select —</option><option value="No">No</option><option value="Yes">Yes</option></select>
-              <input type="text" id="hbi" value="" />
+              <input type="text" id="hbi" value="" placeholder="Describe the issue, if any" />
             </div>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; display:flex; flex-direction:column; gap:6px;">
               <label class="field-label" style="margin:0;">Harmonics Issue</label>
-              <select id="sel-hi" onchange="toggleDropdownNo(this, 'hi')"><option value="">— Select —</option><option value="No">No</option><option value="Yes">Yes</option></select>
-              <input type="text" id="hi" value="" />
+              <input type="text" id="hi" value="" placeholder="Describe the issue, if any" />
             </div>
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; display:flex; flex-direction:column; gap:6px;">
               <label class="field-label" style="margin:0;">Transformer Heating / Breakdown Issue</label>
-              <select id="sel-thi" onchange="toggleDropdownNo(this, 'thi')"><option value="">— Select —</option><option value="No">No</option><option value="Yes">Yes</option></select>
-              <input type="text" id="thi" value="" />
+              <input type="text" id="thi" value="" placeholder="Describe the issue, if any" />
             </div>
           </div>
 
           <div style="margin-bottom: 12px;">
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; display:flex; flex-direction:column; gap:6px;">
               <label class="field-label" style="margin:0;">Grid Stability Issue</label>
-              <select id="sel-gsi" onchange="toggleDropdownNo(this, 'gsi')"><option value="">— Select —</option><option value="No">No</option><option value="Yes">Yes</option></select>
-              <input type="text" id="gsi" value="" />
+              <input type="text" id="gsi" value="" placeholder="Describe the issue, if any" />
             </div>
           </div>
 
@@ -3537,7 +3532,11 @@ async function showAppView() {
           opt.value = eng; opt.textContent = eng;
           targetFormEngSelector.appendChild(opt);
         });
-        if (appActiveOperatorIdentityString) targetFormEngSelector.value = appActiveOperatorIdentityString;
+        // Only auto-select the current operator if their name is an exact match in the list —
+        // otherwise leave the placeholder showing instead of a blank selection.
+        if (appActiveOperatorIdentityString && cachedEngineers.indexOf(appActiveOperatorIdentityString) !== -1) {
+          targetFormEngSelector.value = appActiveOperatorIdentityString;
+        }
       }
       
       // 2. SEARCH BY ENGINEER FILTER DROPDOWN
@@ -3949,7 +3948,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
         if (!data.nameMatchFound) {
           bannerHook.innerHTML = `
             <div class="system-runtime-inline-alert-callout">
-              <span class="alert-callout-text-msg">We have information on the following people from this ${activeSearchCompany}, but not for this ${targetName ? targetName.toString().trim() : "specific person"}.</span>
+              <span class="alert-callout-text-msg">We have information on the following people from this ${activeSearchCompany}, but not for ${targetName ? targetName.toString().trim() : "specific person"}.</span>
               <button class="nav-btn-styled" style="background:#dd6b20;" onclick="revealNewEntryFormDropdownFromBanner()">Create New Entry</button>
             </div>
           `;
@@ -3996,7 +3995,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
   } finally { 
     if (btn) {
       btn.disabled = false; 
-      btn.innerHTML = triggerSourceMode === "CARD" ? "Search Database" : "Search Company"; 
+      btn.innerHTML = triggerSourceMode === "CARD" ? "Search Marketing Database" : "Search Company"; 
     }
   }
 }
@@ -4417,7 +4416,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
       
       // --- 3. PROJECT MONITOR TIMELINE TRACKERS ---
       else if (key === "Expected Tender / RFQ Date") {
-        label.textContent = "Tender Timeline Tracker";
+        label.style.display = "none";
         cell.style.gridColumn = "span 1";
         let wrapper = document.createElement("div"); wrapper.style.cssText = "display: flex; flex-direction: column; gap: 6px;";
         let rawDate = leadMap["Expected Tender / RFQ Date"];
@@ -4432,7 +4431,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
       } 
       
       else if (key === "Existing Project") {
-        label.textContent = "Project Opportunities";
+        label.style.display = "none";
         let wrapper = document.createElement("div"); wrapper.style.cssText = "display: flex; flex-direction: column; gap: 6px;";
         wrapper.innerHTML = `
           <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Existing Project</span><input type="text" class="live-lead-field-input-${leadRef}" data-header-key="Existing Project" value="${leadMap["Existing Project"] || ""}"></div>
@@ -4477,7 +4476,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
 
       // --- 7. VENDOR SELECTION AND CONDITIONAL CONTENT LOOPS ---
       else if (key === "Type of Vendor") {
-        label.textContent = "Vendor Specifications Block";
+        label.textContent = "Vendor Specifications";
         let mainWrapper = document.createElement("div"); mainWrapper.style.cssText = "display: flex; flex-direction: column; gap: 4px;";
         let currentValues = (leadMap[key] || "").toString().split(",").map(v => v.trim());
         
@@ -5093,6 +5092,7 @@ async function submitLead() {
 
   btn.disabled = true; 
   btn.innerHTML = '<div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div> Saving Lead...';
+  showBlockingOverlay("Saving Lead...");
   
   const meetingDate = document.getElementById('meetingDate').value;
   const meetingTime = document.getElementById('meetingTime').value;
@@ -5147,11 +5147,11 @@ async function submitLead() {
       "Type of Customer": qualFinal, 
       vendorType: vtFinal,
       "Name of Materials Supplied": document.getElementById('materialsName').value, 
-      lpi: document.getElementById("sel-lpi").value === "Yes" ? document.getElementById("lpi").value : "", 
-      hbi: document.getElementById("sel-hbi").value === "Yes" ? document.getElementById("hbi").value : "", 
-      hi: document.getElementById("sel-hi").value === "Yes" ? document.getElementById("hi").value : "", 
-      thi: document.getElementById("sel-thi").value === "Yes" ? document.getElementById("thi").value : "", 
-      gsi: document.getElementById("sel-gsi").value === "Yes" ? document.getElementById("gsi").value : "",
+      lpi: document.getElementById("lpi").value.trim(), 
+      hbi: document.getElementById("hbi").value.trim(), 
+      hi: document.getElementById("hi").value.trim(), 
+      thi: document.getElementById("thi").value.trim(), 
+      gsi: document.getElementById("gsi").value.trim(),
       purchaseInquire: document.getElementById('purchaseInquire').value.trim(),
       tenderInquire: document.getElementById('tenderInquire').value.trim(),
       esd: document.getElementById('esd').value.trim(),
@@ -5207,8 +5207,8 @@ async function submitLead() {
         feedbackBanner.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div>
-              <strong style="font-size: 1rem;">Success! Record Created.</strong><br/>
-              <span style="font-size: 0.88rem; font-weight: 600;">Assigned Reference Tracking ID: 
+              <strong style="font-size: 1rem;">Success! Lead Record Created for ${fields["Company Name"] || companyVal}.</strong><br/>
+              <span style="font-size: 0.88rem; font-weight: 600;">Assigned LEAD ID: 
                 <br/><span style="font-family: monospace; font-weight: 800; background: #fff; padding: 4px 10px; border-radius: 4px; border: 1px solid #15803d; color: #111827; display: inline-block; margin-top: 6px;">${d.leadRef}</span>
               </span>
             </div>
@@ -5282,6 +5282,10 @@ async function submitLead() {
                 topFreshCardNode.style.cssText = "border: 2.5px solid var(--accent) !important; box-shadow: 0 4px 12px rgba(0, 168, 120, 0.15) !important;";
               }
             }
+            // The contact just submitted now exists — clear the stale "missing person" banner
+            // left over from before this lead was created.
+            const bannerHookRefresh = document.getElementById("split-missing-person-banner-hook");
+            if (bannerHookRefresh) bannerHookRefresh.innerHTML = "";
           }
           await triggerCompanyDropdownArrayFetch();
         }
@@ -5300,6 +5304,7 @@ async function submitLead() {
   } finally { 
     btn.disabled = false; 
     btn.innerHTML = 'Submit Lead'; 
+    hideBlockingOverlay();
   }
 }
 
