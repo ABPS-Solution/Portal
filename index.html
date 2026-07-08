@@ -56,6 +56,14 @@
   
   /* --- DASHBOARD WRAPPER RESPONSIVE GRID FRAMES --- */
   .dashboard-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+  @media(max-width:640px) {
+    .dashboard-grid { grid-template-columns: repeat(2,1fr); gap: 8px; }
+    .menu-card { height: auto; min-height: 64px; padding: 10px 8px; }
+    .menu-card .mc-label { font-size: 0.82rem; line-height: 1.25; }
+  }
+  @media(max-width:400px) {
+    .dashboard-grid { grid-template-columns: 1fr; }
+  }
   .menu-card { background: var(--card); border: 1.5px solid var(--border); padding: 0 14px; border-radius: 7px; cursor: pointer; font-weight: 700; font-size: 0.88rem; height: 64px; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 1px 2px rgba(0,0,0,0.04); transition:box-shadow 0.15s, border-color 0.15s; position:relative; overflow:hidden; }
   .menu-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--dept-accent, var(--brand)); border-radius:7px 7px 0 0; }
   .menu-card:hover { box-shadow:0 3px 10px rgba(0,0,0,0.1); border-color:var(--dept-accent, var(--brand)); }
@@ -74,7 +82,7 @@
   /* --- WORKSPACE BLOCK WRAPPERS --- */
   .workspace-panel { padding: 4px 10px; min-width: 0; max-width: 100%; box-sizing: border-box; }
   .section { background: var(--card); border-radius: var(--radius); margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); overflow: hidden; }
-  .section-header { background: transparent; color: var(--brand); padding: 0 0 6px 0; margin-bottom: 8px; font-size: .85rem; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid var(--border); }
+  .section-header { background: none; color: var(--text); padding: 0; margin: 0 0 16px 0; font-size: 1.3rem; font-weight: 700; text-transform: none; border: none; }
   .section-body { padding: 10px; }
 
   /* --- DYNAMIC DIVISION LABELS & DEPARTMENT SIDEBAR NAVIGATION --- */
@@ -2527,29 +2535,29 @@
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; display:flex; flex-direction:column; gap:6px;">
               <label class="field-label" style="margin:0;">Low Power Factor Issue</label>
-              <input type="text" id="lpi" value="" placeholder="Describe the issue, if any" />
+              <input type="text" id="lpi" value="" placeholder="Describe, if any" />
             </div>
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; display:flex; flex-direction:column; gap:6px;">
               <label class="field-label" style="margin:0;">High Electricity Bill Issue</label>
-              <input type="text" id="hbi" value="" placeholder="Describe the issue, if any" />
+              <input type="text" id="hbi" value="" placeholder="Describe, if any" />
             </div>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; display:flex; flex-direction:column; gap:6px;">
               <label class="field-label" style="margin:0;">Harmonics Issue</label>
-              <input type="text" id="hi" value="" placeholder="Describe the issue, if any" />
+              <input type="text" id="hi" value="" placeholder="Describe, if any" />
             </div>
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; display:flex; flex-direction:column; gap:6px;">
               <label class="field-label" style="margin:0;">Transformer Heating / Breakdown Issue</label>
-              <input type="text" id="thi" value="" placeholder="Describe the issue, if any" />
+              <input type="text" id="thi" value="" placeholder="Describe, if any" />
             </div>
           </div>
 
           <div style="margin-bottom: 12px;">
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; display:flex; flex-direction:column; gap:6px;">
               <label class="field-label" style="margin:0;">Grid Stability Issue</label>
-              <input type="text" id="gsi" value="" placeholder="Describe the issue, if any" />
+              <input type="text" id="gsi" value="" placeholder="Describe, if any" />
             </div>
           </div>
 
@@ -4484,7 +4492,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         let inp = document.createElement("input"); inp.type = "text";
         inp.className = 'live-lead-field-input-' + leadRef; inp.dataset.headerKey = key;
         inp.value = leadMap[key] || "";
-        inp.placeholder = "Describe the issue, if any";
+        inp.placeholder = "Describe, if any";
         cell.appendChild(inp);
       }
 
