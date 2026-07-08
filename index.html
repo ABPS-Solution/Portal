@@ -364,6 +364,7 @@
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-store-ticket" onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Store Ticket</span></div>
+        <div class="menu-card" id="mod-dispatched-product-code" onclick="switchActiveDashboardModule('dispatched-product-code')"><span class="mc-label">Add / Check Dispatched Product Code Number</span></div>
         <div class="menu-card" id="mod-fg-add" onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
       </div>
     </div>
@@ -1295,6 +1296,14 @@
         </div>
 
         <div style="margin-bottom:14px;">
+          <label class="field-label" style="margin-top:0;">Rating (optional)</label>
+          <input type="text" id="itemcode-new-rating" 
+            style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius);"
+            placeholder="e.g. 300 kVAr, 11 kV, 3 Ph, 50 Hz — leave blank if not applicable" />
+          <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Wherever this Item Code is looked up going forward, the displayed name will be Material Name + Rating combined. Leave blank for materials with no rating (e.g. Aluminium Round Conductor 2.5mm).</div>
+        </div>
+
+        <div style="margin-bottom:14px;">
           <label class="field-label" style="margin-top:0;">Unit *</label>
           <select id="itemcode-new-unit" style="padding:10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
             <option value="">— Select Unit —</option>
@@ -1313,6 +1322,100 @@
           <button id="itemcode-create-submit-btn" onclick="submitNewItemCodeNumber()" 
             style="background:var(--accent); color:#fff; border:none; padding:8px 20px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">
             Create Item Code
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="canvas-module-dispatched-product-code" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="margin-bottom:6px; color:var(--brand);">Add / Check Dispatched Product Code Number</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:20px;">Search the catalog to find an existing Dispatched Product Code, or create a new one if the product doesn't exist. These are final products dispatched to a customer — they don't carry an Item Code and are never requested as material by another Job Card.</p>
+      
+      <div id="dispatchcode-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <!-- SEARCH ZONE -->
+      <div id="dispatchcode-search-zone-wrapper" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+        <label class="field-label" style="margin-top:0; color:var(--brand);">Search Product Name *</label>
+        <div style="display:flex; gap:10px; align-items:flex-end; margin-top:4px;">
+          <div style="flex-grow:1;">
+            <input type="text" id="dispatchcode-search-input" placeholder="e.g. 33kV Aluminium Reactor, Filter Reactor..." 
+              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius);"
+              onkeydown="if(event.key==='Enter') executeDispatchCodeSearch()" />
+          </div>
+          <button class="nav-btn-styled" id="dispatchcode-search-btn" onclick="executeDispatchCodeSearch()" 
+            style="padding:10px 24px; font-weight:700; background:var(--brand);">Search</button>
+        </div>
+      </div>
+
+      <!-- SEARCH RESULTS ZONE -->
+      <div id="dispatchcode-search-results-zone" style="display:none; margin-bottom:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">
+          Did you mean one of these?
+        </div>
+        <div id="dispatchcode-suggestions-mount" style="display:flex; flex-direction:column; gap:8px;"></div>
+        
+        <div id="dispatchcode-none-match-banner" style="margin-top:14px; padding:10px 14px; background:#fffbeb; border:1px solid #f59e0b; border-radius:var(--radius); font-size:0.82rem; color:#92400e; font-weight:600;">
+          None of these match your product? 
+          <button onclick="revealDispatchCodeCreateForm()" 
+            style="background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; font-size:0.78rem; font-weight:700; cursor:pointer; margin-left:8px;">
+            Create New Dispatched Product Code
+          </button>
+        </div>
+      </div>
+
+      <!-- NO RESULTS ZONE -->
+      <div id="dispatchcode-no-results-zone" style="display:none; margin-bottom:16px; padding:14px; background:#fff5f5; border:1px solid #fca5a5; border-radius:var(--radius); font-size:0.85rem; color:#b91c1c; font-weight:600;">
+        No similar products found in the catalog.
+        <button id="dispatchcode-no-results-create-btn" onclick="revealDispatchCodeCreateForm()" 
+          style="background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; font-size:0.78rem; font-weight:700; cursor:pointer; margin-left:10px;">
+          Create New Dispatched Product Code
+        </button>
+      </div>
+
+      <!-- CREATE NEW FORM -->
+      <div id="dispatchcode-create-form-zone" style="display:none; background:#f0fdf4; border:2px solid var(--accent); border-radius:var(--radius); padding:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--accent); margin-bottom:14px; letter-spacing:0.5px;">Create New Dispatched Product Code</div>
+        
+        <div style="margin-bottom:14px;">
+          <label class="field-label" style="margin-top:0;">Dispatched Product Code Number (Auto-assigned)</label>
+          <input type="text" id="dispatchcode-new-code" readonly 
+            style="padding:10px; font-family:monospace; font-size:1rem; font-weight:800; color:var(--brand); background:#e0f2fe; border:1.5px solid var(--brand); border-radius:var(--radius); cursor:not-allowed;" />
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label class="field-label" style="margin-top:0;">Product Name *</label>
+          <input type="text" id="dispatchcode-new-name" 
+            style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius);"
+            placeholder="Enter the full standard product name..." />
+          <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Use the full descriptive name as it should appear in your catalog. This cannot be changed later without admin access.</div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label class="field-label" style="margin-top:0;">Rating (optional)</label>
+          <input type="text" id="dispatchcode-new-rating" 
+            style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius);"
+            placeholder="e.g. 300 kVAr, 11 kV, 3 Ph, 50 Hz — leave blank if not applicable" />
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label class="field-label" style="margin-top:0;">Unit *</label>
+          <select id="dispatchcode-new-unit" style="padding:10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <option value="">— Select Unit —</option>
+            <option value="NOS">NOS (Numbers)</option>
+            <option value="KG"> KG (Kilograms)</option>
+            <option value="MTR">MTR (Metres)</option>
+            <option value="SET">SET (Sets)</option>
+            <option value="LTR">LTR (Litres)</option>
+            <option value="ROL">ROL (Rolls)</option>
+          </select>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #86efac; padding-top:14px;">
+          <button onclick="document.getElementById('dispatchcode-create-form-zone').style.display='none';" 
+            style="background:#718096; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">Cancel</button>
+          <button id="dispatchcode-create-submit-btn" onclick="submitNewDispatchedProductCode()" 
+            style="background:var(--accent); color:#fff; border:none; padding:8px 20px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">
+            Create Dispatched Product Code
           </button>
         </div>
       </div>
@@ -2627,7 +2730,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyu8BgVeUvhssp-3daVV3kYzBOtjRRscBJrSDHPdjN4Ncc3l3yifNdqQADn_u8bFjmO/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycby927eRsWQA9SrDAsEUZbYLrhuWH_yb4UmP42QzfnOXOf7cDcwZ3m66KWtT6XLApBig/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -6257,6 +6360,9 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-design-itemcode")) {
     document.getElementById("mod-design-itemcode").style.display = canSeeItemCode ? "block" : "none";
   }
+  if (document.getElementById("mod-dispatched-product-code")) {
+    document.getElementById("mod-dispatched-product-code").style.display = userPermissionsObject.dispatchCodeAccess === true ? "block" : "none";
+  }
 
   // Design block visibility
   const designHeaderBlock = document.getElementById("dashboard-design-department-header-block");
@@ -7449,6 +7555,8 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     navigateToStoreWorkspacePanel('store-history-matrix');
   } else if (targetCanvasModuleId === 'design-itemcode') {
     navigateToDesignWorkspacePanel('design-itemcode');
+  } else if (targetCanvasModuleId === 'dispatched-product-code') {
+    navigateToDesignWorkspacePanel('dispatched-product-code');
   } else if (targetCanvasModuleId === 'design-create-boq') {
     navigateToDesignWorkspacePanel('design-create-boq');
   } else if (targetCanvasModuleId === 'design-auth-boq') {
@@ -7720,7 +7828,12 @@ async function initializeStoreManagerApprovalsWorkspace() {
 
 function buildStoreScopeOptionsHtml_(placeholderText) {
   const isReturnMode = (document.getElementById("ticket-action-type-toggle-dropdown")?.value || "") === "Return Material";
-  let html = `<option value="">${placeholderText}</option><option value="Raw Materials Store">Raw Materials Store</option><option value="Finished Goods Store">Finished Goods Store</option><option value="Spare Store">Spare Store</option>`;
+  // Finished Goods Store has no Return concept — a dispatched/consumed FG unit doesn't come
+  // back through this flow — so it's excluded entirely in Return mode.
+  let html = `<option value="">${placeholderText}</option><option value="Raw Materials Store">Raw Materials Store</option><option value="Spare Store">Spare Store</option>`;
+  if (!isReturnMode) {
+    html += `<option value="Finished Goods Store">Finished Goods Store</option>`;
+  }
   if (isReturnMode) {
     html += `<option value="Spare -> Raw Material">Spare → Raw Material (Transfer)</option>`;
   }
@@ -9918,7 +10031,8 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
     "canvas-module-design-auth-boq",
     "canvas-module-design-update-boq",
     "canvas-module-design-auth-boq-upd",
-    "canvas-module-design-upload-drawings"
+    "canvas-module-design-upload-drawings",
+    "canvas-module-dispatched-product-code"
   ];
   allDesignCanvases.forEach(id => {
     const el = document.getElementById(id);
@@ -9955,6 +10069,16 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
       document.getElementById("itemcode-no-results-zone").style.display       = "none";
       document.getElementById("itemcode-create-form-zone").style.display      = "none";
       document.getElementById("itemcode-feedback-banner").style.display       = "none";
+    }
+  } else if (targetModuleId === 'dispatched-product-code') {
+    const dispatchCodeCanvas = document.getElementById("canvas-module-dispatched-product-code");
+    if (dispatchCodeCanvas) {
+      dispatchCodeCanvas.style.display = "block";
+      document.getElementById("dispatchcode-search-input").value = "";
+      document.getElementById("dispatchcode-search-results-zone").style.display   = "none";
+      document.getElementById("dispatchcode-no-results-zone").style.display       = "none";
+      document.getElementById("dispatchcode-create-form-zone").style.display      = "none";
+      document.getElementById("dispatchcode-feedback-banner").style.display       = "none";
     }
   } else if (targetModuleId === 'design-create-boq') {
     const el = document.getElementById("canvas-module-design-create-boq");
@@ -10014,6 +10138,17 @@ function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
   if (addZone)  addZone.style.opacity = "0.5";
 
   if (!chosenStoreValue) return;
+
+  // Finished Goods Store can only be requested/returned against Panel, Processing, or Service
+  // departments — if the currently-selected department isn't one of those, auto-correct it to
+  // Panel rather than leaving an invalid combination selected.
+  if (chosenStoreValue === "Finished Goods Store") {
+    const deptDropForFG = document.getElementById("ticket-department-outgoing-dropdown");
+    const validFGDepts = ["Panel", "Processing", "Service"];
+    if (deptDropForFG && !validFGDepts.includes(deptDropForFG.value)) {
+      deptDropForFG.value = "Panel";
+    }
+  }
 
   // Pre-load item catalog now that store scope is known
   loadItemCatalogForSelectedProjectAndStore();
@@ -10285,6 +10420,33 @@ async function loadItemCodeCatalogIntoCache(forceRefresh = false) {
   } catch(e) {
     console.error("ItemCode catalog load failed:", e);
     window.itemCodeCatalogCache = [];
+  }
+}
+
+async function loadDispatchCodeCatalogIntoCache(forceRefresh = false) {
+  const CACHE_TTL_MS = 5 * 60 * 1000;
+  const now = Date.now();
+  if (
+    !forceRefresh &&
+    window.dispatchCodeCatalogCache &&
+    window.dispatchCodeCatalogCache.length > 0 &&
+    window._dispatchCodeCacheLoadedAt &&
+    (now - window._dispatchCodeCacheLoadedAt) < CACHE_TTL_MS
+  ) {
+    return;
+  }
+  try {
+    const data = await apFetch({ action: "fetchDispatchCodeCatalog" });
+    if (data.success) {
+      window.dispatchCodeCatalogCache = data.catalog;
+      window._dispatchCodeCacheLoadedAt = Date.now();
+    } else {
+      console.error("DispatchCode catalog failed:", data.error);
+      window.dispatchCodeCatalogCache = [];
+    }
+  } catch(e) {
+    console.error("DispatchCode catalog load failed:", e);
+    window.dispatchCodeCatalogCache = [];
   }
 }
 
@@ -10621,6 +10783,7 @@ async function submitNewItemCodeNumber() {
   const banner     = document.getElementById("itemcode-feedback-banner");
   const itemCode   = document.getElementById("itemcode-new-code").value.trim();
   const materialName= document.getElementById("itemcode-new-name").value.trim();
+  const rating     = document.getElementById("itemcode-new-rating").value.trim();
   const typeOfMat  = document.getElementById("itemcode-new-type").value.trim();
   const unit       = document.getElementById("itemcode-new-unit").value.trim();
 
@@ -10640,6 +10803,7 @@ async function submitNewItemCodeNumber() {
       action: "createItemCodeNumber",
       itemCode,
       materialName,
+      rating,
       typeOfMaterial: typeOfMat,
       unit,
       createdBy: appActiveOperatorIdentityString
@@ -10658,7 +10822,7 @@ async function submitNewItemCodeNumber() {
         <strong style="font-size:0.95rem;">Item Code Created Successfully!</strong><br/>
         <div style="margin-top:8px; display:flex; gap:16px; flex-wrap:wrap;">
           <span>Code: <strong style="font-family:monospace; font-size:1rem; background:#fff; padding:2px 8px; border-radius:4px; border:1px solid #15803d;">${data.itemCode}</strong></span>
-          <span>Product: <strong>${data.productName}</strong></span>
+          <span>Product: <strong>${data.productName}${data.rating ? " " + data.rating : ""}</strong></span>
           <span>Type: <strong>${data.typeOfMaterial}</strong></span>
           <span>Unit: <strong>${data.unit}</strong></span>
         </div>
@@ -10690,6 +10854,215 @@ async function submitNewItemCodeNumber() {
   } finally {
     btn.disabled = false;
     btn.textContent = "Create Item Code";
+  }
+}
+
+async function executeDispatchCodeSearch() {
+  const query = document.getElementById("dispatchcode-search-input").value.trim();
+  const btn   = document.getElementById("dispatchcode-search-btn");
+  const resultsZone  = document.getElementById("dispatchcode-search-results-zone");
+  const noResultsZone= document.getElementById("dispatchcode-no-results-zone");
+  const suggestMount = document.getElementById("dispatchcode-suggestions-mount");
+  const createZone   = document.getElementById("dispatchcode-create-form-zone");
+  const banner       = document.getElementById("dispatchcode-feedback-banner");
+
+  if (!query) { alert("Please enter a product name to search."); return; }
+
+  resultsZone.style.display   = "none";
+  noResultsZone.style.display = "none";
+  createZone.style.display    = "none";
+  banner.style.display        = "none";
+  suggestMount.innerHTML      = "";
+
+  const nmBanner = document.getElementById("dispatchcode-none-match-banner");
+  const nrBtn    = document.getElementById("dispatchcode-no-results-create-btn");
+  if (nmBanner) nmBanner.style.display = "block";
+  if (nrBtn)    nrBtn.style.display    = "inline";
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Searching...';
+
+  try {
+    await loadDispatchCodeCatalogIntoCache();
+    const catalogToSearch = window.dispatchCodeCatalogCache || [];
+
+    const exactMatch = catalogToSearch.filter(item =>
+      (item.combinedName || "").toLowerCase().includes(query.toLowerCase())
+    );
+
+    const top30 = fuzzyPreFilterCatalog(query, catalogToSearch.map(c => ({ itemCode: c.dispatchCode, productName: c.combinedName, unit: c.unit })), 30);
+    const candidatesToUse = top30.length > 0 ? top30 : exactMatch.map(c => ({ itemCode: c.dispatchCode, productName: c.combinedName, unit: c.unit }));
+
+    if (candidatesToUse.length === 0) {
+      noResultsZone.style.display = "block";
+      return;
+    }
+
+    let finalMatches;
+    if (candidatesToUse.length <= 5) {
+      finalMatches = candidatesToUse.map(c => ({
+        dispatchCode: c.itemCode,
+        combinedName: c.productName,
+        confidence:   "high"
+      }));
+    } else {
+      const data = await apFetch({
+        action: "searchDispatchCodeSemantic",
+        query: query,
+        candidates: candidatesToUse.map(c => ({ dispatchCode: c.itemCode, combinedName: c.productName }))
+      });
+
+      if (!data.success || !data.matches || data.matches.length === 0) {
+        finalMatches = candidatesToUse.slice(0, 5).map(c => ({
+          dispatchCode: c.itemCode,
+          combinedName: c.productName,
+          confidence:   "medium"
+        }));
+      } else {
+        finalMatches = data.matches;
+      }
+    }
+
+    if (!finalMatches || finalMatches.length === 0) {
+      noResultsZone.style.display = "block";
+      return;
+    }
+
+    const confidenceColors = {
+      high:   { bg: "#dcfce7", color: "#15803d", label: "Strong Match" },
+      medium: { bg: "#fef3c7", color: "#b45309", label: "Possible Match" },
+      low:    { bg: "#f1f5f9", color: "#64748b", label: "Weak Match" }
+    };
+
+    const unitLookup = {};
+    catalogToSearch.forEach(c => { if (c.dispatchCode) unitLookup[c.dispatchCode.toString().trim().toUpperCase()] = c.unit || ""; });
+
+    finalMatches.forEach(match => {
+      const conf = confidenceColors[match.confidence] || confidenceColors.low;
+      const unit = unitLookup[(match.dispatchCode || "").toUpperCase()] || "";
+      const card = document.createElement("div");
+      card.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#fff; border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 16px; cursor:pointer; transition:all 0.15s ease;";
+      card.onmouseover = () => { card.style.borderColor = "var(--brand)"; card.style.background = "var(--highlight-bg)"; };
+      card.onmouseout  = () => { card.style.borderColor = "var(--border)";  card.style.background = "#fff"; };
+      card.innerHTML = `
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+            <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${match.dispatchCode}</span>
+            <span style="font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:${conf.bg}; color:${conf.color};">${conf.label}</span>
+          </div>
+          <div style="font-size:0.88rem; font-weight:600; color:var(--text); line-height:1.4;">${match.combinedName}</div>
+          <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">${unit ? `Unit: ${unit}` : ""}</div>
+        </div>
+      `;
+      suggestMount.appendChild(card);
+    });
+
+    resultsZone.style.display = "block";
+
+  } catch(e) {
+    banner.style.cssText = "display:block; background:#fee2e2; border-color:#b91c1c; color:#b91c1c; padding:10px; border-left:4px solid #b91c1c;";
+    banner.textContent = "Search failed: " + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Search";
+  }
+}
+
+async function revealDispatchCodeCreateForm() {
+  const createZone = document.getElementById("dispatchcode-create-form-zone");
+  const codeInput  = document.getElementById("dispatchcode-new-code");
+  const nameInput  = document.getElementById("dispatchcode-new-name");
+  const banner     = document.getElementById("dispatchcode-feedback-banner");
+
+  const noneMatchBanner = document.getElementById("dispatchcode-none-match-banner");
+  const noResultsBtn    = document.getElementById("dispatchcode-no-results-create-btn");
+  if (noneMatchBanner) noneMatchBanner.style.display = "none";
+  if (noResultsBtn)    noResultsBtn.style.display    = "none";
+
+  const query = document.getElementById("dispatchcode-search-input").value.trim();
+  nameInput.value  = query;
+  codeInput.value  = "Loading...";
+  banner.style.display = "none";
+
+  createZone.style.display = "block";
+  createZone.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+  try {
+    const data = await apFetch({ action: "getNextDispatchedProductCode" });
+    codeInput.value = data.success ? data.nextCode : "Error — refresh";
+  } catch(e) {
+    codeInput.value = "Error — refresh";
+  }
+}
+
+async function submitNewDispatchedProductCode() {
+  const btn         = document.getElementById("dispatchcode-create-submit-btn");
+  const banner      = document.getElementById("dispatchcode-feedback-banner");
+  const dispatchCode= document.getElementById("dispatchcode-new-code").value.trim();
+  const productName = document.getElementById("dispatchcode-new-name").value.trim();
+  const rating      = document.getElementById("dispatchcode-new-rating").value.trim();
+  const unit        = document.getElementById("dispatchcode-new-unit").value.trim();
+
+  if (!productName) { alert("Product Name is required."); return; }
+  if (!unit)         { alert("Unit is required."); return; }
+  if (!dispatchCode || dispatchCode === "Loading..." || dispatchCode === "Error — refresh") {
+    alert("Dispatched Product Code not loaded yet. Please wait or refresh.");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Creating...';
+
+  try {
+    const data = await apFetch({
+      action: "createDispatchedProductCode",
+      dispatchCode,
+      productName,
+      rating,
+      unit,
+      createdBy: appActiveOperatorIdentityString
+    });
+
+    if (data.success) {
+      document.getElementById("dispatchcode-create-form-zone").style.display  = "none";
+      document.getElementById("dispatchcode-search-results-zone").style.display = "none";
+      document.getElementById("dispatchcode-no-results-zone").style.display    = "none";
+      document.getElementById("dispatchcode-search-zone-wrapper").style.display = "none";
+
+      banner.style.cssText = "display:block; background:#dcfce7; border-color:#15803d; color:#15803d; padding:14px; border-left:4px solid #15803d; border-radius:var(--radius);";
+      banner.innerHTML = `
+        <strong style="font-size:0.95rem;">Dispatched Product Code Created Successfully!</strong><br/>
+        <div style="margin-top:8px; display:flex; gap:16px; flex-wrap:wrap;">
+          <span>Code: <strong style="font-family:monospace; font-size:1rem; background:#fff; padding:2px 8px; border-radius:4px; border:1px solid #15803d;">${data.dispatchCode}</strong></span>
+          <span>Product: <strong>${data.productName}${data.rating ? " " + data.rating : ""}</strong></span>
+          <span>Unit: <strong>${data.unit}</strong></span>
+        </div>
+        <button onclick="
+          document.getElementById('dispatchcode-feedback-banner').style.display='none';
+          document.getElementById('dispatchcode-search-input').value='';
+          document.getElementById('dispatchcode-search-results-zone').style.display='none';
+          document.getElementById('dispatchcode-no-results-zone').style.display='none';
+          document.getElementById('dispatchcode-create-form-zone').style.display='none';
+          document.getElementById('dispatchcode-search-zone-wrapper').style.display='block';
+          const nm = document.getElementById('dispatchcode-none-match-banner'); if(nm) nm.style.display='block';
+          const nb = document.getElementById('dispatchcode-no-results-create-btn'); if(nb) nb.style.display='inline';
+        " style="margin-top:10px; background:#15803d; color:#fff; border:none; padding:6px 14px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.8rem;">
+          + Search / Add Another Product
+        </button>
+      `;
+
+      await loadDispatchCodeCatalogIntoCache(true);
+      banner.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } else {
+      banner.style.cssText = "display:block; background:#fee2e2; border-color:#b91c1c; color:#b91c1c; padding:12px; border-left:4px solid #b91c1c; border-radius:var(--radius);";
+      banner.textContent = "Failed: " + data.error;
+    }
+  } catch(e) {
+    banner.style.cssText = "display:block; background:#fee2e2; border-color:#b91c1c; color:#b91c1c; padding:12px; border-left:4px solid #b91c1c; border-radius:var(--radius);";
+    banner.textContent = "Network error: " + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Create Dispatched Product Code";
   }
 }
 
