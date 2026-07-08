@@ -1296,20 +1296,21 @@
           </div>
         </div>
 
-        <div style="margin-bottom:14px;">
-          <label class="field-label" style="margin-top:0;">Material Name *</label>
-          <input type="text" id="itemcode-new-name" 
-            style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius);"
-            placeholder="Enter the full standard product name..." />
-          <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Use the full descriptive name as it should appear in your catalog. This cannot be changed later without admin access.</div>
-        </div>
-
-        <div style="margin-bottom:14px;">
-          <label class="field-label" style="margin-top:0;">Rating (optional)</label>
-          <input type="text" id="itemcode-new-rating" 
-            style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius);"
-            placeholder="e.g. 300 kVAr, 11 kV, 3 Ph, 50 Hz — leave blank if not applicable" />
-          <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Wherever this Item Code is looked up going forward, the displayed name will be Material Name + Rating combined. Leave blank for materials with no rating (e.g. Aluminium Round Conductor 2.5mm).</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+          <div>
+            <label class="field-label" style="margin-top:0;">Material Name *</label>
+            <input type="text" id="itemcode-new-name" 
+              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"
+              placeholder="Enter the full standard product name..." />
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Full descriptive name. Cannot be changed later without admin access.</div>
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Rating (optional)</label>
+            <input type="text" id="itemcode-new-rating" 
+              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"
+              placeholder="e.g. 300 kVAr, 11 kV, 3 Ph, 50 Hz" />
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Combined with Material Name wherever this code is looked up. Leave blank if not applicable.</div>
+          </div>
         </div>
 
         <div style="margin-bottom:14px;">
@@ -1391,19 +1392,20 @@
             style="padding:10px; font-family:monospace; font-size:1rem; font-weight:800; color:var(--brand); background:#e0f2fe; border:1.5px solid var(--brand); border-radius:var(--radius); cursor:not-allowed;" />
         </div>
 
-        <div style="margin-bottom:14px;">
-          <label class="field-label" style="margin-top:0;">Product Name *</label>
-          <input type="text" id="dispatchcode-new-name" 
-            style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius);"
-            placeholder="Enter the full standard product name..." />
-          <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Use the full descriptive name as it should appear in your catalog. This cannot be changed later without admin access.</div>
-        </div>
-
-        <div style="margin-bottom:14px;">
-          <label class="field-label" style="margin-top:0;">Rating (optional)</label>
-          <input type="text" id="dispatchcode-new-rating" 
-            style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius);"
-            placeholder="e.g. 300 kVAr, 11 kV, 3 Ph, 50 Hz — leave blank if not applicable" />
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+          <div>
+            <label class="field-label" style="margin-top:0;">Product Name *</label>
+            <input type="text" id="dispatchcode-new-name" 
+              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"
+              placeholder="Enter the full standard product name..." />
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Full descriptive name. Cannot be changed later without admin access.</div>
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Rating (optional)</label>
+            <input type="text" id="dispatchcode-new-rating" 
+              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"
+              placeholder="e.g. 300 kVAr, 11 kV, 3 Ph, 50 Hz" />
+          </div>
         </div>
 
         <div style="margin-bottom:14px;">
@@ -2739,7 +2741,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxD-MUetq7pqMuetWm8LBHdEMybdT_BX2iEIF8qML0q1xxCMddYFF_vubEZxXhIGfLf/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxLWO3-uLVSb2opiuhg-4wI_ZOn5GSPpRvpSHfduKfBsEYePu1m41TZZ2-oXQUo6OcP/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -10740,7 +10742,7 @@ async function executeItemCodeSearch() {
     if (candidatesToUse.length <= 5) {
       finalMatches = candidatesToUse.map(c => ({
         itemCode:       c.itemCode,
-        productName:    c.productName,
+        productName:    c.combinedName || c.productName,
         typeOfMaterial: c.typeOfMaterial,
         confidence:     "high"
       }));
@@ -10756,12 +10758,28 @@ async function executeItemCodeSearch() {
         // Gemini failed — fall back to showing direct matches
         finalMatches = candidatesToUse.slice(0, 5).map(c => ({
           itemCode:       c.itemCode,
-          productName:    c.productName,
+          productName:    c.combinedName || c.productName,
           typeOfMaterial: c.typeOfMaterial,
           confidence:     "medium"
         }));
       } else {
-        finalMatches = data.matches;
+        // Gemini only ever returns itemCode + confidence now (see backend fix) — map each
+        // match back to its exact combinedName + typeOfMaterial from the candidate list this
+        // client already built, rather than trusting any AI-echoed text.
+        const candidateByCode = {};
+        candidatesToUse.forEach(c => { candidateByCode[(c.itemCode || "").toUpperCase()] = c; });
+        finalMatches = data.matches
+          .map(m => {
+            const c = candidateByCode[(m.itemCode || "").toUpperCase()];
+            if (!c) return null;
+            return {
+              itemCode:       c.itemCode,
+              productName:    c.combinedName || c.productName,
+              typeOfMaterial: c.typeOfMaterial,
+              confidence:     m.confidence || "medium"
+            };
+          })
+          .filter(Boolean);
       }
     }
 
@@ -11154,6 +11172,8 @@ function handleSENameSearch(inputEl, gateNum, idx) {
   dropdown.style.width = rect.width + "px";
 
   if (query.length < 2) { dropdown.style.display = "none"; return; }
+  // Search matches the raw name (findable without knowing the rating), display/select the
+  // combined name — same convention as BOQ search and every other catalog consumer.
   const matches = catalog.filter(c => (c.productName || "").toLowerCase().includes(query)).slice(0, 10);
   if (matches.length === 0) {
     const createUrl = window.location.pathname + "?module=design-itemcode";
@@ -11164,10 +11184,10 @@ function handleSENameSearch(inputEl, gateNum, idx) {
     dropdown.style.display = "block"; return;
   }
   dropdown.innerHTML = matches.map(c => `
-    <div onclick="selectSENameMatch('${gateNum}', ${idx}, '${c.itemCode}', '${c.productName.replace(/'/g,"\\'")}', '${c.typeOfMaterial || ""}')"
+    <div onclick="selectSENameMatch('${gateNum}', ${idx}, '${c.itemCode}', '${(c.combinedName || c.productName).replace(/'/g,"\\'")}', '${c.typeOfMaterial || ""}')"
       style="padding:7px 10px; cursor:pointer; font-size:0.78rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
-      <span style="font-weight:600;">${c.productName}</span>
+      <span style="font-weight:600;">${c.combinedName || c.productName}</span>
       <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px;">${c.itemCode}</span>
     </div>`).join("");
   dropdown.style.display = "block";
@@ -11439,6 +11459,9 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
   }
 
   const q = query.toLowerCase();
+  // Search matches against the raw name (so typing just "Air Core Reactor" still finds it even
+  // without knowing the rating), but display and select the combined name — same convention as
+  // every other catalog consumer.
   const matches = catalog.filter(item => (item.productName || "").toLowerCase().includes(q)).slice(0, 10);
 
   if (matches.length === 0) {
@@ -11451,10 +11474,10 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
   }
 
   dropdown.innerHTML = matches.map(item => `
-    <div onclick="selectBOQRowMaterial(${rowIdx}, '${item.productName.replace(/'/g,"\\'")}', '${item.itemCode}', '${formPrefix}')"
+    <div onclick="selectBOQRowMaterial(${rowIdx}, '${(item.combinedName || item.productName).replace(/'/g,"\\'")}', '${item.itemCode}', '${formPrefix}')"
       style="padding:9px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; display:flex; align-items:center; gap:10px; background:#fff; transition:background 0.1s;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
-      <span style="font-weight:600; color:var(--text); flex:1;">${item.productName}</span>
+      <span style="font-weight:600; color:var(--text); flex:1;">${item.combinedName || item.productName}</span>
       <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px; white-space:nowrap; flex-shrink:0;">${item.typeOfMaterial}</span>
     </div>`).join("");
   dropdown.style.display = "block";
