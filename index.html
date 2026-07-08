@@ -82,8 +82,8 @@
   /* --- WORKSPACE BLOCK WRAPPERS --- */
   .workspace-panel { padding: 4px 10px; min-width: 0; max-width: 100%; box-sizing: border-box; }
   .section { background: var(--card); border-radius: var(--radius); margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); overflow: hidden; }
-  .section-header { background: none; color: var(--text); padding: 0; margin: 0 0 16px 0; font-size: 1.3rem; font-weight: 700; text-transform: none; border: none; }
-  .section-body { padding: 10px; }
+  .section-header { background: none; color: var(--text); padding: 18px 18px 0 18px; margin: 0 0 14px 0; font-size: 1.3rem; font-weight: 700; text-transform: none; border: none; }
+  .section-body { padding: 0 16px 16px 16px; }
 
   /* --- DYNAMIC DIVISION LABELS & DEPARTMENT SIDEBAR NAVIGATION --- */
   .nav-department-group-wrapper { padding: 6px 4px; }
@@ -178,7 +178,7 @@
   #missing-trigger-notice-block p { font-size: 0.78rem; font-weight: 700; color: #e53e3e; margin: 0 0 4px; }
 
   .card-row { display: flex; gap: 6px; margin-bottom: 4px; }
-  .card-box { flex: 1; border: 2px dashed var(--border); padding: 6px; text-align: center; font-size: .75rem; cursor: pointer; border-radius: 4px; }
+  .card-box { flex: 1; border: 2px dashed var(--border); padding: 20px 10px; text-align: center; font-size: .85rem; cursor: pointer; border-radius: 4px; min-height: 46px; display: flex; align-items: center; justify-content: center; }
   .card-box.done { border-color: var(--accent); color: var(--accent); font-weight: 700; }
 
   /* --- GATE ENTRY MOBILE RESPONSIVENESS (scoped to #canvas-module-store-gate-entry only) --- */
@@ -2176,14 +2176,18 @@
           <button class="btn btn-ai" id="parse-btn" onclick="parseCard()">Process Card with AI</button>
           
           <label class="field-label">Company Name *</label><input type="text" id="f-company" placeholder="Enter Company Name..." />
-          <label class="field-label">Contact Person Name</label><input type="text" id="f-name" />
-          <label class="field-label">Position</label><input type="text" id="f-position" />
+          <div class="card-details-grid-2">
+            <div><label class="field-label">Contact Person Name</label><input type="text" id="f-name" /></div>
+            <div><label class="field-label">Position</label><input type="text" id="f-position" /></div>
+          </div>
           <div class="card-details-grid-2">
             <div><label class="field-label">Phone</label><input type="tel" id="f-phone" /></div>
             <div><label class="field-label">Alt Phone</label><input type="tel" id="f-altphone" /></div>
           </div>
-          <label class="field-label">Email</label><input type="email" id="f-email" />
-          <label class="field-label">Website</label><input type="url" id="f-website" />
+          <div class="card-details-grid-2">
+            <div><label class="field-label">Email</label><input type="email" id="f-email" /></div>
+            <div><label class="field-label">Website</label><input type="url" id="f-website" /></div>
+          </div>
           <div class="card-details-grid-3">
             <div><label class="field-label">City *</label><input type="text" id="f-city" /></div>
             <div><label class="field-label">State *</label><input type="text" id="f-state" /></div>
@@ -2412,40 +2416,42 @@
             </select>
           </div>
 
-          <div style="margin-bottom: 12px;">
-            <label class="field-label">Company Name *</label>
-            <input type="text" id="dropform-company-locked" placeholder="Enter company name..." style="background: #ffffff; font-weight: 600;" />
-          </div>
+          <div id="dropform-duplicate-fields-block">
+            <div style="margin-bottom: 12px;">
+              <label class="field-label">Company Name *</label>
+              <input type="text" id="dropform-company-locked" placeholder="Enter company name..." style="background: #ffffff; font-weight: 600;" />
+            </div>
 
-          <div style="margin-bottom: 12px;">
-            <label class="field-label">Contact Person Name</label>
-            <input type="text" id="dropform-name" placeholder="Enter contact name..." />
-          </div>
+            <div style="margin-bottom: 12px;">
+              <label class="field-label">Contact Person Name</label>
+              <input type="text" id="dropform-name" placeholder="Enter contact name..." />
+            </div>
 
-          <div style="margin-bottom: 12px;">
-            <label class="field-label">Position</label>
-            <input type="text" id="dropform-position" placeholder="Enter job position..." />
-          </div>
+            <div style="margin-bottom: 12px;">
+              <label class="field-label">Position</label>
+              <input type="text" id="dropform-position" placeholder="Enter job position..." />
+            </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-            <div><label class="field-label">Phone</label><input type="tel" id="dropform-phone" /></div>
-            <div><label class="field-label">Alt Phone</label><input type="tel" id="dropform-altphone" /></div>
-          </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+              <div><label class="field-label">Phone</label><input type="tel" id="dropform-phone" /></div>
+              <div><label class="field-label">Alt Phone</label><input type="tel" id="dropform-altphone" /></div>
+            </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-            <div><label class="field-label">Email Address</label><input type="email" id="dropform-email" /></div>
-            <div><label class="field-label">Website</label><input type="url" id="dropform-website" /></div>
-          </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+              <div><label class="field-label">Email Address</label><input type="email" id="dropform-email" /></div>
+              <div><label class="field-label">Website</label><input type="url" id="dropform-website" /></div>
+            </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-            <div><label class="field-label">City *</label><input type="text" id="dropform-city" /></div>
-            <div><label class="field-label">State *</label><input type="text" id="dropform-state" /></div>
-            <div><label class="field-label">Country *</label><input type="text" id="dropform-country" placeholder="e.g. India" /></div>
-          </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+              <div><label class="field-label">City *</label><input type="text" id="dropform-city" /></div>
+              <div><label class="field-label">State *</label><input type="text" id="dropform-state" /></div>
+              <div><label class="field-label">Country *</label><input type="text" id="dropform-country" placeholder="e.g. India" /></div>
+            </div>
 
-          <div style="margin-bottom: 12px;">
-            <label class="field-label">Company Address</label>
-            <textarea id="dropform-address" style="min-height: 40px;"></textarea>
+            <div style="margin-bottom: 12px;">
+              <label class="field-label">Company Address</label>
+              <textarea id="dropform-address" style="min-height: 40px;"></textarea>
+            </div>
           </div>
 
           <div class="section-divider-line" style="margin: 15px 0; background: var(--border); height: 1px;"></div>
@@ -4031,6 +4037,12 @@ function revealNewEntryFormDropdown() {
   if (!dropdownEl) return;
   document.getElementById(container).appendChild(dropdownEl);
 
+  // These fields duplicate what's already entered in "Business Card Information" when
+  // arriving via CARD mode — hide them there. In DROPDOWN mode (Search Company) they're
+  // the only place to enter this data, so keep them visible.
+  const dupBlock = document.getElementById("dropform-duplicate-fields-block");
+  if (dupBlock) dupBlock.style.display = (currentActiveModuleContext === "CARD") ? "none" : "block";
+
   let companyName = "";
   let contactName = "";
   
@@ -4088,6 +4100,11 @@ function revealNewEntryFormDropdownFromBanner() {
   document.getElementById("step2-inline-interaction-canvas").style.display = "none";
   const parentId = (currentActiveModuleContext === "CARD") ? "workspace-cardDetails" : "workspace-searchCompany";
   document.getElementById(parentId).appendChild(dropdownEl);
+
+  // Same duplicate-field suppression as revealNewEntryFormDropdown() — this is the banner's
+  // "Create New Entry" path (your screenshot's exact scenario), same rule applies.
+  const dupBlockFromBanner = document.getElementById("dropform-duplicate-fields-block");
+  if (dupBlockFromBanner) dupBlockFromBanner.style.display = (currentActiveModuleContext === "CARD") ? "none" : "block";
   
   if (document.getElementById("dropform-company-locked")) {
     document.getElementById("dropform-company-locked").value = activeSearchCompany || "";
