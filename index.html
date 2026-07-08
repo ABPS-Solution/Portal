@@ -6446,7 +6446,17 @@ async function initializeMaterialRequestWorkspace() {
   const storeScopeDropdown = document.getElementById("ticket-selected-store-scope-toggle");
   
   if (!projectDropdown || !itemDropdown || !storeStaffDropdown || !deptDropdown) return;
-  
+
+  // Full session-state reset — without this, leaving and re-entering this section kept whatever
+  // Request/Return mode, FG catalog mode, and per-Job-Card caches were left over from the
+  // previous visit, instead of genuinely starting fresh like a first-time arrival.
+  const ticketTypeToggle = document.getElementById("ticket-action-type-toggle-dropdown");
+  if (ticketTypeToggle) ticketTypeToggle.value = "Request Material";
+  window._fgActiveCatalogMode = "item";
+  window._ticketJobCardMaterialsCache = null;
+  window._ticketBOQCache = null;
+  window.cachedSpareStoreStock = [];
+
   // Enforce pristine starting conditions across cascading lock states parameters
   projectDropdown.value = "";
   deptDropdown.value = ""; 
