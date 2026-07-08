@@ -74,7 +74,7 @@
   /* --- WORKSPACE BLOCK WRAPPERS --- */
   .workspace-panel { padding: 4px 10px; min-width: 0; max-width: 100%; box-sizing: border-box; }
   .section { background: var(--card); border-radius: var(--radius); margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); overflow: hidden; }
-  .section-header { background: var(--brand); color: #fff; padding: 5px 12px; font-size: .75rem; font-weight: 700; text-transform: uppercase; }
+  .section-header { background: transparent; color: var(--brand); padding: 0 0 6px 0; margin-bottom: 8px; font-size: .85rem; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid var(--border); }
   .section-body { padding: 10px; }
 
   /* --- DYNAMIC DIVISION LABELS & DEPARTMENT SIDEBAR NAVIGATION --- */
@@ -194,6 +194,22 @@
   }
   @media(max-width:400px) {
     .gate-meta-grid { grid-template-columns:1fr; }
+  }
+
+  .card-details-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .card-details-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+
+  @media(max-width:640px) {
+    #workspace-cardDetails .card-row { flex-direction:row; gap:8px; }
+    #workspace-cardDetails .card-box { min-height:48px !important; padding:10px 6px !important; font-size:0.75rem !important; line-height:1.2; display:flex; align-items:center; justify-content:center; }
+    #workspace-cardDetails .card-details-grid-3 { grid-template-columns:1fr; gap:6px; }
+    #workspace-cardDetails .card-details-grid-2 { grid-template-columns:1fr; gap:6px; }
+    #workspace-cardDetails input[type="text"],
+    #workspace-cardDetails input[type="tel"],
+    #workspace-cardDetails input[type="email"],
+    #workspace-cardDetails input[type="url"],
+    #workspace-cardDetails textarea { font-size:16px; padding:10px 8px; }
+    #workspace-cardDetails .btn { width:100%; padding:12px !important; font-size:0.95rem; }
   }
   
   .fup-item-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 4px; text-align: left; overflow: hidden; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
@@ -2154,13 +2170,13 @@
           <label class="field-label">Company Name *</label><input type="text" id="f-company" placeholder="Enter Company Name..." />
           <label class="field-label">Contact Person Name</label><input type="text" id="f-name" />
           <label class="field-label">Position</label><input type="text" id="f-position" />
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="card-details-grid-2">
             <div><label class="field-label">Phone</label><input type="tel" id="f-phone" /></div>
             <div><label class="field-label">Alt Phone</label><input type="tel" id="f-altphone" /></div>
           </div>
           <label class="field-label">Email</label><input type="email" id="f-email" />
           <label class="field-label">Website</label><input type="url" id="f-website" />
-          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+          <div class="card-details-grid-3">
             <div><label class="field-label">City *</label><input type="text" id="f-city" /></div>
             <div><label class="field-label">State *</label><input type="text" id="f-state" /></div>
             <div><label class="field-label">Country *</label><input type="text" id="f-country" /></div>
