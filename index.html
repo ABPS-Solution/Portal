@@ -174,8 +174,8 @@
   .alert-callout-text-msg { font-size: 0.8rem; font-weight: 700; color: #dd6b20; line-height: 1.3; }
 
   /* --- DEPRECATED NOTICE & MISC BOX INTERACTIVE LAYOUTS --- */
-  #missing-trigger-notice-block { padding: 6px; text-align: center; background: white; border-radius: var(--radius); border: 1px solid var(--warn); margin-bottom: 4px; }
-  #missing-trigger-notice-block p { font-size: 0.78rem; font-weight: 700; color: #e53e3e; margin: 0 0 4px; }
+  #missing-trigger-notice-block { padding: 20px 16px; text-align: center; background: #fef2f2; border-radius: var(--radius); border: 1px solid var(--warn); margin-bottom: 12px; }
+  #missing-trigger-notice-block p { font-size: 1rem; font-weight: 700; color: #e53e3e; margin: 0 0 14px; }
 
   .card-row { display: flex; gap: 6px; margin-bottom: 4px; }
   .card-box { flex: 1; border: 2px dashed var(--border); padding: 20px 10px; text-align: center; font-size: .85rem; cursor: pointer; border-radius: 4px; min-height: 46px; display: flex; align-items: center; justify-content: center; }
@@ -2385,12 +2385,12 @@
 
     <div id="missing-trigger-notice-block" style="display:none;">
       <p>No Record Matched Your Target Company Inputs.</p>
-      <button class="btn btn-sub" id="reveal-new-entry-btn" onclick="revealNewEntryFormDropdown()" style="width:auto; display:inline-flex; padding:4px 10px; font-size:0.75rem;">Create New Entry</button>
+      <button class="btn btn-sub" id="reveal-new-entry-btn" onclick="revealNewEntryFormDropdown()" style="width:auto; display:inline-flex; padding:10px 22px; font-size:0.92rem;">Create New Entry</button>
     </div>
 
     <div id="step2-new-entry-dropdown" style="display: none; padding: 0 4px; text-align: left;">
       <div class="section" style="background: var(--card); padding: 15px; border-radius: var(--radius); border: 1px solid var(--border);">
-        <div class="section-header" style="margin-bottom:10px;">Create New Lead Record Details</div>
+        <div class="section-header" style="padding:0; margin: 0 0 16px 0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Create New Lead Record Details</div>
         
         <div id="marketing-lead-creation-inline-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>    
         <div id="remaining-sections-form">
