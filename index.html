@@ -1842,7 +1842,7 @@
             <div class="dd-stat-val" id="pd2-s-activejcn">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Finished This Period</div>
+            <div class="dd-stat-label">Job Cards Finished</div>
             <div class="dd-stat-val" id="pd2-s-finished" style="color:#15803d;">—</div>
           </div>
           <div class="dd-stat-card">
@@ -1856,7 +1856,7 @@
             <div class="dd-stat-sub">live · all projects</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Projects Active</div>
+            <div class="dd-stat-label">Active Projects</div>
             <div class="dd-stat-val" id="pd2-s-unique-proj">—</div>
             <div class="dd-stat-sub">with active job cards</div>
           </div>
@@ -1910,7 +1910,7 @@
           <!-- In Progress Job Cards -->
           <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
-              <div class="dd-card-title" style="margin-bottom:0;">⚙️ In Progress Job Cards</div>
+              <div class="dd-card-title" style="margin-bottom:0;">In Progress Job Cards</div>
               <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                 <input id="pd2-jcn-search" type="text" placeholder="Search JCN / project..."
                   oninput="pd2FilterJCN()"
@@ -2627,7 +2627,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyrfhMpmXuNHFoToSlb7eCeVFmtPCV31R2TjJHONskeVHfzFRYN1HkisM472WFZbJkf/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyu8BgVeUvhssp-3daVV3kYzBOtjRRscBJrSDHPdjN4Ncc3l3yifNdqQADn_u8bFjmO/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -7713,10 +7713,20 @@ async function initializeStoreManagerApprovalsWorkspace() {
   }
 }
 
-/**
- * HANDLES FORM CONTENT TOGGLING
- * Synchronizes interface text lines matching chosen drop-down modes indicators
- */
+// Shared builder for the "Choose Store" dropdown's option list. The "Spare -> Raw Material"
+// transfer option only ever appears when the active ticket type is Return Material — it isn't
+// a real store to request FROM, it's a relocation of stock between two stores, and only makes
+// sense framed as a return-side action.
+
+function buildStoreScopeOptionsHtml_(placeholderText) {
+  const isReturnMode = (document.getElementById("ticket-action-type-toggle-dropdown")?.value || "") === "Return Material";
+  let html = `<option value="">${placeholderText}</option><option value="Raw Materials Store">Raw Materials Store</option><option value="Finished Goods Store">Finished Goods Store</option><option value="Spare Store">Spare Store</option>`;
+  if (isReturnMode) {
+    html += `<option value="Spare -> Raw Material">Spare → Raw Material (Transfer)</option>`;
+  }
+  return html;
+}
+
 function handleStoreTicketTypeInterfaceLayoutChange(chosenModeString) {
   const labelNode = document.getElementById("lbl-dynamic-operator-signature-title");
   const submitBtn = document.getElementById("submit-ticket-final-btn");
@@ -7733,6 +7743,15 @@ function handleStoreTicketTypeInterfaceLayoutChange(chosenModeString) {
   } else {
     labelNode.textContent = "Requested By *";
     if (submitBtn) submitBtn.textContent = "Generate Material Ticket";
+  }
+
+  // Rebuild the Store dropdown's option list immediately — switching back to Request Material
+  // must remove the Spare -> Raw Material option if it was showing, and switching to Return
+  // Material must add it back, even if the dropdown is currently locked/disabled at this stage.
+  const storeScopeDropNow = document.getElementById("ticket-selected-store-scope-toggle");
+  if (storeScopeDropNow) {
+    const currentPlaceholder = storeScopeDropNow.options[0] ? storeScopeDropNow.options[0].text : "— Choose Requested By First —";
+    storeScopeDropNow.innerHTML = buildStoreScopeOptionsHtml_(currentPlaceholder);
   }
 }
 
@@ -7979,30 +7998,39 @@ async function checkCoverageAndApprove(ticketId, projectId, btn) {
   btn.disabled = true;
   if (rejectBtn) rejectBtn.disabled = true;
   btn.innerHTML = `<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Checking stock...`;
+  // Show the blocking overlay from the very first click, not only once the coverage check
+  // resolves — closes the gap where the button spinner was visible but the full-screen
+  // overlay hadn't appeared yet.
+  showBlockingOverlay("Checking Stock Coverage...");
 
   try {
     const data = await apFetch({ action: "checkStockCoverageForTicket", ticketId });
 
     if (!data.success) {
+      hideBlockingOverlay();
       btn.disabled = false; if (rejectBtn) rejectBtn.disabled = false;
       btn.innerHTML = `<span>Approve & Release Items</span>`;
       return alert("Coverage check failed: " + data.error);
     }
 
     if (!data.hasShortfall) {
-      // No shortfall — go straight to standard approve
+      // No shortfall — go straight to standard approve. executeStoreManagerTicketActionDecision
+      // will immediately re-show the overlay with its own "Releasing Stock..." message, so this
+      // stays continuously visible rather than flickering off and back on.
       btn.disabled = false; if (rejectBtn) rejectBtn.disabled = false;
       btn.innerHTML = `<span>Approve & Release Items</span>`;
       executeStoreManagerTicketActionDecision(ticketId, "APPROVE");
       return;
     }
 
-    // Has shortfall — restore button and show modal
+    // Has shortfall — restore button and show modal instead of proceeding
+    hideBlockingOverlay();
     btn.disabled = false; if (rejectBtn) rejectBtn.disabled = false;
     btn.innerHTML = `<span>Approve & Release Items</span>`;
     showShortfallResolutionModal(ticketId, projectId, data.coverageReport);
 
   } catch(e) {
+    hideBlockingOverlay();
     btn.disabled = false; if (rejectBtn) rejectBtn.disabled = false;
     btn.innerHTML = `<span>Approve & Release Items</span>`;
     alert("Network error: " + e.message);
@@ -9588,7 +9616,7 @@ async function handleCreateTicketProjectChange(chosenProjectVal) {
   storeScopeDropdown.disabled = true;
   storeScopeDropdown.style.opacity = "0.5";
   storeScopeDropdown.style.cursor = "not-allowed";
-  storeScopeDropdown.innerHTML = '<option value="">— Choose Job Card First —</option><option value="Raw Materials Store">Raw Materials Store</option><option value="Finished Goods Store">Finished Goods Store</option><option value="Spare Store">Spare Store</option>';
+  storeScopeDropdown.innerHTML = buildStoreScopeOptionsHtml_("— Choose Job Card First —");
   if (storeScopeLabel) storeScopeLabel.style.color = "var(--muted)";
 
   if (!chosenProjectVal) {
@@ -10005,7 +10033,7 @@ function handleTicketJobCardChange(chosenJobCard) {
     storeScopeDrop.style.opacity = "0.5";
     storeScopeDrop.style.cursor = "not-allowed";
     storeScopeDrop.value = "";
-    storeScopeDrop.innerHTML = '<option value="">— Choose Requested By First —</option><option value="Raw Materials Store">Raw Materials Store</option><option value="Finished Goods Store">Finished Goods Store</option><option value="Spare Store">Spare Store</option>';
+    storeScopeDrop.innerHTML = buildStoreScopeOptionsHtml_("— Choose Requested By First —");
   }
   if (storeScopeLabel) storeScopeLabel.style.color = "var(--muted)";
 
