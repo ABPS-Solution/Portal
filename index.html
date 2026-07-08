@@ -364,7 +364,7 @@
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-store-ticket" onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Store Ticket</span></div>
-        <div class="menu-card" id="mod-dispatched-product-code" onclick="switchActiveDashboardModule('dispatched-product-code')"><span class="mc-label">Add / Check Dispatched Product Code Number</span></div>
+        <div class="menu-card" id="mod-dispatched-product-code" onclick="switchActiveDashboardModule('dispatched-product-code')"><span class="mc-label">Add / Check Dispatch Product Code Number</span></div>
         <div class="menu-card" id="mod-fg-add" onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
       </div>
     </div>
@@ -1328,8 +1328,8 @@
     </div>
 
     <div id="canvas-module-dispatched-product-code" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin-bottom:6px; color:var(--brand);">Add / Check Dispatched Product Code Number</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:20px;">Search the catalog to find an existing Dispatched Product Code, or create a new one if the product doesn't exist. These are final products dispatched to a customer — they don't carry an Item Code and are never requested as material by another Job Card.</p>
+      <h2 style="margin-bottom:6px; color:var(--brand);">Add / Check Dispatch Product Code Number</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:20px;">Search the catalog to find an existing Dispatch Product Code, or create a new one if the product doesn't exist. These are final products dispatched to a customer.</p>
       
       <div id="dispatchcode-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -1358,7 +1358,7 @@
           None of these match your product? 
           <button onclick="revealDispatchCodeCreateForm()" 
             style="background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; font-size:0.78rem; font-weight:700; cursor:pointer; margin-left:8px;">
-            Create New Dispatched Product Code
+            Create New Dispatch Product Code
           </button>
         </div>
       </div>
@@ -1368,16 +1368,16 @@
         No similar products found in the catalog.
         <button id="dispatchcode-no-results-create-btn" onclick="revealDispatchCodeCreateForm()" 
           style="background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; font-size:0.78rem; font-weight:700; cursor:pointer; margin-left:10px;">
-          Create New Dispatched Product Code
+          Create New Dispatch Product Code
         </button>
       </div>
 
       <!-- CREATE NEW FORM -->
       <div id="dispatchcode-create-form-zone" style="display:none; background:#f0fdf4; border:2px solid var(--accent); border-radius:var(--radius); padding:16px;">
-        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--accent); margin-bottom:14px; letter-spacing:0.5px;">Create New Dispatched Product Code</div>
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--accent); margin-bottom:14px; letter-spacing:0.5px;">Create New Dispatch Product Code</div>
         
         <div style="margin-bottom:14px;">
-          <label class="field-label" style="margin-top:0;">Dispatched Product Code Number (Auto-assigned)</label>
+          <label class="field-label" style="margin-top:0;">Dispatch Product Code Number (Auto-assigned)</label>
           <input type="text" id="dispatchcode-new-code" readonly 
             style="padding:10px; font-family:monospace; font-size:1rem; font-weight:800; color:var(--brand); background:#e0f2fe; border:1.5px solid var(--brand); border-radius:var(--radius); cursor:not-allowed;" />
         </div>
@@ -1415,7 +1415,7 @@
             style="background:#718096; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">Cancel</button>
           <button id="dispatchcode-create-submit-btn" onclick="submitNewDispatchedProductCode()" 
             style="background:var(--accent); color:#fff; border:none; padding:8px 20px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">
-            Create Dispatched Product Code
+            Create Dispatch Product Code
           </button>
         </div>
       </div>
@@ -2169,7 +2169,7 @@
         <div class="section-body" style="text-align: left; padding: 16px;">
           <div id="dispatch-bill-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
           <div id="dispatch-bill-inputs-container" style="display: block;">
-            <div class="card-box" id="dispatch-bill-upload-box" onclick="document.getElementById('dispatch-bill-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Dispatched Bill</div>
+            <div class="card-box" id="dispatch-bill-upload-box" onclick="document.getElementById('dispatch-bill-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Dispatch Bill</div>
             <input type="file" id="dispatch-bill-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'dispatch-bill-upload-box', 'Dispatch Bill Document Added ✅')" />
             <button class="nav-btn-styled" id="btn-ops-dispatch-submit" style="margin-top: 14px; width: 100%; padding: 10px;" onclick="executeMarketingOperationsDocumentCommit('DISPATCH')">Process Dispatch Bill with AI</button>
           </div>
@@ -2730,7 +2730,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycby927eRsWQA9SrDAsEUZbYLrhuWH_yb4UmP42QzfnOXOf7cDcwZ3m66KWtT6XLApBig/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwfvG2x6wgJqzGvA7kmv4xZFPKBpnm7-zUrEMtzfLaxlVuqHDLuypBlsSn5KPUZBbbH/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -10538,7 +10538,7 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
     ];
     const dispatchFields = [
       "Dispatch Bill Invoice Number", "Dispatch Bill Invoice Date", "Customer PO Number",
-      "Customer PO Date", "Basic Dispatched Bill Amount (in Rs)", "Dispatch Bill GST Amount",
+      "Customer PO Date", "Basic Dispatch Bill Amount (in Rs)", "Dispatch Bill GST Amount",
       "Total Dispatch Bill Amount"
     ];
     const commissionFields = [
@@ -11006,7 +11006,7 @@ async function submitNewDispatchedProductCode() {
   if (!productName) { alert("Product Name is required."); return; }
   if (!unit)         { alert("Unit is required."); return; }
   if (!dispatchCode || dispatchCode === "Loading..." || dispatchCode === "Error — refresh") {
-    alert("Dispatched Product Code not loaded yet. Please wait or refresh.");
+    alert("Dispatch Product Code not loaded yet. Please wait or refresh.");
     return;
   }
 
@@ -11031,7 +11031,7 @@ async function submitNewDispatchedProductCode() {
 
       banner.style.cssText = "display:block; background:#dcfce7; border-color:#15803d; color:#15803d; padding:14px; border-left:4px solid #15803d; border-radius:var(--radius);";
       banner.innerHTML = `
-        <strong style="font-size:0.95rem;">Dispatched Product Code Created Successfully!</strong><br/>
+        <strong style="font-size:0.95rem;">Dispatch Product Code Created Successfully!</strong><br/>
         <div style="margin-top:8px; display:flex; gap:16px; flex-wrap:wrap;">
           <span>Code: <strong style="font-family:monospace; font-size:1rem; background:#fff; padding:2px 8px; border-radius:4px; border:1px solid #15803d;">${data.dispatchCode}</strong></span>
           <span>Product: <strong>${data.productName}${data.rating ? " " + data.rating : ""}</strong></span>
@@ -11062,7 +11062,7 @@ async function submitNewDispatchedProductCode() {
     banner.textContent = "Network error: " + e.message;
   } finally {
     btn.disabled = false;
-    btn.textContent = "Create Dispatched Product Code";
+    btn.textContent = "Create Dispatch Product Code";
   }
 }
 
