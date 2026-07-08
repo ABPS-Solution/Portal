@@ -634,7 +634,16 @@
     </div>
 
     <div id="canvas-module-fg-add" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin-bottom:16px; color:var(--brand);">Add to Finished Goods Store</h2>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h2 style="margin:0; color:var(--brand);">Add to Finished Goods Store</h2>
+        <div>
+          <select id="fg-add-use-toggle" onchange="handleFGUseToggleChange(this.value)" style="border-color:var(--brand); font-weight:700; color:var(--brand); padding:6px;">
+            <option value="Use in other Product">Use in other Product</option>
+            <option value="Ready for Dispatch">Ready for Dispatch</option>
+            <option value="Keep in FG Store">Keep in FG Store</option>
+          </select>
+        </div>
+      </div>
       <div id="fg-add-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="fg-add-form">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
@@ -674,12 +683,12 @@
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
           <div>
-            <label class="field-label" style="margin-top:0;">Item Code Number</label>
+            <label class="field-label" style="margin-top:0;" id="fg-add-item-code-label">Item Code Number / Dispatch Product Code Number</label>
             <input type="text" id="fg-add-item-code" readonly style="padding:9px; background:#e0f2fe; color:var(--brand); font-family:monospace; font-weight:800; cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Product Name" />
           </div>
           <div>
             <label class="field-label" style="margin-top:0;">Product Rating</label>
-            <input type="text" id="fg-add-rating" disabled oninput="triggerFGBOQValidation()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" placeholder="e.g. 100KVAR 11KV" />
+            <input type="text" id="fg-add-rating" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Product Name (blank if this product has no rating)" />
           </div>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
@@ -2730,7 +2739,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwfvG2x6wgJqzGvA7kmv4xZFPKBpnm7-zUrEMtzfLaxlVuqHDLuypBlsSn5KPUZBbbH/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxD-MUetq7pqMuetWm8LBHdEMybdT_BX2iEIF8qML0q1xxCMddYFF_vubEZxXhIGfLf/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -6689,7 +6698,7 @@ async function refreshLiveStockForSelectedMaterial() {
     }
 
     // NOW fire the single network call for live stock counts
-    const data = await apFetch({ action: "getLiveStockForItem", materialName: cleanMaterialName });
+    const data = await apFetch({ action: "getLiveStockForItem", materialName: cleanMaterialName, projectId: projectId });
     if (!data.success) return;
 
     // Patch inventory counts in local cache
@@ -6747,30 +6756,82 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
 
   // --- FINISHED GOODS STORE: show FG item details ---
   if (activeStoreScope === "Finished Goods Store") {
-    const fgCache = window.cachedFinishedGoodsStoreStockCollection || {};
-    const allFGItems = [
-      ...(fgCache.reactor   || []),
-      ...(fgCache.capacitor || []),
-      ...(fgCache.panel     || [])
-    ];
-    const fgItem = allFGItems.find(i => {
-      const serial  = (i["Product Serial Number"] || "").toString().trim();
-      const details = (i["Product Details"]        || "").toString().trim();
-      return serial === selectedMaterial || details === selectedMaterial;
-    });
-    if (fgItem) {
-      const qty = parseInt(fgItem["Product Quantity"]) || 0;
-      const styleClass = qty === 0 ? "pill-stock-empty" : qty <= 2 ? "pill-stock-low" : "pill-stock-healthy";
+    const jobCardNumberValForPillFG = document.getElementById("ticket-job-card-dropdown")?.value || "";
+    const jcmCacheKeyForPillFG = jobCardNumberValForPillFG + "|" + projectId;
+
+    if (!window._ticketJobCardMaterialsCache || window._ticketJobCardMaterialsCache.key !== jcmCacheKeyForPillFG) {
+      counterZone.innerHTML = `<span style="font-size:0.75rem; color:var(--brand); font-weight:700;">🔄 Evaluating Real-Time Job Card Allocations...</span>`;
+    }
+
+    try {
+      if (!jobCardNumberValForPillFG) {
+        counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Select a Job Card Number first.</span>`;
+        return;
+      }
+
+      if (!window._ticketJobCardMaterialsCache || window._ticketJobCardMaterialsCache.key !== jcmCacheKeyForPillFG) {
+        const jcmFetchFGPill = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValForPillFG, projectId: projectId });
+        window._ticketJobCardMaterialsCache = { key: jcmCacheKeyForPillFG, records: jcmFetchFGPill.records || [] };
+      }
+      let jcmCacheDataFG = window._ticketJobCardMaterialsCache;
+
+      const cleanSearchKeyFG = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim().replace(/\s+/g, '').toLowerCase();
+
+      function findJcmMatchForPillFG_(recs) {
+        return (recs || []).find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKeyFG)
+          || (recs || []).find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase().includes(cleanSearchKeyFG.substring(0, 20)))
+          || (recs || []).find(r => cleanSearchKeyFG.includes((r.materialName || "").replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+      }
+
+      let jcmMatchFG = findJcmMatchForPillFG_(jcmCacheDataFG.records);
+
+      if (!jcmMatchFG) {
+        try {
+          const freshJcmDataFG = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValForPillFG, projectId: projectId });
+          window._ticketJobCardMaterialsCache = { key: jcmCacheKeyForPillFG, records: freshJcmDataFG.records || [] };
+          jcmCacheDataFG = window._ticketJobCardMaterialsCache;
+          jcmMatchFG = findJcmMatchForPillFG_(jcmCacheDataFG.records);
+        } catch(refreshErrFG) {
+          console.error("JobCardMaterials cache self-heal refetch failed (FG):", refreshErrFG);
+        }
+      }
+
+      if (!jcmMatchFG) {
+        counterZone.innerHTML = `
+          <div style="margin:8px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text);">
+            <span style="font-size:0.75rem; color:var(--warn);">⚠️ No allotment for this Job Card</span>
+          </div>`;
+        return;
+      }
+
+      // Physical "In Stock" count comes ONLY from liveStockOverride (getLiveStockForItem, a
+      // fresh sheet read fired every time a material is selected) — no client-side cache. On the
+      // fast first pass (liveStockOverride is null, JCM allotment still renders immediately) the
+      // count shows a loading placeholder until the live fetch resolves and re-renders this pill.
+      const unitTokenFG = jcmMatchFG.unitType || "NOS";
+      const hasLiveFGCount = !!liveStockOverride;
+      const inStockCount = hasLiveFGCount ? (liveStockOverride.fgInStockCount || 0) : 0;
+      let styleClassFG = !hasLiveFGCount ? "" : (inStockCount === 0 ? "pill-stock-empty" : inStockCount <= 2 ? "pill-stock-low" : "pill-stock-healthy");
+      const countDisplay = hasLiveFGCount
+        ? `<span class="live-counter-pill ${styleClassFG}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${inStockCount} ${unitTokenFG} IN STOCK</span>`
+        : `<span style="font-size:0.78rem; color:var(--muted); margin-left:4px;">🔄 checking live stock…</span>`;
+
       counterZone.innerHTML = `
-        <div style="margin:8px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text);">
-          Available in Finished Goods Store:
-          <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${qty} NOS</span>
-          <span style="font-size:0.75rem; color:var(--muted); margin-left:8px;">
-            Rating: ${fgItem["Product Rating"] || "—"} | Customer: ${fgItem["Customer Name"] || "—"}
-          </span>
-        </div>`;
-    } else {
-      counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Item details not found in FG inventory.</span>`;
+        <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
+          <div>
+            FG Store Count:
+            ${countDisplay}
+          </div>
+          <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${jcmMatchFG.allottedQty || 0} ${unitTokenFG}</span>
+            <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED: ${jcmMatchFG.usedQty || 0} ${unitTokenFG}</span>
+            <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING: ${jcmMatchFG.remainingQty || 0} ${unitTokenFG}</span>
+          </div>
+        </div>
+      `;
+    } catch(errFG) {
+      console.error("FG pill allocation tracking crash:", errFG);
+      counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Could not load FG stock/allotment.</span>`;
     }
     return;
   }
@@ -7112,27 +7173,50 @@ async function addItemToShoppingBasketRow() {
     return;
   }
 
-  // --- FINISHED GOODS STORE: no BOQ check, no inventory catalog check ---
+  // --- FINISHED GOODS STORE: same JobCardMaterials allotment check as Raw Materials Store ---
   if (activeStoreScope === "Finished Goods Store") {
+    const jobCardNumberValFGAdd = document.getElementById("ticket-job-card-dropdown")?.value || "";
+    const cacheKeyFGAdd = jobCardNumberValFGAdd + "|" + projectId;
+
+    if (!window._ticketJobCardMaterialsCache || window._ticketJobCardMaterialsCache.key !== cacheKeyFGAdd) {
+      try {
+        const jcmDataFGAdd = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValFGAdd, projectId: projectId });
+        window._ticketJobCardMaterialsCache = { key: cacheKeyFGAdd, records: jcmDataFGAdd.records || [] };
+      } catch(e) {
+        window._ticketJobCardMaterialsCache = { key: cacheKeyFGAdd, records: [] };
+      }
+    }
+
+    const jcmRecordsFGAdd = window._ticketJobCardMaterialsCache.records || [];
+    const jcmMatchFGAdd = jcmRecordsFGAdd.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
+
+    if (!jcmMatchFGAdd) {
+      restoreAddBtn();
+      alert("This Finished Goods material has no allotment for " + jobCardNumberValFGAdd + ".");
+      return;
+    }
+
+    const fgCatalogEntry = (window.itemCodeCatalogCache || []).find(c =>
+      (c.productName || "").replace(/\s+/g, "").toLowerCase() === cleanSearchKey
+    );
 
     const existingLineItem = dynamicTicketShoppingBasketArray.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
     let totalRequestedQuantity = quantity;
     if (existingLineItem) {
       totalRequestedQuantity += existingLineItem.quantity;
       existingLineItem.quantity = totalRequestedQuantity;
-      existingLineItem.requiresBOQIncreaseFlag = false;
-      existingLineItem.allottedRemainingLimit = 9999;
+      existingLineItem.requiresBOQIncreaseFlag = totalRequestedQuantity > jcmMatchFGAdd.remainingQty;
+      existingLineItem.allottedRemainingLimit = jcmMatchFGAdd.remainingQty;
     } else {
-      // Auto-fill unit from catalog cache for Finished Goods Store items
-      const fgCatalogEntry = (window.itemCodeCatalogCache || []).find(c =>
-        (c.productName || "").replace(/\s+/g, "").toLowerCase() === cleanSearchKey
-      );
       dynamicTicketShoppingBasketArray.push({
         materialName: materialName,
+        itemCode: jcmMatchFGAdd.itemCode || "",
         quantity: totalRequestedQuantity,
         unitType: (fgCatalogEntry && fgCatalogEntry.unit) ? fgCatalogEntry.unit : "NOS",
-        requiresBOQIncreaseFlag: false,
-        allottedRemainingLimit: 9999
+        requiresBOQIncreaseFlag: totalRequestedQuantity > jcmMatchFGAdd.remainingQty,
+        allottedRemainingLimit: jcmMatchFGAdd.remainingQty,
+        boqId: jcmMatchFGAdd.boqId || "",
+        jcmRowIdx: jcmMatchFGAdd.jcmRowIdx
       });
     }
     qtyInput.value = "";
@@ -9898,9 +9982,6 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       return;
     }
     if (activeStoreScope === "Finished Goods Store") {
-      // Scoped to the selected Job Card, same principle as Raw and Spare — a Finished Goods
-      // ticket should only ever offer the specific product(s) that Job Card actually produced,
-      // not every in-stock item across the whole project.
       const chosenJobCardValFG = document.getElementById("ticket-job-card-dropdown")?.value || "";
       if (!chosenJobCardValFG) {
         itemDrop.innerHTML = '<option value="">⚠️ Select a Job Card Number first</option>';
@@ -9908,46 +9989,40 @@ async function loadItemCatalogForSelectedProjectAndStore() {
         return;
       }
 
-      const fgCache = window.cachedFinishedGoodsStoreStockCollection || {};
-      const allFGItems = [
-        ...(fgCache.reactor   || []),
-        ...(fgCache.capacitor || []),
-        ...(fgCache.panel     || [])
-      ].filter(row => (row["Status"] || "").trim() === "In Stock");
-
-      const projectItems = allFGItems.filter(i =>
-        (i["Project ID"] || "").toString().trim().toLowerCase() === chosenProjectVal.toLowerCase()
-        && (i["Job Card Number"] || "").toString().trim().toLowerCase() === chosenJobCardValFG.toLowerCase()
-      );
-
-      if (projectItems.length === 0) {
-        itemDrop.innerHTML = '<option value="">⚠️ No In-Stock Finished Goods found for this Job Card</option>';
-        addZone.style.opacity = "0.5";
-        return;
+      const jcmCacheKeyFG = chosenJobCardValFG + "|" + chosenProjectVal;
+      let jcmFetchFG;
+      try {
+        jcmFetchFG = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: chosenJobCardValFG, projectId: chosenProjectVal });
+      } catch(e) {
+        jcmFetchFG = { success: false, records: [], error: e.message };
       }
 
-      // Group by Product Name + Rating + Item Code to show unique options
-      const seen = {};
-      itemDrop.innerHTML = '<option value="" style="font-weight:700;">— Select Item from Job Card —</option>';
-      projectItems.forEach(i => {
-        const pname  = (i["Product Name"]    || "").trim();
-        const rating = (i["Product Rating"]  || "").trim();
-        const code   = (i["Item Code Number"]|| "").trim();
-        const key    = pname + "||" + rating + "||" + code;
-        if (seen[key]) return;
-        seen[key] = true;
-        const label = [pname, rating, code].filter(Boolean).join(" | ");
-        const opt   = document.createElement("option");
-        opt.value   = pname;
-        opt.textContent = label;
-        itemDrop.appendChild(opt);
-      });
+      window._ticketJobCardMaterialsCache = { key: jcmCacheKeyFG, records: jcmFetchFG.records || [] };
 
-      addZone.style.opacity = "1";
-      itemDrop.disabled = false;
-      qtyInp.disabled   = false;
-      addBtn.disabled   = false;
-      addBtn.style.cursor = "pointer";
+      const fgRecordsForCard = (jcmFetchFG.records || []).filter(r =>
+        (r.typeOfStore || "").toString().trim() === "Finished Goods Store"
+      );
+
+      if (jcmFetchFG.success && fgRecordsForCard.length > 0) {
+        itemDrop.innerHTML = '<option value="" style="font-weight:700;">— Select Item from Job Card —</option>';
+        let uniqueMaterialsMapFG = {};
+        fgRecordsForCard.forEach(r => {
+          if (!uniqueMaterialsMapFG[r.materialName]) {
+            uniqueMaterialsMapFG[r.materialName] = true;
+            let opt = document.createElement("option");
+            opt.value = r.materialName;
+            opt.textContent = r.materialName;
+            itemDrop.appendChild(opt);
+          }
+        });
+        addZone.style.opacity = "1";
+        itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
+        addBtn.style.cursor = "pointer";
+      } else {
+        itemDrop.innerHTML = '<option value="">⚠️ No Finished Goods materials allotted to this Job Card</option>';
+        addZone.style.opacity = "0.5";
+      }
+      return;
     } else {
       // Pre-fetch spare store stock for the suggestion banner
       apFetch({ action: "getSpareStoreStock" })
@@ -12542,14 +12617,50 @@ async function handleFGAddProjectChange(projectId) {
   }
 }
 
-function handleFGProductSearch(query) {
+// Which catalog "Product Name" search reads from. Both "Use in other Product" and "Keep in FG
+// Store" search ItemCodeNumbers (Type-A material — genuinely exists in another BOQ, requestable
+// later via Store Ticket). "Ready for Dispatch" searches DispatchProductCodeNumber instead
+// (Type-B — a final product with no Item Code, never requestable as material).
+window._fgActiveCatalogMode = "item";
+
+function handleFGUseToggleChange(chosenUse) {
+  window._fgActiveCatalogMode = (chosenUse === "Ready for Dispatch") ? "dispatch" : "item";
+
+  // Switching modes invalidates whatever was already searched/selected against the other catalog.
+  document.getElementById("fg-add-product-search").value = "";
+  document.getElementById("fg-add-product-name").value   = "";
+  document.getElementById("fg-add-item-code").value      = "";
+  document.getElementById("fg-add-rating").value          = "";
   const dropdown = document.getElementById("fg-product-dropdown");
-  const catalog  = window.itemCodeCatalogCache || [];
+  if (dropdown) dropdown.style.display = "none";
+
+  const searchInput = document.getElementById("fg-add-product-search");
+  if (searchInput) {
+    searchInput.placeholder = window._fgActiveCatalogMode === "dispatch"
+      ? "Type to search dispatched product name..."
+      : "Type to search item code product name...";
+  }
+
+  // Pre-warm the relevant catalog so the first keystroke isn't waiting on a fetch.
+  if (window._fgActiveCatalogMode === "dispatch") {
+    loadDispatchCodeCatalogIntoCache();
+  } else {
+    loadItemCodeCatalogIntoCache();
+  }
+}
+
+function handleFGProductSearch(query) {
+  const dropdown  = document.getElementById("fg-product-dropdown");
+  const isDispatch = window._fgActiveCatalogMode === "dispatch";
+  const catalog = isDispatch
+    ? (window.dispatchCodeCatalogCache || []).map(c => ({ itemCode: c.dispatchCode, productName: c.productName, displayName: c.combinedName, rating: c.rating, typeOfMaterial: "" }))
+    : (window.itemCodeCatalogCache || []).map(c => ({ ...c, displayName: c.productName }));
 
   if (!query || query.trim().length < 1) {
     dropdown.style.display = "none";
     document.getElementById("fg-add-product-name").value = "";
     document.getElementById("fg-add-item-code").value    = "";
+    document.getElementById("fg-add-rating").value        = "";
     return;
   }
 
@@ -12557,31 +12668,35 @@ function handleFGProductSearch(query) {
   const matches = catalog.filter(item => (item.productName || "").toLowerCase().includes(q)).slice(0, 10);
 
   if (matches.length === 0) {
+    const createLink = isDispatch
+      ? `<a href="${window.location.pathname}?module=dispatched-product-code" target="_blank" style="color:var(--brand); font-weight:700;">Create Dispatch Product Code first →</a>`
+      : `<a href="${window.location.pathname}?module=design-itemcode" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>`;
     dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">
-      No matching product found.
-      <a href="${window.location.pathname}?module=design-itemcode" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
+      No matching product found. ${createLink}
     </div>`;
     dropdown.style.display = "block";
     document.getElementById("fg-add-product-name").value = "";
     document.getElementById("fg-add-item-code").value    = "";
+    document.getElementById("fg-add-rating").value        = "";
     return;
   }
 
   dropdown.innerHTML = matches.map(item => `
-    <div onclick="selectFGProduct('${item.productName.replace(/'/g,"\\'")}', '${item.itemCode}')"
+    <div onclick="selectFGProduct('${item.productName.replace(/'/g,"\\'")}', '${item.itemCode}', '${(item.rating||'').replace(/'/g,"\\'")}')"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>
-      ${item.productName}
-      <span style="font-size:0.7rem; color:var(--muted); margin-left:6px;">(${item.typeOfMaterial})</span>
+      ${item.displayName}
+      ${item.typeOfMaterial ? `<span style="font-size:0.7rem; color:var(--muted); margin-left:6px;">(${item.typeOfMaterial})</span>` : ""}
     </div>`).join("");
   dropdown.style.display = "block";
 }
 
-function selectFGProduct(productName, itemCode) {
+function selectFGProduct(productName, itemCode, rating) {
   document.getElementById("fg-add-product-search").value = productName;
   document.getElementById("fg-add-product-name").value   = productName;
   document.getElementById("fg-add-item-code").value      = itemCode;
+  document.getElementById("fg-add-rating").value          = rating || "";
   document.getElementById("fg-product-dropdown").style.display = "none";
   triggerFGBOQValidation();
 }
@@ -12752,6 +12867,8 @@ async function submitFGAddItem() {
 
     btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Adding to Finished Goods...';
 
+    const finishedGoodUse = document.getElementById("fg-add-use-toggle")?.value || "Use in other Product";
+
     const data = await apFetch({
       action: "addFinishedGoodsItem",
       department, projectId, customerName, productName,
@@ -12759,7 +12876,7 @@ async function submitFGAddItem() {
       productSerialNumber: serialNumber,
       unit, prodResponsible: prodPerson,
       storeIncharge: storePerson, additionalRemarks: remarks,
-      qaPersonName, qaDone,
+      qaPersonName, qaDone, finishedGoodUse,
       testCertUrl, inspectionClearanceUrl, inProcessInspUrl, jobCardSheetUrl
     });
 
