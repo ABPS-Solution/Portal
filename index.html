@@ -4137,8 +4137,9 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
     }
 
     const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
+    const escForOnclick = s => (s || "").toString().replace(/\\/g, "\\\\").replace(/'/g, "\\'");
     const deleteButtonHtml = isAdminUser 
-      ? `<button class="nav-btn-styled" style="font-size:0.92rem; padding:6px 14px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}')">Delete Record</button>` 
+      ? `<button class="nav-btn-styled" style="font-size:0.92rem; padding:6px 14px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}', '${escForOnclick(companyLabelName)}', '${escForOnclick(cardDisplayName)}')">Delete Record</button>` 
       : ""; // Non-admins get absolutely nothing rendered
 
     wrapperCard.innerHTML = `
@@ -4462,16 +4463,13 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         cell.appendChild(wrapper);
       }
 
-      // --- 6. SECTION 3 EMPTY BY DEFAULT CONFIGURATIONS ---
+      // --- 6. SECTION 3 FREE-TEXT DIAGNOSTIC FIELDS ---
       else if (["Low Power Factor Issue", "High Electricity Bill Issue", "Harmonics Issue", "Transformer Heating / Breakdown Issue", "Grid Stability Issue"].indexOf(key) !== -1) {
-        let container = document.createElement("div"); container.style.cssText = "display: flex; gap: 6px; align-items: center; width:100%;";
-        let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
-        ["", "No", "Yes"].forEach(optVal => {
-          let op = document.createElement("option"); op.value = optVal; op.textContent = optVal === "" ? "— Select —" : optVal;
-          if (leadMap[key] === optVal) op.selected = true;
-          sel.appendChild(op);
-        });
-        cell.appendChild(sel);
+        let inp = document.createElement("input"); inp.type = "text";
+        inp.className = 'live-lead-field-input-' + leadRef; inp.dataset.headerKey = key;
+        inp.value = leadMap[key] || "";
+        inp.placeholder = "Describe the issue, if any";
+        cell.appendChild(inp);
       }
 
       // --- 7. VENDOR SELECTION AND CONDITIONAL CONTENT LOOPS ---
@@ -4692,8 +4690,9 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
   } catch(e) { alert(e.message); } finally { if(btn) { btn.disabled = false; btn.innerHTML = "Save Modifications"; } }
 }
 
-async function removeLeadRowEntirely(leadRef) {
-    if (!confirm("Confirm Delete?")) return;
+async function removeLeadRowEntirely(leadRef, companyNameForConfirm, contactNameForConfirm) {
+    const confirmLabel = [companyNameForConfirm, contactNameForConfirm].filter(Boolean).join(" ") || "this record";
+    if (!confirm(`Confirm Delete of ${confirmLabel}?`)) return;
     const btn = event.target; 
     btn.disabled = true;
     btn.innerHTML = 'Deleting...';
@@ -5694,8 +5693,9 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
       const isTarget = (lead["Contact Person Name"] || "").toLowerCase() === personName.toLowerCase();
       const cardName = lead["Contact Person Name"] || "Unspecified";
       const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
+      const escForOnclick2 = s => (s || "").toString().replace(/\\/g, "\\\\").replace(/'/g, "\\'");
       const deleteHtml = isAdminUser
-        ? `<button class="nav-btn-styled" style="font-size:0.82rem; padding:5px 12px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}')">Delete Record</button>`
+        ? `<button class="nav-btn-styled" style="font-size:0.82rem; padding:5px 12px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}', '${escForOnclick2(companyName)}', '${escForOnclick2(cardName)}')">Delete Record</button>`
         : "";
 
       const card = document.createElement("div");
