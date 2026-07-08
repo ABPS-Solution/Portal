@@ -2101,7 +2101,7 @@
             <button class="dd-period-btn"        data-period="thisyear"    onclick="mdSetPeriod(this)">This Year</button>
             <button class="dd-period-btn"        data-period="custom"      onclick="mdSetPeriod(this)">Custom ▾</button>
           </div>
-          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">📈 Marketing Dashboard</span>
+          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">Marketing Dashboard</span>
           <button class="nav-btn-styled" onclick="exitMarketingDashboardBackToMenu()" style="font-size:0.75rem;">Return to Main Dashboard</button>
         </div>
         <div id="md-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
@@ -2140,7 +2140,7 @@
             <div class="dd-stat-val" id="md-s-failed" style="color:#b91c1c;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Avg. Days: Lead → Order</div>
+            <div class="dd-stat-label">Average Days For Lead → Order</div>
             <div class="dd-stat-val" id="md-s-avgdays">—</div>
             <div class="dd-stat-sub">days</div>
           </div>
@@ -2157,15 +2157,15 @@
             <div class="dd-stat-val" id="md-s-opentasks">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Leads — Zero Follow-Up</div>
+            <div class="dd-stat-label">Leads With Zero Follow-Up</div>
             <div class="dd-stat-val" id="md-s-zerofollowup" style="color:#b91c1c;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">PO Uploads</div>
+            <div class="dd-stat-label">Purchase Orders Uploaded</div>
             <div class="dd-stat-val" id="md-s-pouploads" style="color:#15803d;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Distinct Offers Sent</div>
+            <div class="dd-stat-label">Email Offers Sent</div>
             <div class="dd-stat-val" id="md-s-offerssent">—</div>
           </div>
         </div>
@@ -2189,7 +2189,7 @@
         <!-- ROW 4: Stale Leads + Recent Wins -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
           <div class="dd-stat-card" style="min-height:220px;">
-            <div class="dd-stat-label" style="margin-bottom:8px;">⚠ Stale Leads Needing Attention (7+ days, current)</div>
+            <div class="dd-stat-label" style="margin-bottom:8px;">Stale Leads Needing Attention (7+ days, current)</div>
             <div style="max-height:260px; overflow-y:auto;">
               <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
                 <thead>
@@ -2205,7 +2205,7 @@
             </div>
           </div>
           <div class="dd-stat-card" style="min-height:220px;">
-            <div class="dd-stat-label" style="margin-bottom:8px;">🏆 Recent Wins (Orders Received in period)</div>
+            <div class="dd-stat-label" style="margin-bottom:8px;">Recent Wins (Orders Received in period)</div>
             <div style="max-height:260px; overflow-y:auto;">
               <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
                 <thead>
@@ -4235,10 +4235,12 @@ function revealNewEntryFormDropdownFromBanner() {
   const parentId = (currentActiveModuleContext === "CARD") ? "workspace-cardDetails" : "workspace-searchCompany";
   document.getElementById(parentId).appendChild(dropdownEl);
 
-  // Same duplicate-field suppression as revealNewEntryFormDropdown() — this is the banner's
-  // "Create New Entry" path (your screenshot's exact scenario), same rule applies.
+  // Unlike revealNewEntryFormDropdown() (the plain/global "no match at all" entry point),
+  // this banner path represents "add a new contact to a company we already matched" —
+  // always show the fields here so the person can confirm/edit the new contact's details,
+  // even in CARD mode.
   const dupBlockFromBanner = document.getElementById("dropform-duplicate-fields-block");
-  if (dupBlockFromBanner) dupBlockFromBanner.style.display = (currentActiveModuleContext === "CARD") ? "none" : "block";
+  if (dupBlockFromBanner) dupBlockFromBanner.style.display = "block";
   
   if (document.getElementById("dropform-company-locked")) {
     document.getElementById("dropform-company-locked").value = activeSearchCompany || "";
