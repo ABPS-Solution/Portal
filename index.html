@@ -9487,7 +9487,7 @@ async function initializeStoreEntryWorkspaceQueue() {
   feed.innerHTML = `
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--brand);">
       <div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
-      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading Store Entry Queue...</span>
+      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading Pending Store Entry List</span>
     </div>`;
   try {
     const [, data] = await Promise.all([
@@ -9572,8 +9572,11 @@ async function initializeStoreEntryWorkspaceQueue() {
           </td>
           <td style="padding:6px; min-width:280px;">
             <div class="se-mat-name-display-${item.gateNumber}" data-idx="${idx}"
-              style="${isPreFilled ? 'display:block; font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; min-height:30px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4; line-height:1.4;' : 'display:none; font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; min-height:30px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4; line-height:1.4;'}">
-              ${preFilledName}
+              onclick="reopenSEMaterialSearch('${item.gateNumber}', ${idx})"
+              title="Click to change"
+              style="${isPreFilled ? 'display:flex; justify-content:space-between; align-items:center; gap:6px; cursor:pointer;' : 'display:none; cursor:pointer;'} font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; min-height:30px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4; line-height:1.4;">
+              <span>${preFilledName}</span>
+              <span style="font-size:0.65rem; font-weight:700; color:var(--muted); white-space:nowrap; flex-shrink:0;">✎ change</span>
             </div>
             <input type="hidden" class="se-mat-name-${item.gateNumber}" data-idx="${idx}" value="${preFilledName}" />
             <input type="hidden" class="se-material-type-${item.gateNumber}" data-idx="${idx}" value="${preFilledType}" />
@@ -9813,7 +9816,7 @@ async function initializeStoreGrnWorkspaceQueue() {
   feed.innerHTML = `
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--accent);">
       <div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
-      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading Active GRN Queue...</span>
+      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading Active GRN List</span>
     </div>`;
   try {
     const data = await apFetch({ action: "fetchInwardWorkflowQueueStream", targetStep: "GRN pending" });
@@ -11553,6 +11556,21 @@ async function submitNewDispatchedProductCode() {
     btn.disabled = false;
     btn.textContent = "Create Dispatch Product Code";
   }
+}
+
+function reopenSEMaterialSearch(gateNum, idx) {
+  const nameDisplay = document.querySelector(`.se-mat-name-display-${gateNum}[data-idx="${idx}"]`);
+  const searchInput = document.getElementById(`se-search-${gateNum}-${idx}`);
+  if (nameDisplay) nameDisplay.style.display = "none";
+  if (searchInput) {
+    searchInput.style.display = "block";
+    searchInput.value = "";
+    searchInput.focus();
+  }
+  // Note: the previously-selected Item Code / Material Name / Type values are left in place
+  // (in the hidden inputs) until a new match is actually picked from the dropdown — so if the
+  // person clicks "change" and then clicks away without selecting anything, the original
+  // selection is still submitted rather than silently becoming blank.
 }
 
 function handleSENameSearch(inputEl, gateNum, idx) {
@@ -15946,8 +15964,21 @@ async function parseRawMaterialPOWithAI() {
                style="font-size:0.82rem; font-weight:600; padding:4px; border:1.5px solid #fca5a5; width:100%; border-radius:3px; background:#fff7f7;" />
              <div id="rmpo-name-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1px solid var(--border); border-radius:4px; z-index:9999; max-height:200px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,0.15); min-width:280px;"></div>
            </div>`
-        : `<input type="text" class="rm-po-mat-name-input" data-idx="${idx}" value="${resolvedName}"
-             style="font-size:0.82rem; font-weight:600; padding:4px; border:1px solid #86efac; width:100%; border-radius:3px; background:#f0fdf4;" readonly />`;
+        : `<div style="position:relative;">
+             <div class="rm-po-mat-name-locked" data-idx="${idx}"
+               onclick="reopenRMPONameSearch(${idx})"
+               title="Click to change"
+               style="display:flex; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; font-size:0.82rem; font-weight:600; padding:4px; border:1px solid #86efac; border-radius:3px; background:#f0fdf4;">
+               <span class="rm-po-mat-name-locked-text">${resolvedName}</span>
+               <span style="font-size:0.62rem; font-weight:700; color:var(--muted); white-space:nowrap; flex-shrink:0;">✎ change</span>
+             </div>
+             <input type="text" class="rm-po-mat-name-input rm-po-name-search" data-idx="${idx}" value="${resolvedName}"
+               placeholder="Type to search material name..."
+               oninput="handleRMPONameSearch(this, ${idx})"
+               autocomplete="off"
+               style="display:none; font-size:0.82rem; font-weight:600; padding:4px; border:1.5px solid var(--brand); width:100%; border-radius:3px;" />
+             <div id="rmpo-name-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1px solid var(--border); border-radius:4px; z-index:9999; max-height:200px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,0.15); min-width:280px;"></div>
+           </div>`;
 
       tbody.innerHTML += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
     <td style="padding:6px; width:140px;">${itemCodeCellContent}</td>
@@ -16117,15 +16148,33 @@ function handleRMPONameSearch(inputEl, idx) {
   dropdown.style.display = "block";
 }
 
+function reopenRMPONameSearch(idx) {
+  const lockedBox    = document.querySelector(`.rm-po-mat-name-locked[data-idx="${idx}"]`);
+  const searchInput  = document.querySelector(`.rm-po-mat-name-input.rm-po-name-search[data-idx="${idx}"]`);
+  if (lockedBox)   lockedBox.style.display = "none";
+  if (searchInput) { searchInput.style.display = "block"; searchInput.value = ""; searchInput.focus(); }
+  // Item Code / Unit stay as-is until a new match is picked — same "no silent blanking" behavior
+  // as Store Entry, so clicking away without selecting doesn't lose the original match.
+}
+
 function selectRMPONameMatch(idx, itemCode, productName, unit) {
-  const dropdown  = document.getElementById("rmpo-name-dropdown-" + idx);
-  const nameInput = document.querySelector(`.rm-po-mat-name-input[data-idx="${idx}"]`);
-  const codeInput = document.querySelector(`.rm-po-item-code-input[data-idx="${idx}"]`);
-  const unitInput = document.querySelector(`.rm-po-unit-input[data-idx="${idx}"]`);
+  const dropdown   = document.getElementById("rmpo-name-dropdown-" + idx);
+  const nameInput  = document.querySelector(`.rm-po-mat-name-input[data-idx="${idx}"]`);
+  const codeInput  = document.querySelector(`.rm-po-item-code-input[data-idx="${idx}"]`);
+  const unitInput  = document.querySelector(`.rm-po-unit-input[data-idx="${idx}"]`);
+  const lockedBox  = document.querySelector(`.rm-po-mat-name-locked[data-idx="${idx}"]`);
+  const lockedText = document.querySelector(`.rm-po-mat-name-locked-text[data-idx="${idx}"]`) || lockedBox?.querySelector(".rm-po-mat-name-locked-text");
   if (nameInput) { nameInput.value = productName; nameInput.style.border = "1.5px solid #86efac"; nameInput.style.background = "#f0fdf4"; nameInput.style.color = "var(--text)"; }
   if (codeInput) { codeInput.value = itemCode; codeInput.placeholder = ""; codeInput.style.border = "1.5px solid #86efac"; codeInput.style.background = "#f0fdf4"; codeInput.style.color = "var(--brand)"; }
   if (unitInput) { unitInput.value = unit || ""; unitInput.style.border = "1px solid #86efac"; unitInput.style.background = "#f0fdf4"; unitInput.style.color = "var(--brand)"; }
   if (dropdown)  dropdown.style.display = "none";
+  // If this row started as a locked auto-match (has a locked-box), swap back to the locked
+  // display showing the newly chosen name, instead of leaving the raw search input visible.
+  if (lockedBox) {
+    if (lockedText) lockedText.textContent = productName;
+    if (nameInput)  nameInput.style.display = "none";
+    lockedBox.style.display = "flex";
+  }
   // Update the payload cache
   if (activeParsedRMPOPayload && activeParsedRMPOPayload.lineItems && activeParsedRMPOPayload.lineItems[idx]) {
     activeParsedRMPOPayload.lineItems[idx].itemCode     = itemCode;
