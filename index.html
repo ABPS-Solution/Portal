@@ -9732,6 +9732,7 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
   const itemData = JSON.parse(decodeURIComponent(encodedItem));
   const banner = document.getElementById('store-entry-runtime-feedback-banner');
   const btn = event.target;
+  banner.style.display = "none";
   
   // Activate frontend button compression animation
   btn.disabled = true; 
@@ -9768,7 +9769,8 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
   itemData.storePerson = appActiveOperatorIdentityString || "";
 
   if (itemCodeMissing || materialTypeMissing) {
-    alert("Every line item must have a material selected. If no match exists, create the Item Code first in Design Department.");
+    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Every line item must have a material selected. If no match exists, create the Item Code first in Design Department.", "error");
+    banner.scrollIntoView({ behavior: "smooth", block: "center" });
     btn.disabled = false;
     btn.textContent = "Verify & Generate Raw Materials Store Entry";
     return;
@@ -10018,18 +10020,23 @@ async function commitGrnVerificationToBackend(gateNum, encodedItem) {
     line.unitType                    = (line.unitType || "NOS").toString().trim();
   });
   
+  banner.style.display = "none";
+
   if (qaIncomplete) {
-    alert("Compulsory Quality Check: You must change the Q/A Done selection to 'Yes' for all line items before you can add stock to the Store.");
+    showBOQBanner('store-grn-runtime-feedback-banner', "⚠️ Compulsory Quality Check: You must change the Q/A Done selection to 'Yes' for all line items before you can add stock to the Store.", "error");
+    banner.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
   
   if (codeMissing) {
-    alert("Compulsory Validation Failure: Every single inventory line item must have a valid Item Code Number filled before you can finalize and sign off the GRN section.");
+    showBOQBanner('store-grn-runtime-feedback-banner', "⚠️ Compulsory Validation Failure: Every single inventory line item must have a valid Item Code Number filled before you can finalize and sign off the GRN section.", "error");
+    banner.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
   
   if (validationError) {
-    alert("Quantity Balancing Violation: The sum of OK Quantity and Not OK Quantity must equal the Received Quantity exactly.");
+    showBOQBanner('store-grn-runtime-feedback-banner', "⚠️ Quantity Balancing Violation: The sum of OK Quantity and Not OK Quantity must equal the Received Quantity exactly.", "error");
+    banner.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
   
