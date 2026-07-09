@@ -2336,7 +2336,7 @@
             <div><label class="field-label">State *</label><input type="text" id="f-state" /></div>
             <div><label class="field-label">Country *</label><input type="text" id="f-country" /></div>
           </div>
-          <label class="field-label">Address</label><textarea id="f-address" style="min-height:28px;"></textarea>
+          <label class="field-label">Address</label><textarea id="f-address" style="min-height:80px;"></textarea>
           
           <button class="btn btn-sub" id="gate-search-btn" onclick="triggerSequentialSearch('CARD')" style="margin-top:6px;">Search Marketing Database</button>
         </div>
@@ -2611,7 +2611,7 @@
 
             <div style="margin-bottom: 12px;">
               <label class="field-label">Company Address</label>
-              <textarea id="dropform-address" style="min-height: 40px;"></textarea>
+              <textarea id="dropform-address" style="min-height: 80px;"></textarea>
             </div>
           </div>
 
@@ -2648,7 +2648,7 @@
 
           <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--brand); margin-bottom: 8px; text-transform: uppercase;">Section 2: Lead Profile Categorization</h3>
           <div style="margin-bottom: 12px;">
-            <label class="field-label">ABPS Business Vertical</label>
+            <label class="field-label">ABPS Business Vertical *</label>
             <div style="display: flex; gap: 12px; margin-top: 4px;">
               <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Industrial" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Industrial</label>
               <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Power" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Power</label>
@@ -2805,11 +2805,11 @@
 
           <div style="margin-bottom: 12px;">
             <label class="field-label">Approx Business Potential</label>
-            <div style="display: flex; gap: 15px; margin-top: 4px;">
-              <label style="width:auto; cursor:pointer;"><input type="radio" name="pot" value="&lt;10L" style="width:auto; margin-right:4px;"> &lt;10L</label>
-              <label style="width:auto; cursor:pointer;"><input type="radio" name="pot" value="10-50L" style="width:auto; margin-right:4px;"> 10-50L</label>
-              <label style="width:auto; cursor:pointer;"><input type="radio" name="pot" value="50L-2cr" style="width:auto; margin-right:4px;"> 50L-2cr</label>
-              <label style="width:auto; cursor:pointer;"><input type="radio" name="pot" value="&gt;2cr" style="width:auto; margin-right:4px;"> &gt;2cr</label>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; margin-top: 4px;">
+              <label style="width:auto; cursor:pointer; white-space:nowrap;"><input type="radio" name="pot" value="&lt;10L" style="width:auto; margin-right:4px;"> &lt;10L</label>
+              <label style="width:auto; cursor:pointer; white-space:nowrap;"><input type="radio" name="pot" value="10-50L" style="width:auto; margin-right:4px;"> 10-50L</label>
+              <label style="width:auto; cursor:pointer; white-space:nowrap;"><input type="radio" name="pot" value="50L-2cr" style="width:auto; margin-right:4px;"> 50L-2cr</label>
+              <label style="width:auto; cursor:pointer; white-space:nowrap;"><input type="radio" name="pot" value="&gt;2cr" style="width:auto; margin-right:4px;"> &gt;2cr</label>
             </div>
           </div>
 
@@ -4563,7 +4563,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
       if (key === "Products Discussed")             cell.style.gridColumn = "span 2";
 
       let label = document.createElement("label"); 
-      label.textContent = key; 
+      label.textContent = (["Date of Meeting", "ABPS Business Vertical"].indexOf(key) !== -1) ? key + " *" : key;
       cell.appendChild(label);
 
       // --- 1. CORE PIPELINE CONTROLLER ROUTINES ---
@@ -4613,7 +4613,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         container.style.cssText = "display: flex; flex-direction: column; gap: 8px; width: 100%;";
         
         let subCellBv = document.createElement("div"); subCellBv.className = "grid-cell-item";
-        subCellBv.innerHTML = `<label class="field-label" style="margin-top:0;">ABPS Business Vertical</label>`;
+        subCellBv.innerHTML = `<label class="field-label" style="margin-top:0;">ABPS Business Vertical *</label>`;
         let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
         const opts = ["Industrial", "Power", "Renewable", "Other"];
         let isOther = leadMap[key] && opts.indexOf(leadMap[key].toString().trim()) === -1 && leadMap[key].toString().trim() !== "";
@@ -4850,7 +4850,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
       } else if (["Technical Discussion Summary", "Company Address", "Company Name", "Problem Observed", "Existing System Details"].indexOf(key) !== -1) {
         let inpTypeElement = (key === "Technical Discussion Summary" || key === "Company Address") ? document.createElement("textarea") : document.createElement("input");
         inpTypeElement.type = "text"; inpTypeElement.className = 'live-lead-field-input-' + leadRef; inpTypeElement.dataset.headerKey = key;
-        inpTypeElement.value = leadMap[key] || ""; if (key === "Technical Discussion Summary" || key === "Company Address") inpTypeElement.style.minHeight = "45px"; 
+        inpTypeElement.value = leadMap[key] || ""; if (key === "Technical Discussion Summary" || key === "Company Address") inpTypeElement.style.minHeight = "80px";
         cell.appendChild(inpTypeElement);
       } 
       else {
@@ -4877,7 +4877,6 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
 
 async function commitTargetedLeadsMutationsRows(leadRef) {
   const btn = document.getElementById('save-leads-matrix-btn-' + leadRef);
-  if(btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...'; }
   
   let fieldsPayload = {};
   
@@ -4885,6 +4884,13 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
   document.querySelectorAll('.live-lead-field-input-' + leadRef).forEach(el => { 
     if (el.dataset.headerKey) fieldsPayload[el.dataset.headerKey] = el.value; 
   });
+
+  // Compulsory field checks — same rule as lead creation, enforced here too so an
+  // edit can't silently blank out a required field.
+  if (!fieldsPayload["Date of Meeting"]) { alert("Date of Meeting is compulsory and cannot be left blank."); return; }
+  if (!fieldsPayload["ABPS Business Vertical"]) { alert("ABPS Business Vertical is compulsory and cannot be left blank."); return; }
+
+  if(btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...'; }
   
   // Handle ABPS Business Vertical "Other" field override criteria check
   const bvSelect = Array.from(document.querySelectorAll('.live-lead-field-input-' + leadRef)).find(el => el.dataset.headerKey === "ABPS Business Vertical");
@@ -5324,6 +5330,9 @@ async function submitLead() {
   const meetingDateField = document.getElementById('meetingDate');
   if (!meetingDateField || !meetingDateField.value) { alert("Please select a Date of Meeting."); return; }
 
+  const businessVerticalCheck = getRadioStrict('businessVertical');
+  if (!businessVerticalCheck) { alert("ABPS Business Vertical is a compulsory question."); return; }
+
   const companyNameCheck = document.getElementById('dropform-company-locked').value.trim();
   if (!companyNameCheck) { alert("Company Name is compulsory."); return; }
 
@@ -5349,6 +5358,10 @@ async function submitLead() {
   
   const getChecks = n => Array.from(activeFormContainerScopeNode.querySelectorAll(`input[name="${n}"]:checked`)).map(c => c.value);
   const getRadio  = n => (activeFormContainerScopeNode.querySelector(`input[name="${n}"]:checked`) || {}).value || "No";
+  // Some radio groups (Meeting Venue, ABPS Business Vertical) aren't genuine Yes/No
+  // questions — "No" is meaningless for them, so leave truly blank when untouched
+  // instead of silently writing "No" into the sheet.
+  const getRadioStrict = n => (activeFormContainerScopeNode.querySelector(`input[name="${n}"]:checked`) || {}).value || "";
   
   try {
     const companyVal = document.getElementById('dropform-company-locked')?.value.trim() || document.getElementById('f-company')?.value.trim() || "";
@@ -5389,10 +5402,10 @@ async function submitLead() {
       address: document.getElementById('dropform-address').value.trim() || (document.getElementById('f-address') ? document.getElementById('f-address').value.trim() : ""),
       meetingDate: meetingDate, 
       meetingTime: meetingTime,
-      meetingVenue: getRadio('meetingVenue') === 'Other' ? (document.getElementById('meetingVenueOther') ? document.getElementById('meetingVenueOther').value : 'Other') : getRadio('meetingVenue'), 
+      meetingVenue: getRadioStrict('meetingVenue') === 'Other' ? (document.getElementById('meetingVenueOther') ? document.getElementById('meetingVenueOther').value : 'Other') : getRadioStrict('meetingVenue'),
       venueName: document.getElementById('venueName').value, 
       additionalMeetingDetails: document.getElementById('additionalMeetingDetails').value,
-      businessVertical: getRadio('businessVertical') === 'Other' ? (document.getElementById('businessVerticalOther') ? document.getElementById('businessVerticalOther').value : 'Other') : getRadio('businessVertical'), 
+      businessVertical: getRadioStrict('businessVertical') === 'Other' ? (document.getElementById('businessVerticalOther') ? document.getElementById('businessVerticalOther').value : 'Other') : getRadioStrict('businessVertical'),
       industry: document.getElementById('industry').value, 
       "Type of Customer": qualFinal, 
       vendorType: vtFinal,
