@@ -118,9 +118,13 @@
   @media(min-width: 800px) { .contact-summary-header-row { flex-direction: row; justify-content: space-between; align-items: center; } }
   
   .contact-summary-title-info { font-size: 0.95rem; font-weight: 700; color: var(--text); width: 100%; text-align: left; line-height: 1.5; display: flex; flex-wrap: wrap; gap: 4px; flex-direction: column; align-items: flex-start;  }
-  .contact-summary-title-info .meta-row-line-block { display: flex; align-items: center; width: 100%; margin-bottom: 4px; }
-  .contact-summary-title-info span { font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; background: #edf2f7; padding: 2px 6px; border-radius: 4px; margin-right: 4px; display: inline-block; }
-  .contact-summary-title-info strong { margin-right: 18px; color: #111827; display: inline-block; }
+  .contact-summary-title-info .meta-row-line-block { display: flex; flex-wrap: wrap; align-items: flex-start; width: 100%; margin-bottom: 4px; gap: 6px 20px; }
+  .contact-summary-title-info .meta-pair { display: flex; align-items: center; gap: 4px; min-width: 0; flex: 1 1 auto; }
+  .contact-summary-title-info span { font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; background: #edf2f7; padding: 2px 6px; border-radius: 4px; display: inline-block; flex-shrink: 0; }
+  .contact-summary-title-info strong { color: #111827; word-break: break-word; }
+  @media(max-width: 480px) {
+    .contact-summary-title-info .meta-pair { flex: 1 1 100%; }
+  }
   
   .directory-btn-actions-block { display: flex; gap: 6px; width: 100%; justify-content: flex-start; }
   @media(min-width: 800px) { .directory-btn-actions-block { width: auto; justify-content: flex-end; } }
@@ -4386,12 +4390,12 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
       <div class="contact-summary-header-row">
         <div class="contact-summary-title-info">
           <div class="meta-row-line-block" style="margin-bottom: 6px;">
-            <span style="background: #e2e8f0;">Company:</span><strong style="margin-right: 20px;">${companyLabelName}</strong>
-            <span style="background: #edf2f7;">Status:</span><strong id="card-lbl-status-${tRef}">${lead["Status"] || "N/A"}</strong>
+            <div class="meta-pair"><span style="background: #e2e8f0;">Company:</span><strong>${companyLabelName}</strong></div>
+            <div class="meta-pair"><span style="background: #edf2f7;">Status:</span><strong id="card-lbl-status-${tRef}">${lead["Status"] || "N/A"}</strong></div>
           </div>
           <div class="meta-row-line-block">
-            <span style="background: #e2e8f0;">Name:</span><strong style="margin-right: 20px;" id="card-lbl-name-${tRef}">${cardDisplayName}</strong>
-            <span style="background: #edf2f7;">Position:</span><strong id="card-lbl-pos-${tRef}">${lead["Position"] || "Unspecified"}</strong>
+            <div class="meta-pair"><span style="background: #e2e8f0;">Name:</span><strong id="card-lbl-name-${tRef}">${cardDisplayName}</strong></div>
+            <div class="meta-pair"><span style="background: #edf2f7;">Position:</span><strong id="card-lbl-pos-${tRef}">${lead["Position"] || "Unspecified"}</strong></div>
           </div>
         </div>
         <div class="directory-btn-actions-block">
