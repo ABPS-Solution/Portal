@@ -11821,7 +11821,6 @@ function renderCBOQMaterialRows() {
 
 function updateCBOQTotals() {
   const totalPerSet = cboqMaterialRows.reduce((sum, row) => {
-    if (row.typeOfStore !== "Raw Materials Store") return sum;
     return sum + ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0));
   }, 0);
   const orderQty = parseInt(document.getElementById("cboq-order-qty")?.value) || 0;
@@ -12358,7 +12357,6 @@ function renderEBOQMaterialRows() {
 
 function updateEBOQTotals() {
   const totalPerSet = eboqMaterialRows.reduce((sum, row) => {
-    if (row.typeOfStore !== "Raw Materials Store") return sum;
     return sum + ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0));
   }, 0);
   const orderQty = parseInt(document.getElementById("eboq-order-qty")?.value) || 0;
@@ -12801,7 +12799,6 @@ function renderUBOQMaterialRows() {
 
 function updateUBOQTotals() {
   const totalPerSet = uboqMaterialRows.reduce((sum, row) => {
-    if (row.typeOfStore !== "Raw Materials Store") return sum;
     return sum + ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0));
   }, 0);
   const orderQty = parseInt(document.getElementById("uboq-order-qty")?.value) || 0;
@@ -15800,7 +15797,7 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
         <tbody>${rowsHtml}</tbody>
         <tfoot>
           <tr style="border-top:2px solid var(--border);">
-            <td style="padding:8px 6px; font-size:0.82rem; font-weight:800; color:#334155;">Total (matches Material List)</td>
+            <td style="padding:8px 6px; font-size:0.82rem; font-weight:800; color:#334155;">Total</td>
             <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:var(--brand);">${(totalQty || 0).toFixed(2)} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
           </tr>
         </tfoot>
