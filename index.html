@@ -4060,6 +4060,33 @@ function returnToDashboard() {
   if (canvas) canvas.style.display = "none";
   
   document.getElementById("multi-contact-records-container").innerHTML = "";
+
+  // Reset Upload Purchase Order / Dispatch Bill / Commissioning Report sections back to first-visit state
+  targetDispatchBillFileObj = null;
+  targetCommissioningReportFileObj = null;
+  targetPurchaseOrderFileObj = null;
+
+  [
+    { boxId: "dispatch-bill-upload-box",        fileId: "dispatch-bill-raw-file",        label: "📋 Select Dispatch Bill",        bannerId: "dispatch-bill-feedback-banner",        containerId: "dispatch-bill-inputs-container",        leadId: "dispatch-bill-lead-dropdown",        btnId: "btn-ops-dispatch-submit",         btnLabel: "Process Dispatch Bill with AI" },
+    { boxId: "commissioning-report-upload-box", fileId: "commissioning-report-raw-file", label: "📋 Select Commissioning Report", bannerId: "commissioning-report-feedback-banner", containerId: "commissioning-report-inputs-container", leadId: "commissioning-report-lead-dropdown", btnId: "btn-ops-commission-submit",       btnLabel: "Process Commissioning Report with AI" },
+    { boxId: "purchase-order-upload-box",       fileId: "purchase-order-raw-file",       label: "📋 Select Purchase Order",       bannerId: "purchase-order-feedback-banner",       containerId: "purchase-order-inputs-container",       leadId: "purchase-order-lead-dropdown",       btnId: "btn-ops-purchase-order-submit",   btnLabel: "Process Purchase Order with AI" }
+  ].forEach(cfg => {
+    const box = document.getElementById(cfg.boxId);
+    if (box) { box.textContent = cfg.label; box.classList.remove('done'); }
+    const fileInput = document.getElementById(cfg.fileId);
+    if (fileInput) fileInput.value = '';
+    const banner = document.getElementById(cfg.bannerId);
+    if (banner) { banner.style.display = 'none'; banner.innerHTML = ''; }
+    const container = document.getElementById(cfg.containerId);
+    if (container) container.style.display = 'block';
+    const leadDrop = document.getElementById(cfg.leadId);
+    if (leadDrop) leadDrop.value = '';
+    const btn = document.getElementById(cfg.btnId);
+    if (btn) { btn.disabled = false; btn.innerHTML = cfg.btnLabel; }
+  });
+  const poOwnerDropReset = document.getElementById("po-owner-of-order-dropdown");
+  if (poOwnerDropReset) poOwnerDropReset.value = '';
+
   // Reset card scan fields for next use
   fileFront = null; fileBack = null;
   const fb = document.getElementById('front-box'); if (fb) { fb.textContent = '📷 Front Side '; fb.classList.remove('done'); }
@@ -4509,7 +4536,7 @@ function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
   const fupClose = nodeScope.querySelector(".trigger-fup-close");
   const fupEngSelect = nodeScope.querySelector(".fup-eng-select");
   
-  fupEngSelect.innerHTML = "";
+  fupEngSelect.innerHTML = '<option value="">— Select Engineer —</option>';
   cachedEngineers.forEach(eng => {
     let o1 = document.createElement("option"); o1.textContent = eng; fupEngSelect.appendChild(o1);
   });
@@ -4532,7 +4559,8 @@ function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
   const taskEngSelect = nodeScope.querySelector(".task-eng-select");
   const taskAssignerSelect = nodeScope.querySelector(".task-assigner-select");
 
-  taskEngSelect.innerHTML = ""; taskAssignerSelect.innerHTML = "";
+  taskEngSelect.innerHTML = '<option value="">— Select Engineer —</option>';
+  taskAssignerSelect.innerHTML = '<option value="">— Select Engineer —</option>';
   cachedEngineers.forEach(eng => {
     let o2 = document.createElement("option"); o2.textContent = eng; taskEngSelect.appendChild(o2);
     let o3 = document.createElement("option"); o3.textContent = eng; taskAssignerSelect.appendChild(o3);
@@ -9155,6 +9183,9 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
     targetBtn.innerHTML = '<div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div> AI Processing & Matching Document...';
   }
 
+  const overlayLabels = { "DISPATCH": "Saving Dispatch Bill...", "COMMISSION": "Saving Commissioning Report...", "PURCHASE_ORDER": "Saving Purchase Order..." };
+  showBlockingOverlay(overlayLabels[opsFlagTypeString] || "Processing Document...");
+
   try {
     const fileBase64Raw = await new Promise((resolve) => {
       const reader = new FileReader();
@@ -9203,7 +9234,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
                   <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Project ID Assigned</span><br/><strong style="font-family:monospace; color:#111827;">${data.generatedProjectId || '—'}</strong></div>
                 </div>
                 <div style="margin-top:8px; font-size:0.75rem; color:${data.partialWriteWarning ? '#b45309' : '#15803d'}; border-top:1px dashed ${data.partialWriteWarning ? '#fcd34d' : '#86efac'}; padding-top:6px;">
-                  ${data.partialWriteWarning ? '⚠ Core PO data was saved, but see the warning above — some downstream records may be incomplete.' : '✓ All data has been saved to the Purchase Order sheets. If anything looks wrong, check the UploadedDocumentInformation and PurchaseOrderInformation sheets.'}
+                  ${data.partialWriteWarning ? '⚠ Core PO data was saved, but see the warning above — some downstream records may be incomplete.' : '✓ All data has been saved to the Purchase Order sheets. If anything looks wrong, check the UploadedDocumentInformation and PurchaseOrderInformation Google Sheets.'}
                 </div>
               </div>` : ''}
 
@@ -9273,6 +9304,8 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
       targetBtn.disabled = false;
       targetBtn.innerHTML = defaultBtnLabels[opsFlagTypeString];
     }
+  } finally {
+    hideBlockingOverlay();
   }
 }
 
