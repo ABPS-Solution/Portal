@@ -2927,6 +2927,14 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbyqv6RDo_MzpysU1eUVmAuK
  * CENTRAL FETCH WRAPPER
  * All backend calls go through this. Handles session expiry globally.
  */
+// Shared display helper — stored values stay bare letters (A-E) everywhere: sheets, PDFs,
+// filters, matching logic. Only presentational text shows "Material A" etc.
+// Defined globally here (not lazily) so it's always available regardless of navigation order.
+window.typeLabelDisplay_ = window.typeLabelDisplay_ || function(t) {
+  const clean = (t || "").toString().trim();
+  return /^[A-E]$/.test(clean) ? ("Material " + clean) : (clean || "Uncategorized");
+};
+
 async function apFetch(payload) {
   payload.sessionToken = localStorage.getItem("sessionToken");
   const res  = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
@@ -6107,18 +6115,20 @@ async function executeLeadMatrixFilterSearch() {
  * and updates the interface layout with instruction-centered headers.
  */
 async function executeInboundEmailSyncPipelineFetch() {
+  // syncBtn no longer exists — the "Sync Inbox" button was retired since scanning now
+  // runs automatically via background triggers. This function still runs on panel-open
+  // to populate the feed, so every reference to syncBtn below is now optional.
   const syncBtn = document.getElementById("email-sync-trigger-btn");
   const feedbackNode = document.getElementById("email-leads-runtime-status-feedback");
   const feedCanvas = document.getElementById("email-leads-inbound-feed-canvas");
   
-  if (!syncBtn || !feedbackNode || !feedCanvas) {
+  if (!feedbackNode || !feedCanvas) {
     console.error("UI Render Error: One or more compulsory target elements are missing from the DOM.");
     return;
   }
   
-  // 1. Lock the interface button to block multiple overlapping server requests
-  syncBtn.disabled = true; 
-  syncBtn.textContent = "Syncing...";
+  // 1. Lock the interface button to block multiple overlapping server requests (if present)
+  if (syncBtn) { syncBtn.disabled = true; syncBtn.textContent = "Syncing..."; }
   
   // 2. Set up the high-visibility animated loading banner look
   feedbackNode.style.cssText = `
@@ -6202,8 +6212,7 @@ async function executeInboundEmailSyncPipelineFetch() {
     console.error("Inbound email pipeline operational sync crash: ", error);
   } finally {
     // 5. Restore full structural button states parameters regardless of success or failure paths
-    syncBtn.disabled = false; 
-    syncBtn.textContent = "Refresh Leads";
+    if (syncBtn) { syncBtn.disabled = false; syncBtn.textContent = "Refresh Leads"; }
   }
 }
 
@@ -6220,7 +6229,8 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
   if (emailLeadsList.length === 0) {
     canvas.innerHTML = `
       <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;">
-        <h3 style="color: var(--accent);">All Email Leads are Handled</h3>
+        <h3 style="color: var(--accent); margin-bottom:6px;">No Email Leads Found</h3>
+        <p style="margin:0;">Nothing has been classified as a lead yet. New inbound emails are scanned automatically in the background every few minutes.</p>
       </div>
     `;
     return;
@@ -11207,7 +11217,7 @@ async function submitNewItemCodeNumber() {
         <div style="margin-top:8px; display:flex; gap:16px; flex-wrap:wrap;">
           <span>Code: <strong style="font-family:monospace; font-size:1rem; background:#fff; padding:2px 8px; border-radius:4px; border:1px solid #15803d;">${data.itemCode}</strong></span>
           <span>Product: <strong>${data.productName}${data.rating ? " " + data.rating : ""}</strong></span>
-          <span>Type: <strong>${data.typeOfMaterial}</strong></span>
+          <span>Type: <strong>${window.typeLabelDisplay_(data.typeOfMaterial)}</strong></span>
           <span>Unit: <strong>${data.unit}</strong></span>
         </div>
         <button onclick="
