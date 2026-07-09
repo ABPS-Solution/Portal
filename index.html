@@ -2340,6 +2340,12 @@
         <div class="section-body" style="text-align: left; padding: 16px;">
           <div id="dispatch-bill-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
           <div id="dispatch-bill-inputs-container" style="display: block;">
+            <div style="margin-bottom: 12px;">
+              <label class="field-label">Select Lead / Company *</label>
+              <select id="dispatch-bill-lead-dropdown" style="padding: 8px; font-weight: 600; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
+                <option value="">— Select Company / Lead —</option>
+              </select>
+            </div>
             <div class="card-box" id="dispatch-bill-upload-box" onclick="document.getElementById('dispatch-bill-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Dispatch Bill</div>
             <input type="file" id="dispatch-bill-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'dispatch-bill-upload-box', 'Dispatch Bill Document Added ✅')" />
             <button class="nav-btn-styled" id="btn-ops-dispatch-submit" style="margin-top: 14px; width: 100%; padding: 10px;" onclick="executeMarketingOperationsDocumentCommit('DISPATCH')">Process Dispatch Bill with AI</button>
@@ -2354,6 +2360,12 @@
         <div class="section-body" style="text-align: left; padding: 16px;">
           <div id="commissioning-report-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
           <div id="commissioning-report-inputs-container" style="display: block;">
+            <div style="margin-bottom: 12px;">
+              <label class="field-label">Select Lead / Company *</label>
+              <select id="commissioning-report-lead-dropdown" style="padding: 8px; font-weight: 600; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
+                <option value="">— Select Company / Lead —</option>
+              </select>
+            </div>
             <div class="card-box" id="commissioning-report-upload-box" onclick="document.getElementById('commissioning-report-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Commissioning Report</div>
             <input type="file" id="commissioning-report-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'commissioning-report-upload-box', 'Commissioning Report Document Added ✅')" />
             <button class="nav-btn-styled" id="btn-ops-commission-submit" style="margin-top: 14px; width: 100%; padding: 10px;" onclick="executeMarketingOperationsDocumentCommit('COMMISSION')">Process Commissioning Report with AI</button>
@@ -2368,6 +2380,12 @@
         <div class="section-body" style="text-align: left; padding: 16px;">
           <div id="purchase-order-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
           <div id="purchase-order-inputs-container" style="display: block;">
+            <div style="margin-bottom: 12px;">
+              <label class="field-label">Select Lead / Company *</label>
+              <select id="purchase-order-lead-dropdown" style="padding: 8px; font-weight: 600; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
+                <option value="">— Select Company / Lead —</option>
+              </select>
+            </div>
             <div style="margin-bottom: 12px;">
               <label class="field-label">Name of Owner of Order *</label>
               <select id="po-owner-of-order-dropdown" style="padding: 8px; font-weight: 600; border: 1.5px solid var(--border); border-radius: var(--radius);">
@@ -2856,12 +2874,10 @@
     <div><label class="field-label">ABPS Engineer Name *</label><select class="fup-eng-select"></select></div>
     <div><label class="field-label">Next Follow-Up Date</label><input type="date" class="fup-nexttarget-input"></div>
     <div><label class="field-label">Next Follow-Up Time</label><select class="fup-nexttime-select"><option value="">— Select —</option><option value="Morning">Morning</option><option value="Afternoon">Afternoon</option><option value="Evening">Evening</option></select></div>
-    <div><label class="field-label">NQ1</label><input type="text" class="fup-nq1" placeholder="Notes..." /></div>
-    <div><label class="field-label">NQ2</label><input type="text" class="fup-nq2" placeholder="Notes..." /></div>
-    <div><label class="field-label">NQ3</label><input type="text" class="fup-nq3" placeholder="Notes..." /></div>
-    <div><label class="field-label">NQ4</label><input type="text" class="fup-nq4" placeholder="Notes..." /></div>
-    <div><label class="field-label">NQ5</label><input type="text" class="fup-nq5" placeholder="Notes..." /></div>
-    <div><label class="field-label">NQ6</label><input type="text" class="fup-nq6" placeholder="Notes..." /></div>
+    <div><label class="field-label">Interaction Outcome</label><select class="fup-outcome-select"><option value="">— Select —</option><option value="Positive">Positive</option><option value="Neutral">Neutral</option><option value="Negative">Negative</option><option value="No Response">No Response</option></select></div>
+    <div><label class="field-label">Interaction Mode</label><select class="fup-mode-select"><option value="">— Select —</option><option value="Phone Call">Phone Call</option><option value="Email">Email</option><option value="WhatsApp">WhatsApp</option><option value="In-Person Visit">In-Person Visit</option><option value="Video Call">Video Call</option></select></div>
+    <div><label class="field-label">Next Action Type</label><input type="text" class="fup-nextaction-input" placeholder="e.g. Send Offer, Site Visit..." /></div>
+    <div><label class="field-label">Objection Raised</label><input type="text" class="fup-objection-input" placeholder="e.g. Price, Timeline, Already has vendor..." /></div>
     <div style="grid-column:span 2;"><label class="field-label">Interaction Notes *</label><textarea class="fup-notes-input" style="min-height:50px;"></textarea></div>
     <div style="grid-column:span 2; display:flex; justify-content:flex-end;">
       <button class="nav-btn-styled commit-fup-btn-trigger" style="background:var(--accent); padding:8px 20px;">Save Follow-Up</button>
@@ -2885,7 +2901,9 @@
     <div><label class="field-label">Assigned By (ABPS Engineer) *</label><select class="task-assigner-select"></select></div>
     <div><label class="field-label">Shift / Time Slot *</label><select class="task-shift-select"><option value="Morning">Morning</option><option value="Afternoon">Afternoon</option><option value="Evening">Evening</option></select></div>
     <div><label class="field-label">Target Date *</label><input type="date" class="task-targetdate-input"></div>
+    <div><label class="field-label">Task Priority</label><select class="task-priority-select"><option value="Low">Low</option><option value="Medium" selected>Medium</option><option value="High">High</option><option value="Urgent">Urgent</option></select></div>
     <div style="grid-column:span 2;"><label class="field-label">Task Description *</label><textarea class="task-desc-input" style="min-height:45px;"></textarea></div>
+    <div style="grid-column:span 2;"><label class="field-label">Completion Notes / Outcome</label><textarea class="task-completionnotes-input" style="min-height:35px;" placeholder="Filled in once the task is done — what actually happened?"></textarea></div>
     <div style="grid-column:span 2; display:flex; justify-content:flex-end;">
       <button class="nav-btn-styled commit-task-btn-trigger" style="background:var(--accent); padding:8px 20px;">Save Task</button>
     </div>
@@ -2898,7 +2916,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzmZeXwjb0qO3Wo6Re10VgLgRyPQxRJVMEFfmMv7UxEUOfz8yBYV6BtC4Bm_CPpJ0Qh/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyWDm2I3CY5jIbXJaFA-lpTj-PotZWRpEVi4q86_dfKZovLdFyds8FWe3SPPospgYkY/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -2977,6 +2995,7 @@ let appActiveOperatorIdentityString = "";
 let fileFront = null, fileBack = null;
 let userPermissions = { cardDetails: false, searchCompany: false, searchStatus: false, searchEngineer: false, searchTasks: false, emailWhatsapp: false, dispatchCommissioning: true }; 
 let cachedEngineers = [];
+let cachedUploadLeadsList = [];
 let activeSearchRef = ""; 
 let activeSearchCompany = "";
 let currentFollowUpCount = 0;
@@ -3102,6 +3121,26 @@ async function syncPlatformPersonnelDropdownOptionsList() {
     console.error("Directory synchronization exception dropped:", error);
     deptSelect.innerHTML = '<option value="">Network connection drop</option>';
   }
+}
+
+async function fetchAndPopulateUploadLeadDropdowns() {
+  try {
+    const d = await apFetch({ action: "getLeadsForDocumentUploadDropdown", activeEngineer: appActiveOperatorIdentityString });
+    if (!d.success) return;
+    cachedUploadLeadsList = d.leads;
+    ["dispatch-bill-lead-dropdown", "commissioning-report-lead-dropdown", "purchase-order-lead-dropdown"].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const prevVal = el.value;
+      el.innerHTML = '<option value="">— Select Company / Lead —</option>';
+      cachedUploadLeadsList.forEach(l => {
+        const opt = document.createElement("option");
+        opt.value = l.leadId; opt.textContent = l.displayLabel;
+        el.appendChild(opt);
+      });
+      if (prevVal && cachedUploadLeadsList.some(l => l.leadId === prevVal)) el.value = prevVal;
+    });
+  } catch(e) { /* non-fatal — dropdowns just stay on placeholder if this fails */ }
 }
 
 /**
@@ -3686,6 +3725,7 @@ async function showAppView() {
     if (data.success) { 
       cachedEngineers = data.engineers;
       populateEngineerDropdowns(); 
+      fetchAndPopulateUploadLeadDropdowns();
       
       // 1. MASTER LEAD ENTRY DROPDOWN PATCH
       const targetFormEngSelector = document.getElementById("engName");
@@ -3813,7 +3853,9 @@ async function navigateToModule(key) {
               opt.value = eng; opt.textContent = eng;
               poOwnerDrop.appendChild(opt);
             });
-            if (appActiveOperatorIdentityString) poOwnerDrop.value = appActiveOperatorIdentityString;
+            if (appActiveOperatorIdentityString && cachedEngineers.indexOf(appActiveOperatorIdentityString) !== -1) {
+              poOwnerDrop.value = appActiveOperatorIdentityString;
+            }
           };
           if (cachedEngineers.length > 0) {
             populatePOOwnerDrop();
@@ -3914,6 +3956,22 @@ function returnToDashboard() {
   boqFormIsDirty   = false;
   boqUpdateIsDirty = false;
   collapseNewEntryDropdownFormExplicitly(); 
+  resetSequentialFormState();
+
+  // Clear any stale "missing person" banner / no-match notice left over from a prior visit
+  const bannerHookReset = document.getElementById("split-missing-person-banner-hook");
+  if (bannerHookReset) bannerHookReset.innerHTML = "";
+  const missingNoticeReset = document.getElementById("missing-trigger-notice-block");
+  if (missingNoticeReset) missingNoticeReset.style.display = "none";
+
+  // Duplicate-fields block may have been left hidden from a prior CARD-mode visit — restore
+  // it to its default visible state so the next visit starts clean.
+  const dupBlockReset = document.getElementById("dropform-duplicate-fields-block");
+  if (dupBlockReset) dupBlockReset.style.display = "block";
+
+  // Engineer Name should show its placeholder again, not a stale selection
+  const engResetEl = document.getElementById("engName");
+  if (engResetEl) engResetEl.value = "";
   
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
   if (document.getElementById("module-purchase-workspace-enclosure-panel")) document.getElementById("module-purchase-workspace-enclosure-panel").style.display = "none";
@@ -4953,8 +5011,8 @@ function renderIsolatedFollowUpTimeline(leadRef, list, scopeNode) {
         <div style="font-size:0.82rem; line-height:1.5; color:var(--muted); margin-bottom:6px;">
           <strong>Status:</strong> ${f.status}<br/><strong>Lead ID:</strong> ${f.leadId}<br/><strong>ABPS Engineer Name:</strong> ${f.eng}<br/>
           <strong>Next Follow-Up Date:</strong> ${formatCleanDateOnly(f.nextDate)} | <strong>Time:</strong> ${f.nextTime || "None"}<br/>
-          <strong>NQ1:</strong> ${f.nq1} | <strong>NQ2:</strong> ${f.nq2} | <strong>NQ3:</strong> ${f.nq3}<br/>
-          <strong>NQ4:</strong> ${f.nq4} | <strong>NQ5:</strong> ${f.nq5} | <strong>NQ6:</strong> ${f.nq6}
+          <strong>Outcome:</strong> ${f.outcome || "—"} | <strong>Mode:</strong> ${f.mode || "—"}<br/>
+          <strong>Next Action:</strong> ${f.nextActionType || "—"} | <strong>Objection:</strong> ${f.objectionRaised || "—"}
         </div>
         <div style="font-size:0.85rem; color:#2d3748; padding:6px 0; border-top:1px solid #edf2f7; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"><strong>Notes:</strong> ${f.notes}</div>
         <div style="margin-top:8px; display:flex; gap:8px;">
@@ -4984,9 +5042,10 @@ function editIsolatedFollowUpItem(leadRef, scopeNode, f) {
   fupForm.querySelector(".fup-nexttarget-input").value = formatCleanDateOnly(f.nextDate);
   fupForm.querySelector(".fup-nexttime-select").value = f.nextTime || "Morning";
   
-  fupForm.querySelector(".fup-nq1").value = f.nq1; fupForm.querySelector(".fup-nq2").value = f.nq2;
-  fupForm.querySelector(".fup-nq3").value = f.nq3; fupForm.querySelector(".fup-nq4").value = f.nq4;
-  fupForm.querySelector(".fup-nq5").value = f.nq5; fupForm.querySelector(".fup-nq6").value = f.nq6;
+  fupForm.querySelector(".fup-outcome-select").value = f.outcome || "";
+  fupForm.querySelector(".fup-mode-select").value = f.mode || "";
+  fupForm.querySelector(".fup-nextaction-input").value = f.nextActionType || "";
+  fupForm.querySelector(".fup-objection-input").value = f.objectionRaised || "";
   fupForm.style.display = "grid"; scopeNode.querySelector(".trigger-fup-open").style.display = "none"; scopeNode.querySelector(".trigger-fup-close").style.display = "inline-flex";
 }
 
@@ -5000,8 +5059,8 @@ async function commitIsolatedFollowUpItem(leadRef, scopeNode) {
     leadRef: leadRef, company: activeSearchCompany,
     eng: form.querySelector(".fup-eng-select").value, notes: form.querySelector(".fup-notes-input").value,
     nextDate: form.querySelector(".fup-nexttarget-input").value, nextTime: form.querySelector(".fup-nexttime-select").value,
-    nq1: form.querySelector(".fup-nq1").value, nq2: form.querySelector(".fup-nq2").value, nq3: form.querySelector(".fup-nq3").value,
-    nq4: form.querySelector(".fup-nq4").value, nq5: form.querySelector(".fup-nq5").value, nq6: form.querySelector(".fup-nq6").value
+    outcome: form.querySelector(".fup-outcome-select").value, mode: form.querySelector(".fup-mode-select").value,
+    nextActionType: form.querySelector(".fup-nextaction-input").value, objectionRaised: form.querySelector(".fup-objection-input").value
   };
   if (!followUpData.eng || !followUpData.eng.trim()) return alert("Engineer Name is a compulsory field.");
   if (!followUpData.notes) return alert("Interaction Notes required.");
@@ -5067,8 +5126,11 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
       ? `<button class="nav-btn-styled" id="trigger-inner-delete-task-${leadRef}-${t.id}" style="font-size:0.75rem; background:var(--warn); padding:2px 6px;">Delete</button>` 
       : `<span id="trigger-inner-delete-task-${leadRef}-${t.id}" style="display:none;"></span>`;
 
-    div.innerHTML = `<strong>${t.type}</strong> - ${t.eng}<br/><small>Time: ${t.shift} | Target Date: ${formatCleanDateOnly(t.targetDate)}</small>
+    const priorityColors = { "Urgent": "#b91c1c", "High": "#b45309", "Medium": "#2563eb", "Low": "#65a30d" };
+    const priorityColor = priorityColors[t.priority] || "#64748b";
+    div.innerHTML = `<strong>${t.type}</strong> - ${t.eng} <span style="font-size:0.68rem; font-weight:700; color:#fff; background:${priorityColor}; padding:1px 6px; border-radius:3px; margin-left:4px;">${t.priority || "Medium"}</span><br/><small>Time: ${t.shift} | Target Date: ${formatCleanDateOnly(t.targetDate)}</small>
                      <p style="font-size:0.82rem; margin-top:4px; color:var(--text); word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"><strong>Desc:</strong> ${t.desc || 'None'}</p>
+                     ${t.completionNotes ? `<p style="font-size:0.8rem; margin-top:4px; color:#15803d; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"><strong>Outcome:</strong> ${t.completionNotes}</p>` : ''}
                      <div style="font-size:0.75rem; font-weight:bold; color:var(--brand); margin-top:4px;">Status: ${t.status} | Assigned By: ${t.assigner || "System"}</div>
                      <div style="margin-top:8px; display:flex; gap:6px;">
                        <button class="nav-btn-styled" id="trigger-inner-edit-task-${leadRef}-${t.id}" style="font-size:0.75rem; padding:2px 6px;">Edit</button>
@@ -5094,7 +5156,9 @@ function editIsolatedTaskItem(leadRef, scopeNode, t) {
   taskForm.querySelector(".task-desc-input").value = t.desc;
   taskForm.querySelector(".task-shift-select").value = t.shift; 
   taskForm.querySelector(".task-targetdate-input").value = formatCleanDateOnly(t.targetDate);
-  taskForm.style.display = "grid"; scopeNode.querySelector(".trigger-task-open").style.display = "none"; 
+  taskForm.querySelector(".task-priority-select").value = t.priority || "Medium";
+  taskForm.querySelector(".task-completionnotes-input").value = t.completionNotes || "";
+  taskForm.style.display = "grid"; scopeNode.querySelector(".trigger-task-open").style.display = "none";
   scopeNode.querySelector(".trigger-task-close").style.display = "inline-flex";
 }
 
@@ -5107,7 +5171,8 @@ async function commitIsolatedTaskItem(leadRef, scopeNode) {
     id: editId || "NEW", isNew: !editId, fupNum: currentFollowUpCount, leadRef: leadRef, company: activeSearchCompany,
     engineer: form.querySelector(".task-eng-select").value, assigner: form.querySelector(".task-assigner-select").value,
     type: form.querySelector(".task-type-select").value, desc: form.querySelector(".task-desc-input").value, 
-    shift: form.querySelector(".task-shift-select").value, targetDate: form.querySelector(".task-targetdate-input").value, status: form.querySelector(".task-status-select").value
+    shift: form.querySelector(".task-shift-select").value, targetDate: form.querySelector(".task-targetdate-input").value, status: form.querySelector(".task-status-select").value,
+    priority: form.querySelector(".task-priority-select").value, completionNotes: form.querySelector(".task-completionnotes-input").value
   };
   if (!taskData.targetDate) return alert("Target Date required.");
   if (!desc || desc.trim() === "") return alert("Task Description is a compulsory field.");
@@ -8981,6 +9046,14 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
     return;
   }
 
+  const leadDropdownIds = { "DISPATCH": "dispatch-bill-lead-dropdown", "COMMISSION": "commissioning-report-lead-dropdown", "PURCHASE_ORDER": "purchase-order-lead-dropdown" };
+  const leadDropEl = document.getElementById(leadDropdownIds[opsFlagTypeString]);
+  if (!leadDropEl || !leadDropEl.value || leadDropEl.value.trim() === "") {
+    alert("Please select the Company / Lead this document belongs to before processing.");
+    if (leadDropEl) leadDropEl.focus();
+    return;
+  }
+
   if (isPO) {
     const poOwnerDropEl = document.getElementById("po-owner-of-order-dropdown");
     if (!poOwnerDropEl || !poOwnerDropEl.value || poOwnerDropEl.value.trim() === "") {
@@ -9009,13 +9082,17 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
     const poOwnerDropEl = document.getElementById("po-owner-of-order-dropdown");
     const ownerOfOrder = (isPO && poOwnerDropEl) ? poOwnerDropEl.value.trim() : "";
 
+    const leadDropdownIdsForSubmit = { "DISPATCH": "dispatch-bill-lead-dropdown", "COMMISSION": "commissioning-report-lead-dropdown", "PURCHASE_ORDER": "purchase-order-lead-dropdown" };
+    const selectedLeadIdForSubmit = document.getElementById(leadDropdownIdsForSubmit[opsFlagTypeString]).value.trim();
+
     const data = await apFetch({
       action: "commitMarketingOperationsDocument",
       activeEngineer: appActiveOperatorIdentityString,
       operationType: opsFlagTypeString,
       fileData64: fileBase64Raw,
       isPdf: isPdfFormat,
-      ownerOfOrder: ownerOfOrder
+      ownerOfOrder: ownerOfOrder,
+      leadId: selectedLeadIdForSubmit
     });
     if (data.success) {
       // Hide the file picker input controls on success
@@ -9045,6 +9122,11 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
                 </div>
               </div>` : ''}
 
+              ${data.companyCrossCheckWarning ? `
+              <div style="margin-top:10px; background:#fef2f2; border:1px solid #fca5a5; border-radius:6px; padding:10px; font-size:0.82rem; color:#991b1b;">
+                <div style="font-weight:700; font-size:0.78rem; text-transform:uppercase; color:#b91c1c; margin-bottom:4px; letter-spacing:0.3px;">⚠ Company Mismatch Warning</div>
+                ${data.companyCrossCheckWarning}
+              </div>` : ''}
               ${data.partialWriteWarning ? `
               <div style="margin-top:10px; background:#fffbeb; border:1px solid #fcd34d; border-radius:6px; padding:10px; font-size:0.82rem; color:#92400e;">
                 <div style="font-weight:700; font-size:0.78rem; text-transform:uppercase; color:#b45309; margin-bottom:4px; letter-spacing:0.3px;">⚠ Partial Save Warning</div>
@@ -13927,6 +14009,15 @@ function exitMarketingDashboardBackToMenu() {
   document.getElementById("canvas-module-marketing-dashboard").style.display = "none";
   enforceDynamicModuleRoleGateways(userPermissions);
   document.getElementById("dashboard-view").style.display = "flex";
+
+  // Reset period selector back to "Today" so the next visit starts fresh instead of
+  // silently resuming whatever period was last viewed.
+  mdCurrentPeriod = "today";
+  document.querySelectorAll("#md-period-btns .dd-period-btn").forEach(b => b.classList.remove("active"));
+  const todayBtn = document.querySelector('#md-period-btns .dd-period-btn[data-period="today"]');
+  if (todayBtn) todayBtn.classList.add("active");
+  const customZoneReset = document.getElementById("md-custom-zone");
+  if (customZoneReset) customZoneReset.style.display = "none";
 }
 
 function navigateToDesignDashboard() {
@@ -15342,7 +15433,9 @@ function renderMaterialListByType(materials) {
 
     items.forEach(item => {
       const card = document.createElement("div");
-      card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; justify-content:space-between; gap:8px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:160px; flex-shrink:0; overflow:hidden;";
+      card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; justify-content:space-between; gap:8px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:160px; flex-shrink:0; overflow:hidden; cursor:pointer;";
+      card.title = "Click to see the Project ID breakdown for this material";
+      card.onclick = () => showMaterialProjectBreakdownModal(item.itemCode, item.materialName, item.unit, item.totalPurchaseQty);
       card.innerHTML = `
         <div style="font-size:0.78rem; font-weight:700; color:#334155; line-height:1.35; word-break:break-word; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; flex:1;">
           ${item.materialName}
@@ -15361,6 +15454,75 @@ function renderMaterialListByType(materials) {
     section.appendChild(bodyDiv);
     zone.appendChild(section);
   });
+}
+
+function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQty) {
+  // materialListCache already carries one entry per (Project ID, Item Code) pair —
+  // the table view sums these into a single aggregated card. This modal un-collapses
+  // that same data back into its per-project breakdown, no extra network call needed.
+  const rows = materialListCache.filter(m => (m.itemCode || "").trim() === itemCode);
+
+  // Respect whatever project filter pills are currently active, same as the main table
+  const filteredRows = materialListActiveProjectFilters.size === 0
+    ? rows
+    : rows.filter(r => materialListActiveProjectFilters.has(r.projectId));
+
+  const byProject = {};
+  filteredRows.forEach(r => {
+    const pid = r.projectId || "Unassigned";
+    const qty = Math.max(0, Number(r.stillToOrderQty) || 0);
+    if (qty <= 0) return;
+    if (!byProject[pid]) byProject[pid] = 0;
+    byProject[pid] += qty;
+  });
+
+  const projectIds = Object.keys(byProject).sort();
+  const unitLabel = (unit || "NOS").toUpperCase();
+
+  const rowsHtml = projectIds.length === 0
+    ? `<tr><td colspan="2" style="padding:14px; text-align:center; color:var(--muted); font-size:0.85rem;">No project-level breakdown available.</td></tr>`
+    : projectIds.map(pid => `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:8px 6px; font-size:0.85rem; font-weight:600; color:#334155;">${pid}</td>
+          <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:#b91c1c;">${byProject[pid].toFixed(2)} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
+        </tr>`).join("");
+
+  const existing = document.getElementById("material-project-breakdown-modal-overlay");
+  if (existing) existing.remove();
+
+  const modal = document.createElement("div");
+  modal.id = "material-project-breakdown-modal-overlay";
+  modal.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;";
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:var(--radius);padding:24px;max-width:480px;width:92%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;border-bottom:2px solid var(--border);padding-bottom:12px;">
+        <div>
+          <div style="font-size:1rem;font-weight:800;color:var(--brand);">${materialName}</div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Item Code: <strong>${itemCode}</strong></div>
+        </div>
+        <button onclick="document.getElementById('material-project-breakdown-modal-overlay').remove()" style="background:transparent;border:none;font-size:1.3rem;line-height:1;color:var(--muted);cursor:pointer;padding:0 0 0 10px;">&times;</button>
+      </div>
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="text-align:left; border-bottom:2px solid var(--border);">
+            <th style="padding:6px; font-size:0.72rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">Project ID</th>
+            <th style="padding:6px; text-align:right; font-size:0.72rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">PRN Quantity</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+        <tfoot>
+          <tr style="border-top:2px solid var(--border);">
+            <td style="padding:8px 6px; font-size:0.82rem; font-weight:800; color:#334155;">Total (matches Material List)</td>
+            <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:var(--brand);">${(totalQty || 0).toFixed(2)} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
+          </tr>
+        </tfoot>
+      </table>
+      <div style="margin-top:14px; text-align:right;">
+        <button class="nav-btn-styled" style="background:#718096;" onclick="document.getElementById('material-project-breakdown-modal-overlay').remove()">Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
 }
 
 // ═══════════════════════════════════════════════════════
