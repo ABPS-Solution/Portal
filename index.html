@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Prevent browsers from serving a stale cached copy of this page after a deploy —
+       this is what caused today's "different results on different browser profiles" issue. -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <meta charset="UTF-8" />
