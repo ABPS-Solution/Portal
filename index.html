@@ -398,6 +398,7 @@
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-store-ticket" onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Store Ticket</span></div>
         <div class="menu-card" id="mod-dispatched-product-code" onclick="switchActiveDashboardModule('dispatched-product-code')"><span class="mc-label">Add / Check Dispatch Product Code Number</span></div>
+        <div class="menu-card" id="mod-jc-letterhead" onclick="switchActiveDashboardModule('jc-letterhead')"><span class="mc-label">Job Card Letterhead</span></div>
         <div class="menu-card" id="mod-fg-add" onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
       </div>
     </div>
@@ -664,6 +665,56 @@
 
     <div id="canvas-module-store-live-spare" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
       <div class="dashboard-grid" id="dashboard-live-spare-inventory-metrics-mount-zone" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap:10px; padding:0;"></div>
+    </div>
+
+    <div id="canvas-module-jc-letterhead" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="margin:0 0 16px; color:var(--brand);">Job Card Letterhead</h2>
+      <div id="jclh-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Project ID *</label>
+          <select id="jclh-project" onchange="handleJCLHProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <option value="">— Select Project ID —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Customer Name</label>
+          <input type="text" id="jclh-customer" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Project ID" />
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">BOQ ID *</label>
+          <select id="jclh-boq" onchange="handleJCLHBoqChange(this.value)" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <option value="">— Select Project First —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Department</label>
+          <input type="text" id="jclh-department" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from BOQ ID" />
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Product Name</label>
+          <input type="text" id="jclh-product-name" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from BOQ ID" />
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Product Rating</label>
+          <input type="text" id="jclh-product-rating" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from BOQ ID (blank if none)" />
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:20px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Job Card Number *</label>
+          <select id="jclh-jobcard" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <option value="">— Select BOQ ID First —</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
+        <button class="nav-btn-styled" id="jclh-download-btn" disabled onclick="submitJCLHDownload()" style="background:var(--accent); padding:8px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;">Download</button>
+      </div>
     </div>
 
     <div id="canvas-module-fg-add" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
@@ -2921,7 +2972,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbx-9H1Uvoz05Kow1ka6dEEvMwZhGq86erqx8kSDUKcEum54kxRkvuhXRvgE6V2F5vvp/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyD52AS0hLJIGStPtuDdHmWhsaDD5T6QzFXtAkAV3BBQdAFKKjGoxUxMpe3Ia0BlOJR/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -6608,6 +6659,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   }
   
   if (document.getElementById("mod-fg-add")) document.getElementById("mod-fg-add").style.display = canAddFinishedGoods ? "block" : "none";
+  if (document.getElementById("mod-jc-letterhead")) document.getElementById("mod-jc-letterhead").style.display = canAddFinishedGoods ? "block" : "none";
 
   const canApproveBOQIncrease = userPermissionsObject.approveJCIncrease === true;
   if (document.getElementById("mod-boq-increase-approvals")) {
@@ -7933,6 +7985,14 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     navigateToDesignWorkspacePanel('design-auth-boq-upd');
   } else if (targetCanvasModuleId === 'design-upload-drawings') {
     navigateToDesignWorkspacePanel('design-upload-drawings');
+  } else if (targetCanvasModuleId === 'jc-letterhead') {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    const leftControlsJCLH = document.getElementById("store-panel-left-controls");
+    const centerTitleJCLH  = document.getElementById("store-panel-center-title");
+    if (leftControlsJCLH) leftControlsJCLH.style.visibility = "hidden";
+    if (centerTitleJCLH)  centerTitleJCLH.style.visibility  = "hidden";
+    document.getElementById("canvas-module-jc-letterhead").style.display = "block";
+    initializeJCLHWorkspace();
   } else if (targetCanvasModuleId === 'fg-add') {
     document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
     const leftControls = document.getElementById("store-panel-left-controls");
@@ -12831,6 +12891,171 @@ async function submitUpdateBOQ() {
     _submitUpdateBOQInProgress = false;
     btn.disabled = false;
     btn.textContent = "Submit BOQ Update for Authorization";
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// JOB CARD LETTERHEAD
+// ═══════════════════════════════════════════════════════
+
+let jclhWorkspaceInitInProgress = false;
+let jclhAllJobCardsForProject = []; // cache: full job-card list for the selected project
+let jclhSubmitInProgress = false;
+
+async function initializeJCLHWorkspace() {
+  if (jclhWorkspaceInitInProgress) return;
+  jclhWorkspaceInitInProgress = true;
+  document.getElementById("jclh-feedback").style.display = "none";
+  try {
+    const projDrop = document.getElementById("jclh-project");
+    projDrop.innerHTML = '<option value="">Loading...</option>';
+    const data = await apFetch({ action: "pullLiveActiveProjectCodes" });
+    window.jclhProjectMeta = data.projectMeta || {};
+    projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
+    (data.projects || []).forEach(code => {
+      const opt = document.createElement("option");
+      opt.value = code; opt.textContent = code;
+      projDrop.appendChild(opt);
+    });
+    handleJCLHProjectChange("");
+  } catch(e) {
+    document.getElementById("jclh-project").innerHTML = '<option value="">Error loading projects</option>';
+  } finally {
+    jclhWorkspaceInitInProgress = false;
+  }
+}
+
+async function handleJCLHProjectChange(projectId) {
+  const meta = window.jclhProjectMeta && window.jclhProjectMeta[projectId];
+  document.getElementById("jclh-customer").value = meta ? (meta.companyName || "") : "";
+
+  const boqDrop = document.getElementById("jclh-boq");
+  const jcDrop  = document.getElementById("jclh-jobcard");
+  resetJCLHDownstreamFields();
+
+  if (!projectId) {
+    boqDrop.innerHTML = '<option value="">— Select Project First —</option>';
+    boqDrop.disabled = true;
+    jcDrop.innerHTML  = '<option value="">— Select BOQ ID First —</option>';
+    jcDrop.disabled   = true;
+    return;
+  }
+
+  boqDrop.innerHTML = '<option value="">Loading...</option>';
+  boqDrop.disabled = true;
+  try {
+    const data = await apFetch({ action: "fetchJobCardsForProject", projectId });
+    jclhAllJobCardsForProject = data.jobCards || [];
+
+    // Distinct BOQ IDs that already have job cards, per requirement
+    const seenBoq = {};
+    const boqOptions = [];
+    jclhAllJobCardsForProject.forEach(jc => {
+      if (jc.boqId && !seenBoq[jc.boqId]) {
+        seenBoq[jc.boqId] = true;
+        boqOptions.push(jc);
+      }
+    });
+
+    boqDrop.innerHTML = '<option value="">— Select BOQ ID —</option>';
+    boqOptions.forEach(jc => {
+      const opt = document.createElement("option");
+      opt.value = jc.boqId;
+      opt.textContent = `${jc.boqId} | ${jc.productName}${jc.productRating ? " " + jc.productRating : ""}`;
+      boqDrop.appendChild(opt);
+    });
+    boqDrop.disabled = false;
+  } catch(e) {
+    boqDrop.innerHTML = '<option value="">Error loading BOQs</option>';
+  }
+}
+
+function handleJCLHBoqChange(boqId) {
+  const jcDrop = document.getElementById("jclh-jobcard");
+  document.getElementById("jclh-department").value     = "";
+  document.getElementById("jclh-product-name").value   = "";
+  document.getElementById("jclh-product-rating").value = "";
+  updateJCLHDownloadButtonState();
+
+  if (!boqId) {
+    jcDrop.innerHTML = '<option value="">— Select BOQ ID First —</option>';
+    jcDrop.disabled = true;
+    return;
+  }
+
+  const matches = jclhAllJobCardsForProject.filter(jc => jc.boqId === boqId);
+  if (matches.length > 0) {
+    document.getElementById("jclh-department").value     = matches[0].department || "";
+    document.getElementById("jclh-product-name").value   = matches[0].productName || "";
+    document.getElementById("jclh-product-rating").value = matches[0].productRating || "";
+  }
+
+  jcDrop.innerHTML = '<option value="">— Select Job Card Number —</option>';
+  matches.forEach(jc => {
+    const opt = document.createElement("option");
+    opt.value = jc.jobCardNumber;
+    opt.textContent = `${jc.jobCardNumber} (Set ${jc.setNumber})`;
+    jcDrop.appendChild(opt);
+  });
+  jcDrop.disabled = false;
+  jcDrop.onchange = updateJCLHDownloadButtonState;
+}
+
+function resetJCLHDownstreamFields() {
+  document.getElementById("jclh-department").value     = "";
+  document.getElementById("jclh-product-name").value   = "";
+  document.getElementById("jclh-product-rating").value = "";
+  updateJCLHDownloadButtonState();
+}
+
+function updateJCLHDownloadButtonState() {
+  const btn = document.getElementById("jclh-download-btn");
+  const jc  = document.getElementById("jclh-jobcard").value.trim();
+  if (!btn) return;
+  if (jc) {
+    btn.disabled = false; btn.style.opacity = "1"; btn.style.cursor = "pointer";
+  } else {
+    btn.disabled = true; btn.style.opacity = "0.5"; btn.style.cursor = "not-allowed";
+  }
+}
+
+async function submitJCLHDownload() {
+  if (jclhSubmitInProgress) return;
+  jclhSubmitInProgress = true;
+  const btn = document.getElementById("jclh-download-btn");
+  const originalText = btn.textContent;
+  btn.disabled = true; btn.textContent = "Generating...";
+
+  const projectId     = document.getElementById("jclh-project").value.trim();
+  const customerName  = document.getElementById("jclh-customer").value.trim();
+  const boqId          = document.getElementById("jclh-boq").value.trim();
+  const productName   = document.getElementById("jclh-product-name").value.trim();
+  const productRating = document.getElementById("jclh-product-rating").value.trim();
+  const department     = document.getElementById("jclh-department").value.trim();
+  const jobCardNumber = document.getElementById("jclh-jobcard").value.trim();
+
+  try {
+    const data = await apFetch({
+      action: "generateJobCardLetterheadPdf",
+      projectId, customerName, boqId, productName, productRating, department, jobCardNumber
+    });
+    if (data.success) {
+      const link = document.createElement("a");
+      link.href = "data:application/pdf;base64," + data.base64;
+      link.download = data.fileName || "JobCard_Letterhead.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showBOQBanner("jclh-feedback", "Letterhead PDF downloaded.", "success");
+    } else {
+      showBOQBanner("jclh-feedback", data.error || "Failed to generate PDF.", "error");
+    }
+  } catch(e) {
+    showBOQBanner("jclh-feedback", "Network error: " + e.message, "error");
+  } finally {
+    jclhSubmitInProgress = false;
+    btn.disabled = false; btn.textContent = originalText;
+    updateJCLHDownloadButtonState();
   }
 }
 
