@@ -11821,7 +11821,7 @@ function renderCBOQMaterialRows() {
 
 function updateCBOQTotals() {
   const totalPerSet = cboqMaterialRows.reduce((sum, row) => {
-    if (row.typeOfStore === "Spare Store") return sum;
+    if (row.typeOfStore !== "Raw Materials Store") return sum;
     return sum + ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0));
   }, 0);
   const orderQty = parseInt(document.getElementById("cboq-order-qty")?.value) || 0;
@@ -12358,7 +12358,7 @@ function renderEBOQMaterialRows() {
 
 function updateEBOQTotals() {
   const totalPerSet = eboqMaterialRows.reduce((sum, row) => {
-    if (row.typeOfStore === "Spare Store") return sum;
+    if (row.typeOfStore !== "Raw Materials Store") return sum;
     return sum + ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0));
   }, 0);
   const orderQty = parseInt(document.getElementById("eboq-order-qty")?.value) || 0;
@@ -12801,7 +12801,7 @@ function renderUBOQMaterialRows() {
 
 function updateUBOQTotals() {
   const totalPerSet = uboqMaterialRows.reduce((sum, row) => {
-    if (row.typeOfStore === "Spare Store") return sum;
+    if (row.typeOfStore !== "Raw Materials Store") return sum;
     return sum + ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0));
   }, 0);
   const orderQty = parseInt(document.getElementById("uboq-order-qty")?.value) || 0;
@@ -14888,6 +14888,7 @@ async function initializePRNPanel() {
 async function loadPRNNeedQueue() {
   const zone = document.getElementById("prn-needqueue-zone");
   if (!zone) return;
+  zone.style.display = "block"; // undo the "hide after success" state from a prior PRN creation
   zone.innerHTML = `<div style="text-align:center; padding:12px; color:var(--muted); font-size:0.8rem;">
     <div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>
     Checking which BOQs need a PRN...
