@@ -947,11 +947,11 @@
               <label class="field-label" style="margin-top:0; color:var(--brand);">Filter by Type of Material</label>
               <select id="assign-type-filter" onchange="handleAssignTypeFilterChange(this.value)" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
                 <option value="">— All Types —</option>
-                <option value="A">Material A</option>
-                <option value="B">Material B</option>
-                <option value="C">Material C</option>
-                <option value="D">Material D</option>
-                <option value="E">Material E</option>
+                <option value="Material A">Material A</option>
+                <option value="Material B">Material B</option>
+                <option value="Material C">Material C</option>
+                <option value="Material D">Material D</option>
+                <option value="Material E">Material E</option>
               </select>
             </div>
             <div>
@@ -1318,11 +1318,11 @@
             <label class="field-label" style="margin-top:0;">Type of Material *</label>
             <select id="itemcode-new-type" style="padding:10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
               <option value="">— Select Type —</option>
-              <option value="A">Material A</option>
-              <option value="B">Material B</option>
-              <option value="C">Material C</option>
-              <option value="D">Material D</option>
-              <option value="E">Material E</option>
+              <option value="Material A">Material A</option>
+              <option value="Material B">Material B</option>
+              <option value="Material C">Material C</option>
+              <option value="Material D">Material D</option>
+              <option value="Material E">Material E</option>
             </select>
           </div>
         </div>
@@ -8826,7 +8826,7 @@ async function triggerLiveWarehouseStockMetricsSync() {
       // Group items by Type of Material
       const typeGroups = {};
       const typeOrder = [
-        "A","B","C","D","E","Uncategorized",""
+        "Material A","Material B","Material C","Material D","Material E","Uncategorized",""
       ];
       // Shared display helper — stored values stay bare letters (A-E) everywhere: sheets, PDFs,
       // filters, matching logic. Only presentational text (headings, search-result badges) shows
