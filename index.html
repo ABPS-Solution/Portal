@@ -2974,7 +2974,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyD52AS0hLJIGStPtuDdHmWhsaDD5T6QzFXtAkAV3BBQdAFKKjGoxUxMpe3Ia0BlOJR/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwSbTfaK0_hQUmuDnviWnu6HYUvWbZzDZhXhV0j4C8hAcM6uQ4TkOvszOav7eCDlnkY/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -8057,8 +8057,45 @@ function exitStoreWorkspacePanelBackToMenu() {
   if(document.getElementById("canvas-module-assign-current-stock")) document.getElementById("canvas-module-assign-current-stock").style.display = "none";
   if(document.getElementById("canvas-module-expected-inbounds")) document.getElementById("canvas-module-expected-inbounds").style.display = "none";
 
+  // FIX: these panels share the Store enclosure but were never hidden or state-reset on exit,
+  // so re-entering the section showed stale selections from the previous visit.
+  if(document.getElementById("canvas-module-jc-letterhead")) document.getElementById("canvas-module-jc-letterhead").style.display = "none";
+  if(document.getElementById("canvas-module-fg-add")) document.getElementById("canvas-module-fg-add").style.display = "none";
+  if(document.getElementById("canvas-module-store-live-fg")) document.getElementById("canvas-module-store-live-fg").style.display = "none";
+  if(document.getElementById("canvas-module-store-live-spare")) document.getElementById("canvas-module-store-live-spare").style.display = "none";
+  if(document.getElementById("canvas-module-store-history-matrix")) document.getElementById("canvas-module-store-history-matrix").style.display = "none";
+
+  resetJCLHWorkspace();
+
   document.getElementById("dashboard-view").style.display = "flex"; 
   triggerCompanyDropdownArrayFetch(); 
+}
+
+function resetJCLHWorkspace() {
+  // Full clean-slate wipe: dropdown state, cached lookups, and read-only autofill fields.
+  jclhAllJobCardsForProject = [];
+  window.jclhProjectMeta = {};
+
+  const feedback = document.getElementById("jclh-feedback");
+  if (feedback) feedback.style.display = "none";
+
+  const projDrop = document.getElementById("jclh-project");
+  const boqDrop  = document.getElementById("jclh-boq");
+  const jcDrop   = document.getElementById("jclh-jobcard");
+  if (projDrop) projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
+  if (boqDrop)  { boqDrop.innerHTML = '<option value="">— Select Project First —</option>'; boqDrop.disabled = true; }
+  if (jcDrop)   { jcDrop.innerHTML  = '<option value="">— Select BOQ ID First —</option>'; jcDrop.disabled = true; }
+
+  const customer = document.getElementById("jclh-customer");
+  const dept     = document.getElementById("jclh-department");
+  const pname    = document.getElementById("jclh-product-name");
+  const prating  = document.getElementById("jclh-product-rating");
+  if (customer) customer.value = "";
+  if (dept)     dept.value     = "";
+  if (pname)    pname.value    = "";
+  if (prating)  prating.value  = "";
+
+  updateJCLHDownloadButtonState();
 }
 
 async function initializeBOQIncreaseApprovalsWorkspace() {
@@ -9487,7 +9524,7 @@ async function initializeStoreEntryWorkspaceQueue() {
   feed.innerHTML = `
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--brand);">
       <div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
-      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading Pending Store Entry List</span>
+      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading Pending Store Entry List...</span>
     </div>`;
   try {
     const [, data] = await Promise.all([
@@ -9818,7 +9855,7 @@ async function initializeStoreGrnWorkspaceQueue() {
   feed.innerHTML = `
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--accent);">
       <div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
-      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading Active GRN List</span>
+      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading Pending GRN List...</span>
     </div>`;
   try {
     const data = await apFetch({ action: "fetchInwardWorkflowQueueStream", targetStep: "GRN pending" });
@@ -12961,9 +12998,9 @@ let jclhAllJobCardsForProject = []; // cache: full job-card list for the selecte
 let jclhSubmitInProgress = false;
 
 async function initializeJCLHWorkspace() {
-  if (jclhWorkspaceInitInProgress) return;
+  jclhWorkspaceInitInProgress = false; // clear any stuck guard from an abandoned prior load
+  resetJCLHWorkspace();                // guarantee first-time-like state on every entry
   jclhWorkspaceInitInProgress = true;
-  document.getElementById("jclh-feedback").style.display = "none";
   try {
     const projDrop = document.getElementById("jclh-project");
     projDrop.innerHTML = '<option value="">Loading...</option>';
@@ -13082,7 +13119,7 @@ async function submitJCLHDownload() {
   jclhSubmitInProgress = true;
   const btn = document.getElementById("jclh-download-btn");
   const originalText = btn.textContent;
-  btn.disabled = true; btn.textContent = "Generating...";
+  btn.disabled = true; btn.textContent = "Downloading...";
 
   const projectId     = document.getElementById("jclh-project").value.trim();
   const customerName  = document.getElementById("jclh-customer").value.trim();
