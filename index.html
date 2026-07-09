@@ -1666,7 +1666,7 @@
         </div>
 
         <!-- ROW 3: Value card + By Dept table + Charts -->
-        <div style="display:grid; grid-template-columns:1fr 1.2fr 1fr 1fr; gap:10px; flex:0 0 28%;">
+        <div style="display:grid; grid-template-columns:1fr 1.2fr 1fr 1fr; gap:10px; flex:0 0 22%;">
           <div class="dd-stat-card">
             <div class="dd-stat-label">Total Authorized BOQ Value</div>
             <div class="dd-stat-val" id="dd-s-value" style="font-size:1.05rem; color:var(--brand);">—</div>
@@ -1704,18 +1704,20 @@
               <button onclick="ddHealthPage(1)"  class="dd-period-btn" style="padding:2px 7px;">›</button>
             </div>
           </div>
-          <table style="width:100%; border-collapse:collapse; font-size:0.78rem; flex:1;">
-            <thead><tr style="color:var(--muted); font-size:0.72rem; border-bottom:1.5px solid var(--border);">
-              <th style="text-align:left; padding:3px 6px; font-weight:700;">Project ID</th>
-              <th style="text-align:left; padding:3px 6px; font-weight:700;">Customer</th>
-              <th style="text-align:center; padding:3px 6px; font-weight:700;">Total BOQs</th>
-              <th style="text-align:center; padding:3px 6px; font-weight:700;">Authorized</th>
-              <th style="text-align:center; padding:3px 6px; font-weight:700;">Pending</th>
-              <th style="text-align:right; padding:3px 6px; font-weight:700;">Authorized Value (₹)</th>
-              <th style="text-align:center; padding:3px 6px; font-weight:700;">PRN Raised</th>
-            </tr></thead>
-            <tbody id="dd-health-tbody"></tbody>
-          </table>
+          <div style="overflow-y:auto; flex:1; min-height:0;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.78rem;">
+              <thead><tr style="color:var(--muted); font-size:0.72rem; border-bottom:1.5px solid var(--border); position:sticky; top:0; background:var(--card);">
+                <th style="text-align:left; padding:3px 6px; font-weight:700;">Project ID</th>
+                <th style="text-align:left; padding:3px 6px; font-weight:700;">Customer</th>
+                <th style="text-align:center; padding:3px 6px; font-weight:700;">Total BOQs</th>
+                <th style="text-align:center; padding:3px 6px; font-weight:700;">Authorized</th>
+                <th style="text-align:center; padding:3px 6px; font-weight:700;">Pending</th>
+                <th style="text-align:right; padding:3px 6px; font-weight:700;">Authorized Value (₹)</th>
+                <th style="text-align:center; padding:3px 6px; font-weight:700;">PRN Raised</th>
+              </tr></thead>
+              <tbody id="dd-health-tbody"></tbody>
+            </table>
+          </div>
         </div>
 
       </div><!-- end dd-body -->
@@ -1941,7 +1943,7 @@
         </div>
 
         <!-- ROW 3: Charts -->
-        <div style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 26%;">
+        <div style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 22%;">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
             <div class="dd-card-title">Tickets by Department</div>
             <canvas id="sd-chart-dept" style="max-height:100px;"></canvas>
@@ -2085,7 +2087,7 @@
         </div>
 
         <!-- ROW 3: Charts — 2 real + 1 upcoming -->
-        <div style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 26%;">
+        <div style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 22%;">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
             <div class="dd-card-title">Finished Goods by Department</div>
             <canvas id="pd2-chart-dept" style="max-height:100px;"></canvas>
@@ -2179,10 +2181,10 @@
       </div>
 
       <!-- DASHBOARD BODY -->
-      <div id="md-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box;">
+      <div id="md-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Lead Funnel Pulse -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 13%;">
           <div class="dd-stat-card">
             <div class="dd-stat-label">New Leads</div>
             <div class="dd-stat-val" id="md-s-newleads">—</div>
@@ -2207,7 +2209,7 @@
         </div>
 
         <!-- ROW 2: Activity & Engagement Health -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 13%;">
           <div class="dd-stat-card">
             <div class="dd-stat-label">Follow-Ups Due/Overdue</div>
             <div class="dd-stat-val" id="md-s-followupsdue" style="color:#b45309;">—</div>
@@ -2231,29 +2233,29 @@
         </div>
 
         <!-- ROW 3: 3 Charts -->
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
-          <div class="dd-stat-card" style="min-height:200px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:0 0 22%;">
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; justify-content:center;">
             <div class="dd-stat-label" style="margin-bottom:6px;">Lead Status Funnel</div>
-            <canvas id="md-chart-funnel" style="max-height:170px;"></canvas>
+            <canvas id="md-chart-funnel" style="max-height:110px;"></canvas>
           </div>
-          <div class="dd-stat-card" style="min-height:200px;">
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; justify-content:center;">
             <div class="dd-stat-label" style="margin-bottom:6px;">New Leads vs Orders Received</div>
-            <canvas id="md-chart-trend" style="max-height:170px;"></canvas>
+            <canvas id="md-chart-trend" style="max-height:110px;"></canvas>
           </div>
-          <div class="dd-stat-card" style="min-height:200px;">
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; justify-content:center;">
             <div class="dd-stat-label" style="margin-bottom:6px;">Lead Status Distribution</div>
-            <canvas id="md-chart-donut" style="max-height:170px;"></canvas>
+            <canvas id="md-chart-donut" style="max-height:110px;"></canvas>
           </div>
         </div>
 
         <!-- ROW 4: Stale Leads + Recent Wins -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-          <div class="dd-stat-card" style="min-height:220px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1; min-height:0;">
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
             <div class="dd-stat-label" style="margin-bottom:8px;">Stale Leads Needing Attention (7+ days, current)</div>
-            <div style="max-height:260px; overflow-y:auto;">
+            <div style="flex:1; min-height:0; overflow-y:auto;">
               <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
                 <thead>
-                  <tr style="text-align:left; border-bottom:1px solid var(--border);">
+                  <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
                     <th style="padding:4px;">Company</th>
                     <th style="padding:4px;">Engineer</th>
                     <th style="padding:4px;">Status</th>
@@ -2264,12 +2266,12 @@
               </table>
             </div>
           </div>
-          <div class="dd-stat-card" style="min-height:220px;">
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
             <div class="dd-stat-label" style="margin-bottom:8px;">Recent Wins (Orders Received in period)</div>
-            <div style="max-height:260px; overflow-y:auto;">
+            <div style="flex:1; min-height:0; overflow-y:auto;">
               <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
                 <thead>
-                  <tr style="text-align:left; border-bottom:1px solid var(--border);">
+                  <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
                     <th style="padding:4px;">Company</th>
                     <th style="padding:4px;">Engineer</th>
                     <th style="padding:4px; text-align:right;">Date</th>
