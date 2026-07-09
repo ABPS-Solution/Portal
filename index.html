@@ -11877,13 +11877,14 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
   dropdown.style.display = "block";
 }
 
-// Refresh item code catalog when tab regains focus (e.g. after creating item code in another tab)
+// Refresh item code catalog when tab regains focus (e.g. after creating item code in another tab).
+// Forced (bypasses the 5-min TTL) since this is a deliberate user action, not a background poll —
+// the whole point is to catch an item code created seconds ago in another tab.
 document.addEventListener("visibilitychange", function() {
   if (document.visibilityState === "visible" && window.itemCodeCatalogCache) {
-    loadItemCodeCatalogIntoCache().catch(() => {});
+    loadItemCodeCatalogIntoCache(true).catch(() => {});
   }
 });
-
 // Close dropdowns when clicking outside
 document.addEventListener("click", function(e) {
   if (!e.target.closest("[id*='-mat-dropdown-']") && !e.target.closest("input")) {
