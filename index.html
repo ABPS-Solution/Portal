@@ -5321,6 +5321,7 @@ async function submitLead() {
   const statusField = document.getElementById('dropform-status');
   const feedbackBanner = document.getElementById('marketing-lead-creation-inline-feedback-banner');
   const activeFormContainerScopeNode = document.getElementById("step2-new-entry-dropdown");
+  const getRadioStrict = n => (activeFormContainerScopeNode.querySelector(`input[name="${n}"]:checked`) || {}).value || "";
   
   if (!statusField.value) { alert("Lead Status is compulsory."); return; }
 
@@ -5358,10 +5359,6 @@ async function submitLead() {
   
   const getChecks = n => Array.from(activeFormContainerScopeNode.querySelectorAll(`input[name="${n}"]:checked`)).map(c => c.value);
   const getRadio  = n => (activeFormContainerScopeNode.querySelector(`input[name="${n}"]:checked`) || {}).value || "No";
-  // Some radio groups (Meeting Venue, ABPS Business Vertical) aren't genuine Yes/No
-  // questions — "No" is meaningless for them, so leave truly blank when untouched
-  // instead of silently writing "No" into the sheet.
-  const getRadioStrict = n => (activeFormContainerScopeNode.querySelector(`input[name="${n}"]:checked`) || {}).value || "";
   
   try {
     const companyVal = document.getElementById('dropform-company-locked')?.value.trim() || document.getElementById('f-company')?.value.trim() || "";
