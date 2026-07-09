@@ -2537,7 +2537,6 @@
 
     <div id="missing-trigger-notice-block" style="display:none;">
       <p>No Record Matched Your Target Company Inputs.</p>
-      <p id="missing-trigger-notice-searched-value" style="font-size:0.78rem; font-weight:600; color:var(--muted); margin-top:-8px;"></p>
       <button class="btn btn-sub" id="reveal-new-entry-btn" onclick="revealNewEntryFormDropdown()" style="width:auto; display:inline-flex; padding:10px 22px; font-size:0.92rem;">Create New Entry</button>
     </div>
 
@@ -2917,7 +2916,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxmPBs6_Nkwc8SpNLz7dgTarEHYgQDdlHNuo7i61R-URqP7bM39hS4khfZ-oK-90R-3/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbykZo5MImr3LxAmwow_RTq6vPR3sJL-1oSU-3zy4hXF09G2BJUs9em_TilwMy7yxYIy/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -4212,10 +4211,6 @@ async function triggerSequentialSearch(triggerSourceMode) {
     } else {
       if (missingNoticeBlock) missingNoticeBlock.style.display = "block";
       if (inlineCanvas) inlineCanvas.style.display = "none";
-      // Echo back exactly what was searched — makes it possible to tell whether the
-      // right value actually reached the backend, versus a genuine no-match.
-      const searchedEchoEl = document.getElementById("missing-trigger-notice-searched-value");
-      if (searchedEchoEl) searchedEchoEl.textContent = `Searched for: "${comp}"` + (targetName ? ` / "${targetName}"` : "");
     }
   } catch(e) { 
     alert("Lookup Failed: " + e.message); 
