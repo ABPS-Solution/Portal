@@ -6230,7 +6230,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
     canvas.innerHTML = `
       <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;">
         <h3 style="color: var(--accent); margin-bottom:6px;">No Email Leads Found</h3>
-        <p style="margin:0;">Nothing has been classified as a lead yet. New inbound emails are scanned automatically in the background every few minutes.</p>
+        <p style="margin:0;">Nothing has been classified as a lead yet. New incoming emails are scanned automatically in the background every 5 minutes.</p>
       </div>
     `;
     return;
@@ -6273,7 +6273,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
       </div>
       
       <div style="font-size:0.85rem; background:#f8fafc; border:1px solid #e2e8f0; padding:8px; border-radius:4px; margin:6px 0; line-height:1.4; color:var(--text);">
-        <strong>AI Executive Summary:</strong> ${mail.aiSummaryText}
+        <strong>AI Email Summary:</strong> ${mail.aiSummaryText}
       </div>
       
       <div style="font-size:0.72rem; font-weight:700; color:var(--muted); margin-bottom:8px;">
