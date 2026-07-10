@@ -9365,6 +9365,27 @@ function resetGateEntryWorkspaceState() {
   if (b2) { b2.textContent = "📷 Select Challan Image"; b2.classList.remove('done'); }
   document.getElementById('gate-ai-verification-workspace').style.display = "none";
   document.getElementById('gate-verification-table-body').innerHTML = "";
+
+  // FIX: metadata fields and the feedback banner survived a prior visit and showed stale
+  // vendor/invoice/date/challan values on the next entry — clear them explicitly.
+  const metaInvoice  = document.getElementById('gate-meta-invoice');
+  const metaChallan  = document.getElementById('gate-meta-challan');
+  const metaVendor   = document.getElementById('gate-meta-vendor');
+  const metaDate     = document.getElementById('gate-meta-date');
+  const metaTime     = document.getElementById('gate-meta-time');
+  if (metaInvoice) metaInvoice.value = "";
+  if (metaChallan) metaChallan.value = "";
+  if (metaVendor)  metaVendor.value  = "";
+  if (metaDate)    metaDate.value    = "";
+  if (metaTime)    metaTime.value    = "";
+
+  const banner = document.getElementById('store-gate-runtime-feedback-banner');
+  if (banner) { banner.style.display = "none"; banner.innerHTML = ""; }
+
+  const parseBtn  = document.getElementById('gate-parse-ai-btn');
+  const submitBtn = document.getElementById('gate-submit-btn');
+  if (parseBtn)  { parseBtn.disabled = false;  parseBtn.textContent = "Process Documents with AI"; }
+  if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = "Generate Gate Entry"; }
 }
 
 async function parseGateDocumentsWithAI() {
