@@ -16504,7 +16504,8 @@ async function loadAssignStockPersonnel() {
       const opt = document.createElement("option"); opt.value = p.fullName; opt.textContent = p.fullName;
       select.appendChild(opt);
     });
-    if (appActiveOperatorIdentityString) select.value = appActiveOperatorIdentityString;
+    // FIX: this was silently auto-selecting the logged-in operator's name, so the
+    // "— Select Person —" placeholder never showed. Leave it unselected by default.
   } catch(e) { select.innerHTML = '<option value="">Error loading personnel</option>'; }
 }
 
