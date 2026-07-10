@@ -3770,7 +3770,15 @@ async function showAppView() {
   document.getElementById("display-full-name").textContent = localStorage.getItem("userFirstName") + " " + localStorage.getItem("userLastName");
   document.getElementById("display-username").textContent = "@" + localStorage.getItem("sessionUser");
   
-  enforceDynamicModuleRoleGateways(userPermissions);
+  // DIAGNOSTIC: surface exactly what permissions object the dashboard is being built
+  // from. If this ever logs an empty object, every menu card will silently stay hidden
+  // with no thrown error — that's the failure mode this guards against.
+  if (!userPermissions || Object.keys(userPermissions).length === 0) {
+    console.error("showAppView: userPermissions is empty or missing — dashboard will render with all cards hidden.", userPermissions);
+  } else {
+    console.log("showAppView: rendering with permissions for", Object.keys(userPermissions).length, "keys.");
+  }
+  enforceDynamicModuleRoleGateways(userPermissions || {});
   // Pre-load ItemCodeNumbers catalog into memory (fire-and-forget, suppress unhandled rejection)
   loadItemCodeCatalogIntoCache().catch(() => {});
   
