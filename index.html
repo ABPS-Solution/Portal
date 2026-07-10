@@ -360,10 +360,9 @@
           <button class="dept-dash-pill" id="mod-store-dashboard" onclick="navigateToStoreDashboard()" style="background:#eff8ff; color:#0369a1;">📊 Dashboard</button>
         </div>
       </div>
-      <div class="sec-label">PRN & Stock Assignment</div>
+      <div class="sec-label">Stock PRN</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-request-note" onclick="navigateToPurchaseWorkspacePanel('purchase-prn')"><span class="mc-label">Create Purchase Request Note</span></div>
-        <div class="menu-card" id="mod-assign-current-stock"  onclick="navigateToStoreWorkspacePanel('assign-current-stock')"><span class="mc-label">Assign Current Stock</span></div>
       </div>
       <div class="sec-label">Raw Materials Store Inward</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -1918,15 +1917,8 @@
 
         <!-- ROW 2: Assignment Health -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 13%;">
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Items Pending Assignment</div>
-            <div class="dd-stat-val" id="sd-s-pending-assign" style="color:#b45309;">—</div>
-            <div class="dd-stat-sub">have BOQ need, stock available</div>
-          </div>
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Items Fully Assigned</div>
-            <div class="dd-stat-val" id="sd-s-fully-assigned" style="color:#15803d;">—</div>
-            <div class="dd-stat-sub">all available stock assigned</div>
+          <div class="dd-stat-card" style="grid-column: span 2; display:flex; align-items:center; justify-content:center;">
+            <div class="dd-stat-label" style="color:var(--muted); font-weight:700;">Coming Soon</div>
           </div>
           <div class="dd-stat-card">
             <div class="dd-stat-label">Pending Job Card Increases</div>
@@ -14474,7 +14466,7 @@ function sdLoadCustom() {
 
 async function sdLoadDashboard(customVal) {
   ["sd-s-tickets","sd-s-pending","sd-s-boqneedprn","sd-s-grns","sd-s-spare",
-   "sd-s-pending-assign","sd-s-fully-assigned","sd-s-boqinc","sd-s-returns","sd-s-overruns"].forEach(id => {
+   "sd-s-boqinc","sd-s-returns","sd-s-overruns"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
   try {
@@ -14501,8 +14493,6 @@ function sdRenderDashboard(data) {
   document.getElementById("sd-s-boqneedprn").textContent = stats.boqsNeedingPRN ?? "—";
 
   // Row 2 stat cards
-  document.getElementById("sd-s-pending-assign").textContent  = stats.itemsPendingAssignment;
-  document.getElementById("sd-s-fully-assigned").textContent  = stats.itemsFullyAssigned;
   document.getElementById("sd-s-boqinc").textContent          = stats.pendingBOQIncrease;
   document.getElementById("sd-s-returns").textContent         = stats.returnTickets;
   document.getElementById("sd-s-overruns").textContent        = stats.boqOverruns;
