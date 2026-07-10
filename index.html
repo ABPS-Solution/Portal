@@ -331,7 +331,7 @@
         <div class="menu-card" id="mod-design-auth-boq"     onclick="switchActiveDashboardModule('design-auth-boq')"><span class="mc-label">Authorize Bill of Quantity</span></div>
         <div class="menu-card" id="mod-design-update-boq"   onclick="switchActiveDashboardModule('design-update-boq')"><span class="mc-label">Update Bill of Quantity</span></div>
         <div class="menu-card" id="mod-design-auth-boq-upd" onclick="switchActiveDashboardModule('design-auth-boq-upd')"><span class="mc-label">Authorize Bill of Quantity Update</span></div>
-        <div class="menu-card" id="mod-design-itemcode"        onclick="navigateToDesignWorkspacePanel('design-itemcode')"><span class="mc-label">Add / Check Item Code Number</span></div>
+        <div class="menu-card" id="mod-design-itemcode"        onclick="switchActiveDashboardModule('design-itemcode')"><span class="mc-label">Add / Check Item Code Number</span></div>
         <div class="menu-card" id="mod-design-upload-drawings" onclick="switchActiveDashboardModule('design-upload-drawings')"><span class="mc-label">Upload Drawings</span></div>
       </div>
     </div>
@@ -373,7 +373,6 @@
       </div>
       <div class="sec-label">Raw Materials Store Outward</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-assign-current-stock" onclick="navigateToStoreWorkspacePanel('assign-current-stock')"><span class="mc-label">Assign Store Stock</span></div>
         <div class="menu-card" id="mod-boq-increase-approvals" onclick="navigateToStoreWorkspacePanel('boq-increase-approvals')"><span class="mc-label">Approve Job Card Increase</span></div>
         <div class="menu-card" id="mod-store-approvals" onclick="navigateToStoreWorkspacePanel('store-manager-approvals')"><span class="mc-label">Approve Store Tickets</span></div>
         <div class="menu-card" id="mod-store-matrix" onclick="switchActiveDashboardModule('store-history-matrix')"><span class="mc-label">Search Store Tickets</span></div>
@@ -419,7 +418,7 @@
     </div>
 
     <div id="canvas-module-store-gate-entry" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 16px;">Store Gate Entry</h2>
+      <h2 style="margin-bottom: 16px;">Raw Materials Store Gate Entry</h2>
       <div id="store-gate-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       
       <div class="section" style="padding: 16px;">
@@ -974,31 +973,14 @@
     </div>
 
     <div id="canvas-module-assign-current-stock" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="color:var(--brand); margin:0 0 6px 0;">Assign Store Stock</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
-        Incoming stock is now assigned to BOQs automatically on GRN. Use this screen only to move
-        already-assigned stock between BOQs, or release it back to the unassigned pool — for example,
-        when a BOQ for a project starting months from now has been auto-assigned material another BOQ
-        needs sooner.
-      </p>
-      <div id="ass-feedback" style="display:none; margin-bottom:14px;"></div>
-      <div style="position:relative; margin-bottom:16px;">
-        <input type="text" id="ass-material-search" placeholder="Search material name..." oninput="handleAssStockSearch(this.value)"
-               style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:var(--radius);">
-        <div id="ass-material-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:var(--radius); max-height:260px; overflow-y:auto; z-index:20; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:10px;">
+        <h2 style="color:var(--brand); margin:0;">Assign Current Stock</h2>
+        <div style="display:flex; gap:8px;">
+          <button id="assign-mode-grn-btn" onclick="switchAssignStockMode('grn')" class="nav-btn-styled" style="background:var(--brand);">Post-GRN List</button>
+          <button id="assign-mode-unassigned-btn" onclick="switchAssignStockMode('unassigned')" class="nav-btn-styled" style="background:#718096;">Unassigned Materials</button>
+        </div>
       </div>
-      <div id="ass-results-zone" style="display:none;">
-        <h3 id="ass-material-title" style="margin-bottom:10px;"></h3>
-        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
-          <thead><tr style="background:var(--highlight-bg); text-align:left;">
-            <th style="padding:8px;">PRN ID</th><th style="padding:8px;">BOQ ID</th><th style="padding:8px;">Project</th>
-            <th style="padding:8px;">Assigned Qty</th><th style="padding:8px;">Action</th>
-          </tr></thead>
-          <tbody id="ass-results-body"></tbody>
-        </table>
-      </div>
-      <div id="ass-old-content-removed-marker" style="display:none;">
-    <div style="opacity:0;">Assign received stock to BOQ IDs. Any quantity not assigned stays in the unassigned automatically.</p>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Assign received stock to BOQ IDs. Any quantity not assigned stays in the unassigned automatically.</p>
       <div id="assign-stock-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
       <!-- MODE 1: POST-GRN QUEUE -->
@@ -3770,15 +3752,7 @@ async function showAppView() {
   document.getElementById("display-full-name").textContent = localStorage.getItem("userFirstName") + " " + localStorage.getItem("userLastName");
   document.getElementById("display-username").textContent = "@" + localStorage.getItem("sessionUser");
   
-  // DIAGNOSTIC: surface exactly what permissions object the dashboard is being built
-  // from. If this ever logs an empty object, every menu card will silently stay hidden
-  // with no thrown error — that's the failure mode this guards against.
-  if (!userPermissions || Object.keys(userPermissions).length === 0) {
-    console.error("showAppView: userPermissions is empty or missing — dashboard will render with all cards hidden.", userPermissions);
-  } else {
-    console.log("showAppView: rendering with permissions for", Object.keys(userPermissions).length, "keys.");
-  }
-  enforceDynamicModuleRoleGateways(userPermissions || {});
+  enforceDynamicModuleRoleGateways(userPermissions);
   // Pre-load ItemCodeNumbers catalog into memory (fire-and-forget, suppress unhandled rejection)
   loadItemCodeCatalogIntoCache().catch(() => {});
   
@@ -16483,107 +16457,12 @@ function showPurchaseFeedback(elementId, message, type) {
 // ASSIGN CURRENT STOCK
 // ═══════════════════════════════════════════════════════
 
-function handleAssStockSearch(query) {
-  const dropdown = document.getElementById("ass-material-dropdown");
-  if (!query || query.trim().length < 1) { dropdown.style.display = "none"; return; }
-  const catalog = window.itemCodeCatalogCache || [];
-  const q = query.toLowerCase();
-  const matches = catalog.filter(item => (item.productName || "").toLowerCase().includes(q)).slice(0, 10);
-  if (matches.length === 0) { dropdown.style.display = "none"; return; }
-  dropdown.innerHTML = matches.map(item => `
-    <div onclick="loadAssStockForItem('${item.itemCode}', \`${item.productName.replace(/`/g,"'")}\`)"
-      style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9;"
-      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>${item.productName}
-    </div>`).join("");
-  dropdown.style.display = "block";
-}
-
-let assStockCache = { itemCode: "", materialName: "", assignments: [], eligibleTargets: [] };
-
-async function loadAssStockForItem(itemCode, materialName) {
-  document.getElementById("ass-material-search").value = materialName;
-  document.getElementById("ass-material-dropdown").style.display = "none";
-  document.getElementById("ass-results-zone").style.display = "block";
-  document.getElementById("ass-material-title").textContent = itemCode + " — " + materialName;
-  document.getElementById("ass-results-body").innerHTML = '<tr><td colspan="5" style="padding:14px; text-align:center;">Loading...</td></tr>';
-  try {
-    const data = await apFetch({ action: "fetchStockAssignmentsForItem", itemCode });
-    if (!data.success) { showBOQBanner("ass-feedback", data.error || "Failed to load.", "error"); return; }
-    assStockCache = data;
-    renderAssStockRows();
-  } catch(e) {
-    showBOQBanner("ass-feedback", "Network error: " + e.message, "error");
-  }
-}
-
-function renderAssStockRows() {
-  const body = document.getElementById("ass-results-body");
-  if (assStockCache.assignments.length === 0) {
-    body.innerHTML = '<tr><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No BOQ currently holds assigned stock for this material.</td></tr>';
-    return;
-  }
-  body.innerHTML = assStockCache.assignments.map(a => `
-    <tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:8px;">${a.prnId}</td>
-      <td style="padding:8px;">${a.boqId}</td>
-      <td style="padding:8px;">${a.projectId}</td>
-      <td style="padding:8px; font-weight:700;">${a.assignedQty}</td>
-      <td style="padding:8px;">
-        <button class="nav-btn-styled" style="background:#718096; padding:5px 10px; font-size:0.78rem;" onclick="doAssUnassign('${a.prnId}', ${a.assignedQty})">Unassign</button>
-        <button class="nav-btn-styled" style="background:var(--brand); padding:5px 10px; font-size:0.78rem;" onclick="openAssReassign('${a.prnId}', ${a.assignedQty})">Reassign</button>
-      </td>
-    </tr>`).join("");
-}
-
-async function doAssUnassign(prnId, maxQty) {
-  const qty = parseFloat(prompt(`Unassign how much (max ${maxQty})? This returns it to the unassigned pool.`, maxQty));
-  if (!qty || qty <= 0 || qty > maxQty) return;
-  showBlockingOverlay("Unassigning stock...");
-  try {
-    const data = await apFetch({ action: "unassignStock", prnId, itemCode: assStockCache.itemCode, quantity: qty });
-    if (data.success) { showBOQBanner("ass-feedback", "Unassigned successfully.", "success"); loadAssStockForItem(assStockCache.itemCode, assStockCache.materialName); }
-    else showBOQBanner("ass-feedback", data.error || "Failed.", "error");
-  } catch(e) { showBOQBanner("ass-feedback", "Network error: " + e.message, "error"); }
-  finally { hideBlockingOverlay(); }
-}
-
-function openAssReassign(sourcePrnId, maxQty) {
-  const targets = assStockCache.eligibleTargets.filter(t => t.prnId !== sourcePrnId);
-  if (targets.length === 0) { alert("No other open PRN line item exists for this material."); return; }
-  const list = targets.map((t, i) => `${i+1}. ${t.prnId} (BOQ: ${t.boqId}, Still To Order: ${t.stillToOrder})`).join("\n");
-  const choice = parseInt(prompt("Reassign to which PRN? Enter number:\n\n" + list), 10);
-  if (!choice || choice < 1 || choice > targets.length) return;
-  const target = targets[choice - 1];
-  const qty = parseFloat(prompt(`Quantity to move to ${target.prnId} (max ${maxQty})?`, maxQty));
-  if (!qty || qty <= 0 || qty > maxQty) return;
-  doAssReassign(sourcePrnId, target.prnId, qty);
-}
-
-async function doAssReassign(sourcePrnId, targetPrnId, qty) {
-  showBlockingOverlay("Reassigning stock...");
-  try {
-    const data = await apFetch({ action: "reassignStockBetweenPRNs", itemCode: assStockCache.itemCode, sourcePrnId, targetPrnId, quantity: qty, movedBy: appActiveOperatorIdentityString || "Unknown" });
-    if (data.success) { showBOQBanner("ass-feedback", data.message || "Reassigned successfully.", "success"); loadAssStockForItem(assStockCache.itemCode, assStockCache.materialName); }
-    else showBOQBanner("ass-feedback", data.error || "Failed.", "error");
-  } catch(e) { showBOQBanner("ass-feedback", "Network error: " + e.message, "error"); }
-  finally { hideBlockingOverlay(); }
-}
-
-async function initializeAssignCurrentStockPanel() {
-  document.getElementById("ass-feedback").style.display = "none";
-  document.getElementById("ass-results-zone").style.display = "none";
-  document.getElementById("ass-material-search").value = "";
-  document.getElementById("ass-material-dropdown").style.display = "none";
-  assStockCache = { itemCode: "", materialName: "", assignments: [], eligibleTargets: [] };
-}
-
 let assignStockCurrentMode     = "grn";
 let assignStockCurrentItemCode = "";
 let assignStockCurrentMaterial = null;
 let assignStockUnassignedCache = [];
 
-async function initializeAssignCurrentStockPanel_OLD_UNUSED() {
+async function initializeAssignCurrentStockPanel() {
   assignStockCurrentMode     = "grn";
   assignStockCurrentItemCode = "";
   assignStockCurrentMaterial = null;
