@@ -397,8 +397,8 @@
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-store-ticket" onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Store Ticket</span></div>
-        <div class="menu-card" id="mod-dispatched-product-code" onclick="switchActiveDashboardModule('dispatched-product-code')"><span class="mc-label">Add / Check Dispatch Product Code Number</span></div>
         <div class="menu-card" id="mod-jc-letterhead" onclick="switchActiveDashboardModule('jc-letterhead')"><span class="mc-label">Job Card Letterhead</span></div>
+        <div class="menu-card" id="mod-dispatched-product-code" onclick="switchActiveDashboardModule('dispatched-product-code')"><span class="mc-label">Add / Check Dispatch Product Code Number</span></div>
         <div class="menu-card" id="mod-fg-add" onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
       </div>
     </div>
@@ -2974,7 +2974,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwSbTfaK0_hQUmuDnviWnu6HYUvWbZzDZhXhV0j4C8hAcM6uQ4TkOvszOav7eCDlnkY/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxLmzudVbp92MELs4Uy9oKIPCI3h_DMD2ovu0qPB0wCCjm2m4zDF0TlWZUwXR8HkUfK/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -13119,7 +13119,8 @@ async function submitJCLHDownload() {
   jclhSubmitInProgress = true;
   const btn = document.getElementById("jclh-download-btn");
   const originalText = btn.textContent;
-  btn.disabled = true; btn.textContent = "Downloading...";
+  btn.disabled = true; btn.textContent = "Generating...";
+  showBlockingOverlay("Downloading Job Card Letterhead...");
 
   const projectId     = document.getElementById("jclh-project").value.trim();
   const customerName  = document.getElementById("jclh-customer").value.trim();
@@ -13151,6 +13152,7 @@ async function submitJCLHDownload() {
     jclhSubmitInProgress = false;
     btn.disabled = false; btn.textContent = originalText;
     updateJCLHDownloadButtonState();
+    hideBlockingOverlay();
   }
 }
 
