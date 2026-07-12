@@ -329,7 +329,9 @@
     </div>
 
     <!-- ── DESIGN ─────────────────────────────────────────────────────────── -->
-    <div id="dashboard-design-department-header-block" style="display:none;">
+    <div id="dashboard-design-department-header-block" class="dept-block" style="display:none; --dept-accent:#2563eb;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#2563eb;"></div>
         <span class="dept-name">Design Department</span>
         <div id="mod-design-dashboard-wrapper" style="display:none;">
           <button class="dept-dash-pill" id="mod-design-dashboard" onclick="navigateToDesignDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Dashboard</button>
@@ -480,7 +482,7 @@
     </div>
 
     <div id="canvas-module-store-grn" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 16px;">Goods Received Note (GRN)</h2>
+      <h2 style="margin-bottom: 16px;">Raw Materials Q/A Check</h2>
       <div id="store-grn-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="store-grn-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>  
@@ -8023,7 +8025,10 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
     initializeStoreEntryWorkspaceQueue();
   } else if (targetPanelModuleId === 'store-grn') {
     document.getElementById("canvas-module-store-grn").style.display = "block";
-    initializeStoreGrnWorkspaceQueue();
+    const grnBanner = document.getElementById("store-grn-runtime-feedback-banner");
+    if (grnBanner) { grnBanner.style.display = "none"; grnBanner.innerHTML = ""; }
+    window.activeQAToggle = "pending";
+    initializeStoreGrnWorkspaceQueue('pending');
   } else if (targetPanelModuleId === 'stock-sweep') {
     document.getElementById("canvas-module-stock-sweep").style.display = "block";
     initializeStockSweepPanel();
@@ -8167,6 +8172,11 @@ function exitStoreWorkspacePanelBackToMenu() {
   if (leftControls) leftControls.style.visibility = "hidden";
   if (centerTitle)  { centerTitle.style.visibility = "hidden"; centerTitle.textContent = ""; }
   if (syncBtn) { syncBtn.removeAttribute("onclick"); syncBtn.onclick = function() { triggerLiveWarehouseStockMetricsSync(); }; }
+
+  // Restore the main dashboard — this was missing, which is why leaving a Store screen
+  // left the page in a half-hidden state instead of returning to the department grid.
+  enforceDynamicModuleRoleGateways(userPermissions);
+  document.getElementById("dashboard-view").style.display = "flex";
 
   enforceDynamicModuleRoleGateways(userPermissions);
 
@@ -14410,6 +14420,8 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
     initializeRMPOUploadPanel();
   } else if (targetModuleId === "purchase-rejected-material") {
     document.getElementById("canvas-module-purchase-rejected-material").style.display = "block";
+    const rejBanner = document.getElementById("rejected-material-feedback-banner");
+    if (rejBanner) { rejBanner.style.display = "none"; rejBanner.innerHTML = ""; }
     initializeRejectedMaterialPanel('pending');
   }
 }
