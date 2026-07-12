@@ -317,10 +317,19 @@
       </div>
     </div>
 
-    <!-- ── DESIGN ─────────────────────────────────────────────────────────── -->
-    <div id="dashboard-design-department-header-block" class="dept-block" style="display:none; --dept-accent:#2563eb;">
+    <!-- ── PROJECT ────────────────────────────────────────────────────────── -->
+    <div id="dashboard-project-department-header-block" class="dept-block" style="display:none; --dept-accent:#2563eb;">
       <div class="dept-header">
         <div class="dept-bar" style="background:#2563eb;"></div>
+        <span class="dept-name">Project Department</span>
+      </div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-manufacturing-clearance" onclick="switchActiveDashboardModule('manufacturing-clearance')"><span class="mc-label">Manufacturing Clearance</span></div>
+      </div>
+    </div>
+
+    <!-- ── DESIGN ─────────────────────────────────────────────────────────── -->
+    <div id="dashboard-design-department-header-block" style="display:none;">
         <span class="dept-name">Design Department</span>
         <div id="mod-design-dashboard-wrapper" style="display:none;">
           <button class="dept-dash-pill" id="mod-design-dashboard" onclick="navigateToDesignDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Dashboard</button>
@@ -331,7 +340,7 @@
         <div class="menu-card" id="mod-design-auth-boq"     onclick="switchActiveDashboardModule('design-auth-boq')"><span class="mc-label">Authorize Bill of Quantity</span></div>
         <div class="menu-card" id="mod-design-update-boq"   onclick="switchActiveDashboardModule('design-update-boq')"><span class="mc-label">Update Bill of Quantity</span></div>
         <div class="menu-card" id="mod-design-auth-boq-upd" onclick="switchActiveDashboardModule('design-auth-boq-upd')"><span class="mc-label">Authorize Bill of Quantity Update</span></div>
-        <div class="menu-card" id="mod-design-itemcode"        onclick="switchActiveDashboardModule('design-itemcode')"><span class="mc-label">Add / Check Item Code Number</span></div>
+        <div class="menu-card" id="mod-design-itemcode"        onclick="navigateToDesignWorkspacePanel('design-itemcode')"><span class="mc-label">Add / Check Item Code Number</span></div>
         <div class="menu-card" id="mod-design-upload-drawings" onclick="switchActiveDashboardModule('design-upload-drawings')"><span class="mc-label">Upload Drawings</span></div>
       </div>
     </div>
@@ -348,6 +357,7 @@
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')"><span class="mc-label">Material List for Purchase</span></div>
         <div class="menu-card" id="mod-purchase-upload-rm-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-upload-rm-po')"><span class="mc-label">Upload Raw Material Purchase Order</span></div>
+        <div class="menu-card" id="mod-purchase-rejected-material" onclick="navigateToPurchaseWorkspacePanel('purchase-rejected-material')"><span class="mc-label">Store Inward Rejected Material</span></div>
       </div>
     </div>
 
@@ -367,21 +377,23 @@
       <div class="sec-label">Raw Materials Store Inward</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-store-gate"        onclick="navigateToStoreWorkspacePanel('store-gate-entry')"><span class="mc-label">Gate Entry</span></div>
-        <div class="menu-card" id="mod-store-entry"       onclick="navigateToStoreWorkspacePanel('store-entry')"><span class="mc-label">Raw Materials Store Entry</span></div>
-        <div class="menu-card" id="mod-store-grn"         onclick="navigateToStoreWorkspacePanel('store-grn')"><span class="mc-label">GRN (Goods Received Note)</span></div>
+        <div class="menu-card" id="mod-store-entry"       onclick="navigateToStoreWorkspacePanel('store-entry')"><span class="mc-label">Raw Materials Store Entry and GRN</span></div>
+        <div class="menu-card" id="mod-store-grn"         onclick="navigateToStoreWorkspacePanel('store-grn')"><span class="mc-label">Raw Materials Q/A Check</span></div>
         <div class="menu-card" id="mod-expected-inbounds" onclick="navigateToStoreWorkspacePanel('expected-inbounds')"><span class="mc-label">Expected Deliveries</span></div>
+        <div class="menu-card" id="mod-stock-sweep"       onclick="navigateToStoreWorkspacePanel('stock-sweep')"><span class="mc-label">Stock Sweep (Weekly Return)</span></div>
       </div>
       <div class="sec-label">Raw Materials Store Outward</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-boq-increase-approvals" onclick="navigateToStoreWorkspacePanel('boq-increase-approvals')"><span class="mc-label">Approve Job Card Increase</span></div>
-        <div class="menu-card" id="mod-store-approvals" onclick="navigateToStoreWorkspacePanel('store-manager-approvals')"><span class="mc-label">Approve Store Tickets</span></div>
-        <div class="menu-card" id="mod-store-matrix" onclick="switchActiveDashboardModule('store-history-matrix')"><span class="mc-label">Search Store Tickets</span></div>
+        <div class="menu-card" id="mod-assign-current-stock"    onclick="navigateToStoreWorkspacePanel('assign-current-stock')"><span class="mc-label">Assign Store Stock</span></div>
+        <div class="menu-card" id="mod-boq-increase-approvals"  onclick="navigateToStoreWorkspacePanel('boq-increase-approvals')"><span class="mc-label">Approve Job Card Increase</span></div>
+        <div class="menu-card" id="mod-store-approvals"         onclick="navigateToStoreWorkspacePanel('store-manager-approvals')"><span class="mc-label">Approve Store Tickets</span></div>
+        <div class="menu-card" id="mod-store-matrix"            onclick="switchActiveDashboardModule('store-history-matrix')"><span class="mc-label">Search Store Tickets</span></div>
       </div>
       <div class="sec-label">Store Quantity</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-live-store-stock" onclick="switchActiveDashboardModule('store-live-stock')"><span class="mc-label">Live Raw Materials Store Stock</span></div>
+        <div class="menu-card" id="mod-live-store-stock"          onclick="switchActiveDashboardModule('store-live-stock')"><span class="mc-label">Live Raw Materials Store Stock</span></div>
         <div class="menu-card" id="mod-live-finished-store-stock" onclick="switchActiveDashboardModule('store-live-finished-goods')"><span class="mc-label">Live Finished Goods Store Stock</span></div>
-        <div class="menu-card" id="mod-live-spare-store-stock" onclick="switchActiveDashboardModule('store-live-spare')"><span class="mc-label">Live Spare Store Stock</span></div>
+        <div class="menu-card" id="mod-live-spare-store-stock"    onclick="switchActiveDashboardModule('store-live-spare')"><span class="mc-label">Live Spare Store Stock</span></div>
       </div>
     </div>
 
@@ -395,10 +407,10 @@
         </div>
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-store-ticket" onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Store Ticket</span></div>
-        <div class="menu-card" id="mod-jc-letterhead" onclick="switchActiveDashboardModule('jc-letterhead')"><span class="mc-label">Job Card Letterhead</span></div>
+        <div class="menu-card" id="mod-store-ticket"            onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Store Ticket</span></div>
+        <div class="menu-card" id="mod-jc-letterhead"           onclick="switchActiveDashboardModule('jc-letterhead')"><span class="mc-label">Job Card Letterhead</span></div>
         <div class="menu-card" id="mod-dispatched-product-code" onclick="switchActiveDashboardModule('dispatched-product-code')"><span class="mc-label">Add / Check Dispatch Product Code Number</span></div>
-        <div class="menu-card" id="mod-fg-add" onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
+        <div class="menu-card" id="mod-fg-add"                  onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
       </div>
     </div>
     
@@ -418,7 +430,7 @@
     </div>
 
     <div id="canvas-module-store-gate-entry" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 16px;">Raw Materials Store Gate Entry</h2>
+      <h2 style="margin-bottom: 16px;">Store Gate Entry</h2>
       <div id="store-gate-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       
       <div class="section" style="padding: 16px;">
@@ -436,10 +448,11 @@
           <div class="gate-meta-grid">
             <div><label class="field-label">Invoice Number</label><input type="text" id="gate-meta-invoice" style="background:#f1f5f9;" /></div>
             <div><label class="field-label">Challan Number</label><input type="text" id="gate-meta-challan" style="background:#f1f5f9;" /></div>
-            <div><label class="field-label">Vendor Name</label><input type="text" id="gate-meta-vendor" style="background:#f1f5f9;" /></div>
+            <div><label class="field-label">Vendor Name</label><input type="text" id="gate-meta-vendor" style="background:#f1f5f9;" onblur="checkVendorOpenRejections()" /></div>
             <div><label class="field-label">Date</label><input type="text" id="gate-meta-date" style="background:#f1f5f9;" /></div>
             <input type="hidden" id="gate-meta-time" value="" />
           </div>
+          <div id="gate-vendor-rejection-banner" style="display:none; margin-bottom:16px;"></div>
           <div style="margin-bottom: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
             <table class="store-basket-data-table" style="width:100%; table-layout:fixed; word-wrap:break-word; min-width:560px;">
               <thead>
@@ -972,15 +985,76 @@
       <div id="store-historical-matrix-results-feed" style="display: flex; flex-direction: column; gap: 12px;"></div>
     </div>
 
-    <div id="canvas-module-assign-current-stock" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:10px;">
-        <h2 style="color:var(--brand); margin:0;">Assign Current Stock</h2>
-        <div style="display:flex; gap:8px;">
-          <button id="assign-mode-grn-btn" onclick="switchAssignStockMode('grn')" class="nav-btn-styled" style="background:var(--brand);">Post-GRN List</button>
-          <button id="assign-mode-unassigned-btn" onclick="switchAssignStockMode('unassigned')" class="nav-btn-styled" style="background:#718096;">Unassigned Materials</button>
-        </div>
+    <div id="canvas-module-manufacturing-clearance" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="color:var(--brand); margin:0 0 6px 0;">Manufacturing Clearance</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">
+        New projects start Inactive and stay invisible to every other department until cleared here.
+        Activation is one-way — an Active project cannot be sent back to Inactive from this screen.
+      </p>
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <button id="mc-pill-active" class="nav-btn-styled" onclick="switchMcStatus('Active')" style="padding:6px 16px;">Active</button>
+        <button id="mc-pill-inactive" class="nav-btn-styled" onclick="switchMcStatus('Inactive')" style="padding:6px 16px;">Inactive</button>
+        <button id="mc-pill-completed" class="nav-btn-styled" onclick="switchMcStatus('Completed')" style="padding:6px 16px;">Completed</button>
       </div>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Assign received stock to BOQ IDs. Any quantity not assigned stays in the unassigned automatically.</p>
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:8px;">Project ID</th><th style="padding:8px;">Company Name</th>
+          <th style="padding:8px;">Delivery Date</th><th style="padding:8px;">Action</th>
+        </tr></thead>
+        <tbody id="mc-list-body"></tbody>
+      </table>
+      <button class="nav-btn-styled" style="background:#718096; margin-top:16px;" onclick="document.getElementById('dashboard-view').style.display='flex'; document.getElementById('canvas-module-manufacturing-clearance').style.display='none';">Return to Main Dashboard</button>
+    </div>
+
+    <div id="canvas-module-stock-sweep" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="color:var(--brand); margin:0 0 6px 0;">Stock Sweep (Weekly Return)</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
+        Record all material recovered from every department/job card in this sweep, regardless of project.
+        This is not tied to any specific BOQ — it goes straight into the general pool and gets automatically
+        redistributed to whichever BOQs need it, exactly like a GRN receipt.
+      </p>
+      <div id="sweep-feedback" style="display:none; margin-bottom:14px;"></div>
+      <div style="position:relative; margin-bottom:12px;">
+        <input type="text" id="sweep-material-search" placeholder="Search material to add to this sweep..." oninput="handleSweepSearch(this.value)"
+               style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:var(--radius);">
+        <div id="sweep-material-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:var(--radius); max-height:260px; overflow-y:auto; z-index:20; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+      </div>
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:14px;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:8px;">Item Code</th><th style="padding:8px;">Material</th>
+          <th style="padding:8px; width:110px;">Quantity</th><th style="padding:8px;">Reason (optional)</th><th style="padding:8px; width:40px;"></th>
+        </tr></thead>
+        <tbody id="sweep-basket-body"><tr id="sweep-basket-empty"><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No items added yet.</td></tr></tbody>
+      </table>
+      <button id="sweep-submit-btn" class="nav-btn-styled" style="background:var(--brand);" onclick="submitStockSweep()" disabled>Submit Stock Sweep</button>
+    </div>
+
+    <div id="canvas-module-assign-current-stock" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="color:var(--brand); margin:0 0 6px 0;">Assign Current Stock</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
+        Incoming stock is now assigned to BOQs automatically on GRN. Use this screen only to move
+        already-assigned stock between BOQs, or release it back to the unassigned pool — for example,
+        when a BOQ for a project starting months from now has been auto-assigned material another BOQ
+        needs sooner.
+      </p>
+      <div id="ass-feedback" style="display:none; margin-bottom:14px;"></div>
+      <div style="position:relative; margin-bottom:16px;">
+        <input type="text" id="ass-material-search" placeholder="Search material name..." oninput="handleAssStockSearch(this.value)"
+               style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:var(--radius);">
+        <div id="ass-material-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:var(--radius); max-height:260px; overflow-y:auto; z-index:20; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+      </div>
+      <div id="ass-results-zone" style="display:none;">
+        <h3 id="ass-material-title" style="margin-bottom:10px;"></h3>
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+          <thead><tr style="background:var(--highlight-bg); text-align:left;">
+            <th style="padding:8px;">PRN ID</th><th style="padding:8px;">BOQ ID</th><th style="padding:8px;">Project</th>
+            <th style="padding:8px;">Assigned Qty</th><th style="padding:8px;">Action</th>
+          </tr></thead>
+          <tbody id="ass-results-body"></tbody>
+        </table>
+      </div>
+      <div id="ass-old-content-removed-marker" style="display:none;">
+    <div style="opacity:0;">Assign received stock to BOQ IDs. Any quantity not assigned stays in the unassigned automatically.</p>
       <div id="assign-stock-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
       <!-- MODE 1: POST-GRN QUEUE -->
@@ -1117,6 +1191,22 @@
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:20px;">Fill in the BOQ details and add material rows. Submit when complete and it will go for Authorization.</p>
       <div id="create-boq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
+      <!-- Import Existing BOQ -->
+      <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#6d28d9; margin-bottom:8px; letter-spacing:0.5px;">Import an Existing BOQ (Optional)</div>
+        <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Select a finalized BOQ for a similar product to pre-fill the material rows below, instead of starting from scratch.</p>
+        <div style="display:grid; grid-template-columns:2fr auto; gap:10px; align-items:end;">
+          <div>
+            <label class="field-label" style="margin-top:0;">Search Product Name / Rating</label>
+            <select id="cboq-import-select" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+              <option value="">— Loading BOQs... —</option>
+            </select>
+          </div>
+          <button class="nav-btn-styled" id="cboq-import-btn" onclick="importCBOQFromExisting()" style="background:#6d28d9; color:#fff; padding:9px 18px; font-weight:700;">Import BOQ</button>
+        </div>
+      </div>
+      <div id="cboq-import-banner" style="display:none; background:#fef2f2; border-left:4px solid #dc2626; color:#b91c1c; padding:10px 14px; border-radius:var(--radius); margin-bottom:16px; font-size:0.85rem; font-weight:600;"></div>
+
       <!-- Header Fields -->
       <div id="cboq-form-body">
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
@@ -1136,11 +1226,19 @@
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
           <div>
             <label class="field-label" style="margin-top:0;">Product Name *</label>
-            <input type="text" id="cboq-product-name" disabled style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" placeholder="e.g. HT Capacitor Bank" />
+            <div style="position:relative;">
+              <input type="text" id="cboq-product-search" disabled
+                placeholder="Type to search product name..."
+                autocomplete="off"
+                oninput="handleCBOQProductSearch(this.value)"
+                style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
+              <div id="cboq-product-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 var(--radius) var(--radius); max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+            </div>
+            <input type="hidden" id="cboq-product-name" />
           </div>
           <div>
             <label class="field-label" style="margin-top:0;">Product Rating *</label>
-            <input type="text" id="cboq-product-rating" disabled style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" placeholder="e.g. 100KVAR 11KV" />
+            <input type="text" id="cboq-product-rating" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Product Name" />
           </div>
           <div>
             <label class="field-label" style="margin-top:0;">Department *</label>
@@ -1563,6 +1661,11 @@
     </div>
 
     <!-- MATERIAL LIST CANVAS -->
+    <div id="canvas-module-purchase-rejected-material" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <div id="rejected-material-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
+      <div id="rejected-material-cards-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
+    </div>
+
     <div id="canvas-module-purchase-material-list" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Live view of all materials needed across active PRNs. Items with Still To Order Quantity = 0 are hidden automatically.</p>
       <div id="material-list-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
@@ -2966,7 +3069,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxa-BrW-HTgSJeyzrzwylfWHisG19eTPuG6U420eIM6epTOLXmklibl-r2k_4GrKwCI/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxEBhIP6zF76yiWC-R5dTjlsC0AnJHub8QBFUZeEpLQrLNciGyYRT0NKAg_upv-tW4/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -3752,7 +3855,15 @@ async function showAppView() {
   document.getElementById("display-full-name").textContent = localStorage.getItem("userFirstName") + " " + localStorage.getItem("userLastName");
   document.getElementById("display-username").textContent = "@" + localStorage.getItem("sessionUser");
   
-  enforceDynamicModuleRoleGateways(userPermissions);
+  // DIAGNOSTIC: surface exactly what permissions object the dashboard is being built
+  // from. If this ever logs an empty object, every menu card will silently stay hidden
+  // with no thrown error — that's the failure mode this guards against.
+  if (!userPermissions || Object.keys(userPermissions).length === 0) {
+    console.error("showAppView: userPermissions is empty or missing — dashboard will render with all cards hidden.", userPermissions);
+  } else {
+    console.log("showAppView: rendering with permissions for", Object.keys(userPermissions).length, "keys.");
+  }
+  enforceDynamicModuleRoleGateways(userPermissions || {});
   // Pre-load ItemCodeNumbers catalog into memory (fire-and-forget, suppress unhandled rejection)
   loadItemCodeCatalogIntoCache().catch(() => {});
   
@@ -6632,6 +6743,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canCreateJobCardNumber = userPermissionsObject.createJobCardNumber === true;
   const canAssignCurrentStock  = userPermissionsObject.assignCurrentStock  === true;
   const canExpectedInbounds = userPermissionsObject.expectedDeliveries === true;
+  const canManufacturingClearance = userPermissionsObject.manufacturingClearance === true;
+  const canViewRejectedMaterial = userPermissionsObject.rejectedMaterial === true;
 
   // --- SET INDIVIDUAL VISIBILITY FOR MARKETING TARGET CARDS ---
   if (document.getElementById("mod-card")) {
@@ -6671,10 +6784,10 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     document.getElementById("mod-store-gate").style.display = userPermissionsObject.gateEntry === true ? "block" : "none";
   }
   if (document.getElementById("mod-store-entry")) {
-    document.getElementById("mod-store-entry").style.display = userPermissionsObject.storeEntry === true ? "block" : "none";
+    document.getElementById("mod-store-entry").style.display = userPermissionsObject.storeEntryAndGrn === true ? "block" : "none";
   }
   if (document.getElementById("mod-store-grn")) {
-    document.getElementById("mod-store-grn").style.display = userPermissionsObject.grnNote === true ? "block" : "none";
+    document.getElementById("mod-store-grn").style.display = userPermissionsObject.qaCheck === true ? "block" : "none";
   }
   if (document.getElementById("mod-store-ticket")) {
     document.getElementById("mod-store-ticket").style.display = canCreateTicket ? "block" : "none";
@@ -6709,8 +6822,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-design-auth-boq-upd")) document.getElementById("mod-design-auth-boq-upd").style.display = canAuthorizeBOQUpdate ? "block" : "none";
   if (document.getElementById("mod-design-upload-drawings")) document.getElementById("mod-design-upload-drawings").style.display = canUploadDrawings ? "block" : "none";
   const canSeeItemCode = canCreateBOQ || canAuthorizeBOQ || canUpdateBOQ || canAuthorizeBOQUpdate || canUploadDrawings
-    || userPermissionsObject.storeEntry === true
-    || userPermissionsObject.grnNote === true
+    || userPermissionsObject.storeEntryAndGrn === true
+    || userPermissionsObject.qaCheck === true
     || userPermissionsObject.itemCodeAccess === true;
   if (document.getElementById("mod-design-itemcode")) {
     document.getElementById("mod-design-itemcode").style.display = canSeeItemCode ? "block" : "none";
@@ -6729,9 +6842,10 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-purchase-request-note"))  document.getElementById("mod-purchase-request-note").style.display  = canPurchaseRequestNote      ? "block" : "none";
   if (document.getElementById("mod-purchase-material-list")) document.getElementById("mod-purchase-material-list").style.display = canViewMaterialListPurchase  ? "block" : "none";
   if (document.getElementById("mod-purchase-upload-rm-po"))  document.getElementById("mod-purchase-upload-rm-po").style.display  = canUploadRMPurchaseOrder     ? "block" : "none";
+  if (document.getElementById("mod-purchase-rejected-material")) document.getElementById("mod-purchase-rejected-material").style.display = canViewRejectedMaterial ? "block" : "none";
   const purchaseHeaderBlock = document.getElementById("dashboard-purchase-department-header-block");
   if (purchaseHeaderBlock) {
-    purchaseHeaderBlock.style.display = (canViewMaterialListPurchase || canUploadRMPurchaseOrder || userPermissionsObject.viewPurchaseDashboard === true) ? "block" : "none";
+    purchaseHeaderBlock.style.display = (canViewMaterialListPurchase || canUploadRMPurchaseOrder || canViewRejectedMaterial || userPermissionsObject.viewPurchaseDashboard === true) ? "block" : "none";
   }
 
   // Production Department block visibility
@@ -6745,6 +6859,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canLiveSpareStoreStock = userPermissionsObject.liveSpareStoreStock === true;
   if (document.getElementById("mod-live-spare-store-stock")) document.getElementById("mod-live-spare-store-stock").style.display = canLiveSpareStoreStock ? "block" : "none";
   if (document.getElementById("mod-assign-current-stock")) document.getElementById("mod-assign-current-stock").style.display = canAssignCurrentStock ? "block" : "none";
+  if (document.getElementById("mod-stock-sweep")) document.getElementById("mod-stock-sweep").style.display = canAssignCurrentStock ? "block" : "none";
   if (document.getElementById("mod-expected-inbounds")) document.getElementById("mod-expected-inbounds").style.display = canExpectedInbounds ? "block" : "none";
 
   // --- DASHBOARD WRAPPER VISIBILITY (show entire wrapper, not just the card) ---
@@ -6774,9 +6889,13 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   }
 
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");
-  if (storeHeaderBlock) {
-    storeHeaderBlock.style.display = (canViewLiveStock || canReleaseTicket || canSearchStoreMat || canApproveBOQIncrease || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntry === true || userPermissionsObject.grnNote === true || canViewLiveFinishedStock || canLiveSpareStoreStock || canAssignCurrentStock || canPurchaseRequestNote) ? "block" : "none";
-  }
+      if (storeHeaderBlock) {
+        storeHeaderBlock.style.display = (canViewLiveStock || canReleaseTicket || canSearchStoreMat || canApproveBOQIncrease || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntryAndGrn === true || userPermissionsObject.qaCheck === true || canViewLiveFinishedStock || canLiveSpareStoreStock || canAssignCurrentStock || canPurchaseRequestNote) ? "block" : "none";
+      }
+
+      if (document.getElementById("mod-manufacturing-clearance")) document.getElementById("mod-manufacturing-clearance").style.display = canManufacturingClearance ? "block" : "none";
+      const projectHeaderBlock = document.getElementById("dashboard-project-department-header-block");
+      if (projectHeaderBlock) projectHeaderBlock.style.display = canManufacturingClearance ? "block" : "none";
 }
 
 /**
@@ -7905,6 +8024,9 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   } else if (targetPanelModuleId === 'store-grn') {
     document.getElementById("canvas-module-store-grn").style.display = "block";
     initializeStoreGrnWorkspaceQueue();
+  } else if (targetPanelModuleId === 'stock-sweep') {
+    document.getElementById("canvas-module-stock-sweep").style.display = "block";
+    initializeStockSweepPanel();
   } else if (targetPanelModuleId === 'assign-current-stock') {
     document.getElementById("canvas-module-assign-current-stock").style.display = "block";
     initializeAssignCurrentStockPanel();
@@ -7991,6 +8113,10 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     }
     document.getElementById("canvas-module-store-live-spare").style.display = "block";
     triggerLiveSpareStoreStockMetricsSync();
+  } else if (targetCanvasModuleId === 'manufacturing-clearance') {
+    document.getElementById("dashboard-view").style.display = "none";
+    const c = document.getElementById("canvas-module-manufacturing-clearance");
+    if (c) { c.style.display = "block"; initializeManufacturingClearancePanel(); }
   } else if (targetCanvasModuleId === 'store-history-matrix') {
     navigateToStoreWorkspacePanel('store-history-matrix');
   } else if (targetCanvasModuleId === 'design-itemcode') {
@@ -8052,6 +8178,7 @@ function exitStoreWorkspacePanelBackToMenu() {
   // FIX: these panels share the Store enclosure but were never hidden or state-reset on exit,
   // so re-entering the section showed stale selections from the previous visit.
   if(document.getElementById("canvas-module-jc-letterhead")) document.getElementById("canvas-module-jc-letterhead").style.display = "none";
+  if(document.getElementById("canvas-module-stock-sweep")) { document.getElementById("canvas-module-stock-sweep").style.display = "none"; initializeStockSweepPanel(); }
   if(document.getElementById("canvas-module-fg-add")) document.getElementById("canvas-module-fg-add").style.display = "none";
   if(document.getElementById("canvas-module-store-live-fg")) document.getElementById("canvas-module-store-live-fg").style.display = "none";
   if(document.getElementById("canvas-module-store-live-spare")) document.getElementById("canvas-module-store-live-spare").style.display = "none";
@@ -9415,6 +9542,7 @@ async function parseGateDocumentsWithAI() {
     document.getElementById('gate-meta-invoice').value = activeParsedGatePayloadCache.invoiceNumber || "";
     document.getElementById('gate-meta-vendor').value = activeParsedGatePayloadCache.vendorName || "";
     document.getElementById('gate-meta-challan').value = activeParsedGatePayloadCache.challanNumber || "";
+    checkVendorOpenRejections();
 
     // Always use today's upload date — not the date on the document
     const rawDateObj      = new Date();
@@ -9530,6 +9658,96 @@ async function commitGateEntryRecordsToBackend() {
       btn.disabled = false; btn.textContent = "Generate Gate Entry";
     }
   } catch(e) { hideBlockingOverlay(); alert(e.message); btn.disabled = false; btn.textContent = "Generate Gate Entry"; }
+}
+
+window.activeGateRejectionLinks = {}; // rejectionId -> { linkedQty, itemCode, materialName, unitType }
+
+async function renderStoreEntryRejectionBanner(cardEl, gateNum, vendorName, lineItems) {
+  if (!vendorName) return;
+  try {
+    const data = await apFetch({ action: "fetchOpenRejectionsForVendor", vendorName: vendorName });
+    if (!data.success || !data.openRejections || data.openRejections.length === 0) return;
+
+    const bannerEl = cardEl.querySelector(`.se-rejection-banner-${gateNum}`);
+    if (!bannerEl) return;
+
+    const rows = data.openRejections.map((r, idx) => `
+      <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #fde68a;">
+        <input type="checkbox" id="se-rej-check-${gateNum}-${idx}" onchange="toggleGateRejectionLink('${r.rejectionId}', this.checked, '${r.itemCode}', '${(r.materialName||'').replace(/'/g,"\\'")}',  '${r.unitType}', ${r.outstandingQuantity}, '${gateNum}', ${idx})" />
+        <label for="se-rej-check-${gateNum}-${idx}" style="flex:1; font-size:0.85rem;">
+          <strong>${r.materialName}</strong> (${r.itemCode}) — ${r.action || "Pending action"} — Outstanding: ${r.outstandingQuantity} ${r.unitType}
+          ${lineItems.some(li => (li.itemCode||'').toUpperCase() === r.itemCode.toUpperCase()) ? '' : '<span style="color:#b91c1c; font-weight:700;"> (no matching item code on this delivery)</span>'}
+        </label>
+        <input type="number" min="0" max="${r.outstandingQuantity}" placeholder="Qty" style="width:80px;" disabled
+               id="se-rej-qty-${gateNum}-${idx}" onchange="updateGateRejectionLinkQty('${r.rejectionId}', this.value)" />
+      </div>`).join("");
+
+    bannerEl.style.cssText = "display:block; margin:10px 0; background:#fffbeb; border-left:4px solid #d97706; padding:14px; border-radius:var(--radius);";
+    bannerEl.innerHTML = `
+      <div style="font-weight:700; color:#92400e; margin-bottom:8px;">This vendor has open repair/replacement items — link any that this delivery resolves:</div>
+      ${rows}`;
+  } catch(e) { /* non-fatal, banner just stays empty */ }
+}
+
+function toggleGateRejectionLink(rejectionId, checked, itemCode, materialName, unitType, outstandingQty, gateNum, idx) {
+  const qtyInput = document.getElementById(`se-rej-qty-${gateNum}-${idx}`);
+  if (qtyInput) { qtyInput.disabled = !checked; if (checked && !qtyInput.value) qtyInput.value = outstandingQty; }
+  if (checked) {
+    window.activeGateRejectionLinks[rejectionId] = { linkedQty: outstandingQty, itemCode, materialName, unitType };
+  } else {
+    delete window.activeGateRejectionLinks[rejectionId];
+  }
+}
+
+function updateGateRejectionLinkQty(rejectionId, val) {
+  if (window.activeGateRejectionLinks[rejectionId]) {
+    window.activeGateRejectionLinks[rejectionId].linkedQty = parseFloat(val) || 0;
+  }
+}
+
+function updateSERowAmounts(gateNumber, idx) {
+  const qtyInput  = document.querySelector(`.se-phys-qty-${gateNumber}[data-idx="${idx}"]`);
+  const rateInput = document.querySelector(`.se-rate-${gateNumber}[data-idx="${idx}"]`);
+  const gstInput  = document.querySelector(`.se-gst-${gateNumber}[data-idx="${idx}"]`);
+  const basicHidden = document.querySelector(`.se-basic-amt-${gateNumber}[data-idx="${idx}"]`);
+  const invHidden    = document.querySelector(`.se-inv-amt-${gateNumber}[data-idx="${idx}"]`);
+  const displaySpan  = document.querySelector(`.se-amount-display-${gateNumber}[data-idx="${idx}"]`);
+
+  const qty  = parseFloat(qtyInput?.value)  || 0;
+  const rate = parseFloat(rateInput?.value) || 0;
+  const gst  = parseFloat(gstInput?.value)  || 0;
+
+  const basicAmt = qty * rate;
+  const invAmt   = basicAmt * (1 + gst / 100);
+
+  if (basicHidden) basicHidden.value = basicAmt.toFixed(2);
+  if (invHidden) invHidden.value = invAmt.toFixed(2);
+  if (displaySpan) displaySpan.textContent = invAmt.toFixed(2);
+}
+
+async function checkVendorOpenRejections() {
+  const banner = document.getElementById('gate-vendor-rejection-banner');
+  const vendorName = document.getElementById('gate-meta-vendor').value.trim();
+  if (!vendorName) { banner.style.display = "none"; banner.innerHTML = ""; return; }
+
+  try {
+    const data = await apFetch({ action: "fetchOpenRejectionsForVendor", vendorName: vendorName });
+    if (!data.success || !data.openRejections || data.openRejections.length === 0) {
+      banner.style.display = "none";
+      banner.innerHTML = "";
+      return;
+    }
+
+    const rows = data.openRejections.map(r => `
+      <div style="padding:4px 0; font-size:0.85rem;">
+        <strong>${r.materialName}</strong> (${r.itemCode}) — ${r.action || "Pending action"} — Outstanding: ${r.outstandingQuantity} ${r.unitType}
+      </div>`).join("");
+
+    banner.style.cssText = "display:block; margin-bottom:16px; background:#fffbeb; border-left:4px solid #d97706; padding:14px; border-radius:var(--radius);";
+    banner.innerHTML = `
+      <div style="font-weight:700; color:#92400e; margin-bottom:8px;">Heads up — this vendor has open repair/replacement items. You'll be able to link them once item codes are matched at Store Entry.</div>
+      ${rows}`;
+  } catch(e) { banner.style.display = "none"; }
 }
 
 async function initializeStoreEntryWorkspaceQueue() {
@@ -9655,6 +9873,23 @@ async function initializeStoreEntryWorkspaceQueue() {
             <input type="text" class="se-damage-desc-${item.gateNumber}" data-idx="${idx}"
               placeholder="Reason for short / missing supply..."
               style="font-size:0.82rem; padding:6px; width:100%; border-radius:3px; border:1px solid var(--border);">
+          </td>
+          <td style="text-align:right; width:100px; padding:6px; vertical-align:top;">
+            <input type="number" class="se-rate-${item.gateNumber}" data-idx="${idx}"
+              value="${line.ratePerQuantity || ''}" placeholder="Rate"
+              style="width:100%; text-align:right; font-weight:700; border:1.5px solid ${line.ratePerQuantity > 0 ? 'var(--brand)' : '#f59e0b'}; padding:5px; font-size:0.9rem; border-radius:3px;"
+              oninput="updateSERowAmounts('${item.gateNumber}', ${idx})">
+          </td>
+          <td style="text-align:center; width:70px; padding:6px; vertical-align:top;">
+            <input type="number" class="se-gst-${item.gateNumber}" data-idx="${idx}"
+              value="${line.gstPercent || 18}" placeholder="GST%"
+              style="width:100%; text-align:center; font-weight:700; border:1px solid var(--border); padding:5px; font-size:0.9rem; border-radius:3px;"
+              oninput="updateSERowAmounts('${item.gateNumber}', ${idx})">
+          </td>
+          <td style="text-align:right; width:100px; padding:6px; vertical-align:top; font-family:monospace; font-size:0.85rem; font-weight:700;">
+            <span class="se-amount-display-${item.gateNumber}" data-idx="${idx}">0.00</span>
+            <input type="hidden" class="se-basic-amt-${item.gateNumber}" data-idx="${idx}" value="0" />
+            <input type="hidden" class="se-inv-amt-${item.gateNumber}" data-idx="${idx}" value="0" />
           </td>
         </tr>`;
       });
@@ -9811,6 +10046,33 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
     itemData.lineItems[parseInt(inp.dataset.idx, 10)].materialType = val;
   });
 
+  document.querySelectorAll(`.se-rate-${gateNum}`).forEach(inp => {
+    itemData.lineItems[parseInt(inp.dataset.idx, 10)].ratePerQuantity = parseFloat(inp.value) || 0;
+  });
+  document.querySelectorAll(`.se-gst-${gateNum}`).forEach(inp => {
+    itemData.lineItems[parseInt(inp.dataset.idx, 10)].gstPercent = parseFloat(inp.value) || 18;
+  });
+  document.querySelectorAll(`.se-basic-amt-${gateNum}`).forEach(inp => {
+    itemData.lineItems[parseInt(inp.dataset.idx, 10)].totalBasicAmount = parseFloat(inp.value) || 0;
+  });
+  document.querySelectorAll(`.se-inv-amt-${gateNum}`).forEach(inp => {
+    itemData.lineItems[parseInt(inp.dataset.idx, 10)].totalInvoiceAmount = parseFloat(inp.value) || 0;
+  });
+
+  // Attach linked rejection resolutions, matched by item code now that Store Entry has resolved them
+  itemData.lineItems.forEach(li => {
+    const code = (li.itemCodeNumber || "").toString().trim().toUpperCase();
+    for (const [rejId, link] of Object.entries(window.activeGateRejectionLinks || {})) {
+      if ((link.itemCode || "").toString().trim().toUpperCase() === code) {
+        li.resolvesRejectionId = rejId;
+        li.resolvedQuantity = link.linkedQty;
+        break;
+      }
+    }
+  });
+
+  itemData.storePerson = appActiveOperatorIdentityString || "";
+
   document.querySelectorAll(`.se-item-code-${gateNum}`).forEach(inp => {
     const val = inp.value.trim();
     if (!val) itemCodeMissing = true;
@@ -9843,8 +10105,8 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
       banner.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; text-align:left;">
           <div>
-            <strong>Success! Raw Materials Store Entry Generated.</strong><br/>
-            <span>Inward Number: <strong style="font-family:monospace; font-size:1.05rem; color:#111827;">${data.inwardNumber}</strong></span>
+            <strong>Success! Store Entry + GRN Generated.</strong><br/>
+            <span>GRN Number: <strong style="font-family:monospace; font-size:1.05rem; color:#111827;">${data.grnNumber}</strong></span>
           </div>
           <button class="nav-btn-styled" onclick="
             document.getElementById('store-entry-runtime-feedback-banner').style.display = 'none';
@@ -9862,280 +10124,239 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
   }
 }
 
-async function initializeStoreGrnWorkspaceQueue() {
+window.activeQAToggle = "pending";
+
+async function initializeStoreGrnWorkspaceQueue(toggle) {
+  window.activeQAToggle = toggle || window.activeQAToggle || "pending";
   const feed = document.getElementById("store-grn-queue-cards-feed");
-  // FORCE WIPE old elements cards footprints instantly
-  feed.innerHTML = `
+
+  const toggleBar = `
+    <div style="display:flex; gap:8px; margin-bottom:16px;">
+      <button class="nav-btn-styled" onclick="initializeStoreGrnWorkspaceQueue('pending')" style="background:${window.activeQAToggle==='pending' ? 'var(--brand)' : '#e2e8f0'}; color:${window.activeQAToggle==='pending' ? '#fff' : '#334155'}; font-weight:700;">Pending Q/A</button>
+      <button class="nav-btn-styled" onclick="initializeStoreGrnWorkspaceQueue('repair')" style="background:${window.activeQAToggle==='repair' ? 'var(--brand)' : '#e2e8f0'}; color:${window.activeQAToggle==='repair' ? '#fff' : '#334155'}; font-weight:700;">Being Repaired at ABPS</button>
+    </div>`;
+
+  feed.innerHTML = toggleBar + `
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--accent);">
       <div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
-      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading Pending GRN List...</span>
+      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading...</span>
     </div>`;
+
   try {
-    const data = await apFetch({ action: "fetchInwardWorkflowQueueStream", targetStep: "GRN pending" });
-    if (!data.success || data.queue.length === 0) {
-      feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records waiting for GRN.</div>';
+    const data = await apFetch({ action: "fetchStoreQAQueue", toggle: window.activeQAToggle });
+    if (!data.success || !data.queue || data.queue.length === 0) {
+      feed.innerHTML = toggleBar + `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">${window.activeQAToggle === 'repair' ? 'No materials currently being repaired at ABPS.' : 'No records waiting for Q/A.'}</div>`;
       return;
     }
-    feed.innerHTML = "";
+
+    feed.innerHTML = toggleBar;
+
     data.queue.forEach(item => {
       let trs = "";
-      item.lineItems.forEach((line, idx) => {
-        const activeReceivedQtyCount = parseInt(line.gateQuantity, 10) || 0;
-        
-        trs += `<tr style="border-bottom:1px solid #f1f5f9;">
-          <td style="width:120px; padding:5px 6px; vertical-align:middle;">
-            <input type="text" class="grn-item-code-${item.gateNumber}" data-idx="${idx}" value="${line.itemCode || ""}" placeholder="CODE *" readonly style="padding:4px 5px; font-weight:700; border:1.5px solid var(--brand); background:#e0f2fe; color:var(--brand); text-align:center; width:100%; font-size:0.8rem; cursor:not-allowed;">
-          </td>
-          <td style="width:200px; padding:5px 6px; vertical-align:top;">
-            <div class="grn-mat-name-display-${item.gateNumber}" style="font-size:0.8rem; font-weight:600; color:var(--brand); white-space:normal; word-break:break-word; line-height:1.5; padding:2px;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-            <input type="hidden" class="grn-mat-name-${item.gateNumber}" data-idx="${idx}" value="${(line.materialName || "").replace(/"/g,'&quot;')}" />
-          </td>
-          <td style="width:55px; padding:5px 4px; text-align:center; vertical-align:middle; font-family:monospace; font-weight:700; font-size:0.82rem; color:#64748b;">
-            ${line.unitType || "NOS"}
-          </td>
-          <td style="width:55px; padding:5px 4px; font-family:monospace; font-weight:700; text-align:center; vertical-align:middle; font-size:0.88rem;">
-            ${activeReceivedQtyCount}
-          </td>
-          <td style="width:65px; padding:5px 4px; text-align:center; vertical-align:middle;">
-            <select class="grn-qa-${item.gateNumber}" data-idx="${idx}" style="padding:3px 2px; font-weight:700; font-size:0.78rem; width:100%;">
-              <option value="No" selected>No</option><option value="Yes">Yes</option>
-            </select>
-          </td>
-          <td style="width:70px; padding:5px 4px; text-align:center; vertical-align:middle;">
-            <input type="number" min="0" class="grn-ok-${item.gateNumber}" data-idx="${idx}" data-max="${activeReceivedQtyCount}" value="${activeReceivedQtyCount}" style="width:100%; border:1.5px solid var(--brand); font-weight:700; text-align:center; padding:4px 2px; font-size:0.85rem;" onchange="autoBalanceGrnQuantities(this, '${item.gateNumber}', ${idx})">
-          </td>
-          <td style="width:50px; padding:5px 4px; text-align:center; vertical-align:middle;">
-            <input type="number" min="0" class="grn-notok-${item.gateNumber}" data-idx="${idx}" value="0" style="width:100%; background:#f1f5f9; text-align:center; font-weight:700; padding:4px 2px; font-size:0.85rem; border:1px solid var(--border);" readonly>
-          </td>
-          <td style="width:80px; padding:5px 4px; text-align:right; vertical-align:middle;">
-            <input type="number" class="grn-rate-${item.gateNumber}" data-idx="${idx}" value="${line.ratePerQuantity || ''}" placeholder="Enter rate" style="width:100%; text-align:right; background:${line.ratePerQuantity > 0 ? '#fffef0' : '#fff3cd'}; font-weight:700; border:1.5px solid ${line.ratePerQuantity > 0 ? 'var(--brand)' : '#f59e0b'}; padding:4px 3px; font-size:0.82rem;" oninput="updateGrnRowAmounts('${item.gateNumber}', ${idx}); this.style.background='#fffef0'; this.style.borderColor='var(--brand)';">
-          </td>
-          <td style="width:42px; padding:5px 3px; text-align:center; vertical-align:middle;">
-            <input type="number" class="grn-gst-${item.gateNumber}" data-idx="${idx}" value="${line.gstPercent || 18}" min="0" max="100" style="width:100%; text-align:center; padding:4px 2px; font-size:0.82rem; border:1px solid var(--border);" oninput="updateGrnRowAmounts('${item.gateNumber}', ${idx})">
-          </td>
-          <td style="width:85px; padding:5px 4px; text-align:right; vertical-align:middle;">
-            <input type="number" class="grn-total-basic-${item.gateNumber}" data-idx="${idx}" value="0.00" style="width:100%; text-align:right; background:#e0f2fe; font-weight:700; color:#0369a1; padding:4px 3px; font-size:0.82rem; border:1px solid #bae6fd;" readonly>
-          </td>
-          <td style="width:85px; padding:5px 4px; text-align:right; vertical-align:middle;">
-            <input type="number" class="grn-total-invoice-${item.gateNumber}" data-idx="${idx}" value="0.00" style="width:100%; text-align:right; background:#dcfce7; font-weight:700; color:#15803d; padding:4px 3px; font-size:0.82rem; border:1px solid #86efac;" readonly>
-          </td>
-          <td style="width:140px; padding:5px 4px; vertical-align:middle;">
-            <input type="text" class="grn-rej-desc-${item.gateNumber}" data-idx="${idx}" placeholder="Rejection details..." style="font-size:0.78rem; padding:4px; width:100%; border:1px solid var(--border);">
-          </td>
-          <td style="width:155px; padding:5px 4px; vertical-align:middle;">
-            <select class="grn-action-${item.gateNumber}" data-idx="${idx}" style="width:100%; font-size:0.76rem; padding:3px 2px; margin-bottom:3px; border:1px solid var(--border);" onchange="handleGrnActionChange(this, '${item.gateNumber}', ${idx})">
-              <option value="">— N/A —</option>
-              <option value="Return to Vendor for Replacement">Return to Vendor for Replacement</option>
-              <option value="Return to Vendor for Repair">Return to Vendor for Repair</option>
-              <option value="Ask Vendor to repair at ABPS">Ask Vendor to repair at ABPS</option>
-              <option value="Ask ABPS to Repair at ABPS">Ask ABPS to Repair at ABPS</option>
-              <option value="Others">Others</option>
-            </select>
-            <input type="text" class="grn-action-others-${item.gateNumber}" data-idx="${idx}" placeholder="Specify action..." style="display:none; width:100%; font-size:0.76rem; padding:3px; border:1px solid var(--border);">
-          </td>
-        </tr>`;
-      });
 
-      let cleanDateDisplay = item.invoiceDate || "";
-      if (cleanDateDisplay.includes(" ") || cleanDateDisplay.includes("am") || cleanDateDisplay.includes("pm")) {
-        // Already structured formatted cleanly from backend string conversion pass
+      if (window.activeQAToggle === "repair") {
+        item.lineItems.forEach((line, idx) => {
+          trs += `<tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="width:120px; padding:6px; text-align:center; font-weight:700; font-family:monospace;">${line.itemCode}</td>
+            <td style="padding:6px;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+            <td style="width:60px; padding:6px; text-align:center;">${line.unitType}</td>
+            <td style="width:80px; padding:6px; text-align:center; font-weight:700;">${line.outstandingQty}</td>
+            <td style="width:160px; padding:6px; font-size:0.78rem; color:#64748b;">${line.action}</td>
+            <td style="width:100px; padding:6px; text-align:center;">
+              <input type="number" min="0" max="${line.outstandingQty}" class="repair-qty-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" value="${line.outstandingQty}" style="width:100%; text-align:center; font-weight:700; border:1.5px solid var(--brand); padding:4px;">
+            </td>
+          </tr>`;
+        });
+
+        let card = document.createElement("div"); card.className = "contact-summary-card-parent";
+        card.innerHTML = `
+          <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
+            <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${item.grnNumber}</span>
+            <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
+          </div>
+          <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
+            <table class="store-basket-data-table" style="width:100%; margin-bottom:12px;">
+              <thead><tr style="background:#f8fafc;">
+                <th style="padding:6px;">Item Code</th><th style="padding:6px;">Material</th><th style="padding:6px;">Unit</th>
+                <th style="padding:6px;">Outstanding</th><th style="padding:6px;">Action Selected</th><th style="padding:6px;">Repaired Qty (assumed OK)</th>
+              </tr></thead>
+              <tbody>${trs}</tbody>
+            </table>
+            <div style="display:flex; justify-content:flex-end;">
+              <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitRepairQAToBackend('${item.grnNumber}', this)">Confirm Repair Q/A & Add to Stock</button>
+            </div>
+          </div>`;
+        feed.appendChild(card);
+
       } else {
-        let dateObj = new Date(cleanDateDisplay);
-        if (!isNaN(dateObj.getTime())) {
-          const dt = dateObj.toLocaleDateString('en-CA'); 
-          const tm = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
-          cleanDateDisplay = dt + " " + tm;
-        }
+        item.lineItems.forEach((line, idx) => {
+          const recvd = parseInt(line.quantityReceived, 10) || 0;
+          trs += `<tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="width:120px; padding:5px 6px; text-align:center; font-weight:700; font-family:monospace;">${line.itemCode}</td>
+            <td style="width:200px; padding:5px 6px;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+            <td style="width:55px; padding:5px 4px; text-align:center; font-family:monospace; font-weight:700;">${line.unitType}</td>
+            <td style="width:70px; padding:5px 4px; text-align:center; font-weight:700;">${recvd}</td>
+            <td style="width:70px; padding:5px 4px; text-align:center;">
+              <input type="number" min="0" class="qa-ok-${item.grnNumber}" data-idx="${idx}" data-max="${recvd}" value="${recvd}" style="width:100%; border:1.5px solid var(--brand); font-weight:700; text-align:center; padding:4px 2px;" onchange="autoBalanceQaQuantities(this, '${item.grnNumber}', ${idx})">
+            </td>
+            <td style="width:50px; padding:5px 4px; text-align:center;">
+              <input type="number" min="0" class="qa-notok-${item.grnNumber}" data-idx="${idx}" value="0" style="width:100%; background:#f1f5f9; text-align:center; font-weight:700; padding:4px 2px; border:1px solid var(--border);" readonly>
+            </td>
+            <td style="width:150px; padding:5px 4px;">
+              <input type="text" class="qa-reason-${item.grnNumber}" data-idx="${idx}" placeholder="Reason for Not OK..." style="font-size:0.78rem; padding:4px; width:100%; border:1px solid var(--border);">
+            </td>
+            <td style="width:170px; padding:5px 4px;">
+              <select class="qa-action-${item.grnNumber}" data-idx="${idx}" style="width:100%; font-size:0.76rem; padding:3px 2px;">
+                <option value="">— N/A —</option>
+                <option value="Return to Vendor for Replacement">Return to Vendor for Replacement</option>
+                <option value="Return to Vendor for Repair">Return to Vendor for Repair</option>
+                <option value="Ask Vendor to repair at ABPS">Ask Vendor to repair at ABPS</option>
+                <option value="Ask ABPS to Repair at ABPS">Ask ABPS to Repair at ABPS</option>
+              </select>
+            </td>
+          </tr>`;
+        });
+
+        let card = document.createElement("div"); card.className = "contact-summary-card-parent";
+        card.innerHTML = `
+          <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
+            <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${item.grnNumber}</span>
+            <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
+            <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Invoice: ${item.invoiceNumber}</span>
+          </div>
+          <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
+            <table class="store-basket-data-table" style="width:100%; margin-bottom:12px;">
+              <thead><tr style="background:#f8fafc;">
+                <th style="padding:6px;">Item Code</th><th style="padding:6px;">Material</th><th style="padding:6px;">Unit</th>
+                <th style="padding:6px;">Received</th><th style="padding:6px;">OK Qty</th><th style="padding:6px;">Not OK</th>
+                <th style="padding:6px;">Reason for Not OK</th><th style="padding:6px;">Action for Rejected *</th>
+              </tr></thead>
+              <tbody>${trs}</tbody>
+            </table>
+            <div style="display:flex; justify-content:flex-end;">
+              <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitStoreQAToBackend('${item.grnNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">Submit Q/A & Add Stock</button>
+            </div>
+          </div>`;
+        feed.appendChild(card);
       }
-
-      let card = document.createElement("div"); card.className = "contact-summary-card-parent";
-      card.innerHTML = `
-        <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
-          <div class="contact-summary-title-info" style="width:100%;">
-            <div class="meta-row-line-block" style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-              <div>
-                <span style="background:var(--accent); color:#fff; padding:3px 8px; font-weight:700;">INWARD Number: ${item.inwardNumber || "PENDING"}</span>
-                ${item.grnNumber ? `<span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px; margin-left:4px;">GRN: ${item.grnNumber}</span>` : ''}
-                <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">GATE Number: ${item.gateNumber}</span>
-              </div>
-              <span style="background:#cbd5e1; color:#1e293b; font-weight:700; text-transform:none; font-size:0.8rem; padding:3px 8px;">${cleanDateDisplay}</span>
-            </div>
-            <div style="font-size:0.85rem; margin-top:8px; color:var(--muted); font-weight:600; padding-left:2px;">
-              Vendor Name: <strong style="color:var(--brand); font-weight:700;">${item.vendorName}</strong> | 
-              Invoice Number: <strong style="color:var(--text); font-weight:700;">${item.invoiceNumber}</strong>${item.challanNumber ? ' | CHALLAN Number: <strong style="color:var(--text); font-weight:700;">' + item.challanNumber + '</strong>' : ''}
-            </div>
-          </div>
-        </div>
-        <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
-          <table class="store-basket-data-table" style="width:100%; margin-bottom:12px; table-layout:fixed;">
-            <thead>
-              <tr style="background:#f8fafc; border-bottom:2px solid var(--border);">
-                <th style="min-width:120px; width:120px; text-align:center; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Item Code</th>
-                <th style="min-width:200px; width:200px; text-align:left; padding:8px 6px; font-size:0.72rem;">Standard Material Name</th>
-                <th style="min-width:55px; width:55px; text-align:center; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Unit<br/>Type</th>
-                <th style="min-width:55px; width:55px; text-align:center; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Received<br/>Qty</th>
-                <th style="min-width:65px; width:65px; text-align:center; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Q/A<br/>Done</th>
-                <th style="min-width:70px; width:70px; text-align:center; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">OK<br/>Qty *</th>
-                <th style="min-width:50px; width:50px; text-align:center; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Not<br/>OK</th>
-                <th style="min-width:80px; width:80px; text-align:right; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Rate/<br/>Unit (₹)</th>
-                <th style="min-width:42px; width:42px; text-align:center; white-space:nowrap; padding:8px 4px; font-size:0.72rem;">GST<br/>%</th>
-                <th style="min-width:85px; width:85px; text-align:right; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Basic<br/>Amt (₹)</th>
-                <th style="min-width:85px; width:85px; text-align:right; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Including<br/>GST (₹)</th>
-                <th style="min-width:140px; width:140px; text-align:left; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Rejection Details</th>
-                <th style="min-width:155px; width:155px; text-align:left; white-space:nowrap; padding:8px 6px; font-size:0.72rem;">Action for Rejected</th>
-              </tr>
-            </thead>
-            <tbody>${trs}</tbody>
-          </table>
-          <div style="display:flex; justify-content:flex-end;">
-            <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitGrnVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">Verify & Add Stock to Store</button>
-          </div>
-        </div>`;
-      feed.appendChild(card);
-      // Initialise amount calculations for all rows after card is in DOM
-      item.lineItems.forEach((line, idx) => { updateGrnRowAmounts(item.gateNumber, idx); });
     });
-  } catch(e) { feed.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+  } catch(e) { feed.innerHTML = toggleBar + `<p style="color:var(--warn);">${e.message}</p>`; }
 }
 
-function updateGrnRowCalculations(qaInput, idx) {
-  const gateQty    = parseInt(qaInput.dataset.gate,    10) || 0;
-  const transitRej = parseInt(qaInput.dataset.transit, 10) || 0;
-  const qaRej      = parseInt(qaInput.value,           10) || 0;
-  const okQty      = Math.max(0, gateQty - transitRej - qaRej);
-  const okInput    = document.querySelector(`.grn-ok-qty-input[data-idx="${idx}"]`);
-  if (okInput) { okInput.value = okQty; }
-  updateGrnRowAmounts(idx);
-}
-
-function updateGrnRowAmounts(gateNum, idx) {
-  const okQty      = parseFloat(document.querySelector(`.grn-ok-${gateNum}[data-idx="${idx}"]`)?.value)          || 0;
-  const rate       = parseFloat(document.querySelector(`.grn-rate-${gateNum}[data-idx="${idx}"]`)?.value)         || 0;
-  const gstPct     = parseFloat(document.querySelector(`.grn-gst-${gateNum}[data-idx="${idx}"]`)?.value)          || 0;
-  const totalBasic = okQty * rate;
-  const totalInv   = totalBasic * (1 + gstPct / 100);
-  const basicEl    = document.querySelector(`.grn-total-basic-${gateNum}[data-idx="${idx}"]`);
-  const invEl      = document.querySelector(`.grn-total-invoice-${gateNum}[data-idx="${idx}"]`);
-  if (basicEl) basicEl.value = totalBasic.toFixed(2);
-  if (invEl)   invEl.value   = totalInv.toFixed(2);
-}
-
-function handleGrnActionChange(selectEl, gateNum, idx) {
-  const othersInput = document.querySelector(`.grn-action-others-${gateNum}[data-idx="${idx}"]`);
-  if (othersInput) othersInput.style.display = selectEl.value === "Others" ? "block" : "none";
-}
-
-async function commitGrnVerificationToBackend(gateNum, encodedItem) {
-  const itemData = JSON.parse(decodeURIComponent(encodedItem));
-  const banner = document.getElementById('store-grn-runtime-feedback-banner');
-  const btn = event.target;
-  
-  let validationError = false;
-  let codeMissing = false;
-  let qaIncomplete = false;
-  
-  const codeInputs = document.querySelectorAll(`.grn-item-code-${gateNum}`);
-  
-  itemData.lineItems.forEach((line, idx) => {
-    const qa    = document.querySelector(`.grn-qa-${gateNum}[data-idx="${idx}"]`).value;
-    const ok    = parseInt(document.querySelector(`.grn-ok-${gateNum}[data-idx="${idx}"]`).value, 10) || 0;
-    const notOk = parseInt(document.querySelector(`.grn-notok-${gateNum}[data-idx="${idx}"]`).value, 10) || 0;
-    const desc  = document.querySelector(`.grn-rej-desc-${gateNum}[data-idx="${idx}"]`).value.trim();
-    const rate  = parseFloat(document.querySelector(`.grn-rate-${gateNum}[data-idx="${idx}"]`).value) || 0;
-    const gst   = parseFloat(document.querySelector(`.grn-gst-${gateNum}[data-idx="${idx}"]`).value) || 0;
-    const totalBasic   = parseFloat(document.querySelector(`.grn-total-basic-${gateNum}[data-idx="${idx}"]`).value) || 0;
-    const totalInvoice = parseFloat(document.querySelector(`.grn-total-invoice-${gateNum}[data-idx="${idx}"]`).value) || 0;
-    const actionSel    = document.querySelector(`.grn-action-${gateNum}[data-idx="${idx}"]`)?.value || "";
-    const actionOthers = document.querySelector(`.grn-action-others-${gateNum}[data-idx="${idx}"]`)?.value.trim() || "";
-    const actionFinal  = actionSel === "Others" ? ("Others: " + actionOthers) : actionSel;
-    
-    const itemCodeVal = codeInputs[idx] ? codeInputs[idx].value.trim() : "";
-    
-    if (!itemCodeVal)            codeMissing = true;
-    if (qa !== "Yes")            qaIncomplete = true;
-    if (ok + notOk !== line.gateQuantity) validationError = true;
-    
-    line.materialName                = document.querySelector(`.grn-mat-name-${gateNum}[data-idx="${idx}"]`)?.value?.trim() || line.materialName || "";
-    line.itemCode                    = itemCodeVal;
-    line.qaDoneOption                = qa;
-    line.okQuantity                  = ok;
-    line.notOkQuantity               = notOk;
-    line.rejectionDetailsDescription = desc;
-    line.ratePerQuantity             = rate;
-    line.gstPercentage               = gst;
-    line.totalBasicAmount            = totalBasic;
-    line.totalInvoiceAmount          = totalInvoice;
-    line.actionForRejectedMaterial   = actionFinal;
-    line.materialType                = (line.materialType || "").toString().trim();
-    line.unitType                    = (line.unitType || "NOS").toString().trim();
-  });
-  
-  banner.style.display = "none";
-
-  if (qaIncomplete) {
-    showBOQBanner('store-grn-runtime-feedback-banner', "⚠️ Compulsory Quality Check: You must change the Q/A Done selection to 'Yes' for all line items before you can add stock to the Store.", "error");
-    banner.scrollIntoView({ behavior: "smooth", block: "center" });
-    return;
-  }
-  
-  if (codeMissing) {
-    showBOQBanner('store-grn-runtime-feedback-banner', "⚠️ Compulsory Validation Failure: Every single inventory line item must have a valid Item Code Number filled before you can finalize and sign off the GRN section.", "error");
-    banner.scrollIntoView({ behavior: "smooth", block: "center" });
-    return;
-  }
-  
-  if (validationError) {
-    showBOQBanner('store-grn-runtime-feedback-banner', "⚠️ Quantity Balancing Violation: The sum of OK Quantity and Not OK Quantity must equal the Received Quantity exactly.", "error");
-    banner.scrollIntoView({ behavior: "smooth", block: "center" });
-    return;
-  }
-  
-  btn.disabled = true; 
-  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Certifying GRN Note...';
-  
-  showBlockingOverlay("Verifying GRN...");
-  try {
-    const data = await apFetch({ 
-      action: "commitGrnPipelineStep", 
-      activeEngineer: appActiveOperatorIdentityString, 
-      payload: { ...itemData, vendorName: itemData.vendorName || document.getElementById("store-grn-queue-cards-feed").querySelector(`[data-vendor]`)?.dataset.vendor || "" }
-    });
-    hideBlockingOverlay();
-    if (data.success) {
-      document.getElementById("store-grn-queue-cards-feed").innerHTML = "";
-      banner.style.cssText = "display: block; background: #dcfce7; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); margin-bottom:15px;";
-      banner.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; text-align:left;">
-          <div>
-            <strong>Success! GRN Certified & Stock Balances Updated.</strong><br/>
-            <span style="font-size:0.88rem; font-weight:600;">GRN Number: <span style="font-family:monospace; font-weight:800; background:#fff; padding:2px 6px; border-radius:4px; border:1px solid #15803d; color:#111827;">${data.grnNumber || "GRN-ISSUED"}</span></span>
-          </div>
-          <button class="nav-btn-styled" onclick="
-            document.getElementById('store-grn-runtime-feedback-banner').style.display = 'none';
-            initializeStoreGrnWorkspaceQueue();
-          " style="background: #15803d; color: white; padding:8px 16px; font-weight:700;">
-            + Create New Entry
-          </button>
-        </div>`;
-    } else {
-      alert("Server Error: " + data.error);
-      btn.disabled = false; btn.textContent = "Verify & Add Stock to Store";
-    }
-  } catch(e) { 
-    hideBlockingOverlay();
-    alert("Network request execution failure: " + e.message); 
-    btn.disabled = false; btn.textContent = "Verify & Add Stock to Store"; 
-  }
-}
-
-function autoBalanceGrnQuantities(okInput, gateNum, idx) {
+function autoBalanceQaQuantities(okInput, grnNum, idx) {
   const max = parseInt(okInput.dataset.max, 10);
   let okVal = parseInt(okInput.value, 10) || 0;
   if (okVal > max) { okVal = max; okInput.value = max; }
   if (okVal < 0) { okVal = 0; okInput.value = 0; }
-  const notOkInput = document.querySelector(`.grn-notok-${gateNum}[data-idx="${idx}"]`);
+  const notOkInput = document.querySelector(`.qa-notok-${grnNum}[data-idx="${idx}"]`);
   if (notOkInput) notOkInput.value = max - okVal;
-  updateGrnRowAmounts(gateNum, idx);
+}
+
+async function commitStoreQAToBackend(grnNum, encodedItem) {
+  const itemData = JSON.parse(decodeURIComponent(encodedItem));
+  const banner = document.getElementById('store-grn-runtime-feedback-banner');
+  const btn = event.target;
+
+  let actionMissing = false;
+  let validationError = false;
+
+  itemData.lineItems.forEach((line, idx) => {
+    const ok     = parseInt(document.querySelector(`.qa-ok-${grnNum}[data-idx="${idx}"]`).value, 10) || 0;
+    const notOk  = parseInt(document.querySelector(`.qa-notok-${grnNum}[data-idx="${idx}"]`).value, 10) || 0;
+    const reason = document.querySelector(`.qa-reason-${grnNum}[data-idx="${idx}"]`).value.trim();
+    const action = document.querySelector(`.qa-action-${grnNum}[data-idx="${idx}"]`).value;
+
+    if (notOk > 0 && !action) actionMissing = true;
+    if (ok + notOk !== (parseInt(line.quantityReceived, 10) || 0)) validationError = true;
+
+    line.okQuantity              = ok;
+    line.notOkQuantity           = notOk;
+    line.reasonForNotOk          = reason;
+    line.actionForRejectedMaterial = action;
+  });
+
+  banner.style.display = "none";
+
+  if (actionMissing) {
+    showBOQBanner('store-grn-runtime-feedback-banner', "⚠️ Action for Rejected Material is compulsory for any line item with a Not OK quantity greater than zero.", "error");
+    banner.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  if (validationError) {
+    showBOQBanner('store-grn-runtime-feedback-banner', "⚠️ Quantity Balancing Violation: OK Quantity + Not OK Quantity must equal Received Quantity exactly.", "error");
+    banner.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting Q/A...';
+
+  showBlockingOverlay("Verifying Q/A...");
+  try {
+    const data = await apFetch({
+      action: "commitStoreQAPipelineStep",
+      activeEngineer: appActiveOperatorIdentityString,
+      payload: { grnNumber: grnNum, vendorName: itemData.vendorName || "", lineItems: itemData.lineItems }
+    });
+    hideBlockingOverlay();
+    if (data.success) {
+      banner.style.cssText = "display: block; background: #dcfce7; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); margin-bottom:15px;";
+      banner.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; text-align:left;">
+          <div><strong>Success! Q/A Complete & Stock Updated.</strong></div>
+          <button class="nav-btn-styled" onclick="
+            document.getElementById('store-grn-runtime-feedback-banner').style.display = 'none';
+            initializeStoreGrnWorkspaceQueue('pending');
+          " style="background: #15803d; color: white; padding:8px 16px; font-weight:700;">Refresh Queue</button>
+        </div>`;
+    } else {
+      alert("Server Error: " + data.error);
+      btn.disabled = false; btn.textContent = "Submit Q/A & Add Stock";
+    }
+  } catch(e) {
+    hideBlockingOverlay();
+    alert("Network request execution failure: " + e.message);
+    btn.disabled = false; btn.textContent = "Submit Q/A & Add Stock";
+  }
+}
+
+async function commitRepairQAToBackend(grnNum, btn) {
+  const banner = document.getElementById('store-grn-runtime-feedback-banner');
+  banner.style.display = "none";
+
+  const lineItems = [];
+  document.querySelectorAll(`.repair-qty-${grnNum}`).forEach(inp => {
+    const repairedQuantity = parseFloat(inp.value) || 0;
+    if (repairedQuantity > 0) {
+      lineItems.push({ rejectionId: inp.dataset.rejid, repairedQuantity: repairedQuantity });
+    }
+  });
+  if (lineItems.length === 0) { alert("Enter at least one repaired quantity greater than zero."); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Confirming...';
+
+  showBlockingOverlay("Confirming Repair Q/A...");
+  try {
+    const data = await apFetch({
+      action: "commitRepairQAPipelineStep",
+      activeEngineer: appActiveOperatorIdentityString,
+      payload: { lineItems: lineItems }
+    });
+    hideBlockingOverlay();
+    if (data.success) {
+      banner.style.cssText = "display: block; background: #dcfce7; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); margin-bottom:15px;";
+      banner.innerHTML = `<strong>Success! Repaired material returned to stock.</strong>`;
+      initializeStoreGrnWorkspaceQueue('repair');
+    } else {
+      alert("Server Error: " + data.error);
+      btn.disabled = false; btn.textContent = "Confirm Repair Q/A & Add to Stock";
+    }
+  } catch(e) {
+    hideBlockingOverlay();
+    alert("Network request execution failure: " + e.message);
+    btn.disabled = false; btn.textContent = "Confirm Repair Q/A & Add to Stock";
+  }
 }
 
 /**
@@ -11741,12 +11962,15 @@ async function initializeCreateBOQPanel() {
   renderCBOQMaterialRows();
   const _g = id => document.getElementById(id);
   if (_g("cboq-customer-name"))  _g("cboq-customer-name").value  = "";
+  if (_g("cboq-product-search")) _g("cboq-product-search").value = "";
   if (_g("cboq-product-name"))   _g("cboq-product-name").value   = "";
   if (_g("cboq-product-rating")) _g("cboq-product-rating").value = "";
   if (_g("cboq-department"))     _g("cboq-department").value     = "";
   if (_g("cboq-order-qty"))      _g("cboq-order-qty").value      = "1";
   if (_g("cboq-spec-doc-list"))  _g("cboq-spec-doc-list").innerHTML = "";
   if (_g("create-boq-feedback")) _g("create-boq-feedback").style.display = "none";
+  if (_g("cboq-import-banner"))  { _g("cboq-import-banner").style.display = "none"; _g("cboq-import-banner").innerHTML = ""; }
+  window.cboqImportSourceInfo = null;
 
   // Lock Prepared By until Department is selected
   const preparedByEl = _g("cboq-prepared-by");
@@ -11761,11 +11985,24 @@ async function initializeCreateBOQPanel() {
   if (!projDrop) return;
   projDrop.innerHTML = '<option value="">Loading projects...</option>';
 
-  const [projResult, , personnelResult] = await Promise.allSettled([
+  const [projResult, , personnelResult, importListResult] = await Promise.allSettled([
     apFetch({ action: "pullLiveActiveProjectCodes" }),
     loadItemCodeCatalogIntoCache(),
-    apFetch({ action: "getStoreOperatorsList" })
+    apFetch({ action: "getStoreOperatorsList" }),
+    apFetch({ action: "fetchBOQsForImport" })
   ]);
+
+  const importSelect = _g("cboq-import-select");
+  if (importSelect) {
+    if (importListResult.status === "fulfilled" && importListResult.value.success && importListResult.value.boqs.length > 0) {
+      importSelect.innerHTML = '<option value="">— Select a finalized BOQ —</option>' +
+        importListResult.value.boqs.map(b =>
+          `<option value="${b.boqId}">${b.productName} ${b.productRating} — Project: ${b.projectId} — Sets: ${b.orderQuantity}</option>`
+        ).join("");
+    } else {
+      importSelect.innerHTML = '<option value="">No finalized BOQs available to import</option>';
+    }
+  }
 
   // Cache personnel for Prepared By (used when department is selected)
   if (personnelResult.status === "fulfilled" && personnelResult.value.fullPersonnelDataRecordsTree) {
@@ -11783,11 +12020,49 @@ async function initializeCreateBOQPanel() {
   }
 }
 
+async function importCBOQFromExisting() {
+  const select = document.getElementById("cboq-import-select");
+  const boqId = select.value;
+  if (!boqId) { alert("Please select a BOQ to import first."); return; }
+
+  const btn = document.getElementById("cboq-import-btn");
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = "Importing...";
+
+  try {
+    const data = await apFetch({ action: "fetchBOQMaterialRowsForImport", boqId: boqId });
+    if (!data.success) { alert("Import failed: " + data.error); return; }
+
+    cboqMaterialRows = (data.materialRows || []).map(row => ({
+      typeOfStore: row.typeOfStore || "Raw Materials Store",
+      descriptionOfMaterial: row.descriptionOfMaterial || "",
+      itemCode: row.itemCode || "",
+      make: row.make || "",
+      quantityFor1Set: row.quantityFor1Set || "",
+      unit: row.unit || "",
+      designRatePerQuantity: row.designRatePerQuantity || ""
+    }));
+    renderCBOQMaterialRows();
+
+    const banner = document.getElementById("cboq-import-banner");
+    banner.style.display = "block";
+    banner.textContent = `This BOQ is imported from Project ID: ${data.sourceProjectId} and for Product: ${data.sourceProductName} ${data.sourceProductRating} — make the necessary changes to it.`;
+
+    window.cboqImportSourceInfo = { boqId, sourceProjectId: data.sourceProjectId, sourceProductName: data.sourceProductName, sourceProductRating: data.sourceProductRating };
+  } catch(e) {
+    alert("Network request execution failure: " + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
 function handleCBOQProjectChange(projectId) {
   const meta = window.cboqProjectMeta && window.cboqProjectMeta[projectId];
   document.getElementById("cboq-customer-name").value = meta ? (meta.companyName || "") : "";
 
-  const fieldsToToggle = ["cboq-product-name", "cboq-product-rating", "cboq-department", "cboq-order-qty"];
+  const fieldsToToggle = ["cboq-product-search", "cboq-department", "cboq-order-qty"];
   const addRowBtn = document.getElementById("cboq-add-row-btn");
   const submitBtn = document.getElementById("cboq-submit-btn");
 
@@ -11795,6 +12070,7 @@ function handleCBOQProjectChange(projectId) {
     fieldsToToggle.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = false; });
     if (addRowBtn) { addRowBtn.disabled = false; addRowBtn.style.opacity = "1"; addRowBtn.style.cursor = "pointer"; }
     if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
+    loadItemCodeCatalogIntoCache();
   } else {
     fieldsToToggle.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = true; });
     const pb = document.getElementById("cboq-prepared-by");
@@ -13308,6 +13584,49 @@ function handleFGUseToggleChange(chosenUse) {
   }
 }
 
+function handleCBOQProductSearch(query) {
+  const dropdown = document.getElementById("cboq-product-dropdown");
+  const catalog = window.itemCodeCatalogCache || [];
+
+  if (!query || query.trim().length < 1) {
+    dropdown.style.display = "none";
+    document.getElementById("cboq-product-name").value = "";
+    document.getElementById("cboq-product-rating").value = "";
+    return;
+  }
+
+  const q = query.toLowerCase();
+  const matches = catalog.filter(item =>
+    (item.productName || "").toLowerCase().includes(q) ||
+    (item.rating || "").toLowerCase().includes(q)
+  ).slice(0, 10);
+
+  if (matches.length === 0) {
+    dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">
+      No matching product found. <a href="${window.location.pathname}?module=design-itemcode" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
+    </div>`;
+    dropdown.style.display = "block";
+    document.getElementById("cboq-product-name").value = "";
+    document.getElementById("cboq-product-rating").value = "";
+    return;
+  }
+
+  dropdown.innerHTML = matches.map(item => `
+    <div onclick="selectCBOQProduct('${item.productName.replace(/'/g,"\\'")}', '${(item.rating||'').replace(/'/g,"\\'")}')"
+      style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      ${item.productName}${item.rating ? ` <span style="color:var(--brand); font-weight:700;">${item.rating}</span>` : ""}
+    </div>`).join("");
+  dropdown.style.display = "block";
+}
+
+function selectCBOQProduct(productName, rating) {
+  document.getElementById("cboq-product-search").value = rating ? `${productName} ${rating}` : productName;
+  document.getElementById("cboq-product-name").value   = productName;
+  document.getElementById("cboq-product-rating").value = rating || "";
+  document.getElementById("cboq-product-dropdown").style.display = "none";
+}
+
 function handleFGProductSearch(query) {
   const dropdown  = document.getElementById("fg-product-dropdown");
   const isDispatch = window._fgActiveCatalogMode === "dispatch";
@@ -13940,63 +14259,130 @@ async function loadJobCardBOQGroups(projectId) {
   }
 }
 
-let _submitJobCardFormInProgress = false;
-async function submitJobCardForm() {
-  if (_submitJobCardFormInProgress) return;
-  _submitJobCardFormInProgress = true;
-  const projectId = document.getElementById("job-card-project").value;
-  const customerName = document.getElementById("job-card-customer").value;
-  const createdBy = document.getElementById("job-card-created-by").value.trim();
-  const btn = document.getElementById("job-card-submit-btn");
-
-  if (!createdBy) return showBOQBanner("job-card-feedback", "Job Card Number Created By is required.", "error");
-
-  let entries = [];
-  let hasEmptyField = false;
-
-  jobCardBOQGroups.forEach(group => {
-    const safeBoqId = group.boqId.replace(/[^a-zA-Z0-9]/g, '_');
-    document.querySelectorAll(`.job-card-input-${safeBoqId}`).forEach(input => {
-      const val = input.value.trim();
-      if (!val) { hasEmptyField = true; }
-      entries.push({
-        projectId, customerName,
-        productName: group.productName,
-        productRating: group.productRating,
-        boqId: group.boqId,
-        setNumber: parseInt(input.dataset.setnum, 10),
-        jobCardNumber: val
-      });
-    });
-  });
-
-  if (hasEmptyField) return showBOQBanner("job-card-feedback", "All Job Card Number fields must be filled in before saving.", "error");
-  if (entries.length === 0) return showBOQBanner("job-card-feedback", "No entries to save.", "error");
-
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Saving...';
-
-  try {
-    const data = await apFetch({ action: "submitJobCardNumbers", entries, createdBy, projectId });
-
-    if (data.success) {
-      showBOQBanner("job-card-feedback", `${data.count} Job Card Number(s) saved successfully.`, "success");
-      await loadJobCardBOQGroups(projectId);
-    } else {
-      showBOQBanner("job-card-feedback", data.error || "Failed to save job cards.", "error");
-    }
-  } catch(e) {
-    showBOQBanner("job-card-feedback", "Network error: " + e.message, "error");
-  } finally {
-    _submitJobCardFormInProgress = false;
-    btn.disabled = false;
-    btn.textContent = "Save Job Card Numbers";
-  }
-}
-
 // ═══════════════════════════════════════════════════════
 // PURCHASE WORKSPACE NAVIGATION
 // ═══════════════════════════════════════════════════════
+
+window.activeRejectedMaterialToggle = "pending";
+
+async function initializeRejectedMaterialPanel(toggle, searchTerm) {
+  window.activeRejectedMaterialToggle = toggle || window.activeRejectedMaterialToggle || "pending";
+  const cleanSearch = (searchTerm || "").toString().trim();
+  const feed = document.getElementById("rejected-material-cards-feed");
+  const isCompleted = window.activeRejectedMaterialToggle === "completed";
+
+  const toggleBar = `
+    <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+      <button class="nav-btn-styled" onclick="initializeRejectedMaterialPanel('pending')" style="background:${!isCompleted ? 'var(--brand)' : '#e2e8f0'}; color:${!isCompleted ? '#fff' : '#334155'}; font-weight:700;">Pending Action</button>
+      <button class="nav-btn-styled" onclick="initializeRejectedMaterialPanel('completed')" style="background:${isCompleted ? 'var(--brand)' : '#e2e8f0'}; color:${isCompleted ? '#fff' : '#334155'}; font-weight:700;">Completed Action</button>
+      ${isCompleted ? `
+        <input type="text" id="rejected-material-search-input" placeholder="Search by Vendor Name or Action..." value="${cleanSearch.replace(/"/g,'&quot;')}"
+          style="flex:1; min-width:220px; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);"
+          onkeydown="if(event.key==='Enter') initializeRejectedMaterialPanel('completed', this.value)" />
+        <button class="nav-btn-styled" onclick="initializeRejectedMaterialPanel('completed', document.getElementById('rejected-material-search-input').value)" style="background:var(--accent); color:#fff; font-weight:700;">Search</button>
+      ` : ''}
+    </div>`;
+
+  feed.innerHTML = toggleBar + `
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--accent);">
+      <div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+      <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading...</span>
+    </div>`;
+
+  if (isCompleted && !cleanSearch) {
+    feed.innerHTML = toggleBar + `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">Search by Vendor Name or Action to view completed items — this list isn't loaded by default.</div>`;
+    return;
+  }
+
+  try {
+    const data = await apFetch({ action: "fetchRejectedMaterialQueue", toggle: window.activeRejectedMaterialToggle, searchTerm: cleanSearch });
+    if (!data.success || !data.queue || data.queue.length === 0) {
+      feed.innerHTML = toggleBar + `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records found.</div>`;
+      return;
+    }
+
+    feed.innerHTML = toggleBar;
+
+    data.queue.forEach(item => {
+      const isEditable = !isCompleted;
+      let trs = "";
+      item.lineItems.forEach((line, idx) => {
+        trs += `<tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="width:110px; padding:6px; text-align:center; font-family:monospace; font-weight:700;">${line.itemCode}</td>
+          <td style="width:180px; padding:6px;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+          <td style="width:70px; padding:6px; text-align:center; font-weight:700;">${line.notOkQuantity}</td>
+          <td style="width:80px; padding:6px; text-align:center; font-weight:700;">${line.outstandingQuantity}</td>
+          <td style="width:180px; padding:6px; font-size:0.8rem; color:#64748b;">${(line.reasonForNotOk || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+          <td style="width:170px; padding:6px;">
+            ${isEditable ? `
+              <select class="rej-action-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" style="width:100%; font-size:0.76rem; padding:3px 2px;">
+                <option value="Return to Vendor for Replacement" ${line.action==='Return to Vendor for Replacement'?'selected':''}>Return to Vendor for Replacement</option>
+                <option value="Return to Vendor for Repair" ${line.action==='Return to Vendor for Repair'?'selected':''}>Return to Vendor for Repair</option>
+                <option value="Ask Vendor to repair at ABPS" ${line.action==='Ask Vendor to repair at ABPS'?'selected':''}>Ask Vendor to repair at ABPS</option>
+                <option value="Ask ABPS to Repair at ABPS" ${line.action==='Ask ABPS to Repair at ABPS'?'selected':''}>Ask ABPS to Repair at ABPS</option>
+              </select>` : `<span style="font-size:0.8rem; font-weight:600;">${line.action}</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>`}
+          </td>
+        </tr>`;
+      });
+
+      let card = document.createElement("div"); card.className = "contact-summary-card-parent";
+      card.innerHTML = `
+        <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
+          <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${item.grnNumber}</span>
+          <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
+        </div>
+        <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
+          <table class="store-basket-data-table" style="width:100%; margin-bottom:12px;">
+            <thead><tr style="background:#f8fafc;">
+              <th style="padding:6px;">Item Code</th><th style="padding:6px;">Material</th><th style="padding:6px;">Not OK</th>
+              <th style="padding:6px;">Outstanding</th><th style="padding:6px;">Reason for Not OK</th><th style="padding:6px;">Action for Rejected</th>
+            </tr></thead>
+            <tbody>${trs}</tbody>
+          </table>
+          ${isEditable ? `<div style="display:flex; justify-content:flex-end;">
+            <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitRejectedMaterialActionToBackend('${item.grnNumber}', this)">Submit Action</button>
+          </div>` : ''}
+        </div>`;
+      feed.appendChild(card);
+    });
+  } catch(e) { feed.innerHTML = toggleBar + `<p style="color:var(--warn);">${e.message}</p>`; }
+}
+
+async function commitRejectedMaterialActionToBackend(grnNum, btn) {
+  const banner = document.getElementById('rejected-material-feedback-banner');
+  banner.style.display = "none";
+
+  const lineItems = [];
+  document.querySelectorAll(`.rej-action-${grnNum}`).forEach(sel => {
+    lineItems.push({ rejectionId: sel.dataset.rejid, actionForRejectedMaterial: sel.value });
+  });
+  if (lineItems.length === 0) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
+
+  showBlockingOverlay("Submitting Action...");
+  try {
+    const data = await apFetch({
+      action: "commitRejectedMaterialAction",
+      activeEngineer: appActiveOperatorIdentityString,
+      payload: { lineItems: lineItems }
+    });
+    hideBlockingOverlay();
+    if (data.success) {
+      banner.style.cssText = "display: block; background: #dcfce7; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); margin-bottom:15px;";
+      banner.innerHTML = `<strong>Success! Action recorded — GRN ${grnNum} moved to Completed Action.</strong>`;
+      initializeRejectedMaterialPanel('pending');
+    } else {
+      alert("Server Error: " + data.error);
+      btn.disabled = false; btn.textContent = "Submit Action";
+    }
+  } catch(e) {
+    hideBlockingOverlay();
+    alert("Network request execution failure: " + e.message);
+    btn.disabled = false; btn.textContent = "Submit Action";
+  }
+}
 
 function navigateToPurchaseWorkspacePanel(targetModuleId) {
   window.scrollTo(0, 0);
@@ -14005,7 +14391,7 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
   document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
 
-  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po"].forEach(id => {
+  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po","canvas-module-purchase-rejected-material"].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = "none";
   });
 
@@ -14022,6 +14408,9 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
   } else if (targetModuleId === "purchase-upload-rm-po") {
     document.getElementById("canvas-module-purchase-upload-rm-po").style.display = "block";
     initializeRMPOUploadPanel();
+  } else if (targetModuleId === "purchase-rejected-material") {
+    document.getElementById("canvas-module-purchase-rejected-material").style.display = "block";
+    initializeRejectedMaterialPanel('pending');
   }
 }
 
@@ -16457,12 +16846,257 @@ function showPurchaseFeedback(elementId, message, type) {
 // ASSIGN CURRENT STOCK
 // ═══════════════════════════════════════════════════════
 
+let sweepBasket = []; // [{ itemCode, materialName, quantity, reason }]
+
+function initializeStockSweepPanel() {
+  sweepBasket = [];
+  document.getElementById("sweep-feedback").style.display = "none";
+  document.getElementById("sweep-material-search").value = "";
+  document.getElementById("sweep-material-dropdown").style.display = "none";
+  renderSweepBasket();
+}
+
+let mcCurrentStatus = "Inactive";
+
+function initializeManufacturingClearancePanel() {
+  mcCurrentStatus = "Inactive";
+  syncMcStatusPills();
+  loadManufacturingClearanceList();
+}
+
+function switchMcStatus(status) {
+  mcCurrentStatus = status;
+  syncMcStatusPills();
+  loadManufacturingClearanceList();
+}
+
+function syncMcStatusPills() {
+  ["Active", "Inactive", "Completed"].forEach(s => {
+    const btn = document.getElementById("mc-pill-" + s.toLowerCase());
+    if (btn) btn.style.background = (s === mcCurrentStatus) ? "var(--brand)" : "#e2e8f0";
+    if (btn) btn.style.color = (s === mcCurrentStatus) ? "#fff" : "#334155";
+  });
+}
+
+async function loadManufacturingClearanceList() {
+  const body = document.getElementById("mc-list-body");
+  body.innerHTML = '<tr><td colspan="4" style="padding:14px; text-align:center;">Loading...</td></tr>';
+  try {
+    const data = await apFetch({ action: "fetchProjectsByStatus", status: mcCurrentStatus });
+    if (!data.success) { body.innerHTML = `<tr><td colspan="4" style="padding:14px; text-align:center; color:#b91c1c;">${data.error}</td></tr>`; return; }
+    if (data.projects.length === 0) { body.innerHTML = '<tr><td colspan="4" style="padding:14px; text-align:center; color:var(--muted);">No projects with this status.</td></tr>'; return; }
+    body.innerHTML = data.projects.map(p => `
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px; font-family:monospace;">${p.projectId}</td>
+        <td style="padding:8px;">${p.companyName}</td>
+        <td style="padding:8px;">${p.deliveryDate || "—"}</td>
+        <td style="padding:8px;">
+          ${mcCurrentStatus === "Inactive"
+            ? `<button class="nav-btn-styled" style="background:#2f9e58; padding:5px 12px; font-size:0.78rem;" onclick="mcActivateProject('${p.projectId}')">Activate</button>`
+            : `<span style="color:var(--muted); font-size:0.78rem;">—</span>`}
+        </td>
+      </tr>`).join("");
+  } catch(e) {
+    body.innerHTML = `<tr><td colspan="4" style="padding:14px; text-align:center; color:#b91c1c;">Network error: ${e.message}</td></tr>`;
+  }
+}
+
+async function mcActivateProject(projectId) {
+  if (!confirm(`Activate ${projectId}? This clears it for manufacturing and makes it visible to all departments. This cannot be undone from this screen.`)) return;
+  showBlockingOverlay("Activating project...");
+  try {
+    const data = await apFetch({ action: "activateProject", projectId });
+    if (data.success) { loadManufacturingClearanceList(); }
+    else alert(data.error || "Failed to activate.");
+  } catch(e) {
+    alert("Network error: " + e.message);
+  } finally {
+    hideBlockingOverlay();
+  }
+}
+
+function handleSweepSearch(query) {
+  const dropdown = document.getElementById("sweep-material-dropdown");
+  if (!query || query.trim().length < 1) { dropdown.style.display = "none"; return; }
+  const catalog = window.itemCodeCatalogCache || [];
+  const q = query.toLowerCase();
+  const matches = catalog.filter(item => (item.productName || "").toLowerCase().includes(q)).slice(0, 10);
+  if (matches.length === 0) { dropdown.style.display = "none"; return; }
+  dropdown.innerHTML = matches.map(item => `
+    <div onclick="addToSweepBasket('${item.itemCode}', \`${item.productName.replace(/`/g,"'")}\`)"
+      style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>${item.productName}
+    </div>`).join("");
+  dropdown.style.display = "block";
+}
+
+function addToSweepBasket(itemCode, materialName) {
+  document.getElementById("sweep-material-search").value = "";
+  document.getElementById("sweep-material-dropdown").style.display = "none";
+  if (sweepBasket.some(b => b.itemCode === itemCode)) { alert("This item is already in the sweep list — edit its quantity below instead."); return; }
+  sweepBasket.push({ itemCode, materialName, quantity: "", reason: "" });
+  renderSweepBasket();
+}
+
+function removeFromSweepBasket(itemCode) {
+  sweepBasket = sweepBasket.filter(b => b.itemCode !== itemCode);
+  renderSweepBasket();
+}
+
+function updateSweepBasketField(itemCode, field, value) {
+  const row = sweepBasket.find(b => b.itemCode === itemCode);
+  if (row) row[field] = value;
+  updateSweepSubmitState();
+}
+
+function renderSweepBasket() {
+  const body = document.getElementById("sweep-basket-body");
+  if (sweepBasket.length === 0) {
+    body.innerHTML = '<tr id="sweep-basket-empty"><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No items added yet.</td></tr>';
+  } else {
+    body.innerHTML = sweepBasket.map(b => `
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px; font-family:monospace;">${b.itemCode}</td>
+        <td style="padding:8px;">${b.materialName}</td>
+        <td style="padding:8px;"><input type="number" min="0.01" step="any" value="${b.quantity}" oninput="updateSweepBasketField('${b.itemCode}','quantity',this.value)" style="width:90px; padding:5px; border:1px solid var(--border); border-radius:4px;"></td>
+        <td style="padding:8px;"><input type="text" value="${b.reason}" placeholder="e.g. over-issued, unused" oninput="updateSweepBasketField('${b.itemCode}','reason',this.value)" style="width:100%; padding:5px; border:1px solid var(--border); border-radius:4px;"></td>
+        <td style="padding:8px;"><button onclick="removeFromSweepBasket('${b.itemCode}')" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>
+      </tr>`).join("");
+  }
+  updateSweepSubmitState();
+}
+
+function updateSweepSubmitState() {
+  const valid = sweepBasket.length > 0 && sweepBasket.every(b => parseFloat(b.quantity) > 0);
+  document.getElementById("sweep-submit-btn").disabled = !valid;
+}
+
+async function submitStockSweep() {
+  if (sweepBasket.some(b => !(parseFloat(b.quantity) > 0))) { alert("Every item needs a quantity greater than 0."); return; }
+  showBlockingOverlay("Recording Stock Sweep...");
+  try {
+    const data = await apFetch({
+      action: "commitStockSweep",
+      sweepItems: sweepBasket.map(b => ({ itemCode: b.itemCode, quantity: parseFloat(b.quantity), reason: b.reason }))
+    });
+    if (data.success) {
+      let msg = `Sweep recorded: ${data.itemsProcessed} item(s) added and auto-distributed to BOQs.`;
+      if (data.notFound && data.notFound.length) msg += ` NOT found in catalog (skipped): ${data.notFound.join(", ")}.`;
+      showBOQBanner("sweep-feedback", msg, "success");
+      sweepBasket = [];
+      renderSweepBasket();
+    } else {
+      showBOQBanner("sweep-feedback", data.error || "Failed to record sweep.", "error");
+    }
+  } catch(e) {
+    showBOQBanner("sweep-feedback", "Network error: " + e.message, "error");
+  } finally {
+    hideBlockingOverlay();
+  }
+}
+
+function handleAssStockSearch(query) {
+  const dropdown = document.getElementById("ass-material-dropdown");
+  if (!query || query.trim().length < 1) { dropdown.style.display = "none"; return; }
+  const catalog = window.itemCodeCatalogCache || [];
+  const q = query.toLowerCase();
+  const matches = catalog.filter(item => (item.productName || "").toLowerCase().includes(q)).slice(0, 10);
+  if (matches.length === 0) { dropdown.style.display = "none"; return; }
+  dropdown.innerHTML = matches.map(item => `
+    <div onclick="loadAssStockForItem('${item.itemCode}', \`${item.productName.replace(/`/g,"'")}\`)"
+      style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>${item.productName}
+    </div>`).join("");
+  dropdown.style.display = "block";
+}
+
+let assStockCache = { itemCode: "", materialName: "", assignments: [], eligibleTargets: [] };
+
+async function loadAssStockForItem(itemCode, materialName) {
+  document.getElementById("ass-material-search").value = materialName;
+  document.getElementById("ass-material-dropdown").style.display = "none";
+  document.getElementById("ass-results-zone").style.display = "block";
+  document.getElementById("ass-material-title").textContent = itemCode + " — " + materialName;
+  document.getElementById("ass-results-body").innerHTML = '<tr><td colspan="5" style="padding:14px; text-align:center;">Loading...</td></tr>';
+  try {
+    const data = await apFetch({ action: "fetchStockAssignmentsForItem", itemCode });
+    if (!data.success) { showBOQBanner("ass-feedback", data.error || "Failed to load.", "error"); return; }
+    assStockCache = data;
+    renderAssStockRows();
+  } catch(e) {
+    showBOQBanner("ass-feedback", "Network error: " + e.message, "error");
+  }
+}
+
+function renderAssStockRows() {
+  const body = document.getElementById("ass-results-body");
+  if (assStockCache.assignments.length === 0) {
+    body.innerHTML = '<tr><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No BOQ currently holds assigned stock for this material.</td></tr>';
+    return;
+  }
+  body.innerHTML = assStockCache.assignments.map(a => `
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:8px;">${a.prnId}</td>
+      <td style="padding:8px;">${a.boqId}</td>
+      <td style="padding:8px;">${a.projectId}</td>
+      <td style="padding:8px; font-weight:700;">${a.assignedQty}</td>
+      <td style="padding:8px;">
+        <button class="nav-btn-styled" style="background:#718096; padding:5px 10px; font-size:0.78rem;" onclick="doAssUnassign('${a.prnId}', ${a.assignedQty})">Unassign</button>
+        <button class="nav-btn-styled" style="background:var(--brand); padding:5px 10px; font-size:0.78rem;" onclick="openAssReassign('${a.prnId}', ${a.assignedQty})">Reassign</button>
+      </td>
+    </tr>`).join("");
+}
+
+async function doAssUnassign(prnId, maxQty) {
+  const qty = parseFloat(prompt(`Unassign how much (max ${maxQty})? This returns it to the unassigned pool.`, maxQty));
+  if (!qty || qty <= 0 || qty > maxQty) return;
+  showBlockingOverlay("Unassigning stock...");
+  try {
+    const data = await apFetch({ action: "unassignStock", prnId, itemCode: assStockCache.itemCode, quantity: qty });
+    if (data.success) { showBOQBanner("ass-feedback", "Unassigned successfully.", "success"); loadAssStockForItem(assStockCache.itemCode, assStockCache.materialName); }
+    else showBOQBanner("ass-feedback", data.error || "Failed.", "error");
+  } catch(e) { showBOQBanner("ass-feedback", "Network error: " + e.message, "error"); }
+  finally { hideBlockingOverlay(); }
+}
+
+function openAssReassign(sourcePrnId, maxQty) {
+  const targets = assStockCache.eligibleTargets.filter(t => t.prnId !== sourcePrnId);
+  if (targets.length === 0) { alert("No other open PRN line item exists for this material."); return; }
+  const list = targets.map((t, i) => `${i+1}. ${t.prnId} (BOQ: ${t.boqId}, Still To Order: ${t.stillToOrder})`).join("\n");
+  const choice = parseInt(prompt("Reassign to which PRN? Enter number:\n\n" + list), 10);
+  if (!choice || choice < 1 || choice > targets.length) return;
+  const target = targets[choice - 1];
+  const qty = parseFloat(prompt(`Quantity to move to ${target.prnId} (max ${maxQty})?`, maxQty));
+  if (!qty || qty <= 0 || qty > maxQty) return;
+  doAssReassign(sourcePrnId, target.prnId, qty);
+}
+
+async function doAssReassign(sourcePrnId, targetPrnId, qty) {
+  showBlockingOverlay("Reassigning stock...");
+  try {
+    const data = await apFetch({ action: "reassignStockBetweenPRNs", itemCode: assStockCache.itemCode, sourcePrnId, targetPrnId, quantity: qty, movedBy: appActiveOperatorIdentityString || "Unknown" });
+    if (data.success) { showBOQBanner("ass-feedback", data.message || "Reassigned successfully.", "success"); loadAssStockForItem(assStockCache.itemCode, assStockCache.materialName); }
+    else showBOQBanner("ass-feedback", data.error || "Failed.", "error");
+  } catch(e) { showBOQBanner("ass-feedback", "Network error: " + e.message, "error"); }
+  finally { hideBlockingOverlay(); }
+}
+
+async function initializeAssignCurrentStockPanel() {
+  document.getElementById("ass-feedback").style.display = "none";
+  document.getElementById("ass-results-zone").style.display = "none";
+  document.getElementById("ass-material-search").value = "";
+  document.getElementById("ass-material-dropdown").style.display = "none";
+  assStockCache = { itemCode: "", materialName: "", assignments: [], eligibleTargets: [] };
+}
+
 let assignStockCurrentMode     = "grn";
 let assignStockCurrentItemCode = "";
 let assignStockCurrentMaterial = null;
 let assignStockUnassignedCache = [];
 
-async function initializeAssignCurrentStockPanel() {
+async function initializeAssignCurrentStockPanel_OLD_UNUSED() {
   assignStockCurrentMode     = "grn";
   assignStockCurrentItemCode = "";
   assignStockCurrentMaterial = null;
