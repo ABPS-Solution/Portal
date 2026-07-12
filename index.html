@@ -987,27 +987,6 @@
       <div id="store-historical-matrix-results-feed" style="display: flex; flex-direction: column; gap: 12px;"></div>
     </div>
 
-    <div id="canvas-module-manufacturing-clearance" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="color:var(--brand); margin:0 0 6px 0;">Manufacturing Clearance</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">
-        New projects start Inactive and stay invisible to every other department until cleared here.
-        Activation is one-way — an Active project cannot be sent back to Inactive from this screen.
-      </p>
-      <div style="display:flex; gap:8px; margin-bottom:16px;">
-        <button id="mc-pill-active" class="nav-btn-styled" onclick="switchMcStatus('Active')" style="padding:6px 16px;">Active</button>
-        <button id="mc-pill-inactive" class="nav-btn-styled" onclick="switchMcStatus('Inactive')" style="padding:6px 16px;">Inactive</button>
-        <button id="mc-pill-completed" class="nav-btn-styled" onclick="switchMcStatus('Completed')" style="padding:6px 16px;">Completed</button>
-      </div>
-      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
-        <thead><tr style="background:var(--highlight-bg); text-align:left;">
-          <th style="padding:8px;">Project ID</th><th style="padding:8px;">Company Name</th>
-          <th style="padding:8px;">Delivery Date</th><th style="padding:8px;">Action</th>
-        </tr></thead>
-        <tbody id="mc-list-body"></tbody>
-      </table>
-      <button class="nav-btn-styled" style="background:#718096; margin-top:16px;" onclick="document.getElementById('dashboard-view').style.display='flex'; document.getElementById('canvas-module-manufacturing-clearance').style.display='none';">Return to Main Dashboard</button>
-    </div>
-
     <div id="canvas-module-stock-sweep" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="color:var(--brand); margin:0 0 6px 0;">Stock Sweep (Weekly Return)</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
@@ -1179,7 +1158,27 @@
       <div id="expected-inbounds-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="expected-inbounds-results" style="display:flex; flex-direction:column; gap:16px;"></div>
     </div>
+  </div>
 
+  <div id="canvas-module-manufacturing-clearance" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <h2 style="color:var(--brand); margin:0 0 6px 0;">Manufacturing Clearance</h2>
+    <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">
+      New projects start Inactive and stay invisible to every other department until cleared here.
+      Activation is one-way — an Active project cannot be sent back to Inactive from this screen.
+    </p>
+    <div style="display:flex; gap:8px; margin-bottom:16px;">
+      <button id="mc-pill-active" class="nav-btn-styled" onclick="switchMcStatus('Active')" style="padding:6px 16px;">Active</button>
+      <button id="mc-pill-inactive" class="nav-btn-styled" onclick="switchMcStatus('Inactive')" style="padding:6px 16px;">Inactive</button>
+      <button id="mc-pill-completed" class="nav-btn-styled" onclick="switchMcStatus('Completed')" style="padding:6px 16px;">Completed</button>
+    </div>
+    <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+      <thead><tr style="background:var(--highlight-bg); text-align:left;">
+        <th style="padding:8px;">Project ID</th><th style="padding:8px;">Company Name</th>
+        <th style="padding:8px;">Delivery Date</th><th style="padding:8px;">Action</th>
+      </tr></thead>
+      <tbody id="mc-list-body"></tbody>
+    </table>
+    <button class="nav-btn-styled" style="background:#718096; margin-top:16px;" onclick="document.getElementById('dashboard-view').style.display='flex'; document.getElementById('canvas-module-manufacturing-clearance').style.display='none';">Return to Main Dashboard</button>
   </div>
 
   <div id="module-design-workspace-enclosure-panel" class="workspace-panel" style="display: none; padding: 12px 10px;">
