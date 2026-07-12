@@ -1166,7 +1166,7 @@
     <h2 style="color:var(--brand); margin:0 0 6px 0;">Manufacturing Clearance</h2>
     <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">
       New projects start Inactive and stay invisible to every other department until cleared here.
-      Activation is one-way — an Active project cannot be sent back to Inactive from this screen.
+      Activation is one-way. An Active project cannot be sent back to Inactive from this screen.
     </p>
     <div style="display:flex; gap:8px; margin-bottom:16px;">
       <button id="mc-pill-active" class="nav-btn-styled" onclick="switchMcStatus('Active')" style="padding:6px 16px;">Active</button>
@@ -1666,7 +1666,7 @@
     <div id="canvas-module-purchase-rejected-material" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="color:var(--brand); margin:0 0 6px 0;">Store Inward Rejected Material</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
-        Review Q/A-rejected material from Store and decide the action — return to vendor, or repair at ABPS / by the vendor.
+        Review Q/A-rejected material from Store and decide the action.
         Once actioned, a GRN moves from Pending Action to Completed Action.
       </p>
       <div id="rejected-material-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
@@ -3073,7 +3073,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxEBhIP6zF76yiWC-R5dTjlsC0AnJHub8QBFUZeEpLQrLNciGyYRT0NKAg_upv-tW4/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxfk3BQBCkMuOYk2S3AK2o3BGyK1n0sBItiV4_kGf-k32_5e6nA0Neqc9KpbdYwFRPE/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -14287,24 +14287,62 @@ async function loadJobCardBOQGroups(projectId) {
 // ═══════════════════════════════════════════════════════
 
 window.activeRejectedMaterialToggle = "pending";
+window.rejMaterialVendorFilter = "";
+window.rejMaterialActionFilter = [];
 
-async function initializeRejectedMaterialPanel(toggle, searchTerm) {
+function toggleRejActionAll(checked) {
+  if (checked) {
+    document.querySelectorAll(".rej-action-filter-cb").forEach(cb => cb.checked = false);
+  }
+}
+
+function handleRejActionFilterChange() {
+  const anyChecked = Array.from(document.querySelectorAll(".rej-action-filter-cb")).some(cb => cb.checked);
+  const allCb = document.getElementById("rej-action-all");
+  if (anyChecked && allCb) allCb.checked = false;
+}
+
+function applyRejectedMaterialFilters() {
+  const vendorInput = document.getElementById("rejected-material-vendor-input");
+  window.rejMaterialVendorFilter = vendorInput ? vendorInput.value : "";
+  const allCb = document.getElementById("rej-action-all");
+  window.rejMaterialActionFilter = (allCb && allCb.checked)
+    ? []
+    : Array.from(document.querySelectorAll(".rej-action-filter-cb:checked")).map(cb => cb.value);
+  initializeRejectedMaterialPanel('completed');
+}
+
+async function initializeRejectedMaterialPanel(toggle) {
   window.activeRejectedMaterialToggle = toggle || window.activeRejectedMaterialToggle || "pending";
-  const cleanSearch = (searchTerm || "").toString().trim();
   const feed = document.getElementById("rejected-material-cards-feed");
   const isCompleted = window.activeRejectedMaterialToggle === "completed";
 
+  const cleanVendor = (window.rejMaterialVendorFilter || "").toString().trim();
+  const selectedActions = window.rejMaterialActionFilter || [];
+  const ALL_ACTIONS = ["Return to Vendor for Replacement", "Return to Vendor for Repair", "Ask Vendor to repair at ABPS", "Ask ABPS to Repair at ABPS"];
+
   const toggleBar = `
-    <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
       <button class="nav-btn-styled" onclick="initializeRejectedMaterialPanel('pending')" style="background:${!isCompleted ? 'var(--brand)' : '#e2e8f0'}; color:${!isCompleted ? '#fff' : '#334155'}; font-weight:700;">Pending Action</button>
       <button class="nav-btn-styled" onclick="initializeRejectedMaterialPanel('completed')" style="background:${isCompleted ? 'var(--brand)' : '#e2e8f0'}; color:${isCompleted ? '#fff' : '#334155'}; font-weight:700;">Completed Action</button>
-      ${isCompleted ? `
-        <input type="text" id="rejected-material-search-input" placeholder="Search by Vendor Name or Action..." value="${cleanSearch.replace(/"/g,'&quot;')}"
-          style="flex:1; min-width:220px; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);"
-          onkeydown="if(event.key==='Enter') initializeRejectedMaterialPanel('completed', this.value)" />
-        <button class="nav-btn-styled" onclick="initializeRejectedMaterialPanel('completed', document.getElementById('rejected-material-search-input').value)" style="background:var(--accent); color:#fff; font-weight:700;">Search</button>
-      ` : ''}
-    </div>`;
+    </div>
+    ${isCompleted ? `
+    <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:12px;">
+      <input type="text" id="rejected-material-vendor-input" placeholder="Search by Vendor Name..." value="${cleanVendor.replace(/"/g,'&quot;')}"
+        style="flex:1; min-width:200px; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);"
+        onkeydown="if(event.key==='Enter') applyRejectedMaterialFilters()" />
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; font-size:0.8rem;">
+        <label style="display:flex; align-items:center; gap:4px; font-weight:700; cursor:pointer;">
+          <input type="checkbox" id="rej-action-all" onchange="toggleRejActionAll(this.checked)" ${selectedActions.length === 0 ? 'checked' : ''}> ALL
+        </label>
+        ${ALL_ACTIONS.map((a, i) => `
+          <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+            <input type="checkbox" class="rej-action-filter-cb" value="${a}" onchange="handleRejActionFilterChange()" ${selectedActions.includes(a) ? 'checked' : ''}> ${a}
+          </label>`).join("")}
+      </div>
+      <button class="nav-btn-styled" onclick="applyRejectedMaterialFilters()" style="background:var(--accent); color:#fff; font-weight:700;">Search</button>
+    </div>
+    ` : ''}`;
 
   feed.innerHTML = toggleBar + `
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); gap:12px; color:var(--accent);">
@@ -14312,13 +14350,13 @@ async function initializeRejectedMaterialPanel(toggle, searchTerm) {
       <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading...</span>
     </div>`;
 
-  if (isCompleted && !cleanSearch) {
-    feed.innerHTML = toggleBar + `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">Search by Vendor Name or Action to view completed items — this list isn't loaded by default.</div>`;
+  if (isCompleted && !cleanVendor && selectedActions.length === 0) {
+    feed.innerHTML = toggleBar + `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">Search by Vendor Name and/or Action to view completed items — this list isn't loaded by default.</div>`;
     return;
   }
 
   try {
-    const data = await apFetch({ action: "fetchRejectedMaterialQueue", toggle: window.activeRejectedMaterialToggle, searchTerm: cleanSearch });
+    const data = await apFetch({ action: "fetchRejectedMaterialQueue", toggle: window.activeRejectedMaterialToggle, vendorName: cleanVendor, actions: selectedActions });
     if (!data.success || !data.queue || data.queue.length === 0) {
       feed.innerHTML = toggleBar + `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records found.</div>`;
       return;
@@ -14435,6 +14473,8 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
     document.getElementById("canvas-module-purchase-rejected-material").style.display = "block";
     const rejBanner = document.getElementById("rejected-material-feedback-banner");
     if (rejBanner) { rejBanner.style.display = "none"; rejBanner.innerHTML = ""; }
+    window.rejMaterialVendorFilter = "";
+    window.rejMaterialActionFilter = [];
     initializeRejectedMaterialPanel('pending');
   }
 }
