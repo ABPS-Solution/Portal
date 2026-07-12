@@ -991,8 +991,6 @@
       <h2 style="color:var(--brand); margin:0 0 6px 0;">Stock Sweep (Weekly Return)</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
         Record all material recovered from every department/job card in this sweep, regardless of project.
-        This is not tied to any specific BOQ — it goes straight into the general pool and gets automatically
-        redistributed to whichever BOQs need it, exactly like a GRN receipt.
       </p>
       <div id="sweep-feedback" style="display:none; margin-bottom:14px;"></div>
       <div style="position:relative; margin-bottom:12px;">
@@ -1002,8 +1000,8 @@
       </div>
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:14px;">
         <thead><tr style="background:var(--highlight-bg); text-align:left;">
-          <th style="padding:8px;">Item Code</th><th style="padding:8px;">Material</th>
-          <th style="padding:8px; width:110px;">Quantity</th><th style="padding:8px;">Reason (optional)</th><th style="padding:8px; width:40px;"></th>
+          <th style="padding:8px;">Item Code</th><th style="padding:8px;">Material Name + Rating</th>
+          <th style="padding:8px; width:80px;">Unit</th><th style="padding:8px; width:110px;">Quantity *</th><th style="padding:8px; width:40px;"></th>
         </tr></thead>
         <tbody id="sweep-basket-body"><tr id="sweep-basket-empty"><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No items added yet.</td></tr></tbody>
       </table>
@@ -1232,18 +1230,18 @@
           <div>
             <label class="field-label" style="margin-top:0;">Product Name *</label>
             <div style="position:relative;">
-              <input type="text" id="cboq-product-search" disabled
+              <textarea id="cboq-product-search" disabled rows="1"
                 placeholder="Type to search product name..."
                 autocomplete="off"
-                oninput="handleCBOQProductSearch(this.value)"
-                style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
+                oninput="handleCBOQProductSearch(this.value); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+                style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; resize:none; overflow:hidden; font-family:inherit; font-size:inherit; line-height:1.4; display:block; min-height:38px;"></textarea>
               <div id="cboq-product-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 var(--radius) var(--radius); max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
             </div>
             <input type="hidden" id="cboq-product-name" />
           </div>
           <div>
             <label class="field-label" style="margin-top:0;">Product Rating *</label>
-            <input type="text" id="cboq-product-rating" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Product Name" />
+            <textarea id="cboq-product-rating" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; font-family:inherit; font-size:inherit; line-height:1.4; display:block; min-height:38px; border:1.5px solid var(--border);" placeholder="Auto-filled from Product Name"></textarea>
           </div>
           <div>
             <label class="field-label" style="margin-top:0;">Department *</label>
@@ -1666,6 +1664,11 @@
 
     <!-- MATERIAL LIST CANVAS -->
     <div id="canvas-module-purchase-rejected-material" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="color:var(--brand); margin:0 0 6px 0;">Store Inward Rejected Material</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
+        Review Q/A-rejected material from Store and decide the action — return to vendor, or repair at ABPS / by the vendor.
+        Once actioned, a GRN moves from Pending Action to Completed Action.
+      </p>
       <div id="rejected-material-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="rejected-material-cards-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
     </div>
@@ -11977,9 +11980,9 @@ async function initializeCreateBOQPanel() {
   renderCBOQMaterialRows();
   const _g = id => document.getElementById(id);
   if (_g("cboq-customer-name"))  _g("cboq-customer-name").value  = "";
-  if (_g("cboq-product-search")) _g("cboq-product-search").value = "";
+  if (_g("cboq-product-search")) { _g("cboq-product-search").value = ""; _g("cboq-product-search").style.height = "auto"; }
   if (_g("cboq-product-name"))   _g("cboq-product-name").value   = "";
-  if (_g("cboq-product-rating")) _g("cboq-product-rating").value = "";
+  if (_g("cboq-product-rating")) { _g("cboq-product-rating").value = ""; _g("cboq-product-rating").style.height = "auto"; }
   if (_g("cboq-department"))     _g("cboq-department").value     = "";
   if (_g("cboq-order-qty"))      _g("cboq-order-qty").value      = "1";
   if (_g("cboq-spec-doc-list"))  _g("cboq-spec-doc-list").innerHTML = "";
@@ -13636,10 +13639,15 @@ function handleCBOQProductSearch(query) {
 }
 
 function selectCBOQProduct(productName, rating) {
-  document.getElementById("cboq-product-search").value = rating ? `${productName} ${rating}` : productName;
-  document.getElementById("cboq-product-name").value   = productName;
-  document.getElementById("cboq-product-rating").value = rating || "";
+  const searchEl = document.getElementById("cboq-product-search");
+  const ratingEl = document.getElementById("cboq-product-rating");
+  searchEl.value = rating ? `${productName} ${rating}` : productName;
+  document.getElementById("cboq-product-name").value = productName;
+  ratingEl.value = rating || "";
   document.getElementById("cboq-product-dropdown").style.display = "none";
+
+  searchEl.style.height = "auto"; searchEl.style.height = searchEl.scrollHeight + "px";
+  ratingEl.style.height = "auto"; ratingEl.style.height = ratingEl.scrollHeight + "px";
 }
 
 function handleFGProductSearch(query) {
@@ -16937,22 +16945,25 @@ function handleSweepSearch(query) {
   if (!query || query.trim().length < 1) { dropdown.style.display = "none"; return; }
   const catalog = window.itemCodeCatalogCache || [];
   const q = query.toLowerCase();
-  const matches = catalog.filter(item => (item.productName || "").toLowerCase().includes(q)).slice(0, 10);
+  const matches = catalog.filter(item =>
+    (item.productName || "").toLowerCase().includes(q) ||
+    (item.rating || "").toLowerCase().includes(q)
+  ).slice(0, 10);
   if (matches.length === 0) { dropdown.style.display = "none"; return; }
   dropdown.innerHTML = matches.map(item => `
-    <div onclick="addToSweepBasket('${item.itemCode}', \`${item.productName.replace(/`/g,"'")}\`)"
+    <div onclick="addToSweepBasket('${item.itemCode}', \`${item.productName.replace(/`/g,"'")}\`, \`${(item.rating||'').replace(/`/g,"'")}\`, '${(item.unitType||'NOS').replace(/'/g,"")}')"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>${item.productName}
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>${item.productName}${item.rating ? ` <span style="color:var(--brand); font-weight:700;">${item.rating}</span>` : ""}
     </div>`).join("");
   dropdown.style.display = "block";
 }
 
-function addToSweepBasket(itemCode, materialName) {
+function addToSweepBasket(itemCode, materialName, rating, unitType) {
   document.getElementById("sweep-material-search").value = "";
   document.getElementById("sweep-material-dropdown").style.display = "none";
   if (sweepBasket.some(b => b.itemCode === itemCode)) { alert("This item is already in the sweep list — edit its quantity below instead."); return; }
-  sweepBasket.push({ itemCode, materialName, quantity: "", reason: "" });
+  sweepBasket.push({ itemCode, materialName, rating: rating || "", unitType: unitType || "NOS", quantity: "" });
   renderSweepBasket();
 }
 
@@ -16975,9 +16986,9 @@ function renderSweepBasket() {
     body.innerHTML = sweepBasket.map(b => `
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px; font-family:monospace;">${b.itemCode}</td>
-        <td style="padding:8px;">${b.materialName}</td>
-        <td style="padding:8px;"><input type="number" min="0.01" step="any" value="${b.quantity}" oninput="updateSweepBasketField('${b.itemCode}','quantity',this.value)" style="width:90px; padding:5px; border:1px solid var(--border); border-radius:4px;"></td>
-        <td style="padding:8px;"><input type="text" value="${b.reason}" placeholder="e.g. over-issued, unused" oninput="updateSweepBasketField('${b.itemCode}','reason',this.value)" style="width:100%; padding:5px; border:1px solid var(--border); border-radius:4px;"></td>
+        <td style="padding:8px;">${b.materialName}${b.rating ? ` <span style="color:var(--brand); font-weight:700;">${b.rating}</span>` : ""}</td>
+        <td style="padding:8px; font-family:monospace; color:var(--muted);">${b.unitType || "NOS"}</td>
+        <td style="padding:8px;"><input type="number" min="0.01" step="any" required value="${b.quantity}" oninput="updateSweepBasketField('${b.itemCode}','quantity',this.value)" style="width:90px; padding:5px; border:1px solid var(--border); border-radius:4px;"></td>
         <td style="padding:8px;"><button onclick="removeFromSweepBasket('${b.itemCode}')" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>
       </tr>`).join("");
   }
@@ -16995,7 +17006,7 @@ async function submitStockSweep() {
   try {
     const data = await apFetch({
       action: "commitStockSweep",
-      sweepItems: sweepBasket.map(b => ({ itemCode: b.itemCode, quantity: parseFloat(b.quantity), reason: b.reason }))
+      sweepItems: sweepBasket.map(b => ({ itemCode: b.itemCode, quantity: parseFloat(b.quantity) }))
     });
     if (data.success) {
       let msg = `Sweep recorded: ${data.itemsProcessed} item(s) added and auto-distributed to BOQs.`;
