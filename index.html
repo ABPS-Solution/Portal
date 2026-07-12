@@ -372,9 +372,10 @@
           <button class="dept-dash-pill" id="mod-store-dashboard" onclick="navigateToStoreDashboard()" style="background:#eff8ff; color:#0369a1;">📊 Dashboard</button>
         </div>
       </div>
-      <div class="sec-label">Stock PRN</div>
+      <div class="sec-label">Stock PRN and Assigning</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-purchase-request-note" onclick="navigateToPurchaseWorkspacePanel('purchase-prn')"><span class="mc-label">Create Purchase Request Note</span></div>
+        <div class="menu-card" id="mod-purchase-request-note" onclick="navigateToPurchaseWorkspacePanel('purchase-prn')"><span class="mc-label">Create Purchase Request Note (PRN)</span></div>
+        <div class="menu-card" id="mod-assign-current-stock"    onclick="navigateToStoreWorkspacePanel('assign-current-stock')"><span class="mc-label">Assign Store Stock</span></div>
       </div>
       <div class="sec-label">Raw Materials Store Inward</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -386,7 +387,6 @@
       </div>
       <div class="sec-label">Raw Materials Store Outward</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-assign-current-stock"    onclick="navigateToStoreWorkspacePanel('assign-current-stock')"><span class="mc-label">Assign Store Stock</span></div>
         <div class="menu-card" id="mod-boq-increase-approvals"  onclick="navigateToStoreWorkspacePanel('boq-increase-approvals')"><span class="mc-label">Approve Job Card Increase</span></div>
         <div class="menu-card" id="mod-store-approvals"         onclick="navigateToStoreWorkspacePanel('store-manager-approvals')"><span class="mc-label">Approve Store Tickets</span></div>
         <div class="menu-card" id="mod-store-matrix"            onclick="switchActiveDashboardModule('store-history-matrix')"><span class="mc-label">Search Store Tickets</span></div>
