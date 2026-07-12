@@ -10863,6 +10863,12 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
   }
 }
 
+function exitManufacturingClearanceBackToMenu() {
+  document.getElementById("canvas-module-manufacturing-clearance").style.display = "none";
+  enforceDynamicModuleRoleGateways(userPermissions);
+  document.getElementById("dashboard-view").style.display = "flex";
+}
+
 function exitDesignWorkspacePanelBackToMenu() {
   document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
   const dd = document.getElementById("canvas-module-design-dashboard");
