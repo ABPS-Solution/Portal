@@ -3091,7 +3091,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycby7QsKw8fRl30AbnAymONEWoQPEKyveg6i1CW_ytE_U0be4s94xG1hwKoYk-93tRnDH/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwp6QkA47mAy-i1UjaHtHBi1SkWu-mTaSljlBsWChXO4gnXMIo8rXnMN0AreTmjteiE/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -14528,7 +14528,6 @@ async function initializeCreatePOPanel() {
   loadItemCodeCatalogIntoCache();
 
   window.cpoVendors = (vendorRes.status === "fulfilled" && vendorRes.value.success) ? vendorRes.value.vendors : [];
-  console.log("VENDOR DEBUG — status:", vendorRes.status, "| full value:", JSON.stringify(vendorRes.value), "| cpoVendors:", JSON.stringify(window.cpoVendors));
   window.cpoActiveProjects = (projRes.status === "fulfilled" && projRes.value.success)
     ? (projRes.value.projects || projRes.value.projectCodes || []).map(p => (typeof p === "string" ? p : (p.projectId || p.projectCode || ""))).filter(Boolean)
     : [];
