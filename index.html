@@ -358,7 +358,8 @@
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')"><span class="mc-label">Material List for Purchase</span></div>
-        <div class="menu-card" id="mod-purchase-upload-rm-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-upload-rm-po')"><span class="mc-label">Upload Raw Material Purchase Order</span></div>
+        <div class="menu-card" id="mod-purchase-create-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-create-po')"><span class="mc-label">Create Raw Material Purchase Order</span></div>
+        <div class="menu-card" id="mod-purchase-authorize-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po')"><span class="mc-label">Authorize Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-rejected-material" onclick="navigateToPurchaseWorkspacePanel('purchase-rejected-material')"><span class="mc-label">Store Inward Rejected Material</span></div>
       </div>
     </div>
@@ -1663,6 +1664,28 @@
       </div>
 
     <!-- MATERIAL LIST CANVAS -->
+    <div id="canvas-module-purchase-create-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <div class="navigation-action-header-row" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between;">
+        <div></div>
+        <button class="nav-btn-styled" onclick="exitPurchaseWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
+      </div>
+      <h2 style="color:var(--brand); margin:0 0 6px 0;">Create Raw Material Purchase Order</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Fill in the PO details and add material rows. Tag each material with the projects it serves. Submit when complete and it will go for Authorization.</p>
+      <div id="create-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="create-po-body"></div>
+    </div>
+
+    <div id="canvas-module-purchase-authorize-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <div class="navigation-action-header-row" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between;">
+        <div></div>
+        <button class="nav-btn-styled" onclick="exitPurchaseWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
+      </div>
+      <h2 style="color:var(--brand); margin:0 0 6px 0;">Authorize Raw Material Purchase Order</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review pending Purchase Orders. On authorization, the PO PDF is generated and saved, and the order is finalized.</p>
+      <div id="authorize-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="authorize-po-body"></div>
+    </div>
+
     <div id="canvas-module-purchase-rejected-material" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="color:var(--brand); margin:0 0 6px 0;">Store Inward Rejected Material</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
@@ -3073,7 +3096,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxfk3BQBCkMuOYk2S3AK2o3BGyK1n0sBItiV4_kGf-k32_5e6nA0Neqc9KpbdYwFRPE/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyK1YEMr-QFZSuZKEngji2douvbnl3Cx2Ytz5TV2O-nnnbFjYcXC0mpl2xSMu68DKO2/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -6743,12 +6766,13 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canUploadDrawings = userPermissionsObject.uploadDrawings === true;
   const canPurchaseRequestNote     = userPermissionsObject.purchaseRequestNote === true;
   const canViewMaterialListPurchase= userPermissionsObject.materialListForPurchase === true;
-  const canUploadRMPurchaseOrder   = userPermissionsObject.uploadRMPurchaseOrder === true;
   const canCreateJobCardNumber = userPermissionsObject.createJobCardNumber === true;
   const canAssignCurrentStock  = userPermissionsObject.assignCurrentStock  === true;
   const canExpectedInbounds = userPermissionsObject.expectedDeliveries === true;
   const canManufacturingClearance = userPermissionsObject.manufacturingClearance === true;
   const canViewRejectedMaterial = userPermissionsObject.rejectedMaterial === true;
+  const canCreatePO = userPermissionsObject.createRMPurchaseOrder === true;
+  const canAuthorizePO = userPermissionsObject.authorizeRMPurchaseOrder === true;
 
   // --- SET INDIVIDUAL VISIBILITY FOR MARKETING TARGET CARDS ---
   if (document.getElementById("mod-card")) {
@@ -6845,11 +6869,12 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // Purchase Department block visibility
   if (document.getElementById("mod-purchase-request-note"))  document.getElementById("mod-purchase-request-note").style.display  = canPurchaseRequestNote      ? "block" : "none";
   if (document.getElementById("mod-purchase-material-list")) document.getElementById("mod-purchase-material-list").style.display = canViewMaterialListPurchase  ? "block" : "none";
-  if (document.getElementById("mod-purchase-upload-rm-po"))  document.getElementById("mod-purchase-upload-rm-po").style.display  = canUploadRMPurchaseOrder     ? "block" : "none";
+  if (document.getElementById("mod-purchase-create-po"))     document.getElementById("mod-purchase-create-po").style.display     = canCreatePO    ? "block" : "none";
+  if (document.getElementById("mod-purchase-authorize-po"))  document.getElementById("mod-purchase-authorize-po").style.display  = canAuthorizePO ? "block" : "none";
   if (document.getElementById("mod-purchase-rejected-material")) document.getElementById("mod-purchase-rejected-material").style.display = canViewRejectedMaterial ? "block" : "none";
   const purchaseHeaderBlock = document.getElementById("dashboard-purchase-department-header-block");
   if (purchaseHeaderBlock) {
-    purchaseHeaderBlock.style.display = (canViewMaterialListPurchase || canUploadRMPurchaseOrder || canViewRejectedMaterial || userPermissionsObject.viewPurchaseDashboard === true) ? "block" : "none";
+    purchaseHeaderBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || userPermissionsObject.viewPurchaseDashboard === true) ? "block" : "none";
   }
 
   // Production Department block visibility
@@ -14286,6 +14311,445 @@ async function loadJobCardBOQGroups(projectId) {
 // PURCHASE WORKSPACE NAVIGATION
 // ═══════════════════════════════════════════════════════
 
+window.cpoVendors = [];
+window.cpoMaterialRows = [];
+window.cpoActiveProjects = [];
+window.cpoRowSeq = 0;
+
+async function initializeAuthorizePOPanel() {
+  const body = document.getElementById("authorize-po-body");
+  body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading pending POs...</div>`;
+  try {
+    const data = await apFetch({ action: "fetchPendingPOsForAuthorization" });
+    if (!data.success) { body.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    if (!data.pos || data.pos.length === 0) {
+      body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No Purchase Orders pending authorization.</div>`;
+      return;
+    }
+    const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+    body.innerHTML = data.pos.map(po => `
+      <div class="contact-summary-card-parent" style="margin-bottom:12px;">
+        <div class="contact-summary-header-row" onclick="togglePOAuthDetail('${po.poNumber}', this)" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNumber}</span>
+            <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
+          </div>
+          <div style="font-size:0.85rem; color:var(--muted);">${po.orderDate} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${po.preparedBy}</div>
+        </div>
+        <div id="po-auth-detail-${po.poNumber}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
+      </div>`).join("");
+  } catch(e) { body.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+}
+
+async function togglePOAuthDetail(poNumber, headerEl) {
+  const detail = document.getElementById(`po-auth-detail-${poNumber}`);
+  if (detail.style.display === "block") { detail.style.display = "none"; return; }
+  detail.style.display = "block";
+  detail.innerHTML = `<div style="padding:14px; text-align:center; color:var(--muted);">Loading...</div>`;
+  try {
+    const data = await apFetch({ action: "fetchPODraftById", poNumber });
+    if (!data.success) { detail.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    const po = data.po;
+    const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+    const rows = (po.lineItems||[]).map(it => `
+      <tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:5px; text-align:center;">${it.srNo}</td>
+        <td style="padding:5px;">${(it.description||'').replace(/</g,'&lt;')}</td>
+        <td style="padding:5px; text-align:center; font-family:monospace;">${it.itemCode||''}</td>
+        <td style="padding:5px; text-align:center;">${fmt(it.quantity)}</td>
+        <td style="padding:5px; text-align:right;">${fmt(it.rate)}</td>
+        <td style="padding:5px; text-align:center;">${it.unit||''}</td>
+        <td style="padding:5px; text-align:center;">${it.discountPercent?fmt(it.discountPercent):''}</td>
+        <td style="padding:5px; text-align:right; font-weight:700;">${fmt(it.amount)}</td>
+        <td style="padding:5px; font-size:0.72rem; color:var(--brand);">${(it.projectIds||[]).join(", ")}</td>
+      </tr>`).join("");
+    detail.innerHTML = `
+      <div style="font-size:0.85rem; margin-bottom:10px;">
+        Vendor: <strong>${po.vendorName}</strong> &nbsp;|&nbsp; Supplier Offer No: ${po.supplierRef||'—'} &nbsp;|&nbsp; Delivery: ${po.deliveryDate||'—'}
+      </div>
+      <div style="overflow-x:auto; margin-bottom:12px;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.8rem; min-width:800px;">
+          <thead><tr style="background:var(--highlight-bg); text-align:left;">
+            <th style="padding:6px;">Sr</th><th style="padding:6px;">Description</th><th style="padding:6px;">Item Code</th>
+            <th style="padding:6px;">Qty</th><th style="padding:6px;">Rate</th><th style="padding:6px;">Per</th>
+            <th style="padding:6px;">Disc%</th><th style="padding:6px;">Amount</th><th style="padding:6px;">Projects</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius); padding:12px;">
+        <div style="font-size:0.9rem;">
+          Sub Total: <strong>${fmt(po.subTotal)}</strong> &nbsp;|&nbsp;
+          CGST ${po.cgstPercent}%: ${fmt(po.cgstAmount)} &nbsp;|&nbsp; SGST ${po.sgstPercent}%: ${fmt(po.sgstAmount)} &nbsp;|&nbsp; IGST ${po.igstPercent}%: ${fmt(po.igstAmount)}<br/>
+          <span style="font-size:1.05rem;">Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></span>
+        </div>
+        <button class="nav-btn-styled" onclick="authorizePONow('${poNumber}', this)" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Authorize & Generate PDF</button>
+      </div>`;
+  } catch(e) { detail.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+}
+
+async function authorizePONow(poNumber, btn) {
+  if (!confirm(`Authorize ${poNumber}? This finalizes the PO and generates the PDF.`)) return;
+  btn.disabled = true; btn.textContent = "Authorizing...";
+  showBlockingOverlay("Authorizing PO & generating PDF...");
+  const banner = document.getElementById("authorize-po-feedback");
+  try {
+    const data = await apFetch({ action: "authorizePurchaseOrder", activeEngineer: appActiveOperatorIdentityString, payload: { poNumber } });
+    hideBlockingOverlay();
+    if (data.success) {
+      banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
+      let msg = `<strong>${poNumber} Authorized.</strong>`;
+      if (data.pdfPending) {
+        msg += ` <span style="color:#b45309;">PDF generation is pending (service issue) — it can be regenerated later.</span>`;
+      } else if (data.pdfUrl) {
+        msg += ` <a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700;">Open PDF →</a>`;
+      }
+      banner.innerHTML = msg;
+      banner.scrollIntoView({ behavior:"smooth", block:"center" });
+      initializeAuthorizePOPanel(); // refresh queue (this PO drops off)
+    } else {
+      btn.disabled = false; btn.textContent = "Authorize & Generate PDF";
+      banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
+      banner.textContent = "Error: " + data.error;
+      banner.scrollIntoView({ behavior:"smooth", block:"center" });
+    }
+  } catch(e) {
+    hideBlockingOverlay();
+    btn.disabled = false; btn.textContent = "Authorize & Generate PDF";
+    alert("Network error: " + e.message);
+  }
+}
+
+async function initializeCreatePOPanel() {
+  const body = document.getElementById("create-po-body");
+  body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading vendors and projects...</div>`;
+  window.cpoMaterialRows = [];
+  window.cpoRowSeq = 0;
+
+  const [vendorRes, projRes] = await Promise.allSettled([
+    apFetch({ action: "fetchVendorList" }),
+    apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" })
+  ]);
+  loadItemCodeCatalogIntoCache();
+
+  window.cpoVendors = (vendorRes.status === "fulfilled" && vendorRes.value.success) ? vendorRes.value.vendors : [];
+  window.cpoActiveProjects = (projRes.status === "fulfilled" && projRes.value.success)
+    ? (projRes.value.projects || projRes.value.projectCodes || []).map(p => (typeof p === "string" ? p : (p.projectId || p.projectCode || ""))).filter(Boolean)
+    : [];
+
+  const vendorOptions = window.cpoVendors.map(v => `<option value="${v.vendorName.replace(/"/g,'&quot;')}">${v.vendorName}</option>`).join("");
+
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2,'0');
+  const mmm = today.toLocaleString('en-US',{month:'short'});
+  const orderDateStr = `${dd}-${mmm}-${today.getFullYear()}`;
+
+  body.innerHTML = `
+    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px; letter-spacing:0.5px;">Purchase Order Header</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Vendor Name *</label>
+          <select id="cpo-vendor" onchange="handleCPOVendorChange()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+            <option value="">— Select Vendor —</option>${vendorOptions}
+          </select>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Supplier Offer No</label>
+          <input type="text" id="cpo-supplier-ref" placeholder="e.g. SEW/OFF/2026/0042" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Delivery Date *</label>
+          <input type="text" id="cpo-delivery-date" placeholder="e.g. 20-Feb-2026" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        </div>
+      </div>
+      <div id="cpo-vendor-preview" style="display:none; font-size:0.8rem; color:var(--muted); background:#fff; border:1px dashed var(--border); border-radius:var(--radius); padding:10px;"></div>
+      <input type="hidden" id="cpo-order-date" value="${orderDateStr}" />
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">Material Rows</div>
+        <button class="nav-btn-styled" id="cpo-add-row-btn" onclick="addCPOMaterialRow()" style="background:var(--accent); color:#fff; font-weight:700; padding:6px 14px;">+ Add Material Row</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.82rem; min-width:900px;">
+          <thead><tr style="background:var(--highlight-bg); text-align:left;">
+            <th style="padding:7px; width:40px;">Sr</th>
+            <th style="padding:7px; min-width:220px;">Description of Material *</th>
+            <th style="padding:7px; width:90px;">Item Code</th>
+            <th style="padding:7px; width:75px;">Quantity *</th>
+            <th style="padding:7px; width:85px;">Rate/Qty *</th>
+            <th style="padding:7px; width:55px;">Per</th>
+            <th style="padding:7px; width:70px;">Disc %</th>
+            <th style="padding:7px; width:95px;">Amount</th>
+            <th style="padding:7px; min-width:160px;">Projects Served *</th>
+            <th style="padding:7px; width:40px;"></th>
+          </tr></thead>
+          <tbody id="cpo-rows-body">
+            <tr id="cpo-rows-empty"><td colspan="10" style="padding:14px; text-align:center; color:var(--muted);">No material rows yet. Click "+ Add Material Row".</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Taxes & Charges</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+          <div><label class="field-label" style="margin-top:0;">CGST %</label><input type="number" id="cpo-cgst" value="9" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">SGST %</label><input type="number" id="cpo-sgst" value="9" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">IGST %</label><input type="number" id="cpo-igst" value="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Packing</label><input type="number" id="cpo-packing" value="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Freight</label><input type="number" id="cpo-freight" value="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Other</label><input type="number" id="cpo-other" value="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="cpo-roundoff" value="0" step="any" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+        </div>
+      </div>
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Terms</div>
+        <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Warranty</label><input type="text" id="cpo-warranty" placeholder="e.g. 24 Months From Date Of Commissioning" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+        <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Payment Terms</label><input type="text" id="cpo-payment" placeholder="e.g. 60 Days Credit PDC" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+        <div><label class="field-label" style="margin-top:0;">Freight Terms</label><input type="text" id="cpo-freight-terms" placeholder="e.g. To Pay" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius); padding:14px; margin-bottom:16px;">
+      <div style="font-size:0.85rem;">
+        <div>Sub Total: <strong id="cpo-subtotal-disp">0.00</strong></div>
+        <div style="font-size:1.05rem; margin-top:4px;">Grand Total: <strong id="cpo-grandtotal-disp" style="color:var(--brand);">0.00</strong></div>
+      </div>
+      <button class="nav-btn-styled" id="cpo-submit-btn" onclick="submitCreatePO()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Submit for Authorization</button>
+    </div>
+  `;
+}
+
+function handleCPOVendorChange() {
+  const name = document.getElementById("cpo-vendor").value;
+  const preview = document.getElementById("cpo-vendor-preview");
+  const v = window.cpoVendors.find(x => x.vendorName === name);
+  if (!v) { preview.style.display = "none"; return; }
+  preview.style.display = "block";
+  preview.innerHTML = `<strong>${v.vendorName}</strong> &nbsp;|&nbsp; ${v.address || "(no address)"} &nbsp;|&nbsp; GSTIN: ${v.gstin || "—"} &nbsp;|&nbsp; ${v.state || "—"} (Code ${v.stateCode || "—"}) &nbsp;|&nbsp; ${v.email || "—"}`;
+}
+
+function addCPOMaterialRow() {
+  const id = ++window.cpoRowSeq;
+  window.cpoMaterialRows.push({ id, description: "", itemCode: "", quantity: "", unit: "", rate: "", discountPercent: "", projectIds: [] });
+  renderCPOMaterialRows();
+}
+
+function removeCPOMaterialRow(id) {
+  window.cpoMaterialRows = window.cpoMaterialRows.filter(r => r.id !== id);
+  renderCPOMaterialRows();
+  recalcCPOTotals();
+}
+
+function renderCPOMaterialRows() {
+  const body = document.getElementById("cpo-rows-body");
+  if (window.cpoMaterialRows.length === 0) {
+    body.innerHTML = `<tr id="cpo-rows-empty"><td colspan="10" style="padding:14px; text-align:center; color:var(--muted);">No material rows yet. Click "+ Add Material Row".</td></tr>`;
+    return;
+  }
+  body.innerHTML = window.cpoMaterialRows.map((row, idx) => {
+    const projectChips = row.projectIds.map(p => `<span style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.7rem; padding:1px 6px; border-radius:10px; margin:1px;">${p}</span>`).join("");
+    return `<tr data-rowid="${row.id}" style="border-bottom:1px solid var(--border);">
+      <td style="padding:5px; text-align:center; font-weight:700;">${idx + 1}</td>
+      <td style="padding:5px; position:relative;">
+        <input type="text" class="cpo-desc-search" data-rowid="${row.id}" value="${(row.description||'').replace(/"/g,'&quot;')}" placeholder="Search material name / rating..." autocomplete="off"
+          oninput="handleCPODescSearch(${row.id}, this.value)"
+          style="width:100%; padding:5px; border:1.5px solid ${row.itemCode ? 'var(--brand)' : '#f59e0b'}; border-radius:3px; font-size:0.8rem;">
+        <div id="cpo-desc-dd-${row.id}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; max-height:180px; overflow-y:auto; z-index:50; box-shadow:0 4px 12px rgba(0,0,0,0.12);"></div>
+      </td>
+      <td style="padding:5px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${row.itemCode || '—'}</td>
+      <td style="padding:5px;"><input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${row.quantity}" oninput="updateCPORowField(${row.id},'quantity',this.value)" style="width:100%; text-align:center; padding:5px; border:1px solid var(--border); border-radius:3px;"></td>
+      <td style="padding:5px;"><input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)" style="width:100%; text-align:right; padding:5px; border:1px solid var(--border); border-radius:3px;"></td>
+      <td style="padding:5px; text-align:center; font-family:monospace; color:var(--muted);">${row.unit || '—'}</td>
+      <td style="padding:5px;"><input type="number" min="0" max="100" step="any" class="cpo-disc" data-rowid="${row.id}" value="${row.discountPercent}" oninput="updateCPORowField(${row.id},'discountPercent',this.value)" style="width:100%; text-align:center; padding:5px; border:1px solid var(--border); border-radius:3px;"></td>
+      <td style="padding:5px; text-align:right; font-family:monospace; font-weight:700;"><span class="cpo-amount" data-rowid="${row.id}">0.00</span></td>
+      <td style="padding:5px;">
+        <div style="margin-bottom:3px;">${projectChips || '<span style="color:#b91c1c; font-size:0.72rem;">none selected</span>'}</div>
+        <button onclick="openCPOProjectPicker(${row.id})" style="font-size:0.72rem; padding:2px 8px; background:var(--accent); color:#fff; border:none; border-radius:3px; cursor:pointer;">Select Projects</button>
+      </td>
+      <td style="padding:5px; text-align:center;"><button onclick="removeCPOMaterialRow(${row.id})" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>
+    </tr>`;
+  }).join("");
+  // Recompute displayed amounts for all rows
+  window.cpoMaterialRows.forEach(r => updateCPORowAmount(r.id));
+}
+
+function handleCPODescSearch(rowId, query) {
+  updateCPORowField(rowId, 'description', query);
+  const dd = document.getElementById(`cpo-desc-dd-${rowId}`);
+  const catalog = window.itemCodeCatalogCache || [];
+  if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
+  const q = query.toLowerCase();
+  const matches = catalog.filter(it => (it.productName||"").toLowerCase().includes(q) || (it.rating||"").toLowerCase().includes(q)).slice(0, 10);
+  if (matches.length === 0) { dd.style.display = "none"; return; }
+  dd.innerHTML = matches.map(it => `
+    <div onclick="selectCPOMaterial(${rowId}, '${it.itemCode}', \`${(it.productName||'').replace(/\`/g,"'")}\`, \`${(it.rating||'').replace(/\`/g,"'")}\`, '${(it.unit||'Nos').replace(/'/g,'')}')"
+      style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.productName}${it.rating ? ` <span style="color:var(--brand); font-weight:700;">${it.rating}</span>` : ''}
+    </div>`).join("");
+  dd.style.display = "block";
+}
+
+function selectCPOMaterial(rowId, itemCode, productName, rating, unitType) {
+  const row = window.cpoMaterialRows.find(r => r.id === rowId);
+  if (!row) return;
+  row.description = rating ? `${productName} ${rating}` : productName;
+  row.itemCode = itemCode;
+  row.unit = unitType || "Nos";
+  document.getElementById(`cpo-desc-dd-${rowId}`).style.display = "none";
+  renderCPOMaterialRows();
+}
+
+function updateCPORowField(rowId, field, value) {
+  const row = window.cpoMaterialRows.find(r => r.id === rowId);
+  if (!row) return;
+  row[field] = value;
+  if (field === 'quantity' || field === 'rate' || field === 'discountPercent') {
+    updateCPORowAmount(rowId);
+    recalcCPOTotals();
+  }
+}
+
+function updateCPORowAmount(rowId) {
+  const row = window.cpoMaterialRows.find(r => r.id === rowId);
+  if (!row) return;
+  const qty = parseFloat(row.quantity) || 0;
+  const rate = parseFloat(row.rate) || 0;
+  const disc = parseFloat(row.discountPercent) || 0;
+  const amount = qty * rate * (100 - disc) / 100;
+  const span = document.querySelector(`.cpo-amount[data-rowid="${rowId}"]`);
+  if (span) span.textContent = amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function recalcCPOTotals() {
+  let subTotal = 0;
+  window.cpoMaterialRows.forEach(row => {
+    const qty = parseFloat(row.quantity) || 0;
+    const rate = parseFloat(row.rate) || 0;
+    const disc = parseFloat(row.discountPercent) || 0;
+    subTotal += qty * rate * (100 - disc) / 100;
+  });
+  const cgst = subTotal * (parseFloat(document.getElementById("cpo-cgst").value) || 0) / 100;
+  const sgst = subTotal * (parseFloat(document.getElementById("cpo-sgst").value) || 0) / 100;
+  const igst = subTotal * (parseFloat(document.getElementById("cpo-igst").value) || 0) / 100;
+  const packing = parseFloat(document.getElementById("cpo-packing").value) || 0;
+  const freight = parseFloat(document.getElementById("cpo-freight").value) || 0;
+  const other = parseFloat(document.getElementById("cpo-other").value) || 0;
+  const roundOff = parseFloat(document.getElementById("cpo-roundoff").value) || 0;
+  const grandTotal = subTotal + cgst + sgst + igst + packing + freight + other + roundOff;
+  const fmt = (n) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById("cpo-subtotal-disp").textContent = fmt(subTotal);
+  document.getElementById("cpo-grandtotal-disp").textContent = fmt(grandTotal);
+}
+
+function openCPOProjectPicker(rowId) {
+  const row = window.cpoMaterialRows.find(r => r.id === rowId);
+  if (!row) return;
+  if (window.cpoActiveProjects.length === 0) { alert("No active projects loaded."); return; }
+  // Simple multiselect via prompt-style checklist overlay
+  const existing = document.getElementById("cpo-project-modal");
+  if (existing) existing.remove();
+  const modal = document.createElement("div");
+  modal.id = "cpo-project-modal";
+  modal.style.cssText = "position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; display:flex; align-items:center; justify-content:center;";
+  const checks = window.cpoActiveProjects.map(p => `
+    <label style="display:flex; align-items:center; gap:8px; padding:6px 4px; border-bottom:1px solid #f1f5f9; cursor:pointer;">
+      <input type="checkbox" value="${p.replace(/"/g,'&quot;')}" ${row.projectIds.includes(p) ? 'checked' : ''}> ${p}
+    </label>`).join("");
+  modal.innerHTML = `
+    <div style="background:#fff; border-radius:var(--radius); padding:20px; width:90%; max-width:480px; max-height:70vh; display:flex; flex-direction:column;">
+      <div style="font-weight:700; margin-bottom:12px;">Select Projects this material serves</div>
+      <div style="overflow-y:auto; flex:1; margin-bottom:12px;">${checks}</div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button onclick="document.getElementById('cpo-project-modal').remove()" style="padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:4px; cursor:pointer;">Cancel</button>
+        <button onclick="saveCPOProjectPicker(${rowId})" style="padding:8px 16px; background:var(--brand); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:700;">Save</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function saveCPOProjectPicker(rowId) {
+  const row = window.cpoMaterialRows.find(r => r.id === rowId);
+  const modal = document.getElementById("cpo-project-modal");
+  if (!row || !modal) return;
+  row.projectIds = Array.from(modal.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+  modal.remove();
+  renderCPOMaterialRows();
+}
+
+async function submitCreatePO() {
+  const banner = document.getElementById("create-po-feedback");
+  banner.style.display = "none";
+  const showErr = (msg) => {
+    banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
+    banner.textContent = msg;
+    banner.scrollIntoView({ behavior:"smooth", block:"center" });
+  };
+
+  const vendorName = document.getElementById("cpo-vendor").value.trim();
+  const deliveryDate = document.getElementById("cpo-delivery-date").value.trim();
+  if (!vendorName) return showErr("Please select a Vendor.");
+  if (!deliveryDate) return showErr("Please enter a Delivery Date.");
+  if (window.cpoMaterialRows.length === 0) return showErr("Add at least one material row.");
+
+  for (let i = 0; i < window.cpoMaterialRows.length; i++) {
+    const row = window.cpoMaterialRows[i];
+    const n = i + 1;
+    if (!row.itemCode) return showErr(`Row ${n}: select a material from the search (item code required).`);
+    if (!(parseFloat(row.quantity) > 0)) return showErr(`Row ${n}: Quantity must be greater than 0.`);
+    if (!(parseFloat(row.rate) > 0)) return showErr(`Row ${n}: Rate must be greater than 0.`);
+    if (!row.projectIds || row.projectIds.length === 0) return showErr(`Row ${n}: select at least one Project this material serves.`);
+  }
+
+  const payload = {
+    vendorName,
+    supplierRef: document.getElementById("cpo-supplier-ref").value.trim(),
+    orderDate: document.getElementById("cpo-order-date").value.trim(),
+    deliveryDate,
+    lineItems: window.cpoMaterialRows.map(r => ({
+      description: r.description, itemCode: r.itemCode, quantity: parseFloat(r.quantity) || 0,
+      unit: r.unit, rate: parseFloat(r.rate) || 0, discountPercent: parseFloat(r.discountPercent) || 0,
+      projectIds: r.projectIds
+    })),
+    cgstPercent: parseFloat(document.getElementById("cpo-cgst").value) || 0,
+    sgstPercent: parseFloat(document.getElementById("cpo-sgst").value) || 0,
+    igstPercent: parseFloat(document.getElementById("cpo-igst").value) || 0,
+    packing: parseFloat(document.getElementById("cpo-packing").value) || 0,
+    freight: parseFloat(document.getElementById("cpo-freight").value) || 0,
+    other: parseFloat(document.getElementById("cpo-other").value) || 0,
+    roundOff: parseFloat(document.getElementById("cpo-roundoff").value) || 0,
+    warranty: document.getElementById("cpo-warranty").value.trim(),
+    paymentTerms: document.getElementById("cpo-payment").value.trim(),
+    freightTerms: document.getElementById("cpo-freight-terms").value.trim(),
+    preparedBy: appActiveOperatorIdentityString || ""
+  };
+
+  const btn = document.getElementById("cpo-submit-btn");
+  btn.disabled = true; btn.textContent = "Submitting...";
+  showBlockingOverlay("Creating Purchase Order...");
+  try {
+    const data = await apFetch({ action: "commitPurchaseOrderDraft", activeEngineer: appActiveOperatorIdentityString, payload });
+    hideBlockingOverlay();
+    if (data.success) {
+      banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
+      banner.innerHTML = `<strong>PO Draft Created — ${data.poNumber}</strong><br/>It has been sent for Authorization. <button class="nav-btn-styled" onclick="initializeCreatePOPanel()" style="background:#15803d; color:#fff; margin-top:8px; padding:6px 14px;">Create Another</button>`;
+      banner.scrollIntoView({ behavior:"smooth", block:"center" });
+    } else {
+      btn.disabled = false; btn.textContent = "Submit for Authorization";
+      showErr("Server error: " + data.error);
+    }
+  } catch(e) {
+    hideBlockingOverlay();
+    btn.disabled = false; btn.textContent = "Submit for Authorization";
+    showErr("Network error: " + e.message);
+  }
+}
+
 window.activeRejectedMaterialToggle = "pending";
 window.rejMaterialVendorFilter = "";
 window.rejMaterialActionFilter = [];
@@ -14452,7 +14916,7 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
   document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
 
-  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po","canvas-module-purchase-rejected-material"].forEach(id => {
+  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po","canvas-module-purchase-rejected-material","canvas-module-purchase-create-po","canvas-module-purchase-authorize-po"].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = "none";
   });
 
@@ -14469,6 +14933,16 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
   } else if (targetModuleId === "purchase-upload-rm-po") {
     document.getElementById("canvas-module-purchase-upload-rm-po").style.display = "block";
     initializeRMPOUploadPanel();
+  } else if (targetModuleId === "purchase-create-po") {
+    document.getElementById("canvas-module-purchase-create-po").style.display = "block";
+    const cpoBanner = document.getElementById("create-po-feedback");
+    if (cpoBanner) { cpoBanner.style.display = "none"; cpoBanner.innerHTML = ""; }
+    initializeCreatePOPanel();
+  } else if (targetModuleId === "purchase-authorize-po") {
+    document.getElementById("canvas-module-purchase-authorize-po").style.display = "block";
+    const apoBanner = document.getElementById("authorize-po-feedback");
+    if (apoBanner) { apoBanner.style.display = "none"; apoBanner.innerHTML = ""; }
+    initializeAuthorizePOPanel();
   } else if (targetModuleId === "purchase-rejected-material") {
     document.getElementById("canvas-module-purchase-rejected-material").style.display = "block";
     const rejBanner = document.getElementById("rejected-material-feedback-banner");
