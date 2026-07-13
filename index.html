@@ -3091,7 +3091,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwp6QkA47mAy-i1UjaHtHBi1SkWu-mTaSljlBsWChXO4gnXMIo8rXnMN0AreTmjteiE/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycby-dJf5KsOPSeEi45HMozmUauX1w6K_lYpQy1g_31RnvZ0xqs-2oEleUPrrW0-CyPU7/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -14555,7 +14555,7 @@ async function initializeCreatePOPanel() {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Delivery Date *</label>
-          <input type="text" id="cpo-delivery-date" placeholder="e.g. 20-Feb-2026" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          <input type="date" id="cpo-delivery-date" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
         </div>
       </div>
       <div id="cpo-vendor-preview" style="display:none; font-size:0.8rem; color:var(--muted); background:#fff; border:1px dashed var(--border); border-radius:var(--radius); padding:10px;"></div>
@@ -14645,32 +14645,32 @@ function renderCPOMaterialRows() {
           <div id="cpo-desc-dd-${row.id}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
         </div>
 
-        <div style="width:100px;">
-          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Item Code</label>
-          <div style="padding:7px 4px; font-family:monospace; font-weight:700; color:var(--brand); font-size:0.82rem; text-align:center;">${row.itemCode || '—'}</div>
+        <div style="width:95px; flex-shrink:0; text-align:center;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Item Code</div>
+          <div style="font-family:monospace; font-weight:700; color:var(--brand); font-size:0.85rem;">${row.itemCode || '—'}</div>
         </div>
-        <div style="width:55px;">
-          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Unit</label>
-          <div style="padding:7px 4px; font-family:monospace; color:var(--muted); font-size:0.82rem; text-align:center;">${row.unit || '—'}</div>
+        <div style="width:50px; flex-shrink:0; text-align:center;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Unit</div>
+          <div style="font-family:monospace; color:#475569; font-size:0.85rem; padding-top:2px;">${row.unit || '—'}</div>
         </div>
-        <div style="width:85px;">
-          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Quantity *</label>
-          <input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${row.quantity}" oninput="updateCPORowField(${row.id},'quantity',this.value)" style="width:100%; text-align:center; padding:7px; border:1px solid var(--border); border-radius:4px; margin-top:2px;">
+        <div style="width:80px; flex-shrink:0;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px; text-align:center;">Quantity *</div>
+          <input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${row.quantity}" oninput="updateCPORowField(${row.id},'quantity',this.value)" style="width:100%; text-align:center; padding:7px 4px; border:1px solid var(--border); border-radius:4px;">
         </div>
-        <div style="width:95px;">
-          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Rate/Qty *</label>
-          <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)" style="width:100%; text-align:right; padding:7px; border:1px solid var(--border); border-radius:4px; margin-top:2px;">
+        <div style="width:90px; flex-shrink:0;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px; text-align:center;">Rate / Qty *</div>
+          <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)" style="width:100%; text-align:right; padding:7px 6px; border:1px solid var(--border); border-radius:4px;">
         </div>
-        <div style="width:70px;">
-          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Disc %</label>
-          <input type="number" min="0" max="100" step="any" class="cpo-disc" data-rowid="${row.id}" value="${row.discountPercent}" oninput="updateCPORowField(${row.id},'discountPercent',this.value)" style="width:100%; text-align:center; padding:7px; border:1px solid var(--border); border-radius:4px; margin-top:2px;">
+        <div style="width:70px; flex-shrink:0;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px; text-align:center;">Disc %</div>
+          <input type="number" min="0" max="100" step="any" class="cpo-disc" data-rowid="${row.id}" value="${row.discountPercent}" placeholder="0" oninput="updateCPORowField(${row.id},'discountPercent',this.value)" style="width:100%; text-align:center; padding:7px 4px; border:1px solid var(--border); border-radius:4px;">
         </div>
-        <div style="width:120px;">
-          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Amount</label>
-          <div style="padding:7px 4px; text-align:right; font-family:monospace; font-weight:800; font-size:1rem; color:var(--text); margin-top:2px;"><span class="cpo-amount" data-rowid="${row.id}">0.00</span></div>
+        <div style="width:120px; flex-shrink:0; text-align:right;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Amount</div>
+          <div style="font-family:monospace; font-weight:800; font-size:1.05rem; color:#0f172a; padding-top:2px;"><span class="cpo-amount" data-rowid="${row.id}">0.00</span></div>
         </div>
 
-        <button onclick="removeCPOMaterialRow(${row.id})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.9rem; width:30px; height:34px; border-radius:4px; display:flex; align-items:center; justify-content:center;">✕</button>
+        <button onclick="removeCPOMaterialRow(${row.id})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.95rem; width:32px; height:36px; border-radius:4px; display:flex; align-items:center; justify-content:center; flex-shrink:0; align-self:flex-end;">✕</button>
       </div>
 
       <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
@@ -14802,7 +14802,16 @@ async function submitCreatePO() {
   };
 
   const vendorName = document.getElementById("cpo-vendor").value.trim();
-  const deliveryDate = document.getElementById("cpo-delivery-date").value.trim();
+  const deliveryDateRaw = document.getElementById("cpo-delivery-date").value.trim();
+  let deliveryDate = deliveryDateRaw;
+  if (deliveryDateRaw) {
+    const d = new Date(deliveryDateRaw + "T00:00:00");
+    if (!isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mmm = d.toLocaleString('en-US',{month:'short'});
+      deliveryDate = `${dd}-${mmm}-${d.getFullYear()}`;
+    }
+  }
   if (!vendorName) return showErr("Please select a Vendor.");
   if (!deliveryDate) return showErr("Please enter a Delivery Date.");
   if (window.cpoMaterialRows.length === 0) return showErr("Add at least one material row.");
