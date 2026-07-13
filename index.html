@@ -1655,7 +1655,7 @@
     <!-- MATERIAL LIST CANVAS -->
     <div id="canvas-module-purchase-create-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="color:var(--brand); margin:0 0 6px 0;">Create Raw Material Purchase Order</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Fill in the PO details and add material rows. Tag each material with the projects it serves. Submit when complete and it will go for Authorization.</p>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Fill in the PO details and add material rows. Tag each material with the Projects using this Material. Submit when complete and it will go for Authorization.</p>
       <div id="create-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="create-po-body"></div>
     </div>
@@ -14528,6 +14528,7 @@ async function initializeCreatePOPanel() {
   loadItemCodeCatalogIntoCache();
 
   window.cpoVendors = (vendorRes.status === "fulfilled" && vendorRes.value.success) ? vendorRes.value.vendors : [];
+  console.log("VENDOR DEBUG — status:", vendorRes.status, "| full value:", JSON.stringify(vendorRes.value), "| cpoVendors:", JSON.stringify(window.cpoVendors));
   window.cpoActiveProjects = (projRes.status === "fulfilled" && projRes.value.success)
     ? (projRes.value.projects || projRes.value.projectCodes || []).map(p => (typeof p === "string" ? p : (p.projectId || p.projectCode || ""))).filter(Boolean)
     : [];
@@ -14634,40 +14635,47 @@ function renderCPOMaterialRows() {
       : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No projects selected</span>';
 
     return `<div data-rowid="${row.id}" style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px;">
-      <div style="display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;">
-        <div style="font-weight:700; color:var(--brand); padding-top:8px; min-width:22px;">${idx + 1}</div>
+      <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+        <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx + 1}</div>
 
-        <div style="flex:1; min-width:260px; position:relative;">
+        <div style="flex:1; min-width:220px; position:relative;">
           <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Description of Material *</label>
           <input type="text" class="cpo-desc-search" data-rowid="${row.id}" value="${(row.description||'').replace(/"/g,'&quot;')}" placeholder="Search material name / rating..." autocomplete="off"
             oninput="handleCPODescSearch(${row.id}, this.value)"
             style="width:100%; padding:7px; border:1.5px solid ${row.itemCode ? 'var(--brand)' : '#f59e0b'}; border-radius:4px; font-size:0.82rem; margin-top:2px;">
           <div id="cpo-desc-dd-${row.id}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
-          <div style="font-size:0.72rem; color:var(--muted); margin-top:3px;">Item Code: <span style="font-family:monospace; font-weight:700; color:var(--brand);">${row.itemCode || '—'}</span> &nbsp;|&nbsp; Unit: <span style="font-family:monospace;">${row.unit || '—'}</span></div>
         </div>
 
-        <div style="width:90px;">
+        <div style="width:100px;">
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Item Code</label>
+          <div style="padding:7px 4px; font-family:monospace; font-weight:700; color:var(--brand); font-size:0.82rem; text-align:center;">${row.itemCode || '—'}</div>
+        </div>
+        <div style="width:55px;">
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Unit</label>
+          <div style="padding:7px 4px; font-family:monospace; color:var(--muted); font-size:0.82rem; text-align:center;">${row.unit || '—'}</div>
+        </div>
+        <div style="width:85px;">
           <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Quantity *</label>
           <input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${row.quantity}" oninput="updateCPORowField(${row.id},'quantity',this.value)" style="width:100%; text-align:center; padding:7px; border:1px solid var(--border); border-radius:4px; margin-top:2px;">
         </div>
-        <div style="width:100px;">
+        <div style="width:95px;">
           <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Rate/Qty *</label>
           <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)" style="width:100%; text-align:right; padding:7px; border:1px solid var(--border); border-radius:4px; margin-top:2px;">
         </div>
-        <div style="width:80px;">
+        <div style="width:70px;">
           <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Disc %</label>
           <input type="number" min="0" max="100" step="any" class="cpo-disc" data-rowid="${row.id}" value="${row.discountPercent}" oninput="updateCPORowField(${row.id},'discountPercent',this.value)" style="width:100%; text-align:center; padding:7px; border:1px solid var(--border); border-radius:4px; margin-top:2px;">
         </div>
-        <div style="width:110px;">
+        <div style="width:120px;">
           <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Amount</label>
-          <div style="padding:7px; text-align:right; font-family:monospace; font-weight:700; margin-top:2px;"><span class="cpo-amount" data-rowid="${row.id}">0.00</span></div>
+          <div style="padding:7px 4px; text-align:right; font-family:monospace; font-weight:800; font-size:1rem; color:var(--text); margin-top:2px;"><span class="cpo-amount" data-rowid="${row.id}">0.00</span></div>
         </div>
 
-        <button onclick="removeCPOMaterialRow(${row.id})" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1.1rem; padding-top:20px;">✕</button>
+        <button onclick="removeCPOMaterialRow(${row.id})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.9rem; width:30px; height:34px; border-radius:4px; display:flex; align-items:center; justify-content:center;">✕</button>
       </div>
 
       <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
-        <div style="min-width:200px;">
+        <div style="min-width:180px;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Projects using this Material *</div>
           <button onclick="openCPOProjectPicker(${row.id})" style="font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">Select Projects</button>
         </div>
@@ -14766,7 +14774,6 @@ function openCPOProjectPicker(rowId) {
     <div style="background:#fff; border-radius:12px; width:100%; max-width:520px; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
       <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
         <div style="font-weight:800; font-size:1rem; color:var(--brand);">Select Projects this Material is Used by</div>
-        <div style="font-size:0.78rem; color:var(--muted); margin-top:2px;">Tick every project this material is being ordered for.</div>
       </div>
       <div style="overflow-y:auto; flex:1; padding:16px 20px;">${checks}</div>
       <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid var(--border); background:#f8fafc;">
