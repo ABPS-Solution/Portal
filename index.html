@@ -360,6 +360,7 @@
         <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')"><span class="mc-label">Material List for Purchase</span></div>
         <div class="menu-card" id="mod-purchase-create-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-create-po')"><span class="mc-label">Create Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-authorize-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po')"><span class="mc-label">Authorize Raw Material Purchase Order</span></div>
+        <div class="menu-card" id="mod-purchase-pps-tracking" onclick="navigateToPurchaseWorkspacePanel('purchase-pps-tracking')"><span class="mc-label">PPS Tracking</span></div>
         <div class="menu-card" id="mod-purchase-rejected-material" onclick="navigateToPurchaseWorkspacePanel('purchase-rejected-material')"><span class="mc-label">Store Inward Rejected Material</span></div>
       </div>
     </div>
@@ -1338,13 +1339,7 @@
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project ID, then select the BOQ to update. Changes will go for re-authorization.</p>
       <div id="update-boq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
-      <div id="update-boq-selector-zone" style="display:grid; grid-template-columns:0.6fr 0.7fr 2.4fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
-        <div>
-          <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project Status *</label>
-          <select id="update-boq-status" onchange="handleUpdateBOQStatusChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-            <option value="Active">Active</option>
-          </select>
-        </div>
+      <div id="update-boq-selector-zone" style="display:grid; grid-template-columns:1fr 2fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
           <select id="update-boq-project" onchange="loadAuthorizedBOQsForProject(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
@@ -1379,16 +1374,10 @@
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project ID, then upload drawing documents. Multiple uploads possible.</p>
       <div id="upload-drawings-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
-        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
-          <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project Status *</label>
-          <select id="upload-drawings-status" onchange="handleUploadDrawingsStatusChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:4px;">
-            <option value="Active">Active</option>
-          </select>
-        </div>
-        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+      <div style="margin-bottom:16px;">
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; max-width:400px;">
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
-          <select id="upload-drawings-project" onchange="handleUploadDrawingsProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:4px;">
+          <select id="upload-drawings-project" onchange="handleUploadDrawingsProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:4px; width:100%;">
             <option value="">— Select Project ID —</option>
           </select>
         </div>
@@ -1684,6 +1673,24 @@
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review pending Purchase Orders. On authorization, the PO PDF is generated and saved, and the order is finalized.</p>
       <div id="authorize-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="authorize-po-body"></div>
+    </div>
+
+    <div id="canvas-module-purchase-pps-tracking" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <div class="navigation-action-header-row" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between;">
+        <div></div>
+        <button class="nav-btn-styled" onclick="exitPurchaseWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
+      </div>
+      <h2 style="color:var(--brand); margin:0 0 6px 0;">PPS Tracking</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Search a Project to see its PRNs and the Purchase Orders linked to each — with expected vs. actual delivery tracking. Add an Action Plan per line as needed.</p>
+      <div id="pps-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div style="display:flex; gap:10px; align-items:end; margin-bottom:16px;">
+        <div style="flex:1; max-width:400px;">
+          <label class="field-label" style="margin-top:0;">Select Project *</label>
+          <select id="pps-project-select" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Loading projects... —</option></select>
+        </div>
+        <button class="nav-btn-styled" onclick="loadPPSForProject()" style="background:var(--accent); color:#fff; font-weight:700; padding:9px 20px;">Search</button>
+      </div>
+      <div id="pps-results-body"></div>
     </div>
 
     <div id="canvas-module-purchase-rejected-material" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
@@ -3096,7 +3103,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyK1YEMr-QFZSuZKEngji2douvbnl3Cx2Ytz5TV2O-nnnbFjYcXC0mpl2xSMu68DKO2/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycby7QsKw8fRl30AbnAymONEWoQPEKyveg6i1CW_ytE_U0be4s94xG1hwKoYk-93tRnDH/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -6773,6 +6780,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canViewRejectedMaterial = userPermissionsObject.rejectedMaterial === true;
   const canCreatePO = userPermissionsObject.createRMPurchaseOrder === true;
   const canAuthorizePO = userPermissionsObject.authorizeRMPurchaseOrder === true;
+  const canPPSTracking = userPermissionsObject.ppsTracking === true;
 
   // --- SET INDIVIDUAL VISIBILITY FOR MARKETING TARGET CARDS ---
   if (document.getElementById("mod-card")) {
@@ -6871,10 +6879,11 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-purchase-material-list")) document.getElementById("mod-purchase-material-list").style.display = canViewMaterialListPurchase  ? "block" : "none";
   if (document.getElementById("mod-purchase-create-po"))     document.getElementById("mod-purchase-create-po").style.display     = canCreatePO    ? "block" : "none";
   if (document.getElementById("mod-purchase-authorize-po"))  document.getElementById("mod-purchase-authorize-po").style.display  = canAuthorizePO ? "block" : "none";
+  if (document.getElementById("mod-purchase-pps-tracking"))  document.getElementById("mod-purchase-pps-tracking").style.display  = canPPSTracking ? "block" : "none";
   if (document.getElementById("mod-purchase-rejected-material")) document.getElementById("mod-purchase-rejected-material").style.display = canViewRejectedMaterial ? "block" : "none";
   const purchaseHeaderBlock = document.getElementById("dashboard-purchase-department-header-block");
   if (purchaseHeaderBlock) {
-    purchaseHeaderBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || userPermissionsObject.viewPurchaseDashboard === true) ? "block" : "none";
+    purchaseHeaderBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || canPPSTracking || userPermissionsObject.viewPurchaseDashboard === true) ? "block" : "none";
   }
 
   // Production Department block visibility
@@ -12896,7 +12905,7 @@ async function initializeUpdateBOQPanel() {
   const formEl       = document.getElementById("update-boq-form");
   const fbEl         = document.getElementById("update-boq-feedback");
 
-  if (selectorZone) { selectorZone.style.display = "grid"; selectorZone.style.gridTemplateColumns = "0.6fr 0.7fr 2.4fr"; }
+  if (selectorZone) { selectorZone.style.display = "grid"; selectorZone.style.gridTemplateColumns = "1fr 2fr"; }
   if (projDrop)   projDrop.innerHTML  = '<option value="">Loading...</option>';
   if (boqDrop)  { boqDrop.innerHTML   = '<option value="">— Select Project First —</option>'; boqDrop.disabled = true; }
   if (formEl)     formEl.style.display  = "none";
@@ -14023,9 +14032,7 @@ function showBOQBanner(elementId, message, type) {
 
 async function initializeUploadDrawingsPanel() {
   const projDrop   = document.getElementById("upload-drawings-project");
-  const statusDrop = document.getElementById("upload-drawings-status");
   projDrop.innerHTML   = '<option value="">— Select Project ID —</option>';
-  statusDrop.innerHTML = '<option value="Active">Active</option>';
   document.getElementById("upload-drawings-existing-list").style.display = "none";
   document.getElementById("upload-drawings-upload-zone").style.display = "none";
   document.getElementById("upload-drawings-feedback").style.display = "none";
@@ -14033,18 +14040,7 @@ async function initializeUploadDrawingsPanel() {
   try {
     const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: "Active" });
 
-    // Populate status dropdown from all statuses returned
-    if (data.allStatuses && data.allStatuses.length > 0) {
-      statusDrop.innerHTML = "";
-      data.allStatuses.forEach(s => {
-        const opt = document.createElement("option");
-        opt.value = s; opt.textContent = s;
-        if (s === "Active") opt.selected = true;
-        statusDrop.appendChild(opt);
-      });
-    }
-
-    // Populate projects for Active (default)
+    // Populate projects for Active only
     projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
     (data.projects || []).forEach(code => {
       const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
@@ -14315,6 +14311,117 @@ window.cpoVendors = [];
 window.cpoMaterialRows = [];
 window.cpoActiveProjects = [];
 window.cpoRowSeq = 0;
+
+async function initializePPSTrackingPanel() {
+  const sel = document.getElementById("pps-project-select");
+  sel.innerHTML = `<option value="">— Loading projects... —</option>`;
+  try {
+    const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
+    const projects = (data.success ? (data.projects || []) : []);
+    if (projects.length === 0) {
+      sel.innerHTML = `<option value="">No active projects</option>`;
+      return;
+    }
+    sel.innerHTML = `<option value="">— Select Project —</option>` +
+      projects.map(p => `<option value="${p.toString().replace(/"/g,'&quot;')}">${p}</option>`).join("");
+  } catch(e) {
+    sel.innerHTML = `<option value="">Failed to load projects</option>`;
+  }
+}
+
+async function loadPPSForProject() {
+  const projectId = document.getElementById("pps-project-select").value;
+  const body = document.getElementById("pps-results-body");
+  const banner = document.getElementById("pps-feedback");
+  banner.style.display = "none";
+  if (!projectId) { alert("Please select a project."); return; }
+
+  body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading PPS tracking...</div>`;
+  try {
+    const data = await apFetch({ action: "fetchPPSByProject", projectId });
+    if (!data.success) { body.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    if (!data.prns || data.prns.length === 0) {
+      body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No PPS tracking records for this project yet. Records appear once a PO linked to this project's PRNs is authorized.</div>`;
+      return;
+    }
+    const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+    const esc = (s) => (s==null?"":s.toString().replace(/</g,"&lt;").replace(/>/g,"&gt;"));
+
+    body.innerHTML = data.prns.map(prn => {
+      const rows = prn.rows.map(row => `
+        <tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:5px; text-align:center; font-family:monospace; font-weight:700;">${esc(row.itemCode)}</td>
+          <td style="padding:5px;">${esc(row.materialName)}</td>
+          <td style="padding:5px; text-align:center;">${fmt(row.boqQuantity)}</td>
+          <td style="padding:5px; text-align:center;">${fmt(row.bufferedQuantity)}</td>
+          <td style="padding:5px; text-align:center;">${fmt(row.storeReservedQuantity)}</td>
+          <td style="padding:5px; text-align:center; font-weight:700; color:var(--brand);">${fmt(row.purchasedQuantity)}</td>
+          <td style="padding:5px; text-align:center; font-family:monospace;">${esc(row.poNumber)}</td>
+          <td style="padding:5px; text-align:center;">${esc(row.poDate)}</td>
+          <td style="padding:5px;">${esc(row.vendorName)}</td>
+          <td style="padding:5px; text-align:center;">${esc(row.expectedDeliveryDate)}</td>
+          <td style="padding:5px; text-align:center;">${esc(row.actualDeliveryDate) || '<span style="color:var(--muted);">—</span>'}</td>
+          <td style="padding:5px; text-align:center;">${row.actualReceivedQuantity!==""?fmt(row.actualReceivedQuantity):'<span style="color:var(--muted);">—</span>'}</td>
+          <td style="padding:5px; text-align:center;">${esc(row.prnCreatedDate)}</td>
+          <td style="padding:5px;">
+            <input type="text" class="pps-action-input" value="${(row.actionPlan||'').replace(/"/g,'&quot;')}"
+              data-rownum="${row.rowNum}" data-prnid="${esc(prn.prnId)}" data-itemcode="${esc(row.itemCode)}" data-pono="${esc(row.poNumber)}"
+              placeholder="Add action plan..." style="width:100%; min-width:140px; padding:5px; border:1px solid var(--border); border-radius:3px; font-size:0.78rem;">
+          </td>
+        </tr>`).join("");
+      return `
+        <div class="contact-summary-card-parent" style="margin-bottom:14px;">
+          <div style="font-weight:700; margin-bottom:8px;">
+            <span style="background:var(--accent); color:#fff; padding:3px 10px; font-family:monospace;">PRN: ${esc(prn.prnId)}</span>
+            <span style="margin-left:8px; font-size:0.82rem; color:var(--muted);">Created: ${esc(prn.prnCreatedDate)}</span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.78rem; min-width:1400px;">
+              <thead><tr style="background:var(--highlight-bg); text-align:left;">
+                <th style="padding:6px;">Item Code</th><th style="padding:6px;">Material Name</th>
+                <th style="padding:6px;">BOQ Qty</th><th style="padding:6px;">Buffered</th><th style="padding:6px;">Store Reserved</th>
+                <th style="padding:6px;">Purchased</th><th style="padding:6px;">P.O. No.</th><th style="padding:6px;">P.O. Date</th>
+                <th style="padding:6px;">Vendor</th><th style="padding:6px;">Expected Delivery</th><th style="padding:6px;">Actual Delivery</th>
+                <th style="padding:6px;">Actual Received</th><th style="padding:6px;">PRN Created</th><th style="padding:6px;">Action Plan</th>
+              </tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>`;
+    }).join("") + `
+      <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+        <button class="nav-btn-styled" onclick="savePPSActionPlans('${projectId.replace(/'/g,"\\'")}')" style="background:var(--brand); color:#fff; font-weight:700; padding:9px 22px;">Save Action Plans</button>
+      </div>`;
+  } catch(e) { body.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+}
+
+async function savePPSActionPlans(projectId) {
+  const inputs = document.querySelectorAll(".pps-action-input");
+  const updates = Array.from(inputs).map(inp => ({
+    rowNum: parseInt(inp.dataset.rownum, 10),
+    prnId: inp.dataset.prnid,
+    itemCode: inp.dataset.itemcode,
+    poNumber: inp.dataset.pono,
+    actionPlan: inp.value
+  }));
+  const banner = document.getElementById("pps-feedback");
+  showBlockingOverlay("Saving action plans...");
+  try {
+    const data = await apFetch({ action: "updatePPSActionPlan", activeEngineer: appActiveOperatorIdentityString, payload: { projectId, updates } });
+    hideBlockingOverlay();
+    if (data.success) {
+      banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius); font-weight:600;";
+      banner.textContent = "Action plans saved.";
+      banner.scrollIntoView({ behavior:"smooth", block:"center" });
+    } else {
+      banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
+      banner.textContent = "Error: " + data.error;
+    }
+  } catch(e) {
+    hideBlockingOverlay();
+    alert("Network error: " + e.message);
+  }
+}
 
 async function initializeAuthorizePOPanel() {
   const body = document.getElementById("authorize-po-body");
@@ -14916,7 +15023,7 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
   document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
 
-  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po","canvas-module-purchase-rejected-material","canvas-module-purchase-create-po","canvas-module-purchase-authorize-po"].forEach(id => {
+  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po","canvas-module-purchase-rejected-material","canvas-module-purchase-create-po","canvas-module-purchase-authorize-po","canvas-module-purchase-pps-tracking"].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = "none";
   });
 
@@ -14943,6 +15050,12 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
     const apoBanner = document.getElementById("authorize-po-feedback");
     if (apoBanner) { apoBanner.style.display = "none"; apoBanner.innerHTML = ""; }
     initializeAuthorizePOPanel();
+  } else if (targetModuleId === "purchase-pps-tracking") {
+    document.getElementById("canvas-module-purchase-pps-tracking").style.display = "block";
+    const ppsBanner = document.getElementById("pps-feedback");
+    if (ppsBanner) { ppsBanner.style.display = "none"; ppsBanner.innerHTML = ""; }
+    document.getElementById("pps-results-body").innerHTML = "";
+    initializePPSTrackingPanel();
   } else if (targetModuleId === "purchase-rejected-material") {
     document.getElementById("canvas-module-purchase-rejected-material").style.display = "block";
     const rejBanner = document.getElementById("rejected-material-feedback-banner");
