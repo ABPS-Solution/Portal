@@ -1654,10 +1654,6 @@
 
     <!-- MATERIAL LIST CANVAS -->
     <div id="canvas-module-purchase-create-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <div class="navigation-action-header-row" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between;">
-        <div></div>
-        <button class="nav-btn-styled" onclick="exitPurchaseWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
-      </div>
       <h2 style="color:var(--brand); margin:0 0 6px 0;">Create Raw Material Purchase Order</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Fill in the PO details and add material rows. Tag each material with the projects it serves. Submit when complete and it will go for Authorization.</p>
       <div id="create-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
@@ -1665,10 +1661,6 @@
     </div>
 
     <div id="canvas-module-purchase-authorize-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <div class="navigation-action-header-row" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between;">
-        <div></div>
-        <button class="nav-btn-styled" onclick="exitPurchaseWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
-      </div>
       <h2 style="color:var(--brand); margin:0 0 6px 0;">Authorize Raw Material Purchase Order</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review pending Purchase Orders. On authorization, the PO PDF is generated and saved, and the order is finalized.</p>
       <div id="authorize-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
@@ -1676,10 +1668,6 @@
     </div>
 
     <div id="canvas-module-purchase-pps-tracking" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <div class="navigation-action-header-row" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between;">
-        <div></div>
-        <button class="nav-btn-styled" onclick="exitPurchaseWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
-      </div>
       <h2 style="color:var(--brand); margin:0 0 6px 0;">PPS Tracking</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Search a Project to see its PRNs and the Purchase Orders linked to each — with expected vs. actual delivery tracking. Add an Action Plan per line as needed.</p>
       <div id="pps-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
@@ -14579,25 +14567,7 @@ async function initializeCreatePOPanel() {
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">Material Rows</div>
         <button class="nav-btn-styled" id="cpo-add-row-btn" onclick="addCPOMaterialRow()" style="background:var(--accent); color:#fff; font-weight:700; padding:6px 14px;">+ Add Material Row</button>
       </div>
-      <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:0.82rem; min-width:900px;">
-          <thead><tr style="background:var(--highlight-bg); text-align:left;">
-            <th style="padding:7px; width:40px;">Sr</th>
-            <th style="padding:7px; min-width:220px;">Description of Material *</th>
-            <th style="padding:7px; width:90px;">Item Code</th>
-            <th style="padding:7px; width:75px;">Quantity *</th>
-            <th style="padding:7px; width:85px;">Rate/Qty *</th>
-            <th style="padding:7px; width:55px;">Per</th>
-            <th style="padding:7px; width:70px;">Disc %</th>
-            <th style="padding:7px; width:95px;">Amount</th>
-            <th style="padding:7px; min-width:160px;">Projects Served *</th>
-            <th style="padding:7px; width:40px;"></th>
-          </tr></thead>
-          <tbody id="cpo-rows-body">
-            <tr id="cpo-rows-empty"><td colspan="10" style="padding:14px; text-align:center; color:var(--muted);">No material rows yet. Click "+ Add Material Row".</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <div id="cpo-rows-body"></div>
     </div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
@@ -14655,33 +14625,56 @@ function removeCPOMaterialRow(id) {
 function renderCPOMaterialRows() {
   const body = document.getElementById("cpo-rows-body");
   if (window.cpoMaterialRows.length === 0) {
-    body.innerHTML = `<tr id="cpo-rows-empty"><td colspan="10" style="padding:14px; text-align:center; color:var(--muted);">No material rows yet. Click "+ Add Material Row".</td></tr>`;
+    body.innerHTML = `<div style="padding:14px; text-align:center; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:var(--radius);">No material rows yet. Click "+ Add Material Row".</div>`;
     return;
   }
   body.innerHTML = window.cpoMaterialRows.map((row, idx) => {
-    const projectChips = row.projectIds.map(p => `<span style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.7rem; padding:1px 6px; border-radius:10px; margin:1px;">${p}</span>`).join("");
-    return `<tr data-rowid="${row.id}" style="border-bottom:1px solid var(--border);">
-      <td style="padding:5px; text-align:center; font-weight:700;">${idx + 1}</td>
-      <td style="padding:5px; position:relative;">
-        <input type="text" class="cpo-desc-search" data-rowid="${row.id}" value="${(row.description||'').replace(/"/g,'&quot;')}" placeholder="Search material name / rating..." autocomplete="off"
-          oninput="handleCPODescSearch(${row.id}, this.value)"
-          style="width:100%; padding:5px; border:1.5px solid ${row.itemCode ? 'var(--brand)' : '#f59e0b'}; border-radius:3px; font-size:0.8rem;">
-        <div id="cpo-desc-dd-${row.id}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; max-height:180px; overflow-y:auto; z-index:50; box-shadow:0 4px 12px rgba(0,0,0,0.12);"></div>
-      </td>
-      <td style="padding:5px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${row.itemCode || '—'}</td>
-      <td style="padding:5px;"><input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${row.quantity}" oninput="updateCPORowField(${row.id},'quantity',this.value)" style="width:100%; text-align:center; padding:5px; border:1px solid var(--border); border-radius:3px;"></td>
-      <td style="padding:5px;"><input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)" style="width:100%; text-align:right; padding:5px; border:1px solid var(--border); border-radius:3px;"></td>
-      <td style="padding:5px; text-align:center; font-family:monospace; color:var(--muted);">${row.unit || '—'}</td>
-      <td style="padding:5px;"><input type="number" min="0" max="100" step="any" class="cpo-disc" data-rowid="${row.id}" value="${row.discountPercent}" oninput="updateCPORowField(${row.id},'discountPercent',this.value)" style="width:100%; text-align:center; padding:5px; border:1px solid var(--border); border-radius:3px;"></td>
-      <td style="padding:5px; text-align:right; font-family:monospace; font-weight:700;"><span class="cpo-amount" data-rowid="${row.id}">0.00</span></td>
-      <td style="padding:5px;">
-        <div style="margin-bottom:3px;">${projectChips || '<span style="color:#b91c1c; font-size:0.72rem;">none selected</span>'}</div>
-        <button onclick="openCPOProjectPicker(${row.id})" style="font-size:0.72rem; padding:2px 8px; background:var(--accent); color:#fff; border:none; border-radius:3px; cursor:pointer;">Select Projects</button>
-      </td>
-      <td style="padding:5px; text-align:center;"><button onclick="removeCPOMaterialRow(${row.id})" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>
-    </tr>`;
+    const projectChips = row.projectIds.length
+      ? row.projectIds.map(p => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">${p}</div>`).join("")
+      : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No projects selected</span>';
+
+    return `<div data-rowid="${row.id}" style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px;">
+      <div style="display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;">
+        <div style="font-weight:700; color:var(--brand); padding-top:8px; min-width:22px;">${idx + 1}</div>
+
+        <div style="flex:1; min-width:260px; position:relative;">
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Description of Material *</label>
+          <input type="text" class="cpo-desc-search" data-rowid="${row.id}" value="${(row.description||'').replace(/"/g,'&quot;')}" placeholder="Search material name / rating..." autocomplete="off"
+            oninput="handleCPODescSearch(${row.id}, this.value)"
+            style="width:100%; padding:7px; border:1.5px solid ${row.itemCode ? 'var(--brand)' : '#f59e0b'}; border-radius:4px; font-size:0.82rem; margin-top:2px;">
+          <div id="cpo-desc-dd-${row.id}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <div style="font-size:0.72rem; color:var(--muted); margin-top:3px;">Item Code: <span style="font-family:monospace; font-weight:700; color:var(--brand);">${row.itemCode || '—'}</span> &nbsp;|&nbsp; Unit: <span style="font-family:monospace;">${row.unit || '—'}</span></div>
+        </div>
+
+        <div style="width:90px;">
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Quantity *</label>
+          <input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${row.quantity}" oninput="updateCPORowField(${row.id},'quantity',this.value)" style="width:100%; text-align:center; padding:7px; border:1px solid var(--border); border-radius:4px; margin-top:2px;">
+        </div>
+        <div style="width:100px;">
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Rate/Qty *</label>
+          <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)" style="width:100%; text-align:right; padding:7px; border:1px solid var(--border); border-radius:4px; margin-top:2px;">
+        </div>
+        <div style="width:80px;">
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Disc %</label>
+          <input type="number" min="0" max="100" step="any" class="cpo-disc" data-rowid="${row.id}" value="${row.discountPercent}" oninput="updateCPORowField(${row.id},'discountPercent',this.value)" style="width:100%; text-align:center; padding:7px; border:1px solid var(--border); border-radius:4px; margin-top:2px;">
+        </div>
+        <div style="width:110px;">
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Amount</label>
+          <div style="padding:7px; text-align:right; font-family:monospace; font-weight:700; margin-top:2px;"><span class="cpo-amount" data-rowid="${row.id}">0.00</span></div>
+        </div>
+
+        <button onclick="removeCPOMaterialRow(${row.id})" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1.1rem; padding-top:20px;">✕</button>
+      </div>
+
+      <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
+        <div style="min-width:200px;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Projects using this Material *</div>
+          <button onclick="openCPOProjectPicker(${row.id})" style="font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">Select Projects</button>
+        </div>
+        <div style="flex:1; min-width:200px; padding-top:2px;">${projectChips}</div>
+      </div>
+    </div>`;
   }).join("");
-  // Recompute displayed amounts for all rows
   window.cpoMaterialRows.forEach(r => updateCPORowAmount(r.id));
 }
 
@@ -14758,23 +14751,27 @@ function openCPOProjectPicker(rowId) {
   const row = window.cpoMaterialRows.find(r => r.id === rowId);
   if (!row) return;
   if (window.cpoActiveProjects.length === 0) { alert("No active projects loaded."); return; }
-  // Simple multiselect via prompt-style checklist overlay
   const existing = document.getElementById("cpo-project-modal");
   if (existing) existing.remove();
   const modal = document.createElement("div");
   modal.id = "cpo-project-modal";
-  modal.style.cssText = "position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; display:flex; align-items:center; justify-content:center;";
-  const checks = window.cpoActiveProjects.map(p => `
-    <label style="display:flex; align-items:center; gap:8px; padding:6px 4px; border-bottom:1px solid #f1f5f9; cursor:pointer;">
-      <input type="checkbox" value="${p.replace(/"/g,'&quot;')}" ${row.projectIds.includes(p) ? 'checked' : ''}> ${p}
+  modal.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;";
+  const checks = window.cpoActiveProjects.map((p, i) => `
+    <label for="cpo-proj-cb-${i}" style="display:flex; align-items:center; gap:12px; padding:11px 12px; border:1px solid var(--border); border-radius:6px; margin-bottom:6px; cursor:pointer; font-size:0.85rem; transition:background 0.1s;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      <input type="checkbox" id="cpo-proj-cb-${i}" value="${p.replace(/"/g,'&quot;')}" ${row.projectIds.includes(p) ? 'checked' : ''} style="width:16px; height:16px; flex-shrink:0;">
+      <span style="font-weight:600;">${p}</span>
     </label>`).join("");
   modal.innerHTML = `
-    <div style="background:#fff; border-radius:var(--radius); padding:20px; width:90%; max-width:480px; max-height:70vh; display:flex; flex-direction:column;">
-      <div style="font-weight:700; margin-bottom:12px;">Select Projects this material serves</div>
-      <div style="overflow-y:auto; flex:1; margin-bottom:12px;">${checks}</div>
-      <div style="display:flex; justify-content:flex-end; gap:8px;">
-        <button onclick="document.getElementById('cpo-project-modal').remove()" style="padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:4px; cursor:pointer;">Cancel</button>
-        <button onclick="saveCPOProjectPicker(${rowId})" style="padding:8px 16px; background:var(--brand); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:700;">Save</button>
+    <div style="background:#fff; border-radius:12px; width:100%; max-width:520px; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
+      <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
+        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Select Projects this Material is Used by</div>
+        <div style="font-size:0.78rem; color:var(--muted); margin-top:2px;">Tick every project this material is being ordered for.</div>
+      </div>
+      <div style="overflow-y:auto; flex:1; padding:16px 20px;">${checks}</div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid var(--border); background:#f8fafc;">
+        <button onclick="document.getElementById('cpo-project-modal').remove()" style="padding:9px 18px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600;">Cancel</button>
+        <button onclick="saveCPOProjectPicker(${rowId})" style="padding:9px 22px; background:var(--brand); color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:700;">Save Selection</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
