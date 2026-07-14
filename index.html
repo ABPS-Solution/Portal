@@ -3147,7 +3147,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbz5jg4nEZN9qk2Wy4P_ibO3aY-LKeWlBWo9QVrlUL7YpM6NRW1Kf9V6_8uhkXCF8Bb1/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbx6gsMkqkhJOy21ugBmoYZObFi7yl5LSYMKB2jsa8Z7Y3rbUsH2tbosqxuPxhA8Xrvp/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -10246,32 +10246,54 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
 
       if (window.activeQAToggle === "repair") {
         item.lineItems.forEach((line, idx) => {
-          trs += `<tr style="border-bottom:1px solid #f1f5f9;">
-            <td style="width:120px; padding:6px; text-align:center; font-weight:700; font-family:monospace;">${line.itemCode}</td>
-            <td style="padding:6px;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
-            <td style="width:60px; padding:6px; text-align:center;">${line.unitType}</td>
-            <td style="width:80px; padding:6px; text-align:center; font-weight:700;">${line.outstandingQty}</td>
-            <td style="width:160px; padding:6px; font-size:0.78rem; color:#64748b;">${line.action}</td>
-            <td style="width:100px; padding:6px; text-align:center;">
-              <input type="number" min="0" max="${line.outstandingQty}" class="repair-qty-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" value="${line.outstandingQty}" style="width:100%; text-align:center; font-weight:700; border:1.5px solid var(--brand); padding:4px;">
+          trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
+            <td style="width:120px; padding:8px 6px; text-align:center; font-weight:700; font-family:monospace;">${line.itemCode}</td>
+            <td style="padding:8px 6px; min-width:220px; font-size:0.85rem;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+            <td style="width:60px; padding:8px 6px; text-align:center; font-family:monospace; font-weight:700;">${line.unitType}</td>
+            <td style="width:90px; padding:8px 6px; text-align:center; font-weight:700;">${line.outstandingQty}</td>
+            <td style="width:180px; padding:8px 6px; font-size:0.78rem; color:#64748b;">${line.action}</td>
+            <td style="width:110px; padding:8px 6px; text-align:center;">
+              <input type="number" min="0" max="${line.outstandingQty}" class="repair-qty-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" value="${line.outstandingQty}" style="width:100%; text-align:center; font-weight:700; border:1.5px solid var(--brand); padding:5px; border-radius:3px;">
             </td>
           </tr>`;
         });
 
+        // Date/time badge — same source and formatting as the GRN card in Store Entry.
+        let repairDateDisplay = "";
+        if (item.invoiceDate) {
+          const repairDateObj = new Date(item.invoiceDate);
+          if (!isNaN(repairDateObj.getTime())) {
+            const dt = repairDateObj.toLocaleDateString('en-CA');
+            const tm = repairDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
+            repairDateDisplay = dt + " " + tm;
+          }
+        }
+
         let card = document.createElement("div"); card.className = "contact-summary-card-parent";
         card.innerHTML = `
           <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
-            <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${item.grnNumber}</span>
-            <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:8px;">
+              <div>
+                <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${item.grnNumber}</span>
+                <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
+              </div>
+              ${repairDateDisplay ? `<span style="background:#cbd5e1; color:#1e293b; font-weight:700; font-size:0.8rem; padding:3px 8px;">${repairDateDisplay}</span>` : ''}
+            </div>
           </div>
           <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
-            <table class="store-basket-data-table" style="width:100%; margin-bottom:12px;">
-              <thead><tr style="background:#f8fafc;">
-                <th style="padding:6px;">Item Code</th><th style="padding:6px;">Material</th><th style="padding:6px;">Unit</th>
-                <th style="padding:6px;">Outstanding</th><th style="padding:6px;">Action Selected</th><th style="padding:6px;">Repaired Qty (assumed OK)</th>
-              </tr></thead>
-              <tbody>${trs}</tbody>
-            </table>
+            <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
+              <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:820px; border-collapse:collapse;">
+                <thead><tr style="background:#f8fafc;">
+                  <th style="width:120px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
+                  <th style="min-width:220px; text-align:left; font-size:0.72rem; padding:8px 6px;">Material</th>
+                  <th style="width:60px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit</th>
+                  <th style="width:90px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Outstanding</th>
+                  <th style="width:180px; text-align:left; font-size:0.72rem; padding:8px 6px;">Action Selected</th>
+                  <th style="width:110px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Repaired Qty (assumed OK)</th>
+                </tr></thead>
+                <tbody>${trs}</tbody>
+              </table>
+            </div>
             <div style="display:flex; justify-content:flex-end;">
               <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitRepairQAToBackend('${item.grnNumber}', this)">Confirm Repair Q/A & Add to Stock</button>
             </div>
@@ -10281,22 +10303,51 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
       } else {
         item.lineItems.forEach((line, idx) => {
           const recvd = parseInt(line.quantityReceived, 10) || 0;
-          trs += `<tr style="border-bottom:1px solid #f1f5f9;">
-            <td style="width:120px; padding:5px 6px; text-align:center; font-weight:700; font-family:monospace;">${line.itemCode}</td>
-            <td style="width:200px; padding:5px 6px;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
-            <td style="width:55px; padding:5px 4px; text-align:center; font-family:monospace; font-weight:700;">${line.unitType}</td>
-            <td style="width:70px; padding:5px 4px; text-align:center; font-weight:700;">${recvd}</td>
-            <td style="width:70px; padding:5px 4px; text-align:center;">
-              <input type="number" min="0" class="qa-ok-${item.grnNumber}" data-idx="${idx}" data-max="${recvd}" value="${recvd}" style="width:100%; border:1.5px solid var(--brand); font-weight:700; text-align:center; padding:4px 2px;" onchange="autoBalanceQaQuantities(this, '${item.grnNumber}', ${idx})">
+          const searchId = `qa-search-${item.grnNumber}-${idx}`;
+          const dropId   = `qa-drop-${item.grnNumber}-${idx}`;
+          const matName  = (line.materialName || "").toString();
+          trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:top;">
+            <td style="width:110px; padding:6px; vertical-align:middle;">
+              <input type="text" class="qa-item-code-${item.grnNumber}" data-idx="${idx}" value="${line.itemCode}" readonly
+                style="font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #86efac; text-align:center; width:100%; background:#f0fdf4; color:var(--brand); border-radius:3px;">
             </td>
-            <td style="width:50px; padding:5px 4px; text-align:center;">
-              <input type="number" min="0" class="qa-notok-${item.grnNumber}" data-idx="${idx}" value="0" style="width:100%; background:#f1f5f9; text-align:center; font-weight:700; padding:4px 2px; border:1px solid var(--border);" readonly>
+            <td style="padding:8px; font-size:0.78rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:180px; max-width:220px; line-height:1.4;">
+              ${(line.invoiceDescription || "").replace(/</g,'&lt;').replace(/>/g,'&gt;') || "—"}
             </td>
-            <td style="width:150px; padding:5px 4px;">
-              <input type="text" class="qa-reason-${item.grnNumber}" data-idx="${idx}" placeholder="Reason for Not OK..." style="font-size:0.78rem; padding:4px; width:100%; border:1px solid var(--border);">
+            <td style="padding:6px; min-width:220px;">
+              <div class="qa-mat-name-display-${item.grnNumber}" data-idx="${idx}"
+                onclick="reopenQAMaterialSearch('${item.grnNumber}', ${idx})"
+                title="Click to correct the material match"
+                style="display:flex; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; min-height:30px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4; line-height:1.4;">
+                <span>${matName.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>
+                <span style="font-size:0.65rem; font-weight:700; color:var(--muted); white-space:nowrap; flex-shrink:0;">✎ change</span>
+              </div>
+              <input type="hidden" class="qa-mat-name-${item.grnNumber}" data-idx="${idx}" value="${matName.replace(/"/g,'&quot;')}" />
+              <div style="position:relative; margin-top:4px;">
+                <input type="text" id="${searchId}"
+                  placeholder="Search to change..."
+                  oninput="handleQANameSearch(this, '${item.grnNumber}', ${idx})"
+                  autocomplete="off"
+                  style="font-size:0.78rem; padding:4px 6px; border:1px solid var(--border); width:100%; border-radius:3px; display:none;" />
+                <div id="${dropId}" style="display:none; position:fixed; background:#fff; border:1px solid var(--border); border-radius:4px; z-index:9999; max-height:180px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,0.15); min-width:240px;"></div>
+              </div>
             </td>
-            <td style="width:170px; padding:5px 4px;">
-              <select class="qa-action-${item.grnNumber}" data-idx="${idx}" style="width:100%; font-size:0.76rem; padding:3px 2px;">
+            <td style="width:55px; padding:6px; text-align:center; vertical-align:middle;">
+              <input type="text" class="qa-unit-${item.grnNumber}" data-idx="${idx}" value="${line.unitType}" readonly
+                style="width:100%; text-align:center; font-family:monospace; font-weight:700; border:none; background:transparent; color:#1e293b;">
+            </td>
+            <td style="width:70px; padding:6px; text-align:center; font-weight:700; vertical-align:middle;">${recvd}</td>
+            <td style="width:70px; padding:6px; vertical-align:middle;">
+              <input type="number" min="0" class="qa-ok-${item.grnNumber}" data-idx="${idx}" data-max="${recvd}" value="${recvd}" style="width:100%; border:1.5px solid var(--brand); font-weight:700; text-align:center; padding:5px 2px; border-radius:3px;" onchange="autoBalanceQaQuantities(this, '${item.grnNumber}', ${idx})">
+            </td>
+            <td style="width:55px; padding:6px; vertical-align:middle;">
+              <input type="number" min="0" class="qa-notok-${item.grnNumber}" data-idx="${idx}" value="0" style="width:100%; background:#f1f5f9; text-align:center; font-weight:700; padding:5px 2px; border:1px solid var(--border); border-radius:3px;" readonly>
+            </td>
+            <td style="width:150px; padding:6px; vertical-align:middle;">
+              <input type="text" class="qa-reason-${item.grnNumber}" data-idx="${idx}" placeholder="Reason for Not OK..." style="font-size:0.78rem; padding:6px; width:100%; border:1px solid var(--border); border-radius:3px;">
+            </td>
+            <td style="width:170px; padding:6px; vertical-align:middle;">
+              <select class="qa-action-${item.grnNumber}" data-idx="${idx}" style="width:100%; font-size:0.76rem; padding:5px 2px; border-radius:3px;">
                 <option value="">— N/A —</option>
                 <option value="Return to Vendor for Replacement">Return to Vendor for Replacement</option>
                 <option value="Return to Vendor for Repair">Return to Vendor for Repair</option>
@@ -10304,27 +10355,55 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
                 <option value="Ask ABPS to Repair at ABPS">Ask ABPS to Repair at ABPS</option>
               </select>
             </td>
+            <td style="width:60px; padding:6px; text-align:center; vertical-align:middle;">
+              <input type="checkbox" class="qa-done-${item.grnNumber}" data-idx="${idx}" style="width:18px; height:18px; cursor:pointer;">
+            </td>
           </tr>`;
         });
+
+        // Date/time badge — same source and formatting as the GRN card in Store Entry.
+        let qaDateDisplay = "";
+        if (item.invoiceDate) {
+          const qaDateObj = new Date(item.invoiceDate);
+          if (!isNaN(qaDateObj.getTime())) {
+            const dt = qaDateObj.toLocaleDateString('en-CA');
+            const tm = qaDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
+            qaDateDisplay = dt + " " + tm;
+          }
+        }
 
         let card = document.createElement("div"); card.className = "contact-summary-card-parent";
         card.innerHTML = `
           <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
-            <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${item.grnNumber}</span>
-            <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
-            <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Invoice: ${item.invoiceNumber}</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:8px;">
+              <div>
+                <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${item.grnNumber}</span>
+                <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
+                <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Invoice: ${item.invoiceNumber}</span>
+              </div>
+              ${qaDateDisplay ? `<span style="background:#cbd5e1; color:#1e293b; font-weight:700; font-size:0.8rem; padding:3px 8px;">${qaDateDisplay}</span>` : ''}
+            </div>
           </div>
           <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
-            <table class="store-basket-data-table" style="width:100%; margin-bottom:12px;">
-              <thead><tr style="background:#f8fafc;">
-                <th style="padding:6px;">Item Code</th><th style="padding:6px;">Material</th><th style="padding:6px;">Unit</th>
-                <th style="padding:6px;">Received</th><th style="padding:6px;">OK Qty</th><th style="padding:6px;">Not OK</th>
-                <th style="padding:6px;">Reason for Not OK</th><th style="padding:6px;">Action for Rejected *</th>
-              </tr></thead>
-              <tbody>${trs}</tbody>
-            </table>
+            <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
+              <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:1250px; border-collapse:collapse;">
+                <thead><tr style="background:#f8fafc;">
+                  <th style="width:110px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
+                  <th style="min-width:180px; max-width:220px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Description</th>
+                  <th style="min-width:220px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name</th>
+                  <th style="width:55px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit</th>
+                  <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Received</th>
+                  <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">OK Qty</th>
+                  <th style="width:55px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Not OK</th>
+                  <th style="width:150px; text-align:left; font-size:0.72rem; padding:8px 6px;">Reason for Not OK</th>
+                  <th style="width:170px; text-align:left; font-size:0.72rem; padding:8px 6px;">Action for Rejected *</th>
+                  <th style="width:60px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Q/A Done</th>
+                </tr></thead>
+                <tbody>${trs}</tbody>
+              </table>
+            </div>
             <div style="display:flex; justify-content:flex-end;">
-              <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitStoreQAToBackend('${item.grnNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">Submit Q/A & Add Stock</button>
+              <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitStoreQAToBackend('${item.grnNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`, this)">Submit Q/A & Add Stock</button>
             </div>
           </div>`;
         feed.appendChild(card);
@@ -10332,6 +10411,67 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
     });
   } catch(e) { feed.innerHTML = toggleBar + `<p style="color:var(--warn);">${e.message}</p>`; }
 }
+
+function reopenQAMaterialSearch(grnNum, idx) {
+  const nameDisplay = document.querySelector(`.qa-mat-name-display-${grnNum}[data-idx="${idx}"]`);
+  const searchInput = document.getElementById(`qa-search-${grnNum}-${idx}`);
+  if (nameDisplay) nameDisplay.style.display = "none";
+  if (searchInput) { searchInput.style.display = "block"; searchInput.value = ""; searchInput.focus(); }
+}
+
+function handleQANameSearch(inputEl, grnNum, idx) {
+  const query    = inputEl.value.trim().toLowerCase();
+  const dropId   = `qa-drop-${grnNum}-${idx}`;
+  const dropdown = document.getElementById(dropId);
+  const catalog  = window.itemCodeCatalogCache || [];
+  if (!dropdown) return;
+
+  const rect = inputEl.getBoundingClientRect();
+  dropdown.style.top   = (rect.bottom + 2) + "px";
+  dropdown.style.left  = rect.left + "px";
+  dropdown.style.width = rect.width + "px";
+
+  if (query.length < 2) { dropdown.style.display = "none"; return; }
+  const matches = catalog.filter(c => (c.productName || "").toLowerCase().includes(query)).slice(0, 10);
+  if (matches.length === 0) {
+    dropdown.innerHTML = `<div style="padding:8px 10px; font-size:0.78rem; color:var(--muted);">No match found</div>`;
+    dropdown.style.display = "block"; return;
+  }
+  dropdown.innerHTML = matches.map(c => `
+    <div onclick="selectQANameMatch('${grnNum}', ${idx}, '${c.itemCode}', '${(c.combinedName || c.productName).replace(/'/g,"\\'")}', '${(c.unit || 'NOS').replace(/'/g,"\\'")}')"
+      style="padding:7px 10px; cursor:pointer; font-size:0.78rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;"
+      onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
+      <span style="font-weight:600;">${c.combinedName || c.productName}</span>
+      <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px;">${c.itemCode}</span>
+    </div>`).join("");
+  dropdown.style.display = "block";
+}
+
+function selectQANameMatch(grnNum, idx, itemCode, productName, unit) {
+  const dropdown     = document.getElementById(`qa-drop-${grnNum}-${idx}`);
+  const searchInput  = document.getElementById(`qa-search-${grnNum}-${idx}`);
+  const codeInput    = document.querySelector(`.qa-item-code-${grnNum}[data-idx="${idx}"]`);
+  const nameInput    = document.querySelector(`.qa-mat-name-${grnNum}[data-idx="${idx}"]`);
+  const nameDisplay  = document.querySelector(`.qa-mat-name-display-${grnNum}[data-idx="${idx}"]`);
+  const unitInput    = document.querySelector(`.qa-unit-${grnNum}[data-idx="${idx}"]`);
+
+  if (codeInput) codeInput.value = itemCode;
+  if (nameInput) nameInput.value = productName;
+  if (unitInput) unitInput.value = unit || "NOS";
+  if (nameDisplay) {
+    nameDisplay.querySelector("span").textContent = productName;
+    nameDisplay.style.display = "flex";
+  }
+  if (searchInput) searchInput.style.display = "none";
+  if (dropdown)    dropdown.style.display    = "none";
+}
+
+// Close QA dropdowns on outside click
+document.addEventListener("click", function(e) {
+  if (!e.target.id || !e.target.id.startsWith("qa-search-")) {
+    document.querySelectorAll("[id^='qa-drop-']").forEach(d => d.style.display = "none");
+  }
+});
 
 function autoBalanceQaQuantities(okInput, grnNum, idx) {
   const max = parseInt(okInput.dataset.max, 10);
@@ -10342,31 +10482,46 @@ function autoBalanceQaQuantities(okInput, grnNum, idx) {
   if (notOkInput) notOkInput.value = max - okVal;
 }
 
-async function commitStoreQAToBackend(grnNum, encodedItem) {
+async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
   const itemData = JSON.parse(decodeURIComponent(encodedItem));
   const banner = document.getElementById('store-grn-runtime-feedback-banner');
-  const btn = event.target;
+  const btn = btnEl || event.target;
 
   let actionMissing = false;
   let validationError = false;
+  let qaDoneMissing = false;
 
   itemData.lineItems.forEach((line, idx) => {
-    const ok     = parseInt(document.querySelector(`.qa-ok-${grnNum}[data-idx="${idx}"]`).value, 10) || 0;
-    const notOk  = parseInt(document.querySelector(`.qa-notok-${grnNum}[data-idx="${idx}"]`).value, 10) || 0;
-    const reason = document.querySelector(`.qa-reason-${grnNum}[data-idx="${idx}"]`).value.trim();
-    const action = document.querySelector(`.qa-action-${grnNum}[data-idx="${idx}"]`).value;
+    const ok       = parseInt(document.querySelector(`.qa-ok-${grnNum}[data-idx="${idx}"]`).value, 10) || 0;
+    const notOk    = parseInt(document.querySelector(`.qa-notok-${grnNum}[data-idx="${idx}"]`).value, 10) || 0;
+    const reason   = document.querySelector(`.qa-reason-${grnNum}[data-idx="${idx}"]`).value.trim();
+    const action   = document.querySelector(`.qa-action-${grnNum}[data-idx="${idx}"]`).value;
+    const done     = document.querySelector(`.qa-done-${grnNum}[data-idx="${idx}"]`).checked;
+    const itemCode = document.querySelector(`.qa-item-code-${grnNum}[data-idx="${idx}"]`).value.trim();
+    const matName  = document.querySelector(`.qa-mat-name-${grnNum}[data-idx="${idx}"]`).value.trim();
+    const unit     = document.querySelector(`.qa-unit-${grnNum}[data-idx="${idx}"]`).value.trim();
 
     if (notOk > 0 && !action) actionMissing = true;
     if (ok + notOk !== (parseInt(line.quantityReceived, 10) || 0)) validationError = true;
+    if (!done) qaDoneMissing = true;
 
     line.okQuantity              = ok;
     line.notOkQuantity           = notOk;
     line.reasonForNotOk          = reason;
     line.actionForRejectedMaterial = action;
+    // Pick up any correction made against the original invoice description
+    line.itemCode      = itemCode;
+    line.materialName   = matName;
+    line.unitType        = unit;
   });
 
   banner.style.display = "none";
 
+  if (qaDoneMissing) {
+    showBOQBanner('store-grn-runtime-feedback-banner', "⚠️ Every line item must be checked off as Q/A Done before this GRN can be submitted.", "error");
+    banner.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
   if (actionMissing) {
     showBOQBanner('store-grn-runtime-feedback-banner', "⚠️ Action for Rejected Material is compulsory for any line item with a Not OK quantity greater than zero.", "error");
     banner.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -10390,6 +10545,9 @@ async function commitStoreQAToBackend(grnNum, encodedItem) {
     });
     hideBlockingOverlay();
     if (data.success) {
+      // Hide the whole queue (not just this card) until Refresh Queue is pressed.
+      const feed = document.getElementById("store-grn-queue-cards-feed");
+      if (feed) feed.innerHTML = "";
       banner.style.cssText = "display: block; background: #dcfce7; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); margin-bottom:15px;";
       banner.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; text-align:left;">
@@ -10435,9 +10593,17 @@ async function commitRepairQAToBackend(grnNum, btn) {
     });
     hideBlockingOverlay();
     if (data.success) {
+      const feed = document.getElementById("store-grn-queue-cards-feed");
+      if (feed) feed.innerHTML = "";
       banner.style.cssText = "display: block; background: #dcfce7; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); margin-bottom:15px;";
-      banner.innerHTML = `<strong>Success! Repaired material returned to stock.</strong>`;
-      initializeStoreGrnWorkspaceQueue('repair');
+      banner.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; text-align:left;">
+          <div><strong>Success! Repaired material returned to stock.</strong></div>
+          <button class="nav-btn-styled" onclick="
+            document.getElementById('store-grn-runtime-feedback-banner').style.display = 'none';
+            initializeStoreGrnWorkspaceQueue('repair');
+          " style="background: #15803d; color: white; padding:8px 16px; font-weight:700;">Refresh Queue</button>
+        </div>`;
     } else {
       alert("Server Error: " + data.error);
       btn.disabled = false; btn.textContent = "Confirm Repair Q/A & Add to Stock";
@@ -15216,13 +15382,13 @@ async function initializeRejectedMaterialPanel(toggle) {
       const isEditable = !isCompleted;
       let trs = "";
       item.lineItems.forEach((line, idx) => {
-        trs += `<tr style="border-bottom:1px solid #f1f5f9;">
-          <td style="width:110px; padding:6px; text-align:center; font-family:monospace; font-weight:700;">${line.itemCode}</td>
-          <td style="width:180px; padding:6px;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
-          <td style="width:70px; padding:6px; text-align:center; font-weight:700;">${line.notOkQuantity}</td>
-          <td style="width:80px; padding:6px; text-align:center; font-weight:700;">${line.outstandingQuantity}</td>
-          <td style="width:180px; padding:6px; font-size:0.8rem; color:#64748b;">${(line.reasonForNotOk || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
-          <td style="width:170px; padding:6px;">
+        trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
+          <td style="width:110px; padding:8px 6px; text-align:center; font-family:monospace; font-weight:700;">${line.itemCode}</td>
+          <td style="min-width:180px; padding:8px 6px; font-size:0.85rem;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+          <td style="width:70px; padding:8px 6px; text-align:center; font-weight:700;">${line.notOkQuantity}</td>
+          <td style="width:90px; padding:8px 6px; text-align:center; font-weight:700;">${line.outstandingQuantity}</td>
+          <td style="width:180px; padding:8px 6px; font-size:0.8rem; color:#64748b;">${(line.reasonForNotOk || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+          <td style="width:170px; padding:8px 6px;">
             ${isEditable ? `
               <select class="rej-action-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" style="width:100%; font-size:0.76rem; padding:3px 2px;">
                 <option value="Return to Vendor for Replacement" ${line.action==='Return to Vendor for Replacement'?'selected':''}>Return to Vendor for Replacement</option>
@@ -15234,20 +15400,42 @@ async function initializeRejectedMaterialPanel(toggle) {
         </tr>`;
       });
 
+      // Date/time badge — same source and formatting as the GRN card in Store Entry.
+      let rejDateDisplay = "";
+      if (item.setTimestamp) {
+        const rejDateObj = new Date(item.setTimestamp);
+        if (!isNaN(rejDateObj.getTime())) {
+          const dt = rejDateObj.toLocaleDateString('en-CA');
+          const tm = rejDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
+          rejDateDisplay = dt + " " + tm;
+        }
+      }
+
       let card = document.createElement("div"); card.className = "contact-summary-card-parent";
       card.innerHTML = `
         <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
-          <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${item.grnNumber}</span>
-          <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
+          <div style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:8px;">
+            <div>
+              <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${item.grnNumber}</span>
+              <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
+            </div>
+            ${rejDateDisplay ? `<span style="background:#cbd5e1; color:#1e293b; font-weight:700; font-size:0.8rem; padding:3px 8px;">${rejDateDisplay}</span>` : ''}
+          </div>
         </div>
         <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
-          <table class="store-basket-data-table" style="width:100%; margin-bottom:12px;">
-            <thead><tr style="background:#f8fafc;">
-              <th style="padding:6px;">Item Code</th><th style="padding:6px;">Material</th><th style="padding:6px;">Not OK</th>
-              <th style="padding:6px;">Outstanding</th><th style="padding:6px;">Reason for Not OK</th><th style="padding:6px;">Action for Rejected</th>
-            </tr></thead>
-            <tbody>${trs}</tbody>
-          </table>
+          <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
+            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:840px; border-collapse:collapse;">
+              <thead><tr style="background:#f8fafc;">
+                <th style="width:110px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
+                <th style="min-width:180px; text-align:left; font-size:0.72rem; padding:8px 6px;">Material</th>
+                <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Not OK</th>
+                <th style="width:90px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Outstanding</th>
+                <th style="width:180px; text-align:left; font-size:0.72rem; padding:8px 6px;">Reason for Not OK</th>
+                <th style="width:170px; text-align:left; font-size:0.72rem; padding:8px 6px;">Action for Rejected</th>
+              </tr></thead>
+              <tbody>${trs}</tbody>
+            </table>
+          </div>
           ${isEditable ? `<div style="display:flex; justify-content:flex-end;">
             <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitRejectedMaterialActionToBackend('${item.grnNumber}', this)">Submit Action</button>
           </div>` : ''}
@@ -15279,9 +15467,17 @@ async function commitRejectedMaterialActionToBackend(grnNum, btn) {
     });
     hideBlockingOverlay();
     if (data.success) {
+      const feed = document.getElementById("rejected-material-cards-feed");
+      if (feed) feed.innerHTML = "";
       banner.style.cssText = "display: block; background: #dcfce7; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); margin-bottom:15px;";
-      banner.innerHTML = `<strong>Success! Action recorded — GRN ${grnNum} moved to Completed Action.</strong>`;
-      initializeRejectedMaterialPanel('pending');
+      banner.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; text-align:left;">
+          <div><strong>Success! Action recorded — GRN ${grnNum} moved to Completed Action.</strong></div>
+          <button class="nav-btn-styled" onclick="
+            document.getElementById('rejected-material-feedback-banner').style.display = 'none';
+            initializeRejectedMaterialPanel('pending');
+          " style="background: #15803d; color: white; padding:8px 16px; font-weight:700;">Refresh Queue</button>
+        </div>`;
     } else {
       alert("Server Error: " + data.error);
       btn.disabled = false; btn.textContent = "Submit Action";
