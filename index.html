@@ -1053,11 +1053,39 @@
               <label class="field-label" style="margin-top:0; color:var(--brand);">Filter by Type of Material</label>
               <select id="assign-type-filter" onchange="handleAssignTypeFilterChange(this.value)" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
                 <option value="">— All Types —</option>
-                <option value="Material A">Material A</option>
-                <option value="Material B">Material B</option>
-                <option value="Material C">Material C</option>
-                <option value="Material D">Material D</option>
-                <option value="Material E">Material E</option>
+                <option value="Fabrication">Fabrication</option>
+                <option value="Switchgear">Switchgear</option>
+                <option value="Cables">Cables</option>
+                <option value="Busbar">Busbar</option>
+                <option value="Lugs">Lugs</option>
+                <option value="Hardware">Hardware</option>
+                <option value="Meters">Meters</option>
+                <option value="Relay">Relay</option>
+                <option value="Fans">Fans</option>
+                <option value="Air Core Reactor">Air Core Reactor</option>
+                <option value="Fiber Glass Material">Fiber Glass Material</option>
+                <option value="HT Capacitors">HT Capacitors</option>
+                <option value="Iron Core Reactor">Iron Core Reactor</option>
+                <option value="Conductor">Conductor</option>
+                <option value="LT Capacitors">LT Capacitors</option>
+                <option value="Associated Equipment">Associated Equipment</option>
+                <option value="Insulators">Insulators</option>
+                <option value="Electronic Card">Electronic Card</option>
+                <option value="Resin Hardener">Resin Hardener</option>
+                <option value="Paint">Paint</option>
+                <option value="Varnish">Varnish</option>
+                <option value="Thinner">Thinner</option>
+                <option value="HT Capacitors Resistors">HT Capacitors Resistors</option>
+                <option value="Tin Zinc/Lead">Tin Zinc/Lead</option>
+                <option value="Insulating Material">Insulating Material</option>
+                <option value="TSM">TSM</option>
+                <option value="SCR">SCR</option>
+                <option value="Heatsink">Heatsink</option>
+                <option value="Laminations">Laminations</option>
+                <option value="Consumables">Consumables</option>
+                <option value="Gas Cylinders">Gas Cylinders</option>
+                <option value="Packing Material">Packing Material</option>
+                <option value="Assembly Material">Assembly Material</option>
               </select>
             </div>
             <div>
@@ -1459,11 +1487,39 @@
             <label class="field-label" style="margin-top:0;">Type of Material *</label>
             <select id="itemcode-new-type" style="padding:10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
               <option value="">— Select Type —</option>
-              <option value="Material A">Material A</option>
-              <option value="Material B">Material B</option>
-              <option value="Material C">Material C</option>
-              <option value="Material D">Material D</option>
-              <option value="Material E">Material E</option>
+              <option value="Fabrication">Fabrication</option>
+              <option value="Switchgear">Switchgear</option>
+              <option value="Cables">Cables</option>
+              <option value="Busbar">Busbar</option>
+              <option value="Lugs">Lugs</option>
+              <option value="Hardware">Hardware</option>
+              <option value="Meters">Meters</option>
+              <option value="Relay">Relay</option>
+              <option value="Fans">Fans</option>
+              <option value="Air Core Reactor">Air Core Reactor</option>
+              <option value="Fiber Glass Material">Fiber Glass Material</option>
+              <option value="HT Capacitors">HT Capacitors</option>
+              <option value="Iron Core Reactor">Iron Core Reactor</option>
+              <option value="Conductor">Conductor</option>
+              <option value="LT Capacitors">LT Capacitors</option>
+              <option value="Associated Equipment">Associated Equipment</option>
+              <option value="Insulators">Insulators</option>
+              <option value="Electronic Card">Electronic Card</option>
+              <option value="Resin Hardener">Resin Hardener</option>
+              <option value="Paint">Paint</option>
+              <option value="Varnish">Varnish</option>
+              <option value="Thinner">Thinner</option>
+              <option value="HT Capacitors Resistors">HT Capacitors Resistors</option>
+              <option value="Tin Zinc/Lead">Tin Zinc/Lead</option>
+              <option value="Insulating Material">Insulating Material</option>
+              <option value="TSM">TSM</option>
+              <option value="SCR">SCR</option>
+              <option value="Heatsink">Heatsink</option>
+              <option value="Laminations">Laminations</option>
+              <option value="Consumables">Consumables</option>
+              <option value="Gas Cylinders">Gas Cylinders</option>
+              <option value="Packing Material">Packing Material</option>
+              <option value="Assembly Material">Assembly Material</option>
             </select>
           </div>
         </div>
@@ -3097,12 +3153,13 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbz5jg4nEZN9qk2Wy4P_ibO3
  * CENTRAL FETCH WRAPPER
  * All backend calls go through this. Handles session expiry globally.
  */
-// Shared display helper — stored values stay bare letters (A-E) everywhere: sheets, PDFs,
-// filters, matching logic. Only presentational text shows "Material A" etc.
+
+// Shared display helper — stored values are the full Type of Material name directly
+// (e.g. "Fabrication", "Switchgear") everywhere: sheets, PDFs, filters, matching logic.
 // Defined globally here (not lazily) so it's always available regardless of navigation order.
 window.typeLabelDisplay_ = window.typeLabelDisplay_ || function(t) {
   const clean = (t || "").toString().trim();
-  return /^[A-E]$/.test(clean) ? ("Material " + clean) : (clean || "Uncategorized");
+  return clean || "Uncategorized";
 };
 
 async function apFetch(payload) {
@@ -9106,14 +9163,18 @@ async function triggerLiveWarehouseStockMetricsSync() {
       // Group items by Type of Material
       const typeGroups = {};
       const typeOrder = [
-        "Material A","Material B","Material C","Material D","Material E","Uncategorized",""
+        "Fabrication","Switchgear","Cables","Busbar","Lugs","Hardware","Meters","Relay","Fans",
+        "Air Core Reactor","Fiber Glass Material","HT Capacitors","Iron Core Reactor","Conductor",
+        "LT Capacitors","Associated Equipment","Insulators","Electronic Card","Resin Hardener",
+        "Paint","Varnish","Thinner","HT Capacitors Resistors","Tin Zinc/Lead","Insulating Material",
+        "TSM","SCR","Heatsink","Laminations","Consumables","Gas Cylinders","Packing Material",
+        "Assembly Material",""
       ];
-      // Shared display helper — stored values stay bare letters (A-E) everywhere: sheets, PDFs,
-      // filters, matching logic. Only presentational text (headings, search-result badges) shows
-      // "Material A" etc. Defined once here since this is the first place it's needed.
+      // Shared display helper — stored values are the full Type of Material name directly.
+      // Defined once here since this is the first place it's needed.
       window.typeLabelDisplay_ = window.typeLabelDisplay_ || function(t) {
         const clean = (t || "").toString().trim();
-        return /^[A-E]$/.test(clean) ? ("Material " + clean) : (clean || "Uncategorized");
+        return clean || "Uncategorized";
       };
       
       cachedInventoryStockCollection.forEach(item => {
