@@ -9858,7 +9858,7 @@ async function initializeStoreEntryWorkspaceQueue() {
       apFetch({ action: "fetchInwardWorkflowQueueStream", targetStep: "STORE pending" })
     ]);
     if (!data.success || data.queue.length === 0) {
-      feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records waiting for Raw Materials Store Entry.</div>';
+      feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records waiting for Raw Materials Store Entry and GRN.</div>';
       return;
     }
 
@@ -9933,7 +9933,7 @@ async function initializeStoreEntryWorkspaceQueue() {
           <td style="padding:8px; font-size:0.78rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:150px; max-width:200px; line-height:1.4;">
             ${rawDesc}
           </td>
-          <td style="padding:6px; min-width:280px;">
+          <td style="padding:6px; min-width:300px;">
             <div class="se-mat-name-display-${item.gateNumber}" data-idx="${idx}"
               onclick="reopenSEMaterialSearch('${item.gateNumber}', ${idx})"
               title="Click to change"
@@ -9959,15 +9959,11 @@ async function initializeStoreEntryWorkspaceQueue() {
           <td style="text-align:center; color:#1e293b; font-weight:800; vertical-align:top; padding-top:10px; width:70px; font-family:monospace; font-size:1.05rem;">
             ${line.gateQuantity}
           </td>
-          <td style="text-align:center; width:110px; padding:6px; vertical-align:top;">
+          <td style="text-align:center; width:110px; padding:6px 6px 6px 16px; vertical-align:top;">
             <input type="number" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}"
               value="${line.gateQuantity}"
-              style="width:100%; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:5px; font-size:0.95rem; border-radius:3px;">
-          </td>
-          <td style="padding:6px; min-width:160px; vertical-align:top;">
-            <input type="text" class="se-damage-desc-${item.gateNumber}" data-idx="${idx}"
-              placeholder="Reason for short / missing supply..."
-              style="font-size:0.82rem; padding:6px; width:100%; border-radius:3px; border:1px solid var(--border);">
+              style="width:100%; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:5px; font-size:0.95rem; border-radius:3px;"
+              oninput="updateSERowAmounts('${item.gateNumber}', ${idx})">
           </td>
           <td style="text-align:right; width:100px; padding:6px; vertical-align:top;">
             <input type="number" class="se-rate-${item.gateNumber}" data-idx="${idx}"
@@ -9982,9 +9978,9 @@ async function initializeStoreEntryWorkspaceQueue() {
               oninput="updateSERowAmounts('${item.gateNumber}', ${idx})">
           </td>
           <td style="text-align:right; width:100px; padding:6px; vertical-align:top; font-family:monospace; font-size:0.85rem; font-weight:700;">
-            <span class="se-amount-display-${item.gateNumber}" data-idx="${idx}">0.00</span>
-            <input type="hidden" class="se-basic-amt-${item.gateNumber}" data-idx="${idx}" value="0" />
-            <input type="hidden" class="se-inv-amt-${item.gateNumber}" data-idx="${idx}" value="0" />
+            <span class="se-amount-display-${item.gateNumber}" data-idx="${idx}">${(((line.gateQuantity || 0) * (line.ratePerQuantity || 0)) * (1 + (line.gstPercent || 18) / 100)).toFixed(2)}</span>
+            <input type="hidden" class="se-basic-amt-${item.gateNumber}" data-idx="${idx}" value="${((line.gateQuantity || 0) * (line.ratePerQuantity || 0)).toFixed(2)}" />
+            <input type="hidden" class="se-inv-amt-${item.gateNumber}" data-idx="${idx}" value="${(((line.gateQuantity || 0) * (line.ratePerQuantity || 0)) * (1 + (line.gstPercent || 18) / 100)).toFixed(2)}" />
           </td>
         </tr>`;
       });
@@ -10025,11 +10021,13 @@ async function initializeStoreEntryWorkspaceQueue() {
                 <tr style="background:#f8fafc;">
                   <th style="width:140px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
                   <th style="min-width:150px; max-width:200px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Description</th>
-                  <th style="min-width:280px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name *</th>
+                  <th style="min-width:300px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name *</th>
                   <th style="width:60px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit</th>
                   <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Invoice Qty</th>
-                  <th style="width:110px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Received Qty *</th>
-                  <th style="min-width:160px; text-align:left; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Reason for Short Supply</th>
+                  <th style="width:110px; text-align:center; font-size:0.72rem; padding:8px 6px 8px 16px; white-space:nowrap;">Received Qty *</th>
+                  <th style="width:100px; text-align:right; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Rate / Qty</th>
+                  <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">GST %</th>
+                  <th style="width:100px; text-align:right; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Amount (Incl. GST)</th>
                 </tr>
               </thead>
               <tbody>${trs}</tbody>
@@ -10127,9 +10125,6 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
   });
   document.querySelectorAll(`.se-phys-qty-${gateNum}`).forEach(inp => {
     itemData.lineItems[parseInt(inp.dataset.idx, 10)].verifiedPhysicalQuantity = parseInt(inp.value, 10) || 0;
-  });
-  document.querySelectorAll(`.se-damage-desc-${gateNum}`).forEach(inp => {
-    itemData.lineItems[parseInt(inp.dataset.idx, 10)].reasonForShortSupply = inp.value.trim() || "No Short Supply";
   });
 
   let materialTypeMissing = false;
