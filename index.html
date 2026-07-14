@@ -342,7 +342,7 @@
         <div class="menu-card" id="mod-design-auth-boq"     onclick="switchActiveDashboardModule('design-auth-boq')"><span class="mc-label">Authorize Bill of Quantity</span></div>
         <div class="menu-card" id="mod-design-update-boq"   onclick="switchActiveDashboardModule('design-update-boq')"><span class="mc-label">Update Bill of Quantity</span></div>
         <div class="menu-card" id="mod-design-auth-boq-upd" onclick="switchActiveDashboardModule('design-auth-boq-upd')"><span class="mc-label">Authorize Bill of Quantity Update</span></div>
-        <div class="menu-card" id="mod-design-itemcode"        onclick="navigateToDesignWorkspacePanel('design-itemcode')"><span class="mc-label">Add / Check Item Code Number</span></div>
+        <div class="menu-card" id="mod-design-itemcode"        onclick="navigateToDesignWorkspacePanel('design-itemcode')"><span class="mc-label">Add / Check Item Code</span></div>
         <div class="menu-card" id="mod-design-upload-drawings" onclick="switchActiveDashboardModule('design-upload-drawings')"><span class="mc-label">Upload Drawings</span></div>
       </div>
     </div>
@@ -413,7 +413,7 @@
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-store-ticket"            onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Store Ticket</span></div>
         <div class="menu-card" id="mod-jc-letterhead"           onclick="switchActiveDashboardModule('jc-letterhead')"><span class="mc-label">Job Card Letterhead</span></div>
-        <div class="menu-card" id="mod-dispatched-product-code" onclick="switchActiveDashboardModule('dispatched-product-code')"><span class="mc-label">Add / Check Dispatch Product Code Number</span></div>
+        <div class="menu-card" id="mod-dispatched-product-code" onclick="switchActiveDashboardModule('dispatched-product-code')"><span class="mc-label">Add / Check Dispatch Product Code</span></div>
         <div class="menu-card" id="mod-fg-add"                  onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
       </div>
     </div>
@@ -461,7 +461,7 @@
             <table class="store-basket-data-table" style="width:100%; table-layout:fixed; word-wrap:break-word; min-width:560px;">
               <thead>
                 <tr>
-                  <th style="width:160px;">Item Code Number</th>
+                  <th style="width:160px;">Item Code</th>
                   <th style="min-width:280px;">Description of Material</th>
                   <th style="width:140px; text-align:center; color:#64748b; font-size:0.75rem; font-weight:700; text-transform:uppercase;">Invoice Quantity</th>
                 </tr>
@@ -783,7 +783,7 @@
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
           <div>
-            <label class="field-label" style="margin-top:0;" id="fg-add-item-code-label">Item Code Number / Dispatch Product Code Number</label>
+            <label class="field-label" style="margin-top:0;" id="fg-add-item-code-label">Item Code / Dispatch Product Code</label>
             <input type="text" id="fg-add-item-code" readonly style="padding:9px; background:#e0f2fe; color:var(--brand); font-family:monospace; font-weight:800; cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Product Name" />
           </div>
           <div>
@@ -1401,7 +1401,7 @@
     </div>
 
     <div id="canvas-module-design-itemcode" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin-bottom:6px; color:var(--brand);">Add / Check Item Code Number</h2>
+      <h2 style="margin-bottom:6px; color:var(--brand);">Add / Check Item Code</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:20px;">Search the catalog to find an existing Item Code, or create a new one if the material doesn't exist.</p>
       
       <div id="itemcode-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
@@ -1447,11 +1447,11 @@
 
       <!-- CREATE NEW FORM -->
       <div id="itemcode-create-form-zone" style="display:none; background:#f0fdf4; border:2px solid var(--accent); border-radius:var(--radius); padding:16px;">
-        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--accent); margin-bottom:14px; letter-spacing:0.5px;">Create New Item Code Number</div>
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--accent); margin-bottom:14px; letter-spacing:0.5px;">Create New Item Code</div>
         
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
           <div>
-            <label class="field-label" style="margin-top:0;">Item Code Number (Auto-assigned)</label>
+            <label class="field-label" style="margin-top:0;">Item Code (Auto-assigned)</label>
             <input type="text" id="itemcode-new-code" readonly 
               style="padding:10px; font-family:monospace; font-size:1rem; font-weight:800; color:var(--brand); background:#e0f2fe; border:1.5px solid var(--brand); border-radius:var(--radius); cursor:not-allowed;" />
           </div>
@@ -1501,7 +1501,7 @@
         <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #86efac; padding-top:14px;">
           <button onclick="document.getElementById('itemcode-create-form-zone').style.display='none';" 
             style="background:#718096; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">Cancel</button>
-          <button id="itemcode-create-submit-btn" onclick="submitNewItemCodeNumber()" 
+          <button id="itemcode-create-submit-btn" onclick="submitNewItemCode()" 
             style="background:var(--accent); color:#fff; border:none; padding:8px 20px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">
             Create Item Code
           </button>
@@ -1510,7 +1510,7 @@
     </div>
 
     <div id="canvas-module-dispatched-product-code" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin-bottom:6px; color:var(--brand);">Add / Check Dispatch Product Code Number</h2>
+      <h2 style="margin-bottom:6px; color:var(--brand);">Add / Check Dispatch Product Code</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:20px;">Search the catalog to find an existing Dispatch Product Code, or create a new one if the product doesn't exist. These are final products dispatched to a customer.</p>
       
       <div id="dispatchcode-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
@@ -1559,7 +1559,7 @@
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--accent); margin-bottom:14px; letter-spacing:0.5px;">Create New Dispatch Product Code</div>
         
         <div style="margin-bottom:14px;">
-          <label class="field-label" style="margin-top:0;">Dispatch Product Code Number (Auto-assigned)</label>
+          <label class="field-label" style="margin-top:0;">Dispatch Product Code (Auto-assigned)</label>
           <input type="text" id="dispatchcode-new-code" readonly 
             style="padding:10px; font-family:monospace; font-size:1rem; font-weight:800; color:var(--brand); background:#e0f2fe; border:1.5px solid var(--brand); border-radius:var(--radius); cursor:not-allowed;" />
         </div>
@@ -2441,7 +2441,7 @@
           <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:900px;">
             <thead>
               <tr style="background:#f8fafc;">
-                <th style="padding:8px; font-size:0.72rem; width:140px; text-align:center;">Item Code Number *</th>
+                <th style="padding:8px; font-size:0.72rem; width:140px; text-align:center;">Item Code *</th>
                 <th style="padding:8px; font-size:0.72rem; width:260px; text-align:left;">Invoice Description</th>
                 <th style="padding:8px; font-size:0.72rem; width:200px; text-align:left;">Standard Material Name *</th>
                 <th style="padding:8px; font-size:0.72rem; text-align:center; width:80px;">Qty</th>
@@ -3091,7 +3091,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycby-dJf5KsOPSeEi45HMozmUauX1w6K_lYpQy1g_31RnvZ0xqs-2oEleUPrrW0-CyPU7/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbz5jg4nEZN9qk2Wy4P_ibO3aY-LKeWlBWo9QVrlUL7YpM6NRW1Kf9V6_8uhkXCF8Bb1/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -3886,7 +3886,7 @@ async function showAppView() {
     console.log("showAppView: rendering with permissions for", Object.keys(userPermissions).length, "keys.");
   }
   enforceDynamicModuleRoleGateways(userPermissions || {});
-  // Pre-load ItemCodeNumbers catalog into memory (fire-and-forget, suppress unhandled rejection)
+  // Pre-load ItemCodes catalog into memory (fire-and-forget, suppress unhandled rejection)
   loadItemCodeCatalogIntoCache().catch(() => {});
   
   loadQualFilter();
@@ -9962,7 +9962,7 @@ async function initializeStoreEntryWorkspaceQueue() {
             <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:1100px; border-collapse:collapse;">
               <thead>
                 <tr style="background:#f8fafc;">
-                  <th style="width:140px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code Number</th>
+                  <th style="width:140px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
                   <th style="min-width:150px; max-width:200px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Description</th>
                   <th style="min-width:280px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name *</th>
                   <th style="width:60px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit</th>
@@ -10059,7 +10059,7 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
   
   // Capture Item Code inputs and physically received quantities from the active table row coordinates
   document.querySelectorAll(`.se-item-code-${gateNum}`).forEach(inp => {
-    itemData.lineItems[parseInt(inp.dataset.idx, 10)].itemCodeNumber = inp.value.trim(); // Must match itemCodeNumber
+    itemData.lineItems[parseInt(inp.dataset.idx, 10)].itemCode = inp.value.trim(); // Must match itemCode
   });
   document.querySelectorAll(`.se-mat-name-${gateNum}`).forEach(inp => {
     itemData.lineItems[parseInt(inp.dataset.idx, 10)].materialName = inp.value.trim();
@@ -10095,7 +10095,7 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
 
   // Attach linked rejection resolutions, matched by item code now that Store Entry has resolved them
   itemData.lineItems.forEach(li => {
-    const code = (li.itemCodeNumber || "").toString().trim().toUpperCase();
+    const code = (li.itemCode || "").toString().trim().toUpperCase();
     for (const [rejId, link] of Object.entries(window.activeGateRejectionLinks || {})) {
       if ((link.itemCode || "").toString().trim().toUpperCase() === code) {
         li.resolvesRejectionId = rejId;
@@ -11400,7 +11400,7 @@ function handleFGProjectIdChange(selectedProjectId, canvasId) {
   customerInput.value = meta ? (meta.companyName || "") : "";
 }
 
-// ─── ITEM CODE NUMBER MODULE ───────────────────────────────────────────
+// ─── ITEM CODE MODULE ───────────────────────────────────────────
 
 async function executeItemCodeSearch() {
   const query = document.getElementById("itemcode-search-input").value.trim();
@@ -11580,7 +11580,7 @@ async function revealItemCodeCreateForm() {
   // Fetch next available code
   try {
     const data = await apFetch({
-      action: "getNextItemCodeNumber"
+      action: "getNextItemCode"
     });
     codeInput.value = data.success ? data.nextCode : "Error — refresh";
   } catch(e) {
@@ -11588,7 +11588,7 @@ async function revealItemCodeCreateForm() {
   }
 }
 
-async function submitNewItemCodeNumber() {
+async function submitNewItemCode() {
   const btn        = document.getElementById("itemcode-create-submit-btn");
   const banner     = document.getElementById("itemcode-feedback-banner");
   const itemCode   = document.getElementById("itemcode-new-code").value.trim();
@@ -11610,7 +11610,7 @@ async function submitNewItemCodeNumber() {
 
   try {
     const data = await apFetch({
-      action: "createItemCodeNumber",
+      action: "createItemCode",
       itemCode,
       materialName,
       rating,
@@ -11798,7 +11798,7 @@ async function revealDispatchCodeCreateForm() {
   createZone.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
   try {
-    const data = await apFetch({ action: "getNextDispatchedProductCode" });
+    const data = await apFetch({ action: "getNextDispatchProductCode" });
     codeInput.value = data.success ? data.nextCode : "Error — refresh";
   } catch(e) {
     codeInput.value = "Error — refresh";
@@ -11825,7 +11825,7 @@ async function submitNewDispatchedProductCode() {
 
   try {
     const data = await apFetch({
-      action: "createDispatchedProductCode",
+      action: "createDispatchProductCode",
       dispatchCode,
       productName,
       rating,
@@ -13593,8 +13593,8 @@ async function handleFGAddProjectChange(projectId) {
 }
 
 // Which catalog "Product Name" search reads from. Both "Use in other Product" and "Keep in FG
-// Store" search ItemCodeNumbers (Type-A material — genuinely exists in another BOQ, requestable
-// later via Store Ticket). "Ready for Dispatch" searches DispatchProductCodeNumber instead
+// Store" search ItemCodes (Type-A material — genuinely exists in another BOQ, requestable
+// later via Store Ticket). "Ready for Dispatch" searches DispatchProductCode instead
 // (Type-B — a final product with no Item Code, never requestable as material).
 window._fgActiveCatalogMode = "item";
 
@@ -13961,7 +13961,7 @@ async function triggerLiveFinishedGoodsStoreStockMetricsSync() {
         groups[key] = {
           projectId:    pid,
           customerName: (row["Customer Name"]   || "").trim(),
-          itemCode:     (row["Item Code Number"] || "").trim(),
+          itemCode:     (row["Item Code / Dispatched Product Code"] || "").trim(),
           productRating:prating,
           productName:  pname,
           unit:         (row["Unit"]            || "NOS").trim(),
@@ -14411,6 +14411,214 @@ async function savePPSActionPlans(projectId) {
   }
 }
 
+function fmtPODate(raw) {
+  if (!raw) return "";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return raw; // already a plain string like "15-Feb-2026"
+  return d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'2-digit', year:'numeric' });
+}
+
+// ── Editable Authorize PO state (standalone, apo* prefix) ──
+window.apoEditRows = [];
+window.apoEditRowSeq = 0;
+window.apoEditProjects = [];
+window.apoEditPO = null;
+
+function isoFromPODate(raw) {
+  // Convert "15-Feb-2026" or a Date string to yyyy-mm-dd for <input type=date>
+  if (!raw) return "";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return "";
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+async function enterPOEditMode(poNumber) {
+  const detail = document.getElementById(`po-auth-detail-${poNumber}`);
+  detail.innerHTML = `<div style="padding:14px; text-align:center; color:var(--muted);">Loading editable form...</div>`;
+
+  // Ensure catalog + active projects are loaded for editing
+  if (!window.itemCodeCatalogCache || window.itemCodeCatalogCache.length === 0) {
+    await loadItemCodeCatalogIntoCache().catch(()=>{});
+  }
+  const projRes = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
+  window.apoEditProjects = (projRes.success ? (projRes.projects || []) : []).map(p => p.toString());
+
+  const data = await apFetch({ action: "fetchPODraftById", poNumber });
+  if (!data.success) { detail.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+  const po = data.po;
+  window.apoEditPO = po;
+
+  // Seed editable rows from the draft
+  window.apoEditRows = (po.lineItems || []).map(it => {
+    const id = ++window.apoEditRowSeq;
+    return { id, description: it.description||"", itemCode: it.itemCode||"", quantity: it.quantity||"", unit: it.unit||"", rate: it.rate||"", discountPercent: it.discountPercent||"", projectIds: Array.isArray(it.projectIds)?it.projectIds:[] };
+  });
+
+  detail.innerHTML = `
+    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius); padding:10px 14px; margin-bottom:14px; font-size:0.82rem; color:#92400e;">
+      <strong>Edit Mode.</strong> P.O. No., Vendor, and Order Date are locked. Edit anything else, then Authorize to finalize with your changes.
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+      <div><label class="field-label" style="margin-top:0;">P.O. No. (locked)</label><div style="padding:9px; background:#f1f5f9; border-radius:var(--radius); font-family:monospace; font-weight:700;">${po.poNumber}</div></div>
+      <div><label class="field-label" style="margin-top:0;">Vendor (locked)</label><div style="padding:9px; background:#f1f5f9; border-radius:var(--radius); font-weight:600;">${po.vendorName}</div></div>
+      <div><label class="field-label" style="margin-top:0;">Order Date (locked)</label><div style="padding:9px; background:#f1f5f9; border-radius:var(--radius);">${fmtPODate(po.orderDate)}</div></div>
+      <div><label class="field-label" style="margin-top:0;">Supplier Offer No</label><input type="text" id="apo-supplier-ref" value="${(po.supplierRef||'').replace(/"/g,'&quot;')}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"></div>
+      <div><label class="field-label" style="margin-top:0;">Delivery Date *</label><input type="date" id="apo-delivery-date" value="${isoFromPODate(po.deliveryDate)}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"></div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin:16px 0 10px;">
+      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand);">Material Rows</div>
+      <button class="nav-btn-styled" onclick="addAPOEditRow()" style="background:var(--accent); color:#fff; font-weight:700; padding:6px 14px;">+ Add Material Row</button>
+    </div>
+    <div id="apo-edit-rows-body"></div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:16px 0;">
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Taxes & Charges</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+          <div><label class="field-label" style="margin-top:0;">CGST %</label><input type="number" id="apo-cgst" value="${po.cgstPercent||0}" oninput="recalcAPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">SGST %</label><input type="number" id="apo-sgst" value="${po.sgstPercent||0}" oninput="recalcAPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">IGST %</label><input type="number" id="apo-igst" value="${po.igstPercent||0}" oninput="recalcAPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Packing</label><input type="number" id="apo-packing" value="${po.packing||0}" oninput="recalcAPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Freight</label><input type="number" id="apo-freight" value="${po.freight||0}" oninput="recalcAPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Other</label><input type="number" id="apo-other" value="${po.other||0}" oninput="recalcAPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="apo-roundoff" value="${po.roundOff||0}" step="any" oninput="recalcAPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+        </div>
+      </div>
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Terms</div>
+        <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Warranty</label><input type="text" id="apo-warranty" value="${(po.warranty||'').replace(/"/g,'&quot;')}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+        <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Payment Terms</label><input type="text" id="apo-payment" value="${(po.paymentTerms||'').replace(/"/g,'&quot;')}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+        <div><label class="field-label" style="margin-top:0;">Freight Terms</label><input type="text" id="apo-freight-terms" value="${(po.freightTerms||'').replace(/"/g,'&quot;')}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius); padding:14px;">
+      <div style="font-size:0.9rem;">
+        Sub Total: <strong id="apo-subtotal-disp">0.00</strong><br/>
+        <span style="font-size:1.05rem;">Grand Total: <strong id="apo-grandtotal-disp" style="color:var(--brand);">0.00</strong></span>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="nav-btn-styled" onclick="togglePOAuthDetail('${poNumber}')" style="background:#e2e8f0; color:#334155; font-weight:700; padding:10px 18px;">Cancel Edit</button>
+        <button class="nav-btn-styled" onclick="authorizePONow('${poNumber}', this, true)" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Authorize with Changes</button>
+      </div>
+    </div>
+  `;
+  renderAPOEditRows();
+  recalcAPOTotals();
+}
+
+function addAPOEditRow() {
+  const id = ++window.apoEditRowSeq;
+  window.apoEditRows.push({ id, description:"", itemCode:"", quantity:"", unit:"", rate:"", discountPercent:"", projectIds:[] });
+  renderAPOEditRows();
+}
+function removeAPOEditRow(id) {
+  window.apoEditRows = window.apoEditRows.filter(r => r.id !== id);
+  renderAPOEditRows(); recalcAPOTotals();
+}
+function renderAPOEditRows() {
+  const body = document.getElementById("apo-edit-rows-body");
+  if (window.apoEditRows.length === 0) {
+    body.innerHTML = `<div style="padding:12px; text-align:center; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:var(--radius);">No material rows.</div>`;
+    return;
+  }
+  body.innerHTML = window.apoEditRows.map((row, idx) => {
+    const chips = row.projectIds.length
+      ? row.projectIds.map(p => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;">${p}</div>`).join("")
+      : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No projects selected</span>';
+    return `<div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px;">
+      <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+        <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx+1}</div>
+        <div style="flex:1; min-width:220px; position:relative;">
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Description of Material *</label>
+          <input type="text" value="${(row.description||'').replace(/"/g,'&quot;')}" placeholder="Search material name / rating..." autocomplete="off" oninput="handleAPODescSearch(${row.id}, this.value)" style="width:100%; padding:7px; border:1.5px solid ${row.itemCode?'var(--brand)':'#f59e0b'}; border-radius:4px; font-size:0.82rem; margin-top:2px;">
+          <div id="apo-desc-dd-${row.id}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        </div>
+        <div style="width:95px; flex-shrink:0; text-align:center;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Item Code</div><div style="font-family:monospace; font-weight:700; color:var(--brand); font-size:0.85rem;">${row.itemCode||'—'}</div></div>
+        <div style="width:50px; flex-shrink:0; text-align:center;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Unit</div><div style="font-family:monospace; color:#475569; font-size:0.85rem; padding-top:2px;">${row.unit||'—'}</div></div>
+        <div style="width:80px; flex-shrink:0;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px; text-align:center;">Quantity *</div><input type="number" min="0" step="any" value="${row.quantity}" oninput="updateAPORowField(${row.id},'quantity',this.value)" style="width:100%; text-align:center; padding:7px 4px; border:1px solid var(--border); border-radius:4px;"></div>
+        <div style="width:90px; flex-shrink:0;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px; text-align:center;">Rate / Qty *</div><input type="number" min="0" step="any" value="${row.rate}" oninput="updateAPORowField(${row.id},'rate',this.value)" style="width:100%; text-align:right; padding:7px 6px; border:1px solid var(--border); border-radius:4px;"></div>
+        <div style="width:70px; flex-shrink:0;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px; text-align:center;">Disc %</div><input type="number" min="0" max="100" step="any" value="${row.discountPercent}" placeholder="0" oninput="updateAPORowField(${row.id},'discountPercent',this.value)" style="width:100%; text-align:center; padding:7px 4px; border:1px solid var(--border); border-radius:4px;"></div>
+        <div style="width:120px; flex-shrink:0; text-align:right;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Amount</div><div style="font-family:monospace; font-weight:800; font-size:1.05rem; color:#0f172a; padding-top:2px;"><span class="apo-amount" data-rowid="${row.id}">0.00</span></div></div>
+        <button onclick="removeAPOEditRow(${row.id})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.95rem; width:32px; height:36px; border-radius:4px; display:flex; align-items:center; justify-content:center; flex-shrink:0; align-self:flex-end;">✕</button>
+      </div>
+      <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
+        <div style="min-width:180px;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Projects using this Material *</div><button onclick="openAPOProjectPicker(${row.id})" style="font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">Select Projects</button></div>
+        <div style="flex:1; min-width:200px; padding-top:2px;">${chips}</div>
+      </div>
+    </div>`;
+  }).join("");
+  window.apoEditRows.forEach(r => updateAPORowAmount(r.id));
+}
+function handleAPODescSearch(rowId, query) {
+  updateAPORowField(rowId, 'description', query);
+  const dd = document.getElementById(`apo-desc-dd-${rowId}`);
+  const catalog = window.itemCodeCatalogCache || [];
+  if (!query || query.trim().length < 1) { dd.style.display="none"; return; }
+  const q = query.toLowerCase();
+  const matches = catalog.filter(it => (it.productName||"").toLowerCase().includes(q) || (it.rating||"").toLowerCase().includes(q)).slice(0,10);
+  if (matches.length === 0) { dd.style.display="none"; return; }
+  dd.innerHTML = matches.map(it => `<div onclick="selectAPOMaterial(${rowId}, '${it.itemCode}', \`${(it.productName||'').replace(/\`/g,"'")}\`, \`${(it.rating||'').replace(/\`/g,"'")}\`, '${(it.unit||'Nos').replace(/'/g,'')}')" style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'"><span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.productName}${it.rating?` <span style="color:var(--brand); font-weight:700;">${it.rating}</span>`:''}</div>`).join("");
+  dd.style.display = "block";
+}
+function selectAPOMaterial(rowId, itemCode, productName, rating, unit) {
+  const row = window.apoEditRows.find(r => r.id === rowId);
+  if (!row) return;
+  row.description = rating ? `${productName} ${rating}` : productName;
+  row.itemCode = itemCode; row.unit = unit || "Nos";
+  document.getElementById(`apo-desc-dd-${rowId}`).style.display = "none";
+  renderAPOEditRows();
+}
+function updateAPORowField(rowId, field, value) {
+  const row = window.apoEditRows.find(r => r.id === rowId);
+  if (!row) return;
+  row[field] = value;
+  if (field==='quantity'||field==='rate'||field==='discountPercent') { updateAPORowAmount(rowId); recalcAPOTotals(); }
+}
+function updateAPORowAmount(rowId) {
+  const row = window.apoEditRows.find(r => r.id === rowId);
+  if (!row) return;
+  const amt = (parseFloat(row.quantity)||0) * (parseFloat(row.rate)||0) * (100-(parseFloat(row.discountPercent)||0))/100;
+  const span = document.querySelector(`.apo-amount[data-rowid="${rowId}"]`);
+  if (span) span.textContent = amt.toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function recalcAPOTotals() {
+  let sub = 0;
+  window.apoEditRows.forEach(r => sub += (parseFloat(r.quantity)||0)*(parseFloat(r.rate)||0)*(100-(parseFloat(r.discountPercent)||0))/100);
+  const v = id => parseFloat(document.getElementById(id).value)||0;
+  const gt = sub + sub*v("apo-cgst")/100 + sub*v("apo-sgst")/100 + sub*v("apo-igst")/100 + v("apo-packing") + v("apo-freight") + v("apo-other") + v("apo-roundoff");
+  const fmt = n => n.toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById("apo-subtotal-disp").textContent = fmt(sub);
+  document.getElementById("apo-grandtotal-disp").textContent = fmt(gt);
+}
+function openAPOProjectPicker(rowId) {
+  const row = window.apoEditRows.find(r => r.id === rowId);
+  if (!row) return;
+  if (window.apoEditProjects.length === 0) { alert("No active projects loaded."); return; }
+  const existing = document.getElementById("apo-project-modal"); if (existing) existing.remove();
+  const modal = document.createElement("div");
+  modal.id = "apo-project-modal";
+  modal.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;";
+  const checks = window.apoEditProjects.map((p,i) => `<label for="apo-proj-cb-${i}" style="display:flex; align-items:center; gap:12px; padding:11px 12px; border:1px solid var(--border); border-radius:6px; margin-bottom:6px; cursor:pointer; font-size:0.85rem;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'"><input type="checkbox" id="apo-proj-cb-${i}" value="${p.replace(/"/g,'&quot;')}" ${row.projectIds.includes(p)?'checked':''} style="width:16px; height:16px; flex-shrink:0;"><span style="font-weight:600;">${p}</span></label>`).join("");
+  modal.innerHTML = `<div style="background:#fff; border-radius:12px; width:100%; max-width:520px; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
+    <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;"><div style="font-weight:800; font-size:1rem; color:var(--brand);">Select Projects this Material is Used by</div></div>
+    <div style="overflow-y:auto; flex:1; padding:16px 20px;">${checks}</div>
+    <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid var(--border); background:#f8fafc;"><button onclick="document.getElementById('apo-project-modal').remove()" style="padding:9px 18px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600;">Cancel</button><button onclick="saveAPOProjectPicker(${rowId})" style="padding:9px 22px; background:var(--brand); color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:700;">Save Selection</button></div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+function saveAPOProjectPicker(rowId) {
+  const row = window.apoEditRows.find(r => r.id === rowId);
+  const modal = document.getElementById("apo-project-modal");
+  if (!row || !modal) return;
+  row.projectIds = Array.from(modal.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+  modal.remove(); renderAPOEditRows();
+}
+
 async function initializeAuthorizePOPanel() {
   const body = document.getElementById("authorize-po-body");
   body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading pending POs...</div>`;
@@ -14429,7 +14637,7 @@ async function initializeAuthorizePOPanel() {
             <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNumber}</span>
             <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
           </div>
-          <div style="font-size:0.85rem; color:var(--muted);">${po.orderDate} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${po.preparedBy}</div>
+          <div style="font-size:0.85rem; color:var(--muted);">${fmtPODate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${po.preparedBy}</div>
         </div>
         <div id="po-auth-detail-${po.poNumber}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
       </div>`).join("");
@@ -14460,7 +14668,7 @@ async function togglePOAuthDetail(poNumber, headerEl) {
       </tr>`).join("");
     detail.innerHTML = `
       <div style="font-size:0.85rem; margin-bottom:10px;">
-        Vendor: <strong>${po.vendorName}</strong> &nbsp;|&nbsp; Supplier Offer No: ${po.supplierRef||'—'} &nbsp;|&nbsp; Delivery: ${po.deliveryDate||'—'}
+        Vendor: <strong>${po.vendorName}</strong> &nbsp;|&nbsp; Supplier Offer No: ${po.supplierRef||'—'} &nbsp;|&nbsp; Delivery: ${fmtPODate(po.deliveryDate)||'—'}
       </div>
       <div style="overflow-x:auto; margin-bottom:12px;">
         <table style="width:100%; border-collapse:collapse; font-size:0.8rem; min-width:800px;">
@@ -14822,7 +15030,7 @@ async function submitCreatePO() {
     if (!row.itemCode) return showErr(`Row ${n}: select a material from the search (item code required).`);
     if (!(parseFloat(row.quantity) > 0)) return showErr(`Row ${n}: Quantity must be greater than 0.`);
     if (!(parseFloat(row.rate) > 0)) return showErr(`Row ${n}: Rate must be greater than 0.`);
-    if (!row.projectIds || row.projectIds.length === 0) return showErr(`Row ${n}: select at least one Project this material serves.`);
+    if (!row.projectIds || row.projectIds.length === 0) return showErr(`Row ${n}: select at least one Project this material Uses.`);
   }
 
   const payload = {
@@ -14855,8 +15063,9 @@ async function submitCreatePO() {
     const data = await apFetch({ action: "commitPurchaseOrderDraft", activeEngineer: appActiveOperatorIdentityString, payload });
     hideBlockingOverlay();
     if (data.success) {
+      document.getElementById("create-po-body").innerHTML = "";
       banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
-      banner.innerHTML = `<strong>PO Draft Created — ${data.poNumber}</strong><br/>It has been sent for Authorization. <button class="nav-btn-styled" onclick="initializeCreatePOPanel()" style="background:#15803d; color:#fff; margin-top:8px; padding:6px 14px;">Create Another</button>`;
+      banner.innerHTML = `<strong>PO Draft Created — ${data.poNumber}</strong><br/>It has been sent for Authorization. <button class="nav-btn-styled" onclick="document.getElementById('create-po-feedback').style.display='none'; initializeCreatePOPanel();" style="background:#15803d; color:#fff; margin-top:8px; padding:6px 14px;">+ Create Another</button>`;
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
     } else {
       btn.disabled = false; btn.textContent = "Submit for Authorization";
@@ -17055,7 +17264,7 @@ async function parseRawMaterialPOWithAI() {
         }
       }
       // Note: matchSource "catalog" is no longer used — AI no longer does catalog lookup
-      // Unit is ALWAYS sourced from the Item Code Number catalog, never from the PO
+      // Unit is ALWAYS sourced from the Item Code catalog, never from the PO
 
       const notFound = !resolvedCode;
       const itemCodeCellContent = notFound
@@ -17141,7 +17350,7 @@ async function commitRawMaterialPOToBackend() {
   });
 
   // Validate all rows have item code, material name, AND a resolved unit — unit
-  // is never typed manually, so a blank unit here means the Item Code Number
+  // is never typed manually, so a blank unit here means the Item Code
   // sheet's Unit column is blank for that material and needs fixing at the source.
   const incompleteRows = (activeParsedRMPOPayload.lineItems || []).reduce((acc, item, idx) => {
     const missingCode = !item.itemCode;
@@ -17150,7 +17359,7 @@ async function commitRawMaterialPOToBackend() {
     if (missingCode || missingName || missingUnit) {
       const desc = item.rawDescription || ("Row " + (idx + 1));
       const missingLabels = [];
-      if (missingCode) missingLabels.push("Item Code Number");
+      if (missingCode) missingLabels.push("Item Code");
       if (missingName) missingLabels.push("Standard Material Name");
       if (missingUnit) missingLabels.push("Unit (check Item Code sheet — this material's Unit column may be blank)");
       acc.push("• Row " + (idx+1) + " (" + desc.substring(0,40) + "…): missing " + missingLabels.join(" and "));
