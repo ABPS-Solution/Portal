@@ -3147,7 +3147,13 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzOUzYP8bUZArjHYg4NCEkhRcZyXPK_rc5qHi8IYX5QTtBo4KI-_3Kn-ZurVpZ6W7jR/exec";
+// MIGRATED: was the Apps Script /exec URL. Now points at the Cloud Run
+// backend's /exec bridge route (see server.js), which accepts the exact
+// same { action, ...payload, sessionToken } POST shape apFetch() already
+// sends — so this one-line change is the entire frontend migration for
+// every module that's been ported. Replace <YOUR-CLOUD-RUN-URL> with
+// your actual deployed Cloud Run service URL once you've deployed.
+const GAS_URL = "https://abps-backend-244281871074.asia-south1.run.app/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
