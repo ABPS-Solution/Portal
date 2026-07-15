@@ -3147,7 +3147,7 @@
 
 <script>
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbx6gsMkqkhJOy21ugBmoYZObFi7yl5LSYMKB2jsa8Z7Y3rbUsH2tbosqxuPxhA8Xrvp/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzOUzYP8bUZArjHYg4NCEkhRcZyXPK_rc5qHi8IYX5QTtBo4KI-_3Kn-ZurVpZ6W7jR/exec";
 
 /**
  * CENTRAL FETCH WRAPPER
@@ -3439,7 +3439,6 @@ function initializeGoogleAuthPlatformEngine() {
 
     // 2. INITIALIZE GOOGLE WITH MOBILE CACHE OVERRIDES
     google.accounts.id.initialize({
-      // client_id: "374058137880-64dt8h9eem9impq61bpb0n9iselso76e.apps.googleusercontent.com",
       client_id: "223982503901-jij5hbl0npjmbqnsgl352pvmq4sk75nt.apps.googleusercontent.com",
       callback: handleGooglePlatformCredentialResponse,
       ux_mode: "popup",
@@ -4629,11 +4628,11 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
     let bMatches = (sanitizedTargetName !== "" && bNameClean === sanitizedTargetName);
     if (aMatches && !bMatches) return -1;
     if (!aMatches && bMatches) return 1;
-    return parseInt(b["Lead ID"].split("-")[1]) - parseInt(a["Lead ID"].split("-")[1]); 
+    return parseInt(b["Enquiry ID"].split("-")[1]) - parseInt(a["Enquiry ID"].split("-")[1]); 
   });
 
   leadsList.forEach(lead => {
-    let tRef = lead["Lead ID"];
+    let tRef = lead["Enquiry ID"];
     let wrapperCard = document.createElement("div");
     wrapperCard.className = "contact-summary-card-parent";
     wrapperCard.id = `contact-parent-wrapper-${tRef}`;
@@ -4708,7 +4707,7 @@ function toggleContactExpansionView(leadRef, encodedLeadMap) {
     currentFollowUpCount = globalFollowUpsCacheMap[leadRef] ? globalFollowUpsCacheMap[leadRef].length : 0;
     renderIsolatedFollowUpTimeline(leadRef, globalFollowUpsCacheMap[leadRef] || [], templateClone);
     renderIsolatedTaskItemsList(leadRef, globalTasksCacheMap[leadRef] || [], templateClone);
-    renderIsolatedDocumentInfoSection(leadRef, leadMap["Lead ID"] || leadRef, templateClone);
+    renderIsolatedDocumentInfoSection(leadRef, leadMap["Enquiry ID"] || leadRef, templateClone);
 
     drawer.style.display = "block"; triggerBtn.textContent = "Collapse Details";
   }
@@ -5133,6 +5132,15 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
   });
   canvas.appendChild(gridWrapper);
 
+  // Carries the Company ID through to the save handler — this form mixes Company-level
+  // fields (City/State/Website/etc.) with Enquiry-level fields, and the save handler needs
+  // this to route the Company-level edits to updateCompany separately.
+  let hiddenCompanyIdCarrier = document.createElement("input");
+  hiddenCompanyIdCarrier.type = "hidden";
+  hiddenCompanyIdCarrier.id = "hidden-companyid-" + leadRef;
+  hiddenCompanyIdCarrier.value = leadMap["Company ID"] || "";
+  canvas.appendChild(hiddenCompanyIdCarrier);
+
   let saveBtn = document.createElement("button"); saveBtn.className = "btn btn-sub"; saveBtn.id = 'save-leads-matrix-btn-' + leadRef;
   saveBtn.style.marginTop = "12px"; saveBtn.textContent = "Save Modifications";
   saveBtn.onclick = function() { commitTargetedLeadsMutationsRows(leadRef); }; canvas.appendChild(saveBtn);
@@ -5186,6 +5194,20 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
     fieldsPayload[masterKey] = selectedPillsList.join(", ");
   });
 
+  // This form mixes Company-level fields (identity, shared across all a company's
+  // Enquiries) with Enquiry-level fields (this specific project) — split them here so
+  // each goes to the sheet that actually has that column. Sending a Company field to
+  // updateEnquiry would silently no-op (the header doesn't exist there).
+  const companyLevelKeys = ["Company Name", "City", "State", "Country", "Company Address", "Website", "Type of Customer", "Type of Vendor", "Type of Industry", "Name of Materials Supplied"];
+  let companyFieldsPayload = {};
+  companyLevelKeys.forEach(k => {
+    if (fieldsPayload[k] !== undefined) {
+      companyFieldsPayload[k] = fieldsPayload[k];
+      delete fieldsPayload[k]; // Company Name never goes to updateEnquiry regardless — it's a protected, denormalized-copy field there.
+    }
+  });
+  const carrierCompanyId = (document.getElementById(`hidden-companyid-${leadRef}`) || {}).value || "";
+
   try {
     const r = await apFetch({ 
       action: "updateLeadFull", 
@@ -5193,8 +5215,21 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
       leadRef: leadRef, 
       fields: fieldsPayload 
     });
+
+    let companySaveOk = true;
+    if (carrierCompanyId && Object.keys(companyFieldsPayload).length > 0) {
+      const cr = await apFetch({
+        action: "updateCompany",
+        activeEngineer: appActiveOperatorIdentityString,
+        companyId: carrierCompanyId,
+        fields: companyFieldsPayload
+      });
+      companySaveOk = !!cr.success;
+      if (!companySaveOk) alert("Enquiry details saved, but company details failed: " + (cr.error || "Unknown error"));
+    }
+
     if (r.success) {
-      alert("Modifications Saved Successfully.");
+      if (companySaveOk) alert("Modifications Saved Successfully.");
       // FIXED: Point to renamed structural data attributes identifiers
       const updatedNameText = fieldsPayload["Contact Person Name"] || "Unspecified Name";
       const updatedPositionText = fieldsPayload["Position"] || "Unspecified";
@@ -6217,7 +6252,7 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
     expandDiv.innerHTML = `<div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.3px;">📋 ${companyName} — All Contacts</div>`;
 
     leads.forEach(lead => {
-      const tRef = lead["Lead ID"];
+      const tRef = lead["Enquiry ID"];
       const isTarget = (lead["Contact Person Name"] || "").toLowerCase() === personName.toLowerCase();
       const cardName = lead["Contact Person Name"] || "Unspecified";
       const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
@@ -6555,7 +6590,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
       </div>
       
       <div style="margin-top:10px;" id="email-action-response-mount-zone-${mIdx}">
-        <button class="btn btn-sub" style="width:auto; font-size:0.78rem; padding:5px 12px;" onclick="triggerEmailLeadDatabaseActionPipeline(${mIdx})" id="email-form-toggle-btn-text-${mIdx}">Create New Entry</button>
+        <button class="btn btn-sub" style="width:auto; font-size:0.78rem; padding:5px 12px;" onclick="triggerEmailLeadDatabaseActionPipeline(${mIdx})" id="email-form-toggle-btn-text-${mIdx}">Check in CRM / Log Follow-up</button>
       </div>
       
       <div id="email-nested-inline-database-workspace-anchor-${mIdx}" style="margin-top:10px; display:none; background:#f1f5f9; padding:8px; border-radius:6px; border:1px solid var(--border);"></div>
@@ -6649,7 +6684,7 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
   if (nestedWorkspace.style.display === "block") {
     nestedWorkspace.style.display = "none";
     nestedWorkspace.innerHTML = "";
-    actionBtn.textContent = "Create New Entry";
+    actionBtn.textContent = "Check in CRM / Log Follow-up";
     actionBtn.style.display = "inline-flex";
     actionBtn.disabled = false;
     // Ensure global buttons stay hidden — email leads never use them
@@ -6682,7 +6717,7 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
             document.getElementById('email-nested-inline-database-workspace-anchor-${index}').style.display='none';
             document.getElementById('email-nested-inline-database-workspace-anchor-${index}').innerHTML='';
             const ab = document.getElementById('email-form-toggle-btn-text-${index}');
-            if(ab){ab.textContent='Create New Entry';ab.style.display='inline-flex';ab.disabled=false;}
+            if(ab){ab.textContent='Check in CRM / Log Follow-up';ab.style.display='inline-flex';ab.disabled=false;}
             document.getElementById('global-direct-inline-create-entry-btn').style.display='none';
             document.getElementById('canvas-back-btn-enclosure-row').innerHTML='';
           ">Collapse</button>
