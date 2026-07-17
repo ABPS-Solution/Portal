@@ -6916,7 +6916,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   }
   
   if (document.getElementById("mod-fg-add")) document.getElementById("mod-fg-add").style.display = canAddFinishedGoods ? "block" : "none";
-  if (document.getElementById("mod-jc-letterhead")) document.getElementById("mod-jc-letterhead").style.display = canAddFinishedGoods ? "block" : "none";
+  if (document.getElementById("mod-jc-letterhead")) document.getElementById("mod-jc-letterhead").style.display = userPermissionsObject.jobCardLetterhead === true ? "block" : "none";
 
   const canApproveBOQIncrease = userPermissionsObject.approveJCIncrease === true;
   if (document.getElementById("mod-boq-increase-approvals")) {
