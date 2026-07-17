@@ -417,6 +417,17 @@
         <div class="menu-card" id="mod-fg-add"                  onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
       </div>
     </div>
+
+    <!-- ── ACCOUNTS ───────────────────────────────────────────────────────── -->
+    <div id="dashboard-accounts-department-header-block" class="dept-block" style="display:none; --dept-accent:#0f766e;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#0f766e;"></div>
+        <span class="dept-name">Accounts Department</span>
+      </div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-tour-expense" onclick="switchActiveDashboardModule('tour-expense')"><span class="mc-label">Tour Expense Tracker</span></div>
+      </div>
+    </div>
     
   </div> 
   
@@ -1210,6 +1221,46 @@
       </tr></thead>
       <tbody id="mc-list-body"></tbody>
     </table>
+  </div>
+
+  <div id="canvas-module-tour-expense" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitTourExpenseBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <h2 style="color:var(--brand); margin:0 0 6px 0;">Tour Expense Tracker</h2>
+    <div id="te-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+    <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
+      <button id="te-tab-employee" class="nav-btn-styled" onclick="switchTourExpenseTab('employee')" style="padding:6px 16px;">Search Employee</button>
+      <button id="te-tab-voucher" class="nav-btn-styled" onclick="switchTourExpenseTab('voucher')" style="padding:6px 16px;">Search Voucher</button>
+      <button class="nav-btn-styled" onclick="openAddTourEmployeeForm()" style="padding:6px 16px; margin-left:auto;">+ Add Employee</button>
+    </div>
+
+    <!-- SEARCH EMPLOYEE TAB -->
+    <div id="te-panel-employee">
+      <div id="te-add-employee-form" style="display:none; background:var(--highlight-bg); padding:12px; border-radius:var(--radius); margin-bottom:14px;">
+        <input type="text" id="te-new-employee-name" placeholder="Employee Name" style="padding:8px; margin-right:8px;">
+        <input type="text" id="te-new-employee-dept" placeholder="Department" style="padding:8px; margin-right:8px;">
+        <button class="nav-btn-styled" onclick="submitAddTourEmployee()">Submit</button>
+        <button class="nav-btn-styled" onclick="document.getElementById('te-add-employee-form').style.display='none';">Cancel</button>
+      </div>
+      <input type="text" id="te-employee-search-input" placeholder="Search employee by name..." style="padding:8px; width:280px; margin-bottom:10px;" oninput="renderTourEmployeeSearchResults()">
+      <div id="te-employee-list" style="margin-bottom:16px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+      <div id="te-employee-detail"></div>
+    </div>
+
+    <!-- SEARCH VOUCHER TAB -->
+    <div id="te-panel-voucher" style="display:none;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:8px;">Date</th><th style="padding:8px;">Department</th><th style="padding:8px;">Employee Name</th>
+          <th style="padding:8px;">Customer Name</th><th style="padding:8px;">Purpose of Visit</th><th style="padding:8px;">Voucher Amount</th>
+          <th style="padding:8px;">Checked Amount</th><th style="padding:8px;">Action</th>
+        </tr></thead>
+        <tbody id="te-voucher-list-body"></tbody>
+      </table>
+    </div>
   </div>
 
   <div id="module-design-workspace-enclosure-panel" class="workspace-panel" style="display: none; padding: 12px 10px;">
@@ -3167,6 +3218,27 @@ window.typeLabelDisplay_ = window.typeLabelDisplay_ || function(t) {
   const clean = (t || "").toString().trim();
   return clean || "Uncategorized";
 };
+
+// Direct REST helper for new modules — per server.js's own comment, new
+// modules should call real REST paths, not the /exec legacy-action bridge.
+// Derives the backend's base URL from GAS_URL so there's only one place
+// (GAS_URL itself) that ever needs to change if the backend URL changes.
+async function acFetch(path, payload) {
+  const base = GAS_URL.replace(/\/exec$/, "");
+  const res  = await fetch(base + "/api/accounts/" + path, {
+    method: "POST",
+    body: JSON.stringify({ ...payload, sessionToken: localStorage.getItem("sessionToken") }),
+  });
+  const data = await res.json();
+  if (!data.success && data.code === "SESSION_EXPIRED") {
+    localStorage.clear();
+    document.getElementById("app-container").style.display  = "none";
+    document.getElementById("auth-container").style.display = "flex";
+    initializeGoogleAuthPlatformEngine();
+    throw new Error("SESSION_EXPIRED");
+  }
+  return data;
+}
 
 async function apFetch(payload) {
   payload.sessionToken = localStorage.getItem("sessionToken");
@@ -7020,6 +7092,11 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
       if (document.getElementById("mod-manufacturing-clearance")) document.getElementById("mod-manufacturing-clearance").style.display = canManufacturingClearance ? "block" : "none";
       const projectHeaderBlock = document.getElementById("dashboard-project-department-header-block");
       if (projectHeaderBlock) projectHeaderBlock.style.display = canManufacturingClearance ? "block" : "none";
+
+      const canTourExpense = userPermissionsObject.tourExpense === true;
+      if (document.getElementById("mod-tour-expense")) document.getElementById("mod-tour-expense").style.display = canTourExpense ? "block" : "none";
+      const accountsHeaderBlock = document.getElementById("dashboard-accounts-department-header-block");
+      if (accountsHeaderBlock) accountsHeaderBlock.style.display = canTourExpense ? "block" : "none";
 }
 
 /**
@@ -8276,6 +8353,10 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     if (centerTitle)  centerTitle.style.visibility  = "hidden";
     document.getElementById("canvas-module-fg-add").style.display = "block";
     initializeFGAddWorkspace();
+  } else if (targetCanvasModuleId === 'tour-expense') {
+    document.getElementById("dashboard-view").style.display = "none";
+    const teCanvas = document.getElementById("canvas-module-tour-expense");
+    if (teCanvas) { teCanvas.style.display = "block"; initializeTourExpensePanel(); }
   } else if (targetCanvasModuleId === 'coming-soon') {
     document.getElementById("dashboard-view").style.display = "none";
     document.getElementById("module-workspace-container").style.display = "block";
@@ -11153,6 +11234,12 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
 
 function exitManufacturingClearanceBackToMenu() {
   document.getElementById("canvas-module-manufacturing-clearance").style.display = "none";
+  enforceDynamicModuleRoleGateways(userPermissions);
+  document.getElementById("dashboard-view").style.display = "flex";
+}
+
+function exitTourExpenseBackToMenu() {
+  document.getElementById("canvas-module-tour-expense").style.display = "none";
   enforceDynamicModuleRoleGateways(userPermissions);
   document.getElementById("dashboard-view").style.display = "flex";
 }
@@ -18028,6 +18115,224 @@ function initializeManufacturingClearancePanel() {
   mcCurrentStatus = "Inactive";
   syncMcStatusPills();
   loadManufacturingClearanceList();
+}
+
+// ═══════════════════════════════════════════════════════
+// TOUR EXPENSE TRACKER
+// ═══════════════════════════════════════════════════════
+let teSelectedEmployeeId = null;
+
+function initializeTourExpensePanel() {
+  teSelectedEmployeeId = null;
+  document.getElementById("te-employee-detail").innerHTML = "";
+  document.getElementById("te-employee-search-input").value = "";
+  document.getElementById("te-add-employee-form").style.display = "none";
+  switchTourExpenseTab("employee");
+  renderTourEmployeeSearchResults();
+}
+
+function switchTourExpenseTab(tab) {
+  document.getElementById("te-panel-employee").style.display = tab === "employee" ? "block" : "none";
+  document.getElementById("te-panel-voucher").style.display  = tab === "voucher"  ? "block" : "none";
+  document.getElementById("te-tab-employee").style.background = tab === "employee" ? "var(--brand)" : "";
+  document.getElementById("te-tab-employee").style.color      = tab === "employee" ? "#fff" : "";
+  document.getElementById("te-tab-voucher").style.background  = tab === "voucher"  ? "var(--brand)" : "";
+  document.getElementById("te-tab-voucher").style.color       = tab === "voucher"  ? "#fff" : "";
+  if (tab === "voucher") loadTourVoucherList();
+}
+
+function openAddTourEmployeeForm() {
+  document.getElementById("te-new-employee-name").value = "";
+  document.getElementById("te-new-employee-dept").value = "";
+  document.getElementById("te-add-employee-form").style.display = "block";
+}
+
+async function submitAddTourEmployee() {
+  const employeeName = document.getElementById("te-new-employee-name").value.trim();
+  const departmentName = document.getElementById("te-new-employee-dept").value.trim();
+  if (!employeeName) { showBOQBanner("te-feedback", "Employee name is required.", "error"); return; }
+  showBlockingOverlay("Adding employee...");
+  try {
+    const data = await acFetch("addTourEmployee", { employeeName, departmentName });
+    if (data.success) {
+      document.getElementById("te-add-employee-form").style.display = "none";
+      showBOQBanner("te-feedback", `Added employee "${employeeName}" with 0 balance.`, "success");
+      renderTourEmployeeSearchResults();
+    } else {
+      showBOQBanner("te-feedback", data.error || "Failed to add employee.", "error");
+    }
+  } catch(e) {
+    showBOQBanner("te-feedback", "Network error: " + e.message, "error");
+  } finally {
+    hideBlockingOverlay();
+  }
+}
+
+async function renderTourEmployeeSearchResults() {
+  const searchTerm = document.getElementById("te-employee-search-input").value.trim();
+  const list = document.getElementById("te-employee-list");
+  list.innerHTML = '<div style="padding:10px; color:var(--muted);">Loading...</div>';
+  try {
+    const data = await acFetch("searchTourEmployees", { searchTerm: searchTerm || null });
+    if (!data.success) { list.innerHTML = `<div style="padding:10px; color:#b91c1c;">${data.error}</div>`; return; }
+    if (data.employees.length === 0) { list.innerHTML = '<div style="padding:10px; color:var(--muted);">No employees found.</div>'; return; }
+    list.innerHTML = data.employees.map(emp => `
+      <div class="menu-card" style="padding:10px 14px; cursor:pointer;" onclick="selectTourEmployee(${emp.employee_id})">
+        <span class="mc-label">${emp.employee_name}</span>
+        <div style="font-size:0.75rem; color:var(--muted);">${emp.department_name || "—"} · Balance: ${emp.balance}</div>
+      </div>`).join("");
+  } catch(e) {
+    list.innerHTML = `<div style="padding:10px; color:#b91c1c;">Network error: ${e.message}</div>`;
+  }
+}
+
+async function selectTourEmployee(employeeId) {
+  teSelectedEmployeeId = employeeId;
+  const detail = document.getElementById("te-employee-detail");
+  detail.innerHTML = '<div style="padding:10px; color:var(--muted);">Loading...</div>';
+  try {
+    const data = await acFetch("getTourEmployeeDetail", { employeeId });
+    if (!data.success) { detail.innerHTML = `<div style="padding:10px; color:#b91c1c;">${data.error}</div>`; return; }
+    renderTourEmployeeDetail(data.employee, data.pendingVouchers);
+  } catch(e) {
+    detail.innerHTML = `<div style="padding:10px; color:#b91c1c;">Network error: ${e.message}</div>`;
+  }
+}
+
+function renderTourEmployeeDetail(employee, pendingVouchers) {
+  const detail = document.getElementById("te-employee-detail");
+  detail.innerHTML = `
+    <div style="background:var(--highlight-bg); padding:16px; border-radius:var(--radius); margin-top:10px;">
+      <h3 style="margin:0 0 8px 0;">${employee.employee_name}</h3>
+      <div style="font-size:0.85rem; color:var(--muted); margin-bottom:4px;">Department: ${employee.department_name || "—"}</div>
+      <div style="font-size:1.1rem; font-weight:700; margin-bottom:12px;">Balance: ${employee.balance}</div>
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <button class="nav-btn-styled" onclick="openTourAdvanceForm()">Pay Advance</button>
+        <button class="nav-btn-styled" onclick="openTourVoucherForm()">Add Voucher</button>
+      </div>
+      <div id="te-advance-form" style="display:none; margin-bottom:12px;">
+        <input type="number" id="te-advance-amount" placeholder="Amount" style="padding:8px; margin-right:8px; width:140px;">
+        <button class="nav-btn-styled" onclick="submitTourAdvance()">Submit</button>
+        <button class="nav-btn-styled" onclick="document.getElementById('te-advance-form').style.display='none';">Cancel</button>
+      </div>
+      <div id="te-voucher-form" style="display:none; margin-bottom:12px;">
+        <input type="text" id="te-voucher-customer" placeholder="Customer Name" style="padding:8px; margin-right:8px;"><br style="margin-bottom:6px;">
+        <input type="text" id="te-voucher-purpose" placeholder="Purpose of Visit" style="padding:8px; margin:6px 8px 6px 0;"><br>
+        <input type="number" id="te-voucher-amount" placeholder="Voucher Amount" style="padding:8px; margin:6px 8px 6px 0; width:140px;"><br>
+        <button class="nav-btn-styled" onclick="submitTourVoucher()">Submit</button>
+        <button class="nav-btn-styled" onclick="document.getElementById('te-voucher-form').style.display='none';">Cancel</button>
+      </div>
+      <div style="font-weight:600; margin-bottom:6px;">Pending Vouchers</div>
+      ${pendingVouchers.length === 0
+        ? '<div style="color:var(--muted); font-size:0.85rem;">No pending vouchers.</div>'
+        : pendingVouchers.map(v => `
+            <div style="padding:8px 0; border-bottom:1px solid var(--border); font-size:0.85rem;">
+              ${v.customer_name} — ${v.purpose_of_visit || "—"} — Amount: ${v.voucher_amount}
+            </div>`).join("")}
+    </div>`;
+}
+
+function openTourAdvanceForm() {
+  document.getElementById("te-advance-amount").value = "";
+  document.getElementById("te-advance-form").style.display = "block";
+}
+
+async function submitTourAdvance() {
+  const amount = Number(document.getElementById("te-advance-amount").value);
+  if (!amount || amount <= 0) { showBOQBanner("te-feedback", "Enter a valid positive amount.", "error"); return; }
+  showBlockingOverlay("Paying advance...");
+  try {
+    const data = await acFetch("payTourAdvance", { employeeId: teSelectedEmployeeId, amount });
+    if (data.success) {
+      showBOQBanner("te-feedback", `Advance paid. New balance: ${data.newBalance}.`, "success");
+      selectTourEmployee(teSelectedEmployeeId);
+      renderTourEmployeeSearchResults();
+    } else {
+      showBOQBanner("te-feedback", data.error || "Failed to pay advance.", "error");
+    }
+  } catch(e) {
+    showBOQBanner("te-feedback", "Network error: " + e.message, "error");
+  } finally {
+    hideBlockingOverlay();
+  }
+}
+
+function openTourVoucherForm() {
+  document.getElementById("te-voucher-customer").value = "";
+  document.getElementById("te-voucher-purpose").value = "";
+  document.getElementById("te-voucher-amount").value = "";
+  document.getElementById("te-voucher-form").style.display = "block";
+}
+
+async function submitTourVoucher() {
+  const customerName = document.getElementById("te-voucher-customer").value.trim();
+  const purposeOfVisit = document.getElementById("te-voucher-purpose").value.trim();
+  const voucherAmount = Number(document.getElementById("te-voucher-amount").value);
+  if (!customerName || !voucherAmount || voucherAmount <= 0) {
+    showBOQBanner("te-feedback", "Customer Name and a valid positive Voucher Amount are required.", "error");
+    return;
+  }
+  showBlockingOverlay("Creating voucher...");
+  try {
+    const data = await acFetch("addTourVoucher", { employeeId: teSelectedEmployeeId, customerName, purposeOfVisit, voucherAmount });
+    if (data.success) {
+      showBOQBanner("te-feedback", `Voucher created. New balance: ${data.newBalance}.`, "success");
+      selectTourEmployee(teSelectedEmployeeId);
+      renderTourEmployeeSearchResults();
+    } else {
+      showBOQBanner("te-feedback", data.error || "Failed to create voucher.", "error");
+    }
+  } catch(e) {
+    showBOQBanner("te-feedback", "Network error: " + e.message, "error");
+  } finally {
+    hideBlockingOverlay();
+  }
+}
+
+async function loadTourVoucherList() {
+  const body = document.getElementById("te-voucher-list-body");
+  body.innerHTML = '<tr><td colspan="8" style="padding:14px; text-align:center;">Loading...</td></tr>';
+  try {
+    const data = await acFetch("searchTourVouchers", {});
+    if (!data.success) { body.innerHTML = `<tr><td colspan="8" style="padding:14px; text-align:center; color:#b91c1c;">${data.error}</td></tr>`; return; }
+    if (data.vouchers.length === 0) { body.innerHTML = '<tr><td colspan="8" style="padding:14px; text-align:center; color:var(--muted);">No unchecked vouchers.</td></tr>'; return; }
+    body.innerHTML = data.vouchers.map(v => `
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px;">${(v.created_date || "").toString().slice(0,10)}</td>
+        <td style="padding:8px;">${v.department_name || "—"}</td>
+        <td style="padding:8px;">${v.employee_name}</td>
+        <td style="padding:8px;">${v.customer_name}</td>
+        <td style="padding:8px;">${v.purpose_of_visit || "—"}</td>
+        <td style="padding:8px;">${v.voucher_amount}</td>
+        <td style="padding:8px;"><input type="number" id="te-checked-amount-${v.voucher_id}" placeholder="Checked Amount" style="padding:6px; width:120px;"></td>
+        <td style="padding:8px;"><button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="submitCheckTourVoucher(${v.voucher_id})">Submit</button></td>
+      </tr>`).join("");
+  } catch(e) {
+    body.innerHTML = `<tr><td colspan="8" style="padding:14px; text-align:center; color:#b91c1c;">Network error: ${e.message}</td></tr>`;
+  }
+}
+
+async function submitCheckTourVoucher(voucherId) {
+  const input = document.getElementById("te-checked-amount-" + voucherId);
+  const checkedAmount = Number(input.value);
+  if (input.value === "" || isNaN(checkedAmount) || checkedAmount < 0) {
+    showBOQBanner("te-feedback", "Enter a valid Checked Voucher Amount.", "error");
+    return;
+  }
+  showBlockingOverlay("Checking voucher...");
+  try {
+    const data = await acFetch("checkTourVoucher", { voucherId, checkedAmount });
+    if (data.success) {
+      showBOQBanner("te-feedback", `Voucher checked. Employee's new balance: ${data.newBalance}.`, "success");
+      loadTourVoucherList();
+    } else {
+      showBOQBanner("te-feedback", data.error || "Failed to check voucher.", "error");
+    }
+  } catch(e) {
+    showBOQBanner("te-feedback", "Network error: " + e.message, "error");
+  } finally {
+    hideBlockingOverlay();
+  }
 }
 
 function switchMcStatus(status) {
