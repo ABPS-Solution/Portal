@@ -4064,13 +4064,17 @@ async function showAppView() {
         targetFormEngSelector.innerHTML = '<option value="">— Select Engineer Name —</option>';
         cachedEngineers.forEach(eng => {
           let opt = document.createElement("option");
-          opt.value = eng; opt.textContent = eng;
+          opt.value = eng.email; opt.textContent = eng.name;
           targetFormEngSelector.appendChild(opt);
         });
         // Only auto-select the current operator if their name is an exact match in the list —
         // otherwise leave the placeholder showing instead of a blank selection.
-        if (appActiveOperatorIdentityString && cachedEngineers.indexOf(appActiveOperatorIdentityString) !== -1) {
-          targetFormEngSelector.value = appActiveOperatorIdentityString;
+        // appActiveOperatorIdentityString is a display name (from the login
+        // dropdown), so it has to be matched against eng.name here, but the
+        // value actually set on the select must still be the email.
+        const matchedSelfEngineer = cachedEngineers.find(eng => eng.name === appActiveOperatorIdentityString);
+        if (matchedSelfEngineer) {
+          targetFormEngSelector.value = matchedSelfEngineer.email;
         }
       }
       
@@ -4079,7 +4083,7 @@ async function showAppView() {
       if (engDrop) {
         engDrop.innerHTML = '<option value="">— Select Engineer —</option>';
         cachedEngineers.forEach(eng => {
-          let opt = document.createElement("option"); opt.value = eng; opt.textContent = eng; engDrop.appendChild(opt);
+          let opt = document.createElement("option"); opt.value = eng.email; opt.textContent = eng.name; engDrop.appendChild(opt);
         });
       }
 
@@ -4090,9 +4094,10 @@ async function showAppView() {
         setTimeout(() => {
           matrixEngBoxEnclosure.innerHTML = "";
           cachedEngineers.forEach(eng => {
+            const safeId = `chk_tm_eng_${eng.email.replace(/[^a-zA-Z0-9]/g, '_')}`;
             matrixEngBoxEnclosure.innerHTML += `
-              <input type="checkbox" name="taskMatrixEngineer" value="${eng}" id="chk_tm_eng_${eng.replace(/\s+/g, '_')}">
-              <label for="chk_tm_eng_${eng.replace(/\s+/g, '_')}">${eng}</label>
+              <input type="checkbox" name="taskMatrixEngineer" value="${eng.email}" id="${safeId}">
+              <label for="${safeId}">${eng.name}</label>
             `;
           });
         }, 50);
@@ -4120,7 +4125,7 @@ function populateEngineerDropdowns() {
   const el = document.getElementById("engName"); if (!el) return;
   el.innerHTML = '<option value="">— Select —</option>';
   cachedEngineers.forEach(eng => {
-    let opt = document.createElement("option"); opt.textContent = eng; el.appendChild(opt);
+    let opt = document.createElement("option"); opt.value = eng.email; opt.textContent = eng.name; el.appendChild(opt);
   });
 }
 
@@ -4181,7 +4186,7 @@ async function navigateToModule(key) {
             poOwnerDrop.innerHTML = '<option value="">— Select Engineer —</option>';
             cachedEngineers.forEach(eng => {
               const opt = document.createElement("option");
-              opt.value = eng; opt.textContent = eng;
+              opt.value = eng.email; opt.textContent = eng.name;
               poOwnerDrop.appendChild(opt);
             });
             if (appActiveOperatorIdentityString && cachedEngineers.indexOf(appActiveOperatorIdentityString) !== -1) {
@@ -4805,9 +4810,10 @@ function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
   
   fupEngSelect.innerHTML = '<option value="">— Select Engineer —</option>';
   cachedEngineers.forEach(eng => {
-    let o1 = document.createElement("option"); o1.textContent = eng; fupEngSelect.appendChild(o1);
+    let o1 = document.createElement("option"); o1.value = eng.email; o1.textContent = eng.name; fupEngSelect.appendChild(o1);
   });
-  if (appActiveOperatorIdentityString) fupEngSelect.value = appActiveOperatorIdentityString;
+  const fupSelfEngineer = cachedEngineers.find(eng => eng.name === appActiveOperatorIdentityString);
+  if (fupSelfEngineer) fupEngSelect.value = fupSelfEngineer.email;
 
   fupOpen.onclick = function() {
     fupForm.querySelector(".fup-is-edit-flag").value = "false";
@@ -4829,12 +4835,13 @@ function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
   taskEngSelect.innerHTML = '<option value="">— Select Engineer —</option>';
   taskAssignerSelect.innerHTML = '<option value="">— Select Engineer —</option>';
   cachedEngineers.forEach(eng => {
-    let o2 = document.createElement("option"); o2.textContent = eng; taskEngSelect.appendChild(o2);
-    let o3 = document.createElement("option"); o3.textContent = eng; taskAssignerSelect.appendChild(o3);
+    let o2 = document.createElement("option"); o2.value = eng.email; o2.textContent = eng.name; taskEngSelect.appendChild(o2);
+    let o3 = document.createElement("option"); o3.value = eng.email; o3.textContent = eng.name; taskAssignerSelect.appendChild(o3);
   });
-  if (appActiveOperatorIdentityString) {
-    taskEngSelect.value = appActiveOperatorIdentityString;
-    taskAssignerSelect.value = appActiveOperatorIdentityString;
+  const taskSelfEngineer = cachedEngineers.find(eng => eng.name === appActiveOperatorIdentityString);
+  if (taskSelfEngineer) {
+    taskEngSelect.value = taskSelfEngineer.email;
+    taskAssignerSelect.value = taskSelfEngineer.email;
   }
 
   taskOpen.onclick = function() {
@@ -4941,8 +4948,14 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
       } 
       else if (key === "Engineer Name") {
         let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
+        // leadMap["Engineer Name"] is now a resolved display name (from the
+        // COALESCE in LEAD_CARD_SELECT), so match against eng.name here —
+        // but the option's actual value must still be the email, since
+        // that's what gets sent back on save.
         cachedEngineers.forEach(eng => {
-          let op = document.createElement("option"); op.textContent = eng; if(leadMap[key] === eng) op.selected = true; sel.appendChild(op);
+          let op = document.createElement("option"); op.value = eng.email; op.textContent = eng.name;
+          if (leadMap[key] === eng.name) op.selected = true;
+          sel.appendChild(op);
         });
         cell.appendChild(sel);
       } 
@@ -5491,7 +5504,7 @@ async function removeIsolatedFollowUpItem(leadRef, fNum, event) {
   btn.disabled = true;
   btn.textContent = "Deleting...";
   
-  const fupId = leadRef + "||" + fNum;
+  const fupId = fNum; // fNum is now the real follow_up_id (see renderIsolatedFollowUpTimeline), not a composite string
   try {
     const r = await apFetch({ 
       action: "deleteFollowUp", 
@@ -6209,9 +6222,11 @@ function injectMatrixInlineTaskForm(taskItem, parentCardNode) {
   const taskAssignerSelect = coreTaskForm.querySelector(".task-assigner-select");
   
   taskEngSelect.innerHTML = ""; taskAssignerSelect.innerHTML = "";
+  // taskItem.eng/assigner are resolved display names now (from
+  // fetchFollowupsAndTasksMaps' COALESCE) — match on .name, submit .email.
   cachedEngineers.forEach(eng => {
-    let o1 = document.createElement("option"); o1.textContent = eng; if(taskItem.eng === eng) o1.selected = true; taskEngSelect.appendChild(o1);
-    let o2 = document.createElement("option"); o2.textContent = eng; if(taskItem.assigner === eng) o2.selected = true; taskAssignerSelect.appendChild(o2);
+    let o1 = document.createElement("option"); o1.value = eng.email; o1.textContent = eng.name; if(taskItem.eng === eng.name) o1.selected = true; taskEngSelect.appendChild(o1);
+    let o2 = document.createElement("option"); o2.value = eng.email; o2.textContent = eng.name; if(taskItem.assigner === eng.name) o2.selected = true; taskAssignerSelect.appendChild(o2);
   });
 
   coreTaskForm.querySelector(".task-edit-id").value = taskItem.id;
@@ -6389,7 +6404,7 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
     expandDiv.style.display = "block";
     btn.textContent = "View Company";
     btn.style.background = "var(--brand)";
-  }
+  }mountPoint.innerHTML = "";
   btn.disabled = false;
 }
 
@@ -6401,10 +6416,10 @@ function renderLeadMatrixEngineerCheckboxes() {
   setTimeout(() => {
     mountPoint.innerHTML = "";
     cachedEngineers.forEach(eng => {
-      const cleanId = `chk_lm_eng_${eng.replace(/\s+/g, '_')}`;
+      const cleanId = `chk_lm_eng_${eng.email.replace(/[^a-zA-Z0-9]/g, '_')}`;
       mountPoint.innerHTML += `
-        <input type="checkbox" name="leadMatrixEngineerFilter" value="${eng}" id="${cleanId}">
-        <label for="${cleanId}">${eng}</label>
+        <input type="checkbox" name="leadMatrixEngineerFilter" value="${eng.email}" id="${cleanId}">
+        <label for="${cleanId}">${eng.name}</label>
       `;
     });
   }, 50);
@@ -18344,6 +18359,7 @@ async function submitCheckTourVoucher(voucherId) {
     if (data.success) {
       showBOQBanner("te-feedback", `Voucher checked. Employee's new balance: ${data.newBalance}.`, "success");
       loadTourVoucherList();
+      renderTourEmployeeSearchResults(); // the employee-list card also shows Balance — refresh it too, not just the detail panel
     } else {
       showBOQBanner("te-feedback", data.error || "Failed to check voucher.", "error");
     }
