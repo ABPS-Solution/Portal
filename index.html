@@ -1228,25 +1228,31 @@
       <div></div>
       <button class="nav-btn-styled" onclick="exitTourExpenseBackToMenu()">Return to Main Dashboard</button>
     </div>
-    <h2 style="color:var(--brand); margin:0 0 6px 0;">Tour Expense Tracker</h2>
+    <div class="section-header" style="padding:0; margin:0 0 16px 0;">Tour Expense Tracker</div>
     <div id="te-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
-    <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
-      <button id="te-tab-employee" class="nav-btn-styled" onclick="switchTourExpenseTab('employee')" style="padding:6px 16px;">Search Employee</button>
-      <button id="te-tab-voucher" class="nav-btn-styled" onclick="switchTourExpenseTab('voucher')" style="padding:6px 16px;">Search Voucher</button>
-      <button class="nav-btn-styled" onclick="openAddTourEmployeeForm()" style="padding:6px 16px; margin-left:auto;">+ Add Employee</button>
+    <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center;">
+      <button id="te-tab-employee" class="nav-btn-styled" onclick="switchTourExpenseTab('employee')" style="padding:8px 18px;">Search Employee</button>
+      <button id="te-tab-voucher" class="nav-btn-styled" onclick="switchTourExpenseTab('voucher')" style="padding:8px 18px;">Search Voucher</button>
+      <button class="nav-btn-styled" onclick="openAddTourEmployeeForm()" style="padding:8px 18px; margin-left:auto;">+ Add Employee</button>
     </div>
 
     <!-- SEARCH EMPLOYEE TAB -->
     <div id="te-panel-employee">
-      <div id="te-add-employee-form" style="display:none; background:var(--highlight-bg); padding:12px; border-radius:var(--radius); margin-bottom:14px;">
-        <input type="text" id="te-new-employee-name" placeholder="Employee Name" style="padding:8px; margin-right:8px;">
-        <input type="text" id="te-new-employee-dept" placeholder="Department" style="padding:8px; margin-right:8px;">
-        <button class="nav-btn-styled" onclick="submitAddTourEmployee()">Submit</button>
-        <button class="nav-btn-styled" onclick="document.getElementById('te-add-employee-form').style.display='none';">Cancel</button>
+      <div id="te-add-employee-form" style="display:none; background:var(--highlight-bg); padding:16px; border-radius:var(--radius); margin-bottom:20px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+          <input type="text" id="te-new-employee-name" placeholder="Employee Name" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; flex:1; min-width:200px;">
+          <select id="te-new-employee-dept" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; flex:1; min-width:200px;">
+            <option value="">Select Department</option>
+          </select>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn-styled" onclick="submitAddTourEmployee()">Submit</button>
+          <button class="nav-btn-styled" onclick="document.getElementById('te-add-employee-form').style.display='none';">Cancel</button>
+        </div>
       </div>
-      <input type="text" id="te-employee-search-input" placeholder="Search employee by name..." style="padding:8px; width:280px; margin-bottom:10px;" oninput="renderTourEmployeeSearchResults()">
-      <div id="te-employee-list" style="margin-bottom:16px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+      <input type="text" id="te-employee-search-input" placeholder="Search employee by name..." style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; width:300px; margin-bottom:16px;" oninput="renderTourEmployeeSearchResults()">
+      <div id="te-employee-list" style="margin-bottom:20px; display:flex; flex-wrap:wrap; gap:10px;"></div>
       <div id="te-employee-detail"></div>
     </div>
 
@@ -18141,10 +18147,23 @@ function switchTourExpenseTab(tab) {
   if (tab === "voucher") loadTourVoucherList();
 }
 
-function openAddTourEmployeeForm() {
+async function openAddTourEmployeeForm() {
   document.getElementById("te-new-employee-name").value = "";
-  document.getElementById("te-new-employee-dept").value = "";
   document.getElementById("te-add-employee-form").style.display = "block";
+  const deptSelect = document.getElementById("te-new-employee-dept");
+  if (deptSelect.options.length <= 1) {
+    try {
+      const data = await acFetch("listTourDepartments", {});
+      if (data.success) {
+        data.departments.forEach(name => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          deptSelect.appendChild(opt);
+        });
+      }
+    } catch(e) { /* dropdown just stays with the default option if this fails */ }
+  }
 }
 
 async function submitAddTourEmployee() {
