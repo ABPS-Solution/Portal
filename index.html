@@ -4380,10 +4380,17 @@ function returnToDashboard() {
   document.querySelectorAll('input[name="taskMatrixStatus"]').forEach(cb => cb.checked = false);
   document.querySelectorAll('input[name="searchCountryFilter"], input[name="searchStateFilter"], input[name="searchCityFilter"]').forEach(cb => cb.checked = false);
   const engDrop = document.getElementById("engineer-filter-select"); if (engDrop) engDrop.value = "";
+  const statusDrop = document.getElementById("status-filter-select"); if (statusDrop) statusDrop.value = "";
+  const companyDrop = document.getElementById("lookup-module-company-dropdown"); if (companyDrop) companyDrop.value = "";
   const selDisplay = document.getElementById("selected-quals-display"); if (selDisplay) selDisplay.textContent = "";
   const qualDrawer = document.getElementById("custom-qualifications-sub-drawer"); if (qualDrawer) qualDrawer.style.display = "none";
   const taskOutput = document.getElementById("task-matrix-results-output-node"); if (taskOutput) taskOutput.innerHTML = "";
   const tfd = document.getElementById("task-matrix-active-filters-display"); if (tfd) { tfd.style.display = "none"; tfd.textContent = ""; }
+  const lfd = document.getElementById("lead-matrix-active-filters-display"); if (lfd) { lfd.style.display = "none"; lfd.textContent = ""; }
+  // Full "brand new" reset — stale results from a previous visit to any
+  // marketing search screen should never carry over into the next one.
+  globalFollowUpsCacheMap = {};
+  globalTasksCacheMap = {};
 
   // Restore search section input blocks that get hidden after a search runs
   const companyDropBlock = document.getElementById("company-dropdown-selector-block"); if (companyDropBlock) companyDropBlock.style.display = "block";
