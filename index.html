@@ -3631,45 +3631,36 @@ async function parseCard() {
     
     const base64Front = await getBase64(fileFront);
     const base64Back = fileBack ? await getBase64(fileBack) : null;
-    
+
     // 2. Route through apFetch so SESSION_EXPIRED is caught globally
     const data = await apFetch({
       action: "parse",
       activeEngineer: appActiveOperatorIdentityString,
-      image: base64Front,
-      imageBack: base64Back
+      base64Image: base64Front,
+      mimeType: fileFront.type || "image/jpeg",
+      base64ImageBack: base64Back,
+      mimeTypeBack: fileBack ? fileBack.type || "image/jpeg" : null
     });
 
-    // 3. Response is raw Gemini JSON passed through from the backend
-    // Check for doPost-level errors (string) first, then Gemini API errors (object)
+    // 3. Backend already parses server-side (routes/marketing.js's /parse
+    // + lib/gemini.js's parseBusinessCard) and returns clean structured
+    // fields at data.parsed — not raw Gemini API JSON to parse ourselves.
     if (data && data.success === false) {
       alert("Card processing failed: " + (data.error || "Unknown server error."));
       return;
     }
-    if (data && data.error) {
-      // Gemini API error object: { error: { code, message, status } }
-      alert("AI Processing failed: " + (data.error.message || JSON.stringify(data.error)));
-      return;
-    }
-    if (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0].text) {
-      let rawText = data.candidates[0].content.parts[0].text;
-
-      // Clean markdown code blocks if Gemini wraps response in ```json
-      if (rawText.includes("```")) {
-        rawText = rawText.replace(/```json/gi, "").replace(/```/gi, "").trim();
-      }
-
-      const resultData = JSON.parse(rawText);
+    if (data && data.parsed) {
+      const resultData = data.parsed;
 
       // 4. Inject extracted fields into form inputs
-      document.getElementById("f-company").value  = resultData.company  || "";
-      document.getElementById("f-name").value     = resultData.name     || "";
-      document.getElementById("f-position").value = resultData.position || "";
-      document.getElementById("f-phone").value    = resultData.phone    || "";
+      document.getElementById("f-company").value  = resultData.companyName        || "";
+      document.getElementById("f-name").value     = resultData.contactPersonName  || "";
+      document.getElementById("f-position").value = resultData.position           || "";
+      document.getElementById("f-phone").value    = resultData.phone              || "";
       document.getElementById("f-altphone").value = (resultData.altPhone || "").replace(/,/g, ", ");
-      document.getElementById("f-email").value    = resultData.email    || "";
-      document.getElementById("f-website").value  = resultData.website  || "";
-      document.getElementById("f-address").value  = resultData.address  || "";
+      document.getElementById("f-email").value    = resultData.email              || "";
+      document.getElementById("f-website").value  = resultData.website            || "";
+      document.getElementById("f-address").value  = resultData.companyAddress     || "";
 
       if (document.getElementById("f-city"))    document.getElementById("f-city").value    = resultData.city    || "";
       if (document.getElementById("f-state"))   document.getElementById("f-state").value   = resultData.state   || "";
