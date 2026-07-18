@@ -4537,10 +4537,23 @@ async function triggerSequentialSearch(triggerSourceMode) {
       
       const bannerHook = document.getElementById("split-missing-person-banner-hook");
       if (bannerHook) {
-        if (!data.nameMatchFound) {
+        const searchedForPerson = targetName && targetName.toString().trim();
+        if (searchedForPerson && !data.nameMatchFound) {
+          // Card Details flow: a specific person was searched but not found.
           bannerHook.innerHTML = `
             <div class="system-runtime-inline-alert-callout">
-              <span class="alert-callout-text-msg">We have information on the following people from this ${activeSearchCompany}, but not for ${targetName ? targetName.toString().trim() : "specific person"}.</span>
+              <span class="alert-callout-text-msg">We have information on the following people from this ${activeSearchCompany}, but not for ${targetName.toString().trim()}.</span>
+              <button class="nav-btn-styled" style="background:var(--accent);" onclick="revealNewEntryFormDropdownFromBanner()">Create New Entry</button>
+            </div>
+          `;
+        } else if (!searchedForPerson) {
+          // Search-by-Company flow: no person was searched, so "no name
+          // match" isn't a warning — reuse the existing Back to Search
+          // handler (returns to the company search input, not the main
+          // dashboard) plus keep Create New Entry.
+          bannerHook.innerHTML = `
+            <div class="system-runtime-inline-alert-callout">
+              <button class="nav-btn-styled" style="background:#4a5568;" onclick="exitCanvasToCardView()">Back to Search</button>
               <button class="nav-btn-styled" style="background:var(--accent);" onclick="revealNewEntryFormDropdownFromBanner()">Create New Entry</button>
             </div>
           `;
