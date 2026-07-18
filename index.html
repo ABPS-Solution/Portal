@@ -4751,11 +4751,11 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
     let bMatches = (sanitizedTargetName !== "" && bNameClean === sanitizedTargetName);
     if (aMatches && !bMatches) return -1;
     if (!aMatches && bMatches) return 1;
-    return parseInt(b["Enquiry ID"].split("-")[1]) - parseInt(a["Enquiry ID"].split("-")[1]); 
+    return parseInt(b["Lead ID"].split("-")[1]) - parseInt(a["Lead ID"].split("-")[1]);
   });
 
   leadsList.forEach(lead => {
-    let tRef = lead["Enquiry ID"];
+    let tRef = lead["Lead ID"];
     let wrapperCard = document.createElement("div");
     wrapperCard.className = "contact-summary-card-parent";
     wrapperCard.id = `contact-parent-wrapper-${tRef}`;
@@ -4838,7 +4838,7 @@ function toggleContactExpansionView(leadRef, encodedLeadMap) {
     currentFollowUpCount = globalFollowUpsCacheMap[leadRef] ? globalFollowUpsCacheMap[leadRef].length : 0;
     renderIsolatedFollowUpTimeline(leadRef, globalFollowUpsCacheMap[leadRef] || [], templateClone);
     renderIsolatedTaskItemsList(leadRef, globalTasksCacheMap[leadRef] || [], templateClone);
-    renderIsolatedDocumentInfoSection(leadRef, leadMap["Enquiry ID"] || leadRef, templateClone);
+    renderIsolatedDocumentInfoSection(leadRef, leadMap["Lead ID"] || leadRef, templateClone);
 
     drawer.style.display = "block"; triggerBtn.textContent = "Collapse Details";
   }
@@ -5272,7 +5272,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
   canvas.appendChild(gridWrapper);
 
   // Carries the Company ID through to the save handler — this form mixes Company-level
-  // fields (City/State/Website/etc.) with Enquiry-level fields, and the save handler needs
+  // fields (City/State/Website/etc.) with Lead-level fields, and the save handler needs
   // this to route the Company-level edits to updateCompany separately.
   let hiddenCompanyIdCarrier = document.createElement("input");
   hiddenCompanyIdCarrier.type = "hidden";
@@ -5334,15 +5334,14 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
   });
 
   // This form mixes Company-level fields (identity, shared across all a company's
-  // Enquiries) with Enquiry-level fields (this specific project) — split them here so
-  // each goes to the sheet that actually has that column. Sending a Company field to
-  // updateEnquiry would silently no-op (the header doesn't exist there).
+  // Leads) with Lead-level fields (this specific project) — split them here so
+  // the lead-update save would silently no-op (the header doesn't exist there).
   const companyLevelKeys = ["Company Name", "City", "State", "Country", "Company Address", "Website", "Type of Customer", "Type of Vendor", "Type of Industry", "Name of Materials Supplied"];
   let companyFieldsPayload = {};
   companyLevelKeys.forEach(k => {
     if (fieldsPayload[k] !== undefined) {
       companyFieldsPayload[k] = fieldsPayload[k];
-      delete fieldsPayload[k]; // Company Name never goes to updateEnquiry regardless — it's a protected, denormalized-copy field there.
+      delete fieldsPayload[k]; // Company Name never goes to the lead-update save regardless — it's a protected, denormalized-copy field there.
     }
   });
   const carrierCompanyId = (document.getElementById(`hidden-companyid-${leadRef}`) || {}).value || "";
@@ -5364,7 +5363,7 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
         fields: companyFieldsPayload
       });
       companySaveOk = !!cr.success;
-      if (!companySaveOk) alert("Enquiry details saved, but company details failed: " + (cr.error || "Unknown error"));
+      if (!companySaveOk) alert("Lead details saved, but company details failed: " + (cr.error || "Unknown error"));
     }
 
     if (r.success) {
@@ -6393,7 +6392,7 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
     expandDiv.innerHTML = `<div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.3px;">📋 ${companyName} — All Contacts</div>`;
 
     leads.forEach(lead => {
-      const tRef = lead["Enquiry ID"];
+      const tRef = lead["Lead ID"];
       const isTarget = (lead["Contact Person Name"] || "").toLowerCase() === personName.toLowerCase();
       const cardName = lead["Contact Person Name"] || "Unspecified";
       const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
