@@ -3407,6 +3407,16 @@ window.onload = async function() {
   }
 };
 
+// cachedEngineers holds {email, name} objects. Checkbox/filter values are
+// emails (needed for DB filtering), but anything shown to the user must be
+// the display name — never the email. This maps a list of emails to names.
+function engineerEmailsToNames(emails) {
+  return emails.map(em => {
+    const match = cachedEngineers.find(e => e.email === em);
+    return match ? match.name : em;
+  });
+}
+
 /**
  * FETCH UN-AUTHENTICATED DEPARTMENTS & PERSONNEL MAP
  * Builds the initial dynamic department and dependent person lookups
@@ -4715,7 +4725,11 @@ function revealNewEntryFormDropdownFromBanner() {
 function returnToDirectoryCardsFromFormView() {
   document.getElementById("step2-new-entry-dropdown").style.display = "none";
   document.getElementById("staged-back-button-row").style.display = "none";
-  document.getElementById("global-direct-inline-create-entry-btn").style.display = "inline-flex";
+  // Only the Card Details flow uses the top-left button — in Search-by-
+  // Company the banner already carries its own Create New Entry, so
+  // re-showing this one here produces a duplicate.
+  document.getElementById("global-direct-inline-create-entry-btn").style.display =
+    (currentActiveModuleContext === "CARD") ? "inline-flex" : "none";
   document.getElementById("step2-inline-interaction-canvas").style.display = "block";
 }
 
@@ -4761,18 +4775,26 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
       : ""; // Non-admins get absolutely nothing rendered
 
     wrapperCard.innerHTML = `
-      <div class="contact-summary-header-row">
-        <div class="contact-summary-title-info">
-          <div class="meta-row-line-block" style="margin-bottom: 6px;">
-            <div class="meta-pair"><span style="background: #e2e8f0;">Company:</span><strong>${companyLabelName}</strong></div>
-            <div class="meta-pair"><span style="background: #edf2f7;">Status:</span><strong id="card-lbl-status-${tRef}">${lead["Status"] || "N/A"}</strong></div>
+      <div class="contact-summary-header-row" style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+        <div class="contact-summary-title-info" style="flex:1; display:grid; grid-template-columns: minmax(220px, 1fr) minmax(200px, 1fr); gap:10px 24px;">
+          <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
+            <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Company</span>
+            <strong style="font-size:0.95rem; overflow-wrap:anywhere;">${companyLabelName}</strong>
           </div>
-          <div class="meta-row-line-block">
-            <div class="meta-pair"><span style="background: #e2e8f0;">Name:</span><strong id="card-lbl-name-${tRef}">${cardDisplayName}</strong></div>
-            <div class="meta-pair"><span style="background: #edf2f7;">Position:</span><strong id="card-lbl-pos-${tRef}">${lead["Position"] || "Unspecified"}</strong></div>
+          <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
+            <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Status</span>
+            <strong id="card-lbl-status-${tRef}" style="font-size:0.95rem;">${lead["Status"] || "N/A"}</strong>
+          </div>
+          <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
+            <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Name</span>
+            <strong id="card-lbl-name-${tRef}" style="font-size:0.95rem; overflow-wrap:anywhere;">${cardDisplayName}</strong>
+          </div>
+          <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
+            <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Position</span>
+            <strong id="card-lbl-pos-${tRef}" style="font-size:0.95rem;">${lead["Position"] || "Unspecified"}</strong>
           </div>
         </div>
-        <div class="directory-btn-actions-block">
+        <div class="directory-btn-actions-block" style="display:flex; gap:8px; flex-shrink:0;">
           <button class="nav-btn-styled" style="font-size:0.92rem; padding:6px 14px;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)" id="expand-trigger-${tRef}">View Details</button>
           ${deleteButtonHtml}
         </div>
@@ -6145,7 +6167,7 @@ async function executeTaskMatrixSearch() {
   const filterDisplay = document.getElementById("task-matrix-active-filters-display");
   if (filterDisplay) {
     const parts = [];
-    if (checkedEngineers.length > 0) parts.push("Engineers: " + checkedEngineers.join(", "));
+    if (checkedEngineers.length > 0) parts.push("Engineers: " + engineerEmailsToNames(checkedEngineers).join(", "));
     if (checkedStatuses.length > 0) parts.push("Status: " + checkedStatuses.join(", "));
     filterDisplay.textContent = "Filtering for → " + parts.join(" | ");
     filterDisplay.style.display = "block";
@@ -6168,7 +6190,7 @@ async function executeTaskMatrixSearch() {
       if (data.tasks.length === 0) {
         if (filterDisplay) {
           const parts = [];
-          if (checkedEngineers.length > 0) parts.push("Engineers: " + checkedEngineers.join(", "));
+          if (checkedEngineers.length > 0) parts.push("Engineers: " + engineerEmailsToNames(checkedEngineers).join(", "));
           if (checkedStatuses.length > 0) parts.push("Status: " + checkedStatuses.join(", "));
           filterDisplay.textContent = "No tasks found for → " + parts.join(" | ");
           filterDisplay.style.color = "var(--warn)";
@@ -6462,7 +6484,7 @@ async function executeLeadMatrixFilterSearch() {
   const filterDisplay = document.getElementById("lead-matrix-active-filters-display");
   if (filterDisplay) {
     const parts = [];
-    if (checkedEngineers.length > 0) parts.push("Engineers: " + checkedEngineers.join(", "));
+    if (checkedEngineers.length > 0) parts.push("Engineers: " + engineerEmailsToNames(checkedEngineers).join(", "));
     if (checkedStatuses.length > 0) parts.push("Status: " + checkedStatuses.join(", "));
     filterDisplay.textContent = "Filtering for → " + parts.join(" | ");
     filterDisplay.style.display = "block";
@@ -6494,7 +6516,7 @@ async function executeLeadMatrixFilterSearch() {
         const filterDisplay = document.getElementById("lead-matrix-active-filters-display");
         if (filterDisplay) {
           const parts = [];
-          if (checkedEngineers.length > 0) parts.push("Engineers: " + checkedEngineers.join(", "));
+          if (checkedEngineers.length > 0) parts.push("Engineers: " + engineerEmailsToNames(checkedEngineers).join(", "));
           if (checkedStatuses.length > 0) parts.push("Status: " + checkedStatuses.join(", "));
           filterDisplay.textContent = "No entries found for → " + parts.join(" | ");
           filterDisplay.style.display = "block";
