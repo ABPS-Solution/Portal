@@ -14808,7 +14808,7 @@ async function savePPSActionPlans(projectId) {
   const banner = document.getElementById("pps-feedback");
   showBlockingOverlay("Saving action plans...");
   try {
-    const data = await apFetch({ action: "updatePPSActionPlan", activeEngineer: appActiveOperatorIdentityString, payload: { projectId, updates } });
+    const data = await apFetch({ action: "updatePPSActionPlan", activeEngineer: appActiveOperatorIdentityString, updates, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success) {
       banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius); font-weight:600;";
@@ -15110,7 +15110,7 @@ async function authorizePONow(poNumber, btn) {
   showBlockingOverlay("Authorizing PO & generating PDF...");
   const banner = document.getElementById("authorize-po-feedback");
   try {
-    const data = await apFetch({ action: "authorizePurchaseOrder", activeEngineer: appActiveOperatorIdentityString, payload: { poNumber } });
+    const data = await apFetch({ action: "authorizePurchaseOrder", activeEngineer: appActiveOperatorIdentityString, poNo: poNumber, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success) {
       banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
@@ -15473,7 +15473,7 @@ async function submitCreatePO() {
   btn.disabled = true; btn.textContent = "Submitting...";
   showBlockingOverlay("Creating Purchase Order...");
   try {
-    const data = await apFetch({ action: "commitPurchaseOrderDraft", activeEngineer: appActiveOperatorIdentityString, payload });
+    const data = await apFetch({ action: "commitPurchaseOrderDraft", activeEngineer: appActiveOperatorIdentityString, ...payload, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success) {
       document.getElementById("create-po-body").innerHTML = "";
