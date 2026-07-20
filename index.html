@@ -340,8 +340,8 @@
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-design-create-boq"   onclick="switchActiveDashboardModule('design-create-boq')"><span class="mc-label">Create Bill of Quantity</span></div>
         <div class="menu-card" id="mod-design-auth-boq"     onclick="switchActiveDashboardModule('design-auth-boq')"><span class="mc-label">Authorize Bill of Quantity</span></div>
-        <div class="menu-card" id="mod-design-update-boq"   onclick="switchActiveDashboardModule('design-update-boq')"><span class="mc-label">Update Bill of Quantity</span></div>
-        <div class="menu-card" id="mod-design-auth-boq-upd" onclick="switchActiveDashboardModule('design-auth-boq-upd')"><span class="mc-label">Authorize Bill of Quantity Update</span></div>
+        <div class="menu-card" id="mod-design-update-boq"   onclick="switchActiveDashboardModule('design-update-boq')"><span class="mc-label">Revise Bill of Quantity</span></div>
+        <div class="menu-card" id="mod-design-auth-boq-upd" onclick="switchActiveDashboardModule('design-auth-boq-upd')"><span class="mc-label">Authorize Bill of Quantity Revision</span></div>
         <div class="menu-card" id="mod-design-itemcode"        onclick="navigateToDesignWorkspacePanel('design-itemcode')"><span class="mc-label">Add / Check Item Code</span></div>
         <div class="menu-card" id="mod-design-upload-drawings" onclick="switchActiveDashboardModule('design-upload-drawings')"><span class="mc-label">Upload Drawings</span></div>
       </div>
@@ -359,6 +359,8 @@
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')"><span class="mc-label">Material List for Purchase</span></div>
         <div class="menu-card" id="mod-purchase-create-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-create-po')"><span class="mc-label">Create Raw Material Purchase Order</span></div>
+        <div class="menu-card" id="mod-revise-rm-po" onclick="switchActiveDashboardModule('coming-soon')"><span class="mc-label">Revise Raw Material Purchase Order</span></div>
+        <div class="menu-card" id="mod-authorize-rm-po-revision" onclick="switchActiveDashboardModule('coming-soon')"><span class="mc-label">Authorize Raw Material Purchase Order Revision</span></div>
         <div class="menu-card" id="mod-purchase-authorize-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po')"><span class="mc-label">Authorize Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-pps-tracking" onclick="navigateToPurchaseWorkspacePanel('purchase-pps-tracking')"><span class="mc-label">PPS Tracking</span></div>
         <div class="menu-card" id="mod-purchase-rejected-material" onclick="navigateToPurchaseWorkspacePanel('purchase-rejected-material')"><span class="mc-label">Store Inward Rejected Material</span></div>
@@ -377,6 +379,9 @@
       <div class="sec-label">Stock PRN and Assigning</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-request-note" onclick="navigateToPurchaseWorkspacePanel('purchase-prn')"><span class="mc-label">Create Purchase Request Note (PRN)</span></div>
+        <div class="menu-card" id="mod-authorize-prn" onclick="switchActiveDashboardModule('coming-soon')"><span class="mc-label">Authorize Purchase Request Note (PRN)</span></div>
+        <div class="menu-card" id="mod-revise-prn" onclick="switchActiveDashboardModule('coming-soon')"><span class="mc-label">Revise Purchase Request Note (PRN)</span></div>
+        <div class="menu-card" id="mod-authorize-prn-revision" onclick="switchActiveDashboardModule('coming-soon')"><span class="mc-label">Authorize Purchase Request Note (PRN) Revision</span></div>
         <div class="menu-card" id="mod-assign-current-stock"    onclick="navigateToStoreWorkspacePanel('assign-current-stock')"><span class="mc-label">Assign Store Stock</span></div>
       </div>
       <div class="sec-label">Raw Materials Store Inward</div>
@@ -384,6 +389,7 @@
         <div class="menu-card" id="mod-store-gate"        onclick="navigateToStoreWorkspacePanel('store-gate-entry')"><span class="mc-label">Gate Entry</span></div>
         <div class="menu-card" id="mod-store-entry"       onclick="navigateToStoreWorkspacePanel('store-entry')"><span class="mc-label">Raw Materials Store Entry and GRN</span></div>
         <div class="menu-card" id="mod-store-grn"         onclick="navigateToStoreWorkspacePanel('store-grn')"><span class="mc-label">Raw Materials Q/A Check</span></div>
+        <div class="menu-card" id="mod-revise-qa-check" onclick="switchActiveDashboardModule('coming-soon')"><span class="mc-label">Revise Raw Materials Q/A Check</span></div>
         <div class="menu-card" id="mod-expected-inbounds" onclick="navigateToStoreWorkspacePanel('expected-inbounds')"><span class="mc-label">Expected Deliveries</span></div>
         <div class="menu-card" id="mod-stock-sweep"       onclick="navigateToStoreWorkspacePanel('stock-sweep')"><span class="mc-label">Stock Sweep (Weekly Return)</span></div>
       </div>
@@ -413,7 +419,6 @@
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-store-ticket"            onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Store Ticket</span></div>
         <div class="menu-card" id="mod-jc-letterhead"           onclick="switchActiveDashboardModule('jc-letterhead')"><span class="mc-label">Job Card Letterhead</span></div>
-        <div class="menu-card" id="mod-dispatched-product-code" onclick="switchActiveDashboardModule('dispatched-product-code')"><span class="mc-label">Add / Check Dispatch Product Code</span></div>
         <div class="menu-card" id="mod-fg-add"                  onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
       </div>
     </div>
@@ -830,12 +835,6 @@
         <div id="fg-boq-validation-zone" style="display:none; margin-bottom:16px;"></div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
           <div>
-            <label class="field-label" style="margin-top:0;">Production Department Responsible Person</label>
-            <select id="fg-add-prod-person" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-              <option value="">— Select Person —</option>
-            </select>
-          </div>
-          <div>
             <label class="field-label" style="margin-top:0;">Finished Goods Store Incharge Person *</label>
             <select id="fg-add-store-person" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
               <option value="">— Select Person —</option>
@@ -889,12 +888,6 @@
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
-            <div>
-              <label class="field-label" style="margin-top:0;">Q/A Person *</label>
-              <select id="fg-add-qa-person" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-                <option value="">— Select Person —</option>
-              </select>
-            </div>
             <div>
               <label class="field-label" style="margin-top:0;">Q/A Done *</label>
               <select id="fg-add-qa-done" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
@@ -1350,15 +1343,7 @@
             <input type="text" id="cboq-date" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
           </div>
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
-          <div>
-            <label class="field-label" style="margin-top:0;">Prepared By *</label>
-            <select id="cboq-prepared-by" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-              <option value="">— Select Person —</option>
-            </select>
-          </div>
         </div>
-      </div>
 
       <!-- Material Rows -->
       <div style="margin-bottom:16px;">
@@ -1420,7 +1405,7 @@
 
     <!-- UPDATE BOQ -->
     <div id="canvas-module-design-update-boq" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin-bottom:6px; color:var(--brand);">Update Bill of Quantity</h2>
+      <h2 style="margin-bottom:6px; color:var(--brand);">Revise Bill of Quantity</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project ID, then select the BOQ to update. Changes will go for re-authorization.</p>
       <div id="update-boq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -1446,7 +1431,7 @@
 
     <!-- AUTHORIZE BOQ UPDATE -->
     <div id="canvas-module-design-auth-boq-upd" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin-bottom:6px; color:var(--brand);">Authorize Bill of Quantity Update</h2>
+      <h2 style="margin-bottom:6px; color:var(--brand);">Authorize Bill of Quantity Revision</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Click a pending BOQ update to review changes, edit if needed, then authorize.</p>
       <div id="auth-boq-upd-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -1621,102 +1606,6 @@
         </div>
       </div>
     </div>
-
-    <div id="canvas-module-dispatched-product-code" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin-bottom:6px; color:var(--brand);">Add / Check Dispatch Product Code</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:20px;">Search the catalog to find an existing Dispatch Product Code, or create a new one if the product doesn't exist. These are final products dispatched to a customer.</p>
-      
-      <div id="dispatchcode-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
-
-      <!-- SEARCH ZONE -->
-      <div id="dispatchcode-search-zone-wrapper" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
-        <label class="field-label" style="margin-top:0; color:var(--brand);">Search Product Name *</label>
-        <div style="display:flex; gap:10px; align-items:flex-end; margin-top:4px;">
-          <div style="flex-grow:1;">
-            <input type="text" id="dispatchcode-search-input" placeholder="e.g. 33kV Aluminium Reactor, Filter Reactor..." 
-              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius);"
-              onkeydown="if(event.key==='Enter') executeDispatchCodeSearch()" />
-          </div>
-          <button class="nav-btn-styled" id="dispatchcode-search-btn" onclick="executeDispatchCodeSearch()" 
-            style="padding:10px 24px; font-weight:700; background:var(--brand);">Search</button>
-        </div>
-      </div>
-
-      <!-- SEARCH RESULTS ZONE -->
-      <div id="dispatchcode-search-results-zone" style="display:none; margin-bottom:16px;">
-        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">
-          Did you mean one of these?
-        </div>
-        <div id="dispatchcode-suggestions-mount" style="display:flex; flex-direction:column; gap:8px;"></div>
-        
-        <div id="dispatchcode-none-match-banner" style="margin-top:14px; padding:10px 14px; background:#fffbeb; border:1px solid #f59e0b; border-radius:var(--radius); font-size:0.82rem; color:#92400e; font-weight:600;">
-          None of these match your product? 
-          <button onclick="revealDispatchCodeCreateForm()" 
-            style="background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; font-size:0.78rem; font-weight:700; cursor:pointer; margin-left:8px;">
-            Create New Dispatch Product Code
-          </button>
-        </div>
-      </div>
-
-      <!-- NO RESULTS ZONE -->
-      <div id="dispatchcode-no-results-zone" style="display:none; margin-bottom:16px; padding:14px; background:#fff5f5; border:1px solid #fca5a5; border-radius:var(--radius); font-size:0.85rem; color:#b91c1c; font-weight:600;">
-        No similar products found in the catalog.
-        <button id="dispatchcode-no-results-create-btn" onclick="revealDispatchCodeCreateForm()" 
-          style="background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; font-size:0.78rem; font-weight:700; cursor:pointer; margin-left:10px;">
-          Create New Dispatch Product Code
-        </button>
-      </div>
-
-      <!-- CREATE NEW FORM -->
-      <div id="dispatchcode-create-form-zone" style="display:none; background:#f0fdf4; border:2px solid var(--accent); border-radius:var(--radius); padding:16px;">
-        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--accent); margin-bottom:14px; letter-spacing:0.5px;">Create New Dispatch Product Code</div>
-        
-        <div style="margin-bottom:14px;">
-          <label class="field-label" style="margin-top:0;">Dispatch Product Code (Auto-assigned)</label>
-          <input type="text" id="dispatchcode-new-code" readonly 
-            style="padding:10px; font-family:monospace; font-size:1rem; font-weight:800; color:var(--brand); background:#e0f2fe; border:1.5px solid var(--brand); border-radius:var(--radius); cursor:not-allowed;" />
-        </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-          <div>
-            <label class="field-label" style="margin-top:0;">Product Name *</label>
-            <input type="text" id="dispatchcode-new-name" 
-              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"
-              placeholder="Enter the full standard product name..." />
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Full descriptive name. Cannot be changed later without admin access.</div>
-          </div>
-          <div>
-            <label class="field-label" style="margin-top:0;">Rating (optional)</label>
-            <input type="text" id="dispatchcode-new-rating" 
-              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"
-              placeholder="e.g. 300 kVAr, 11 kV, 3 Ph, 50 Hz" />
-          </div>
-        </div>
-
-        <div style="margin-bottom:14px;">
-          <label class="field-label" style="margin-top:0;">Unit *</label>
-          <select id="dispatchcode-new-unit" style="padding:10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-            <option value="">— Select Unit —</option>
-            <option value="NOS">NOS (Numbers)</option>
-            <option value="KG"> KG (Kilograms)</option>
-            <option value="MTR">MTR (Metres)</option>
-            <option value="SET">SET (Sets)</option>
-            <option value="LTR">LTR (Litres)</option>
-            <option value="ROL">ROL (Rolls)</option>
-          </select>
-        </div>
-
-        <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #86efac; padding-top:14px;">
-          <button onclick="document.getElementById('dispatchcode-create-form-zone').style.display='none';" 
-            style="background:#718096; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">Cancel</button>
-          <button id="dispatchcode-create-submit-btn" onclick="submitNewDispatchedProductCode()" 
-            style="background:var(--accent); color:#fff; border:none; padding:8px 20px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">
-            Create Dispatch Product Code
-          </button>
-        </div>
-      </div>
-    </div>
-
   </div>
 
   <div id="module-purchase-workspace-enclosure-panel" class="workspace-panel" style="display: none; padding: 12px 10px;">
@@ -2525,14 +2414,7 @@
       <div id="rm-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
       <div id="rm-po-upload-zone">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
-          <div>
-            <label class="field-label" style="margin-top:0;">Uploaded By *</label>
-            <select id="rm-po-uploaded-by" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-              <option value="">— Select Person —</option>
-            </select>
-          </div>
-        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;"></div>
 
         <div class="card-box" id="rm-po-file-dropzone" onclick="document.getElementById('rm-po-file-input').click()" style="padding:40px; border:2px dashed var(--brand); font-weight:700; color:var(--brand); margin-bottom:16px; display:flex; align-items:center; justify-content:center;">
           📄 Select Raw Material Purchase Order (PDF or Image)
@@ -6992,6 +6874,12 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canCreatePO = userPermissionsObject.createRMPurchaseOrder === true;
   const canAuthorizePO = userPermissionsObject.authorizeRMPurchaseOrder === true;
   const canPPSTracking = userPermissionsObject.ppsTracking === true;
+  const canAuthorizePRN = userPermissionsObject.authorizePRN === true;
+  const canRevisePRN = userPermissionsObject.revisePRN === true;
+  const canAuthorizePRNRevision = userPermissionsObject.authorizePRNRevision === true;
+  const canReviseRMPO = userPermissionsObject.reviseRMPO === true;
+  const canAuthorizeRMPORevision = userPermissionsObject.authorizeRMPORevision === true;
+  const canReviseQACheck = userPermissionsObject.reviseQACheck === true;
 
   // --- SET INDIVIDUAL VISIBILITY FOR MARKETING TARGET CARDS ---
   if (document.getElementById("mod-card")) {
@@ -7075,9 +6963,6 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-design-itemcode")) {
     document.getElementById("mod-design-itemcode").style.display = canSeeItemCode ? "block" : "none";
   }
-  if (document.getElementById("mod-dispatched-product-code")) {
-    document.getElementById("mod-dispatched-product-code").style.display = userPermissionsObject.dispatchCodeAccess === true ? "block" : "none";
-  }
 
   // Design block visibility
   const designHeaderBlock = document.getElementById("dashboard-design-department-header-block");
@@ -7092,6 +6977,12 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-purchase-authorize-po"))  document.getElementById("mod-purchase-authorize-po").style.display  = canAuthorizePO ? "block" : "none";
   if (document.getElementById("mod-purchase-pps-tracking"))  document.getElementById("mod-purchase-pps-tracking").style.display  = canPPSTracking ? "block" : "none";
   if (document.getElementById("mod-purchase-rejected-material")) document.getElementById("mod-purchase-rejected-material").style.display = canViewRejectedMaterial ? "block" : "none";
+  if (document.getElementById("mod-authorize-prn")) document.getElementById("mod-authorize-prn").style.display = canAuthorizePRN ? "block" : "none";
+  if (document.getElementById("mod-revise-prn")) document.getElementById("mod-revise-prn").style.display = canRevisePRN ? "block" : "none";
+  if (document.getElementById("mod-authorize-prn-revision")) document.getElementById("mod-authorize-prn-revision").style.display = canAuthorizePRNRevision ? "block" : "none";
+  if (document.getElementById("mod-revise-rm-po")) document.getElementById("mod-revise-rm-po").style.display = canReviseRMPO ? "block" : "none";
+  if (document.getElementById("mod-authorize-rm-po-revision")) document.getElementById("mod-authorize-rm-po-revision").style.display = canAuthorizeRMPORevision ? "block" : "none";
+  if (document.getElementById("mod-revise-qa-check")) document.getElementById("mod-revise-qa-check").style.display = canReviseQACheck ? "block" : "none";
   const purchaseHeaderBlock = document.getElementById("dashboard-purchase-department-header-block");
   if (purchaseHeaderBlock) {
     purchaseHeaderBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || canPPSTracking || userPermissionsObject.viewPurchaseDashboard === true) ? "block" : "none";
@@ -11216,8 +11107,7 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
     "canvas-module-design-auth-boq",
     "canvas-module-design-update-boq",
     "canvas-module-design-auth-boq-upd",
-    "canvas-module-design-upload-drawings",
-    "canvas-module-dispatched-product-code"
+    "canvas-module-design-upload-drawings"
   ];
   allDesignCanvases.forEach(id => {
     const el = document.getElementById(id);
@@ -11254,16 +11144,6 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
       document.getElementById("itemcode-no-results-zone").style.display       = "none";
       document.getElementById("itemcode-create-form-zone").style.display      = "none";
       document.getElementById("itemcode-feedback-banner").style.display       = "none";
-    }
-  } else if (targetModuleId === 'dispatched-product-code') {
-    const dispatchCodeCanvas = document.getElementById("canvas-module-dispatched-product-code");
-    if (dispatchCodeCanvas) {
-      dispatchCodeCanvas.style.display = "block";
-      document.getElementById("dispatchcode-search-input").value = "";
-      document.getElementById("dispatchcode-search-results-zone").style.display   = "none";
-      document.getElementById("dispatchcode-no-results-zone").style.display       = "none";
-      document.getElementById("dispatchcode-create-form-zone").style.display      = "none";
-      document.getElementById("dispatchcode-feedback-banner").style.display       = "none";
     }
   } else if (targetModuleId === 'design-create-boq') {
     const el = document.getElementById("canvas-module-design-create-boq");
@@ -11617,33 +11497,6 @@ async function loadItemCodeCatalogIntoCache(forceRefresh = false) {
   } catch(e) {
     console.error("ItemCode catalog load failed:", e);
     window.itemCodeCatalogCache = [];
-  }
-}
-
-async function loadDispatchCodeCatalogIntoCache(forceRefresh = false) {
-  const CACHE_TTL_MS = 5 * 60 * 1000;
-  const now = Date.now();
-  if (
-    !forceRefresh &&
-    window.dispatchCodeCatalogCache &&
-    window.dispatchCodeCatalogCache.length > 0 &&
-    window._dispatchCodeCacheLoadedAt &&
-    (now - window._dispatchCodeCacheLoadedAt) < CACHE_TTL_MS
-  ) {
-    return;
-  }
-  try {
-    const data = await apFetch({ action: "fetchDispatchCodeCatalog" });
-    if (data.success) {
-      window.dispatchCodeCatalogCache = data.catalog;
-      window._dispatchCodeCacheLoadedAt = Date.now();
-    } else {
-      console.error("DispatchCode catalog failed:", data.error);
-      window.dispatchCodeCatalogCache = [];
-    }
-  } catch(e) {
-    console.error("DispatchCode catalog load failed:", e);
-    window.dispatchCodeCatalogCache = [];
   }
 }
 
@@ -12067,215 +11920,6 @@ async function submitNewItemCode() {
   } finally {
     btn.disabled = false;
     btn.textContent = "Create Item Code";
-  }
-}
-
-async function executeDispatchCodeSearch() {
-  const query = document.getElementById("dispatchcode-search-input").value.trim();
-  const btn   = document.getElementById("dispatchcode-search-btn");
-  const resultsZone  = document.getElementById("dispatchcode-search-results-zone");
-  const noResultsZone= document.getElementById("dispatchcode-no-results-zone");
-  const suggestMount = document.getElementById("dispatchcode-suggestions-mount");
-  const createZone   = document.getElementById("dispatchcode-create-form-zone");
-  const banner       = document.getElementById("dispatchcode-feedback-banner");
-
-  if (!query) { alert("Please enter a product name to search."); return; }
-
-  resultsZone.style.display   = "none";
-  noResultsZone.style.display = "none";
-  createZone.style.display    = "none";
-  banner.style.display        = "none";
-  suggestMount.innerHTML      = "";
-
-  const nmBanner = document.getElementById("dispatchcode-none-match-banner");
-  const nrBtn    = document.getElementById("dispatchcode-no-results-create-btn");
-  if (nmBanner) nmBanner.style.display = "block";
-  if (nrBtn)    nrBtn.style.display    = "inline";
-
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Searching...';
-
-  try {
-    await loadDispatchCodeCatalogIntoCache();
-    const catalogToSearch = window.dispatchCodeCatalogCache || [];
-
-    const exactMatch = catalogToSearch.filter(item =>
-      (item.combinedName || "").toLowerCase().includes(query.toLowerCase())
-    );
-
-    const top30 = fuzzyPreFilterCatalog(query, catalogToSearch.map(c => ({ itemCode: c.dispatchCode, productName: c.combinedName, unit: c.unit })), 30);
-    const candidatesToUse = top30.length > 0 ? top30 : exactMatch.map(c => ({ itemCode: c.dispatchCode, productName: c.combinedName, unit: c.unit }));
-
-    if (candidatesToUse.length === 0) {
-      noResultsZone.style.display = "block";
-      return;
-    }
-
-    let finalMatches;
-    if (candidatesToUse.length <= 5) {
-      finalMatches = candidatesToUse.map(c => ({
-        dispatchCode: c.itemCode,
-        combinedName: c.productName,
-        confidence:   "high"
-      }));
-    } else {
-      const data = await apFetch({
-        action: "searchDispatchCodeSemantic",
-        query: query,
-        candidates: candidatesToUse.map(c => ({ dispatchCode: c.itemCode, combinedName: c.productName }))
-      });
-
-      if (!data.success || !data.matches || data.matches.length === 0) {
-        finalMatches = candidatesToUse.slice(0, 5).map(c => ({
-          dispatchCode: c.itemCode,
-          combinedName: c.productName,
-          confidence:   "medium"
-        }));
-      } else {
-        finalMatches = data.matches;
-      }
-    }
-
-    if (!finalMatches || finalMatches.length === 0) {
-      noResultsZone.style.display = "block";
-      return;
-    }
-
-    const confidenceColors = {
-      high:   { bg: "#dcfce7", color: "#15803d", label: "Strong Match" },
-      medium: { bg: "#fef3c7", color: "#b45309", label: "Possible Match" },
-      low:    { bg: "#f1f5f9", color: "#64748b", label: "Weak Match" }
-    };
-
-    const unitLookup = {};
-    catalogToSearch.forEach(c => { if (c.dispatchCode) unitLookup[c.dispatchCode.toString().trim().toUpperCase()] = c.unit || ""; });
-
-    finalMatches.forEach(match => {
-      const conf = confidenceColors[match.confidence] || confidenceColors.low;
-      const unit = unitLookup[(match.dispatchCode || "").toUpperCase()] || "";
-      const card = document.createElement("div");
-      card.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#fff; border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 16px; cursor:pointer; transition:all 0.15s ease;";
-      card.onmouseover = () => { card.style.borderColor = "var(--brand)"; card.style.background = "var(--highlight-bg)"; };
-      card.onmouseout  = () => { card.style.borderColor = "var(--border)";  card.style.background = "#fff"; };
-      card.innerHTML = `
-        <div style="flex:1; min-width:0;">
-          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-            <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${match.dispatchCode}</span>
-            <span style="font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:${conf.bg}; color:${conf.color};">${conf.label}</span>
-          </div>
-          <div style="font-size:0.88rem; font-weight:600; color:var(--text); line-height:1.4;">${match.combinedName}</div>
-          <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">${unit ? `Unit: ${unit}` : ""}</div>
-        </div>
-      `;
-      suggestMount.appendChild(card);
-    });
-
-    resultsZone.style.display = "block";
-
-  } catch(e) {
-    banner.style.cssText = "display:block; background:#fee2e2; border-color:#b91c1c; color:#b91c1c; padding:10px; border-left:4px solid #b91c1c;";
-    banner.textContent = "Search failed: " + e.message;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Search";
-  }
-}
-
-async function revealDispatchCodeCreateForm() {
-  const createZone = document.getElementById("dispatchcode-create-form-zone");
-  const codeInput  = document.getElementById("dispatchcode-new-code");
-  const nameInput  = document.getElementById("dispatchcode-new-name");
-  const banner     = document.getElementById("dispatchcode-feedback-banner");
-
-  const noneMatchBanner = document.getElementById("dispatchcode-none-match-banner");
-  const noResultsBtn    = document.getElementById("dispatchcode-no-results-create-btn");
-  if (noneMatchBanner) noneMatchBanner.style.display = "none";
-  if (noResultsBtn)    noResultsBtn.style.display    = "none";
-
-  const query = document.getElementById("dispatchcode-search-input").value.trim();
-  nameInput.value  = query;
-  codeInput.value  = "Loading...";
-  banner.style.display = "none";
-
-  createZone.style.display = "block";
-  createZone.scrollIntoView({ behavior: "smooth", block: "nearest" });
-
-  try {
-    const data = await apFetch({ action: "getNextDispatchProductCode" });
-    codeInput.value = data.success ? data.nextCode : "Error — refresh";
-  } catch(e) {
-    codeInput.value = "Error — refresh";
-  }
-}
-
-async function submitNewDispatchedProductCode() {
-  const btn         = document.getElementById("dispatchcode-create-submit-btn");
-  const banner      = document.getElementById("dispatchcode-feedback-banner");
-  const dispatchCode= document.getElementById("dispatchcode-new-code").value.trim();
-  const productName = document.getElementById("dispatchcode-new-name").value.trim();
-  const rating      = document.getElementById("dispatchcode-new-rating").value.trim();
-  const unit        = document.getElementById("dispatchcode-new-unit").value.trim();
-
-  if (!productName) { alert("Product Name is required."); return; }
-  if (!unit)         { alert("Unit is required."); return; }
-  if (!dispatchCode || dispatchCode === "Loading..." || dispatchCode === "Error — refresh") {
-    alert("Dispatch Product Code not loaded yet. Please wait or refresh.");
-    return;
-  }
-
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Creating...';
-
-  try {
-    const data = await apFetch({
-      action: "createDispatchProductCode",
-      dispatchCode,
-      productName,
-      rating,
-      unit,
-      createdBy: appActiveOperatorIdentityString
-    });
-
-    if (data.success) {
-      document.getElementById("dispatchcode-create-form-zone").style.display  = "none";
-      document.getElementById("dispatchcode-search-results-zone").style.display = "none";
-      document.getElementById("dispatchcode-no-results-zone").style.display    = "none";
-      document.getElementById("dispatchcode-search-zone-wrapper").style.display = "none";
-
-      banner.style.cssText = "display:block; background:#dcfce7; border-color:#15803d; color:#15803d; padding:14px; border-left:4px solid #15803d; border-radius:var(--radius);";
-      banner.innerHTML = `
-        <strong style="font-size:0.95rem;">Dispatch Product Code Created Successfully!</strong><br/>
-        <div style="margin-top:8px; display:flex; gap:16px; flex-wrap:wrap;">
-          <span>Code: <strong style="font-family:monospace; font-size:1rem; background:#fff; padding:2px 8px; border-radius:4px; border:1px solid #15803d;">${data.dispatchCode}</strong></span>
-          <span>Product: <strong>${data.productName}${data.rating ? " " + data.rating : ""}</strong></span>
-          <span>Unit: <strong>${data.unit}</strong></span>
-        </div>
-        <button onclick="
-          document.getElementById('dispatchcode-feedback-banner').style.display='none';
-          document.getElementById('dispatchcode-search-input').value='';
-          document.getElementById('dispatchcode-search-results-zone').style.display='none';
-          document.getElementById('dispatchcode-no-results-zone').style.display='none';
-          document.getElementById('dispatchcode-create-form-zone').style.display='none';
-          document.getElementById('dispatchcode-search-zone-wrapper').style.display='block';
-          const nm = document.getElementById('dispatchcode-none-match-banner'); if(nm) nm.style.display='block';
-          const nb = document.getElementById('dispatchcode-no-results-create-btn'); if(nb) nb.style.display='inline';
-        " style="margin-top:10px; background:#15803d; color:#fff; border:none; padding:6px 14px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.8rem;">
-          + Search / Add Another Product
-        </button>
-      `;
-
-      await loadDispatchCodeCatalogIntoCache(true);
-      banner.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    } else {
-      banner.style.cssText = "display:block; background:#fee2e2; border-color:#b91c1c; color:#b91c1c; padding:12px; border-left:4px solid #b91c1c; border-radius:var(--radius);";
-      banner.textContent = "Failed: " + data.error;
-    }
-  } catch(e) {
-    banner.style.cssText = "display:block; background:#fee2e2; border-color:#b91c1c; color:#b91c1c; padding:12px; border-left:4px solid #b91c1c; border-radius:var(--radius);";
-    banner.textContent = "Network error: " + e.message;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Create Dispatch Product Code";
   }
 }
 
@@ -12710,14 +12354,13 @@ async function submitCreateBOQ() {
   const department  = document.getElementById("cboq-department").value.trim();
   const orderQty    = parseInt(document.getElementById("cboq-order-qty").value) || 0;
   const customerName= document.getElementById("cboq-customer-name").value.trim();
-  const preparedBy  = document.getElementById("cboq-prepared-by").value.trim();
+  const preparedBy  = appActiveOperatorIdentityString || "";
 
   if (!projectId)    return showBOQBanner("create-boq-feedback", "⚠️ Project ID is required.", "error");
   if (!productName)  return showBOQBanner("create-boq-feedback", "⚠️ Product Name is required.", "error");
   if (!productRating)return showBOQBanner("create-boq-feedback", "⚠️ Product Rating is required.", "error");
   if (!department)   return showBOQBanner("create-boq-feedback", "⚠️ Department is required.", "error");
   if (orderQty < 1)  return showBOQBanner("create-boq-feedback", "⚠️ Order Quantity must be at least 1.", "error");
-  if (!preparedBy)   return showBOQBanner("create-boq-feedback", "⚠️ Prepared By is required — select a Department first.", "error");
   if (cboqMaterialRows.length === 0) return showBOQBanner("create-boq-feedback", "⚠️ Add at least one material row.", "error");
 
   const invalidRow = cboqMaterialRows.find(r => !r.descriptionOfMaterial || !r.quantityFor1Set || !r.unit);
@@ -13007,20 +12650,9 @@ function renderEBOQForm(containerId) {
       </div>
     </div>
 
-    ${eboqMode === "authorize" ? `
-    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
-      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px;">Authorization</div>
-      <div style="max-width:400px;">
-        <label class="field-label" style="margin-top:0;">Authorized By *</label>
-        <select id="eboq-authorized-by" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-          <option value="">Loading...</option>
-        </select>
-      </div>
-    </div>` : ``}
-
     <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
       <button class="nav-btn-styled" onclick="submitEBOQAuthorize()" style="background:var(--accent); padding:8px 24px; font-weight:700;" id="eboq-submit-btn">
-        ${eboqMode === "authorize" ? "Authorize BOQ" : "Authorize BOQ Update"}
+        ${eboqMode === "authorize" ? "Authorize BOQ" : "Authorize BOQ Revision"}
       </button>
     </div>
   `;
@@ -13197,7 +12829,7 @@ async function submitEBOQAuthorize() {
   const productRating= document.getElementById("eboq-product-rating")?.value.trim() || "";
   const department   = document.getElementById("eboq-department")?.value.trim() || "";
   const orderQty     = parseInt(document.getElementById("eboq-order-qty")?.value) || 0;
-  const authorizedBy = eboqMode === "authorize" ? (document.getElementById("eboq-authorized-by")?.value.trim() || "") : "";
+  const authorizedBy = appActiveOperatorIdentityString || "";
 
   const _validationFail = (msg) => { _submitBOQAuthorizeInProgress = false; showBOQBanner(feedbackId, msg, "error"); };
 
@@ -13213,7 +12845,7 @@ async function submitEBOQAuthorize() {
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Authorizing...';
-  showBlockingOverlay(eboqMode === "authorize" ? "Authorizing Bill of Quantity..." : "Authorizing Bill of Quantity Update...");
+  showBlockingOverlay(eboqMode === "authorize" ? "Authorizing Bill of Quantity..." : "Authorizing Bill of Quantity Revision...");
 
   try {
     const data = await apFetch({
@@ -13247,7 +12879,7 @@ async function submitEBOQAuthorize() {
         fb.style.color           = "#276749";
         fb.style.display         = "block";
         fb.innerHTML = `
-          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ Bill of Quantity ${eboqMode === "authorize" ? "Authorized" : "Update Authorized"} Successfully!</div>
+          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ Bill of Quantity ${eboqMode === "authorize" ? "Authorized" : "Revision Authorized"} Successfully!</div>
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">BOQ ID</span><span style="font-family:monospace; font-weight:800;">${data.boqId}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Project ID</span><span style="font-weight:700;">${_lastDraft?.projectId || ""}</span></div>
@@ -13263,7 +12895,7 @@ async function submitEBOQAuthorize() {
             document.getElementById('${feedbackId}').style.display='none';
             initializeAuthorizeBOQPanel('${eboqMode}').catch(()=>{});"
             style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
-            ${eboqMode === "authorize" ? "Authorize Another Bill of Quantity" : "Authorize Another BOQ Update"}
+            ${eboqMode === "authorize" ? "Authorize Another Bill of Quantity" : "Authorize Another BOQ Revision"}
           </button>`;
       }
     } else {
@@ -13444,15 +13076,6 @@ function renderUBOQForm() {
           <input type="text" value="${draft.date ? new Date(draft.date).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) : ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
       </div>
-      ${eboqMode === "authorize" ? `
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        <div>
-          <label class="field-label" style="margin-top:0;">Authorized By *</label>
-          <select id="eboq-authorized-by" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-            <option value="">Loading...</option>
-          </select>
-        </div>
-      </div>` : ``}
     </div>
 
     <!-- Material Rows -->
@@ -13494,7 +13117,7 @@ function renderUBOQForm() {
     </div>
 
     <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
-      <button class="nav-btn-styled" onclick="submitUpdateBOQ()" style="background:var(--accent); padding:8px 24px; font-weight:700;" id="uboq-submit-btn">Submit BOQ Update for Authorization</button>
+      <button class="nav-btn-styled" onclick="submitUpdateBOQ()" style="background:var(--accent); padding:8px 24px; font-weight:700;" id="uboq-submit-btn">Submit BOQ Revision for Authorization</button>
     </div>
   `;
 
@@ -13665,7 +13288,7 @@ async function submitUpdateBOQ() {
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
-  showBlockingOverlay("Saving Bill of Quantity Update...");
+  showBlockingOverlay("Saving Bill of Quantity Revision...");
 
   try {
     const data = await apFetch({
@@ -13694,7 +13317,7 @@ async function submitUpdateBOQ() {
         fb.style.color           = "#276749";
         fb.style.display         = "block";
         fb.innerHTML = `
-          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ Bill of Quantity Update Submitted for Re-Authorization!</div>
+          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ Bill of Quantity Revision Submitted for Re-Authorization!</div>
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">BOQ ID</span><span style="font-family:monospace; font-weight:800;">${data.boqId}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Version</span><span style="font-weight:700;">v${data.newVersion}</span></div>
@@ -13705,11 +13328,11 @@ async function submitUpdateBOQ() {
           </div>
           <button onclick="const sz=document.getElementById('update-boq-selector-zone'); if(sz) sz.style.display='grid'; initializeUpdateBOQPanel().catch(()=>{});"
             style="background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
-            + Update Another Bill of Quantity
+            + Revise Another Bill of Quantity
           </button>`;
       }
     } else {
-      showBOQBanner(feedbackId, data.error || "Update submission failed.", "error");
+      showBOQBanner(feedbackId, data.error || "Revision submission failed.", "error");
     }
   } catch(e) {
     hideBlockingOverlay();
@@ -13717,7 +13340,7 @@ async function submitUpdateBOQ() {
   } finally {
     _submitUpdateBOQInProgress = false;
     btn.disabled = false;
-    btn.textContent = "Submit BOQ Update for Authorization";
+    btn.textContent = "Submit BOQ Revision for Authorization";
   }
 }
 
@@ -13995,16 +13618,9 @@ async function handleFGAddProjectChange(projectId) {
   }
 }
 
-// Which catalog "Product Name" search reads from. Both "Use in other Product" and "Keep in FG
-// Store" search ItemCodes (Type-A material — genuinely exists in another BOQ, requestable
-// later via Store Ticket). "Ready for Dispatch" searches DispatchProductCode instead
-// (Type-B — a final product with no Item Code, never requestable as material).
-window._fgActiveCatalogMode = "item";
-
+// "Finished Good Use" no longer changes which catalog is searched — Dispatch Product Code
+// was removed; every use (including "Ready for Dispatch") now searches Item Code.
 function handleFGUseToggleChange(chosenUse) {
-  window._fgActiveCatalogMode = (chosenUse === "Ready for Dispatch") ? "dispatch" : "item";
-
-  // Switching modes invalidates whatever was already searched/selected against the other catalog.
   document.getElementById("fg-add-product-search").value = "";
   document.getElementById("fg-add-product-name").value   = "";
   document.getElementById("fg-add-item-code").value      = "";
@@ -14013,18 +13629,9 @@ function handleFGUseToggleChange(chosenUse) {
   if (dropdown) dropdown.style.display = "none";
 
   const searchInput = document.getElementById("fg-add-product-search");
-  if (searchInput) {
-    searchInput.placeholder = window._fgActiveCatalogMode === "dispatch"
-      ? "Type to search dispatched product name..."
-      : "Type to search item code product name...";
-  }
+  if (searchInput) searchInput.placeholder = "Type to search item code product name...";
 
-  // Pre-warm the relevant catalog so the first keystroke isn't waiting on a fetch.
-  if (window._fgActiveCatalogMode === "dispatch") {
-    loadDispatchCodeCatalogIntoCache();
-  } else {
-    loadItemCodeCatalogIntoCache();
-  }
+  loadItemCodeCatalogIntoCache();
 }
 
 function handleCBOQProductSearch(query) {
@@ -14077,10 +13684,7 @@ function selectCBOQProduct(productName, rating) {
 
 function handleFGProductSearch(query) {
   const dropdown  = document.getElementById("fg-product-dropdown");
-  const isDispatch = window._fgActiveCatalogMode === "dispatch";
-  const catalog = isDispatch
-    ? (window.dispatchCodeCatalogCache || []).map(c => ({ itemCode: c.dispatchCode, productName: c.productName, displayName: c.combinedName, rating: c.rating, typeOfMaterial: "" }))
-    : (window.itemCodeCatalogCache || []).map(c => ({ ...c, displayName: c.productName }));
+  const catalog = (window.itemCodeCatalogCache || []).map(c => ({ ...c, displayName: c.productName }));
 
   if (!query || query.trim().length < 1) {
     dropdown.style.display = "none";
@@ -14094,11 +13698,8 @@ function handleFGProductSearch(query) {
   const matches = catalog.filter(item => (item.productName || "").toLowerCase().includes(q)).slice(0, 10);
 
   if (matches.length === 0) {
-    const createLink = isDispatch
-      ? `<a href="${window.location.pathname}?module=dispatched-product-code" target="_blank" style="color:var(--brand); font-weight:700;">Create Dispatch Product Code first →</a>`
-      : `<a href="${window.location.pathname}?module=design-itemcode" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>`;
     dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">
-      No matching product found. ${createLink}
+      No matching product found. <a href="${window.location.pathname}?module=design-itemcode" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
     </div>`;
     dropdown.style.display = "block";
     document.getElementById("fg-add-product-name").value = "";
@@ -14225,7 +13826,6 @@ function resetFGAddForm() {
    "fg-add-rating","fg-add-jobcard","fg-add-serial","fg-add-remarks"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
-  document.getElementById("fg-add-qa-person").value = "";
   document.getElementById("fg-add-qa-done").value = "No";
   fgJobCardSheetFile = null; fgQATestCertFile = null; fgInProcessInspFile = null; fgQAInspectionFile = null;
   [["fg-add-jobcard-sheet-dropzone","📎 Click to attach Job Card Sheet"],
@@ -14256,10 +13856,10 @@ async function submitFGAddItem() {
   const serialNumber = document.getElementById("fg-add-serial").value.trim();
   const unitSelect = document.getElementById("fg-add-unit").value.trim();
   const unit        = unitSelect === "Others" ? document.getElementById("fg-add-unit-other").value.trim() : unitSelect;
-  const prodPerson = document.getElementById("fg-add-prod-person").value.trim();
+  const prodPerson = appActiveOperatorIdentityString || "";
   const storePerson= document.getElementById("fg-add-store-person").value.trim();
   const remarks    = document.getElementById("fg-add-remarks").value.trim();
-  const qaPersonName = document.getElementById("fg-add-qa-person").value.trim();
+  const qaPersonName = appActiveOperatorIdentityString || "";
   const qaDone     = document.getElementById("fg-add-qa-done").value.trim();
 
   if (!department)  return showBOQBanner("fg-add-feedback", "Department is required.", "error");
@@ -17759,7 +17359,7 @@ async function parseRawMaterialPOWithAI() {
 async function commitRawMaterialPOToBackend() {
   if (!activeParsedRMPOPayload) { showPurchaseFeedback("rm-po-feedback", "⚠️ Please process a PO document first.", "error"); return; }
   const vendorName   = (document.getElementById("rm-po-vendor-name")?.value   || "").trim();
-  const uploadedBy   = (document.getElementById("rm-po-uploaded-by")?.value   || "").trim();
+  const uploadedBy   = appActiveOperatorIdentityString || "";
   const poNumber     = (document.getElementById("rm-po-number")?.value        || "").trim();
   const orderDate    = (document.getElementById("rm-po-order-date")?.value    || "").trim();
   const deliveryDate = (document.getElementById("rm-po-delivery-date")?.value || "").trim();
