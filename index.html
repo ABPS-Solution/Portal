@@ -11480,43 +11480,17 @@ async function loadDesignPersonnelIntoSelect(selectId) {
   }
 }
 
+// Department selection no longer drives a "Prepared By" picker -- that
+// field was removed (Prepared By is now silently set to the logged-in
+// operator's name at submit time, not chosen from a select). This
+// handler is now a no-op, kept only because the <select> in the HTML
+// still has onchange="handleCBOQDepartmentChange(this.value)" wired to
+// it. It used to reach into #cboq-prepared-by directly with no
+// null-check, which threw on every Department change once that element
+// was removed -- surfaced to users as a misleading "Network error"
+// banner via the global unhandledrejection handler.
 function handleCBOQDepartmentChange(department) {
-  const preparedByEl = document.getElementById("cboq-prepared-by");
-  if (!department) {
-    preparedByEl.innerHTML = '<option value="">— Select Department First —</option>';
-    preparedByEl.disabled = true;
-    preparedByEl.style.opacity = "0.5";
-    return;
-  }
-
-  const allPersonnel = window.cboqAllPersonnel || [];
-  if (allPersonnel.length === 0) {
-    // Personnel not yet cached — fetch now
-    apFetch({ action:"getStoreOperatorsList" }).then(data => {
-      window.cboqAllPersonnel = data.fullPersonnelDataRecordsTree || [];
-      populateCBOQPreparedBy(department);
-    }).catch(() => {
-      preparedByEl.innerHTML = '<option value="">Error loading personnel</option>';
-    });
-  } else {
-    populateCBOQPreparedBy(department);
-  }
-}
-
-function populateCBOQPreparedBy(department) {
-  const preparedByEl = document.getElementById("cboq-prepared-by");
-  const allPersonnel = window.cboqAllPersonnel || [];
-  const deptLower = department.toLowerCase();
-  const filtered = allPersonnel.filter(p =>
-    p.departmentsList.some(d => d.toLowerCase().trim().includes("design"))
-  );
-  preparedByEl.innerHTML = '<option value="">— Select Person —</option>';
-  filtered.forEach(p => {
-    const opt = document.createElement("option"); opt.value = p.fullName; opt.textContent = p.fullName;
-    preparedByEl.appendChild(opt);
-  });
-  preparedByEl.disabled = false;
-  preparedByEl.style.opacity = "1";
+  // Intentionally empty.
 }
 
 async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
