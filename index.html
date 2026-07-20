@@ -3660,11 +3660,7 @@ function cleanISTTimestamp(rawStr) {
 }
 
 function formatCleanDateOnly(rawStr) {
-  if (!rawStr) return "";
-  let s = rawStr.toString().trim();
-  if (s.indexOf("T") !== -1) s = s.split("T")[0];
-  if (s.indexOf(" ") !== -1) s = s.split(" ")[0];
-  return s;
+  return formatDateDMY(rawStr);
 }
 
 async function loadCityStateFilterOptions() {
@@ -6570,7 +6566,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
           <div class="meta-row-line-block">
             <span style="background:var(--accent); color:#fff;">SOURCE: EMAIL</span>
             <span style="background:var(--highlight-bg); border:1px solid var(--brand); color:var(--brand); font-family:monospace; text-transform:none;">${mail.destinationInboxAccount}</span>
-            <span style="background:#cbd5e1; color:#1e293b; font-weight:700;">${mail.receivedDate} at ${mail.receivedTime}</span>
+            <span style="background:#cbd5e1; color:#1e293b; font-weight:700;">${formatDateDMY(mail.receivedDate)} at ${formatTime12h(mail.receivedTime) || mail.receivedTime}</span>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px;">
             <span style="background:#e2e8f0;">Company:</span><strong style="margin-right:20px; color:var(--brand);">${mail.extractedCompany}</strong>
@@ -8830,15 +8826,8 @@ function executeClientSideStoreTicketFilterSearch() {
     const statusBadgeText = isBoqInc ? "BOQ LIMIT OVERRUN" : currentStatus.toUpperCase();
     const mappedStorageScope = ticket.storeTargetScope || "Raw Materials Store";
 
-    let cleanCreatedDate = ticket.dateCreated || "";
-    if (cleanCreatedDate.indexOf(" GMT") !== -1) {
-      cleanCreatedDate = cleanCreatedDate.split(" GMT")[0].trim();
-    }
-    
-    let cleanActionedDate = ticket.dateActioned || "Waiting Handover Verification";
-    if (cleanActionedDate.indexOf(" GMT") !== -1) {
-      cleanActionedDate = cleanActionedDate.split(" GMT")[0].trim();
-    }
+    let cleanCreatedDate = formatDateTimeDMY(ticket.dateCreated);
+    let cleanActionedDate = ticket.dateActioned ? formatDateTimeDMY(ticket.dateActioned) : "Waiting Handover Verification";
 
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed var(--border); padding-bottom:6px; margin-bottom:8px;">
@@ -9546,7 +9535,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
                 <div style="font-weight:700; font-size:0.78rem; text-transform:uppercase; color:#15803d; margin-bottom:8px; letter-spacing:0.3px;">Please verify the extracted data below is correct:</div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
                   <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Number</span><br/><strong style="font-family:monospace; color:#111827;">${data.extractedPONumber || '—'}</strong></div>
-                  <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Date</span><br/><strong style="color:#111827;">${data.extractedPODate || '—'}</strong></div>
+                  <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Date</span><br/><strong style="color:#111827;">${formatDateDMY(data.extractedPODate) || '—'}</strong></div>
                   <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Basic Amount (excl. GST)</span><br/><strong style="color:#111827;">${data.extractedBasicAmount ? '₹' + Number(data.extractedBasicAmount).toLocaleString('en-IN') : '—'}</strong></div>
                   <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Total Amount (incl. GST)</span><br/><strong style="color:#111827;">${data.extractedTotalAmount ? '₹' + Number(data.extractedTotalAmount).toLocaleString('en-IN') : '—'}</strong></div>
                   <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Line Items Captured</span><br/><strong style="color:#111827;">${data.extractedLineItemCount || 0} items</strong></div>
@@ -10052,15 +10041,7 @@ async function initializeStoreEntryWorkspaceQueue() {
       });
 
       // Date formatting
-      let cleanDateDisplay = item.invoiceDate || "";
-      if (!cleanDateDisplay.includes("am") && !cleanDateDisplay.includes("pm") && !cleanDateDisplay.includes(" ")) {
-        let dateObj = new Date(cleanDateDisplay);
-        if (!isNaN(dateObj.getTime())) {
-          const dt = dateObj.toLocaleDateString('en-CA');
-          const tm = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
-          cleanDateDisplay = dt + " " + tm;
-        }
-      }
+      let cleanDateDisplay = formatDateTimeDMY(item.invoiceDate) || item.invoiceDate || "";
 
       let card = document.createElement("div");
       card.className = "contact-summary-card-parent";
@@ -10325,15 +10306,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
         });
 
         // Date/time badge — same source and formatting as the GRN card in Store Entry.
-        let repairDateDisplay = "";
-        if (item.invoiceDate) {
-          const repairDateObj = new Date(item.invoiceDate);
-          if (!isNaN(repairDateObj.getTime())) {
-            const dt = repairDateObj.toLocaleDateString('en-CA');
-            const tm = repairDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
-            repairDateDisplay = dt + " " + tm;
-          }
-        }
+        let repairDateDisplay = formatDateTimeDMY(item.invoiceDate);
 
         let card = document.createElement("div"); card.className = "contact-summary-card-parent";
         card.innerHTML = `
@@ -10428,15 +10401,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
         });
 
         // Date/time badge — same source and formatting as the GRN card in Store Entry.
-        let qaDateDisplay = "";
-        if (item.invoiceDate) {
-          const qaDateObj = new Date(item.invoiceDate);
-          if (!isNaN(qaDateObj.getTime())) {
-            const dt = qaDateObj.toLocaleDateString('en-CA');
-            const tm = qaDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
-            qaDateDisplay = dt + " " + tm;
-          }
-        }
+        let qaDateDisplay = formatDateTimeDMY(item.invoiceDate);
 
         let card = document.createElement("div"); card.className = "contact-summary-card-parent";
         card.innerHTML = `
@@ -12472,7 +12437,7 @@ async function initializeAuthorizeBOQPanel(mode) {
               <span style="background:#e2e8f0;">Product:</span><strong style="margin-right:15px;">${draft.productName} ${draft.productRating}</strong>
               <span style="background:#edf2f7;">Department:</span><strong style="margin-right:15px;">${draft.department}</strong>
               <span style="background:#edf2f7;">Qty:</span><strong style="margin-right:15px;">${draft.orderQuantity}</strong>
-              <span style="background:#edf2f7;">Date:</span><strong style="margin-right:15px;">${draft.date ? new Date(draft.date).toDateString().replace(/^\S+\s/, '') : ''}</strong>
+              <span style="background:#edf2f7;">Date:</span><strong style="margin-right:15px;">${formatDateDMY(draft.date)}</strong>
               <span style="background:#edf2f7;">Prepared By:</span><strong>${draft.preparedBy}</strong>
             </div>
           </div>
@@ -12998,7 +12963,7 @@ async function loadAuthorizedBOQsForProject(projectId) {
     (data.drafts || []).forEach(draft => {
       const opt = document.createElement("option");
       opt.value = draft.boqId;
-      const cleanDate = draft.date ? new Date(draft.date).toDateString().replace(/^\S+\s/, '') : '';
+      const cleanDate = formatDateDMY(draft.date);
       opt.textContent = `${draft.customerName} | ${draft.boqId} | ${draft.department} | Qty: ${draft.orderQuantity} | ${cleanDate} | By: ${draft.preparedBy}`;
       boqDrop.appendChild(opt);
     });
@@ -14096,7 +14061,7 @@ async function refreshUploadDrawingsList(projectId) {
     mount.innerHTML = data.documents.map(doc => `
       <a href="${doc.url}" target="_blank" style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:0.85rem; font-weight:600;">
         <span>📄 ${doc.name}</span>
-        <span style="font-size:0.72rem; color:var(--muted); font-weight:400;">${doc.lastUpdated}</span>
+        <span style="font-size:0.72rem; color:var(--muted); font-weight:400;">${formatDateTimeDMY(doc.lastUpdated) || doc.lastUpdated}</span>
       </a>`).join("");
   } catch(e) {
     mount.innerHTML = '<div style="color:var(--warn); font-size:0.82rem;">Failed to load documents.</div>';
@@ -14348,12 +14313,12 @@ async function loadPPSForProject() {
           <td style="padding:5px; text-align:center;">${fmt(row.storeReservedQuantity)}</td>
           <td style="padding:5px; text-align:center; font-weight:700; color:var(--brand);">${fmt(row.purchasedQuantity)}</td>
           <td style="padding:5px; text-align:center; font-family:monospace;">${esc(row.poNumber)}</td>
-          <td style="padding:5px; text-align:center;">${esc(row.poDate)}</td>
+          <td style="padding:5px; text-align:center;">${esc(formatDateDMY(row.poDate))}</td>
           <td style="padding:5px;">${esc(row.vendorName)}</td>
-          <td style="padding:5px; text-align:center;">${esc(row.expectedDeliveryDate)}</td>
-          <td style="padding:5px; text-align:center;">${esc(row.actualDeliveryDate) || '<span style="color:var(--muted);">—</span>'}</td>
+          <td style="padding:5px; text-align:center;">${esc(formatDateDMY(row.expectedDeliveryDate))}</td>
+          <td style="padding:5px; text-align:center;">${row.actualDeliveryDate ? esc(formatDateDMY(row.actualDeliveryDate)) : '<span style="color:var(--muted);">—</span>'}</td>
           <td style="padding:5px; text-align:center;">${row.actualReceivedQuantity!==""?fmt(row.actualReceivedQuantity):'<span style="color:var(--muted);">—</span>'}</td>
-          <td style="padding:5px; text-align:center;">${esc(row.prnCreatedDate)}</td>
+          <td style="padding:5px; text-align:center;">${esc(formatDateDMY(row.prnCreatedDate))}</td>
           <td style="padding:5px;">
             <input type="text" class="pps-action-input" value="${(row.actionPlan||'').replace(/"/g,'&quot;')}"
               data-rownum="${row.rowNum}" data-prnid="${esc(prn.prnId)}" data-itemcode="${esc(row.itemCode)}" data-pono="${esc(row.poNumber)}"
@@ -14414,11 +14379,48 @@ async function savePPSActionPlans(projectId) {
   }
 }
 
+// ── Global date/time formatting — DD-MM-YYYY dates, 12-hour times ─────
+// Never show raw ISO strings (2026-08-15T00:00:00.000Z) or timezone
+// offsets to users. Pure calendar dates (Postgres DATE columns, which
+// arrive as "YYYY-MM-DDT00:00:00.000Z") are parsed from the date part
+// directly rather than through a Date object, to avoid a local-timezone
+// shift silently rolling the date back/forward a day. Real timestamps
+// (created_at, ts, etc.) DO go through Date object conversion, since
+// localizing time-of-day is the correct behavior there.
+function formatDateDMY(value) {
+  if (!value) return "";
+  const s = String(value);
+  const dateOnlyMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (dateOnlyMatch) {
+    const [, yyyy, mm, dd] = dateOnlyMatch;
+    return `${dd}-${mm}-${yyyy}`;
+  }
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return s; // already a plain/unparseable string — show as-is rather than blank
+  const dd2 = String(d.getDate()).padStart(2, "0");
+  const mm2 = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd2}-${mm2}-${d.getFullYear()}`;
+}
+
+function formatTime12h(value) {
+  if (!value) return "";
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) return String(value);
+  let h = d.getHours();
+  const m = String(d.getMinutes()).padStart(2, "0");
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12; if (h === 0) h = 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+function formatDateTimeDMY(value) {
+  if (!value) return "";
+  return `${formatDateDMY(value)}, ${formatTime12h(value)}`;
+}
+
 function fmtPODate(raw) {
   if (!raw) return "";
-  const d = new Date(raw);
-  if (isNaN(d.getTime())) return raw; // already a plain string like "15-Feb-2026"
-  return d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'2-digit', year:'numeric' });
+  return formatDateDMY(raw);
 }
 
 // ── Editable Authorize PO state (standalone, apo* prefix) ──
@@ -15182,15 +15184,7 @@ async function initializeRejectedMaterialPanel(toggle) {
       });
 
       // Date/time badge — same source and formatting as the GRN card in Store Entry.
-      let rejDateDisplay = "";
-      if (item.setTimestamp) {
-        const rejDateObj = new Date(item.setTimestamp);
-        if (!isNaN(rejDateObj.getTime())) {
-          const dt = rejDateObj.toLocaleDateString('en-CA');
-          const tm = rejDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
-          rejDateDisplay = dt + " " + tm;
-        }
-      }
+      let rejDateDisplay = formatDateTimeDMY(item.setTimestamp);
 
       let card = document.createElement("div"); card.className = "contact-summary-card-parent";
       card.innerHTML = `
@@ -15656,7 +15650,7 @@ function mdRenderDashboard(data) {
         <tr style="border-bottom:1px solid var(--border);">
           <td style="padding:4px;">${w.company}</td>
           <td style="padding:4px;">${w.engineer}</td>
-          <td style="padding:4px; text-align:right;">${w.date}</td>
+          <td style="padding:4px; text-align:right;">${formatDateDMY(w.date)}</td>
         </tr>`).join("");
 }
 
@@ -15869,7 +15863,7 @@ function sdRenderDashboard(data) {
           </div>
           <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
             <span style="font-size:0.65rem; font-weight:700; padding:1px 7px; border-radius:6px; background:${sc.bg}; color:${sc.color};">${t.status}</span>
-            <span style="font-size:0.62rem; color:var(--muted);">${t.dateCreated}</span>
+            <span style="font-size:0.62rem; color:var(--muted);">${formatDateTimeDMY(t.dateCreated) || t.dateCreated}</span>
           </div>
         </div>`;
       }).join("");
@@ -16115,7 +16109,7 @@ function pd2RenderDashboard(data) {
             </div>
             <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
               <span style="font-size:0.65rem; font-weight:700; padding:1px 7px; border-radius:6px; background:${fg.qaDone === 'Yes' ? '#dcfce7' : '#fef9c3'}; color:${fg.qaDone === 'Yes' ? '#15803d' : '#854d0e'};">QA ${fg.qaDone === 'Yes' ? '✓' : 'Pending'}</span>
-              <span style="font-size:0.62rem; color:var(--muted);">${fg.date}</span>
+              <span style="font-size:0.62rem; color:var(--muted);">${formatDateDMY(fg.date)}</span>
             </div>
           </div>
         </div>`).join("");
@@ -17728,7 +17722,7 @@ function pdRenderDashboard(data) {
         return `<tr style="border-bottom:1px solid #f1f5f9; background:${rowBg};">
           <td style="padding:4px 5px; font-family:monospace; font-size:0.68rem; font-weight:700;">${po.poId}</td>
           <td style="padding:4px 5px; font-size:0.7rem;">${po.vendor}</td>
-          <td style="padding:4px 5px; text-align:center; font-size:0.68rem;">${po.deliveryDate}</td>
+          <td style="padding:4px 5px; text-align:center; font-size:0.68rem;">${formatDateDMY(po.deliveryDate)}</td>
           <td style="padding:4px 5px; text-align:center;"><span style="font-size:0.62rem; font-weight:700; padding:1px 6px; border-radius:8px; background:${overdueBg}; color:${overdueColor};">${po.daysOverdue}d</span></td>
           <td style="padding:4px 5px; text-align:right; font-family:monospace; font-size:0.7rem;">${fmtNum(po.grand)}</td>
         </tr>`;
@@ -17964,7 +17958,7 @@ async function loadTourVoucherList() {
     if (data.vouchers.length === 0) { body.innerHTML = '<tr><td colspan="8" style="padding:14px; text-align:center; color:var(--muted);">No unchecked vouchers.</td></tr>'; return; }
     body.innerHTML = data.vouchers.map(v => `
       <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px;">${(v.created_date || "").toString().slice(0,10)}</td>
+        <td style="padding:8px;">${formatDateDMY(v.created_date)}</td>
         <td style="padding:8px;">${v.department_name || "—"}</td>
         <td style="padding:8px;">${v.employee_name}</td>
         <td style="padding:8px;">${v.customer_name}</td>
@@ -18027,7 +18021,7 @@ async function loadManufacturingClearanceList() {
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px; font-family:monospace;">${p.projectId}</td>
         <td style="padding:8px;">${p.companyName}</td>
-        <td style="padding:8px;">${p.deliveryDate || "—"}</td>
+        <td style="padding:8px;">${formatDateDMY(p.deliveryDate) || "—"}</td>
         <td style="padding:8px;">
           ${mcCurrentStatus === "Inactive"
             ? `<button class="nav-btn-styled" style="background:#2f9e58; padding:5px 12px; font-size:0.78rem;" onclick="mcActivateProject('${p.projectId}')">Activate</button>`
@@ -18794,7 +18788,7 @@ function renderExpectedInboundsPOCard(po, scheme) {
         <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.78rem; color:var(--muted);">
           <span><strong style="color:var(--text);">${po.vendorName}</strong></span>
           <span>📅 Order Date: <strong>${po.orderDate || "—"}</strong></span>
-          <span>🚚 Delivery Date: <strong>${po.deliveryDate || "—"}</strong></span>
+          <span>🚚 Delivery Date: <strong>${formatDateDMY(po.deliveryDate) || "—"}</strong></span>
         </div>
       </div>
 
