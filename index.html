@@ -1320,7 +1320,7 @@
               <input type="hidden" id="cboq-product-name" />
             </div>
             <div>
-              <label class="field-label" style="margin-top:0;">Product Rating *</label>
+              <label class="field-label" style="margin-top:0;">Product Rating</label>
               <textarea id="cboq-product-rating" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; font-family:inherit; font-size:inherit; line-height:1.4; display:block; min-height:38px; border:1.5px solid var(--border);" placeholder="Auto-filled from Product Name"></textarea>
             </div>
           </div>
@@ -2560,12 +2560,6 @@
               <label class="field-label">Select Lead / Company *</label>
               <select id="purchase-order-lead-dropdown" style="padding: 8px; font-weight: 600; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
                 <option value="">— Select Company / Lead —</option>
-              </select>
-            </div>
-            <div style="margin-bottom: 12px;">
-              <label class="field-label">Name of Owner of Order *</label>
-              <select id="po-owner-of-order-dropdown" style="padding: 8px; font-weight: 600; border: 1.5px solid var(--border); border-radius: var(--radius);">
-                <option value="">— Select Engineer —</option>
               </select>
             </div>
             <div class="card-box" id="purchase-order-upload-box" onclick="document.getElementById('purchase-order-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Purchase Order</div>
@@ -4235,9 +4229,6 @@ function returnToDashboard() {
     const btn = document.getElementById(cfg.btnId);
     if (btn) { btn.disabled = false; btn.innerHTML = cfg.btnLabel; }
   });
-  const poOwnerDropReset = document.getElementById("po-owner-of-order-dropdown");
-  if (poOwnerDropReset) poOwnerDropReset.value = '';
-
   // Reset card scan fields for next use
   fileFront = null; fileBack = null;
   const fb = document.getElementById('front-box'); if (fb) { fb.textContent = '📷 Front Side '; fb.classList.remove('done'); }
@@ -5219,7 +5210,7 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
     const r = await apFetch({ 
       action: "updateLeadFull", 
       activeEngineer: appActiveOperatorIdentityString,
-      leadRef: leadRef, 
+      leadId: leadRef, 
       fields: fieldsPayload 
     });
 
@@ -5260,7 +5251,7 @@ async function removeLeadRowEntirely(leadRef, companyNameForConfirm, contactName
         const r = await apFetch({ 
           action: "deleteLeadRow", 
           activeEngineer: appActiveOperatorIdentityString,
-          leadRef: leadRef 
+          leadId: leadRef 
         });
         
         if (!r.success) {
@@ -7313,8 +7304,20 @@ async function refreshLiveStockForSelectedMaterial() {
       await updateSelectedLiveStockPillCounter(null);
     }
 
+    // getLiveStockForItem looks up by Item Code, not material name -- resolve
+    // it from the catalog cache first (loading the cache if this is the
+    // first time this screen has needed it).
+    if (!window.itemCodeCatalogCache || window.itemCodeCatalogCache.length === 0) {
+      await loadItemCodeCatalogIntoCache().catch(() => {});
+    }
+    const cleanKeyForLookup = cleanMaterialName.replace(/\s+/g, "").toLowerCase();
+    const matchedCatalogEntry = (window.itemCodeCatalogCache || []).find(
+      c => (c.productName || "").replace(/\s+/g, "").toLowerCase() === cleanKeyForLookup
+    );
+    if (!matchedCatalogEntry) return; // no Item Code found for this material -- nothing to look up
+
     // NOW fire the single network call for live stock counts
-    const data = await apFetch({ action: "getLiveStockForItem", materialName: cleanMaterialName, projectId: projectId });
+    const data = await apFetch({ action: "getLiveStockForItem", itemCode: matchedCatalogEntry.itemCode, projectId: projectId });
     if (!data.success) return;
 
     // Patch inventory counts in local cache
@@ -9474,15 +9477,6 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
     if (leadDropEl) leadDropEl.focus();
     return;
   }
-
-  if (isPO) {
-    const poOwnerDropEl = document.getElementById("po-owner-of-order-dropdown");
-    if (!poOwnerDropEl || !poOwnerDropEl.value || poOwnerDropEl.value.trim() === "") {
-      alert("Please select the Name of Owner of Order before processing.");
-      if (poOwnerDropEl) poOwnerDropEl.focus();
-      return;
-    }
-  }
   
   if (feedbackBanner) feedbackBanner.style.display = "none";
   
@@ -9501,21 +9495,22 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
       reader.readAsDataURL(activeWorkingFile);
     });
 
-    const isPdfFormat = activeWorkingFile.type === "application/pdf";
-
-    const poOwnerDropEl = document.getElementById("po-owner-of-order-dropdown");
-    const ownerOfOrder = (isPO && poOwnerDropEl) ? poOwnerDropEl.value.trim() : "";
-
     const leadDropdownIdsForSubmit = { "DISPATCH": "dispatch-bill-lead-dropdown", "COMMISSION": "commissioning-report-lead-dropdown", "PURCHASE_ORDER": "purchase-order-lead-dropdown" };
     const selectedLeadIdForSubmit = document.getElementById(leadDropdownIdsForSubmit[opsFlagTypeString]).value.trim();
+
+    // Owner of Order used to be a manual selection -- now auto-filled from
+    // the logged-in operator, matching the same approach used elsewhere
+    // (BOQ Prepared By, Job Card Created By, etc.) instead of asking.
+    const fields = isPO ? { abps_owner_of_order: appActiveOperatorIdentityString || "" } : {};
 
     const data = await apFetch({
       action: "commitMarketingOperationsDocument",
       activeEngineer: appActiveOperatorIdentityString,
-      operationType: opsFlagTypeString,
-      fileData64: fileBase64Raw,
-      isPdf: isPdfFormat,
-      ownerOfOrder: ownerOfOrder,
+      docType: opsFlagTypeString,
+      fileName: activeWorkingFile.name,
+      base64Data: fileBase64Raw,
+      mimeType: activeWorkingFile.type || "application/octet-stream",
+      fields,
       leadId: selectedLeadIdForSubmit
     });
     if (data.success) {
@@ -9674,9 +9669,9 @@ async function parseGateDocumentsWithAI() {
     // Use whichever document is available, prefer invoice, fall back to challan
     const data = await apFetch({ 
       action: "storeProcessAIInvoiceBlob", 
-      imageBlobBase64: inv64 || ch64,
+      invoiceBase64: inv64 || ch64,
       invoiceMimeType: targetGateInvoiceFileObj ? targetGateInvoiceFileObj.type : "image/jpeg",
-      challanImageBase64: (inv64 && ch64) ? ch64 : null,
+      challanBase64: (inv64 && ch64) ? ch64 : null,
       challanMimeType: targetGateChallanFileObj ? targetGateChallanFileObj.type : "image/jpeg",
       canonicalMaterialsCatalog: existingMaterialNamesList 
     });
@@ -12309,12 +12304,18 @@ async function submitCreateBOQ() {
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
   showBlockingOverlay("Saving Bill of Quantity Draft...");
 
+  const totalCostPerSet = cboqMaterialRows.reduce((sum, row) => {
+    return sum + ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0));
+  }, 0);
+  const totalCost = totalCostPerSet * orderQty;
+
   try {
     const data = await apFetch({
       action: "createBOQDraft",
       projectId, customerName, productName, productRating,
       department, orderQuantity: orderQty,
       materialRowsList: cboqMaterialRows,
+      totalCostPerSet, totalCost,
       preparedBy
     });
     hideBlockingOverlay();
@@ -12525,7 +12526,7 @@ function renderEBOQForm(containerId) {
           <input type="text" id="eboq-product-name" value="${draft.productName}" ${eboqMode === "authorize-update" ? 'readonly' : 'oninput="updateEBOQId()"'} style="padding:8px; ${eboqMode === "authorize-update" ? 'background:#f1f5f9; color:var(--muted); cursor:not-allowed;' : 'border:1.5px solid var(--border);'} border-radius:var(--radius);" />
         </div>
         <div>
-          <label class="field-label" style="margin-top:0;">${eboqMode === "authorize-update" ? "Product Rating (locked)" : "Product Rating *"}</label>
+          <label class="field-label" style="margin-top:0;">${eboqMode === "authorize-update" ? "Product Rating (locked)" : "Product Rating"}</label>
           <input type="text" id="eboq-product-rating" value="${draft.productRating}" ${eboqMode === "authorize-update" ? 'readonly' : 'oninput="updateEBOQId()"'} style="padding:8px; ${eboqMode === "authorize-update" ? 'background:#f1f5f9; color:var(--muted); cursor:not-allowed;' : 'border:1.5px solid var(--border);'} border-radius:var(--radius);" /></div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
@@ -13044,6 +13045,11 @@ function renderUBOQForm() {
       </div>
     </div>
 
+    <div style="margin-bottom:16px;">
+      <label class="field-label" style="margin-top:0;">Justification for Revision *</label>
+      <textarea id="uboq-justification" rows="2" placeholder="Explain why this BOQ is being revised..." style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; resize:vertical; font-family:inherit; font-size:inherit;"></textarea>
+    </div>
+
     <div style="background:#f0fdf4; border:1.5px solid #86efac; border-radius:var(--radius); padding:14px; margin-bottom:16px; display:flex; justify-content:flex-end; gap:32px;">
       <div style="text-align:right;">
         <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Total BOQ Cost Per Set</div>
@@ -13213,6 +13219,7 @@ async function submitUpdateBOQ() {
   const productRating= document.getElementById("uboq-product-rating")?.value.trim() || "";
   const department   = document.getElementById("uboq-department")?.value.trim() || "";
   const orderQty     = parseInt(document.getElementById("uboq-order-qty")?.value) || 0;
+  const justification= document.getElementById("uboq-justification")?.value.trim() || "";
 
   const _uValidationFail = (msg) => { _submitUpdateBOQInProgress = false; showBOQBanner(feedbackId, msg, "error"); };
 
@@ -13220,6 +13227,7 @@ async function submitUpdateBOQ() {
   if (!productRating) { _uValidationFail("⚠️ Product Rating is required."); return; }
   if (!department)    { _uValidationFail("⚠️ Department is required."); return; }
   if (orderQty < 1)   { _uValidationFail("⚠️ Order Quantity must be at least 1."); return; }
+  if (!justification) { _uValidationFail("⚠️ Justification for Revision is required."); return; }
   if (uboqMaterialRows.length === 0) { _uValidationFail("⚠️ At least one material row is required."); return; }
 
   const invalidRow = uboqMaterialRows.find(r => !r.descriptionOfMaterial || !r.quantityFor1Set);
@@ -13233,9 +13241,9 @@ async function submitUpdateBOQ() {
     const data = await apFetch({
       action: "submitBOQUpdate",
       boqId: uboqCurrentDraft.boqId,
-      productName, productRating, department,
-      orderQuantity: orderQty,
-      materialRowsList: uboqMaterialRows
+      justification,
+      newMaterialRows: uboqMaterialRows,
+      newOrderQuantity: orderQty
     });
     hideBlockingOverlay();
 
@@ -14082,7 +14090,9 @@ async function submitUploadDrawing() {
     const data = await apFetch({
       action: "uploadDrawingDocument",
       projectId,
-      file: { fileName: uploadDrawingsSelectedFile.name, base64Data: b64, mimeType: uploadDrawingsSelectedFile.type || "application/octet-stream" }
+      fileName: uploadDrawingsSelectedFile.name,
+      base64Data: b64,
+      mimeType: uploadDrawingsSelectedFile.type || "application/octet-stream"
     });
 
     if (data.success) {
@@ -14424,7 +14434,7 @@ async function enterPOEditMode(poNumber) {
   const projRes = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
   window.apoEditProjects = (projRes.success ? (projRes.projects || []) : []).map(p => p.toString());
 
-  const data = await apFetch({ action: "fetchPODraftById", poNumber });
+  const data = await apFetch({ action: "fetchPODraftById", poNo: poNumber });
   if (!data.success) { detail.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
   const po = data.po;
   window.apoEditPO = po;
@@ -14629,7 +14639,7 @@ async function togglePOAuthDetail(poNumber, headerEl) {
   detail.style.display = "block";
   detail.innerHTML = `<div style="padding:14px; text-align:center; color:var(--muted);">Loading...</div>`;
   try {
-    const data = await apFetch({ action: "fetchPODraftById", poNumber });
+    const data = await apFetch({ action: "fetchPODraftById", poNo: poNumber });
     if (!data.success) { detail.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
     const po = data.po;
     const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
