@@ -12639,15 +12639,43 @@ function renderEBOQForm(containerId) {
   }
 }
 
-function updateEBOQId() {
-  const projectId    = eboqCurrentDraft ? eboqCurrentDraft.projectId : "";
-  const productName  = document.getElementById("eboq-product-name")?.value.trim() || "";
-  const productRating= document.getElementById("eboq-product-rating")?.value.trim() || "";
-  const cleanProduct = productName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
-  const cleanRating  = productRating.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
-  const newId        = "BOQ-" + projectId + "-" + cleanProduct + "_" + cleanRating;
-  const el = document.getElementById("eboq-boq-id");
-  if (el) el.value = newId;
+// updateEBOQId() removed -- the BOQ ID is generated once at creation
+// time and never changes; this used to overwrite the correct displayed
+// ID with a bogus client-side recomputation ("BOQ-<projectId>-<garbled>")
+// the moment someone touched Product Name/Rating, which is exactly the
+// wrong-ID-shown bug that got reported. Product Name/Rating are now a
+// locked item-code search (see handleEBOQProductSearch/selectEBOQProduct
+// below) rather than free text, so there's nothing left that needs to
+// recompute a preview here at all.
+function handleEBOQProductSearch(query) {
+  const dropdown = document.getElementById("eboq-product-dropdown");
+  const catalog = (window.itemCodeCatalogCache || []).map(c => ({ ...c, displayName: c.productName }));
+  if (!query || query.trim().length < 1) { dropdown.style.display = "none"; return; }
+
+  const q = query.toLowerCase();
+  const matches = catalog.filter(item => (item.productName || "").toLowerCase().includes(q)).slice(0, 10);
+
+  if (matches.length === 0) {
+    dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">No matching product found.</div>`;
+    dropdown.style.display = "block";
+    return;
+  }
+
+  dropdown.innerHTML = matches.map(item => `
+    <div onclick="selectEBOQProduct('${item.productName.replace(/'/g,"\\'")}', '${(item.rating||'').replace(/'/g,"\\'")}')"
+      style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>
+      ${item.displayName}${item.rating ? ` <span style="color:var(--brand); font-weight:700;">${item.rating}</span>` : ""}
+    </div>`).join("");
+  dropdown.style.display = "block";
+}
+
+function selectEBOQProduct(productName, rating) {
+  document.getElementById("eboq-product-search").value = productName;
+  document.getElementById("eboq-product-name").value = productName;
+  document.getElementById("eboq-product-rating").value = rating || "";
+  document.getElementById("eboq-product-dropdown").style.display = "none";
 }
 
 function addEBOQMaterialRow() {
