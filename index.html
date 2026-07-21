@@ -13652,7 +13652,7 @@ function handleFGProductSearch(query) {
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>
-      ${item.displayName}
+      ${item.displayName}${item.rating ? ` <span style="color:var(--brand); font-weight:700;">${item.rating}</span>` : ""}
       ${item.typeOfMaterial ? `<span style="font-size:0.7rem; color:var(--muted); margin-left:6px;">(${window.typeLabelDisplay_(item.typeOfMaterial)})</span>` : ""}
     </div>`).join("");
   dropdown.style.display = "block";
