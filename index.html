@@ -12532,16 +12532,26 @@ function renderEBOQForm(containerId) {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">${eboqMode === "authorize-update" ? "Product Name (locked)" : "Product Name *"}</label>
-          <input type="text" id="eboq-product-name" value="${draft.productName}" ${eboqMode === "authorize-update" ? 'readonly' : 'oninput="updateEBOQId()"'} style="padding:8px; ${eboqMode === "authorize-update" ? 'background:#f1f5f9; color:var(--muted); cursor:not-allowed;' : 'border:1.5px solid var(--border);'} border-radius:var(--radius);" />
+          ${eboqMode === "authorize-update" ? `
+          <input type="text" value="${draft.productName}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          ` : `
+          <div style="position:relative;">
+            <input type="text" id="eboq-product-search" value="${draft.productName}" autocomplete="off"
+              oninput="handleEBOQProductSearch(this.value)"
+              style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
+            <div id="eboq-product-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 var(--radius) var(--radius); max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+          </div>
+          <input type="hidden" id="eboq-product-name" value="${draft.productName}" />
+          `}
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">${eboqMode === "authorize-update" ? "Product Rating (locked)" : "Product Rating"}</label>
-          <input type="text" id="eboq-product-rating" value="${draft.productRating}" ${eboqMode === "authorize-update" ? 'readonly' : 'oninput="updateEBOQId()"'} style="padding:8px; ${eboqMode === "authorize-update" ? 'background:#f1f5f9; color:var(--muted); cursor:not-allowed;' : 'border:1.5px solid var(--border);'} border-radius:var(--radius);" /></div>
+          <input type="text" id="eboq-product-rating" value="${draft.productRating}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" ${eboqMode === "authorize-update" ? "" : 'placeholder="Auto-filled from Product Name"'} /></div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Order Quantity (No. of Sets) *</label>
-          <input type="number" id="eboq-order-qty" value="${draft.orderQuantity}" min="1" oninput="updateEBOQTotals()" style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          <input type="number" id="eboq-order-qty" value="${formatQtyTrimmed(draft.orderQuantity)}" min="1" oninput="updateEBOQTotals()" style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Date</label>
