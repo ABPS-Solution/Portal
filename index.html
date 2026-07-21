@@ -13612,7 +13612,7 @@ function handleCBOQProductSearch(query) {
 function selectCBOQProduct(productName, rating) {
   const searchEl = document.getElementById("cboq-product-search");
   const ratingEl = document.getElementById("cboq-product-rating");
-  searchEl.value = rating ? `${productName} ${rating}` : productName;
+  searchEl.value = productName;
   document.getElementById("cboq-product-name").value = productName;
   ratingEl.value = rating || "";
   document.getElementById("cboq-product-dropdown").style.display = "none";
