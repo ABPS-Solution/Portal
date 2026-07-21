@@ -12414,14 +12414,13 @@ async function initializeAuthorizeBOQPanel(mode) {
         <div class="contact-summary-header-row" onclick="toggleAuthBOQCardExpansion('${draft.boqId}', '${mode}')" style="cursor:pointer; width:100%; padding-bottom:8px;">
           <div class="contact-summary-title-info" style="width:100%;">
             <div class="meta-row-line-block" style="margin-bottom:6px;">
-              <span style="font-family:monospace; font-weight:800; background:var(--brand); color:#fff; font-size:0.72rem; padding:3px 6px;">${draft.boqId}</span>
               <span style="background:#edf2f7;">Customer:</span><strong style="margin-right:15px;">${draft.customerName}</strong>
               <span style="background:#edf2f7;">Project ID:</span><strong style="color:var(--brand);">${draft.projectId}</strong>
             </div>
             <div class="meta-row-line-block">
               <span style="background:#e2e8f0;">Product:</span><strong style="margin-right:15px;">${draft.productName} ${draft.productRating}</strong>
               <span style="background:#edf2f7;">Department:</span><strong style="margin-right:15px;">${draft.department}</strong>
-              <span style="background:#edf2f7;">Qty:</span><strong style="margin-right:15px;">${draft.orderQuantity}</strong>
+              <span style="background:#edf2f7;">Qty:</span><strong style="margin-right:15px;">${formatQtyTrimmed(draft.orderQuantity)}</strong>
               <span style="background:#edf2f7;">Date:</span><strong style="margin-right:15px;">${formatDateDMY(draft.date)}</strong>
               <span style="background:#edf2f7;">Prepared By:</span><strong>${draft.preparedBy}</strong>
             </div>
@@ -14381,6 +14380,17 @@ async function savePPSActionPlans(projectId) {
 // shift silently rolling the date back/forward a day. Real timestamps
 // (created_at, ts, etc.) DO go through Date object conversion, since
 // localizing time-of-day is the correct behavior there.
+
+// Trims trailing zeros from a NUMERIC-column value Postgres returns as a
+// string like "2.000" -- shows "2" for whole numbers, "2.5" if that's
+// what's actually there, never a padded decimal.
+function formatQtyTrimmed(value) {
+  if (value === null || value === undefined || value === "") return "";
+  const n = Number(value);
+  if (isNaN(n)) return String(value);
+  return String(parseFloat(n.toFixed(6)));
+}
+
 function formatDateDMY(value) {
   if (!value) return "";
   const s = String(value);
