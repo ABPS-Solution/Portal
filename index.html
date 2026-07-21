@@ -1275,13 +1275,13 @@
       <div id="create-boq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
       <!-- Import Existing BOQ -->
-      <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+      <div id="cboq-import-section" style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:var(--radius); padding:16px; margin-bottom:16px;">
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#6d28d9; margin-bottom:8px; letter-spacing:0.5px;">Import an Existing BOQ (Optional)</div>
         <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Select a finalized BOQ for a similar product to pre-fill the material rows below, instead of starting from scratch.</p>
         <div style="display:grid; grid-template-columns:2fr auto; gap:10px; align-items:end;">
           <div>
-            <label class="field-label" style="margin-top:0;">Search Product Name / Rating</label>
-            <select id="cboq-import-select" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+            <label class="field-label" style="margin-top:0;">Search Product Name + Rating</label>
+            <select id="cboq-import-select" style="padding:11px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
               <option value="">— Loading BOQs... —</option>
             </select>
           </div>
@@ -11972,39 +11972,45 @@ function selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, type
 // ═══════════════════════════════════════════════════════
 
 async function initializeCreateBOQPanel() {
-  const today = new Date().toLocaleDateString('en-CA');
-  const dateEl = document.getElementById("cboq-date"); if (dateEl) dateEl.value = today;
+  // Every OTHER Design screen resets fully on re-entry -- Create BOQ is the
+  // deliberate exception: leaving via "Return to Main Dashboard" and coming
+  // back should NOT lose whatever was already typed/added. isFirstVisit
+  // gates the one-time destructive reset (only runs the very first time
+  // this screen opens in the session); everything after that only
+  // refreshes the async dropdown DATA (projects list, catalog, personnel)
+  // without touching whatever the person already entered.
+  const isFirstVisit = !window._cboqInitializedOnce;
+  window._cboqInitializedOnce = true;
 
-  // Reset DOM immediately — guard every getElementById
-  const formBody = document.getElementById("cboq-form-body");
-  if (formBody) formBody.style.display = "";
-  cboqMaterialRows = [];
-  cboqSpecFiles    = [];
-  renderCBOQMaterialRows();
   const _g = id => document.getElementById(id);
-  if (_g("cboq-customer-name"))  _g("cboq-customer-name").value  = "";
-  if (_g("cboq-product-search")) { _g("cboq-product-search").value = ""; _g("cboq-product-search").style.height = "auto"; }
-  if (_g("cboq-product-name"))   _g("cboq-product-name").value   = "";
-  if (_g("cboq-product-rating")) { _g("cboq-product-rating").value = ""; _g("cboq-product-rating").style.height = "auto"; }
-  if (_g("cboq-department"))     _g("cboq-department").value     = "";
-  if (_g("cboq-order-qty"))      _g("cboq-order-qty").value      = "1";
-  if (_g("cboq-spec-doc-list"))  _g("cboq-spec-doc-list").innerHTML = "";
-  if (_g("create-boq-feedback")) _g("create-boq-feedback").style.display = "none";
-  if (_g("cboq-import-banner"))  { _g("cboq-import-banner").style.display = "none"; _g("cboq-import-banner").innerHTML = ""; }
-  window.cboqImportSourceInfo = null;
 
-  // Lock Prepared By until Department is selected
-  const preparedByEl = _g("cboq-prepared-by");
-  if (preparedByEl) {
-    preparedByEl.innerHTML = '<option value="">— Select Department First —</option>';
-    preparedByEl.disabled = true;
-    preparedByEl.style.opacity = "0.5";
+  if (isFirstVisit) {
+    const today = new Date().toLocaleDateString('en-CA');
+    const dateEl = _g("cboq-date"); if (dateEl) dateEl.value = today;
+
+    cboqMaterialRows = [];
+    cboqSpecFiles    = [];
+    if (_g("cboq-customer-name"))  _g("cboq-customer-name").value  = "";
+    if (_g("cboq-product-search")) { _g("cboq-product-search").value = ""; _g("cboq-product-search").style.height = "auto"; }
+    if (_g("cboq-product-name"))   _g("cboq-product-name").value   = "";
+    if (_g("cboq-product-rating")) { _g("cboq-product-rating").value = ""; _g("cboq-product-rating").style.height = "auto"; }
+    if (_g("cboq-department"))     _g("cboq-department").value     = "";
+    if (_g("cboq-order-qty"))      _g("cboq-order-qty").value      = "1";
+    if (_g("cboq-spec-doc-list"))  _g("cboq-spec-doc-list").innerHTML = "";
+    if (_g("cboq-import-banner"))  { _g("cboq-import-banner").style.display = "none"; _g("cboq-import-banner").innerHTML = ""; }
+    window.cboqImportSourceInfo = null;
   }
+
+  const formBody = _g("cboq-form-body");
+  if (formBody) formBody.style.display = "";
+  renderCBOQMaterialRows();
+  if (_g("create-boq-feedback")) _g("create-boq-feedback").style.display = "none";
 
   // Load Project IDs + item code catalog + personnel all in parallel
   const projDrop = _g("cboq-project-id");
   if (!projDrop) return;
-  projDrop.innerHTML = '<option value="">Loading projects...</option>';
+  const previouslySelectedProject = isFirstVisit ? "" : projDrop.value;
+  if (isFirstVisit) projDrop.innerHTML = '<option value="">Loading projects...</option>';
 
   const [projResult, , personnelResult, importListResult] = await Promise.allSettled([
     apFetch({ action: "pullLiveActiveProjectCodes" }),
@@ -12036,6 +12042,11 @@ async function initializeCreateBOQPanel() {
       const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
     });
     window.cboqProjectMeta = projResult.value.projectMeta || {};
+    // Restore whichever project was already selected before leaving,
+    // as long as it's still a valid Active project.
+    if (previouslySelectedProject && projResult.value.projects.includes(previouslySelectedProject)) {
+      projDrop.value = previouslySelectedProject;
+    }
   } else {
     projDrop.innerHTML = '<option value="">Error loading projects</option>';
   }
@@ -12325,6 +12336,8 @@ async function submitCreateBOQ() {
       if (fb) {
         const formBody = document.getElementById("cboq-form-body");
         if (formBody) formBody.style.display = "none";
+        const importSection = document.getElementById("cboq-import-section");
+        if (importSection) importSection.style.display = "none";
         fb.style.borderLeftColor = "var(--accent)";
         fb.style.background      = "#f0fff4";
         fb.style.color           = "#276749";
@@ -12339,7 +12352,7 @@ async function submitCreateBOQ() {
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Rating</span><span style="font-weight:700;">${productRating}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Order Quantity (Sets)</span><span style="font-weight:700;">${orderQty}</span></div>
           </div>
-          <button onclick="const fb=document.getElementById('cboq-form-body'); if(fb) fb.style.display=''; resetCreateBOQForm(); initializeCreateBOQPanel().catch(()=>{});"  
+          <button onclick="const fb=document.getElementById('cboq-form-body'); if(fb) fb.style.display=''; const is=document.getElementById('cboq-import-section'); if(is) is.style.display=''; resetCreateBOQForm(); initializeCreateBOQPanel().catch(()=>{});"  
             style="background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
             + Create New Bill of Quantity
           </button>`;
@@ -12385,10 +12398,7 @@ async function initializeAuthorizeBOQPanel(mode) {
 
   try {
     const data = await apFetch({ action:"fetchBOQDraftsQueue", status });
-    let drafts = data.drafts || [];
-
-    // Oldest first
-    drafts.sort((a, b) => a.createdTimestamp.localeCompare(b.createdTimestamp));
+    let drafts = data.drafts || []; // already ordered oldest-first by the backend query
 
     if (drafts.length === 0) {
       cardsFeed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;"><h3 style="color:var(--accent);">No Pending BOQs</h3></div>`;
