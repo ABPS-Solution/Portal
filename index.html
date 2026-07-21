@@ -1292,57 +1292,57 @@
 
       <!-- Header Fields -->
       <div id="cboq-form-body">
-      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
-        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px; letter-spacing:0.5px;">BOQ Header Information</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-          <div>
-            <label class="field-label" style="margin-top:0;">Project ID *</label>
-            <select id="cboq-project-id" onchange="handleCBOQProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-              <option value="">— Select Project ID —</option>
-            </select>
-          </div>
-          <div>
-            <label class="field-label" style="margin-top:0;">Customer Name</label>
-            <input type="text" id="cboq-customer-name" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Project ID" />
-          </div>
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
-          <div>
-            <label class="field-label" style="margin-top:0;">Product Name *</label>
-            <div style="position:relative;">
-              <textarea id="cboq-product-search" disabled rows="1"
-                placeholder="Type to search product name..."
-                autocomplete="off"
-                oninput="handleCBOQProductSearch(this.value); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
-                style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; resize:none; overflow:hidden; font-family:inherit; font-size:inherit; line-height:1.4; display:block; min-height:38px;"></textarea>
-              <div id="cboq-product-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 var(--radius) var(--radius); max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px; letter-spacing:0.5px;">BOQ Header Information</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Project ID *</label>
+              <select id="cboq-project-id" onchange="handleCBOQProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+                <option value="">— Select Project ID —</option>
+              </select>
             </div>
-            <input type="hidden" id="cboq-product-name" />
+            <div>
+              <label class="field-label" style="margin-top:0;">Customer Name</label>
+              <input type="text" id="cboq-customer-name" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Project ID" />
+            </div>
           </div>
-          <div>
-            <label class="field-label" style="margin-top:0;">Product Rating *</label>
-            <textarea id="cboq-product-rating" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; font-family:inherit; font-size:inherit; line-height:1.4; display:block; min-height:38px; border:1.5px solid var(--border);" placeholder="Auto-filled from Product Name"></textarea>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Product Name *</label>
+              <div style="position:relative;">
+                <textarea id="cboq-product-search" disabled rows="1"
+                  placeholder="Type to search product name..."
+                  autocomplete="off"
+                  oninput="handleCBOQProductSearch(this.value); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+                  style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; resize:none; overflow:hidden; font-family:inherit; font-size:inherit; line-height:1.4; display:block; min-height:38px;"></textarea>
+                <div id="cboq-product-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 var(--radius) var(--radius); max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+              </div>
+              <input type="hidden" id="cboq-product-name" />
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Product Rating *</label>
+              <textarea id="cboq-product-rating" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; font-family:inherit; font-size:inherit; line-height:1.4; display:block; min-height:38px; border:1.5px solid var(--border);" placeholder="Auto-filled from Product Name"></textarea>
+            </div>
           </div>
-          <div>
-            <label class="field-label" style="margin-top:0;">Department *</label>
-            <select id="cboq-department" disabled onchange="handleCBOQDepartmentChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-              <option value="">— Select —</option>
-              <option value="Reactor">Reactor</option>
-              <option value="Capacitor">Capacitor</option>
-              <option value="Panel">Panel</option>
-            </select>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Order Quantity (No. of Sets) *</label>
+              <input type="number" id="cboq-order-qty" min="1" value="1" disabled oninput="updateCBOQTotals()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Date</label>
+              <input type="text" id="cboq-date" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Department *</label>
+              <select id="cboq-department" disabled onchange="handleCBOQDepartmentChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+                <option value="">— Select —</option>
+                <option value="Reactor">Reactor</option>
+                <option value="Capacitor">Capacitor</option>
+                <option value="Panel">Panel</option>
+              </select>
+            </div>
           </div>
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-          <div>
-            <label class="field-label" style="margin-top:0;">Order Quantity (No. of Sets) *</label>
-            <input type="number" id="cboq-order-qty" min="1" value="1" disabled oninput="updateCBOQTotals()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
-          </div>
-          <div>
-            <label class="field-label" style="margin-top:0;">Date</label>
-            <input type="text" id="cboq-date" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
-          </div>
-        </div>
         </div>
 
       <!-- Material Rows -->
@@ -12519,7 +12519,7 @@ function renderEBOQForm(containerId) {
           <input type="text" value="${draft.customerName}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">${eboqMode === "authorize-update" ? "Product Name (locked)" : "Product Name *"}</label>
           <input type="text" id="eboq-product-name" value="${draft.productName}" ${eboqMode === "authorize-update" ? 'readonly' : 'oninput="updateEBOQId()"'} style="padding:8px; ${eboqMode === "authorize-update" ? 'background:#f1f5f9; color:var(--muted); cursor:not-allowed;' : 'border:1.5px solid var(--border);'} border-radius:var(--radius);" />
@@ -12527,6 +12527,16 @@ function renderEBOQForm(containerId) {
         <div>
           <label class="field-label" style="margin-top:0;">${eboqMode === "authorize-update" ? "Product Rating (locked)" : "Product Rating *"}</label>
           <input type="text" id="eboq-product-rating" value="${draft.productRating}" ${eboqMode === "authorize-update" ? 'readonly' : 'oninput="updateEBOQId()"'} style="padding:8px; ${eboqMode === "authorize-update" ? 'background:#f1f5f9; color:var(--muted); cursor:not-allowed;' : 'border:1.5px solid var(--border);'} border-radius:var(--radius);" /></div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Order Quantity (No. of Sets) *</label>
+          <input type="number" id="eboq-order-qty" value="${draft.orderQuantity}" min="1" oninput="updateEBOQTotals()" style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Date</label>
+          <input type="text" value="${formatDateDMY(draft.date)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+        </div>
         <div>
           <label class="field-label" style="margin-top:0;">Department ${eboqMode === "authorize-update" ? "(locked)" : "*"}</label>
           ${eboqMode === "authorize-update"
@@ -12537,16 +12547,6 @@ function renderEBOQForm(containerId) {
                 <option value="Panel" ${draft.department==="Panel"?"selected":""}>Panel</option>
               </select>`
           }
-        </div>
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        <div>
-          <label class="field-label" style="margin-top:0;">Order Quantity (No. of Sets) *</label>
-          <input type="number" id="eboq-order-qty" value="${draft.orderQuantity}" min="1" oninput="updateEBOQTotals()" style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
-        </div>
-        <div>
-          <label class="field-label" style="margin-top:0;">Date</label>
-          <input type="text" value="${draft.date ? new Date(draft.date).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) : ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
       </div>
     </div>
@@ -12991,7 +12991,7 @@ function renderUBOQForm() {
           <input type="text" value="${draft.customerName}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Product Name (locked)</label>
           <input type="text" id="uboq-product-name" value="${draft.productName}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
@@ -13000,19 +13000,19 @@ function renderUBOQForm() {
           <label class="field-label" style="margin-top:0;">Product Rating (locked)</label>
           <input type="text" id="uboq-product-rating" value="${draft.productRating}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
-        <div>
-          <label class="field-label" style="margin-top:0;">Department (locked)</label>
-          <input type="text" id="uboq-department" value="${draft.department}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
-        </div>
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Order Quantity (No. of Sets) *</label>
           <input type="number" id="uboq-order-qty" value="${draft.orderQuantity}" min="1" oninput="updateUBOQTotals()" style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Date</label>
-          <input type="text" value="${draft.date ? new Date(draft.date).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) : ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" value="${formatDateDMY(draft.date)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Department (locked)</label>
+          <input type="text" id="uboq-department" value="${draft.department}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
       </div>
     </div>
