@@ -6976,7 +6976,6 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   }
 
   // Production Department block visibility
-  if (document.getElementById("mod-create-job-card")) document.getElementById("mod-create-job-card").style.display = canCreateJobCardNumber ? "block" : "none";
   const productionHeaderBlock = document.getElementById("dashboard-production-department-header-block");
   if (productionHeaderBlock) {
     productionHeaderBlock.style.display = (canCreateJobCardNumber || canCreateTicket || canAddFinishedGoods) ? "block" : "none";
