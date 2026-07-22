@@ -12089,7 +12089,11 @@ async function importCBOQFromExisting() {
     const productSearchEl = document.getElementById("cboq-product-search");
     const productNameEl = document.getElementById("cboq-product-name");
     const productRatingEl = document.getElementById("cboq-product-rating");
-    if (productSearchEl) { productSearchEl.value = data.sourceProductName || ""; productSearchEl.style.height = "auto"; productSearchEl.style.height = productSearchEl.scrollHeight + "px"; }
+    if (productSearchEl) {
+      productSearchEl.value = data.sourceProductName || "";
+      productSearchEl.disabled = false; // editable after import, even if a project hasn't been picked yet
+      productSearchEl.style.height = "auto"; productSearchEl.style.height = productSearchEl.scrollHeight + "px";
+    }
     if (productNameEl) productNameEl.value = data.sourceProductName || "";
     if (productRatingEl) { productRatingEl.value = data.sourceProductRating || ""; productRatingEl.style.height = "auto"; productRatingEl.style.height = productRatingEl.scrollHeight + "px"; }
 
@@ -12301,8 +12305,15 @@ function resetCreateBOQForm() {
   renderCBOQMaterialRows();
   ["cboq-project-id","cboq-department"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   ["cboq-customer-name","cboq-product-name","cboq-product-rating","cboq-prepared-by"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  const searchEl = document.getElementById("cboq-product-search");
+  if (searchEl) { searchEl.value = ""; searchEl.style.height = "auto"; }
+  const ratingEl = document.getElementById("cboq-product-rating");
+  if (ratingEl) ratingEl.style.height = "auto";
   document.getElementById("cboq-order-qty").value = "1";
   const fbEl = document.getElementById("create-boq-feedback"); if (fbEl) fbEl.style.display = "none";
+  const importBanner = document.getElementById("cboq-import-banner"); if (importBanner) importBanner.style.display = "none";
+  window.cboqImportSourceInfo = null;
+  const importSelect = document.getElementById("cboq-import-select"); if (importSelect) importSelect.value = "";
   handleCBOQProjectChange(""); // re-lock fields
 }
 
