@@ -12095,7 +12095,7 @@ async function importCBOQFromExisting() {
 
     const banner = document.getElementById("cboq-import-banner");
     banner.style.display = "block";
-    banner.textContent = `This BOQ is imported from Project ID: ${data.sourceProjectId} and for Product: ${data.sourceProductName} ${data.sourceProductRating} — make the necessary changes to it.`;
+    banner.textContent = `This BOQ is imported from Project ID: ${data.sourceProjectId} and for Product: ${data.sourceProductName} ${data.sourceProductRating}. Make the necessary changes to it.`;
 
     window.cboqImportSourceInfo = { boqId, sourceProjectId: data.sourceProjectId, sourceProductName: data.sourceProductName, sourceProductRating: data.sourceProductRating };
   } catch(e) {
