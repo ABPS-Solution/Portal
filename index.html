@@ -12023,7 +12023,7 @@ async function initializeCreateBOQPanel() {
     if (importListResult.status === "fulfilled" && importListResult.value.success && importListResult.value.boqs.length > 0) {
       importSelect.innerHTML = '<option value="">— Select a finalized BOQ —</option>' +
         importListResult.value.boqs.map(b =>
-          `<option value="${b.boqId}">${b.productName} ${b.productRating} — Project: ${b.projectId} — Sets: ${b.orderQuantity}</option>`
+          `<option value="${b.boqId}">${b.productName} ${b.productRating} | Project: ${b.projectId} | Order Quantity: ${Math.round(Number(b.orderQuantity) || 0)}</option>`
         ).join("");
     } else {
       importSelect.innerHTML = '<option value="">No finalized BOQs available to import</option>';
@@ -12065,16 +12065,33 @@ async function importCBOQFromExisting() {
     const data = await apFetch({ action: "fetchBOQMaterialRowsForImport", boqId: boqId });
     if (!data.success) { alert("Import failed: " + data.error); return; }
 
+    // Strip trailing decimal noise (DB numeric columns come back as
+    // strings like "16.000") the same way formatRateSmart does server-side:
+    // whole numbers show with no decimals, fractional values keep up to 2.
+    const cleanNum = (v) => {
+      const n = Number(v) || 0;
+      return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
+    };
     cboqMaterialRows = (data.materialRows || []).map(row => ({
       typeOfStore: row.typeOfStore || "Raw Materials Store",
       descriptionOfMaterial: row.descriptionOfMaterial || "",
       itemCode: row.itemCode || "",
       make: row.make || "",
-      quantityFor1Set: row.quantityFor1Set || "",
+      quantityFor1Set: row.quantityFor1Set !== null && row.quantityFor1Set !== undefined ? cleanNum(row.quantityFor1Set) : "",
       unit: row.unit || "",
-      designRatePerQuantity: row.designRatePerQuantity || ""
+      designRatePerQuantity: row.designRatePerQuantity !== null && row.designRatePerQuantity !== undefined ? cleanNum(row.designRatePerQuantity) : ""
     }));
     renderCBOQMaterialRows();
+
+    // Auto-fill Product Name / Product Rating from the imported BOQ —
+    // previously left blank, forcing the user to re-select the product
+    // via the search box even though they'd just picked one to import from.
+    const productSearchEl = document.getElementById("cboq-product-search");
+    const productNameEl = document.getElementById("cboq-product-name");
+    const productRatingEl = document.getElementById("cboq-product-rating");
+    if (productSearchEl) { productSearchEl.value = data.sourceProductName || ""; productSearchEl.style.height = "auto"; productSearchEl.style.height = productSearchEl.scrollHeight + "px"; }
+    if (productNameEl) productNameEl.value = data.sourceProductName || "";
+    if (productRatingEl) { productRatingEl.value = data.sourceProductRating || ""; productRatingEl.style.height = "auto"; productRatingEl.style.height = productRatingEl.scrollHeight + "px"; }
 
     const banner = document.getElementById("cboq-import-banner");
     banner.style.display = "block";
