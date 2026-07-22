@@ -12511,7 +12511,7 @@ function renderEBOQForm(containerId) {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">BOQ ID (auto)</label>
-          <input type="text" id="eboq-boq-id" value="${draft.boqId}" readonly style="padding:8px; font-family:monospace; font-weight:800; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:var(--radius);" />
+          <textarea id="eboq-boq-id" readonly rows="1" style="padding:8px; font-family:monospace; font-weight:800; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${draft.boqId}</textarea>
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Prepared By (locked)</label>
@@ -12614,6 +12614,9 @@ function renderEBOQForm(containerId) {
       </button>
     </div>
   `;
+
+  const boqIdBox = document.getElementById('eboq-boq-id');
+  if (boqIdBox) { boqIdBox.style.height = 'auto'; boqIdBox.style.height = boqIdBox.scrollHeight + 'px'; }
 
   renderEBOQMaterialRows();
 
