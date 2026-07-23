@@ -12410,9 +12410,17 @@ async function initializeAuthorizeBOQPanel(mode) {
   eboqCurrentDraft = null;
   eboqExpandedCardBoqId = null;
 
-  const cardsFeedId = mode === "authorize" ? "auth-boq-queue-cards-feed" : "auth-boq-upd-queue-cards-feed";
-  const feedbackId  = mode === "authorize" ? "auth-boq-feedback" : "auth-boq-upd-feedback";
-  const status      = mode === "authorize" ? "Pending Authorization" : "Pending Authorization Update";
+  // Revision-authorize is a fundamentally different data source
+  // (boq_update_requests, keyed by updateId) than initial authorize
+  // (boq_drafts pending queue), so it has its own dedicated flow.
+  if (mode === "authorize-update") {
+    await initializeAuthorizeBOQRevisionPanel();
+    return;
+  }
+
+  const cardsFeedId = "auth-boq-queue-cards-feed";
+  const feedbackId  = "auth-boq-feedback";
+  const status      = "Pending Authorization";
 
   // Reset DOM immediately — before any async calls
   const cardsFeed = document.getElementById(cardsFeedId);
@@ -12459,6 +12467,241 @@ async function initializeAuthorizeBOQPanel(mode) {
     });
   } catch(e) {
     cardsFeed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${e.message}</div>`;
+  }
+}
+
+// ── Authorize BOQ Revision — its own flow, sourced from
+// boq_update_requests (keyed by updateId), NOT the boq_drafts pending
+// queue. Each pending request renders a card; expanding shows the
+// change summary + the proposed rows in an EDITABLE form (the authorizer
+// may tweak before approving); Authorize commits, Reject discards.
+let uboqRevList = [];          // cached pending requests from the server
+let uboqRevExpandedId = null;  // currently expanded updateId
+let uboqRevRows = [];          // editable working copy of the expanded request's rows
+
+async function initializeAuthorizeBOQRevisionPanel() {
+  const cardsFeed = document.getElementById("auth-boq-upd-queue-cards-feed");
+  const fbEl = document.getElementById("auth-boq-upd-feedback");
+  if (fbEl) { fbEl.style.display = "none"; fbEl.innerHTML = ""; }
+  if (!cardsFeed) return;
+  cardsFeed.style.display = "";
+  cardsFeed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);"><div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>Loading pending revisions...</div>`;
+
+  await loadItemCodeCatalogIntoCache().catch(() => {});
+  uboqRevExpandedId = null;
+  uboqRevRows = [];
+
+  try {
+    const data = await apFetch({ action: "fetchPendingBOQUpdateRequests" });
+    uboqRevList = data.requests || [];
+
+    if (uboqRevList.length === 0) {
+      cardsFeed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;"><h3 style="color:var(--accent);">No Pending BOQ Revisions</h3></div>`;
+      return;
+    }
+
+    cardsFeed.innerHTML = "";
+    uboqRevList.forEach(reqItem => {
+      const card = document.createElement("div");
+      card.className = "contact-summary-card-parent";
+      card.id = `auth-boqrev-card-${reqItem.updateId}`;
+      card.innerHTML = `
+        <div class="contact-summary-header-row" onclick="toggleBOQRevisionExpansion(${reqItem.updateId})" style="cursor:pointer; width:100%; padding-bottom:8px;">
+          <div class="contact-summary-title-info" style="width:100%;">
+            <div class="meta-row-line-block" style="margin-bottom:6px;">
+              <span style="background:#edf2f7;">Customer:</span><strong style="margin-right:15px;">${reqItem.customerName || ""}</strong>
+              <span style="background:#edf2f7;">Project ID:</span><strong style="color:var(--brand);">${reqItem.projectId || ""}</strong>
+            </div>
+            <div class="meta-row-line-block" style="margin-bottom:6px;">
+              <span style="background:#e2e8f0;">Product:</span><strong style="margin-right:15px;">${reqItem.productName || ""} ${reqItem.productRating || ""}</strong>
+              <span style="background:#edf2f7;">Requested By:</span><strong style="margin-right:15px;">${reqItem.requestedBy || ""}</strong>
+              <span style="background:#edf2f7;">Date:</span><strong>${formatDateDMY(reqItem.createdAt)}</strong>
+            </div>
+            <div class="meta-row-line-block">
+              <span style="background:#fef3c7;">Justification:</span><strong style="color:#92400e;">${reqItem.justification || ""}</strong>
+            </div>
+          </div>
+        </div>
+        <div id="auth-boqrev-body-${reqItem.updateId}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
+      `;
+      cardsFeed.appendChild(card);
+    });
+  } catch (e) {
+    cardsFeed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${e.message}</div>`;
+  }
+}
+
+async function toggleBOQRevisionExpansion(updateId) {
+  const bodyEl = document.getElementById(`auth-boqrev-body-${updateId}`);
+  if (!bodyEl) return;
+
+  if (uboqRevExpandedId === updateId) {
+    bodyEl.style.display = "none"; bodyEl.innerHTML = "";
+    uboqRevExpandedId = null; return;
+  }
+  if (uboqRevExpandedId) {
+    const prev = document.getElementById(`auth-boqrev-body-${uboqRevExpandedId}`);
+    if (prev) { prev.style.display = "none"; prev.innerHTML = ""; }
+  }
+
+  uboqRevExpandedId = updateId;
+  const reqItem = uboqRevList.find(r => r.updateId === updateId);
+  if (!reqItem) { bodyEl.innerHTML = `<p style="color:var(--warn);">Request not found — refresh the list.</p>`; bodyEl.style.display = "block"; return; }
+
+  // Editable working copy of the PROPOSED rows.
+  uboqRevRows = (reqItem.newMaterialRows || []).map(r => ({ ...r }));
+
+  // Build a plain-text diff summary from old vs new for the reviewer.
+  let summaryText = "Generating change summary...";
+  bodyEl.style.display = "block";
+  bodyEl.innerHTML = `
+    <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-bottom:16px;">
+      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:8px; letter-spacing:0.5px;">Change Summary</div>
+      <div id="boqrev-summary-text-${updateId}" style="font-size:0.85rem; color:#78350f; line-height:1.7; white-space:pre-line;">${summaryText}</div>
+    </div>
+    <div id="boqrev-rows-mount-${updateId}"></div>
+    <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px; margin-top:14px;">
+      <button class="nav-btn-styled" onclick="rejectBOQRevision(${updateId})" style="background:#dc2626; padding:8px 20px; font-weight:700;" id="boqrev-reject-btn-${updateId}">Reject Revision</button>
+      <button class="nav-btn-styled" onclick="authorizeBOQRevision(${updateId})" style="background:var(--accent); padding:8px 24px; font-weight:700;" id="boqrev-auth-btn-${updateId}">Authorize Revision</button>
+    </div>
+  `;
+
+  renderBOQRevisionRows(updateId);
+
+  try {
+    const sumData = await apFetch({
+      action: "generateBOQUpdateSummary",
+      boqId: reqItem.boqId,
+      updatedRows: uboqRevRows,
+      updatedDepartment: reqItem.department || "",
+      updatedOrderQty: parseInt(reqItem.newOrderQuantity) || 0
+    });
+    const el = document.getElementById(`boqrev-summary-text-${updateId}`);
+    if (el) el.textContent = sumData.summary || "No changes detected.";
+  } catch (e) {
+    const el = document.getElementById(`boqrev-summary-text-${updateId}`);
+    if (el) el.textContent = "Could not generate summary.";
+  }
+}
+
+// Renders the editable proposed-rows table. Reuses the same per-row
+// shape the create/update BOQ forms use so item-code lookups behave the
+// same. Kept intentionally simple: description, item code, qty/set,
+// unit, rate — editable — with a running recompute.
+function renderBOQRevisionRows(updateId) {
+  const mount = document.getElementById(`boqrev-rows-mount-${updateId}`);
+  if (!mount) return;
+  const rowsHtml = uboqRevRows.map((r, idx) => `
+    <tr>
+      <td style="padding:4px; text-align:center;">${idx + 1}</td>
+      <td style="padding:4px;"><input type="text" value="${(r.descriptionOfMaterial || '').replace(/"/g,'&quot;')}" oninput="uboqRevRows[${idx}].descriptionOfMaterial=this.value" style="width:100%; padding:5px; border:1px solid var(--border); border-radius:4px;" /></td>
+      <td style="padding:4px;"><input type="text" value="${(r.itemCode || '').replace(/"/g,'&quot;')}" oninput="uboqRevRows[${idx}].itemCode=this.value" style="width:100%; padding:5px; border:1px solid var(--border); border-radius:4px;" /></td>
+      <td style="padding:4px;"><input type="number" value="${r.quantityFor1Set ?? ''}" oninput="uboqRevRows[${idx}].quantityFor1Set=this.value; recomputeBOQRevisionSummary(${updateId})" style="width:80px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:center;" /></td>
+      <td style="padding:4px;"><input type="text" value="${(r.unit || '').replace(/"/g,'&quot;')}" oninput="uboqRevRows[${idx}].unit=this.value" style="width:60px; padding:5px; border:1px solid var(--border); border-radius:4px;" /></td>
+      <td style="padding:4px;"><input type="number" value="${r.designRatePerQuantity ?? ''}" oninput="uboqRevRows[${idx}].designRatePerQuantity=this.value; recomputeBOQRevisionSummary(${updateId})" style="width:90px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:right;" /></td>
+      <td style="padding:4px; text-align:center;"><button onclick="uboqRevRows.splice(${idx},1); renderBOQRevisionRows(${updateId}); recomputeBOQRevisionSummary(${updateId});" style="background:#fee2e2; color:#b91c1c; border:none; border-radius:4px; padding:4px 9px; cursor:pointer; font-weight:700;">×</button></td>
+    </tr>
+  `).join("");
+  mount.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand);">Proposed Material Rows (editable)</div>
+      <button onclick="uboqRevRows.push({typeOfStore:'Raw Materials Store',descriptionOfMaterial:'',itemCode:'',make:'',quantityFor1Set:'',unit:'NOS',designRatePerQuantity:''}); renderBOQRevisionRows(${updateId});" style="background:var(--accent); color:#fff; border:none; border-radius:4px; padding:5px 12px; font-size:0.78rem; font-weight:700; cursor:pointer;">+ Add Row</button>
+    </div>
+    <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+      <thead><tr style="background:#f1f5f9;">
+        <th style="padding:6px;">Sr</th><th style="padding:6px; text-align:left;">Description of Material</th>
+        <th style="padding:6px;">Item Code</th><th style="padding:6px;">Qty/Set</th>
+        <th style="padding:6px;">Unit</th><th style="padding:6px;">Rate/Qty</th><th style="padding:6px;">Del</th>
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+  `;
+}
+
+// Debounced-ish live re-diff as the authorizer edits, so the summary
+// reflects THEIR edits, not just the original proposal.
+let _boqRevSummaryTimer = null;
+function recomputeBOQRevisionSummary(updateId) {
+  clearTimeout(_boqRevSummaryTimer);
+  _boqRevSummaryTimer = setTimeout(async () => {
+    const reqItem = uboqRevList.find(r => r.updateId === updateId);
+    if (!reqItem) return;
+    try {
+      const sumData = await apFetch({
+        action: "generateBOQUpdateSummary",
+        boqId: reqItem.boqId, updatedRows: uboqRevRows,
+        updatedDepartment: reqItem.department || "",
+        updatedOrderQty: parseInt(reqItem.newOrderQuantity) || 0
+      });
+      const el = document.getElementById(`boqrev-summary-text-${updateId}`);
+      if (el) el.textContent = sumData.summary || "No changes detected.";
+    } catch (_) {}
+  }, 600);
+}
+
+async function authorizeBOQRevision(updateId) {
+  const reqItem = uboqRevList.find(r => r.updateId === updateId);
+  if (!reqItem) return;
+  const invalid = uboqRevRows.find(r => !r.descriptionOfMaterial || r.quantityFor1Set === "" || r.quantityFor1Set === null || r.quantityFor1Set === undefined);
+  if (invalid) { showBOQBanner("auth-boq-upd-feedback", "⚠️ Every row must have a Material Description and Qty/Set.", "error"); return; }
+  if (uboqRevRows.length === 0) { showBOQBanner("auth-boq-upd-feedback", "⚠️ At least one material row is required.", "error"); return; }
+
+  const authBtn = document.getElementById(`boqrev-auth-btn-${updateId}`);
+  const rejBtn  = document.getElementById(`boqrev-reject-btn-${updateId}`);
+  if (authBtn) { authBtn.disabled = true; authBtn.textContent = "Authorizing..."; }
+  if (rejBtn) rejBtn.disabled = true;
+  showBlockingOverlay("Authorizing Bill of Quantity Revision...");
+
+  try {
+    const data = await apFetch({
+      action: "submitBOQUpdateAuthorize",
+      updateId,
+      editedMaterialRows: uboqRevRows,
+      editedOrderQuantity: reqItem.newOrderQuantity,
+      authorizedBy: appActiveOperatorIdentityString || ""
+    });
+    hideBlockingOverlay();
+    if (data.success) {
+      const pdfNote = data.pdfUrl ? ` <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">View updated BOQ PDF</a>` : "";
+      showBOQBanner("auth-boq-upd-feedback", `✅ Revision authorized for ${reqItem.boqId}.${pdfNote}`, "success");
+      await initializeAuthorizeBOQRevisionPanel(); // refresh the queue
+    } else {
+      if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize Revision"; }
+      if (rejBtn) rejBtn.disabled = false;
+      showBOQBanner("auth-boq-upd-feedback", data.error || "Authorization failed.", "error");
+    }
+  } catch (e) {
+    hideBlockingOverlay();
+    if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize Revision"; }
+    if (rejBtn) rejBtn.disabled = false;
+    showBOQBanner("auth-boq-upd-feedback", "Network error: " + e.message, "error");
+  }
+}
+
+async function rejectBOQRevision(updateId) {
+  const reqItem = uboqRevList.find(r => r.updateId === updateId);
+  if (!reqItem) return;
+  if (!confirm(`Reject this revision request for ${reqItem.boqId}? The BOQ stays at its current authorized version.`)) return;
+
+  const authBtn = document.getElementById(`boqrev-auth-btn-${updateId}`);
+  const rejBtn  = document.getElementById(`boqrev-reject-btn-${updateId}`);
+  if (rejBtn) { rejBtn.disabled = true; rejBtn.textContent = "Rejecting..."; }
+  if (authBtn) authBtn.disabled = true;
+
+  try {
+    const data = await apFetch({ action: "submitBOQUpdateReject", updateId });
+    if (data.success) {
+      showBOQBanner("auth-boq-upd-feedback", `Revision request for ${reqItem.boqId} was rejected.`, "success");
+      await initializeAuthorizeBOQRevisionPanel();
+    } else {
+      if (rejBtn) { rejBtn.disabled = false; rejBtn.textContent = "Reject Revision"; }
+      if (authBtn) authBtn.disabled = false;
+      showBOQBanner("auth-boq-upd-feedback", data.error || "Rejection failed.", "error");
+    }
+  } catch (e) {
+    if (rejBtn) { rejBtn.disabled = false; rejBtn.textContent = "Reject Revision"; }
+    if (authBtn) authBtn.disabled = false;
+    showBOQBanner("auth-boq-upd-feedback", "Network error: " + e.message, "error");
   }
 }
 
