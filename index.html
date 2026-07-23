@@ -12517,9 +12517,6 @@ async function initializeAuthorizeBOQRevisionPanel() {
               <span style="background:#edf2f7;">Requested By:</span><strong style="margin-right:15px;">${reqItem.requestedBy || ""}</strong>
               <span style="background:#edf2f7;">Date:</span><strong>${formatDateDMY(reqItem.createdAt)}</strong>
             </div>
-            <div class="meta-row-line-block">
-              <span style="background:#fef3c7;">Justification:</span><strong style="color:#92400e;">${reqItem.justification || ""}</strong>
-            </div>
           </div>
         </div>
         <div id="auth-boqrev-body-${reqItem.updateId}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
@@ -13284,7 +13281,8 @@ async function loadAuthorizedBOQsForProject(projectId) {
       const opt = document.createElement("option");
       opt.value = draft.boqId;
       const cleanDate = formatDateDMY(draft.date);
-      opt.textContent = `${draft.customerName} | ${draft.boqId} | ${draft.department} | Qty: ${draft.orderQuantity} | ${cleanDate} | By: ${draft.preparedBy}`;
+      const qtyDisplay = Math.round(Number(draft.orderQuantity) || 0);
+      opt.textContent = `${draft.customerName} | ${draft.boqId} | ${draft.department} | Qty: ${qtyDisplay} | ${cleanDate} | By: ${draft.preparedBy || "\u2014"}`;
       boqDrop.appendChild(opt);
     });
     boqDrop.disabled = false;
@@ -13350,7 +13348,7 @@ function renderUBOQForm() {
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Order Quantity (No. of Sets) *</label>
-          <input type="number" id="uboq-order-qty" value="${draft.orderQuantity}" min="1" oninput="updateUBOQTotals()" style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          <input type="number" id="uboq-order-qty" value="${Math.round(Number(draft.orderQuantity) || 0)}" min="1" oninput="updateUBOQTotals()" style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Date</label>
@@ -13388,11 +13386,6 @@ function renderUBOQForm() {
           <tbody id="uboq-material-rows-body"></tbody>
         </table>
       </div>
-    </div>
-
-    <div style="margin-bottom:16px;">
-      <label class="field-label" style="margin-top:0;">Justification for Revision *</label>
-      <textarea id="uboq-justification" rows="2" placeholder="Explain why this BOQ is being revised..." style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; resize:vertical; font-family:inherit; font-size:inherit;"></textarea>
     </div>
 
     <div style="background:#f0fdf4; border:1.5px solid #86efac; border-radius:var(--radius); padding:14px; margin-bottom:16px; display:flex; justify-content:flex-end; gap:32px;">
@@ -13564,7 +13557,6 @@ async function submitUpdateBOQ() {
   const productRating= document.getElementById("uboq-product-rating")?.value.trim() || "";
   const department   = document.getElementById("uboq-department")?.value.trim() || "";
   const orderQty     = parseInt(document.getElementById("uboq-order-qty")?.value) || 0;
-  const justification= document.getElementById("uboq-justification")?.value.trim() || "";
 
   const _uValidationFail = (msg) => { _submitUpdateBOQInProgress = false; showBOQBanner(feedbackId, msg, "error"); };
 
@@ -13572,7 +13564,6 @@ async function submitUpdateBOQ() {
   if (!productRating) { _uValidationFail("⚠️ Product Rating is required."); return; }
   if (!department)    { _uValidationFail("⚠️ Department is required."); return; }
   if (orderQty < 1)   { _uValidationFail("⚠️ Order Quantity must be at least 1."); return; }
-  if (!justification) { _uValidationFail("⚠️ Justification for Revision is required."); return; }
   if (uboqMaterialRows.length === 0) { _uValidationFail("⚠️ At least one material row is required."); return; }
 
   const invalidRow = uboqMaterialRows.find(r => !r.descriptionOfMaterial || !r.quantityFor1Set);
@@ -13586,7 +13577,6 @@ async function submitUpdateBOQ() {
     const data = await apFetch({
       action: "submitBOQUpdate",
       boqId: uboqCurrentDraft.boqId,
-      justification,
       newMaterialRows: uboqMaterialRows,
       newOrderQuantity: orderQty
     });
