@@ -12949,6 +12949,26 @@ function selectEBOQProduct(productName, rating) {
   document.getElementById("eboq-product-name").value = productName;
   document.getElementById("eboq-product-rating").value = rating || "";
   document.getElementById("eboq-product-dropdown").style.display = "none";
+  recomputeEBOQBoqId(productName, rating || "");
+}
+
+// BOQ ID format (set server-side by generateBOQId) is:
+// BOQ_<FYLabel>_<MonthAbbr>_<Company>_<PO>_<Product>_<Rating>
+// with underscores used ONLY as the 7-way segment separator (never
+// inside a segment itself). So the first 5 segments — BOQ, FY, Month,
+// Company, PO — are a stable prefix that survives a product change;
+// only the trailing Product/Rating segments need swapping when the
+// user picks a different item on this screen.
+function recomputeEBOQBoqId(productName, rating) {
+  const boqIdBox = document.getElementById('eboq-boq-id');
+  if (!boqIdBox || !eboqCurrentDraft?.boqId) return;
+  const parts = eboqCurrentDraft.boqId.split('_');
+  if (parts.length < 7) return; // unexpected format — leave the original ID untouched rather than risk mangling it
+  const prefix = parts.slice(0, 5).join('_');
+  const cleanSeg = (s) => (s || '').toString().trim().replace(/\s+/g, ' ');
+  const newBoqId = `${prefix}_${cleanSeg(productName)}_${cleanSeg(rating)}`;
+  boqIdBox.value = newBoqId;
+  boqIdBox.style.height = 'auto'; boqIdBox.style.height = boqIdBox.scrollHeight + 'px';
 }
 
 function addEBOQMaterialRow() {
