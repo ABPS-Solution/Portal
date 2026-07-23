@@ -12807,7 +12807,7 @@ function renderEBOQForm(containerId) {
           ` : `
           <div style="position:relative;">
             <input type="text" id="eboq-product-search" value="${draft.productName}" autocomplete="off"
-              oninput="handleEBOQProductSearch(this.value)"
+              oninput="handleEBOQProductSearch(this.value); document.getElementById('eboq-product-name').value = this.value; recomputeEBOQBoqId(this.value, document.getElementById('eboq-product-rating').value);"
               style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
             <div id="eboq-product-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 var(--radius) var(--radius); max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
           </div>
@@ -12816,7 +12816,10 @@ function renderEBOQForm(containerId) {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">${eboqMode === "authorize-update" ? "Product Rating (locked)" : "Product Rating"}</label>
-          <input type="text" id="eboq-product-rating" value="${draft.productRating}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" ${eboqMode === "authorize-update" ? "" : 'placeholder="Auto-filled from Product Name"'} /></div>
+          <input type="text" id="eboq-product-rating" value="${draft.productRating}"
+            ${eboqMode === "authorize-update" ? 'readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);"'
+              : 'oninput="recomputeEBOQBoqId(document.getElementById(\'eboq-product-name\').value, this.value)" style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" placeholder="e.g. 300 kVAr, 11 kV, 3 Ph, 50 Hz"'}
+          /></div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
         <div>
@@ -12958,7 +12961,9 @@ function selectEBOQProduct(productName, rating) {
 // inside a segment itself). So the first 5 segments — BOQ, FY, Month,
 // Company, PO — are a stable prefix that survives a product change;
 // only the trailing Product/Rating segments need swapping when the
-// user picks a different item on this screen.
+// user edits Product Name/Rating on the Authorize screen. This is a
+// LIVE PREVIEW only — the backend recomputes the same way and is the
+// actual source of truth for what gets saved.
 function recomputeEBOQBoqId(productName, rating) {
   const boqIdBox = document.getElementById('eboq-boq-id');
   if (!boqIdBox || !eboqCurrentDraft?.boqId) return;
@@ -13164,8 +13169,8 @@ async function submitEBOQAuthorize() {
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">BOQ ID</span><span style="font-family:monospace; font-weight:800;">${data.boqId}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Project ID</span><span style="font-weight:700;">${_lastDraft?.projectId || ""}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Customer</span><span style="font-weight:700;">${_lastDraft?.customerName || ""}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Name</span><span style="font-weight:700;">${_lastDraft?.productName || ""}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Rating</span><span style="font-weight:700;">${_lastDraft?.productRating || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Name</span><span style="font-weight:700;">${data.productName || _lastDraft?.productName || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Rating</span><span style="font-weight:700;">${data.productRating || _lastDraft?.productRating || ""}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Order Qty (Sets)</span><span style="font-weight:700;">${formatQtyTrimmed(_lastDraft?.orderQuantity)}</span></div>
           </div>
           ${pdfNote}
