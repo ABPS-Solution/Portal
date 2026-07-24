@@ -17004,6 +17004,9 @@ async function authorizePRN(prnId) {
   if (rejBtn) rejBtn.disabled = true;
   showBlockingOverlay("Authorizing Purchase Request Note...");
 
+  // Grab display fields before the queue gets wiped/reloaded.
+  const prn = aprnList.find(p => p.prnId === prnId) || {};
+
   try {
     const data = await apFetch({
       action: "authorizePurchaseRequestNote",
@@ -17013,9 +17016,38 @@ async function authorizePRN(prnId) {
     });
     hideBlockingOverlay();
     if (data.success) {
-      const pdfNote = data.pdfUrl ? ` <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a>` : "";
-      showPurchaseFeedback("aprn-feedback", `✅ PRN <strong>${prnId}</strong> authorized.${pdfNote}`, "success");
-      await initializeAuthorizePRNPanel();
+      const feed = document.getElementById("aprn-cards-feed");
+      if (feed) feed.style.display = "none";
+
+      const pdfNote = data.pdfWarning
+        ? `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — PRN is authorized. Contact admin to verify Drive folder setup.</div>`
+        : (data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a></div>` : ``);
+
+      const fb = document.getElementById("aprn-feedback");
+      if (fb) {
+        fb.style.borderLeftColor = "var(--accent)";
+        fb.style.background      = "#f0fff4";
+        fb.style.color           = "#276749";
+        fb.style.display         = "block";
+        fb.innerHTML = `
+          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ Purchase Request Note Authorized Successfully!</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">PRN ID</span><span style="font-family:monospace; font-weight:800;">${prnId}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Project ID</span><span style="font-weight:700;">${prn.projectId || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Customer</span><span style="font-weight:700;">${prn.customerName || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product</span><span style="font-weight:700;">${prn.productName || ""} ${prn.productRating || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Order Qty (Sets)</span><span style="font-weight:700;">${Math.round(Number(prn.orderQuantity) || 0)}</span></div>
+          </div>
+          ${pdfNote}
+          <button onclick="
+            const _cf=document.getElementById('aprn-cards-feed');
+            if(_cf){_cf.innerHTML='';_cf.style.display='';}
+            document.getElementById('aprn-feedback').style.display='none';
+            initializeAuthorizePRNPanel();"
+            style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
+            + Authorize Another PRN
+          </button>`;
+      }
     } else {
       if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize PRN"; }
       if (rejBtn) rejBtn.disabled = false;
