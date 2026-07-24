@@ -359,6 +359,7 @@
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')"><span class="mc-label">Material List for Purchase</span></div>
         <div class="menu-card" id="mod-purchase-create-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-create-po')"><span class="mc-label">Create Raw Material Purchase Order</span></div>
+        <div class="menu-card" id="mod-purchase-authorize-prn" onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-prn')"><span class="mc-label">Authorize Purchase Request Note</span></div>
         <div class="menu-card" id="mod-purchase-authorize-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po')"><span class="mc-label">Authorize Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-pps-tracking" onclick="navigateToPurchaseWorkspacePanel('purchase-pps-tracking')"><span class="mc-label">PPS Tracking</span></div>
         <div class="menu-card" id="mod-revise-rm-po" onclick="switchActiveDashboardModule('coming-soon')"><span class="mc-label">Revise Raw Material Purchase Order</span></div>
@@ -1650,6 +1651,12 @@
           <div id="prn-bottom-action-bar" style="display:none; justify-content:flex-end; align-items:center; gap:12px; margin-bottom:16px;">
             <span id="prn-boq-updated-badge" style="display:none; background:#fef3c7; border:1px solid #f59e0b; color:#92400e; font-size:0.75rem; font-weight:700; padding:4px 10px; border-radius:4px;"></span>
             <button class="nav-btn-styled" id="prn-create-new-btn" onclick="event.stopPropagation(); startNewPRNCreation();" style="background:var(--brand); padding:7px 18px; font-weight:700; font-size:0.82rem;">+ Create New PRN for this BOQ</button>
+          </div>
+          <div id="canvas-module-purchase-authorize-prn" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+            <h2 class="section-title">Authorize Purchase Request Note (PRN)</h2>
+            <p class="section-subtitle">Review each pending PRN, adjust Store Quantity if needed, then authorize or reject.</p>
+            <div id="aprn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+            <div id="aprn-cards-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
           </div>
         </div>
       </div>
@@ -6860,8 +6867,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canViewRejectedMaterial = userPermissionsObject.rejectedMaterial === true;
   const canCreatePO = userPermissionsObject.createRMPurchaseOrder === true;
   const canAuthorizePO = userPermissionsObject.authorizeRMPurchaseOrder === true;
-  const canPPSTracking = userPermissionsObject.ppsTracking === true;
   const canAuthorizePRN = userPermissionsObject.authorizePRN === true;
+  const canPPSTracking = userPermissionsObject.ppsTracking === true;
   const canRevisePRN = userPermissionsObject.revisePRN === true;
   const canAuthorizePRNRevision = userPermissionsObject.authorizePRNRevision === true;
   const canReviseRMPO = userPermissionsObject.reviseRMPO === true;
@@ -6962,6 +6969,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-purchase-material-list")) document.getElementById("mod-purchase-material-list").style.display = canViewMaterialListPurchase  ? "block" : "none";
   if (document.getElementById("mod-purchase-create-po"))     document.getElementById("mod-purchase-create-po").style.display     = canCreatePO    ? "block" : "none";
   if (document.getElementById("mod-purchase-authorize-po"))  document.getElementById("mod-purchase-authorize-po").style.display  = canAuthorizePO ? "block" : "none";
+  if (document.getElementById("mod-purchase-authorize-prn")) document.getElementById("mod-purchase-authorize-prn").style.display = canAuthorizePRN ? "block" : "none";
   if (document.getElementById("mod-purchase-pps-tracking"))  document.getElementById("mod-purchase-pps-tracking").style.display  = canPPSTracking ? "block" : "none";
   if (document.getElementById("mod-purchase-rejected-material")) document.getElementById("mod-purchase-rejected-material").style.display = canViewRejectedMaterial ? "block" : "none";
   if (document.getElementById("mod-authorize-prn")) document.getElementById("mod-authorize-prn").style.display = canAuthorizePRN ? "block" : "none";
@@ -15259,6 +15267,11 @@ function updateCPORowField(rowId, field, value) {
   const row = window.cpoMaterialRows.find(r => r.id === rowId);
   if (!row) return;
   row[field] = value;
+  if (field === 'itemCode') {
+    // The valid project list is material-specific, so any previously
+    // chosen projects no longer necessarily apply.
+    row.projectIds = [];
+  }
   if (field === 'quantity' || field === 'rate' || field === 'discountPercent') {
     updateCPORowAmount(rowId);
     recalcCPOTotals();
@@ -15297,25 +15310,46 @@ function recalcCPOTotals() {
   document.getElementById("cpo-grandtotal-disp").textContent = fmt(grandTotal);
 }
 
-function openCPOProjectPicker(rowId) {
+async function openCPOProjectPicker(rowId) {
   const row = window.cpoMaterialRows.find(r => r.id === rowId);
   if (!row) return;
-  if (window.cpoActiveProjects.length === 0) { alert("No active projects loaded."); return; }
+  if (!row.itemCode) { alert("Select the material for this row first — the project list depends on which item code is being purchased."); return; }
+
+  // Only projects with an outstanding PRN demand for THIS item code are
+  // selectable. Previously every Active project was listed regardless of
+  // material, so a PO line could be tagged to a project that never
+  // requested it.
+  let awaiting = [];
+  try {
+    const res = await apFetch({ action: "fetchProjectsAwaitingMaterial", itemCode: row.itemCode });
+    awaiting = (res && res.success) ? (res.projects || []) : [];
+  } catch (e) {
+    alert("Could not load the project list for this material: " + e.message);
+    return;
+  }
+  if (awaiting.length === 0) {
+    alert(`No project currently has an outstanding, authorized PRN requirement for "${row.itemCode}". Nothing to allocate this line to.`);
+    return;
+  }
+
   const existing = document.getElementById("cpo-project-modal");
   if (existing) existing.remove();
   const modal = document.createElement("div");
   modal.id = "cpo-project-modal";
   modal.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;";
-  const checks = window.cpoActiveProjects.map((p, i) => `
+  const fmtQty = (n) => (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  const checks = awaiting.map((p, i) => `
     <label for="cpo-proj-cb-${i}" style="display:flex; align-items:center; gap:12px; padding:11px 12px; border:1px solid var(--border); border-radius:6px; margin-bottom:6px; cursor:pointer; font-size:0.85rem; transition:background 0.1s;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <input type="checkbox" id="cpo-proj-cb-${i}" value="${p.replace(/"/g,'&quot;')}" ${row.projectIds.includes(p) ? 'checked' : ''} style="width:16px; height:16px; flex-shrink:0;">
-      <span style="font-weight:600;">${p}</span>
+      <input type="checkbox" id="cpo-proj-cb-${i}" value="${p.projectId.replace(/"/g,'&quot;')}" ${row.projectIds.includes(p.projectId) ? 'checked' : ''} style="width:16px; height:16px; flex-shrink:0;">
+      <span style="font-weight:600; flex:1;">${p.projectId}</span>
+      <span style="font-size:0.72rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px; white-space:nowrap;">Still to order: ${fmtQty(p.outstandingQty)}</span>
     </label>`).join("");
   modal.innerHTML = `
     <div style="background:#fff; border-radius:12px; width:100%; max-width:520px; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
       <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
         <div style="font-weight:800; font-size:1rem; color:var(--brand);">Select Projects this Material is Used by</div>
+        <div style="font-size:0.78rem; color:var(--muted); margin-top:4px;">Only projects with an outstanding authorized PRN requirement for this material are shown.</div>
       </div>
       <div style="overflow-y:auto; flex:1; padding:16px 20px;">${checks}</div>
       <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid var(--border); background:#f8fafc;">
@@ -15601,7 +15635,7 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
   document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
 
-  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po","canvas-module-purchase-rejected-material","canvas-module-purchase-create-po","canvas-module-purchase-authorize-po","canvas-module-purchase-pps-tracking"].forEach(id => {
+  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po","canvas-module-purchase-rejected-material","canvas-module-purchase-create-po","canvas-module-purchase-authorize-prn","canvas-module-purchase-authorize-po","canvas-module-purchase-pps-tracking"].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = "none";
   });
 
@@ -15623,6 +15657,9 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
     const cpoBanner = document.getElementById("create-po-feedback");
     if (cpoBanner) { cpoBanner.style.display = "none"; cpoBanner.innerHTML = ""; }
     initializeCreatePOPanel();
+  } else if (targetModuleId === "purchase-authorize-prn") {
+    document.getElementById("canvas-module-purchase-authorize-prn").style.display = "block";
+    initializeAuthorizePRNPanel().catch(e => { if (e?.message !== "SESSION_EXPIRED") console.error("Authorize PRN panel init error:", e); });
   } else if (targetModuleId === "purchase-authorize-po") {
     document.getElementById("canvas-module-purchase-authorize-po").style.display = "block";
     const apoBanner = document.getElementById("authorize-po-feedback");
@@ -16805,6 +16842,199 @@ async function handlePRNBOQChange(boqId) {
   }
 }
 
+// ── Authorize Purchase Request Note ──────────────────────────────────
+// Mirrors the BOQ authorize pattern: a queue of pending PRNs, each
+// expandable into an editable review. Only Store Quantity is editable;
+// Purchase Qty recomputes from it live (purchase = buffered − store,
+// rounded up for NOS units, exactly as the backend recomputes it).
+let aprnList = [];
+let aprnExpandedId = null;
+let aprnRows = [];
+
+async function initializeAuthorizePRNPanel() {
+  const feed = document.getElementById("aprn-cards-feed");
+  const fb = document.getElementById("aprn-feedback");
+  if (fb) { fb.style.display = "none"; fb.innerHTML = ""; }
+  if (!feed) return;
+  feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);"><div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>Loading pending PRNs...</div>`;
+  aprnExpandedId = null; aprnRows = [];
+
+  try {
+    const data = await apFetch({ action: "fetchPendingPRNsForAuthorization" });
+    aprnList = data.prns || [];
+
+    if (aprnList.length === 0) {
+      feed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;"><h3 style="color:var(--accent);">No PRNs Pending Authorization</h3></div>`;
+      return;
+    }
+
+    feed.innerHTML = "";
+    aprnList.forEach(p => {
+      const card = document.createElement("div");
+      card.className = "contact-summary-card-parent";
+      card.innerHTML = `
+        <div class="contact-summary-header-row" onclick="toggleAPRNExpansion('${p.prnId}')" style="cursor:pointer; width:100%; padding-bottom:8px;">
+          <div class="contact-summary-title-info" style="width:100%;">
+            <div class="meta-row-line-block" style="margin-bottom:6px;">
+              <span style="background:#edf2f7;">PRN:</span><strong style="font-family:monospace; color:var(--brand); margin-right:15px;">${p.prnId}</strong>
+              <span style="background:#edf2f7;">Version:</span><strong style="margin-right:15px;">v${p.version}</strong>
+              <span style="background:#edf2f7;">Customer:</span><strong>${p.customerName || ""}</strong>
+            </div>
+            <div class="meta-row-line-block" style="margin-bottom:6px;">
+              <span style="background:#e2e8f0;">Product:</span><strong style="margin-right:15px;">${p.productName || ""} ${p.productRating || ""}</strong>
+              <span style="background:#edf2f7;">Order Qty:</span><strong style="margin-right:15px;">${Math.round(Number(p.orderQuantity) || 0)}</strong>
+              <span style="background:#edf2f7;">Store Person:</span><strong>${p.storePerson || ""}</strong>
+            </div>
+            <div class="meta-row-line-block">
+              <span style="background:#edf2f7;">BOQ:</span><strong style="font-family:monospace; font-size:0.78rem;">${p.boqId}</strong>
+            </div>
+          </div>
+        </div>
+        <div id="aprn-body-${p.prnId}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>`;
+      feed.appendChild(card);
+    });
+  } catch (e) {
+    feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${e.message}</div>`;
+  }
+}
+
+function toggleAPRNExpansion(prnId) {
+  const body = document.getElementById(`aprn-body-${prnId}`);
+  if (!body) return;
+  if (aprnExpandedId === prnId) { body.style.display = "none"; body.innerHTML = ""; aprnExpandedId = null; return; }
+  if (aprnExpandedId) {
+    const prev = document.getElementById(`aprn-body-${aprnExpandedId}`);
+    if (prev) { prev.style.display = "none"; prev.innerHTML = ""; }
+  }
+  aprnExpandedId = prnId;
+  const prn = aprnList.find(p => p.prnId === prnId);
+  if (!prn) return;
+  aprnRows = (prn.draftLineItems || []).map(r => ({ ...r }));
+
+  body.style.display = "block";
+  body.innerHTML = `
+    <div id="aprn-rows-mount-${prnId}"></div>
+    <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px; margin-top:14px;">
+      <button class="nav-btn-styled" id="aprn-reject-btn-${prnId}" onclick="rejectPRN('${prnId}')" style="background:#dc2626; padding:8px 20px; font-weight:700;">Reject PRN</button>
+      <button class="nav-btn-styled" id="aprn-auth-btn-${prnId}" onclick="authorizePRN('${prnId}')" style="background:var(--accent); padding:8px 24px; font-weight:700;">Authorize PRN</button>
+    </div>`;
+  renderAPRNRows(prnId);
+}
+
+function renderAPRNRows(prnId) {
+  const mount = document.getElementById(`aprn-rows-mount-${prnId}`);
+  if (!mount) return;
+  const rowsHtml = aprnRows.map((r, idx) => {
+    const buffered = Number(r.bufferedPurchaseQty) || 0;
+    return `
+      <tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
+        <td style="padding:8px; font-size:0.82rem; font-weight:600;">${r.materialName || ""}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${Number(r.boqRequiredQty || 0).toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; color:#b45309; font-weight:700;">${r.bufferPct || 0}%</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${buffered.toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${r.unit || "—"}</td>
+        <td style="padding:8px; text-align:center;">
+          <input type="number" min="0" max="${buffered}" value="${Number(r.currentUnassignedStoreQty) || 0}"
+            oninput="updateAPRNRow(${idx}, this.value, '${prnId}')"
+            style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
+        </td>
+        <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#15803d;">${Number(r.purchaseQty || 0).toFixed(2)}</td>
+      </tr>`;
+  }).join("");
+
+  mount.innerHTML = `
+    <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:8px;">Line Items — adjust Store Quantity if needed</div>
+    <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+      <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:900px;">
+        <thead><tr style="background:#f8fafc;">
+          <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:240px;">Material Name</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Req Qty</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered Purchase Qty</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1;">Store Quantity *</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d;">Purchase Qty</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+}
+
+// Recompute purchase qty exactly as the backend does, so what the
+// authorizer sees is what gets committed.
+function updateAPRNRow(idx, value, prnId) {
+  const row = aprnRows[idx];
+  if (!row) return;
+  const buffered = Number(row.bufferedPurchaseQty) || 0;
+  let storeQty = parseFloat(value) || 0;
+  if (storeQty < 0) storeQty = 0;
+  if (storeQty > buffered) storeQty = buffered;
+  row.currentUnassignedStoreQty = storeQty;
+  const isCountUnit = (row.unit || "").toString().trim().toUpperCase() === "NOS";
+  const raw = Math.max(0, buffered - storeQty);
+  row.purchaseQty = isCountUnit ? Math.ceil(raw - 1e-9) : raw;
+  const cell = document.getElementById(`aprn-purchaseqty-${idx}`);
+  if (cell) cell.textContent = Number(row.purchaseQty).toFixed(2);
+}
+
+async function authorizePRN(prnId) {
+  const authBtn = document.getElementById(`aprn-auth-btn-${prnId}`);
+  const rejBtn = document.getElementById(`aprn-reject-btn-${prnId}`);
+  if (authBtn) { authBtn.disabled = true; authBtn.textContent = "Authorizing..."; }
+  if (rejBtn) rejBtn.disabled = true;
+  showBlockingOverlay("Authorizing Purchase Request Note...");
+
+  try {
+    const data = await apFetch({
+      action: "authorizePurchaseRequestNote",
+      prnId,
+      editedLineItems: aprnRows,
+      authorizedBy: appActiveOperatorIdentityString || ""
+    });
+    hideBlockingOverlay();
+    if (data.success) {
+      const pdfNote = data.pdfUrl ? ` <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a>` : "";
+      showPurchaseFeedback("aprn-feedback", `✅ PRN <strong>${prnId}</strong> authorized.${pdfNote}`, "success");
+      await initializeAuthorizePRNPanel();
+    } else {
+      if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize PRN"; }
+      if (rejBtn) rejBtn.disabled = false;
+      showPurchaseFeedback("aprn-feedback", data.error || "Authorization failed.", "error");
+    }
+  } catch (e) {
+    hideBlockingOverlay();
+    if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize PRN"; }
+    if (rejBtn) rejBtn.disabled = false;
+    showPurchaseFeedback("aprn-feedback", "Network error: " + e.message, "error");
+  }
+}
+
+async function rejectPRN(prnId) {
+  if (!confirm(`Reject PRN ${prnId}? Reserved store quantities will be released and no purchase lines will be created.`)) return;
+  const authBtn = document.getElementById(`aprn-auth-btn-${prnId}`);
+  const rejBtn = document.getElementById(`aprn-reject-btn-${prnId}`);
+  if (rejBtn) { rejBtn.disabled = true; rejBtn.textContent = "Rejecting..."; }
+  if (authBtn) authBtn.disabled = true;
+
+  try {
+    const data = await apFetch({ action: "rejectPurchaseRequestNote", prnId });
+    if (data.success) {
+      showPurchaseFeedback("aprn-feedback", `PRN ${prnId} was rejected and its store reservations released.`, "success");
+      await initializeAuthorizePRNPanel();
+    } else {
+      if (rejBtn) { rejBtn.disabled = false; rejBtn.textContent = "Reject PRN"; }
+      if (authBtn) authBtn.disabled = false;
+      showPurchaseFeedback("aprn-feedback", data.error || "Rejection failed.", "error");
+    }
+  } catch (e) {
+    if (rejBtn) { rejBtn.disabled = false; rejBtn.textContent = "Reject PRN"; }
+    if (authBtn) authBtn.disabled = false;
+    showPurchaseFeedback("aprn-feedback", "Network error: " + e.message, "error");
+  }
+}
+
 function renderPRNCreateTable() {
   const pending = window.prnPendingCreate;
   if (!pending) return;
@@ -16998,6 +17228,16 @@ async function submitNewPRNCreation() {
       return;
     }
     document.getElementById("prn-feedback").style.display = "none";
+    if (data.pendingAuthorization) {
+      hideBlockingOverlay();
+      const createZone = document.getElementById("prn-create-zone");
+      if (createZone) createZone.style.display = "none";
+      showPurchaseFeedback("prn-feedback",
+        `✅ PRN <strong>${data.prnId}</strong> created and sent for authorization. Store quantities are reserved. It will be finalised (and its PDF generated) once authorized.`,
+        "success");
+      await initializePRNPanel();
+      return;
+    }
 
     if (window._prnCreateStockInterval) clearInterval(window._prnCreateStockInterval);
     window.prnPendingCreate = null;
