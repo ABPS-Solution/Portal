@@ -1648,17 +1648,11 @@
 
         <div id="prn-details-zone" style="display:none;">
           <div id="prn-cards-feed" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;"></div>
-          <div id="prn-bottom-action-bar" style="display:none; justify-content:flex-end; align-items:center; gap:12px; margin-bottom:16px;">
-            <span id="prn-boq-updated-badge" style="display:none; background:#fef3c7; border:1px solid #f59e0b; color:#92400e; font-size:0.75rem; font-weight:700; padding:4px 10px; border-radius:4px;"></span>
-            <button class="nav-btn-styled" id="prn-create-new-btn" onclick="event.stopPropagation(); startNewPRNCreation();" style="background:var(--brand); padding:7px 18px; font-weight:700; font-size:0.82rem;">+ Create New PRN for this BOQ</button>
+            <div id="prn-bottom-action-bar" style="display:none; justify-content:flex-end; align-items:center; gap:12px; margin-bottom:16px;">
+              <span id="prn-boq-updated-badge" style="display:none; background:#fef3c7; border:1px solid #f59e0b; color:#92400e; font-size:0.75rem; font-weight:700; padding:4px 10px; border-radius:4px;"></span>
+              <button class="nav-btn-styled" id="prn-create-new-btn" onclick="event.stopPropagation(); startNewPRNCreation();" style="background:var(--brand); padding:7px 18px; font-weight:700; font-size:0.82rem;">+ Create New PRN for this BOQ</button>
+            </div>
           </div>
-          <div id="canvas-module-purchase-authorize-prn" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-            <h2 class="section-title">Authorize Purchase Request Note (PRN)</h2>
-            <p class="section-subtitle">Review each pending PRN, adjust Store Quantity if needed, then authorize or reject.</p>
-            <div id="aprn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
-            <div id="aprn-cards-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
-          </div>
-        </div>
       </div>
 
     <!-- MATERIAL LIST CANVAS -->
@@ -1667,6 +1661,13 @@
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Fill in the PO details and add material rows. Tag each material with the Projects using this Material. Submit when complete and it will go for Authorization.</p>
       <div id="create-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="create-po-body"></div>
+    </div>
+
+    <div id="canvas-module-purchase-authorize-prn" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="color:var(--brand); margin:0 0 6px 0;">Authorize Purchase Request Note (PRN)</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review each pending PRN, adjust Store Quantity if needed, then authorize or reject.</p>
+      <div id="aprn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="aprn-cards-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
     </div>
 
     <div id="canvas-module-purchase-authorize-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
