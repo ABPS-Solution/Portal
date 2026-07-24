@@ -17047,13 +17047,13 @@ function renderPRNCreateTable() {
 
   let rowsHtml = "";
   pending.lineItems.forEach((item, idx) => {
-    const bufferedQty = Math.round((Number(item.bufferedPurchQty) || 0) * 100) / 100;
+    const bufferedQty = Math.round((Number(item.bufferedPurchaseQty) || 0) * 100) / 100;
     rowsHtml += `
       <tr style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${item.materialName}</td>
         <td style="padding:8px; font-size:0.75rem; color:var(--muted);">${item.typeOfMaterial ? window.typeLabelDisplay_(item.typeOfMaterial) : "—"}</td>
-        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${Number(item.boqReqQty).toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${Number(item.boqRequiredQty).toFixed(2)}</td>
         <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct}%</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${bufferedQty.toFixed(2)}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
@@ -17127,7 +17127,7 @@ function renderPRNCreateTable() {
       // Round to 2dp to match the displayed "Buffered Qty" column — the raw stored value can
       // legitimately carry 3dp precision (e.g. 4.8 * 1.16 = 5.568), but every input/display in
       // this row must agree on 2dp so the user never sees a mismatch like Buffered=5.57 / Store=5.568.
-      const bufferedQty = Math.round((Number(item.bufferedPurchQty) || 0) * 100) / 100;
+      const bufferedQty = Math.round((Number(item.bufferedPurchaseQty) || 0) * 100) / 100;
       const liveSpan = document.querySelector(`.prn-create-livestock[data-itemcode="${item.itemCode}"]`);
       const liveMax  = (liveSpan && liveSpan.dataset.liveTotal !== undefined) ? Number(liveSpan.dataset.liveTotal) || 0 : 0;
       const cap = Math.round(Math.min(bufferedQty, liveMax) * 100) / 100;
@@ -17193,7 +17193,7 @@ async function submitNewPRNCreation() {
     return {
       itemCode: item.itemCode, materialName: item.materialName, typeOfMaterial: item.typeOfMaterial,
       unit: item.unit,
-      boqRequiredQty: item.boqReqQty, bufferPct: item.bufferPct, bufferedPurchaseQty: item.bufferedPurchQty,
+      boqRequiredQty: item.boqRequiredQty, bufferPct: item.bufferPct, bufferedPurchaseQty: item.bufferedPurchaseQty,
       currentUnassignedStoreQty: storeQty, checkedByStorePerson: checkedVal
     };
   });
