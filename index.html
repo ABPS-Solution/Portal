@@ -359,7 +359,6 @@
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')"><span class="mc-label">Material List for Purchase</span></div>
         <div class="menu-card" id="mod-purchase-create-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-create-po')"><span class="mc-label">Create Raw Material Purchase Order</span></div>
-        <div class="menu-card" id="mod-purchase-authorize-prn" onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-prn')"><span class="mc-label">Authorize Purchase Request Note</span></div>
         <div class="menu-card" id="mod-purchase-authorize-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po')"><span class="mc-label">Authorize Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-pps-tracking" onclick="navigateToPurchaseWorkspacePanel('purchase-pps-tracking')"><span class="mc-label">PPS Tracking</span></div>
         <div class="menu-card" id="mod-revise-rm-po" onclick="switchActiveDashboardModule('coming-soon')"><span class="mc-label">Revise Raw Material Purchase Order</span></div>
@@ -380,7 +379,7 @@
       <div class="sec-label">Stock PRN and Assigning</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-request-note" onclick="navigateToPurchaseWorkspacePanel('purchase-prn')"><span class="mc-label">Create Purchase Request Note (PRN)</span></div>
-        <div class="menu-card" id="mod-authorize-prn" onclick="switchActiveDashboardModule('coming-soon')"><span class="mc-label">Authorize Purchase Request Note (PRN)</span></div>
+        <div class="menu-card" id="mod-purchase-authorize-prn" onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-prn')"><span class="mc-label">Authorize Purchase Request Note (PRN)</span></div>
         <div class="menu-card" id="mod-revise-prn" onclick="switchActiveDashboardModule('coming-soon')"><span class="mc-label">Revise Purchase Request Note (PRN)</span></div>
         <div class="menu-card" id="mod-authorize-prn-revision" onclick="switchActiveDashboardModule('coming-soon')"><span class="mc-label">Authorize Purchase Request Note (PRN) Revision</span></div>
         <div class="menu-card" id="mod-assign-current-stock"    onclick="navigateToStoreWorkspacePanel('assign-current-stock')"><span class="mc-label">Assign Store Stock</span></div>
@@ -6973,7 +6972,6 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-purchase-authorize-prn")) document.getElementById("mod-purchase-authorize-prn").style.display = canAuthorizePRN ? "block" : "none";
   if (document.getElementById("mod-purchase-pps-tracking"))  document.getElementById("mod-purchase-pps-tracking").style.display  = canPPSTracking ? "block" : "none";
   if (document.getElementById("mod-purchase-rejected-material")) document.getElementById("mod-purchase-rejected-material").style.display = canViewRejectedMaterial ? "block" : "none";
-  if (document.getElementById("mod-authorize-prn")) document.getElementById("mod-authorize-prn").style.display = canAuthorizePRN ? "block" : "none";
   if (document.getElementById("mod-revise-prn")) document.getElementById("mod-revise-prn").style.display = canRevisePRN ? "block" : "none";
   if (document.getElementById("mod-authorize-prn-revision")) document.getElementById("mod-authorize-prn-revision").style.display = canAuthorizePRNRevision ? "block" : "none";
   if (document.getElementById("mod-revise-rm-po")) document.getElementById("mod-revise-rm-po").style.display = canReviseRMPO ? "block" : "none";
