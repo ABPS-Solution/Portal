@@ -16933,6 +16933,7 @@ function renderAPRNRows(prnId) {
         <td style="padding:8px; text-align:center; color:#b45309; font-weight:700;">${r.bufferPct || 0}%</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${buffered.toFixed(2)}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${r.unit || "—"}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="aprn-livestock" data-itemcode="${r.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
           <input type="number" min="0" max="${buffered}" value="${Number(r.currentUnassignedStoreQty) || 0}"
             oninput="updateAPRNRow(${idx}, this.value, '${prnId}')"
@@ -16945,7 +16946,7 @@ function renderAPRNRows(prnId) {
   mount.innerHTML = `
     <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:8px;">Line Items — adjust Store Quantity if needed</div>
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-      <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:900px;">
+      <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1000px;">
         <thead><tr style="background:#f8fafc;">
           <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
           <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:240px;">Material Name</th>
@@ -16953,12 +16954,30 @@ function renderAPRNRows(prnId) {
           <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
           <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered Purchase Qty</th>
           <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:130px;">Store Available Stock</th>
           <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1;">Store Quantity *</th>
           <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d;">Purchase Qty</th>
         </tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table>
     </div>`;
+
+  refreshAPRNLiveStock();
+}
+
+async function refreshAPRNLiveStock() {
+  const itemCodes = aprnRows.map(r => r.itemCode).filter(Boolean);
+  if (itemCodes.length === 0) return;
+  try {
+    const data = await apFetch({ action: "fetchLiveMaterialStock", itemCodes });
+    if (!data.success) return;
+    document.querySelectorAll(".aprn-livestock").forEach(span => {
+      const code = span.dataset.itemcode;
+      const s = data.stock[code.toUpperCase()] || { raw: 0, spare: 0 };
+      const total = s.raw + s.spare;
+      span.textContent = `${total} (Raw: ${s.raw}, Spare: ${s.spare})`;
+    });
+  } catch (e) { /* silent — quantities still editable without this */ }
 }
 
 // Recompute purchase qty exactly as the backend does, so what the
@@ -17266,7 +17285,7 @@ async function submitNewPRNCreation() {
     hideBlockingOverlay();
     if (bodyZone) bodyZone.style.display = "grid";
     showPurchaseFeedback("prn-feedback", "Network error: " + e.message, "error");
-    btn.disabled = false; btn.textContent = "Generate & Save PRN PDF";
+    btn.disabled = false; btn.textContent = "Save & Submit for Authorization";
   }
 }
 
