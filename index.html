@@ -17101,7 +17101,7 @@ function renderPRNCreateTable() {
           <option value="">Loading...</option>
         </select>
       </div>
-      <button class="nav-btn-styled" id="prn-create-generate-btn" onclick="submitNewPRNCreation()" style="background:var(--accent); padding:8px 24px; font-weight:700;">Generate & Save PRN PDF</button>
+      <button class="nav-btn-styled" id="prn-create-generate-btn" onclick="submitNewPRNCreation()" style="background:var(--accent); padding:8px 24px; font-weight:700;">Save & Submit for Authorization</button>
     </div>
   `;
 
@@ -17223,7 +17223,7 @@ async function submitNewPRNCreation() {
     if (!data.success) {
       hideBlockingOverlay();
       showPurchaseFeedback("prn-feedback", data.error || "Failed to create PRN.", "error");
-      btn.disabled = false; btn.textContent = "Generate & Save PRN PDF";
+      btn.disabled = false; btn.textContent = "Save & Submit for Authorization";
       return;
     }
     document.getElementById("prn-feedback").style.display = "none";
@@ -17486,10 +17486,9 @@ async function generatePRNPDF() {
     });
     if (data.success) {
       prnStoreQtyLocked = true;
-      prnCurrentData.pdfUrl = data.pdfUrl;
       prnCurrentData.storeQtyLocked = true;
       renderPRNDetails(prnCurrentData);
-      showPurchaseFeedback("prn-feedback", `PDF generated! <a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700;">Open PDF ↗</a>`, "success");
+      showPurchaseFeedback("prn-feedback", `Store quantities saved. This PRN's PDF will be generated once it is authorized.`, "success");
     } else {
       showPurchaseFeedback("prn-feedback", data.error || "PDF generation failed.", "error");
     }
