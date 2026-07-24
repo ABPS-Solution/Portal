@@ -17169,9 +17169,6 @@ async function submitNewPRNCreation() {
   const pending = window.prnPendingCreate;
   if (!pending) return;
 
-  const storePerson = appActiveOperatorIdentityString;
-  if (!storePerson) return showPurchaseFeedback("prn-feedback", "⚠️ No active operator identity found. Please re-select your name from the login screen.", "error");
-
   const checkedSelects = document.querySelectorAll(".prn-create-checked");
   const storeQtyInputs = document.querySelectorAll(".prn-create-storeqty");
 
@@ -17205,7 +17202,7 @@ async function submitNewPRNCreation() {
       productName: boqMeta.productName || "", productRating: boqMeta.productRating || "",
       orderQuantity: boqMeta.orderQuantity || pending.orderQty || 0,
       customerName: boqMeta.customerName || "",
-      storePerson, lineItems: submittedItems
+      lineItems: submittedItems
     });
 
     if (!data.success) {
