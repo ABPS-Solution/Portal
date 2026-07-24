@@ -1626,7 +1626,7 @@
 
       <div id="prn-needqueue-zone" style="margin-bottom:16px;"></div>
 
-      <div id="prn-body-zone" style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+      <div id="prn-body-zone" style="display:grid; grid-template-columns:1fr 2fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
           <select id="prn-project-select" onchange="handlePRNProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
@@ -17094,22 +17094,10 @@ function renderPRNCreateTable() {
         <tbody>${rowsHtml}</tbody>
       </table>
     </div>
-    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; display:flex; justify-content:space-between; align-items:flex-end; gap:14px;">
-      <div style="max-width:340px; flex:1;">
-        <label class="field-label" style="margin-top:0;">Store Person *</label>
-        <select id="prn-create-store-person" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-          <option value="">Loading...</option>
-        </select>
-      </div>
+    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; display:flex; justify-content:flex-end; align-items:center; gap:14px;">
       <button class="nav-btn-styled" id="prn-create-generate-btn" onclick="submitNewPRNCreation()" style="background:var(--accent); padding:8px 24px; font-weight:700;">Save & Submit for Authorization</button>
     </div>
   `;
-
-  // Populate Store Person dropdown
-  const storeDrop = document.getElementById("prn-create-store-person");
-  storeDrop.innerHTML = '<option value="">— Select Person —</option>';
-  (window.prnAllPersonnel || []).filter(p => p.departmentsList.some(d => d.toLowerCase().includes("store")))
-    .forEach(p => { const o = document.createElement("option"); o.value = p.fullName; o.textContent = p.fullName; storeDrop.appendChild(o); });
 
   // Wire up checked-select → enable store qty input
   document.querySelectorAll(".prn-create-checked").forEach(sel => {
@@ -17181,8 +17169,8 @@ async function submitNewPRNCreation() {
   const pending = window.prnPendingCreate;
   if (!pending) return;
 
-  const storePerson = document.getElementById("prn-create-store-person").value;
-  if (!storePerson) return showPurchaseFeedback("prn-feedback", "⚠️ Please select a Store Person.", "error");
+  const storePerson = appActiveOperatorIdentityString;
+  if (!storePerson) return showPurchaseFeedback("prn-feedback", "⚠️ No active operator identity found. Please re-select your name from the login screen.", "error");
 
   const checkedSelects = document.querySelectorAll(".prn-create-checked");
   const storeQtyInputs = document.querySelectorAll(".prn-create-storeqty");
