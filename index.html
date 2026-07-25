@@ -361,8 +361,8 @@
         <div class="menu-card" id="mod-purchase-create-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-create-po')"><span class="mc-label">Create Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-authorize-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po')"><span class="mc-label">Authorize Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-pps-tracking" onclick="navigateToPurchaseWorkspacePanel('purchase-pps-tracking')"><span class="mc-label">PPS Tracking</span></div>
-        <div class="menu-card" id="mod-revise-rm-po" onclick="switchActiveDashboardModule('coming-soon')"><span class="mc-label">Revise Raw Material Purchase Order</span></div>
-        <div class="menu-card" id="mod-authorize-rm-po-revision" onclick="switchActiveDashboardModule('coming-soon')"><span class="mc-label">Authorize Raw Material Purchase Order Revision</span></div>
+        <div class="menu-card" id="mod-revise-rm-po" onclick="navigateToPurchaseWorkspacePanel('purchase-revise-po')"><span class="mc-label">Revise Raw Material Purchase Order</span></div>
+        <div class="menu-card" id="mod-authorize-rm-po-revision" onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po-revision')"><span class="mc-label">Authorize Raw Material Purchase Order Revision</span></div>
         <div class="menu-card" id="mod-purchase-rejected-material" onclick="navigateToPurchaseWorkspacePanel('purchase-rejected-material')"><span class="mc-label">Store Inward Rejected Material</span></div>
       </div>
     </div>
@@ -379,9 +379,9 @@
       <div class="sec-label">Stock PRN and Assigning</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-request-note" onclick="navigateToPurchaseWorkspacePanel('purchase-prn')"><span class="mc-label">Create Purchase Request Note (PRN)</span></div>
-        <div class="menu-card" id="mod-purchase-authorize-prn" onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-prn')"><span class="mc-label">Authorize Purchase Request Note (PRN)</span></div>
-        <div class="menu-card" id="mod-revise-prn" onclick="switchActiveDashboardModule('coming-soon')"><span class="mc-label">Revise Purchase Request Note (PRN)</span></div>
-        <div class="menu-card" id="mod-authorize-prn-revision" onclick="switchActiveDashboardModule('coming-soon')"><span class="mc-label">Authorize Purchase Request Note (PRN) Revision</span></div>
+        <div class="menu-card" id="mod-purchase-authorize-prn" onclick="openAuthorizePRNPanel('Delta')"><span class="mc-label">Authorize Purchase Request Note (PRN)</span></div>
+        <div class="menu-card" id="mod-revise-prn" onclick="navigateToPurchaseWorkspacePanel('purchase-revise-prn')"><span class="mc-label">Revise Purchase Request Note (PRN)</span></div>
+        <div class="menu-card" id="mod-authorize-prn-revision" onclick="openAuthorizePRNPanel('Revision')"><span class="mc-label">Authorize Purchase Request Note (PRN) Revision</span></div>
         <div class="menu-card" id="mod-assign-current-stock"    onclick="navigateToStoreWorkspacePanel('assign-current-stock')"><span class="mc-label">Assign Store Stock</span></div>
       </div>
       <div class="sec-label">Raw Materials Store Inward</div>
@@ -1676,16 +1676,78 @@
       <div id="authorize-po-body"></div>
     </div>
 
+    <div id="canvas-module-purchase-revise-prn" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="color:var(--brand); margin:0 0 6px 0;">Revise Purchase Request Note (PRN)</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Re-split an authorized PRN between store stock and purchase. The BOQ requirement does not change — only how much of it comes from stock you already hold. Use this when material comes back from production, or when stock frees up.</p>
+      <div id="rprn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div style="display:grid; grid-template-columns:1fr 2fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
+          <select id="rprn-project-select" onchange="loadRevisePRNList()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Loading projects… —</option></select>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
+          <select id="rprn-prn-select" onchange="loadPRNForRevision()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
+        </div>
+      </div>
+      <div id="rprn-body"></div>
+    </div>
+
+    <div id="canvas-module-purchase-authorize-po-revision" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="color:var(--brand); margin:0 0 6px 0;">Authorize Purchase Order Revision</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review each pending PO revision — what changes, and how the revised quantities are split across PRNs — then authorize or reject. The PO stays untouched until you authorize.</p>
+      <div id="apor-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="apor-cards-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
+    </div>
+
+    <div id="canvas-module-purchase-revise-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="color:var(--brand); margin:0 0 6px 0;">Revise Raw Material Purchase Order</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Revise a PO whose PRN requirements have changed, or search any authorized PO to revise it for a vendor-side reason.</p>
+      <div id="rpo-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--border);">
+        <button id="rpo-tab-queue" onclick="switchRevisePOTab('queue')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:800; font-size:0.85rem; color:var(--brand); border-bottom:3px solid var(--brand); margin-bottom:-2px;">PRN Revisions Needing PO Revision</button>
+        <button id="rpo-tab-other" onclick="switchRevisePOTab('other')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:700; font-size:0.85rem; color:var(--muted); border-bottom:3px solid transparent; margin-bottom:-2px;">Other PO Revisions</button>
+      </div>
+
+      <div id="rpo-queue-section">
+        <div id="rpo-queue-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
+      </div>
+
+      <div id="rpo-other-section" style="display:none;">
+        <div style="display:flex; gap:10px; align-items:end; margin-bottom:16px;">
+          <div style="flex:1; max-width:420px;">
+            <label class="field-label" style="margin-top:0; color:var(--brand);">Search by PO Number or Vendor Name</label>
+            <input type="text" id="rpo-search-input" placeholder="e.g. PO-0012 or Acme Steel" onkeydown="if(event.key==='Enter')searchPOsForRevisionUI()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+          </div>
+          <button class="nav-btn-styled" onclick="searchPOsForRevisionUI()" style="background:var(--accent); color:#fff; font-weight:700; padding:9px 20px;">Search</button>
+        </div>
+        <div id="rpo-search-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
+      </div>
+
+      <div id="rpo-detail-zone" style="margin-top:18px;"></div>
+    </div>
+
     <div id="canvas-module-purchase-pps-tracking" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="color:var(--brand); margin:0 0 6px 0;">PPS Tracking</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Search a Project to see its PRNs and the Purchase Orders linked to each — with expected vs. actual delivery tracking. Add an Action Plan per line as needed.</p>
       <div id="pps-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
-      <div style="display:flex; gap:10px; align-items:end; margin-bottom:16px;">
-        <div style="flex:1; max-width:400px;">
-          <label class="field-label" style="margin-top:0;">Select Project *</label>
-          <select id="pps-project-select" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Loading projects... —</option></select>
+      <div style="display:grid; grid-template-columns:2fr 1fr 3fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project *</label>
+          <select id="pps-project-select" onchange="loadPPSPRNList()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Loading projects... —</option></select>
         </div>
-        <button class="nav-btn-styled" onclick="loadPPSForProject()" style="background:var(--accent); color:#fff; font-weight:700; padding:9px 20px;">Search</button>
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">PRN Status *</label>
+          <select id="pps-status-select" onchange="loadPPSPRNList()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+            <option value="Pending">Pending</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
+          <select id="pps-prn-select" onchange="loadPPSForPRN()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
+        </div>
       </div>
       <div id="pps-results-body"></div>
     </div>
@@ -14611,70 +14673,138 @@ async function initializePPSTrackingPanel() {
   }
 }
 
-async function loadPPSForProject() {
+async function loadPPSPRNList() {
   const projectId = document.getElementById("pps-project-select").value;
+  const prnStatus = document.getElementById("pps-status-select").value;
+  const prnSel = document.getElementById("pps-prn-select");
   const body = document.getElementById("pps-results-body");
-  const banner = document.getElementById("pps-feedback");
-  banner.style.display = "none";
-  if (!projectId) { alert("Please select a project."); return; }
+  body.innerHTML = "";
+  if (!projectId) { prnSel.innerHTML = `<option value="">— Select a project first —</option>`; return; }
+
+  prnSel.innerHTML = `<option value="">Loading…</option>`;
+  try {
+    const data = await apFetch({ action: "fetchPRNsByProjectAndStatus", projectId, prnStatus });
+    const prns = (data.success ? (data.prns || []) : []);
+    if (prns.length === 0) {
+      prnSel.innerHTML = `<option value="">No ${prnStatus.toLowerCase()} PRNs for this project</option>`;
+      return;
+    }
+    prnSel.innerHTML = `<option value="">— Select PRN —</option>` +
+      prns.map(p => `<option value="${p.prnId.replace(/"/g,'&quot;')}">${p.customerName ? p.customerName + " | " : ""}${p.prnId}${p.version > 1 ? ` (v${p.version})` : ""}</option>`).join("");
+  } catch (e) {
+    prnSel.innerHTML = `<option value="">Failed to load PRNs</option>`;
+  }
+}
+
+async function loadPPSForPRN() {
+  const prnId = document.getElementById("pps-prn-select").value;
+  const body = document.getElementById("pps-results-body");
+  document.getElementById("pps-feedback").style.display = "none";
+  if (!prnId) { body.innerHTML = ""; return; }
 
   body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading PPS tracking...</div>`;
   try {
-    const data = await apFetch({ action: "fetchPPSByProject", projectId });
+    const data = await apFetch({ action: "fetchPPSForPRN", prnId });
     if (!data.success) { body.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
-    if (!data.prns || data.prns.length === 0) {
-      body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No PPS tracking records for this project yet. Records appear once a PO linked to this project's PRNs is authorized.</div>`;
+    const materials = data.materials || [];
+    if (materials.length === 0) {
+      body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">This PRN has no material lines.</div>`;
       return;
     }
-    const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+
+    const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
     const esc = (s) => (s==null?"":s.toString().replace(/</g,"&lt;").replace(/>/g,"&gt;"));
 
-    body.innerHTML = data.prns.map(prn => {
-      const rows = prn.rows.map(row => `
-        <tr style="border-bottom:1px solid #f1f5f9;">
-          <td style="padding:5px; text-align:center; font-family:monospace; font-weight:700;">${esc(row.itemCode)}</td>
-          <td style="padding:5px;">${esc(row.materialName)}</td>
-          <td style="padding:5px; text-align:center;">${fmt(row.boqQuantity)}</td>
-          <td style="padding:5px; text-align:center;">${fmt(row.bufferedQuantity)}</td>
-          <td style="padding:5px; text-align:center;">${fmt(row.storeReservedQuantity)}</td>
-          <td style="padding:5px; text-align:center; font-weight:700; color:var(--brand);">${fmt(row.purchasedQuantity)}</td>
-          <td style="padding:5px; text-align:center; font-family:monospace;">${esc(row.poNumber)}</td>
-          <td style="padding:5px; text-align:center;">${esc(formatDateDMY(row.poDate))}</td>
-          <td style="padding:5px;">${esc(row.vendorName)}</td>
-          <td style="padding:5px; text-align:center;">${esc(formatDateDMY(row.expectedDeliveryDate))}</td>
-          <td style="padding:5px; text-align:center;">${row.actualDeliveryDate ? esc(formatDateDMY(row.actualDeliveryDate)) : '<span style="color:var(--muted);">—</span>'}</td>
-          <td style="padding:5px; text-align:center;">${row.actualReceivedQuantity!==""?fmt(row.actualReceivedQuantity):'<span style="color:var(--muted);">—</span>'}</td>
-          <td style="padding:5px; text-align:center;">${esc(formatDateDMY(row.prnCreatedDate))}</td>
-          <td style="padding:5px;">
-            <input type="text" class="pps-action-input" value="${(row.actionPlan||'').replace(/"/g,'&quot;')}"
-              data-rownum="${row.rowNum}" data-prnid="${esc(prn.prnId)}" data-itemcode="${esc(row.itemCode)}" data-pono="${esc(row.poNumber)}"
-              placeholder="Add action plan..." style="width:100%; min-width:140px; padding:5px; border:1px solid var(--border); border-radius:3px; font-size:0.78rem;">
+    const rowsHtml = materials.map(m => {
+      const pos = m.purchaseOrders || [];
+      const ordered = Number(m.purchaseQty) || 0;
+      const received = Number(m.receivedQty) || 0;
+      const pct = ordered > 0 ? Math.min(100, (received / ordered) * 100) : 100;
+      // Status reads received/ordered — a purchase quantity of 0 means the
+      // line is fully covered from store and has nothing to wait for.
+      const statusCell = ordered <= 0
+        ? `<span style="font-size:0.72rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px;">From store</span>`
+        : `<div style="font-weight:800; font-family:monospace; font-size:0.85rem; color:${received >= ordered ? "#15803d" : "#b45309"};">${fmt(received)} / ${fmt(ordered)}</div>
+           <div style="height:4px; background:#e2e8f0; border-radius:2px; margin-top:4px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:${received >= ordered ? "#15803d" : "#f59e0b"};"></div></div>`;
+
+      const poCell = pos.length === 0
+        ? (Number(m.stillToOrder) > 0
+            ? `<span style="font-size:0.72rem; font-weight:700; color:#b91c1c; background:#fee2e2; padding:2px 8px; border-radius:4px;">Not yet ordered</span>`
+            : `<span style="color:var(--muted); font-size:0.75rem;">—</span>`)
+        : pos.map(po => `<div style="font-family:monospace; font-size:0.72rem; font-weight:700; color:var(--brand);">${esc(po.poNo)} <span style="color:var(--muted); font-weight:600;">(${fmt(po.orderedQty)})</span></div>`).join("");
+
+      const dateCell = pos.length === 0
+        ? `<span style="color:var(--muted); font-size:0.75rem;">—</span>`
+        : pos.map(po => `<div style="font-size:0.72rem;">${po.expectedDelivery ? esc(formatDateDMY(po.expectedDelivery)) : "—"}${po.actualDelivery ? ` <span style="color:#15803d; font-weight:700;">✓ ${esc(formatDateDMY(po.actualDelivery))}</span>` : ""}</div>`).join("");
+
+      const flag = m.awaitingPoRevision
+        ? `<div style="font-size:0.6rem; font-weight:800; color:#b45309; margin-top:3px;">⏳ AWAITING PO REVISION</div>` : "";
+
+      const actionRows = pos.map(po => `
+        <tr style="background:#fafbfc; border-bottom:1px solid #f1f5f9;">
+          <td colspan="4" style="padding:4px 8px 4px 26px; font-size:0.72rem; color:var(--muted);">
+            ↳ <span style="font-family:monospace; font-weight:700; color:var(--brand);">${esc(po.poNo)}</span> · ${esc(po.vendorName || "")} · ${fmt(po.receivedQty)}/${fmt(po.orderedQty)} received
+          </td>
+          <td colspan="5" style="padding:4px 8px;">
+            <input type="text" class="pps-action-input" value="${(po.actionPlan||'').replace(/"/g,'&quot;')}"
+              data-prnid="${esc(prnId)}" data-itemcode="${esc(m.itemCode)}" data-pono="${esc(po.poNo)}"
+              placeholder="Add action plan…" style="width:100%; padding:4px 6px; border:1px solid var(--border); border-radius:3px; font-size:0.72rem;">
           </td>
         </tr>`).join("");
+
       return `
-        <div class="contact-summary-card-parent" style="margin-bottom:14px;">
-          <div style="font-weight:700; margin-bottom:8px;">
-            <span style="background:var(--accent); color:#fff; padding:3px 10px; font-family:monospace;">PRN: ${esc(prn.prnId)}</span>
-            <span style="margin-left:8px; font-size:0.82rem; color:var(--muted);">Created: ${esc(prn.prnCreatedDate)}</span>
-          </div>
-          <div style="overflow-x:auto;">
-            <table style="width:100%; border-collapse:collapse; font-size:0.78rem; min-width:1400px;">
-              <thead><tr style="background:var(--highlight-bg); text-align:left;">
-                <th style="padding:6px;">Item Code</th><th style="padding:6px;">Material Name</th>
-                <th style="padding:6px;">BOQ Qty</th><th style="padding:6px;">Buffered</th><th style="padding:6px;">Store Reserved</th>
-                <th style="padding:6px;">Purchased</th><th style="padding:6px;">P.O. No.</th><th style="padding:6px;">P.O. Date</th>
-                <th style="padding:6px;">Vendor</th><th style="padding:6px;">Expected Delivery</th><th style="padding:6px;">Actual Delivery</th>
-                <th style="padding:6px;">Actual Received</th><th style="padding:6px;">PRN Created</th><th style="padding:6px;">Action Plan</th>
-              </tr></thead>
-              <tbody>${rows}</tbody>
-            </table>
-          </div>
-        </div>`;
-    }).join("") + `
-      <div style="display:flex; justify-content:flex-end; margin-top:8px;">
-        <button class="nav-btn-styled" onclick="savePPSActionPlans('${projectId.replace(/'/g,"\\'")}')" style="background:var(--brand); color:#fff; font-weight:700; padding:9px 22px;">Save Action Plans</button>
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${esc(m.itemCode)}${flag}</td>
+          <td style="padding:8px; font-size:0.82rem; font-weight:600;">${esc(m.materialName)}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace;">${fmt(m.boqRequiredQty)}</td>
+          <td style="padding:8px; text-align:center; color:#b45309; font-weight:700;">${fmt(m.bufferPct)}%</td>
+          <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(m.bufferedPurchaseQty)}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace;">${fmt(m.storeQty)}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${fmt(m.purchaseQty)}</td>
+          <td style="padding:8px; text-align:center;">${poCell}</td>
+          <td style="padding:8px; text-align:center;">${dateCell}</td>
+          <td style="padding:8px; text-align:center; min-width:110px;">${statusCell}</td>
+        </tr>${actionRows}`;
+    }).join("");
+
+    body.innerHTML = `
+      <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+        <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1150px;">
+          <thead><tr style="background:#f8fafc;">
+            <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:200px;">Material Name</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center;">Store Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center;">Purchase Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:120px;">Purchase Order(s)</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:120px;">Expected Delivery</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center;">Received / Ordered</th>
+          </tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+      <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+        <button class="nav-btn-styled" onclick="savePPSActionPlans()" style="background:var(--accent); color:#fff; font-weight:700; padding:8px 20px;">Save Action Plans</button>
       </div>`;
-  } catch(e) { body.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+  } catch (e) {
+    body.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
+  }
+}
+
+async function savePPSActionPlans() {
+  const updates = Array.from(document.querySelectorAll(".pps-action-input")).map(inp => ({
+    prnId: inp.dataset.prnid, itemCode: inp.dataset.itemcode, poNo: inp.dataset.pono,
+    actionPlan: inp.value.trim()
+  }));
+  if (updates.length === 0) return;
+  try {
+    const data = await apFetch({ action: "updatePPSActionPlan", updates, operatorName: appActiveOperatorIdentityString });
+    showPurchaseFeedback("pps-feedback", data.success ? "Action plans saved." : (data.error || "Save failed."), data.success ? "success" : "error");
+  } catch (e) {
+    showPurchaseFeedback("pps-feedback", "Network error: " + e.message, "error");
+  }
 }
 
 async function savePPSActionPlans(projectId) {
@@ -15162,7 +15292,7 @@ function handleCPOVendorChange() {
 
 function addCPOMaterialRow() {
   const id = ++window.cpoRowSeq;
-  window.cpoMaterialRows.push({ id, description: "", itemCode: "", quantity: "", unit: "", rate: "", discountPercent: "", projectIds: [] });
+  window.cpoMaterialRows.push({ id, description: "", itemCode: "", quantity: "", unit: "", rate: "", discountPercent: "", projectIds: [], allocations: [] });
   renderCPOMaterialRows();
 }
 
@@ -15179,9 +15309,14 @@ function renderCPOMaterialRows() {
     return;
   }
   body.innerHTML = window.cpoMaterialRows.map((row, idx) => {
-    const projectChips = row.projectIds.length
-      ? row.projectIds.map(p => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">${p}</div>`).join("")
-      : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No projects selected</span>';
+    const allocList = row.allocations || [];
+    const allocSum = allocList.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
+    const lineQtyNow = parseFloat(row.quantity) || 0;
+    const unallocNow = Math.round((lineQtyNow - allocSum) * 100) / 100;
+    const projectChips = allocList.length
+      ? allocList.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId.replace(/^PRN_/, "")} — <strong>${a.quantity}</strong></div>`).join("")
+        + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">spare — <strong>${unallocNow}</strong></div>` : "")
+      : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No PRNs allocated</span>';
 
     return `<div data-rowid="${row.id}" style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px;">
       <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
@@ -15226,7 +15361,7 @@ function renderCPOMaterialRows() {
       <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
         <div style="min-width:180px;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Projects using this Material *</div>
-          <button onclick="openCPOProjectPicker(${row.id})" style="font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">Select Projects</button>
+          <button onclick="openCPOAllocationPicker(${row.id})" style="font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">Allocate to PRNs</button>
         </div>
         <div style="flex:1; min-width:200px; padding-top:2px;">${projectChips}</div>
       </div>
@@ -15309,61 +15444,130 @@ function recalcCPOTotals() {
   document.getElementById("cpo-grandtotal-disp").textContent = fmt(grandTotal);
 }
 
-async function openCPOProjectPicker(rowId) {
+async function openCPOAllocationPicker(rowId) {
   const row = window.cpoMaterialRows.find(r => r.id === rowId);
   if (!row) return;
-  if (!row.itemCode) { alert("Select the material for this row first — the project list depends on which item code is being purchased."); return; }
+  if (!row.itemCode) { alert("Select the material for this row first — the PRN list depends on which item code is being purchased."); return; }
 
-  // Only projects with an outstanding PRN demand for THIS item code are
-  // selectable. Previously every Active project was listed regardless of
-  // material, so a PO line could be tagged to a project that never
-  // requested it.
-  let awaiting = [];
+  let prns = [];
   try {
-    const res = await apFetch({ action: "fetchProjectsAwaitingMaterial", itemCode: row.itemCode });
-    awaiting = (res && res.success) ? (res.projects || []) : [];
+    const res = await apFetch({ action: "fetchOpenPRNsForItemCode", itemCode: row.itemCode });
+    prns = (res && res.success) ? (res.prns || []) : [];
   } catch (e) {
-    alert("Could not load the project list for this material: " + e.message);
+    alert("Could not load the PRN list for this material: " + e.message);
     return;
   }
-  if (awaiting.length === 0) {
-    alert(`No project currently has an outstanding, authorized PRN requirement for "${row.itemCode}". Nothing to allocate this line to.`);
-    return;
+  if (prns.length === 0) {
+    alert(`No authorized PRN currently needs "${row.itemCode}". This line will be ordered entirely as spare stock unless you add allocations.`);
   }
 
-  const existing = document.getElementById("cpo-project-modal");
+  const existing = document.getElementById("cpo-alloc-modal");
   if (existing) existing.remove();
-  const modal = document.createElement("div");
-  modal.id = "cpo-project-modal";
-  modal.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;";
+
+  const lineQty = parseFloat(row.quantity) || 0;
   const fmtQty = (n) => (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
-  const checks = awaiting.map((p, i) => `
-    <label for="cpo-proj-cb-${i}" style="display:flex; align-items:center; gap:12px; padding:11px 12px; border:1px solid var(--border); border-radius:6px; margin-bottom:6px; cursor:pointer; font-size:0.85rem; transition:background 0.1s;"
-      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <input type="checkbox" id="cpo-proj-cb-${i}" value="${p.projectId.replace(/"/g,'&quot;')}" ${row.projectIds.includes(p.projectId) ? 'checked' : ''} style="width:16px; height:16px; flex-shrink:0;">
-      <span style="font-weight:600; flex:1;">${p.projectId}</span>
-      <span style="font-size:0.72rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px; white-space:nowrap;">Still to order: ${fmtQty(p.outstandingQty)}</span>
-    </label>`).join("");
-  modal.innerHTML = `
-    <div style="background:#fff; border-radius:12px; width:100%; max-width:520px; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
-      <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
-        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Select Projects this Material is Used by</div>
-        <div style="font-size:0.78rem; color:var(--muted); margin-top:4px;">Only projects with an outstanding authorized PRN requirement for this material are shown.</div>
+
+  const existingByPrn = Object.fromEntries((row.allocations || []).map(a => [a.prnId, a.quantity]));
+  let remaining = lineQty;
+  const prefilled = prns.map(p => {
+    if (existingByPrn[p.prnId] !== undefined) {
+      const q = Number(existingByPrn[p.prnId]) || 0;
+      remaining = Math.max(0, remaining - q);
+      return { ...p, suggested: q };
+    }
+    const take = Math.min(remaining, Number(p.stillToOrder) || 0);
+    remaining = Math.max(0, remaining - take);
+    return { ...p, suggested: take };
+  });
+
+  const modal = document.createElement("div");
+  modal.id = "cpo-alloc-modal";
+  modal.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;";
+
+  const rowsHtml = prefilled.map((p) => `
+    <div style="display:flex; align-items:center; gap:12px; padding:11px 12px; border:1px solid var(--border); border-radius:6px; margin-bottom:6px; font-size:0.85rem;">
+      <div style="flex:1; min-width:0;">
+        <div style="font-weight:700; font-family:monospace; font-size:0.78rem; color:var(--brand); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.prnId}</div>
+        <div style="font-size:0.72rem; color:var(--muted);">${p.projectId || ""}</div>
       </div>
-      <div style="overflow-y:auto; flex:1; padding:16px 20px;">${checks}</div>
+      <span style="font-size:0.7rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px; white-space:nowrap;">Needs ${fmtQty(p.stillToOrder)}</span>
+      <input type="number" min="0" max="${Number(p.stillToOrder) || 0}" step="any"
+        class="cpo-alloc-input" data-prnid="${p.prnId}" data-max="${Number(p.stillToOrder) || 0}"
+        value="${p.suggested > 0 ? p.suggested : ""}" placeholder="0"
+        oninput="updateCPOAllocTotals(${lineQty})"
+        style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--brand); border-radius:4px; font-size:0.85rem;">
+    </div>`).join("");
+
+  modal.innerHTML = `
+    <div style="background:#fff; border-radius:12px; width:100%; max-width:600px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
+      <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
+        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmtQty(lineQty)} ${row.unit || ""} of ${row.itemCode} to PRNs</div>
+        <div style="font-size:0.78rem; color:var(--muted); margin-top:4px;">
+          Pre-filled oldest-PRN-first. Change any figure to prioritise differently — anything left unallocated is ordered deliberately as spare and lands in free store stock.
+        </div>
+      </div>
+      <div style="overflow-y:auto; flex:1; padding:16px 20px;">${rowsHtml || `<div style="text-align:center; color:var(--muted); padding:20px;">No PRN currently needs this material.</div>`}</div>
+      <div id="cpo-alloc-summary" style="padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700;"></div>
       <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid var(--border); background:#f8fafc;">
-        <button onclick="document.getElementById('cpo-project-modal').remove()" style="padding:9px 18px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600;">Cancel</button>
-        <button onclick="saveCPOProjectPicker(${rowId})" style="padding:9px 22px; background:var(--brand); color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:700;">Save Selection</button>
+        <button onclick="document.getElementById('cpo-alloc-modal').remove()" style="padding:9px 18px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600;">Cancel</button>
+        <button onclick="saveCPOAllocationPicker(${rowId})" style="padding:9px 22px; background:var(--brand); color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:700;">Save Allocation</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
+  updateCPOAllocTotals(lineQty);
 }
 
-function saveCPOProjectPicker(rowId) {
+function updateCPOAllocTotals(lineQty) {
+  const inputs = Array.from(document.querySelectorAll(".cpo-alloc-input"));
+  let sum = 0, overCap = [];
+  inputs.forEach(inp => {
+    const v = parseFloat(inp.value) || 0;
+    const cap = parseFloat(inp.dataset.max) || 0;
+    sum += v;
+    if (v > cap + 1e-9) overCap.push(inp.dataset.prnid);
+    inp.style.borderColor = v > cap + 1e-9 ? "#b91c1c" : "var(--brand)";
+  });
+  const unalloc = Math.round((lineQty - sum) * 100) / 100;
+  const el = document.getElementById("cpo-alloc-summary");
+  if (!el) return;
+  const fmt = (n) => (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  if (overCap.length) {
+    el.style.cssText = "padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700; background:#fef2f2; color:#b91c1c;";
+    el.textContent = `${overCap.length} PRN(s) allocated more than they still need.`;
+  } else if (sum > lineQty + 1e-9) {
+    el.style.cssText = "padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700; background:#fef2f2; color:#b91c1c;";
+    el.textContent = `Allocated ${fmt(sum)} but the line is only ${fmt(lineQty)}.`;
+  } else {
+    el.style.cssText = `padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700; background:${unalloc > 0 ? "#fffbeb" : "#f0fdf4"}; color:${unalloc > 0 ? "#78350f" : "#15803d"};`;
+    el.textContent = unalloc > 0
+      ? `Allocated ${fmt(sum)} of ${fmt(lineQty)} — ${fmt(unalloc)} unallocated, will go to free store stock.`
+      : `All ${fmt(lineQty)} allocated.`;
+  }
+}
+
+function saveCPOAllocationPicker(rowId) {
   const row = window.cpoMaterialRows.find(r => r.id === rowId);
-  const modal = document.getElementById("cpo-project-modal");
+  const modal = document.getElementById("cpo-alloc-modal");
   if (!row || !modal) return;
-  row.projectIds = Array.from(modal.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+  const lineQty = parseFloat(row.quantity) || 0;
+  const allocs = [];
+  let sum = 0;
+  for (const inp of modal.querySelectorAll(".cpo-alloc-input")) {
+    const q = parseFloat(inp.value) || 0;
+    if (q <= 0) continue;
+    const cap = parseFloat(inp.dataset.max) || 0;
+    if (q > cap + 1e-9) {
+      alert(`${inp.dataset.prnid} only needs ${cap} more of this material — cannot allocate ${q}.`);
+      return;
+    }
+    sum += q;
+    allocs.push({ prnId: inp.dataset.prnid, quantity: q });
+  }
+  if (sum > lineQty + 1e-9) {
+    alert(`Allocated ${sum} across PRNs but the ordered quantity is only ${lineQty}.`);
+    return;
+  }
+  row.allocations = allocs;
   modal.remove();
   renderCPOMaterialRows();
 }
@@ -15398,7 +15602,13 @@ async function submitCreatePO() {
     if (!row.itemCode) return showErr(`Row ${n}: select a material from the search (item code required).`);
     if (!(parseFloat(row.quantity) > 0)) return showErr(`Row ${n}: Quantity must be greater than 0.`);
     if (!(parseFloat(row.rate) > 0)) return showErr(`Row ${n}: Rate must be greater than 0.`);
-    if (!row.projectIds || row.projectIds.length === 0) return showErr(`Row ${n}: select at least one Project this material Uses.`);
+    // A line with no allocations is legal — a deliberate stock-building
+    // purchase where everything becomes free store stock. Only an
+    // over-allocation is invalid, and the server re-checks it under lock.
+    const aSum = (row.allocations || []).reduce((s, a) => s + (Number(a.quantity) || 0), 0);
+    if (aSum > (parseFloat(row.quantity) || 0) + 1e-9) {
+      return showErr(`Row ${n}: allocated ${aSum} across PRNs but only ${row.quantity} is being ordered.`);
+    }
   }
 
   const payload = {
@@ -15409,7 +15619,8 @@ async function submitCreatePO() {
     lineItems: window.cpoMaterialRows.map(r => ({
       description: r.description, itemCode: r.itemCode, quantity: parseFloat(r.quantity) || 0,
       unit: r.unit, rate: parseFloat(r.rate) || 0, discountPercent: parseFloat(r.discountPercent) || 0,
-      projectIds: r.projectIds
+      deliveryDate: r.deliveryDate || null,
+      allocations: (r.allocations || []).map(a => ({ prnId: a.prnId, quantity: Number(a.quantity) || 0 }))
     })),
     cgstPercent: parseFloat(document.getElementById("cpo-cgst").value) || 0,
     sgstPercent: parseFloat(document.getElementById("cpo-sgst").value) || 0,
@@ -15634,7 +15845,7 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
   document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
 
-  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po","canvas-module-purchase-rejected-material","canvas-module-purchase-create-po","canvas-module-purchase-authorize-prn","canvas-module-purchase-authorize-po","canvas-module-purchase-pps-tracking"].forEach(id => {
+  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po","canvas-module-purchase-rejected-material","canvas-module-purchase-create-po","canvas-module-purchase-authorize-prn","canvas-module-purchase-authorize-po","canvas-module-purchase-pps-tracking","canvas-module-purchase-revise-po","canvas-module-purchase-authorize-po-revision","canvas-module-purchase-revise-prn"].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = "none";
   });
 
@@ -15664,6 +15875,15 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
     const apoBanner = document.getElementById("authorize-po-feedback");
     if (apoBanner) { apoBanner.style.display = "none"; apoBanner.innerHTML = ""; }
     initializeAuthorizePOPanel();
+  } else if (targetModuleId === "purchase-revise-prn") {
+    document.getElementById("canvas-module-purchase-revise-prn").style.display = "block";
+    initializeRevisePRNPanel();
+  } else if (targetModuleId === "purchase-authorize-po-revision") {
+    document.getElementById("canvas-module-purchase-authorize-po-revision").style.display = "block";
+    initializeAuthorizePORevisionPanel();
+  } else if (targetModuleId === "purchase-revise-po") {
+    document.getElementById("canvas-module-purchase-revise-po").style.display = "block";
+    initializeRevisePOPanel();
   } else if (targetModuleId === "purchase-pps-tracking") {
     document.getElementById("canvas-module-purchase-pps-tracking").style.display = "block";
     const ppsBanner = document.getElementById("pps-feedback");
@@ -15678,6 +15898,647 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
     window.rejMaterialActionFilter = [];
     initializeRejectedMaterialPanel('pending');
   }
+}
+
+// ── Revise PO ────────────────────────────────────────────────────────────
+window.rpoActive = null;   // { po, lineItems, kind }
+
+function switchRevisePOTab(tab) {
+  const isQueue = tab === "queue";
+  document.getElementById("rpo-queue-section").style.display = isQueue ? "block" : "none";
+  document.getElementById("rpo-other-section").style.display = isQueue ? "none" : "block";
+  document.getElementById("rpo-detail-zone").innerHTML = "";
+  window.rpoActive = null;
+  const on = (b) => { b.style.color = "var(--brand)"; b.style.borderBottomColor = "var(--brand)"; b.style.fontWeight = "800"; };
+  const off = (b) => { b.style.color = "var(--muted)"; b.style.borderBottomColor = "transparent"; b.style.fontWeight = "700"; };
+  const q = document.getElementById("rpo-tab-queue"), o = document.getElementById("rpo-tab-other");
+  isQueue ? (on(q), off(o)) : (on(o), off(q));
+  if (isQueue) initializeRevisePOPanel();
+}
+
+async function initializeRevisePOPanel() {
+  const feed = document.getElementById("rpo-queue-feed");
+  document.getElementById("rpo-detail-zone").innerHTML = "";
+  feed.innerHTML = `<div style="text-align:center; padding:24px; color:var(--muted);">Loading…</div>`;
+  try {
+    const data = await apFetch({ action: "fetchPOsNeedingRevision" });
+    const queue = (data.success ? (data.queue || []) : []);
+    if (queue.length === 0) {
+      feed.innerHTML = `<div style="text-align:center; padding:26px; color:var(--muted); background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px;">✅ No PO is waiting on a PRN revision.</div>`;
+      return;
+    }
+    feed.innerHTML = queue.map(po => {
+      const prns = (po.changedPrns || []).filter(p => p && p.prnId);
+      const chips = prns.map(p => `<span style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.68rem; font-family:monospace; padding:2px 7px; border-radius:4px; margin:0 4px 3px 0;">${p.prnId.replace(/^PRN_/,"")} v${p.stampedVersion}→v${p.currentVersion}</span>`).join("");
+      return `
+        <div style="background:#fff; border:1px solid var(--border); border-left:3px solid #f59e0b; border-radius:var(--radius); padding:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:240px;">
+              <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${po.poNo}${po.revisionNumber > 1 ? ` <span style="font-size:0.7rem; color:var(--muted);">(Rev ${po.revisionNumber})</span>` : ""}</div>
+              <div style="font-size:0.8rem; font-weight:600; margin-top:2px;">${po.vendorName || ""}</div>
+              <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Ordered ${po.orderDate ? formatDateDMY(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatDateDMY(po.deliveryDate) : "—"}</div>
+              <div style="margin-top:7px;">${chips}</div>
+            </div>
+            <div style="display:flex; gap:8px; flex-shrink:0;">
+              <button onclick="dismissPORevision('${po.poNo}')" style="padding:7px 14px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.8rem;">No Revision Needed</button>
+              <button class="nav-btn-styled" onclick="openPORevision('${po.poNo}', true)" style="background:var(--brand); color:#fff; font-weight:700; padding:7px 18px; font-size:0.8rem;">Revise →</button>
+            </div>
+          </div>
+        </div>`;
+    }).join("");
+  } catch (e) {
+    feed.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
+  }
+}
+
+async function searchPOsForRevisionUI() {
+  const query = document.getElementById("rpo-search-input").value.trim();
+  const feed = document.getElementById("rpo-search-feed");
+  document.getElementById("rpo-detail-zone").innerHTML = "";
+  if (query.length < 2) { feed.innerHTML = `<div style="color:#b91c1c; font-size:0.8rem;">Enter at least 2 characters.</div>`; return; }
+  feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching…</div>`;
+  try {
+    const data = await apFetch({ action: "searchPOsForRevision", query });
+    const results = (data.success ? (data.results || []) : []);
+    if (results.length === 0) { feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">No authorized PO matched.</div>`; return; }
+    feed.innerHTML = results.map(po => `
+      <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px; display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;">
+        <div>
+          <div style="font-family:monospace; font-weight:800; color:var(--brand);">${po.poNo}${po.revisionNumber > 1 ? ` <span style="font-size:0.7rem; color:var(--muted);">(Rev ${po.revisionNumber})</span>` : ""}</div>
+          <div style="font-size:0.8rem; font-weight:600;">${po.vendorName || ""}</div>
+          <div style="font-size:0.72rem; color:var(--muted);">Delivery ${po.deliveryDate ? formatDateDMY(po.deliveryDate) : "—"}</div>
+        </div>
+        ${po.revisionPending
+          ? `<span style="font-size:0.72rem; font-weight:700; color:#b45309; background:#fef3c7; padding:4px 10px; border-radius:4px;">Revision already pending</span>`
+          : `<button class="nav-btn-styled" onclick="openPORevision('${po.poNo}', false)" style="background:var(--brand); color:#fff; font-weight:700; padding:7px 18px; font-size:0.8rem;">Revise →</button>`}
+      </div>`).join("");
+  } catch (e) {
+    feed.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
+  }
+}
+
+async function openPORevision(poNo, changedOnly) {
+  const zone = document.getElementById("rpo-detail-zone");
+  zone.innerHTML = `<div style="text-align:center; padding:24px; color:var(--muted);">Loading PO…</div>`;
+  try {
+    const data = await apFetch({ action: "fetchPOForRevision", poNo, changedOnly });
+    if (!data.success) { zone.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${data.error}</div>`; return; }
+    window.rpoActive = { po: data.po, lineItems: data.lineItems || [], kind: changedOnly ? "PRN Driven" : "Standalone" };
+    renderPORevisionCard();
+  } catch (e) {
+    zone.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
+  }
+}
+
+function renderPORevisionCard() {
+  const st = window.rpoActive;
+  if (!st) return;
+  const { po, lineItems, kind } = st;
+  const fmt = (n) => (Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
+
+  const rows = lineItems.map((li, idx) => {
+    // Allocation inputs, one per PRN already on this line. "Needs" is that
+    // PRN's CURRENT requirement from THIS PO — its purchase quantity minus
+    // whatever other POs already cover — so a material split across two
+    // vendors is never double-counted.
+    const allocs = li.allocations || [];
+    const allocHtml = allocs.length === 0
+      ? `<div style="font-size:0.72rem; color:var(--muted);">No PRN allocated — whole line is spare stock.</div>`
+      : allocs.map(a => {
+          const need = Math.max(0, (Number(a.currentPurchaseQty)||0) - (Number(a.coveredByOtherPOs)||0));
+          const stale = Number(a.prnVersion) > Number(a.stampedVersion || 0);
+          return `<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+            <span style="flex:1; font-family:monospace; font-size:0.7rem; font-weight:700; color:${stale ? "#b45309" : "var(--brand)"};">${a.prnId.replace(/^PRN_/,"")}${stale ? " ●" : ""}</span>
+            <span style="font-size:0.65rem; color:var(--muted); white-space:nowrap;">needs ${fmt(need)}</span>
+            <input type="number" min="0" step="any" class="rpo-alloc" data-idx="${idx}" data-prnid="${a.prnId}" data-need="${need}"
+              value="${Number(a.allocatedQty)||0}" oninput="updateRPOLineTotals(${idx})"
+              style="width:78px; text-align:center; font-weight:700; padding:4px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.78rem;">
+          </div>`;
+        }).join("");
+
+    return `
+      <tr style="border-bottom:1px solid #e2e8f0; ${li.changed ? "background:#fffbeb;" : ""}">
+        <td style="padding:8px; font-family:monospace; font-size:0.76rem; font-weight:700; color:var(--brand);">${li.itemCode}</td>
+        <td style="padding:8px; font-size:0.8rem; font-weight:600;">${li.description || ""}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; color:var(--muted);">${fmt(li.orderedQty)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:800; color:${Number(li.newRequiredQty) > Number(li.orderedQty) ? "#15803d" : "#b91c1c"};">${fmt(li.newRequiredQty)}</td>
+        <td style="padding:8px; text-align:center; font-size:0.72rem; color:${Number(li.receivedQty) > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(li.receivedQty)}</td>
+        <td style="padding:8px; text-align:center;">
+          <input type="number" min="${Number(li.receivedQty)||0}" step="any" class="rpo-vdq" data-idx="${idx}"
+            value="${fmt(li.orderedQty).replace(/,/g,"")}" oninput="updateRPOLineTotals(${idx})"
+            style="width:100px; text-align:center; font-weight:800; padding:6px; border:1.5px solid #15803d; border-radius:4px; font-size:0.85rem;">
+        </td>
+        <td style="padding:8px; text-align:center;">
+          <input type="number" min="0" step="any" class="rpo-rate" data-idx="${idx}" value="${Number(li.rate)||0}"
+            style="width:90px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
+        </td>
+        <td style="padding:8px; min-width:190px;">${allocHtml}<div id="rpo-sum-${idx}" style="font-size:0.65rem; font-weight:800; margin-top:4px;"></div></td>
+      </tr>`;
+  }).join("");
+
+  document.getElementById("rpo-detail-zone").innerHTML = `
+    <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px; padding-bottom:12px; border-bottom:1px dashed var(--border);">
+        <div>
+          <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:1rem;">${po.poNo}</div>
+          <div style="font-size:0.85rem; font-weight:700;">${po.vendorName || ""}</div>
+          <div style="font-size:0.74rem; color:var(--muted);">Ordered ${po.orderDate ? formatDateDMY(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatDateDMY(po.deliveryDate) : "—"} · Currently Rev ${po.revisionNumber || 1}</div>
+        </div>
+        <span style="font-size:0.7rem; font-weight:800; padding:4px 10px; border-radius:4px; background:${kind === "PRN Driven" ? "#fef3c7" : "#e0f2fe"}; color:${kind === "PRN Driven" ? "#78350f" : "#075985"};">${kind === "PRN Driven" ? "PRN-DRIVEN REVISION" : "STANDALONE REVISION"}</span>
+      </div>
+
+      <div style="background:#f8fafc; border-left:3px solid var(--brand); padding:9px 12px; border-radius:4px; font-size:0.75rem; color:#334155; margin-bottom:12px;">
+        <strong>Vendor Discussed Purchase Quantity</strong> is what you actually agreed with the vendor, and is required on every row. It cannot go below what has already been received. Anything you don't allocate to a PRN is ordered as spare and lands in free store stock.
+      </div>
+
+      <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+        <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
+          <thead><tr style="background:#f8fafc;">
+            <th style="padding:8px; font-size:0.68rem; text-align:left;">Item Code</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:left; min-width:180px;">Material</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center;">Old PO Qty</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center; color:var(--brand);">New Required Qty</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center;">Received</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center; color:#15803d;">Vendor Discussed Qty *</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center;">Rate</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:left;">Allocation to PRNs</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap;">
+        <button onclick="cancelPOEntirely('${po.poNo}')" style="padding:8px 16px; border:1px solid #b91c1c; background:#fff; color:#b91c1c; border-radius:6px; cursor:pointer; font-weight:700; font-size:0.8rem;">Cancel this PO entirely</button>
+        <div style="display:flex; gap:10px;">
+          <button onclick="document.getElementById('rpo-detail-zone').innerHTML=''; window.rpoActive=null;" style="padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.8rem;">Close</button>
+          <button class="nav-btn-styled" id="rpo-submit-btn" onclick="submitPORevisionUI()" style="background:var(--accent); color:#fff; font-weight:700; padding:8px 22px;">Submit Revision for Authorization</button>
+        </div>
+      </div>
+    </div>`;
+
+  lineItems.forEach((_, idx) => updateRPOLineTotals(idx));
+}
+
+function updateRPOLineTotals(idx) {
+  const vdq = parseFloat(document.querySelector(`.rpo-vdq[data-idx="${idx}"]`)?.value) || 0;
+  const inputs = Array.from(document.querySelectorAll(`.rpo-alloc[data-idx="${idx}"]`));
+  let sum = 0, over = false;
+  inputs.forEach(inp => {
+    const v = parseFloat(inp.value) || 0;
+    const need = parseFloat(inp.dataset.need) || 0;
+    sum += v;
+    const bad = v > need + 1e-9;
+    if (bad) over = true;
+    inp.style.borderColor = bad ? "#b91c1c" : "var(--brand)";
+  });
+  const el = document.getElementById(`rpo-sum-${idx}`);
+  if (!el) return;
+  const spare = Math.round((vdq - sum) * 100) / 100;
+  if (over)            { el.style.color = "#b91c1c"; el.textContent = "A PRN is allocated more than it needs."; }
+  else if (sum > vdq + 1e-9) { el.style.color = "#b91c1c"; el.textContent = `Allocated ${sum} but the line is ${vdq}.`; }
+  else if (spare > 0)  { el.style.color = "#b45309"; el.textContent = `${spare} spare → free store stock`; }
+  else                 { el.style.color = "#15803d"; el.textContent = "Fully allocated"; }
+}
+
+function collectRPOLines() {
+  const st = window.rpoActive;
+  return st.lineItems.map((li, idx) => {
+    const vdq = parseFloat(document.querySelector(`.rpo-vdq[data-idx="${idx}"]`)?.value);
+    const rate = parseFloat(document.querySelector(`.rpo-rate[data-idx="${idx}"]`)?.value) || 0;
+    const allocations = Array.from(document.querySelectorAll(`.rpo-alloc[data-idx="${idx}"]`))
+      .map(inp => ({ prnId: inp.dataset.prnid, quantity: parseFloat(inp.value) || 0 }))
+      .filter(a => a.quantity > 0);
+    return { itemCode: li.itemCode, srNo: li.srNo, description: li.description, unit: li.unit,
+             vendorDiscussedQty: vdq, rate, discountPercent: Number(li.discountPercent) || 0,
+             deliveryDate: li.deliveryDate || null, allocations, _received: Number(li.receivedQty) || 0 };
+  });
+}
+
+async function submitPORevisionUI() {
+  const st = window.rpoActive;
+  if (!st) return;
+  const lines = collectRPOLines();
+
+  for (const l of lines) {
+    if (l.vendorDiscussedQty === undefined || l.vendorDiscussedQty === null || isNaN(l.vendorDiscussedQty)) {
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: Vendor Discussed Purchase Quantity is required.`, "error");
+    }
+    if (l.vendorDiscussedQty < l._received - 1e-9) {
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: ${l._received} already received — cannot revise below that.`, "error");
+    }
+    const sum = l.allocations.reduce((s, a) => s + a.quantity, 0);
+    if (sum > l.vendorDiscussedQty + 1e-9) {
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: allocated ${sum} but the revised line is ${l.vendorDiscussedQty}.`, "error");
+    }
+  }
+
+  const btn = document.getElementById("rpo-submit-btn");
+  btn.disabled = true; btn.textContent = "Submitting…";
+  showBlockingOverlay("Submitting PO revision…");
+  try {
+    const data = await apFetch({ action: "submitPORevisionDraft", poNo: st.po.poNo,
+      revisionKind: st.kind, lineItems: lines, operatorName: appActiveOperatorIdentityString });
+    hideBlockingOverlay();
+    if (data.success) {
+      document.getElementById("rpo-detail-zone").innerHTML = "";
+      window.rpoActive = null;
+      showPurchaseFeedback("rpo-feedback", `✅ Revision for <strong>${st.po.poNo}</strong> submitted — pending authorization. The PO is unchanged until it is authorized.`, "success");
+      initializeRevisePOPanel();
+    } else {
+      btn.disabled = false; btn.textContent = "Submit Revision for Authorization";
+      showPurchaseFeedback("rpo-feedback", data.error || "Submission failed.", "error");
+    }
+  } catch (e) {
+    hideBlockingOverlay();
+    btn.disabled = false; btn.textContent = "Submit Revision for Authorization";
+    showPurchaseFeedback("rpo-feedback", "Network error: " + e.message, "error");
+  }
+}
+
+async function cancelPOEntirely(poNo) {
+  const st = window.rpoActive;
+  if (!st) return;
+  if (!confirm(`Cancel PO ${poNo} entirely?\n\nEvery line goes to zero and all PRN allocations are released back to "still to order". This still requires authorization.`)) return;
+  const lines = st.lineItems.map(li => ({
+    itemCode: li.itemCode, srNo: li.srNo, description: li.description, unit: li.unit,
+    vendorDiscussedQty: 0, rate: Number(li.rate) || 0, discountPercent: Number(li.discountPercent) || 0,
+    allocations: []
+  }));
+  try {
+    const data = await apFetch({ action: "submitPORevisionDraft", poNo, revisionKind: "Cancellation",
+      lineItems: lines, reason: "Full PO cancellation", operatorName: appActiveOperatorIdentityString });
+    if (data.success) {
+      document.getElementById("rpo-detail-zone").innerHTML = "";
+      window.rpoActive = null;
+      showPurchaseFeedback("rpo-feedback", `Cancellation of <strong>${poNo}</strong> submitted — pending authorization.`, "success");
+      initializeRevisePOPanel();
+    } else {
+      showPurchaseFeedback("rpo-feedback", data.error || "Cancellation failed.", "error");
+    }
+  } catch (e) {
+    showPurchaseFeedback("rpo-feedback", "Network error: " + e.message, "error");
+  }
+}
+
+async function dismissPORevision(poNo) {
+  const reason = prompt(`Mark ${poNo} as needing no revision?\n\nUse this when you covered the PRN change with a NEW purchase order instead. Optionally note why:`);
+  if (reason === null) return;
+  try {
+    const data = await apFetch({ action: "dismissPORevisionQueue", poNo, reason, operatorName: appActiveOperatorIdentityString });
+    if (data.success) {
+      showPurchaseFeedback("rpo-feedback", `${poNo} removed from the revision queue.`, "success");
+      initializeRevisePOPanel();
+    } else {
+      showPurchaseFeedback("rpo-feedback", data.error || "Failed.", "error");
+    }
+  } catch (e) {
+    showPurchaseFeedback("rpo-feedback", "Network error: " + e.message, "error");
+  }
+}
+
+// ── Authorize PO Revision ────────────────────────────────────────────────
+async function initializeAuthorizePORevisionPanel() {
+  const feed = document.getElementById("apor-cards-feed");
+  feed.innerHTML = `<div style="text-align:center; padding:26px; color:var(--muted);">Loading pending revisions…</div>`;
+  try {
+    const data = await apFetch({ action: "fetchPendingPORevisions" });
+    const revs = (data.success ? (data.revisions || []) : []);
+    window.aporList = revs;
+    if (revs.length === 0) {
+      feed.innerHTML = `<div style="text-align:center; padding:26px; color:var(--muted); background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px;">✅ No PO revisions are awaiting authorization.</div>`;
+      return;
+    }
+    feed.innerHTML = revs.map(r => renderAPORCard(r)).join("");
+  } catch (e) {
+    feed.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
+  }
+}
+
+function renderAPORCard(r) {
+  const fmt = (n) => (Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
+  const currentByItem = Object.fromEntries((r.currentLines || []).map(l => [l.itemCode, l]));
+  const revised = r.revisedLineItems || [];
+  const isCancel = r.revisionKind === "Cancellation";
+
+  // Change summary — the point of this screen. Only rows whose quantity or
+  // rate actually moves are listed; an untouched line carries forward.
+  const changeRows = revised.map(line => {
+    const cur = currentByItem[line.itemCode] || {};
+    const oldQty = Number(cur.quantity) || 0, newQty = Number(line.quantity) || 0;
+    const oldRate = Number(cur.rate) || 0, newRate = Number(line.rate) || 0;
+    const qtyMoved = Math.abs(newQty - oldQty) > 1e-9;
+    const rateMoved = Math.abs(newRate - oldRate) > 1e-9;
+    if (!qtyMoved && !rateMoved) return "";
+    const allocs = (line.allocations || []);
+    const allocSum = allocs.reduce((s,a) => s + (Number(a.quantity)||0), 0);
+    const spare = Math.round((newQty - allocSum) * 100) / 100;
+    const arrow = (a, b, better) => `<span style="color:#94a3b8; font-family:monospace;">${fmt(a)}</span> <span style="font-weight:800; color:${better};">→ ${fmt(b)}</span>`;
+    return `
+      <tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:7px; font-family:monospace; font-size:0.74rem; font-weight:700; color:var(--brand);">${line.itemCode}</td>
+        <td style="padding:7px; font-size:0.78rem;">${line.description || ""}</td>
+        <td style="padding:7px; text-align:center; font-size:0.8rem;">${qtyMoved ? arrow(oldQty, newQty, newQty > oldQty ? "#15803d" : "#b91c1c") : `<span style="color:var(--muted); font-family:monospace;">${fmt(oldQty)}</span>`}</td>
+        <td style="padding:7px; text-align:center; font-size:0.8rem;">${rateMoved ? arrow(oldRate, newRate, "#b45309") : `<span style="color:var(--muted); font-family:monospace;">${fmt(oldRate)}</span>`}</td>
+        <td style="padding:7px; text-align:center; font-size:0.72rem; color:${Number(cur.received) > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(cur.received)}</td>
+        <td style="padding:7px; font-size:0.72rem;">
+          ${allocs.length === 0 ? `<span style="color:var(--muted);">none</span>`
+            : allocs.map(a => `<div style="font-family:monospace; font-weight:700; color:var(--brand);">${a.prnId.replace(/^PRN_/,"")} — ${fmt(a.quantity)}</div>`).join("")}
+          ${spare > 0 ? `<div style="color:#b45309; font-weight:700; margin-top:2px;">${fmt(spare)} spare → store</div>` : ""}
+        </td>
+      </tr>`;
+  }).filter(Boolean).join("");
+
+  return `
+    <div style="background:#fff; border:1px solid var(--border); border-left:3px solid ${isCancel ? "#b91c1c" : "var(--accent)"}; border-radius:var(--radius); padding:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; margin-bottom:12px;">
+        <div>
+          <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.95rem;">${r.poNo} <span style="font-size:0.7rem; color:var(--muted);">→ Rev ${(Number(r.revisionNumber)||1) + 1}</span></div>
+          <div style="font-size:0.82rem; font-weight:700;">${r.vendorName || ""}</div>
+          <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Drafted by ${r.requestedBy || "—"} · ${r.requestedAt ? formatDateDMY(r.requestedAt) : ""}</div>
+          ${r.reason ? `<div style="font-size:0.74rem; color:#334155; margin-top:5px; font-style:italic;">"${r.reason}"</div>` : ""}
+        </div>
+        <span style="font-size:0.68rem; font-weight:800; padding:4px 10px; border-radius:4px; background:${isCancel ? "#fee2e2" : "#fef3c7"}; color:${isCancel ? "#7f1d1d" : "#78350f"};">${isCancel ? "FULL CANCELLATION" : r.revisionKind.toUpperCase()}</span>
+      </div>
+
+      ${isCancel ? `<div style="background:#fef2f2; border-left:3px solid #b91c1c; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#7f1d1d; margin-bottom:10px;">Authorizing this cancels the PO outright. Every line goes to zero and all PRN allocations return to "still to order".</div>` : ""}
+
+      <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">Change Summary</div>
+      <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+        <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:820px;">
+          <thead><tr style="background:#f8fafc;">
+            <th style="padding:7px; font-size:0.66rem; text-align:left;">Item Code</th>
+            <th style="padding:7px; font-size:0.66rem; text-align:left; min-width:170px;">Material</th>
+            <th style="padding:7px; font-size:0.66rem; text-align:center;">Quantity</th>
+            <th style="padding:7px; font-size:0.66rem; text-align:center;">Rate</th>
+            <th style="padding:7px; font-size:0.66rem; text-align:center;">Received</th>
+            <th style="padding:7px; font-size:0.66rem; text-align:left; min-width:150px;">Allocation</th>
+          </tr></thead>
+          <tbody>${changeRows || `<tr><td colspan="6" style="padding:12px; text-align:center; color:var(--muted); font-size:0.78rem;">No quantity or rate changes — allocations only.</td></tr>`}</tbody>
+        </table>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
+        <button id="apor-reject-${r.requestId}" onclick="rejectPORevisionUI(${r.requestId})" style="padding:8px 18px; background:#b91c1c; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:700; font-size:0.82rem;">Reject Revision</button>
+        <button id="apor-auth-${r.requestId}" class="nav-btn-styled" onclick="authorizePORevisionUI(${r.requestId}, false)" style="background:var(--accent); color:#fff; font-weight:700; padding:8px 22px;">Authorize Revision</button>
+      </div>
+    </div>`;
+}
+
+// Two-phase authorize. The first call may come back needsConfirmation
+// when a PRN moved on since the draft was written — rather than discarding
+// the purchaser's vendor negotiation, the server re-clamps the affected
+// allocations and reports exactly what will become spare. The authorizer
+// sees that and re-confirms; only then does anything get written.
+async function authorizePORevisionUI(requestId, confirmStale) {
+  const authBtn = document.getElementById(`apor-auth-${requestId}`);
+  const rejBtn = document.getElementById(`apor-reject-${requestId}`);
+  if (authBtn) { authBtn.disabled = true; authBtn.textContent = "Authorizing…"; }
+  if (rejBtn) rejBtn.disabled = true;
+  showBlockingOverlay("Authorizing PO revision…");
+
+  try {
+    const data = await apFetch({ action: "authorizePORevision", requestId, confirmStale,
+      operatorName: appActiveOperatorIdentityString });
+    hideBlockingOverlay();
+
+    if (!data.success && data.needsConfirmation) {
+      const fmt = (n) => (Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
+      const lines = (data.staleNotes || []).map(s =>
+        `• ${s.prnId} / ${s.itemCode}: drafted ${fmt(s.drafted)}, but it can now only take ${fmt(s.canAbsorb)} — ${fmt(s.surplus)} becomes spare stock.`).join("\n");
+      if (confirm(`A PRN changed since this revision was drafted.\n\n${lines}\n\nAuthorize with these adjustments?`)) {
+        return authorizePORevisionUI(requestId, true);
+      }
+      if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize Revision"; }
+      if (rejBtn) rejBtn.disabled = false;
+      return;
+    }
+
+    if (data.success) {
+      const notes = [];
+      if ((data.staleNotes || []).length) notes.push(`${data.staleNotes.length} allocation(s) re-clamped to current PRN needs.`);
+      if ((data.unwound || []).length) notes.push(`Deferred BOQ reductions completed for ${data.unwound.map(u => u.prnId).join(", ")}.`);
+      showPurchaseFeedback("apor-feedback",
+        `✅ <strong>${data.poNo}</strong> revised to Rev ${data.revisionNumber}.${notes.length ? " " + notes.join(" ") : ""}`, "success");
+      await initializeAuthorizePORevisionPanel();
+    } else {
+      if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize Revision"; }
+      if (rejBtn) rejBtn.disabled = false;
+      showPurchaseFeedback("apor-feedback", data.error || "Authorization failed.", "error");
+    }
+  } catch (e) {
+    hideBlockingOverlay();
+    if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize Revision"; }
+    if (rejBtn) rejBtn.disabled = false;
+    showPurchaseFeedback("apor-feedback", "Network error: " + e.message, "error");
+  }
+}
+
+async function rejectPORevisionUI(requestId) {
+  const reason = prompt("Reason for rejecting this PO revision (optional):");
+  if (reason === null) return;
+  try {
+    const data = await apFetch({ action: "rejectPORevision", requestId, rejectionReason: reason,
+      operatorName: appActiveOperatorIdentityString });
+    if (data.success) {
+      // Nothing to restore — the live PO was never modified. It simply
+      // reappears in the revision queue, since its stamped PRN versions
+      // are still behind.
+      showPurchaseFeedback("apor-feedback", `Revision for <strong>${data.poNo}</strong> rejected. The PO is unchanged and returns to the revision queue.`, "success");
+      await initializeAuthorizePORevisionPanel();
+    } else {
+      showPurchaseFeedback("apor-feedback", data.error || "Rejection failed.", "error");
+    }
+  } catch (e) {
+    showPurchaseFeedback("apor-feedback", "Network error: " + e.message, "error");
+  }
+}
+
+// ── Revise PRN (store ↔ purchase re-split) ───────────────────────────────
+window.rprnState = null;
+
+async function initializeRevisePRNPanel() {
+  document.getElementById("rprn-body").innerHTML = "";
+  document.getElementById("rprn-feedback").style.display = "none";
+  const sel = document.getElementById("rprn-project-select");
+  try {
+    const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
+    const projects = (data.success ? (data.projects || []) : []);
+    sel.innerHTML = `<option value="">— Select Project —</option>` +
+      projects.map(p => `<option value="${p.toString().replace(/"/g,'&quot;')}">${p}</option>`).join("");
+  } catch (e) { sel.innerHTML = `<option value="">Failed to load projects</option>`; }
+}
+
+async function loadRevisePRNList() {
+  const projectId = document.getElementById("rprn-project-select").value;
+  const prnSel = document.getElementById("rprn-prn-select");
+  document.getElementById("rprn-body").innerHTML = "";
+  if (!projectId) { prnSel.innerHTML = `<option value="">— Select a project first —</option>`; return; }
+  prnSel.innerHTML = `<option value="">Loading…</option>`;
+  try {
+    // Only "Pending" PRNs — a Completed PRN has nothing left to procure,
+    // so there is no split left to change.
+    const data = await apFetch({ action: "fetchPRNsByProjectAndStatus", projectId, prnStatus: "Pending" });
+    const prns = (data.success ? (data.prns || []) : []);
+    prnSel.innerHTML = prns.length === 0
+      ? `<option value="">No open PRNs for this project</option>`
+      : `<option value="">— Select PRN —</option>` + prns.map(p =>
+          `<option value="${p.prnId.replace(/"/g,'&quot;')}">${p.customerName ? p.customerName + " | " : ""}${p.prnId}${p.version > 1 ? ` (v${p.version})` : ""}</option>`).join("");
+  } catch (e) { prnSel.innerHTML = `<option value="">Failed to load PRNs</option>`; }
+}
+
+async function loadPRNForRevision() {
+  const prnId = document.getElementById("rprn-prn-select").value;
+  const body = document.getElementById("rprn-body");
+  document.getElementById("rprn-feedback").style.display = "none";
+  if (!prnId) { body.innerHTML = ""; window.rprnState = null; return; }
+  body.innerHTML = `<div style="text-align:center; padding:26px; color:var(--muted);">Loading PRN…</div>`;
+  try {
+    const data = await apFetch({ action: "fetchPRNForRevision", prnId });
+    if (!data.success) { body.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${data.error}</div>`; return; }
+    window.rprnState = { prn: data.prn, lineItems: data.lineItems || [] };
+    renderRevisePRNTable();
+  } catch (e) { body.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`; }
+}
+
+function renderRevisePRNTable() {
+  const st = window.rprnState;
+  if (!st) return;
+  const fmt = (n) => (Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
+
+  const rows = st.lineItems.map((li, idx) => {
+    const blocked = !!li.awaitingPoRevision;
+    // Store can rise to the full requirement, but purchase can never fall
+    // below what is already on order — that material is committed to a
+    // vendor and needs a PO revision first.
+    const minStore = Math.max(0, (Number(li.bufferedRequirement)||0) - (Number(li.onOrderQty)||0));
+    const maxStore = (Number(li.storeQty)||0) + (Number(li.availableStock)||0);
+    const cap = Math.min(Number(li.bufferedRequirement)||0, maxStore);
+    return `
+      <tr style="border-bottom:1px solid #f1f5f9; ${blocked ? "background:#fffbeb;" : ""}">
+        <td style="padding:8px; font-family:monospace; font-size:0.76rem; font-weight:700; color:var(--brand);">${li.itemCode}</td>
+        <td style="padding:8px; font-size:0.8rem; font-weight:600;">${li.materialName || ""}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(li.bufferedRequirement)}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;">${fmt(li.availableStock)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace;">${fmt(li.storeQty)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${fmt(li.purchaseQty)}</td>
+        <td style="padding:8px; text-align:center; font-size:0.74rem; color:${Number(li.onOrderQty) > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(li.onOrderQty)}</td>
+        <td style="padding:8px; text-align:center;">
+          ${blocked
+            ? `<span style="font-size:0.62rem; font-weight:800; color:#b45309;">⏳ AWAITING PO REVISION</span>`
+            : `<input type="number" min="${minStore}" max="${cap}" step="any" class="rprn-store" data-idx="${idx}"
+                 value="${Number(li.storeQty)||0}" oninput="updateRevisePRNRow(${idx})"
+                 style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--brand); border-radius:4px; font-size:0.85rem;">`}
+        </td>
+        <td id="rprn-newpurch-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.88rem;">${fmt(li.purchaseQty)}</td>
+      </tr>`;
+  }).join("");
+
+  document.getElementById("rprn-body").innerHTML = `
+    <div style="background:#eff6ff; border-left:3px solid var(--brand); padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#1e3a8a; margin-bottom:12px;">
+      Only <strong>Store Quantity</strong> is editable — purchase is always the remainder of the requirement. Raising store reserves that stock immediately so it can't be taken while this waits for authorization.
+    </div>
+    <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:14px;">
+      <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:980px;">
+        <thead><tr style="background:#f8fafc;">
+          <th style="padding:8px; font-size:0.68rem; text-align:left;">Item Code</th>
+          <th style="padding:8px; font-size:0.68rem; text-align:left; min-width:190px;">Material Name</th>
+          <th style="padding:8px; font-size:0.68rem; text-align:center; color:var(--brand);">Buffered Requirement</th>
+          <th style="padding:8px; font-size:0.68rem; text-align:center;">Free in Store</th>
+          <th style="padding:8px; font-size:0.68rem; text-align:center;">Current Store Qty</th>
+          <th style="padding:8px; font-size:0.68rem; text-align:center;">Current Purchase Qty</th>
+          <th style="padding:8px; font-size:0.68rem; text-align:center;">On Order</th>
+          <th style="padding:8px; font-size:0.68rem; text-align:center; color:#0369a1;">New Store Qty *</th>
+          <th style="padding:8px; font-size:0.68rem; text-align:center; color:#15803d;">New Purchase Qty</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <input type="text" id="rprn-reason" placeholder="Reason for this re-split (optional)" style="flex:1; min-width:220px; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:0.82rem;">
+      <button class="nav-btn-styled" id="rprn-submit-btn" onclick="submitRevisePRN()" style="background:var(--accent); color:#fff; font-weight:700; padding:8px 22px;">Submit for Authorization</button>
+    </div>`;
+}
+
+function updateRevisePRNRow(idx) {
+  const st = window.rprnState;
+  const li = st.lineItems[idx];
+  const inp = document.querySelector(`.rprn-store[data-idx="${idx}"]`);
+  const req = Number(li.bufferedRequirement) || 0;
+  const onOrder = Number(li.onOrderQty) || 0;
+  let store = parseFloat(inp.value) || 0;
+  const newPurchase = Math.max(0, req - store);
+  const cell = document.getElementById(`rprn-newpurch-${idx}`);
+  const bad = newPurchase < onOrder - 1e-9 || store > req + 1e-9;
+  inp.style.borderColor = bad ? "#b91c1c" : "var(--brand)";
+  cell.style.color = bad ? "#b91c1c" : (Math.abs(newPurchase - (Number(li.purchaseQty)||0)) > 1e-9 ? "#15803d" : "#1a2332");
+  cell.textContent = newPurchase.toLocaleString("en-IN",{maximumFractionDigits:2})
+    + (newPurchase < onOrder - 1e-9 ? `  (below ${onOrder} on order)` : "");
+}
+
+async function submitRevisePRN() {
+  const st = window.rprnState;
+  if (!st) return;
+  const changed = [];
+  for (const [idx, li] of st.lineItems.entries()) {
+    const inp = document.querySelector(`.rprn-store[data-idx="${idx}"]`);
+    if (!inp) continue;
+    const newStore = parseFloat(inp.value) || 0;
+    if (Math.abs(newStore - (Number(li.storeQty)||0)) < 1e-9) continue;
+    const req = Number(li.bufferedRequirement) || 0;
+    if (newStore > req + 1e-9) return showPurchaseFeedback("rprn-feedback", `⚠️ ${li.itemCode}: store cannot exceed the requirement of ${req}.`, "error");
+    if (Math.max(0, req - newStore) < (Number(li.onOrderQty)||0) - 1e-9) {
+      return showPurchaseFeedback("rprn-feedback", `⚠️ ${li.itemCode}: ${li.onOrderQty} is already on order — revise that PO first before cutting purchase below it.`, "error");
+    }
+    changed.push({ itemCode: li.itemCode, newStoreQty: newStore });
+  }
+  if (changed.length === 0) return showPurchaseFeedback("rprn-feedback", "⚠️ Nothing changed — adjust at least one store quantity.", "error");
+
+  const btn = document.getElementById("rprn-submit-btn");
+  btn.disabled = true; btn.textContent = "Submitting…";
+  showBlockingOverlay("Submitting PRN revision…");
+  try {
+    const data = await apFetch({ action: "submitPRNRevision", prnId: st.prn.prnId, lineItems: changed,
+      reason: document.getElementById("rprn-reason").value.trim(), operatorName: appActiveOperatorIdentityString });
+    hideBlockingOverlay();
+    if (data.success) {
+      document.getElementById("rprn-body").innerHTML = "";
+      window.rprnState = null;
+      showPurchaseFeedback("rprn-feedback", `✅ Re-split submitted for <strong>${data.prnId}</strong> — ${data.changed.length} material(s) changed, pending authorization. Any extra store stock is reserved now.`, "success");
+    } else {
+      btn.disabled = false; btn.textContent = "Submit for Authorization";
+      showPurchaseFeedback("rprn-feedback", data.error || "Submission failed.", "error");
+    }
+  } catch (e) {
+    hideBlockingOverlay();
+    btn.disabled = false; btn.textContent = "Submit for Authorization";
+    showPurchaseFeedback("rprn-feedback", "Network error: " + e.message, "error");
+  }
+}
+
+// The authorize screen serves both kinds — a delta PRN from a BOQ change
+// and a store/purchase re-split — since both sit in the same pending state
+// on the same row. The menu card chooses which to show.
+function openAuthorizePRNPanel(kind) {
+  window.aprnKindFilter = kind || null;
+  navigateToPurchaseWorkspacePanel('purchase-authorize-prn');
+}
+
+// DB status → user-facing label. The stored values stay as they are;
+// only the wording changes, so nothing in the backend depends on this.
+function prnStatusLabel(status, stillToOrder) {
+  if (status === "Completed") return { text: "Completed", bg: "#dcfce7", fg: "#15803d" };
+  if (status === "Pending Authorization") return { text: "Awaiting Authorization", bg: "#fef3c7", fg: "#78350f" };
+  if (status === "PRN Generated") {
+    return Number(stillToOrder) > 0
+      ? { text: "Pending — Partially Ordered", bg: "#e0f2fe", fg: "#075985" }
+      : { text: "Pending — Awaiting Delivery", bg: "#ede9fe", fg: "#5b21b6" };
+  }
+  return { text: status || "—", bg: "#f1f5f9", fg: "#475569" };
+}
+
+function prnStatusChip(status, stillToOrder) {
+  const s = prnStatusLabel(status, stillToOrder);
+  return `<span style="display:inline-block; font-size:0.68rem; font-weight:800; padding:3px 9px; border-radius:4px; background:${s.bg}; color:${s.fg};">${s.text}</span>`;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -16935,9 +17796,12 @@ function renderAPRNRows(prnId) {
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${r.unit || "—"}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="aprn-livestock" data-itemcode="${r.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
-          <input type="number" min="0" max="${buffered}" value="${Number(r.currentUnassignedStoreQty) || 0}"
-            oninput="updateAPRNRow(${idx}, this.value, '${prnId}')"
-            style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
+          ${r.editable === false
+            ? `<span style="font-family:monospace; font-weight:700;">${Number(r.newStoreTotal ?? r.currentUnassignedStoreQty ?? 0).toFixed(2)}</span>
+               <div style="font-size:0.6rem; color:#94a3b8; font-weight:700;">AUTO</div>`
+            : `<input type="number" min="0" max="${buffered}" value="${Number(r.currentUnassignedStoreQty) || 0}"
+                 oninput="updateAPRNRow(${idx}, this.value, '${prnId}')"
+                 style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />`}
         </td>
         <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#15803d;">${Number(r.purchaseQty || 0).toFixed(2)}</td>
       </tr>`;
@@ -17090,23 +17954,31 @@ function renderPRNCreateTable() {
   if (!pending) return;
   const createZone = document.getElementById("prn-create-zone");
 
-  const deltaBadge = false
-    ? `<span style="background:#fb923c; color:#fff; font-size:0.62rem; padding:2px 6px; border-radius:3px; font-weight:800; margin-left:8px;">ADDITIONAL PRN — NEW/INCREASED ITEMS ONLY</span>`
+  const isDelta = !!pending.isDeltaPRN;
+  const revBadge = isDelta
+    ? `<span style="background:#fb923c; color:#fff; font-size:0.62rem; padding:2px 6px; border-radius:3px; font-weight:800; margin-left:8px;">REVISION v${pending.nextVersion} — CHANGED MATERIALS ONLY</span>`
     : "";
 
-  const boqMeta = (window.prnBOQMeta || {})[pending.boqId] || {};
+  const hasEditable = pending.lineItems.some(it => it.editable !== false);
+  const hasReadOnly = pending.lineItems.some(it => it.editable === false);
+  const anyDeferred = pending.lineItems.some(it => it.deferred);
 
   let rowsHtml = "";
   pending.lineItems.forEach((item, idx) => {
-    const bufferedQty = Math.round((Number(item.bufferedPurchaseQty) || 0) * 100) / 100;
-    rowsHtml += `
-      <tr style="border-bottom:1px solid #f1f5f9;">
+    const qty = Math.round((Number(item.bufferedPurchaseQty) || 0) * 100) / 100;
+    const common = `
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
-        <td style="padding:8px; font-size:0.82rem; font-weight:600;">${item.materialName}</td>
+        <td style="padding:8px; font-size:0.82rem; font-weight:600;">${item.materialName || ""}</td>
         <td style="padding:8px; font-size:0.75rem; color:var(--muted);">${item.typeOfMaterial ? window.typeLabelDisplay_(item.typeOfMaterial) : "—"}</td>
-        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${Number(item.boqRequiredQty).toFixed(2)}</td>
-        <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct}%</td>
-        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${bufferedQty.toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${Number(item.boqRequiredQty || 0).toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct || 0}%</td>`;
+
+    if (item.editable !== false) {
+      // New / increased coverage — the store person decides how much of
+      // the shortfall comes from store stock; purchase is the remainder.
+      rowsHtml += `
+      <tr style="border-bottom:1px solid #f1f5f9;">${common}
+        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${qty.toFixed(2)}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="prn-create-livestock" data-itemcode="${item.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
@@ -17116,17 +17988,54 @@ function renderPRNCreateTable() {
           </select>
         </td>
         <td style="padding:8px; text-align:center;">
-          <input type="number" min="0" max="${bufferedQty}" value="" placeholder="0" class="prn-create-storeqty" data-idx="${idx}" disabled
+          <input type="number" min="0" max="${qty}" value="" placeholder="0" class="prn-create-storeqty" data-idx="${idx}" disabled
             style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem; opacity:0.5;" />
         </td>
-        <td id="prn-create-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">${bufferedQty.toFixed(2)}</td>
+        <td id="prn-create-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">${qty.toFixed(2)}</td>
       </tr>`;
+    } else {
+      // Reduction or removal — computed, not chosen. Shown so the
+      // authorizer sees exactly what is being unwound and released.
+      const removed = item.changeKind === "removed";
+      const arrow = (from, to) =>
+        `<span style="font-family:monospace; color:#94a3b8;">${Number(from || 0).toFixed(2)}</span>
+         <span style="color:#b91c1c; font-weight:800;"> → ${Number(to || 0).toFixed(2)}</span>`;
+      const note = item.deferred
+        ? `<div style="font-size:0.62rem; font-weight:800; color:#b45309; margin-top:3px;">⏳ AWAITING PO REVISION</div>`
+        : (Number(item.storeReleased) > 0
+            ? `<div style="font-size:0.62rem; color:#15803d; font-weight:700; margin-top:3px;">releases ${Number(item.storeReleased).toFixed(2)} to store</div>`
+            : "");
+
+      rowsHtml += `
+      <tr style="border-bottom:1px solid #f1f5f9; background:${item.deferred ? "#fffbeb" : "#fef2f2"};">${common}
+        <td style="padding:8px; text-align:center; font-weight:800; font-family:monospace; font-size:0.95rem; color:#b91c1c;">${qty.toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
+        <td style="padding:8px; text-align:center;">
+          <span style="background:${removed ? "#b91c1c" : "#f59e0b"}; color:#fff; font-size:0.6rem; padding:2px 6px; border-radius:3px; font-weight:800;">${removed ? "REMOVED FROM BOQ" : "DECREASED"}</span>
+        </td>
+        <td style="padding:8px; text-align:center; font-size:0.72rem; color:#94a3b8; font-weight:700;">AUTO</td>
+        <td style="padding:8px; text-align:center; font-size:0.8rem;">${arrow(item.previousStoreQty, item.newStoreTotal)}${note}</td>
+        <td style="padding:8px; text-align:center; font-size:0.85rem; font-weight:800;">${arrow(item.previousPurchaseQty, item.newPurchaseTotal)}</td>
+      </tr>`;
+    }
   });
 
+  const banners = `
+    ${hasReadOnly ? `<div style="background:#fef2f2; border-left:3px solid #b91c1c; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#7f1d1d; margin-bottom:10px;">
+      Rows shaded red are <strong>reductions or removals</strong> from the BOQ revision. They are computed automatically — purchase is unwound first, then store — and need no confirmation from you.
+    </div>` : ""}
+    ${anyDeferred ? `<div style="background:#fffbeb; border-left:3px solid #b45309; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#78350f; margin-bottom:10px;">
+      ⏳ One or more reductions cannot be applied yet because that material is <strong>already on a purchase order</strong>. Those lines hold their current quantities until the PO is revised, then unwind automatically.
+    </div>` : ""}
+    ${(!hasEditable && hasReadOnly) ? `<div style="background:#eff6ff; border-left:3px solid var(--brand); padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#1e3a8a; margin-bottom:10px;">
+      This revision contains only reductions. Submitting it records them — there is nothing for you to fill in.
+    </div>` : ""}`;
+
   createZone.innerHTML = `
-    <div style="font-size:0.85rem; font-weight:700; color:var(--brand); margin-bottom:12px;">New Purchase Request Note for ${pending.boqId} ${deltaBadge}</div>
+    <div style="font-size:0.85rem; font-weight:700; color:var(--brand); margin-bottom:12px;">${isDelta ? "Revised" : "New"} Purchase Request Note for ${pending.boqId} ${revBadge}</div>
+    ${banners}
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
-      <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1000px;">
+      <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
         <thead>
           <tr style="background:#f8fafc;">
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
@@ -17134,12 +18043,12 @@ function renderPRNCreateTable() {
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Type</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Req Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered Purchase Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">${isDelta ? "Change in Qty" : "Buffered Purchase Qty"}</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:130px;">Store Available Stock</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:90px;">Checked by Store Person *</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1;">Store Quantity *</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d;">Purchase Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1; min-width:120px;">Store Quantity *</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d; min-width:120px;">Purchase Qty</th>
           </tr>
         </thead>
         <tbody>${rowsHtml}</tbody>
@@ -17230,11 +18139,16 @@ async function submitNewPRNCreation() {
       itemCode: item.itemCode, materialName: item.materialName, typeOfMaterial: item.typeOfMaterial,
       unit: item.unit,
       boqRequiredQty: item.boqRequiredQty, bufferPct: item.bufferPct, bufferedPurchaseQty: item.bufferedPurchaseQty,
-      currentUnassignedStoreQty: storeQty, checkedByStorePerson: checkedVal
+      currentUnassignedStoreQty: storeQty, checkedByStorePerson: checkedVal,
+      // Echoed so the server knows which rows carried an operator choice.
+      // Decrease/removed rows are recomputed server-side regardless — the
+      // values sent for them are display-only and are never trusted.
+      editable: item.editable !== false, changeKind: item.changeKind
     };
   });
 
-  const unchecked = submittedItems.find(it => it.checkedByStorePerson !== "Yes");
+  // Only operator-editable rows carry a checkbox; reductions are automatic.
+  const unchecked = submittedItems.find(it => it.editable && it.checkedByStorePerson !== "Yes");
   if (unchecked) return showPurchaseFeedback("prn-feedback", `⚠️ All rows must be marked "Checked by Store Person = Yes". "${unchecked.materialName}" is not checked yet.`, "error");
 
   const bodyZone = document.getElementById("prn-body-zone");
