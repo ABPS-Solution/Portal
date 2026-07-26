@@ -17795,6 +17795,7 @@ function renderAPRNRows(prnId) {
             ? `<span style="font-family:monospace; font-weight:700;">${Number(r.newStoreTotal ?? r.currentUnassignedStoreQty ?? 0).toFixed(2)}</span>
                <div style="font-size:0.6rem; color:#94a3b8; font-weight:700;">AUTO</div>`
             : `<input type="number" min="0" max="${buffered}" value="${Number(r.storeDelta) || 0}"
+                 class="aprn-storeqty" data-idx="${idx}"
                  oninput="updateAPRNRow(${idx}, this.value, '${prnId}')"
                  style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />`}
         </td>
@@ -17835,6 +17836,30 @@ async function refreshAPRNLiveStock() {
       const s = data.stock[code.toUpperCase()] || { raw: 0, spare: 0 };
       const total = s.raw + s.spare;
       span.textContent = `${total} (Raw: ${s.raw}, Spare: ${s.spare})`;
+
+      // Same restriction as the Create PRN screen: the input can never
+      // exceed what's ACTUALLY free right now, not just the buffered
+      // requirement. The backend already rejects an over-claim on submit
+      // (reservationDelta vs freeNow), so this is purely making that
+      // limit visible and self-correcting up front rather than letting
+      // someone type a number that's guaranteed to fail authorization.
+      const tr = span.closest("tr");
+      const inp = tr ? tr.querySelector(".aprn-storeqty") : null;
+      const idxAttr = inp ? inp.dataset.idx : null;
+      if (inp && idxAttr !== null) {
+        const idx = Number(idxAttr);
+        const row = aprnRows[idx];
+        const requirementCap = row
+          ? (row.editable !== false ? (Number(row.bufferedRequirement) || 0) : Math.abs(Number(row.deltaRequirement) || 0))
+          : Infinity;
+        const cap = Math.min(requirementCap, total);
+        inp.max = cap;
+        const currentVal = parseFloat(inp.value) || 0;
+        if (currentVal > cap) {
+          inp.value = Math.round(cap * 100) / 100;
+          updateAPRNRow(idx, inp.value, aprnExpandedId);
+        }
+      }
     });
   } catch (e) { /* silent — quantities still editable without this */ }
 }
