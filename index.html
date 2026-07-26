@@ -17857,7 +17857,7 @@ async function refreshAPRNLiveStock() {
         const currentVal = parseFloat(inp.value) || 0;
         if (currentVal > cap) {
           inp.value = Math.round(cap * 100) / 100;
-          updateAPRNRow(idx, inp.value, aprnExpandedId);
+          updateAPRNRow(idx, inp.value, window.aprnExpandedId);
         }
       }
     });
