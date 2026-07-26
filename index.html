@@ -17822,7 +17822,9 @@ function renderAPRNRows(prnId) {
       </table>
     </div>`;
 
+  if (window._aprnStockInterval) clearInterval(window._aprnStockInterval);
   refreshAPRNLiveStock();
+  window._aprnStockInterval = setInterval(refreshAPRNLiveStock, 5000);
 }
 
 async function refreshAPRNLiveStock() {
@@ -17870,9 +17872,19 @@ function updateAPRNRow(idx, value, prnId) {
   const row = aprnRows[idx];
   if (!row) return;
   const buffered = row.editable !== false ? (Number(row.bufferedRequirement) || 0) : Math.abs(Number(row.deltaRequirement) || 0);
+  // The input's own `max` attribute is kept current by
+  // refreshAPRNLiveStock's poll — reading it here means every keystroke
+  // is capped by whichever is tighter: the requirement, or what's
+  // actually free in store right now. `max` alone on the element does
+  // NOT stop typing (browsers only flag it as :invalid, they don't
+  // block input), so this has to be enforced in code, not markup.
+  const inputEl = document.querySelector(`.aprn-storeqty[data-idx="${idx}"]`);
+  const liveMax = inputEl && inputEl.max !== '' ? Number(inputEl.max) : buffered;
+  const cap = Math.min(buffered, isNaN(liveMax) ? buffered : liveMax);
   let storeQty = parseFloat(value) || 0;
   if (storeQty < 0) storeQty = 0;
-  if (storeQty > buffered) storeQty = buffered;
+  if (storeQty > cap) storeQty = cap;
+  if (inputEl) inputEl.value = storeQty;
   row.currentUnassignedStoreQty = storeQty;
   const isCountUnit = (row.unit || "").toString().trim().toUpperCase() === "NOS";
   const raw = Math.max(0, buffered - storeQty);
