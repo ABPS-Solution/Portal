@@ -1683,11 +1683,11 @@
       <div style="display:grid; grid-template-columns:1fr 2fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
-          <select id="rprn-project-select" onchange="loadRevisePRNList()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Loading projects… —</option></select>
+          <select id="rprn-project-select" onchange="loadRevisePRNList()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Loading projects… —</option></select>
         </div>
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
-          <select id="rprn-prn-select" onchange="loadPRNForRevision()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
+          <select id="rprn-prn-select" onchange="loadPRNForRevision()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
         </div>
       </div>
       <div id="rprn-body"></div>
@@ -15831,6 +15831,15 @@ async function commitRejectedMaterialActionToBackend(grnNum, btn) {
 }
 
 function navigateToPurchaseWorkspacePanel(targetModuleId) {
+  // Both Authorize PRN's and Revise PRN's live-stock polls only stop
+  // when their own screen explicitly clears them (a card collapsing, a
+  // row re-rendering) — neither of those fires when the user instead
+  // switches straight to a DIFFERENT panel, so without this the interval
+  // keeps polling in the background indefinitely for a screen that's no
+  // longer visible.
+  if (window._aprnStockInterval) { clearInterval(window._aprnStockInterval); window._aprnStockInterval = null; }
+  if (window._rprnStockInterval) { clearInterval(window._rprnStockInterval); window._rprnStockInterval = null; }
+
   window.scrollTo(0, 0);
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
@@ -16399,10 +16408,12 @@ function renderRevisePRNTable() {
 
   const rows = st.lineItems.map((li, idx) => {
     const blocked = !!li.awaitingPoRevision;
-    // Store can rise to the full requirement, but purchase can never fall
-    // below what is already on order — that material is committed to a
-    // vendor and needs a PO revision first.
     const minStore = Math.max(0, (Number(li.bufferedRequirement)||0) - (Number(li.onOrderQty)||0));
+    // Store Available Stock = live free stock (raw+spare) + whatever this
+    // PRN already has reserved — its own reservation is effectively
+    // "available to itself" for re-splitting, on top of anything free.
+    // Starts from the one-time backend figure (raw only) and gets
+    // corrected to raw+spare the moment the live poll below returns.
     const maxStore = (Number(li.storeQty)||0) + (Number(li.availableStock)||0);
     const cap = Math.min(Number(li.bufferedRequirement)||0, maxStore);
     return `
@@ -16410,7 +16421,8 @@ function renderRevisePRNTable() {
         <td style="padding:8px; font-family:monospace; font-size:0.76rem; font-weight:700; color:var(--brand);">${li.itemCode}</td>
         <td style="padding:8px; font-size:0.8rem; font-weight:600;">${li.materialName || ""}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(li.bufferedRequirement)}</td>
-        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;">${fmt(li.availableStock)}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${li.unit || "—"}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="rprn-livestock" data-itemcode="${li.itemCode}" data-idx="${idx}">loading…</span></td>
         <td style="padding:8px; text-align:center; font-family:monospace;">${fmt(li.storeQty)}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${fmt(li.purchaseQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.74rem; color:${Number(li.onOrderQty) > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(li.onOrderQty)}</td>
@@ -16426,29 +16438,66 @@ function renderRevisePRNTable() {
   }).join("");
 
   document.getElementById("rprn-body").innerHTML = `
-    <div style="background:#eff6ff; border-left:3px solid var(--brand); padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#1e3a8a; margin-bottom:12px;">
-      Only <strong>Store Quantity</strong> is editable — purchase is always the remainder of the requirement. Raising store reserves that stock immediately so it can't be taken while this waits for authorization.
-    </div>
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:14px;">
-      <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:980px;">
+      <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
         <thead><tr style="background:#f8fafc;">
           <th style="padding:8px; font-size:0.68rem; text-align:left;">Item Code</th>
           <th style="padding:8px; font-size:0.68rem; text-align:left; min-width:190px;">Material Name</th>
-          <th style="padding:8px; font-size:0.68rem; text-align:center; color:var(--brand);">Buffered Requirement</th>
-          <th style="padding:8px; font-size:0.68rem; text-align:center;">Free in Store</th>
-          <th style="padding:8px; font-size:0.68rem; text-align:center;">Current Store Qty</th>
-          <th style="padding:8px; font-size:0.68rem; text-align:center;">Current Purchase Qty</th>
-          <th style="padding:8px; font-size:0.68rem; text-align:center;">On Order</th>
+          <th style="padding:8px; font-size:0.68rem; text-align:center; color:var(--brand);">Buffered BOQ Req</th>
+          <th style="padding:8px; font-size:0.68rem; text-align:center; color:#94a3b8;">Unit</th>
+          <th style="padding:8px; font-size:0.68rem; text-align:center; color:#6b7a8d; min-width:130px;">Store Available Stock</th>
+          <th style="padding:8px; font-size:0.68rem; text-align:center;">Current PRN Store Qty</th>
+          <th style="padding:8px; font-size:0.68rem; text-align:center;">Current PRN Purchase Qty</th>
+          <th style="padding:8px; font-size:0.68rem; text-align:center;">P.O. On Order Qty</th>
           <th style="padding:8px; font-size:0.68rem; text-align:center; color:#0369a1;">New Store Qty *</th>
           <th style="padding:8px; font-size:0.68rem; text-align:center; color:#15803d;">New Purchase Qty</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
-    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-      <input type="text" id="rprn-reason" placeholder="Reason for this re-split (optional)" style="flex:1; min-width:220px; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:0.82rem;">
+    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; display:flex; justify-content:flex-end;">
       <button class="nav-btn-styled" id="rprn-submit-btn" onclick="submitRevisePRN()" style="background:var(--accent); color:#fff; font-weight:700; padding:8px 22px;">Submit for Authorization</button>
     </div>`;
+
+  if (window._rprnStockInterval) clearInterval(window._rprnStockInterval);
+  refreshRevisePRNLiveStock();
+  window._rprnStockInterval = setInterval(refreshRevisePRNLiveStock, 5000);
+}
+
+// Same live raw+spare polling as Create/Auth PRN, and the same
+// enforce-in-code cap — the input's `max` attribute alone does not stop
+// typing, so updateRevisePRNRow also reads it back to actually block
+// entering more than what's genuinely available.
+async function refreshRevisePRNLiveStock() {
+  const st = window.rprnState;
+  if (!st) { if (window._rprnStockInterval) clearInterval(window._rprnStockInterval); return; }
+  const itemCodes = st.lineItems.map(li => li.itemCode).filter(Boolean);
+  if (itemCodes.length === 0) return;
+  try {
+    const data = await apFetch({ action: "fetchLiveMaterialStock", itemCodes });
+    if (!data.success) return;
+    document.querySelectorAll(".rprn-livestock").forEach(span => {
+      const code = span.dataset.itemcode;
+      const idx = Number(span.dataset.idx);
+      const li = st.lineItems[idx];
+      const s = data.stock[code.toUpperCase()] || { raw: 0, spare: 0 };
+      const freeNow = s.raw + s.spare;
+      // This PRN's own current reservation counts as available TO ITSELF
+      // for re-splitting, on top of whatever else is genuinely free.
+      const ownReserved = li ? (Number(li.storeQty) || 0) : 0;
+      const total = freeNow + ownReserved;
+      span.textContent = `${total} (Raw: ${s.raw}, Spare: ${s.spare})`;
+
+      const inp = document.querySelector(`.rprn-store[data-idx="${idx}"]`);
+      if (inp && li) {
+        const requirementCap = Number(li.bufferedRequirement) || 0;
+        const cap = Math.min(requirementCap, total);
+        inp.max = cap;
+        const currentVal = parseFloat(inp.value) || 0;
+        if (currentVal > cap) { inp.value = Math.round(cap * 100) / 100; updateRevisePRNRow(idx); }
+      }
+    });
+  } catch (e) { /* silent — quantities still editable without this */ }
 }
 
 function updateRevisePRNRow(idx) {
@@ -16457,7 +16506,12 @@ function updateRevisePRNRow(idx) {
   const inp = document.querySelector(`.rprn-store[data-idx="${idx}"]`);
   const req = Number(li.bufferedRequirement) || 0;
   const onOrder = Number(li.onOrderQty) || 0;
+  // `max` alone does not stop typing — read it back and cap in code,
+  // same enforcement pattern as Create/Authorize PRN.
+  const liveMax = inp.max !== '' ? Number(inp.max) : req;
+  const cap = Math.min(req, isNaN(liveMax) ? req : liveMax);
   let store = parseFloat(inp.value) || 0;
+  if (store > cap) { store = cap; inp.value = store; }
   const newPurchase = Math.max(0, req - store);
   const cell = document.getElementById(`rprn-newpurch-${idx}`);
   const bad = newPurchase < onOrder - 1e-9 || store > req + 1e-9;
@@ -16490,7 +16544,7 @@ async function submitRevisePRN() {
   showBlockingOverlay("Submitting PRN revision…");
   try {
     const data = await apFetch({ action: "submitPRNRevision", prnId: st.prn.prnId, lineItems: changed,
-      reason: document.getElementById("rprn-reason").value.trim(), operatorName: appActiveOperatorIdentityString });
+      operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success) {
       document.getElementById("rprn-body").innerHTML = "";
@@ -17812,7 +17866,7 @@ function renderAPRNRows(prnId) {
           <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:240px;">Material Name</th>
           <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Req Qty</th>
           <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
-          <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered Purchase Qty</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered BOQ Req</th>
           <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
           <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:130px;">Store Available Stock</th>
           <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1;">Store Quantity *</th>
@@ -18075,7 +18129,7 @@ function renderPRNCreateTable() {
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Type</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Req Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">${isDelta ? "Change in Qty" : "Buffered Purchase Qty"}</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">${isDelta ? "Change in Qty" : "Buffered BOQ Req"}</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:130px;">Store Available Stock</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:90px;">Checked by Store Person *</th>
@@ -18338,7 +18392,7 @@ function renderAllPRNCards(prns, boqId) {
                 <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:60px;">Type</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Req Qty</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
-                <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered Purchase Qty</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered BOQ Req</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1;">Store Quantity</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d;">Purchase Qty</th>
               </tr></thead>
