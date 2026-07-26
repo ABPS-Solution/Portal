@@ -11764,12 +11764,6 @@ async function executeItemCodeSearch() {
     }
 
     // Step 3: Render suggestions
-    const confidenceColors = {
-      high:   { bg: "#dcfce7", color: "#15803d", label: "Strong Match" },
-      medium: { bg: "#fef3c7", color: "#b45309", label: "Possible Match" },
-      low:    { bg: "#f1f5f9", color: "#64748b", label: "Weak Match" }
-    };
-
     const catalogUnitLookup = {};
     (window.itemCodeCatalogCache || []).forEach(c => {
       if (c.itemCode) catalogUnitLookup[c.itemCode.toUpperCase()] = c.unit || "";
@@ -11781,7 +11775,6 @@ async function executeItemCodeSearch() {
     });
 
     finalMatches.forEach((match, idx) => {
-      const conf   = confidenceColors[match.confidence] || confidenceColors.low;
       const _unit  = _unitLookup[(match.itemCode || "").toString().trim().toUpperCase()] || "";
       const unit   = catalogUnitLookup[(match.itemCode || "").toUpperCase()] || match.unit || "";
       const card   = document.createElement("div");
@@ -11792,7 +11785,6 @@ async function executeItemCodeSearch() {
         <div style="flex:1; min-width:0;">
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
             <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${match.itemCode}</span>
-            <span style="font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:${conf.bg}; color:${conf.color};">${conf.label}</span>
           </div>
           <div style="font-size:0.88rem; font-weight:600; color:var(--text); line-height:1.4;">${match.productName}</div>
           <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">${match.typeOfMaterial}${_unit ? ` &nbsp;·&nbsp; <strong style="color:var(--text);">Unit: ${_unit}</strong>` : ""}</div>
