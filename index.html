@@ -18349,17 +18349,23 @@ function renderAllPRNCards(prns, boqId) {
       ? `<a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700; font-size:0.82rem;" onclick="event.stopPropagation();">View PDF ↗</a>`
       : `<span style="color:var(--muted); font-size:0.8rem;">Not generated</span>`;
 
+    // Trims trailing zeros the same way the PDF's formatRateSmart does —
+    // 270 stays "270", 280.8 stays "280.8", nothing shows as "270.00".
+    const fmtSmart = (n) => {
+      const num = Number(n) || 0;
+      return Number.isInteger(num) ? String(num) : String(Math.round(num * 100) / 100);
+    };
     let rowsHtml = "";
     (data.lineItems || []).forEach(li => {
       rowsHtml += `<tr style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${li.itemCode}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${li.materialName}</td>
         <td style="padding:8px; font-size:0.75rem; color:var(--muted);">${li.typeOfMaterial || "—"}</td>
-        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${Number(li.boqRequiredQty).toFixed(2)}</td>
-        <td style="padding:8px; text-align:center; font-weight:700; color:#b45309;">${li.bufferPct}%</td>
-        <td style="padding:8px; text-align:center; font-weight:800; color:var(--brand); font-family:monospace;">${Number(li.bufferedPurchaseQty).toFixed(2)}</td>
-        <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.92rem; font-weight:700;">${li.currentUnassignedStoreQty !== "" ? li.currentUnassignedStoreQty : "0"}</td>
-        <td style="padding:8px; text-align:center; font-weight:800; font-family:monospace; font-size:0.95rem; color:#15803d;">${li.purchaseQty !== "" ? Number(li.purchaseQty).toFixed(2) : "—"}</td>
+        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${fmtSmart(li.boqRequiredQty)}</td>
+        <td style="padding:8px; text-align:center; font-weight:700; color:#b45309;">${fmtSmart(li.bufferPct)}%</td>
+        <td style="padding:8px; text-align:center; font-weight:800; color:var(--brand); font-family:monospace;">${fmtSmart(li.bufferedPurchaseQty)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.92rem; font-weight:700;">${li.currentUnassignedStoreQty !== "" ? fmtSmart(li.currentUnassignedStoreQty) : "0"}</td>
+        <td style="padding:8px; text-align:center; font-weight:800; font-family:monospace; font-size:0.95rem; color:#15803d;">${li.purchaseQty !== "" ? fmtSmart(li.purchaseQty) : "—"}</td>
       </tr>`;
     });
 
@@ -18367,8 +18373,6 @@ function renderAllPRNCards(prns, boqId) {
     card.innerHTML = `
       <div id="${cardId}" onclick="togglePRNCardExpanded('${expandId}','${toggleId}')" style="cursor:pointer; background:var(--highlight-bg); border:1.5px solid var(--brand); border-radius:var(--radius); padding:12px;">
         <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; margin-bottom:4px;">
-          <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PRN ID</div>
-            <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.88rem;">${data.prnId}</div></div>
           <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Customer Name</div>
             <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${data.customerName || "—"}</div></div>
           <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Product Name</div>
@@ -18376,7 +18380,7 @@ function renderAllPRNCards(prns, boqId) {
           <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Product Rating</div>
             <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${data.productRating || "—"}</div></div>
           <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Order Quantity</div>
-            <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${(data.orderQuantity || "—") + " Sets"}</div></div>
+            <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${Math.round(Number(data.orderQuantity) || 0) + " Sets"}</div></div>
           <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Store Person</div>
             <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${data.storePerson || "—"}</div></div>
           <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PRN PDF</div>
