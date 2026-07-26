@@ -17777,7 +17777,10 @@ function renderAPRNRows(prnId) {
   const mount = document.getElementById(`aprn-rows-mount-${prnId}`);
   if (!mount) return;
   const rowsHtml = aprnRows.map((r, idx) => {
-    const buffered = Number(r.bufferedPurchaseQty) || 0;
+  // editable rows (new/increase) store the full requirement in
+  // bufferedRequirement; decrease/removed/resplit rows are computed and
+  // store the signed change in deltaRequirement instead.
+  const buffered = r.editable !== false ? (Number(r.bufferedRequirement) || 0) : Math.abs(Number(r.deltaRequirement) || 0);
     return `
       <tr style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
@@ -17791,11 +17794,11 @@ function renderAPRNRows(prnId) {
           ${r.editable === false
             ? `<span style="font-family:monospace; font-weight:700;">${Number(r.newStoreTotal ?? r.currentUnassignedStoreQty ?? 0).toFixed(2)}</span>
                <div style="font-size:0.6rem; color:#94a3b8; font-weight:700;">AUTO</div>`
-            : `<input type="number" min="0" max="${buffered}" value="${Number(r.currentUnassignedStoreQty) || 0}"
+            : `<input type="number" min="0" max="${buffered}" value="${Number(r.storeDelta) || 0}"
                  oninput="updateAPRNRow(${idx}, this.value, '${prnId}')"
                  style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />`}
         </td>
-        <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#15803d;">${Number(r.purchaseQty || 0).toFixed(2)}</td>
+        <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#15803d;">${(r.editable !== false ? Number(r.purchaseDelta || 0) : Number(r.newPurchaseTotal || 0)).toFixed(2)}</td>
       </tr>`;
   }).join("");
 
@@ -17841,7 +17844,7 @@ async function refreshAPRNLiveStock() {
 function updateAPRNRow(idx, value, prnId) {
   const row = aprnRows[idx];
   if (!row) return;
-  const buffered = Number(row.bufferedPurchaseQty) || 0;
+  const buffered = row.editable !== false ? (Number(row.bufferedRequirement) || 0) : Math.abs(Number(row.deltaRequirement) || 0);
   let storeQty = parseFloat(value) || 0;
   if (storeQty < 0) storeQty = 0;
   if (storeQty > buffered) storeQty = buffered;
