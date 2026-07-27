@@ -15227,12 +15227,7 @@ async function initializeCreatePOPanel() {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Delivery Date *</label>
-          <div style="display:flex; gap:5px;">
-            <input type="number" id="cpo-delivery-dd" min="1" max="31" placeholder="DD" oninput="syncCPODeliveryDate()" style="width:58px; text-align:center; padding:9px 4px; border:1.5px solid var(--border); border-radius:var(--radius);">
-            <input type="number" id="cpo-delivery-mm" min="1" max="12" placeholder="MM" oninput="syncCPODeliveryDate()" style="width:58px; text-align:center; padding:9px 4px; border:1.5px solid var(--border); border-radius:var(--radius);">
-            <input type="number" id="cpo-delivery-yyyy" min="2000" max="2100" placeholder="YYYY" oninput="syncCPODeliveryDate()" style="width:80px; text-align:center; padding:9px 4px; border:1.5px solid var(--border); border-radius:var(--radius);">
-          </div>
-          <input type="hidden" id="cpo-delivery-date" value="">
+          <input type="date" lang="en-GB" id="cpo-delivery-date" oninput="persistCPODraft()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
         </div>
       </div>
       <div id="cpo-vendor-preview" style="display:none; font-size:0.8rem; color:var(--muted); background:#fff; border:1px dashed var(--border); border-radius:var(--radius); padding:10px;"></div>
@@ -15287,10 +15282,7 @@ async function initializeCreatePOPanel() {
   if (draft) {
     if (draft.vendor) { document.getElementById("cpo-vendor").value = draft.vendor; handleCPOVendorChange(); }
     if (draft.supplierRef) document.getElementById("cpo-supplier-ref").value = draft.supplierRef;
-    if (draft.deliveryDD) document.getElementById("cpo-delivery-dd").value = draft.deliveryDD;
-    if (draft.deliveryMM) document.getElementById("cpo-delivery-mm").value = draft.deliveryMM;
-    if (draft.deliveryYYYY) document.getElementById("cpo-delivery-yyyy").value = draft.deliveryYYYY;
-    syncCPODeliveryDate();
+    if (draft.deliveryDate) document.getElementById("cpo-delivery-date").value = draft.deliveryDate;
     if (draft.cgst) document.getElementById("cpo-cgst").value = draft.cgst;
     if (draft.sgst) document.getElementById("cpo-sgst").value = draft.sgst;
     if (draft.igst) document.getElementById("cpo-igst").value = draft.igst;
@@ -15320,9 +15312,7 @@ function persistCPODraft() {
     const draft = {
       vendor: vendorEl.value,
       supplierRef: document.getElementById("cpo-supplier-ref").value,
-      deliveryDD: document.getElementById("cpo-delivery-dd").value,
-      deliveryMM: document.getElementById("cpo-delivery-mm").value,
-      deliveryYYYY: document.getElementById("cpo-delivery-yyyy").value,
+      deliveryDate: document.getElementById("cpo-delivery-date").value,
       cgst: document.getElementById("cpo-cgst").value,
       sgst: document.getElementById("cpo-sgst").value,
       igst: document.getElementById("cpo-igst").value,
@@ -15352,23 +15342,9 @@ function clearCPODraftStorage() {
 }
 
 function clearCPOForm() {
-  if (!confirm("Clear the entire Purchase Order form — header, material rows, and allocations? This cannot be undone.")) return;
+  if (!confirm("Clear the entire Purchase Order form: Header, Material Rows, and Allocations?")) return;
   clearCPODraftStorage();
   initializeCreatePOPanel();
-}
-
-// DD/MM/YYYY fields are display-only — this keeps the hidden ISO field
-// (what submitCreatePO actually reads) in sync, so nothing downstream
-// needs to know the display format changed.
-function syncCPODeliveryDate() {
-  const d = parseInt(document.getElementById("cpo-delivery-dd").value, 10);
-  const m = parseInt(document.getElementById("cpo-delivery-mm").value, 10);
-  const y = parseInt(document.getElementById("cpo-delivery-yyyy").value, 10);
-  const hidden = document.getElementById("cpo-delivery-date");
-  hidden.value = (d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 1000)
-    ? `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`
-    : "";
-  persistCPODraft();
 }
 
 function handleCPOVendorChange() {
@@ -15515,14 +15491,24 @@ function updateCPORowField(rowId, field, value) {
 // against. A full re-render is fine here since typing has finished.
 function handleCPOQtyBlur(rowId) {
   const row = window.cpoMaterialRows.find(r => r.id === rowId);
-  if (!row || !(row.allocations || []).length) return;
+  if (!row || !row._allocationTouched) return;
   const newQty = parseFloat(row.quantity) || 0;
-  if (newQty !== row._allocatedForQty) {
+  if (newQty === row._allocatedForQty) return;
+  if ((row.allocations || []).length > 0) {
+    // Real PRN allocations no longer necessarily make sense against a
+    // different quantity — clear them and force the operator to
+    // re-confirm via Allocate to PRNs.
     row.allocations = [];
     row._allocationTouched = false;
-    renderCPOMaterialRows();
-    persistCPODraft();
+  } else {
+    // All-extra: extra is just "whatever's left after real PRN
+    // allocations" (here, all of it), which stays automatically valid
+    // no matter how the quantity changes — just re-track what it's
+    // now confirmed against so the Extra chip updates.
+    row._allocatedForQty = newQty;
   }
+  renderCPOMaterialRows();
+  persistCPODraft();
 }
 
 function updateCPORowAmount(rowId) {
@@ -15626,7 +15612,6 @@ async function openCPOAllocationPicker(rowId) {
     <div id="cpo-alloc-extra-row" style="display:flex; align-items:center; gap:12px; padding:11px 12px; border:1px dashed #f59e0b; border-radius:6px; margin-bottom:6px; font-size:0.85rem; background:#fffbeb;">
       <div style="flex:1; min-width:0;">
         <div style="font-weight:700; font-size:0.78rem; color:#78350f;">Extra</div>
-        <div style="font-size:0.72rem; color:#92400e;">Not tied to any PRN — becomes free store stock</div>
       </div>
       <div id="cpo-alloc-extra-value" style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid #f59e0b; border-radius:4px; font-size:0.85rem; background:#fff; color:#78350f;">0</div>
     </div>`;
@@ -15691,7 +15676,7 @@ function updateCPOAllocTotals(lineQty) {
   } else {
     el.style.cssText = `padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700; background:${unalloc > 0 ? "#fffbeb" : "#f0fdf4"}; color:${unalloc > 0 ? "#78350f" : "#15803d"};`;
     el.textContent = unalloc > 0
-      ? `Allocated ${fmt(sum)} of ${fmt(lineQty)}. ${fmt(unalloc)} unallocated will be extra store stock.`
+      ? `Allocated ${fmt(sum)} of ${fmt(lineQty)}. Unallocated ${fmt(unalloc)} will be extra stock.`
       : `All ${fmt(lineQty)} allocated.`;
   }
 }
@@ -15756,9 +15741,13 @@ async function submitCreatePO() {
     if (!row.itemCode) return showErr(`Row ${n}: select a material from the search (item code required).`);
     if (!(parseFloat(row.quantity) > 0)) return showErr(`Row ${n}: Quantity must be greater than 0.`);
     if (!(parseFloat(row.rate) > 0)) return showErr(`Row ${n}: Rate must be greater than 0.`);
-    // A line with no allocations is legal — a deliberate stock-building
-    // purchase where everything becomes free store stock. Only an
-    // over-allocation is invalid, and the server re-checks it under lock.
+    // Every row must have been through "Allocate to PRNs" at least once
+    // — ending up with zero real PRN allocations is fine (a deliberate
+    // stock-building purchase), but it must be an explicit confirmation
+    // via Save Allocation, not silently defaulted by never opening it.
+    if (!row._allocationTouched) {
+      return showErr(`Row ${n}: click "Allocate to PRNs" and confirm the split (or Extra) before submitting.`);
+    }
     const aSum = (row.allocations || []).reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     if (aSum > (parseFloat(row.quantity) || 0) + 1e-9) {
       return showErr(`Row ${n}: allocated ${aSum} across PRNs but only ${row.quantity} is being ordered.`);
