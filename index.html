@@ -15306,7 +15306,7 @@ function renderCPOMaterialRows() {
     const unallocNow = Math.round((lineQtyNow - allocSum) * 100) / 100;
     const projectChips = allocList.length
       ? allocList.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId.replace(/^PRN_/, "")} — <strong>${a.quantity}</strong></div>`).join("")
-        + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">spare — <strong>${unallocNow}</strong></div>` : "")
+        + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra — <strong>${unallocNow}</strong></div>` : "")
       : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No PRNs allocated</span>';
 
     return `<div data-rowid="${row.id}" style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px;">
