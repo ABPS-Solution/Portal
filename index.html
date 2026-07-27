@@ -17890,28 +17890,37 @@ async function refreshAPRNLiveStock() {
     document.querySelectorAll(".aprn-livestock").forEach(span => {
       const code = span.dataset.itemcode;
       const s = data.stock[code.toUpperCase()] || { raw: 0, spare: 0 };
-      const total = s.raw + s.spare;
-      span.textContent = `${total} (Raw: ${s.raw}, Spare: ${s.spare})`;
-
-      // Same restriction as the Create PRN screen: the input can never
-      // exceed what's ACTUALLY free right now, not just the buffered
-      // requirement. The backend already rejects an over-claim on submit
-      // (reservationDelta vs freeNow), so this is purely making that
-      // limit visible and self-correcting up front rather than letting
-      // someone type a number that's guaranteed to fail authorization.
       const tr = span.closest("tr");
       const inp = tr ? tr.querySelector(".aprn-storeqty") : null;
-      const idxAttr = inp ? inp.dataset.idx : null;
-      if (inp && idxAttr !== null) {
-        const idx = Number(idxAttr);
-        const row = aprnRows[idx];
+      const idx = inp ? Number(inp.dataset.idx) : null;
+      const row = (idx !== null && !isNaN(idx)) ? aprnRows[idx] : null;
+
+      // What THIS pending PRN already holds counts as available TO
+      // ITSELF — it was reserved out of the live pool at creation, so
+      // without adding it back here the screen would show almost
+      // nothing free and force the input down to whatever tiny amount
+      // happens to still be genuinely unclaimed, even though the full
+      // original claim is still legitimately this PRN's to keep or edit.
+      const ownRaw = row ? (Number(row.storeFromRawDelta) || 0) : 0;
+      const ownSpare = row ? (Number(row.storeFromSpareDelta) || 0) : 0;
+      const baseRaw = s.raw + ownRaw;
+      const baseSpare = s.spare + ownSpare;
+      const total = baseRaw + baseSpare;
+
+      span.dataset.baseraw = baseRaw;
+      span.dataset.basespare = baseSpare;
+
+      const currentTyped = inp ? (parseFloat(inp.value) || 0) : 0;
+      const split = computeLiveStoreSplit(baseRaw, baseSpare, currentTyped);
+      span.textContent = `${split.remainingRaw + split.remainingSpare} (Raw: ${split.remainingRaw}, Spare: ${split.remainingSpare})`;
+
+      if (inp) {
         const requirementCap = row
           ? (row.editable !== false ? (Number(row.bufferedRequirement) || 0) : Math.abs(Number(row.deltaRequirement) || 0))
           : Infinity;
         const cap = Math.min(requirementCap, total);
         inp.max = cap;
-        const currentVal = parseFloat(inp.value) || 0;
-        if (currentVal > cap) {
+        if (currentTyped > cap) {
           inp.value = Math.round(cap * 100) / 100;
           updateAPRNRow(idx, inp.value, window.aprnExpandedId);
         }
@@ -17926,12 +17935,6 @@ function updateAPRNRow(idx, value, prnId) {
   const row = aprnRows[idx];
   if (!row) return;
   const buffered = row.editable !== false ? (Number(row.bufferedRequirement) || 0) : Math.abs(Number(row.deltaRequirement) || 0);
-  // The input's own `max` attribute is kept current by
-  // refreshAPRNLiveStock's poll — reading it here means every keystroke
-  // is capped by whichever is tighter: the requirement, or what's
-  // actually free in store right now. `max` alone on the element does
-  // NOT stop typing (browsers only flag it as :invalid, they don't
-  // block input), so this has to be enforced in code, not markup.
   const inputEl = document.querySelector(`.aprn-storeqty[data-idx="${idx}"]`);
   const liveMax = inputEl && inputEl.max !== '' ? Number(inputEl.max) : buffered;
   const cap = Math.min(buffered, isNaN(liveMax) ? buffered : liveMax);
@@ -17945,6 +17948,18 @@ function updateAPRNRow(idx, value, prnId) {
   row.purchaseQty = isCountUnit ? Math.ceil(raw - 1e-9) : raw;
   const cell = document.getElementById(`aprn-purchaseqty-${idx}`);
   if (cell) cell.textContent = Number(row.purchaseQty).toFixed(2);
+
+  // Live-update "Store Available Stock" as the typed quantity changes —
+  // spare is consumed first, matching exactly how the backend reserves
+  // it on submit, so what's shown updating is what will really happen.
+  const tr = inputEl ? inputEl.closest("tr") : null;
+  const stockSpan = tr ? tr.querySelector(".aprn-livestock") : null;
+  if (stockSpan && stockSpan.dataset.baseraw !== undefined) {
+    const baseRaw = Number(stockSpan.dataset.baseraw) || 0;
+    const baseSpare = Number(stockSpan.dataset.basespare) || 0;
+    const split = computeLiveStoreSplit(baseRaw, baseSpare, storeQty);
+    stockSpan.textContent = `${split.remainingRaw + split.remainingSpare} (Raw: ${split.remainingRaw}, Spare: ${split.remainingSpare})`;
+  }
 }
 
 async function authorizePRN(prnId) {
@@ -18169,6 +18184,15 @@ function renderPRNCreateTable() {
       if (val > cap) { val = cap; this.value = val; this.style.border = "1.5px solid #ef4444"; }
       else { this.style.border = "1.5px solid var(--brand)"; }
 
+      // Live-update "Store Available Stock" — spare consumed first,
+      // matching exactly how the backend reserves it on submit.
+      if (liveSpan && liveSpan.dataset.liveRaw !== undefined) {
+        const baseRaw = Number(liveSpan.dataset.liveRaw) || 0;
+        const baseSpare = Number(liveSpan.dataset.liveSpare) || 0;
+        const split = computeLiveStoreSplit(baseRaw, baseSpare, val);
+        liveSpan.textContent = `${split.remainingRaw + split.remainingSpare} (Raw: ${split.remainingRaw}, Spare: ${split.remainingSpare})`;
+      }
+
       // NOS is a discrete/count unit — you cannot purchase a fraction of a unit (e.g. 1.3 NOS).
       // Round UP to the next whole number so the purchase quantity always fully covers the gap.
       const isCountUnit = (item.unit || "").toString().trim().toUpperCase() === "NOS";
@@ -18197,14 +18221,17 @@ async function refreshPRNCreateLiveStock() {
       const code = span.dataset.itemcode;
       const s = data.stock[code.toUpperCase()] || { raw: 0, spare: 0 };
       const total = s.raw + s.spare;
-      span.textContent = `${total} (Raw: ${s.raw}, Spare: ${s.spare})`;
+      span.dataset.liveRaw = s.raw;
+      span.dataset.liveSpare = s.spare;
       span.dataset.liveTotal = total;
       const tr = span.closest("tr");
       const inp = tr ? tr.querySelector(".prn-create-storeqty") : null;
+      const currentVal = inp ? (Math.round((parseFloat(inp.value) || 0) * 100) / 100) : 0;
+      const split = computeLiveStoreSplit(s.raw, s.spare, currentVal);
+      span.textContent = `${split.remainingRaw + split.remainingSpare} (Raw: ${split.remainingRaw}, Spare: ${split.remainingSpare})`;
       if (inp) {
         if (inp.disabled) { inp.disabled = false; inp.style.opacity = "1"; }
         inp.max = total;
-        const currentVal = Math.round((parseFloat(inp.value) || 0) * 100) / 100;
         if (currentVal > total) { inp.value = Math.round(total * 100) / 100; inp.dispatchEvent(new Event("input")); }
       }
     });
@@ -18345,9 +18372,12 @@ function renderAllPRNCards(prns, boqId) {
     const cardId = "prn-card-" + idx;
     const expandId = "prn-expand-" + idx;
     const toggleId = "prn-toggle-text-" + idx;
-    const pdfHtml = data.pdfUrl
-      ? `<a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700; font-size:0.82rem;" onclick="event.stopPropagation();">View PDF ↗</a>`
-      : `<span style="color:var(--muted); font-size:0.8rem;">Not generated</span>`;
+    const isPending = data.status === "Pending Authorization";
+    const pdfHtml = isPending
+      ? `<span style="color:#b45309; font-size:0.8rem; font-weight:700;">Pending — no PDF yet</span>`
+      : (data.pdfUrl
+          ? `<a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700; font-size:0.82rem;" onclick="event.stopPropagation();">View PDF ↗</a>`
+          : `<span style="color:var(--muted); font-size:0.8rem;">Not generated</span>`);
 
     // Trims trailing zeros the same way the PDF's formatRateSmart does —
     // 270 stays "270", 280.8 stays "280.8", nothing shows as "270.00".
@@ -18371,7 +18401,8 @@ function renderAllPRNCards(prns, boqId) {
 
     const card = document.createElement("div");
     card.innerHTML = `
-      <div id="${cardId}" onclick="togglePRNCardExpanded('${expandId}','${toggleId}')" style="cursor:pointer; background:var(--highlight-bg); border:1.5px solid var(--brand); border-radius:var(--radius); padding:12px;">
+      <div id="${cardId}" onclick="togglePRNCardExpanded('${expandId}','${toggleId}')" style="cursor:pointer; background:${isPending ? "#fffbeb" : "var(--highlight-bg)"}; border:1.5px solid ${isPending ? "#f59e0b" : "var(--brand)"}; border-radius:var(--radius); padding:12px;">
+        ${isPending ? `<div style="font-size:0.72rem; font-weight:800; color:#b45309; margin-bottom:8px;">⏳ This PRN is waiting for authorization. The rows below are the pending proposal — view only until it's approved or rejected.</div>` : ""}
         <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; margin-bottom:4px;">
           <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Customer Name</div>
             <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${data.customerName || "—"}</div></div>
@@ -18432,6 +18463,19 @@ function renderAllPRNCards(prns, boqId) {
       if (badge) badge.style.display = "none";
     }
   }
+}
+
+// Spare-first allocation of a typed claim against the combined pool —
+// mirrors exactly how the backend actually reserves it (splitStoreClaim),
+// so "Store Available Stock" updating live as you type shows the truth.
+function computeLiveStoreSplit(baseRaw, baseSpare, claimQty) {
+  const qty = Math.max(0, Number(claimQty) || 0);
+  const spareUsed = Math.min(qty, baseSpare);
+  const rawUsed = Math.max(0, qty - baseSpare);
+  return {
+    remainingRaw: Math.max(0, baseRaw - rawUsed),
+    remainingSpare: Math.max(0, baseSpare - spareUsed),
+  };
 }
 
 function updatePRNCheckedByStorePerson(selectEl, idx) {
