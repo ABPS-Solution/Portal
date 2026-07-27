@@ -18019,7 +18019,9 @@ async function refreshAPRNLiveStock() {
       span.dataset.basespare = baseSpare;
 
       const currentTyped = inp ? (parseFloat(inp.value) || 0) : 0;
-      const split = computeLiveStoreSplit(baseRaw, baseSpare, currentTyped);
+      const split = isResplitRow
+        ? computeRevisePRNStoreDisplay(baseRaw, baseSpare, ownRaw, ownSpare, currentTyped)
+        : computeLiveStoreSplit(baseRaw, baseSpare, currentTyped);
       span.textContent = `${split.remainingRaw + split.remainingSpare} (Raw: ${split.remainingRaw}, Spare: ${split.remainingSpare})`;
 
       if (inp) {
@@ -18073,7 +18075,14 @@ function updateAPRNRow(idx, value, prnId) {
   if (stockSpan && stockSpan.dataset.baseraw !== undefined) {
     const baseRaw = Number(stockSpan.dataset.baseraw) || 0;
     const baseSpare = Number(stockSpan.dataset.basespare) || 0;
-    const split = computeLiveStoreSplit(baseRaw, baseSpare, storeQty);
+    // Resplit rows: raw-first release / spare-first extra-claim, same
+    // formula Revise PRN's own preview uses and what the backend now
+    // actually commits — NOT the generic spare-first-claim formula
+    // (computeLiveStoreSplit) Delta PRN rows use, which assumes a fresh
+    // claim rather than an edit against an existing specific split.
+    const split = row.changeKind === 'resplit'
+      ? computeRevisePRNStoreDisplay(baseRaw, baseSpare, Number(row.newStoreFromRaw) || 0, Number(row.newStoreFromSpare) || 0, storeQty)
+      : computeLiveStoreSplit(baseRaw, baseSpare, storeQty);
     stockSpan.textContent = `${split.remainingRaw + split.remainingSpare} (Raw: ${split.remainingRaw}, Spare: ${split.remainingSpare})`;
   }
 }
