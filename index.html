@@ -15189,8 +15189,9 @@ async function authorizePONow(poNumber, btn) {
 async function initializeCreatePOPanel() {
   const body = document.getElementById("create-po-body");
   body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading vendors and projects...</div>`;
-  window.cpoMaterialRows = [];
-  window.cpoRowSeq = 0;
+  const draft = loadCPODraft();
+  window.cpoMaterialRows = (draft && draft.materialRows) || [];
+  window.cpoRowSeq = (draft && draft.rowSeq) || 0;
 
   const [vendorRes, projRes] = await Promise.allSettled([
     apFetch({ action: "fetchVendorList" }),
@@ -15222,11 +15223,16 @@ async function initializeCreatePOPanel() {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Supplier Offer No</label>
-          <input type="text" id="cpo-supplier-ref" placeholder="e.g. SEW/OFF/2026/0042" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          <input type="text" id="cpo-supplier-ref" placeholder="e.g. SEW/OFF/2026/0042" oninput="persistCPODraft()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Delivery Date *</label>
-          <input type="date" id="cpo-delivery-date" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          <div style="display:flex; gap:5px;">
+            <input type="number" id="cpo-delivery-dd" min="1" max="31" placeholder="DD" oninput="syncCPODeliveryDate()" style="width:58px; text-align:center; padding:9px 4px; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <input type="number" id="cpo-delivery-mm" min="1" max="12" placeholder="MM" oninput="syncCPODeliveryDate()" style="width:58px; text-align:center; padding:9px 4px; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <input type="number" id="cpo-delivery-yyyy" min="2000" max="2100" placeholder="YYYY" oninput="syncCPODeliveryDate()" style="width:80px; text-align:center; padding:9px 4px; border:1.5px solid var(--border); border-radius:var(--radius);">
+          </div>
+          <input type="hidden" id="cpo-delivery-date" value="">
         </div>
       </div>
       <div id="cpo-vendor-preview" style="display:none; font-size:0.8rem; color:var(--muted); background:#fff; border:1px dashed var(--border); border-radius:var(--radius); padding:10px;"></div>
@@ -15245,20 +15251,20 @@ async function initializeCreatePOPanel() {
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Taxes & Charges</div>
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
-          <div><label class="field-label" style="margin-top:0;">CGST %</label><input type="number" id="cpo-cgst" value="9" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-          <div><label class="field-label" style="margin-top:0;">SGST %</label><input type="number" id="cpo-sgst" value="9" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-          <div><label class="field-label" style="margin-top:0;">IGST %</label><input type="number" id="cpo-igst" value="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-          <div><label class="field-label" style="margin-top:0;">Packing</label><input type="number" id="cpo-packing" value="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-          <div><label class="field-label" style="margin-top:0;">Freight</label><input type="number" id="cpo-freight" value="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-          <div><label class="field-label" style="margin-top:0;">Other</label><input type="number" id="cpo-other" value="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-          <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="cpo-roundoff" value="0" step="any" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">CGST %</label><input type="number" id="cpo-cgst" placeholder="9" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">SGST %</label><input type="number" id="cpo-sgst" placeholder="9" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">IGST %</label><input type="number" id="cpo-igst" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Packing</label><input type="number" id="cpo-packing" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Freight</label><input type="number" id="cpo-freight" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Other</label><input type="number" id="cpo-other" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="cpo-roundoff" placeholder="0" step="any" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         </div>
       </div>
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Terms</div>
-        <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Warranty</label><input type="text" id="cpo-warranty" placeholder="e.g. 24 Months From Date Of Commissioning" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-        <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Payment Terms</label><input type="text" id="cpo-payment" placeholder="e.g. 60 Days Credit PDC" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-        <div><label class="field-label" style="margin-top:0;">Freight Terms</label><input type="text" id="cpo-freight-terms" placeholder="e.g. To Pay" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+        <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Warranty</label><input type="text" id="cpo-warranty" placeholder="e.g. 24 Months From Date Of Commissioning" oninput="persistCPODraft()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+        <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Payment Terms</label><input type="text" id="cpo-payment" placeholder="e.g. 60 Days Credit PDC" oninput="persistCPODraft()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+        <div><label class="field-label" style="margin-top:0;">Freight Terms</label><input type="text" id="cpo-freight-terms" placeholder="e.g. To Pay" oninput="persistCPODraft()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
       </div>
     </div>
 
@@ -15267,30 +15273,126 @@ async function initializeCreatePOPanel() {
         <div>Sub Total: <strong id="cpo-subtotal-disp">0.00</strong></div>
         <div style="font-size:1.05rem; margin-top:4px;">Grand Total: <strong id="cpo-grandtotal-disp" style="color:var(--brand);">0.00</strong></div>
       </div>
-      <button class="nav-btn-styled" id="cpo-submit-btn" onclick="submitCreatePO()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Submit for Authorization</button>
+      <div style="display:flex; gap:10px;">
+        <button class="nav-btn-styled" onclick="clearCPOForm()" style="background:#718096;">Clear Form</button>
+        <button class="nav-btn-styled" id="cpo-submit-btn" onclick="submitCreatePO()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Submit for Authorization</button>
+      </div>
     </div>
   `;
+
+  // Restore whatever was saved — Return to Main Dashboard (or an
+  // accidental reload) shouldn't lose an in-progress PO. Only the
+  // material rows come from state (window.cpoMaterialRows, restored
+  // above); everything else is a plain field value re-applied here.
+  if (draft) {
+    if (draft.vendor) { document.getElementById("cpo-vendor").value = draft.vendor; handleCPOVendorChange(); }
+    if (draft.supplierRef) document.getElementById("cpo-supplier-ref").value = draft.supplierRef;
+    if (draft.deliveryDD) document.getElementById("cpo-delivery-dd").value = draft.deliveryDD;
+    if (draft.deliveryMM) document.getElementById("cpo-delivery-mm").value = draft.deliveryMM;
+    if (draft.deliveryYYYY) document.getElementById("cpo-delivery-yyyy").value = draft.deliveryYYYY;
+    syncCPODeliveryDate();
+    if (draft.cgst) document.getElementById("cpo-cgst").value = draft.cgst;
+    if (draft.sgst) document.getElementById("cpo-sgst").value = draft.sgst;
+    if (draft.igst) document.getElementById("cpo-igst").value = draft.igst;
+    if (draft.packing) document.getElementById("cpo-packing").value = draft.packing;
+    if (draft.freight) document.getElementById("cpo-freight").value = draft.freight;
+    if (draft.other) document.getElementById("cpo-other").value = draft.other;
+    if (draft.roundoff) document.getElementById("cpo-roundoff").value = draft.roundoff;
+    if (draft.warranty) document.getElementById("cpo-warranty").value = draft.warranty;
+    if (draft.payment) document.getElementById("cpo-payment").value = draft.payment;
+    if (draft.freightTerms) document.getElementById("cpo-freight-terms").value = draft.freightTerms;
+  }
+  renderCPOMaterialRows();
+  recalcCPOTotals();
+}
+
+// ── Create PO draft persistence ─────────────────────────────────────────
+// Return to Main Dashboard (or an accidental tab reload) shouldn't lose
+// an in-progress PO — every field write calls persistCPODraft(), and
+// initializeCreatePOPanel restores from it on next entry. Cleared only
+// on a successful submit or an explicit Clear Form.
+const CPO_DRAFT_STORAGE_KEY = 'abps_cpo_draft_v1';
+
+function persistCPODraft() {
+  const vendorEl = document.getElementById("cpo-vendor");
+  if (!vendorEl) return; // panel not mounted — nothing to save
+  try {
+    const draft = {
+      vendor: vendorEl.value,
+      supplierRef: document.getElementById("cpo-supplier-ref").value,
+      deliveryDD: document.getElementById("cpo-delivery-dd").value,
+      deliveryMM: document.getElementById("cpo-delivery-mm").value,
+      deliveryYYYY: document.getElementById("cpo-delivery-yyyy").value,
+      cgst: document.getElementById("cpo-cgst").value,
+      sgst: document.getElementById("cpo-sgst").value,
+      igst: document.getElementById("cpo-igst").value,
+      packing: document.getElementById("cpo-packing").value,
+      freight: document.getElementById("cpo-freight").value,
+      other: document.getElementById("cpo-other").value,
+      roundoff: document.getElementById("cpo-roundoff").value,
+      warranty: document.getElementById("cpo-warranty").value,
+      payment: document.getElementById("cpo-payment").value,
+      freightTerms: document.getElementById("cpo-freight-terms").value,
+      materialRows: window.cpoMaterialRows || [],
+      rowSeq: window.cpoRowSeq || 0,
+    };
+    localStorage.setItem(CPO_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  } catch (e) { /* storage unavailable/full — resume just won't work, not fatal */ }
+}
+
+function loadCPODraft() {
+  try {
+    const raw = localStorage.getItem(CPO_DRAFT_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+function clearCPODraftStorage() {
+  try { localStorage.removeItem(CPO_DRAFT_STORAGE_KEY); } catch (e) { /* ignore */ }
+}
+
+function clearCPOForm() {
+  if (!confirm("Clear the entire Purchase Order form — header, material rows, and allocations? This cannot be undone.")) return;
+  clearCPODraftStorage();
+  initializeCreatePOPanel();
+}
+
+// DD/MM/YYYY fields are display-only — this keeps the hidden ISO field
+// (what submitCreatePO actually reads) in sync, so nothing downstream
+// needs to know the display format changed.
+function syncCPODeliveryDate() {
+  const d = parseInt(document.getElementById("cpo-delivery-dd").value, 10);
+  const m = parseInt(document.getElementById("cpo-delivery-mm").value, 10);
+  const y = parseInt(document.getElementById("cpo-delivery-yyyy").value, 10);
+  const hidden = document.getElementById("cpo-delivery-date");
+  hidden.value = (d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 1000)
+    ? `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+    : "";
+  persistCPODraft();
 }
 
 function handleCPOVendorChange() {
   const name = document.getElementById("cpo-vendor").value;
   const preview = document.getElementById("cpo-vendor-preview");
   const v = window.cpoVendors.find(x => x.vendorName === name);
-  if (!v) { preview.style.display = "none"; return; }
+  if (!v) { preview.style.display = "none"; persistCPODraft(); return; }
   preview.style.display = "block";
   preview.innerHTML = `<strong>${v.vendorName}</strong> &nbsp;|&nbsp; ${v.address || "(no address)"} &nbsp;|&nbsp; GSTIN: ${v.gstin || "—"} &nbsp;|&nbsp; ${v.state || "—"} (Code ${v.stateCode || "—"}) &nbsp;|&nbsp; ${v.email || "—"}`;
+  persistCPODraft();
 }
 
 function addCPOMaterialRow() {
   const id = ++window.cpoRowSeq;
   window.cpoMaterialRows.push({ id, description: "", itemCode: "", quantity: "", unit: "", rate: "", discountPercent: "", projectIds: [], allocations: [] });
   renderCPOMaterialRows();
+  persistCPODraft();
 }
 
 function removeCPOMaterialRow(id) {
   window.cpoMaterialRows = window.cpoMaterialRows.filter(r => r.id !== id);
   renderCPOMaterialRows();
   recalcCPOTotals();
+  persistCPODraft();
 }
 
 function renderCPOMaterialRows() {
@@ -15304,9 +15406,9 @@ function renderCPOMaterialRows() {
     const allocSum = allocList.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     const lineQtyNow = parseFloat(row.quantity) || 0;
     const unallocNow = Math.round((lineQtyNow - allocSum) * 100) / 100;
-    const projectChips = allocList.length
-      ? allocList.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId.replace(/^PRN_/, "")} — <strong>${a.quantity}</strong></div>`).join("")
-        + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra — <strong>${unallocNow}</strong></div>` : "")
+    const projectChips = (allocList.length || row._allocationTouched)
+      ? allocList.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId.replace(/^PRN_/, "")}: <strong>${a.quantity}</strong></div>`).join("")
+        + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${unallocNow}</strong></div>` : "")
       : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No PRNs allocated</span>';
 
     return `<div data-rowid="${row.id}" style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px;">
@@ -15314,36 +15416,36 @@ function renderCPOMaterialRows() {
         <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx + 1}</div>
 
         <div style="flex:1; min-width:220px; position:relative;">
-          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Description of Material *</label>
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Description of Material *</label>
           <input type="text" class="cpo-desc-search" data-rowid="${row.id}" value="${(row.description||'').replace(/"/g,'&quot;')}" placeholder="Search material name / rating..." autocomplete="off"
             oninput="handleCPODescSearch(${row.id}, this.value)"
-            style="width:100%; padding:7px; border:1.5px solid ${row.itemCode ? 'var(--brand)' : '#f59e0b'}; border-radius:4px; font-size:0.82rem; margin-top:2px;">
+            style="width:100%; height:36px; box-sizing:border-box; padding:7px; border:1.5px solid ${row.itemCode ? 'var(--brand)' : '#f59e0b'}; border-radius:4px; font-size:0.82rem;">
           <div id="cpo-desc-dd-${row.id}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
         </div>
 
         <div style="width:95px; flex-shrink:0; text-align:center;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Item Code</div>
-          <div style="font-family:monospace; font-weight:700; color:var(--brand); font-size:0.85rem;">${row.itemCode || '—'}</div>
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Item Code</div>
+          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:700; color:var(--brand); font-size:0.85rem;">${row.itemCode || '—'}</div>
         </div>
         <div style="width:50px; flex-shrink:0; text-align:center;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Unit</div>
-          <div style="font-family:monospace; color:#475569; font-size:0.85rem; padding-top:2px;">${row.unit || '—'}</div>
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Unit</div>
+          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; color:#475569; font-size:0.85rem;">${row.unit || '—'}</div>
         </div>
         <div style="width:80px; flex-shrink:0;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px; text-align:center;">Quantity *</div>
-          <input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${row.quantity}" oninput="updateCPORowField(${row.id},'quantity',this.value)" style="width:100%; text-align:center; padding:7px 4px; border:1px solid var(--border); border-radius:4px;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Quantity *</div>
+          <input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${row.quantity}" oninput="updateCPORowField(${row.id},'quantity',this.value)" onblur="handleCPOQtyBlur(${row.id})" style="width:100%; height:36px; box-sizing:border-box; text-align:center; padding:7px 4px; border:1.5px solid var(--border); border-radius:4px;">
         </div>
         <div style="width:90px; flex-shrink:0;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px; text-align:center;">Rate / Qty *</div>
-          <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)" style="width:100%; text-align:right; padding:7px 6px; border:1px solid var(--border); border-radius:4px;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Rate / Qty *</div>
+          <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)" style="width:100%; height:36px; box-sizing:border-box; text-align:right; padding:7px 6px; border:1.5px solid var(--border); border-radius:4px;">
         </div>
         <div style="width:70px; flex-shrink:0;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px; text-align:center;">Disc %</div>
-          <input type="number" min="0" max="100" step="any" class="cpo-disc" data-rowid="${row.id}" value="${row.discountPercent}" placeholder="0" oninput="updateCPORowField(${row.id},'discountPercent',this.value)" style="width:100%; text-align:center; padding:7px 4px; border:1px solid var(--border); border-radius:4px;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Disc %</div>
+          <input type="number" min="0" max="100" step="any" class="cpo-disc" data-rowid="${row.id}" value="${row.discountPercent}" placeholder="0" oninput="updateCPORowField(${row.id},'discountPercent',this.value)" style="width:100%; height:36px; box-sizing:border-box; text-align:center; padding:7px 4px; border:1.5px solid var(--border); border-radius:4px;">
         </div>
         <div style="width:120px; flex-shrink:0; text-align:right;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Amount</div>
-          <div style="font-family:monospace; font-weight:800; font-size:1.05rem; color:#0f172a; padding-top:2px;"><span class="cpo-amount" data-rowid="${row.id}">0.00</span></div>
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Amount</div>
+          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:flex-end; font-family:monospace; font-weight:800; font-size:1.05rem; color:#0f172a;"><span class="cpo-amount" data-rowid="${row.id}">0.00</span></div>
         </div>
 
         <button onclick="removeCPOMaterialRow(${row.id})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.95rem; width:32px; height:36px; border-radius:4px; display:flex; align-items:center; justify-content:center; flex-shrink:0; align-self:flex-end;">✕</button>
@@ -15384,8 +15486,11 @@ function selectCPOMaterial(rowId, itemCode, productName, rating, unitType) {
   row.description = rating ? `${productName} ${rating}` : productName;
   row.itemCode = itemCode;
   row.unit = unitType || "Nos";
+  row.allocations = []; // old allocations were tied to the previous item code
+  row._allocationTouched = false;
   document.getElementById(`cpo-desc-dd-${rowId}`).style.display = "none";
   renderCPOMaterialRows();
+  persistCPODraft();
 }
 
 function updateCPORowField(rowId, field, value) {
@@ -15400,6 +15505,23 @@ function updateCPORowField(rowId, field, value) {
   if (field === 'quantity' || field === 'rate' || field === 'discountPercent') {
     updateCPORowAmount(rowId);
     recalcCPOTotals();
+  }
+  persistCPODraft();
+}
+
+// Quantity is handled on blur (not on every keystroke) so allocations
+// aren't wiped mid-typing — only once the operator has actually settled
+// on a new value that no longer matches what the allocation was made
+// against. A full re-render is fine here since typing has finished.
+function handleCPOQtyBlur(rowId) {
+  const row = window.cpoMaterialRows.find(r => r.id === rowId);
+  if (!row || !(row.allocations || []).length) return;
+  const newQty = parseFloat(row.quantity) || 0;
+  if (newQty !== row._allocatedForQty) {
+    row.allocations = [];
+    row._allocationTouched = false;
+    renderCPOMaterialRows();
+    persistCPODraft();
   }
 }
 
@@ -15422,8 +15544,12 @@ function recalcCPOTotals() {
     const disc = parseFloat(row.discountPercent) || 0;
     subTotal += qty * rate * (100 - disc) / 100;
   });
-  const cgst = subTotal * (parseFloat(document.getElementById("cpo-cgst").value) || 0) / 100;
-  const sgst = subTotal * (parseFloat(document.getElementById("cpo-sgst").value) || 0) / 100;
+  // CGST/SGST default to 9 when left blank (the placeholder is a real
+  // default, not just a hint) — everything else genuinely defaults to 0.
+  const cgstPct = document.getElementById("cpo-cgst").value.trim() === "" ? 9 : (parseFloat(document.getElementById("cpo-cgst").value) || 0);
+  const sgstPct = document.getElementById("cpo-sgst").value.trim() === "" ? 9 : (parseFloat(document.getElementById("cpo-sgst").value) || 0);
+  const cgst = subTotal * cgstPct / 100;
+  const sgst = subTotal * sgstPct / 100;
   const igst = subTotal * (parseFloat(document.getElementById("cpo-igst").value) || 0) / 100;
   const packing = parseFloat(document.getElementById("cpo-packing").value) || 0;
   const freight = parseFloat(document.getElementById("cpo-freight").value) || 0;
@@ -15433,6 +15559,7 @@ function recalcCPOTotals() {
   const fmt = (n) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   document.getElementById("cpo-subtotal-disp").textContent = fmt(subTotal);
   document.getElementById("cpo-grandtotal-disp").textContent = fmt(grandTotal);
+  persistCPODraft();
 }
 
 async function openCPOAllocationPicker(rowId) {
@@ -15447,9 +15574,6 @@ async function openCPOAllocationPicker(rowId) {
   } catch (e) {
     alert("Could not load the PRN list for this material: " + e.message);
     return;
-  }
-  if (prns.length === 0) {
-    alert(`No authorized PRN currently needs "${row.itemCode}". This line will be ordered entirely as extra available stock unless you add allocations to PRNs.`);
   }
 
   const existing = document.getElementById("cpo-alloc-modal");
@@ -15485,16 +15609,34 @@ async function openCPOAllocationPicker(rowId) {
       <input type="number" min="0" max="${Number(p.stillToOrder) || 0}" step="any"
         class="cpo-alloc-input" data-prnid="${p.prnId}" data-max="${Number(p.stillToOrder) || 0}"
         value="${p.suggested > 0 ? p.suggested : ""}" placeholder="0"
-        oninput="updateCPOAllocTotals(${lineQty})"
+        oninput="handleCPOAllocInput(this, ${lineQty})"
         style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--brand); border-radius:4px; font-size:0.85rem;">
     </div>`).join("");
+
+  const noPrnNotice = prns.length === 0
+    ? `<div style="padding:10px 12px; margin-bottom:10px; background:#fffbeb; border:1px solid #fde68a; border-radius:6px; font-size:0.8rem; color:#78350f;">No authorized PRN currently needs "${row.itemCode}". This line will be ordered entirely as extra available stock unless you add allocations to PRNs.</div>`
+    : "";
+
+  // Extra is always shown, never a manual input — it's just whatever's
+  // left on the line after real PRN allocations, computed live. There's
+  // nothing meaningful to type into it independently: the line quantity
+  // is fixed by the material row, so "extra" can only ever be a
+  // remainder, not an independent value.
+  const extraRowHtml = `
+    <div id="cpo-alloc-extra-row" style="display:flex; align-items:center; gap:12px; padding:11px 12px; border:1px dashed #f59e0b; border-radius:6px; margin-bottom:6px; font-size:0.85rem; background:#fffbeb;">
+      <div style="flex:1; min-width:0;">
+        <div style="font-weight:700; font-size:0.78rem; color:#78350f;">Extra</div>
+        <div style="font-size:0.72rem; color:#92400e;">Not tied to any PRN — becomes free store stock</div>
+      </div>
+      <div id="cpo-alloc-extra-value" style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid #f59e0b; border-radius:4px; font-size:0.85rem; background:#fff; color:#78350f;">0</div>
+    </div>`;
 
   modal.innerHTML = `
     <div style="background:#fff; border-radius:12px; width:100%; max-width:600px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
       <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
         <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmtQty(lineQty)} ${row.unit || ""} of ${row.itemCode} to PRNs</div>
       </div>
-      <div style="overflow-y:auto; flex:1; padding:16px 20px;">${rowsHtml || `<div style="text-align:center; color:var(--muted); padding:20px;">No PRN currently needs this material.</div>`}</div>
+      <div style="overflow-y:auto; flex:1; padding:16px 20px;">${noPrnNotice}${rowsHtml}${extraRowHtml}</div>
       <div id="cpo-alloc-summary" style="padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700;"></div>
       <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid var(--border); background:#f8fafc;">
         <button onclick="document.getElementById('cpo-alloc-modal').remove()" style="padding:9px 18px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600;">Cancel</button>
@@ -15502,6 +15644,25 @@ async function openCPOAllocationPicker(rowId) {
       </div>
     </div>`;
   document.body.appendChild(modal);
+  updateCPOAllocTotals(lineQty);
+}
+
+// Live-clamps whatever's being typed so the total across every PRN input
+// (including this one) can never exceed the line quantity — the field
+// currently being edited is capped to its own need AND to "line qty
+// minus every OTHER field's current value", so e.g. typing 60 into a
+// second row when a first row already holds 80 (line qty 100) clamps
+// down to 20, the genuine remainder.
+function handleCPOAllocInput(inputEl, lineQty) {
+  const allInputs = Array.from(document.querySelectorAll(".cpo-alloc-input"));
+  const sumOthers = allInputs.filter(i => i !== inputEl).reduce((s, i) => s + (parseFloat(i.value) || 0), 0);
+  const ownNeedCap = parseFloat(inputEl.dataset.max) || 0;
+  const remainingForThis = Math.max(0, lineQty - sumOthers);
+  const effectiveCap = Math.min(ownNeedCap, remainingForThis);
+  const typed = parseFloat(inputEl.value) || 0;
+  if (typed > effectiveCap + 1e-9) {
+    inputEl.value = Math.round(effectiveCap * 100) / 100;
+  }
   updateCPOAllocTotals(lineQty);
 }
 
@@ -15516,6 +15677,8 @@ function updateCPOAllocTotals(lineQty) {
     inp.style.borderColor = v > cap + 1e-9 ? "#b91c1c" : "var(--brand)";
   });
   const unalloc = Math.round((lineQty - sum) * 100) / 100;
+  const extraEl = document.getElementById("cpo-alloc-extra-value");
+  if (extraEl) extraEl.textContent = (Math.max(0, unalloc)).toLocaleString("en-IN", { maximumFractionDigits: 2 });
   const el = document.getElementById("cpo-alloc-summary");
   if (!el) return;
   const fmt = (n) => (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
@@ -15556,8 +15719,11 @@ function saveCPOAllocationPicker(rowId) {
     return;
   }
   row.allocations = allocs;
+  row._allocatedForQty = lineQty;
+  row._allocationTouched = true;
   modal.remove();
   renderCPOMaterialRows();
+  persistCPODraft();
 }
 
 async function submitCreatePO() {
@@ -15610,8 +15776,8 @@ async function submitCreatePO() {
       deliveryDate: r.deliveryDate || null,
       allocations: (r.allocations || []).map(a => ({ prnId: a.prnId, quantity: Number(a.quantity) || 0 }))
     })),
-    cgstPercent: parseFloat(document.getElementById("cpo-cgst").value) || 0,
-    sgstPercent: parseFloat(document.getElementById("cpo-sgst").value) || 0,
+    cgstPercent: document.getElementById("cpo-cgst").value.trim() === "" ? 9 : (parseFloat(document.getElementById("cpo-cgst").value) || 0),
+    sgstPercent: document.getElementById("cpo-sgst").value.trim() === "" ? 9 : (parseFloat(document.getElementById("cpo-sgst").value) || 0),
     igstPercent: parseFloat(document.getElementById("cpo-igst").value) || 0,
     packing: parseFloat(document.getElementById("cpo-packing").value) || 0,
     freight: parseFloat(document.getElementById("cpo-freight").value) || 0,
@@ -15630,6 +15796,7 @@ async function submitCreatePO() {
     const data = await apFetch({ action: "commitPurchaseOrderDraft", activeEngineer: appActiveOperatorIdentityString, ...payload, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success) {
+      clearCPODraftStorage();
       document.getElementById("create-po-body").innerHTML = "";
       banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
       banner.innerHTML = `<strong>PO Draft Created — ${data.poNumber}</strong><br/>It has been sent for Authorization. <button class="nav-btn-styled" onclick="document.getElementById('create-po-feedback').style.display='none'; initializeCreatePOPanel();" style="background:#15803d; color:#fff; margin-top:8px; padding:6px 14px;">+ Create Another</button>`;
