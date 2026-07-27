@@ -15010,7 +15010,7 @@ function renderAPOEditRows() {
         <button onclick="removeAPOEditRow(${row.id})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.95rem; width:32px; height:36px; border-radius:4px; display:flex; align-items:center; justify-content:center; flex-shrink:0; align-self:flex-end;">✕</button>
       </div>
       <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
-        <div style="min-width:180px;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Projects using this Material *</div><button onclick="openAPOProjectPicker(${row.id})" style="font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">Select Projects</button></div>
+        <div style="min-width:180px;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">PRNs using this Material *</div><button onclick="openAPOProjectPicker(${row.id})" style="font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">Select Projects</button></div>
         <div style="flex:1; min-width:200px; padding-top:2px;">${chips}</div>
       </div>
     </div>`;
@@ -15351,7 +15351,7 @@ function renderCPOMaterialRows() {
 
       <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
         <div style="min-width:180px;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Projects using this Material *</div>
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">PRNs using this Material *</div>
           <button onclick="openCPOAllocationPicker(${row.id})" style="font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">Allocate to PRNs</button>
         </div>
         <div style="flex:1; min-width:200px; padding-top:2px;">${projectChips}</div>
@@ -15449,7 +15449,7 @@ async function openCPOAllocationPicker(rowId) {
     return;
   }
   if (prns.length === 0) {
-    alert(`No authorized PRN currently needs "${row.itemCode}". This line will be ordered entirely as spare stock unless you add allocations.`);
+    alert(`No authorized PRN currently needs "${row.itemCode}". This line will be ordered entirely as extra available stock unless you add allocations to PRNs.`);
   }
 
   const existing = document.getElementById("cpo-alloc-modal");
@@ -15493,9 +15493,6 @@ async function openCPOAllocationPicker(rowId) {
     <div style="background:#fff; border-radius:12px; width:100%; max-width:600px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
       <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
         <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmtQty(lineQty)} ${row.unit || ""} of ${row.itemCode} to PRNs</div>
-        <div style="font-size:0.78rem; color:var(--muted); margin-top:4px;">
-          Pre-filled oldest-PRN-first. Change any figure to prioritise differently — anything left unallocated is ordered deliberately as spare and lands in free store stock.
-        </div>
       </div>
       <div style="overflow-y:auto; flex:1; padding:16px 20px;">${rowsHtml || `<div style="text-align:center; color:var(--muted); padding:20px;">No PRN currently needs this material.</div>`}</div>
       <div id="cpo-alloc-summary" style="padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700;"></div>
@@ -15531,7 +15528,7 @@ function updateCPOAllocTotals(lineQty) {
   } else {
     el.style.cssText = `padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700; background:${unalloc > 0 ? "#fffbeb" : "#f0fdf4"}; color:${unalloc > 0 ? "#78350f" : "#15803d"};`;
     el.textContent = unalloc > 0
-      ? `Allocated ${fmt(sum)} of ${fmt(lineQty)} — ${fmt(unalloc)} unallocated, will go to free store stock.`
+      ? `Allocated ${fmt(sum)} of ${fmt(lineQty)}. ${fmt(unalloc)} unallocated, will go to free store stock.`
       : `All ${fmt(lineQty)} allocated.`;
   }
 }
@@ -16565,6 +16562,7 @@ async function submitRevisePRN() {
 
   const btn = document.getElementById("rprn-submit-btn");
   btn.disabled = true; btn.textContent = "Submitting…";
+  if (window._rprnStockInterval) { clearInterval(window._rprnStockInterval); window._rprnStockInterval = null; }
   showBlockingOverlay("Submitting PRN revision…");
   try {
     const data = await apFetch({ action: "submitPRNRevision", prnId: st.prn.prnId, lineItems: changed,
@@ -18093,6 +18091,13 @@ async function authorizePRN(prnId) {
   const rejBtn = document.getElementById(`aprn-reject-btn-${prnId}`);
   if (authBtn) { authBtn.disabled = true; authBtn.textContent = "Authorizing..."; }
   if (rejBtn) rejBtn.disabled = true;
+  // The commit can land server-side before this request's response comes
+  // back (PDF generation happens after commit, adding latency) — if the
+  // 5s poll fires in that window it fetches already-updated live stock
+  // but combines it with stale pre-commit "what this row holds" data,
+  // producing a display-only inflated number with no bearing on the
+  // actual (correct) committed math. Stop polling before it can race.
+  if (window._aprnStockInterval) { clearInterval(window._aprnStockInterval); window._aprnStockInterval = null; }
   showBlockingOverlay("Authorizing Purchase Request Note...");
 
   // Grab display fields before the queue gets wiped/reloaded.
@@ -18158,6 +18163,7 @@ async function rejectPRN(prnId) {
   const rejBtn = document.getElementById(`aprn-reject-btn-${prnId}`);
   if (rejBtn) { rejBtn.disabled = true; rejBtn.textContent = "Rejecting..."; }
   if (authBtn) authBtn.disabled = true;
+  if (window._aprnStockInterval) { clearInterval(window._aprnStockInterval); window._aprnStockInterval = null; }
 
   try {
     const data = await apFetch({ action: "rejectPurchaseRequestNote", prnId });
