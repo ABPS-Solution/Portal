@@ -16360,6 +16360,7 @@ async function initializeRevisePRNPanel() {
   document.getElementById("rprn-body").innerHTML = "";
   document.getElementById("rprn-feedback").style.display = "none";
   document.getElementById("rprn-selector-row").style.display = "grid";
+  document.getElementById("rprn-prn-select").innerHTML = `<option value="">— Select a project first —</option>`;
   const sel = document.getElementById("rprn-project-select");
   try {
     const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
