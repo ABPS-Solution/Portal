@@ -17996,13 +17996,21 @@ async function refreshAPRNLiveStock() {
       const row = (idx !== null && !isNaN(idx)) ? aprnRows[idx] : null;
 
       // What THIS pending PRN already holds counts as available TO
-      // ITSELF — it was reserved out of the live pool at creation, so
-      // without adding it back here the screen would show almost
-      // nothing free and force the input down to whatever tiny amount
-      // happens to still be genuinely unclaimed, even though the full
-      // original claim is still legitimately this PRN's to keep or edit.
-      const ownRaw = row ? (Number(row.storeFromRawDelta) || 0) : 0;
-      const ownSpare = row ? (Number(row.storeFromSpareDelta) || 0) : 0;
+      // ITSELF — otherwise the screen would show almost nothing free and
+      // force the input down to whatever tiny amount happens to still be
+      // genuinely unclaimed, even though the full claim is still
+      // legitimately this PRN's to keep or edit. For a Delta PRN's
+      // new/increase rows, that claim hasn't been applied to the live
+      // pool yet (it only lands at authorize), so the DELTA is what's
+      // missing and gets added back. For a resplit revision row, the
+      // opposite is true — its claim/release already executed immediately
+      // at submission, so the live pool already reflects it; adding the
+      // delta back again would double-count a claim or double-release a
+      // release. Resplit rows carry the ABSOLUTE current split
+      // (newStoreFromRaw/newStoreFromSpare) for exactly this reason.
+      const isResplitRow = row && row.changeKind === 'resplit';
+      const ownRaw = row ? (isResplitRow ? (Number(row.newStoreFromRaw) || 0) : (Number(row.storeFromRawDelta) || 0)) : 0;
+      const ownSpare = row ? (isResplitRow ? (Number(row.newStoreFromSpare) || 0) : (Number(row.storeFromSpareDelta) || 0)) : 0;
       const baseRaw = s.raw + ownRaw;
       const baseSpare = s.spare + ownSpare;
       const total = baseRaw + baseSpare;
