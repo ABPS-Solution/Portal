@@ -1678,7 +1678,6 @@
 
     <div id="canvas-module-purchase-revise-prn" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="color:var(--brand); margin:0 0 6px 0;">Revise Purchase Request Note (PRN)</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Re-split an authorized PRN between store stock and purchase. The BOQ requirement does not change — only how much of it comes from stock you already hold. Use this when material comes back from production, or when stock frees up.</p>
       <div id="rprn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="rprn-selector-row" style="display:grid; grid-template-columns:33% 67%; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
         <div>
@@ -16360,7 +16359,7 @@ window.rprnState = null;
 async function initializeRevisePRNPanel() {
   document.getElementById("rprn-body").innerHTML = "";
   document.getElementById("rprn-feedback").style.display = "none";
-  document.getElementById("rprn-selector-row").style.display = "";
+  document.getElementById("rprn-selector-row").style.display = "grid";
   const sel = document.getElementById("rprn-project-select");
   try {
     const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
