@@ -16481,20 +16481,30 @@ async function refreshRevisePRNLiveStock() {
       const idx = Number(span.dataset.idx);
       const li = st.lineItems[idx];
       const s = data.stock[code.toUpperCase()] || { raw: 0, spare: 0 };
-      const freeNow = s.raw + s.spare;
-      // This PRN's own current reservation counts as available TO ITSELF
-      // for re-splitting, on top of whatever else is genuinely free.
-      const ownReserved = li ? (Number(li.storeQty) || 0) : 0;
-      const total = freeNow + ownReserved;
-      span.textContent = `${total} (Raw: ${s.raw}, Spare: ${s.spare})`;
+
+      // Add back THIS PRN's own reservation, per pool, using the exact
+      // recorded split — not an assumed spare-first guess.
+      const reservedRaw = li ? (Number(li.storeFromRaw) || 0) : 0;
+      const reservedSpare = li ? (Number(li.storeFromSpare) || 0) : 0;
+      const baseRaw = s.raw + reservedRaw;
+      const baseSpare = s.spare + reservedSpare;
+      const total = baseRaw + baseSpare;
+
+      span.dataset.baseraw = baseRaw;
+      span.dataset.basespare = baseSpare;
+      span.dataset.reservedraw = reservedRaw;
+      span.dataset.reservedspare = reservedSpare;
 
       const inp = document.querySelector(`.rprn-store[data-idx="${idx}"]`);
+      const currentTyped = inp ? (parseFloat(inp.value) || 0) : (li ? Number(li.storeQty) || 0 : 0);
+      const disp = computeRevisePRNStoreDisplay(baseRaw, baseSpare, reservedRaw, reservedSpare, currentTyped);
+      span.textContent = `${disp.remainingRaw + disp.remainingSpare} (Raw: ${disp.remainingRaw}, Spare: ${disp.remainingSpare})`;
+
       if (inp && li) {
         const requirementCap = Number(li.bufferedRequirement) || 0;
         const cap = Math.min(requirementCap, total);
         inp.max = cap;
-        const currentVal = parseFloat(inp.value) || 0;
-        if (currentVal > cap) { inp.value = Math.round(cap * 100) / 100; updateRevisePRNRow(idx); }
+        if (currentTyped > cap) { inp.value = Math.round(cap * 100) / 100; updateRevisePRNRow(idx); }
       }
     });
   } catch (e) { /* silent — quantities still editable without this */ }
@@ -16519,6 +16529,19 @@ function updateRevisePRNRow(idx) {
   cell.style.color = bad ? "#b91c1c" : (Math.abs(newPurchase - (Number(li.purchaseQty)||0)) > 1e-9 ? "#15803d" : "#1a2332");
   cell.textContent = newPurchase.toLocaleString("en-IN",{maximumFractionDigits:2})
     + (newPurchase < onOrder - 1e-9 ? `  (below ${onOrder} on order)` : "");
+
+  // Live-update "Store Available Stock" as the typed quantity changes —
+  // spare-first on increase, raw-first release on decrease, matching
+  // exactly how the backend will actually reserve/release it on submit.
+  const stockSpan = document.querySelector(`.rprn-livestock[data-idx="${idx}"]`);
+  if (stockSpan && stockSpan.dataset.baseraw !== undefined) {
+    const baseRaw = Number(stockSpan.dataset.baseraw) || 0;
+    const baseSpare = Number(stockSpan.dataset.basespare) || 0;
+    const reservedRaw = Number(stockSpan.dataset.reservedraw) || 0;
+    const reservedSpare = Number(stockSpan.dataset.reservedspare) || 0;
+    const disp = computeRevisePRNStoreDisplay(baseRaw, baseSpare, reservedRaw, reservedSpare, store);
+    stockSpan.textContent = `${disp.remainingRaw + disp.remainingSpare} (Raw: ${disp.remainingRaw}, Spare: ${disp.remainingSpare})`;
+  }
 }
 
 async function submitRevisePRN() {
@@ -18471,6 +18494,37 @@ function computeLiveStoreSplit(baseRaw, baseSpare, claimQty) {
   return {
     remainingRaw: Math.max(0, baseRaw - rawUsed),
     remainingSpare: Math.max(0, baseSpare - spareUsed),
+  };
+}
+
+// Revise PRN's directional formula — genuinely different from claiming
+// fresh stock. Increasing beyond the CURRENT reservation draws the
+// EXTRA amount spare-first (matching claim priority everywhere else in
+// the system). Decreasing BELOW the current reservation releases the
+// difference raw-first — explicit decision, opposite of claim priority.
+function computeRevisePRNStoreDisplay(baseRaw, baseSpare, reservedRawAtCurrent, reservedSpareAtCurrent, typed) {
+  const currentTotal = reservedRawAtCurrent + reservedSpareAtCurrent;
+  const target = Math.max(0, Number(typed) || 0);
+  let newReservedRaw, newReservedSpare;
+
+  if (target >= currentTotal) {
+    const extra = target - currentTotal;
+    const remainingSpareCapacity = baseSpare - reservedSpareAtCurrent; // == live free spare
+    const extraSpare = Math.min(extra, remainingSpareCapacity);
+    const extraRaw = extra - extraSpare;
+    newReservedSpare = reservedSpareAtCurrent + extraSpare;
+    newReservedRaw = reservedRawAtCurrent + extraRaw;
+  } else {
+    const release = currentTotal - target;
+    const releaseRaw = Math.min(release, reservedRawAtCurrent);
+    const releaseSpare = release - releaseRaw;
+    newReservedRaw = reservedRawAtCurrent - releaseRaw;
+    newReservedSpare = reservedSpareAtCurrent - releaseSpare;
+  }
+
+  return {
+    remainingRaw: Math.max(0, baseRaw - newReservedRaw),
+    remainingSpare: Math.max(0, baseSpare - newReservedSpare),
   };
 }
 
