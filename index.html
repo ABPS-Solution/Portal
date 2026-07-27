@@ -1610,11 +1610,11 @@
 
   <div id="module-purchase-workspace-enclosure-panel" class="workspace-panel" style="display: none; padding: 12px 10px;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px;">
-      <div id="purchase-top-bar-left" style="display:flex; align-items:center; gap:10px;">
+      <div id="purchase-top-bar-left" style="grid-column:1; display:flex; align-items:center; gap:10px;">
         <button class="nav-btn-styled" id="material-list-sync-btn" onclick="loadMaterialListForPurchase()" style="display:none; background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Refresh</button>
       </div>
-      <span id="purchase-top-bar-title" style="display:none; font-size:1rem; font-weight:700; color:var(--text); text-align:center; white-space:nowrap;">Material List for Purchase</span>
-      <button class="nav-btn-styled" onclick="exitPurchaseWorkspacePanelBackToMenu()" style="justify-self:end;">Return to Main Dashboard</button>
+      <span id="purchase-top-bar-title" style="grid-column:2; display:none; font-size:1rem; font-weight:700; color:var(--text); text-align:center; white-space:nowrap;">Material List for Purchase</span>
+      <button class="nav-btn-styled" onclick="exitPurchaseWorkspacePanelBackToMenu()" style="grid-column:3; justify-self:end;">Return to Main Dashboard</button>
     </div>
 
     <!-- PRN CANVAS -->
