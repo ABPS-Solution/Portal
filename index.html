@@ -16422,10 +16422,10 @@ function renderRevisePRNTable() {
         <td style="padding:8px; font-size:0.8rem; font-weight:600;">${li.materialName || ""}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(li.bufferedRequirement)}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${li.unit || "—"}</td>
-        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="rprn-livestock" data-itemcode="${li.itemCode}" data-idx="${idx}">loading…</span></td>
         <td style="padding:8px; text-align:center; font-family:monospace;">${fmt(li.storeQty)}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${fmt(li.purchaseQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.74rem; color:${Number(li.onOrderQty) > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(li.onOrderQty)}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="rprn-livestock" data-itemcode="${li.itemCode}" data-idx="${idx}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
           ${blocked
             ? `<span style="font-size:0.62rem; font-weight:800; color:#b45309;">⏳ AWAITING PO REVISION</span>`
@@ -16445,10 +16445,10 @@ function renderRevisePRNTable() {
           <th style="padding:8px; font-size:0.68rem; text-align:left; min-width:190px;">Material Name</th>
           <th style="padding:8px; font-size:0.68rem; text-align:center; color:var(--brand);">Buffered BOQ Req Qty</th>
           <th style="padding:8px; font-size:0.68rem; text-align:center; color:#94a3b8;">Unit</th>
-          <th style="padding:8px; font-size:0.68rem; text-align:center; color:#6b7a8d; min-width:130px;">Store Available Stock</th>
           <th style="padding:8px; font-size:0.68rem; text-align:center;">Current PRN Store Qty</th>
           <th style="padding:8px; font-size:0.68rem; text-align:center;">Current PRN Purchase Qty</th>
           <th style="padding:8px; font-size:0.68rem; text-align:center;">P.O. On Order Qty</th>
+          <th style="padding:8px; font-size:0.68rem; text-align:center; color:#6b7a8d; min-width:130px;">Store Available Stock</th>
           <th style="padding:8px; font-size:0.68rem; text-align:center; color:#0369a1;">New Store Qty *</th>
           <th style="padding:8px; font-size:0.68rem; text-align:center; color:#15803d;">New Purchase Qty</th>
         </tr></thead>
@@ -16576,7 +16576,7 @@ async function submitRevisePRN() {
       const fb = document.getElementById("rprn-feedback");
       if (fb) {
         fb.style.cssText = "display:block; background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:12px; margin-bottom:12px; border-radius:var(--radius);";
-        fb.innerHTML = `✅ Re-split submitted for <strong>${data.prnId}</strong> — ${data.changed.length} material(s) changed, pending authorization. Any extra store stock is reserved now.
+        fb.innerHTML = `✅ PRN Revision submitted for <strong>${data.prnId}</strong>. ${data.changed.length} material(s) changed, pending authorization. 
           <div>
             <button onclick="initializeRevisePRNPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
               + Revise Another PRN
@@ -17834,7 +17834,6 @@ async function initializeAuthorizePRNPanel() {
             </div>
             <div class="meta-row-line-block" style="margin-bottom:6px;">
               <span style="background:#e2e8f0;">Product:</span><strong style="margin-right:15px;">${p.productName || ""} ${p.productRating || ""}</strong>
-              <span style="background:#edf2f7;">Order Qty:</span><strong style="margin-right:15px;">${Math.round(Number(p.orderQuantity) || 0)}</strong>
               <span style="background:#edf2f7;">Created By:</span><strong>${p.storePerson || ""}</strong>
             </div>
             </div>
@@ -17874,9 +17873,67 @@ function toggleAPRNExpansion(prnId) {
 function renderAPRNRows(prnId) {
   const mount = document.getElementById(`aprn-rows-mount-${prnId}`);
   if (!mount) return;
+  const isRevision = window.aprnKindFilter === 'Revision';
+
+  if (isRevision) {
+    // Revision mode mirrors Revise PRN's exact column set and order —
+    // every row shown (not just changed ones), New Store Qty * seeded
+    // with whatever was actually submitted there (newStoreTotal, an
+    // ABSOLUTE total — not the incremental storeDelta a Delta PRN's
+    // 'new'/'increase' rows use), and every row editable since a resplit
+    // never produces a non-editable (awaiting-PO) row in its draft.
+    const fmt = (n) => (Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
+    const rowsHtml = aprnRows.map((r, idx) => {
+      const buffered = Number(r.bufferedRequirement) || 0;
+      const minStore = Math.max(0, buffered - (Number(r.onOrderQty) || 0));
+      return `
+        <tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
+          <td style="padding:8px; font-size:0.82rem; font-weight:600;">${r.materialName || ""}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(buffered)}</td>
+          <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${r.unit || "—"}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace;">${fmt(r.previousStoreQty)}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${fmt(r.previousPurchaseQty)}</td>
+          <td style="padding:8px; text-align:center; font-size:0.74rem; color:${Number(r.onOrderQty) > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(r.onOrderQty)}</td>
+          <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="aprn-livestock" data-itemcode="${r.itemCode}">loading…</span></td>
+          <td style="padding:8px; text-align:center;">
+            <input type="number" min="${minStore}" max="${buffered}" value="${Number(r.newStoreTotal) || 0}"
+              class="aprn-storeqty" data-idx="${idx}"
+              oninput="updateAPRNRow(${idx}, this.value, '${prnId}')"
+              style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
+          </td>
+          <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:${r.wasChanged === false ? "#1a2332" : "#15803d"};">${fmt(r.newPurchaseTotal)}</td>
+        </tr>`;
+    }).join("");
+
+    mount.innerHTML = `
+      <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+        <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
+          <thead><tr style="background:#f8fafc;">
+            <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:190px;">Material Name</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered BOQ Req Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center;">Current PRN Store Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center;">Current PRN Purchase Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center;">P.O. On Order Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:130px;">Store Available Stock</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1;">New Store Qty *</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d;">New Purchase Qty</th>
+          </tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>`;
+
+    if (window._aprnStockInterval) clearInterval(window._aprnStockInterval);
+    refreshAPRNLiveStock();
+    window._aprnStockInterval = setInterval(refreshAPRNLiveStock, 5000);
+    return;
+  }
+
   const rowsHtml = aprnRows.map((r, idx) => {
   // editable rows (new/increase) store the full requirement in
-  // bufferedRequirement; decrease/removed/resplit rows are computed and
+  // bufferedRequirement; decrease/removed rows are computed and
   // store the signed change in deltaRequirement instead.
   const buffered = r.editable !== false ? (Number(r.bufferedRequirement) || 0) : Math.abs(Number(r.deltaRequirement) || 0);
     return `
@@ -17897,7 +17954,7 @@ function renderAPRNRows(prnId) {
                  oninput="updateAPRNRow(${idx}, this.value, '${prnId}')"
                  style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />`}
         </td>
-        <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:${r.wasChanged === false ? "#1a2332" : "#15803d"};">${(r.changeKind === 'resplit' ? Number(r.newPurchaseTotal || 0) : (r.editable !== false ? Number(r.purchaseDelta || 0) : Number(r.newPurchaseTotal || 0))).toFixed(2)}</td>
+        <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:${r.wasChanged === false ? "#1a2332" : "#15803d"};">${(r.editable !== false ? Number(r.purchaseDelta || 0) : Number(r.newPurchaseTotal || 0)).toFixed(2)}</td>
       </tr>`;
   }).join("");
 
