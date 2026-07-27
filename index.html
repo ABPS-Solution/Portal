@@ -15528,7 +15528,7 @@ function updateCPOAllocTotals(lineQty) {
   } else {
     el.style.cssText = `padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700; background:${unalloc > 0 ? "#fffbeb" : "#f0fdf4"}; color:${unalloc > 0 ? "#78350f" : "#15803d"};`;
     el.textContent = unalloc > 0
-      ? `Allocated ${fmt(sum)} of ${fmt(lineQty)}. ${fmt(unalloc)} unallocated, will go to free store stock.`
+      ? `Allocated ${fmt(sum)} of ${fmt(lineQty)}. ${fmt(unalloc)} unallocated will be extra store stock.`
       : `All ${fmt(lineQty)} allocated.`;
   }
 }
