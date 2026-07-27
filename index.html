@@ -17836,7 +17836,7 @@ async function initializeAuthorizePRNPanel() {
             <div class="meta-row-line-block" style="margin-bottom:6px;">
               <span style="background:#e2e8f0;">Product:</span><strong style="margin-right:15px;">${p.productName || ""} ${p.productRating || ""}</strong>
               <span style="background:#edf2f7;">Order Qty:</span><strong style="margin-right:15px;">${Math.round(Number(p.orderQuantity) || 0)}</strong>
-              <span style="background:#edf2f7;">Store Person:</span><strong>${p.storePerson || ""}</strong>
+              <span style="background:#edf2f7;">Created By:</span><strong>${p.storePerson || ""}</strong>
             </div>
             </div>
         </div>
@@ -18464,7 +18464,7 @@ function renderAllPRNCards(prns, boqId) {
             <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${data.productRating || "—"}</div></div>
           <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Order Quantity</div>
             <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${Math.round(Number(data.orderQuantity) || 0) + " Sets"}</div></div>
-          <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Store Person</div>
+          <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Created By</div>
             <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${data.storePerson || "—"}</div></div>
           <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PRN PDF</div>
             <div style="font-size:0.82rem;" onclick="event.stopPropagation();">${pdfHtml}</div></div>
