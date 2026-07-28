@@ -15083,6 +15083,7 @@ function saveAPOProjectPicker(rowId) {
 }
 
 async function initializeAuthorizePOPanel() {
+  window.cpoExpandedPoNo = null;
   const body = document.getElementById("authorize-po-body");
   body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading pending POs...</div>`;
   try {
@@ -15095,30 +15096,49 @@ async function initializeAuthorizePOPanel() {
     const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
     body.innerHTML = data.pos.map(po => `
       <div class="contact-summary-card-parent" style="margin-bottom:12px;">
-        <div class="contact-summary-header-row" onclick="openPOForAuthorization('${po.poNumber}')" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
+        <div class="contact-summary-header-row" onclick="toggleAuthorizePOCard('${po.poNumber}')" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNumber}</span>
             <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
           </div>
           <div style="font-size:0.85rem; color:var(--muted);">${fmtPODate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${po.preparedBy}</div>
         </div>
+        <div id="po-auth-expand-${po.poNumber}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
       </div>`).join("");
   } catch(e) { body.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
 }
 
-// Reuses the exact same panel Create PO uses, in "authorize" mode — see
-// initializeCreatePOPanel(authorizePoNo). Same rows/allocation/tax/terms
-// UI, vendor locked, Authorize PO / Reject PO instead of
-// Submit for Authorization / Clear Form.
-function openPOForAuthorization(poNo) {
-  navigateToPurchaseWorkspacePanel('purchase-create-po', poNo);
+// Accordion, one PO expanded at a time — reuses the exact same panel
+// Create PO uses (initializeCreatePOPanel), just rendered into this
+// card's own expand area instead of the Create PO tab, so the whole
+// thing stays inside Authorize Raw Material Purchase Order the way
+// Auth BOQ / Auth PRN's cards already work. Vendor locked, Authorize PO
+// / Reject PO instead of Submit for Authorization / Clear Form.
+function toggleAuthorizePOCard(poNo) {
+  const expandDiv = document.getElementById(`po-auth-expand-${poNo}`);
+  if (!expandDiv) return;
+
+  if (window.cpoExpandedPoNo === poNo) {
+    expandDiv.style.display = "none";
+    expandDiv.innerHTML = "";
+    window.cpoExpandedPoNo = null;
+    return;
+  }
+  if (window.cpoExpandedPoNo) {
+    const prev = document.getElementById(`po-auth-expand-${window.cpoExpandedPoNo}`);
+    if (prev) { prev.style.display = "none"; prev.innerHTML = ""; }
+  }
+  window.cpoExpandedPoNo = poNo;
+  expandDiv.style.display = "block";
+  initializeCreatePOPanel(poNo, `po-auth-expand-${poNo}`);
 }
 
-async function initializeCreatePOPanel(authorizePoNo = null) {
+async function initializeCreatePOPanel(authorizePoNo = null, containerId = "create-po-body") {
   window.cpoMode = authorizePoNo ? 'authorize' : 'create';
   window.cpoEditingPoNo = authorizePoNo || null;
 
-  const body = document.getElementById("create-po-body");
+  const body = document.getElementById(containerId);
+  if (!body) return;
   body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading vendors and projects...</div>`;
 
   // A local create-draft is only relevant to brand-new POs — editing an
@@ -15798,7 +15818,7 @@ window.rejMaterialActionFilter = [];
 // validation and payload shape (vendor omitted — it's locked, the server
 // always uses the PO's own regardless of what's sent).
 async function authorizePOFromForm() {
-  const banner = document.getElementById("create-po-feedback");
+  const banner = document.getElementById("authorize-po-feedback");
   banner.style.display = "none";
   const showErr = (msg) => {
     banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
@@ -15869,14 +15889,14 @@ async function authorizePOFromForm() {
     const data = await apFetch({ action: "authorizePurchaseOrder", activeEngineer: appActiveOperatorIdentityString, ...payload, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success) {
-      document.getElementById("create-po-body").innerHTML = "";
       banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
       let msg = `<strong>${poNo} Authorized.</strong>`;
       if (data.pdfUrl) msg += ` <a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700;">Open PDF →</a>`;
       else if (data.pdfWarning) msg += ` <span style="color:#b45309;">PDF generation is pending (service issue) — it can be regenerated later.</span>`;
-      msg += ` <button class="nav-btn-styled" onclick="document.getElementById('create-po-feedback').style.display='none'; exitPurchaseWorkspacePanelBackToMenu();" style="background:#15803d; color:#fff; margin-top:8px; padding:6px 14px;">Back to Dashboard</button>`;
       banner.innerHTML = msg;
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
+      window.cpoExpandedPoNo = null;
+      initializeAuthorizePOPanel(); // refresh queue — this PO drops off
     } else {
       btn.disabled = false; btn.textContent = "Authorize PO";
       showErr("Server error: " + data.error);
@@ -15894,13 +15914,17 @@ async function rejectPOFromForm() {
   const reason = prompt(`Reject ${poNo}? This deletes the PO entirely — it cannot be undone. Optional reason:`);
   if (reason === null) return; // cancelled
 
-  const banner = document.getElementById("create-po-feedback");
+  const banner = document.getElementById("authorize-po-feedback");
   showBlockingOverlay("Rejecting PO...");
   try {
     const data = await apFetch({ action: "rejectPurchaseOrder", activeEngineer: appActiveOperatorIdentityString, poNo, reason, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success) {
-      exitPurchaseWorkspacePanelBackToMenu();
+      banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius); font-weight:600;";
+      banner.textContent = `${poNo} rejected and removed.`;
+      banner.scrollIntoView({ behavior:"smooth", block:"center" });
+      window.cpoExpandedPoNo = null;
+      initializeAuthorizePOPanel(); // refresh queue — this PO drops off
     } else {
       banner.style.display = "block";
       banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
