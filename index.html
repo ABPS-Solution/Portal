@@ -20820,11 +20820,17 @@ function enhanceOneDateInputForDMY(input) {
   wrap.appendChild(input);
   input.style.width = '100%';
   input.style.color = 'transparent';
+  input.style.background = 'transparent';
   input.style.position = 'relative';
   input.style.zIndex = '1';
 
+  // Overlay must sit ABOVE the input (higher z-index) or the input's own
+  // background — opaque by default, "transparent" above only covers its
+  // TEXT — silently covers the overlay text entirely. pointer-events:none
+  // means clicks still fall through to the input underneath, so the
+  // native calendar picker still opens normally on click.
   const overlay = document.createElement('span');
-  overlay.style.cssText = 'position:absolute; left:1px; top:0; right:26px; bottom:0; display:flex; align-items:center; padding-left:9px; pointer-events:none; font:inherit; z-index:0;';
+  overlay.style.cssText = 'position:absolute; left:1px; top:0; right:26px; bottom:0; display:flex; align-items:center; padding-left:9px; pointer-events:none; font:inherit; z-index:2;';
   wrap.appendChild(overlay);
 
   const sync = () => {
