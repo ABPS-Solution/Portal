@@ -15911,7 +15911,7 @@ async function authorizePOFromForm() {
 async function rejectPOFromForm() {
   const poNo = window.cpoEditingPoNo;
   if (!poNo) return;
-  if (!confirm(`Reject ${poNo}? This deletes the PO entirely — it cannot be undone.`)) return;
+  if (!confirm(`Reject ${poNo}? This deletes the PO entirely.`)) return;
 
   const banner = document.getElementById("authorize-po-feedback");
   showBlockingOverlay("Rejecting PO...");
@@ -19195,7 +19195,7 @@ function renderMaterialListByType(materials) {
         </div>
         <div style="border-top:1px dashed #e2e8f0; padding-top:8px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-family:monospace; font-size:1.2rem; font-weight:800; color:#b91c1c;">${item.totalPurchaseQty.toFixed(2)}</span>
+            <span style="font-family:monospace; font-size:1.2rem; font-weight:800; color:#b91c1c;">${(Math.round(item.totalPurchaseQty * 100) / 100).toString()}</span>
             <span style="font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:#fee2e2; color:#b91c1c;">${(item.unit || "NOS").toUpperCase()}</span>
           </div>
           <div style="font-size:0.65rem; color:var(--muted); font-weight:600; margin-top:2px;">To Purchase</div>
@@ -19237,7 +19237,7 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
     : projectIds.map(pid => `
         <tr style="border-bottom:1px solid var(--border);">
           <td style="padding:8px 6px; font-size:0.85rem; font-weight:600; color:#334155;">${pid}</td>
-          <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:#b91c1c;">${byProject[pid].toFixed(2)} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
+          <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:#b91c1c;">${(Math.round(byProject[pid] * 100) / 100).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
         </tr>`).join("");
 
   const existing = document.getElementById("material-project-breakdown-modal-overlay");
@@ -19267,7 +19267,7 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
         <tfoot>
           <tr style="border-top:2px solid var(--border);">
             <td style="padding:8px 6px; font-size:0.82rem; font-weight:800; color:#334155;">Total</td>
-            <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:var(--brand);">${(totalQty || 0).toFixed(2)} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
+            <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:var(--brand);">${(Math.round((totalQty || 0) * 100) / 100).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
           </tr>
         </tfoot>
       </table>
