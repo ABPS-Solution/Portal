@@ -1701,7 +1701,7 @@
 
     <div id="canvas-module-purchase-revise-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="color:var(--brand); margin:0 0 6px 0;">Revise Raw Material Purchase Order</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Revise a PO whose PRN requirements have changed, or search any authorized PO to revise it for a vendor-side reason.</p>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Revise a PO whose PRN requirements have changed, or search any authorized PO to revise it.</p>
       <div id="rpo-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
       <div style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--border);">
@@ -1717,7 +1717,7 @@
         <div style="display:flex; gap:10px; align-items:end; margin-bottom:16px;">
           <div style="flex:1; max-width:420px;">
             <label class="field-label" style="margin-top:0; color:var(--brand);">Search by PO Number or Vendor Name</label>
-            <input type="text" id="rpo-search-input" placeholder="e.g. PO-0012 or Acme Steel" onkeydown="if(event.key==='Enter')searchPOsForRevisionUI()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+            <input type="text" id="rpo-search-input" placeholder="e.g. PO_26-27_00001 or Acme Steel" onkeydown="if(event.key==='Enter')searchPOsForRevisionUI()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
           </div>
           <button class="nav-btn-styled" onclick="searchPOsForRevisionUI()" style="background:var(--accent); color:#fff; font-weight:700; padding:9px 20px;">Search</button>
         </div>
@@ -16285,10 +16285,12 @@ function renderPORevisionCard() {
     // Allocation inputs, one per PRN already on this line. "Needs" is that
     // PRN's CURRENT requirement from THIS PO — its purchase quantity minus
     // whatever other POs already cover — so a material split across two
-    // vendors is never double-counted.
+    // vendors is never double-counted. This block's own height is never
+    // constrained, so a line allocated across several PRNs naturally
+    // grows the row to fit every one of them — nothing to configure.
     const allocs = li.allocations || [];
     const allocHtml = allocs.length === 0
-      ? `<div style="font-size:0.72rem; color:var(--muted);">No PRN allocated — whole line is spare stock.</div>`
+      ? `<div style="font-size:0.72rem; color:var(--muted);">No PRN allocated — whole line is extra stock (Raw Material store).</div>`
       : allocs.map(a => {
           const need = Math.max(0, (Number(a.currentPurchaseQty)||0) - (Number(a.coveredByOtherPOs)||0));
           const stale = Number(a.prnVersion) > Number(a.stampedVersion || 0);
@@ -16303,8 +16305,7 @@ function renderPORevisionCard() {
 
     return `
       <tr style="border-bottom:1px solid #e2e8f0; ${li.changed ? "background:#fffbeb;" : ""}">
-        <td style="padding:8px; font-family:monospace; font-size:0.76rem; font-weight:700; color:var(--brand);">${li.itemCode}</td>
-        <td style="padding:8px; font-size:0.8rem; font-weight:600;">${li.description || ""}</td>
+        <td style="padding:8px; font-size:0.8rem; font-weight:600; min-width:170px;">${li.description || ""}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; color:var(--muted);">${fmt(li.orderedQty)}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:800; color:${Number(li.newRequiredQty) > Number(li.orderedQty) ? "#15803d" : "#b91c1c"};">${fmt(li.newRequiredQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.72rem; color:${Number(li.receivedQty) > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(li.receivedQty)}</td>
@@ -16314,9 +16315,14 @@ function renderPORevisionCard() {
             style="width:100px; text-align:center; font-weight:800; padding:6px; border:1.5px solid #15803d; border-radius:4px; font-size:0.85rem;">
         </td>
         <td style="padding:8px; text-align:center;">
-          <input type="number" min="0" step="any" class="rpo-rate" data-idx="${idx}" value="${Number(li.rate)||0}"
+          <input type="number" min="0" step="any" class="rpo-rate" data-idx="${idx}" value="${Number(li.rate)||0}" oninput="updateRPOLineTotals(${idx})"
             style="width:90px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
         </td>
+        <td style="padding:8px; text-align:center;">
+          <input type="number" min="0" max="100" step="any" class="rpo-disc" data-idx="${idx}" value="${Number(li.discountPercent)||0}" oninput="updateRPOLineTotals(${idx})"
+            style="width:70px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
+        </td>
+        <td id="rpo-amount-${idx}" style="padding:8px; text-align:right; font-family:monospace; font-weight:800; font-size:0.88rem;">0.00</td>
         <td style="padding:8px; min-width:190px;">${allocHtml}<div id="rpo-sum-${idx}" style="font-size:0.65rem; font-weight:800; margin-top:4px;"></div></td>
       </tr>`;
   }).join("");
@@ -16327,36 +16333,76 @@ function renderPORevisionCard() {
         <div>
           <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:1rem;">${po.poNo}</div>
           <div style="font-size:0.85rem; font-weight:700;">${po.vendorName || ""}</div>
-          <div style="font-size:0.74rem; color:var(--muted);">Ordered ${po.orderDate ? formatDateDMY(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatDateDMY(po.deliveryDate) : "—"} · Currently Rev ${po.revisionNumber || 1}</div>
+          <div style="font-size:0.74rem; color:var(--muted);">Ordered ${po.orderDate ? formatDateDMY(po.orderDate) : "—"} · Currently Rev ${po.revisionNumber || 1}</div>
         </div>
         <span style="font-size:0.7rem; font-weight:800; padding:4px 10px; border-radius:4px; background:${kind === "PRN Driven" ? "#fef3c7" : "#e0f2fe"}; color:${kind === "PRN Driven" ? "#78350f" : "#075985"};">${kind === "PRN Driven" ? "PRN-DRIVEN REVISION" : "STANDALONE REVISION"}</span>
       </div>
 
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Supplier Offer No</label>
+          <input type="text" id="rpo-supplier-ref" value="${(po.supplierRef||"").replace(/"/g,"&quot;")}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Delivery Date *</label>
+          <input type="date" lang="en-GB" id="rpo-delivery-date" value="${po.deliveryDate ? new Date(po.deliveryDate).toISOString().slice(0,10) : ""}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+        </div>
+      </div>
+
       <div style="background:#f8fafc; border-left:3px solid var(--brand); padding:9px 12px; border-radius:4px; font-size:0.75rem; color:#334155; margin-bottom:12px;">
-        <strong>Vendor Discussed Purchase Quantity</strong> is what you actually agreed with the vendor, and is required on every row. It cannot go below what has already been received. Anything you don't allocate to a PRN is ordered as spare and lands in free store stock.
+        <strong>Vendor Discussed Purchase Quantity</strong> is what you actually agreed with the vendor, and is required on every row. It cannot go below what has already been received. Anything you don't allocate to a PRN is ordered as extra stock and lands in the Raw Material store.
       </div>
 
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-        <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
+        <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1150px;">
           <thead><tr style="background:#f8fafc;">
-            <th style="padding:8px; font-size:0.68rem; text-align:left;">Item Code</th>
-            <th style="padding:8px; font-size:0.68rem; text-align:left; min-width:180px;">Material</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:left; min-width:170px;">Description of Material</th>
             <th style="padding:8px; font-size:0.68rem; text-align:center;">Old PO Qty</th>
             <th style="padding:8px; font-size:0.68rem; text-align:center; color:var(--brand);">New Required Qty</th>
-            <th style="padding:8px; font-size:0.68rem; text-align:center;">Received</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center;">Already Received</th>
             <th style="padding:8px; font-size:0.68rem; text-align:center; color:#15803d;">Vendor Discussed Qty *</th>
-            <th style="padding:8px; font-size:0.68rem; text-align:center;">Rate</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center;">Rate / Qty</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center;">Disc %</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center; color:#15803d;">Amount</th>
             <th style="padding:8px; font-size:0.68rem; text-align:left;">Allocation to PRNs</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>
 
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Taxes & Charges</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+            <div><label class="field-label" style="margin-top:0;">CGST %</label><input type="number" id="rpo-cgst" value="${Number(po.cgstPercent)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">SGST %</label><input type="number" id="rpo-sgst" value="${Number(po.sgstPercent)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">IGST %</label><input type="number" id="rpo-igst" value="${Number(po.igstPercent)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">Packing</label><input type="number" id="rpo-packing" value="${Number(po.packing)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">Freight</label><input type="number" id="rpo-freight" value="${Number(po.freight)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">Other</label><input type="number" id="rpo-other" value="${Number(po.other)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="rpo-roundoff" value="${Number(po.roundOff)||0}" step="any" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          </div>
+        </div>
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Terms</div>
+          <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Warranty</label><input type="text" id="rpo-warranty" value="${(po.warranty||"").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Payment Terms</label><input type="text" id="rpo-payment" value="${(po.paymentTerms||"").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Freight Terms</label><input type="text" id="rpo-freight-terms" value="${(po.freightTerms||"").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius); padding:14px; margin-top:14px;">
+        <div style="font-size:0.85rem;">
+          <div>Sub Total: <strong id="rpo-subtotal-disp">0.00</strong></div>
+          <div style="font-size:1.05rem; margin-top:4px;">Grand Total: <strong id="rpo-grandtotal-disp" style="color:var(--brand);">0.00</strong></div>
+        </div>
+      </div>
+
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap;">
-        <button onclick="cancelPOEntirely('${po.poNo}')" style="padding:8px 16px; border:1px solid #b91c1c; background:#fff; color:#b91c1c; border-radius:6px; cursor:pointer; font-weight:700; font-size:0.8rem;">Cancel this PO entirely</button>
+        <button onclick="cancelPOEntirely('${po.poNo}')" class="nav-btn-styled" style="background:#dc2626;">Cancel this PO entirely</button>
         <div style="display:flex; gap:10px;">
           <button onclick="document.getElementById('rpo-detail-zone').innerHTML=''; window.rpoActive=null;" style="padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.8rem;">Close</button>
-          <button class="nav-btn-styled" id="rpo-submit-btn" onclick="submitPORevisionUI()" style="background:var(--accent); color:#fff; font-weight:700; padding:8px 22px;">Submit Revision for Authorization</button>
+          <button class="nav-btn-styled" id="rpo-submit-btn" onclick="submitPORevisionUI()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Submit Revision for Authorization</button>
         </div>
       </div>
     </div>`;
@@ -16364,8 +16410,36 @@ function renderPORevisionCard() {
   lineItems.forEach((_, idx) => updateRPOLineTotals(idx));
 }
 
+function updateRPOGrandTotal() {
+  let subTotal = 0;
+  (window.rpoActive?.lineItems || []).forEach((_, idx) => {
+    const vdq = parseFloat(document.querySelector(`.rpo-vdq[data-idx="${idx}"]`)?.value) || 0;
+    const rate = parseFloat(document.querySelector(`.rpo-rate[data-idx="${idx}"]`)?.value) || 0;
+    const disc = parseFloat(document.querySelector(`.rpo-disc[data-idx="${idx}"]`)?.value) || 0;
+    subTotal += vdq * rate * (100 - disc) / 100;
+  });
+  const cgstP = parseFloat(document.getElementById("rpo-cgst")?.value) || 0;
+  const sgstP = parseFloat(document.getElementById("rpo-sgst")?.value) || 0;
+  const igstP = parseFloat(document.getElementById("rpo-igst")?.value) || 0;
+  const packing = parseFloat(document.getElementById("rpo-packing")?.value) || 0;
+  const freight = parseFloat(document.getElementById("rpo-freight")?.value) || 0;
+  const other = parseFloat(document.getElementById("rpo-other")?.value) || 0;
+  const roundOff = parseFloat(document.getElementById("rpo-roundoff")?.value) || 0;
+  const grandTotal = subTotal + subTotal*cgstP/100 + subTotal*sgstP/100 + subTotal*igstP/100 + packing + freight + other + roundOff;
+  const fmt = (n) => n.toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const stEl = document.getElementById("rpo-subtotal-disp");
+  const gtEl = document.getElementById("rpo-grandtotal-disp");
+  if (stEl) stEl.textContent = fmt(subTotal);
+  if (gtEl) gtEl.textContent = fmt(grandTotal);
+}
+
 function updateRPOLineTotals(idx) {
   const vdq = parseFloat(document.querySelector(`.rpo-vdq[data-idx="${idx}"]`)?.value) || 0;
+  const rate = parseFloat(document.querySelector(`.rpo-rate[data-idx="${idx}"]`)?.value) || 0;
+  const disc = parseFloat(document.querySelector(`.rpo-disc[data-idx="${idx}"]`)?.value) || 0;
+  const amountEl = document.getElementById(`rpo-amount-${idx}`);
+  if (amountEl) amountEl.textContent = (vdq * rate * (100 - disc) / 100).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+
   const inputs = Array.from(document.querySelectorAll(`.rpo-alloc[data-idx="${idx}"]`));
   let sum = 0, over = false;
   inputs.forEach(inp => {
@@ -16377,12 +16451,14 @@ function updateRPOLineTotals(idx) {
     inp.style.borderColor = bad ? "#b91c1c" : "var(--brand)";
   });
   const el = document.getElementById(`rpo-sum-${idx}`);
-  if (!el) return;
-  const spare = Math.round((vdq - sum) * 100) / 100;
-  if (over)            { el.style.color = "#b91c1c"; el.textContent = "A PRN is allocated more than it needs."; }
-  else if (sum > vdq + 1e-9) { el.style.color = "#b91c1c"; el.textContent = `Allocated ${sum} but the line is ${vdq}.`; }
-  else if (spare > 0)  { el.style.color = "#b45309"; el.textContent = `${spare} spare → free store stock`; }
-  else                 { el.style.color = "#15803d"; el.textContent = "Fully allocated"; }
+  if (el) {
+    const extra = Math.round((vdq - sum) * 100) / 100;
+    if (over)            { el.style.color = "#b91c1c"; el.textContent = "A PRN is allocated more than it needs."; }
+    else if (sum > vdq + 1e-9) { el.style.color = "#b91c1c"; el.textContent = `Allocated ${sum} but the line is ${vdq}.`; }
+    else if (extra > 0)  { el.style.color = "#b45309"; el.textContent = `${extra} extra → Raw Material store stock`; }
+    else                 { el.style.color = "#15803d"; el.textContent = "Fully allocated"; }
+  }
+  updateRPOGrandTotal();
 }
 
 function collectRPOLines() {
@@ -16390,11 +16466,12 @@ function collectRPOLines() {
   return st.lineItems.map((li, idx) => {
     const vdq = parseFloat(document.querySelector(`.rpo-vdq[data-idx="${idx}"]`)?.value);
     const rate = parseFloat(document.querySelector(`.rpo-rate[data-idx="${idx}"]`)?.value) || 0;
+    const discountPercent = parseFloat(document.querySelector(`.rpo-disc[data-idx="${idx}"]`)?.value) || 0;
     const allocations = Array.from(document.querySelectorAll(`.rpo-alloc[data-idx="${idx}"]`))
       .map(inp => ({ prnId: inp.dataset.prnid, quantity: parseFloat(inp.value) || 0 }))
       .filter(a => a.quantity > 0);
     return { itemCode: li.itemCode, srNo: li.srNo, description: li.description, unit: li.unit,
-             vendorDiscussedQty: vdq, rate, discountPercent: Number(li.discountPercent) || 0,
+             vendorDiscussedQty: vdq, rate, discountPercent,
              deliveryDate: li.deliveryDate || null, allocations, _received: Number(li.receivedQty) || 0 };
   });
 }
@@ -16415,6 +16492,29 @@ async function submitPORevisionUI() {
     if (sum > l.vendorDiscussedQty + 1e-9) {
       return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: allocated ${sum} but the revised line is ${l.vendorDiscussedQty}.`, "error");
     }
+    // Per-PRN over-allocation — the live red border/message already
+    // flags this on the row itself, but nothing previously stopped
+    // Submit from actually sending it; the backend caught it, but only
+    // after a full round trip. Checking it here too so it's an
+    // immediate, in-place error instead of a wasted request.
+    for (const a of l.allocations) {
+      const inp = document.querySelector(`.rpo-alloc[data-idx="${lines.indexOf(l)}"][data-prnid="${a.prnId}"]`);
+      const need = inp ? (parseFloat(inp.dataset.need) || 0) : Infinity;
+      if (a.quantity > need + 1e-9) {
+        return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode} / ${a.prnId.replace(/^PRN_/,"")}: needs only ${need} from this PO — cannot allocate ${a.quantity}.`, "error");
+      }
+    }
+  }
+
+  const deliveryDateRaw = document.getElementById("rpo-delivery-date")?.value.trim();
+  let deliveryDate = deliveryDateRaw || null;
+  if (deliveryDateRaw) {
+    const d = new Date(deliveryDateRaw + "T00:00:00");
+    if (!isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mmm = d.toLocaleString('en-US',{month:'short'});
+      deliveryDate = `${dd}-${mmm}-${d.getFullYear()}`;
+    }
   }
 
   const btn = document.getElementById("rpo-submit-btn");
@@ -16422,7 +16522,20 @@ async function submitPORevisionUI() {
   showBlockingOverlay("Submitting PO revision…");
   try {
     const data = await apFetch({ action: "submitPORevisionDraft", poNo: st.po.poNo,
-      revisionKind: st.kind, lineItems: lines, operatorName: appActiveOperatorIdentityString });
+      revisionKind: st.kind, lineItems: lines, operatorName: appActiveOperatorIdentityString,
+      supplierRef: document.getElementById("rpo-supplier-ref")?.value.trim() || null,
+      deliveryDate,
+      cgstPercent: parseFloat(document.getElementById("rpo-cgst")?.value) || 0,
+      sgstPercent: parseFloat(document.getElementById("rpo-sgst")?.value) || 0,
+      igstPercent: parseFloat(document.getElementById("rpo-igst")?.value) || 0,
+      packing: parseFloat(document.getElementById("rpo-packing")?.value) || 0,
+      freight: parseFloat(document.getElementById("rpo-freight")?.value) || 0,
+      other: parseFloat(document.getElementById("rpo-other")?.value) || 0,
+      roundOff: parseFloat(document.getElementById("rpo-roundoff")?.value) || 0,
+      warranty: document.getElementById("rpo-warranty")?.value.trim() || null,
+      paymentTerms: document.getElementById("rpo-payment")?.value.trim() || null,
+      freightTerms: document.getElementById("rpo-freight-terms")?.value.trim() || null,
+    });
     hideBlockingOverlay();
     if (data.success) {
       document.getElementById("rpo-detail-zone").innerHTML = "";
