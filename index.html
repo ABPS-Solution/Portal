@@ -15204,7 +15204,7 @@ async function initializeCreatePOPanel() {
     ? (projRes.value.projects || projRes.value.projectCodes || []).map(p => (typeof p === "string" ? p : (p.projectId || p.projectCode || ""))).filter(Boolean)
     : [];
 
-  const vendorOptions = window.cpoVendors.map(v => `<option value="${v.vendorName.replace(/"/g,'&quot;')}">${v.vendorName}</option>`).join("");
+  const vendorOptions = window.cpoVendors.filter(v => v.vendorName).map(v => `<option value="${v.vendorName.replace(/"/g,'&quot;')}">${v.vendorName}</option>`).join("");
 
   const today = new Date();
   const dd = String(today.getDate()).padStart(2,'0');
