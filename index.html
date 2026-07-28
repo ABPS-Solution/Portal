@@ -15911,13 +15911,12 @@ async function authorizePOFromForm() {
 async function rejectPOFromForm() {
   const poNo = window.cpoEditingPoNo;
   if (!poNo) return;
-  const reason = prompt(`Reject ${poNo}? This deletes the PO entirely — it cannot be undone. Optional reason:`);
-  if (reason === null) return; // cancelled
+  if (!confirm(`Reject ${poNo}? This deletes the PO entirely — it cannot be undone.`)) return;
 
   const banner = document.getElementById("authorize-po-feedback");
   showBlockingOverlay("Rejecting PO...");
   try {
-    const data = await apFetch({ action: "rejectPurchaseOrder", activeEngineer: appActiveOperatorIdentityString, poNo, reason, operatorName: appActiveOperatorIdentityString });
+    const data = await apFetch({ action: "rejectPurchaseOrder", activeEngineer: appActiveOperatorIdentityString, poNo, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success) {
       banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius); font-weight:600;";
