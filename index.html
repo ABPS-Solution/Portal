@@ -1694,7 +1694,6 @@
 
     <div id="canvas-module-purchase-authorize-po-revision" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="color:var(--brand); margin:0 0 6px 0;">Authorize Purchase Order Revision</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review each pending PO revision — what changes, and how the revised quantities are split across PRNs — then authorize or reject. The PO stays untouched until you authorize.</p>
       <div id="apor-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="apor-cards-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
     </div>
@@ -16662,9 +16661,30 @@ function renderAPORCard(r) {
   // writes; null on a field means that field was never touched by this
   // revision, so it's left out entirely rather than shown as a no-op.
   const hc = r.headerChanges || {};
-  const fieldDefs = [
+  const bulletHtml = (f) => {
+    const curDisp = f.isDate ? formatDateDMY(f.cur) : (f.isText ? (f.cur || "—") : fmt(f.cur));
+    const revDisp = f.isDate ? formatDateDMY(f.rev) : (f.isText ? f.rev : fmt(f.rev));
+    return `<li>${f.label}: <span style="color:#1e293b;">${curDisp}</span> → <span style="font-weight:700; color:#b45309;">${revDisp}</span></li>`;
+  };
+  const changedField = (f) => {
+    if (f.rev == null) return false;
+    if (f.isDate) return new Date(f.rev).toDateString() !== new Date(f.cur).toDateString();
+    if (f.isText) return (f.rev || "") !== (f.cur || "");
+    return Math.abs(Number(f.rev) - Number(f.cur)) > 1e-9;
+  };
+
+  const headerFieldDefs = [
     { label: "Supplier Offer No", cur: r.supplierRef, rev: hc.supplierRef, isText: true },
     { label: "Delivery Date", cur: r.deliveryDate, rev: hc.deliveryDate, isDate: true },
+  ];
+  const headerBullets = headerFieldDefs.filter(changedField).map(bulletHtml);
+  const headerChangesHtml = headerBullets.length ? `
+      <div style="background:#fefce8; border:1px solid #fde68a; border-radius:4px; padding:9px 12px; margin-bottom:12px;">
+        <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:4px;">Header Changes</div>
+        <ul style="margin:0; padding-left:18px; font-size:0.76rem; color:#334155; line-height:1.6;">${headerBullets.join("")}</ul>
+      </div>` : "";
+
+  const taxTermFieldDefs = [
     { label: "CGST %", cur: r.cgstPercent, rev: hc.cgstPercent },
     { label: "SGST %", cur: r.sgstPercent, rev: hc.sgstPercent },
     { label: "IGST %", cur: r.igstPercent, rev: hc.igstPercent },
@@ -16676,20 +16696,11 @@ function renderAPORCard(r) {
     { label: "Payment Terms", cur: r.paymentTerms, rev: hc.paymentTerms, isText: true },
     { label: "Freight Terms", cur: r.freightTerms, rev: hc.freightTerms, isText: true },
   ];
-  const headerBullets = fieldDefs.filter(f => {
-    if (f.rev == null) return false;
-    if (f.isDate) return new Date(f.rev).toDateString() !== new Date(f.cur).toDateString();
-    if (f.isText) return (f.rev || "") !== (f.cur || "");
-    return Math.abs(Number(f.rev) - Number(f.cur)) > 1e-9;
-  }).map(f => {
-    const curDisp = f.isDate ? formatDateDMY(f.cur) : (f.cur ?? "—");
-    const revDisp = f.isDate ? formatDateDMY(f.rev) : f.rev;
-    return `<li>${f.label}: <span style="color:#94a3b8;">${curDisp}</span> → <span style="font-weight:700; color:#b45309;">${revDisp}</span></li>`;
-  });
-  const headerChangesHtml = headerBullets.length ? `
-      <div style="background:#fefce8; border:1px solid #fde68a; border-radius:4px; padding:9px 12px; margin-bottom:12px;">
-        <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:4px;">Header, Taxes & Terms Changes</div>
-        <ul style="margin:0; padding-left:18px; font-size:0.76rem; color:#334155; line-height:1.6;">${headerBullets.join("")}</ul>
+  const taxTermBullets = taxTermFieldDefs.filter(changedField).map(bulletHtml);
+  const taxTermChangesHtml = taxTermBullets.length ? `
+      <div style="background:#fefce8; border:1px solid #fde68a; border-radius:4px; padding:9px 12px; margin-top:12px;">
+        <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:4px;">Taxes, Charges & Terms Changes</div>
+        <ul style="margin:0; padding-left:18px; font-size:0.76rem; color:#334155; line-height:1.6;">${taxTermBullets.join("")}</ul>
       </div>` : "";
 
   // Effective tax/charge values this revision would actually apply —
@@ -16717,7 +16728,7 @@ function renderAPORCard(r) {
     + eff.packing + eff.freight + eff.other + eff.roundOff;
   const oldSubTotal = Number(r.subTotal) || 0, oldGrandTotal = Number(r.grandTotal) || 0;
   const totalArrow = (a, b) => Math.abs(a - b) > 1e-9
-    ? `<span style="color:#94a3b8; font-family:monospace;">${fmt(a)}</span> <span style="font-weight:800; color:${b > a ? "#15803d" : "#b91c1c"};">→ ${fmt(b)}</span>`
+    ? `<span style="color:#1e293b; font-family:monospace;">${fmt(a)}</span> <span style="font-weight:800; color:${b > a ? "#15803d" : "#b91c1c"};">→ ${fmt(b)}</span>`
     : `<span style="font-family:monospace;">${fmt(a)}</span>`;
 
   // Change summary — the point of this screen. Only rows whose quantity or
@@ -16732,7 +16743,7 @@ function renderAPORCard(r) {
     const allocs = (line.allocations || []);
     const allocSum = allocs.reduce((s,a) => s + (Number(a.quantity)||0), 0);
     const extra = Math.round((newQty - allocSum) * 100) / 100;
-    const arrow = (a, b, better) => `<span style="color:#94a3b8; font-family:monospace;">${fmt(a)}</span> <span style="font-weight:800; color:${better};">→ ${fmt(b)}</span>`;
+    const arrow = (a, b, better) => `<span style="color:#1e293b; font-family:monospace;">${fmt(a)}</span> <span style="font-weight:800; color:${better};">→ ${fmt(b)}</span>`;
     return `
       <tr style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:7px; font-family:monospace; font-size:0.74rem; font-weight:700; color:var(--brand);">${line.itemCode}</td>
@@ -16764,7 +16775,7 @@ function renderAPORCard(r) {
 
       ${headerChangesHtml}
 
-      <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">Change Summary</div>
+      <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">Order Quantity Changes</div>
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
         <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:820px;">
           <thead><tr style="background:#f8fafc;">
@@ -16778,6 +16789,8 @@ function renderAPORCard(r) {
           <tbody>${changeRows || `<tr><td colspan="6" style="padding:12px; text-align:center; color:var(--muted); font-size:0.78rem;">No quantity or rate changes — allocations only.</td></tr>`}</tbody>
         </table>
       </div>
+
+      ${taxTermChangesHtml}
 
       <div style="display:flex; justify-content:flex-end; background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius); padding:10px 14px; margin-top:12px; font-size:0.85rem;">
         <div style="text-align:right;">
