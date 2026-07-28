@@ -15095,101 +15095,36 @@ async function initializeAuthorizePOPanel() {
     const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
     body.innerHTML = data.pos.map(po => `
       <div class="contact-summary-card-parent" style="margin-bottom:12px;">
-        <div class="contact-summary-header-row" onclick="togglePOAuthDetail('${po.poNumber}', this)" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
+        <div class="contact-summary-header-row" onclick="openPOForAuthorization('${po.poNumber}')" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNumber}</span>
             <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
           </div>
           <div style="font-size:0.85rem; color:var(--muted);">${fmtPODate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${po.preparedBy}</div>
         </div>
-        <div id="po-auth-detail-${po.poNumber}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
       </div>`).join("");
   } catch(e) { body.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
 }
 
-async function togglePOAuthDetail(poNumber, headerEl) {
-  const detail = document.getElementById(`po-auth-detail-${poNumber}`);
-  if (detail.style.display === "block") { detail.style.display = "none"; return; }
-  detail.style.display = "block";
-  detail.innerHTML = `<div style="padding:14px; text-align:center; color:var(--muted);">Loading...</div>`;
-  try {
-    const data = await apFetch({ action: "fetchPODraftById", poNo: poNumber });
-    if (!data.success) { detail.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
-    const po = data.po;
-    const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
-    const rows = (po.lineItems||[]).map(it => `
-      <tr style="border-bottom:1px solid #f1f5f9;">
-        <td style="padding:5px; text-align:center;">${it.srNo}</td>
-        <td style="padding:5px;">${(it.description||'').replace(/</g,'&lt;')}</td>
-        <td style="padding:5px; text-align:center; font-family:monospace;">${it.itemCode||''}</td>
-        <td style="padding:5px; text-align:center;">${fmt(it.quantity)}</td>
-        <td style="padding:5px; text-align:right;">${fmt(it.rate)}</td>
-        <td style="padding:5px; text-align:center;">${it.unit||''}</td>
-        <td style="padding:5px; text-align:center;">${it.discountPercent?fmt(it.discountPercent):''}</td>
-        <td style="padding:5px; text-align:right; font-weight:700;">${fmt(it.amount)}</td>
-        <td style="padding:5px; font-size:0.72rem; color:var(--brand);">${(it.projectIds||[]).join(", ")}</td>
-      </tr>`).join("");
-    detail.innerHTML = `
-      <div style="font-size:0.85rem; margin-bottom:10px;">
-        Vendor: <strong>${po.vendorName}</strong> &nbsp;|&nbsp; Supplier Offer No: ${po.supplierRef||'—'} &nbsp;|&nbsp; Delivery: ${fmtPODate(po.deliveryDate)||'—'}
-      </div>
-      <div style="overflow-x:auto; margin-bottom:12px;">
-        <table style="width:100%; border-collapse:collapse; font-size:0.8rem; min-width:800px;">
-          <thead><tr style="background:var(--highlight-bg); text-align:left;">
-            <th style="padding:6px;">Sr</th><th style="padding:6px;">Description</th><th style="padding:6px;">Item Code</th>
-            <th style="padding:6px;">Qty</th><th style="padding:6px;">Rate</th><th style="padding:6px;">Per</th>
-            <th style="padding:6px;">Disc%</th><th style="padding:6px;">Amount</th><th style="padding:6px;">Projects</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius); padding:12px;">
-        <div style="font-size:0.9rem;">
-          Sub Total: <strong>${fmt(po.subTotal)}</strong> &nbsp;|&nbsp;
-          CGST ${po.cgstPercent}%: ${fmt(po.cgstAmount)} &nbsp;|&nbsp; SGST ${po.sgstPercent}%: ${fmt(po.sgstAmount)} &nbsp;|&nbsp; IGST ${po.igstPercent}%: ${fmt(po.igstAmount)}<br/>
-          <span style="font-size:1.05rem;">Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></span>
-        </div>
-        <button class="nav-btn-styled" onclick="authorizePONow('${poNumber}', this)" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Authorize & Generate PDF</button>
-      </div>`;
-  } catch(e) { detail.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+// Reuses the exact same panel Create PO uses, in "authorize" mode — see
+// initializeCreatePOPanel(authorizePoNo). Same rows/allocation/tax/terms
+// UI, vendor locked, Authorize PO / Reject PO instead of
+// Submit for Authorization / Clear Form.
+function openPOForAuthorization(poNo) {
+  navigateToPurchaseWorkspacePanel('purchase-create-po', poNo);
 }
 
-async function authorizePONow(poNumber, btn) {
-  if (!confirm(`Authorize ${poNumber}? This finalizes the PO and generates the PDF.`)) return;
-  btn.disabled = true; btn.textContent = "Authorizing...";
-  showBlockingOverlay("Authorizing PO & generating PDF...");
-  const banner = document.getElementById("authorize-po-feedback");
-  try {
-    const data = await apFetch({ action: "authorizePurchaseOrder", activeEngineer: appActiveOperatorIdentityString, poNo: poNumber, operatorName: appActiveOperatorIdentityString });
-    hideBlockingOverlay();
-    if (data.success) {
-      banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
-      let msg = `<strong>${poNumber} Authorized.</strong>`;
-      if (data.pdfPending) {
-        msg += ` <span style="color:#b45309;">PDF generation is pending (service issue) — it can be regenerated later.</span>`;
-      } else if (data.pdfUrl) {
-        msg += ` <a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700;">Open PDF →</a>`;
-      }
-      banner.innerHTML = msg;
-      banner.scrollIntoView({ behavior:"smooth", block:"center" });
-      initializeAuthorizePOPanel(); // refresh queue (this PO drops off)
-    } else {
-      btn.disabled = false; btn.textContent = "Authorize & Generate PDF";
-      banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
-      banner.textContent = "Error: " + data.error;
-      banner.scrollIntoView({ behavior:"smooth", block:"center" });
-    }
-  } catch(e) {
-    hideBlockingOverlay();
-    btn.disabled = false; btn.textContent = "Authorize & Generate PDF";
-    alert("Network error: " + e.message);
-  }
-}
+async function initializeCreatePOPanel(authorizePoNo = null) {
+  window.cpoMode = authorizePoNo ? 'authorize' : 'create';
+  window.cpoEditingPoNo = authorizePoNo || null;
 
-async function initializeCreatePOPanel() {
   const body = document.getElementById("create-po-body");
   body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading vendors and projects...</div>`;
-  const draft = loadCPODraft();
+
+  // A local create-draft is only relevant to brand-new POs — editing an
+  // existing pending PO for authorization always starts from the PO's
+  // own saved data (fetched below), never from localStorage.
+  const draft = (window.cpoMode === 'create') ? loadCPODraft() : null;
   window.cpoMaterialRows = (draft && draft.materialRows) || [];
   window.cpoRowSeq = (draft && draft.rowSeq) || 0;
 
@@ -15211,15 +15146,18 @@ async function initializeCreatePOPanel() {
   const mmm = today.toLocaleString('en-US',{month:'short'});
   const orderDateStr = `${dd}-${mmm}-${today.getFullYear()}`;
 
+  const isAuth = window.cpoMode === 'authorize';
+
   body.innerHTML = `
     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px; letter-spacing:0.5px;">Purchase Order Header</div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
         <div>
           <label class="field-label" style="margin-top:0;">Vendor Name *</label>
-          <select id="cpo-vendor" onchange="handleCPOVendorChange()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+          <select id="cpo-vendor" onchange="handleCPOVendorChange()" ${isAuth ? "disabled" : ""} style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; ${isAuth ? "background:#f1f5f9; color:#475569;" : ""}">
             <option value="">— Select Vendor —</option>${vendorOptions}
           </select>
+          ${isAuth ? `<div style="font-size:0.7rem; color:var(--muted); margin-top:3px;">Locked — vendor can't change once a PO exists.</div>` : ""}
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Supplier Offer No</label>
@@ -15269,17 +15207,64 @@ async function initializeCreatePOPanel() {
         <div style="font-size:1.05rem; margin-top:4px;">Grand Total: <strong id="cpo-grandtotal-disp" style="color:var(--brand);">0.00</strong></div>
       </div>
       <div style="display:flex; gap:10px;">
-        <button class="nav-btn-styled" onclick="clearCPOForm()" style="background:#718096;">Clear Form</button>
-        <button class="nav-btn-styled" id="cpo-submit-btn" onclick="submitCreatePO()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Submit for Authorization</button>
+        ${isAuth
+          ? `<button class="nav-btn-styled" onclick="rejectPOFromForm()" style="background:#dc2626;">Reject PO</button>
+             <button class="nav-btn-styled" id="cpo-submit-btn" onclick="authorizePOFromForm()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Authorize PO</button>`
+          : `<button class="nav-btn-styled" onclick="clearCPOForm()" style="background:#718096;">Clear Form</button>
+             <button class="nav-btn-styled" id="cpo-submit-btn" onclick="submitCreatePO()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Submit for Authorization</button>`}
       </div>
     </div>
   `;
 
-  // Restore whatever was saved — Return to Main Dashboard (or an
-  // accidental reload) shouldn't lose an in-progress PO. Only the
-  // material rows come from state (window.cpoMaterialRows, restored
-  // above); everything else is a plain field value re-applied here.
-  if (draft) {
+  if (isAuth) {
+    // Load the PO's own saved data — not a local draft. Vendor is
+    // pre-selected but the select stays disabled (set above), so it
+    // displays correctly without being editable.
+    try {
+      const data = await apFetch({ action: "fetchPODraftById", poNo: authorizePoNo });
+      if (data.success && data.po) {
+        const po = data.po;
+        document.getElementById("cpo-vendor").value = po.vendorName || "";
+        handleCPOVendorChange();
+        if (po.supplierRef) document.getElementById("cpo-supplier-ref").value = po.supplierRef;
+        if (po.deliveryDate) document.getElementById("cpo-delivery-date").value = new Date(po.deliveryDate).toISOString().slice(0,10);
+        if (po.cgstPercent != null) document.getElementById("cpo-cgst").value = po.cgstPercent;
+        if (po.sgstPercent != null) document.getElementById("cpo-sgst").value = po.sgstPercent;
+        if (po.igstPercent != null) document.getElementById("cpo-igst").value = po.igstPercent;
+        if (po.packing != null) document.getElementById("cpo-packing").value = po.packing;
+        if (po.freight != null) document.getElementById("cpo-freight").value = po.freight;
+        if (po.other != null) document.getElementById("cpo-other").value = po.other;
+        if (po.roundOff != null) document.getElementById("cpo-roundoff").value = po.roundOff;
+        if (po.warranty) document.getElementById("cpo-warranty").value = po.warranty;
+        if (po.paymentTerms) document.getElementById("cpo-payment").value = po.paymentTerms;
+        if (po.freightTerms) document.getElementById("cpo-freight-terms").value = po.freightTerms;
+
+        // These rows already went through allocation once at creation —
+        // marking them touched avoids re-triggering the "must allocate"
+        // gate on rows the authorizer hasn't actually changed.
+        window.cpoMaterialRows = (po.lineItems || []).map(li => {
+          window.cpoRowSeq = (window.cpoRowSeq || 0) + 1;
+          const qty = Number(li.quantity) || 0;
+          return {
+            id: window.cpoRowSeq, description: li.description || "", itemCode: li.itemCode || "",
+            quantity: li.quantity, unit: li.unit || "", rate: li.rate, discountPercent: li.discountPercent || 0,
+            projectIds: [], allocations: li.allocations || [],
+            _allocationTouched: true, _allocatedForQty: qty,
+          };
+        });
+      } else {
+        body.innerHTML = `<div style="padding:20px; color:#b91c1c;">Could not load ${authorizePoNo}: ${data.error || "not found"}</div>`;
+        return;
+      }
+    } catch (e) {
+      body.innerHTML = `<div style="padding:20px; color:#b91c1c;">Network error loading ${authorizePoNo}: ${e.message}</div>`;
+      return;
+    }
+  } else if (draft) {
+    // Restore whatever was saved — Return to Main Dashboard (or an
+    // accidental reload) shouldn't lose an in-progress PO. Only the
+    // material rows come from state (window.cpoMaterialRows, restored
+    // above); everything else is a plain field value re-applied here.
     if (draft.vendor) { document.getElementById("cpo-vendor").value = draft.vendor; handleCPOVendorChange(); }
     if (draft.supplierRef) document.getElementById("cpo-supplier-ref").value = draft.supplierRef;
     if (draft.deliveryDate) document.getElementById("cpo-delivery-date").value = draft.deliveryDate;
@@ -15306,6 +15291,7 @@ async function initializeCreatePOPanel() {
 const CPO_DRAFT_STORAGE_KEY = 'abps_cpo_draft_v1';
 
 function persistCPODraft() {
+  if (window.cpoMode === 'authorize') return; // editing an existing PO, not a local draft
   const vendorEl = document.getElementById("cpo-vendor");
   if (!vendorEl) return; // panel not mounted — nothing to save
   try {
@@ -15790,7 +15776,7 @@ async function submitCreatePO() {
       clearCPODraftStorage();
       document.getElementById("create-po-body").innerHTML = "";
       banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
-      banner.innerHTML = `<strong>PO Draft Created — ${data.poNumber}</strong><br/>It has been sent for Authorization. <button class="nav-btn-styled" onclick="document.getElementById('create-po-feedback').style.display='none'; initializeCreatePOPanel();" style="background:#15803d; color:#fff; margin-top:8px; padding:6px 14px;">+ Create Another</button>`;
+      banner.innerHTML = `<strong>PO Draft Created — ${data.poNo}</strong><br/>It has been sent for Authorization. <button class="nav-btn-styled" onclick="document.getElementById('create-po-feedback').style.display='none'; initializeCreatePOPanel();" style="background:#15803d; color:#fff; margin-top:8px; padding:6px 14px;">+ Create Another</button>`;
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
     } else {
       btn.disabled = false; btn.textContent = "Submit for Authorization";
@@ -15806,6 +15792,129 @@ async function submitCreatePO() {
 window.activeRejectedMaterialToggle = "pending";
 window.rejMaterialVendorFilter = "";
 window.rejMaterialActionFilter = [];
+
+// authorizePOFromForm / rejectPOFromForm — the Authorize-mode counterparts
+// of submitCreatePO/clearCPOForm. Same panel, same DOM ids, same
+// validation and payload shape (vendor omitted — it's locked, the server
+// always uses the PO's own regardless of what's sent).
+async function authorizePOFromForm() {
+  const banner = document.getElementById("create-po-feedback");
+  banner.style.display = "none";
+  const showErr = (msg) => {
+    banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
+    banner.textContent = msg;
+    banner.scrollIntoView({ behavior:"smooth", block:"center" });
+  };
+
+  const poNo = window.cpoEditingPoNo;
+  if (!poNo) return showErr("No PO is loaded for authorization.");
+
+  const deliveryDateRaw = document.getElementById("cpo-delivery-date").value.trim();
+  let deliveryDate = deliveryDateRaw;
+  if (deliveryDateRaw) {
+    const d = new Date(deliveryDateRaw + "T00:00:00");
+    if (!isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mmm = d.toLocaleString('en-US',{month:'short'});
+      deliveryDate = `${dd}-${mmm}-${d.getFullYear()}`;
+    }
+  }
+  if (!deliveryDate) return showErr("Please enter a Delivery Date.");
+  if (window.cpoMaterialRows.length === 0) return showErr("Add at least one material row.");
+
+  for (let i = 0; i < window.cpoMaterialRows.length; i++) {
+    const row = window.cpoMaterialRows[i];
+    const n = i + 1;
+    if (!row.itemCode) return showErr(`Row ${n}: select a material from the search (item code required).`);
+    if (!(parseFloat(row.quantity) > 0)) return showErr(`Row ${n}: Quantity must be greater than 0.`);
+    if (!(parseFloat(row.rate) > 0)) return showErr(`Row ${n}: Rate must be greater than 0.`);
+    if (!row._allocationTouched) {
+      return showErr(`Row ${n}: click "Allocate to PRNs" and confirm the split (or Extra) before authorizing.`);
+    }
+    const aSum = (row.allocations || []).reduce((s, a) => s + (Number(a.quantity) || 0), 0);
+    if (aSum > (parseFloat(row.quantity) || 0) + 1e-9) {
+      return showErr(`Row ${n}: allocated ${aSum} across PRNs but only ${row.quantity} is being ordered.`);
+    }
+  }
+
+  if (!confirm(`Authorize ${poNo}? This finalizes the PO, allocates it against the PRNs above, and generates the PDF.`)) return;
+
+  const payload = {
+    poNo,
+    supplierRef: document.getElementById("cpo-supplier-ref").value.trim(),
+    deliveryDate,
+    lineItems: window.cpoMaterialRows.map(r => ({
+      description: r.description, itemCode: r.itemCode, quantity: parseFloat(r.quantity) || 0,
+      unit: r.unit, rate: parseFloat(r.rate) || 0, discountPercent: parseFloat(r.discountPercent) || 0,
+      amount: Number(r.amount) || 0,
+      deliveryDate: r.deliveryDate || null,
+      allocations: (r.allocations || []).map(a => ({ prnId: a.prnId, quantity: Number(a.quantity) || 0 }))
+    })),
+    cgstPercent: document.getElementById("cpo-cgst").value.trim() === "" ? 9 : (parseFloat(document.getElementById("cpo-cgst").value) || 0),
+    sgstPercent: document.getElementById("cpo-sgst").value.trim() === "" ? 9 : (parseFloat(document.getElementById("cpo-sgst").value) || 0),
+    igstPercent: parseFloat(document.getElementById("cpo-igst").value) || 0,
+    packing: parseFloat(document.getElementById("cpo-packing").value) || 0,
+    freight: parseFloat(document.getElementById("cpo-freight").value) || 0,
+    other: parseFloat(document.getElementById("cpo-other").value) || 0,
+    roundOff: parseFloat(document.getElementById("cpo-roundoff").value) || 0,
+    warranty: document.getElementById("cpo-warranty").value.trim(),
+    paymentTerms: document.getElementById("cpo-payment").value.trim(),
+    freightTerms: document.getElementById("cpo-freight-terms").value.trim(),
+  };
+
+  const btn = document.getElementById("cpo-submit-btn");
+  btn.disabled = true; btn.textContent = "Authorizing...";
+  showBlockingOverlay("Authorizing PO & generating PDF...");
+  try {
+    const data = await apFetch({ action: "authorizePurchaseOrder", activeEngineer: appActiveOperatorIdentityString, ...payload, operatorName: appActiveOperatorIdentityString });
+    hideBlockingOverlay();
+    if (data.success) {
+      document.getElementById("create-po-body").innerHTML = "";
+      banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
+      let msg = `<strong>${poNo} Authorized.</strong>`;
+      if (data.pdfUrl) msg += ` <a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700;">Open PDF →</a>`;
+      else if (data.pdfWarning) msg += ` <span style="color:#b45309;">PDF generation is pending (service issue) — it can be regenerated later.</span>`;
+      msg += ` <button class="nav-btn-styled" onclick="document.getElementById('create-po-feedback').style.display='none'; exitPurchaseWorkspacePanelBackToMenu();" style="background:#15803d; color:#fff; margin-top:8px; padding:6px 14px;">Back to Dashboard</button>`;
+      banner.innerHTML = msg;
+      banner.scrollIntoView({ behavior:"smooth", block:"center" });
+    } else {
+      btn.disabled = false; btn.textContent = "Authorize PO";
+      showErr("Server error: " + data.error);
+    }
+  } catch (e) {
+    hideBlockingOverlay();
+    btn.disabled = false; btn.textContent = "Authorize PO";
+    showErr("Network error: " + e.message);
+  }
+}
+
+async function rejectPOFromForm() {
+  const poNo = window.cpoEditingPoNo;
+  if (!poNo) return;
+  const reason = prompt(`Reject ${poNo}? This deletes the PO entirely — it cannot be undone. Optional reason:`);
+  if (reason === null) return; // cancelled
+
+  const banner = document.getElementById("create-po-feedback");
+  showBlockingOverlay("Rejecting PO...");
+  try {
+    const data = await apFetch({ action: "rejectPurchaseOrder", activeEngineer: appActiveOperatorIdentityString, poNo, reason, operatorName: appActiveOperatorIdentityString });
+    hideBlockingOverlay();
+    if (data.success) {
+      exitPurchaseWorkspacePanelBackToMenu();
+    } else {
+      banner.style.display = "block";
+      banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
+      banner.textContent = "Error: " + data.error;
+      banner.scrollIntoView({ behavior:"smooth", block:"center" });
+    }
+  } catch (e) {
+    hideBlockingOverlay();
+    banner.style.display = "block";
+    banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
+    banner.textContent = "Network error: " + e.message;
+    banner.scrollIntoView({ behavior:"smooth", block:"center" });
+  }
+}
 
 function toggleRejActionAll(checked) {
   if (checked) {
@@ -15984,7 +16093,7 @@ async function commitRejectedMaterialActionToBackend(grnNum, btn) {
   }
 }
 
-function navigateToPurchaseWorkspacePanel(targetModuleId) {
+function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
   // Both Authorize PRN's and Revise PRN's live-stock polls only stop
   // when their own screen explicitly clears them (a card collapsing, a
   // row re-rendering) — neither of those fires when the user instead
@@ -16021,7 +16130,7 @@ function navigateToPurchaseWorkspacePanel(targetModuleId) {
     document.getElementById("canvas-module-purchase-create-po").style.display = "block";
     const cpoBanner = document.getElementById("create-po-feedback");
     if (cpoBanner) { cpoBanner.style.display = "none"; cpoBanner.innerHTML = ""; }
-    initializeCreatePOPanel();
+    initializeCreatePOPanel(extraArg);
   } else if (targetModuleId === "purchase-authorize-prn") {
     document.getElementById("canvas-module-purchase-authorize-prn").style.display = "block";
     initializeAuthorizePRNPanel().catch(e => { if (e?.message !== "SESSION_EXPIRED") console.error("Authorize PRN panel init error:", e); });
