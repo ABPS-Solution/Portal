@@ -16376,10 +16376,10 @@ function renderPORevisionCard() {
       ${prnSummaryHtml}
 
       <div style="background:#f8fafc; border-left:3px solid var(--brand); padding:9px 12px; border-radius:4px; font-size:0.75rem; color:#334155; margin-bottom:12px;">
-        <strong>Vendor Discussed Purchase Quantity</strong> is what you actually agreed with the vendor, and is required on every row. It cannot go below what has already been received. Anything you don't allocate to a PRN is ordered as extra stock and lands in the Raw Material store (master inventory) — not spare store, which is a separate concept.
+        <strong>Vendor Discussed Purchase Quantity</strong> is what you actually agreed with the vendor, and is required on every row. It cannot go below what has already been received. Anything you don't allocate to a PRN is ordered as extra stock and lands in the Raw Material store.
       </div>
 
-      ${kind === "PRN Driven" ? `<div style="font-size:0.72rem; color:var(--muted); margin-bottom:8px;">Showing only materials whose required quantity changed — not every row on this PO.</div>` : ""}
+      ${kind === "PRN Driven" ? `<div style="font-size:0.72rem; color:var(--muted); margin-bottom:8px;">Showing only materials whose required quantity changed and not every material in this PO.</div>` : ""}
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
         <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1150px;">
           <thead><tr style="background:#f8fafc;">
