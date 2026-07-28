@@ -16580,7 +16580,7 @@ async function submitPORevisionUI() {
     if (data.success) {
       document.getElementById("rpo-detail-zone").innerHTML = "";
       window.rpoActive = null;
-      showPurchaseFeedback("rpo-feedback", `✅ Revision for <strong>${st.po.poNo}</strong> submitted — pending authorization. The PO is unchanged until it is authorized.`, "success");
+      showPurchaseFeedback("rpo-feedback", `✅ Revision for <strong>${st.po.poNo}</strong> submitted and is pending authorization. The PO is unchanged until it is authorized.`, "success");
       initializeRevisePOPanel();
     } else {
       btn.disabled = false; btn.textContent = "Submit Revision for Authorization";
@@ -16608,7 +16608,7 @@ async function cancelPOEntirely(poNo) {
     if (data.success) {
       document.getElementById("rpo-detail-zone").innerHTML = "";
       window.rpoActive = null;
-      showPurchaseFeedback("rpo-feedback", `Cancellation of <strong>${poNo}</strong> submitted — pending authorization.`, "success");
+      showPurchaseFeedback("rpo-feedback", `Cancellation of <strong>${poNo}</strong> submitted and is pending authorization.`, "success");
       initializeRevisePOPanel();
     } else {
       showPurchaseFeedback("rpo-feedback", data.error || "Cancellation failed.", "error");
@@ -16658,6 +16658,68 @@ function renderAPORCard(r) {
   const revised = r.revisedLineItems || [];
   const isCancel = r.revisionKind === "Cancellation";
 
+  // Header/Taxes/Terms changes — same header_changes JSONB Revise PO
+  // writes; null on a field means that field was never touched by this
+  // revision, so it's left out entirely rather than shown as a no-op.
+  const hc = r.headerChanges || {};
+  const fieldDefs = [
+    { label: "Supplier Offer No", cur: r.supplierRef, rev: hc.supplierRef, isText: true },
+    { label: "Delivery Date", cur: r.deliveryDate, rev: hc.deliveryDate, isDate: true },
+    { label: "CGST %", cur: r.cgstPercent, rev: hc.cgstPercent },
+    { label: "SGST %", cur: r.sgstPercent, rev: hc.sgstPercent },
+    { label: "IGST %", cur: r.igstPercent, rev: hc.igstPercent },
+    { label: "Packing", cur: r.packing, rev: hc.packing },
+    { label: "Freight", cur: r.freight, rev: hc.freight },
+    { label: "Other", cur: r.other, rev: hc.other },
+    { label: "Round Off", cur: r.roundOff, rev: hc.roundOff },
+    { label: "Warranty", cur: r.warranty, rev: hc.warranty, isText: true },
+    { label: "Payment Terms", cur: r.paymentTerms, rev: hc.paymentTerms, isText: true },
+    { label: "Freight Terms", cur: r.freightTerms, rev: hc.freightTerms, isText: true },
+  ];
+  const headerBullets = fieldDefs.filter(f => {
+    if (f.rev == null) return false;
+    if (f.isDate) return new Date(f.rev).toDateString() !== new Date(f.cur).toDateString();
+    if (f.isText) return (f.rev || "") !== (f.cur || "");
+    return Math.abs(Number(f.rev) - Number(f.cur)) > 1e-9;
+  }).map(f => {
+    const curDisp = f.isDate ? formatDateDMY(f.cur) : (f.cur ?? "—");
+    const revDisp = f.isDate ? formatDateDMY(f.rev) : f.rev;
+    return `<li>${f.label}: <span style="color:#94a3b8;">${curDisp}</span> → <span style="font-weight:700; color:#b45309;">${revDisp}</span></li>`;
+  });
+  const headerChangesHtml = headerBullets.length ? `
+      <div style="background:#fefce8; border:1px solid #fde68a; border-radius:4px; padding:9px 12px; margin-bottom:12px;">
+        <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:4px;">Header, Taxes & Terms Changes</div>
+        <ul style="margin:0; padding-left:18px; font-size:0.76rem; color:#334155; line-height:1.6;">${headerBullets.join("")}</ul>
+      </div>` : "";
+
+  // Effective tax/charge values this revision would actually apply —
+  // the revised value where the operator touched it, otherwise whatever
+  // the PO already has.
+  const eff = {
+    cgstPercent: hc.cgstPercent != null ? Number(hc.cgstPercent) : (Number(r.cgstPercent) || 0),
+    sgstPercent: hc.sgstPercent != null ? Number(hc.sgstPercent) : (Number(r.sgstPercent) || 0),
+    igstPercent: hc.igstPercent != null ? Number(hc.igstPercent) : (Number(r.igstPercent) || 0),
+    packing: hc.packing != null ? Number(hc.packing) : (Number(r.packing) || 0),
+    freight: hc.freight != null ? Number(hc.freight) : (Number(r.freight) || 0),
+    other: hc.other != null ? Number(hc.other) : (Number(r.other) || 0),
+    roundOff: hc.roundOff != null ? Number(hc.roundOff) : (Number(r.roundOff) || 0),
+  };
+
+  // New Sub Total = every current line's amount, except lines this
+  // revision touches, which use the REVISED quantity/rate/discount
+  // instead — same computation authorizePORevision itself will apply.
+  const newSubTotal = (r.currentLines || []).reduce((sum, cur) => {
+    const rev = revised.find(l => l.itemCode === cur.itemCode);
+    if (rev) return sum + (Number(rev.quantity)||0) * (Number(rev.rate)||0) * (100 - (Number(rev.discountPercent)||0)) / 100;
+    return sum + (Number(cur.amount) || ((Number(cur.quantity)||0) * (Number(cur.rate)||0) * (100 - (Number(cur.discountPercent)||0)) / 100));
+  }, 0);
+  const newGrandTotal = newSubTotal + newSubTotal*eff.cgstPercent/100 + newSubTotal*eff.sgstPercent/100 + newSubTotal*eff.igstPercent/100
+    + eff.packing + eff.freight + eff.other + eff.roundOff;
+  const oldSubTotal = Number(r.subTotal) || 0, oldGrandTotal = Number(r.grandTotal) || 0;
+  const totalArrow = (a, b) => Math.abs(a - b) > 1e-9
+    ? `<span style="color:#94a3b8; font-family:monospace;">${fmt(a)}</span> <span style="font-weight:800; color:${b > a ? "#15803d" : "#b91c1c"};">→ ${fmt(b)}</span>`
+    : `<span style="font-family:monospace;">${fmt(a)}</span>`;
+
   // Change summary — the point of this screen. Only rows whose quantity or
   // rate actually moves are listed; an untouched line carries forward.
   const changeRows = revised.map(line => {
@@ -16669,7 +16731,7 @@ function renderAPORCard(r) {
     if (!qtyMoved && !rateMoved) return "";
     const allocs = (line.allocations || []);
     const allocSum = allocs.reduce((s,a) => s + (Number(a.quantity)||0), 0);
-    const spare = Math.round((newQty - allocSum) * 100) / 100;
+    const extra = Math.round((newQty - allocSum) * 100) / 100;
     const arrow = (a, b, better) => `<span style="color:#94a3b8; font-family:monospace;">${fmt(a)}</span> <span style="font-weight:800; color:${better};">→ ${fmt(b)}</span>`;
     return `
       <tr style="border-bottom:1px solid #f1f5f9;">
@@ -16680,8 +16742,8 @@ function renderAPORCard(r) {
         <td style="padding:7px; text-align:center; font-size:0.72rem; color:${Number(cur.received) > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(cur.received)}</td>
         <td style="padding:7px; font-size:0.72rem;">
           ${allocs.length === 0 ? `<span style="color:var(--muted);">none</span>`
-            : allocs.map(a => `<div style="font-family:monospace; font-weight:700; color:var(--brand);">${a.prnId.replace(/^PRN_/,"")} — ${fmt(a.quantity)}</div>`).join("")}
-          ${spare > 0 ? `<div style="color:#b45309; font-weight:700; margin-top:2px;">${fmt(spare)} spare → store</div>` : ""}
+            : allocs.map(a => `<div style="font-family:monospace; font-weight:700; color:var(--brand);">${a.prnId.replace(/^PRN_/,"")}: <span style="color:#000;">${fmt(a.quantity)}</span></div>`).join("")}
+          ${extra > 0 ? `<div style="color:#b45309; font-weight:700; margin-top:2px;">${fmt(extra)} extra → Raw Material store</div>` : ""}
         </td>
       </tr>`;
   }).filter(Boolean).join("");
@@ -16700,24 +16762,33 @@ function renderAPORCard(r) {
 
       ${isCancel ? `<div style="background:#fef2f2; border-left:3px solid #b91c1c; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#7f1d1d; margin-bottom:10px;">Authorizing this cancels the PO outright. Every line goes to zero and all PRN allocations return to "still to order".</div>` : ""}
 
+      ${headerChangesHtml}
+
       <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">Change Summary</div>
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
         <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:820px;">
           <thead><tr style="background:#f8fafc;">
             <th style="padding:7px; font-size:0.66rem; text-align:left;">Item Code</th>
-            <th style="padding:7px; font-size:0.66rem; text-align:left; min-width:170px;">Material</th>
-            <th style="padding:7px; font-size:0.66rem; text-align:center;">Quantity</th>
-            <th style="padding:7px; font-size:0.66rem; text-align:center;">Rate</th>
-            <th style="padding:7px; font-size:0.66rem; text-align:center;">Received</th>
+            <th style="padding:7px; font-size:0.66rem; text-align:left; min-width:170px;">Description of Material</th>
+            <th style="padding:7px; font-size:0.66rem; text-align:center;">Quantity Change</th>
+            <th style="padding:7px; font-size:0.66rem; text-align:center;">Rate / Qty</th>
+            <th style="padding:7px; font-size:0.66rem; text-align:center;">Already Received</th>
             <th style="padding:7px; font-size:0.66rem; text-align:left; min-width:150px;">Allocation</th>
           </tr></thead>
           <tbody>${changeRows || `<tr><td colspan="6" style="padding:12px; text-align:center; color:var(--muted); font-size:0.78rem;">No quantity or rate changes — allocations only.</td></tr>`}</tbody>
         </table>
       </div>
 
+      <div style="display:flex; justify-content:flex-end; background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius); padding:10px 14px; margin-top:12px; font-size:0.85rem;">
+        <div style="text-align:right;">
+          <div>Sub Total: ${totalArrow(oldSubTotal, newSubTotal)}</div>
+          <div style="font-size:1.02rem; margin-top:3px;">Grand Total: ${totalArrow(oldGrandTotal, newGrandTotal)}</div>
+        </div>
+      </div>
+
       <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
-        <button id="apor-reject-${r.requestId}" onclick="rejectPORevisionUI(${r.requestId})" style="padding:8px 18px; background:#b91c1c; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:700; font-size:0.82rem;">Reject Revision</button>
-        <button id="apor-auth-${r.requestId}" class="nav-btn-styled" onclick="authorizePORevisionUI(${r.requestId}, false)" style="background:var(--accent); color:#fff; font-weight:700; padding:8px 22px;">Authorize Revision</button>
+        <button id="apor-reject-${r.requestId}" onclick="rejectPORevisionUI(${r.requestId})" style="padding:8px 18px; background:#b91c1c; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:700; font-size:0.82rem;">Reject PO Revision</button>
+        <button id="apor-auth-${r.requestId}" class="nav-btn-styled" onclick="authorizePORevisionUI(${r.requestId}, false)" style="background:var(--accent); color:#fff; font-weight:700; padding:8px 22px;">Authorize PO Revision</button>
       </div>
     </div>`;
 }
