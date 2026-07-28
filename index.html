@@ -16282,6 +16282,8 @@ function renderPORevisionCard() {
   const fmt = (n) => (Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
 
   const rows = lineItems.map((li, idx) => {
+    if (kind === "PRN Driven" && !li.changed) return ""; // unchanged — not shown, but still counted in the totals below
+
     // Allocation inputs, one per PRN already on this line. "Needs" is that
     // PRN's CURRENT requirement from THIS PO — its purchase quantity minus
     // whatever other POs already cover — so a material split across two
@@ -16325,7 +16327,7 @@ function renderPORevisionCard() {
         <td id="rpo-amount-${idx}" style="padding:8px; text-align:right; font-family:monospace; font-weight:800; font-size:0.88rem;">0.00</td>
         <td style="padding:8px; min-width:190px;">${allocHtml}<div id="rpo-sum-${idx}" style="font-size:0.65rem; font-weight:800; margin-top:4px;"></div></td>
       </tr>`;
-  }).join("");
+  }).filter(Boolean).join("");
 
   // PRN Change Summary — what changed in the PRN(s) that's PROMPTING this
   // PO revision, as opposed to Authorize PO Revision's own "Change
@@ -16439,11 +16441,19 @@ function renderPORevisionCard() {
 
 function updateRPOGrandTotal() {
   let subTotal = 0;
-  (window.rpoActive?.lineItems || []).forEach((_, idx) => {
-    const vdq = parseFloat(document.querySelector(`.rpo-vdq[data-idx="${idx}"]`)?.value) || 0;
-    const rate = parseFloat(document.querySelector(`.rpo-rate[data-idx="${idx}"]`)?.value) || 0;
-    const disc = parseFloat(document.querySelector(`.rpo-disc[data-idx="${idx}"]`)?.value) || 0;
-    subTotal += vdq * rate * (100 - disc) / 100;
+  (window.rpoActive?.lineItems || []).forEach((li, idx) => {
+    const vdqEl = document.querySelector(`.rpo-vdq[data-idx="${idx}"]`);
+    if (vdqEl) {
+      // Rendered/editable row — use the live inputs.
+      const vdq = parseFloat(vdqEl.value) || 0;
+      const rate = parseFloat(document.querySelector(`.rpo-rate[data-idx="${idx}"]`)?.value) || 0;
+      const disc = parseFloat(document.querySelector(`.rpo-disc[data-idx="${idx}"]`)?.value) || 0;
+      subTotal += vdq * rate * (100 - disc) / 100;
+    } else {
+      // Unchanged line, not rendered in PRN-driven mode — still part of
+      // the PO, so its stored amount still counts toward the total.
+      subTotal += Number(li.amount) || ((Number(li.orderedQty)||0) * (Number(li.rate)||0) * (100 - (Number(li.discountPercent)||0)) / 100);
+    }
   });
   const cgstP = parseFloat(document.getElementById("rpo-cgst")?.value) || 0;
   const sgstP = parseFloat(document.getElementById("rpo-sgst")?.value) || 0;
@@ -16490,17 +16500,20 @@ function updateRPOLineTotals(idx) {
 
 function collectRPOLines() {
   const st = window.rpoActive;
-  return st.lineItems.map((li, idx) => {
-    const vdq = parseFloat(document.querySelector(`.rpo-vdq[data-idx="${idx}"]`)?.value);
-    const rate = parseFloat(document.querySelector(`.rpo-rate[data-idx="${idx}"]`)?.value) || 0;
-    const discountPercent = parseFloat(document.querySelector(`.rpo-disc[data-idx="${idx}"]`)?.value) || 0;
-    const allocations = Array.from(document.querySelectorAll(`.rpo-alloc[data-idx="${idx}"]`))
-      .map(inp => ({ prnId: inp.dataset.prnid, quantity: parseFloat(inp.value) || 0 }))
-      .filter(a => a.quantity > 0);
-    return { itemCode: li.itemCode, srNo: li.srNo, description: li.description, unit: li.unit,
-             vendorDiscussedQty: vdq, rate, discountPercent,
-             deliveryDate: li.deliveryDate || null, allocations, _received: Number(li.receivedQty) || 0 };
-  });
+  return st.lineItems
+    .map((li, idx) => ({ li, idx }))
+    .filter(({ idx }) => document.querySelector(`.rpo-vdq[data-idx="${idx}"]`)) // skip unchanged/unrendered lines
+    .map(({ li, idx }) => {
+      const vdq = parseFloat(document.querySelector(`.rpo-vdq[data-idx="${idx}"]`)?.value);
+      const rate = parseFloat(document.querySelector(`.rpo-rate[data-idx="${idx}"]`)?.value) || 0;
+      const discountPercent = parseFloat(document.querySelector(`.rpo-disc[data-idx="${idx}"]`)?.value) || 0;
+      const allocations = Array.from(document.querySelectorAll(`.rpo-alloc[data-idx="${idx}"]`))
+        .map(inp => ({ prnId: inp.dataset.prnid, quantity: parseFloat(inp.value) || 0 }))
+        .filter(a => a.quantity > 0);
+      return { itemCode: li.itemCode, srNo: li.srNo, description: li.description, unit: li.unit,
+               vendorDiscussedQty: vdq, rate, discountPercent,
+               deliveryDate: li.deliveryDate || null, allocations, _received: Number(li.receivedQty) || 0, _idx: idx };
+    });
 }
 
 async function submitPORevisionUI() {
@@ -16525,7 +16538,7 @@ async function submitPORevisionUI() {
     // after a full round trip. Checking it here too so it's an
     // immediate, in-place error instead of a wasted request.
     for (const a of l.allocations) {
-      const inp = document.querySelector(`.rpo-alloc[data-idx="${lines.indexOf(l)}"][data-prnid="${a.prnId}"]`);
+      const inp = document.querySelector(`.rpo-alloc[data-idx="${l._idx}"][data-prnid="${a.prnId}"]`);
       const need = inp ? (parseFloat(inp.dataset.need) || 0) : Infinity;
       if (a.quantity > need + 1e-9) {
         return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode} / ${a.prnId.replace(/^PRN_/,"")}: needs only ${need} from this PO — cannot allocate ${a.quantity}.`, "error");
