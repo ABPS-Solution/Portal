@@ -16956,9 +16956,6 @@ async function submitRevisePRN() {
     if (Math.abs(newStore - (Number(li.storeQty)||0)) < 1e-9) continue;
     const req = Number(li.bufferedRequirement) || 0;
     if (newStore > req + 1e-9) return showPurchaseFeedback("rprn-feedback", `⚠️ ${li.itemCode}: store cannot exceed the requirement of ${req}.`, "error");
-    if (Math.max(0, req - newStore) < (Number(li.onOrderQty)||0) - 1e-9) {
-      return showPurchaseFeedback("rprn-feedback", `⚠️ ${li.itemCode}: ${li.onOrderQty} is already on order — revise that PO first before cutting purchase below it.`, "error");
-    }
     changed.push({ itemCode: li.itemCode, newStoreQty: newStore });
   }
   if (changed.length === 0) return showPurchaseFeedback("rprn-feedback", "⚠️ Nothing changed — adjust at least one store quantity.", "error");
