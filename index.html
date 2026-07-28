@@ -15518,6 +15518,7 @@ function updateCPORowAmount(rowId) {
   const rate = parseFloat(row.rate) || 0;
   const disc = parseFloat(row.discountPercent) || 0;
   const amount = qty * rate * (100 - disc) / 100;
+  row.amount = amount;
   const span = document.querySelector(`.cpo-amount[data-rowid="${rowId}"]`);
   if (span) span.textContent = amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -15762,6 +15763,7 @@ async function submitCreatePO() {
     lineItems: window.cpoMaterialRows.map(r => ({
       description: r.description, itemCode: r.itemCode, quantity: parseFloat(r.quantity) || 0,
       unit: r.unit, rate: parseFloat(r.rate) || 0, discountPercent: parseFloat(r.discountPercent) || 0,
+      amount: Number(r.amount) || 0,
       deliveryDate: r.deliveryDate || null,
       allocations: (r.allocations || []).map(a => ({ prnId: a.prnId, quantity: Number(a.quantity) || 0 }))
     })),
