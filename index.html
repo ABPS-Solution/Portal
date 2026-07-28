@@ -16329,28 +16329,19 @@ function renderPORevisionCard() {
 
   // PRN Change Summary — what changed in the PRN(s) that's PROMPTING this
   // PO revision, as opposed to Authorize PO Revision's own "Change
-  // Summary" (what the purchaser is about to change ON the PO). Built
-  // entirely from data already on st.lineItems — no extra fetch needed.
-  // Only meaningful for a PRN-driven revision; a Standalone one has no
-  // PRN reason to summarize.
+  // Summary" (what the purchaser is about to change ON the PO). Gated on
+  // li.changed — the same item-level "does this PO's allocation record
+  // still match what the PRN actually needs" signal the backend uses to
+  // decide which rows even appear in the table below, so the two stay
+  // consistent (a material that's genuinely untouched never shows up in
+  // either place, even if some OTHER item on the same PRN did change).
   let prnSummaryHtml = "";
   if (kind === "PRN Driven") {
-    const versionMoves = {}; // prnId -> {from, to}
-    lineItems.forEach(li => (li.allocations || []).forEach(a => {
-      const from = Number(a.stampedVersion) || 0, to = Number(a.prnVersion) || 0;
-      if (to > from) versionMoves[a.prnId] = { from, to };
-    }));
-    const qtyMoves = lineItems.filter(li => Math.abs((Number(li.newRequiredQty)||0) - (Number(li.orderedQty)||0)) > 1e-9);
-
-    const bullets = [
-      ...Object.entries(versionMoves).map(([prnId, v]) =>
-        `<li><span style="font-family:monospace; font-weight:700; color:var(--brand);">${prnId.replace(/^PRN_/,"")}</span> revised: v${v.from} → v${v.to}</li>`),
-      ...qtyMoves.map(li => {
-        const delta = (Number(li.newRequiredQty)||0) - (Number(li.orderedQty)||0);
-        const dirColor = delta > 0 ? "#15803d" : "#b91c1c";
-        return `<li>${li.description || li.itemCode}: requirement ${fmt(li.orderedQty)} → <span style="font-weight:700; color:${dirColor};">${fmt(li.newRequiredQty)}</span> (${delta > 0 ? "+" : ""}${fmt(delta)})</li>`;
-      }),
-    ];
+    const bullets = lineItems.filter(li => li.changed).map(li => {
+      const delta = (Number(li.newRequiredQty)||0) - (Number(li.orderedQty)||0);
+      const dirColor = delta > 0 ? "#15803d" : "#b91c1c";
+      return `<li>${li.description || li.itemCode}: requirement ${fmt(li.orderedQty)} → <span style="font-weight:700; color:${dirColor};">${fmt(li.newRequiredQty)}</span> (${delta > 0 ? "+" : ""}${fmt(delta)})</li>`;
+    });
     if (bullets.length) {
       prnSummaryHtml = `
       <div style="background:#fefce8; border:1px solid #fde68a; border-radius:var(--radius); padding:10px 14px; margin-bottom:12px;">
@@ -16388,6 +16379,7 @@ function renderPORevisionCard() {
         <strong>Vendor Discussed Purchase Quantity</strong> is what you actually agreed with the vendor, and is required on every row. It cannot go below what has already been received. Anything you don't allocate to a PRN is ordered as extra stock and lands in the Raw Material store (master inventory) — not spare store, which is a separate concept.
       </div>
 
+      ${kind === "PRN Driven" ? `<div style="font-size:0.72rem; color:var(--muted); margin-bottom:8px;">Showing only materials whose required quantity changed — not every row on this PO.</div>` : ""}
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
         <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1150px;">
           <thead><tr style="background:#f8fafc;">
