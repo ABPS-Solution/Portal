@@ -16209,7 +16209,7 @@ async function initializeRevisePOPanel() {
     const data = await apFetch({ action: "fetchPOsNeedingRevision" });
     const queue = (data.success ? (data.queue || []) : []);
     if (queue.length === 0) {
-      feed.innerHTML = `<div style="text-align:center; padding:26px; color:var(--muted); background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px;">✅ No PO is waiting on a PRN revision.</div>`;
+      feed.innerHTML = `<div style="text-align:center; padding:26px; color:var(--muted); background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px;">✅ No PO needs a Revision based on a PRN revision.</div>`;
       return;
     }
     feed.innerHTML = queue.map(po => {
@@ -16290,7 +16290,7 @@ function renderPORevisionCard() {
     // grows the row to fit every one of them — nothing to configure.
     const allocs = li.allocations || [];
     const allocHtml = allocs.length === 0
-      ? `<div style="font-size:0.72rem; color:var(--muted);">No PRN allocated — whole line is extra stock (Raw Material store).</div>`
+      ? `<div style="font-size:0.72rem; color:var(--muted);">No PRN allocated. Entire Material Quantity is extra stock.</div>`
       : allocs.map(a => {
           const need = Math.max(0, (Number(a.currentPurchaseQty)||0) - (Number(a.coveredByOtherPOs)||0));
           const stale = Number(a.prnVersion) > Number(a.stampedVersion || 0);
@@ -16455,7 +16455,7 @@ function updateRPOLineTotals(idx) {
     const extra = Math.round((vdq - sum) * 100) / 100;
     if (over)            { el.style.color = "#b91c1c"; el.textContent = "A PRN is allocated more than it needs."; }
     else if (sum > vdq + 1e-9) { el.style.color = "#b91c1c"; el.textContent = `Allocated ${sum} but the line is ${vdq}.`; }
-    else if (extra > 0)  { el.style.color = "#b45309"; el.textContent = `${extra} extra → Raw Material store stock`; }
+    else if (extra > 0)  { el.style.color = "#b45309"; el.textContent = `${extra} Extra Quantity`; }
     else                 { el.style.color = "#15803d"; el.textContent = "Fully allocated"; }
   }
   updateRPOGrandTotal();
@@ -16921,7 +16921,9 @@ function updateRevisePRNRow(idx) {
   const cap = Math.min(req, isNaN(liveMax) ? req : liveMax);
   let store = parseFloat(inp.value) || 0;
   if (store > cap) { store = cap; inp.value = store; }
-  const newPurchase = Math.max(0, req - store);
+  const rawPurchase = Math.max(0, req - store);
+  const isCountUnit = (li.unit || "").toString().trim().toUpperCase() === "NOS";
+  const newPurchase = isCountUnit ? Math.ceil(rawPurchase - 1e-9) : rawPurchase;
   const cell = document.getElementById(`rprn-newpurch-${idx}`);
   const bad = newPurchase < onOrder - 1e-9 || store > req + 1e-9;
   inp.style.borderColor = bad ? "#b91c1c" : "var(--brand)";
