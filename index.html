@@ -15796,7 +15796,7 @@ async function submitCreatePO() {
       clearCPODraftStorage();
       document.getElementById("create-po-body").innerHTML = "";
       banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
-      banner.innerHTML = `<strong>PO Draft Created — ${data.poNo}</strong><br/>It has been sent for Authorization. <button class="nav-btn-styled" onclick="document.getElementById('create-po-feedback').style.display='none'; initializeCreatePOPanel();" style="background:#15803d; color:#fff; margin-top:8px; padding:6px 14px;">+ Create Another</button>`;
+      banner.innerHTML = `<strong>PO Draft Created: ${data.poNo}</strong><br/>It has been sent for Authorization. <button class="nav-btn-styled" onclick="document.getElementById('create-po-feedback').style.display='none'; initializeCreatePOPanel();" style="background:#15803d; color:#fff; margin-top:8px; padding:6px 14px;">+ Create Another PO</button>`;
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
     } else {
       btn.disabled = false; btn.textContent = "Submit for Authorization";
@@ -15856,8 +15856,6 @@ async function authorizePOFromForm() {
       return showErr(`Row ${n}: allocated ${aSum} across PRNs but only ${row.quantity} is being ordered.`);
     }
   }
-
-  if (!confirm(`Authorize ${poNo}? This finalizes the PO, allocates it against the PRNs above, and generates the PDF.`)) return;
 
   const payload = {
     poNo,
