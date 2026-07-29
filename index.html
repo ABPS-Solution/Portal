@@ -10029,7 +10029,7 @@ async function initializeStoreEntryWorkspaceQueue() {
         const catalogHit   = existingCode
           ? catalog.find(c => (c.itemCode || "").toUpperCase() === existingCode.toUpperCase())
           : null;
-        const preFilledName = catalogHit ? catalogHit.productName : (line.materialName || "");
+        const preFilledName = catalogHit ? (catalogHit.combinedName || catalogHit.productName) : (line.materialName || "");
         const preFilledType = catalogHit ? (catalogHit.typeOfMaterial || "") : "";
         const isPreFilled   = !!existingCode;
 
@@ -10277,7 +10277,7 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
   itemData.storePerson = appActiveOperatorIdentityString || "";
 
   if (itemCodeMissing || materialTypeMissing) {
-    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Every line item must have a material selected. If no match exists, create the Item Code first in Design Department.", "error");
+    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Every line item must have a material selected. If no match exists, create the Item Code first.", "error");
     banner.scrollIntoView({ behavior: "smooth", block: "center" });
     btn.disabled = false;
     btn.textContent = "Verify & Generate Raw Materials Store Entry";
