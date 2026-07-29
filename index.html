@@ -17861,18 +17861,24 @@ function exitMarketingDashboardBackToMenu() {
   if (customZoneReset) customZoneReset.style.display = "none";
 }
 
+// Dashboard canvases are NOT reliably nested under their "own"
+// department's enclosure panel — live DOM inspection showed
+// canvas-module-design-dashboard actually sits inside
+// module-purchase-workspace-enclosure-panel, not the design one. Rather
+// than guess per-department, show every enclosure panel unconditionally;
+// each one's own .workspace-panel children are already forced to
+// display:none right below, so this can't leak stale content, it just
+// guarantees whichever ancestor actually contains the target canvas is
+// no longer display:none.
+function ddShowAllWorkspaceEnclosures() {
+  document.querySelectorAll('[id$="-workspace-enclosure-panel"]').forEach(p => p.style.display = "block");
+}
+
 function navigateToDesignDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
-  // The dashboard canvas is nested inside this enclosure panel (see
-  // exitDesignWorkspacePanelBackToMenu, which hides both together) — it
-  // was never being shown here, so going straight to the dashboard
-  // without visiting another Design panel first left it trapped inside
-  // a hidden ancestor: display:block on the canvas itself, but
-  // getBoundingClientRect() all zeros and nothing visible.
-  const enclosure = document.getElementById("module-design-workspace-enclosure-panel");
-  if (enclosure) enclosure.style.display = "block";
+  ddShowAllWorkspaceEnclosures();
   const c = document.getElementById("canvas-module-design-dashboard");
   if (c) c.style.display = "block";
   if (typeof ddLoadDashboard === "function") ddLoadDashboard();
@@ -17882,11 +17888,7 @@ function navigateToPurchaseDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
-  // Same hidden-ancestor issue as Design — the dashboard canvas lives
-  // inside this enclosure panel, confirmed via a live DOM ancestor trace
-  // (getBoundingClientRect returning all zeros despite display:block).
-  const enclosure = document.getElementById("module-purchase-workspace-enclosure-panel");
-  if (enclosure) enclosure.style.display = "block";
+  ddShowAllWorkspaceEnclosures();
   const c = document.getElementById("canvas-module-purchase-dashboard");
   if (c) c.style.display = "block";
   if (typeof pdLoadDashboard === "function") pdLoadDashboard();
@@ -17896,11 +17898,7 @@ function navigateToStoreDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
-  // Same class of bug as Design/Purchase — exitStoreWorkspacePanelBackToMenu
-  // hides this same enclosure panel, confirming the dashboard canvas sits
-  // inside it too.
-  const enclosure = document.getElementById("module-store-workspace-enclosure-panel");
-  if (enclosure) enclosure.style.display = "block";
+  ddShowAllWorkspaceEnclosures();
   const c = document.getElementById("canvas-module-store-dashboard");
   if (c) c.style.display = "block";
   if (typeof sdLoadDashboard === "function") sdLoadDashboard();
@@ -18136,6 +18134,7 @@ function navigateToProductionDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+  ddShowAllWorkspaceEnclosures();
   const c = document.getElementById("canvas-module-production-dashboard");
   if (c) c.style.display = "block";
   if (typeof pd2LoadDashboard === "function") pd2LoadDashboard();
@@ -18384,6 +18383,7 @@ function navigateToMarketingDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+  ddShowAllWorkspaceEnclosures();
   const c = document.getElementById("canvas-module-marketing-dashboard");
   if (c) c.style.display = "block";
   mdLoadDashboard();
