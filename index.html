@@ -10608,7 +10608,7 @@ async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
   banner.style.display = "none";
 
   if (qaDoneMissing) {
-    showBOQBanner('store-grn-runtime-feedback-banner', "⚠️ Every line item must be checked off as Q/A Done before this GRN can be submitted.", "error");
+    showBOQBanner('store-grn-runtime-feedback-banner', "⚠️ Every line item must be checked off as Q/A Done before this can be submitted.", "error");
     banner.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
