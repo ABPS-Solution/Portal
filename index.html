@@ -1750,6 +1750,39 @@
       <div id="pps-results-body"></div>
     </div>
 
+    <div id="canvas-module-purchase-search-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="color:var(--brand); margin:0 0 6px 0;">Search by Raw Material Purchase Order</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Look up any Authorized Purchase Order by PO Number, material, or Project ID — view only.</p>
+      <div id="srchpo-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--border);">
+        <button id="srchpo-tab-po" onclick="switchSearchRMPOToggle('po')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:800; font-size:0.85rem; color:var(--brand); border-bottom:3px solid var(--brand); margin-bottom:-2px;">Search Purchase Order Information</button>
+        <button id="srchpo-tab-vendor" onclick="switchSearchRMPOToggle('vendor')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:700; font-size:0.85rem; color:var(--muted); border-bottom:3px solid transparent; margin-bottom:-2px;">Search Vendor Information</button>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:18px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+        <div id="srchpo-po-field">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">PO Number</label>
+          <input type="text" id="srchpo-po-input" placeholder="e.g. PO_26-27_00001" autocomplete="off" onkeydown="if(event.key==='Enter')searchByPONumberUI()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+          <button class="nav-btn-styled" onclick="searchByPONumberUI()" style="margin-top:8px; background:var(--accent); color:#fff; font-weight:700; padding:7px 16px; width:100%;">Search</button>
+        </div>
+        <div style="position:relative;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Material Name</label>
+          <input type="text" id="srchpo-material-input" placeholder="Start typing material name..." autocomplete="off" oninput="handleSrchPOMaterialInput(this.value)" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+          <div id="srchpo-material-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <button class="nav-btn-styled" onclick="searchByMaterialUI()" style="margin-top:8px; background:var(--accent); color:#fff; font-weight:700; padding:7px 16px; width:100%;">Search</button>
+        </div>
+        <div style="position:relative;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID</label>
+          <input type="text" id="srchpo-project-input" placeholder="Start typing Project ID..." autocomplete="off" oninput="handleSrchPOProjectInput(this.value)" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+          <div id="srchpo-project-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <button class="nav-btn-styled" onclick="searchByProjectIdUI()" style="margin-top:8px; background:var(--accent); color:#fff; font-weight:700; padding:7px 16px; width:100%;">Search</button>
+        </div>
+      </div>
+
+      <div id="srchpo-results" style="display:flex; flex-direction:column; gap:12px;"></div>
+    </div>
+
     <div id="canvas-module-purchase-rejected-material" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="color:var(--brand); margin:0 0 6px 0;">Store Inward Rejected Material</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
@@ -15132,6 +15165,315 @@ function toggleAuthorizePOCard(poNo) {
   initializeCreatePOPanel(poNo, `po-auth-expand-${poNo}`);
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// Search by Raw Material Purchase Order — deliberately its OWN read-only
+// renderer, not a reuse of initializeCreatePOPanel/renderCPOMaterialRows.
+// Those two are shared by Create/Authorize/Revise PO and are already
+// warned about in the handoff as "trace every call site" risk — adding a
+// view-only branch through them would mean threading a 3rd mode through
+// every input's disabled-state and every button's visibility. Cheaper and
+// safer to just render static divs here from fetchRMPOFullDetail's data.
+// ═══════════════════════════════════════════════════════════════════════
+
+async function initializeSearchRMPOPanel() {
+  window.srchpoToggle = 'po';
+  window.srchpoSelectedItemCode = null;
+  window.srchpoSelectedProjectId = null;
+  window.srchpoExpandedPoNo = null;
+  const poInput = document.getElementById("srchpo-po-input");
+  const matInput = document.getElementById("srchpo-material-input");
+  const projInput = document.getElementById("srchpo-project-input");
+  if (poInput) poInput.value = "";
+  if (matInput) matInput.value = "";
+  if (projInput) projInput.value = "";
+  document.getElementById("srchpo-results").innerHTML = "";
+  const fb = document.getElementById("srchpo-feedback");
+  if (fb) { fb.style.display = "none"; fb.innerHTML = ""; }
+  switchSearchRMPOToggle('po');
+  loadItemCodeCatalogIntoCache();
+  try {
+    const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
+    window.srchpoActiveProjects = (data.success ? (data.projects || []) : []);
+  } catch(e) { window.srchpoActiveProjects = []; }
+}
+
+function switchSearchRMPOToggle(mode) {
+  window.srchpoToggle = mode;
+  document.getElementById("srchpo-results").innerHTML = "";
+  const poTab = document.getElementById("srchpo-tab-po");
+  const vendorTab = document.getElementById("srchpo-tab-vendor");
+  const poField = document.getElementById("srchpo-po-field");
+  if (mode === 'po') {
+    poTab.style.color = "var(--brand)"; poTab.style.borderBottomColor = "var(--brand)"; poTab.style.fontWeight = "800";
+    vendorTab.style.color = "var(--muted)"; vendorTab.style.borderBottomColor = "transparent"; vendorTab.style.fontWeight = "700";
+    if (poField) poField.style.display = "block";
+  } else {
+    vendorTab.style.color = "var(--brand)"; vendorTab.style.borderBottomColor = "var(--brand)"; vendorTab.style.fontWeight = "800";
+    poTab.style.color = "var(--muted)"; poTab.style.borderBottomColor = "transparent"; poTab.style.fontWeight = "700";
+    // PO Number search doesn't apply to vendor lookup — hidden per spec.
+    if (poField) poField.style.display = "none";
+  }
+}
+
+function handleSrchPOMaterialInput(query) {
+  window.srchpoSelectedItemCode = null;
+  const dd = document.getElementById("srchpo-material-dd");
+  const catalog = window.itemCodeCatalogCache || [];
+  if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
+  const q = query.toLowerCase();
+  const matches = catalog.filter(it => (it.productName||"").toLowerCase().includes(q) || (it.rating||"").toLowerCase().includes(q)).slice(0, 10);
+  if (matches.length === 0) { dd.style.display = "none"; return; }
+  dd.innerHTML = matches.map(it => `
+    <div onclick="selectSrchPOMaterial('${it.itemCode}', \`${(it.productName||'').replace(/\`/g,"'")}\`, \`${(it.rating||'').replace(/\`/g,"'")}\`)"
+      style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.productName}${it.rating ? ` <span style="color:var(--brand); font-weight:700;">${it.rating}</span>` : ''}
+    </div>`).join("");
+  dd.style.display = "block";
+}
+
+function selectSrchPOMaterial(itemCode, productName, rating) {
+  window.srchpoSelectedItemCode = itemCode;
+  document.getElementById("srchpo-material-input").value = rating ? `${productName} ${rating}` : productName;
+  document.getElementById("srchpo-material-dd").style.display = "none";
+}
+
+function handleSrchPOProjectInput(query) {
+  window.srchpoSelectedProjectId = null;
+  const dd = document.getElementById("srchpo-project-dd");
+  const projects = window.srchpoActiveProjects || [];
+  if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
+  const q = query.toLowerCase();
+  const matches = projects.filter(p => p.toString().toLowerCase().includes(q)).slice(0, 10);
+  if (matches.length === 0) { dd.style.display = "none"; return; }
+  dd.innerHTML = matches.map(p => `
+    <div onclick="selectSrchPOProject('${p.toString().replace(/'/g,"")}')"
+      style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${p}</div>`).join("");
+  dd.style.display = "block";
+}
+
+function selectSrchPOProject(projectId) {
+  window.srchpoSelectedProjectId = projectId;
+  document.getElementById("srchpo-project-input").value = projectId;
+  document.getElementById("srchpo-project-dd").style.display = "none";
+}
+
+function srchpoShowFeedback(msg, isError) {
+  const fb = document.getElementById("srchpo-feedback");
+  fb.style.display = "block";
+  fb.style.borderLeftColor = isError ? "var(--warn)" : "var(--brand)";
+  fb.style.background = isError ? "#fef2f2" : "#eff6ff";
+  fb.style.color = isError ? "#b91c1c" : "var(--brand)";
+  fb.innerHTML = msg;
+}
+
+async function searchByPONumberUI() {
+  const q = document.getElementById("srchpo-po-input").value.trim();
+  if (!q || q.length < 2) { srchpoShowFeedback("Enter at least 2 characters of a PO number.", true); return; }
+  document.getElementById("srchpo-feedback").style.display = "none";
+  const results = document.getElementById("srchpo-results");
+  results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
+  try {
+    const data = await apFetch({ action: "searchRMPOsByPONumber", query: q });
+    if (!data.success) { srchpoShowFeedback(data.error, true); results.innerHTML = ""; return; }
+    renderSrchPOResultsAsPOCards(data.results || []);
+  } catch(e) { srchpoShowFeedback(e.message, true); results.innerHTML = ""; }
+}
+
+async function searchByMaterialUI() {
+  if (!window.srchpoSelectedItemCode) { srchpoShowFeedback("Select a material from the dropdown list.", true); return; }
+  document.getElementById("srchpo-feedback").style.display = "none";
+  const results = document.getElementById("srchpo-results");
+  results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
+  try {
+    if (window.srchpoToggle === 'po') {
+      const data = await apFetch({ action: "searchRMPOsByMaterial", itemCode: window.srchpoSelectedItemCode });
+      if (!data.success) { srchpoShowFeedback(data.error, true); results.innerHTML = ""; return; }
+      renderSrchPOResultsAsPOCards(data.results || []);
+    } else {
+      const data = await apFetch({ action: "searchRMPOVendorsByMaterial", itemCode: window.srchpoSelectedItemCode });
+      if (!data.success) { srchpoShowFeedback(data.error, true); results.innerHTML = ""; return; }
+      renderSrchPOVendorResults(data.vendors || []);
+    }
+  } catch(e) { srchpoShowFeedback(e.message, true); results.innerHTML = ""; }
+}
+
+async function searchByProjectIdUI() {
+  const projectId = window.srchpoSelectedProjectId || document.getElementById("srchpo-project-input").value.trim();
+  if (!projectId) { srchpoShowFeedback("Select or enter a Project ID.", true); return; }
+  document.getElementById("srchpo-feedback").style.display = "none";
+  const results = document.getElementById("srchpo-results");
+  results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
+  try {
+    if (window.srchpoToggle === 'po') {
+      const data = await apFetch({ action: "searchRMPOsByProjectId", projectId });
+      if (!data.success) { srchpoShowFeedback(data.error, true); results.innerHTML = ""; return; }
+      renderSrchPOResultsAsPOCards(data.results || []);
+    } else {
+      const data = await apFetch({ action: "searchRMPOVendorsByProjectId", projectId });
+      if (!data.success) { srchpoShowFeedback(data.error, true); results.innerHTML = ""; return; }
+      renderSrchPOVendorResults(data.vendors || []);
+    }
+  } catch(e) { srchpoShowFeedback(e.message, true); results.innerHTML = ""; }
+}
+
+function renderSrchPOResultsAsPOCards(list) {
+  const results = document.getElementById("srchpo-results");
+  window.srchpoExpandedPoNo = null;
+  if (list.length === 0) {
+    results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No matching Authorized Purchase Orders found.</div>`;
+    return;
+  }
+  const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+  results.innerHTML = list.map(po => `
+    <div class="contact-summary-card-parent" style="margin-bottom:0;">
+      <div class="contact-summary-header-row" onclick="toggleSrchPOCard('${po.poNo}')" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNo}</span>
+          <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
+          ${po.revisionNumber ? `<span style="margin-left:8px; font-size:0.72rem; color:var(--muted);">Rev ${po.revisionNumber}</span>` : ""}
+        </div>
+        <div style="font-size:0.85rem; color:var(--muted);">${fmtPODate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></div>
+      </div>
+      <div id="srchpo-expand-${po.poNo}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
+    </div>`).join("");
+}
+
+async function toggleSrchPOCard(poNo) {
+  const expandDiv = document.getElementById(`srchpo-expand-${poNo}`);
+  if (!expandDiv) return;
+
+  if (window.srchpoExpandedPoNo === poNo) {
+    expandDiv.style.display = "none";
+    expandDiv.innerHTML = "";
+    window.srchpoExpandedPoNo = null;
+    return;
+  }
+  if (window.srchpoExpandedPoNo) {
+    const prev = document.getElementById(`srchpo-expand-${window.srchpoExpandedPoNo}`);
+    if (prev) { prev.style.display = "none"; prev.innerHTML = ""; }
+  }
+  window.srchpoExpandedPoNo = poNo;
+  expandDiv.style.display = "block";
+  expandDiv.innerHTML = `<div style="text-align:center; padding:16px; color:var(--muted);">Loading PO detail...</div>`;
+  try {
+    const data = await apFetch({ action: "fetchRMPOFullDetail", poNo });
+    if (!data.success) { expandDiv.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    expandDiv.innerHTML = renderRMPOViewOnlyDetail(data.po, data.lineItems || []);
+  } catch(e) { expandDiv.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+}
+
+function renderRMPOViewOnlyDetail(po, lineItems) {
+  const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const field = (label, val) => `
+    <div>
+      <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:3px;">${label}</div>
+      <div style="font-size:0.85rem; color:#0f172a;">${val || '—'}</div>
+    </div>`;
+
+  const rowsHtml = lineItems.map((l, idx) => {
+    const allocs = l.allocations || [];
+    const projectChips = allocs.length
+      ? allocs.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${(a.prnId||'').replace(/^PRN_/, "")} (${a.projectId||''}): <strong>${a.quantity}</strong></div>`).join("")
+      : '<span style="color:var(--muted); font-size:0.75rem;">No allocation on record</span>';
+    return `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:8px; text-align:center;">${idx + 1}</td>
+      <td style="padding:8px;">${l.description || ''}<div style="font-family:monospace; color:var(--brand); font-size:0.75rem;">${l.itemCode || ''}</div></td>
+      <td style="padding:8px; text-align:center;">${l.unit || '—'}</td>
+      <td style="padding:8px; text-align:right;">${l.quantity}</td>
+      <td style="padding:8px; text-align:right;">${fmt(l.rate)}</td>
+      <td style="padding:8px; text-align:center;">${l.discountPercent || 0}%</td>
+      <td style="padding:8px; text-align:right; font-weight:700;">${fmt(l.amount)}</td>
+      <td style="padding:8px;">${projectChips}</td>
+    </tr>`;
+  }).join("");
+
+  return `
+    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px; letter-spacing:0.5px;">Purchase Order Header (View Only)</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:14px;">
+        ${field("Vendor Name", po.vendorName)}
+        ${field("Supplier Offer No", po.supplierRef)}
+        ${field("Order Date", fmtPODate(po.orderDate))}
+        ${field("Delivery Date", fmtPODate(po.deliveryDate))}
+        ${field("Prepared By", po.preparedBy)}
+        ${field("Authorized By", po.authorizedBy)}
+        ${field("Revision Number", po.revisionNumber || 0)}
+        ${field("Status", po.status)}
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px; overflow-x:auto;">
+      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">Material Rows</div>
+      <table style="width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--border); font-size:0.82rem;">
+        <thead>
+          <tr style="background:#f1f5f9; text-align:left;">
+            <th style="padding:8px; text-align:center;">#</th>
+            <th style="padding:8px;">Description of Material</th>
+            <th style="padding:8px; text-align:center;">Unit</th>
+            <th style="padding:8px; text-align:right;">Quantity</th>
+            <th style="padding:8px; text-align:right;">Rate/Qty</th>
+            <th style="padding:8px; text-align:center;">Disc %</th>
+            <th style="padding:8px; text-align:right;">Amount</th>
+            <th style="padding:8px;">PRNs / Projects</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml || `<tr><td colspan="8" style="padding:14px; text-align:center; color:var(--muted);">No line items.</td></tr>`}</tbody>
+      </table>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Taxes & Charges</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+          ${field("CGST %", po.cgstPercent)}
+          ${field("SGST %", po.sgstPercent)}
+          ${field("IGST %", po.igstPercent)}
+          ${field("Packing", fmt(po.packing))}
+          ${field("Freight", fmt(po.freight))}
+          ${field("Other", fmt(po.other))}
+          ${field("Round Off", fmt(po.roundOff))}
+        </div>
+      </div>
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Terms</div>
+        ${field("Warranty", po.warranty)}
+        <div style="margin-top:8px;">${field("Payment Terms", po.paymentTerms)}</div>
+        <div style="margin-top:8px;">${field("Freight Terms", po.freightTerms)}</div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius); padding:14px;">
+      <div style="font-size:0.85rem; text-align:right;">
+        <div>Sub Total: <strong>${fmt(po.subTotal)}</strong></div>
+        <div style="font-size:1.05rem; margin-top:4px;">Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderSrchPOVendorResults(vendors) {
+  const results = document.getElementById("srchpo-results");
+  if (vendors.length === 0) {
+    results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No matching vendors found.</div>`;
+    return;
+  }
+  results.innerHTML = vendors.map(v => `
+    <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+      <div style="font-weight:700; font-size:0.95rem; color:var(--brand); margin-bottom:8px;">${v.vendorName} ${v.status ? `<span style="font-size:0.7rem; font-weight:600; color:${v.status === 'Active' ? '#16a34a' : '#b91c1c'};">(${v.status})</span>` : ""}</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; font-size:0.82rem;">
+        <div><span style="color:var(--muted);">GSTIN/UIN:</span> ${v.gstinUin || '—'}</div>
+        <div><span style="color:var(--muted);">Type:</span> ${v.typeOfVendor || '—'}</div>
+        <div><span style="color:var(--muted);">Contact Person:</span> ${v.contactPerson || '—'}</div>
+        <div><span style="color:var(--muted);">Phone:</span> ${v.phoneNumber || '—'}</div>
+        <div><span style="color:var(--muted);">Email:</span> ${v.email || '—'}</div>
+        <div><span style="color:var(--muted);">City/State:</span> ${v.city || '—'}${v.state ? ', ' + v.state : ''} ${v.stateCode ? `(${v.stateCode})` : ''}</div>
+        <div style="grid-column:1 / -1;"><span style="color:var(--muted);">Address:</span> ${v.address || '—'}</div>
+      </div>
+    </div>`).join("");
+}
+
 async function initializeCreatePOPanel(authorizePoNo = null, containerId = "create-po-body") {
   window.cpoMode = authorizePoNo ? 'authorize' : 'create';
   window.cpoEditingPoNo = authorizePoNo || null;
@@ -16129,7 +16471,7 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
   document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
 
-  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po","canvas-module-purchase-rejected-material","canvas-module-purchase-create-po","canvas-module-purchase-authorize-prn","canvas-module-purchase-authorize-po","canvas-module-purchase-pps-tracking","canvas-module-purchase-revise-po","canvas-module-purchase-authorize-po-revision","canvas-module-purchase-revise-prn"].forEach(id => {
+  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po","canvas-module-purchase-rejected-material","canvas-module-purchase-create-po","canvas-module-purchase-authorize-prn","canvas-module-purchase-authorize-po","canvas-module-purchase-pps-tracking","canvas-module-purchase-revise-po","canvas-module-purchase-authorize-po-revision","canvas-module-purchase-revise-prn","canvas-module-purchase-search-po"].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = "none";
   });
 
@@ -16181,6 +16523,9 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
     window.rejMaterialVendorFilter = "";
     window.rejMaterialActionFilter = [];
     initializeRejectedMaterialPanel('pending');
+  } else if (targetModuleId === "purchase-search-po") {
+    document.getElementById("canvas-module-purchase-search-po").style.display = "block";
+    initializeSearchRMPOPanel();
   }
 }
 
