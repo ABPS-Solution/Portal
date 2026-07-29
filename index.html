@@ -10067,19 +10067,19 @@ async function initializeStoreEntryWorkspaceQueue() {
             </div>
             ${isPreFilled ? '' : suggestionHtml}
           </td>
-          <td style="text-align:center; color:#64748b; font-weight:700; vertical-align:top; padding-top:10px; width:60px; font-family:monospace; font-size:0.95rem;">
+          <td style="text-align:center; color:#64748b; font-weight:700; vertical-align:top; padding-top:10px; width:55px; font-family:monospace; font-size:0.9rem;">
             ${line.unitType || "NOS"}
           </td>
-          <td style="text-align:center; color:#1e293b; font-weight:800; vertical-align:top; padding-top:10px; width:70px; font-family:monospace; font-size:1.05rem;">
+          <td style="text-align:center; color:#1e293b; font-weight:800; vertical-align:top; padding-top:10px; width:65px; font-family:monospace; font-size:0.95rem;">
             ${line.gateQuantity}
           </td>
-          <td style="text-align:center; width:110px; padding:6px 6px 6px 16px; vertical-align:top;">
+          <td style="text-align:center; width:85px; padding:6px 6px 6px 16px; vertical-align:top;">
             <input type="number" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}"
               value="${line.gateQuantity}"
-              style="width:100%; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:5px; font-size:0.95rem; border-radius:3px;"
+              style="width:100%; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:5px; font-size:0.9rem; border-radius:3px;"
               oninput="updateSERowAmounts('${item.gateNumber}', ${idx})">
           </td>
-          <td style="text-align:right; width:100px; padding:6px; vertical-align:top;">
+          <td style="text-align:right; width:75px; padding:6px; vertical-align:top;">
             <input type="number" class="se-rate-${item.gateNumber}" data-idx="${idx}"
               value="${line.ratePerQuantity || ''}" placeholder="Rate"
               style="width:100%; text-align:right; font-weight:700; border:1.5px solid ${line.ratePerQuantity > 0 ? 'var(--brand)' : '#f59e0b'}; padding:5px; font-size:0.9rem; border-radius:3px;"
@@ -10126,14 +10126,14 @@ async function initializeStoreEntryWorkspaceQueue() {
               <thead>
                 <tr style="background:#f8fafc;">
                   <th style="width:95px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
-                  <th style="width:290px; max-width:150px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Description</th>
-                  <th style="width:320px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name *</th>
-                  <th style="width:60px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit</th>
-                  <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Invoice Qty</th>
-                  <th style="width:110px; text-align:center; font-size:0.72rem; padding:8px 6px 8px 16px; white-space:nowrap;">Received Qty *</th>
-                  <th style="width:100px; text-align:right; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Rate / Qty</th>
-                  <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">GST %</th>
-                  <th style="width:100px; text-align:right; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Amount (Incl. GST)</th>
+                  <th style="width:250px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Description</th>
+                  <th style="width:280px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name *</th>
+                  <th style="width:55px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit</th>
+                  <th style="width:65px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Invoice Qty</th>
+                  <th style="width:85px; text-align:center; font-size:0.72rem; padding:8px 6px 8px 16px; white-space:nowrap;">Received Qty *</th>
+                  <th style="width:75px; text-align:right; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Rate / Qty</th>
+                  <th style="width:60px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">GST %</th>
+                  <th style="width:95px; text-align:right; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Amount (Incl. GST)</th>
                 </tr>
               </thead>
               <tbody>${trs}</tbody>
