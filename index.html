@@ -363,6 +363,7 @@
         <div class="menu-card" id="mod-purchase-pps-tracking" onclick="navigateToPurchaseWorkspacePanel('purchase-pps-tracking')"><span class="mc-label">PPS Tracking</span></div>
         <div class="menu-card" id="mod-revise-rm-po" onclick="navigateToPurchaseWorkspacePanel('purchase-revise-po')"><span class="mc-label">Revise Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-authorize-rm-po-revision" onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po-revision')"><span class="mc-label">Authorize Raw Material Purchase Order Revision</span></div>
+        <div class="menu-card" id="mod-search-rm-po" onclick="navigateToPurchaseWorkspacePanel('purchase-search-po')"><span class="mc-label">Search by Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-rejected-material" onclick="navigateToPurchaseWorkspacePanel('purchase-rejected-material')"><span class="mc-label">Store Inward Rejected Material</span></div>
       </div>
     </div>
@@ -6966,6 +6967,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canAuthorizePRNRevision = userPermissionsObject.authorizePRNRevision === true;
   const canReviseRMPO = userPermissionsObject.reviseRMPO === true;
   const canAuthorizeRMPORevision = userPermissionsObject.authorizeRMPORevision === true;
+  const canSearchRMPO = userPermissionsObject.searchRMPO === true;
   const canReviseQACheck = userPermissionsObject.reviseQACheck === true;
 
   // --- SET INDIVIDUAL VISIBILITY FOR MARKETING TARGET CARDS ---
@@ -7069,6 +7071,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-authorize-prn-revision")) document.getElementById("mod-authorize-prn-revision").style.display = canAuthorizePRNRevision ? "block" : "none";
   if (document.getElementById("mod-revise-rm-po")) document.getElementById("mod-revise-rm-po").style.display = canReviseRMPO ? "block" : "none";
   if (document.getElementById("mod-authorize-rm-po-revision")) document.getElementById("mod-authorize-rm-po-revision").style.display = canAuthorizeRMPORevision ? "block" : "none";
+  if (document.getElementById("mod-search-rm-po")) document.getElementById("mod-search-rm-po").style.display = canSearchRMPO ? "block" : "none";
   if (document.getElementById("mod-revise-qa-check")) document.getElementById("mod-revise-qa-check").style.display = canReviseQACheck ? "block" : "none";
   const purchaseHeaderBlock = document.getElementById("dashboard-purchase-department-header-block");
   if (purchaseHeaderBlock) {
