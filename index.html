@@ -15445,9 +15445,9 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Taxes & Charges</div>
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
-          ${field("CGST %", po.cgstPercent)}
-          ${field("SGST %", po.sgstPercent)}
-          ${field("IGST %", po.igstPercent)}
+          ${field("CGST %", fmt(po.cgstPercent))}
+          ${field("SGST %", fmt(po.sgstPercent))}
+          ${field("IGST %", fmt(po.igstPercent))}
           ${field("Packing", fmt(po.packing))}
           ${field("Freight", fmt(po.freight))}
           ${field("Other", fmt(po.other))}
@@ -17865,6 +17865,14 @@ function navigateToDesignDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+  // The dashboard canvas is nested inside this enclosure panel (see
+  // exitDesignWorkspacePanelBackToMenu, which hides both together) — it
+  // was never being shown here, so going straight to the dashboard
+  // without visiting another Design panel first left it trapped inside
+  // a hidden ancestor: display:block on the canvas itself, but
+  // getBoundingClientRect() all zeros and nothing visible.
+  const enclosure = document.getElementById("module-design-workspace-enclosure-panel");
+  if (enclosure) enclosure.style.display = "block";
   const c = document.getElementById("canvas-module-design-dashboard");
   if (c) c.style.display = "block";
   if (typeof ddLoadDashboard === "function") ddLoadDashboard();
@@ -17874,6 +17882,11 @@ function navigateToPurchaseDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+  // Same hidden-ancestor issue as Design — the dashboard canvas lives
+  // inside this enclosure panel, confirmed via a live DOM ancestor trace
+  // (getBoundingClientRect returning all zeros despite display:block).
+  const enclosure = document.getElementById("module-purchase-workspace-enclosure-panel");
+  if (enclosure) enclosure.style.display = "block";
   const c = document.getElementById("canvas-module-purchase-dashboard");
   if (c) c.style.display = "block";
   if (typeof pdLoadDashboard === "function") pdLoadDashboard();
@@ -17883,6 +17896,11 @@ function navigateToStoreDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+  // Same class of bug as Design/Purchase — exitStoreWorkspacePanelBackToMenu
+  // hides this same enclosure panel, confirming the dashboard canvas sits
+  // inside it too.
+  const enclosure = document.getElementById("module-store-workspace-enclosure-panel");
+  if (enclosure) enclosure.style.display = "block";
   const c = document.getElementById("canvas-module-store-dashboard");
   if (c) c.style.display = "block";
   if (typeof sdLoadDashboard === "function") sdLoadDashboard();
