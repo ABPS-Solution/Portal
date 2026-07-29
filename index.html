@@ -9988,7 +9988,7 @@ async function initializeStoreEntryWorkspaceQueue() {
       item.lineItems.forEach((line, idx) => {
         const lineMatches = matches[`${cardIdx}_${idx}`] || [];
         const hasMatches = lineMatches.length > 0;
-        const rawDesc = (line.materialName || line.rawDescriptionLine || "").replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const rawDesc = (line.invoiceDescription || line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
         const confColors = {
           high:   { bg:"#dcfce7", color:"#15803d", border:"#86efac" },
@@ -10480,13 +10480,13 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
                 <thead><tr style="background:#f8fafc;">
                   <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
                   <th style="width:180px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Description</th>
-                  <th style="width:225px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name</th>
+                  <th style="width:220px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name</th>
                   <th style="width:55px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit</th>
                   <th style="width:65px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Received</th>
                   <th style="width:65px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">OK Qty</th>
                   <th style="width:55px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Not OK</th>
                   <th style="width:150px; text-align:left; font-size:0.72rem; padding:8px 6px;">Reason for Not OK</th>
-                  <th style="width:165px; text-align:left; font-size:0.72rem; padding:8px 6px;">Action for Rejected *</th>
+                  <th style="width:170px; text-align:left; font-size:0.72rem; padding:8px 6px;">Action for Rejected *</th>
                   <th style="width:60px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Q/A Done</th>
                 </tr></thead>
                 <tbody>${trs}</tbody>
