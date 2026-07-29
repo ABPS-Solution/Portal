@@ -9969,7 +9969,7 @@ async function initializeStoreEntryWorkspaceQueue() {
   try {
     const [, data] = await Promise.all([
       loadItemCodeCatalogIntoCache(),
-      apFetch({ action: "fetchInwardWorkflowQueueStream", targetStep: "STORE pending" })
+      apFetch({ action: "fetchInwardWorkflowQueueStream", targetStep: "Gate Entered" })
     ]);
     if (!data.success || data.queue.length === 0) {
       feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records waiting for Raw Materials Store Entry and GRN.</div>';
