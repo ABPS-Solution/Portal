@@ -1810,37 +1810,6 @@
     <!-- DESIGN DASHBOARD CANVAS -->
     <div id="canvas-module-design-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
-      <!-- TOP BAR -->
-      <div style="background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10;">
-        <!-- Row 1: period buttons + title + return -->
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; position:relative;">
-          <div id="dd-period-btns" style="display:flex; gap:4px; flex-wrap:nowrap;">
-            <button class="dd-period-btn active" data-period="today"       onclick="ddSetPeriod(this)">Today</button>
-            <button class="dd-period-btn"        data-period="yesterday"   onclick="ddSetPeriod(this)">Yesterday</button>
-            <button class="dd-period-btn"        data-period="thisweek"    onclick="ddSetPeriod(this)">This Week</button>
-            <button class="dd-period-btn"        data-period="thismonth"   onclick="ddSetPeriod(this)">This Month</button>
-            <button class="dd-period-btn"        data-period="thisquarter" onclick="ddSetPeriod(this)">This Quarter</button>
-            <button class="dd-period-btn"        data-period="thisyear"    onclick="ddSetPeriod(this)">This Year</button>
-            <button class="dd-period-btn"        data-period="custom"      onclick="ddSetPeriod(this)">Custom ▾</button>
-          </div>
-          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">Design Dashboard</span>
-          <button class="nav-btn-styled" onclick="exitDesignWorkspacePanelBackToMenu()" style="font-size:0.75rem;">Return to Main Dashboard</button>
-        </div>
-        <!-- Row 2: custom picker — drops below, hidden by default -->
-        <div id="dd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
-          <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
-          <select id="dd-custom-type" onchange="ddCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
-            <option value="customday">Day</option>
-            <option value="customweek">Week</option>
-            <option value="custommonth">Month</option>
-            <option value="customquarter">Quarter</option>
-            <option value="customyear">Year</option>
-          </select>
-          <input id="dd-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
-          <button onclick="ddLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
-        </div>
-      </div>
-
       <!-- DASHBOARD BODY -->
       <div id="dd-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
@@ -1956,35 +1925,6 @@
     <!-- PURCHASE DASHBOARD CANVAS -->
     <div id="canvas-module-purchase-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
-      <!-- TOP BAR -->
-      <div style="background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10;">
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; position:relative;">
-          <div id="pd-period-btns" style="display:flex; gap:4px; flex-wrap:nowrap;">
-            <button class="dd-period-btn active" data-period="today"       onclick="pdSetPeriod(this)">Today</button>
-            <button class="dd-period-btn"        data-period="yesterday"   onclick="pdSetPeriod(this)">Yesterday</button>
-            <button class="dd-period-btn"        data-period="thisweek"    onclick="pdSetPeriod(this)">This Week</button>
-            <button class="dd-period-btn"        data-period="thismonth"   onclick="pdSetPeriod(this)">This Month</button>
-            <button class="dd-period-btn"        data-period="thisquarter" onclick="pdSetPeriod(this)">This Quarter</button>
-            <button class="dd-period-btn"        data-period="thisyear"    onclick="pdSetPeriod(this)">This Year</button>
-            <button class="dd-period-btn"        data-period="custom"      onclick="pdSetPeriod(this)">Custom ▾</button>
-          </div>
-          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">Purchase Dashboard</span>
-          <button class="nav-btn-styled" onclick="pdReturnToMain()" style="font-size:0.75rem;">Return to Main Dashboard</button>
-        </div>
-        <div id="pd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
-          <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
-          <select id="pd-custom-type" onchange="pdCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
-            <option value="customday">Day</option>
-            <option value="customweek">Week</option>
-            <option value="custommonth">Month</option>
-            <option value="customquarter">Quarter</option>
-            <option value="customyear">Year</option>
-          </select>
-          <input id="pd-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
-          <button onclick="pdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
-        </div>
-      </div>
-
       <!-- BODY -->
       <div id="pd-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
@@ -2090,35 +2030,6 @@
     <!-- STORE DASHBOARD CANVAS -->
     <div id="canvas-module-store-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
-      <!-- TOP BAR -->
-      <div style="background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10;">
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; position:relative;">
-          <div id="sd-period-btns" style="display:flex; gap:4px; flex-wrap:nowrap;">
-            <button class="dd-period-btn active" data-period="today"       onclick="sdSetPeriod(this)">Today</button>
-            <button class="dd-period-btn"        data-period="yesterday"   onclick="sdSetPeriod(this)">Yesterday</button>
-            <button class="dd-period-btn"        data-period="thisweek"    onclick="sdSetPeriod(this)">This Week</button>
-            <button class="dd-period-btn"        data-period="thismonth"   onclick="sdSetPeriod(this)">This Month</button>
-            <button class="dd-period-btn"        data-period="thisquarter" onclick="sdSetPeriod(this)">This Quarter</button>
-            <button class="dd-period-btn"        data-period="thisyear"    onclick="sdSetPeriod(this)">This Year</button>
-            <button class="dd-period-btn"        data-period="custom"      onclick="sdSetPeriod(this)">Custom ▾</button>
-          </div>
-          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">Store Dashboard</span>
-          <button class="nav-btn-styled" onclick="sdReturnToMain()" style="font-size:0.75rem;">Return to Main Dashboard</button>
-        </div>
-        <div id="sd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
-          <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
-          <select id="sd-custom-type" onchange="sdCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
-            <option value="customday">Day</option>
-            <option value="customweek">Week</option>
-            <option value="custommonth">Month</option>
-            <option value="customquarter">Quarter</option>
-            <option value="customyear">Year</option>
-          </select>
-          <input id="sd-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
-          <button onclick="sdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
-        </div>
-      </div>
-
       <!-- DASHBOARD BODY -->
       <div id="sd-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
@@ -2223,35 +2134,6 @@
 
     <!-- PRODUCTION DASHBOARD CANVAS -->
     <div id="canvas-module-production-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
-
-      <!-- TOP BAR -->
-      <div style="background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10;">
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; position:relative;">
-          <div id="pd2-period-btns" style="display:flex; gap:4px; flex-wrap:nowrap;">
-            <button class="dd-period-btn active" data-period="today"       onclick="pd2SetPeriod(this)">Today</button>
-            <button class="dd-period-btn"        data-period="yesterday"   onclick="pd2SetPeriod(this)">Yesterday</button>
-            <button class="dd-period-btn"        data-period="thisweek"    onclick="pd2SetPeriod(this)">This Week</button>
-            <button class="dd-period-btn"        data-period="thismonth"   onclick="pd2SetPeriod(this)">This Month</button>
-            <button class="dd-period-btn"        data-period="thisquarter" onclick="pd2SetPeriod(this)">This Quarter</button>
-            <button class="dd-period-btn"        data-period="thisyear"    onclick="pd2SetPeriod(this)">This Year</button>
-            <button class="dd-period-btn"        data-period="custom"      onclick="pd2SetPeriod(this)">Custom ▾</button>
-          </div>
-          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">Production Dashboard</span>
-          <button class="nav-btn-styled" onclick="pd2ReturnToMain();" style="font-size:0.75rem;">Return to Main Dashboard</button>
-        </div>
-        <div id="pd2-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
-          <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
-          <select id="pd2-custom-type" onchange="pd2CustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
-            <option value="customday">Day</option>
-            <option value="customweek">Week</option>
-            <option value="custommonth">Month</option>
-            <option value="customquarter">Quarter</option>
-            <option value="customyear">Year</option>
-          </select>
-          <input id="pd2-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
-          <button onclick="pd2LoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
-        </div>
-      </div>
 
       <!-- DASHBOARD BODY -->
       <div id="pd2-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
@@ -2371,37 +2253,7 @@
     </div>
 
     <!-- MARKETING DASHBOARD CANVAS -->
-    <!-- MARKETING DASHBOARD CANVAS -->
     <div id="canvas-module-marketing-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
-
-      <!-- TOP BAR -->
-      <div style="background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10;">
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; position:relative;">
-          <div id="md-period-btns" style="display:flex; gap:4px; flex-wrap:nowrap;">
-            <button class="dd-period-btn active" data-period="today"       onclick="mdSetPeriod(this)">Today</button>
-            <button class="dd-period-btn"        data-period="yesterday"   onclick="mdSetPeriod(this)">Yesterday</button>
-            <button class="dd-period-btn"        data-period="thisweek"    onclick="mdSetPeriod(this)">This Week</button>
-            <button class="dd-period-btn"        data-period="thismonth"   onclick="mdSetPeriod(this)">This Month</button>
-            <button class="dd-period-btn"        data-period="thisquarter" onclick="mdSetPeriod(this)">This Quarter</button>
-            <button class="dd-period-btn"        data-period="thisyear"    onclick="mdSetPeriod(this)">This Year</button>
-            <button class="dd-period-btn"        data-period="custom"      onclick="mdSetPeriod(this)">Custom ▾</button>
-          </div>
-          <span style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);">Marketing Dashboard</span>
-          <button class="nav-btn-styled" onclick="exitMarketingDashboardBackToMenu()" style="font-size:0.75rem;">Return to Main Dashboard</button>
-        </div>
-        <div id="md-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
-          <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
-          <select id="md-custom-type" onchange="mdCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
-            <option value="customday">Day</option>
-            <option value="customweek">Week</option>
-            <option value="custommonth">Month</option>
-            <option value="customquarter">Quarter</option>
-            <option value="customyear">Year</option>
-          </select>
-          <input id="md-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
-          <button onclick="mdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
-        </div>
-      </div>
 
       <!-- DASHBOARD BODY -->
       <div id="md-body" style="padding:10px 14px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
@@ -2558,6 +2410,115 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       SHARED DASHBOARD TOOLBAR — one toolbar reused by all 5 department
+       dashboards, deliberately placed here as a sibling of dashboard-view
+       (NOT inside any *-workspace-enclosure-panel) so it's immune to the
+       dashboard-canvas-nested-inside-the-wrong-enclosure-panel bug. Each
+       dashboard used to carry its own full copy of this bar; that's what
+       caused multiple "Return to Main Dashboard" buttons to stack up
+       once ddShowAllWorkspaceEnclosures() started revealing every
+       enclosure panel's own separate header row too.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div id="dashboard-global-toolbar" style="display:none; background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10;">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; position:relative;">
+      <div id="dash-global-period-groups">
+        <div id="dd-period-btns" style="display:none; gap:4px; flex-wrap:nowrap;">
+          <button class="dd-period-btn active" data-period="today" onclick="ddSetPeriod(this)">Today</button>
+          <button class="dd-period-btn" data-period="yesterday" onclick="ddSetPeriod(this)">Yesterday</button>
+          <button class="dd-period-btn" data-period="thisweek" onclick="ddSetPeriod(this)">This Week</button>
+          <button class="dd-period-btn" data-period="thismonth" onclick="ddSetPeriod(this)">This Month</button>
+          <button class="dd-period-btn" data-period="thisquarter" onclick="ddSetPeriod(this)">This Quarter</button>
+          <button class="dd-period-btn" data-period="thisyear" onclick="ddSetPeriod(this)">This Year</button>
+          <button class="dd-period-btn" data-period="custom" onclick="ddSetPeriod(this)">Custom ▾</button>
+        </div>
+        <div id="pd-period-btns" style="display:none; gap:4px; flex-wrap:nowrap;">
+          <button class="dd-period-btn active" data-period="today" onclick="pdSetPeriod(this)">Today</button>
+          <button class="dd-period-btn" data-period="yesterday" onclick="pdSetPeriod(this)">Yesterday</button>
+          <button class="dd-period-btn" data-period="thisweek" onclick="pdSetPeriod(this)">This Week</button>
+          <button class="dd-period-btn" data-period="thismonth" onclick="pdSetPeriod(this)">This Month</button>
+          <button class="dd-period-btn" data-period="thisquarter" onclick="pdSetPeriod(this)">This Quarter</button>
+          <button class="dd-period-btn" data-period="thisyear" onclick="pdSetPeriod(this)">This Year</button>
+          <button class="dd-period-btn" data-period="custom" onclick="pdSetPeriod(this)">Custom ▾</button>
+        </div>
+        <div id="sd-period-btns" style="display:none; gap:4px; flex-wrap:nowrap;">
+          <button class="dd-period-btn active" data-period="today" onclick="sdSetPeriod(this)">Today</button>
+          <button class="dd-period-btn" data-period="yesterday" onclick="sdSetPeriod(this)">Yesterday</button>
+          <button class="dd-period-btn" data-period="thisweek" onclick="sdSetPeriod(this)">This Week</button>
+          <button class="dd-period-btn" data-period="thismonth" onclick="sdSetPeriod(this)">This Month</button>
+          <button class="dd-period-btn" data-period="thisquarter" onclick="sdSetPeriod(this)">This Quarter</button>
+          <button class="dd-period-btn" data-period="thisyear" onclick="sdSetPeriod(this)">This Year</button>
+          <button class="dd-period-btn" data-period="custom" onclick="sdSetPeriod(this)">Custom ▾</button>
+        </div>
+        <div id="md-period-btns" style="display:none; gap:4px; flex-wrap:nowrap;">
+          <button class="dd-period-btn active" data-period="today" onclick="mdSetPeriod(this)">Today</button>
+          <button class="dd-period-btn" data-period="yesterday" onclick="mdSetPeriod(this)">Yesterday</button>
+          <button class="dd-period-btn" data-period="thisweek" onclick="mdSetPeriod(this)">This Week</button>
+          <button class="dd-period-btn" data-period="thismonth" onclick="mdSetPeriod(this)">This Month</button>
+          <button class="dd-period-btn" data-period="thisquarter" onclick="mdSetPeriod(this)">This Quarter</button>
+          <button class="dd-period-btn" data-period="thisyear" onclick="mdSetPeriod(this)">This Year</button>
+          <button class="dd-period-btn" data-period="custom" onclick="mdSetPeriod(this)">Custom ▾</button>
+        </div>
+        <div id="pd2-period-btns" style="display:none; gap:4px; flex-wrap:nowrap;">
+          <button class="dd-period-btn active" data-period="today" onclick="pd2SetPeriod(this)">Today</button>
+          <button class="dd-period-btn" data-period="yesterday" onclick="pd2SetPeriod(this)">Yesterday</button>
+          <button class="dd-period-btn" data-period="thisweek" onclick="pd2SetPeriod(this)">This Week</button>
+          <button class="dd-period-btn" data-period="thismonth" onclick="pd2SetPeriod(this)">This Month</button>
+          <button class="dd-period-btn" data-period="thisquarter" onclick="pd2SetPeriod(this)">This Quarter</button>
+          <button class="dd-period-btn" data-period="thisyear" onclick="pd2SetPeriod(this)">This Year</button>
+          <button class="dd-period-btn" data-period="custom" onclick="pd2SetPeriod(this)">Custom ▾</button>
+        </div>
+      </div>
+      <span id="dash-global-title" style="font-size:1rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);"></span>
+      <button class="nav-btn-styled" onclick="dashboardGlobalReturnClick()" style="font-size:0.75rem;">Return to Main Dashboard</button>
+    </div>
+    <div id="dd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
+      <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
+      <select id="dd-custom-type" onchange="ddCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
+        <option value="customday">Day</option><option value="customweek">Week</option><option value="custommonth">Month</option>
+        <option value="customquarter">Quarter</option><option value="customyear">Year</option>
+      </select>
+      <input id="dd-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
+      <button onclick="ddLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
+    </div>
+    <div id="pd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
+      <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
+      <select id="pd-custom-type" onchange="pdCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
+        <option value="customday">Day</option><option value="customweek">Week</option><option value="custommonth">Month</option>
+        <option value="customquarter">Quarter</option><option value="customyear">Year</option>
+      </select>
+      <input id="pd-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
+      <button onclick="pdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
+    </div>
+    <div id="sd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
+      <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
+      <select id="sd-custom-type" onchange="sdCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
+        <option value="customday">Day</option><option value="customweek">Week</option><option value="custommonth">Month</option>
+        <option value="customquarter">Quarter</option><option value="customyear">Year</option>
+      </select>
+      <input id="sd-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
+      <button onclick="sdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
+    </div>
+    <div id="md-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
+      <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
+      <select id="md-custom-type" onchange="mdCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
+        <option value="customday">Day</option><option value="customweek">Week</option><option value="custommonth">Month</option>
+        <option value="customquarter">Quarter</option><option value="customyear">Year</option>
+      </select>
+      <input id="md-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
+      <button onclick="mdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
+    </div>
+    <div id="pd2-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
+      <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
+      <select id="pd2-custom-type" onchange="pd2CustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
+        <option value="customday">Day</option><option value="customweek">Week</option><option value="custommonth">Month</option>
+        <option value="customquarter">Quarter</option><option value="customyear">Year</option>
+      </select>
+      <input id="pd2-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
+      <button onclick="pd2LoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
+    </div>
   </div>
 
   <div id="module-workspace-container" style="display: none;">
@@ -17874,13 +17835,54 @@ function ddShowAllWorkspaceEnclosures() {
   document.querySelectorAll('[id$="-workspace-enclosure-panel"]').forEach(p => p.style.display = "block");
 }
 
+// Single dispatcher for the shared toolbar's ONE Return button — set by
+// whichever navigateTo*Dashboard() is currently active, so the toolbar
+// doesn't need 5 separate buttons or to know which dashboard it's for.
+let activeDashboardReturnFn = null;
+function dashboardGlobalReturnClick() {
+  document.getElementById("dashboard-global-toolbar").style.display = "none";
+  if (activeDashboardReturnFn) activeDashboardReturnFn();
+  activeDashboardReturnFn = null;
+}
+
+// Shows the shared toolbar, sets its title, and reveals only the one
+// period-button-group/custom-zone pair that belongs to the dashboard
+// being opened (the other 4 pairs live in the same toolbar but stay
+// hidden). Also proactively hides each *-workspace-enclosure-panel's
+// OWN separate header row — those are a different element from this
+// toolbar entirely, and were the second source of duplicate "Return to
+// Main Dashboard" buttons once ddShowAllWorkspaceEnclosures() started
+// revealing whole enclosure panels (header row included) to fix the
+// canvas-nested-in-wrong-enclosure bug.
+function showDashboardGlobalToolbar(title, periodBtnsId, returnFn) {
+  activeDashboardReturnFn = returnFn;
+  const toolbar = document.getElementById("dashboard-global-toolbar");
+  toolbar.style.display = "block";
+  document.getElementById("dash-global-title").textContent = title;
+  ["dd-period-btns","pd-period-btns","sd-period-btns","md-period-btns","pd2-period-btns"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = (id === periodBtnsId) ? "flex" : "none";
+  });
+  ["dd-custom-zone","pd-custom-zone","sd-custom-zone","md-custom-zone","pd2-custom-zone"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = "none";
+  });
+  document.querySelectorAll('[id$="-workspace-enclosure-panel"] > .navigation-action-header-row').forEach(h => h.style.display = "none");
+}
+
 function navigateToDesignDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
-  ddShowAllWorkspaceEnclosures();
+  // The dashboard canvas is nested inside this enclosure panel (see
+  // exitDesignWorkspacePanelBackToMenu, which hides both together) — it
+  // was never being shown here, so going straight to the dashboard
+  // without visiting another Design panel first left it trapped inside
+  // a hidden ancestor: display:block on the canvas itself, but
+  // getBoundingClientRect() all zeros and nothing visible.
+  const enclosure = document.getElementById("module-design-workspace-enclosure-panel");
+  if (enclosure) enclosure.style.display = "block";
   const c = document.getElementById("canvas-module-design-dashboard");
   if (c) c.style.display = "block";
+  showDashboardGlobalToolbar("Design Dashboard", "dd-period-btns", exitDesignWorkspacePanelBackToMenu);
   if (typeof ddLoadDashboard === "function") ddLoadDashboard();
 }
 
@@ -17888,9 +17890,14 @@ function navigateToPurchaseDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
-  ddShowAllWorkspaceEnclosures();
+  // Same hidden-ancestor issue as Design — the dashboard canvas lives
+  // inside this enclosure panel, confirmed via a live DOM ancestor trace
+  // (getBoundingClientRect returning all zeros despite display:block).
+  const enclosure = document.getElementById("module-purchase-workspace-enclosure-panel");
+  if (enclosure) enclosure.style.display = "block";
   const c = document.getElementById("canvas-module-purchase-dashboard");
   if (c) c.style.display = "block";
+  showDashboardGlobalToolbar("Purchase Dashboard", "pd-period-btns", pdReturnToMain);
   if (typeof pdLoadDashboard === "function") pdLoadDashboard();
 }
 
@@ -17898,9 +17905,14 @@ function navigateToStoreDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
-  ddShowAllWorkspaceEnclosures();
+  // Same class of bug as Design/Purchase — exitStoreWorkspacePanelBackToMenu
+  // hides this same enclosure panel, confirming the dashboard canvas sits
+  // inside it too.
+  const enclosure = document.getElementById("module-store-workspace-enclosure-panel");
+  if (enclosure) enclosure.style.display = "block";
   const c = document.getElementById("canvas-module-store-dashboard");
   if (c) c.style.display = "block";
+  showDashboardGlobalToolbar("Store Dashboard", "sd-period-btns", sdReturnToMain);
   if (typeof sdLoadDashboard === "function") sdLoadDashboard();
 }
 
@@ -18134,9 +18146,9 @@ function navigateToProductionDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
-  ddShowAllWorkspaceEnclosures();
   const c = document.getElementById("canvas-module-production-dashboard");
   if (c) c.style.display = "block";
+  showDashboardGlobalToolbar("Production Dashboard", "pd2-period-btns", pd2ReturnToMain);
   if (typeof pd2LoadDashboard === "function") pd2LoadDashboard();
 }
 
@@ -18383,9 +18395,9 @@ function navigateToMarketingDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
-  ddShowAllWorkspaceEnclosures();
   const c = document.getElementById("canvas-module-marketing-dashboard");
   if (c) c.style.display = "block";
+  showDashboardGlobalToolbar("Marketing Dashboard", "md-period-btns", exitMarketingDashboardBackToMenu);
   mdLoadDashboard();
 }
 
