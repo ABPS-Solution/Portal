@@ -1753,7 +1753,7 @@
 
     <div id="canvas-module-purchase-search-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="color:var(--brand); margin:0 0 6px 0;">Search by Raw Material Purchase Order</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Look up any Authorized Purchase Order by PO Number, material, or Project ID — view only.</p>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Look up any Authorized Purchase Order by PO Number, material, or Project ID.</p>
       <div id="srchpo-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
       <div style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--border);">
@@ -1781,6 +1781,7 @@
         </div>
       </div>
 
+      <div id="srchpo-search-label" style="display:none; font-weight:700; color:var(--brand); margin-bottom:10px; font-size:0.9rem;"></div>
       <div id="srchpo-results" style="display:flex; flex-direction:column; gap:12px;"></div>
     </div>
 
@@ -15192,6 +15193,8 @@ async function initializeSearchRMPOPanel() {
   document.getElementById("srchpo-results").innerHTML = "";
   const fb = document.getElementById("srchpo-feedback");
   if (fb) { fb.style.display = "none"; fb.innerHTML = ""; }
+  const lbl = document.getElementById("srchpo-search-label");
+  if (lbl) lbl.style.display = "none";
   switchSearchRMPOToggle('po');
   loadItemCodeCatalogIntoCache();
   try {
@@ -15203,6 +15206,8 @@ async function initializeSearchRMPOPanel() {
 function switchSearchRMPOToggle(mode) {
   window.srchpoToggle = mode;
   document.getElementById("srchpo-results").innerHTML = "";
+  const lbl = document.getElementById("srchpo-search-label");
+  if (lbl) lbl.style.display = "none";
   const poTab = document.getElementById("srchpo-tab-po");
   const vendorTab = document.getElementById("srchpo-tab-vendor");
   const poField = document.getElementById("srchpo-po-field");
@@ -15262,6 +15267,13 @@ function selectSrchPOProject(projectId) {
   document.getElementById("srchpo-project-dd").style.display = "none";
 }
 
+function srchpoSetSearchingLabel(text) {
+  const el = document.getElementById("srchpo-search-label");
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = "block";
+}
+
 function srchpoShowFeedback(msg, isError) {
   const fb = document.getElementById("srchpo-feedback");
   fb.style.display = "block";
@@ -15275,6 +15287,7 @@ async function searchByPONumberUI() {
   const q = document.getElementById("srchpo-po-input").value.trim();
   if (!q || q.length < 2) { srchpoShowFeedback("Enter at least 2 characters of a PO number.", true); return; }
   document.getElementById("srchpo-feedback").style.display = "none";
+  srchpoSetSearchingLabel(`Searching for "${q}"`);
   const results = document.getElementById("srchpo-results");
   results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
   try {
@@ -15287,6 +15300,7 @@ async function searchByPONumberUI() {
 async function searchByMaterialUI() {
   if (!window.srchpoSelectedItemCode) { srchpoShowFeedback("Select a material from the dropdown list.", true); return; }
   document.getElementById("srchpo-feedback").style.display = "none";
+  srchpoSetSearchingLabel(`Searching for "${document.getElementById("srchpo-material-input").value.trim()}"`);
   const results = document.getElementById("srchpo-results");
   results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
   try {
@@ -15306,6 +15320,7 @@ async function searchByProjectIdUI() {
   const projectId = window.srchpoSelectedProjectId || document.getElementById("srchpo-project-input").value.trim();
   if (!projectId) { srchpoShowFeedback("Select or enter a Project ID.", true); return; }
   document.getElementById("srchpo-feedback").style.display = "none";
+  srchpoSetSearchingLabel(`Searching for "${projectId}"`);
   const results = document.getElementById("srchpo-results");
   results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
   try {
@@ -15328,7 +15343,7 @@ function renderSrchPOResultsAsPOCards(list) {
     results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No matching Authorized Purchase Orders found.</div>`;
     return;
   }
-  const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:0,maximumFractionDigits:2});
   results.innerHTML = list.map(po => `
     <div class="contact-summary-card-parent" style="margin-bottom:0;">
       <div class="contact-summary-header-row" onclick="toggleSrchPOCard('${po.poNo}')" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
@@ -15368,7 +15383,7 @@ async function toggleSrchPOCard(poNo) {
 }
 
 function renderRMPOViewOnlyDetail(po, lineItems) {
-  const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:0,maximumFractionDigits:2});
   const field = (label, val) => `
     <div>
       <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:3px;">${label}</div>
@@ -15378,15 +15393,15 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
   const rowsHtml = lineItems.map((l, idx) => {
     const allocs = l.allocations || [];
     const projectChips = allocs.length
-      ? allocs.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${(a.prnId||'').replace(/^PRN_/, "")} (${a.projectId||''}): <strong>${a.quantity}</strong></div>`).join("")
+      ? allocs.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${(a.prnId||'').replace(/^PRN_/, "")} (${a.projectId||''}): <strong>${fmt(a.quantity)}</strong></div>`).join("")
       : '<span style="color:var(--muted); font-size:0.75rem;">No allocation on record</span>';
     return `<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:8px; text-align:center;">${idx + 1}</td>
       <td style="padding:8px;">${l.description || ''}<div style="font-family:monospace; color:var(--brand); font-size:0.75rem;">${l.itemCode || ''}</div></td>
       <td style="padding:8px; text-align:center;">${l.unit || '—'}</td>
-      <td style="padding:8px; text-align:right;">${l.quantity}</td>
+      <td style="padding:8px; text-align:right;">${fmt(l.quantity)}</td>
       <td style="padding:8px; text-align:right;">${fmt(l.rate)}</td>
-      <td style="padding:8px; text-align:center;">${l.discountPercent || 0}%</td>
+      <td style="padding:8px; text-align:center;">${fmt(l.discountPercent)}%</td>
       <td style="padding:8px; text-align:right; font-weight:700;">${fmt(l.amount)}</td>
       <td style="padding:8px;">${projectChips}</td>
     </tr>`;
