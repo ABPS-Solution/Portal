@@ -17841,6 +17841,11 @@ function ddShowAllWorkspaceEnclosures() {
 let activeDashboardReturnFn = null;
 function dashboardGlobalReturnClick() {
   document.getElementById("dashboard-global-toolbar").style.display = "none";
+  // Restore each enclosure panel's own header row (Return button included)
+  // that showDashboardGlobalToolbar hid — without this, leaving a
+  // dashboard and later visiting any other panel in that department
+  // (e.g. Store Gate Entry) left it with no way back to the main menu.
+  document.querySelectorAll('[id$="-workspace-enclosure-panel"] > .navigation-action-header-row').forEach(h => h.style.removeProperty("display"));
   if (activeDashboardReturnFn) activeDashboardReturnFn();
   activeDashboardReturnFn = null;
 }
