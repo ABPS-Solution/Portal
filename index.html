@@ -12260,7 +12260,7 @@ function renderCBOQMaterialRows() {
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'cboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; display:block;"
         >${row.descriptionOfMaterial || ""}</textarea>
-        <div id="cboq-mat-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
+        <div id="cboq-mat-dropdown-${idx}" onmousedown="event.stopPropagation();" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
       </td>
       <td style="padding:4px;">
         <input type="text" value="${row.itemCode || ""}" readonly 
@@ -12394,9 +12394,14 @@ document.addEventListener("visibilitychange", function() {
     loadItemCodeCatalogIntoCache(true).catch(() => {});
   }
 });
-// Close dropdowns when clicking outside
+// Close dropdowns when clicking outside. Checks both input and textarea —
+// Create BOQ's material search field is a <textarea>, not an <input>, so
+// e.target.closest("input") was always null for it; any interaction that
+// registered as a click there (including scroll-related mouse activity
+// inside the dropdown itself) was being treated as "outside" and closing
+// the list before a scroll or selection could complete.
 document.addEventListener("click", function(e) {
-  if (!e.target.closest("[id*='-mat-dropdown-']") && !e.target.closest("input")) {
+  if (!e.target.closest("[id*='-mat-dropdown-']") && !e.target.closest("input") && !e.target.closest("textarea")) {
     document.querySelectorAll("[id*='-mat-dropdown-']").forEach(d => d.style.display = "none");
   }
   if (!e.target.closest("#fg-product-dropdown") && !e.target.closest("#fg-add-product-search")) {
