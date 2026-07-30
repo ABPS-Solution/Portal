@@ -17617,7 +17617,7 @@ function renderRPRNDeltaTable() {
         <thead>
           <tr style="background:#f8fafc;">
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:190px;">Material Name</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:180px;">Material Name</th>
             <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:60px;">Type</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Req Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
@@ -17625,9 +17625,9 @@ function renderRPRNDeltaTable() {
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#64748b; width:95px;">Old Store Quantity</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:110px;">Store Available Stock</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:80px;">Checked by Store Person *</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1; width:100px;">Store Quantity *</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d; width:100px;">Purchase Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:80px;">Checked *</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1; min-width:120px;">Store Quantity *</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d; min-width:110px;">Purchase Qty</th>
           </tr>
         </thead>
         <tbody>${rowsHtml}</tbody>
@@ -19109,7 +19109,7 @@ async function loadPRNNeedQueue() {
     if (!data.success) { zone.innerHTML = ""; return; }
     const queue = data.queue || [];
     if (queue.length === 0) {
-      zone.innerHTML = `<div style="padding:10px 14px; background:#f0fff4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-size:0.8rem; font-weight:600;">✅ No new BOQs need a first PRN raised.</div>`;
+      zone.innerHTML = `<div style="padding:10px 14px; background:#f0fff4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-size:0.8rem; font-weight:600;">✅ No new BOQs need a PRN.</div>`;
       return;
     }
     const rows = queue.map(item => {
