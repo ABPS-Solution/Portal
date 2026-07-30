@@ -12822,21 +12822,25 @@ function renderBOQRevisionRows(updateId) {
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand);">Material Rows *</div>
       <button onclick="uboqRevRows.push({typeOfStore:'Raw Materials Store',descriptionOfMaterial:'',itemCode:'',make:'',quantityFor1Set:'',unit:'NOS',designRatePerQuantity:''}); renderBOQRevisionRows(${updateId});" style="background:var(--accent); color:#fff; border:none; border-radius:4px; padding:5px 12px; font-size:0.78rem; font-weight:700; cursor:pointer;">+ Add Row</button>
     </div>
-    <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
-      <thead><tr style="background:#f1f5f9;">
-        <th style="padding:6px;">Sr No</th>
-        <th style="padding:6px; text-align:left;">Type of Store *</th>
-        <th style="padding:6px; text-align:left;">Description of Material *</th>
-        <th style="padding:6px;">Item Code</th>
-        <th style="padding:6px;">Make</th>
-        <th style="padding:6px;">Qty / Set *</th>
-        <th style="padding:6px;">Unit *</th>
-        <th style="padding:6px;">Design Rate / Qty</th>
-        <th style="padding:6px;">Total Material Cost / Set</th>
-        <th style="padding:6px;">Del</th>
-      </tr></thead>
-      <tbody>${rowsHtml}</tbody>
-    </table>
+    <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+      <table class="store-basket-data-table" style="width:100%; min-width:1050px; border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f8fafc;">
+            <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
+            <th style="width:110px; padding:8px; font-size:0.7rem;">Type of Store *</th>
+            <th style="width:240px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+            <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
+            <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
+            <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
+            <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
+            <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
+            <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Cost / Set</th>
+            <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
     <div style="border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-top:14px; display:flex; justify-content:flex-end; gap:32px;">
       <div style="text-align:right;">
         <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Total BOQ Cost Per Set</div>
