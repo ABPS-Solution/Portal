@@ -17902,14 +17902,14 @@ function showDashboardGlobalToolbar(title, periodBtnsId, returnFn) {
   // canvas needs top padding equal to the toolbar's real height or its
   // content starts underneath the floating bar.
   requestAnimationFrame(() => {
-    const toolbarBottom = toolbar.getBoundingClientRect().bottom;
+    // Subtracting here, not adding the full toolbar height — the canvas's
+    // own inner *-body div (sd-body/md-body/etc.) already carries its own
+    // top padding, so using the toolbar's full height on top of that
+    // double-counted the gap. This snugs content right up against the
+    // fixed toolbar instead.
+    const h = Math.max(0, toolbar.offsetHeight - 20);
     document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => {
-      if (c.style.display !== "block") return;
-      c.style.paddingTop = "0px";
-      requestAnimationFrame(() => {
-        const gap = toolbarBottom - c.getBoundingClientRect().top;
-        c.style.paddingTop = Math.max(0, gap) + "px";
-      });
+      if (c.style.display === "block") c.style.paddingTop = h + "px";
     });
   });
   document.getElementById("dash-global-title").textContent = title;
@@ -17942,15 +17942,20 @@ function navigateToPurchaseDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
-  // Same hidden-ancestor issue as Design — the dashboard canvas lives
-  // inside this enclosure panel, confirmed via a live DOM ancestor trace
-  // (getBoundingClientRect returning all zeros despite display:block).
-  const enclosure = document.getElementById("module-purchase-workspace-enclosure-panel");
-  if (enclosure) enclosure.style.display = "block";
+  ddShowAllWorkspaceEnclosures();
   const c = document.getElementById("canvas-module-purchase-dashboard");
   if (c) c.style.display = "block";
   showDashboardGlobalToolbar("Purchase Dashboard", "pd-period-btns", pdReturnToMain);
   if (typeof pdLoadDashboard === "function") pdLoadDashboard();
+  // Purchase specifically renders under the fixed toolbar despite the
+  // shared padding logic — its extra stat-card row (7 vs 5 on the
+  // others) makes this canvas measure differently. Overriding just this
+  // canvas's own top padding directly, without touching the shared
+  // calculation the other 4 dashboards already render correctly with.
+  requestAnimationFrame(() => {
+    const toolbar = document.getElementById("dashboard-global-toolbar");
+    if (c && toolbar) c.style.paddingTop = (toolbar.offsetHeight + 20) + "px";
+  });
 }
 
 function navigateToStoreDashboard() {
