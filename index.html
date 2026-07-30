@@ -12658,8 +12658,11 @@ async function toggleBOQRevisionExpansion(updateId) {
   }
 
   uboqRevExpandedId = updateId;
-  const reqItem = uboqRevList.find(r => r.updateId === updateId);
-  if (!reqItem) { bodyEl.innerHTML = `<p style="color:var(--warn);">Request not found — refresh the list.</p>`; bodyEl.style.display = "block"; return; }
+  // update_id is BIGSERIAL — node-postgres serializes BIGINT/BIGSERIAL as
+  // strings (not numbers) to avoid precision loss, but the onclick handler
+  // passes updateId as a raw numeric literal. Strict === between "5" and 5
+  // always failed, which is what "Request not found" actually meant.
+  const reqItem = uboqRevList.find(r => String(r.updateId) === String(updateId));
 
   // Editable working copy of the PROPOSED rows.
   uboqRevRows = (reqItem.newMaterialRows || []).map(r => ({ ...r }));
@@ -12737,7 +12740,7 @@ let _boqRevSummaryTimer = null;
 function recomputeBOQRevisionSummary(updateId) {
   clearTimeout(_boqRevSummaryTimer);
   _boqRevSummaryTimer = setTimeout(async () => {
-    const reqItem = uboqRevList.find(r => r.updateId === updateId);
+    const reqItem = uboqRevList.find(r => String(r.updateId) === String(updateId));
     if (!reqItem) return;
     try {
       const sumData = await apFetch({
@@ -12753,7 +12756,7 @@ function recomputeBOQRevisionSummary(updateId) {
 }
 
 async function authorizeBOQRevision(updateId) {
-  const reqItem = uboqRevList.find(r => r.updateId === updateId);
+  const reqItem = uboqRevList.find(r => String(r.updateId) === String(updateId));
   if (!reqItem) return;
   const invalid = uboqRevRows.find(r => !r.descriptionOfMaterial || r.quantityFor1Set === "" || r.quantityFor1Set === null || r.quantityFor1Set === undefined);
   if (invalid) { showBOQBanner("auth-boq-upd-feedback", "⚠️ Every row must have a Material Description and Qty/Set.", "error"); return; }
@@ -12792,7 +12795,7 @@ async function authorizeBOQRevision(updateId) {
 }
 
 async function rejectBOQRevision(updateId) {
-  const reqItem = uboqRevList.find(r => r.updateId === updateId);
+  const reqItem = uboqRevList.find(r => String(r.updateId) === String(updateId));
   if (!reqItem) return;
   if (!confirm(`Reject this revision request for ${reqItem.boqId}? The BOQ stays at its current authorized version.`)) return;
 
