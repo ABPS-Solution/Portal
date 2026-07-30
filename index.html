@@ -17622,7 +17622,7 @@ function renderRPRNDeltaTable() {
             <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Req Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Change in Req Qty</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#64748b; width:95px;">Old Store Quantity</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#64748b; width:95px;">Current PRN Store Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:110px;">Store Available Stock</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:80px;">Checked *</th>
@@ -19758,7 +19758,7 @@ function renderPRNCreateTable() {
 
     if (item.editable !== false) {
       // New / increased coverage. "increase" rows pre-fill with their
-      // Old Store Quantity (this PRN already holds that much) and start
+      // Current PRN Store Qty (this PRN already holds that much) and start
       // enabled immediately — consistent with Revise PRN. "new" rows
       // (truly new to the BOQ, nothing held yet) stay empty and gated
       // behind the checkbox, as before.
@@ -19842,7 +19842,7 @@ function renderPRNCreateTable() {
             <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Req Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">${isDelta ? "Change in Req Qty" : "Buffered BOQ Req Qty"}</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#64748b; width:95px;">Old Store Quantity</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#64748b; width:95px;">Current PRN Store Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:100px;">Store Available Stock</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:80px;">Checked *</th>
