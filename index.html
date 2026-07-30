@@ -10409,10 +10409,10 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
               <input type="text" class="qa-item-code-${item.grnNumber}" data-idx="${idx}" value="${line.itemCode}" readonly
                 style="font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #86efac; text-align:center; width:100%; background:#f0fdf4; color:var(--brand); border-radius:3px;">
             </td>
-            <td style="padding:8px; font-size:0.78rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:180px; max-width:220px; line-height:1.4;">
+            <td style="padding:8px; font-size:0.78rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:180px; max-width:220px; line-height:1.4; vertical-align:middle;">
               ${(line.invoiceDescription || "").replace(/</g,'&lt;').replace(/>/g,'&gt;') || "—"}
             </td>
-            <td style="padding:6px; min-width:220px;">
+            <td style="padding:6px; min-width:220px; vertical-align:middle;">
               <div class="qa-mat-name-display-${item.grnNumber}" data-idx="${idx}"
                 onclick="reopenQAMaterialSearch('${item.grnNumber}', ${idx})"
                 title="Click to correct the material match"
@@ -19137,10 +19137,7 @@ function renderPRNCreateTable() {
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="prn-create-livestock" data-itemcode="${item.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
-          <select class="prn-create-checked" data-idx="${idx}" style="padding:5px; font-weight:700; border:1.5px solid #9333ea; border-radius:3px; font-size:0.85rem; color:#b91c1c;">
-            <option value="No" selected>No</option>
-            <option value="Yes">Yes</option>
-          </select>
+          <input type="checkbox" class="prn-create-checked" data-idx="${idx}" style="width:20px; height:20px; cursor:pointer; accent-color:#9333ea;" />
         </td>
         <td style="padding:8px; text-align:center;">
           <input type="number" min="0" max="${qty}" value="" placeholder="0" class="prn-create-storeqty" data-idx="${idx}" disabled
@@ -19214,12 +19211,12 @@ function renderPRNCreateTable() {
     </div>
   `;
 
-  // Wire up checked-select → enable store qty input
-  document.querySelectorAll(".prn-create-checked").forEach(sel => {
-    sel.addEventListener("change", function() {
+  // Wire up checked-checkbox → enable store qty input
+  document.querySelectorAll(".prn-create-checked").forEach(cb => {
+    cb.addEventListener("change", function() {
       const idx = this.dataset.idx;
       const input = document.querySelector(`.prn-create-storeqty[data-idx="${idx}"]`);
-      this.style.color = this.value === "Yes" ? "#15803d" : "#b91c1c";
+      if (input) { input.disabled = !this.checked; input.style.opacity = this.checked ? "1" : "0.5"; }
     });
   });
 
@@ -19296,11 +19293,11 @@ async function submitNewPRNCreation() {
   const pending = window.prnPendingCreate;
   if (!pending) return;
 
-  const checkedSelects = document.querySelectorAll(".prn-create-checked");
+  const checkedBoxes = document.querySelectorAll(".prn-create-checked");
   const storeQtyInputs = document.querySelectorAll(".prn-create-storeqty");
 
   const submittedItems = pending.lineItems.map((item, idx) => {
-    const checkedVal = checkedSelects[idx] ? checkedSelects[idx].value : "No";
+    const checkedVal = checkedBoxes[idx] && checkedBoxes[idx].checked ? "Yes" : "No";
     const storeQty    = storeQtyInputs[idx] ? (parseFloat(storeQtyInputs[idx].value) || 0) : 0;
     return {
       itemCode: item.itemCode, materialName: item.materialName, typeOfMaterial: item.typeOfMaterial,
@@ -21530,7 +21527,7 @@ function renderExpectedInboundsPOCard(po, scheme) {
         <div style="flex:1; background:#e2e8f0; border-radius:4px; height:6px; overflow:hidden;">
           <div style="height:100%; width:${receivedPct}%; background:${progressColor}; border-radius:4px; transition:width 0.3s ease;"></div>
         </div>
-        <span style="font-size:0.72rem; font-weight:700; color:${progressColor}; white-space:nowrap;">${po.receivedCount} / ${po.totalCount} items received</span>
+        <span style="font-size:0.72rem; font-weight:700; color:${progressColor}; white-space:nowrap;">${po.receivedCount} / ${po.totalCount} fully received</span>
       </div>
 
       <div style="overflow-x:auto;">
