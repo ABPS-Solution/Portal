@@ -19367,11 +19367,12 @@ function renderPRNCreateTable() {
   let rowsHtml = "";
   pending.lineItems.forEach((item, idx) => {
     const qty = Math.round((Number(item.bufferedPurchaseQty) || 0) * 100) / 100;
+    const trimNum = (n) => { const x = Number(n) || 0; return Number.isInteger(x) ? String(x) : x.toFixed(2); };
     const common = `
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${item.materialName || ""}</td>
         <td style="padding:8px; font-size:0.75rem; color:var(--muted);">${item.typeOfMaterial ? window.typeLabelDisplay_(item.typeOfMaterial) : "—"}</td>
-        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${Number(item.boqRequiredQty || 0).toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${trimNum(item.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct || 0}%</td>`;
 
     if (item.editable !== false) {
@@ -19381,7 +19382,8 @@ function renderPRNCreateTable() {
       const changeBadge = `<div style="font-size:0.7rem; font-weight:800; color:${isIncrease ? "#15803d" : "#2563eb"}; margin-top:3px;">${isIncrease ? "INCREASED" : "NEWLY ADDED TO BOQ"}</div>`;
       rowsHtml += `
       <tr style="border-bottom:1px solid #f1f5f9;">${common}
-        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${qty.toFixed(2)}${changeBadge}</td>
+        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${trimNum(qty)}${changeBadge}</td>
+        <td style="padding:8px; text-align:center; font-weight:600; font-family:monospace; font-size:0.85rem; color:#64748b;">${trimNum(item.previousStoreQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="prn-create-livestock" data-itemcode="${item.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
@@ -19411,7 +19413,8 @@ function renderPRNCreateTable() {
 
       rowsHtml += `
       <tr style="border-bottom:1px solid #f1f5f9; background:${item.deferred ? "#fffbeb" : "#fef2f2"};">${common}
-        <td style="padding:8px; text-align:center; font-weight:800; font-family:monospace; font-size:0.95rem; color:#b91c1c;">${changeVal.toFixed(2)}${changeBadge}</td>
+        <td style="padding:8px; text-align:center; font-weight:800; font-family:monospace; font-size:0.95rem; color:#b91c1c;">${trimNum(changeVal)}${changeBadge}</td>
+        <td style="padding:8px; text-align:center; font-weight:600; font-family:monospace; font-size:0.85rem; color:#64748b;">${trimNum(item.previousStoreQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="prn-create-livestock" data-itemcode="${item.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
@@ -19452,12 +19455,13 @@ function renderPRNCreateTable() {
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Type</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Req Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">${isDelta ? "Change in Qty" : "Buffered BOQ Req Qty"}</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">${isDelta ? "Change in Req Qty" : "Buffered BOQ Req Qty"}</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#64748b; width:95px;">Old Store Quantity</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:130px;">Store Available Stock</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:90px;">Checked*</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1; min-width:120px;">Store Quantity *</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d; min-width:120px;">Purchase Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:110px;">Store Available Stock</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:80px;">Checked *</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1; width:100px;">Store Quantity *</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d; width:100px;">Purchase Qty</th>
           </tr>
         </thead>
         <tbody>${rowsHtml}</tbody>
