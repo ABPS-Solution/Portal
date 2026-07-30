@@ -19388,17 +19388,19 @@ function renderPRNCreateTable() {
         <td id="prn-create-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">${qty.toFixed(2)}</td>
       </tr>`;
     } else {
-      // Reduction or removal — computed, not chosen. Shown so the
-      // authorizer sees exactly what is being unwound and released.
+      // Reduction or removal — now editable, same as any other row: the
+      // store person can claim MORE store stock than the automatic
+      // unwind alone gives (freeing it for use immediately, ahead of the
+      // next PO revision), or release further. deferred rows keep their
+      // Purchase Qty completely frozen (that number is locked to what's
+      // actually on the active PO — only a PO revision can move it);
+      // non-deferred rows recompute Purchase Qty live as store changes.
       const removed = item.changeKind === "removed";
-      const arrow = (from, to) =>
-        `<span style="font-family:monospace; color:#94a3b8;">${Number(from || 0).toFixed(2)}</span>
-         <span style="color:#b91c1c; font-weight:800;"> → ${Number(to || 0).toFixed(2)}</span>`;
+      const autoStoreQty = Number(item.newStoreTotal) || 0;
+      const totalCovered = (Number(item.newStoreTotal) || 0) + (Number(item.newPurchaseTotal) || 0);
       const note = item.deferred
-        ? `<div style="font-size:0.62rem; font-weight:800; color:#b45309; margin-top:3px;">⏳ AWAITING PO REVISION</div>`
-        : (Number(item.storeReleased) > 0
-            ? `<div style="font-size:0.62rem; color:#15803d; font-weight:700; margin-top:3px;">releases ${Number(item.storeReleased).toFixed(2)} to store</div>`
-            : "");
+        ? `<div style="font-size:0.6rem; font-weight:800; color:#b45309; margin-top:3px;">⏳ Purchase Qty locked — awaiting PO revision</div>`
+        : "";
 
       rowsHtml += `
       <tr style="border-bottom:1px solid #f1f5f9; background:${item.deferred ? "#fffbeb" : "#fef2f2"};">${common}
@@ -19407,9 +19409,17 @@ function renderPRNCreateTable() {
         <td style="padding:8px; text-align:center;">
           <span style="background:${removed ? "#b91c1c" : "#f59e0b"}; color:#fff; font-size:0.6rem; padding:2px 6px; border-radius:3px; font-weight:800;">${removed ? "REMOVED FROM BOQ" : "DECREASED"}</span>
         </td>
-        <td style="padding:8px; text-align:center; font-size:0.72rem; color:#94a3b8; font-weight:700;">AUTO</td>
-        <td style="padding:8px; text-align:center; font-size:0.8rem;">${arrow(item.previousStoreQty, item.newStoreTotal)}${note}</td>
-        <td style="padding:8px; text-align:center; font-size:0.85rem; font-weight:800;">${arrow(item.previousPurchaseQty, item.newPurchaseTotal)}</td>
+        <td style="padding:8px; text-align:center;">
+          <input type="checkbox" class="prn-create-checked" data-idx="${idx}" style="width:20px; height:20px; cursor:pointer; accent-color:#9333ea;" />
+        </td>
+        <td style="padding:8px; text-align:center;">
+          <input type="number" min="0" max="${totalCovered}" value="${autoStoreQty.toFixed(2)}"
+            class="prn-create-storeqty prn-create-decrease-storeqty" data-idx="${idx}" data-total-covered="${totalCovered}" data-deferred="${item.deferred ? '1' : '0'}"
+            oninput="updatePRNDecreaseRowPurchaseQty(${idx}, this)"
+            style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
+          ${note}
+        </td>
+        <td id="prn-create-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">${Number(item.newPurchaseTotal || 0).toFixed(2)}</td>
       </tr>`;
     }
   });
@@ -19529,6 +19539,25 @@ async function refreshPRNCreateLiveStock() {
       }
     });
   } catch(e) { /* silent, retry next interval */ }
+}
+
+// Live Purchase Qty recompute for editable decrease/removed rows —
+// mirrors authorizePurchaseRequestNote's own logic exactly: deferred
+// rows never touch Purchase Qty (frozen to whatever's really on the
+// active PO), everything else conserves store+purchase = totalCovered.
+function updatePRNDecreaseRowPurchaseQty(idx, input) {
+  const totalCovered = parseFloat(input.dataset.totalCovered) || 0;
+  const isDeferred = input.dataset.deferred === '1';
+  let val = parseFloat(input.value) || 0;
+  if (val < 0) { val = 0; input.value = "0"; }
+  if (val > totalCovered) { val = totalCovered; input.value = totalCovered.toFixed(2); }
+  const purchaseCell = document.getElementById(`prn-create-purchaseqty-${idx}`);
+  if (!purchaseCell) return;
+  if (isDeferred) return; // Purchase Qty stays exactly what it already shows
+  const item = window.prnPendingCreate.lineItems[idx];
+  const purchaseQty = Math.max(0, totalCovered - val);
+  const rounded = item.isCountUnit ? Math.ceil(purchaseQty - 1e-9) : purchaseQty;
+  purchaseCell.textContent = rounded.toFixed(2);
 }
 
 async function submitNewPRNCreation() {
