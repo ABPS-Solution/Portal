@@ -17901,21 +17901,15 @@ function showDashboardGlobalToolbar(title, periodBtnsId, returnFn) {
   // Fixed positioning takes the toolbar out of normal flow, so the visible
   // canvas needs top padding equal to the toolbar's real height or its
   // content starts underneath the floating bar.
-  // Double RAF, not single — reading toolbar.offsetHeight in the same
-  // frame it just flipped from display:none to block can measure a
-  // smaller, not-yet-settled size (this is exactly what happened on
-  // Purchase Dashboard: fine everywhere else, clipped only when it was
-  // the first dashboard opened in a session, i.e. the toolbar's first
-  // ever layout pass). Waiting one extra frame guarantees layout is final.
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      // Floor of 60px — if measurement is ever still wrong for some other
-      // reason, this stops content from ever landing flush under the
-      // toolbar again instead of silently applying near-zero padding.
-      const h = Math.max(20, toolbar.offsetHeight - 100);
-      document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => {
-        if (c.style.display === "block") c.style.paddingTop = h + "px";
-      });
+    // Subtracting here, not adding the full toolbar height — the canvas's
+    // own inner *-body div (sd-body/md-body/etc.) already carries its own
+    // top padding, so using the toolbar's full height on top of that
+    // double-counted the gap. This snugs content right up against the
+    // fixed toolbar instead.
+    const h = Math.max(0, toolbar.offsetHeight - 20);
+    document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => {
+      if (c.style.display === "block") c.style.paddingTop = h + "px";
     });
   });
   document.getElementById("dash-global-title").textContent = title;
