@@ -19378,7 +19378,7 @@ function renderPRNCreateTable() {
       // New / increased coverage — the store person decides how much of
       // the shortfall comes from store stock; purchase is the remainder.
       const isIncrease = item.changeKind === "increase";
-      const changeBadge = `<div style="font-size:0.6rem; font-weight:800; color:${isIncrease ? "#15803d" : "#2563eb"}; margin-top:3px;">${isIncrease ? "INCREASED" : "NEWLY ADDED TO BOQ"}</div>`;
+      const changeBadge = `<div style="font-size:0.7rem; font-weight:800; color:${isIncrease ? "#15803d" : "#2563eb"}; margin-top:3px;">${isIncrease ? "INCREASED" : "NEWLY ADDED TO BOQ"}</div>`;
       rowsHtml += `
       <tr style="border-bottom:1px solid #f1f5f9;">${common}
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${qty.toFixed(2)}${changeBadge}</td>
@@ -19402,11 +19402,11 @@ function renderPRNCreateTable() {
       // show the Change-in-Qty number instead of its own value).
       const removed = item.changeKind === "removed";
       const changeVal = Number(item.bufferedPurchaseQty) || 0; // deltaRequirement, already signed negative
-      const changeBadge = `<div style="font-size:0.6rem; font-weight:800; color:${removed ? "#b91c1c" : "#f59e0b"}; margin-top:3px;">${removed ? "REMOVED FROM BOQ" : "DECREASED"}</div>`;
+      const changeBadge = `<div style="font-size:0.7rem; font-weight:800; color:${removed ? "#b91c1c" : "#f59e0b"}; margin-top:3px;">${removed ? "REMOVED FROM BOQ" : "DECREASED"}</div>`;
       const autoStoreQty = Number(item.newStoreTotal) || 0;
       const totalCovered = (Number(item.newStoreTotal) || 0) + (Number(item.newPurchaseTotal) || 0);
       const note = item.deferred
-        ? `<div style="font-size:0.6rem; font-weight:800; color:#b45309; margin-top:3px;">⏳ Purchase Qty locked — awaiting PO revision</div>`
+        ? `<div style="font-size:0.6rem; font-weight:800; color:#b45309; margin-top:3px;">Purchase Qty locked, waiting for PO revision</div>`
         : "";
 
       rowsHtml += `
@@ -19418,7 +19418,7 @@ function renderPRNCreateTable() {
           <input type="checkbox" class="prn-create-checked" data-idx="${idx}" style="width:20px; height:20px; cursor:pointer; accent-color:#9333ea;" />
         </td>
         <td style="padding:8px; text-align:center;">
-          <input type="number" min="0" max="${totalCovered}" value="${autoStoreQty.toFixed(2)}"
+          <input type="number" min="0" max="${totalCovered}" value="${Number.isInteger(autoStoreQty) ? autoStoreQty : autoStoreQty.toFixed(2)}"
             class="prn-create-storeqty prn-create-decrease-storeqty" data-idx="${idx}" data-total-covered="${totalCovered}" data-deferred="${item.deferred ? '1' : '0'}"
             oninput="updatePRNDecreaseRowPurchaseQty(${idx}, this)"
             style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
@@ -19455,7 +19455,7 @@ function renderPRNCreateTable() {
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">${isDelta ? "Change in Qty" : "Buffered BOQ Req Qty"}</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:130px;">Store Available Stock</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:90px;">Checked by Store Person *</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:90px;">Checked*</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1; min-width:120px;">Store Quantity *</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d; min-width:120px;">Purchase Qty</th>
           </tr>
@@ -19541,7 +19541,17 @@ async function refreshPRNCreateLiveStock() {
       const tr = span.closest("tr");
       const inp = tr ? tr.querySelector(".prn-create-storeqty") : null;
        const currentVal = inp ? (Math.round((parseFloat(inp.value) || 0) * 100) / 100) : 0;
-      const split = computeLiveStoreSplit(s.raw, s.spare, currentVal);
+      // Decrease/removed rows already hold their pre-filled amount from
+      // this PRN's PRIOR authorization — that's not a new claim being
+      // made, so it needs adding back to the live pool before simulating
+      // "what happens if the typed amount is claimed", same as Revise
+      // PRN/Authorize PRN already do for their own equivalent rows.
+      const isDecreaseInp = inp && inp.classList.contains("prn-create-decrease-storeqty");
+      const idxForItem = inp ? Number(inp.dataset.idx) : null;
+      const itemForSpan = (idxForItem !== null && !isNaN(idxForItem)) ? pending.lineItems[idxForItem] : null;
+      const baseRaw = isDecreaseInp && itemForSpan ? s.raw + (Number(itemForSpan.storeFromRaw) || 0) : s.raw;
+      const baseSpare = isDecreaseInp && itemForSpan ? s.spare + (Number(itemForSpan.storeFromSpare) || 0) : s.spare;
+      const split = computeLiveStoreSplit(baseRaw, baseSpare, currentVal);
       span.textContent = `${split.remainingRaw + split.remainingSpare} (Raw: ${split.remainingRaw}, Spare: ${split.remainingSpare})`;
       if (inp) {
         // Decrease/removed rows have their own ceiling (totalCovered —
@@ -19610,7 +19620,7 @@ async function submitNewPRNCreation() {
 
   // Only operator-editable rows carry a checkbox; reductions are automatic.
   const unchecked = submittedItems.find(it => it.editable && it.checkedByStorePerson !== "Yes");
-  if (unchecked) return showPurchaseFeedback("prn-feedback", `⚠️ All rows must be marked "Checked by Store Person = Yes". "${unchecked.materialName}" is not checked yet.`, "error");
+  if (unchecked) return showPurchaseFeedback("prn-feedback", `⚠️ All rows must be marked "Checked = Yes". "${unchecked.materialName}" is not checked yet.`, "error");
 
   const bodyZone = document.getElementById("prn-body-zone");
   if (bodyZone) bodyZone.style.display = "none";
@@ -19945,7 +19955,7 @@ async function generatePRNPDF() {
 
   const uncheckedRow = prnCurrentData.lineItems.find(it => (it.checkedByStorePerson || "No") !== "Yes");
   if (uncheckedRow) {
-    showPurchaseFeedback("prn-feedback", `⚠️ All rows must be marked "Checked by Store Person = Yes" before submitting. "${uncheckedRow.materialName}" is not checked yet.`, "error");
+    showPurchaseFeedback("prn-feedback", `⚠️ All rows must be marked "Checked = Yes" before submitting. "${uncheckedRow.materialName}" is not checked yet.`, "error");
     btn.disabled = false; btn.textContent = "Generate & Save PRN PDF";
     return;
   }
