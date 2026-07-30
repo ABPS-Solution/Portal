@@ -19419,7 +19419,7 @@ function renderPRNCreateTable() {
       Rows shaded red are <strong>reductions or removals</strong> from the BOQ revision. They're handled automatically and need no action from you.
     </div>` : ""}
     ${anyDeferred ? `<div style="background:#fffbeb; border-left:3px solid #b45309; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#78350f; margin-bottom:10px;">
-      ⏳ One or more reductions cannot be applied yet because that material is <strong>already on a purchase order</strong>. Those materials will update automatically once the PO is revised.
+      One or more reductions cannot be applied yet because that material is <strong>already on a purchase order</strong>. Those materials will update automatically once the PO is revised.
     </div>` : ""}
     ${(!hasEditable && hasReadOnly) ? `<div style="background:#eff6ff; border-left:3px solid var(--brand); padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#1e3a8a; margin-bottom:10px;">
       This revision contains only reductions. Submitting it records them — there is nothing for you to fill in.
@@ -19594,10 +19594,12 @@ async function submitNewPRNCreation() {
       hideBlockingOverlay();
       const createZone = document.getElementById("prn-create-zone");
       if (createZone) createZone.style.display = "none";
+      const bodyZoneEl = document.getElementById("prn-body-zone");
+      if (bodyZoneEl) bodyZoneEl.style.display = "none";
       showPurchaseFeedback("prn-feedback",
-        `✅ PRN <strong>${data.prnId}</strong> created and sent for authorization. Store quantities are reserved. It will be finalised (and its PDF generated) once authorized.`,
+        `✅ PRN <strong>${data.prnId}</strong> created and sent for authorization. Store quantities are reserved. It will be finalised (and its PDF generated) once authorized.` +
+        `<br><button onclick="document.getElementById('prn-feedback').style.display='none'; window.prnPendingCreate=null; initializePRNPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Create Another PRN</button>`,
         "success");
-      await initializePRNPanel();
       return;
     }
 
