@@ -12331,9 +12331,15 @@ function updateCBOQTotals() {
 // underneath while the dropdown stays frozen at its old screen position.
 // Closing on scroll rather than trying to track position live, since
 // this dropdown is dismissed by selection/blur anyway in normal use.
+// MUST exclude scroll events that originate from inside the dropdown's
+// own overflow-y:auto option list — capture:true catches scroll events
+// at their real target regardless of bubbling, so scrolling the option
+// list itself was firing this handler and closing the dropdown on the
+// very interaction it was meant to allow.
 if (!window._boqDropdownScrollHandlerInstalled) {
   window._boqDropdownScrollHandlerInstalled = true;
-  window.addEventListener('scroll', () => {
+  window.addEventListener('scroll', (e) => {
+    if (e.target && e.target.id && e.target.id.includes('-mat-dropdown-')) return;
     document.querySelectorAll('[id*="-mat-dropdown-"]').forEach(dd => {
       if (dd.style.display === 'block') dd.style.display = 'none';
     });
