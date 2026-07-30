@@ -2422,7 +2422,7 @@
        once ddShowAllWorkspaceEnclosures() started revealing every
        enclosure panel's own separate header row too.
        ═══════════════════════════════════════════════════════════════════ -->
-  <div id="dashboard-global-toolbar" style="display:none; background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10;">
+  <div id="dashboard-global-toolbar" style="display:none; background:var(--card); border-bottom:1px solid var(--border); position:fixed; top:0; left:0; right:0; z-index:1000; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
     <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; position:relative;">
       <div id="dash-global-period-groups">
         <div id="dd-period-btns" style="display:none; gap:4px; flex-wrap:nowrap;">
@@ -17843,6 +17843,7 @@ function ddShowAllWorkspaceEnclosures() {
 let activeDashboardReturnFn = null;
 function dashboardGlobalReturnClick() {
   document.getElementById("dashboard-global-toolbar").style.display = "none";
+  document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => c.style.paddingTop = "");
   // Restore each enclosure panel's own header row (Return button included)
   // that showDashboardGlobalToolbar hid — without this, leaving a
   // dashboard and later visiting any other panel in that department
@@ -17872,6 +17873,15 @@ function showDashboardGlobalToolbar(title, periodBtnsId, returnFn) {
   activeDashboardReturnFn = returnFn;
   const toolbar = document.getElementById("dashboard-global-toolbar");
   toolbar.style.display = "block";
+  // Fixed positioning takes the toolbar out of normal flow, so the visible
+  // canvas needs top padding equal to the toolbar's real height or its
+  // content starts underneath the floating bar.
+  requestAnimationFrame(() => {
+    const h = toolbar.offsetHeight;
+    document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => {
+      if (c.style.display === "block") c.style.paddingTop = h + "px";
+    });
+  });
   document.getElementById("dash-global-title").textContent = title;
   ["dd-period-btns","pd-period-btns","sd-period-btns","md-period-btns","pd2-period-btns"].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = (id === periodBtnsId) ? "flex" : "none";
@@ -17886,14 +17896,12 @@ function navigateToDesignDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
-  // The dashboard canvas is nested inside this enclosure panel (see
-  // exitDesignWorkspacePanelBackToMenu, which hides both together) — it
-  // was never being shown here, so going straight to the dashboard
-  // without visiting another Design panel first left it trapped inside
-  // a hidden ancestor: display:block on the canvas itself, but
-  // getBoundingClientRect() all zeros and nothing visible.
-  const enclosure = document.getElementById("module-design-workspace-enclosure-panel");
-  if (enclosure) enclosure.style.display = "block";
+  // Dashboard canvases aren't reliably nested under their "own"
+  // department's enclosure panel — canvas-module-design-dashboard
+  // actually lives inside module-purchase-workspace-enclosure-panel,
+  // confirmed via live DOM inspection. Show every enclosure panel
+  // unconditionally rather than guessing per-department.
+  ddShowAllWorkspaceEnclosures();
   const c = document.getElementById("canvas-module-design-dashboard");
   if (c) c.style.display = "block";
   showDashboardGlobalToolbar("Design Dashboard", "dd-period-btns", exitDesignWorkspacePanelBackToMenu);
@@ -17919,11 +17927,9 @@ function navigateToStoreDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
-  // Same class of bug as Design/Purchase — exitStoreWorkspacePanelBackToMenu
-  // hides this same enclosure panel, confirming the dashboard canvas sits
-  // inside it too.
-  const enclosure = document.getElementById("module-store-workspace-enclosure-panel");
-  if (enclosure) enclosure.style.display = "block";
+  // Same fix as Design — the dashboard canvas isn't reliably nested under
+  // its own department's enclosure panel, so show all of them.
+  ddShowAllWorkspaceEnclosures();
   const c = document.getElementById("canvas-module-store-dashboard");
   if (c) c.style.display = "block";
   showDashboardGlobalToolbar("Store Dashboard", "sd-period-btns", sdReturnToMain);
