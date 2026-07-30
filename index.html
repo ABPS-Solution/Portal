@@ -17844,6 +17844,8 @@ let activeDashboardReturnFn = null;
 function dashboardGlobalReturnClick() {
   document.getElementById("dashboard-global-toolbar").style.display = "none";
   document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => c.style.paddingTop = "");
+  const appHeader = document.querySelector('header');
+  if (appHeader) appHeader.style.display = "";
   // Restore each enclosure panel's own header row (Return button included)
   // that showDashboardGlobalToolbar hid — without this, leaving a
   // dashboard and later visiting any other panel in that department
@@ -17873,6 +17875,15 @@ function showDashboardGlobalToolbar(title, periodBtnsId, returnFn) {
   activeDashboardReturnFn = returnFn;
   const toolbar = document.getElementById("dashboard-global-toolbar");
   toolbar.style.display = "block";
+  // The main app <header> is ALSO position:sticky at top:0 — it stays in
+  // normal document flow (sticky elements still occupy space, they just
+  // don't scroll away), so it kept rendering right below this fixed
+  // toolbar instead of being replaced by it. Hiding it outright while a
+  // dashboard is open, matching how every dashboard screen looked before
+  // this toolbar consolidation (none of them ever showed the app header
+  // alongside their own top bar).
+  const appHeader = document.querySelector('header');
+  if (appHeader) appHeader.style.display = "none";
   // Fixed positioning takes the toolbar out of normal flow, so the visible
   // canvas needs top padding equal to the toolbar's real height or its
   // content starts underneath the floating bar.
