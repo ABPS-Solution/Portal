@@ -18732,6 +18732,7 @@ async function loadPRNNeedQueue() {
       return;
     }
     const rows = queue.map(item => {
+      const isRevised = item.badge === "Revised";
       const badgeColor = item.badge === "New" ? "#b91c1c" : "#b45309";
       const badgeBg     = item.badge === "New" ? "#fee2e2" : "#fef3c7";
       return `
@@ -18741,10 +18742,13 @@ async function loadPRNNeedQueue() {
             <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${item.boqId}</span>
             <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} — ${item.productName || ""} ${item.productRating || ""}</div>
           </div>
-          <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
-            onclick="jumpToPRNFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.boqId.replace(/'/g, "\\'")}', this)">
-            Create PRN →
-          </button>
+          <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
+            ${isRevised ? `<span style="font-size:0.72rem; color:#78350f; max-width:300px; line-height:1.35;">The BOQ linked to this PRN was revised, which may have increased or decreased quantities for some materials. Revise the PRN to match.</span>` : ""}
+            <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
+              onclick="jumpToPRNFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.boqId.replace(/'/g, "\\'")}', this)">
+              ${isRevised ? "Revise PRN →" : "Create PRN →"}
+            </button>
+          </div>
         </div>`;
     }).join("");
 
@@ -19373,9 +19377,11 @@ function renderPRNCreateTable() {
     if (item.editable !== false) {
       // New / increased coverage — the store person decides how much of
       // the shortfall comes from store stock; purchase is the remainder.
+      const isIncrease = item.changeKind === "increase";
+      const changeBadge = `<div style="font-size:0.6rem; font-weight:800; color:${isIncrease ? "#15803d" : "#2563eb"}; margin-top:3px;">${isIncrease ? "INCREASED" : "NEWLY ADDED TO BOQ"}</div>`;
       rowsHtml += `
       <tr style="border-bottom:1px solid #f1f5f9;">${common}
-        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${qty.toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${qty.toFixed(2)}${changeBadge}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="prn-create-livestock" data-itemcode="${item.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
@@ -19388,14 +19394,15 @@ function renderPRNCreateTable() {
         <td id="prn-create-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">${qty.toFixed(2)}</td>
       </tr>`;
     } else {
-      // Reduction or removal — now editable, same as any other row: the
-      // store person can claim MORE store stock than the automatic
-      // unwind alone gives (freeing it for use immediately, ahead of the
-      // next PO revision), or release further. deferred rows keep their
-      // Purchase Qty completely frozen (that number is locked to what's
-      // actually on the active PO — only a PO revision can move it);
-      // non-deferred rows recompute Purchase Qty live as store changes.
+      // Reduction or removal — editable, same cell COUNT and ORDER as the
+      // branch above (this is what was actually broken before: this
+      // branch rendered one fewer real cell than the header expects — a
+      // static badge sat where the live-stock span belongs — which
+      // shifted every subsequent cell, making Store Quantity visually
+      // show the Change-in-Qty number instead of its own value).
       const removed = item.changeKind === "removed";
+      const changeVal = Number(item.bufferedPurchaseQty) || 0; // deltaRequirement, already signed negative
+      const changeBadge = `<div style="font-size:0.6rem; font-weight:800; color:${removed ? "#b91c1c" : "#f59e0b"}; margin-top:3px;">${removed ? "REMOVED FROM BOQ" : "DECREASED"}</div>`;
       const autoStoreQty = Number(item.newStoreTotal) || 0;
       const totalCovered = (Number(item.newStoreTotal) || 0) + (Number(item.newPurchaseTotal) || 0);
       const note = item.deferred
@@ -19404,11 +19411,9 @@ function renderPRNCreateTable() {
 
       rowsHtml += `
       <tr style="border-bottom:1px solid #f1f5f9; background:${item.deferred ? "#fffbeb" : "#fef2f2"};">${common}
-        <td style="padding:8px; text-align:center; font-weight:800; font-family:monospace; font-size:0.95rem; color:#b91c1c;">${qty.toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; font-weight:800; font-family:monospace; font-size:0.95rem; color:#b91c1c;">${changeVal.toFixed(2)}${changeBadge}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
-        <td style="padding:8px; text-align:center;">
-          <span style="background:${removed ? "#b91c1c" : "#f59e0b"}; color:#fff; font-size:0.6rem; padding:2px 6px; border-radius:3px; font-weight:800;">${removed ? "REMOVED FROM BOQ" : "DECREASED"}</span>
-        </td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="prn-create-livestock" data-itemcode="${item.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
           <input type="checkbox" class="prn-create-checked" data-idx="${idx}" style="width:20px; height:20px; cursor:pointer; accent-color:#9333ea;" />
         </td>
@@ -19474,6 +19479,12 @@ function renderPRNCreateTable() {
 
   document.querySelectorAll(".prn-create-storeqty").forEach(inp => {
     inp.addEventListener("input", function() {
+      // Decrease/removed rows have their own cap logic
+      // (updatePRNDecreaseRowPurchaseQty, wired via oninput on the
+      // element itself) — this generic listener's cap is based on
+      // bufferedPurchaseQty, which for these rows is the NEGATIVE
+      // deltaRequirement, not a usable ceiling.
+      if (this.classList.contains("prn-create-decrease-storeqty")) return;
       const idx = this.dataset.idx;
       const item = pending.lineItems[idx];
       // Round to 2dp to match the displayed "Buffered Qty" column — the raw stored value can
@@ -19529,13 +19540,21 @@ async function refreshPRNCreateLiveStock() {
       span.dataset.liveTotal = total;
       const tr = span.closest("tr");
       const inp = tr ? tr.querySelector(".prn-create-storeqty") : null;
-      const currentVal = inp ? (Math.round((parseFloat(inp.value) || 0) * 100) / 100) : 0;
+       const currentVal = inp ? (Math.round((parseFloat(inp.value) || 0) * 100) / 100) : 0;
       const split = computeLiveStoreSplit(s.raw, s.spare, currentVal);
       span.textContent = `${split.remainingRaw + split.remainingSpare} (Raw: ${split.remainingRaw}, Spare: ${split.remainingSpare})`;
       if (inp) {
-        if (inp.disabled) { inp.disabled = false; inp.style.opacity = "1"; }
-        inp.max = total;
-        if (currentVal > total) { inp.value = Math.round(total * 100) / 100; inp.dispatchEvent(new Event("input")); }
+        // Decrease/removed rows have their own ceiling (totalCovered —
+        // store+purchase combined) enforced by updatePRNDecreaseRowPurchaseQty,
+        // not the live-stock total. Clamping to `total` here would cap
+        // (or silently overwrite) a decrease row's value to whatever the
+        // live pool happens to hold, which is unrelated to what this row
+        // is actually allowed to claim.
+        if (!inp.classList.contains("prn-create-decrease-storeqty")) {
+          if (inp.disabled) { inp.disabled = false; inp.style.opacity = "1"; }
+          inp.max = total;
+          if (currentVal > total) { inp.value = Math.round(total * 100) / 100; inp.dispatchEvent(new Event("input")); }
+        }
       }
     });
   } catch(e) { /* silent, retry next interval */ }
@@ -19788,7 +19807,15 @@ function renderAllPRNCards(prns, boqId) {
         }
       }
       const createBtn = document.getElementById("prn-create-new-btn");
-      if (createBtn) createBtn.style.display = boqPendingAuth ? "none" : "inline-block";
+      if (createBtn) {
+        createBtn.style.display = boqPendingAuth ? "none" : "inline-block";
+        createBtn.textContent = boqUpdatedAfterLatestPRN ? "+ Revise PRN for this BOQ" : "+ Create New PRN for this BOQ";
+      }
+      if (badge && boqUpdatedAfterLatestPRN) {
+        badge.style.display = "inline-block";
+        badge.textContent = "The BOQ linked to this PRN was revised, which may have increased or decreased quantities for some materials. Revise the PRN to match.";
+        badge.style.background = "#fef3c7"; badge.style.borderColor = "#f59e0b"; badge.style.color = "#78350f";
+      }
     } else {
       actionBar.style.display = "none";
       if (badge) badge.style.display = "none";
