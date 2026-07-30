@@ -17720,6 +17720,18 @@ async function refreshRPRNDeltaLiveStock() {
       const addBackOwn = (isDecreaseInp || isIncreaseInp) && itemForSpan;
       const baseRaw = addBackOwn ? s.raw + (Number(itemForSpan.storeFromRaw) || 0) : s.raw;
       const baseSpare = addBackOwn ? s.spare + (Number(itemForSpan.storeFromSpare) || 0) : s.spare;
+      const effectiveTotal = baseRaw + baseSpare;
+
+      // Overwriting these with the ADD-BACK-INCLUSIVE numbers, not the
+      // raw live-only ones — the input's own typing listener reads these
+      // exact dataset keys for both its cap and its live split preview.
+      // Storing the raw-only numbers here (as before) meant the display
+      // text (computed fresh, correctly, right below) and the input's
+      // actual cap/typing behavior disagreed — capping you at 50 while
+      // showing 70, and re-diverging on every poll cycle.
+      span.dataset.liveRaw = baseRaw;
+      span.dataset.liveSpare = baseSpare;
+      span.dataset.liveTotal = effectiveTotal;
 
       const currentVal = inp ? (Math.round((parseFloat(inp.value) || 0) * 100) / 100) : 0;
       const split = computeLiveStoreSplit(baseRaw, baseSpare, currentVal);
@@ -17727,8 +17739,8 @@ async function refreshRPRNDeltaLiveStock() {
       if (inp) {
         if (!inp.classList.contains("rprn-delta-decrease-storeqty")) {
           if (inp.disabled) { inp.disabled = false; inp.style.opacity = "1"; }
-          inp.max = total;
-          if (currentVal > total) { inp.value = Math.round(total * 100) / 100; inp.dispatchEvent(new Event("input")); }
+          inp.max = effectiveTotal;
+          if (currentVal > effectiveTotal) { inp.value = Math.round(effectiveTotal * 100) / 100; inp.dispatchEvent(new Event("input")); }
         }
       }
     });
@@ -19930,7 +19942,7 @@ async function refreshPRNCreateLiveStock() {
       span.dataset.liveTotal = total;
       const tr = span.closest("tr");
       const inp = tr ? tr.querySelector(".prn-create-storeqty") : null;
-       const currentVal = inp ? (Math.round((parseFloat(inp.value) || 0) * 100) / 100) : 0;
+      const currentVal = inp ? (Math.round((parseFloat(inp.value) || 0) * 100) / 100) : 0;
       // Decrease/removed rows already hold their pre-filled amount from
       // this PRN's PRIOR authorization — that's not a new claim being
       // made, so it needs adding back to the live pool before simulating
@@ -19943,19 +19955,23 @@ async function refreshPRNCreateLiveStock() {
       const addBackOwn = (isDecreaseInp || isIncreaseInp) && itemForSpan;
       const baseRaw = addBackOwn ? s.raw + (Number(itemForSpan.storeFromRaw) || 0) : s.raw;
       const baseSpare = addBackOwn ? s.spare + (Number(itemForSpan.storeFromSpare) || 0) : s.spare;
+      const effectiveTotal = baseRaw + baseSpare;
+      // Overwriting with the ADD-BACK-INCLUSIVE numbers — the dataset
+      // values were set above from s.raw/s.spare/total (live-pool-only,
+      // BEFORE this row's own held stock gets added back), so the cap
+      // logic below and any other reader of these same dataset keys was
+      // silently disagreeing with the "remaining" text this function
+      // itself displays two lines down.
+      span.dataset.liveRaw = baseRaw;
+      span.dataset.liveSpare = baseSpare;
+      span.dataset.liveTotal = effectiveTotal;
       const split = computeLiveStoreSplit(baseRaw, baseSpare, currentVal);
       span.textContent = `${split.remainingRaw + split.remainingSpare} (Raw: ${split.remainingRaw}, Spare: ${split.remainingSpare})`;
       if (inp) {
-        // Decrease/removed rows have their own ceiling (totalCovered —
-        // store+purchase combined) enforced by updatePRNDecreaseRowPurchaseQty,
-        // not the live-stock total. Clamping to `total` here would cap
-        // (or silently overwrite) a decrease row's value to whatever the
-        // live pool happens to hold, which is unrelated to what this row
-        // is actually allowed to claim.
         if (!inp.classList.contains("prn-create-decrease-storeqty")) {
           if (inp.disabled) { inp.disabled = false; inp.style.opacity = "1"; }
-          inp.max = total;
-          if (currentVal > total) { inp.value = Math.round(total * 100) / 100; inp.dispatchEvent(new Event("input")); }
+          inp.max = effectiveTotal;
+          if (currentVal > effectiveTotal) { inp.value = Math.round(effectiveTotal * 100) / 100; inp.dispatchEvent(new Event("input")); }
         }
       }
     });
