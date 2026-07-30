@@ -12675,10 +12675,49 @@ async function toggleBOQRevisionExpansion(updateId) {
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:8px; letter-spacing:0.5px;">Change Summary</div>
       <div id="boqrev-summary-text-${updateId}" style="font-size:0.85rem; color:#78350f; line-height:1.7; white-space:pre-line;">${summaryText}</div>
     </div>
+    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">BOQ Header Information</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Project ID (locked)</label>
+          <input type="text" value="${reqItem.projectId || ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Customer Name (locked)</label>
+          <input type="text" value="${reqItem.customerName || ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Product Name (locked)</label>
+          <input type="text" value="${reqItem.productName || ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Product Rating (locked)</label>
+          <input type="text" value="${reqItem.productRating || ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Order Quantity (No. of Sets) *</label>
+          <input type="number" id="boqrev-order-qty-${updateId}" value="${reqItem.newOrderQuantity ?? ''}" min="1"
+            oninput="reqItem.newOrderQuantity = this.value; recomputeBOQRevisionSummary(${updateId})"
+            style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Date</label>
+          <input type="text" value="${formatDateDMY(reqItem.createdAt)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Department (locked)</label>
+          <input type="text" value="${reqItem.department || ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+        </div>
+      </div>
+    </div>
     <div id="boqrev-rows-mount-${updateId}"></div>
     <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px; margin-top:14px;">
-      <button class="nav-btn-styled" onclick="rejectBOQRevision(${updateId})" style="background:#dc2626; padding:8px 20px; font-weight:700;" id="boqrev-reject-btn-${updateId}">Reject Revision</button>
-      <button class="nav-btn-styled" onclick="authorizeBOQRevision(${updateId})" style="background:var(--accent); padding:8px 24px; font-weight:700;" id="boqrev-auth-btn-${updateId}">Authorize Revision</button>
+      <button class="nav-btn-styled" onclick="rejectBOQRevision(${updateId})" style="background:#dc2626; padding:8px 20px; font-weight:700;" id="boqrev-reject-btn-${updateId}">Reject BOQ Revision</button>
+      <button class="nav-btn-styled" onclick="authorizeBOQRevision(${updateId})" style="background:var(--accent); padding:8px 24px; font-weight:700;" id="boqrev-auth-btn-${updateId}">Authorize BOQ Revision</button>
     </div>
   `;
 
@@ -12767,6 +12806,7 @@ async function authorizeBOQRevision(updateId) {
   if (authBtn) { authBtn.disabled = true; authBtn.textContent = "Authorizing..."; }
   if (rejBtn) rejBtn.disabled = true;
   showBlockingOverlay("Authorizing Bill of Quantity Revision...");
+  // (button labels intentionally stay "Authorizing..."/"Rejecting..." mid-flight, not the full renamed text — keeps the in-progress state visually distinct)
 
   try {
     const data = await apFetch({
@@ -12782,13 +12822,13 @@ async function authorizeBOQRevision(updateId) {
       showBOQBanner("auth-boq-upd-feedback", `✅ Revision authorized for ${reqItem.boqId}.${pdfNote}`, "success");
       await initializeAuthorizeBOQRevisionPanel(); // refresh the queue
     } else {
-      if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize Revision"; }
+      if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize BOQ Revision"; }
       if (rejBtn) rejBtn.disabled = false;
       showBOQBanner("auth-boq-upd-feedback", data.error || "Authorization failed.", "error");
     }
   } catch (e) {
     hideBlockingOverlay();
-    if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize Revision"; }
+    if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize BOQ Revision"; }
     if (rejBtn) rejBtn.disabled = false;
     showBOQBanner("auth-boq-upd-feedback", "Network error: " + e.message, "error");
   }
@@ -12810,7 +12850,7 @@ async function rejectBOQRevision(updateId) {
       showBOQBanner("auth-boq-upd-feedback", `Revision request for ${reqItem.boqId} was rejected.`, "success");
       await initializeAuthorizeBOQRevisionPanel();
     } else {
-      if (rejBtn) { rejBtn.disabled = false; rejBtn.textContent = "Reject Revision"; }
+      if (rejBtn) { rejBtn.disabled = false; rejBtn.textContent = "Reject BOQ Revision"; }
       if (authBtn) authBtn.disabled = false;
       showBOQBanner("auth-boq-upd-feedback", data.error || "Rejection failed.", "error");
     }
