@@ -12292,6 +12292,20 @@ function updateCBOQTotals() {
   if (totalEl)  totalEl.textContent  = "₹" + totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// Fixed-position dropdowns (this one and its siblings) compute their
+// coordinates once, at open time — scrolling moves the actual input away
+// underneath while the dropdown stays frozen at its old screen position.
+// Closing on scroll rather than trying to track position live, since
+// this dropdown is dismissed by selection/blur anyway in normal use.
+if (!window._boqDropdownScrollHandlerInstalled) {
+  window._boqDropdownScrollHandlerInstalled = true;
+  window.addEventListener('scroll', () => {
+    document.querySelectorAll('[id*="-mat-dropdown-"]').forEach(dd => {
+      if (dd.style.display === 'block') dd.style.display = 'none';
+    });
+  }, true); // capture:true — catches scrolling on any nested scrollable container, not just the window
+}
+
 // Shared typeahead for BOQ material rows
 function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
   const dropdownId = formPrefix + "-mat-dropdown-" + rowIdx;
