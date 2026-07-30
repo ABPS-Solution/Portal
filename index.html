@@ -1964,8 +1964,42 @@
           </div>
         </div>
 
-        <!-- ROW 2: Charts -->
-        <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 31%;">
+        <!-- ROW 2: PRN Assignment Health -->
+        <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:8px; flex:0 0 13%;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">PRNs Pending Assignment</div>
+            <div class="dd-stat-val" id="pd-s-prn-pending" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub">line items under-assigned</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Fully Covered PRNs</div>
+            <div class="dd-stat-val" id="pd-s-prn-covered" style="color:#15803d;">—</div>
+            <div class="dd-stat-sub">all line items assigned</div>
+          </div>
+          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
+            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          </div>
+          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
+            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          </div>
+          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
+            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          </div>
+          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
+            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          </div>
+          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
+            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 3: Charts -->
+        <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 22%;">
           <div class="dd-card" style="padding:8px 10px;">
             <div class="dd-card-title" id="pd-chart2-title">PRN Status Over Time</div>
             <canvas id="pd-chart-prn-trend" style="max-height:130px;"></canvas>
@@ -1980,8 +2014,8 @@
           </div>
         </div>
 
-        <!-- ROW 3: Pending actions — 2 columns -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:0 0 40%;">
+        <!-- ROW 4: Pending actions — 2 columns -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1; min-height:0;">
 
           <!-- Materials with no PO yet -->
           <div class="dd-card" style="padding:10px 12px; display:flex; flex-direction:column; min-height:0;">
@@ -17942,20 +17976,15 @@ function navigateToPurchaseDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
-  ddShowAllWorkspaceEnclosures();
+  // Same hidden-ancestor issue as Design — the dashboard canvas lives
+  // inside this enclosure panel, confirmed via a live DOM ancestor trace
+  // (getBoundingClientRect returning all zeros despite display:block).
+  const enclosure = document.getElementById("module-purchase-workspace-enclosure-panel");
+  if (enclosure) enclosure.style.display = "block";
   const c = document.getElementById("canvas-module-purchase-dashboard");
   if (c) c.style.display = "block";
   showDashboardGlobalToolbar("Purchase Dashboard", "pd-period-btns", pdReturnToMain);
   if (typeof pdLoadDashboard === "function") pdLoadDashboard();
-  // Purchase specifically renders under the fixed toolbar despite the
-  // shared padding logic — its extra stat-card row (7 vs 5 on the
-  // others) makes this canvas measure differently. Overriding just this
-  // canvas's own top padding directly, without touching the shared
-  // calculation the other 4 dashboards already render correctly with.
-  requestAnimationFrame(() => {
-    const toolbar = document.getElementById("dashboard-global-toolbar");
-    if (c && toolbar) c.style.paddingTop = (toolbar.offsetHeight + 20) + "px";
-  });
 }
 
 function navigateToStoreDashboard() {
