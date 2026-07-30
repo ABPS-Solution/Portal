@@ -12700,7 +12700,7 @@ async function toggleBOQRevisionExpansion(updateId) {
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Order Quantity (No. of Sets) *</label>
-          <input type="number" id="boqrev-order-qty-${updateId}" value="${reqItem.newOrderQuantity ?? ''}" min="1"
+          <input type="number" id="boqrev-order-qty-${updateId}" value="${formatQtyTrimmed(reqItem.newOrderQuantity)}" min="1"
             oninput="reqItem.newOrderQuantity = this.value; recomputeBOQRevisionSummary(${updateId})"
             style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
         </div>
@@ -12739,38 +12739,122 @@ async function toggleBOQRevisionExpansion(updateId) {
   }
 }
 
-// Renders the editable proposed-rows table. Reuses the same per-row
-// shape the create/update BOQ forms use so item-code lookups behave the
-// same. Kept intentionally simple: description, item code, qty/set,
-// unit, rate — editable — with a running recompute.
+// Renders the editable proposed-rows table — now byte-for-byte the same
+// column set, locked Item Code/Unit, and search-typeahead Description of
+// Material as Create/Authorize/Update BOQ's own material-rows tables
+// (see renderEBOQMaterialRows), instead of the simplified free-text
+// version this used to be.
 function renderBOQRevisionRows(updateId) {
   const mount = document.getElementById(`boqrev-rows-mount-${updateId}`);
   if (!mount) return;
-  const rowsHtml = uboqRevRows.map((r, idx) => `
-    <tr>
-      <td style="padding:4px; text-align:center;">${idx + 1}</td>
-      <td style="padding:4px;"><input type="text" value="${(r.descriptionOfMaterial || '').replace(/"/g,'&quot;')}" oninput="uboqRevRows[${idx}].descriptionOfMaterial=this.value" style="width:100%; padding:5px; border:1px solid var(--border); border-radius:4px;" /></td>
-      <td style="padding:4px;"><input type="text" value="${(r.itemCode || '').replace(/"/g,'&quot;')}" oninput="uboqRevRows[${idx}].itemCode=this.value" style="width:100%; padding:5px; border:1px solid var(--border); border-radius:4px;" /></td>
-      <td style="padding:4px;"><input type="number" value="${r.quantityFor1Set ?? ''}" oninput="uboqRevRows[${idx}].quantityFor1Set=this.value; recomputeBOQRevisionSummary(${updateId})" style="width:80px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:center;" /></td>
-      <td style="padding:4px;"><input type="text" value="${(r.unit || '').replace(/"/g,'&quot;')}" oninput="uboqRevRows[${idx}].unit=this.value" style="width:60px; padding:5px; border:1px solid var(--border); border-radius:4px;" /></td>
-      <td style="padding:4px;"><input type="number" value="${r.designRatePerQuantity ?? ''}" oninput="uboqRevRows[${idx}].designRatePerQuantity=this.value; recomputeBOQRevisionSummary(${updateId})" style="width:90px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:right;" /></td>
-      <td style="padding:4px; text-align:center;"><button onclick="uboqRevRows.splice(${idx},1); renderBOQRevisionRows(${updateId}); recomputeBOQRevisionSummary(${updateId});" style="background:#fee2e2; color:#b91c1c; border:none; border-radius:4px; padding:4px 9px; cursor:pointer; font-weight:700;">×</button></td>
-    </tr>
-  `).join("");
+
+  const totalPerSet = uboqRevRows.reduce((sum, row) => {
+    return sum + ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0));
+  }, 0);
+  const orderQtyEl = document.getElementById(`boqrev-order-qty-${updateId}`);
+  const orderQty = parseInt(orderQtyEl?.value) || 0;
+  const totalCost = totalPerSet * orderQty;
+
+  const rowsHtml = uboqRevRows.length === 0
+    ? `<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows. Click "+ Add Row".</td></tr>`
+    : uboqRevRows.map((row, idx) => {
+        const isRawMaterial = row.typeOfStore !== "Spare Store";
+        const totalMaterialRate = isRawMaterial ? ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0)) : 0;
+        return `
+    <tr style="border-bottom:1px solid #f1f5f9;">
+      <td style="text-align:center; padding:6px; font-weight:700; color:var(--muted);">${idx + 1}</td>
+      <td style="padding:4px;">
+        <select onchange="uboqRevRows[${idx}].typeOfStore=this.value; renderBOQRevisionRows(${updateId});" style="padding:4px; font-size:0.8rem; width:100%;">
+          <option value="Raw Materials Store" ${row.typeOfStore==="Raw Materials Store"?"selected":""}>Raw Material</option>
+          <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods</option>
+        </select>
+      </td>
+      <td style="padding:4px; position:relative;">
+        <textarea rows="1" placeholder="Type to search..." autocomplete="off"
+          oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'boqrev'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+          onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'boqrev'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+          style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; display:block;"
+        >${row.descriptionOfMaterial || ""}</textarea>
+        <div id="boqrev-mat-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
+      </td>
+      <td style="padding:4px;">
+        <input type="text" value="${row.itemCode || ""}" readonly
+          style="padding:5px; font-size:0.78rem; font-family:monospace; font-weight:700; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:3px; border:1px solid #bae6fd; width:100%;" />
+      </td>
+      <td style="padding:4px;">
+        <input type="text" value="${row.make || ""}" placeholder="Make..."
+          oninput="uboqRevRows[${idx}].make=this.value"
+          style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px;" />
+      </td>
+      <td style="padding:4px; text-align:center;">
+        <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
+          oninput="uboqRevRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; renderBOQRevisionRows(${updateId}); recomputeBOQRevisionSummary(${updateId});"
+          style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
+      </td>
+      <td style="padding:4px; text-align:center;">
+        <select disabled onchange="uboqRevRows[${idx}].unit=this.value" style="padding:4px; font-size:0.8rem; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed;">
+          <option value="" ${!row.unit?"selected":""} disabled>— Unit —</option>
+          <option value="NOS" ${row.unit==="NOS"?"selected":""}>NOS</option>
+          <option value="KG"  ${row.unit==="KG"?"selected":""}>KG</option>
+          <option value="MTR" ${row.unit==="MTR"?"selected":""}>MTR</option>
+          <option value="SET" ${row.unit==="SET"?"selected":""}>SET</option>
+          <option value="LTR" ${row.unit==="LTR"?"selected":""}>LTR</option>
+          <option value="ROL" ${row.unit==="ROL"?"selected":""}>ROL</option>
+        </select>
+      </td>
+      <td style="padding:4px;">
+        <input type="number" value="${row.designRatePerQuantity || ""}" min="0" placeholder="0.00"
+          oninput="uboqRevRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; renderBOQRevisionRows(${updateId}); recomputeBOQRevisionSummary(${updateId});"
+          style="padding:5px; font-size:0.85rem; text-align:right; width:100%; border:1px solid var(--border); border-radius:3px;" />
+      </td>
+      <td style="padding:4px;">
+        <input type="text" value="${isRawMaterial ? totalMaterialRate.toFixed(2) : '—'}" readonly
+          style="padding:5px; font-size:0.85rem; font-weight:700; text-align:center; width:100%; background:#f0fdf4; color:var(--accent); cursor:not-allowed; border-radius:3px; border:1px solid #86efac;" />
+      </td>
+      <td style="padding:4px; text-align:center;">
+        <button onclick="uboqRevRows.splice(${idx},1); renderBOQRevisionRows(${updateId}); recomputeBOQRevisionSummary(${updateId});" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:3px 8px; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:700;">✕</button>
+      </td>
+    </tr>`;
+      }).join("");
+
   mount.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand);">Proposed Material Rows (editable)</div>
+      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand);">Material Rows *</div>
       <button onclick="uboqRevRows.push({typeOfStore:'Raw Materials Store',descriptionOfMaterial:'',itemCode:'',make:'',quantityFor1Set:'',unit:'NOS',designRatePerQuantity:''}); renderBOQRevisionRows(${updateId});" style="background:var(--accent); color:#fff; border:none; border-radius:4px; padding:5px 12px; font-size:0.78rem; font-weight:700; cursor:pointer;">+ Add Row</button>
     </div>
     <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
       <thead><tr style="background:#f1f5f9;">
-        <th style="padding:6px;">Sr</th><th style="padding:6px; text-align:left;">Description of Material</th>
-        <th style="padding:6px;">Item Code</th><th style="padding:6px;">Qty/Set</th>
-        <th style="padding:6px;">Unit</th><th style="padding:6px;">Rate/Qty</th><th style="padding:6px;">Del</th>
+        <th style="padding:6px;">Sr No</th>
+        <th style="padding:6px; text-align:left;">Type of Store *</th>
+        <th style="padding:6px; text-align:left;">Description of Material *</th>
+        <th style="padding:6px;">Item Code</th>
+        <th style="padding:6px;">Make</th>
+        <th style="padding:6px;">Qty / Set *</th>
+        <th style="padding:6px;">Unit *</th>
+        <th style="padding:6px;">Design Rate / Qty</th>
+        <th style="padding:6px;">Total Material Cost / Set</th>
+        <th style="padding:6px;">Del</th>
       </tr></thead>
       <tbody>${rowsHtml}</tbody>
     </table>
+    <div style="border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-top:14px; display:flex; justify-content:flex-end; gap:32px;">
+      <div style="text-align:right;">
+        <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Total BOQ Cost Per Set</div>
+        <div style="font-size:1.1rem; font-weight:800; color:var(--accent);">₹${totalPerSet.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Total BOQ Cost</div>
+        <div style="font-size:1.1rem; font-weight:800; color:var(--accent);">₹${totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+      </div>
+    </div>
   `;
+
+  const orderInput = document.getElementById(`boqrev-order-qty-${updateId}`);
+  if (orderInput) orderInput.oninput = () => { reqItem_forOrderQty(updateId).newOrderQuantity = orderInput.value; renderBOQRevisionRows(updateId); recomputeBOQRevisionSummary(updateId); };
+}
+
+function reqItem_forOrderQty(updateId) {
+  return uboqRevList.find(r => String(r.updateId) === String(updateId));
 }
 
 // Debounced-ish live re-diff as the authorizer edits, so the summary
@@ -13672,9 +13756,9 @@ function updateUBOQTotals() {
 // Add uboq to selectBOQRowMaterial
 // Find existing selectBOQRowMaterial and add uboq branch:
 function selectBOQRowMaterial(rowIdx, productName, itemCode, formPrefix) {
-  const rowsMap = { cboq: cboqMaterialRows, eboq: eboqMaterialRows, uboq: uboqMaterialRows };
-  const renderMap = { cboq: renderCBOQMaterialRows, eboq: renderEBOQMaterialRows, uboq: renderUBOQMaterialRows };
-  const feedbackMap = { cboq: "create-boq-feedback", eboq: "auth-boq-feedback", uboq: "update-boq-feedback" };
+  const rowsMap = { cboq: cboqMaterialRows, eboq: eboqMaterialRows, uboq: uboqMaterialRows, boqrev: uboqRevRows };
+  const renderMap = { cboq: renderCBOQMaterialRows, eboq: renderEBOQMaterialRows, uboq: renderUBOQMaterialRows, boqrev: () => renderBOQRevisionRows(uboqRevExpandedId) };
+  const feedbackMap = { cboq: "create-boq-feedback", eboq: "auth-boq-feedback", uboq: "update-boq-feedback", boqrev: "auth-boq-upd-feedback" };
 
   const rows = rowsMap[formPrefix];
   if (rows) {
