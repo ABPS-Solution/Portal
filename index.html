@@ -19353,7 +19353,7 @@ function renderPRNCreateTable() {
 
   const isDelta = !!pending.isDeltaPRN;
   const revBadge = isDelta
-    ? `<span style="background:#fb923c; color:#fff; font-size:0.62rem; padding:2px 6px; border-radius:3px; font-weight:800; margin-left:8px;">REVISION v${pending.nextVersion} — CHANGED MATERIALS ONLY</span>`
+    ? `<span style="background:#fb923c; color:#fff; font-size:0.62rem; padding:2px 6px; border-radius:3px; font-weight:800; margin-left:8px;">REVISION v${pending.nextVersion}</span>`
     : "";
 
   const hasEditable = pending.lineItems.some(it => it.editable !== false);
@@ -19416,10 +19416,10 @@ function renderPRNCreateTable() {
 
   const banners = `
     ${hasReadOnly ? `<div style="background:#fef2f2; border-left:3px solid #b91c1c; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#7f1d1d; margin-bottom:10px;">
-      Rows shaded red are <strong>reductions or removals</strong> from the BOQ revision. They are computed automatically — purchase is unwound first, then store — and need no confirmation from you.
+      Rows shaded red are <strong>reductions or removals</strong> from the BOQ revision. They're handled automatically and need no action from you.
     </div>` : ""}
     ${anyDeferred ? `<div style="background:#fffbeb; border-left:3px solid #b45309; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#78350f; margin-bottom:10px;">
-      ⏳ One or more reductions cannot be applied yet because that material is <strong>already on a purchase order</strong>. Those lines hold their current quantities until the PO is revised, then unwind automatically.
+      ⏳ One or more reductions cannot be applied yet because that material is <strong>already on a purchase order</strong>. Those materials will update automatically once the PO is revised.
     </div>` : ""}
     ${(!hasEditable && hasReadOnly) ? `<div style="background:#eff6ff; border-left:3px solid var(--brand); padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#1e3a8a; margin-bottom:10px;">
       This revision contains only reductions. Submitting it records them — there is nothing for you to fill in.
@@ -19535,12 +19535,19 @@ async function submitNewPRNCreation() {
   const pending = window.prnPendingCreate;
   if (!pending) return;
 
-  const checkedBoxes = document.querySelectorAll(".prn-create-checked");
-  const storeQtyInputs = document.querySelectorAll(".prn-create-storeqty");
-
+  // Looked up by data-idx, NOT array position — rows that are
+  // auto-computed (decrease/removed, no checkbox rendered at all) are
+  // skipped when the DOM is queried, so the Nth checkbox in the DOM
+  // does not correspond to the Nth row in pending.lineItems whenever any
+  // non-editable rows sit before it. Indexing positionally grabbed the
+  // wrong row's checkbox state for every editable row after the first
+  // AUTO row — which is exactly why a visibly-checked "Container Box"
+  // still failed validation.
   const submittedItems = pending.lineItems.map((item, idx) => {
-    const checkedVal = checkedBoxes[idx] && checkedBoxes[idx].checked ? "Yes" : "No";
-    const storeQty    = storeQtyInputs[idx] ? (parseFloat(storeQtyInputs[idx].value) || 0) : 0;
+    const cb = document.querySelector(`.prn-create-checked[data-idx="${idx}"]`);
+    const storeQtyInput = document.querySelector(`.prn-create-storeqty[data-idx="${idx}"]`);
+    const checkedVal = cb && cb.checked ? "Yes" : "No";
+    const storeQty    = storeQtyInput ? (parseFloat(storeQtyInput.value) || 0) : 0;
     return {
       itemCode: item.itemCode, materialName: item.materialName, typeOfMaterial: item.typeOfMaterial,
       unit: item.unit,
