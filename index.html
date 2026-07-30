@@ -17574,7 +17574,7 @@ function renderRPRNDeltaTable() {
       const autoStoreQty = Number(item.newStoreTotal) || 0;
       const totalCovered = (Number(item.newStoreTotal) || 0) + (Number(item.newPurchaseTotal) || 0);
       const note = item.deferred
-        ? `<div style="font-size:0.6rem; font-weight:800; color:#b45309; margin-top:3px;">⏳ Purchase Qty locked — awaiting PO revision</div>`
+        ? `<div style="font-size:0.6rem; font-weight:800; color:#b45309; margin-top:3px;">Purchase Qty locked and waiting for PO revision</div>`
         : "";
 
       rowsHtml += `
