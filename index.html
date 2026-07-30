@@ -17902,14 +17902,14 @@ function showDashboardGlobalToolbar(title, periodBtnsId, returnFn) {
   // canvas needs top padding equal to the toolbar's real height or its
   // content starts underneath the floating bar.
   requestAnimationFrame(() => {
-    // Subtracting here, not adding the full toolbar height — the canvas's
-    // own inner *-body div (sd-body/md-body/etc.) already carries its own
-    // top padding, so using the toolbar's full height on top of that
-    // double-counted the gap. This snugs content right up against the
-    // fixed toolbar instead.
-    const h = Math.max(0, toolbar.offsetHeight - 20);
+    const toolbarBottom = toolbar.getBoundingClientRect().bottom;
     document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => {
-      if (c.style.display === "block") c.style.paddingTop = h + "px";
+      if (c.style.display !== "block") return;
+      c.style.paddingTop = "0px";
+      requestAnimationFrame(() => {
+        const gap = toolbarBottom - c.getBoundingClientRect().top;
+        c.style.paddingTop = Math.max(0, gap) + "px";
+      });
     });
   });
   document.getElementById("dash-global-title").textContent = title;
