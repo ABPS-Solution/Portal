@@ -17634,7 +17634,7 @@ function renderRPRNDeltaTable() {
       </table>
     </div>
     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; display:flex; justify-content:flex-end; align-items:center; gap:14px;">
-      <button class="nav-btn-styled" id="rprn-delta-generate-btn" onclick="submitRPRNDelta()" style="background:var(--accent); padding:8px 24px; font-weight:700;">Save & Submit for Authorization</button>
+      <button class="nav-btn-styled" id="rprn-delta-generate-btn" onclick="submitRPRNDelta()" style="background:var(--accent); padding:8px 24px; font-weight:700;">Submit for Authorization</button>
     </div>
   `;
 
@@ -17677,7 +17677,7 @@ function renderRPRNDeltaTable() {
 
   refreshRPRNDeltaLiveStock();
   if (window._rprnDeltaStockInterval) clearInterval(window._rprnDeltaStockInterval);
-  window._rprnDeltaStockInterval = setInterval(refreshRPRNDeltaLiveStock, 8000);
+  window._rprnDeltaStockInterval = setInterval(refreshRPRNDeltaLiveStock, 3000);
 }
 
 function updateRPRNDeltaDecreaseRowPurchaseQty(idx, input) {
@@ -17776,7 +17776,7 @@ async function submitRPRNDelta() {
     hideBlockingOverlay();
     if (!data.success) {
       showPurchaseFeedback("rprn-delta-feedback", data.error || "Failed to submit PRN revision.", "error");
-      btn.disabled = false; btn.textContent = "Save & Submit for Authorization";
+      btn.disabled = false; btn.textContent = "Submit for Authorization";
       return;
     }
 
@@ -17788,7 +17788,7 @@ async function submitRPRNDelta() {
   } catch (e) {
     hideBlockingOverlay();
     showPurchaseFeedback("rprn-delta-feedback", "Network error: " + e.message, "error");
-    btn.disabled = false; btn.textContent = "Save & Submit for Authorization";
+    btn.disabled = false; btn.textContent = "Submit for Authorization";
   }
 }
 
