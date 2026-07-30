@@ -17912,7 +17912,7 @@ function showDashboardGlobalToolbar(title, periodBtnsId, returnFn) {
       // Floor of 60px — if measurement is ever still wrong for some other
       // reason, this stops content from ever landing flush under the
       // toolbar again instead of silently applying near-zero padding.
-      const h = Math.max(60, toolbar.offsetHeight - 100);
+      const h = Math.max(100, toolbar.offsetHeight - 100);
       document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => {
         if (c.style.display === "block") c.style.paddingTop = h + "px";
       });
