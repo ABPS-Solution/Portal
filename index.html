@@ -16397,14 +16397,16 @@ async function authorizePOFromForm() {
     const data = await apFetch({ action: "authorizePurchaseOrder", activeEngineer: appActiveOperatorIdentityString, ...payload, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success) {
+      window.cpoExpandedPoNo = null;
+      const body = document.getElementById("authorize-po-body");
+      if (body) body.innerHTML = "";
       banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
-      let msg = `<strong>${poNo} Authorized.</strong>`;
-      if (data.pdfUrl) msg += ` <a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700;">Open PDF →</a>`;
-      else if (data.pdfWarning) msg += ` <span style="color:#b45309;">PDF generation is pending (service issue) — it can be regenerated later.</span>`;
+      let msg = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:8px;">✅ ${poNo} Authorized Successfully!</div>`;
+      if (data.pdfUrl) msg += `<div style="font-size:0.82rem;">📄 <a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700;">Open PDF →</a></div>`;
+      else if (data.pdfWarning) msg += `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — PO is authorized. Contact admin to verify Drive folder setup.</div>`;
+      msg += `<button onclick="document.getElementById('apo-feedback-banner').style.display='none'; initializeAuthorizePOPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another PO</button>`;
       banner.innerHTML = msg;
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
-      window.cpoExpandedPoNo = null;
-      initializeAuthorizePOPanel(); // refresh queue — this PO drops off
     } else {
       btn.disabled = false; btn.textContent = "Authorize PO";
       showErr("Server error: " + data.error);
@@ -16680,7 +16682,19 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
     initializeAuthorizePORevisionPanel();
   } else if (targetModuleId === "purchase-revise-po") {
     document.getElementById("canvas-module-purchase-revise-po").style.display = "block";
-    initializeRevisePOPanel();
+    // switchRevisePOTab('queue') resets everything a plain
+    // initializeRevisePOPanel() call didn't: which tab is visually
+    // active, the "Other PO Revisions" search box + its results, and
+    // rpo-detail-zone/rpoActive — without this, leaving on the "Other"
+    // tab mid-search and coming back re-entered into that exact stale
+    // state instead of a fresh screen.
+    const otherSearchInput = document.getElementById("rpo-other-search-input");
+    if (otherSearchInput) otherSearchInput.value = "";
+    const otherResults = document.getElementById("rpo-other-results");
+    if (otherResults) otherResults.innerHTML = "";
+    const rpoFb = document.getElementById("rpo-feedback");
+    if (rpoFb) { rpoFb.style.display = "none"; rpoFb.innerHTML = ""; }
+    switchRevisePOTab('queue');
   } else if (targetModuleId === "purchase-pps-tracking") {
     document.getElementById("canvas-module-purchase-pps-tracking").style.display = "block";
     const ppsBanner = document.getElementById("pps-feedback");
@@ -17095,8 +17109,9 @@ async function submitPORevisionUI() {
     if (data.success) {
       document.getElementById("rpo-detail-zone").innerHTML = "";
       window.rpoActive = null;
-      showPurchaseFeedback("rpo-feedback", `✅ Revision for <strong>${st.po.poNo}</strong> submitted and is pending authorization. The PO is unchanged until it is authorized.`, "success");
-      initializeRevisePOPanel();
+      showPurchaseFeedback("rpo-feedback", `✅ Revision for <strong>${st.po.poNo}</strong> submitted and is pending authorization. The PO is unchanged until it is authorized.<br><button onclick="document.getElementById('rpo-feedback').style.display='none'; initializeRevisePOPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Revise Another PO</button>`, "success");
+      document.getElementById("rpo-detail-zone").innerHTML = "";
+      window.rpoActive = null;
     } else {
       btn.disabled = false; btn.textContent = "Submit Revision for Authorization";
       showPurchaseFeedback("rpo-feedback", data.error || "Submission failed.", "error");
@@ -17352,12 +17367,16 @@ async function authorizePORevisionUI(requestId, confirmStale) {
     }
 
     if (data.success) {
+      const feed = document.getElementById("apor-cards-feed");
+      if (feed) feed.innerHTML = "";
       const notes = [];
       if ((data.staleNotes || []).length) notes.push(`${data.staleNotes.length} allocation(s) re-clamped to current PRN needs.`);
       if ((data.unwound || []).length) notes.push(`Deferred BOQ reductions completed for ${data.unwound.map(u => u.prnId).join(", ")}.`);
-      showPurchaseFeedback("apor-feedback",
-        `✅ <strong>${data.poNo}</strong> revised to Rev ${data.revisionNumber}.${notes.length ? " " + notes.join(" ") : ""}`, "success");
-      await initializeAuthorizePORevisionPanel();
+      let msg = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:8px;">✅ <strong>${data.poNo}</strong> revised to Rev ${data.revisionNumber}!</div>`;
+      if (notes.length) msg += `<div style="font-size:0.8rem; margin-bottom:8px;">${notes.join(" ")}</div>`;
+      if (data.pdfUrl) msg += `<div style="font-size:0.82rem;">📄 <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">Open PDF →</a></div>`;
+      msg += `<button onclick="document.getElementById('apor-feedback').style.display='none'; initializeAuthorizePORevisionPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another PO Revision</button>`;
+      showPurchaseFeedback("apor-feedback", msg, "success");
     } else {
       if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize Revision"; }
       if (rejBtn) rejBtn.disabled = false;
