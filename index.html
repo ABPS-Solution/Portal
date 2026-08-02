@@ -17642,7 +17642,16 @@ function renderRPRNDeltaTable() {
     cb.addEventListener("change", function() {
       const idx = this.dataset.idx;
       const input = document.querySelector(`.rprn-delta-storeqty[data-idx="${idx}"]`);
-      if (input) { input.disabled = !this.checked; input.style.opacity = this.checked ? "1" : "0.5"; }
+      if (!input) return;
+      // Only a genuinely-new row (no decrease/increase marker class)
+      // starts disabled and is meant to be checkbox-gated at all —
+      // increase AND decrease rows are always editable regardless of
+      // checked state. Disabling them here locked whatever value was
+      // typed while checked, with no way to correct it back down after
+      // unchecking — which is exactly how a stale, unachievable value
+      // (typed once, then stuck) ended up getting submitted.
+      const isNewRow = !input.classList.contains("rprn-delta-decrease-storeqty") && !input.classList.contains("rprn-delta-increase-storeqty");
+      if (isNewRow) { input.disabled = !this.checked; input.style.opacity = this.checked ? "1" : "0.5"; }
     });
   });
 
