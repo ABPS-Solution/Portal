@@ -17549,7 +17549,7 @@ function renderRPRNDeltaTable() {
 
     if (item.editable !== false) {
       const isIncrease = item.changeKind === "increase";
-      const changeBadge = `<div style="font-size:0.7rem; font-weight:800; color:${isIncrease ? "#15803d" : "#2563eb"}; margin-top:3px;">${isIncrease ? "INCREASED" : "NEWLY ADDED TO BOQ"}</div>`;
+      const changeBadge = `<div style="font-size:0.7rem; font-weight:800; color:${isIncrease ? "#15803d" : "#2563eb"}; margin-top:3px;">${isIncrease ? "INCREASED" : "NEWLY ADDED"}</div>`;
       const prefillVal = isIncrease ? trimNum(item.previousStoreQty) : "";
       const storeqtyExtraClass = isIncrease ? "rprn-delta-increase-storeqty" : "";
       rowsHtml += `
@@ -19466,7 +19466,7 @@ function renderAPRNRows(prnId) {
       const buffered = isDecreaseOrRemoved ? totalCovered : (Number(r.bufferedRequirement) || 0);
       const minStore = isDecreaseOrRemoved ? 0 : Math.max(0, buffered - (Number(r.onOrderQty) || 0));
       const changeBadge = r.changeKind === 'increase' ? `<div style="font-size:0.65rem; font-weight:800; color:#15803d; margin-top:2px;">INCREASED</div>`
-        : r.changeKind === 'new' ? `<div style="font-size:0.65rem; font-weight:800; color:#2563eb; margin-top:2px;">NEWLY ADDED TO BOQ</div>`
+        : r.changeKind === 'new' ? `<div style="font-size:0.65rem; font-weight:800; color:#2563eb; margin-top:2px;">NEWLY ADDED</div>`
         : r.changeKind === 'decrease' ? `<div style="font-size:0.65rem; font-weight:800; color:#f59e0b; margin-top:2px;">DECREASED</div>`
         : r.changeKind === 'removed' ? `<div style="font-size:0.65rem; font-weight:800; color:#b91c1c; margin-top:2px;">REMOVED FROM BOQ</div>`
         : "";
@@ -19812,7 +19812,7 @@ function renderPRNCreateTable() {
       // (truly new to the BOQ, nothing held yet) stay empty and gated
       // behind the checkbox, as before.
       const isIncrease = item.changeKind === "increase";
-      const changeBadge = `<div style="font-size:0.7rem; font-weight:800; color:${isIncrease ? "#15803d" : "#2563eb"}; margin-top:3px;">${isIncrease ? "INCREASED" : "NEWLY ADDED TO BOQ"}</div>`;
+      const changeBadge = `<div style="font-size:0.7rem; font-weight:800; color:${isIncrease ? "#15803d" : "#2563eb"}; margin-top:3px;">${isIncrease ? "INCREASED" : "NEWLY ADDED"}</div>`;
       const prefillVal = isIncrease ? trimNum(item.previousStoreQty) : "";
       const storeqtyExtraClass = isIncrease ? "prn-create-increase-storeqty" : "";
       rowsHtml += `
