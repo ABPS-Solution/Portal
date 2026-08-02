@@ -16224,7 +16224,7 @@ function saveCPOAllocationPicker(rowId) {
     if (q <= 0) continue;
     const cap = parseFloat(inp.dataset.max) || 0;
     if (q > cap + 1e-9) {
-      alert(`${inp.dataset.prnid} only needs ${cap} more of this material — cannot allocate ${q}.`);
+      alert(`${inp.dataset.prnid} only needs ${cap} more of this material, cannot allocate ${q}.`);
       return;
     }
     sum += q;
@@ -17069,7 +17069,7 @@ async function submitPORevisionUI() {
       return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: Vendor Discussed Purchase Quantity is required.`, "error");
     }
     if (l.vendorDiscussedQty < l._received - 1e-9) {
-      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: ${l._received} already received — cannot revise below that.`, "error");
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: ${l._received} already received, cannot revise below that.`, "error");
     }
     const sum = l.allocations.reduce((s, a) => s + a.quantity, 0);
     if (sum > l.vendorDiscussedQty + 1e-9) {
@@ -17084,7 +17084,7 @@ async function submitPORevisionUI() {
       const inp = document.querySelector(`.rpo-alloc[data-idx="${l._idx}"][data-prnid="${a.prnId}"]`);
       const need = inp ? (parseFloat(inp.dataset.need) || 0) : Infinity;
       if (a.quantity > need + 1e-9) {
-        return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode} / ${a.prnId.replace(/^PRN_/,"")}: needs only ${need} from this PO — cannot allocate ${a.quantity}.`, "error");
+        return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode} / ${a.prnId.replace(/^PRN_/,"")}: needs only ${need} from this PO, cannot allocate ${a.quantity}.`, "error");
       }
     }
   }
@@ -17680,6 +17680,11 @@ function renderRPRNDeltaTable() {
   window._rprnDeltaStockInterval = setInterval(refreshRPRNDeltaLiveStock, 3000);
 }
 
+function totalCovered_dataset(inp) {
+  const v = parseFloat(inp.dataset.totalCovered);
+  return isNaN(v) ? Infinity : v;
+}
+
 function updateRPRNDeltaDecreaseRowPurchaseQty(idx, input) {
   const totalCovered = parseFloat(input.dataset.totalCovered) || 0;
   const isDeferred = input.dataset.deferred === '1';
@@ -17741,6 +17746,22 @@ async function refreshRPRNDeltaLiveStock() {
           if (inp.disabled) { inp.disabled = false; inp.style.opacity = "1"; }
           inp.max = effectiveTotal;
           if (currentVal > effectiveTotal) { inp.value = Math.round(effectiveTotal * 100) / 100; inp.dispatchEvent(new Event("input")); }
+        } else {
+          // Decrease/removed rows have TWO ceilings, not one: the
+          // requirement itself (totalCovered — enforced at render time
+          // and inside updateRPRNDeltaDecreaseRowPurchaseQty), AND how
+          // much can genuinely be claimed beyond what this row already
+          // holds (effectiveTotal — live stock + this row's own hold).
+          // This was skipped entirely for decrease rows before, so
+          // typing anything up to totalCovered was accepted client-side
+          // even when nowhere near that much stock actually existed —
+          // exactly what let 110 through when only 90 was ever achievable.
+          const realCap = Math.min(totalCovered_dataset(inp), effectiveTotal);
+          inp.max = realCap;
+          if (currentVal > realCap) {
+            inp.value = Math.round(realCap * 100) / 100;
+            inp.dispatchEvent(new Event("input"));
+          }
         }
       }
     });
