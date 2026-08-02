@@ -17793,6 +17793,14 @@ async function submitRPRNDelta() {
     }
 
     document.getElementById("rprn-delta-zone").innerHTML = "";
+    // Also clears the stale queue card for THIS BOQ — it's the same PRN
+    // that was just submitted, and left visible otherwise (still reading
+    // "Revised... Revise PRN →") behind the success banner. Stopping the
+    // poll and nulling the pending state too, since both were left
+    // running/set after a successful submit with nothing left to refresh.
+    document.getElementById("rprn-queue-feed").innerHTML = "";
+    if (window._rprnDeltaStockInterval) { clearInterval(window._rprnDeltaStockInterval); window._rprnDeltaStockInterval = null; }
+    window.rprnPendingCreate = null;
     showPurchaseFeedback("rprn-delta-feedback",
       `✅ PRN revision <strong>${data.prnId}</strong> submitted and sent for authorization.<br>` +
       `<button onclick="document.getElementById('rprn-delta-feedback').style.display='none'; loadRPRNQueueTab();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Revise Another PRN</button>`,
@@ -19443,14 +19451,31 @@ function renderAPRNRows(prnId) {
     // 'new'/'increase' rows use), and every row editable since a resplit
     // never produces a non-editable (awaiting-PO) row in its draft.
     const fmt = (n) => (Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
+    const hasDeltaRows = aprnRows.some(r => r.changeKind && r.changeKind !== 'resplit');
+    const anyDeferred = aprnRows.some(r => r.deferred);
+    const summaryBanners = hasDeltaRows ? `
+      <div style="background:#fef2f2; border-left:3px solid #b91c1c; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#7f1d1d; margin-bottom:10px;">
+        Rows shaded red are <strong>reductions or removals</strong> from a BOQ revision. They're handled automatically and need no action from you.
+      </div>
+      ${anyDeferred ? `<div style="background:#fffbeb; border-left:3px solid #b45309; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#78350f; margin-bottom:10px;">
+        One or more reductions cannot be applied yet because that material is <strong>already on a purchase order</strong>. Those materials will update automatically once the PO is revised.
+      </div>` : ""}` : "";
     const rowsHtml = aprnRows.map((r, idx) => {
-      const buffered = Number(r.bufferedRequirement) || 0;
-      const minStore = Math.max(0, buffered - (Number(r.onOrderQty) || 0));
+      const isDecreaseOrRemoved = r.changeKind === 'decrease' || r.changeKind === 'removed';
+      const totalCovered = (Number(r.previousStoreQty) || 0) + (Number(r.previousPurchaseQty) || 0);
+      const buffered = isDecreaseOrRemoved ? totalCovered : (Number(r.bufferedRequirement) || 0);
+      const minStore = isDecreaseOrRemoved ? 0 : Math.max(0, buffered - (Number(r.onOrderQty) || 0));
+      const changeBadge = r.changeKind === 'increase' ? `<div style="font-size:0.65rem; font-weight:800; color:#15803d; margin-top:2px;">INCREASED</div>`
+        : r.changeKind === 'new' ? `<div style="font-size:0.65rem; font-weight:800; color:#2563eb; margin-top:2px;">NEWLY ADDED TO BOQ</div>`
+        : r.changeKind === 'decrease' ? `<div style="font-size:0.65rem; font-weight:800; color:#f59e0b; margin-top:2px;">DECREASED</div>`
+        : r.changeKind === 'removed' ? `<div style="font-size:0.65rem; font-weight:800; color:#b91c1c; margin-top:2px;">REMOVED FROM BOQ</div>`
+        : "";
+      const deferredNote = r.deferred ? `<div style="font-size:0.6rem; font-weight:800; color:#b45309; margin-top:3px;">⏳ Purchase Qty locked — awaiting PO revision</div>` : "";
       return `
-        <tr style="border-bottom:1px solid #f1f5f9;">
+        <tr style="border-bottom:1px solid #f1f5f9; background:${isDecreaseOrRemoved ? (r.deferred ? '#fffbeb' : '#fef2f2') : 'transparent'};">
           <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
           <td style="padding:8px; font-size:0.82rem; font-weight:600;">${r.materialName || ""}</td>
-          <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(buffered)}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(buffered)}${changeBadge}</td>
           <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${r.unit || "—"}</td>
           <td style="padding:8px; text-align:center; font-family:monospace;">${fmt(r.previousStoreQty)}</td>
           <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${fmt(r.previousPurchaseQty)}</td>
@@ -19458,15 +19483,16 @@ function renderAPRNRows(prnId) {
           <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="aprn-livestock" data-itemcode="${r.itemCode}">loading…</span></td>
           <td style="padding:8px; text-align:center;">
             <input type="number" min="${minStore}" max="${buffered}" value="${Number(r.newStoreTotal) || 0}"
-              class="aprn-storeqty" data-idx="${idx}"
+              class="aprn-storeqty" data-idx="${idx}" data-decrease-row="${isDecreaseOrRemoved ? '1' : '0'}" data-total-covered="${totalCovered}" data-deferred="${r.deferred ? '1' : '0'}"
               oninput="updateAPRNRow(${idx}, this.value, '${prnId}')"
               style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
           </td>
-          <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:${r.wasChanged === false ? "#1a2332" : "#15803d"};">${fmt(r.newPurchaseTotal)}</td>
+          <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:${r.wasChanged === false ? "#1a2332" : "#15803d"};">${fmt(r.newPurchaseTotal)}${deferredNote}</td>
         </tr>`;
     }).join("");
 
     mount.innerHTML = `
+      ${summaryBanners}
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
         <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
           <thead><tr style="background:#f8fafc;">
@@ -19604,7 +19630,10 @@ async function refreshAPRNLiveStock() {
 function updateAPRNRow(idx, value, prnId) {
   const row = aprnRows[idx];
   if (!row) return;
-  const buffered = row.editable !== false ? (Number(row.bufferedRequirement) || 0) : Math.abs(Number(row.deltaRequirement) || 0);
+  const isDecreaseRow = row.changeKind === 'decrease' || row.changeKind === 'removed';
+  const totalCovered = (Number(row.previousStoreQty) || 0) + (Number(row.previousPurchaseQty) || 0);
+  const buffered = isDecreaseRow ? totalCovered
+    : (row.editable !== false ? (Number(row.bufferedRequirement) || 0) : Math.abs(Number(row.deltaRequirement) || 0));
   const inputEl = document.querySelector(`.aprn-storeqty[data-idx="${idx}"]`);
   const liveMax = inputEl && inputEl.max !== '' ? Number(inputEl.max) : buffered;
   const cap = Math.min(buffered, isNaN(liveMax) ? buffered : liveMax);
@@ -19614,9 +19643,17 @@ function updateAPRNRow(idx, value, prnId) {
   if (inputEl) inputEl.value = storeQty;
   row.currentUnassignedStoreQty = storeQty;
   const isCountUnit = (row.unit || "").toString().trim().toUpperCase() === "NOS";
+  const cell = document.getElementById(`aprn-purchaseqty-${idx}`);
+  if (row.deferred) {
+    // Frozen — a deferred row's real Purchase Qty is whatever's actually
+    // on the active PO right now; only a PO revision can move it, so
+    // moving Store Quantity here must never touch it.
+    row.purchaseQty = Number(row.newPurchaseTotal) || 0;
+    if (cell) cell.textContent = Number(row.purchaseQty).toFixed(2);
+    return;
+  }
   const raw = Math.max(0, buffered - storeQty);
   row.purchaseQty = isCountUnit ? Math.ceil(raw - 1e-9) : raw;
-  const cell = document.getElementById(`aprn-purchaseqty-${idx}`);
   if (cell) {
     cell.textContent = Number(row.purchaseQty).toFixed(2);
     // Green once the authorizer's live edit actually moves this row away
