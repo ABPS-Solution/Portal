@@ -18520,7 +18520,7 @@ function showDashboardGlobalToolbar(title, periodBtnsId, returnFn) {
     // top padding, so using the toolbar's full height on top of that
     // double-counted the gap. This snugs content right up against the
     // fixed toolbar instead.
-    const h = Math.max(0, toolbar.offsetHeight - 70);
+    const h = Math.max(0, toolbar.offsetHeight - 50);
     document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => {
       if (c.style.display === "block") c.style.paddingTop = h + "px";
     });
