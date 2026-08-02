@@ -17543,9 +17543,9 @@ function renderRPRNDeltaTable() {
     const common = `
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${item.materialName || ""}</td>
-        <td style="padding:8px; font-size:0.75rem; color:var(--muted);">${item.typeOfMaterial ? window.typeLabelDisplay_(item.typeOfMaterial) : "—"}</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${trimNum(item.boqRequiredQty)}</td>
-        <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct || 0}%</td>`;
+        <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct || 0}%</td>
+        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; color:var(--brand);">${trimNum(item.bufferedRequirement)}</td>`;
 
     if (item.editable !== false) {
       const isIncrease = item.changeKind === "increase";
@@ -17617,17 +17617,17 @@ function renderRPRNDeltaTable() {
         <thead>
           <tr style="background:#f8fafc;">
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:180px;">Material Name</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:60px;">Type</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:190px;">Material Name</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Req Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered BOQ Req Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Change in Req Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#64748b; width:95px;">Current PRN Store Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:110px;">Store Available Stock</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:80px;">Checked *</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1; min-width:120px;">Store Quantity *</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d; min-width:110px;">Purchase Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1; min-width:120px;">New Store Qty *</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d; min-width:110px;">New Purchase Qty</th>
           </tr>
         </thead>
         <tbody>${rowsHtml}</tbody>
@@ -19801,9 +19801,9 @@ function renderPRNCreateTable() {
     const common = `
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${item.materialName || ""}</td>
-        <td style="padding:8px; font-size:0.75rem; color:var(--muted);">${item.typeOfMaterial ? window.typeLabelDisplay_(item.typeOfMaterial) : "—"}</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${trimNum(item.boqRequiredQty)}</td>
-        <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct || 0}%</td>`;
+        <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct || 0}%</td>
+        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; color:var(--brand);">${trimNum(item.bufferedRequirement)}</td>`;
 
     if (item.editable !== false) {
       // New / increased coverage. "increase" rows pre-fill with their
