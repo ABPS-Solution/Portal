@@ -12828,6 +12828,19 @@ function renderBOQChangeBullets(changes) {
 // Material as Create/Authorize/Update BOQ's own material-rows tables
 // (see renderEBOQMaterialRows), instead of the simplified free-text
 // version this used to be.
+function updateBOQRevisionTotalsOnly(updateId) {
+  const totalPerSet = uboqRevRows.reduce((sum, row) => {
+    return sum + ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0));
+  }, 0);
+  const orderQtyEl = document.getElementById(`boqrev-order-qty-${updateId}`);
+  const orderQty = parseInt(orderQtyEl?.value) || 0;
+  const totalCost = totalPerSet * orderQty;
+  const perSetEl = document.getElementById(`boqrev-total-per-set-${updateId}`);
+  const totalEl  = document.getElementById(`boqrev-total-cost-${updateId}`);
+  if (perSetEl) perSetEl.textContent = "₹" + totalPerSet.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  if (totalEl)  totalEl.textContent  = "₹" + totalCost.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+
 function renderBOQRevisionRows(updateId) {
   const mount = document.getElementById(`boqrev-rows-mount-${updateId}`);
   if (!mount) return;
@@ -12872,7 +12885,7 @@ function renderBOQRevisionRows(updateId) {
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
-          oninput="uboqRevRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; renderBOQRevisionRows(${updateId}); recomputeBOQRevisionSummary(${updateId});"
+          oninput="uboqRevRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; const r=document.getElementById('boqrev-rate-${idx}'); if(r) { const v=uboqRevRows[${idx}].quantityFor1Set*(Number(uboqRevRows[${idx}].designRatePerQuantity)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); } updateBOQRevisionTotalsOnly(${updateId}); recomputeBOQRevisionSummary(${updateId});"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -12888,11 +12901,11 @@ function renderBOQRevisionRows(updateId) {
       </td>
       <td style="padding:4px;">
         <input type="number" class="boq-center-num" value="${row.designRatePerQuantity || ""}" min="0" placeholder="0.00"
-          oninput="uboqRevRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; renderBOQRevisionRows(${updateId}); recomputeBOQRevisionSummary(${updateId});"
+          oninput="uboqRevRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; const r=document.getElementById('boqrev-rate-${idx}'); if(r) { const v=(Number(uboqRevRows[${idx}].quantityFor1Set)||0)*(Number(uboqRevRows[${idx}].designRatePerQuantity)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); } updateBOQRevisionTotalsOnly(${updateId}); recomputeBOQRevisionSummary(${updateId});"
           style="padding:5px; font-size:0.85rem; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px;">
-        <input type="text" value="${isRawMaterial ? (Number.isInteger(totalMaterialRate) ? totalMaterialRate : totalMaterialRate.toFixed(2)) : '—'}" readonly
+        <input type="text" id="boqrev-rate-${idx}" value="${isRawMaterial ? (Number.isInteger(totalMaterialRate) ? totalMaterialRate : totalMaterialRate.toFixed(2)) : '—'}" readonly
           style="padding:5px; font-size:0.85rem; font-weight:700; text-align:center; width:100%; background:#f0fdf4; color:var(--accent); cursor:not-allowed; border-radius:3px; border:1px solid #86efac;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -12928,11 +12941,11 @@ function renderBOQRevisionRows(updateId) {
     <div style="border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-top:14px; display:flex; justify-content:flex-end; gap:32px;">
       <div style="text-align:right;">
         <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Total BOQ Cost Per Set</div>
-        <div style="font-size:1.1rem; font-weight:800; color:var(--accent);">₹${totalPerSet.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+        <div id="boqrev-total-per-set-${updateId}" style="font-size:1.1rem; font-weight:800; color:var(--accent);">₹${totalPerSet.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
       </div>
       <div style="text-align:right;">
         <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Total BOQ Cost</div>
-        <div style="font-size:1.1rem; font-weight:800; color:var(--accent);">₹${totalCost.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+        <div id="boqrev-total-cost-${updateId}" style="font-size:1.1rem; font-weight:800; color:var(--accent);">₹${totalCost.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
       </div>
     </div>
   `;
