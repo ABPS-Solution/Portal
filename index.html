@@ -19461,7 +19461,7 @@ async function loadPRNNeedQueue() {
             <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} <strong> | </strong>  ${item.productName || ""} ${item.productRating || ""}</div>
           </div>
           <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
-            <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
+            <button class="nav-btn-styled prn-queue-create-btn" data-boqid="${item.boqId.replace(/"/g,"&quot;")}" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
               onclick="jumpToPRNFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.boqId.replace(/'/g, "\\'")}', this)">
               Create PRN →
             </button>
@@ -19556,6 +19556,13 @@ function togglePRNExpanded() {
   if (toggleText) toggleText.textContent = isOpen ? "expand and view materials" : "collapse";
 }
 
+function syncPRNQueueButtonState() {
+  const activeBoqId = (window.prnPendingCreate && window.prnPendingCreate.lineItems) ? window.prnPendingCreate.boqId : null;
+  document.querySelectorAll(".prn-queue-create-btn").forEach(btn => {
+    btn.style.display = (btn.dataset.boqid === activeBoqId) ? "none" : "";
+  });
+}
+
 async function startNewPRNCreation() {
   const projDrop = document.getElementById("prn-project-select");
   const boqDrop  = document.getElementById("prn-boq-select");
@@ -19597,6 +19604,7 @@ async function startNewPRNCreation() {
     window.prnAllPersonnel = personnelData.fullPersonnelDataRecordsTree || [];
 
     renderPRNCreateTable();
+    syncPRNQueueButtonState();
   } catch(e) {
     createZone.innerHTML = `<div style="padding:16px; background:#fef2f2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-weight:600;">Network error: ${e.message}</div>`;
   }
@@ -19612,7 +19620,11 @@ async function handlePRNBOQChange(boqId, skipToCreate) {
   if (noPrnZone)  noPrnZone.style.display  = "none";
   document.getElementById("prn-feedback").style.display = "none";
   prnCurrentData = null;
+  // Switching away from whatever BOQ was mid-edit means that button in
+  // the queue should reappear — clearing prnPendingCreate before this
+  // resync makes syncPRNQueueButtonState treat everything as inactive.
   window.prnPendingCreate = null;
+  syncPRNQueueButtonState();
   if (!boqId) return;
 
   const projectId = document.getElementById("prn-project-select").value;
@@ -20254,7 +20266,7 @@ function renderPRNCreateTable() {
       const purchaseQty = isCountUnit ? Math.ceil(rawPurchaseQty - 1e-9) : rawPurchaseQty;
 
       const cell = document.getElementById(`prn-create-purchaseqty-${idx}`);
-      if (cell) cell.textContent = isCountUnit ? String(purchaseQty) : purchaseQty.toFixed(2);
+      if (cell) cell.textContent = isCountUnit ? String(purchaseQty) : (Number.isInteger(purchaseQty) ? String(purchaseQty) : purchaseQty.toFixed(2));
     });
   });
   
