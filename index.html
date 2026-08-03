@@ -17834,7 +17834,7 @@ async function submitRPRNDelta() {
     if (window._rprnDeltaStockInterval) { clearInterval(window._rprnDeltaStockInterval); window._rprnDeltaStockInterval = null; }
     window.rprnPendingCreate = null;
     showPurchaseFeedback("rprn-delta-feedback",
-      `✅ PRN revision <strong>${data.prnId}</strong> submitted and sent for authorization.<br>` +
+      `✅ PRN revision: <strong>${data.prnId}</strong> submitted and sent for authorization.<br>` +
       `<button onclick="document.getElementById('rprn-delta-feedback').style.display='none'; loadRPRNQueueTab();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Revise Another PRN</button>`,
       "success", true);
   } catch (e) {
@@ -19501,14 +19501,15 @@ function renderAPRNRows(prnId) {
     const rowsHtml = aprnRows.map((r, idx) => {
       const isDecreaseOrRemoved = r.changeKind === 'decrease' || r.changeKind === 'removed';
       const totalCovered = (Number(r.previousStoreQty) || 0) + (Number(r.previousPurchaseQty) || 0);
-      const buffered = isDecreaseOrRemoved ? totalCovered : (Number(r.bufferedRequirement) || 0);
+      const buffered = Number(r.bufferedRequirement) || 0;
+      const storeCap = isDecreaseOrRemoved ? Math.min(totalCovered, buffered) : buffered;
       const minStore = isDecreaseOrRemoved ? 0 : Math.max(0, buffered - (Number(r.onOrderQty) || 0));
       const changeBadge = r.changeKind === 'increase' ? `<div style="font-size:0.65rem; font-weight:800; color:#15803d; margin-top:2px;">INCREASED</div>`
         : r.changeKind === 'new' ? `<div style="font-size:0.65rem; font-weight:800; color:#2563eb; margin-top:2px;">NEWLY ADDED</div>`
         : r.changeKind === 'decrease' ? `<div style="font-size:0.65rem; font-weight:800; color:#f59e0b; margin-top:2px;">DECREASED</div>`
         : r.changeKind === 'removed' ? `<div style="font-size:0.65rem; font-weight:800; color:#b91c1c; margin-top:2px;">REMOVED FROM BOQ</div>`
         : "";
-      const deferredNote = r.deferred ? `<div style="font-size:0.6rem; font-weight:800; color:#b45309; margin-top:3px;">⏳ Purchase Qty locked — awaiting PO revision</div>` : "";
+      const deferredNote = "";
       return `
         <tr style="border-bottom:1px solid #f1f5f9; background:${isDecreaseOrRemoved ? (r.deferred ? '#fffbeb' : '#fef2f2') : 'transparent'};">
           <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
@@ -19520,12 +19521,12 @@ function renderAPRNRows(prnId) {
           <td style="padding:8px; text-align:center; font-size:0.74rem; color:${Number(r.onOrderQty) > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(r.onOrderQty)}</td>
           <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="aprn-livestock" data-itemcode="${r.itemCode}">loading…</span></td>
           <td style="padding:8px; text-align:center;">
-            <input type="number" min="${minStore}" max="${buffered}" value="${Number(r.newStoreTotal) || 0}"
+            <input type="number" min="${minStore}" max="${storeCap}" value="${Number(r.newStoreTotal) || 0}"
               class="aprn-storeqty" data-idx="${idx}" data-decrease-row="${isDecreaseOrRemoved ? '1' : '0'}" data-total-covered="${totalCovered}" data-deferred="${r.deferred ? '1' : '0'}"
               oninput="updateAPRNRow(${idx}, this.value, '${prnId}')"
               style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
           </td>
-          <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:${r.wasChanged === false ? "#1a2332" : "#15803d"};">${fmt(r.newPurchaseTotal)}${deferredNote}</td>
+          <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:${r.wasChanged === false ? "#1a2332" : "#15803d"};">${trimNum(r.newPurchaseTotal)}${deferredNote}</td>
         </tr>`;
     }).join("");
 
@@ -19670,11 +19671,11 @@ function updateAPRNRow(idx, value, prnId) {
   if (!row) return;
   const isDecreaseRow = row.changeKind === 'decrease' || row.changeKind === 'removed';
   const totalCovered = (Number(row.previousStoreQty) || 0) + (Number(row.previousPurchaseQty) || 0);
-  const buffered = isDecreaseRow ? totalCovered
-    : (row.editable !== false ? (Number(row.bufferedRequirement) || 0) : Math.abs(Number(row.deltaRequirement) || 0));
+  const buffered = Number(row.bufferedRequirement) || 0;
+  const staticCap = isDecreaseRow ? Math.min(totalCovered, buffered) : buffered;
   const inputEl = document.querySelector(`.aprn-storeqty[data-idx="${idx}"]`);
-  const liveMax = inputEl && inputEl.max !== '' ? Number(inputEl.max) : buffered;
-  const cap = Math.min(buffered, isNaN(liveMax) ? buffered : liveMax);
+  const liveMax = inputEl && inputEl.max !== '' ? Number(inputEl.max) : staticCap;
+  const cap = Math.min(staticCap, isNaN(liveMax) ? staticCap : liveMax);
   let storeQty = parseFloat(value) || 0;
   if (storeQty < 0) storeQty = 0;
   if (storeQty > cap) storeQty = cap;
@@ -19682,18 +19683,14 @@ function updateAPRNRow(idx, value, prnId) {
   row.currentUnassignedStoreQty = storeQty;
   const isCountUnit = (row.unit || "").toString().trim().toUpperCase() === "NOS";
   const cell = document.getElementById(`aprn-purchaseqty-${idx}`);
-  if (row.deferred) {
-    // Frozen — a deferred row's real Purchase Qty is whatever's actually
-    // on the active PO right now; only a PO revision can move it, so
-    // moving Store Quantity here must never touch it.
-    row.purchaseQty = Number(row.newPurchaseTotal) || 0;
-    if (cell) cell.textContent = Number(row.purchaseQty).toFixed(2);
-    return;
-  }
+  // Recomputed against the true buffered BOQ requirement even for
+  // deferred rows — the actual purchase_quantity DB field stays locked
+  // until the PO is revised, but this preview reflects what's really
+  // needed now, same as the Revise PRN screen.
   const raw = Math.max(0, buffered - storeQty);
   row.purchaseQty = isCountUnit ? Math.ceil(raw - 1e-9) : raw;
   if (cell) {
-    cell.textContent = Number(row.purchaseQty).toFixed(2);
+    cell.textContent = trimNum(row.purchaseQty);
     // Green once the authorizer's live edit actually moves this row away
     // from what was originally submitted for review; black if it still
     // matches (covers untouched rows on a Revision, where most rows are
