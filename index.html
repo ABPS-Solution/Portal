@@ -3201,6 +3201,31 @@
 // your actual deployed Cloud Run service URL once you've deployed.
 const GAS_URL = "https://abps-backend-244281871074.asia-south1.run.app/exec";
 
+// Global guard for every number input in the app — native <input type="number">
+// otherwise accepts 'e'/'E' (scientific notation), '+', and '-' even on
+// fields that make no sense with them (quantities, rates, percentages).
+// Blocks the keystroke where possible, and strips it on paste/autofill
+// too, since keydown alone doesn't catch those.
+(function() {
+  function allowsNegative(inp) {
+    return !(inp.min !== "" && inp.min != null && Number(inp.min) >= 0);
+  }
+  document.addEventListener("keydown", function(e) {
+    const t = e.target;
+    if (!(t && t.tagName === "INPUT" && t.type === "number")) return;
+    if (e.key === "e" || e.key === "E" || e.key === "+") { e.preventDefault(); return; }
+    if (e.key === "-" && !allowsNegative(t)) { e.preventDefault(); }
+  }, true);
+  document.addEventListener("input", function(e) {
+    const t = e.target;
+    if (!(t && t.tagName === "INPUT" && t.type === "number")) return;
+    let v = t.value;
+    let cleaned = v.replace(/[eE+]/g, "");
+    if (!allowsNegative(t)) cleaned = cleaned.replace(/-/g, "");
+    if (cleaned !== v) t.value = cleaned;
+  }, true);
+})();
+
 /**
  * CENTRAL FETCH WRAPPER
  * All backend calls go through this. Handles session expiry globally.
