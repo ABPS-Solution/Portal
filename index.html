@@ -12629,14 +12629,14 @@ async function initializeAuthorizeBOQPanel(mode) {
           <div class="contact-summary-title-info" style="width:100%;">
             <div class="meta-row-line-block" style="margin-bottom:6px;">
               <span style="background:#edf2f7;">Customer:</span><strong style="margin-right:15px;">${draft.customerName}</strong>
-              <span style="background:#edf2f7;">Project ID:</span><span style="margin-right:15px; color:var(--brand); font-weight:700;">${draft.projectId}</span>
-              <span style="background:#edf2f7;">Prepared By:</span><span>${draft.preparedBy}</span>
+              <span style="background:#edf2f7;">Project ID:</span><span style="background:none; text-transform:none; padding:0; font-weight:700; color:var(--brand); margin-right:15px;">${draft.projectId}</span>
+              <span style="background:#edf2f7;">Prepared By:</span><span style="background:none; text-transform:none; padding:0; font-weight:400; color:#111827;">${draft.preparedBy}</span>
             </div>
             <div class="meta-row-line-block">
               <span style="background:#e2e8f0;">Product:</span><strong style="margin-right:15px;">${draft.productName} ${draft.productRating}</strong>
-              <span style="background:#edf2f7;">Department:</span><span style="margin-right:15px;">${draft.department}</span>
-              <span style="background:#edf2f7;">Qty:</span><span style="margin-right:15px;">${formatQtyTrimmed(draft.orderQuantity)}</span>
-              <span style="background:#edf2f7;">Date:</span><span>${formatDateDMY(draft.date)}</span>
+              <span style="background:#edf2f7;">Department:</span><span style="background:none; text-transform:none; padding:0; font-weight:400; color:#111827; margin-right:15px;">${draft.department}</span>
+              <span style="background:#edf2f7;">Qty:</span><span style="background:none; text-transform:none; padding:0; font-weight:400; color:#111827; margin-right:15px;">${formatQtyTrimmed(draft.orderQuantity)}</span>
+              <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-weight:400; color:#111827;">${formatDateDMY(draft.date)}</span>
             </div>
           </div>
         </div>
