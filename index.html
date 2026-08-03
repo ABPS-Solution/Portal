@@ -17561,15 +17561,15 @@ async function authorizePORevisionUI(requestId, confirmStale) {
 
     if (data.success) {
       const feed = document.getElementById("apor-cards-feed");
-      if (feed) feed.style.display = "none";
+      if (feed) { feed.style.display = "none"; feed.innerHTML = ""; }
       const notes = [];
       if ((data.staleNotes || []).length) notes.push(`${data.staleNotes.length} allocation(s) re-clamped to current PRN needs.`);
       if ((data.unwound || []).length) notes.push(`Deferred BOQ reductions completed for ${data.unwound.map(u => u.prnId).join(", ")}.`);
       let msg = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:8px;">✅ <strong>${data.poNo}</strong> revised to Rev ${data.revisionNumber}!</div>`;
       if (notes.length) msg += `<div style="font-size:0.8rem; margin-bottom:8px;">${notes.join(" ")}</div>`;
-      if (data.pdfUrl) msg += `<div style="font-size:0.82rem;">📄 <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">Open PDF →</a></div>`;
+      if (data.pdfUrl) msg += `<div style="font-size:0.82rem;">📄 <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">Open PO on Drive →</a></div>`;
       msg += `<button onclick="document.getElementById('apor-feedback').style.display='none'; initializeAuthorizePORevisionPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another PO Revision</button>`;
-      showPurchaseFeedback("apor-feedback", msg, "success");
+      showPurchaseFeedback("apor-feedback", msg, "success", true);
     } else {
       if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize Revision"; }
       if (rejBtn) rejBtn.disabled = false;
