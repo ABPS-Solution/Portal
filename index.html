@@ -17606,20 +17606,8 @@ function renderRPRNDeltaTable() {
     }
   });
 
-  const banners = `
-    ${hasReadOnly ? `<div style="background:#fef2f2; border-left:3px solid #b91c1c; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#7f1d1d; margin-bottom:10px;">
-      Rows shaded red are <strong>reductions or removals</strong> from the BOQ revision. They're handled automatically and need no action from you.
-    </div>` : ""}
-    ${anyDeferred ? `<div style="background:#fffbeb; border-left:3px solid #b45309; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#78350f; margin-bottom:10px;">
-      One or more reductions cannot be applied yet because that material is <strong>already on a purchase order</strong>. Those materials will update automatically once the PO is revised.
-    </div>` : ""}
-    ${(!hasEditable && hasReadOnly) ? `<div style="background:#eff6ff; border-left:3px solid var(--brand); padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#1e3a8a; margin-bottom:10px;">
-      This revision contains only reductions. Submitting it records them — there is nothing for you to fill in.
-    </div>` : ""}`;
-
   zone.innerHTML = `
     <div style="font-size:0.85rem; font-weight:700; color:var(--brand); margin-bottom:12px;">Revised Purchase Request Note for ${pending.boqId}${revBadge}</div>
-    ${banners}
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
       <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1150px;">
         <thead>
@@ -19491,13 +19479,6 @@ function renderAPRNRows(prnId) {
           <strong>${r.materialName || ""}:</strong> ${r.deltaRequirement !== undefined ? `Change in BOQ Qty: <strong> ${fmt(r.deltaRequirement)}` : ""} </strong>  |  Store QTY: <strong> ${fmt(r.previousStoreQty)} → ${fmt(r.newStoreTotal)} </strong>  |  Purchase QTY: <strong>${fmt(r.previousPurchaseQty)} → ${fmt(r.newPurchaseTotal)}</strong>
         </div>`).join("")}
       </div>` : "";
-    const summaryBanners = changeSummary + (hasDeltaRows ? `
-      <div style="background:#fef2f2; border-left:3px solid #b91c1c; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#7f1d1d; margin-bottom:10px;">
-        Rows shaded red are <strong>reductions or removals</strong> from a BOQ revision. They're handled automatically and need no action from you.
-      </div>
-      ${anyDeferred ? `<div style="background:#fffbeb; border-left:3px solid #b45309; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#78350f; margin-bottom:10px;">
-        One or more reductions cannot be applied yet because that material is <strong>already on a purchase order</strong>. Those materials will update automatically once the PO is revised.
-      </div>` : ""}` : "");
     const rowsHtml = aprnRows.map((r, idx) => {
       const isDecreaseOrRemoved = r.changeKind === 'decrease' || r.changeKind === 'removed';
       const totalCovered = (Number(r.previousStoreQty) || 0) + (Number(r.previousPurchaseQty) || 0);
@@ -19531,7 +19512,7 @@ function renderAPRNRows(prnId) {
     }).join("");
 
     mount.innerHTML = `
-      ${summaryBanners}
+      ${changeSummary}
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
         <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
           <thead><tr style="background:#f8fafc;">
@@ -19906,20 +19887,8 @@ function renderPRNCreateTable() {
     }
   });
 
-  const banners = `
-    ${hasReadOnly ? `<div style="background:#fef2f2; border-left:3px solid #b91c1c; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#7f1d1d; margin-bottom:10px;">
-      Rows shaded red are <strong>reductions or removals</strong> from the BOQ revision. They're handled automatically and need no action from you.
-    </div>` : ""}
-    ${anyDeferred ? `<div style="background:#fffbeb; border-left:3px solid #b45309; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#78350f; margin-bottom:10px;">
-      One or more reductions cannot be applied yet because that material is <strong>already on a purchase order</strong>. Those materials will update automatically once the PO is revised.
-    </div>` : ""}
-    ${(!hasEditable && hasReadOnly) ? `<div style="background:#eff6ff; border-left:3px solid var(--brand); padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#1e3a8a; margin-bottom:10px;">
-      This revision contains only reductions. Submitting it records them — there is nothing for you to fill in.
-    </div>` : ""}`;
-
   createZone.innerHTML = `
     <div style="font-size:0.85rem; font-weight:700; color:var(--brand); margin-bottom:12px;">${isDelta ? "Revised" : "New"} Purchase Request Note for ${pending.boqId} ${revBadge}</div>
-    ${banners}
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
       <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
         <thead>
