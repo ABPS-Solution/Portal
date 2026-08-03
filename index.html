@@ -15162,16 +15162,23 @@ function formatQtyTrimmed(value) {
 function formatDateDMY(value) {
   if (!value) return "";
   const s = String(value);
-  const dateOnlyMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  // A pure calendar date with no time component (e.g. "2026-08-03", a
+  // date picker's own selection with no instant to convert) — this has
+  // no timezone ambiguity, so it's used as-is rather than round-tripped
+  // through Date parsing (which would treat it as UTC midnight anyway).
+  const dateOnlyMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (dateOnlyMatch) {
     const [, yyyy, mm, dd] = dateOnlyMatch;
     return `${dd}-${mm}-${yyyy}`;
   }
   const d = new Date(s);
   if (isNaN(d.getTime())) return s; // already a plain/unparseable string — show as-is rather than blank
-  const dd2 = String(d.getDate()).padStart(2, "0");
-  const mm2 = String(d.getMonth() + 1).padStart(2, "0");
-  return `${dd2}-${mm2}-${d.getFullYear()}`;
+  // A real timestamp (has a time component) — converted to IST
+  // explicitly, since the server stores/returns UTC instants and this
+  // must never depend on the browser's own local timezone setting.
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' }).formatToParts(d);
+  const get = (t) => parts.find(p => p.type === t)?.value || "";
+  return `${get('day')}-${get('month')}-${get('year')}`;
 }
 
 function formatTime12h(value) {
