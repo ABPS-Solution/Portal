@@ -17693,7 +17693,6 @@ function totalCovered_dataset(inp) {
 
 function updateRPRNDeltaDecreaseRowPurchaseQty(idx, input) {
   const totalCovered = parseFloat(input.dataset.totalCovered) || 0;
-  const isDeferred = input.dataset.deferred === '1';
   // The real ceiling is the SMALLER of totalCovered (the requirement
   // itself) and effectiveTotal (live stock + this row's own hold) — this
   // only checked totalCovered before, so a value the requirement allowed
@@ -17709,9 +17708,14 @@ function updateRPRNDeltaDecreaseRowPurchaseQty(idx, input) {
   if (val > realCap) { val = Math.round(realCap * 100) / 100; input.value = val; }
   const purchaseCell = document.getElementById(`rprn-delta-purchaseqty-${idx}`);
   if (!purchaseCell) return;
-  if (isDeferred) return;
   const item = window.rprnPendingCreate.lineItems[idx];
-  const purchaseQty = Math.max(0, totalCovered - val);
+  // Recomputed against the NEW buffered BOQ requirement, not the frozen
+  // totalCovered — the actual purchase_quantity DB field stays locked
+  // until the PO is revised, but this preview shows what's really needed
+  // so any vendor over-delivery against the old PO qty is understood as
+  // landing in unassigned stock, not silently lost.
+  const bufferedReq = Number(item.bufferedRequirement) || 0;
+  const purchaseQty = Math.max(0, bufferedReq - val);
   const rounded = item.isCountUnit ? Math.ceil(purchaseQty - 1e-9) : purchaseQty;
   purchaseCell.textContent = trimNum(rounded);
 }
@@ -19491,9 +19495,9 @@ function renderAPRNRows(prnId) {
     const changedRows = aprnRows.filter(r => Math.abs(Number(r.storeDelta) || 0) > 1e-9 || Math.abs(Number(r.purchaseDelta) || 0) > 1e-9);
     const changeSummary = changedRows.length > 0 ? `
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:4px; padding:10px 14px; margin-bottom:10px;">
-        <div style="font-size:0.72rem; font-weight:800; color:var(--brand); margin-bottom:6px;">Change Summary</div>
+        <div style="font-size:0.82rem; font-weight:1000; color:var(--brand); margin-bottom:6px;">Change Summary</div>
         ${changedRows.map(r => `<div style="font-size:0.74rem; color:#334155; margin-bottom:2px;">
-          <strong>${r.itemCode}</strong> ${r.materialName || ""} — Store: ${fmt(r.previousStoreQty)} → ${fmt(r.newStoreTotal)}, Purchase: ${fmt(r.previousPurchaseQty)} → ${fmt(r.newPurchaseTotal)}
+          <strong>${r.materialName || ""}:</strong> ${r.deltaRequirement !== undefined ? `Change in BOQ Qty: ${r.deltaRequirement > 0 ? '+' : ''}${fmt(r.deltaRequirement)}` : ""} | Store QTY: ${fmt(r.previousStoreQty)} → ${fmt(r.newStoreTotal)} | Purchase QTY: ${fmt(r.previousPurchaseQty)} → ${fmt(r.newPurchaseTotal)}
         </div>`).join("")}
       </div>` : "";
     const summaryBanners = changeSummary + (hasDeltaRows ? `
@@ -19638,8 +19642,8 @@ async function refreshAPRNLiveStock() {
       // release. Resplit rows carry the ABSOLUTE current split
       // (newStoreFromRaw/newStoreFromSpare) for exactly this reason.
       const isResplitRow = row && row.changeKind === 'resplit';
-      const ownRaw = row ? (isResplitRow ? (Number(row.newStoreFromRaw) || 0) : (Number(row.storeFromRawDelta) || 0)) : 0;
-      const ownSpare = row ? (isResplitRow ? (Number(row.newStoreFromSpare) || 0) : (Number(row.storeFromSpareDelta) || 0)) : 0;
+      const ownRaw = row ? (isResplitRow ? (Number(row.newStoreFromRaw) || 0) : (Number(row.storeFromRaw) || 0)) : 0;
+      const ownSpare = row ? (isResplitRow ? (Number(row.newStoreFromSpare) || 0) : (Number(row.storeFromSpare) || 0)) : 0;
       const baseRaw = s.raw + ownRaw;
       const baseSpare = s.spare + ownSpare;
       const total = baseRaw + baseSpare;
@@ -19655,7 +19659,7 @@ async function refreshAPRNLiveStock() {
 
       if (inp) {
         const requirementCap = row
-          ? (row.editable !== false ? (Number(row.bufferedRequirement) || 0) : Math.abs(Number(row.deltaRequirement) || 0))
+          ? (row.editable !== false ? (Number(row.bufferedRequirement) || 0) : ((Number(row.previousStoreQty) || 0) + (Number(row.previousPurchaseQty) || 0)))
           : Infinity;
         const cap = Math.min(requirementCap, total);
         inp.max = cap;
@@ -19931,9 +19935,9 @@ function renderPRNCreateTable() {
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
             <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:230px;">Material Name</th>
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Type</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Req Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center;">New BOQ Req Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">${isDelta ? "Change in Req Qty" : "Buffered BOQ Req Qty"}</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">${isDelta ? "Change in Req Qty" : "New Buffered BOQ Req Qty"}</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#64748b; width:95px;">Current PRN Store Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:100px;">Store Available Stock</th>
