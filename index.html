@@ -1880,12 +1880,8 @@
           </div>
         </div>
 
-        <!-- ROW 3: Value card + By Dept table + Charts -->
-        <div style="display:grid; grid-template-columns:1fr 1.2fr 1fr 1fr; gap:10px; flex:0 0 22%;">
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Total Authorized BOQ Value</div>
-            <div class="dd-stat-val" id="dd-s-value" style="font-size:1.05rem; color:var(--brand);">—</div>
-          </div>
+        <!-- ROW 3: By Dept table + Charts -->
+        <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 22%;">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
             <div class="dd-card-title">BOQ Value by Department</div>
             <table style="width:100%; border-collapse:collapse; font-size:0.74rem;">
@@ -1899,7 +1895,7 @@
           </div>
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
             <div class="dd-card-title">BOQs by Department</div>
-            <canvas id="dd-chart-dept" style="max-height:90px;"></canvas>
+            <canvas id="dd-chart-dept" style="max-height:130px;"></canvas>
           </div>
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
             <div class="dd-card-title">Version Distribution</div>
@@ -13592,7 +13588,7 @@ async function loadAuthorizedBOQsForProject(projectId) {
       opt.value = draft.boqId;
       const cleanDate = formatDateDMY(draft.date);
       const qtyDisplay = Math.round(Number(draft.orderQuantity) || 0);
-      opt.textContent = `${draft.customerName} | ${draft.boqId} | ${draft.department} | Qty: ${qtyDisplay} | ${cleanDate} | By: ${draft.preparedBy || "\u2014"}`;
+      opt.textContent = `${draft.customerName} | ${draft.productName || ""}${draft.productRating ? " " + draft.productRating : ""} | ${draft.department} | Qty: ${qtyDisplay} | ${cleanDate}`;
       boqDrop.appendChild(opt);
     });
     boqDrop.disabled = false;
@@ -18510,8 +18506,8 @@ function ddRenderDashboard(data) {
         backgroundColor: ["rgba(37,99,235,0.7)","rgba(16,185,129,0.7)","rgba(245,158,11,0.7)","rgba(239,68,68,0.7)","rgba(139,92,246,0.7)"],
         borderRadius: 4 }]
     },
-    options: { indexAxis:"y", responsive:true, plugins:{ legend:{ display:false } },
-      scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false } } } }
+    options: { indexAxis:"y", responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
+      scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false }, ticks:{ font:{ size:10 } } } } }
   });
 
   // Chart 3 — Version distribution
