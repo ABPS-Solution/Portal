@@ -19488,7 +19488,7 @@ function renderAPRNRows(prnId) {
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:4px; padding:10px 14px; margin-bottom:10px;">
         <div style="font-size:0.82rem; font-weight:1000; color:var(--brand); margin-bottom:6px;">Change Summary</div>
         ${changedRows.map(r => `<div style="font-size:0.74rem; color:#334155; margin-bottom:2px;">
-          <strong>${r.materialName || ""}:</strong> ${r.deltaRequirement !== undefined ? `Change in BOQ Qty: ${r.deltaRequirement > 0 ? '+' : ''}${fmt(r.deltaRequirement)}` : ""} | Store QTY: ${fmt(r.previousStoreQty)} → ${fmt(r.newStoreTotal)} | Purchase QTY: ${fmt(r.previousPurchaseQty)} → ${fmt(r.newPurchaseTotal)}
+          <strong>${r.materialName || ""}:</strong> ${r.deltaRequirement !== undefined ? `Change in BOQ Qty: <strong> ${fmt(r.deltaRequirement)}` : ""} </strong>  |  Store QTY: <strong> ${fmt(r.previousStoreQty)} → ${fmt(r.newStoreTotal)} </strong>  |  Purchase QTY: <strong>${fmt(r.previousPurchaseQty)} → ${fmt(r.newPurchaseTotal)}</strong>
         </div>`).join("")}
       </div>` : "";
     const summaryBanners = changeSummary + (hasDeltaRows ? `
