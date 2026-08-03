@@ -121,6 +121,7 @@
   .contact-summary-title-info .meta-row-line-block { display: flex; flex-wrap: wrap; align-items: flex-start; width: 100%; margin-bottom: 4px; gap: 6px 20px; }
   .contact-summary-title-info .meta-pair { display: flex; align-items: center; gap: 4px; min-width: 0; flex: 1 1 auto; }
   .contact-summary-title-info span { font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; background: #edf2f7; padding: 2px 6px; border-radius: 4px; display: inline-block; flex-shrink: 0; }
+      input.boq-center-num { text-align: center !important; }
   .contact-summary-title-info strong { color: #111827; word-break: break-word; }
   @media(max-width: 480px) {
     .contact-summary-title-info .meta-pair { flex: 1 1 100%; }
@@ -12730,9 +12731,9 @@ async function toggleBOQRevisionExpansion(updateId) {
   let summaryText = "Generating change summary...";
   bodyEl.style.display = "block";
   bodyEl.innerHTML = `
-    <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-bottom:16px;">
-      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:8px; letter-spacing:0.5px;">Change Summary</div>
-      <div id="boqrev-summary-text-${updateId}" style="font-size:0.85rem; color:#78350f; line-height:1.7; white-space:pre-line;">${summaryText}</div>
+    <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
+      <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">Change Summary</div>
+      <ul id="boqrev-summary-text-${updateId}" style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;"><li>${summaryText}</li></ul>
     </div>
     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">BOQ Header Information</div>
@@ -12791,11 +12792,20 @@ async function toggleBOQRevisionExpansion(updateId) {
       updatedOrderQty: parseInt(reqItem.newOrderQuantity) || 0
     });
     const el = document.getElementById(`boqrev-summary-text-${updateId}`);
-    if (el) el.textContent = sumData.summary || "No changes detected.";
+    if (el) el.innerHTML = renderBOQChangeBullets(sumData.changes);
   } catch (e) {
     const el = document.getElementById(`boqrev-summary-text-${updateId}`);
-    if (el) el.textContent = "Could not generate summary.";
+    if (el) el.innerHTML = "<li>Could not generate summary.</li>";
   }
+}
+
+function renderBOQChangeBullets(changes) {
+  if (!changes || changes.length === 0) return "<li>No changes detected.</li>";
+  return changes.map(c => {
+    const escaped = c.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return "<li>" + escaped.replace(/from (.+?) to (.+?)([.,;]|$)/i,
+      (m, from, to, tail) => `from <span style="color:#64748b;">${from}</span> to <span style="font-weight:700; color:#b45309;">${to}</span>${tail}`) + "</li>";
+  }).join("");
 }
 
 // Renders the editable proposed-rows table — now byte-for-byte the same
@@ -12936,7 +12946,7 @@ function recomputeBOQRevisionSummary(updateId) {
         updatedOrderQty: parseInt(reqItem.newOrderQuantity) || 0
       });
       const el = document.getElementById(`boqrev-summary-text-${updateId}`);
-      if (el) el.textContent = sumData.summary || "No changes detected.";
+      if (el) el.innerHTML = renderBOQChangeBullets(sumData.changes);
     } catch (_) {}
   }, 600);
 }
@@ -13360,10 +13370,10 @@ function renderEBOQMaterialRows() {
       </td>
       <td style="padding:4px; text-align:center;">
         ${isRawMaterial ? `
-        <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
+        <input type="number" class="boq-center-num" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
           oninput="eboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateEBOQTotals(); const r=document.getElementById('eboq-rate-${idx}'); if(r) { const v=(Number(eboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); }"
-          style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
-        ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
+          style="padding:5px; font-size:0.85rem; width:100%; border:1px solid var(--border); border-radius:3px;" />
+        ` : `<input type="text" class="boq-center-num" value="—" readonly style="padding:5px; font-size:0.85rem; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="text" id="eboq-rate-${idx}" value="${isRawMaterial ? (Number.isInteger(totalMaterialRate) ? totalMaterialRate : totalMaterialRate.toFixed(2)) : '—'}" readonly
