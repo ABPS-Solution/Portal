@@ -4143,6 +4143,8 @@ async function triggerCompanyDropdownArrayFetch() {
 }
 
 async function navigateToModule(key) { 
+    window.scrollTo(0, 0);
+    setTimeout(() => window.scrollTo(0, 0), 50);
     // 1. Core verification gateway check routing against userPermissions payload mapping
     if (!userPermissions[key]) return alert("Access Denied: Missing permission profile privileges."); 
     
@@ -8209,6 +8211,7 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
 
 function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   window.scrollTo(0, 0);
+  setTimeout(() => window.scrollTo(0, 0), 50);
   stopLiveStockPolling();
   // 1. Hide the primary dashboard menu grid view and the global marketing containers completely
   document.getElementById("dashboard-view").style.display = "none";
@@ -11158,6 +11161,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
 
 function navigateToDesignWorkspacePanel(targetModuleId) {
   window.scrollTo(0, 0);
+  setTimeout(() => window.scrollTo(0, 0), 50);
   // 1. Un-nest and minimize homepage structures
   document.getElementById("dashboard-view").style.display = "none";
   
@@ -12091,7 +12095,7 @@ async function initializeCreateBOQPanel() {
   const _g = id => document.getElementById(id);
 
   if (isFirstVisit) {
-    const today = new Date().toLocaleDateString('en-CA');
+    const today = new Date().toLocaleDateString('en-GB');
     const dateEl = _g("cboq-date"); if (dateEl) dateEl.value = today;
 
     cboqMaterialRows = [];
@@ -12289,7 +12293,7 @@ function renderCBOQMaterialRows() {
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
-          oninput="cboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateCBOQTotals(); const r=document.getElementById('cboq-rate-${idx}'); if(r) r.value=(cboqMaterialRows[${idx}].quantityFor1Set*(Number(cboqMaterialRows[${idx}].designRatePerQuantity)||0)).toFixed(2);"
+          oninput="cboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateCBOQTotals(); const r=document.getElementById('cboq-rate-${idx}'); if(r) { const v=cboqMaterialRows[${idx}].quantityFor1Set*(Number(cboqMaterialRows[${idx}].designRatePerQuantity)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); }"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -12306,12 +12310,12 @@ function renderCBOQMaterialRows() {
       <td style="padding:4px; text-align:center;">
         ${isRawMaterial ? `
         <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
-          oninput="cboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateCBOQTotals(); const r=document.getElementById('cboq-rate-${idx}'); if(r) r.value=((Number(cboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0)).toFixed(2);"
+          oninput="cboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateCBOQTotals(); const r=document.getElementById('cboq-rate-${idx}'); if(r) { const v=(Number(cboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); }"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       </td>
       <td style="padding:4px; text-align:center;">
-        <input type="text" id="cboq-rate-${idx}" value="${isRawMaterial ? totalMaterialRate.toFixed(2) : '—'}" readonly
+        <input type="text" id="cboq-rate-${idx}" value="${isRawMaterial ? (Number.isInteger(totalMaterialRate) ? totalMaterialRate : totalMaterialRate.toFixed(2)) : '—'}" readonly
           style="padding:5px; font-size:0.85rem; font-weight:700; text-align:center; width:100%; background:#f0fdf4; color:var(--accent); cursor:not-allowed; border-radius:3px; border:1px solid #86efac;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -12338,8 +12342,8 @@ function updateCBOQTotals() {
 
   const perSetEl = document.getElementById("cboq-total-per-set");
   const totalEl  = document.getElementById("cboq-total-cost");
-  if (perSetEl) perSetEl.textContent = "₹" + totalPerSet.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (totalEl)  totalEl.textContent  = "₹" + totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (perSetEl) perSetEl.textContent = "₹" + totalPerSet.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  if (totalEl)  totalEl.textContent  = "₹" + totalCost.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 }
 
 // Fixed-position dropdowns (this one and its siblings) compute their
@@ -12824,7 +12828,7 @@ function renderBOQRevisionRows(updateId) {
           style="padding:5px; font-size:0.85rem; text-align:right; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px;">
-        <input type="text" value="${isRawMaterial ? totalMaterialRate.toFixed(2) : '—'}" readonly
+        <input type="text" value="${isRawMaterial ? (Number.isInteger(totalMaterialRate) ? totalMaterialRate : totalMaterialRate.toFixed(2)) : '—'}" readonly
           style="padding:5px; font-size:0.85rem; font-weight:700; text-align:center; width:100%; background:#f0fdf4; color:var(--accent); cursor:not-allowed; border-radius:3px; border:1px solid #86efac;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -13287,7 +13291,7 @@ function renderEBOQMaterialRows() {
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
-          oninput="eboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateEBOQTotals(); const r=document.getElementById('eboq-rate-${idx}'); if(r) r.value=(eboqMaterialRows[${idx}].quantityFor1Set*(Number(eboqMaterialRows[${idx}].designRatePerQuantity)||0)).toFixed(2);"
+          oninput="eboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateEBOQTotals(); const r=document.getElementById('eboq-rate-${idx}'); if(r) { const v=eboqMaterialRows[${idx}].quantityFor1Set*(Number(eboqMaterialRows[${idx}].designRatePerQuantity)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); }"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -13304,12 +13308,12 @@ function renderEBOQMaterialRows() {
       <td style="padding:4px; text-align:center;">
         ${isRawMaterial ? `
         <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
-          oninput="eboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateEBOQTotals(); const r=document.getElementById('eboq-rate-${idx}'); if(r) r.value=((Number(eboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0)).toFixed(2);"
+          oninput="eboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateEBOQTotals(); const r=document.getElementById('eboq-rate-${idx}'); if(r) { const v=(Number(eboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); }"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       </td>
       <td style="padding:4px; text-align:center;">
-        <input type="text" id="eboq-rate-${idx}" value="${isRawMaterial ? totalMaterialRate.toFixed(2) : '—'}" readonly
+        <input type="text" id="eboq-rate-${idx}" value="${isRawMaterial ? (Number.isInteger(totalMaterialRate) ? totalMaterialRate : totalMaterialRate.toFixed(2)) : '—'}" readonly
           style="padding:5px; font-size:0.85rem; font-weight:700; text-align:center; width:100%; background:#f0fdf4; color:var(--accent); cursor:not-allowed; border-radius:3px; border:1px solid #86efac;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -13335,8 +13339,8 @@ function updateEBOQTotals() {
 
   const perSetEl = document.getElementById("eboq-total-per-set");
   const totalEl  = document.getElementById("eboq-total-cost");
-  if (perSetEl) perSetEl.textContent = "₹" + totalPerSet.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (totalEl)  totalEl.textContent  = "₹" + totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (perSetEl) perSetEl.textContent = "₹" + totalPerSet.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  if (totalEl)  totalEl.textContent  = "₹" + totalCost.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 }
 
 let _submitBOQAuthorizeInProgress = false;
@@ -13721,7 +13725,7 @@ function renderUBOQMaterialRows() {
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
-          oninput="uboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateUBOQTotals(); const r=document.getElementById('uboq-rate-${idx}'); if(r) r.value=(uboqMaterialRows[${idx}].quantityFor1Set*(Number(uboqMaterialRows[${idx}].designRatePerQuantity)||0)).toFixed(2);"
+          oninput="uboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateUBOQTotals(); const r=document.getElementById('uboq-rate-${idx}'); if(r) { const v=uboqMaterialRows[${idx}].quantityFor1Set*(Number(uboqMaterialRows[${idx}].designRatePerQuantity)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); }"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -13738,12 +13742,12 @@ function renderUBOQMaterialRows() {
       <td style="padding:4px; text-align:center;">
         ${isRawMaterial ? `
         <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
-          oninput="uboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateUBOQTotals(); const r=document.getElementById('uboq-rate-${idx}'); if(r) r.value=((Number(uboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0)).toFixed(2);"
+          oninput="uboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateUBOQTotals(); const r=document.getElementById('uboq-rate-${idx}'); if(r) { const v=(Number(uboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); }"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       </td>
       <td style="padding:4px; text-align:center;">
-        <input type="text" id="uboq-rate-${idx}" value="${isRawMaterial ? totalMaterialRate.toFixed(2) : '—'}" readonly
+        <input type="text" id="uboq-rate-${idx}" value="${isRawMaterial ? (Number.isInteger(totalMaterialRate) ? totalMaterialRate : totalMaterialRate.toFixed(2)) : '—'}" readonly
           style="padding:5px; font-size:0.85rem; font-weight:700; text-align:center; width:100%; background:#f0fdf4; color:var(--accent); cursor:not-allowed; border-radius:3px; border:1px solid #86efac;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -13769,8 +13773,8 @@ function updateUBOQTotals() {
 
   const perSetEl = document.getElementById("uboq-total-per-set");
   const totalEl  = document.getElementById("uboq-total-cost");
-  if (perSetEl) perSetEl.textContent = "₹" + totalPerSet.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (totalEl)  totalEl.textContent  = "₹" + totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (perSetEl) perSetEl.textContent = "₹" + totalPerSet.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  if (totalEl)  totalEl.textContent  = "₹" + totalCost.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 }
 
 // Add uboq to selectBOQRowMaterial
@@ -16655,6 +16659,7 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
   if (window._rprnStockInterval) { clearInterval(window._rprnStockInterval); window._rprnStockInterval = null; }
 
   window.scrollTo(0, 0);
+  setTimeout(() => window.scrollTo(0, 0), 50);
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
