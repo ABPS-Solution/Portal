@@ -17186,6 +17186,7 @@ async function dismissPORevision(poNo) {
 async function initializeAuthorizePORevisionPanel() {
   const feed = document.getElementById("apor-cards-feed");
   feed.innerHTML = `<div style="text-align:center; padding:26px; color:var(--muted);">Loading pending revisions…</div>`;
+  window.aporExpandedId = null;
   try {
     const data = await apFetch({ action: "fetchPendingPORevisions" });
     const revs = (data.success ? (data.revisions || []) : []);
@@ -17194,10 +17195,44 @@ async function initializeAuthorizePORevisionPanel() {
       feed.innerHTML = `<div style="text-align:center; padding:26px; color:var(--muted); background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px;">✅ No PO revisions are awaiting authorization.</div>`;
       return;
     }
-    feed.innerHTML = revs.map(r => renderAPORCard(r)).join("");
+    feed.innerHTML = revs.map(r => `
+      <div style="background:#fff; border:1px solid var(--border); border-left:3px solid ${r.revisionKind === "Cancellation" ? "#b91c1c" : "var(--accent)"}; border-radius:var(--radius); padding:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; cursor:pointer;" onclick="toggleAPORCard(${r.requestId})">
+          <div>
+            <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.95rem;">${r.poNo} <span style="font-size:0.7rem; color:var(--muted);">→ Rev ${(Number(r.revisionNumber)||1) + 1}</span></div>
+            <div style="font-size:0.82rem; font-weight:700;">${r.vendorName || ""}</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Drafted by ${r.requestedBy || "—"} · ${r.requestedAt ? formatDateDMY(r.requestedAt) : ""}</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:0.68rem; font-weight:800; padding:4px 10px; border-radius:4px; background:${r.revisionKind === "Cancellation" ? "#fee2e2" : "#fef3c7"}; color:${r.revisionKind === "Cancellation" ? "#7f1d1d" : "#78350f"};">${r.revisionKind === "Cancellation" ? "FULL CANCELLATION" : r.revisionKind.toUpperCase()}</span>
+            <button class="nav-btn-styled" style="background:var(--brand); color:#fff; font-weight:700; padding:7px 18px; font-size:0.8rem;">Authorize →</button>
+          </div>
+        </div>
+        <div id="apor-expand-${r.requestId}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
+      </div>`).join("");
   } catch (e) {
     feed.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
   }
+}
+
+function toggleAPORCard(requestId) {
+  const expandDiv = document.getElementById(`apor-expand-${requestId}`);
+  if (!expandDiv) return;
+  if (window.aporExpandedId === requestId) {
+    expandDiv.style.display = "none"; expandDiv.innerHTML = "";
+    window.aporExpandedId = null;
+    return;
+  }
+  if (window.aporExpandedId) {
+    const prev = document.getElementById(`apor-expand-${window.aporExpandedId}`);
+    if (prev) { prev.style.display = "none"; prev.innerHTML = ""; }
+  }
+  window.aporExpandedId = requestId;
+  const r = (window.aporList || []).find(x => x.requestId === requestId);
+  if (!r) return;
+  expandDiv.style.display = "block";
+  expandDiv.innerHTML = renderAPORCard(r);
+  updateAPORGrandTotal(requestId);
 }
 
 function renderAPORCard(r) {
@@ -17205,155 +17240,193 @@ function renderAPORCard(r) {
   const currentByItem = Object.fromEntries((r.currentLines || []).map(l => [l.itemCode, l]));
   const revised = r.revisedLineItems || [];
   const isCancel = r.revisionKind === "Cancellation";
-
-  // Header/Taxes/Terms changes — same header_changes JSONB Revise PO
-  // writes; null on a field means that field was never touched by this
-  // revision, so it's left out entirely rather than shown as a no-op.
   const hc = r.headerChanges || {};
-  const bulletHtml = (f) => {
-    const curDisp = f.isDate ? formatDateDMY(f.cur) : (f.isText ? (f.cur || "—") : fmt(f.cur));
-    const revDisp = f.isDate ? formatDateDMY(f.rev) : (f.isText ? f.rev : fmt(f.rev));
-    return `<li>${f.label}: <span style="color:#1e293b;">${curDisp}</span> → <span style="font-weight:700; color:#b45309;">${revDisp}</span></li>`;
-  };
-  const changedField = (f) => {
-    if (f.rev == null) return false;
-    if (f.isDate) return new Date(f.rev).toDateString() !== new Date(f.cur).toDateString();
-    if (f.isText) return (f.rev || "") !== (f.cur || "");
-    return Math.abs(Number(f.rev) - Number(f.cur)) > 1e-9;
-  };
+  const rid = r.requestId;
 
-  const headerFieldDefs = [
-    { label: "Supplier Offer No", cur: r.supplierRef, rev: hc.supplierRef, isText: true },
-    { label: "Delivery Date", cur: r.deliveryDate, rev: hc.deliveryDate, isDate: true },
-  ];
-  const headerBullets = headerFieldDefs.filter(changedField).map(bulletHtml);
-  const headerChangesHtml = headerBullets.length ? `
-      <div style="background:#fefce8; border:1px solid #fde68a; border-radius:4px; padding:9px 12px; margin-bottom:12px;">
-        <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">Header Changes</div>
-        <ul style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;">${headerBullets.join("")}</ul>
-      </div>` : "";
-
-  const taxTermFieldDefs = [
-    { label: "CGST %", cur: r.cgstPercent, rev: hc.cgstPercent },
-    { label: "SGST %", cur: r.sgstPercent, rev: hc.sgstPercent },
-    { label: "IGST %", cur: r.igstPercent, rev: hc.igstPercent },
-    { label: "Packing", cur: r.packing, rev: hc.packing },
-    { label: "Freight", cur: r.freight, rev: hc.freight },
-    { label: "Other", cur: r.other, rev: hc.other },
-    { label: "Round Off", cur: r.roundOff, rev: hc.roundOff },
-    { label: "Warranty", cur: r.warranty, rev: hc.warranty, isText: true },
-    { label: "Payment Terms", cur: r.paymentTerms, rev: hc.paymentTerms, isText: true },
-    { label: "Freight Terms", cur: r.freightTerms, rev: hc.freightTerms, isText: true },
-  ];
-  const taxTermBullets = taxTermFieldDefs.filter(changedField).map(bulletHtml);
-  const taxTermChangesHtml = taxTermBullets.length ? `
-      <div style="background:#fefce8; border:1px solid #fde68a; border-radius:4px; padding:9px 12px; margin-top:12px;">
-        <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">Taxes, Charges & Terms Changes</div>
-        <ul style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;">${taxTermBullets.join("")}</ul>
-      </div>` : "";
-
-  // Effective tax/charge values this revision would actually apply —
-  // the revised value where the operator touched it, otherwise whatever
-  // the PO already has.
-  const eff = {
-    cgstPercent: hc.cgstPercent != null ? Number(hc.cgstPercent) : (Number(r.cgstPercent) || 0),
-    sgstPercent: hc.sgstPercent != null ? Number(hc.sgstPercent) : (Number(r.sgstPercent) || 0),
-    igstPercent: hc.igstPercent != null ? Number(hc.igstPercent) : (Number(r.igstPercent) || 0),
-    packing: hc.packing != null ? Number(hc.packing) : (Number(r.packing) || 0),
-    freight: hc.freight != null ? Number(hc.freight) : (Number(r.freight) || 0),
-    other: hc.other != null ? Number(hc.other) : (Number(r.other) || 0),
-    roundOff: hc.roundOff != null ? Number(hc.roundOff) : (Number(r.roundOff) || 0),
-  };
-
-  // New Sub Total = every current line's amount, except lines this
-  // revision touches, which use the REVISED quantity/rate/discount
-  // instead — same computation authorizePORevision itself will apply.
-  const newSubTotal = (r.currentLines || []).reduce((sum, cur) => {
-    const rev = revised.find(l => l.itemCode === cur.itemCode);
-    if (rev) return sum + (Number(rev.quantity)||0) * (Number(rev.rate)||0) * (100 - (Number(rev.discountPercent)||0)) / 100;
-    return sum + (Number(cur.amount) || ((Number(cur.quantity)||0) * (Number(cur.rate)||0) * (100 - (Number(cur.discountPercent)||0)) / 100));
-  }, 0);
-  const newGrandTotal = newSubTotal + newSubTotal*eff.cgstPercent/100 + newSubTotal*eff.sgstPercent/100 + newSubTotal*eff.igstPercent/100
-    + eff.packing + eff.freight + eff.other + eff.roundOff;
-  const oldSubTotal = Number(r.subTotal) || 0, oldGrandTotal = Number(r.grandTotal) || 0;
-  const totalArrow = (a, b) => Math.abs(a - b) > 1e-9
-    ? `<span style="color:#1e293b; font-family:monospace;">${fmt(a)}</span> <span style="font-weight:800; color:${b > a ? "#15803d" : "#b91c1c"};">→ ${fmt(b)}</span>`
-    : `<span style="font-family:monospace;">${fmt(a)}</span>`;
-
-  // Change summary — the point of this screen. Only rows whose quantity or
-  // rate actually moves are listed; an untouched line carries forward.
-  const changeRows = revised.map(line => {
+  // PO Change Summary — every line the draft actually touches, in the
+  // same bullet style as Revise PO's own "PRN Change Summary".
+  const summaryLines = revised.map(line => {
     const cur = currentByItem[line.itemCode] || {};
     const oldQty = Number(cur.quantity) || 0, newQty = Number(line.quantity) || 0;
     const oldRate = Number(cur.rate) || 0, newRate = Number(line.rate) || 0;
-    const qtyMoved = Math.abs(newQty - oldQty) > 1e-9;
-    const rateMoved = Math.abs(newRate - oldRate) > 1e-9;
-    if (!qtyMoved && !rateMoved) return "";
-    const allocs = (line.allocations || []);
-    const allocSum = allocs.reduce((s,a) => s + (Number(a.quantity)||0), 0);
-    const extra = Math.round((newQty - allocSum) * 100) / 100;
-    const arrow = (a, b, better) => `<span style="color:#1e293b; font-family:monospace;">${fmt(a)}</span> <span style="font-weight:800; color:${better};">→ ${fmt(b)}</span>`;
-    const aporRowBg = qtyMoved ? (newQty > oldQty ? "#f0fdf4" : "#fffbeb") : "";
+    if (Math.abs(newQty - oldQty) < 1e-9 && Math.abs(newRate - oldRate) < 1e-9) return "";
+    const qtyColor = newQty > oldQty ? "#15803d" : "#b91c1c";
+    return `<li>${line.description || line.itemCode}: quantity ${fmt(oldQty)} → <span style="font-weight:700; color:${qtyColor};">${fmt(newQty)}</span>${Math.abs(newRate-oldRate) > 1e-9 ? `, rate ${fmt(oldRate)} → <span style="font-weight:700; color:#b45309;">${fmt(newRate)}</span>` : ""}</li>`;
+  }).filter(Boolean);
+  const summaryHtml = summaryLines.length ? `
+      <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; margin-bottom:12px;">
+        <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">PO Change Summary</div>
+        <ul style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;">${summaryLines.join("")}</ul>
+      </div>` : "";
+
+  const rows = revised.map((line, idx) => {
+    const cur = currentByItem[line.itemCode] || {};
+    const oldQty = Number(cur.quantity) || 0;
+    const received = Number(cur.received) || 0;
+    const newQty = Number(line.quantity) || 0;
+    const rowBg = Math.abs(newQty - oldQty) < 1e-9 ? "" : (newQty > oldQty ? "#f0fdf4" : "#fffbeb");
+
+    const allocs = line.allocations || [];
+    const allocHtml = allocs.length === 0
+      ? `<div style="font-size:0.72rem; color:var(--muted);">No PRN allocated. Entire Material Quantity is extra stock.</div>`
+      : allocs.map(a => {
+          // Same "needs" concept as Revise PO — this PRN's current draw
+          // from THIS line, floored so a cross-PO split is never double-counted.
+          const need = Math.max(0, (Number(a.currentPurchaseQty) || Number(a.quantity) || 0));
+          return `<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+            <span style="flex:1; font-family:monospace; font-size:0.7rem; font-weight:700; color:var(--brand);">${a.prnId.replace(/^PRN_/,"")}</span>
+            <input type="number" min="0" step="any" class="apor-alloc" data-idx="${idx}" data-prnid="${a.prnId}" data-need="${need}"
+              value="${Number(a.quantity)||0}" oninput="updateAPORLineTotals(${idx}, ${rid})"
+              style="width:78px; text-align:center; font-weight:700; padding:4px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.78rem;">
+          </div>`;
+        }).join("");
+
     return `
-      <tr style="border-bottom:1px solid #f1f5f9; ${aporRowBg ? `background:${aporRowBg};` : ""}">
-        <td style="padding:7px; font-family:monospace; font-size:0.74rem; font-weight:700; color:var(--brand);">${line.itemCode}</td>
-        <td style="padding:7px; font-size:0.78rem;">${line.description || ""}</td>
-        <td style="padding:7px; text-align:center; font-size:0.8rem;">${qtyMoved ? arrow(oldQty, newQty, newQty > oldQty ? "#15803d" : "#b91c1c") : `<span style="color:var(--muted); font-family:monospace;">${fmt(oldQty)}</span>`}</td>
-        <td style="padding:7px; text-align:center; font-size:0.8rem;">${rateMoved ? arrow(oldRate, newRate, "#b45309") : `<span style="color:var(--muted); font-family:monospace;">${fmt(oldRate)}</span>`}</td>
-        <td style="padding:7px; text-align:center; font-size:0.72rem; color:${Number(cur.received) > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(cur.received)}</td>
-        <td style="padding:7px; font-size:0.72rem;">
-          ${allocs.length === 0 ? `<span style="color:var(--muted);">none</span>`
-            : allocs.map(a => `<div style="font-family:monospace; font-weight:700; color:var(--brand);">${a.prnId.replace(/^PRN_/,"")}: <span style="color:#000;">${fmt(a.quantity)}</span></div>`).join("")}
-          ${extra > 0 ? `<div style="color:#b45309; font-weight:700; margin-top:2px;">${fmt(extra)} extra → Raw Material store</div>` : ""}
+      <tr style="border-bottom:1px solid #e2e8f0; ${rowBg ? `background:${rowBg};` : ""}">
+        <td style="padding:8px; font-size:0.8rem; font-weight:600; min-width:170px;">${line.description || ""}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:#1a2332;">${fmt(oldQty)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:800; color:${newQty > oldQty ? "#15803d" : "#b91c1c"};">${fmt(newQty)}</td>
+        <td style="padding:8px; text-align:center; font-size:0.72rem; color:${received > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(received)}</td>
+        <td style="padding:8px; text-align:center;">
+          <input type="number" min="${received}" step="any" class="apor-vdq" data-idx="${idx}" data-requestid="${rid}"
+            value="${Number(line.quantity)||0}" oninput="updateAPORLineTotals(${idx}, ${rid})"
+            style="width:100px; text-align:center; font-weight:800; padding:6px; border:1.5px solid #15803d; border-radius:4px; font-size:0.85rem;">
         </td>
+        <td style="padding:8px; text-align:center;">
+          <input type="number" min="0" step="any" class="apor-rate" data-idx="${idx}" value="${Number(line.rate)||0}" oninput="updateAPORLineTotals(${idx}, ${rid})"
+            style="width:90px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
+        </td>
+        <td style="padding:8px; text-align:center;">
+          <input type="number" min="0" max="100" step="any" class="apor-disc" data-idx="${idx}" value="${Number(line.discountPercent)||0}" oninput="updateAPORLineTotals(${idx}, ${rid})"
+            style="width:70px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
+        </td>
+        <td id="apor-amount-${rid}-${idx}" style="padding:8px; text-align:right; font-family:monospace; font-weight:800; font-size:0.88rem;">0</td>
+        <td style="padding:8px; min-width:190px;">${allocHtml}<div id="apor-sum-${rid}-${idx}" style="font-size:0.65rem; font-weight:800; margin-top:4px;"></div></td>
       </tr>`;
-  }).filter(Boolean).join("");
+  }).join("");
 
   return `
-    <div style="background:#fff; border:1px solid var(--border); border-left:3px solid ${isCancel ? "#b91c1c" : "var(--accent)"}; border-radius:var(--radius); padding:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; margin-bottom:12px;">
+    <div data-requestid="${rid}">
+      <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.95rem;">${r.poNo} <span style="font-size:0.7rem; color:var(--muted);">→ Rev ${(Number(r.revisionNumber)||1) + 1}</span></div>
+      <div style="font-size:0.82rem; font-weight:700; margin-top:2px;">${r.vendorName || ""}</div>
+      <div style="font-size:0.72rem; color:var(--muted); margin-top:2px; margin-bottom:14px;">Drafted by ${r.requestedBy || "—"} · ${r.requestedAt ? formatDateDMY(r.requestedAt) : ""} · Currently Rev ${r.revisionNumber || 1}</div>
+
+      ${isCancel ? `<div style="background:#fef2f2; border-left:3px solid #b91c1c; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#7f1d1d; margin-bottom:12px;">Authorizing this cancels the PO outright. Every line goes to zero and all PRN allocations return to "still to order".</div>` : ""}
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
         <div>
-          <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.95rem;">${r.poNo} <span style="font-size:0.7rem; color:var(--muted);">→ Rev ${(Number(r.revisionNumber)||1) + 1}</span></div>
-          <div style="font-size:0.82rem; font-weight:700;">${r.vendorName || ""}</div>
-          <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Drafted by ${r.requestedBy || "—"} · ${r.requestedAt ? formatDateDMY(r.requestedAt) : ""}</div>
-          ${r.reason ? `<div style="font-size:0.74rem; color:#334155; margin-top:5px; font-style:italic;">"${r.reason}"</div>` : ""}
+          <label class="field-label" style="margin-top:0;">Supplier Offer No</label>
+          <input type="text" id="apor-supplier-ref-${rid}" value="${(hc.supplierRef != null ? hc.supplierRef : r.supplierRef || "").replace(/"/g,"&quot;")}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
         </div>
-        <span style="font-size:0.68rem; font-weight:800; padding:4px 10px; border-radius:4px; background:${isCancel ? "#fee2e2" : "#fef3c7"}; color:${isCancel ? "#7f1d1d" : "#78350f"};">${isCancel ? "FULL CANCELLATION" : r.revisionKind.toUpperCase()}</span>
+        <div>
+          <label class="field-label" style="margin-top:0;">Delivery Date *</label>
+          <input type="date" lang="en-GB" id="apor-delivery-date-${rid}" value="${(hc.deliveryDate || r.deliveryDate) ? new Date(hc.deliveryDate || r.deliveryDate).toISOString().slice(0,10) : ""}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+        </div>
       </div>
 
-      ${isCancel ? `<div style="background:#fef2f2; border-left:3px solid #b91c1c; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#7f1d1d; margin-bottom:10px;">Authorizing this cancels the PO outright. Every line goes to zero and all PRN allocations return to "still to order".</div>` : ""}
+      ${summaryHtml}
 
-      ${headerChangesHtml}
+      <div style="background:#f8fafc; border-left:3px solid var(--brand); padding:9px 12px; border-radius:4px; font-size:0.75rem; color:#334155; margin-bottom:12px;">
+        <strong>Vendor Discussed Purchase Quantity</strong> is what was actually agreed with the vendor. It cannot go below what has already been received. Anything not allocated to a PRN is ordered as extra stock and lands in the Raw Material store.
+      </div>
 
-      <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">Order Quantity Changes</div>
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-        <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:820px;">
+        <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1150px;">
           <thead><tr style="background:#f8fafc;">
-            <th style="padding:7px; font-size:0.66rem; text-align:left;">Item Code</th>
-            <th style="padding:7px; font-size:0.66rem; text-align:left; min-width:170px;">Description of Material</th>
-            <th style="padding:7px; font-size:0.66rem; text-align:center;">Quantity Change</th>
-            <th style="padding:7px; font-size:0.66rem; text-align:center;">Rate / Qty</th>
-            <th style="padding:7px; font-size:0.66rem; text-align:center;">Already Received</th>
-            <th style="padding:7px; font-size:0.66rem; text-align:left; min-width:150px;">Allocation</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:left; min-width:170px;">Description of Material</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center;">Old PO Qty</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center; color:var(--brand);">New Required Qty</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center;">Already Received</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center; color:#15803d;">Vendor Discussed Qty *</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center;">Rate / Qty</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center;">Disc %</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center; color:#15803d;">Amount</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:left;">Allocation to PRNs</th>
           </tr></thead>
-          <tbody>${changeRows || `<tr><td colspan="6" style="padding:12px; text-align:center; color:var(--muted); font-size:0.78rem;">No quantity or rate changes — allocations only.</td></tr>`}</tbody>
+          <tbody>${rows}</tbody>
         </table>
       </div>
 
-      ${taxTermChangesHtml}
-
-      <div style="display:flex; justify-content:flex-end; background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius); padding:10px 14px; margin-top:12px; font-size:0.85rem;">
-        <div style="text-align:right;">
-          <div>Sub Total: ${totalArrow(oldSubTotal, newSubTotal)}</div>
-          <div style="font-size:1.02rem; margin-top:3px;">Grand Total: ${totalArrow(oldGrandTotal, newGrandTotal)}</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Taxes & Charges</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+            <div><label class="field-label" style="margin-top:0;">CGST %</label><input type="number" id="apor-cgst-${rid}" value="${hc.cgstPercent != null ? hc.cgstPercent : (Number(r.cgstPercent)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">SGST %</label><input type="number" id="apor-sgst-${rid}" value="${hc.sgstPercent != null ? hc.sgstPercent : (Number(r.sgstPercent)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">IGST %</label><input type="number" id="apor-igst-${rid}" value="${hc.igstPercent != null ? hc.igstPercent : (Number(r.igstPercent)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">Packing</label><input type="number" id="apor-packing-${rid}" value="${hc.packing != null ? hc.packing : (Number(r.packing)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">Freight</label><input type="number" id="apor-freight-${rid}" value="${hc.freight != null ? hc.freight : (Number(r.freight)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">Other</label><input type="number" id="apor-other-${rid}" value="${hc.other != null ? hc.other : (Number(r.other)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="apor-roundoff-${rid}" value="${hc.roundOff != null ? hc.roundOff : (Number(r.roundOff)||0)}" step="any" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          </div>
+        </div>
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Terms</div>
+          <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Warranty</label><input type="text" id="apor-warranty-${rid}" value="${(hc.warranty != null ? hc.warranty : r.warranty || "").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Payment Terms</label><input type="text" id="apor-payment-${rid}" value="${(hc.paymentTerms != null ? hc.paymentTerms : r.paymentTerms || "").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Freight Terms</label><input type="text" id="apor-freight-terms-${rid}" value="${(hc.freightTerms != null ? hc.freightTerms : r.freightTerms || "").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         </div>
       </div>
 
-      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
-        <button id="apor-reject-${r.requestId}" onclick="rejectPORevisionUI(${r.requestId})" style="padding:8px 18px; background:#b91c1c; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:700; font-size:0.82rem;">Reject PO Revision</button>
-        <button id="apor-auth-${r.requestId}" class="nav-btn-styled" onclick="authorizePORevisionUI(${r.requestId}, false)" style="background:var(--accent); color:#fff; font-weight:700; padding:8px 22px;">Authorize PO Revision</button>
+      <div style="display:flex; justify-content:space-between; align-items:center; background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius); padding:14px; margin-top:14px;">
+        <div style="font-size:0.85rem;">
+          <div>Sub Total: <strong id="apor-subtotal-disp-${rid}">0</strong></div>
+          <div style="font-size:1.05rem; margin-top:4px;">Grand Total: <strong id="apor-grandtotal-disp-${rid}" style="color:var(--brand);">0</strong></div>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button id="apor-reject-${rid}" onclick="rejectPORevisionUI(${rid})" style="padding:8px 18px; background:#b91c1c; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:700; font-size:0.82rem;">Reject PO Revision</button>
+          <button id="apor-auth-${rid}" class="nav-btn-styled" onclick="authorizePORevisionUI(${rid}, false)" style="background:var(--accent); color:#fff; font-weight:700; padding:8px 22px;">Authorize PO Revision</button>
+        </div>
       </div>
     </div>`;
+}
+
+function updateAPORLineTotals(idx, requestId) {
+  const vdq = parseFloat(document.querySelector(`.apor-vdq[data-idx="${idx}"][data-requestid="${requestId}"]`)?.value) || 0;
+  const rate = parseFloat(document.querySelectorAll(`#apor-expand-${requestId} .apor-rate[data-idx="${idx}"]`)[0]?.value) || 0;
+  const disc = parseFloat(document.querySelectorAll(`#apor-expand-${requestId} .apor-disc[data-idx="${idx}"]`)[0]?.value) || 0;
+  const amountEl = document.getElementById(`apor-amount-${requestId}-${idx}`);
+  if (amountEl) amountEl.textContent = (vdq * rate * (100 - disc) / 100).toLocaleString("en-IN",{maximumFractionDigits:2});
+
+  const inputs = Array.from(document.querySelectorAll(`#apor-expand-${requestId} .apor-alloc[data-idx="${idx}"]`));
+  let sum = 0;
+  inputs.forEach(inp => {
+    let v = parseFloat(inp.value) || 0;
+    const need = parseFloat(inp.dataset.need) || 0;
+    if (v < 0) { v = 0; inp.value = "0"; }
+    if (v > need + 1e-9) { v = need; inp.value = Number.isInteger(need) ? need : need.toFixed(2); }
+    sum += v;
+    inp.style.borderColor = "var(--brand)";
+  });
+  const el = document.getElementById(`apor-sum-${requestId}-${idx}`);
+  if (el) {
+    const extra = Math.round((vdq - sum) * 100) / 100;
+    if (sum > vdq + 1e-9) { el.style.color = "#b91c1c"; el.textContent = `Allocated ${sum} but the line is ${vdq}.`; }
+    else if (extra > 0)  { el.style.color = "#b45309"; el.textContent = `${extra} Extra Quantity`; }
+    else                 { el.style.color = "#15803d"; el.textContent = "Fully allocated"; }
+  }
+  updateAPORGrandTotal(requestId);
+}
+
+function updateAPORGrandTotal(requestId) {
+  const scope = document.getElementById(`apor-expand-${requestId}`);
+  if (!scope) return;
+  let subTotal = 0;
+  scope.querySelectorAll(`[id^="apor-amount-${requestId}-"]`).forEach(el => {
+    subTotal += parseFloat(el.textContent.replace(/,/g, "")) || 0;
+  });
+  const cgst = parseFloat(document.getElementById(`apor-cgst-${requestId}`)?.value) || 0;
+  const sgst = parseFloat(document.getElementById(`apor-sgst-${requestId}`)?.value) || 0;
+  const igst = parseFloat(document.getElementById(`apor-igst-${requestId}`)?.value) || 0;
+  const packing = parseFloat(document.getElementById(`apor-packing-${requestId}`)?.value) || 0;
+  const freight = parseFloat(document.getElementById(`apor-freight-${requestId}`)?.value) || 0;
+  const other = parseFloat(document.getElementById(`apor-other-${requestId}`)?.value) || 0;
+  const roundOff = parseFloat(document.getElementById(`apor-roundoff-${requestId}`)?.value) || 0;
+  const grandTotal = subTotal + subTotal*cgst/100 + subTotal*sgst/100 + subTotal*igst/100 + packing + freight + other + roundOff;
+  const subEl = document.getElementById(`apor-subtotal-disp-${requestId}`);
+  const gtEl = document.getElementById(`apor-grandtotal-disp-${requestId}`);
+  if (subEl) subEl.textContent = subTotal.toLocaleString("en-IN",{maximumFractionDigits:2});
+  if (gtEl) gtEl.textContent = grandTotal.toLocaleString("en-IN",{maximumFractionDigits:2});
 }
 
 // Two-phase authorize. The first call may come back needsConfirmation
@@ -17366,10 +17439,43 @@ async function authorizePORevisionUI(requestId, confirmStale) {
   const rejBtn = document.getElementById(`apor-reject-${requestId}`);
   if (authBtn) { authBtn.disabled = true; authBtn.textContent = "Authorizing…"; }
   if (rejBtn) rejBtn.disabled = true;
+
+  const r = (window.aporList || []).find(x => x.requestId === requestId);
+  const originalLines = r ? (r.revisedLineItems || []) : [];
+  const editedLineItems = originalLines.map((line, idx) => {
+    const vdqEl = document.querySelector(`.apor-vdq[data-idx="${idx}"][data-requestid="${requestId}"]`);
+    const scope = document.getElementById(`apor-expand-${requestId}`);
+    const rateEl = scope?.querySelectorAll(`.apor-rate[data-idx="${idx}"]`)[0];
+    const discEl = scope?.querySelectorAll(`.apor-disc[data-idx="${idx}"]`)[0];
+    const allocEls = scope ? Array.from(scope.querySelectorAll(`.apor-alloc[data-idx="${idx}"]`)) : [];
+    return {
+      ...line,
+      quantity: vdqEl ? (parseFloat(vdqEl.value) || 0) : line.quantity,
+      rate: rateEl ? (parseFloat(rateEl.value) || 0) : line.rate,
+      discountPercent: discEl ? (parseFloat(discEl.value) || 0) : line.discountPercent,
+      allocations: allocEls.map(el => ({ prnId: el.dataset.prnid, quantity: parseFloat(el.value) || 0 })),
+    };
+  });
+  const editedHeader = {
+    supplierRef: document.getElementById(`apor-supplier-ref-${requestId}`)?.value || null,
+    deliveryDate: document.getElementById(`apor-delivery-date-${requestId}`)?.value || null,
+    cgstPercent: parseFloat(document.getElementById(`apor-cgst-${requestId}`)?.value) || 0,
+    sgstPercent: parseFloat(document.getElementById(`apor-sgst-${requestId}`)?.value) || 0,
+    igstPercent: parseFloat(document.getElementById(`apor-igst-${requestId}`)?.value) || 0,
+    packing: parseFloat(document.getElementById(`apor-packing-${requestId}`)?.value) || 0,
+    freight: parseFloat(document.getElementById(`apor-freight-${requestId}`)?.value) || 0,
+    other: parseFloat(document.getElementById(`apor-other-${requestId}`)?.value) || 0,
+    roundOff: parseFloat(document.getElementById(`apor-roundoff-${requestId}`)?.value) || 0,
+    warranty: document.getElementById(`apor-warranty-${requestId}`)?.value || null,
+    paymentTerms: document.getElementById(`apor-payment-${requestId}`)?.value || null,
+    freightTerms: document.getElementById(`apor-freight-terms-${requestId}`)?.value || null,
+  };
+
   showBlockingOverlay("Authorizing PO revision…");
 
   try {
     const data = await apFetch({ action: "authorizePORevision", requestId, confirmStale,
+      editedLineItems, editedHeader,
       operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
 
@@ -17387,7 +17493,7 @@ async function authorizePORevisionUI(requestId, confirmStale) {
 
     if (data.success) {
       const feed = document.getElementById("apor-cards-feed");
-      if (feed) feed.innerHTML = "";
+      if (feed) feed.style.display = "none";
       const notes = [];
       if ((data.staleNotes || []).length) notes.push(`${data.staleNotes.length} allocation(s) re-clamped to current PRN needs.`);
       if ((data.unwound || []).length) notes.push(`Deferred BOQ reductions completed for ${data.unwound.map(u => u.prnId).join(", ")}.`);
