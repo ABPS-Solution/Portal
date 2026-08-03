@@ -16842,8 +16842,8 @@ function renderPORevisionCard() {
           return `<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
             <span style="flex:1; font-family:monospace; font-size:0.7rem; font-weight:700; color:${stale ? "#b45309" : "var(--brand)"};">${a.prnId.replace(/^PRN_/,"")}${stale ? " ●" : ""}</span>
             <span style="font-size:0.68rem; color:#334155; font-weight:600; white-space:nowrap;">needs ${fmt(need)}</span>
-            <input type="number" min="0" step="any" class="rpo-alloc" data-idx="${idx}" data-prnid="${a.prnId}" data-need="${need}"
-              value="${Number(a.allocatedQty)||0}" oninput="updateRPOLineTotals(${idx})"
+            <input type="number" min="0" max="${need}" step="any" class="rpo-alloc" data-idx="${idx}" data-prnid="${a.prnId}" data-need="${need}"
+              value="${Math.min(Number(a.allocatedQty)||0, need)}" oninput="updateRPOLineTotals(${idx})"
               style="width:78px; text-align:center; font-weight:700; padding:4px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.78rem;">
           </div>`;
         }).join("");
@@ -17024,20 +17024,19 @@ function updateRPOLineTotals(idx) {
   if (amountEl) amountEl.textContent = (vdq * rate * (100 - disc) / 100).toLocaleString("en-IN",{maximumFractionDigits:2});
 
   const inputs = Array.from(document.querySelectorAll(`.rpo-alloc[data-idx="${idx}"]`));
-  let sum = 0, over = false;
+  let sum = 0;
   inputs.forEach(inp => {
-    const v = parseFloat(inp.value) || 0;
+    let v = parseFloat(inp.value) || 0;
     const need = parseFloat(inp.dataset.need) || 0;
+    if (v < 0) { v = 0; inp.value = "0"; }
+    if (v > need + 1e-9) { v = need; inp.value = Number.isInteger(need) ? need : need.toFixed(2); }
     sum += v;
-    const bad = v > need + 1e-9;
-    if (bad) over = true;
-    inp.style.borderColor = bad ? "#b91c1c" : "var(--brand)";
+    inp.style.borderColor = "var(--brand)";
   });
   const el = document.getElementById(`rpo-sum-${idx}`);
   if (el) {
     const extra = Math.round((vdq - sum) * 100) / 100;
-    if (over)            { el.style.color = "#b91c1c"; el.textContent = "A PRN is allocated more than it needs."; }
-    else if (sum > vdq + 1e-9) { el.style.color = "#b91c1c"; el.textContent = `Allocated ${sum} but the line is ${vdq}.`; }
+    if (sum > vdq + 1e-9) { el.style.color = "#b91c1c"; el.textContent = `Allocated ${sum} but the line is ${vdq}.`; }
     else if (extra > 0)  { el.style.color = "#b45309"; el.textContent = `${extra} Extra Quantity`; }
     else                 { el.style.color = "#15803d"; el.textContent = "Fully allocated"; }
   }
