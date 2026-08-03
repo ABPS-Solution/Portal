@@ -16757,7 +16757,7 @@ async function initializeRevisePOPanel() {
     }
     feed.innerHTML = queue.map(po => {
       const prns = (po.changedPrns || []).filter(p => p && p.prnId);
-      const chips = prns.map(p => `<span style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.68rem; font-family:monospace; padding:2px 7px; border-radius:4px; margin:0 4px 3px 0;">${p.prnId.replace(/^PRN_/,"")} v${p.stampedVersion}→v${p.currentVersion}</span>`).join("");
+      const chips = prns.map(p => `<span style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.68rem; font-family:monospace; padding:2px 7px; border-radius:4px; margin:0 4px 3px 0;">${p.prnId.replace(/^PRN_/,"")} (v${p.stampedVersion}→v${p.currentVersion})</span>`).join("");
       return `
         <div style="background:#fff; border:1px solid var(--border); border-left:3px solid #f59e0b; border-radius:var(--radius); padding:14px;">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap;">
@@ -16841,7 +16841,7 @@ function renderPORevisionCard() {
           const stale = Number(a.prnVersion) > Number(a.stampedVersion || 0);
           return `<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
             <span style="flex:1; font-family:monospace; font-size:0.7rem; font-weight:700; color:${stale ? "#b45309" : "var(--brand)"};">${a.prnId.replace(/^PRN_/,"")}${stale ? " ●" : ""}</span>
-            <span style="font-size:0.65rem; color:var(--muted); white-space:nowrap;">needs ${fmt(need)}</span>
+            <span style="font-size:0.68rem; color:#334155; font-weight:600; white-space:nowrap;">needs ${fmt(need)}</span>
             <input type="number" min="0" step="any" class="rpo-alloc" data-idx="${idx}" data-prnid="${a.prnId}" data-need="${need}"
               value="${Number(a.allocatedQty)||0}" oninput="updateRPOLineTotals(${idx})"
               style="width:78px; text-align:center; font-weight:700; padding:4px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.78rem;">
@@ -16851,7 +16851,7 @@ function renderPORevisionCard() {
     return `
       <tr style="border-bottom:1px solid #e2e8f0; ${li.changed ? "background:#fffbeb;" : ""}">
         <td style="padding:8px; font-size:0.8rem; font-weight:600; min-width:170px;">${li.description || ""}</td>
-        <td style="padding:8px; text-align:center; font-family:monospace; color:var(--muted);">${fmt(li.orderedQty)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:#1a2332;">${fmt(li.orderedQty)}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:800; color:${Number(li.newRequiredQty) > Number(li.orderedQty) ? "#15803d" : "#b91c1c"};">${fmt(li.newRequiredQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.72rem; color:${Number(li.receivedQty) > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(li.receivedQty)}</td>
         <td style="padding:8px; text-align:center;">
@@ -16885,13 +16885,13 @@ function renderPORevisionCard() {
     const bullets = lineItems.filter(li => li.changed).map(li => {
       const delta = (Number(li.newRequiredQty)||0) - (Number(li.orderedQty)||0);
       const dirColor = delta > 0 ? "#15803d" : "#b91c1c";
-      return `<li>${li.description || li.itemCode}: requirement ${fmt(li.orderedQty)} → <span style="font-weight:700; color:${dirColor};">${fmt(li.newRequiredQty)}</span> (${delta > 0 ? "+" : ""}${fmt(delta)})</li>`;
+      return `<li> <strong> ${li.description || li.itemCode}: </strong> ${fmt(li.orderedQty)} → <span style="font-weight:700; color:${dirColor};">${fmt(li.newRequiredQty)}</span> (${delta > 0 ? "+" : ""}${fmt(delta)})</li>`;
     });
     if (bullets.length) {
       prnSummaryHtml = `
       <div style="background:#fefce8; border:1px solid #fde68a; border-radius:var(--radius); padding:10px 14px; margin-bottom:12px;">
-        <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:5px;">PRN Change Summary</div>
-        <ul style="margin:0; padding-left:18px; font-size:0.78rem; color:#334155; line-height:1.6;">${bullets.join("")}</ul>
+        <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">PRN Change Summary</div>
+        <ul style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;">${bullets.join("")}</ul>
       </div>`;
     }
   }
@@ -17018,7 +17018,7 @@ function updateRPOLineTotals(idx) {
   const rate = parseFloat(document.querySelector(`.rpo-rate[data-idx="${idx}"]`)?.value) || 0;
   const disc = parseFloat(document.querySelector(`.rpo-disc[data-idx="${idx}"]`)?.value) || 0;
   const amountEl = document.getElementById(`rpo-amount-${idx}`);
-  if (amountEl) amountEl.textContent = (vdq * rate * (100 - disc) / 100).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+  if (amountEl) amountEl.textContent = (vdq * rate * (100 - disc) / 100).toLocaleString("en-IN",{maximumFractionDigits:2});
 
   const inputs = Array.from(document.querySelectorAll(`.rpo-alloc[data-idx="${idx}"]`));
   let sum = 0, over = false;
@@ -17225,8 +17225,8 @@ function renderAPORCard(r) {
   const headerBullets = headerFieldDefs.filter(changedField).map(bulletHtml);
   const headerChangesHtml = headerBullets.length ? `
       <div style="background:#fefce8; border:1px solid #fde68a; border-radius:4px; padding:9px 12px; margin-bottom:12px;">
-        <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:4px;">Header Changes</div>
-        <ul style="margin:0; padding-left:18px; font-size:0.76rem; color:#334155; line-height:1.6;">${headerBullets.join("")}</ul>
+        <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">Header Changes</div>
+        <ul style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;">${headerBullets.join("")}</ul>
       </div>` : "";
 
   const taxTermFieldDefs = [
@@ -17244,8 +17244,8 @@ function renderAPORCard(r) {
   const taxTermBullets = taxTermFieldDefs.filter(changedField).map(bulletHtml);
   const taxTermChangesHtml = taxTermBullets.length ? `
       <div style="background:#fefce8; border:1px solid #fde68a; border-radius:4px; padding:9px 12px; margin-top:12px;">
-        <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:4px;">Taxes, Charges & Terms Changes</div>
-        <ul style="margin:0; padding-left:18px; font-size:0.76rem; color:#334155; line-height:1.6;">${taxTermBullets.join("")}</ul>
+        <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">Taxes, Charges & Terms Changes</div>
+        <ul style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;">${taxTermBullets.join("")}</ul>
       </div>` : "";
 
   // Effective tax/charge values this revision would actually apply —
@@ -19734,9 +19734,7 @@ async function authorizePRN(prnId) {
       const feed = document.getElementById("aprn-cards-feed");
       if (feed) feed.style.display = "none";
 
-      const pdfNote = data.pdfWarning
-        ? `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — PRN is authorized. Contact admin to verify Drive folder setup.</div>`
-        : (data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a></div>` : ``);
+      const pdfNote = data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a></div>` : ``;
 
       const fb = document.getElementById("aprn-feedback");
       if (fb) {
