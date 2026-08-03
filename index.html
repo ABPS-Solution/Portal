@@ -2029,10 +2029,10 @@
         </div>
 
         <!-- ROW 4: Pending actions — 2 columns -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1; min-height:0;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr; align-items:stretch; gap:10px; flex:1; min-height:0;">
 
           <!-- Materials with no PO yet -->
-          <div class="dd-card" style="padding:10px 12px; display:flex; flex-direction:column; min-height:0;">
+          <div class="dd-card" style="padding:10px 12px; display:flex; flex-direction:column; min-height:0; height:100%;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-shrink:0;">
               <div class="dd-card-title" style="margin:0;">Materials Needed (No Purchase Order Yet)</div>
               <span id="pd-nopo-count" style="font-size:0.68rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:1px 7px; border-radius:8px;"></span>
@@ -2052,7 +2052,7 @@
           </div>
 
           <!-- Overdue POs -->
-          <div class="dd-card" style="padding:10px 12px; display:flex; flex-direction:column; min-height:0;">
+          <div class="dd-card" style="padding:10px 12px; display:flex; flex-direction:column; min-height:0; height:100%;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-shrink:0;">
               <div class="dd-card-title" style="margin:0;">🔴 Overdue Purchase Orders</div>
               <span id="pd-overdue-count" style="font-size:0.68rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:1px 7px; border-radius:8px;"></span>
@@ -17706,7 +17706,7 @@ function updateRPRNDeltaDecreaseRowPurchaseQty(idx, input) {
   const realCap = Math.min(totalCovered, isNaN(liveCap) ? totalCovered : liveCap);
   let val = parseFloat(input.value) || 0;
   if (val < 0) { val = 0; input.value = "0"; }
-  if (val > realCap) { val = realCap; input.value = realCap.toFixed(2); }
+  if (val > realCap) { val = Math.round(realCap * 100) / 100; input.value = val; }
   const purchaseCell = document.getElementById(`rprn-delta-purchaseqty-${idx}`);
   if (!purchaseCell) return;
   if (isDeferred) return;
@@ -18536,7 +18536,7 @@ function showDashboardGlobalToolbar(title, periodBtnsId, returnFn) {
     // top padding, so using the toolbar's full height on top of that
     // double-counted the gap. This snugs content right up against the
     // fixed toolbar instead.
-    const h = Math.max(0, toolbar.offsetHeight - 48);
+    const h = Math.max(0, toolbar.offsetHeight - 44);
     document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => {
       if (c.style.display === "block") c.style.paddingTop = h + "px";
     });
