@@ -1718,6 +1718,7 @@
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Revise a PO whose PRN requirements have changed, or search any authorized PO to revise it.</p>
       <div id="rpo-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
+      <div id="rpo-tabs-and-lists">
       <div style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--border);">
         <button id="rpo-tab-queue" onclick="switchRevisePOTab('queue')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:800; font-size:0.85rem; color:var(--brand); border-bottom:3px solid var(--brand); margin-bottom:-2px;">PRN Revisions Needing PO Revision</button>
         <button id="rpo-tab-other" onclick="switchRevisePOTab('other')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:700; font-size:0.85rem; color:var(--muted); border-bottom:3px solid transparent; margin-bottom:-2px;">Other PO Revisions</button>
@@ -1736,6 +1737,7 @@
           <button class="nav-btn-styled" onclick="searchPOsForRevisionUI()" style="background:var(--accent); color:#fff; font-weight:700; padding:9px 20px;">Search</button>
         </div>
         <div id="rpo-search-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
+      </div>
       </div>
 
       <div id="rpo-detail-zone" style="margin-top:18px;"></div>
@@ -16203,7 +16205,7 @@ function updateCPOAllocTotals(lineQty) {
     el.textContent = `${overCap.length} PRN(s) allocated more than they still need.`;
   } else if (sum > lineQty + 1e-9) {
     el.style.cssText = "padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700; background:#fef2f2; color:#b91c1c;";
-    el.textContent = `Allocated ${fmt(sum)} but the line is only ${fmt(lineQty)}.`;
+    el.textContent = `Allocated ${fmt(sum)} but the Vendor Discussed Qty is only ${fmt(lineQty)}.`;
   } else {
     el.style.cssText = `padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700; background:${unalloc > 0 ? "#fffbeb" : "#f0fdf4"}; color:${unalloc > 0 ? "#78350f" : "#15803d"};`;
     el.textContent = unalloc > 0
@@ -17036,7 +17038,7 @@ function updateRPOLineTotals(idx) {
   const el = document.getElementById(`rpo-sum-${idx}`);
   if (el) {
     const extra = Math.round((vdq - sum) * 100) / 100;
-    if (sum > vdq + 1e-9) { el.style.color = "#b91c1c"; el.textContent = `Allocated ${sum} but the line is ${vdq}.`; }
+    if (sum > vdq + 1e-9) { el.style.color = "#b91c1c"; el.textContent = `Allocated ${sum} Vendor Discussed Qty is ${vdq}.`; }
     else if (extra > 0)  { el.style.color = "#b45309"; el.textContent = `${extra} Extra Quantity`; }
     else                 { el.style.color = "#15803d"; el.textContent = "Fully allocated"; }
   }
@@ -17125,9 +17127,9 @@ async function submitPORevisionUI() {
     if (data.success) {
       document.getElementById("rpo-detail-zone").innerHTML = "";
       window.rpoActive = null;
-      showPurchaseFeedback("rpo-feedback", `✅ Revision for <strong>${st.po.poNo}</strong> submitted and is pending authorization. The PO is unchanged until it is authorized.<br><button onclick="document.getElementById('rpo-feedback').style.display='none'; initializeRevisePOPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Revise Another PO</button>`, "success");
-      document.getElementById("rpo-detail-zone").innerHTML = "";
-      window.rpoActive = null;
+      const tabsZone = document.getElementById("rpo-tabs-and-lists");
+      if (tabsZone) tabsZone.style.display = "none";
+      showPurchaseFeedback("rpo-feedback", `✅ Revision for <strong>${st.po.poNo}</strong> submitted and is pending authorization. The PO is unchanged until it is authorized.<br><button onclick="document.getElementById('rpo-feedback').style.display='none'; initializeRevisePOPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Revise Another PO</button>`, "success", true);
     } else {
       btn.disabled = false; btn.textContent = "Submit Revision for Authorization";
       showPurchaseFeedback("rpo-feedback", data.error || "Submission failed.", "error");
@@ -17408,10 +17410,9 @@ async function authorizePORevisionUI(requestId, confirmStale) {
 }
 
 async function rejectPORevisionUI(requestId) {
-  const reason = prompt("Reason for rejecting this PO revision (optional):");
-  if (reason === null) return;
+  if (!confirm("Reject this PO revision? The PO stays unchanged and returns to the revision queue.")) return;
   try {
-    const data = await apFetch({ action: "rejectPORevision", requestId, rejectionReason: reason,
+    const data = await apFetch({ action: "rejectPORevision", requestId, rejectionReason: null,
       operatorName: appActiveOperatorIdentityString });
     if (data.success) {
       // Nothing to restore — the live PO was never modified. It simply
