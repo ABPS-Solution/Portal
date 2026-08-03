@@ -13009,7 +13009,7 @@ async function authorizeBOQRevision(updateId) {
     if (data.success) {
       const cardsFeed = document.getElementById("auth-boq-upd-queue-cards-feed");
       if (cardsFeed) { cardsFeed.style.display = "none"; cardsFeed.innerHTML = ""; }
-      const pdfNote = data.pdfUrl ? `<br/><a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">View updated BOQ PDF →</a>` : "";
+      const pdfNote = data.pdfUrl ? `<br/><a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">Revised BOQ PDF</a>` : "";
       showBOQBanner("auth-boq-upd-feedback",
         `✅ Revision authorized for <strong>${reqItem.boqId}</strong>.${pdfNote}<br/>
         <button onclick="document.getElementById('auth-boq-upd-feedback').style.display='none'; initializeAuthorizeBOQRevisionPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another BOQ Revision</button>`,
@@ -19454,30 +19454,25 @@ async function loadPRNNeedQueue() {
       return;
     }
     const rows = queue.map(item => {
-      const isRevised = item.badge === "Revised";
-      const badgeColor = item.badge === "New" ? "#b91c1c" : "#b45309";
-      const badgeBg     = item.badge === "New" ? "#fee2e2" : "#fef3c7";
       return `
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #f1f5f9;">
           <div style="min-width:0;">
-            <span style="font-size:0.68rem; font-weight:800; background:${badgeBg}; color:${badgeColor}; padding:2px 7px; border-radius:4px; margin-right:8px;">${item.badge}</span>
             <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${item.boqId}</span>
-            <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} — ${item.productName || ""} ${item.productRating || ""}</div>
+            <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} | ${item.productName || ""} ${item.productRating || ""}</div>
           </div>
           <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
-            ${isRevised ? `<span style="font-size:0.72rem; color:#78350f; max-width:300px; line-height:1.35;">The BOQ linked to this PRN was revised, which may have increased or decreased quantities for some materials. Revise the PRN to match.</span>` : ""}
             <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
               onclick="jumpToPRNFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.boqId.replace(/'/g, "\\'")}', this)">
-              ${isRevised ? "Revise PRN →" : "Create PRN →"}
+              "Create PRN →"}
             </button>
           </div>
         </div>`;
     }).join("");
 
     zone.innerHTML = `
-      <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); overflow:hidden;">
+      <div style="background:#ebffff; border:1.5px solid #f59e0b; border-radius:var(--radius); overflow:hidden;">
         <div style="padding:10px 14px; font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; letter-spacing:0.5px; background:#fef3c7;">
-          ⚠️ BOQs Needing a PRN (${queue.length})
+          BOQs Needing a PRN (${queue.length})
         </div>
         ${rows}
       </div>`;
