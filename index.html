@@ -17600,7 +17600,6 @@ function renderRPRNDeltaTable() {
             class="rprn-delta-storeqty rprn-delta-decrease-storeqty" data-idx="${idx}" data-total-covered="${totalCovered}" data-buffered-req="${bufferedReq}" data-deferred="${item.deferred ? '1' : '0'}"
             oninput="updateRPRNDeltaDecreaseRowPurchaseQty(${idx}, this)"
             style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
-          ${note}
         </td>
         <td id="rprn-delta-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">${trimNum(initPurchase)}</td>
       </tr>`;
@@ -19889,9 +19888,6 @@ function renderPRNCreateTable() {
       const autoStoreQty = Math.min(Number(item.newStoreTotal) || 0, storeCap);
       const initPurchaseRaw = Math.max(0, bufferedReq - autoStoreQty);
       const initPurchase = item.isCountUnit ? Math.ceil(initPurchaseRaw - 1e-9) : initPurchaseRaw;
-      const note = item.deferred
-        ? `<div style="font-size:0.6rem; font-weight:800; color:#b45309; margin-top:3px;">Purchase Qty locked, waiting for PO revision</div>`
-        : "";
 
       rowsHtml += `
       <tr style="border-bottom:1px solid #f1f5f9; background:${item.deferred ? "#fffbeb" : "#fef2f2"};">${common}
@@ -19907,7 +19903,6 @@ function renderPRNCreateTable() {
             class="prn-create-storeqty prn-create-decrease-storeqty" data-idx="${idx}" data-total-covered="${totalCovered}" data-buffered-req="${bufferedReq}" data-deferred="${item.deferred ? '1' : '0'}"
             oninput="updatePRNDecreaseRowPurchaseQty(${idx}, this)"
             style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
-          ${note}
         </td>
         <td id="prn-create-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">${trimNum(initPurchase)}</td>
       </tr>`;
