@@ -17839,7 +17839,7 @@ async function submitRPRNDelta() {
     if (window._rprnDeltaStockInterval) { clearInterval(window._rprnDeltaStockInterval); window._rprnDeltaStockInterval = null; }
     window.rprnPendingCreate = null;
     showPurchaseFeedback("rprn-delta-feedback",
-      `✅ PRN revision <strong>${data.prnId}</strong> submitted and sent for authorization.<br>` +
+      `✅ PRN revision: <strong>${data.prnId}</strong> submitted and sent for authorization.<br>` +
       `<button onclick="document.getElementById('rprn-delta-feedback').style.display='none'; loadRPRNQueueTab();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Revise Another PRN</button>`,
       "success");
   } catch (e) {
@@ -18571,11 +18571,9 @@ function navigateToPurchaseDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
-  // Same hidden-ancestor issue as Design — the dashboard canvas lives
-  // inside this enclosure panel, confirmed via a live DOM ancestor trace
-  // (getBoundingClientRect returning all zeros despite display:block).
-  const enclosure = document.getElementById("module-purchase-workspace-enclosure-panel");
-  if (enclosure) enclosure.style.display = "block";
+  // Same fix as Design/Store — the dashboard canvas isn't reliably nested
+  // under its own department's enclosure panel, so show all of them.
+  ddShowAllWorkspaceEnclosures();
   const c = document.getElementById("canvas-module-purchase-dashboard");
   if (c) c.style.display = "block";
   showDashboardGlobalToolbar("Purchase Dashboard", "pd-period-btns", pdReturnToMain);
