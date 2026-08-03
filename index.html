@@ -12400,10 +12400,16 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
   }
 
   const q = query.toLowerCase();
-  // Search matches against the raw name (so typing just "Air Core Reactor" still finds it even
-  // without knowing the rating), but display and select the combined name — same convention as
-  // every other catalog consumer.
-  const matches = catalog.filter(item => (item.productName || "").toLowerCase().includes(q)).slice(0, 10);
+  // Matches against the raw name alone (so typing just "Air Core Reactor"
+  // still finds it without knowing the rating) OR the combined
+  // "name rating" string (so typing "Air Core Reactor 40A" also finds
+  // it) — display and select still use the combined name, same
+  // convention as every other catalog consumer.
+  const matches = catalog.filter(item => {
+    const name = (item.productName || "").toLowerCase();
+    const combined = `${name} ${(item.rating || "").toLowerCase()}`.trim();
+    return name.includes(q) || combined.includes(q);
+  }).slice(0, 10);
 
   if (matches.length === 0) {
     dropdown.style.display = "block";
@@ -14207,10 +14213,12 @@ function handleCBOQProductSearch(query) {
   }
 
   const q = query.toLowerCase();
-  const matches = catalog.filter(item =>
-    (item.productName || "").toLowerCase().includes(q) ||
-    (item.rating || "").toLowerCase().includes(q)
-  ).slice(0, 10);
+  const matches = catalog.filter(item => {
+    const name = (item.productName || "").toLowerCase();
+    const rating = (item.rating || "").toLowerCase();
+    const combined = `${name} ${rating}`.trim();
+    return name.includes(q) || rating.includes(q) || combined.includes(q);
+  }).slice(0, 10);
 
   if (matches.length === 0) {
     dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">
@@ -14256,7 +14264,11 @@ function handleFGProductSearch(query) {
   }
 
   const q = query.toLowerCase();
-  const matches = catalog.filter(item => (item.productName || "").toLowerCase().includes(q)).slice(0, 10);
+  const matches = catalog.filter(item => {
+    const name = (item.productName || "").toLowerCase();
+    const combined = `${name} ${(item.rating || "").toLowerCase()}`.trim();
+    return name.includes(q) || combined.includes(q);
+  }).slice(0, 10);
 
   if (matches.length === 0) {
     dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">
@@ -21757,10 +21769,12 @@ function handleSweepSearch(query) {
   if (!query || query.trim().length < 1) { dropdown.style.display = "none"; return; }
   const catalog = window.itemCodeCatalogCache || [];
   const q = query.toLowerCase();
-  const matches = catalog.filter(item =>
-    (item.productName || "").toLowerCase().includes(q) ||
-    (item.rating || "").toLowerCase().includes(q)
-  ).slice(0, 10);
+  const matches = catalog.filter(item => {
+    const name = (item.productName || "").toLowerCase();
+    const rating = (item.rating || "").toLowerCase();
+    const combined = `${name} ${rating}`.trim();
+    return name.includes(q) || rating.includes(q) || combined.includes(q);
+  }).slice(0, 10);
   if (matches.length === 0) { dropdown.style.display = "none"; return; }
   dropdown.innerHTML = matches.map(item => `
     <div onclick="addToSweepBasket('${item.itemCode}', \`${item.productName.replace(/`/g,"'")}\`, \`${(item.rating||'').replace(/`/g,"'")}\`, '${(item.unitType||'NOS').replace(/'/g,"")}')"
