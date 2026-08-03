@@ -12810,12 +12810,15 @@ function renderBOQChangeBullets(changes) {
     s = s.replace(/\bchanged\b/i, `<strong style="color:var(--brand);">changed</strong>`);
     s = s.replace(/\badded\b/i, `<strong style="color:#15803d;">added</strong>`);
     s = s.replace(/\bremoved\b/i, `<strong style="color:#b91c1c;">removed</strong>`);
-    // "from X to Y" — X in grey, Y highlighted.
-    s = s.replace(/from (.+?) to (.+?)([.,;]|$)/i,
-      (m, from, to, tail) => `from <span style="color:#64748b;">${from}</span> to <span style="font-weight:700; color:#b45309;">${to}</span>${tail}`);
+    // "from X to Y" — X in grey, Y highlighted. Greedy to the end of the
+    // sentence (the trailing "." if present), since X/Y are numbers that
+    // legitimately contain their own commas (e.g. "9,83,086.00") — a
+    // non-greedy match with comma as a stop character cut off there.
+    s = s.replace(/from (.+) to (.+?)\.?$/i,
+      (m, from, to) => `from <span style="color:#64748b;">${from}</span> to <span style="font-weight:700; color:#b45309;">${to}</span>.`);
     // "with quantity X" — X highlighted (the "added" case).
-    s = s.replace(/with quantity (.+?)([.,;]|$)/i,
-      (m, q, tail) => `with quantity <span style="font-weight:700; color:#b45309;">${q}</span>${tail}`);
+    s = s.replace(/with quantity (.+?)\.?$/i,
+      (m, q) => `with quantity <span style="font-weight:700; color:#b45309;">${q}</span>.`);
     return `<li>${s}</li>`;
   }).join("");
 }
