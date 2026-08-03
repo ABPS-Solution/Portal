@@ -13375,9 +13375,11 @@ function renderEBOQMaterialRows() {
     tbody.appendChild(tr);
   });
 
-  tbody.querySelectorAll("textarea").forEach(ta => {
-    ta.style.height = "auto";
-    ta.style.height = ta.scrollHeight + "px";
+  requestAnimationFrame(() => {
+    tbody.querySelectorAll("textarea").forEach(ta => {
+      ta.style.height = "auto";
+      ta.style.height = ta.scrollHeight + "px";
+    });
   });
 
   updateEBOQTotals();
