@@ -13007,9 +13007,13 @@ async function authorizeBOQRevision(updateId) {
     });
     hideBlockingOverlay();
     if (data.success) {
-      const pdfNote = data.pdfUrl ? ` <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">View updated BOQ PDF</a>` : "";
-      showBOQBanner("auth-boq-upd-feedback", `✅ Revision authorized for ${reqItem.boqId}.${pdfNote}`, "success");
-      await initializeAuthorizeBOQRevisionPanel(); // refresh the queue
+      const cardsFeed = document.getElementById("auth-boq-upd-queue-cards-feed");
+      if (cardsFeed) { cardsFeed.style.display = "none"; cardsFeed.innerHTML = ""; }
+      const pdfNote = data.pdfUrl ? `<br/><a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">View updated BOQ PDF →</a>` : "";
+      showBOQBanner("auth-boq-upd-feedback",
+        `✅ Revision authorized for <strong>${reqItem.boqId}</strong>.${pdfNote}<br/>
+        <button onclick="document.getElementById('auth-boq-upd-feedback').style.display='none'; initializeAuthorizeBOQRevisionPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another BOQ Revision</button>`,
+        "success", true);
     } else {
       if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize BOQ Revision"; }
       if (rejBtn) rejBtn.disabled = false;
@@ -14657,7 +14661,7 @@ async function triggerLiveFinishedGoodsStoreStockMetricsSync() {
 // SHARED BANNER HELPER
 // ═══════════════════════════════════════════════════════
 
-function showBOQBanner(elementId, message, type) {
+function showBOQBanner(elementId, message, type, persist) {
   const el = document.getElementById(elementId);
   if (!el) return;
   const isSuccess = type === "success";
@@ -14666,7 +14670,7 @@ function showBOQBanner(elementId, message, type) {
   el.style.color           = isSuccess ? "#276749" : "#c53030";
   el.innerHTML  = message;
   el.style.display = "block";
-  if (isSuccess) setTimeout(() => { el.style.display = "none"; }, 6000);
+  if (isSuccess && !persist) setTimeout(() => { el.style.display = "none"; }, 6000);
 }
 
 // ═══════════════════════════════════════════════════════
