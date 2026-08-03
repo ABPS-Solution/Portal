@@ -13583,12 +13583,15 @@ async function loadAuthorizedBOQsForProject(projectId) {
   try {
     const data = await apFetch({ action:"fetchAuthorizedBOQsForUpdate", projectId });
     boqDrop.innerHTML = '<option value="">— Select BOQ —</option>';
+    window.uboqDraftsMeta = {};
     (data.drafts || []).forEach(draft => {
       const opt = document.createElement("option");
       opt.value = draft.boqId;
       const cleanDate = formatDateDMY(draft.date);
       const qtyDisplay = Math.round(Number(draft.orderQuantity) || 0);
-      opt.textContent = `${draft.customerName} | ${draft.productName || ""}${draft.productRating ? " " + draft.productRating : ""} | ${draft.department} | Qty: ${qtyDisplay} | ${cleanDate}`;
+      const pendingTag = draft.hasPendingRevision ? " — REVISION PENDING AUTHORIZATION" : "";
+      opt.textContent = `${draft.customerName} | ${draft.productName || ""}${draft.productRating ? " " + draft.productRating : ""} | ${draft.department} | Qty: ${qtyDisplay} | ${cleanDate}${pendingTag}`;
+      window.uboqDraftsMeta[draft.boqId] = draft;
       boqDrop.appendChild(opt);
     });
     boqDrop.disabled = false;
@@ -13601,6 +13604,17 @@ async function loadBOQForUpdate(boqId) {
   const formEl = document.getElementById("update-boq-form");
   const fbEl   = document.getElementById("update-boq-feedback");
   if (!boqId) { if (formEl) formEl.style.display = "none"; return; }
+  const meta = (window.uboqDraftsMeta || {})[boqId];
+  if (meta && meta.hasPendingRevision) {
+    if (formEl) formEl.style.display = "none";
+    if (fbEl) {
+      fbEl.style.display = "block";
+      fbEl.style.cssText = "display:block; background:#fffbeb; border-left:4px solid #b45309; color:#78350f; padding:12px; margin-bottom:12px; border-radius:var(--radius);";
+      fbEl.innerHTML = "This BOQ has already been submitted for revision and is waiting for authorization.";
+    }
+    return;
+  }
+  if (fbEl) fbEl.style.display = "none";
 
   if (formEl) { formEl.style.display = "block"; formEl.innerHTML = '<div style="padding:20px; text-align:center; color:var(--muted);"><div class="spinner" style="display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin 0.8s linear infinite;margin-right:8px;vertical-align:middle;"></div>Loading BOQ...</div>'; }
 
@@ -18089,10 +18103,11 @@ async function loadRevisePRNList() {
     // so there is no split left to change.
     const data = await apFetch({ action: "fetchPRNsByProjectAndStatus", projectId, prnStatus: "Pending" });
     const prns = (data.success ? (data.prns || []) : []);
+    window.rprnOtherListMeta = Object.fromEntries(prns.map(p => [p.prnId, p]));
     prnSel.innerHTML = prns.length === 0
       ? `<option value="">No open PRNs for this project</option>`
       : `<option value="">— Select PRN —</option>` + prns.map(p =>
-          `<option value="${p.prnId.replace(/"/g,'&quot;')}">${p.customerName ? p.customerName + " | " : ""}${p.prnId}${p.version > 1 ? ` (v${p.version})` : ""}</option>`).join("");
+          `<option value="${p.prnId.replace(/"/g,'&quot;')}">${p.customerName ? p.customerName + " | " : ""}${p.prnId}${p.version > 1 ? ` (v${p.version})` : ""}${p.revisionPending ? " — REVISION PENDING AUTHORIZATION" : ""}</option>`).join("");
   } catch (e) { prnSel.innerHTML = `<option value="">Failed to load PRNs</option>`; }
 }
 
@@ -18101,6 +18116,12 @@ async function loadPRNForRevision() {
   const body = document.getElementById("rprn-body");
   document.getElementById("rprn-feedback").style.display = "none";
   if (!prnId) { body.innerHTML = ""; window.rprnState = null; return; }
+  const meta = (window.rprnOtherListMeta || {})[prnId];
+  if (meta && meta.revisionPending) {
+    body.innerHTML = `<div style="background:#fffbeb; border-left:4px solid #b45309; color:#78350f; padding:14px; border-radius:var(--radius);">This PRN has already been submitted for revision and is waiting for authorization.</div>`;
+    window.rprnState = null;
+    return;
+  }
   body.innerHTML = `<div style="text-align:center; padding:26px; color:var(--muted);">Loading PRN…</div>`;
   try {
     const data = await apFetch({ action: "fetchPRNForRevision", prnId });
