@@ -19458,19 +19458,19 @@ async function loadPRNNeedQueue() {
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #f1f5f9;">
           <div style="min-width:0;">
             <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${item.boqId}</span>
-            <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} | ${item.productName || ""} ${item.productRating || ""}</div>
+            <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} <strong> | </strong>  ${item.productName || ""} ${item.productRating || ""}</div>
           </div>
           <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
             <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
               onclick="jumpToPRNFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.boqId.replace(/'/g, "\\'")}', this)">
-              "Create PRN →"}
+              Create PRN →
             </button>
           </div>
         </div>`;
     }).join("");
 
     zone.innerHTML = `
-      <div style="background:#ebffff; border:1.5px solid #f59e0b; border-radius:var(--radius); overflow:hidden;">
+      <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); overflow:hidden;">
         <div style="padding:10px 14px; font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; letter-spacing:0.5px; background:#fef3c7;">
           BOQs Needing a PRN (${queue.length})
         </div>
