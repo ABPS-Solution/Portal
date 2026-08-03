@@ -12685,12 +12685,12 @@ async function initializeAuthorizeBOQRevisionPanel() {
           <div class="contact-summary-title-info" style="width:100%;">
             <div class="meta-row-line-block" style="margin-bottom:6px;">
               <span style="background:#edf2f7;">Customer:</span><strong style="margin-right:15px;">${reqItem.customerName || ""}</strong>
-              <span style="background:#edf2f7;">Project ID:</span><strong style="color:var(--brand);">${reqItem.projectId || ""}</strong>
+              <span style="background:#edf2f7;">Project ID:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:700; color:var(--brand);">${reqItem.projectId || ""}</span>
             </div>
             <div class="meta-row-line-block" style="margin-bottom:6px;">
               <span style="background:#e2e8f0;">Product:</span><strong style="margin-right:15px;">${reqItem.productName || ""} ${reqItem.productRating || ""}</strong>
-              <span style="background:#edf2f7;">Requested By:</span><strong style="margin-right:15px;">${reqItem.requestedBy || ""}</strong>
-              <span style="background:#edf2f7;">Date:</span><strong>${formatDateDMY(reqItem.createdAt)}</strong>
+              <span style="background:#edf2f7;">Requested By:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${reqItem.requestedBy || ""}</span>
+              <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${formatDateDMY(reqItem.createdAt)}</span>
             </div>
           </div>
         </div>
@@ -13588,7 +13588,7 @@ async function loadAuthorizedBOQsForProject(projectId) {
       opt.value = draft.boqId;
       const cleanDate = formatDateDMY(draft.date);
       const qtyDisplay = Math.round(Number(draft.orderQuantity) || 0);
-      opt.textContent = `${draft.customerName} <strong> | </strong> ${draft.productName || ""}${draft.productRating ? " " + draft.productRating : ""} <strong> | </strong> ${draft.department} <strong> | </strong> Qty: ${qtyDisplay} | ${cleanDate}`;
+      opt.textContent = `${draft.customerName} | ${draft.productName || ""}${draft.productRating ? " " + draft.productRating : ""} | ${draft.department} | Qty: ${qtyDisplay} | ${cleanDate}`;
       boqDrop.appendChild(opt);
     });
     boqDrop.disabled = false;
