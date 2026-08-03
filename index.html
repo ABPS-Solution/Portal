@@ -19733,13 +19733,14 @@ async function initializeAuthorizePRNPanel() {
         <div class="contact-summary-header-row" onclick="toggleAPRNExpansion('${p.prnId}')" style="cursor:pointer; width:100%; padding-bottom:8px;">
           <div class="contact-summary-title-info" style="width:100%;">
             <div class="meta-row-line-block" style="margin-bottom:6px;">
-              <span style="background:#edf2f7;">PRN:</span><strong style="font-family:monospace; color:var(--brand); margin-right:15px;">${p.prnId}</strong>
-              <span style="background:#edf2f7;">Version:</span><strong style="margin-right:15px;">v${p.version}</strong>
-              <span style="background:#edf2f7;">Customer:</span><strong>${p.customerName || ""}</strong>
+              <span style="background:#edf2f7;">Customer:</span><strong style="margin-right:15px;">${p.customerName || ""}</strong>
+              <span style="background:#edf2f7;">Project ID:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:700; color:var(--brand); margin-right:15px;">${p.projectId || ""}</span>
+              <span style="background:#edf2f7;">Created By:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${p.storePerson || ""}</span>
             </div>
             <div class="meta-row-line-block" style="margin-bottom:6px;">
               <span style="background:#e2e8f0;">Product:</span><strong style="margin-right:15px;">${p.productName || ""} ${p.productRating || ""}</strong>
-              <span style="background:#edf2f7;">Created By:</span><strong>${p.storePerson || ""}</strong>
+              <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${formatDateDMY(p.createdDate)}</span>
+              <span style="background:#edf2f7;">Version:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">v${p.version}</span>
             </div>
             </div>
         </div>
@@ -19767,6 +19768,7 @@ function toggleAPRNExpansion(prnId) {
   const isRevision = window.aprnKindFilter === 'Revision';
   body.style.display = "block";
   body.innerHTML = `
+    <div style="font-size:0.82rem; font-weight:700; color:var(--brand); margin-bottom:12px;">PRN: <span style="font-family:monospace;">${prnId}</span></div>
     <div id="aprn-rows-mount-${prnId}"></div>
     <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px; margin-top:14px;">
       <button class="nav-btn-styled" id="aprn-reject-btn-${prnId}" onclick="rejectPRN('${prnId}')" style="background:#dc2626; padding:8px 20px; font-weight:700;">Reject PRN${isRevision ? " Revision" : ""}</button>
@@ -19865,25 +19867,26 @@ function renderAPRNRows(prnId) {
   // bufferedRequirement; decrease/removed rows are computed and
   // store the signed change in deltaRequirement instead.
   const buffered = r.editable !== false ? (Number(r.bufferedRequirement) || 0) : Math.abs(Number(r.deltaRequirement) || 0);
+  const trimN = (n) => { const x = Number(n) || 0; return Number.isInteger(x) ? String(x) : x.toFixed(2); };
     return `
       <tr style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${r.materialName || ""}</td>
-        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${Number(r.boqRequiredQty || 0).toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${trimN(r.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center; color:#b45309; font-weight:700;">${r.bufferPct || 0}%</td>
-        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${buffered.toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${trimN(buffered)}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${r.unit || "—"}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="aprn-livestock" data-itemcode="${r.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
           ${r.editable === false
-            ? `<span style="font-family:monospace; font-weight:700;">${Number(r.newStoreTotal ?? r.currentUnassignedStoreQty ?? 0).toFixed(2)}</span>
+            ? `<span style="font-family:monospace; font-weight:700;">${trimN(r.newStoreTotal ?? r.currentUnassignedStoreQty ?? 0)}</span>
                <div style="font-size:0.6rem; color:#94a3b8; font-weight:700;">AUTO</div>`
             : `<input type="number" min="0" max="${buffered}" value="${Number(r.storeDelta) || 0}"
                  class="aprn-storeqty" data-idx="${idx}"
                  oninput="updateAPRNRow(${idx}, this.value, '${prnId}')"
                  style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />`}
         </td>
-        <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:${r.wasChanged === false ? "#1a2332" : "#15803d"};">${(r.editable !== false ? Number(r.purchaseDelta || 0) : Number(r.newPurchaseTotal || 0)).toFixed(2)}</td>
+        <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">${trimN(r.editable !== false ? Number(r.purchaseDelta || 0) : Number(r.newPurchaseTotal || 0))}</td>
       </tr>`;
   }).join("");
 
@@ -19997,9 +20000,10 @@ function updateAPRNRow(idx, value, prnId) {
     cell.textContent = trimNum(row.purchaseQty);
     // Green once the authorizer's live edit actually moves this row away
     // from what was originally submitted for review; black if it still
-    // matches (covers untouched rows on a Revision, where most rows are
-    // shown for context but weren't part of the re-split).
-    const stillMatchesOriginal = Math.abs(Number(row.purchaseQty) - (Number(row.newPurchaseTotal) || 0)) < 1e-9;
+    // matches. Editable rows' original value is purchaseDelta (what the
+    // initial cell rendered); non-editable rows' is newPurchaseTotal.
+    const originalVal = row.editable !== false ? (Number(row.purchaseDelta) || 0) : (Number(row.newPurchaseTotal) || 0);
+    const stillMatchesOriginal = Math.abs(Number(row.purchaseQty) - originalVal) < 1e-9;
     cell.style.color = stillMatchesOriginal ? "#1a2332" : "#15803d";
   }
 
@@ -20415,7 +20419,7 @@ async function submitNewPRNCreation() {
       const needQueueZone = document.getElementById("prn-needqueue-zone");
       if (needQueueZone) { needQueueZone.style.display = "none"; needQueueZone.innerHTML = ""; }
       showPurchaseFeedback("prn-feedback",
-        `✅ PRN <strong>${data.prnId}</strong> created and sent for authorization. Store quantities are reserved. It will be finalised (and its PDF generated) once authorized.` +
+        `✅ PRN <strong>${data.prnId}</strong> created and sent for authorization. Store quantities are reserved.` +
         `<br><button onclick="document.getElementById('prn-feedback').style.display='none'; window.prnPendingCreate=null; initializePRNPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Create Another PRN</button>`,
         "success", true);
       return;
