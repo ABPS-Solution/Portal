@@ -1708,7 +1708,7 @@
     </div>
 
     <div id="canvas-module-purchase-authorize-po-revision" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="color:var(--brand); margin:0 0 6px 0;">Authorize Purchase Order Revision</h2>
+      <h2 style="color:var(--brand); margin:0 0 6px 0;">Authorize Raw Material Purchase Order Revision</h2>
       <div id="apor-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="apor-cards-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
     </div>
@@ -16748,6 +16748,10 @@ function switchRevisePOTab(tab) {
 
 async function initializeRevisePOPanel() {
   const feed = document.getElementById("rpo-queue-feed");
+  const tabsZone = document.getElementById("rpo-tabs-and-lists");
+  if (tabsZone) tabsZone.style.display = "";
+  const fb = document.getElementById("rpo-feedback");
+  if (fb) fb.style.display = "none";
   document.getElementById("rpo-detail-zone").innerHTML = "";
   feed.innerHTML = `<div style="text-align:center; padding:24px; color:var(--muted);">Loading…</div>`;
   try {
@@ -17185,6 +17189,7 @@ async function dismissPORevision(poNo) {
 // ── Authorize PO Revision ────────────────────────────────────────────────
 async function initializeAuthorizePORevisionPanel() {
   const feed = document.getElementById("apor-cards-feed");
+  feed.style.display = "";
   feed.innerHTML = `<div style="text-align:center; padding:26px; color:var(--muted);">Loading pending revisions…</div>`;
   window.aporExpandedId = null;
   try {
@@ -17567,7 +17572,7 @@ async function authorizePORevisionUI(requestId, confirmStale) {
       if ((data.unwound || []).length) notes.push(`Deferred BOQ reductions completed for ${data.unwound.map(u => u.prnId).join(", ")}.`);
       let msg = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:8px;">✅ <strong>${data.poNo}</strong> revised to Rev ${data.revisionNumber}!</div>`;
       if (notes.length) msg += `<div style="font-size:0.8rem; margin-bottom:8px;">${notes.join(" ")}</div>`;
-      if (data.pdfUrl) msg += `<div style="font-size:0.82rem;">📄 <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">Open PO on Drive →</a></div>`;
+      if (data.pdfUrl) msg += `<div style="font-size:0.82rem;">📄 <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">PO Document</a></div>`;
       msg += `<button onclick="document.getElementById('apor-feedback').style.display='none'; initializeAuthorizePORevisionPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another PO Revision</button>`;
       showPurchaseFeedback("apor-feedback", msg, "success", true);
     } else {
