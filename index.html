@@ -4102,8 +4102,20 @@ async function showAppView() {
   // Auto-navigate if opened via ?module= deep link (e.g. from new tab)
   const urlParams = new URLSearchParams(window.location.search);
   const deepModule = urlParams.get("module");
+  const deepQuery = urlParams.get("q");
   if (deepModule) {
-    setTimeout(() => switchActiveDashboardModule(deepModule), 300);
+    setTimeout(() => {
+      switchActiveDashboardModule(deepModule);
+      if (deepQuery && deepModule === "design-itemcode") {
+        setTimeout(() => {
+          const input = document.getElementById("itemcode-search-input");
+          if (input) {
+            input.value = deepQuery;
+            if (typeof executeItemCodeSearch === "function") executeItemCodeSearch();
+          }
+        }, 300);
+      }
+    }, 300);
   }
 }
 
@@ -12397,7 +12409,7 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
     dropdown.style.display = "block";
     dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">
       No matching product found. 
-      <a href="${window.location.pathname}?module=design-itemcode" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
+      <a href="${window.location.pathname}?module=design-itemcode&q=${encodeURIComponent(query)}" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
     </div>`;
     return;
   }
@@ -14202,7 +14214,7 @@ function handleCBOQProductSearch(query) {
 
   if (matches.length === 0) {
     dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">
-      No matching product found. <a href="${window.location.pathname}?module=design-itemcode" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
+      No matching product found. <a href="${window.location.pathname}?module=design-itemcode&q=${encodeURIComponent(query)}" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
     </div>`;
     dropdown.style.display = "block";
     document.getElementById("cboq-product-name").value = "";
@@ -14248,7 +14260,7 @@ function handleFGProductSearch(query) {
 
   if (matches.length === 0) {
     dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">
-      No matching product found. <a href="${window.location.pathname}?module=design-itemcode" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
+      No matching product found. <a href="${window.location.pathname}?module=design-itemcode&q=${encodeURIComponent(query)}" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
     </div>`;
     dropdown.style.display = "block";
     document.getElementById("fg-add-product-name").value = "";
