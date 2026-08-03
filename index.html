@@ -19497,7 +19497,7 @@ async function jumpToPRNFromQueue(projectId, boqId, btn) {
     await handlePRNProjectChange(projectId);
     if (boqDrop) {
       boqDrop.value = boqId;
-      await handlePRNBOQChange(boqId);
+      await handlePRNBOQChange(boqId, true);
     }
     const bodyZone = document.getElementById("prn-body-zone");
     if (bodyZone) bodyZone.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -19602,7 +19602,7 @@ async function startNewPRNCreation() {
   }
 }
 
-async function handlePRNBOQChange(boqId) {
+async function handlePRNBOQChange(boqId, skipToCreate) {
   const detailsZone = document.getElementById("prn-details-zone");
   const createZone  = document.getElementById("prn-create-zone");
   const noPrnZone   = document.getElementById("prn-none-found-zone");
@@ -19649,8 +19649,17 @@ async function handlePRNBOQChange(boqId) {
       return;
     }
 
-    // No PRN exists — just show the message; user clicks "+ Create New PRN for this BOQ" to proceed
+    // No PRN exists. Coming here via the "BOQs Needing a PRN" queue's
+    // own "Create PRN →" button means the user has already effectively
+    // decided to create one — skip the intermediate confirmation step
+    // and go straight to the material table. A manually searched BOQ
+    // still gets the confirmation step, since that path wasn't an
+    // explicit "create" action.
     window.prnPendingCreate = { projectId, boqId };
+    if (skipToCreate) {
+      await startNewPRNCreation();
+      return;
+    }
     if (noPrnZone) {
       noPrnZone.style.display = "block";
       noPrnZone.innerHTML = `<div style="text-align:center; padding:16px; background:#fff7ed; border:1.5px solid #fb923c; border-radius:var(--radius); color:#9a3412; font-weight:700;">No PRN exists yet for this BOQ ID.</div>
@@ -20112,11 +20121,11 @@ function renderPRNCreateTable() {
 
   let rowsHtml = "";
   pending.lineItems.forEach((item, idx) => {
-    const qty = Math.round((Number(item.bufferedPurchaseQty) || 0) * 100) / 100;
     const trimNum = (n) => { const x = Number(n) || 0; return Number.isInteger(x) ? String(x) : x.toFixed(2); };
     const common = `
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${item.materialName || ""}</td>
+        <td style="padding:8px; font-size:0.8rem; color:#475569;">${item.typeOfMaterial || "—"}</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${trimNum(item.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct || 0}%</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; color:var(--brand);">${trimNum(item.bufferedRequirement)}</td>`;
@@ -20128,7 +20137,6 @@ function renderPRNCreateTable() {
       // (truly new to the BOQ, nothing held yet) stay empty and gated
       // behind the checkbox, as before.
       const isIncrease = item.changeKind === "increase";
-      const changeBadge = `<div style="font-size:0.7rem; font-weight:800; color:${isIncrease ? "#15803d" : "#2563eb"}; margin-top:3px;">${isIncrease ? "INCREASED" : "NEWLY ADDED"}</div>`;
       const prefillVal = isIncrease ? trimNum(item.previousStoreQty) : "";
       const storeqtyExtraClass = isIncrease ? "prn-create-increase-storeqty" : "";
       const bufferedReq = Number(item.bufferedRequirement) || 0;
@@ -20137,8 +20145,6 @@ function renderPRNCreateTable() {
       const initPurchase = item.isCountUnit ? Math.ceil(initPurchaseRaw - 1e-9) : initPurchaseRaw;
       rowsHtml += `
       <tr style="border-bottom:1px solid #f1f5f9;">${common}
-        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${trimNum(qty)}${changeBadge}</td>
-        <td style="padding:8px; text-align:center; font-weight:600; font-family:monospace; font-size:0.85rem; color:#64748b;">${trimNum(item.previousStoreQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="prn-create-livestock" data-itemcode="${item.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
@@ -20157,9 +20163,6 @@ function renderPRNCreateTable() {
       // static badge sat where the live-stock span belongs — which
       // shifted every subsequent cell, making Store Quantity visually
       // show the Change-in-Qty number instead of its own value).
-      const removed = item.changeKind === "removed";
-      const changeVal = Number(item.bufferedPurchaseQty) || 0; // deltaRequirement, already signed negative
-      const changeBadge = `<div style="font-size:0.7rem; font-weight:800; color:${removed ? "#b91c1c" : "#f59e0b"}; margin-top:3px;">${removed ? "REMOVED FROM BOQ" : "DECREASED"}</div>`;
       const bufferedReq = Number(item.bufferedRequirement) || 0;
       const totalCovered = (Number(item.newStoreTotal) || 0) + (Number(item.newPurchaseTotal) || 0);
       const storeCap = Math.min(totalCovered, bufferedReq);
@@ -20169,8 +20172,6 @@ function renderPRNCreateTable() {
 
       rowsHtml += `
       <tr style="border-bottom:1px solid #f1f5f9; background:${item.deferred ? "#fffbeb" : "#fef2f2"};">${common}
-        <td style="padding:8px; text-align:center; font-weight:800; font-family:monospace; font-size:0.95rem; color:#b91c1c;">${trimNum(changeVal)}${changeBadge}</td>
-        <td style="padding:8px; text-align:center; font-weight:600; font-family:monospace; font-size:0.85rem; color:#64748b;">${trimNum(item.previousStoreQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="prn-create-livestock" data-itemcode="${item.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
@@ -20196,10 +20197,9 @@ function renderPRNCreateTable() {
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
             <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:230px;">Material Name</th>
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Type</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center;">New BOQ Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">${isDelta ? "Change in Req Qty" : "New Buffered BOQ Qty"}</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#64748b; width:95px;">Current PRN Store Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered BOQ Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:100px;">Store Available Stock</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:80px;">Checked *</th>
