@@ -16205,7 +16205,7 @@ function updateCPOAllocTotals(lineQty) {
     el.textContent = `${overCap.length} PRN(s) allocated more than they still need.`;
   } else if (sum > lineQty + 1e-9) {
     el.style.cssText = "padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700; background:#fef2f2; color:#b91c1c;";
-    el.textContent = `Allocated ${fmt(sum)} but the Vendor Discussed Qty is only ${fmt(lineQty)}.`;
+    el.textContent = `Allocated ${fmt(sum)}, but the Vendor Discussed Qty is only ${fmt(lineQty)}.`;
   } else {
     el.style.cssText = `padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700; background:${unalloc > 0 ? "#fffbeb" : "#f0fdf4"}; color:${unalloc > 0 ? "#78350f" : "#15803d"};`;
     el.textContent = unalloc > 0
@@ -17038,7 +17038,7 @@ function updateRPOLineTotals(idx) {
   const el = document.getElementById(`rpo-sum-${idx}`);
   if (el) {
     const extra = Math.round((vdq - sum) * 100) / 100;
-    if (sum > vdq + 1e-9) { el.style.color = "#b91c1c"; el.textContent = `Allocated ${sum} Vendor Discussed Qty is ${vdq}.`; }
+    if (sum > vdq + 1e-9) { el.style.color = "#b91c1c"; el.textContent = `Allocated ${sum}, but the Vendor Discussed Qty is ${vdq}.`; }
     else if (extra > 0)  { el.style.color = "#b45309"; el.textContent = `${extra} Extra Quantity`; }
     else                 { el.style.color = "#15803d"; el.textContent = "Fully allocated"; }
   }
@@ -17232,6 +17232,7 @@ function toggleAPORCard(requestId) {
   if (!r) return;
   expandDiv.style.display = "block";
   expandDiv.innerHTML = renderAPORCard(r);
+  (r.revisedLineItems || []).forEach((_, idx) => updateAPORLineTotals(idx, requestId));
   updateAPORGrandTotal(requestId);
 }
 
@@ -17251,12 +17252,66 @@ function renderAPORCard(r) {
     const oldRate = Number(cur.rate) || 0, newRate = Number(line.rate) || 0;
     if (Math.abs(newQty - oldQty) < 1e-9 && Math.abs(newRate - oldRate) < 1e-9) return "";
     const qtyColor = newQty > oldQty ? "#15803d" : "#b91c1c";
-    return `<li>${line.description || line.itemCode}: quantity ${fmt(oldQty)} → <span style="font-weight:700; color:${qtyColor};">${fmt(newQty)}</span>${Math.abs(newRate-oldRate) > 1e-9 ? `, rate ${fmt(oldRate)} → <span style="font-weight:700; color:#b45309;">${fmt(newRate)}</span>` : ""}</li>`;
+    return `<li> <strong> ${line.description || line.itemCode}: </strong> ${fmt(oldQty)} → <span style="font-weight:700; color:${qtyColor};">${fmt(newQty)}</span>${Math.abs(newRate-oldRate) > 1e-9 ? `, rate ${fmt(oldRate)} → <span style="font-weight:700; color:#b45309;">${fmt(newRate)}</span>` : ""}</li>`;
   }).filter(Boolean);
   const summaryHtml = summaryLines.length ? `
       <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; margin-bottom:12px;">
-        <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">PO Change Summary</div>
+        <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">Material Change Summary</div>
         <ul style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;">${summaryLines.join("")}</ul>
+      </div>` : "";
+
+  // General Change Summary — everything from Revise PO OTHER than the
+  // material table itself: header fields, taxes/charges/terms, and the
+  // resulting Sub Total / Grand Total movement.
+  const bulletHtml = (f) => {
+    const curDisp = f.isDate ? formatDateDMY(f.cur) : (f.isText ? (f.cur || "—") : fmt(f.cur));
+    const revDisp = f.isDate ? formatDateDMY(f.rev) : (f.isText ? f.rev : fmt(f.rev));
+    return `<li><strong>${f.label}</strong>: ${curDisp} → <span style="font-weight:700; color:#b45309;">${revDisp}</span></li>`;
+  };
+  const changedField = (f) => {
+    if (f.rev == null) return false;
+    if (f.isDate) return new Date(f.rev).toDateString() !== new Date(f.cur).toDateString();
+    if (f.isText) return (f.rev || "") !== (f.cur || "");
+    return Math.abs(Number(f.rev) - Number(f.cur)) > 1e-9;
+  };
+  const generalFieldDefs = [
+    { label: "Supplier Offer No", cur: r.supplierRef, rev: hc.supplierRef, isText: true },
+    { label: "Delivery Date", cur: r.deliveryDate, rev: hc.deliveryDate, isDate: true },
+    { label: "CGST %", cur: r.cgstPercent, rev: hc.cgstPercent },
+    { label: "SGST %", cur: r.sgstPercent, rev: hc.sgstPercent },
+    { label: "IGST %", cur: r.igstPercent, rev: hc.igstPercent },
+    { label: "Packing", cur: r.packing, rev: hc.packing },
+    { label: "Freight", cur: r.freight, rev: hc.freight },
+    { label: "Other", cur: r.other, rev: hc.other },
+    { label: "Round Off", cur: r.roundOff, rev: hc.roundOff },
+    { label: "Warranty", cur: r.warranty, rev: hc.warranty, isText: true },
+    { label: "Payment Terms", cur: r.paymentTerms, rev: hc.paymentTerms, isText: true },
+    { label: "Freight Terms", cur: r.freightTerms, rev: hc.freightTerms, isText: true },
+  ];
+  const generalBullets = generalFieldDefs.filter(changedField).map(bulletHtml);
+
+  const effForSummary = {
+    cgstPercent: hc.cgstPercent != null ? Number(hc.cgstPercent) : (Number(r.cgstPercent) || 0),
+    sgstPercent: hc.sgstPercent != null ? Number(hc.sgstPercent) : (Number(r.sgstPercent) || 0),
+    igstPercent: hc.igstPercent != null ? Number(hc.igstPercent) : (Number(r.igstPercent) || 0),
+    packing: hc.packing != null ? Number(hc.packing) : (Number(r.packing) || 0),
+    freight: hc.freight != null ? Number(hc.freight) : (Number(r.freight) || 0),
+    other: hc.other != null ? Number(hc.other) : (Number(r.other) || 0),
+    roundOff: hc.roundOff != null ? Number(hc.roundOff) : (Number(r.roundOff) || 0),
+  };
+  const draftSubTotal = revised.reduce((sum, line) => sum + (Number(line.quantity)||0) * (Number(line.rate)||0) * (100 - (Number(line.discountPercent)||0)) / 100, 0)
+    + (r.currentLines || []).filter(cur => !revised.some(l => l.itemCode === cur.itemCode))
+        .reduce((sum, cur) => sum + (Number(cur.amount) || 0), 0);
+  const draftGrandTotal = draftSubTotal + draftSubTotal*effForSummary.cgstPercent/100 + draftSubTotal*effForSummary.sgstPercent/100
+    + draftSubTotal*effForSummary.igstPercent/100 + effForSummary.packing + effForSummary.freight + effForSummary.other + effForSummary.roundOff;
+  const oldSubTotal = Number(r.subTotal) || 0, oldGrandTotal = Number(r.grandTotal) || 0;
+  if (Math.abs(draftSubTotal - oldSubTotal) > 1e-9) generalBullets.push(`<li><strong>Sub Total</strong>: ${fmt(oldSubTotal)} → <span style="font-weight:700; color:${draftSubTotal > oldSubTotal ? "#15803d" : "#b91c1c"};">${fmt(draftSubTotal)}</span></li>`);
+  if (Math.abs(draftGrandTotal - oldGrandTotal) > 1e-9) generalBullets.push(`<li><strong>Grand Total</strong>: ${fmt(oldGrandTotal)} → <span style="font-weight:700; color:${draftGrandTotal > oldGrandTotal ? "#15803d" : "#b91c1c"};">${fmt(draftGrandTotal)}</span></li>`);
+
+  const generalSummaryHtml = generalBullets.length ? `
+      <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; margin-bottom:12px;">
+        <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">General Change Summary</div>
+        <ul style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;">${generalBullets.join("")}</ul>
       </div>` : "";
 
   const rows = revised.map((line, idx) => {
@@ -17305,12 +17360,23 @@ function renderAPORCard(r) {
       </tr>`;
   }).join("");
 
+  // hc.deliveryDate is stored as "dd-Mon-yyyy" (e.g. "11-Aug-2026") by
+  // Revise PO, which native Date parsing handles inconsistently across
+  // browsers — parsed explicitly here instead of trusting `new Date(...)`.
+  const parseDMYDate = (s) => {
+    if (!s) return "";
+    const m = /^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/.exec(String(s).trim());
+    if (m) {
+      const months = { Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12' };
+      const mm = months[m[2]] || '01';
+      return `${m[3]}-${mm}-${m[1].padStart(2,'0')}`;
+    }
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? "" : d.toISOString().slice(0,10);
+  };
+
   return `
     <div data-requestid="${rid}">
-      <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.95rem;">${r.poNo} <span style="font-size:0.7rem; color:var(--muted);">→ Rev ${(Number(r.revisionNumber)||1) + 1}</span></div>
-      <div style="font-size:0.82rem; font-weight:700; margin-top:2px;">${r.vendorName || ""}</div>
-      <div style="font-size:0.72rem; color:var(--muted); margin-top:2px; margin-bottom:14px;">Drafted by ${r.requestedBy || "—"} · ${r.requestedAt ? formatDateDMY(r.requestedAt) : ""} · Currently Rev ${r.revisionNumber || 1}</div>
-
       ${isCancel ? `<div style="background:#fef2f2; border-left:3px solid #b91c1c; padding:9px 12px; border-radius:4px; font-size:0.76rem; color:#7f1d1d; margin-bottom:12px;">Authorizing this cancels the PO outright. Every line goes to zero and all PRN allocations return to "still to order".</div>` : ""}
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
@@ -17320,7 +17386,7 @@ function renderAPORCard(r) {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Delivery Date *</label>
-          <input type="date" lang="en-GB" id="apor-delivery-date-${rid}" value="${(hc.deliveryDate || r.deliveryDate) ? new Date(hc.deliveryDate || r.deliveryDate).toISOString().slice(0,10) : ""}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+          <input type="date" lang="en-GB" id="apor-delivery-date-${rid}" value="${parseDMYDate(hc.deliveryDate) || parseDMYDate(r.deliveryDate)}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
         </div>
       </div>
 
@@ -17346,6 +17412,8 @@ function renderAPORCard(r) {
           <tbody>${rows}</tbody>
         </table>
       </div>
+
+      ${generalSummaryHtml}
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
         <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
