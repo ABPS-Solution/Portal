@@ -17560,8 +17560,9 @@ function renderRPRNDeltaTable() {
       const initStoreAbs = isIncrease ? (Number(item.previousStoreQty) || 0) : 0;
       const initPurchaseRaw = Math.max(0, bufferedReq - initStoreAbs);
       const initPurchase = item.isCountUnit ? Math.ceil(initPurchaseRaw - 1e-9) : initPurchaseRaw;
+      const rprnRowBg = isIncrease ? '#f0fdf4' : 'transparent';
       rowsHtml += `
-      <tr style="border-bottom:1px solid #f1f5f9;">${common}
+      <tr style="border-bottom:1px solid #f1f5f9; background:${rprnRowBg};">${common}
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${trimNum(qty)}${changeBadge}</td>
         <td style="padding:8px; text-align:center; font-weight:600; font-family:monospace; font-size:0.85rem; color:#64748b;">${trimNum(item.previousStoreQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
@@ -17587,7 +17588,7 @@ function renderRPRNDeltaTable() {
       const initPurchase = item.isCountUnit ? Math.ceil(initPurchaseRaw - 1e-9) : initPurchaseRaw;
 
       rowsHtml += `
-      <tr style="border-bottom:1px solid #f1f5f9; background:${item.deferred ? "#fffbeb" : "#fef2f2"};">${common}
+      <tr style="border-bottom:1px solid #f1f5f9; background:${removed ? '#fef2f2' : '#fffbeb'};">${common}
         <td style="padding:8px; text-align:center; font-weight:800; font-family:monospace; font-size:0.95rem; color:#b91c1c;">${trimNum(changeVal)}${changeBadge}</td>
         <td style="padding:8px; text-align:center; font-weight:600; font-family:monospace; font-size:0.85rem; color:#64748b;">${trimNum(item.previousStoreQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
@@ -19475,7 +19476,7 @@ function renderAPRNRows(prnId) {
     const changeSummary = changedRows.length > 0 ? `
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:4px; padding:10px 14px; margin-bottom:10px;">
         <div style="font-size:0.82rem; font-weight:1000; color:var(--brand); margin-bottom:6px;">Change Summary</div>
-        ${changedRows.map(r => `<div style="font-size:0.74rem; color:#334155; margin-bottom:2px;">
+        ${changedRows.map(r => `<div style="font-size:0.86rem; color:#334155; margin-bottom:4px;">
           <strong>${r.materialName || ""}:</strong> ${r.deltaRequirement !== undefined ? `Change in BOQ Qty: <strong> ${fmt(r.deltaRequirement)}` : ""} </strong>  |  Store QTY: <strong> ${fmt(r.previousStoreQty)} → ${fmt(r.newStoreTotal)} </strong>  |  Purchase QTY: <strong>${fmt(r.previousPurchaseQty)} → ${fmt(r.newPurchaseTotal)}</strong>
         </div>`).join("")}
       </div>` : "";
@@ -19491,8 +19492,12 @@ function renderAPRNRows(prnId) {
         : r.changeKind === 'removed' ? `<div style="font-size:0.65rem; font-weight:800; color:#b91c1c; margin-top:2px;">REMOVED FROM BOQ</div>`
         : "";
       const deferredNote = "";
+      const rowBg = r.changeKind === 'decrease' ? '#fffbeb'
+        : r.changeKind === 'removed' ? '#fef2f2'
+        : r.changeKind === 'increase' ? '#f0fdf4'
+        : 'transparent';
       return `
-        <tr style="border-bottom:1px solid #f1f5f9; background:${isDecreaseOrRemoved ? (r.deferred ? '#fffbeb' : '#fef2f2') : 'transparent'};">
+        <tr style="border-bottom:1px solid #f1f5f9; background:${rowBg};">
           <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
           <td style="padding:8px; font-size:0.82rem; font-weight:600;">${r.materialName || ""}</td>
           <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(buffered)}${changeBadge}</td>
@@ -19507,7 +19512,7 @@ function renderAPRNRows(prnId) {
               oninput="updateAPRNRow(${idx}, this.value, '${prnId}')"
               style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
           </td>
-          <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:${r.wasChanged === false ? "#1a2332" : "#15803d"};">${trimNum(r.newPurchaseTotal)}${deferredNote}</td>
+          <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">${trimNum(r.newPurchaseTotal)}${deferredNote}</td>
         </tr>`;
     }).join("");
 
