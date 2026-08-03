@@ -13045,9 +13045,9 @@ async function toggleAuthBOQCardExpansion(boqId, mode) {
     let summaryHtml = "";
     if (mode === "authorize-update") {
       summaryHtml = `
-        <div id="auth-boq-upd-summary-${safeBoqId}" style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-bottom:16px;">
-          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:8px; letter-spacing:0.5px;">Change Summary</div>
-          <div id="auth-boq-upd-summary-text-${safeBoqId}" style="font-size:0.85rem; color:#78350f; line-height:1.7; white-space:pre-line;">Generating change summary...</div>
+        <div id="auth-boq-upd-summary-${safeBoqId}" style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
+          <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">Change Summary</div>
+          <ul id="auth-boq-upd-summary-text-${safeBoqId}" style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;"><li>Generating change summary...</li></ul>
         </div>`;
     }
 
@@ -13065,10 +13065,24 @@ async function toggleAuthBOQCardExpansion(boqId, mode) {
           updatedOrderQty:    parseInt(document.getElementById("eboq-order-qty")?.value) || 0
         });
         const sumTextEl = document.getElementById(`auth-boq-upd-summary-text-${safeBoqId}`);
-        if (sumTextEl) sumTextEl.textContent = sumData.summary || "No changes detected.";
+        if (sumTextEl) {
+          const changes = sumData.changes || [];
+          if (changes.length === 0) {
+            sumTextEl.innerHTML = "<li>No changes detected.</li>";
+          } else {
+            // Highlight the "from X to Y" portion of each line, same
+            // visual weight as the PRN/PO Change Summary boxes.
+            sumTextEl.innerHTML = changes.map(c => {
+              const escaped = c.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+              const highlighted = escaped.replace(/from (.+?) to (.+?)([.,;]|$)/i,
+                (m, from, to, tail) => `from <span style="color:#64748b;">${from}</span> to <span style="font-weight:700; color:#b45309;">${to}</span>${tail}`);
+              return `<li>${highlighted}</li>`;
+            }).join("");
+          }
+        }
       } catch(e) {
         const sumTextEl = document.getElementById(`auth-boq-upd-summary-text-${safeBoqId}`);
-        if (sumTextEl) sumTextEl.textContent = "Could not generate summary.";
+        if (sumTextEl) sumTextEl.innerHTML = "<li>Could not generate summary.</li>";
       }
     }
   } catch(e) {
