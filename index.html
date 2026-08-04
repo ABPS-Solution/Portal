@@ -18522,7 +18522,7 @@ async function ddLoadDashboard(customVal) {
   const body = document.getElementById("dd-body");
   if (!body) return;
   // Show loading state on stat cards
-  ["dd-s-created","dd-s-authorized","dd-s-pending","dd-s-authtime","dd-s-value","dd-s-itemcodes"].forEach(id => {
+  ["dd-s-created","dd-s-authorized","dd-s-pending","dd-s-authtime","dd-s-itemcodes"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
 
@@ -18564,7 +18564,6 @@ function ddRenderDashboard(data) {
     document.getElementById("dd-s-authtime").textContent      = "—";
     document.getElementById("dd-s-authtime-unit").textContent = "";
   }
-  document.getElementById("dd-s-value").textContent      = fmt(stats.totalAuthValue);
   document.getElementById("dd-s-itemcodes").textContent  = stats.newItemCodes;
 
   // By dept table
@@ -19815,12 +19814,21 @@ function renderAPRNRows(prnId) {
     const fmt = (n) => (Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
     const hasDeltaRows = aprnRows.some(r => r.changeKind && r.changeKind !== 'resplit');
     const anyDeferred = aprnRows.some(r => r.deferred);
-    const changedRows = aprnRows.filter(r => Math.abs(Number(r.storeDelta) || 0) > 1e-9 || Math.abs(Number(r.purchaseDelta) || 0) > 1e-9);
+    // Purchase side computed live from bufferedRequirement/newStoreTotal —
+    // both already correct on screen — rather than trusting the stored
+    // purchaseDelta/newPurchaseTotal fields, which can lag the true
+    // requirement for a removed/resized item.
+    const liveNewPurchase = (r) => Math.max(0, (Number(r.bufferedRequirement) || 0) - (Number(r.newStoreTotal) || 0));
+    const changedRows = aprnRows.filter(r => {
+      const storeChanged = Math.abs((Number(r.newStoreTotal) || 0) - (Number(r.previousStoreQty) || 0)) > 1e-9;
+      const purchaseChanged = Math.abs(liveNewPurchase(r) - (Number(r.previousPurchaseQty) || 0)) > 1e-9;
+      return storeChanged || purchaseChanged;
+    });
     const changeSummary = changedRows.length > 0 ? `
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:4px; padding:10px 14px; margin-bottom:10px;">
         <div style="font-size:0.82rem; font-weight:1000; color:var(--brand); margin-bottom:6px;">Change Summary</div>
         ${changedRows.map(r => `<div style="font-size:0.86rem; color:#334155; margin-bottom:4px;">
-          <strong>${r.materialName || ""}:</strong> ${r.deltaRequirement !== undefined ? `Change in BOQ Qty: <strong> ${fmt(r.deltaRequirement)}` : ""} </strong>  |  Store QTY: <strong> ${fmt(r.previousStoreQty)} → ${fmt(r.newStoreTotal)} </strong>  |  Purchase QTY: <strong>${fmt(r.previousPurchaseQty)} → ${fmt(r.newPurchaseTotal)}</strong>
+          <strong>${r.materialName || ""}:</strong> ${r.deltaRequirement !== undefined ? `Change in BOQ Qty: <strong> ${fmt(r.deltaRequirement)}` : ""} </strong>  |  Store QTY: <strong> ${fmt(r.previousStoreQty)} → ${fmt(r.newStoreTotal)} </strong>  |  Purchase QTY: <strong>${fmt(r.previousPurchaseQty)} → ${fmt(liveNewPurchase(r))}</strong>
         </div>`).join("")}
       </div>` : "";
     const rowsHtml = aprnRows.map((r, idx) => {
@@ -19855,7 +19863,7 @@ function renderAPRNRows(prnId) {
               oninput="updateAPRNRow(${idx}, this.value, '${prnId}')"
               style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
           </td>
-          <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">${trimNum(r.newPurchaseTotal)}${deferredNote}</td>
+          <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">${trimNum(Math.max(0, buffered - (Number(r.newStoreTotal) || 0)))}${deferredNote}</td>
         </tr>`;
     }).join("");
 
