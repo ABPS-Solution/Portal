@@ -15686,13 +15686,18 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
       <div style="font-size:0.85rem; color:#0f172a;">${val || '—'}</div>
     </div>`;
 
-  const rowsHtml = lineItems.map((l, idx) => {
+  const rowsHtml = lineItems.map((l) => {
     const allocs = l.allocations || [];
+    // Extra = ordered qty not tied to any PRN, mirroring Create PO's allot chips.
+    const allocSum = allocs.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
+    const extraQty = Math.round(((parseFloat(l.quantity) || 0) - allocSum) * 100) / 100;
     const projectChips = allocs.length
-      ? allocs.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${(a.prnId||'').replace(/^PRN_/, "")} (${a.projectId||''}): <strong>${fmt(a.quantity)}</strong></div>`).join("")
-      : '<span style="color:var(--muted); font-size:0.75rem;">No allocation on record</span>';
+      ? allocs.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${(a.prnId||'').replace(/^PRN_/, "")}: <strong>${fmt(a.quantity)}</strong></div>`).join("")
+        + (extraQty > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${fmt(extraQty)}</strong></div>` : "")
+      : (extraQty > 0
+          ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px;">Extra: <strong>${fmt(extraQty)}</strong></div>`
+          : '<span style="color:var(--muted); font-size:0.75rem;">No allocation on record</span>');
     return `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:8px; text-align:center;">${idx + 1}</td>
       <td style="padding:8px;">${l.description || ''}<div style="font-family:monospace; color:var(--brand); font-size:0.75rem;">${l.itemCode || ''}</div></td>
       <td style="padding:8px; text-align:center;">${l.unit || '—'}</td>
       <td style="padding:8px; text-align:right;">${fmt(l.quantity)}</td>
@@ -15720,10 +15725,18 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
 
     <div style="margin-bottom:16px; overflow-x:auto;">
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">Material Rows</div>
-      <table style="width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--border); font-size:0.82rem;">
+      <table style="width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--border); font-size:0.82rem; table-layout:fixed;">
+        <colgroup>
+          <col style="width:22%;">
+          <col style="width:6%;">
+          <col style="width:8%;">
+          <col style="width:8%;">
+          <col style="width:7%;">
+          <col style="width:10%;">
+          <col style="width:39%;">
+        </colgroup>
         <thead>
           <tr style="background:#f1f5f9; text-align:left;">
-            <th style="padding:8px; text-align:center;">#</th>
             <th style="padding:8px;">Description of Material</th>
             <th style="padding:8px; text-align:center;">Unit</th>
             <th style="padding:8px; text-align:right;">Quantity</th>
@@ -15733,7 +15746,7 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
             <th style="padding:8px;">PRNs / Projects</th>
           </tr>
         </thead>
-        <tbody>${rowsHtml || `<tr><td colspan="8" style="padding:14px; text-align:center; color:var(--muted);">No line items.</td></tr>`}</tbody>
+        <tbody>${rowsHtml || `<tr><td colspan="7" style="padding:14px; text-align:center; color:var(--muted);">No line items.</td></tr>`}</tbody>
       </table>
     </div>
 
@@ -22680,11 +22693,17 @@ function renderExpectedInboundsPOCard(po, scheme) {
       </div>
 
       <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; min-width:600px;">
+        <table style="width:100%; border-collapse:collapse; min-width:600px; table-layout:fixed;">
+          <colgroup>
+            <col style="width:140px;">
+            <col>
+            <col style="width:160px;">
+            <col style="width:120px;">
+          </colgroup>
           <thead>
             <tr style="background:#f8fafc; border-bottom:1px solid var(--border);">
               <th style="padding:6px 8px; font-size:0.68rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Item Code</th>
-              <th style="padding:6px 8px; font-size:0.68rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase; min-width:200px;">Material Name</th>
+              <th style="padding:6px 8px; font-size:0.68rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase;">Material Name</th>
               <th style="padding:6px 8px; font-size:0.68rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Ordered Qty</th>
               <th style="padding:6px 8px; font-size:0.68rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Status</th>
             </tr>
