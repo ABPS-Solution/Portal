@@ -16004,6 +16004,15 @@ function handleCPOVendorChange() {
   if (!v) { preview.style.display = "none"; persistCPODraft(); return; }
   preview.style.display = "block";
   preview.innerHTML = `<strong>${v.vendorName}</strong> &nbsp;|&nbsp; ${v.address || "(no address)"} &nbsp;|&nbsp; GSTIN: ${v.gstin || "—"} &nbsp;|&nbsp; ${v.state || "—"} (Code ${v.stateCode || "—"}) &nbsp;|&nbsp; ${v.email || "—"}`;
+  // Prefilled from the vendor's own record — still a normal editable
+  // input afterward, this just sets the starting value.
+  const cgstEl = document.getElementById("cpo-cgst");
+  const sgstEl = document.getElementById("cpo-sgst");
+  const igstEl = document.getElementById("cpo-igst");
+  if (cgstEl && v.cgstPercent != null) cgstEl.value = v.cgstPercent;
+  if (sgstEl && v.sgstPercent != null) sgstEl.value = v.sgstPercent;
+  if (igstEl && v.igstPercent != null) igstEl.value = v.igstPercent;
+  recalcCPOTotals();
   persistCPODraft();
 }
 
