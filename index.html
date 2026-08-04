@@ -15727,13 +15727,13 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">Material Rows</div>
       <table style="width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--border); font-size:0.82rem; table-layout:fixed;">
         <colgroup>
-          <col style="width:22%;">
-          <col style="width:6%;">
-          <col style="width:8%;">
-          <col style="width:8%;">
+          <col style="width:23%;">
+          <col style="width:4%;">
           <col style="width:7%;">
-          <col style="width:10%;">
-          <col style="width:39%;">
+          <col style="width:7%;">
+          <col style="width:5%;">
+          <col style="width:9%;">
+          <col style="width:43%;">
         </colgroup>
         <thead>
           <tr style="background:#f1f5f9; text-align:left;">
@@ -19774,7 +19774,6 @@ async function initializeAuthorizePRNPanel() {
     if (aprnList.length === 0) {
       feed.innerHTML = `<div style="text-align:center; padding:30px; background:#fff; border:1px solid var(--border); border-radius:6px;">
         <h3 style="color:var(--accent); margin:0 0 6px 0;">No PRN${isRevision ? " Revisions" : ""} Pending Authorization</h3>
-        <div style="color:var(--muted); font-size:0.85rem;">${isRevision ? "There are no PRN re-splits awaiting authorization right now." : "There are no PRNs awaiting authorization right now."}</div>
       </div>`;
       return;
     }
