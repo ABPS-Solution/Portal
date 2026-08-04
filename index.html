@@ -16841,6 +16841,8 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
     initializeRevisePRNPanel();
   } else if (targetModuleId === "purchase-authorize-po-revision") {
     document.getElementById("canvas-module-purchase-authorize-po-revision").style.display = "block";
+    const aporBanner = document.getElementById("apor-feedback");
+    if (aporBanner) { aporBanner.style.display = "none"; aporBanner.innerHTML = ""; }
     initializeAuthorizePORevisionPanel();
   } else if (targetModuleId === "purchase-revise-po") {
     document.getElementById("canvas-module-purchase-revise-po").style.display = "block";
