@@ -10018,7 +10018,7 @@ function updateSERowAmounts(gateNumber, idx) {
 
   if (basicHidden) basicHidden.value = basicAmt.toFixed(2);
   if (invHidden) invHidden.value = invAmt.toFixed(2);
-  if (displaySpan) displaySpan.textContent = invAmt.toFixed(2);
+  if (displaySpan) displaySpan.textContent = Number.isInteger(invAmt) ? String(invAmt) : invAmt.toFixed(2);
 }
 
 async function checkVendorOpenRejections() {
@@ -10179,7 +10179,7 @@ async function initializeStoreEntryWorkspaceQueue() {
               oninput="updateSERowAmounts('${item.gateNumber}', ${idx})">
           </td>
           <td style="text-align:right; width:100px; padding:6px; vertical-align:top; font-family:monospace; font-size:0.85rem; font-weight:700;">
-            <span class="se-amount-display-${item.gateNumber}" data-idx="${idx}">${(((line.gateQuantity || 0) * (line.ratePerQuantity || 0)) * (1 + (line.gstPercent || 18) / 100)).toFixed(2)}</span>
+            <span class="se-amount-display-${item.gateNumber}" data-idx="${idx}">${(() => { const v = ((line.gateQuantity || 0) * (line.ratePerQuantity || 0)) * (1 + (line.gstPercent || 18) / 100); return Number.isInteger(v) ? String(v) : v.toFixed(2); })()}</span>
             <input type="hidden" class="se-basic-amt-${item.gateNumber}" data-idx="${idx}" value="${((line.gateQuantity || 0) * (line.ratePerQuantity || 0)).toFixed(2)}" />
             <input type="hidden" class="se-inv-amt-${item.gateNumber}" data-idx="${idx}" value="${(((line.gateQuantity || 0) * (line.ratePerQuantity || 0)) * (1 + (line.gstPercent || 18) / 100)).toFixed(2)}" />
           </td>
@@ -15368,14 +15368,14 @@ function updateAPORowAmount(rowId) {
   if (!row) return;
   const amt = (parseFloat(row.quantity)||0) * (parseFloat(row.rate)||0) * (100-(parseFloat(row.discountPercent)||0))/100;
   const span = document.querySelector(`.apo-amount[data-rowid="${rowId}"]`);
-  if (span) span.textContent = amt.toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+  if (span) span.textContent = amt.toLocaleString("en-IN",{maximumFractionDigits:2});
 }
 function recalcAPOTotals() {
   let sub = 0;
   window.apoEditRows.forEach(r => sub += (parseFloat(r.quantity)||0)*(parseFloat(r.rate)||0)*(100-(parseFloat(r.discountPercent)||0))/100);
   const v = id => parseFloat(document.getElementById(id).value)||0;
   const gt = sub + sub*v("apo-cgst")/100 + sub*v("apo-sgst")/100 + sub*v("apo-igst")/100 + v("apo-packing") + v("apo-freight") + v("apo-other") + v("apo-roundoff");
-  const fmt = n => n.toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmt = n => n.toLocaleString("en-IN",{maximumFractionDigits:2});
   document.getElementById("apo-subtotal-disp").textContent = fmt(sub);
   document.getElementById("apo-grandtotal-disp").textContent = fmt(gt);
 }
@@ -17150,7 +17150,7 @@ function updateRPOGrandTotal() {
   const other = parseFloat(document.getElementById("rpo-other")?.value) || 0;
   const roundOff = parseFloat(document.getElementById("rpo-roundoff")?.value) || 0;
   const grandTotal = subTotal + subTotal*cgstP/100 + subTotal*sgstP/100 + subTotal*igstP/100 + packing + freight + other + roundOff;
-  const fmt = (n) => n.toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmt = (n) => n.toLocaleString("en-IN",{maximumFractionDigits:2});
   const stEl = document.getElementById("rpo-subtotal-disp");
   const gtEl = document.getElementById("rpo-grandtotal-disp");
   if (stEl) stEl.textContent = fmt(subTotal);
@@ -20729,7 +20729,7 @@ function updatePRNPurchaseQtyCell(inputEl, idx) {
   const purchaseQty = Math.max(0, bufferedQty - storeQty);
   prnCurrentData.lineItems[idx].currentUnassignedStoreQty = storeQty;
   const cell = document.getElementById(`prn-purchase-qty-cell-${idx}`);
-  if (cell) { cell.textContent = purchaseQty.toFixed(2); cell.style.color = "#1a2332"; }
+  if (cell) { cell.textContent = Number.isInteger(purchaseQty) ? String(purchaseQty) : purchaseQty.toFixed(2); cell.style.color = "#1a2332"; }
 }
 
 async function generatePRNPDF() {
@@ -21179,8 +21179,8 @@ async function parseRawMaterialPOWithAI() {
         placeholder="—"
         style="font-size:0.78rem; font-weight:700; padding:4px 2px; text-align:center; width:100%; border-radius:3px; border:1px solid ${resolvedUnit ? '#86efac' : '#fca5a5'}; background:${resolvedUnit ? '#f0fdf4' : '#fff7f7'}; color:${resolvedUnit ? 'var(--brand)' : '#b91c1c'};" />
     </td>
-    <td style="padding:6px; text-align:right; font-family:monospace; font-size:0.82rem; width:100px;">₹${Number(item.rate || 0).toFixed(2)}</td>
-    <td style="padding:6px; text-align:right; font-family:monospace; font-size:0.82rem; width:120px;">₹${Number(item.amount || 0).toFixed(2)}</td>
+    <td style="padding:6px; text-align:right; font-family:monospace; font-size:0.82rem; width:100px;">₹${Number.isInteger(Number(item.rate||0)) ? Number(item.rate||0) : Number(item.rate||0).toFixed(2)}</td>
+    <td style="padding:6px; text-align:right; font-family:monospace; font-size:0.82rem; width:120px;">₹${Number.isInteger(Number(item.amount||0)) ? Number(item.amount||0) : Number(item.amount||0).toFixed(2)}</td>
   </tr>`;
     });
 
@@ -21548,7 +21548,7 @@ function pdRenderDashboard(data) {
           <td style="padding:4px 5px; font-weight:600;">${item.matName}</td>
           <td style="padding:4px 5px; font-family:monospace; font-size:0.68rem;">${item.itemCode}</td>
           <td style="padding:4px 5px; text-align:center; font-size:0.68rem;">${item.prnCount} PRN${item.prnCount>1?"s":""}</td>
-          <td style="padding:4px 5px; text-align:right; font-weight:700;">${(Math.round((item.stillToOrder || 0) * 100) / 100).toFixed(2)}</td>
+          <td style="padding:4px 5px; text-align:right; font-weight:700;">${(() => { const v = Math.round((item.stillToOrder || 0) * 100) / 100; return Number.isInteger(v) ? String(v) : v.toFixed(2); })()}</td>
           <td style="padding:4px 5px; text-align:center;"><span style="font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:8px; background:${ageBg}; color:${ageColor};">${item.maxAge}d</span></td>
         </tr>`;
       }).join("");
@@ -22173,7 +22173,7 @@ async function loadAssignStockGRNQueue() {
         </div>
         <div style="text-align:right; flex-shrink:0; margin-left:16px;">
           <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Available Stock</div>
-          <div style="font-size:1.2rem; font-weight:800; color:#15803d; font-family:monospace;">${Number(mat.availableStock).toFixed(2)}</div>
+          <div style="font-size:1.2rem; font-weight:800; color:#15803d; font-family:monospace;">${(() => { const v = Number(mat.availableStock)||0; return Number.isInteger(v) ? String(v) : v.toFixed(2); })()}</div>
           <div style="font-size:0.7rem; color:var(--muted);">${mat.unitType}</div>
         </div>
         <div style="font-size:0.75rem; font-weight:700; color:var(--brand); margin-left:14px; white-space:nowrap;">Assign →</div>`;
@@ -22222,7 +22222,7 @@ function renderAssignStockUnassignedList(materials) {
       </div>
       <div style="text-align:right; flex-shrink:0; margin-left:16px;">
         <div style="font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Unassigned</div>
-        <div style="font-size:1.2rem; font-weight:800; color:#b91c1c; font-family:monospace;">${Number(mat.unassignedQty).toFixed(2)}</div>
+        <div style="font-size:1.2rem; font-weight:800; color:#b91c1c; font-family:monospace;">${(() => { const v = Number(mat.unassignedQty)||0; return Number.isInteger(v) ? String(v) : v.toFixed(2); })()}</div>
         <div style="font-size:0.7rem; color:var(--muted);">${mat.unitType}</div>
       </div>
       <div style="font-size:0.75rem; font-weight:700; color:var(--brand); margin-left:14px; white-space:nowrap;">Assign →</div>`;
@@ -22338,9 +22338,10 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
     const tbody         = document.getElementById("assign-panel-targets-body");
     const targets       = data.boqTargets || [];
 
-    document.getElementById("assign-panel-total-unassigned").textContent = unassignedQty.toFixed(2);
+    const trimUnassigned = Number.isInteger(unassignedQty) ? String(unassignedQty) : unassignedQty.toFixed(2);
+    document.getElementById("assign-panel-total-unassigned").textContent = trimUnassigned;
     document.getElementById("assign-panel-total-assigning").textContent  = "0";
-    document.getElementById("assign-panel-remainder").textContent        = unassignedQty.toFixed(2);
+    document.getElementById("assign-panel-remainder").textContent        = trimUnassigned;
 
     if (unassignedQty === 0) {
       tbody.innerHTML = "";
@@ -22379,8 +22380,8 @@ async function openAssignStockPanel(itemCode, materialName, unitType) {
           <td style="padding:8px 10px; font-size:0.82rem; font-weight:600; color:var(--text);">${target.customerName || "—"}</td>
           <td style="padding:8px 10px; font-family:monospace; font-size:0.78rem; font-weight:700; color:#475569; white-space:nowrap;">${target.projectId}</td>
           <td style="padding:8px 10px; font-size:0.82rem; font-weight:600; line-height:1.4;">${target.productName} <span style="color:var(--muted); font-weight:400;">${target.productRating}</span></td>
-          <td style="padding:8px 10px; text-align:center; font-family:monospace; font-weight:700; color:#b91c1c;">${Number(target.stillNeeded).toFixed(2)}</td>
-          <td style="padding:8px 10px; text-align:center; font-family:monospace; font-weight:700; color:#15803d;">${Number(target.assignedQty).toFixed(2)}</td>
+          <td style="padding:8px 10px; text-align:center; font-family:monospace; font-weight:700; color:#b91c1c;">${(() => { const v = Number(target.stillNeeded)||0; return Number.isInteger(v) ? String(v) : v.toFixed(2); })()}</td>
+          <td style="padding:8px 10px; text-align:center; font-family:monospace; font-weight:700; color:#15803d;">${(() => { const v = Number(target.assignedQty)||0; return Number.isInteger(v) ? String(v) : v.toFixed(2); })()}</td>
           <td style="padding:8px 10px; text-align:center;">
             <input type="number" min="0" value="" placeholder="0"
               class="assign-qty-input"
@@ -22417,8 +22418,8 @@ function updateAssignPanelTotals(totalUnassigned) {
   const remainder   = Math.max(0, totalUnassigned - totalAssigning);
   const isOverLimit = totalAssigning > totalUnassigned;
 
-  document.getElementById("assign-panel-total-assigning").textContent = totalAssigning.toFixed(2);
-  document.getElementById("assign-panel-remainder").textContent       = remainder.toFixed(2);
+  document.getElementById("assign-panel-total-assigning").textContent = Number.isInteger(totalAssigning) ? String(totalAssigning) : totalAssigning.toFixed(2);
+  document.getElementById("assign-panel-remainder").textContent       = Number.isInteger(remainder) ? String(remainder) : remainder.toFixed(2);
   document.getElementById("assign-panel-total-assigning").style.color = isOverLimit ? "#b91c1c" : "var(--accent)";
 
   const btn = document.getElementById("assign-panel-submit-btn");
