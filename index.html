@@ -19752,14 +19752,17 @@ async function initializeAuthorizePRNPanel() {
 
   try {
     const data = await apFetch({ action: "fetchPendingPRNsForAuthorization" });
-    const allPrns = data.prns || [];
+    const allPrns = Array.isArray(data && data.prns) ? data.prns : [];
     // fetchPendingPRNsForAuthorization already computes pendingKind
     // ('Revision' when draft_line_items only carries resplit rows, else
     // 'Delta') — filter client-side to whichever menu card was used.
     aprnList = window.aprnKindFilter ? allPrns.filter(p => p.pendingKind === window.aprnKindFilter) : allPrns;
 
     if (aprnList.length === 0) {
-      feed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;"><h3 style="color:var(--accent);">No PRN${isRevision ? " Revisions" : "s"} Pending Authorization</h3></div>`;
+      feed.innerHTML = `<div style="text-align:center; padding:30px; background:#fff; border:1px solid var(--border); border-radius:6px;">
+        <h3 style="color:var(--accent); margin:0 0 6px 0;">No PRN${isRevision ? " Revisions" : ""} Pending Authorization</h3>
+        <div style="color:var(--muted); font-size:0.85rem;">${isRevision ? "There are no PRN re-splits awaiting authorization right now." : "There are no PRNs awaiting authorization right now."}</div>
+      </div>`;
       return;
     }
 
@@ -19787,6 +19790,13 @@ async function initializeAuthorizePRNPanel() {
     });
   } catch (e) {
     feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${e.message}</div>`;
+  } finally {
+    // Never leave the feed blank — any silent early exit still shows something.
+    if (feed && !feed.innerHTML.trim()) {
+      feed.innerHTML = `<div style="text-align:center; padding:30px; background:#fff; border:1px solid var(--border); border-radius:6px;">
+        <h3 style="color:var(--accent); margin:0;">No PRN${window.aprnKindFilter === 'Revision' ? " Revisions" : "s"} Pending Authorization</h3>
+      </div>`;
+    }
   }
 }
 
