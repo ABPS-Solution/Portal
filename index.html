@@ -16033,7 +16033,7 @@ function renderCPOMaterialRows() {
     const lineQtyNow = parseFloat(row.quantity) || 0;
     const unallocNow = Math.round((lineQtyNow - allocSum) * 100) / 100;
     const projectChips = (allocList.length || row._allocationTouched)
-      ? allocList.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId.replace(/^PRN_/, "")}: <strong>${a.quantity}</strong></div>`).join("")
+      ? allocList.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId}: <strong>${a.quantity}</strong></div>`).join("")
         + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${unallocNow}</strong></div>` : "")
       : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No PRNs allocated</span>';
 
@@ -16071,7 +16071,7 @@ function renderCPOMaterialRows() {
         </div>
         <div style="width:120px; flex-shrink:0; text-align:right;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Amount</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:flex-end; font-family:monospace; font-weight:800; font-size:1.05rem; color:#0f172a;"><span class="cpo-amount" data-rowid="${row.id}">0.00</span></div>
+          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:flex-end; font-family:monospace; font-weight:800; font-size:1.05rem; color:#0f172a;"><span class="cpo-amount" data-rowid="${row.id}">0</span></div>
         </div>
 
         <button onclick="removeCPOMaterialRow(${row.id})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.95rem; width:32px; height:36px; border-radius:4px; display:flex; align-items:center; justify-content:center; flex-shrink:0; align-self:flex-end;">✕</button>
@@ -16170,7 +16170,7 @@ function updateCPORowAmount(rowId) {
   const amount = qty * rate * (100 - disc) / 100;
   row.amount = amount;
   const span = document.querySelector(`.cpo-amount[data-rowid="${rowId}"]`);
-  if (span) span.textContent = amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (span) span.textContent = amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 }
 
 function recalcCPOTotals() {
@@ -16193,7 +16193,7 @@ function recalcCPOTotals() {
   const other = parseFloat(document.getElementById("cpo-other").value) || 0;
   const roundOff = parseFloat(document.getElementById("cpo-roundoff").value) || 0;
   const grandTotal = subTotal + cgst + sgst + igst + packing + freight + other + roundOff;
-  const fmt = (n) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt = (n) => n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
   document.getElementById("cpo-subtotal-disp").textContent = fmt(subTotal);
   document.getElementById("cpo-grandtotal-disp").textContent = fmt(grandTotal);
   persistCPODraft();
