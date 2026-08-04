@@ -15788,6 +15788,15 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
   window.cpoMode = authorizePoNo ? 'authorize' : 'create';
   window.cpoEditingPoNo = authorizePoNo || null;
 
+  // Guards against two overlapping calls for the same container (e.g. a
+  // fast double-click on the same PO card) — without this, a slower call
+  // that started first can resolve LAST and reset the form's HTML right
+  // after a faster call already populated it, wiping fields like Delivery
+  // Date even though the data was fetched correctly.
+  window._cpoPanelGeneration = (window._cpoPanelGeneration || 0) + 1;
+  const myGeneration = window._cpoPanelGeneration;
+  const isStale = () => myGeneration !== window._cpoPanelGeneration;
+
   const body = document.getElementById(containerId);
   if (!body) return;
   body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading vendors and projects...</div>`;
@@ -15803,6 +15812,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
     apFetch({ action: "fetchVendorList" }),
     apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" })
   ]);
+  if (isStale()) return;
   loadItemCodeCatalogIntoCache();
 
   window.cpoVendors = (vendorRes.status === "fulfilled" && vendorRes.value.success) ? vendorRes.value.vendors : [];
@@ -15893,6 +15903,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
     // displays correctly without being editable.
     try {
       const data = await apFetch({ action: "fetchPODraftById", poNo: authorizePoNo });
+      if (isStale()) return;
       if (data.success && data.po) {
         const po = data.po;
         document.getElementById("cpo-vendor").value = po.vendorName || "";
@@ -16554,7 +16565,7 @@ async function authorizePOFromForm() {
       let msg = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:8px;">✅ ${poNo} Authorized Successfully!</div>`;
       if (data.pdfUrl) msg += `<a href="${data.pdfUrl}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open PO PDF</a>`;
       else if (data.pdfWarning) msg += `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — PO is authorized. Contact admin to verify Drive folder setup.</div>`;
-      msg += `<button onclick="document.getElementById('apo-feedback-banner').style.display='none'; initializeAuthorizePOPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another PO</button>`;
+      msg += `<button onclick="document.getElementById('authorize-po-feedback').style.display='none'; initializeAuthorizePOPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another PO</button>`;
       banner.innerHTML = msg;
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
     } else {
