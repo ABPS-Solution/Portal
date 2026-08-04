@@ -19400,15 +19400,14 @@ function navigateToMarketingDashboard() {
 }
 
 function exitPurchaseWorkspacePanelBackToMenu() {
-  document.getElementById("material-list-sync-btn").style.display = "none";
-  document.getElementById("purchase-top-bar-title").style.display = "none";
-  document.getElementById("module-purchase-workspace-enclosure-panel").style.display = "none";
-  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po"].forEach(id => {
+  ["material-list-sync-btn", "purchase-top-bar-title", "module-purchase-workspace-enclosure-panel",
+   "canvas-module-purchase-prn", "canvas-module-purchase-material-list", "canvas-module-purchase-upload-rm-po"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = "none";
   });
   enforceDynamicModuleRoleGateways(userPermissions);
-  document.getElementById("dashboard-view").style.display = "flex";
+  const dashEl = document.getElementById("dashboard-view");
+  if (dashEl) dashEl.style.display = "flex";
   triggerCompanyDropdownArrayFetch();
 }
 
