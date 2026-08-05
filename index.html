@@ -1801,7 +1801,7 @@
       <h2 style="color:var(--brand); margin:0 0 6px 0;">Store Inward Rejected Material</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
         Review Q/A-rejected material from Store and decide the action.
-        Once actioned, a GRN moves from Pending Action to Completed Action.
+        Once actioned, a GRN moves from Pending Action to Action in Progress.
       </p>
       <div id="rejected-material-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="rejected-material-cards-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
@@ -9442,7 +9442,7 @@ async function triggerLiveWarehouseStockMetricsSync() {
           const card = document.createElement("div");
           card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0; cursor:pointer;";
           card.title = "Click to see how Reserved stock is assigned across BOQs";
-          card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.reservedStock, 'raw');
+          card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.availableStock, 'raw');
           card.innerHTML = `
             <div style="font-size:0.8rem; font-weight:700; color:#334155; line-height:1.4; word-break:break-word;">
               ${item.materialName}
@@ -9539,7 +9539,7 @@ async function triggerLiveSpareStoreStockMetricsSync() {
         const card = document.createElement("div");
         card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0; cursor:pointer;";
         card.title = "Click to see how Reserved stock is assigned across BOQs";
-        card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.reservedStock, 'spare');
+        card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.availableStock, 'spare');
         card.innerHTML = `
           <div style="font-size:0.8rem; font-weight:700; color:#334155; line-height:1.4; word-break:break-word;">
             ${item.materialName}
@@ -16740,7 +16740,7 @@ async function initializeRejectedMaterialPanel(toggle) {
   const toggleBar = `
     <div style="display:flex; gap:8px; margin-bottom:12px;">
       <button class="nav-btn-styled" onclick="initializeRejectedMaterialPanel('pending')" style="background:${!isCompleted ? 'var(--brand)' : '#e2e8f0'}; color:${!isCompleted ? '#fff' : '#334155'}; font-weight:700;">Pending Action</button>
-      <button class="nav-btn-styled" onclick="initializeRejectedMaterialPanel('completed')" style="background:${isCompleted ? 'var(--brand)' : '#e2e8f0'}; color:${isCompleted ? '#fff' : '#334155'}; font-weight:700;">Completed Action</button>
+      <button class="nav-btn-styled" onclick="initializeRejectedMaterialPanel('completed')" style="background:${isCompleted ? 'var(--brand)' : '#e2e8f0'}; color:${isCompleted ? '#fff' : '#334155'}; font-weight:700;">Action in Progress</button>
     </div>
     ${isCompleted ? `
     <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:12px;">
