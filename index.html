@@ -16799,12 +16799,12 @@ async function initializeRejectedMaterialPanel(toggle) {
         <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
           <div style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:8px;">
             <div>
-              <​span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${item.grnNumber}<​/span>
-              <​span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}<​/span>
-              ${item.poNo ? `<​span style="background:#e0f2fe; color:#0369a1; margin-left:4px; font-weight:700;">PO: ${item.poNo}<​/span>` : ''}
-              ${item.deliveryDate ? `<​span style="background:#fef3c7; color:#92400e; margin-left:4px; font-weight:700;">Delivery: ${formatDateDMY(item.deliveryDate)}<​/span>` : ''}
+              <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${item.grnNumber}</span>
+              <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
+              ${item.poNo ? `<span style="background:#e0f2fe; color:#0369a1; margin-left:4px; font-weight:700;">PO: ${item.poNo}</span>` : ''}
+              ${item.deliveryDate ? `<span style="background:#fef3c7; color:#92400e; margin-left:4px; font-weight:700;">Delivery: ${formatDateDMY(item.deliveryDate)}</span>` : ''}
             </div>
-            ${rejDateDisplay ? `<​span style="background:#cbd5e1; color:#1e293b; font-weight:700; font-size:0.8rem; padding:3px 8px;">${rejDateDisplay}<​/span>` : ''}
+            ${rejDateDisplay ? `<span style="background:#cbd5e1; color:#1e293b; font-weight:700; font-size:0.8rem; padding:3px 8px;">${rejDateDisplay}</span>` : ''}
           </div>
         </div>
         <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
