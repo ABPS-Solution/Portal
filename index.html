@@ -21169,29 +21169,31 @@ async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, a
     if (!data.success) { body.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
     const rows = data.breakdown || [];
     const rowsHtml = rows.length === 0
-      ? `<tr><td colspan="3" style="padding:14px; text-align:center; color:var(--muted); font-size:0.85rem;">No stock currently assigned to a BOQ.</td></tr>`
+      ? `<tr><td colspan="2" style="padding:14px; text-align:center; color:var(--muted); font-size:0.85rem;">No stock currently claimed by a BOQ.</td></tr>`
       : rows.map(r => `
           <tr style="border-bottom:1px solid var(--border);">
             <td style="padding:8px 6px; font-size:0.85rem; font-weight:600; color:#334155;">${r.boqId}</td>
-            <td style="padding:8px 6px; font-size:0.8rem; color:var(--muted);">${r.customerName || ''} ${r.productName || ''}</td>
             <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:#b45309;">${(Math.round(r.assignedQty * 100) / 100).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
           </tr>`).join("");
     body.innerHTML = `
-      <table style="width:100%; border-collapse:collapse;">
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-bottom:16px;">
+        <colgroup><col style="width:70%;"><col style="width:30%;"></colgroup>
+        <tbody>
+          <tr style="background:#f0fdf4;">
+            <td style="padding:10px 6px; font-size:0.85rem; font-weight:800; color:#15803d;">Available (unassigned)</td>
+            <td style="padding:10px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:#15803d;">${(Math.round((availableQty || 0) * 100) / 100).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+        <colgroup><col style="width:70%;"><col style="width:30%;"></colgroup>
         <thead>
           <tr style="text-align:left; border-bottom:2px solid var(--border);">
             <th style="padding:6px; font-size:0.72rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">BOQ ID</th>
-            <th style="padding:6px; font-size:0.72rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">Customer / Product</th>
             <th style="padding:6px; text-align:right; font-size:0.72rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">Reserved Qty</th>
           </tr>
         </thead>
-        <tbody>
-          <tr style="border-bottom:2px solid var(--border); background:#f0fdf4;">
-            <td colspan="2" style="padding:8px 6px; font-size:0.82rem; font-weight:800; color:#15803d;">Available (unassigned)</td>
-            <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:#15803d;">${(Math.round((availableQty || 0) * 100) / 100).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
-          </tr>
-          ${rowsHtml}
-        </tbody>
+        <tbody>${rowsHtml}</tbody>
       </table>`;
   } catch(e) {
     body.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`;
