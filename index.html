@@ -16780,9 +16780,11 @@ async function initializeRejectedMaterialPanel(toggle) {
     feed.innerHTML = toggleBar;
 
     data.queue.forEach(item => {
-      const isEditable = !isCompleted;
+      let cardHasEditableLine = false;
       let trs = "";
       item.lineItems.forEach((line, idx) => {
+        const isEditable = line.status !== 'Resolved';
+        if (isEditable) cardHasEditableLine = true;
         trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
           <td style="width:110px; padding:8px 6px; text-align:center; font-family:monospace; font-weight:700;">${line.itemCode}</td>
           <td style="min-width:180px; padding:8px 6px; font-size:0.85rem;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
@@ -16830,8 +16832,8 @@ async function initializeRejectedMaterialPanel(toggle) {
               <tbody>${trs}</tbody>
             </table>
           </div>
-          ${isEditable ? `<div style="display:flex; justify-content:flex-end;">
-            <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitRejectedMaterialActionToBackend('${item.grnNumber}', this)">Submit Action</button>
+          ${cardHasEditableLine ? `<div style="display:flex; justify-content:flex-end;">
+            <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitRejectedMaterialActionToBackend('${item.grnNumber}', this)">${isCompleted ? 'Update Action' : 'Submit Action'}</button>
           </div>` : ''}
         </div>`;
       feed.appendChild(card);
@@ -16869,17 +16871,17 @@ async function commitRejectedMaterialActionToBackend(grnNum, btn) {
           <div><strong>Success! Action recorded for ${grnNum}.</strong></div>
           <button class="nav-btn-styled" onclick="
             document.getElementById('rejected-material-feedback-banner').style.display = 'none';
-            initializeRejectedMaterialPanel('pending');
+            initializeRejectedMaterialPanel(window.activeRejectedMaterialToggle);
           " style="background: #15803d; color: white; padding:8px 16px; font-weight:700;">Refresh Queue</button>
         </div>`;
     } else {
       alert("Server Error: " + data.error);
-      btn.disabled = false; btn.textContent = "Submit Action";
+      btn.disabled = false; btn.textContent = window.activeRejectedMaterialToggle === 'completed' ? 'Update Action' : 'Submit Action';
     }
   } catch(e) {
     hideBlockingOverlay();
     alert("Network request execution failure: " + e.message);
-    btn.disabled = false; btn.textContent = "Submit Action";
+    btn.disabled = false; btn.textContent = window.activeRejectedMaterialToggle === 'completed' ? 'Update Action' : 'Submit Action';
   }
 }
 
