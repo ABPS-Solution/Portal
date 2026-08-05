@@ -391,7 +391,6 @@
         <div class="menu-card" id="mod-store-gate"        onclick="navigateToStoreWorkspacePanel('store-gate-entry')"><span class="mc-label">Gate Entry</span></div>
         <div class="menu-card" id="mod-store-entry"       onclick="navigateToStoreWorkspacePanel('store-entry')"><span class="mc-label">Raw Materials Store Entry and GRN</span></div>
         <div class="menu-card" id="mod-store-grn"         onclick="navigateToStoreWorkspacePanel('store-grn')"><span class="mc-label">Raw Materials Q/A Check</span></div>
-        <div class="menu-card" id="mod-revise-qa-check" onclick="switchActiveDashboardModule('coming-soon')"><span class="mc-label">Revise Raw Materials Q/A Check</span></div>
         <div class="menu-card" id="mod-expected-inbounds" onclick="navigateToStoreWorkspacePanel('expected-inbounds')"><span class="mc-label">Expected Deliveries</span></div>
         <div class="menu-card" id="mod-stock-sweep"       onclick="navigateToStoreWorkspacePanel('stock-sweep')"><span class="mc-label">Stock Sweep (Weekly Return)</span></div>
       </div>
@@ -7026,7 +7025,6 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canReviseRMPO = userPermissionsObject.reviseRMPO === true;
   const canAuthorizeRMPORevision = userPermissionsObject.authorizeRMPORevision === true;
   const canSearchRMPO = userPermissionsObject.searchRMPO === true;
-  const canReviseQACheck = userPermissionsObject.reviseQACheck === true;
 
   // --- SET INDIVIDUAL VISIBILITY FOR MARKETING TARGET CARDS ---
   if (document.getElementById("mod-card")) {
@@ -7130,7 +7128,6 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-revise-rm-po")) document.getElementById("mod-revise-rm-po").style.display = canReviseRMPO ? "block" : "none";
   if (document.getElementById("mod-authorize-rm-po-revision")) document.getElementById("mod-authorize-rm-po-revision").style.display = canAuthorizeRMPORevision ? "block" : "none";
   if (document.getElementById("mod-search-rm-po")) document.getElementById("mod-search-rm-po").style.display = canSearchRMPO ? "block" : "none";
-  if (document.getElementById("mod-revise-qa-check")) document.getElementById("mod-revise-qa-check").style.display = canReviseQACheck ? "block" : "none";
   const purchaseHeaderBlock = document.getElementById("dashboard-purchase-department-header-block");
   if (purchaseHeaderBlock) {
     purchaseHeaderBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || canPPSTracking || userPermissionsObject.viewPurchaseDashboard === true) ? "block" : "none";
