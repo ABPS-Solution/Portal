@@ -998,32 +998,21 @@
         Record all material recovered from every department/job card in this sweep, regardless of project.
       </p>
       <div id="sweep-feedback" style="display:none; margin-bottom:14px;"></div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:14px; padding-bottom:14px; border-bottom:1px dashed var(--border);">
+      <div style="display:grid; grid-template-columns:minmax(200px,1fr) minmax(260px,2fr); gap:12px; margin-bottom:12px; align-items:end;">
         <div>
           <label class="field-label">Sweep Type *</label>
-          <select id="sweep-type" onchange="updateSweepTypeFields()" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);">
+          <select id="sweep-type" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);">
             <option value="Production Return">Production Return</option>
             <option value="Count Correction">Count Correction</option>
             <option value="Found Stock">Found Stock</option>
           </select>
         </div>
-        <div id="sweep-jobcard-wrap">
-          <label class="field-label">Job Card Number</label>
-          <input type="text" id="sweep-jobcard" placeholder="Optional" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        <div style="position:relative;">
+          <label class="field-label">Select Material *</label>
+          <input type="text" id="sweep-material-search" placeholder="Search material to add to this sweep..." oninput="handleSweepSearch(this.value)"
+                 autocomplete="off" style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:var(--radius);">
+          <div id="sweep-material-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:var(--radius); max-height:260px; overflow-y:auto; z-index:20; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
         </div>
-        <div id="sweep-project-wrap">
-          <label class="field-label">Project ID</label>
-          <input type="text" id="sweep-project" placeholder="Optional" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
-        </div>
-        <div id="sweep-reason-wrap" style="display:none;">
-          <label class="field-label">Reason *</label>
-          <input type="text" id="sweep-reason" oninput="updateSweepSubmitState()" placeholder="Why is this correction needed?" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
-        </div>
-      </div>
-      <div style="position:relative; margin-bottom:12px;">
-        <input type="text" id="sweep-material-search" placeholder="Search material to add to this sweep..." oninput="handleSweepSearch(this.value)"
-               style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:var(--radius);">
-        <div id="sweep-material-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:var(--radius); max-height:260px; overflow-y:auto; z-index:20; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
       </div>
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:14px;">
         <thead><tr style="background:var(--highlight-bg); text-align:left;">
@@ -22034,10 +22023,7 @@ function initializeStockSweepPanel() {
   document.getElementById("sweep-material-search").value = "";
   document.getElementById("sweep-material-dropdown").style.display = "none";
   const st = document.getElementById("sweep-type");
-  if (st) { st.value = "Production Return"; updateSweepTypeFields(); }
-  ["sweep-jobcard", "sweep-project", "sweep-reason"].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = "";
-  });
+  if (st) st.value = "Production Return";
   renderSweepBasket();
 }
 
@@ -22389,25 +22375,22 @@ function renderSweepBasket() {
   updateSweepSubmitState();
 }
 
-function updateSweepTypeFields() {
-  const type = document.getElementById("sweep-type").value;
-  const isCorrection = type === 'Count Correction';
-  document.getElementById("sweep-jobcard-wrap").style.display = isCorrection ? "none" : "block";
-  document.getElementById("sweep-project-wrap").style.display = isCorrection ? "none" : "block";
-  document.getElementById("sweep-reason-wrap").style.display = isCorrection ? "block" : "none";
-  updateSweepSubmitState();
-}
-
+// Submit stays enabled with blank quantities so the inline banner can
+// name the offending rows, rather than a silently dead button.
 function updateSweepSubmitState() {
-  const type = document.getElementById("sweep-type");
-  const reason = document.getElementById("sweep-reason");
-  const reasonOk = !type || type.value !== 'Count Correction' || (reason && reason.value.trim().length > 0);
-  const valid = sweepBasket.length > 0 && sweepBasket.every(b => parseFloat(b.quantity) > 0) && reasonOk;
-  document.getElementById("sweep-submit-btn").disabled = !valid;
+  document.getElementById("sweep-submit-btn").disabled = sweepBasket.length === 0;
 }
 
 async function submitStockSweep() {
-  if (sweepBasket.some(b => !(parseFloat(b.quantity) > 0))) { alert("Every item needs a quantity greater than 0."); return; }
+  const missing = sweepBasket.filter(b => !(parseFloat(b.quantity) > 0));
+  if (missing.length > 0) {
+    showBOQBanner("sweep-feedback",
+      `<strong>Quantity Required:</strong> Enter a quantity greater than 0 for: ${missing.map(m => m.itemCode).join(", ")}.`,
+      "error");
+    document.getElementById("sweep-feedback").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  document.getElementById("sweep-feedback").style.display = "none";
   showBlockingOverlay("Recording Stock Sweep...");
   try {
     const data = await apFetch({
@@ -22417,9 +22400,6 @@ async function submitStockSweep() {
         itemCode: b.itemCode,
         quantity: parseFloat(b.quantity),
         sweepType: document.getElementById("sweep-type").value,
-        jobCardNumber: document.getElementById("sweep-jobcard").value.trim() || null,
-        projectId: document.getElementById("sweep-project").value.trim() || null,
-        reason: document.getElementById("sweep-reason").value.trim() || null,
       }))
     });
     if (data.success) {
@@ -22427,9 +22407,6 @@ async function submitStockSweep() {
       if (data.notFound && data.notFound.length) msg += ` NOT found in catalog (skipped): ${data.notFound.join(", ")}.`;
       showBOQBanner("sweep-feedback", msg, "success");
       sweepBasket = [];
-      document.getElementById("sweep-reason").value = "";
-      document.getElementById("sweep-jobcard").value = "";
-      document.getElementById("sweep-project").value = "";
       renderSweepBasket();
     } else {
       showBOQBanner("sweep-feedback", data.error || "Failed to record sweep.", "error");
