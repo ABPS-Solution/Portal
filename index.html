@@ -194,7 +194,7 @@
   /* --- GATE ENTRY MOBILE RESPONSIVENESS (scoped to #canvas-module-store-gate-entry only) --- */
   .gate-upload-row { display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
   .gate-upload-row .card-box { flex:1 1 200px; }
-  .gate-meta-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:15px; }
+  .gate-meta-grid { display:grid; grid-template-columns:15% 15% 15% 40% 15%; gap:10px; margin-bottom:15px; }
   .gate-verification-footer { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
 
   @media(max-width:640px) {
@@ -468,10 +468,10 @@
 
         <div id="gate-ai-verification-workspace" style="display: none; margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 15px;">
           <div class="gate-meta-grid">
+            <div><label class="field-label">PO Number</label><input type="text" id="gate-meta-po" placeholder="e.g. PO_26-27_00002" style="background:#f1f5f9;" onblur="checkGatePONumber()" /><div id="gate-po-check-msg" style="font-size:0.68rem; font-weight:700; margin-top:3px;"></div></div>
             <div><label class="field-label">Invoice Number</label><input type="text" id="gate-meta-invoice" style="background:#f1f5f9;" /></div>
             <div><label class="field-label">Challan Number</label><input type="text" id="gate-meta-challan" style="background:#f1f5f9;" /></div>
             <div><label class="field-label">Vendor Name</label><input type="text" id="gate-meta-vendor" style="background:#f1f5f9;" onblur="checkVendorOpenRejections()" /></div>
-            <div><label class="field-label">PO Number</label><input type="text" id="gate-meta-po" placeholder="e.g. PO_26-27_00002" style="background:#f1f5f9;" onblur="checkGatePONumber()" /><div id="gate-po-check-msg" style="font-size:0.68rem; font-weight:700; margin-top:3px;"></div></div>
             <div><label class="field-label">Date</label><input type="text" id="gate-meta-date" style="background:#f1f5f9;" /></div>
             <input type="hidden" id="gate-meta-time" value="" />
           </div>
@@ -9849,7 +9849,7 @@ async function parseGateDocumentsWithAI() {
 
     // Always use today's upload date — not the date on the document
     const rawDateObj      = new Date();
-    const formattedDateStr = rawDateObj.toLocaleDateString('en-CA');
+    const formattedDateStr = String(rawDateObj.getDate()).padStart(2,'0') + '/' + String(rawDateObj.getMonth()+1).padStart(2,'0') + '/' + rawDateObj.getFullYear();
     const formattedTimeStr = rawDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
 
     document.getElementById('gate-meta-date').value = formattedDateStr;
