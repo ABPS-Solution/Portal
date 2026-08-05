@@ -1016,7 +1016,7 @@
       </div>
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:14px;">
         <thead><tr style="background:var(--highlight-bg); text-align:left;">
-          <th style="padding:8px;">Item Code</th><th style="padding:8px;">Material Name + Rating</th>
+          <th style="padding:8px;">Item Code</th><th style="padding:8px;">Material Name</th>
           <th style="padding:8px; width:80px;">Unit</th><th style="padding:8px; width:110px;">Quantity *</th><th style="padding:8px; width:40px;"></th>
         </tr></thead>
         <tbody id="sweep-basket-body"><tr id="sweep-basket-empty"><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No items added yet.</td></tr></tbody>
@@ -10512,7 +10512,7 @@ async function runQARevisionSearch() {
       <div class="contact-summary-card-parent" style="margin-bottom:10px;">
         <div onclick="openQARevisionDetail('${r.grnNumber}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding:4px;">
           <div>
-            <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${r.grnNumber}</span>
+            <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">${r.grnNumber}</span>
             <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700; padding:3px 8px;">Vendor: ${r.vendorName}</span>
             ${r.poNo ? `<span style="background:#e0f2fe; color:#0369a1; margin-left:4px; font-weight:700; padding:3px 8px;">PO: ${r.poNo}</span>` : ''}
           </div>
@@ -10539,7 +10539,7 @@ async function openQARevisionDetail(grnNumber) {
       const recvd = parseFloat(line.quantityReceived) || 0;
       return `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
         <td style="width:110px; padding:6px;"><input type="text" class="qarev-item-code-${grnNumber}" data-idx="${idx}" value="${line.itemCode}" readonly style="font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #86efac; text-align:center; width:100%; background:#f0fdf4; color:var(--brand); border-radius:3px;"></td>
-        <td style="padding:8px; min-width:180px; max-width:220px;"><input type="text" class="qarev-invoice-desc-${grnNumber}" data-idx="${idx}" value="${(line.invoiceDescription || '').replace(/"/g,'&quot;')}" ${blocked?'disabled':''} style="width:100%; font-size:0.78rem; color:#64748b; padding:5px 6px; border:1px solid var(--border); border-radius:3px;"></td>
+        <td style="padding:8px; font-size:0.78rem; color:#64748b; min-width:180px; max-width:220px; line-height:1.4; word-break:break-word;">${(line.invoiceDescription || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') || "—"}</td>
         <td style="padding:6px; min-width:220px;">
           <div class="qarev-name-display-${grnNumber}" data-idx="${idx}" ${blocked?'':`onclick="reopenQARevMaterialSearch('${grnNumber}', ${idx})"`} style="cursor:${blocked?'default':'pointer'}; font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4;"><span>${(line.materialName||'').replace(/</g,'&lt;')}</span>${blocked?'':' <span style="font-size:0.65rem; color:var(--muted);">✎ change</span>'}</div>
           <input type="hidden" class="qarev-mat-name-${grnNumber}" data-idx="${idx}" value="${(line.materialName||'').replace(/"/g,'&quot;')}" />
@@ -10661,7 +10661,7 @@ async function commitQARevisionToBackend(grnNumber, btn) {
       ledgerId: line.ledgerId,
       itemCode: g('qarev-item-code').value.trim(),
       materialName: g('qarev-mat-name').value.trim(),
-      invoiceDescription: g('qarev-invoice-desc').value.trim(),
+      invoiceDescription: line.invoiceDescription,
       unitType: g('qarev-unit').value.trim(),
       quantityReceived: parseFloat(line.quantityReceived) || 0,
       okQuantity: parseFloat(g('qarev-ok').value) || 0,
@@ -10751,7 +10751,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
           <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
             <div style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:8px;">
               <div>
-                <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${item.grnNumber}</span>
+                <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">${item.grnNumber}</span>
                 <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
               </div>
               ${repairDateDisplay ? `<span style="background:#cbd5e1; color:#1e293b; font-weight:700; font-size:0.8rem; padding:3px 8px;">${repairDateDisplay}</span>` : ''}
@@ -10789,9 +10789,8 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
               <input type="text" class="qa-item-code-${item.grnNumber}" data-idx="${idx}" value="${line.itemCode}" readonly
                 style="font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #86efac; text-align:center; width:100%; background:#f0fdf4; color:var(--brand); border-radius:3px;">
             </td>
-            <td style="padding:8px; min-width:180px; max-width:220px; vertical-align:middle;">
-              <input type="text" class="qa-invoice-desc-${item.grnNumber}" data-idx="${idx}" value="${(line.invoiceDescription || "").replace(/"/g,'&quot;')}"
-                style="width:100%; font-size:0.78rem; color:#64748b; padding:5px 6px; border:1px solid var(--border); border-radius:3px;">
+            <td style="padding:8px; font-size:0.78rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:180px; max-width:220px; line-height:1.4; vertical-align:middle;">
+              ${(line.invoiceDescription || "").replace(/</g,'&lt;').replace(/>/g,'&gt;') || "—"}
             </td>
             <td style="padding:6px; min-width:220px; vertical-align:middle;">
               <div class="qa-mat-name-display-${item.grnNumber}" data-idx="${idx}"
@@ -10848,7 +10847,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
           <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
             <div style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:8px;">
               <div>
-                <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${item.grnNumber}</span>
+                <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">${item.grnNumber}</span>
                 <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
                 <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Invoice: ${item.invoiceNumber}</span>
               </div>
@@ -10971,7 +10970,6 @@ async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
     const itemCode = document.querySelector(`.qa-item-code-${grnNum}[data-idx="${idx}"]`).value.trim();
     const matName  = document.querySelector(`.qa-mat-name-${grnNum}[data-idx="${idx}"]`).value.trim();
     const unit     = document.querySelector(`.qa-unit-${grnNum}[data-idx="${idx}"]`).value.trim();
-    const invDesc  = document.querySelector(`.qa-invoice-desc-${grnNum}[data-idx="${idx}"]`).value.trim();
 
     if (notOk > 0 && !action) actionMissing = true;
     if (ok + notOk !== (parseInt(line.quantityReceived, 10) || 0)) validationError = true;
@@ -10983,7 +10981,6 @@ async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
     line.actionForRejectedMaterial = action;
     // Pick up any correction made against the original invoice description
     line.itemCode      = itemCode;
-    line.invoiceDescription = invDesc;
     line.materialName   = matName;
     line.unitType        = unit;
   });
@@ -17052,7 +17049,7 @@ async function initializeRejectedMaterialPanel(toggle) {
         <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
           <div style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:8px;">
             <div>
-              <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${item.grnNumber}</span>
+              <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">${item.grnNumber}</span>
               <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
               ${item.poNo ? `<span style="background:#e0f2fe; color:#0369a1; margin-left:4px; font-weight:700;">PO: ${item.poNo}</span>` : ''}
             </div>
