@@ -10398,12 +10398,12 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
         </div>`;
     } else {
       alert("Submission Rejected: " + data.error);
-      btn.disabled = false; btn.textContent = "Verify & Generate Raw Materials Store Entry";
+      btn.disabled = false; btn.textContent = "Submit Store Entry and GRN";
     }
   } catch(e) { 
     hideBlockingOverlay();
     alert("Network request execution failure: " + e.message); 
-    btn.disabled = false; btn.textContent = "Verify & Generate Raw Materials Store Entry"; 
+    btn.disabled = false; btn.textContent = "Submit Store Entry and GRN"; 
   }
 }
 
