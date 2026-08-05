@@ -9445,18 +9445,16 @@ async function triggerLiveWarehouseStockMetricsSync() {
         bodyDiv.style.cssText = `display:${isCollapsed ? 'none' : 'flex'}; flex-wrap:wrap; gap:10px; padding:14px;`;
 
         items.forEach(item => {
-          let stockStyle = "color:#15803d; background:#dcfce7;";
-          if (item.availableStock === 0) {
-            stockStyle = "color:#b91c1c; background:#fee2e2;";
-          } else if (item.availableStock <= 5) {
-            stockStyle = "color:#b45309; background:#fef3c7;";
-          }
-
           const card = document.createElement("div");
-          card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:8px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0;";
+          card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0; cursor:pointer;";
+          card.title = "Click to see how Reserved stock is assigned across BOQs";
+          card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.reservedStock, 'raw');
           card.innerHTML = `
             <div style="font-size:0.8rem; font-weight:700; color:#334155; line-height:1.4; word-break:break-word;">
-              ${item.materialName} <span style="display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; vertical-align:middle; white-space:nowrap; ${stockStyle}">${(item.unitType || "PCS").toUpperCase()}</span>
+              ${item.materialName}
+            </div>
+            <div style="text-align:right;">
+              <span style="display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:#dcfce7; color:#15803d;">${(item.unitType || "PCS").toUpperCase()}</span>
             </div>
             <div style="border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; flex-direction:column; gap:4px;">
               <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:600; color:#334155;">
@@ -9544,14 +9542,16 @@ async function triggerLiveSpareStoreStockMetricsSync() {
       bodyDiv.style.cssText = `display:${isCollapsed ? 'none' : 'flex'}; flex-wrap:wrap; gap:10px; padding:14px;`;
 
       items.forEach(item => {
-        let stockStyle = "color:#15803d; background:#dcfce7;";
-        if (item.availableStock === 0) stockStyle = "color:#b91c1c; background:#fee2e2;";
-        else if (item.availableStock <= 5) stockStyle = "color:#b45309; background:#fef3c7;";
         const card = document.createElement("div");
-        card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:8px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0;";
+        card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0; cursor:pointer;";
+        card.title = "Click to see how Reserved stock is assigned across BOQs";
+        card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.reservedStock, 'spare');
         card.innerHTML = `
           <div style="font-size:0.8rem; font-weight:700; color:#334155; line-height:1.4; word-break:break-word;">
-            ${item.materialName} <span style="display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; vertical-align:middle; white-space:nowrap; ${stockStyle}">${(item.unitType || "NOS").toUpperCase()}</span>
+            ${item.materialName}
+          </div>
+          <div style="text-align:right;">
+            <span style="display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:#dcfce7; color:#15803d;">${(item.unitType || "NOS").toUpperCase()}</span>
           </div>
           <div style="border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; flex-direction:column; gap:4px;">
             <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:600; color:#334155;">
@@ -21120,6 +21120,65 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
       </table>
     </div>`;
   document.body.appendChild(modal);
+}
+
+async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, availableQty, storeType) {
+  const existing = document.getElementById("stock-assignment-breakdown-modal-overlay");
+  if (existing) existing.remove();
+
+  const unitLabel = (unit || "NOS").toUpperCase();
+  const modal = document.createElement("div");
+  modal.id = "stock-assignment-breakdown-modal-overlay";
+  modal.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;";
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:var(--radius);padding:24px;max-width:680px;width:92%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;border-bottom:2px solid var(--border);padding-bottom:12px;">
+        <div>
+          <div style="font-size:1rem;font-weight:800;color:var(--brand);">${materialName}</div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Item Code: <strong>${itemCode}</strong></div>
+        </div>
+        <button onclick="document.getElementById('stock-assignment-breakdown-modal-overlay').remove()" style="background:transparent;border:none;font-size:1.3rem;line-height:1;color:var(--muted);cursor:pointer;padding:0 0 0 10px;">&times;</button>
+      </div>
+      <div id="stock-assignment-breakdown-body">
+        <div style="text-align:center; padding:20px; color:var(--muted);"><div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>Loading breakdown...</div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  const body = document.getElementById("stock-assignment-breakdown-body");
+  try {
+    const data = await apFetch({ action: "fetchStockAssignmentBreakdown", itemCode, storeType });
+    if (!data.success) { body.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    const rows = data.breakdown || [];
+    const rowsHtml = rows.length === 0
+      ? `<tr><td colspan="3" style="padding:14px; text-align:center; color:var(--muted); font-size:0.85rem;">No stock currently assigned to a BOQ.</td></tr>`
+      : rows.map(r => `
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px 6px; font-size:0.85rem; font-weight:600; color:#334155;">${r.boqId}</td>
+            <td style="padding:8px 6px; font-size:0.8rem; color:var(--muted);">${r.customerName || ''} ${r.productName || ''}</td>
+            <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:#b45309;">${(Math.round(r.assignedQty * 100) / 100).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
+          </tr>`).join("");
+    body.innerHTML = `
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="text-align:left; border-bottom:2px solid var(--border);">
+            <th style="padding:6px; font-size:0.72rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">BOQ ID</th>
+            <th style="padding:6px; font-size:0.72rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">Customer / Product</th>
+            <th style="padding:6px; text-align:right; font-size:0.72rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">Reserved Qty</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:2px solid var(--border); background:#f0fdf4;">
+            <td colspan="2" style="padding:8px 6px; font-size:0.82rem; font-weight:800; color:#15803d;">Available (unassigned)</td>
+            <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:#15803d;">${(Math.round((availableQty || 0) * 100) / 100).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
+          </tr>
+          ${rowsHtml}
+        </tbody>
+      </table>`;
+  } catch(e) {
+    body.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`;
+  }
 }
 
 // ═══════════════════════════════════════════════════════
