@@ -1019,12 +1019,6 @@
 
     <div id="canvas-module-assign-current-stock" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="color:var(--brand); margin:0 0 6px 0;">Assign Current Stock</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
-        Incoming stock is now assigned to BOQs automatically on GRN. Use this screen only to move
-        already-assigned stock between BOQs, or release it back to the unassigned pool — for example,
-        when a BOQ for a project starting months from now has been auto-assigned material another BOQ
-        needs sooner.
-      </p>
       <div id="ass-feedback" style="display:none; margin-bottom:14px;"></div>
       <div style="position:relative; margin-bottom:16px;">
         <input type="text" id="ass-material-search" placeholder="Search material name..." oninput="handleAssStockSearch(this.value)"
@@ -10501,12 +10495,12 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
       if (window.activeQAToggle === "repair") {
         item.lineItems.forEach((line, idx) => {
           trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
-            <td style="width:120px; padding:8px 6px; text-align:center; font-weight:700; font-family:monospace;">${line.itemCode}</td>
-            <td style="padding:8px 6px; min-width:220px; font-size:0.85rem;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
-            <td style="width:60px; padding:8px 6px; text-align:center; font-family:monospace; font-weight:700;">${line.unitType}</td>
-            <td style="width:90px; padding:8px 6px; text-align:center; font-weight:700;">${line.outstandingQty}</td>
-            <td style="width:180px; padding:8px 6px; font-size:0.78rem; color:#64748b;">${line.action}</td>
-            <td style="width:110px; padding:8px 6px; text-align:center;">
+            <td style="width:10%; padding:8px 6px; text-align:center; font-weight:700; font-family:monospace;">${line.itemCode}</td>
+            <td style="width:30%; padding:8px 6px; font-size:0.85rem;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+            <td style="width:20%; padding:8px 6px; font-size:0.78rem; color:#64748b;">${line.action}</td>
+            <td style="width:8%; padding:8px 6px; text-align:center; font-family:monospace; font-weight:700;">${line.unitType}</td>
+            <td style="width:12%; padding:8px 6px; text-align:center; font-weight:700;">${line.outstandingQty}</td>
+            <td style="width:20%; padding:8px 6px; text-align:center;">
               <input type="number" min="0" max="${line.outstandingQty}" class="repair-qty-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" value="${line.outstandingQty}" style="width:100%; text-align:center; font-weight:700; border:1.5px solid var(--brand); padding:5px; border-radius:3px;">
             </td>
           </tr>`;
@@ -10528,14 +10522,14 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
           </div>
           <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
             <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
-              <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:820px; border-collapse:collapse;">
+              <table class="store-basket-data-table" style="width:100%; table-layout:fixed; border-collapse:collapse;">
                 <thead><tr style="background:#f8fafc;">
-                  <th style="width:120px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
-                  <th style="min-width:220px; text-align:left; font-size:0.72rem; padding:8px 6px;">Material</th>
-                  <th style="width:60px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit</th>
-                  <th style="width:90px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Pending Qty</th>
-                  <th style="width:180px; text-align:left; font-size:0.72rem; padding:8px 6px;">Action Selected</th>
-                  <th style="width:110px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Repaired Qty (assumed OK)</th>
+                  <th style="width:10%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
+                  <th style="width:30%; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name</th>
+                  <th style="width:20%; text-align:left; font-size:0.72rem; padding:8px 6px;">Action Selected</th>
+                  <th style="width:8%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit</th>
+                  <th style="width:12%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Pending Qty</th>
+                  <th style="width:20%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Repaired Qty (assumed OK)</th>
                 </tr></thead>
                 <tbody>${trs}</tbody>
               </table>
@@ -16688,6 +16682,30 @@ async function rejectPOFromForm() {
   }
 }
 
+let rejVendorSearchDebounce = null;
+function handleRejVendorSearch(query) {
+  clearTimeout(rejVendorSearchDebounce);
+  const dropdown = document.getElementById("rejected-material-vendor-dropdown");
+  if (!query || query.trim().length < 1) { if (dropdown) dropdown.style.display = "none"; return; }
+  rejVendorSearchDebounce = setTimeout(async () => {
+    try {
+      const data = await apFetch({ action: "searchVendorNamesForRejectedMaterial", query });
+      if (!dropdown) return;
+      if (!data.success || !data.vendors.length) { dropdown.style.display = "none"; return; }
+      dropdown.innerHTML = data.vendors.map(v => `<div onclick="selectRejVendorSuggestion('${v.replace(/'/g,"\\'")}')" style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${v}</div>`).join("");
+      dropdown.style.display = "block";
+    } catch(e) { if (dropdown) dropdown.style.display = "none"; }
+  }, 250);
+}
+
+function selectRejVendorSuggestion(vendorName) {
+  const input = document.getElementById("rejected-material-vendor-input");
+  if (input) input.value = vendorName;
+  const dropdown = document.getElementById("rejected-material-vendor-dropdown");
+  if (dropdown) dropdown.style.display = "none";
+  applyRejectedMaterialFilters();
+}
+
 function toggleRejActionAll(checked) {
   if (checked) {
     document.querySelectorAll(".rej-action-filter-cb").forEach(cb => cb.checked = false);
@@ -16726,9 +16744,13 @@ async function initializeRejectedMaterialPanel(toggle) {
     </div>
     ${isCompleted ? `
     <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:12px;">
-      <input type="text" id="rejected-material-vendor-input" placeholder="Search by Vendor Name..." value="${cleanVendor.replace(/"/g,'&quot;')}"
-        style="flex:1; min-width:200px; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);"
-        onkeydown="if(event.key==='Enter') applyRejectedMaterialFilters()" />
+      <div style="position:relative; flex:1; min-width:200px;">
+        <input type="text" id="rejected-material-vendor-input" placeholder="Search by Vendor Name..." value="${cleanVendor.replace(/"/g,'&quot;')}" autocomplete="off"
+          style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);"
+          oninput="handleRejVendorSearch(this.value)"
+          onkeydown="if(event.key==='Enter') applyRejectedMaterialFilters()" />
+        <div id="rejected-material-vendor-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+      </div>
       <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; font-size:0.8rem;">
         <label style="display:flex; align-items:center; gap:4px; font-weight:700; cursor:pointer;">
           <input type="checkbox" id="rej-action-all" onchange="toggleRejActionAll(this.checked)" ${selectedActions.length === 0 ? 'checked' : ''}> ALL
@@ -16747,11 +16769,6 @@ async function initializeRejectedMaterialPanel(toggle) {
       <div class="spinner" style="width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
       <span style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Loading...</span>
     </div>`;
-
-  if (isCompleted && !cleanVendor && selectedActions.length === 0) {
-    feed.innerHTML = toggleBar + `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">Search by Vendor Name and/or Action to view completed items</div>`;
-    return;
-  }
 
   try {
     const data = await apFetch({ action: "fetchRejectedMaterialQueue", toggle: window.activeRejectedMaterialToggle, vendorName: cleanVendor, actions: selectedActions });
