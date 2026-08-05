@@ -10039,7 +10039,7 @@ async function checkGatePONumber() {
   msg.style.color = "var(--muted)"; msg.textContent = "Checking...";
   try {
     const data = await apFetch({ action: "validateGatePONumber", poNo: po });
-    if (~(data.success && data.found)) {
+    if (!(data.success && data.found)) {
       msg.style.color = "#b91c1c";
       msg.textContent = "No authorized PO Number found";
     }
@@ -10340,7 +10340,7 @@ async function checkStoreEntryPONumber(gateNum) {
   msg.style.color = "var(--muted)"; msg.textContent = "Checking...";
   try {
     const data = await apFetch({ action: "validateGatePONumber", poNo: po });
-    if (~(data.success && data.found)) {
+    if (!(data.success && data.found)) {
       input.style.borderColor = "#fca5a5";
       msg.style.color = "#b91c1c";
       msg.textContent = "No authorized PO Number found";
