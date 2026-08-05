@@ -10202,7 +10202,7 @@ async function initializeStoreEntryWorkspaceQueue() {
               style="width:100%; text-align:center; font-weight:700; border:1px solid var(--border); padding:5px; font-size:0.9rem; border-radius:3px;"
               oninput="updateSERowAmounts('${item.gateNumber}', ${idx})">
           </td>
-          <td style="text-align:right; width:100px; padding:6px; vertical-align:top; font-family:monospace; font-size:0.85rem; font-weight:700;">
+          <td style="text-align:right; width:100px; padding:6px; vertical-align:middle; font-family:monospace; font-size:0.95rem; font-weight:700;">
             <span class="se-amount-display-${item.gateNumber}" data-idx="${idx}">${(((line.gateQuantity || 0) * (line.ratePerQuantity || 0)) * (1 + (line.gstPercent || 18) / 100)).toLocaleString("en-IN",{maximumFractionDigits:2})}</span>
             <input type="hidden" class="se-basic-amt-${item.gateNumber}" data-idx="${idx}" value="${((line.gateQuantity || 0) * (line.ratePerQuantity || 0)).toFixed(2)}" />
             <input type="hidden" class="se-inv-amt-${item.gateNumber}" data-idx="${idx}" value="${(((line.gateQuantity || 0) * (line.ratePerQuantity || 0)) * (1 + (line.gstPercent || 18) / 100)).toFixed(2)}" />
