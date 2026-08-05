@@ -10178,25 +10178,25 @@ async function initializeStoreEntryWorkspaceQueue() {
             </div>
             ${isPreFilled ? '' : suggestionHtml}
           </td>
-          <td style="text-align:center; color:#64748b; font-weight:700; vertical-align:top; padding-top:10px; width:55px; font-family:monospace; font-size:0.9rem;">
+          <td style="text-align:center; color:#64748b; font-weight:700; vertical-align:middle; width:55px; font-family:monospace; font-size:0.9rem;">
             ${line.unitType || "NOS"}
           </td>
-          <td style="text-align:center; color:#1e293b; font-weight:800; vertical-align:top; padding-top:10px; width:65px; font-family:monospace; font-size:0.95rem;">
+          <td style="text-align:center; color:#1e293b; font-weight:800; vertical-align:middle; width:65px; font-family:monospace; font-size:0.95rem;">
             ${line.gateQuantity}
           </td>
-          <td style="text-align:center; width:85px; padding:6px 6px 6px 16px; vertical-align:top;">
+          <td style="text-align:center; width:85px; padding:6px 6px 6px 16px; vertical-align:middle;">
             <input type="number" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}"
               value="${line.gateQuantity}"
               style="width:100%; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:5px; font-size:0.9rem; border-radius:3px;"
               oninput="updateSERowAmounts('${item.gateNumber}', ${idx})">
           </td>
-          <td style="text-align:center; width:75px; padding:6px; vertical-align:top;">
+          <td style="text-align:center; width:75px; padding:6px; vertical-align:middle;">
             <input type="number" class="se-rate-${item.gateNumber}" data-idx="${idx}"
               value="${line.ratePerQuantity || ''}" placeholder="Rate"
               style="width:100%; text-align:center; font-weight:700; border:1.5px solid ${line.ratePerQuantity > 0 ? 'var(--brand)' : '#f59e0b'}; padding:5px; font-size:0.9rem; border-radius:3px;"
               oninput="updateSERowAmounts('${item.gateNumber}', ${idx})">
           </td>
-          <td style="text-align:center; width:70px; padding:6px; vertical-align:top;">
+          <td style="text-align:center; width:70px; padding:6px; vertical-align:middle;">
             <input type="number" class="se-gst-${item.gateNumber}" data-idx="${idx}"
               value="${line.gstPercent || 18}" placeholder="GST%"
               style="width:100%; text-align:center; font-weight:700; border:1px solid var(--border); padding:5px; font-size:0.9rem; border-radius:3px;"
@@ -10550,7 +10550,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
           const searchId = `qa-search-${item.grnNumber}-${idx}`;
           const dropId   = `qa-drop-${item.grnNumber}-${idx}`;
           const matName  = (line.materialName || "").toString();
-          trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:top;">
+          trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
             <td style="width:110px; padding:6px; vertical-align:middle;">
               <input type="text" class="qa-item-code-${item.grnNumber}" data-idx="${idx}" value="${line.itemCode}" readonly
                 style="font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #86efac; text-align:center; width:100%; background:#f0fdf4; color:var(--brand); border-radius:3px;">
