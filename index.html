@@ -496,7 +496,7 @@
     </div>
 
     <div id="canvas-module-store-entry" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 16px;">Raw Materials Store Entry</h2>
+      <h2 style="margin-bottom: 16px;">Raw Materials Store Entry and GRN</h2>
       <div id="store-entry-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="store-entry-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>
@@ -2438,7 +2438,7 @@
             <thead>
               <tr style="background:#f8fafc;">
                 <th style="padding:8px; font-size:0.72rem; width:140px; text-align:center;">Item Code *</th>
-                <th style="padding:8px; font-size:0.72rem; width:260px; text-align:left;">Invoice Description</th>
+                <th style="padding:8px; font-size:0.72rem; width:260px; text-align:left;">Invoice Material Description</th>
                 <th style="padding:8px; font-size:0.72rem; width:200px; text-align:left;">Standard Material Name *</th>
                 <th style="padding:8px; font-size:0.72rem; text-align:center; width:80px;">Qty</th>
                 <th style="padding:8px; font-size:0.72rem; text-align:center; width:70px;">Unit</th>
@@ -10018,7 +10018,7 @@ function updateSERowAmounts(gateNumber, idx) {
 
   if (basicHidden) basicHidden.value = basicAmt.toFixed(2);
   if (invHidden) invHidden.value = invAmt.toFixed(2);
-  if (displaySpan) displaySpan.textContent = Number.isInteger(invAmt) ? String(invAmt) : invAmt.toFixed(2);
+  if (displaySpan) displaySpan.textContent = invAmt.toLocaleString("en-IN",{maximumFractionDigits:2});
 }
 
 async function checkVendorOpenRejections() {
@@ -10131,7 +10131,7 @@ async function initializeStoreEntryWorkspaceQueue() {
               readonly
               style="${codeStyle}">
           </td>
-          <td style="padding:8px; font-size:0.78rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:150px; max-width:200px; line-height:1.4;">
+          <td style="padding:8px; font-size:0.78rem; color:var(--text); white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:150px; max-width:200px; line-height:1.4;">
             ${rawDesc}
           </td>
           <td style="padding:6px; min-width:300px;">
@@ -10166,10 +10166,10 @@ async function initializeStoreEntryWorkspaceQueue() {
               style="width:100%; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:5px; font-size:0.9rem; border-radius:3px;"
               oninput="updateSERowAmounts('${item.gateNumber}', ${idx})">
           </td>
-          <td style="text-align:right; width:75px; padding:6px; vertical-align:top;">
+          <td style="text-align:center; width:75px; padding:6px; vertical-align:top;">
             <input type="number" class="se-rate-${item.gateNumber}" data-idx="${idx}"
               value="${line.ratePerQuantity || ''}" placeholder="Rate"
-              style="width:100%; text-align:right; font-weight:700; border:1.5px solid ${line.ratePerQuantity > 0 ? 'var(--brand)' : '#f59e0b'}; padding:5px; font-size:0.9rem; border-radius:3px;"
+              style="width:100%; text-align:center; font-weight:700; border:1.5px solid ${line.ratePerQuantity > 0 ? 'var(--brand)' : '#f59e0b'}; padding:5px; font-size:0.9rem; border-radius:3px;"
               oninput="updateSERowAmounts('${item.gateNumber}', ${idx})">
           </td>
           <td style="text-align:center; width:70px; padding:6px; vertical-align:top;">
@@ -10179,7 +10179,7 @@ async function initializeStoreEntryWorkspaceQueue() {
               oninput="updateSERowAmounts('${item.gateNumber}', ${idx})">
           </td>
           <td style="text-align:right; width:100px; padding:6px; vertical-align:top; font-family:monospace; font-size:0.85rem; font-weight:700;">
-            <span class="se-amount-display-${item.gateNumber}" data-idx="${idx}">${(() => { const v = ((line.gateQuantity || 0) * (line.ratePerQuantity || 0)) * (1 + (line.gstPercent || 18) / 100); return Number.isInteger(v) ? String(v) : v.toFixed(2); })()}</span>
+            <span class="se-amount-display-${item.gateNumber}" data-idx="${idx}">${(((line.gateQuantity || 0) * (line.ratePerQuantity || 0)) * (1 + (line.gstPercent || 18) / 100)).toLocaleString("en-IN",{maximumFractionDigits:2})}</span>
             <input type="hidden" class="se-basic-amt-${item.gateNumber}" data-idx="${idx}" value="${((line.gateQuantity || 0) * (line.ratePerQuantity || 0)).toFixed(2)}" />
             <input type="hidden" class="se-inv-amt-${item.gateNumber}" data-idx="${idx}" value="${(((line.gateQuantity || 0) * (line.ratePerQuantity || 0)) * (1 + (line.gstPercent || 18) / 100)).toFixed(2)}" />
           </td>
@@ -10213,12 +10213,12 @@ async function initializeStoreEntryWorkspaceQueue() {
               <thead>
                 <tr style="background:#f8fafc;">
                   <th style="width:95px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
-                  <th style="width:250px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Description</th>
+                  <th style="width:250px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Material Description</th>
                   <th style="width:280px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name *</th>
                   <th style="width:55px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit</th>
                   <th style="width:65px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Invoice Qty</th>
                   <th style="width:85px; text-align:center; font-size:0.72rem; padding:8px 6px 8px 16px; white-space:nowrap;">Received Qty *</th>
-                  <th style="width:75px; text-align:right; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Rate / Qty</th>
+                  <th style="width:75px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Rate / Qty</th>
                   <th style="width:60px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">GST %</th>
                   <th style="width:95px; text-align:right; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Amount (Incl. GST)</th>
                 </tr>
@@ -10229,7 +10229,7 @@ async function initializeStoreEntryWorkspaceQueue() {
           <div style="display:flex; justify-content:flex-end; margin-top:10px;">
             <button class="nav-btn-styled" style="background:var(--accent);" 
               onclick="commitStoreEntryVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">
-              Verify & Generate Raw Materials Store Entry
+              Submit Store Entry and GRN
             </button>
           </div>
         </div>`;
@@ -10367,7 +10367,7 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
     showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Every line item must have a material selected. If no match exists, create the Item Code first.", "error");
     banner.scrollIntoView({ behavior: "smooth", block: "center" });
     btn.disabled = false;
-    btn.textContent = "Verify & Generate Raw Materials Store Entry";
+    btn.textContent = "Submit Store Entry and GRN";
     return;
   }
 
@@ -10566,7 +10566,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
               <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:1250px; border-collapse:collapse;">
                 <thead><tr style="background:#f8fafc;">
                   <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
-                  <th style="width:180px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Description</th>
+                  <th style="width:180px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Material Description</th>
                   <th style="width:220px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name</th>
                   <th style="width:55px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit</th>
                   <th style="width:65px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Received</th>
