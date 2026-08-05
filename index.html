@@ -10039,12 +10039,9 @@ async function checkGatePONumber() {
   msg.style.color = "var(--muted)"; msg.textContent = "Checking...";
   try {
     const data = await apFetch({ action: "validateGatePONumber", poNo: po });
-    if (data.success && data.found) {
-      msg.style.color = "#15803d";
-      msg.textContent = `✓ Authorized PO — ${data.vendorName}`;
-    } else {
+    if (~(data.success && data.found)) {
       msg.style.color = "#b91c1c";
-      msg.textContent = "⚠️ No authorized PO found with this number.";
+      msg.textContent = "No authorized PO Number found.";
     }
   } catch(e) { msg.textContent = ""; }
 }
@@ -10343,14 +10340,10 @@ async function checkStoreEntryPONumber(gateNum) {
   msg.style.color = "var(--muted)"; msg.textContent = "Checking...";
   try {
     const data = await apFetch({ action: "validateGatePONumber", poNo: po });
-    if (data.success && data.found) {
-      input.style.borderColor = "#86efac";
-      msg.style.color = "#15803d";
-      msg.textContent = `✓ Authorized PO — ${data.vendorName}`;
-    } else {
+    if (~(data.success && data.found)) {
       input.style.borderColor = "#fca5a5";
       msg.style.color = "#b91c1c";
-      msg.textContent = "⚠️ No authorized PO found with this number.";
+      msg.textContent = "No authorized PO Number found.";
     }
   } catch(e) { msg.textContent = ""; }
 }
