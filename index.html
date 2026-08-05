@@ -9453,22 +9453,17 @@ async function triggerLiveWarehouseStockMetricsSync() {
           }
 
           const card = document.createElement("div");
-          card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; justify-content:space-between; gap:8px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:160px; flex-shrink:0; overflow:hidden;";
+          card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:8px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0;";
           card.innerHTML = `
-            <div style="font-size:0.78rem; font-weight:700; color:#334155; line-height:1.35; word-break:break-word; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; flex:1;">
-              ${item.materialName}
+            <div style="font-size:0.8rem; font-weight:700; color:#334155; line-height:1.4; word-break:break-word;">
+              ${item.materialName} <span style="display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; vertical-align:middle; white-space:nowrap; ${stockStyle}">${(item.unitType || "PCS").toUpperCase()}</span>
             </div>
-            <div style="border-top:1px dashed #e2e8f0; padding-top:8px;">
-              <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-                <div>
-                  <div style="font-size:0.6rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.3px;">Available</div>
-                  <span style="font-family:monospace; font-size:1.2rem; font-weight:800; color:var(--text);">${item.availableStock}</span>
-                </div>
-                <span style="font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; ${stockStyle}">${(item.unitType || "PCS").toUpperCase()}</span>
+            <div style="border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; flex-direction:column; gap:4px;">
+              <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:600; color:#334155;">
+                <span>Available:</span><span style="font-family:monospace; font-weight:700;">${item.availableStock}</span>
               </div>
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; padding-top:6px; border-top:1px dashed #e2e8f0;">
-                <span style="font-size:0.65rem; color:var(--muted); font-weight:600;">Reserved</span>
-                <span style="font-family:monospace; font-size:0.85rem; font-weight:700; color:#b45309;">${item.reservedStock || 0}</span>
+              <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:600; color:#334155;">
+                <span>Reserved:</span><span style="font-family:monospace; font-weight:700;">${item.reservedStock || 0}</span>
               </div>
             </div>
           `;
@@ -9553,22 +9548,17 @@ async function triggerLiveSpareStoreStockMetricsSync() {
         if (item.availableStock === 0) stockStyle = "color:#b91c1c; background:#fee2e2;";
         else if (item.availableStock <= 5) stockStyle = "color:#b45309; background:#fef3c7;";
         const card = document.createElement("div");
-        card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; justify-content:space-between; gap:8px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:160px; flex-shrink:0; overflow:hidden;";
+        card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:8px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0;";
         card.innerHTML = `
-          <div style="font-size:0.78rem; font-weight:700; color:#334155; line-height:1.35; word-break:break-word; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; flex:1;">
-            ${item.materialName}
+          <div style="font-size:0.8rem; font-weight:700; color:#334155; line-height:1.4; word-break:break-word;">
+            ${item.materialName} <span style="display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; vertical-align:middle; white-space:nowrap; ${stockStyle}">${(item.unitType || "NOS").toUpperCase()}</span>
           </div>
-          <div style="border-top:1px dashed #e2e8f0; padding-top:8px;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-              <div>
-                <div style="font-size:0.6rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.3px;">Available</div>
-                <span style="font-family:monospace; font-size:1.2rem; font-weight:800; color:var(--text);">${item.availableStock}</span>
-              </div>
-              <span style="font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; ${stockStyle}">${(item.unitType || "NOS").toUpperCase()}</span>
+          <div style="border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; flex-direction:column; gap:4px;">
+            <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:600; color:#334155;">
+              <span>Available:</span><span style="font-family:monospace; font-weight:700;">${item.availableStock}</span>
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; padding-top:6px; border-top:1px dashed #e2e8f0;">
-              <span style="font-size:0.65rem; color:var(--muted); font-weight:600;">Reserved</span>
-              <span style="font-family:monospace; font-size:0.85rem; font-weight:700; color:#b45309;">${item.reservedStock || 0}</span>
+            <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:600; color:#334155;">
+              <span>Reserved:</span><span style="font-family:monospace; font-weight:700;">${item.reservedStock || 0}</span>
             </div>
           </div>`;
         bodyDiv.appendChild(card);
@@ -16859,7 +16849,7 @@ async function commitRejectedMaterialActionToBackend(grnNum, btn) {
       banner.style.cssText = "display: block; background: #dcfce7; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); margin-bottom:15px;";
       banner.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; text-align:left;">
-          <div><strong>Success! Action recorded — GRN ${grnNum} moved to Completed Action.</strong></div>
+          <div><strong>Success! Action recorded for ${grnNum}.</strong></div>
           <button class="nav-btn-styled" onclick="
             document.getElementById('rejected-material-feedback-banner').style.display = 'none';
             initializeRejectedMaterialPanel('pending');
