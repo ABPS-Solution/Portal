@@ -10036,7 +10036,6 @@ async function checkGatePONumber() {
   const msg = document.getElementById('gate-po-check-msg');
   const po = input.value.trim();
   if (!po) { msg.textContent = ""; return; }
-  msg.style.color = "var(--muted)"; msg.textContent = "Checking...";
   try {
     const data = await apFetch({ action: "validateGatePONumber", poNo: po });
     if (!(data.success && data.found)) {
@@ -10337,7 +10336,6 @@ async function checkStoreEntryPONumber(gateNum) {
   if (!input || !msg) return;
   const po = input.value.trim();
   if (!po) { msg.textContent = ""; input.style.borderColor = "#fca5a5"; return; }
-  msg.style.color = "var(--muted)"; msg.textContent = "Checking...";
   try {
     const data = await apFetch({ action: "validateGatePONumber", poNo: po });
     if (!(data.success && data.found)) {
