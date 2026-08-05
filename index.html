@@ -16756,7 +16756,7 @@ async function initializeRejectedMaterialPanel(toggle) {
     </div>`;
 
   if (isCompleted && !cleanVendor && selectedActions.length === 0) {
-    feed.innerHTML = toggleBar + `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">Search by Vendor Name and/or Action to view completed items — this list isn't loaded by default.</div>`;
+    feed.innerHTML = toggleBar + `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">Search by Vendor Name and/or Action to view completed items</div>`;
     return;
   }
 
@@ -16792,7 +16792,7 @@ async function initializeRejectedMaterialPanel(toggle) {
       });
 
       // Date/time badge — same source and formatting as the GRN card in Store Entry.
-      let rejDateDisplay = formatDateTimeDMY(item.setTimestamp);
+      let rejDateDisplay = formatDateTimeDMY(item.invoiceDate);
 
       let card = document.createElement("div"); card.className = "contact-summary-card-parent";
       card.innerHTML = `
