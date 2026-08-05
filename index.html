@@ -514,7 +514,6 @@
         <div style="width:180px;">
           <select id="ticket-action-type-toggle-dropdown" onchange="handleStoreTicketTypeInterfaceLayoutChange(this.value)" style="border-color:var(--brand); font-weight:700; color:var(--brand); padding:6px;">
             <option value="Request Material">Request Material</option>
-            <option value="Return Material">Return Material</option>
           </select>
         </div>
       </div>
@@ -931,8 +930,6 @@
             <div class="pill-group" style="margin-bottom:0;">
               <input type="checkbox" name="matrixTypeFilter" value="Request Material" id="mt_ty_req" onchange="executeClientSideStoreTicketFilterSearch()">
               <label for="mt_ty_req">Request Material</label>
-              <input type="checkbox" name="matrixTypeFilter" value="Return Material" id="mt_ty_ret" onchange="executeClientSideStoreTicketFilterSearch()">
-              <label for="mt_ty_ret">Return Material</label>
             </div>
           </div>
 
@@ -1002,6 +999,28 @@
         Record all material recovered from every department/job card in this sweep, regardless of project.
       </p>
       <div id="sweep-feedback" style="display:none; margin-bottom:14px;"></div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:14px; padding-bottom:14px; border-bottom:1px dashed var(--border);">
+        <div>
+          <label class="field-label">Sweep Type *</label>
+          <select id="sweep-type" onchange="updateSweepTypeFields()" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <option value="Production Return">Production Return</option>
+            <option value="Count Correction">Count Correction</option>
+            <option value="Found Stock">Found Stock</option>
+          </select>
+        </div>
+        <div id="sweep-jobcard-wrap">
+          <label class="field-label">Job Card Number</label>
+          <input type="text" id="sweep-jobcard" placeholder="Optional" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        </div>
+        <div id="sweep-project-wrap">
+          <label class="field-label">Project ID</label>
+          <input type="text" id="sweep-project" placeholder="Optional" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        </div>
+        <div id="sweep-reason-wrap" style="display:none;">
+          <label class="field-label">Reason *</label>
+          <input type="text" id="sweep-reason" oninput="updateSweepSubmitState()" placeholder="Why is this correction needed?" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        </div>
+      </div>
       <div style="position:relative; margin-bottom:12px;">
         <input type="text" id="sweep-material-search" placeholder="Search material to add to this sweep..." oninput="handleSweepSearch(this.value)"
                style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:var(--radius);">
@@ -2100,17 +2119,13 @@
         </div>
 
         <!-- ROW 2: Assignment Health -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 13%;">
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 13%;">
           <div class="dd-stat-card" style="grid-column: span 2; display:flex; align-items:center; justify-content:center;">
             <div class="dd-stat-label" style="color:var(--muted); font-weight:700;">Coming Soon</div>
           </div>
           <div class="dd-stat-card">
             <div class="dd-stat-label">Pending Job Card Increases</div>
             <div class="dd-stat-val" id="sd-s-boqinc" style="color:#b45309;">—</div>
-          </div>
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Return Tickets</div>
-            <div class="dd-stat-val" id="sd-s-returns">—</div>
           </div>
           <div class="dd-stat-card">
             <div class="dd-stat-label">Job Card Overrun Incidents</div>
@@ -7324,7 +7339,7 @@ async function submitMaterialRequestTicketToBackend() {
   submitBtn.disabled = true;
   submitBtn.innerHTML = `
     <div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div>
-    <span>${ticketTypeVal === "Return Material" ? 'Generating Return Ticket...' : 'Generating Request Ticket...'}</span>
+    <span>Generating Request Ticket...</span>
   `;
   
   // Cache the full primary HTML skeleton parameters map before clearing for success screen view layout
@@ -7346,6 +7361,8 @@ async function submitMaterialRequestTicketToBackend() {
       departmentOutgoing: departmentVal,
       ticketTypeCommandString: ticketTypeVal,
       storeTargetScope: chosenStoreTargetScopeStr,
+      requestOrReturn: 'Request',
+      typeOfStore: chosenStoreTargetScopeStr,
       items: dynamicTicketShoppingBasketArray,
       itemsClusterArray: dynamicTicketShoppingBasketArray
     };
@@ -7382,7 +7399,7 @@ async function submitMaterialRequestTicketToBackend() {
         feedbackBanner.innerHTML = `<strong>Submission Rejected by Server:</strong> ${result.error}`;
       }
       submitBtn.disabled = false;
-      submitBtn.textContent = ticketTypeVal === "Return Material" ? "Generate Return Ticket" : "Generate Material Ticket";
+      submitBtn.textContent = "Generate Material Ticket";
     }
   } catch (err) {
     hideBlockingOverlay();
@@ -7391,7 +7408,7 @@ async function submitMaterialRequestTicketToBackend() {
       feedbackBanner.innerHTML = `<strong>Network Request Connection Error:</strong> ${err.message}`;
     }
     submitBtn.disabled = false;
-    submitBtn.textContent = ticketTypeVal === "Return Material" ? "Generate Return Ticket" : "Generate Material Ticket";
+    submitBtn.textContent = "Generate Material Ticket";
   }
 }
 
@@ -8740,18 +8757,15 @@ async function initializeStoreManagerApprovalsWorkspace() {
 // a real store to request FROM, it's a relocation of stock between two stores, and only makes
 // sense framed as a return-side action.
 
+// Return Material was removed — production returns now come in via Stock
+// Sweep. Spare → Raw Material stays: it's a bin-to-bin relocation, not a
+// production return, so it moved here rather than leaving with Return mode.
 function buildStoreScopeOptionsHtml_(placeholderText) {
-  const isReturnMode = (document.getElementById("ticket-action-type-toggle-dropdown")?.value || "") === "Return Material";
-  // Finished Goods Store has no Return concept — a dispatched/consumed FG unit doesn't come
-  // back through this flow — so it's excluded entirely in Return mode.
-  let html = `<option value="">${placeholderText}</option><option value="Raw Materials Store">Raw Materials Store</option><option value="Spare Store">Spare Store</option>`;
-  if (!isReturnMode) {
-    html += `<option value="Finished Goods Store">Finished Goods Store</option>`;
-  }
-  if (isReturnMode) {
-    html += `<option value="Spare -> Raw Material">Spare → Raw Material (Transfer)</option>`;
-  }
-  return html;
+  return `<option value="">${placeholderText}</option>`
+    + `<option value="Raw Materials Store">Raw Materials Store</option>`
+    + `<option value="Spare Store">Spare Store</option>`
+    + `<option value="Finished Goods Store">Finished Goods Store</option>`
+    + `<option value="Spare -> Raw Material">Spare → Raw Material (Transfer)</option>`;
 }
 
 function handleStoreTicketTypeInterfaceLayoutChange(chosenModeString) {
@@ -8764,13 +8778,8 @@ function handleStoreTicketTypeInterfaceLayoutChange(chosenModeString) {
   clearFullBasketDraftState();
   resetMaterialRequestFormSubmissionActionControlsRow();
 
-  if (chosenModeString === "Return Material") {
-    labelNode.textContent = "Returned By *";
-    if (submitBtn) submitBtn.textContent = "Generate Return Ticket";
-  } else {
-    labelNode.textContent = "Requested By *";
-    if (submitBtn) submitBtn.textContent = "Generate Material Ticket";
-  }
+  labelNode.textContent = "Requested By *";
+  if (submitBtn) submitBtn.textContent = "Generate Material Ticket";
 
   // Rebuild the Store dropdown's option list immediately — switching back to Request Material
   // must remove the Spare -> Raw Material option if it was showing, and switching to Return
@@ -10464,6 +10473,245 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
 
 window.activeQAToggle = "pending";
 
+async function renderQARevisionSearchPanel(feed, toggleBar) {
+  feed.innerHTML = toggleBar + `
+    <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:14px;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; align-items:end;">
+        <div><label class="field-label">GRN Number</label><input type="text" id="qarev-grn" placeholder="e.g. GRN-XXXX" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
+        <div style="position:relative;">
+          <label class="field-label">Vendor Name</label>
+          <input type="text" id="qarev-vendor" placeholder="Search vendor..." autocomplete="off" oninput="handleQARevVendorSearch(this.value)" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          <div id="qarev-vendor-drop" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; max-height:180px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        </div>
+        <div><label class="field-label">Product / Item Code</label><input type="text" id="qarev-product" placeholder="Material or item code..." style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
+        <div><label class="field-label">Q/A Date From</label><input type="date" id="qarev-date-from" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
+        <div><label class="field-label">Q/A Date To</label><input type="date" id="qarev-date-to" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
+        <div><button class="nav-btn-styled" style="background:#15803d; width:100%;" onclick="runQARevisionSearch()">Search</button></div>
+      </div>
+    </div>
+    <div id="qarev-results"></div>`;
+}
+
+let qaRevVendorDebounce = null;
+function handleQARevVendorSearch(query) {
+  clearTimeout(qaRevVendorDebounce);
+  const drop = document.getElementById("qarev-vendor-drop");
+  if (!query || query.trim().length < 1) { if (drop) drop.style.display = "none"; return; }
+  qaRevVendorDebounce = setTimeout(async () => {
+    try {
+      const data = await apFetch({ action: "searchVendorNamesForRejectedMaterial", query });
+      if (!drop) return;
+      if (!data.success || !data.vendors.length) { drop.style.display = "none"; return; }
+      drop.innerHTML = data.vendors.map(v => `<div onclick="document.getElementById('qarev-vendor').value='${v.replace(/'/g,"\\'")}'; document.getElementById('qarev-vendor-drop').style.display='none';" style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${v}</div>`).join("");
+      drop.style.display = "block";
+    } catch(e) { if (drop) drop.style.display = "none"; }
+  }, 250);
+}
+
+async function runQARevisionSearch() {
+  const zone = document.getElementById("qarev-results");
+  zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
+  try {
+    const data = await apFetch({
+      action: "fetchQARevisionSearch",
+      grnNumber: document.getElementById("qarev-grn").value.trim(),
+      vendorName: document.getElementById("qarev-vendor").value.trim(),
+      productName: document.getElementById("qarev-product").value.trim(),
+      qaDateFrom: document.getElementById("qarev-date-from").value,
+      qaDateTo: document.getElementById("qarev-date-to").value,
+    });
+    if (!data.success) { zone.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    if (!data.results.length) { zone.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No Q/A-completed GRNs match this search.</div>`; return; }
+    zone.innerHTML = data.results.map(r => `
+      <div class="contact-summary-card-parent" style="margin-bottom:10px;">
+        <div onclick="openQARevisionDetail('${r.grnNumber}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding:4px;">
+          <div>
+            <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${r.grnNumber}</span>
+            <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700; padding:3px 8px;">Vendor: ${r.vendorName}</span>
+            ${r.poNo ? `<span style="background:#e0f2fe; color:#0369a1; margin-left:4px; font-weight:700; padding:3px 8px;">PO: ${r.poNo}</span>` : ''}
+          </div>
+          <div style="font-size:0.78rem; color:var(--muted); font-weight:600;">${r.lineCount} line(s) · Q/A by ${r.qaPerson || '—'} · ${formatDateTimeDMY(r.qaTimestamp)}</div>
+        </div>
+        <div id="qarev-detail-${r.grnNumber}" style="display:none; padding-top:12px; margin-top:10px; border-top:1px dashed var(--border);"></div>
+      </div>`).join("");
+  } catch(e) { zone.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+}
+
+async function openQARevisionDetail(grnNumber) {
+  const zone = document.getElementById(`qarev-detail-${grnNumber}`);
+  if (!zone) return;
+  if (zone.style.display === "block") { zone.style.display = "none"; return; }
+  zone.style.display = "block";
+  zone.innerHTML = `<div style="text-align:center; padding:14px; color:var(--muted);">Loading...</div>`;
+  try {
+    const data = await apFetch({ action: "fetchQARevisionDetail", grnNumber });
+    if (!data.success) { zone.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    window[`qaRevData_${grnNumber}`] = data.lineItems;
+    const blocked = (data.blockers || []).length > 0;
+
+    const trs = data.lineItems.map((line, idx) => {
+      const recvd = parseFloat(line.quantityReceived) || 0;
+      return `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
+        <td style="width:110px; padding:6px;"><input type="text" class="qarev-item-code-${grnNumber}" data-idx="${idx}" value="${line.itemCode}" readonly style="font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #86efac; text-align:center; width:100%; background:#f0fdf4; color:var(--brand); border-radius:3px;"></td>
+        <td style="padding:8px; min-width:180px; max-width:220px;"><input type="text" class="qarev-invoice-desc-${grnNumber}" data-idx="${idx}" value="${(line.invoiceDescription || '').replace(/"/g,'&quot;')}" ${blocked?'disabled':''} style="width:100%; font-size:0.78rem; color:#64748b; padding:5px 6px; border:1px solid var(--border); border-radius:3px;"></td>
+        <td style="padding:6px; min-width:220px;">
+          <div class="qarev-name-display-${grnNumber}" data-idx="${idx}" ${blocked?'':`onclick="reopenQARevMaterialSearch('${grnNumber}', ${idx})"`} style="cursor:${blocked?'default':'pointer'}; font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4;"><span>${(line.materialName||'').replace(/</g,'&lt;')}</span>${blocked?'':' <span style="font-size:0.65rem; color:var(--muted);">✎ change</span>'}</div>
+          <input type="hidden" class="qarev-mat-name-${grnNumber}" data-idx="${idx}" value="${(line.materialName||'').replace(/"/g,'&quot;')}" />
+          <input type="hidden" class="qarev-unit-${grnNumber}" data-idx="${idx}" value="${line.unitType||'NOS'}" />
+          <div style="position:relative; margin-top:4px;">
+            <input type="text" id="qarev-search-${grnNumber}-${idx}" placeholder="Search to change..." oninput="handleQARevNameSearch(this, '${grnNumber}', ${idx})" autocomplete="off" style="font-size:0.78rem; padding:4px 6px; border:1px solid var(--border); width:100%; border-radius:3px; display:none;" />
+            <div id="qarev-drop-${grnNumber}-${idx}" style="display:none; position:fixed; background:#fff; border:1px solid var(--border); border-radius:4px; z-index:9999; max-height:180px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,0.15); min-width:240px;"></div>
+          </div>
+        </td>
+        <td style="width:55px; padding:6px; text-align:center; font-family:monospace; font-weight:700;">${line.unitType}</td>
+        <td style="width:70px; padding:6px; text-align:center; font-weight:700;">${recvd}</td>
+        <td style="width:70px; padding:6px;"><input type="number" min="0" class="qarev-ok-${grnNumber}" data-idx="${idx}" data-max="${recvd}" value="${parseFloat(line.okQuantity)||0}" ${blocked?'disabled':''} oninput="autoBalanceQARevQuantities(this, '${grnNumber}', ${idx})" style="width:100%; border:1.5px solid var(--brand); font-weight:700; text-align:center; padding:5px 2px; border-radius:3px;"></td>
+        <td style="width:70px; padding:6px;"><input type="number" min="0" class="qarev-notok-${grnNumber}" data-idx="${idx}" value="${parseFloat(line.notOkQuantity)||0}" readonly style="width:100%; border:1.5px solid #f59e0b; font-weight:700; text-align:center; padding:5px 2px; border-radius:3px; background:#fffbeb;"></td>
+        <td style="min-width:140px; padding:6px;"><input type="text" class="qarev-reason-${grnNumber}" data-idx="${idx}" value="${(line.reasonForNotOk||'').replace(/"/g,'&quot;')}" ${blocked?'disabled':''} placeholder="Reason..." style="width:100%; font-size:0.78rem; padding:5px 6px; border:1px solid var(--border); border-radius:3px;"></td>
+        <td style="min-width:170px; padding:6px;">
+          <select class="qarev-action-${grnNumber}" data-idx="${idx}" ${blocked?'disabled':''} style="width:100%; font-size:0.76rem; padding:4px 2px;">
+            <option value="">-- Select --</option>
+            <option value="Return to Vendor for Replacement" ${line.actionForRejectedMaterial==='Return to Vendor for Replacement'?'selected':''}>Return to Vendor for Replacement</option>
+            <option value="Return to Vendor for Repair" ${line.actionForRejectedMaterial==='Return to Vendor for Repair'?'selected':''}>Return to Vendor for Repair</option>
+            <option value="Ask Vendor to repair at ABPS" ${line.actionForRejectedMaterial==='Ask Vendor to repair at ABPS'?'selected':''}>Ask Vendor to repair at ABPS</option>
+            <option value="Ask ABPS to Repair at ABPS" ${line.actionForRejectedMaterial==='Ask ABPS to Repair at ABPS'?'selected':''}>Ask ABPS to Repair at ABPS</option>
+          </select>
+        </td>
+      </tr>`;
+    }).join("");
+
+    zone.innerHTML = `
+      ${blocked ? `<div style="background:#fef2f2; border-left:4px solid #b91c1c; padding:12px; margin-bottom:12px; border-radius:4px;">
+        <div style="font-weight:800; color:#b91c1c; margin-bottom:6px;">This GRN can no longer be revised automatically</div>
+        <ul style="margin:0; padding-left:18px; font-size:0.82rem; color:#7f1d1d;">${data.blockers.map(b => `<li>${b}</li>`).join("")}</ul>
+        <div style="font-size:0.78rem; color:#7f1d1d; margin-top:8px;">Downstream activity has already moved past this Q/A. Correct it with a manual stock adjustment instead.</div>
+      </div>` : ''}
+      <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+        <table class="store-basket-data-table" style="width:100%; border-collapse:collapse;">
+          <thead><tr style="background:#f8fafc;">
+            <th style="width:110px; text-align:center; font-size:0.72rem; padding:8px 6px;">Item Code</th>
+            <th style="text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Material Description</th>
+            <th style="text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name</th>
+            <th style="width:55px; text-align:center; font-size:0.72rem; padding:8px 6px;">Unit</th>
+            <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px;">Received</th>
+            <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px;">OK Qty</th>
+            <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px;">Not OK</th>
+            <th style="text-align:left; font-size:0.72rem; padding:8px 6px;">Reason for Not OK</th>
+            <th style="text-align:left; font-size:0.72rem; padding:8px 6px;">Action for Rejected</th>
+          </tr></thead>
+          <tbody>${trs}</tbody>
+        </table>
+      </div>
+      ${blocked ? '' : `<div style="display:flex; justify-content:flex-end; margin-top:12px;">
+        <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitQARevisionToBackend('${grnNumber}', this)">Submit Q/A Revision</button>
+      </div>`}`;
+  } catch(e) { zone.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+}
+
+function autoBalanceQARevQuantities(okInput, grnNum, idx) {
+  const max = parseFloat(okInput.dataset.max) || 0;
+  let okVal = parseFloat(okInput.value) || 0;
+  if (okVal > max) { okVal = max; okInput.value = max; }
+  if (okVal < 0) { okVal = 0; okInput.value = 0; }
+  const notOk = document.querySelector(`.qarev-notok-${grnNum}[data-idx="${idx}"]`);
+  if (notOk) notOk.value = Math.round((max - okVal) * 1000) / 1000;
+}
+
+function reopenQARevMaterialSearch(grnNum, idx) {
+  const disp = document.querySelector(`.qarev-name-display-${grnNum}[data-idx="${idx}"]`);
+  const search = document.getElementById(`qarev-search-${grnNum}-${idx}`);
+  if (disp) disp.style.display = "none";
+  if (search) { search.style.display = "block"; search.value = ""; search.focus(); }
+}
+
+function handleQARevNameSearch(inputEl, grnNum, idx) {
+  const query = inputEl.value.trim().toLowerCase();
+  const dropdown = document.getElementById(`qarev-drop-${grnNum}-${idx}`);
+  const catalog = window.itemCodeCatalogCache || [];
+  if (!dropdown) return;
+  const rect = inputEl.getBoundingClientRect();
+  dropdown.style.top = (rect.bottom + 2) + "px";
+  dropdown.style.left = rect.left + "px";
+  dropdown.style.width = rect.width + "px";
+  if (query.length < 2) { dropdown.style.display = "none"; return; }
+  const matches = catalog.filter(c => (c.productName || "").toLowerCase().includes(query)).slice(0, 10);
+  if (!matches.length) { dropdown.innerHTML = `<div style="padding:8px 10px; font-size:0.78rem; color:var(--muted);">No match found</div>`; dropdown.style.display = "block"; return; }
+  dropdown.innerHTML = matches.map(c => `
+    <div onclick="selectQARevNameMatch('${grnNum}', ${idx}, '${c.itemCode}', '${(c.combinedName || c.productName).replace(/'/g,"\\'")}', '${(c.unit || 'NOS').replace(/'/g,"\\'")}')"
+      style="padding:7px 10px; cursor:pointer; font-size:0.78rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; gap:8px;"
+      onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
+      <span style="font-weight:600;">${c.combinedName || c.productName}</span>
+      <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px;">${c.itemCode}</span>
+    </div>`).join("");
+  dropdown.style.display = "block";
+}
+
+function selectQARevNameMatch(grnNum, idx, itemCode, productName, unit) {
+  const codeInput = document.querySelector(`.qarev-item-code-${grnNum}[data-idx="${idx}"]`);
+  const nameInput = document.querySelector(`.qarev-mat-name-${grnNum}[data-idx="${idx}"]`);
+  const unitInput = document.querySelector(`.qarev-unit-${grnNum}[data-idx="${idx}"]`);
+  const disp = document.querySelector(`.qarev-name-display-${grnNum}[data-idx="${idx}"]`);
+  if (codeInput) codeInput.value = itemCode;
+  if (nameInput) nameInput.value = productName;
+  if (unitInput) unitInput.value = unit || "NOS";
+  if (disp) { disp.querySelector("span").textContent = productName; disp.style.display = "block"; }
+  const search = document.getElementById(`qarev-search-${grnNum}-${idx}`);
+  const drop = document.getElementById(`qarev-drop-${grnNum}-${idx}`);
+  if (search) search.style.display = "none";
+  if (drop) drop.style.display = "none";
+}
+
+document.addEventListener("click", function(e) {
+  if (!e.target.id || !e.target.id.startsWith("qarev-search-")) {
+    document.querySelectorAll("[id^='qarev-drop-']").forEach(d => d.style.display = "none");
+  }
+});
+
+async function commitQARevisionToBackend(grnNumber, btn) {
+  const original = window[`qaRevData_${grnNumber}`] || [];
+  const lineItems = original.map((line, idx) => {
+    const g = (cls) => document.querySelector(`.${cls}-${grnNumber}[data-idx="${idx}"]`);
+    return {
+      ledgerId: line.ledgerId,
+      itemCode: g('qarev-item-code').value.trim(),
+      materialName: g('qarev-mat-name').value.trim(),
+      invoiceDescription: g('qarev-invoice-desc').value.trim(),
+      unitType: g('qarev-unit').value.trim(),
+      quantityReceived: parseFloat(line.quantityReceived) || 0,
+      okQuantity: parseFloat(g('qarev-ok').value) || 0,
+      notOkQuantity: parseFloat(g('qarev-notok').value) || 0,
+      reasonForNotOk: g('qarev-reason').value.trim(),
+      actionForRejectedMaterial: g('qarev-action').value,
+    };
+  });
+
+  for (const li of lineItems) {
+    if (li.notOkQuantity > 0 && !li.actionForRejectedMaterial) {
+      alert(`Action for Rejected Material is required for ${li.itemCode}.`);
+      return;
+    }
+  }
+  if (!confirm(`This will reverse the original Q/A for ${grnNumber} and re-apply it with these values across stock, PRN, PO, PPS and assignments. Continue?`)) return;
+
+  btn.disabled = true; btn.textContent = "Submitting...";
+  showBlockingOverlay("Revising Q/A...");
+  try {
+    const data = await apFetch({ action: "commitQARevision", payload: { grnNumber, lineItems }, operatorName: appActiveOperatorIdentityString });
+    hideBlockingOverlay();
+    if (data.success) {
+      alert("Q/A revision applied successfully.");
+      runQARevisionSearch();
+    } else {
+      alert("Server Error: " + data.error);
+      btn.disabled = false; btn.textContent = "Submit Q/A Revision";
+    }
+  } catch(e) {
+    hideBlockingOverlay();
+    alert("Network request execution failure: " + e.message);
+    btn.disabled = false; btn.textContent = "Submit Q/A Revision";
+  }
+}
+
 async function initializeStoreGrnWorkspaceQueue(toggle) {
   window.activeQAToggle = toggle || window.activeQAToggle || "pending";
   const feed = document.getElementById("store-grn-queue-cards-feed");
@@ -10472,6 +10720,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
     <div style="display:flex; gap:8px; margin-bottom:16px;">
       <button class="nav-btn-styled" onclick="initializeStoreGrnWorkspaceQueue('pending')" style="background:${window.activeQAToggle==='pending' ? 'var(--brand)' : '#e2e8f0'}; color:${window.activeQAToggle==='pending' ? '#fff' : '#334155'}; font-weight:700;">Pending Q/A</button>
       <button class="nav-btn-styled" onclick="initializeStoreGrnWorkspaceQueue('repair')" style="background:${window.activeQAToggle==='repair' ? 'var(--brand)' : '#e2e8f0'}; color:${window.activeQAToggle==='repair' ? '#fff' : '#334155'}; font-weight:700;">Being Repaired at ABPS</button>
+      <button class="nav-btn-styled" onclick="initializeStoreGrnWorkspaceQueue('revision')" style="background:${window.activeQAToggle==='revision' ? 'var(--brand)' : '#e2e8f0'}; color:${window.activeQAToggle==='revision' ? '#fff' : '#334155'}; font-weight:700;">Q/A Check Revision</button>
     </div>`;
 
   feed.innerHTML = toggleBar + `
@@ -10481,6 +10730,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
     </div>`;
 
   try {
+    if (window.activeQAToggle === 'revision') { await renderQARevisionSearchPanel(feed, toggleBar); return; }
     const data = await apFetch({ action: "fetchStoreQAQueue", toggle: window.activeQAToggle });
     if (!data.success || !data.queue || data.queue.length === 0) {
       feed.innerHTML = toggleBar + `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">${window.activeQAToggle === 'repair' ? 'No materials currently being repaired at ABPS.' : 'No records waiting for Q/A.'}</div>`;
@@ -10553,8 +10803,9 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
               <input type="text" class="qa-item-code-${item.grnNumber}" data-idx="${idx}" value="${line.itemCode}" readonly
                 style="font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #86efac; text-align:center; width:100%; background:#f0fdf4; color:var(--brand); border-radius:3px;">
             </td>
-            <td style="padding:8px; font-size:0.78rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:180px; max-width:220px; line-height:1.4; vertical-align:middle;">
-              ${(line.invoiceDescription || "").replace(/</g,'&lt;').replace(/>/g,'&gt;') || "—"}
+            <td style="padding:8px; min-width:180px; max-width:220px; vertical-align:middle;">
+              <input type="text" class="qa-invoice-desc-${item.grnNumber}" data-idx="${idx}" value="${(line.invoiceDescription || "").replace(/"/g,'&quot;')}"
+                style="width:100%; font-size:0.78rem; color:#64748b; padding:5px 6px; border:1px solid var(--border); border-radius:3px;">
             </td>
             <td style="padding:6px; min-width:220px; vertical-align:middle;">
               <div class="qa-mat-name-display-${item.grnNumber}" data-idx="${idx}"
@@ -10734,6 +10985,7 @@ async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
     const itemCode = document.querySelector(`.qa-item-code-${grnNum}[data-idx="${idx}"]`).value.trim();
     const matName  = document.querySelector(`.qa-mat-name-${grnNum}[data-idx="${idx}"]`).value.trim();
     const unit     = document.querySelector(`.qa-unit-${grnNum}[data-idx="${idx}"]`).value.trim();
+    const invDesc  = document.querySelector(`.qa-invoice-desc-${grnNum}[data-idx="${idx}"]`).value.trim();
 
     if (notOk > 0 && !action) actionMissing = true;
     if (ok + notOk !== (parseInt(line.quantityReceived, 10) || 0)) validationError = true;
@@ -10745,6 +10997,7 @@ async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
     line.actionForRejectedMaterial = action;
     // Pick up any correction made against the original invoice description
     line.itemCode      = itemCode;
+    line.invoiceDescription = invDesc;
     line.materialName   = matName;
     line.unitType        = unit;
   });
@@ -19071,7 +19324,7 @@ function sdLoadCustom() {
 
 async function sdLoadDashboard(customVal) {
   ["sd-s-tickets","sd-s-pending","sd-s-boqneedprn","sd-s-grns","sd-s-spare",
-   "sd-s-boqinc","sd-s-returns","sd-s-overruns"].forEach(id => {
+   "sd-s-boqinc","sd-s-overruns"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
   try {
@@ -19099,7 +19352,6 @@ function sdRenderDashboard(data) {
 
   // Row 2 stat cards
   document.getElementById("sd-s-boqinc").textContent          = stats.pendingBOQIncrease;
-  document.getElementById("sd-s-returns").textContent         = stats.returnTickets;
   document.getElementById("sd-s-overruns").textContent        = stats.boqOverruns;
 
   // Chart 1 — Tickets by Department (horizontal bar)
@@ -21784,6 +22036,11 @@ function initializeStockSweepPanel() {
   document.getElementById("sweep-feedback").style.display = "none";
   document.getElementById("sweep-material-search").value = "";
   document.getElementById("sweep-material-dropdown").style.display = "none";
+  const st = document.getElementById("sweep-type");
+  if (st) { st.value = "Production Return"; updateSweepTypeFields(); }
+  ["sweep-jobcard", "sweep-project", "sweep-reason"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = "";
+  });
   renderSweepBasket();
 }
 
@@ -22135,8 +22392,20 @@ function renderSweepBasket() {
   updateSweepSubmitState();
 }
 
+function updateSweepTypeFields() {
+  const type = document.getElementById("sweep-type").value;
+  const isCorrection = type === 'Count Correction';
+  document.getElementById("sweep-jobcard-wrap").style.display = isCorrection ? "none" : "block";
+  document.getElementById("sweep-project-wrap").style.display = isCorrection ? "none" : "block";
+  document.getElementById("sweep-reason-wrap").style.display = isCorrection ? "block" : "none";
+  updateSweepSubmitState();
+}
+
 function updateSweepSubmitState() {
-  const valid = sweepBasket.length > 0 && sweepBasket.every(b => parseFloat(b.quantity) > 0);
+  const type = document.getElementById("sweep-type");
+  const reason = document.getElementById("sweep-reason");
+  const reasonOk = !type || type.value !== 'Count Correction' || (reason && reason.value.trim().length > 0);
+  const valid = sweepBasket.length > 0 && sweepBasket.every(b => parseFloat(b.quantity) > 0) && reasonOk;
   document.getElementById("sweep-submit-btn").disabled = !valid;
 }
 
@@ -22146,13 +22415,24 @@ async function submitStockSweep() {
   try {
     const data = await apFetch({
       action: "commitStockSweep",
-      sweepItems: sweepBasket.map(b => ({ itemCode: b.itemCode, quantity: parseFloat(b.quantity) }))
+      operatorName: appActiveOperatorIdentityString,
+      sweepItems: sweepBasket.map(b => ({
+        itemCode: b.itemCode,
+        quantity: parseFloat(b.quantity),
+        sweepType: document.getElementById("sweep-type").value,
+        jobCardNumber: document.getElementById("sweep-jobcard").value.trim() || null,
+        projectId: document.getElementById("sweep-project").value.trim() || null,
+        reason: document.getElementById("sweep-reason").value.trim() || null,
+      }))
     });
     if (data.success) {
       let msg = `Sweep recorded: ${data.itemsProcessed} item(s) added and auto-distributed to BOQs.`;
       if (data.notFound && data.notFound.length) msg += ` NOT found in catalog (skipped): ${data.notFound.join(", ")}.`;
       showBOQBanner("sweep-feedback", msg, "success");
       sweepBasket = [];
+      document.getElementById("sweep-reason").value = "";
+      document.getElementById("sweep-jobcard").value = "";
+      document.getElementById("sweep-project").value = "";
       renderSweepBasket();
     } else {
       showBOQBanner("sweep-feedback", data.error || "Failed to record sweep.", "error");
