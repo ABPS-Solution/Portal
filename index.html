@@ -9459,11 +9459,17 @@ async function triggerLiveWarehouseStockMetricsSync() {
               ${item.materialName}
             </div>
             <div style="border-top:1px dashed #e2e8f0; padding-top:8px;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-family:monospace; font-size:1.2rem; font-weight:800; color:var(--text);">${item.availableStock}</span>
+              <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                <div>
+                  <div style="font-size:0.6rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.3px;">Available</div>
+                  <span style="font-family:monospace; font-size:1.2rem; font-weight:800; color:var(--text);">${item.availableStock}</span>
+                </div>
                 <span style="font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; ${stockStyle}">${(item.unitType || "PCS").toUpperCase()}</span>
               </div>
-              ${item.reservedStock > 0 ? `<div style="font-size:0.65rem; color:var(--muted); font-weight:600; margin-top:2px;">Reserved: ${item.reservedStock}</div>` : ""}
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; padding-top:6px; border-top:1px dashed #e2e8f0;">
+                <span style="font-size:0.65rem; color:var(--muted); font-weight:600;">Reserved</span>
+                <span style="font-family:monospace; font-size:0.85rem; font-weight:700; color:#b45309;">${item.reservedStock || 0}</span>
+              </div>
             </div>
           `;
           bodyDiv.appendChild(card);
@@ -9553,11 +9559,17 @@ async function triggerLiveSpareStoreStockMetricsSync() {
             ${item.materialName}
           </div>
           <div style="border-top:1px dashed #e2e8f0; padding-top:8px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-family:monospace; font-size:1.2rem; font-weight:800; color:var(--text);">${item.availableStock}</span>
+            <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+              <div>
+                <div style="font-size:0.6rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.3px;">Available</div>
+                <span style="font-family:monospace; font-size:1.2rem; font-weight:800; color:var(--text);">${item.availableStock}</span>
+              </div>
               <span style="font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; ${stockStyle}">${(item.unitType || "NOS").toUpperCase()}</span>
             </div>
-            ${item.reservedStock > 0 ? `<div style="font-size:0.65rem; color:var(--muted); font-weight:600; margin-top:2px;">Reserved: ${item.reservedStock}</div>` : ""}
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; padding-top:6px; border-top:1px dashed #e2e8f0;">
+              <span style="font-size:0.65rem; color:var(--muted); font-weight:600;">Reserved</span>
+              <span style="font-family:monospace; font-size:0.85rem; font-weight:700; color:#b45309;">${item.reservedStock || 0}</span>
+            </div>
           </div>`;
         bodyDiv.appendChild(card);
       });
@@ -16773,11 +16785,11 @@ async function initializeRejectedMaterialPanel(toggle) {
           <td style="width:170px; padding:8px 6px;">
             ${isEditable ? `
               <select class="rej-action-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" style="width:100%; font-size:0.76rem; padding:3px 2px;">
-                <option value="Return to Vendor for Replacement" ${line.action==='Return to Vendor for Replacement'?'selected':''}>Return to Vendor for Replacement</option>
-                <option value="Return to Vendor for Repair" ${line.action==='Return to Vendor for Repair'?'selected':''}>Return to Vendor for Repair</option>
-                <option value="Ask Vendor to repair at ABPS" ${line.action==='Ask Vendor to repair at ABPS'?'selected':''}>Ask Vendor to repair at ABPS</option>
-                <option value="Ask ABPS to Repair at ABPS" ${line.action==='Ask ABPS to Repair at ABPS'?'selected':''}>Ask ABPS to Repair at ABPS</option>
-              </select>` : `<span style="font-size:0.8rem; font-weight:600;">${line.action}</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>`}
+                <option value="Return to Vendor for Replacement" ${line.actionForRejectedMaterial==='Return to Vendor for Replacement'?'selected':''}>Return to Vendor for Replacement</option>
+                <option value="Return to Vendor for Repair" ${line.actionForRejectedMaterial==='Return to Vendor for Repair'?'selected':''}>Return to Vendor for Repair</option>
+                <option value="Ask Vendor to repair at ABPS" ${line.actionForRejectedMaterial==='Ask Vendor to repair at ABPS'?'selected':''}>Ask Vendor to repair at ABPS</option>
+                <option value="Ask ABPS to Repair at ABPS" ${line.actionForRejectedMaterial==='Ask ABPS to Repair at ABPS'?'selected':''}>Ask ABPS to Repair at ABPS</option>
+              </select>` : `<span style="font-size:0.8rem; font-weight:600;">${line.actionForRejectedMaterial}</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>`}
           </td>
         </tr>`;
       });
@@ -16793,7 +16805,6 @@ async function initializeRejectedMaterialPanel(toggle) {
               <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">GRN: ${item.grnNumber}</span>
               <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
               ${item.poNo ? `<span style="background:#e0f2fe; color:#0369a1; margin-left:4px; font-weight:700;">PO: ${item.poNo}</span>` : ''}
-              ${item.deliveryDate ? `<span style="background:#fef3c7; color:#92400e; margin-left:4px; font-weight:700;">Delivery: ${formatDateDMY(item.deliveryDate)}</span>` : ''}
             </div>
             ${rejDateDisplay ? `<span style="background:#cbd5e1; color:#1e293b; font-weight:700; font-size:0.8rem; padding:3px 8px;">${rejDateDisplay}</span>` : ''}
           </div>
