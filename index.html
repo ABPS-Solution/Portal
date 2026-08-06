@@ -16977,12 +16977,14 @@ function toggleRejActionAll(checked) {
   if (checked) {
     document.querySelectorAll(".rej-action-filter-cb").forEach(cb => cb.checked = false);
   }
+  applyRejectedMaterialFilters();
 }
 
 function handleRejActionFilterChange() {
   const anyChecked = Array.from(document.querySelectorAll(".rej-action-filter-cb")).some(cb => cb.checked);
   const allCb = document.getElementById("rej-action-all");
-  if (anyChecked && allCb) allCb.checked = false;
+  if (allCb) allCb.checked = !anyChecked;
+  applyRejectedMaterialFilters();
 }
 
 function applyRejectedMaterialFilters() {
@@ -17004,13 +17006,17 @@ async function initializeRejectedMaterialPanel(toggle) {
   const selectedActions = window.rejMaterialActionFilter || [];
   const ALL_ACTIONS = ["Return to Vendor for Replacement", "Return to Vendor for Repair", "Ask Vendor to repair at ABPS", "Ask ABPS to Repair at ABPS"];
 
+  const filterSummaryText = isCompleted
+    ? `Filtering for ${selectedActions.length === 0 ? "All Action for Rejected" : selectedActions.join(", or ")}${cleanVendor ? ` • Vendor: "${cleanVendor}"` : ""}`
+    : "";
+
   const toggleBar = `
     <div style="display:flex; gap:8px; margin-bottom:12px;">
       <button class="nav-btn-styled" onclick="initializeRejectedMaterialPanel('pending')" style="background:${!isCompleted ? 'var(--brand)' : '#e2e8f0'}; color:${!isCompleted ? '#fff' : '#334155'}; font-weight:700;">Pending Action</button>
       <button class="nav-btn-styled" onclick="initializeRejectedMaterialPanel('completed')" style="background:${isCompleted ? 'var(--brand)' : '#e2e8f0'}; color:${isCompleted ? '#fff' : '#334155'}; font-weight:700;">Action in Progress</button>
     </div>
     ${isCompleted ? `
-    <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:12px;">
+    <div style="display:flex; gap:14px; margin-bottom:12px; flex-wrap:wrap; align-items:center; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:12px;">
       <div style="position:relative; flex:1; min-width:200px;">
         <input type="text" id="rejected-material-vendor-input" placeholder="Search by Vendor Name..." value="${cleanVendor.replace(/"/g,'&quot;')}" autocomplete="off"
           style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);"
@@ -17018,17 +17024,17 @@ async function initializeRejectedMaterialPanel(toggle) {
           onkeydown="if(event.key==='Enter') applyRejectedMaterialFilters()" />
         <div id="rejected-material-vendor-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
       </div>
-      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; font-size:0.8rem;">
-        <label style="display:flex; align-items:center; gap:4px; font-weight:700; cursor:pointer;">
-          <input type="checkbox" id="rej-action-all" onchange="toggleRejActionAll(this.checked)" ${selectedActions.length === 0 ? 'checked' : ''}> ALL
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:700; padding:6px 12px; border:1.5px solid ${selectedActions.length === 0 ? 'var(--brand)' : 'var(--border)'}; border-radius:20px; background:${selectedActions.length === 0 ? '#eff6ff' : '#fff'}; cursor:pointer; white-space:nowrap;">
+          <input type="checkbox" id="rej-action-all" onchange="toggleRejActionAll(this.checked)" ${selectedActions.length === 0 ? 'checked' : ''} style="margin:0; cursor:pointer;"> ALL
         </label>
-        ${ALL_ACTIONS.map((a, i) => `
-          <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
-            <input type="checkbox" class="rej-action-filter-cb" value="${a}" onchange="handleRejActionFilterChange()" ${selectedActions.includes(a) ? 'checked' : ''}> ${a}
+        ${ALL_ACTIONS.map(a => `
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:600; padding:6px 12px; border:1.5px solid ${selectedActions.includes(a) ? 'var(--brand)' : 'var(--border)'}; border-radius:20px; background:${selectedActions.includes(a) ? '#eff6ff' : '#fff'}; cursor:pointer; white-space:nowrap;">
+            <input type="checkbox" class="rej-action-filter-cb" value="${a}" onchange="handleRejActionFilterChange()" ${selectedActions.includes(a) ? 'checked' : ''} style="margin:0; cursor:pointer;"> ${a}
           </label>`).join("")}
       </div>
-      <button class="nav-btn-styled" onclick="applyRejectedMaterialFilters()" style="background:var(--accent); color:#fff; font-weight:700;">Search</button>
     </div>
+    <div style="margin-bottom:14px; font-size:0.82rem; font-weight:700; color:#475569;">${filterSummaryText}</div>
     ` : ''}`;
 
   feed.innerHTML = toggleBar + `
