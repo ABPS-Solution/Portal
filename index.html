@@ -22995,40 +22995,138 @@ function setExpectedInboundsFilter(mode) {
 }
 
 function renderDeliveredSearchPanel() {
+  window.eiDelivSelectedItemCode = null;
   const zone = document.getElementById("expected-inbounds-results");
   zone.innerHTML = `
-    <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:4px;">
-      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; align-items:end;">
-        <div><label class="field-label">PO Number</label><input type="text" id="ei-delivered-po" placeholder="e.g. PO_26-27_00001" onkeydown="if(event.key==='Enter')runDeliveredSearch()" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
-        <div><label class="field-label">Vendor Name</label><input type="text" id="ei-delivered-vendor" placeholder="Vendor name..." onkeydown="if(event.key==='Enter')runDeliveredSearch()" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
-        <div><label class="field-label">Material Name / Item Code</label><input type="text" id="ei-delivered-material" placeholder="Material or item code..." onkeydown="if(event.key==='Enter')runDeliveredSearch()" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
-        <div><button class="nav-btn-styled" style="background:#15803d; width:100%;" onclick="runDeliveredSearch()">Search</button></div>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:18px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+      <div style="position:relative;">
+        <label class="field-label" style="margin-top:0; color:var(--brand);">PO Number</label>
+        <input type="text" id="ei-deliv-po-input" placeholder="e.g. PO_26-27_00001" autocomplete="off" oninput="handleEiDelivPOInput(this.value)" onkeydown="if(event.key==='Enter')runEiDelivPOSearch()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+        <div id="ei-deliv-po-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        <button class="nav-btn-styled" onclick="runEiDelivPOSearch()" style="margin-top:8px; background:var(--accent); color:#fff; font-weight:700; padding:7px 16px; width:100%;">Search</button>
+      </div>
+      <div style="position:relative;">
+        <label class="field-label" style="margin-top:0; color:var(--brand);">Material Name</label>
+        <input type="text" id="ei-deliv-material-input" placeholder="Start typing material name..." autocomplete="off" oninput="handleEiDelivMaterialInput(this.value)" onkeydown="if(event.key==='Enter')runEiDelivMaterialSearch()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+        <div id="ei-deliv-material-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        <button class="nav-btn-styled" onclick="runEiDelivMaterialSearch()" style="margin-top:8px; background:var(--accent); color:#fff; font-weight:700; padding:7px 16px; width:100%;">Search</button>
+      </div>
+      <div style="position:relative;">
+        <label class="field-label" style="margin-top:0; color:var(--brand);">Vendor Name</label>
+        <input type="text" id="ei-deliv-vendor-input" placeholder="Start typing vendor name..." autocomplete="off" oninput="handleEiDelivVendorInput(this.value)" onkeydown="if(event.key==='Enter')runEiDelivVendorSearch()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+        <div id="ei-deliv-vendor-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        <button class="nav-btn-styled" onclick="runEiDelivVendorSearch()" style="margin-top:8px; background:var(--accent); color:#fff; font-weight:700; padding:7px 16px; width:100%;">Search</button>
       </div>
     </div>
+    <div id="ei-deliv-search-label" style="display:none; font-weight:700; color:var(--brand); margin-bottom:10px; font-size:0.9rem;"></div>
     <div id="ei-delivered-results" style="display:flex; flex-direction:column; gap:16px;"></div>`;
+  loadItemCodeCatalogIntoCache();
 }
 
-async function runDeliveredSearch() {
-  const zone = document.getElementById("ei-delivered-results");
-  zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
+let eiDelivPODebounce = null;
+function handleEiDelivPOInput(query) {
+  clearTimeout(eiDelivPODebounce);
+  const dd = document.getElementById("ei-deliv-po-dd");
+  if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
+  eiDelivPODebounce = setTimeout(async () => {
+    try {
+      const data = await apFetch({ action: "searchPONumbersForExpectedDeliveries", query });
+      if (!dd) return;
+      if (!data.success || !data.results.length) { dd.style.display = "none"; return; }
+      dd.innerHTML = data.results.map(r => `
+        <div onclick="document.getElementById('ei-deliv-po-input').value='${r.poNo.replace(/'/g,"\\'")}'; document.getElementById('ei-deliv-po-dd').style.display='none';"
+          style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
+          onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+          <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${r.poNo}</span>${r.vendorName || ''}
+        </div>`).join("");
+      dd.style.display = "block";
+    } catch(e) { dd.style.display = "none"; }
+  }, 250);
+}
+
+function handleEiDelivMaterialInput(query) {
+  window.eiDelivSelectedItemCode = null;
+  const dd = document.getElementById("ei-deliv-material-dd");
+  const catalog = window.itemCodeCatalogCache || [];
+  if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
+  const q = query.toLowerCase();
+  const matches = catalog.filter(it => (it.productName||"").toLowerCase().includes(q) || (it.rating||"").toLowerCase().includes(q)).slice(0, 10);
+  if (matches.length === 0) { dd.style.display = "none"; return; }
+  dd.innerHTML = matches.map(it => `
+    <div onclick="selectEiDelivMaterial(\`${(it.productName||'').replace(/\`/g,"'")}\`, \`${(it.rating||'').replace(/\`/g,"'")}\`)"
+      style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.productName}${it.rating ? ` <span style="color:var(--brand); font-weight:700;">${it.rating}</span>` : ''}
+    </div>`).join("");
+  dd.style.display = "block";
+}
+
+function selectEiDelivMaterial(productName, rating) {
+  document.getElementById("ei-deliv-material-input").value = rating ? `${productName} ${rating}` : productName;
+  document.getElementById("ei-deliv-material-dd").style.display = "none";
+}
+
+let eiDelivVendorDebounce = null;
+function handleEiDelivVendorInput(query) {
+  clearTimeout(eiDelivVendorDebounce);
+  const dd = document.getElementById("ei-deliv-vendor-dd");
+  if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
+  eiDelivVendorDebounce = setTimeout(async () => {
+    try {
+      const data = await apFetch({ action: "searchVendorNamesForExpectedDeliveries", query });
+      if (!dd) return;
+      if (!data.success || !data.vendors.length) { dd.style.display = "none"; return; }
+      dd.innerHTML = data.vendors.map(v => `
+        <div onclick="document.getElementById('ei-deliv-vendor-input').value='${v.replace(/'/g,"\\'")}'; document.getElementById('ei-deliv-vendor-dd').style.display='none';"
+          style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
+          onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${v}</div>`).join("");
+      dd.style.display = "block";
+    } catch(e) { dd.style.display = "none"; }
+  }, 250);
+}
+
+function eiDelivSetSearchingLabel(text) {
+  const el = document.getElementById("ei-deliv-search-label");
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = "block";
+}
+
+async function eiDelivRunSearch(params, label) {
+  eiDelivSetSearchingLabel(label);
+  const results = document.getElementById("ei-delivered-results");
+  results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
   try {
-    const data = await apFetch({
-      action: "fetchExpectedDeliveries", filterMode: "delivered",
-      poNumber: document.getElementById("ei-delivered-po").value.trim(),
-      vendorName: document.getElementById("ei-delivered-vendor").value.trim(),
-      materialName: document.getElementById("ei-delivered-material").value.trim(),
-    });
-    if (!data.success) { zone.innerHTML = `<div style="color:var(--warn); padding:12px;">${data.error}</div>`; return; }
+    const data = await apFetch({ action: "fetchExpectedDeliveries", filterMode: "delivered", ...params });
+    if (!data.success) { results.innerHTML = `<div style="color:var(--warn); padding:12px;">${data.error}</div>`; return; }
     if (!data.delivered || data.delivered.length === 0) {
-      zone.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No delivered POs match.</div>`;
+      results.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No delivered POs match.</div>`;
       return;
     }
-    zone.innerHTML = "";
+    results.innerHTML = "";
     const schemeDelivered = { sectionBg: "#f0fdf4", sectionBorder: "#86efac", headerColor: "#15803d", badgeBg: "#dcfce7", badgeColor: "#15803d", icon: "✅" };
-    zone.appendChild(renderExpectedInboundsSection("Delivered", data.delivered, schemeDelivered));
+    results.appendChild(renderExpectedInboundsSection("Delivered", data.delivered, schemeDelivered));
   } catch(e) {
-    zone.innerHTML = `<div style="color:var(--warn); padding:12px;">Network error: ${e.message}</div>`;
+    results.innerHTML = `<div style="color:var(--warn); padding:12px;">Network error: ${e.message}</div>`;
   }
+}
+
+function runEiDelivPOSearch() {
+  const q = document.getElementById("ei-deliv-po-input").value.trim();
+  if (!q) return;
+  eiDelivRunSearch({ poNumber: q }, `Searching for "${q}"`);
+}
+
+function runEiDelivMaterialSearch() {
+  const q = document.getElementById("ei-deliv-material-input").value.trim();
+  if (!q) return;
+  eiDelivRunSearch({ materialName: q }, `Searching for "${q}"`);
+}
+
+function runEiDelivVendorSearch() {
+  const q = document.getElementById("ei-deliv-vendor-input").value.trim();
+  if (!q) return;
+  eiDelivRunSearch({ vendorName: q }, `Searching for "${q}"`);
 }
 
 async function loadExpectedInbounds() {
