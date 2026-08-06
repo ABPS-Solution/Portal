@@ -23085,7 +23085,7 @@ function renderExpectedInboundsPOCard(po, scheme) {
     if (item.fullyReceived) {
       statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:3px;">✅ Fully Received</span>`;
     } else if (item.partialReceived) {
-      statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:3px;">Partial (${item.receivedQty} / ${item.orderedQty})</span>`;
+      statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:3px;">Partial</span>`;
     } else {
       statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:3px;">Pending</span>`;
     }
@@ -23093,6 +23093,9 @@ function renderExpectedInboundsPOCard(po, scheme) {
       <td style="padding:6px 8px; font-family:monospace; font-size:0.75rem; font-weight:700; color:var(--brand); white-space:nowrap;">${item.itemCode || "—"}</td>
       <td style="padding:6px 8px; font-size:0.8rem; font-weight:600; line-height:1.4;">${item.materialName}</td>
       <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; white-space:nowrap;">${item.orderedQty} ${item.unit}</td>
+      <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; white-space:nowrap; color:#15803d;">${item.receivedQty}</td>
+      <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; white-space:nowrap; color:#b45309;">${item.repairQty}</td>
+      <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; white-space:nowrap; color:#b91c1c;">${item.returnMissingQty}</td>
       <td style="padding:6px 8px; text-align:center;">${statusBadge}</td>
     </tr>`;
   }).join("");
@@ -23124,11 +23127,14 @@ function renderExpectedInboundsPOCard(po, scheme) {
       </div>
 
       <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; min-width:600px; table-layout:fixed;">
+        <table style="width:100%; border-collapse:collapse; min-width:920px; table-layout:fixed;">
           <colgroup>
-            <col style="width:140px;">
+            <col style="width:120px;">
             <col>
-            <col style="width:160px;">
+            <col style="width:110px;">
+            <col style="width:110px;">
+            <col style="width:150px;">
+            <col style="width:150px;">
             <col style="width:120px;">
           </colgroup>
           <thead>
@@ -23136,6 +23142,9 @@ function renderExpectedInboundsPOCard(po, scheme) {
               <th style="padding:6px 8px; font-size:0.68rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Item Code</th>
               <th style="padding:6px 8px; font-size:0.68rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase;">Material Name</th>
               <th style="padding:6px 8px; font-size:0.68rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Ordered Qty</th>
+              <th style="padding:6px 8px; font-size:0.68rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Received Qty</th>
+              <th style="padding:6px 8px; font-size:0.68rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Being Repaired at ABPS Qty</th>
+              <th style="padding:6px 8px; font-size:0.68rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Return to Vendor / Missing Qty</th>
               <th style="padding:6px 8px; font-size:0.68rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Status</th>
             </tr>
           </thead>
