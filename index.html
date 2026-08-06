@@ -888,6 +888,23 @@
             </div>
           </div>
 
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Warranty Card * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="fg-add-warranty-dropzone" onclick="document.getElementById('fg-add-warranty-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Warranty Card
+              </div>
+              <input type="file" id="fg-add-warranty-input" hidden onchange="handleFGFileSelection(this, 'warrantyCard')" />
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Other Documents <span style="color:var(--muted);">(optional)</span></label>
+              <div class="card-box" id="fg-add-otherdocs-dropzone" onclick="document.getElementById('fg-add-otherdocs-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Other Documents
+              </div>
+              <input type="file" id="fg-add-otherdocs-input" hidden onchange="handleFGFileSelection(this, 'otherDocuments')" />
+            </div>
+          </div>
+
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Q/A Done *</label>
@@ -3363,8 +3380,10 @@ let uploadDrawingsSelectedFile = null;
 
 let fgJobCardSheetFile    = null;
 let fgQATestCertFile      = null;
-let fgInProcessInspFile   = null;
 let fgQAInspectionFile    = null;
+let fgWarrantyCardFile    = null;
+let fgOtherDocsFile       = null;
+let fgInProcessInspFile   = null;
 
 let jobCardBOQGroups = [];
 let jobCardExisting = {};
@@ -14777,10 +14796,13 @@ function resetFGAddForm() {
   });
   document.getElementById("fg-add-qa-done").value = "No";
   fgJobCardSheetFile = null; fgQATestCertFile = null; fgInProcessInspFile = null; fgQAInspectionFile = null;
+  fgWarrantyCardFile = null; fgOtherDocsFile = null;
   [["fg-add-jobcard-sheet-dropzone","📎 Click to attach Job Card Sheet"],
    ["fg-add-test-cert-dropzone","📎 Click to attach Test Certificate"],
    ["fg-add-inprocess-dropzone","📎 Click to attach In Process Inspection Sheet"],
-   ["fg-add-inspection-dropzone","📎 Click to attach Inspection Clearance"]
+   ["fg-add-inspection-dropzone","📎 Click to attach Inspection Clearance"],
+   ["fg-add-warranty-dropzone","📎 Click to attach Warranty Card"],
+   ["fg-add-otherdocs-dropzone","📎 Click to attach Other Documents"]
   ].forEach(([id, label]) => { const b = document.getElementById(id); if (b) { b.textContent = label; b.classList.remove("done"); } });
   document.getElementById("fg-product-dropdown").style.display = "none";
   document.getElementById("fg-add-feedback").style.display = "none";
@@ -14811,7 +14833,8 @@ async function submitFGAddItem() {
   const qaPersonName = appActiveOperatorIdentityString || "";
   const qaDone     = document.getElementById("fg-add-qa-done").value.trim();
 
-  if (!department)  return showBOQBanner("fg-add-feedback", "Department is required.", "error");
+  const failFG = (msg) => { _submitFGAddItemInProgress = false; return showBOQBanner("fg-add-feedback", msg, "error"); };
+  if (!department)  return failFG("Department is required.");
   if (!projectId)   return showBOQBanner("fg-add-feedback", "Project ID is required.", "error");
   if (!productName) return showBOQBanner("fg-add-feedback", "Product Name is required.", "error");
   if (!storePerson) return showBOQBanner("fg-add-feedback", "Store Incharge Person is required.", "error");
@@ -14821,7 +14844,8 @@ async function submitFGAddItem() {
   if (!fgJobCardSheetFile)  return showBOQBanner("fg-add-feedback", "Job Card Sheet document is required (Production).", "error");
   if (!fgQATestCertFile)    return showBOQBanner("fg-add-feedback", "Test Certificate is required (Q/A).", "error");
   if (!fgInProcessInspFile) return showBOQBanner("fg-add-feedback", "In Process Inspection Sheet is required (Q/A).", "error");
-  // Inspection Clearance is optional — no validation block.
+  if (!fgWarrantyCardFile)  return showBOQBanner("fg-add-feedback", "Warranty Card is required.", "error");
+  // Inspection Clearance and Other Documents are optional — no validation block.
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Uploading documents...';
@@ -14840,6 +14864,8 @@ async function submitFGAddItem() {
     const testCertUrl        = await uploadFGDoc(fgQATestCertFile,      "Test Certificate",           jobCard);
     const inProcessInspUrl   = await uploadFGDoc(fgInProcessInspFile,   "In Process Inspection Sheet",jobCard);
     const inspectionClearanceUrl = await uploadFGDoc(fgQAInspectionFile,"Inspection Clearance",       jobCard);
+    const warrantyCardUrl    = await uploadFGDoc(fgWarrantyCardFile,   "Warranty Card",              jobCard);
+    const otherDocumentsUrl  = await uploadFGDoc(fgOtherDocsFile,      "Other Documents",            jobCard);
 
     btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Adding to Finished Goods...';
 
@@ -14853,7 +14879,8 @@ async function submitFGAddItem() {
       unit, prodResponsible: prodPerson,
       storeIncharge: storePerson, additionalRemarks: remarks,
       qaPersonName, qaDone, finishedGoodUse,
-      testCertUrl, inspectionClearanceUrl, inProcessInspUrl, jobCardSheetUrl
+      testCertUrl, inspectionClearanceUrl, inProcessInspUrl, jobCardSheetUrl,
+      warrantyCardUrl, otherDocumentsUrl
     });
 
     hideBlockingOverlay();
@@ -15068,7 +15095,9 @@ function handleFGFileSelection(input, type) {
     jobCardSheet:        { varSetter: f => fgJobCardSheetFile  = f, boxId: "fg-add-jobcard-sheet-dropzone" },
     testCert:            { varSetter: f => fgQATestCertFile    = f, boxId: "fg-add-test-cert-dropzone" },
     inProcessInspection: { varSetter: f => fgInProcessInspFile = f, boxId: "fg-add-inprocess-dropzone" },
-    inspectionClearance: { varSetter: f => fgQAInspectionFile  = f, boxId: "fg-add-inspection-dropzone" }
+    inspectionClearance: { varSetter: f => fgQAInspectionFile  = f, boxId: "fg-add-inspection-dropzone" },
+    warrantyCard:        { varSetter: f => fgWarrantyCardFile  = f, boxId: "fg-add-warranty-dropzone" },
+    otherDocuments:      { varSetter: f => fgOtherDocsFile     = f, boxId: "fg-add-otherdocs-dropzone" }
   };
   const entry = map[type];
   if (!entry) return;
