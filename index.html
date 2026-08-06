@@ -365,7 +365,7 @@
         <div class="menu-card" id="mod-revise-rm-po" onclick="navigateToPurchaseWorkspacePanel('purchase-revise-po')"><span class="mc-label">Revise Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-authorize-rm-po-revision" onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po-revision')"><span class="mc-label">Authorize Raw Material Purchase Order Revision</span></div>
         <div class="menu-card" id="mod-search-rm-po" onclick="navigateToPurchaseWorkspacePanel('purchase-search-po')"><span class="mc-label">Search by Raw Material Purchase Order</span></div>
-        <div class="menu-card" id="mod-purchase-rejected-material" onclick="navigateToPurchaseWorkspacePanel('purchase-rejected-material')"><span class="mc-label">Store Inward Rejected Material</span></div>
+        <div class="menu-card" id="mod-purchase-rejected-material" onclick="navigateToPurchaseWorkspacePanel('purchase-rejected-material')"><span class="mc-label">Store Inward Rejected & Missing Material</span></div>
       </div>
     </div>
 
@@ -1822,7 +1822,7 @@
     </div>
 
     <div id="canvas-module-purchase-rejected-material" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="color:var(--brand); margin:0 0 6px 0;">Store Inward Rejected Material</h2>
+      <h2 style="color:var(--brand); margin:0 0 6px 0;">Store Inward Rejected & Missing Material</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
         Review Q/A-rejected material from Store and decide the action.
         Once actioned, a GRN moves from Pending Action to Action in Progress.
@@ -17050,16 +17050,19 @@ async function initializeRejectedMaterialPanel(toggle) {
       let cardHasEditableLine = false;
       let trs = "";
       item.lineItems.forEach((line, idx) => {
-        const isEditable = line.status !== 'Resolved';
+        const isMissingOnly = (Number(line.notOkQuantity) || 0) === 0 && (Number(line.missingQuantity) || 0) > 0;
+        const isEditable = line.status !== 'Resolved' && !isMissingOnly;
         if (isEditable) cardHasEditableLine = true;
         trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
           <td style="width:110px; padding:8px 6px; text-align:center; font-family:monospace; font-weight:700;">${line.itemCode}</td>
           <td style="min-width:180px; padding:8px 6px; font-size:0.85rem;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+          <td style="width:70px; padding:8px 6px; text-align:center; font-weight:700;">${Number(line.missingQuantity) || 0}</td>
           <td style="width:70px; padding:8px 6px; text-align:center; font-weight:700;">${line.notOkQuantity}</td>
           <td style="width:90px; padding:8px 6px; text-align:center; font-weight:700;">${line.outstandingQuantity}</td>
           <td style="width:180px; padding:8px 6px; font-size:0.8rem; color:#64748b;">${(line.reasonForNotOk || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
           <td style="width:170px; padding:8px 6px;">
-            ${isEditable ? `
+            ${isMissingOnly ? `<span style="font-size:0.8rem; font-weight:600; color:#64748b;">Awaiting vendor replacement</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>` :
+              isEditable ? `
               <select class="rej-action-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" style="width:100%; font-size:0.76rem; padding:3px 2px;">
                 <option value="Return to Vendor for Replacement" ${line.actionForRejectedMaterial==='Return to Vendor for Replacement'?'selected':''}>Return to Vendor for Replacement</option>
                 <option value="Return to Vendor for Repair" ${line.actionForRejectedMaterial==='Return to Vendor for Repair'?'selected':''}>Return to Vendor for Repair</option>
@@ -17087,10 +17090,11 @@ async function initializeRejectedMaterialPanel(toggle) {
         </div>
         <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
           <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
-            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:830px; border-collapse:collapse;">
+            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:900px; border-collapse:collapse;">
               <thead><tr style="background:#f8fafc;">
                 <th style="width:100px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
                 <th style="width:140px; text-align:left; font-size:0.72rem; padding:8px 6px;">Description of Material</th>
+                <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Missing Qty</th>
                 <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Not OK</th>
                 <th style="width:110px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Pending Qty</th>
                 <th style="width:220px; text-align:left; font-size:0.72rem; padding:8px 6px;">Reason for Not OK</th>
