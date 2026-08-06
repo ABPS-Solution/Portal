@@ -7203,11 +7203,10 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 async function initializeMaterialRequestWorkspace() {
   const projectDropdown = document.getElementById("ticket-project-id-dropdown");
   const itemDropdown = document.getElementById("ticket-item-selection-dropdown");
-  const storeStaffDropdown = document.getElementById("ticket-requested-by-operator-dropdown");
   const deptDropdown = document.getElementById("ticket-department-outgoing-dropdown");
   const storeScopeDropdown = document.getElementById("ticket-selected-store-scope-toggle");
   
-  if (!projectDropdown || !itemDropdown || !storeStaffDropdown || !deptDropdown) return;
+  if (!projectDropdown || !itemDropdown || !deptDropdown) return;
 
   // Full session-state reset — without this, leaving and re-entering this section kept whatever
   // Request/Return mode, FG catalog mode, and per-Job-Card caches were left over from the
@@ -7236,8 +7235,6 @@ async function initializeMaterialRequestWorkspace() {
 
   projectDropdown.innerHTML = '<option value="">Loading Active Projects...</option>';
   itemDropdown.innerHTML = '<option value="">— Select Material —</option>';
-  storeStaffDropdown.innerHTML = '<option value="">— Choose Department First —</option>';
-
   try {
     const [inventoryData, projectsData, staffData] = await Promise.all([
       apFetch({ action: "pullLiveInventoryCounts" }),
@@ -8195,7 +8192,7 @@ function clearFullBasketDraftState() {
 async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
   const notesField = document.getElementById("boq-increase-justification-notes-input");
   const projectId = document.getElementById("ticket-project-id-dropdown").value;
-  const operatorName = document.getElementById("ticket-requested-by-operator-dropdown").value;
+  const operatorName = appActiveOperatorIdentityString;
   const departmentVal = document.getElementById("ticket-department-outgoing-dropdown").value;
   const materialRequestPanelContainer = document.getElementById("canvas-module-store-material-request");
 
