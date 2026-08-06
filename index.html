@@ -1201,7 +1201,7 @@
         <button class="ei-filter-btn" data-mode="7" onclick="setExpectedInboundsFilter('7')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">7 Days</button>
         <button class="ei-filter-btn" data-mode="30" onclick="setExpectedInboundsFilter('30')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">30 Days</button>
         <button class="ei-filter-btn" data-mode="90" onclick="setExpectedInboundsFilter('90')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">90 Days</button>
-        <button class="ei-filter-btn" data-mode="all" onclick="setExpectedInboundsFilter('all')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">All</button>
+        <button class="ei-filter-btn" data-mode="delivered" onclick="setExpectedInboundsFilter('delivered')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">Delivered</button>
       </div>
       <div id="expected-inbounds-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="expected-inbounds-results" style="display:flex; flex-direction:column; gap:16px;"></div>
@@ -22990,7 +22990,45 @@ function setExpectedInboundsFilter(mode) {
     btn.style.color       = active ? "#fff" : "var(--text)";
     btn.style.borderColor = active ? "var(--brand)" : "var(--border)";
   });
-  loadExpectedInbounds();
+  if (mode === "delivered") renderDeliveredSearchPanel();
+  else loadExpectedInbounds();
+}
+
+function renderDeliveredSearchPanel() {
+  const zone = document.getElementById("expected-inbounds-results");
+  zone.innerHTML = `
+    <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:4px;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; align-items:end;">
+        <div><label class="field-label">PO Number</label><input type="text" id="ei-delivered-po" placeholder="e.g. PO_26-27_00001" onkeydown="if(event.key==='Enter')runDeliveredSearch()" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
+        <div><label class="field-label">Vendor Name</label><input type="text" id="ei-delivered-vendor" placeholder="Vendor name..." onkeydown="if(event.key==='Enter')runDeliveredSearch()" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
+        <div><label class="field-label">Material Name / Item Code</label><input type="text" id="ei-delivered-material" placeholder="Material or item code..." onkeydown="if(event.key==='Enter')runDeliveredSearch()" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
+        <div><button class="nav-btn-styled" style="background:#15803d; width:100%;" onclick="runDeliveredSearch()">Search</button></div>
+      </div>
+    </div>
+    <div id="ei-delivered-results" style="display:flex; flex-direction:column; gap:16px;"></div>`;
+}
+
+async function runDeliveredSearch() {
+  const zone = document.getElementById("ei-delivered-results");
+  zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
+  try {
+    const data = await apFetch({
+      action: "fetchExpectedDeliveries", filterMode: "delivered",
+      poNumber: document.getElementById("ei-delivered-po").value.trim(),
+      vendorName: document.getElementById("ei-delivered-vendor").value.trim(),
+      materialName: document.getElementById("ei-delivered-material").value.trim(),
+    });
+    if (!data.success) { zone.innerHTML = `<div style="color:var(--warn); padding:12px;">${data.error}</div>`; return; }
+    if (!data.delivered || data.delivered.length === 0) {
+      zone.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No delivered POs match.</div>`;
+      return;
+    }
+    zone.innerHTML = "";
+    const schemeDelivered = { sectionBg: "#f0fdf4", sectionBorder: "#86efac", headerColor: "#15803d", badgeBg: "#dcfce7", badgeColor: "#15803d", icon: "✅" };
+    zone.appendChild(renderExpectedInboundsSection("Delivered", data.delivered, schemeDelivered));
+  } catch(e) {
+    zone.innerHTML = `<div style="color:var(--warn); padding:12px;">Network error: ${e.message}</div>`;
+  }
 }
 
 async function loadExpectedInbounds() {
@@ -23100,17 +23138,17 @@ function renderExpectedInboundsPOCard(po, scheme) {
       <div style="padding:10px 14px; background:${scheme.sectionBg}; border-bottom:1px solid ${scheme.sectionBorder};">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
           <div>
-            <span style="font-family:monospace; font-weight:800; background:var(--brand); color:#fff; font-size:0.72rem; padding:3px 8px; border-radius:3px; margin-right:6px;">${po.purchaseOrderId}</span>
             <span style="font-size:0.78rem; font-weight:700; color:var(--muted);">Purchase Order Number: <strong style="color:var(--text);">${po.poNumber || "—"}</strong></span>
+            <span style="font-size:0.78rem; font-weight:700; color:var(--muted); margin-left:10px;">Vendor: <strong style="color:var(--text);">${po.vendorName}</strong></span>
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-            ${daysLabel}
+            ${po.actualDeliveryDate ? `<span style="font-size:0.72rem; font-weight:800; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:4px;">✅ Delivered on ${formatDateDMY(po.actualDeliveryDate)}</span>` : daysLabel}
           </div>
         </div>
         <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.78rem; color:var(--muted);">
-          <span><strong style="color:var(--text);">${po.vendorName}</strong></span>
           <span>📅 Order Date: <strong>${po.orderDate || "—"}</strong></span>
-          <span>🚚 Delivery Date: <strong>${formatDateDMY(po.deliveryDate) || "—"}</strong></span>
+          <span>🚚 Expected Delivery Date: <strong>${formatDateDMY(po.deliveryDate) || "—"}</strong></span>
+          <span>📦 Actual Delivery Date: <strong>${po.actualDeliveryDate ? formatDateDMY(po.actualDeliveryDate) : "—"}</strong></span>
         </div>
       </div>
 
