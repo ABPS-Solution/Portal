@@ -8924,7 +8924,7 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
             ${item.materialName}
             ${item.requiresBOQIncreaseFlag ? '<span style="font-size:0.62rem; background:var(--warn); color:white; padding:1px 4px; border-radius:3px; margin-left:4px; font-weight:bold;">OVERRUN</span>' : ''}
           </td>
-          <td style="padding:6px; color:var(--muted); font-size:0.85rem; text-align:center; vertical-align:middle;">${item.unitType || 'Pcs'}</td>
+          <td style="padding:6px; color:var(--muted); font-size:0.95rem; font-weight:600; text-align:center; vertical-align:middle;">${item.unitType || 'Pcs'}</td>
           <td style="padding:6px; font-family:monospace; font-weight:700; font-size:1.05rem; color:var(--brand); text-align:center; vertical-align:middle;">${fmtQty(reqQty)}</td>
           <td style="padding:6px; text-align:center; vertical-align:middle;">
             <input type="number" class="ticket-actual-qty-input" data-itemcode="${item.itemCode}" data-requested="${reqQty}"
@@ -8969,7 +8969,7 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
             <thead>
               <tr style="border-bottom:1px solid #e2e8f0;">
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted);">Material Name</th>
-                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:left;">Unit</th>
+                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Unit</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Requested Quantity</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Actual Quantity *</th>
               </tr>
@@ -9197,7 +9197,7 @@ function executeClientSideStoreTicketFilterSearch() {
     const mappedStorageScope = ticket.storeTargetScope || "Raw Materials Store";
 
     let cleanCreatedDate = formatDateTimeDMY(ticket.dateCreated);
-    let cleanActionedDate = ticket.dateActioned ? formatDateTimeDMY(ticket.dateActioned) : "Not Yet Actioned";
+    let cleanActionedDate = ticket.dateActioned ? formatDateTimeDMY(ticket.dateActioned) : "Not Actioned Yet";
 
     card.innerHTML = `
       <div class="contact-summary-header-row" onclick="toggleMatrixCardBody('${ticket.ticketId}')" style="margin-bottom:0; padding-bottom:6px; cursor:pointer;">
