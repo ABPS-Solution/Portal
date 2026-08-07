@@ -808,9 +808,18 @@
           </div>
         </div>
         <div style="margin-bottom:14px; position:relative;">
-          <label class="field-label" style="margin-top:0;">Job Card Number *</label>
-          <div id="fg-add-jobcard-display" data-disabled="1" onclick="toggleFGJobCardDropdown()" style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; min-height:56px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
-            <span id="fg-add-jobcard-display-text" style="white-space:normal; word-break:break-word;">— Select Project First —</span>
+          <label class="field-label" id="fg-add-boq-label" style="margin-top:0; color:var(--muted);">BOQ ID *</label>
+          <div id="fg-add-boq-display" data-disabled="1" onclick="toggleFGBOQDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="fg-add-boq-display-text" style="white-space:normal; word-break:break-word;">— Select Project First —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="fg-add-boq-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="fg-add-boq" value="" />
+        </div>
+        <div style="margin-bottom:14px; position:relative;">
+          <label class="field-label" id="fg-add-jobcard-label" style="margin-top:0; color:var(--muted);">Job Card Number *</label>
+          <div id="fg-add-jobcard-display" data-disabled="1" onclick="toggleFGJobCardDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="fg-add-jobcard-display-text" style="white-space:normal; word-break:break-word;">— Select BOQ First —</span>
             <span style="flex-shrink:0; margin-top:2px;">▾</span>
           </div>
           <div id="fg-add-jobcard-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
@@ -822,7 +831,7 @@
             <input type="text" id="fg-add-unit" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); font-weight:600;" placeholder="Auto-filled from Product Name" />
           </div>
           <div>
-            <label class="field-label" style="margin-top:0;">Product Serial Number</label>
+            <label class="field-label" style="margin-top:0;">Product Serial Number *</label>
             <input type="text" id="fg-add-serial" disabled style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" placeholder="Enter product serial number..." />
           </div>
         </div>
@@ -14633,24 +14642,41 @@ async function handleFGAddProjectChange(projectId) {
 
   const fieldsToToggle = ["fg-add-department","fg-add-product-search","fg-add-rating","fg-add-serial","fg-add-prod-person","fg-add-qa-person","fg-add-remarks"];
   const submitBtn = document.getElementById("fg-add-submit-btn");
+  const boqLabel = document.getElementById("fg-add-boq-label");
+  const jobCardLabel = document.getElementById("fg-add-jobcard-label");
+
+  fgJobCardDisplayReset("— Select BOQ First —");
+  if (jobCardLabel) jobCardLabel.style.color = "var(--muted)";
 
   if (projectId) {
     fieldsToToggle.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = false; });
     // Submit button stays locked until BOQ validation passes
 
-    fgJobCardDisplayReset("Loading...");
+    fgBOQDisplayReset("Loading...");
     try {
       const data = await apFetch({ action:"fetchJobCardsForProject", projectId });
-      fgJobCardDisplayReset("— Select Job Card Number —");
-      fgJobCardPopulate((data.jobCards || []).map(jc => ({ value: jc.jobCardNumber, label: `${jc.jobCardNumber} | ${jc.productName} ${jc.productRating}` })));
-      fgJobCardDisplayEnable();
+      window.fgJobCardsCache = data.jobCards || [];
+      const boqMap = {};
+      window.fgJobCardsCache.forEach(jc => {
+        if (jc.boqId && !boqMap[jc.boqId]) boqMap[jc.boqId] = jc.boqId;
+      });
+      if (Object.keys(boqMap).length === 0) {
+        fgBOQDisplayReset("⚠ No BOQ IDs found for this project");
+        if (boqLabel) boqLabel.style.color = "var(--warn)";
+      } else {
+        fgBOQDisplayReset("— Select BOQ ID —");
+        fgBOQPopulate(Object.entries(boqMap).map(([boqId, label]) => ({ value: boqId, label })));
+        fgBOQDisplayEnable();
+        if (boqLabel) boqLabel.style.color = "var(--brand)";
+      }
     } catch(e) {
-      fgJobCardDisplayReset("Error loading job cards");
+      fgBOQDisplayReset("Error loading BOQs");
     }
   } else {
     fieldsToToggle.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = true; });
     if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = "0.5"; submitBtn.style.cursor = "not-allowed"; }
-    fgJobCardDisplayReset("— Select Project First —");
+    fgBOQDisplayReset("— Select Project First —");
+    if (boqLabel) boqLabel.style.color = "var(--muted)";
   }
 }
 
@@ -14770,6 +14796,68 @@ function selectFGProduct(productName, itemCode, rating, unit) {
   document.getElementById("fg-product-dropdown").style.display = "none";
   triggerFGBOQValidation();
 }
+
+function fgBOQDisplayReset(text) {
+  const disp = document.getElementById("fg-add-boq-display");
+  const textEl = document.getElementById("fg-add-boq-display-text");
+  const hidden = document.getElementById("fg-add-boq");
+  const list = document.getElementById("fg-add-boq-dropdown-list");
+  if (textEl) textEl.textContent = text;
+  if (hidden) hidden.value = "";
+  if (list) { list.style.display = "none"; list.innerHTML = ""; }
+  if (disp) { disp.dataset.disabled = "1"; disp.style.opacity = "0.5"; disp.style.cursor = "not-allowed"; disp.style.color = "var(--muted)"; disp.style.background = "#f1f5f9"; }
+}
+function fgBOQDisplayEnable() {
+  const disp = document.getElementById("fg-add-boq-display");
+  if (disp) { disp.dataset.disabled = "0"; disp.style.opacity = "1"; disp.style.cursor = "pointer"; disp.style.color = "var(--text)"; disp.style.background = "#fff"; }
+}
+function fgBOQPopulate(options) {
+  const list = document.getElementById("fg-add-boq-dropdown-list");
+  if (!list) return;
+  list.innerHTML = options.map(o => `
+    <div onclick="event.stopPropagation(); selectFGBOQ('${o.value.replace(/'/g,"\\'")}', \`${o.label.replace(/\`/g,"'")}\`)"
+      style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
+}
+function toggleFGBOQDropdown() {
+  const disp = document.getElementById("fg-add-boq-display");
+  if (!disp || disp.dataset.disabled === "1") return;
+  const list = document.getElementById("fg-add-boq-dropdown-list");
+  const isOpen = list.style.display === "block";
+  document.querySelectorAll("[id$='-dropdown-list']").forEach(l => l.style.display = "none");
+  list.style.display = isOpen ? "none" : "block";
+}
+function selectFGBOQ(boqId, label) {
+  document.getElementById("fg-add-boq").value = boqId;
+  document.getElementById("fg-add-boq-display-text").textContent = label;
+  document.getElementById("fg-add-boq-dropdown-list").style.display = "none";
+  handleFGBOQChange(boqId);
+}
+function handleFGBOQChange(boqId) {
+  const jobCardLabel = document.getElementById("fg-add-jobcard-label");
+  resetFGDownstreamOfBOQ();
+  if (!boqId) {
+    fgJobCardDisplayReset("— Select BOQ First —");
+    if (jobCardLabel) jobCardLabel.style.color = "var(--muted)";
+    return;
+  }
+  const filtered = (window.fgJobCardsCache || []).filter(jc => jc.boqId === boqId);
+  fgJobCardDisplayReset("— Select Job Card Number —");
+  fgJobCardPopulate(filtered.map(jc => ({ value: jc.jobCardNumber, label: `${jc.jobCardNumber} (Set ${jc.setNumber})` })));
+  fgJobCardDisplayEnable();
+  if (jobCardLabel) jobCardLabel.style.color = "var(--brand)";
+}
+function resetFGDownstreamOfBOQ() {
+  window.fgBOQValidationPassed = false;
+  const zone = document.getElementById("fg-boq-validation-zone");
+  if (zone) { zone.style.display = "none"; zone.innerHTML = ""; }
+  updateFGSubmitButtonState();
+}
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#fg-add-boq-display") && !e.target.closest("#fg-add-boq-dropdown-list")) {
+    const l = document.getElementById("fg-add-boq-dropdown-list"); if (l) l.style.display = "none";
+  }
+});
 
 function fgJobCardDisplayReset(text) {
   const disp = document.getElementById("fg-add-jobcard-display");
@@ -14904,13 +14992,12 @@ function resetFGAddForm() {
   ["fg-add-department","fg-add-project","fg-add-prod-person","fg-add-qa-person","fg-add-unit"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
-  document.getElementById("fg-add-unit").value = "NOS";
-  document.getElementById("fg-add-unit-other").value = "";
-  document.getElementById("fg-add-unit-other").style.display = "none";
   ["fg-add-customer","fg-add-product-search","fg-add-product-name","fg-add-item-code",
-   "fg-add-rating","fg-add-jobcard","fg-add-serial","fg-add-remarks"].forEach(id => {
+   "fg-add-rating","fg-add-jobcard","fg-add-boq","fg-add-serial","fg-add-remarks"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
+  fgBOQDisplayReset("— Select Project First —");
+  fgJobCardDisplayReset("— Select BOQ First —");
   document.getElementById("fg-add-qa-done").value = "No";
   fgJobCardSheetFile = null; fgQATestCertFile = null; fgInProcessInspFile = null; fgQAInspectionFile = null;
   fgWarrantyCardFile = null; fgOtherDocsFile = null;
@@ -14942,8 +15029,7 @@ async function submitFGAddItem() {
   const rating     = document.getElementById("fg-add-rating").value.trim();
   const jobCard    = document.getElementById("fg-add-jobcard").value.trim();
   const serialNumber = document.getElementById("fg-add-serial").value.trim();
-  const unitSelect = document.getElementById("fg-add-unit").value.trim();
-  const unit        = unitSelect === "Others" ? document.getElementById("fg-add-unit-other").value.trim() : unitSelect;
+  const unit = document.getElementById("fg-add-unit").value.trim();
   const prodPerson = appActiveOperatorIdentityString || "";
   const remarks    = document.getElementById("fg-add-remarks").value.trim();
   const qaPersonName = document.getElementById("fg-add-qa-person").value.trim();
@@ -14953,6 +15039,7 @@ async function submitFGAddItem() {
   if (!department)  return failFG("Department is required.");
   if (!projectId)   return showBOQBanner("fg-add-feedback", "Project ID is required.", "error");
   if (!productName) return showBOQBanner("fg-add-feedback", "Product Name is required.", "error");
+  if (!serialNumber) return showBOQBanner("fg-add-feedback", "Product Serial Number is required.", "error");
   if (!window.fgBOQValidationPassed) return showBOQBanner("fg-add-feedback", "Material consumption for this Job Card does not match the BOQ. Resolve the mismatch before submitting.", "error");
   if (!qaPersonName) return showBOQBanner("fg-add-feedback", "Q/A Person is required.", "error");
   if (qaDone !== "Yes") return showBOQBanner("fg-add-feedback", "Q/A Done must be set to Yes before this item can be submitted.", "error");
