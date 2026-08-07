@@ -933,11 +933,11 @@
           <div style="flex: 1; min-width: 220px;">
             <label class="field-label">Filter By Store</label>
             <div class="pill-group" style="margin-bottom:0;">
-              <input type="checkbox" name="matrixStoreFilter" value="Raw Materials Store" id="ms_st_raw" onchange="executeClientSideStoreTicketFilterSearch()">
+              <input type="checkbox" name="matrixStoreFilter" value="Raw Materials Store" id="ms_st_raw">
               <label for="ms_st_raw">Raw Materials Store</label>
-              <input type="checkbox" name="matrixStoreFilter" value="Spare Store" id="ms_st_spare" onchange="executeClientSideStoreTicketFilterSearch()">
+              <input type="checkbox" name="matrixStoreFilter" value="Spare Store" id="ms_st_spare">
               <label for="ms_st_spare">Spare Store</label>
-              <input type="checkbox" name="matrixStoreFilter" value="Finished Goods Store" id="ms_st_fg" onchange="executeClientSideStoreTicketFilterSearch()">
+              <input type="checkbox" name="matrixStoreFilter" value="Finished Goods Store" id="ms_st_fg">
               <label for="ms_st_fg">Finished Goods Store</label>
             </div>
           </div>
@@ -945,11 +945,11 @@
           <div style="flex: 1; min-width: 220px;">
             <label class="field-label">Filter By Verification Status</label>
             <div class="pill-group" style="margin-bottom:0;">
-              <input type="checkbox" name="matrixStatusFilter" value="Pending" id="ms_st_pending" onchange="executeClientSideStoreTicketFilterSearch()">
+              <input type="checkbox" name="matrixStatusFilter" value="Pending" id="ms_st_pending">
               <label for="ms_st_pending">Pending Approval</label>
-              <input type="checkbox" name="matrixStatusFilter" value="Approved" id="ms_st_approved" onchange="executeClientSideStoreTicketFilterSearch()">
+              <input type="checkbox" name="matrixStatusFilter" value="Approved" id="ms_st_approved">
               <label for="ms_st_approved">Approved & Released</label>
-              <input type="checkbox" name="matrixStatusFilter" value="Rejected" id="ms_st_rejected" onchange="executeClientSideStoreTicketFilterSearch()">
+              <input type="checkbox" name="matrixStatusFilter" value="Rejected" id="ms_st_rejected">
               <label for="ms_st_rejected">Rejected</label>
             </div>
           </div>
@@ -971,7 +971,6 @@
               <span id="matrix-material-search-clear-btn" onclick="clearMatrixMaterialSearch()" style="display:none; position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer; color:var(--muted); font-size:1rem; font-weight:700; line-height:1;">✕</span>
             </div>
             <div id="matrix-material-search-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
-            <div id="matrix-material-search-active-pill" style="display:none; margin-top:6px; font-size:0.78rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:4px 10px; display:inline-block;"></div>
           </div>
 
           <div style="flex: 1; min-width: 280px; position: relative;">
@@ -989,23 +988,29 @@
             </div>
             <div id="matrix-project-search-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
+
           <div style="flex: 1; min-width: 280px;">
             <label class="field-label" style="margin-top: 0;">Filter By Production Department / Outgoing Use</label>
             <div class="pill-group" style="margin-bottom: 0;">
-              <input type="checkbox" name="matrixDepartmentFilter" value="Reactor" id="m_dept_reactor" onchange="executeClientSideStoreTicketFilterSearch()">
+              <input type="checkbox" name="matrixDepartmentFilter" value="Reactor" id="m_dept_reactor">
               <label for="m_dept_reactor">Reactor</label>
-              <input type="checkbox" name="matrixDepartmentFilter" value="Capacitor" id="m_dept_capacitor" onchange="executeClientSideStoreTicketFilterSearch()">
+              <input type="checkbox" name="matrixDepartmentFilter" value="Capacitor" id="m_dept_capacitor">
               <label for="m_dept_capacitor">Capacitor</label>
-              <input type="checkbox" name="matrixDepartmentFilter" value="Panel" id="m_dept_panel" onchange="executeClientSideStoreTicketFilterSearch()">
+              <input type="checkbox" name="matrixDepartmentFilter" value="Panel" id="m_dept_panel">
               <label for="m_dept_panel">Panel</label>
-              <input type="checkbox" name="matrixDepartmentFilter" value="Processing" id="m_dept_processing" onchange="executeClientSideStoreTicketFilterSearch()">
+              <input type="checkbox" name="matrixDepartmentFilter" value="Processing" id="m_dept_processing">
               <label for="m_dept_processing">Processing</label>
-              <input type="checkbox" name="matrixDepartmentFilter" value="Service" id="m_dept_service" onchange="executeClientSideStoreTicketFilterSearch()">
+              <input type="checkbox" name="matrixDepartmentFilter" value="Service" id="m_dept_service">
               <label for="m_dept_service">Service</label>
             </div>
           </div>
         </div>
+
+        <div style="display:flex; justify-content:flex-end; margin-top:14px; border-top:1px dashed rgba(0, 86, 179, 0.15); padding-top:12px;">
+          <button class="btn btn-sub" id="matrix-search-btn" onclick="triggerStoreTicketMatrixSearch()">Search</button>
+        </div>
       </div>
+      <div id="matrix-search-summary-text" style="display:none; font-weight:700; color:var(--brand); margin-bottom:10px; font-size:0.9rem;"></div>
       <div id="store-historical-matrix-results-feed" style="display: flex; flex-direction: column; gap: 12px;"></div>
     </div>
 
@@ -9047,13 +9052,13 @@ function selectMatrixMaterialSuggestion(productName) {
 }
 
 function handleMatrixProjectSearchInput(rawValue) {
-  matrixActiveProjectSearchQuery = rawValue.trim().toLowerCase();
+  const query = rawValue.trim().toLowerCase();
   const clearBtn = document.getElementById("matrix-project-search-clear-btn");
-  if (clearBtn) clearBtn.style.display = matrixActiveProjectSearchQuery ? "block" : "none";
+  if (clearBtn) clearBtn.style.display = query ? "block" : "none";
 
   const dd = document.getElementById("matrix-project-search-dropdown");
-  if (matrixActiveProjectSearchQuery) {
-    const matches = (window.matrixKnownProjectCodes || []).filter(p => p.toLowerCase().includes(matrixActiveProjectSearchQuery)).slice(0, 10);
+  if (query) {
+    const matches = (window.matrixKnownProjectCodes || []).filter(p => p.toLowerCase().includes(query)).slice(0, 10);
     if (matches.length > 0) {
       dd.innerHTML = matches.map(p => `
         <div onclick="selectMatrixProjectSuggestion('${p.replace(/'/g,"\\'")}')"
@@ -9062,23 +9067,21 @@ function handleMatrixProjectSearchInput(rawValue) {
       dd.style.display = "block";
     } else { dd.style.display = "none"; }
   } else { dd.style.display = "none"; }
-
-  executeClientSideStoreTicketFilterSearch();
 }
 function selectMatrixProjectSuggestion(projectId) {
   document.getElementById("matrix-project-search-input").value = projectId;
   document.getElementById("matrix-project-search-dropdown").style.display = "none";
-  handleMatrixProjectSearchInput(projectId);
+  const clearBtn = document.getElementById("matrix-project-search-clear-btn");
+  if (clearBtn) clearBtn.style.display = "block";
 }
 function clearMatrixProjectSearch() {
   const input = document.getElementById("matrix-project-search-input");
   if (input) input.value = "";
-  matrixActiveProjectSearchQuery = "";
   const clearBtn = document.getElementById("matrix-project-search-clear-btn");
   if (clearBtn) clearBtn.style.display = "none";
   document.getElementById("matrix-project-search-dropdown").style.display = "none";
-  executeClientSideStoreTicketFilterSearch();
 }
+
 document.addEventListener("click", (e) => {
   if (!e.target.closest("#matrix-material-name-search-input") && !e.target.closest("#matrix-material-search-dropdown")) {
     const d1 = document.getElementById("matrix-material-search-dropdown"); if (d1) d1.style.display = "none";
@@ -9090,34 +9093,16 @@ document.addEventListener("click", (e) => {
 
 function handleMatrixMaterialSearchInput(rawValue) {
   handleMatrixMaterialSearchInputSuggestions(rawValue);
-  clearTimeout(matrixMaterialSearchDebounceTimer);
-  matrixMaterialSearchDebounceTimer = setTimeout(() => {
-    matrixActiveMaterialSearchQuery = rawValue.trim().toLowerCase();
-    const clearBtn = document.getElementById("matrix-material-search-clear-btn");
-    const activePill = document.getElementById("matrix-material-search-active-pill");
-    if (matrixActiveMaterialSearchQuery) {
-      if (clearBtn) clearBtn.style.display = "block";
-      if (activePill) {
-        activePill.style.display = "inline-block";
-        activePill.textContent = "Filtering by material: \"" + rawValue.trim() + "\"";
-      }
-    } else {
-      if (clearBtn) clearBtn.style.display = "none";
-      if (activePill) activePill.style.display = "none";
-    }
-    executeClientSideStoreTicketFilterSearch();
-  }, 280);
+  const clearBtn = document.getElementById("matrix-material-search-clear-btn");
+  if (clearBtn) clearBtn.style.display = rawValue.trim() ? "block" : "none";
 }
 
 function clearMatrixMaterialSearch() {
   const input = document.getElementById("matrix-material-name-search-input");
   if (input) input.value = "";
-  matrixActiveMaterialSearchQuery = "";
   const clearBtn = document.getElementById("matrix-material-search-clear-btn");
-  const activePill = document.getElementById("matrix-material-search-active-pill");
   if (clearBtn) clearBtn.style.display = "none";
-  if (activePill) activePill.style.display = "none";
-  executeClientSideStoreTicketFilterSearch();
+  document.getElementById("matrix-material-search-dropdown").style.display = "none";
 }
 
 /**
@@ -9125,14 +9110,34 @@ function clearMatrixMaterialSearch() {
  * Searches historical logs by mapping filter filters for stores, action types, 
  * projects, departments, statuses, and material name/item code safely using type-guaranteed parameters lookups.
  */
+function triggerStoreTicketMatrixSearch() {
+  matrixActiveMaterialSearchQuery = (document.getElementById("matrix-material-name-search-input")?.value || "").trim().toLowerCase();
+  matrixActiveProjectSearchQuery = (document.getElementById("matrix-project-search-input")?.value || "").trim().toLowerCase();
+  document.getElementById("matrix-material-search-dropdown").style.display = "none";
+  document.getElementById("matrix-project-search-dropdown").style.display = "none";
+  executeClientSideStoreTicketFilterSearch();
+}
+
 function executeClientSideStoreTicketFilterSearch() {
   const resultsFeedZone = document.getElementById("store-historical-matrix-results-feed");
   if (!resultsFeedZone) return;
 
   // READ ALL ACTIVE INTERFACE CHECKED ELEMENTS PILLS CHANNELS
   const checkedStores      = Array.from(document.querySelectorAll('input[name="matrixStoreFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
+  const checkedStoreLabels = Array.from(document.querySelectorAll('input[name="matrixStoreFilter"]:checked')).map(cb => cb.value);
   const checkedStatuses    = Array.from(document.querySelectorAll('input[name="matrixStatusFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
+  const checkedStatusLabels = Array.from(document.querySelectorAll('input[name="matrixStatusFilter"]:checked')).map(cb => cb.nextElementSibling ? cb.nextElementSibling.textContent : cb.value);
   const checkedDepartments = Array.from(document.querySelectorAll('input[name="matrixDepartmentFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
+  const checkedDeptLabels  = Array.from(document.querySelectorAll('input[name="matrixDepartmentFilter"]:checked')).map(cb => cb.value);
+
+  const summaryParts = [];
+  summaryParts.push(checkedStoreLabels.length ? `Store: ${checkedStoreLabels.join(", or ")}` : "All Stores");
+  summaryParts.push(checkedStatusLabels.length ? `Status: ${checkedStatusLabels.join(", or ")}` : "All Statuses");
+  if (matrixActiveMaterialSearchQuery) summaryParts.push(`Material: "${matrixActiveMaterialSearchQuery}"`);
+  if (matrixActiveProjectSearchQuery) summaryParts.push(`Project ID: "${matrixActiveProjectSearchQuery}"`);
+  if (checkedDeptLabels.length) summaryParts.push(`Department: ${checkedDeptLabels.join(", or ")}`);
+  const summaryEl = document.getElementById("matrix-search-summary-text");
+  if (summaryEl) { summaryEl.style.display = "block"; summaryEl.textContent = `Searching for ${summaryParts.join(" • ")}`; }
 
   resultsFeedZone.innerHTML = "";
 
@@ -9142,13 +9147,15 @@ function executeClientSideStoreTicketFilterSearch() {
     const ticketDeptStr  = (ticket.department || "General Store").toString().trim().toLowerCase();
     const projectIdStr   = (ticket.projectId || "").toString().trim().toLowerCase();
     const statusStr      = (ticket.status || "Pending").toString().trim().toLowerCase();
+    const materialMatchStr = (Array.isArray(ticket.items) ? ticket.items : []).map(i => `${i.materialName || ""} ${i.itemCode || ""}`).join(" ").toLowerCase();
     
-    const matchStore   = (checkedStores.length === 0 || checkedStores.indexOf(ticketStoreStr) !== -1);
-    const matchProject = (!matrixActiveProjectSearchQuery || projectIdStr.includes(matrixActiveProjectSearchQuery));
-    const matchStatus  = (checkedStatuses.length === 0 || checkedStatuses.indexOf(statusStr) !== -1);
-    const matchDept    = (checkedDepartments.length === 0 || checkedDepartments.indexOf(ticketDeptStr) !== -1);
+    const matchStore    = (checkedStores.length === 0 || checkedStores.indexOf(ticketStoreStr) !== -1);
+    const matchProject  = (!matrixActiveProjectSearchQuery || projectIdStr.includes(matrixActiveProjectSearchQuery));
+    const matchMaterial = (!matrixActiveMaterialSearchQuery || materialMatchStr.includes(matrixActiveMaterialSearchQuery));
+    const matchStatus   = (checkedStatuses.length === 0 || checkedStatuses.indexOf(statusStr) !== -1);
+    const matchDept     = (checkedDepartments.length === 0 || checkedDepartments.indexOf(ticketDeptStr) !== -1);
     
-    return matchStore && matchProject && matchStatus && matchDept;
+    return matchStore && matchProject && matchMaterial && matchStatus && matchDept;
   });
 
   if (filteredOutputList.length === 0) {
@@ -9598,8 +9605,7 @@ async function initializeStoreHistoryMatrixWorkspace() {
     window.matrixKnownProjectCodes = (projectsData.projects || []).map(c => c.toString().trim());
     loadItemCodeCatalogIntoCache();
 
-    // Render baseline unfiltered log output lines
-    executeClientSideStoreTicketFilterSearch();
+    if (resultsFeedZone) resultsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Set your filters above and click Search.</div>`;
 
   } catch (error) {
     if (resultsFeedZone) resultsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn);">Network Exception: ${error.message}</div>`;
