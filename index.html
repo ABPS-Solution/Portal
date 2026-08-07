@@ -8919,8 +8919,8 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
           <td style="padding:6px; font-family:monospace; font-weight:700; color:var(--brand); text-align:right;">${fmtQty(reqQty)}</td>
           <td style="padding:6px; text-align:right;">
             <input type="number" class="ticket-actual-qty-input" data-itemcode="${item.itemCode}" data-requested="${reqQty}"
-              value="${reqQty}" min="0" max="${reqQty}" step="any"
-              style="width:90px; padding:5px; text-align:right; font-family:monospace; font-weight:700; border:1.5px solid var(--border); border-radius:4px;" />
+              value="${reqQty}" min="0" max="${reqQty}" step="any" oninput="clampTicketActualQtyInput(this)"
+              style="width:100px; padding:5px; text-align:right; font-family:monospace; font-weight:700; border:1.5px solid var(--border); border-radius:4px;" />
           </td>
         </tr>`;
     });
@@ -8932,14 +8932,15 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
     const mappedStorageScope = ticket.storeTargetScope || "Raw Materials Store";
 
     cardWrapper.innerHTML = `
-      <div class="contact-summary-header-row" style="margin-bottom:10px; padding-bottom:6px; border-bottom:1px dashed var(--border);">
+      <div class="contact-summary-header-row" onclick="toggleTicketCardBody('${ticket.ticketId}')" style="margin-bottom:0; padding-bottom:6px; cursor:pointer;">
         <div class="contact-summary-title-info" style="width:100%;">
           <div class="meta-row-line-block">
             <span style="font-family:monospace; font-weight:800; background:var(--brand); color:#fff; font-size:0.75rem; padding:3px 6px;">${ticket.ticketId}</span>
             <span style="background:#fef3c7; color:#b45309; font-weight:700; margin-left:4px;">${statusBadgeText}</span>
-            <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Store: ${mappedStorageScope.toUpperCase()}</span>
-            <span style="font-size:0.78rem; font-weight:600; color:#475569; margin-left:8px;">Department: ${ticket.department || "General Store"}</span>
-            <span style="margin-left:8px;">Ticket Created By:</span><strong style="color:#111827;">${ticket.requestedBy}</strong>
+            <span style="margin-left:8px;">Store:</span> <strong style="color:#111827;">${mappedStorageScope.toUpperCase()}</strong>
+            <span style="margin-left:8px;">Department:</span> <strong style="color:#111827;">${ticket.department || "General Store"}</strong>
+            <span style="margin-left:8px;">Ticket Created By:</span> <strong style="color:#111827;">${ticket.requestedBy}</strong>
+            <span id="ticket-card-caret-${ticket.ticketId}" style="float:right; font-weight:700; color:var(--muted);">▸</span>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
             <span>Project ID:</span><strong style="margin-right:15px; color:var(--brand);">${ticket.projectId}</strong>
@@ -8947,28 +8948,52 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
           </div>
         </div>
       </div>
-      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px; margin-bottom:12px;">
-        <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.82rem;">
-          <thead>
-            <tr style="border-bottom:1px solid #e2e8f0;">
-              <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted);">Material Name</th>
-              <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:left;">Unit</th>
-              <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:right;">Requested Quantity</th>
-              <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:right;">Actual Quantity</th>
-            </tr>
-          </thead>
-          <tbody>${itemRowsHtml}</tbody>
-        </table>
-      </div>
-      <div style="display:flex; justify-content:flex-end; gap:8px;">
-        <button class="nav-btn-styled" id="btn-reject-${ticket.ticketId}" style="background:#e53e3e; padding:6px 12px; font-size:0.75rem;" onclick="executeStoreManagerTicketActionDecision('${ticket.ticketId}', 'REJECT')">Reject</button>
-          <button class="nav-btn-styled" id="btn-approve-${ticket.ticketId}" style="background:var(--accent); padding:6px 14px; font-size:0.78rem; font-weight:700;" onclick="checkCoverageAndApprove('${ticket.ticketId}', '${ticket.projectId}', this)">
-          ${isBoqInc ? 'Approve Allocation Overwrite' : 'Approve'}
-        </button>
+      <div id="ticket-card-body-${ticket.ticketId}" style="display:none; padding-top:10px; border-top:1px dashed var(--border); margin-top:6px;">
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px; margin-bottom:12px;">
+          <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.82rem; table-layout:fixed;">
+            <colgroup>
+              <col style="width:auto;">
+              <col style="width:90px;">
+              <col style="width:150px;">
+              <col style="width:150px;">
+            </colgroup>
+            <thead>
+              <tr style="border-bottom:1px solid #e2e8f0;">
+                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted);">Material Name</th>
+                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:left;">Unit</th>
+                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:right;">Requested Quantity</th>
+                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:right;">Actual Quantity</th>
+              </tr>
+            </thead>
+            <tbody>${itemRowsHtml}</tbody>
+          </table>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button class="nav-btn-styled" id="btn-reject-${ticket.ticketId}" style="background:#e53e3e; padding:6px 12px; font-size:0.75rem;" onclick="executeStoreManagerTicketActionDecision('${ticket.ticketId}', 'REJECT')">Reject</button>
+            <button class="nav-btn-styled" id="btn-approve-${ticket.ticketId}" style="background:var(--accent); padding:6px 14px; font-size:0.78rem; font-weight:700;" onclick="checkCoverageAndApprove('${ticket.ticketId}', '${ticket.projectId}', this)">
+            ${isBoqInc ? 'Approve Allocation Overwrite' : 'Approve'}
+          </button>
+        </div>
       </div>
     `;
     cardsFeedZone.appendChild(cardWrapper);
   });
+}
+
+function toggleTicketCardBody(ticketId) {
+  const body = document.getElementById(`ticket-card-body-${ticketId}`);
+  const caret = document.getElementById(`ticket-card-caret-${ticketId}`);
+  if (!body) return;
+  const isOpen = body.style.display !== "none";
+  body.style.display = isOpen ? "none" : "block";
+  if (caret) caret.textContent = isOpen ? "▸" : "▾";
+}
+
+function clampTicketActualQtyInput(inp) {
+  const requested = Number(inp.dataset.requested) || 0;
+  let val = parseFloat(inp.value);
+  if (isNaN(val) || val < 0) val = 0;
+  if (val > requested) { val = requested; inp.value = val; }
 }
 
 function collectTicketActualQuantities(ticketId) {
