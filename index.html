@@ -8902,12 +8902,7 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
     cardWrapper.className = "contact-summary-card-parent";
     cardWrapper.id = `store-pending-ticket-card-node-${ticket.ticketId}`;
     
-    let itemsArray = [];
-    try { 
-      itemsArray = JSON.parse(ticket.itemsJson); 
-    } catch(e) { 
-      itemsArray = []; 
-    }
+    let itemsArray = Array.isArray(ticket.items) ? ticket.items : [];
     
     let itemRowsHtml = "";
     itemsArray.forEach(item => {
@@ -9045,12 +9040,7 @@ function executeClientSideStoreTicketFilterSearch() {
     const card = document.createElement("div");
     card.className = "contact-summary-card-parent";
     
-    let itemsArray = [];
-    try { 
-      itemsArray = JSON.parse(ticket.itemsJson); 
-    } catch(e) { 
-      itemsArray = []; 
-    }
+    let itemsArray = Array.isArray(ticket.items) ? ticket.items : [];
     
     let itemsTableRowsHtml = "";
     itemsArray.forEach(i => {
