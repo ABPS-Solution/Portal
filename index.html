@@ -714,17 +714,14 @@
           <input type="text" id="jclh-customer" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Project ID" />
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+      <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
         <div>
           <label class="field-label" style="margin-top:0;">BOQ ID *</label>
           <select id="jclh-boq" onchange="handleJCLHBoqChange(this.value)" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
             <option value="">— Select Project First —</option>
           </select>
         </div>
-        <div>
-          <label class="field-label" style="margin-top:0;">Department</label>
-          <input type="text" id="jclh-department" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from BOQ ID" />
-        </div>
+        <input type="hidden" id="jclh-department" value="" />
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
         <div>
@@ -7438,7 +7435,7 @@ function startLiveStockPolling() {
     const selectedMaterial = document.getElementById("ticket-item-selection-dropdown")?.value;
     if (!selectedMaterial) { stopLiveStockPolling(); return; }
     await refreshLiveStockForSelectedMaterial();
-  }, 8000); // refresh every 8 seconds
+  }, 5000); // refresh every 5 seconds
 }
 
 function stopLiveStockPolling() {
@@ -7477,6 +7474,19 @@ async function refreshLiveStockForSelectedMaterial() {
     // NOW fire the single network call for live stock counts
     const data = await apFetch({ action: "getLiveStockForItem", itemCode: matchedCatalogEntry.itemCode, projectId: projectId });
     if (!data.success) return;
+
+    // Also refresh job_card_materials on every tick — a QA check completing,
+    // automatic reservation shifting stock, or a BOQ revision changing this
+    // Job Card's allotment can all happen while this pill sits open, and
+    // ALLOTTED/USED/REMAINING (plus the "Currently Reserved" figure above
+    // them) come from this cache, not from getLiveStockForItem.
+    const jobCardNumberValPoll = document.getElementById("ticket-job-card-dropdown")?.value || "";
+    if (jobCardNumberValPoll && projectId) {
+      try {
+        const freshJcmPoll = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValPoll, projectId: projectId });
+        window._ticketJobCardMaterialsCache = { key: jobCardNumberValPoll + "|" + projectId, records: freshJcmPoll.records || [] };
+      } catch(e) { /* keep whatever was already cached on a transient failure */ }
+    }
 
     // Patch inventory counts in local cache
     const cleanKey = cleanMaterialName.replace(/\s+/g,"").toLowerCase();
