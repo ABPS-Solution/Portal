@@ -7681,10 +7681,10 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
             <div>
               Spare Store Count:
               <span class="live-counter-pill ${styleClassSpare}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
-                ${availableCountSpare} ${unitTokenSpare} AVAILABLE
+                ${jcmMatchSpare.remainingQty || 0} ${unitTokenSpare} Currently Reserved for THIS JOB CARD
               </span>
               <span style="font-size:0.78rem; color:var(--muted); margin-left:6px; font-weight:normal;">
-                (Reserved: ${reservedCountSpare} ${unitTokenSpare})
+                (Extra Unreserved: ${availableCountSpare} ${unitTokenSpare})
               </span>
             </div>
             <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
@@ -7789,10 +7789,10 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
           <div>
             Raw Material Store Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
-              ${availableCount} ${unitToken} AVAILABLE
+              ${jcmMatch.remainingQty || 0} ${unitToken} Currently Reserved for THIS JOB CARD
             </span>
             <span style="font-size:0.78rem; color:var(--muted); margin-left:6px; font-weight:normal;">
-              (Reserved: ${reservedCount} ${unitToken})
+              (Extra Unreserved: ${availableCount} ${unitToken})
             </span>
           </div>
           <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
@@ -7827,10 +7827,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
           <div>
             Raw Material Store Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
-              ${availableCount} ${unitToken} AVAILABLE
-            </span>
-            <span style="font-size:0.78rem; color:var(--muted); margin-left:6px; font-weight:normal;">
-              (Reserved: ${reservedCount} ${unitToken})
+              ${availableCount} ${unitToken} Extra Unreserved
             </span>
           </div>
           <div style="margin-top:4px; font-size:0.72rem; color:var(--warn);">⚠️ BOQ data could not be loaded. Retry by reselecting the item.</div>
@@ -11311,7 +11308,7 @@ async function handleCreateTicketProjectChange(chosenProjectVal) {
     const boqMap = {};
     (data.jobCards || []).forEach(jc => {
       if (jc.boqId && !boqMap[jc.boqId]) {
-        boqMap[jc.boqId] = `${jc.boqId} | ${jc.productName} ${jc.productRating}`;
+        boqMap[jc.boqId] = jc.boqId;
       }
     });
     // Cache job cards for BOQ filtering
