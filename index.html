@@ -1245,7 +1245,7 @@
       <div></div>
       <button class="nav-btn-styled" onclick="exitTourExpenseBackToMenu()">Return to Main Dashboard</button>
     </div>
-    <div class="section-header" style="padding:0; margin:0 0 16px 0;">Tour Expense Tracker</div>
+    <h2 style="margin: 0 0 16px 0;">Tour Expense Tracker</h2>
     <div id="te-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
     <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center;">
@@ -8924,12 +8924,12 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
             ${item.materialName}
             ${item.requiresBOQIncreaseFlag ? '<span style="font-size:0.62rem; background:var(--warn); color:white; padding:1px 4px; border-radius:3px; margin-left:4px; font-weight:bold;">OVERRUN</span>' : ''}
           </td>
-          <td style="padding:6px; color:var(--muted); font-size:0.78rem; text-align:left;">${item.unitType || 'Pcs'}</td>
-          <td style="padding:6px; font-family:monospace; font-weight:700; color:var(--brand); text-align:right;">${fmtQty(reqQty)}</td>
-          <td style="padding:6px 0px 6px 6px; text-align:right;">
+          <td style="padding:6px; color:var(--muted); font-size:0.85rem; text-align:center; vertical-align:middle;">${item.unitType || 'Pcs'}</td>
+          <td style="padding:6px; font-family:monospace; font-weight:700; font-size:1.05rem; color:var(--brand); text-align:center; vertical-align:middle;">${fmtQty(reqQty)}</td>
+          <td style="padding:6px; text-align:center; vertical-align:middle;">
             <input type="number" class="ticket-actual-qty-input" data-itemcode="${item.itemCode}" data-requested="${reqQty}"
               value="${reqQty}" min="0" max="${reqQty}" step="any" oninput="clampTicketActualQtyInput(this)"
-              style="box-sizing:border-box; width:100%; margin:0; padding:5px 6px; text-align:right; font-family:monospace; font-weight:700; border:1.5px solid var(--border); border-radius:4px;" />
+              style="box-sizing:border-box; width:100%; margin:0; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; font-size:1.05rem; border:1.5px solid var(--border); border-radius:4px;" />
           </td>
         </tr>`;
     });
@@ -8946,7 +8946,7 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
           <div class="meta-row-line-block">
             <span style="font-family:monospace; font-weight:800; background:var(--brand); color:#fff; font-size:0.75rem; padding:3px 6px;">${ticket.ticketId}</span>
             <span style="background:#fef3c7; color:#b45309; font-weight:700; margin-left:4px;">${statusBadgeText}</span>
-            <span style="margin-left:8px;">Store:</span> <strong style="color:#111827;">${mappedStorageScope.toUpperCase()}</strong>
+            <span style="margin-left:8px;">Store:</span> <strong style="color:#111827;">${mappedStorageScope}</strong>
             <span style="margin-left:8px;">Department:</span> <strong style="color:#111827;">${ticket.department || "General Store"}</strong>
             <span style="margin-left:8px;">Ticket Created By:</span> <strong style="color:#111827;">${ticket.requestedBy}</strong>
             <span id="ticket-card-caret-${ticket.ticketId}" style="float:right; font-weight:700; color:var(--muted);">▸</span>
@@ -8970,8 +8970,8 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
               <tr style="border-bottom:1px solid #e2e8f0;">
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted);">Material Name</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:left;">Unit</th>
-                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:right;">Requested Quantity</th>
-                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:right;">Actual Quantity</th>
+                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Requested Quantity</th>
+                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Actual Quantity *</th>
               </tr>
             </thead>
             <tbody>${itemRowsHtml}</tbody>
@@ -9017,6 +9017,12 @@ function collectTicketActualQuantities(ticketId) {
     result[inp.dataset.itemcode] = val;
   });
   return result;
+}
+
+function hasEmptyActualQtyInputs(ticketId) {
+  const card = document.getElementById(`store-pending-ticket-card-node-${ticketId}`);
+  if (!card) return false;
+  return Array.from(card.querySelectorAll(".ticket-actual-qty-input")).some(inp => inp.value.trim() === "");
 }
 
 /**
@@ -9178,7 +9184,7 @@ function executeClientSideStoreTicketFilterSearch() {
       itemsTableRowsHtml += `
         <tr>
           <td style="padding:6px; color:var(--text); font-weight:600; text-align:left;">${i.materialName}</td>
-          <td style="padding:6px; font-family:monospace; font-weight:700; text-align:right; color:var(--brand);">${fmtQty(mappedQty)} ${i.unitType || 'Pcs'}</td>
+          <td style="padding:6px; font-family:monospace; font-weight:700; font-size:1.05rem; text-align:right; color:var(--brand);">${fmtQty(mappedQty)} ${i.unitType || 'Pcs'}</td>
         </tr>`;
     });
 
@@ -9187,47 +9193,60 @@ function executeClientSideStoreTicketFilterSearch() {
     if (currentStatus === "Approved") badgeColorStyle = "background:#dcfce7; color:#15803d;";
     if (currentStatus === "Rejected" || currentStatus === "Expired" || currentStatus === "Rejected by Admin") badgeColorStyle = "background:#fee2e2; color:#b91c1c;";
 
-    const typeLabel = ticket.ticketType || "Request Material";
-    const isBoqInc = typeLabel === "BOQ INCREASE REQUEST";
-    const typeLabelColorStyle = isBoqInc 
-      ? "background:#fee2e2; color:#991b1b; border:1px solid #fca5a5;" 
-      : ((typeLabel === "Return Material") ? "background:#e0f2fe; color:#0369a1;" : "background:#edf2f7; color:#1e293b;");
-      
-    const statusBadgeText = isBoqInc ? "BOQ LIMIT OVERRUN" : currentStatus.toUpperCase();
+    const statusBadgeText = currentStatus.toUpperCase();
     const mappedStorageScope = ticket.storeTargetScope || "Raw Materials Store";
 
     let cleanCreatedDate = formatDateTimeDMY(ticket.dateCreated);
-    let cleanActionedDate = ticket.dateActioned ? formatDateTimeDMY(ticket.dateActioned) : "Waiting Handover Verification";
+    let cleanActionedDate = ticket.dateActioned ? formatDateTimeDMY(ticket.dateActioned) : "Not Yet Actioned";
 
     card.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed var(--border); padding-bottom:6px; margin-bottom:8px;">
-        <div>
-          <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:2px 6px; border-radius:4px; font-size:0.8rem;">${ticket.ticketId}</span>
-          <strong style="margin-left:8px; font-size:0.85rem; color:var(--brand);">Project ID: ${ticket.projectId}</strong>
-          <span style="font-size:0.65rem; font-weight:700; border-radius:3px; padding:1px 5px; margin-left:4px; ${typeLabelColorStyle}">${typeLabel.toUpperCase()}</span>
-          <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Store: ${mappedStorageScope}</span>
-          <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Department: ${ticket.department || "General Store"}</span>
+      <div class="contact-summary-header-row" onclick="toggleMatrixCardBody('${ticket.ticketId}')" style="margin-bottom:0; padding-bottom:6px; cursor:pointer;">
+        <div class="contact-summary-title-info" style="width:100%;">
+          <div class="meta-row-line-block" style="display:flex; align-items:center; justify-content:space-between;">
+            <div>
+              <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:2px 6px; border-radius:4px; font-size:0.8rem;">${ticket.ticketId}</span>
+              <span style="margin-left:8px;">Store:</span> <strong style="color:#111827;">${mappedStorageScope}</strong>
+              <span style="margin-left:8px;">Department:</span> <strong style="color:#111827;">${ticket.department || "General Store"}</strong>
+            </div>
+            <div>
+              <span style="font-size:0.68rem; font-weight:700; border-radius:4px; padding:2px 6px; ${badgeColorStyle}">${statusBadgeText}</span>
+              <span id="matrix-card-caret-${ticket.ticketId}" style="margin-left:8px; font-weight:700; color:var(--muted);">▸</span>
+            </div>
+          </div>
+          <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
+            <span>Job Card Number:</span> <strong style="color:var(--brand);">${ticket.jobCardNumber || "—"}</strong>
+          </div>
         </div>
-        <span style="font-size:0.68rem; font-weight:700; border-radius:4px; padding:2px 6px; ${badgeColorStyle}">${statusBadgeText}</span>
       </div>
-      <div style="font-size:0.8rem; line-height:1.5; margin-bottom:8px; color:#4a5568; text-align:left;">
-        <strong>Requested By:</strong> ${ticket.requestedBy} | <strong>Actioned By:</strong> ${ticket.actionedBy || "Pending Review"}<br/>  
-        <strong>Created On:</strong> ${cleanCreatedDate} | <strong>Actioned On:</strong> ${cleanActionedDate}
-      </div>
-      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px;">
-        <table style="width:100%; font-size:0.82rem; border-collapse:collapse; table-layout:fixed;">
-          <thead>
-            <tr style="border-bottom:1px solid #e2e8f0; font-size:0.7rem; color:var(--muted); font-weight:bold; text-transform:uppercase;">
-              <th style="text-align:left; padding:4px;">Material Description</th>
-              <th style="text-align:right; padding:4px;">Quantity Mapped</th>
-            </tr>
-          </thead>
-          <tbody>${itemsTableRowsHtml}</tbody>
-        </table>
+      <div id="matrix-card-body-${ticket.ticketId}" style="display:none; padding-top:8px; border-top:1px dashed var(--border); margin-top:6px;">
+        <div style="font-size:0.8rem; line-height:1.5; margin-bottom:8px; color:#4a5568; text-align:left;">
+          <strong>Requested By:</strong> ${ticket.requestedBy} | <strong>Actioned By:</strong> ${ticket.actionedBy || "Pending Review"}<br/>  
+          <strong>Created On:</strong> ${cleanCreatedDate} | <strong>Actioned On:</strong> ${cleanActionedDate}
+        </div>
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px;">
+          <table style="width:100%; font-size:0.82rem; border-collapse:collapse; table-layout:fixed;">
+            <thead>
+              <tr style="border-bottom:1px solid #e2e8f0; font-size:0.7rem; color:var(--muted); font-weight:bold; text-transform:uppercase;">
+                <th style="text-align:left; padding:4px;">Material Description</th>
+                <th style="text-align:right; padding:4px;">Quantity</th>
+              </tr>
+            </thead>
+            <tbody>${itemsTableRowsHtml}</tbody>
+          </table>
+        </div>
       </div>
     `;
     resultsFeedZone.appendChild(card);
   });
+}
+
+function toggleMatrixCardBody(ticketId) {
+  const body = document.getElementById(`matrix-card-body-${ticketId}`);
+  const caret = document.getElementById(`matrix-card-caret-${ticketId}`);
+  if (!body) return;
+  const isOpen = body.style.display !== "none";
+  body.style.display = isOpen ? "none" : "block";
+  if (caret) caret.textContent = isOpen ? "▸" : "▾";
 }
 
 /**
@@ -9307,6 +9326,10 @@ async function confirmFGReleaseSelection(ticketId) {
 async function checkCoverageAndApprove(ticketId, projectId, btn, storeType) {
   if (storeType === 'Finished Goods Store') {
     return openFGReleaseSelectionModal(ticketId);
+  }
+  if (hasEmptyActualQtyInputs(ticketId)) {
+    alert("Actual Quantity is required for every item before approving.");
+    return;
   }
   const rejectBtn = document.getElementById(`btn-reject-${ticketId}`);
   btn.disabled = true;
@@ -9590,7 +9613,25 @@ async function executeStoreManagerTicketActionDecision(ticketId, decisionString)
 async function initializeStoreHistoryMatrixWorkspace() {
   const resultsFeedZone = document.getElementById("store-historical-matrix-results-feed");
   const projectsMount = document.getElementById("matrix-search-projects-checkbox-mount");
-  
+
+  // Full reset — leaving and re-entering this screen should look exactly
+  // like a first-time visit, not carry over the previous search.
+  document.querySelectorAll('input[name="matrixStoreFilter"]:checked, input[name="matrixStatusFilter"]:checked, input[name="matrixDepartmentFilter"]:checked').forEach(cb => cb.checked = false);
+  const matInput = document.getElementById("matrix-material-name-search-input");
+  const projInput = document.getElementById("matrix-project-search-input");
+  if (matInput) matInput.value = "";
+  if (projInput) projInput.value = "";
+  matrixActiveMaterialSearchQuery = "";
+  matrixActiveProjectSearchQuery = "";
+  matrixActiveMaterialSearchDisplay = "";
+  matrixActiveProjectSearchDisplay = "";
+  const matClear = document.getElementById("matrix-material-search-clear-btn");
+  const projClear = document.getElementById("matrix-project-search-clear-btn");
+  if (matClear) matClear.style.display = "none";
+  if (projClear) projClear.style.display = "none";
+  const summaryEl = document.getElementById("matrix-search-summary-text");
+  if (summaryEl) { summaryEl.style.display = "none"; summaryEl.innerHTML = ""; }
+
   if (resultsFeedZone) resultsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Loading...</div>`;
 
   try {
