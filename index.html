@@ -9096,10 +9096,11 @@ function executeClientSideStoreTicketFilterSearch() {
     
     let itemsTableRowsHtml = "";
     itemsArray.forEach(i => {
+      const mappedQty = (i.released !== undefined && i.released !== null) ? i.released : i.quantity;
       itemsTableRowsHtml += `
         <tr>
           <td style="padding:6px; color:var(--text); font-weight:600; text-align:left;">${i.materialName}</td>
-          <td style="padding:6px; font-family:monospace; font-weight:700; text-align:right; color:var(--brand);">${i.quantity} ${i.unitType || 'Pcs'}</td>
+          <td style="padding:6px; font-family:monospace; font-weight:700; text-align:right; color:var(--brand);">${fmtQty(mappedQty)} ${i.unitType || 'Pcs'}</td>
         </tr>`;
     });
 
