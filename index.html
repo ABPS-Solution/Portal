@@ -807,40 +807,27 @@
             <input type="text" id="fg-add-rating" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Product Name (blank if this product has no rating)" />
           </div>
         </div>
+        <div style="margin-bottom:14px; position:relative;">
+          <label class="field-label" style="margin-top:0;">Job Card Number *</label>
+          <div id="fg-add-jobcard-display" data-disabled="1" onclick="toggleFGJobCardDropdown()" style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; min-height:56px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="fg-add-jobcard-display-text" style="white-space:normal; word-break:break-word;">— Select Project First —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="fg-add-jobcard-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="fg-add-jobcard" value="" />
+        </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
           <div>
-            <label class="field-label" style="margin-top:0;">Job Card Number *</label>
-            <select id="fg-add-jobcard" onchange="handleFGJobCardChange(this.value)" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-              <option value="">— Select Project First —</option>
-            </select>
+            <label class="field-label" style="margin-top:0;">Unit *</label>
+            <input type="text" id="fg-add-unit" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); font-weight:600;" placeholder="Auto-filled from Product Name" />
           </div>
           <div>
             <label class="field-label" style="margin-top:0;">Product Serial Number</label>
             <input type="text" id="fg-add-serial" disabled style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" placeholder="Enter product serial number..." />
           </div>
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-          <div>
-            <label class="field-label" style="margin-top:0;">Unit *</label>
-            <select id="fg-add-unit" disabled onchange="document.getElementById('fg-add-unit-other').style.display = this.value === 'Others' ? 'block' : 'none';" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-              <option value="NOS">NOS</option>
-              <option value="KG">KG</option>
-              <option value="MTR">MTR</option>
-              <option value="Others">Others</option>
-            </select>
-            <input type="text" id="fg-add-unit-other" placeholder="Specify unit..." style="display:none; margin-top:6px; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
-          </div>
-        </div>
 
         <div id="fg-boq-validation-zone" style="display:none; margin-bottom:16px;"></div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-          <div>
-            <label class="field-label" style="margin-top:0;">Finished Goods Store Incharge Person *</label>
-            <select id="fg-add-store-person" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-              <option value="">— Select Person —</option>
-            </select>
-          </div>
-        </div>
         <div style="margin-bottom:16px;">
           <label class="field-label" style="margin-top:0;">Additional Remarks</label>
           <input type="text" id="fg-add-remarks" disabled style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" placeholder="Any additional notes..." />
@@ -905,6 +892,12 @@
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Q/A Person *</label>
+              <select id="fg-add-qa-person" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+                <option value="">— Select Person —</option>
+              </select>
+            </div>
             <div>
               <label class="field-label" style="margin-top:0;">Q/A Done *</label>
               <select id="fg-add-qa-done" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
@@ -7513,6 +7506,10 @@ async function refreshLiveStockForSelectedMaterial() {
   } catch(e) { console.warn("refreshLiveStockForSelectedMaterial error:", e.message); }
 }
 
+function fmtQty(n) {
+  return (Number(n) || 0).toString();
+}
+
 async function updateSelectedLiveStockPillCounter(liveStockOverride) {
   const selectedMaterial = document.getElementById("ticket-item-selection-dropdown").value;
   const projectId = document.getElementById("ticket-project-id-dropdown").value;
@@ -7553,9 +7550,10 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       const cleanSearchKeyFG = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim().replace(/\s+/g, '').toLowerCase();
 
       function findJcmMatchForPillFG_(recs) {
-        return (recs || []).find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKeyFG)
-          || (recs || []).find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase().includes(cleanSearchKeyFG.substring(0, 20)))
-          || (recs || []).find(r => cleanSearchKeyFG.includes((r.materialName || "").replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+        const scopedFG = (recs || []).filter(r => r.typeOfStore === "Finished Goods Store");
+        return scopedFG.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKeyFG)
+          || scopedFG.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase().includes(cleanSearchKeyFG.substring(0, 20)))
+          || scopedFG.find(r => cleanSearchKeyFG.includes((r.materialName || "").replace(/\s+/g, '').toLowerCase().substring(0, 20)));
       }
 
       let jcmMatchFG = findJcmMatchForPillFG_(jcmCacheDataFG.records);
@@ -7588,19 +7586,19 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       const inStockCount = hasLiveFGCount ? (liveStockOverride.fgInStockCount || 0) : 0;
       let styleClassFG = !hasLiveFGCount ? "" : (inStockCount === 0 ? "pill-stock-empty" : inStockCount <= 2 ? "pill-stock-low" : "pill-stock-healthy");
       const countDisplay = hasLiveFGCount
-        ? `<span class="live-counter-pill ${styleClassFG}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${inStockCount} ${unitTokenFG} IN STOCK</span>`
+        ? `<span class="live-counter-pill ${styleClassFG}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${fmtQty(inStockCount)} ${unitTokenFG}</span>`
         : `<span style="font-size:0.78rem; color:var(--muted); margin-left:4px;">🔄 checking live stock…</span>`;
 
       counterZone.innerHTML = `
         <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
           <div>
-            FG Store Count:
+            Finished Good Store Count:
             ${countDisplay}
           </div>
           <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${jcmMatchFG.allottedQty || 0} ${unitTokenFG}</span>
-            <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED: ${jcmMatchFG.usedQty || 0} ${unitTokenFG}</span>
-            <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING: ${jcmMatchFG.remainingQty || 0} ${unitTokenFG}</span>
+            <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatchFG.allottedQty)} ${unitTokenFG}</span>
+            <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED: ${fmtQty(jcmMatchFG.usedQty)} ${unitTokenFG}</span>
+            <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatchFG.remainingQty)} ${unitTokenFG}</span>
           </div>
         </div>
       `;
@@ -7648,10 +7646,11 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       }
 
       function findJcmMatchForPillSpare_(recs) {
-        return (recs || []).find(r => (r.itemCode || "").replace(/\s+/g, '').toLowerCase() === (spareInventoryMatch?.itemCode || "").replace(/\s+/g, '').toLowerCase() && spareInventoryMatch?.itemCode)
-          || (recs || []).find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKeySpare)
-          || (recs || []).find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase().includes(cleanSearchKeySpare.substring(0, 20)))
-          || (recs || []).find(r => cleanSearchKeySpare.includes((r.materialName || "").replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+        const scopedSpare = (recs || []).filter(r => r.typeOfStore === "Spare Store");
+        return scopedSpare.find(r => (r.itemCode || "").replace(/\s+/g, '').toLowerCase() === (spareInventoryMatch?.itemCode || "").replace(/\s+/g, '').toLowerCase() && spareInventoryMatch?.itemCode)
+          || scopedSpare.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKeySpare)
+          || scopedSpare.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase().includes(cleanSearchKeySpare.substring(0, 20)))
+          || scopedSpare.find(r => cleanSearchKeySpare.includes((r.materialName || "").replace(/\s+/g, '').toLowerCase().substring(0, 20)));
       }
 
       let jcmMatchSpare = findJcmMatchForPillSpare_(jcmCacheDataSpare.records);
@@ -7681,16 +7680,16 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
             <div>
               Spare Store Count:
               <span class="live-counter-pill ${styleClassSpare}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
-                ${jcmMatchSpare.remainingQty || 0} ${unitTokenSpare} Currently Reserved for THIS JOB CARD
+                ${fmtQty(jcmMatchSpare.remainingQty)} ${unitTokenSpare} Currently Reserved for THIS JOB CARD
               </span>
               <span style="font-size:0.78rem; color:var(--muted); margin-left:6px; font-weight:normal;">
-                (Extra Unreserved: ${availableCountSpare} ${unitTokenSpare})
+                (Extra Unreserved: ${fmtQty(availableCountSpare)} ${unitTokenSpare})
               </span>
             </div>
             <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-              <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${jcmMatchSpare.allottedQty || 0} ${unitTokenSpare}</span>
-              <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED: ${jcmMatchSpare.usedQty || 0} ${unitTokenSpare}</span>
-              <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING: ${jcmMatchSpare.remainingQty || 0} ${unitTokenSpare}</span>
+              <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatchSpare.allottedQty)} ${unitTokenSpare}</span>
+              <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED: ${fmtQty(jcmMatchSpare.usedQty)} ${unitTokenSpare}</span>
+              <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatchSpare.remainingQty)} ${unitTokenSpare}</span>
             </div>
           </div>
         `;
@@ -7751,10 +7750,11 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
     }
 
     function findJcmMatchForPill_(recs) {
-      return (recs || []).find(r => (r.itemCode || "").replace(/\s+/g, '').toLowerCase() === (inventoryMatch?.itemCode || "").replace(/\s+/g, '').toLowerCase() && inventoryMatch?.itemCode)
-        || (recs || []).find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
-        || (recs || []).find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
-        || (recs || []).find(r => cleanSearchKey.includes((r.materialName || "").replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+      const scoped = (recs || []).filter(r => r.typeOfStore === "Raw Materials Store");
+      return scoped.find(r => (r.itemCode || "").replace(/\s+/g, '').toLowerCase() === (inventoryMatch?.itemCode || "").replace(/\s+/g, '').toLowerCase() && inventoryMatch?.itemCode)
+        || scoped.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
+        || scoped.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
+        || scoped.find(r => cleanSearchKey.includes((r.materialName || "").replace(/\s+/g, '').toLowerCase().substring(0, 20)));
     }
 
     let jcmMatch = findJcmMatchForPill_(jcmCacheData.records);
@@ -7789,16 +7789,16 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
           <div>
             Raw Material Store Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
-              ${jcmMatch.remainingQty || 0} ${unitToken} Currently Reserved for THIS JOB CARD
+              ${fmtQty(jcmMatch.remainingQty)} ${unitToken} Currently Reserved for THIS JOB CARD
             </span>
             <span style="font-size:0.78rem; color:var(--muted); margin-left:6px; font-weight:normal;">
-              (Extra Unreserved: ${availableCount} ${unitToken})
+              (Extra Unreserved: ${fmtQty(availableCount)} ${unitToken})
             </span>
           </div>
           <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${jcmMatch.allottedQty || 0} ${unitToken}</span>
-            <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED: ${jcmMatch.usedQty || 0} ${unitToken}</span>
-            <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING: ${jcmMatch.remainingQty || 0} ${unitToken}</span>
+            <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatch.allottedQty)} ${unitToken}</span>
+            <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED: ${fmtQty(jcmMatch.usedQty)} ${unitToken}</span>
+            <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatch.remainingQty)} ${unitToken}</span>
           </div>
         </div>
       `;
@@ -7827,7 +7827,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
           <div>
             Raw Material Store Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
-              ${availableCount} ${unitToken} Extra Unreserved
+              ${fmtQty(availableCount)} ${unitToken} Extra Unreserved
             </span>
           </div>
           <div style="margin-top:4px; font-size:0.72rem; color:var(--warn);">⚠️ BOQ data could not be loaded. Retry by reselecting the item.</div>
@@ -8143,8 +8143,8 @@ function renderBOQLimitExceededApprovalRequestWorkspaceBlock(materialsList) {
   // Overwrite submission controls row layout area to mount the justification text box window natively
   bottomActionControlsRow.innerHTML = `
     <div style="width: 100%; text-align: left; background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: var(--radius); display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
-      <label class="field-label" style="margin: 0; color: var(--brand); font-weight: bold;">Explain Request / Justification Text *</label>
-      <textarea id="boq-increase-justification-notes-input" placeholder="Specify why additional component volume allotment is required for this project build tracker..." style="min-height: 55px; padding: 8px; font-size: 0.82rem; border-color: var(--brand);"></textarea>
+      <label class="field-label" style="margin: 0; color: var(--brand); font-weight: bold;">Explain Request / Justification *</label>
+      <textarea id="boq-increase-justification-notes-input" placeholder="Specify why additional material is required for this Job Card..." style="min-height: 55px; padding: 8px; font-size: 0.82rem; border-color: var(--brand);"></textarea>
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px;">
         <button class="nav-btn-styled" onclick="clearFullBasketDraftState()" style="background: #718096; padding: 6px 14px;">Clear Basket</button>
         <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="executeBOQLimitIncreaseRequestTransmissionPipeline()" style="background: var(--brand); padding: 8px 20px; font-weight: 700;">Send Approval Request to Admin</button>
@@ -8935,7 +8935,7 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
       </div>
       <div style="display:flex; justify-content:flex-end; gap:8px;">
         <button class="nav-btn-styled" id="btn-reject-${ticket.ticketId}" style="background:#e53e3e; padding:6px 12px; font-size:0.75rem;" onclick="executeStoreManagerTicketActionDecision('${ticket.ticketId}', 'REJECT')">Reject</button>
-          <button class="nav-btn-styled" id="btn-approve-${ticket.ticketId}" style="background:var(--accent); padding:6px 14px; font-size:0.78rem; font-weight:700;" onclick="checkCoverageAndApprove('${ticket.ticketId}', '${ticket.projectId}', this)">
+          <button class="nav-btn-styled" id="btn-approve-${ticket.ticketId}" style="background:var(--accent); padding:6px 14px; font-size:0.78rem; font-weight:700;" onclick="checkCoverageAndApprove('${ticket.ticketId}', '${ticket.projectId}', this, '${mappedStorageScope}')">
           ${isBoqInc ? 'Approve Allocation Overwrite' : 'Approve Action'}
         </button>
       </div>
@@ -9094,7 +9094,80 @@ function executeClientSideStoreTicketFilterSearch() {
  * 3. EXECUTE RELEASE DISPATCH ACTION CONTROL LOOP (UPDATED: CLICK ANIMATIONS ADDED)
  * Directly handles instant button transforms, text state loaders, and interface locking keys.
  */
-async function checkCoverageAndApprove(ticketId, projectId, btn) {
+async function openFGReleaseSelectionModal(ticketId) {
+  let overlay = document.getElementById("fg-release-modal-overlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "fg-release-modal-overlay";
+    overlay.style.cssText = "position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:900; display:flex; align-items:center; justify-content:center;";
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = `<div style="background:#fff; border-radius:var(--radius); padding:20px; max-width:700px; width:92%; max-height:85vh; overflow-y:auto;">
+    <div style="text-align:center; padding:20px; color:var(--muted);">Loading reserved units...</div>
+  </div>`;
+  overlay.style.display = "flex";
+
+  try {
+    const data = await apFetch({ action: "fetchTicketFGReservationDetails", ticketId });
+    if (!data.success) { overlay.innerHTML = `<div style="background:#fff; border-radius:8px; padding:20px;">Error: ${data.error}</div>`; return; }
+
+    window._fgReleaseSelections = {};
+    data.items.forEach(it => { window._fgReleaseSelections[it.itemCode] = it.reserved.map(r => r.fgId); });
+
+    const itemsHtml = data.items.map(it => `
+      <div style="margin-bottom:16px; border:1px solid var(--border); border-radius:var(--radius); padding:12px;">
+        <div style="font-weight:700; margin-bottom:8px;">${it.materialName} <span style="color:var(--muted); font-weight:400;">(need ${fmtQty(it.quantity)})</span></div>
+        ${it.swapCandidates.map(c => `
+          <label style="display:flex; align-items:center; gap:8px; padding:4px 0; font-size:0.85rem; cursor:pointer;">
+            <input type="checkbox" ${it.reserved.some(r => r.fgId === c.fgId) ? 'checked' : ''}
+              onchange="toggleFGReleaseSelection('${it.itemCode}', ${c.fgId}, this.checked, ${it.quantity})">
+            <span style="font-family:monospace;">${c.serial || '(no serial)'}</span>
+            <span style="color:var(--muted); font-size:0.75rem;">${new Date(c.fgDate).toLocaleDateString()}</span>
+          </label>`).join("")}
+      </div>`).join("");
+
+    overlay.innerHTML = `<div style="background:#fff; border-radius:var(--radius); padding:20px; max-width:700px; width:92%; max-height:85vh; overflow-y:auto;">
+      <h3 style="margin-top:0;">Confirm Finished Goods Units for Release</h3>
+      <p style="color:var(--muted); font-size:0.85rem;">Reserved units are pre-checked. Swap by checking a different unit and unchecking one already selected — the count per item must match what was requested.</p>
+      ${itemsHtml}
+      <div id="fg-release-modal-error" style="color:var(--warn); font-size:0.85rem; margin-bottom:10px; display:none;"></div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="nav-btn-styled" style="background:#718096;" onclick="document.getElementById('fg-release-modal-overlay').style.display='none';">Cancel</button>
+        <button class="nav-btn-styled" style="background:var(--accent);" onclick="confirmFGReleaseSelection('${ticketId}')">Confirm & Release</button>
+      </div>
+    </div>`;
+  } catch(e) {
+    overlay.innerHTML = `<div style="background:#fff; border-radius:8px; padding:20px;">Network error: ${e.message}</div>`;
+  }
+}
+
+function toggleFGReleaseSelection(itemCode, fgId, checked, needQty) {
+  const sel = window._fgReleaseSelections[itemCode] || [];
+  window._fgReleaseSelections[itemCode] = checked ? [...new Set([...sel, fgId])] : sel.filter(id => id !== fgId);
+}
+
+async function confirmFGReleaseSelection(ticketId) {
+  const errZone = document.getElementById("fg-release-modal-error");
+  errZone.style.display = "none";
+  try {
+    const result = await apFetch({
+      action: "actionTicketReleaseApproval", activeEngineer: appActiveOperatorIdentityString,
+      ticketId, managerDecisionCommand: "APPROVE", fgFinalSelections: window._fgReleaseSelections
+    });
+    if (!result.success) { errZone.textContent = result.error || "Release failed."; errZone.style.display = "block"; return; }
+    document.getElementById("fg-release-modal-overlay").style.display = "none";
+    const cardNode = document.getElementById(`store-pending-ticket-card-node-${ticketId}`);
+    if (cardNode) cardNode.remove();
+  } catch(e) {
+    errZone.textContent = "Network error: " + e.message;
+    errZone.style.display = "block";
+  }
+}
+
+async function checkCoverageAndApprove(ticketId, projectId, btn, storeType) {
+  if (storeType === 'Finished Goods Store') {
+    return openFGReleaseSelectionModal(ticketId);
+  }
   const rejectBtn = document.getElementById(`btn-reject-${ticketId}`);
   btn.disabled = true;
   if (rejectBtn) rejectBtn.disabled = true;
@@ -14519,30 +14592,23 @@ async function initializeFGAddWorkspace() {
 
   // Load personnel
   const prodDrop  = document.getElementById("fg-add-prod-person");
-  const storeDrop = document.getElementById("fg-add-store-person");
+  const qaDrop    = document.getElementById("fg-add-qa-person");
   prodDrop.innerHTML  = '<option value="">Loading...</option>';
-  storeDrop.innerHTML = '<option value="">Loading...</option>';
+  qaDrop.innerHTML = '<option value="">Loading...</option>';
   try {
     const data = await apFetch({ action:"getStoreOperatorsList" });
     const allPersonnel = data.fullPersonnelDataRecordsTree || [];
 
     const prodPeople  = filterOutPureAdminPersonnel(allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().trim() === "production" || d.toLowerCase().trim() === "admin")));
-    const storePeople = allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().trim() === "store"));
 
     prodDrop.innerHTML  = '<option value="">— Select Person —</option>';
-    storeDrop.innerHTML = '<option value="">— Select Person —</option>';
 
     prodPeople.forEach(p => {
       const opt = document.createElement("option"); opt.value = p.fullName; opt.textContent = p.fullName;
       prodDrop.appendChild(opt);
     });
-    storePeople.forEach(p => {
-      const opt = document.createElement("option"); opt.value = p.fullName; opt.textContent = p.fullName;
-      storeDrop.appendChild(opt);
-    });
 
     const qaPeople = allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().trim().includes("quality assurance")));
-    const qaDrop = document.getElementById("fg-add-qa-person");
     qaDrop.innerHTML = '<option value="">— Select Person —</option>';
     qaPeople.forEach(p => {
       const opt = document.createElement("option"); opt.value = p.fullName; opt.textContent = p.fullName;
@@ -14550,7 +14616,7 @@ async function initializeFGAddWorkspace() {
     });
   } catch(e) {
     prodDrop.innerHTML  = '<option value="">Error loading personnel</option>';
-    storeDrop.innerHTML = '<option value="">Error loading personnel</option>';
+    qaDrop.innerHTML = '<option value="">Error loading personnel</option>';
   }
 
   resetFGAddForm();
@@ -14565,34 +14631,26 @@ async function handleFGAddProjectChange(projectId) {
   const meta = window.fgAddProjectMeta && window.fgAddProjectMeta[projectId];
   document.getElementById("fg-add-customer").value = meta ? (meta.companyName || "") : "";
 
-  const fieldsToToggle = ["fg-add-department","fg-add-product-search","fg-add-rating","fg-add-serial","fg-add-unit","fg-add-prod-person","fg-add-store-person","fg-add-remarks"];
+  const fieldsToToggle = ["fg-add-department","fg-add-product-search","fg-add-rating","fg-add-serial","fg-add-prod-person","fg-add-qa-person","fg-add-remarks"];
   const submitBtn = document.getElementById("fg-add-submit-btn");
-  const jobCardDrop = document.getElementById("fg-add-jobcard");
 
   if (projectId) {
     fieldsToToggle.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = false; });
     // Submit button stays locked until BOQ validation passes
 
-    jobCardDrop.innerHTML = '<option value="">Loading...</option>';
-    jobCardDrop.disabled = true;
+    fgJobCardDisplayReset("Loading...");
     try {
       const data = await apFetch({ action:"fetchJobCardsForProject", projectId });
-      jobCardDrop.innerHTML = '<option value="">— Select Job Card Number —</option>';
-      (data.jobCards || []).forEach(jc => {
-        const opt = document.createElement("option");
-        opt.value = jc.jobCardNumber;
-        opt.textContent = `${jc.jobCardNumber} | ${jc.productName} ${jc.productRating}`;
-        jobCardDrop.appendChild(opt);
-      });
-      jobCardDrop.disabled = false;
+      fgJobCardDisplayReset("— Select Job Card Number —");
+      fgJobCardPopulate((data.jobCards || []).map(jc => ({ value: jc.jobCardNumber, label: `${jc.jobCardNumber} | ${jc.productName} ${jc.productRating}` })));
+      fgJobCardDisplayEnable();
     } catch(e) {
-      jobCardDrop.innerHTML = '<option value="">Error loading job cards</option>';
+      fgJobCardDisplayReset("Error loading job cards");
     }
   } else {
     fieldsToToggle.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = true; });
     if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = "0.5"; submitBtn.style.cursor = "not-allowed"; }
-    jobCardDrop.innerHTML = '<option value="">— Select Project First —</option>';
-    jobCardDrop.disabled = true;
+    fgJobCardDisplayReset("— Select Project First —");
   }
 }
 
@@ -14693,7 +14751,7 @@ function handleFGProductSearch(query) {
   }
 
   dropdown.innerHTML = matches.map(item => `
-    <div onclick="selectFGProduct('${item.productName.replace(/'/g,"\\'")}', '${item.itemCode}', '${(item.rating||'').replace(/'/g,"\\'")}')"
+    <div onclick="selectFGProduct('${item.productName.replace(/'/g,"\\'")}', '${item.itemCode}', '${(item.rating||'').replace(/'/g,"\\'")}', '${(item.unit||'').replace(/'/g,"\\'")}')"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>
@@ -14703,14 +14761,57 @@ function handleFGProductSearch(query) {
   dropdown.style.display = "block";
 }
 
-function selectFGProduct(productName, itemCode, rating) {
+function selectFGProduct(productName, itemCode, rating, unit) {
   document.getElementById("fg-add-product-search").value = productName;
   document.getElementById("fg-add-product-name").value   = productName;
   document.getElementById("fg-add-item-code").value      = itemCode;
   document.getElementById("fg-add-rating").value          = rating || "";
+  document.getElementById("fg-add-unit").value            = unit || "";
   document.getElementById("fg-product-dropdown").style.display = "none";
   triggerFGBOQValidation();
 }
+
+function fgJobCardDisplayReset(text) {
+  const disp = document.getElementById("fg-add-jobcard-display");
+  const textEl = document.getElementById("fg-add-jobcard-display-text");
+  const hidden = document.getElementById("fg-add-jobcard");
+  const list = document.getElementById("fg-add-jobcard-dropdown-list");
+  if (textEl) textEl.textContent = text;
+  if (hidden) hidden.value = "";
+  if (list) { list.style.display = "none"; list.innerHTML = ""; }
+  if (disp) { disp.dataset.disabled = "1"; disp.style.opacity = "0.5"; disp.style.cursor = "not-allowed"; disp.style.color = "var(--muted)"; disp.style.background = "#f1f5f9"; }
+}
+function fgJobCardDisplayEnable() {
+  const disp = document.getElementById("fg-add-jobcard-display");
+  if (disp) { disp.dataset.disabled = "0"; disp.style.opacity = "1"; disp.style.cursor = "pointer"; disp.style.color = "var(--text)"; disp.style.background = "#fff"; }
+}
+function fgJobCardPopulate(options) {
+  const list = document.getElementById("fg-add-jobcard-dropdown-list");
+  if (!list) return;
+  list.innerHTML = options.map(o => `
+    <div onclick="event.stopPropagation(); selectFGJobCard('${o.value.replace(/'/g,"\\'")}', \`${o.label.replace(/\`/g,"'")}\`)"
+      style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
+}
+function toggleFGJobCardDropdown() {
+  const disp = document.getElementById("fg-add-jobcard-display");
+  if (!disp || disp.dataset.disabled === "1") return;
+  const list = document.getElementById("fg-add-jobcard-dropdown-list");
+  const isOpen = list.style.display === "block";
+  document.querySelectorAll("[id$='-dropdown-list']").forEach(l => l.style.display = "none");
+  list.style.display = isOpen ? "none" : "block";
+}
+function selectFGJobCard(jobCardNumber, label) {
+  document.getElementById("fg-add-jobcard").value = jobCardNumber;
+  document.getElementById("fg-add-jobcard-display-text").textContent = label;
+  document.getElementById("fg-add-jobcard-dropdown-list").style.display = "none";
+  handleFGJobCardChange(jobCardNumber);
+}
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#fg-add-jobcard-display") && !e.target.closest("#fg-add-jobcard-dropdown-list")) {
+    const l = document.getElementById("fg-add-jobcard-dropdown-list"); if (l) l.style.display = "none";
+  }
+});
 
 function handleFGJobCardChange(jobCardNumber) {
   triggerFGBOQValidation();
@@ -14758,7 +14859,7 @@ async function triggerFGBOQValidation() {
       const statusColor = d.matched ? { bg: "#dcfce7", color: "#15803d", icon: "✅" } : { bg: "#fee2e2", color: "#b91c1c", icon: "❌" };
       return `<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:${statusColor.bg}; border-radius:4px; margin-bottom:4px;">
         <div style="font-size:0.8rem; font-weight:600; color:#1e293b;">${statusColor.icon} ${d.materialName} <span style="font-size:0.68rem; color:var(--muted); font-weight:400;">(${d.typeOfStore})</span></div>
-        <div style="font-size:0.78rem; font-weight:700; color:${statusColor.color};">Required: ${d.required} ${d.unitType} | Consumed: ${d.consumed} ${d.unitType}</div>
+        <div style="font-size:0.78rem; font-weight:700; color:${statusColor.color};">Required: ${fmtQty(d.required)} ${d.unitType} | Consumed: ${fmtQty(d.consumed)} ${d.unitType}</div>
       </div>`;
     }).join("");
 
@@ -14800,7 +14901,7 @@ function updateFGSubmitButtonState() {
 }
 
 function resetFGAddForm() {
-  ["fg-add-department","fg-add-project","fg-add-prod-person","fg-add-store-person","fg-add-unit"].forEach(id => {
+  ["fg-add-department","fg-add-project","fg-add-prod-person","fg-add-qa-person","fg-add-unit"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
   document.getElementById("fg-add-unit").value = "NOS";
@@ -14844,16 +14945,14 @@ async function submitFGAddItem() {
   const unitSelect = document.getElementById("fg-add-unit").value.trim();
   const unit        = unitSelect === "Others" ? document.getElementById("fg-add-unit-other").value.trim() : unitSelect;
   const prodPerson = appActiveOperatorIdentityString || "";
-  const storePerson= document.getElementById("fg-add-store-person").value.trim();
   const remarks    = document.getElementById("fg-add-remarks").value.trim();
-  const qaPersonName = appActiveOperatorIdentityString || "";
+  const qaPersonName = document.getElementById("fg-add-qa-person").value.trim();
   const qaDone     = document.getElementById("fg-add-qa-done").value.trim();
 
   const failFG = (msg) => { _submitFGAddItemInProgress = false; return showBOQBanner("fg-add-feedback", msg, "error"); };
   if (!department)  return failFG("Department is required.");
   if (!projectId)   return showBOQBanner("fg-add-feedback", "Project ID is required.", "error");
   if (!productName) return showBOQBanner("fg-add-feedback", "Product Name is required.", "error");
-  if (!storePerson) return showBOQBanner("fg-add-feedback", "Store Incharge Person is required.", "error");
   if (!window.fgBOQValidationPassed) return showBOQBanner("fg-add-feedback", "Material consumption for this Job Card does not match the BOQ. Resolve the mismatch before submitting.", "error");
   if (!qaPersonName) return showBOQBanner("fg-add-feedback", "Q/A Person is required.", "error");
   if (qaDone !== "Yes") return showBOQBanner("fg-add-feedback", "Q/A Done must be set to Yes before this item can be submitted.", "error");
@@ -14893,7 +14992,7 @@ async function submitFGAddItem() {
       itemCode, productRating: rating, jobCardNumber: jobCard,
       productSerialNumber: serialNumber,
       unit, prodResponsible: prodPerson,
-      storeIncharge: storePerson, additionalRemarks: remarks,
+      additionalRemarks: remarks,
       qaPersonName, qaDone, finishedGoodUse,
       testCertUrl, inspectionClearanceUrl, inProcessInspUrl, jobCardSheetUrl,
       warrantyCardUrl, otherDocumentsUrl
