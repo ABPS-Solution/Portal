@@ -926,9 +926,7 @@
       
       <h2 style="margin-bottom: 16px;">Search Store Tickets</h2>
       <div style="background: var(--highlight-bg); border: 1.5px solid var(--border); border-left: 4px solid var(--brand); padding: 16px; border-radius: var(--radius); margin-bottom: 16px; text-align: left;">
-        <span style="display: block; font-size: 0.72rem; font-weight: 800; color: var(--brand); text-transform: uppercase; margin-bottom: 16px; letter-spacing: 0.5px;">Search Filter Parameters</span>  
-        
-        <div style="display: flex; flex-wrap: wrap; gap: 24px; margin-bottom: 14px; width: 100%;">
+        <div style="display: flex; flex-wrap: wrap; gap: 24px; width: 100%;">
           
           <div style="flex: 1; min-width: 220px;">
             <label class="field-label">Filter By Store</label>
@@ -9134,14 +9132,15 @@ function executeClientSideStoreTicketFilterSearch() {
   const checkedDepartments = Array.from(document.querySelectorAll('input[name="matrixDepartmentFilter"]:checked')).map(cb => cb.value.toLowerCase().trim());
   const checkedDeptLabels  = Array.from(document.querySelectorAll('input[name="matrixDepartmentFilter"]:checked')).map(cb => cb.value);
 
+  const valSpan = (v) => `<span style="color:#000;">${v}</span>`;
   const summaryParts = [];
-  summaryParts.push(checkedStoreLabels.length ? `Store: ${checkedStoreLabels.join(", or ")}` : "All Stores");
-  summaryParts.push(checkedStatusLabels.length ? `Status: ${checkedStatusLabels.join(", or ")}` : "All Statuses");
-  if (matrixActiveMaterialSearchQuery) summaryParts.push(`Material: "${matrixActiveMaterialSearchDisplay}"`);
-  if (matrixActiveProjectSearchQuery) summaryParts.push(`Project ID: "${matrixActiveProjectSearchDisplay}"`);
-  if (checkedDeptLabels.length) summaryParts.push(`Department: ${checkedDeptLabels.join(", or ")}`);
+  summaryParts.push(checkedStoreLabels.length ? `Stores: ${valSpan(checkedStoreLabels.join(", or "))}` : `Stores: ${valSpan("ALL")}`);
+  summaryParts.push(checkedStatusLabels.length ? `Statuses: ${valSpan(checkedStatusLabels.join(", or "))}` : `Statuses: ${valSpan("ALL")}`);
+  if (matrixActiveMaterialSearchQuery) summaryParts.push(`Material: ${valSpan(`"${matrixActiveMaterialSearchDisplay}"`)}`);
+  if (matrixActiveProjectSearchQuery) summaryParts.push(`Project ID: ${valSpan(`"${matrixActiveProjectSearchDisplay}"`)}`);
+  if (checkedDeptLabels.length) summaryParts.push(`Department: ${valSpan(checkedDeptLabels.join(", or "))}`);
   const summaryEl = document.getElementById("matrix-search-summary-text");
-  if (summaryEl) { summaryEl.style.display = "block"; summaryEl.textContent = `Searching for ${summaryParts.join(" • ")}`; }
+  if (summaryEl) { summaryEl.style.display = "block"; summaryEl.innerHTML = `Searching for:<br>${summaryParts.join(" • ")}`; }
 
   resultsFeedZone.innerHTML = "";
 
