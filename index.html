@@ -615,7 +615,8 @@
     </div>
 
     <div id="canvas-module-store-manager-approvals" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 16px;">Approve Store Tickets</h2>
+      <h2 style="margin-bottom: 4px;">Approve Store Tickets</h2>
+      <p style="margin:0 0 16px; font-size:0.82rem; color:var(--muted);">Actual Quantity can only be reduced below Requested Quantity, never increased.</p>
       <div id="store-approvals-runtime-inline-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="store-manager-approvals-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>
@@ -8907,24 +8908,26 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
     let itemRowsHtml = "";
     itemsArray.forEach(item => {
       const overrunHighlightStyle = item.requiresBOQIncreaseFlag === true ? 'color: var(--warn); font-weight: 800; background: #fff5f2; padding: 2px 6px; border-radius: 4px; border: 1px solid #fca5a5;' : '';
+      const reqQty = Number(item.quantity) || 0;
       itemRowsHtml += `
         <tr>
           <td style="padding:6px; font-weight:600; text-align:left; ${overrunHighlightStyle}">
             ${item.materialName}
             ${item.requiresBOQIncreaseFlag ? '<span style="font-size:0.62rem; background:var(--warn); color:white; padding:1px 4px; border-radius:3px; margin-left:4px; font-weight:bold;">OVERRUN</span>' : ''}
           </td>
-          <td style="padding:6px; font-family:monospace; font-weight:700; color:var(--brand); text-align:right;">${item.quantity}</td>
-          <td style="padding:6px; color:var(--muted); font-size:0.78rem; text-align:left; padding-left:10px;">${item.unitType || 'Pcs'}</td>
+          <td style="padding:6px; color:var(--muted); font-size:0.78rem; text-align:left;">${item.unitType || 'Pcs'}</td>
+          <td style="padding:6px; font-family:monospace; font-weight:700; color:var(--brand); text-align:right;">${fmtQty(reqQty)}</td>
+          <td style="padding:6px; text-align:right;">
+            <input type="number" class="ticket-actual-qty-input" data-itemcode="${item.itemCode}" data-requested="${reqQty}"
+              value="${reqQty}" min="0" max="${reqQty}" step="any"
+              style="width:90px; padding:5px; text-align:right; font-family:monospace; font-weight:700; border:1.5px solid var(--border); border-radius:4px;" />
+          </td>
         </tr>`;
     });
     
     const typeLabel = (ticket.ticketType || "Request Material").toString().trim();
     const isBoqInc = typeLabel === "BOQ INCREASE REQUEST";
     
-    const typeColorStyle = isBoqInc 
-      ? "background:#fee2e2; color:#991b1b; border:1px solid #fca5a5;" 
-      : ((typeLabel === "Return Material") ? "background:#e0f2fe; color:#0369a1;" : "background:#edf2f7; color:#1e293b;");
-      
     const statusBadgeText = isBoqInc ? "BOQ LIMIT OVERRUN" : "PENDING RELEASE";
     const mappedStorageScope = ticket.storeTargetScope || "Raw Materials Store";
 
@@ -8933,29 +8936,53 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
         <div class="contact-summary-title-info" style="width:100%;">
           <div class="meta-row-line-block">
             <span style="font-family:monospace; font-weight:800; background:var(--brand); color:#fff; font-size:0.75rem; padding:3px 6px;">${ticket.ticketId}</span>
-            <span style="font-weight:800; font-size:0.72rem; padding:3px 6px; border-radius:4px; ${typeColorStyle}">${typeLabel.toUpperCase()}</span>
             <span style="background:#fef3c7; color:#b45309; font-weight:700; margin-left:4px;">${statusBadgeText}</span>
             <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Store: ${mappedStorageScope.toUpperCase()}</span>
+            <span style="font-size:0.78rem; font-weight:600; color:#475569; margin-left:8px;">Department: ${ticket.department || "General Store"}</span>
+            <span style="margin-left:8px;">Ticket Created By:</span><strong style="color:#111827;">${ticket.requestedBy}</strong>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
-            <span>Ticket Created By:</span><strong style="margin-right:15px; color:#111827;">${ticket.requestedBy}</strong>
-            <span>Project reference ID:</span><strong style="color:var(--brand);">${ticket.projectId}</strong>
-            <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:4px;">Department: ${ticket.department || "General Store"}</span>
+            <span>Project ID:</span><strong style="margin-right:15px; color:var(--brand);">${ticket.projectId}</strong>
+            <span>Job Card Number:</span><strong style="color:var(--brand);">${ticket.jobCardNumber || "—"}</strong>
           </div>
         </div>
       </div>
       <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px; margin-bottom:12px;">
-        <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.82rem;"><tbody>${itemRowsHtml}</tbody></table>
+        <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.82rem;">
+          <thead>
+            <tr style="border-bottom:1px solid #e2e8f0;">
+              <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted);">Material Name</th>
+              <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:left;">Unit</th>
+              <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:right;">Requested Quantity</th>
+              <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:right;">Actual Quantity</th>
+            </tr>
+          </thead>
+          <tbody>${itemRowsHtml}</tbody>
+        </table>
       </div>
       <div style="display:flex; justify-content:flex-end; gap:8px;">
         <button class="nav-btn-styled" id="btn-reject-${ticket.ticketId}" style="background:#e53e3e; padding:6px 12px; font-size:0.75rem;" onclick="executeStoreManagerTicketActionDecision('${ticket.ticketId}', 'REJECT')">Reject</button>
-          <button class="nav-btn-styled" id="btn-approve-${ticket.ticketId}" style="background:var(--accent); padding:6px 14px; font-size:0.78rem; font-weight:700;" onclick="checkCoverageAndApprove('${ticket.ticketId}', '${ticket.projectId}', this, '${mappedStorageScope}')">
-          ${isBoqInc ? 'Approve Allocation Overwrite' : 'Approve Action'}
+          <button class="nav-btn-styled" id="btn-approve-${ticket.ticketId}" style="background:var(--accent); padding:6px 14px; font-size:0.78rem; font-weight:700;" onclick="checkCoverageAndApprove('${ticket.ticketId}', '${ticket.projectId}', this)">
+          ${isBoqInc ? 'Approve Allocation Overwrite' : 'Approve'}
         </button>
       </div>
     `;
     cardsFeedZone.appendChild(cardWrapper);
   });
+}
+
+function collectTicketActualQuantities(ticketId) {
+  const card = document.getElementById(`store-pending-ticket-card-node-${ticketId}`);
+  const result = {};
+  if (!card) return result;
+  card.querySelectorAll(".ticket-actual-qty-input").forEach(inp => {
+    const requested = Number(inp.dataset.requested) || 0;
+    let val = Number(inp.value);
+    if (isNaN(val) || val < 0) val = 0;
+    if (val > requested) val = requested; // clamp client-side too; server clamps authoritatively
+    result[inp.dataset.itemcode] = val;
+  });
+  return result;
 }
 
 /**
@@ -9398,7 +9425,8 @@ async function executeStoreManagerTicketActionDecision(ticketId, decisionString)
       action: "actionTicketReleaseApproval",
       activeEngineer: appActiveOperatorIdentityString,
       ticketId: ticketId,
-      managerDecisionCommand: decisionString 
+      managerDecisionCommand: decisionString,
+      actualQuantities: decisionString === "APPROVE" ? collectTicketActualQuantities(ticketId) : undefined
     });
     if (result.success) {
       if (feedbackBanner) {
