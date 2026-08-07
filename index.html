@@ -8279,6 +8279,7 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   window.scrollTo(0, 0);
   setTimeout(() => window.scrollTo(0, 0), 50);
   stopLiveStockPolling();
+  stopPendingTicketsQueuePolling();
   // 1. Hide the primary dashboard menu grid view and the global marketing containers completely
   document.getElementById("dashboard-view").style.display = "none";
   document.querySelectorAll("#module-workspace-container .workspace-panel").forEach(p => p.style.display = "none");
@@ -8766,6 +8767,7 @@ async function initializeStoreManagerApprovalsWorkspace() {
     }
 
     renderStoreManagerApprovalsCardsFeed(data.queue);
+    startPendingTicketsQueuePolling();
 
   } catch (error) {
     cardsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network Exception: ${error.message}</div>`;
@@ -8918,16 +8920,20 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
     itemsArray.forEach(item => {
       const overrunHighlightStyle = item.requiresBOQIncreaseFlag === true ? 'color: var(--warn); font-weight: 800; background: #fff5f2; padding: 2px 6px; border-radius: 4px; border: 1px solid #fca5a5;' : '';
       const reqQty = Number(item.quantity) || 0;
+      const jcAllotted = (item.jcAllottedQty !== null && item.jcAllottedQty !== undefined) ? fmtQty(item.jcAllottedQty) : "—";
+      const jcRemaining = (item.jcRemainingQty !== null && item.jcRemainingQty !== undefined) ? item.jcRemainingQty : null;
       itemRowsHtml += `
         <tr>
           <td style="padding:6px; font-weight:600; text-align:left; ${overrunHighlightStyle}">
             ${item.materialName}
             ${item.requiresBOQIncreaseFlag ? '<span style="font-size:0.62rem; background:var(--warn); color:white; padding:1px 4px; border-radius:3px; margin-left:4px; font-weight:bold;">OVERRUN</span>' : ''}
           </td>
+          <td class="ticket-jc-allotted-cell" data-itemcode="${item.itemCode}" style="padding:6px; color:var(--muted); font-size:0.9rem; text-align:center; vertical-align:middle;">${jcAllotted}</td>
+          <td class="ticket-jc-remaining-cell" data-itemcode="${item.itemCode}" style="padding:6px; font-weight:700; font-size:0.9rem; text-align:center; vertical-align:middle; color:#0369a1;">${jcRemaining !== null ? fmtQty(jcRemaining) : "—"}</td>
           <td style="padding:6px; color:var(--muted); font-size:0.95rem; font-weight:600; text-align:center; vertical-align:middle;">${item.unitType || 'Pcs'}</td>
           <td style="padding:6px; font-family:monospace; font-weight:700; font-size:1.05rem; color:var(--brand); text-align:center; vertical-align:middle;">${fmtQty(reqQty)}</td>
           <td style="padding:6px; text-align:center; vertical-align:middle;">
-            <input type="number" class="ticket-actual-qty-input" data-itemcode="${item.itemCode}" data-requested="${reqQty}"
+            <input type="number" class="ticket-actual-qty-input" data-itemcode="${item.itemCode}" data-requested="${reqQty}" data-jcremaining="${jcRemaining !== null ? jcRemaining : ''}"
               value="${reqQty}" min="0" max="${reqQty}" step="any" oninput="clampTicketActualQtyInput(this)"
               style="box-sizing:border-box; width:100%; margin:0; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; font-size:1.05rem; border:1.5px solid var(--border); border-radius:4px;" />
           </td>
@@ -8962,6 +8968,8 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
           <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.82rem; table-layout:fixed;">
             <colgroup>
               <col style="width:auto;">
+              <col style="width:110px;">
+              <col style="width:110px;">
               <col style="width:90px;">
               <col style="width:150px;">
               <col style="width:150px;">
@@ -8969,6 +8977,8 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
             <thead>
               <tr style="border-bottom:1px solid #e2e8f0;">
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted);">Material Name</th>
+                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">JC Allotted Qty</th>
+                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">JC Remaining Qty</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Unit</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Requested Quantity</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Actual Quantity *</th>
@@ -8987,6 +8997,35 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
     `;
     cardsFeedZone.appendChild(cardWrapper);
   });
+}
+
+let _pendingTicketsQueuePollTimer = null;
+function startPendingTicketsQueuePolling() {
+  stopPendingTicketsQueuePolling();
+  _pendingTicketsQueuePollTimer = setInterval(refreshJcQuantitiesLiveInQueue, 5000);
+}
+function stopPendingTicketsQueuePolling() {
+  if (_pendingTicketsQueuePollTimer) { clearInterval(_pendingTicketsQueuePollTimer); _pendingTicketsQueuePollTimer = null; }
+}
+async function refreshJcQuantitiesLiveInQueue() {
+  const cardsFeedZone = document.getElementById("store-manager-approvals-queue-cards-feed");
+  if (!cardsFeedZone || !cardsFeedZone.children.length) return;
+  try {
+    const data = await apFetch({ action: "fetchPendingTicketsQueueStream" });
+    if (!data.success) return;
+    (data.queue || []).forEach(ticket => {
+      const card = document.getElementById(`store-pending-ticket-card-node-${ticket.ticketId}`);
+      if (!card) return;
+      (ticket.items || []).forEach(item => {
+        const allottedCell = card.querySelector(`.ticket-jc-allotted-cell[data-itemcode="${CSS.escape(item.itemCode)}"]`);
+        const remainingCell = card.querySelector(`.ticket-jc-remaining-cell[data-itemcode="${CSS.escape(item.itemCode)}"]`);
+        const qtyInput = card.querySelector(`.ticket-actual-qty-input[data-itemcode="${CSS.escape(item.itemCode)}"]`);
+        if (allottedCell) allottedCell.textContent = (item.jcAllottedQty !== null && item.jcAllottedQty !== undefined) ? fmtQty(item.jcAllottedQty) : "—";
+        if (remainingCell) remainingCell.textContent = (item.jcRemainingQty !== null && item.jcRemainingQty !== undefined) ? fmtQty(item.jcRemainingQty) : "—";
+        if (qtyInput) qtyInput.dataset.jcremaining = (item.jcRemainingQty !== null && item.jcRemainingQty !== undefined) ? item.jcRemainingQty : "";
+      });
+    });
+  } catch (e) { /* silent — next tick retries */ }
 }
 
 function toggleTicketCardBody(ticketId) {
@@ -9023,6 +9062,23 @@ function hasEmptyActualQtyInputs(ticketId) {
   const card = document.getElementById(`store-pending-ticket-card-node-${ticketId}`);
   if (!card) return false;
   return Array.from(card.querySelectorAll(".ticket-actual-qty-input")).some(inp => inp.value.trim() === "");
+}
+
+function findActualQtyOverJcRemaining(ticketId) {
+  const card = document.getElementById(`store-pending-ticket-card-node-${ticketId}`);
+  if (!card) return null;
+  const inputs = Array.from(card.querySelectorAll(".ticket-actual-qty-input"));
+  for (const inp of inputs) {
+    if (inp.dataset.jcremaining === "" || inp.dataset.jcremaining === undefined) continue; // no JC tracking for this item (e.g. FG) — nothing to enforce
+    const jcRemaining = Number(inp.dataset.jcremaining);
+    const actual = Number(inp.value);
+    if (!isNaN(actual) && actual > jcRemaining) {
+      const row = inp.closest("tr");
+      const materialName = row ? row.querySelector("td")?.textContent?.trim() : inp.dataset.itemcode;
+      return { itemCode: inp.dataset.itemcode, materialName };
+    }
+  }
+  return null;
 }
 
 /**
@@ -9329,6 +9385,11 @@ async function checkCoverageAndApprove(ticketId, projectId, btn, storeType) {
   }
   if (hasEmptyActualQtyInputs(ticketId)) {
     alert("Actual Quantity is required for every item before approving.");
+    return;
+  }
+  const overrunItem = findActualQtyOverJcRemaining(ticketId);
+  if (overrunItem) {
+    alert(`The Actual Quantity for ${overrunItem.materialName} is more than the JC Remaining Qty. Either reduce the Actual Quantity to match the JC Remaining Qty, or reject the entire ticket and have them create a new ticket with a Job Card Increase Request.`);
     return;
   }
   const rejectBtn = document.getElementById(`btn-reject-${ticketId}`);
