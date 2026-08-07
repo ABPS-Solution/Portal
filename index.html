@@ -593,7 +593,7 @@
           <span style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--brand); text-transform: uppercase; margin-bottom: 6px;">Material Basket</span>
           <table class="store-basket-data-table" id="shopping-basket-preview-table">
             <thead>
-              <tr><th>Material Name</th><th>Quantity</th><th>Unit</th><th style="width: 60px; text-align: center;">Action</th></tr>
+              <tr><th>Material Name</th><th>Unit</th><th style="text-align:center;">Quantity</th><th style="width: 60px; text-align: center;">Action</th></tr>
             </thead>
             <tbody id="shopping-basket-table-body">
               <tr><td colspan="4" style="text-align: center; color: var(--muted); padding: 20px;">Your request ticket basket is currently empty.</td></tr>
@@ -8145,8 +8145,8 @@ function renderDraftBasketTableViewportRows() {
         ${rowItem.materialName} 
         ${rowItem.requiresBOQIncreaseFlag ? '<span style="font-size:0.65rem; background:#fef3c7; color:#b45309; padding:1px 4px; border-radius:3px; font-weight:bold; margin-left:4px;">⚠️ EXCEEDS JOB CARD LIMIT</span>' : ''}
       </td>
-      <td style="font-family:monospace; font-weight:700;">${rowItem.quantity}</td>
       <td style="color:var(--muted); font-size:0.8rem;">${rowItem.unitType}</td>
+      <td style="font-family:monospace; font-weight:700; font-size:1.05rem; text-align:center;">${rowItem.quantity}</td>
       <td style="text-align:center;">
         <button class="nav-btn-styled" onclick="removeSingleBasketItemLineAtIndex(${arrayIdx})" style="background:#e53e3e; padding:2px 8px; font-size:0.75rem;">Delete</button>
       </td>
