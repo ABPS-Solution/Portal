@@ -23227,7 +23227,7 @@ async function initializeAssignCurrentStockPanel() {
   document.getElementById("ass-results-zone").style.display = "none";
   document.getElementById("ass-material-search").value = "";
   document.getElementById("ass-material-dropdown").style.display = "none";
-  assStockCache = { itemCode: "", materialName: "", assignments: [], eligibleTargets: [] };
+  assStockCache = { itemCode: "", materialName: "", totals: { totalStock: 0, reservedStock: 0, availableStock: 0 }, assignments: [] };
 }
 
 // ═══════════════════════════════════════════════════════
