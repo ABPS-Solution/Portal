@@ -8692,6 +8692,7 @@ function renderBOQIncreaseTicketCard(ticket) {
       <div class="contact-summary-title-info" style="width:100%;">
         <div class="meta-row-line-block">
           <span style="font-family:monospace; font-weight:800; background:#fef3c7; color:#b45309; padding:3px 8px; font-size:0.85rem; border-radius:3px;">${ticket.ticketId}</span>
+          <strong style="margin-left:10px; color:var(--brand); font-size:0.9rem;">${ticket.jobCardNumber || "—"}</strong>
           <span id="boq-increase-caret-${ticket.ticketId}" style="float:right; font-weight:700; color:var(--muted);">▸</span>
         </div>
         <div class="meta-row-line-block" style="margin-top:8px; font-size:0.85rem;">
