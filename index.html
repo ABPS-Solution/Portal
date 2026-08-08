@@ -422,6 +422,7 @@
         <div class="menu-card" id="mod-store-ticket"            onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Store Ticket</span></div>
         <div class="menu-card" id="mod-jc-letterhead"           onclick="switchActiveDashboardModule('jc-letterhead')"><span class="mc-label">Job Card Letterhead</span></div>
         <div class="menu-card" id="mod-fg-add"                  onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
+        <div class="menu-card" id="mod-project-invoice"         onclick="switchActiveDashboardModule('project-invoice')"><span class="mc-label">Project Invoice Generation</span></div>
       </div>
     </div>
 
@@ -919,6 +920,45 @@
         <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
           <button class="nav-btn-styled" onclick="resetFGAddForm()" style="background:#718096;">Clear</button>
           <button class="nav-btn-styled" id="fg-add-submit-btn" disabled onclick="submitFGAddItem()" style="background:var(--accent); padding:8px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;">Add to Finished Goods Store</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="canvas-module-project-invoice" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="margin:0 0 16px; color:var(--brand);">Project Invoice Generation</h2>
+      <div id="pinv-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div id="pinv-select-zone">
+        <label class="field-label" style="margin-top:0;">Project ID *</label>
+        <select id="pinv-project-select" onchange="handlePinvProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; max-width:420px;">
+          <option value="">— Select Project ID —</option>
+        </select>
+      </div>
+
+      <div id="pinv-detail-zone" style="display:none; margin-top:20px;">
+        <div id="pinv-blockers" style="display:none; margin-bottom:16px;"></div>
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px;">
+          <thead><tr style="background:var(--highlight-bg); text-align:left;">
+            <th style="padding:8px;">BOQ ID</th><th style="padding:8px;">Job Card</th><th style="padding:8px;">Use</th>
+          </tr></thead>
+          <tbody id="pinv-jc-body"></tbody>
+        </table>
+        <div id="pinv-generate-zone" style="display:none; text-align:right;">
+          <button class="nav-btn-styled" style="background:var(--accent); padding:10px 24px; font-weight:700;" onclick="openPinvConfirmModal()">Generate Invoice Doc</button>
+        </div>
+      </div>
+
+      <div id="pinv-success-zone" style="display:none; margin-top:20px;"></div>
+    </div>
+
+    <div id="pinv-confirm-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:var(--radius); padding:24px; max-width:420px; width:90%; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+        <h3 style="margin:0 0 10px; color:var(--brand);">Confirm Invoice Generation</h3>
+        <p style="font-size:0.85rem; color:var(--muted); margin-bottom:14px;">This will force-close remaining PRNs, release unused reserved stock, and mark the project Complete. This cannot be undone from here. Type the Project ID <strong id="pinv-confirm-target"></strong> to confirm.</p>
+        <input type="text" id="pinv-confirm-input" style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); margin-bottom:14px;" oninput="handlePinvConfirmInput()" />
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button class="nav-btn-styled" style="background:#718096;" onclick="closePinvConfirmModal()">Cancel</button>
+          <button class="nav-btn-styled" id="pinv-confirm-submit-btn" disabled style="background:var(--accent); opacity:0.5; cursor:not-allowed;" onclick="submitPinvGeneration()">Generate Invoice Doc</button>
         </div>
       </div>
     </div>
@@ -4284,6 +4324,7 @@ function returnToDashboard() {
   // FIXED REDIRECT RUNTIME REMOVES: Clear out the newly mounted Finished Goods view container as well
   if(document.getElementById("canvas-module-store-finished-goods-live-stock")) document.getElementById("canvas-module-store-finished-goods-live-stock").style.display = "none";
   if(document.getElementById("canvas-module-fg-add")) document.getElementById("canvas-module-fg-add").style.display = "none";
+  if(document.getElementById("canvas-module-project-invoice")) document.getElementById("canvas-module-project-invoice").style.display = "none";
 
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("dashboard-view").style.display = "block"; 
@@ -7004,6 +7045,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   }
   
   if (document.getElementById("mod-fg-add")) document.getElementById("mod-fg-add").style.display = canAddFinishedGoods ? "block" : "none";
+  const canProjectInvoiceGeneration = userPermissionsObject.projectInvoiceGeneration === true;
+  if (document.getElementById("mod-project-invoice")) document.getElementById("mod-project-invoice").style.display = canProjectInvoiceGeneration ? "block" : "none";
   if (document.getElementById("mod-jc-letterhead")) document.getElementById("mod-jc-letterhead").style.display = userPermissionsObject.jobCardLetterhead === true ? "block" : "none";
 
   const canApproveBOQIncrease = userPermissionsObject.approveJCIncrease === true;
@@ -7066,7 +7109,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // Production Department block visibility
   const productionHeaderBlock = document.getElementById("dashboard-production-department-header-block");
   if (productionHeaderBlock) {
-    productionHeaderBlock.style.display = (canCreateJobCardNumber || canCreateTicket || canAddFinishedGoods) ? "block" : "none";
+    productionHeaderBlock.style.display = (canCreateJobCardNumber || canCreateTicket || canAddFinishedGoods || canProjectInvoiceGeneration) ? "block" : "none";
   }
 
   // Live Spare Store Stock card visibility
@@ -8424,7 +8467,15 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     if (leftControls) leftControls.style.visibility = "hidden";
     if (centerTitle)  centerTitle.style.visibility  = "hidden";
     document.getElementById("canvas-module-fg-add").style.display = "block";
-    initializeFGAddWorkspace();
+    initializeFGAddWorkspace()
+  } else if (targetCanvasModuleId === 'project-invoice') {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    const leftControls = document.getElementById("store-panel-left-controls");
+    const centerTitle  = document.getElementById("store-panel-center-title");
+    if (leftControls) leftControls.style.visibility = "hidden";
+    if (centerTitle)  centerTitle.style.visibility  = "hidden";
+    document.getElementById("canvas-module-project-invoice").style.display = "block";
+    initializePinvWorkspace();
   } else if (targetCanvasModuleId === 'tour-expense') {
     document.getElementById("dashboard-view").style.display = "none";
     const teCanvas = document.getElementById("canvas-module-tour-expense");
@@ -8469,6 +8520,7 @@ function exitStoreWorkspacePanelBackToMenu() {
   if(document.getElementById("canvas-module-jc-letterhead")) document.getElementById("canvas-module-jc-letterhead").style.display = "none";
   if(document.getElementById("canvas-module-stock-sweep")) { document.getElementById("canvas-module-stock-sweep").style.display = "none"; initializeStockSweepPanel(); }
   if(document.getElementById("canvas-module-fg-add")) document.getElementById("canvas-module-fg-add").style.display = "none";
+  if(document.getElementById("canvas-module-project-invoice")) document.getElementById("canvas-module-project-invoice").style.display = "none";
   if(document.getElementById("canvas-module-store-live-fg")) document.getElementById("canvas-module-store-live-fg").style.display = "none";
   if(document.getElementById("canvas-module-store-live-spare")) document.getElementById("canvas-module-store-live-spare").style.display = "none";
   if(document.getElementById("canvas-module-store-history-matrix")) document.getElementById("canvas-module-store-history-matrix").style.display = "none";
@@ -15421,6 +15473,129 @@ function resetFGAddForm() {
   if (validationZone) { validationZone.style.display = "none"; validationZone.innerHTML = ""; }
   window.fgBOQValidationPassed = false;
   handleFGAddProjectChange(""); // re-lock fields
+}
+
+let pinvCache = { projectId: "", boqs: [], jobCards: [] };
+
+async function initializePinvWorkspace() {
+  document.getElementById("pinv-feedback").style.display = "none";
+  document.getElementById("pinv-detail-zone").style.display = "none";
+  document.getElementById("pinv-success-zone").style.display = "none";
+  document.getElementById("pinv-select-zone").style.display = "block";
+  const select = document.getElementById("pinv-project-select");
+  select.innerHTML = '<option value="">Loading...</option>';
+  try {
+    const data = await apFetch({ action: "fetchInvoiceEligibleProjects" });
+    if (!data.success) { select.innerHTML = '<option value="">Failed to load</option>'; return; }
+    select.innerHTML = '<option value="">— Select Project ID —</option>' +
+      data.projects.map(p => `<option value="${p.projectId}">${p.projectId} — ${p.companyName || ''}</option>`).join("");
+    if (data.projects.length === 0) {
+      select.innerHTML = '<option value="">No eligible projects — all Job Cards for a project must be Added to FG first</option>';
+    }
+  } catch(e) {
+    select.innerHTML = '<option value="">Network error</option>';
+  }
+}
+
+async function handlePinvProjectChange(projectId) {
+  const detailZone = document.getElementById("pinv-detail-zone");
+  if (!projectId) { detailZone.style.display = "none"; return; }
+  detailZone.style.display = "block";
+  document.getElementById("pinv-jc-body").innerHTML = '<tr><td colspan="3" style="padding:14px; text-align:center;">Loading...</td></tr>';
+  document.getElementById("pinv-blockers").style.display = "none";
+  document.getElementById("pinv-generate-zone").style.display = "none";
+  try {
+    const data = await apFetch({ action: "fetchProjectInvoiceDetail", projectId });
+    if (!data.success) { showBOQBanner("pinv-feedback", data.error || "Failed to load.", "error"); return; }
+    pinvCache = data;
+    renderPinvDetail();
+  } catch(e) {
+    showBOQBanner("pinv-feedback", "Network error: " + e.message, "error");
+  }
+}
+
+function renderPinvDetail() {
+  const body = document.getElementById("pinv-jc-body");
+  const jcByBoq = {};
+  pinvCache.jobCards.forEach(jc => { (jcByBoq[jc.boqId] = jcByBoq[jc.boqId] || []).push(jc); });
+  body.innerHTML = pinvCache.boqs.map(b => {
+    const jcs = jcByBoq[b.boqId] || [];
+    if (jcs.length === 0) {
+      return `<tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;">${b.boqId}</td><td style="padding:8px; color:var(--warn); font-weight:700;" colspan="2">⚠ No Job Cards found for this BOQ</td></tr>`;
+    }
+    return jcs.map((jc, i) => {
+      const useLabel = jc.finishedGoodUse === 'Use in other Product' ? 'Used in other Product'
+                      : jc.finishedGoodUse === 'Keep in FG Store' ? 'Ready for Dispatch' : '—';
+      return `<tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px;">${i === 0 ? b.boqId : ''}</td>
+        <td style="padding:8px;">✅ JC_Set${jc.setNumber}</td>
+        <td style="padding:8px;">${useLabel}</td>
+      </tr>`;
+    }).join("");
+  }).join("");
+
+  const blockersDiv = document.getElementById("pinv-blockers");
+  const msgs = [];
+  if (pinvCache.pendingTicketsCount > 0) msgs.push(`${pinvCache.pendingTicketsCount} pending store ticket(s) exist for this project's job cards — resolve them first.`);
+  if (pinvCache.pendingBoqIncreaseCount > 0) msgs.push(`${pinvCache.pendingBoqIncreaseCount} open BOQ Increase Request(s) exist for this project — resolve them first.`);
+  if (msgs.length > 0) {
+    blockersDiv.style.display = "block";
+    blockersDiv.innerHTML = msgs.map(m => `<div style="padding:12px; margin-bottom:8px; background:#fff5f5; border-left:4px solid #e53e3e; border-radius:var(--radius); color:#b91c1c; font-weight:600;">${m}</div>`).join("");
+    document.getElementById("pinv-generate-zone").style.display = "none";
+  } else {
+    blockersDiv.style.display = "none";
+    document.getElementById("pinv-generate-zone").style.display = "block";
+  }
+}
+
+function openPinvConfirmModal() {
+  document.getElementById("pinv-confirm-target").textContent = pinvCache.projectId;
+  document.getElementById("pinv-confirm-input").value = "";
+  document.getElementById("pinv-confirm-submit-btn").disabled = true;
+  document.getElementById("pinv-confirm-submit-btn").style.opacity = "0.5";
+  document.getElementById("pinv-confirm-submit-btn").style.cursor = "not-allowed";
+  document.getElementById("pinv-confirm-modal").style.display = "flex";
+}
+
+function closePinvConfirmModal() {
+  document.getElementById("pinv-confirm-modal").style.display = "none";
+}
+
+function handlePinvConfirmInput() {
+  const match = document.getElementById("pinv-confirm-input").value.trim() === pinvCache.projectId;
+  const btn = document.getElementById("pinv-confirm-submit-btn");
+  btn.disabled = !match;
+  btn.style.opacity = match ? "1" : "0.5";
+  btn.style.cursor = match ? "pointer" : "not-allowed";
+}
+
+async function submitPinvGeneration() {
+  const confirmProjectId = document.getElementById("pinv-confirm-input").value.trim();
+  closePinvConfirmModal();
+  showBlockingOverlay("Generating invoice and completing project...");
+  try {
+    const data = await apFetch({ action: "generateProjectInvoiceAndComplete", projectId: pinvCache.projectId, confirmProjectId, operatorName: appActiveOperatorIdentityString || "Unknown" });
+    if (data.success) {
+      document.getElementById("pinv-select-zone").style.display = "none";
+      document.getElementById("pinv-detail-zone").style.display = "none";
+      const successZone = document.getElementById("pinv-success-zone");
+      successZone.style.display = "block";
+      successZone.innerHTML = `
+        <div style="padding:14px; background:#f0fdf4; border-left:4px solid #22c55e; border-radius:var(--radius); color:#15803d; font-weight:600; margin-bottom:14px;">
+          Invoice Generated for Project ID: ${pinvCache.projectId}
+        </div>
+        <a href="${data.url}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Invoice Document ↗</a>
+        <div style="margin-top:16px;">
+          <button class="nav-btn-styled" style="background:var(--accent); padding:8px 20px; font-weight:700;" onclick="initializePinvWorkspace()">+ Create New Project Invoice</button>
+        </div>`;
+    } else {
+      showBOQBanner("pinv-feedback", data.error || "Failed.", "error");
+    }
+  } catch(e) {
+    showBOQBanner("pinv-feedback", "Network error: " + e.message, "error");
+  } finally {
+    hideBlockingOverlay();
+  }
 }
 
 let _submitFGAddItemInProgress = false;
@@ -22962,6 +23137,8 @@ async function loadManufacturingClearanceList() {
         <td style="padding:8px;">
           ${mcCurrentStatus === "Inactive"
             ? `<button class="nav-btn-styled" style="background:#2f9e58; padding:5px 12px; font-size:0.78rem;" onclick="mcActivateProject('${p.projectId}')">Activate</button>`
+            : mcCurrentStatus === "Completed"
+            ? `<button class="nav-btn-styled" style="background:var(--brand); padding:5px 12px; font-size:0.78rem;" onclick="mcReactivateProject('${p.projectId}')">Reactivate</button>`
             : `<span style="color:var(--muted); font-size:0.78rem;">—</span>`}
         </td>
       </tr>`).join("");
@@ -22977,6 +23154,20 @@ async function mcActivateProject(projectId) {
     const data = await apFetch({ action: "activateProject", projectId });
     if (data.success) { loadManufacturingClearanceList(); }
     else alert(data.error || "Failed to activate.");
+  } catch(e) {
+    alert("Network error: " + e.message);
+  } finally {
+    hideBlockingOverlay();
+  }
+}
+
+async function mcReactivateProject(projectId) {
+  if (!confirm(`Reactivate ${projectId}? This moves it back to Active. Its PRNs stay Completed and any resumed production will need a fresh Job Card Increase or new PRN.`)) return;
+  showBlockingOverlay("Reactivating project...");
+  try {
+    const data = await apFetch({ action: "reactivateCompletedProject", projectId });
+    if (data.success) { loadManufacturingClearanceList(); }
+    else alert(data.error || "Failed to reactivate.");
   } catch(e) {
     alert("Network error: " + e.message);
   } finally {
