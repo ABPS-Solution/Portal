@@ -8258,7 +8258,7 @@ function renderBOQLimitExceededApprovalRequestWorkspaceBlock(materialsList) {
 
 function resetMaterialRequestFormSubmissionActionControlsRow() {
   const inlineFeedbackBanner = document.getElementById("store-ticket-runtime-inline-feedback-banner");
-  const bottomActionControlsRow = document.getElementById("shopping-basket-preview-table").nextElementSibling;
+  const bottomActionControlsRow = document.getElementById("shopping-basket-preview-table").parentElement.nextElementSibling;
   
   if (inlineFeedbackBanner) inlineFeedbackBanner.style.display = "none";
   if (bottomActionControlsRow && !document.getElementById("boq-increase-justification-notes-input")) return;
