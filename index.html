@@ -1021,17 +1021,25 @@
       <div style="display:grid; grid-template-columns:minmax(200px,1fr) minmax(260px,2fr); gap:12px; margin-bottom:12px; align-items:end;">
         <div>
           <label class="field-label">Sweep Type *</label>
-          <select id="sweep-type" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);">
+          <select id="sweep-type" onchange="handleSweepTypeChange()" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);">
             <option value="Production Return">Production Return</option>
             <option value="Count Correction">Count Correction</option>
             <option value="Found Stock">Found Stock</option>
+            <option value="Blocked → Restricted">Blocked → Restricted</option>
+            <option value="Blocked → RM Store">Blocked → RM Store</option>
           </select>
         </div>
-        <div style="position:relative;">
+        <div id="sweep-material-search-wrapper" style="position:relative;">
           <label class="field-label">Select Material *</label>
           <input type="text" id="sweep-material-search" placeholder="Search material to add to this sweep..." oninput="handleSweepSearch(this.value)"
                  autocomplete="off" style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:var(--radius);">
           <div id="sweep-material-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:var(--radius); max-height:260px; overflow-y:auto; z-index:20; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+        </div>
+        <div id="sweep-allocation-picker-wrapper" style="display:none; position:relative;">
+          <label class="field-label">Select Blocked Allocation *</label>
+          <select id="sweep-allocation-select" onchange="handleSweepAllocationPick(this)" style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <option value="">— Choose an unfreed Blocked allocation —</option>
+          </select>
         </div>
       </div>
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:14px;">
@@ -7400,6 +7408,7 @@ async function submitMaterialRequestTicketToBackend() {
       if (feedbackBanner) {
         feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 12px; margin-bottom: 12px; border-left: 4px solid #b91c1c; text-align: left;";
         feedbackBanner.innerHTML = `<strong>Submission Rejected by Server:</strong> ${result.error}`;
+        feedbackBanner.scrollIntoView({ behavior: "smooth", block: "center" });
       }
       submitBtn.disabled = false;
       submitBtn.textContent = "Generate Material Ticket";
@@ -7409,6 +7418,7 @@ async function submitMaterialRequestTicketToBackend() {
     if (feedbackBanner) {
       feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 12px; margin-bottom: 12px; border-left: 4px solid #b91c1c; text-align: left;";
       feedbackBanner.innerHTML = `<strong>Network Request Connection Error:</strong> ${err.message}`;
+      feedbackBanner.scrollIntoView({ behavior: "smooth", block: "center" });
     }
     submitBtn.disabled = false;
     submitBtn.textContent = "Generate Material Ticket";
@@ -7482,7 +7492,8 @@ async function refreshLiveStockForSelectedMaterial() {
     if (!matchedCatalogEntry) return; // no Item Code found for this material -- nothing to look up
 
     // NOW fire the single network call for live stock counts
-    const data = await apFetch({ action: "getLiveStockForItem", itemCode: matchedCatalogEntry.itemCode, projectId: projectId });
+    const jobCardNumberForPill = document.getElementById("ticket-job-card-dropdown")?.value || "";
+    const data = await apFetch({ action: "getLiveStockForItem", itemCode: matchedCatalogEntry.itemCode, projectId: projectId, jobCardNumber: jobCardNumberForPill });
     if (!data.success) return;
 
     // Also refresh job_card_materials on every tick — a QA check completing,
@@ -7813,6 +7824,15 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       if (availableCount === 0)  styleClass = "pill-stock-empty";
       else if (availableCount <= 5) styleClass = "pill-stock-low";
       
+      const rawPoolRemaining = (liveStockOverride && liveStockOverride.rawPoolRemaining !== null && liveStockOverride.rawPoolRemaining !== undefined) ? liveStockOverride.rawPoolRemaining : null;
+      const sparePoolRemaining = (liveStockOverride && liveStockOverride.sparePoolRemaining !== null && liveStockOverride.sparePoolRemaining !== undefined) ? liveStockOverride.sparePoolRemaining : null;
+      const poolLowWarning = (rawPoolRemaining !== null && rawPoolRemaining < 1e-9 && sparePoolRemaining > 1e-9);
+      const poolLineHtml = rawPoolRemaining !== null ? `
+          <div style="margin-top:6px; font-size:0.78rem; ${poolLowWarning ? 'color:#b45309; font-weight:700;' : 'color:var(--muted);'}">
+            This BOQ's Raw Pool Remaining: <strong>${fmtQty(rawPoolRemaining)} ${unitToken}</strong>
+            &nbsp;|&nbsp; Spare Pool Remaining: <strong>${fmtQty(sparePoolRemaining)} ${unitToken}</strong>
+            ${poolLowWarning ? ' — Raw pool is exhausted; a Spare Store ticket can cover the rest, or submit a Job Card Increase Request.' : ''}
+          </div>` : '';
       counterZone.innerHTML = `
         <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
           <div>
@@ -7829,6 +7849,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
             <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED: ${fmtQty(jcmMatch.usedQty)} ${unitToken}</span>
             <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatch.remainingQty)} ${unitToken}</span>
           </div>
+          ${poolLineHtml}
         </div>
       `;
     } else if (inventoryMatch && !jcmMatch) {
@@ -8916,12 +8937,28 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
     
     let itemsArray = Array.isArray(ticket.items) ? ticket.items : [];
     
+    const isRawTicket = (ticket.storeTargetScope || "Raw Materials Store") === "Raw Materials Store";
     let itemRowsHtml = "";
     itemsArray.forEach(item => {
       const overrunHighlightStyle = item.requiresBOQIncreaseFlag === true ? 'color: var(--warn); font-weight: 800; background: #fff5f2; padding: 2px 6px; border-radius: 4px; border: 1px solid #fca5a5;' : '';
       const reqQty = Number(item.quantity) || 0;
       const jcAllotted = (item.jcAllottedQty !== null && item.jcAllottedQty !== undefined) ? fmtQty(item.jcAllottedQty) : "—";
       const jcRemaining = (item.jcRemainingQty !== null && item.jcRemainingQty !== undefined) ? item.jcRemainingQty : null;
+      const spareCellsHtml = isRawTicket ? `
+          <td style="padding:6px; text-align:center; vertical-align:middle;">
+            <select class="ticket-spare-needed-select" data-itemcode="${item.itemCode}" onchange="handleSpareNeededChange(this)"
+              style="width:100%; padding:5px 4px; font-size:0.82rem; font-weight:600; border:1.5px solid var(--border); border-radius:4px;">
+              <option value="No" selected>No</option>
+              <option value="Blocked">Blocked</option>
+              <option value="Restricted">Restricted</option>
+            </select>
+          </td>
+          <td style="padding:6px; text-align:center; vertical-align:middle;">
+            <input type="number" class="ticket-spare-qty-input" data-itemcode="${item.itemCode}" value="" min="0" step="any" disabled
+              style="box-sizing:border-box; width:100%; margin:0; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; border:1.5px solid var(--border); border-radius:4px; background:#f1f5f9; color:var(--muted);" />
+          </td>` : `
+          <td style="padding:6px; text-align:center; vertical-align:middle; color:var(--muted);">—</td>
+          <td style="padding:6px; text-align:center; vertical-align:middle; color:var(--muted);">—</td>`;
       itemRowsHtml += `
         <tr>
           <td style="padding:6px; font-weight:600; text-align:left; ${overrunHighlightStyle}">
@@ -8937,6 +8974,7 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
               value="${reqQty}" min="0" max="${reqQty}" step="any" oninput="clampTicketActualQtyInput(this)"
               style="box-sizing:border-box; width:100%; margin:0; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; font-size:1.05rem; border:1.5px solid var(--border); border-radius:4px;" />
           </td>
+${spareCellsHtml}
         </tr>`;
     });
     
@@ -8971,8 +9009,10 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
               <col style="width:110px;">
               <col style="width:110px;">
               <col style="width:90px;">
-              <col style="width:150px;">
-              <col style="width:150px;">
+              <col style="width:140px;">
+              <col style="width:140px;">
+              <col style="width:130px;">
+              <col style="width:110px;">
             </colgroup>
             <thead>
               <tr style="border-bottom:1px solid #e2e8f0;">
@@ -8982,6 +9022,8 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Unit</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Requested Quantity</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Actual Quantity *</th>
+                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Spare Stock Needed</th>
+                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Spare Store Qty</th>
               </tr>
             </thead>
             <tbody>${itemRowsHtml}</tbody>
@@ -9035,6 +9077,53 @@ function toggleTicketCardBody(ticketId) {
   const isOpen = body.style.display !== "none";
   body.style.display = isOpen ? "none" : "block";
   if (caret) caret.textContent = isOpen ? "▸" : "▾";
+}
+
+function handleSpareNeededChange(sel) {
+  const row = sel.closest("tr");
+  const qtyInput = row ? row.querySelector(".ticket-spare-qty-input") : null;
+  if (!qtyInput) return;
+  if (sel.value === "No") {
+    qtyInput.value = "";
+    qtyInput.disabled = true;
+    qtyInput.style.background = "#f1f5f9";
+    qtyInput.style.color = "var(--muted)";
+  } else {
+    qtyInput.disabled = false;
+    qtyInput.style.background = "#fff";
+    qtyInput.style.color = "var(--text)";
+  }
+}
+
+function collectSpareAllocations(ticketId) {
+  const card = document.getElementById(`store-pending-ticket-card-node-${ticketId}`);
+  const result = {};
+  if (!card) return result;
+  card.querySelectorAll(".ticket-spare-needed-select").forEach(sel => {
+    if (sel.value === "No") return;
+    const row = sel.closest("tr");
+    const qtyInput = row ? row.querySelector(".ticket-spare-qty-input") : null;
+    const qty = qtyInput ? Number(qtyInput.value) : 0;
+    result[sel.dataset.itemcode] = { needed: sel.value, qty: (!isNaN(qty) && qty > 0) ? qty : 0 };
+  });
+  return result;
+}
+
+function findInvalidSpareAllocation(ticketId) {
+  const card = document.getElementById(`store-pending-ticket-card-node-${ticketId}`);
+  if (!card) return null;
+  const selects = Array.from(card.querySelectorAll(".ticket-spare-needed-select"));
+  for (const sel of selects) {
+    if (sel.value === "No") continue;
+    const row = sel.closest("tr");
+    const qtyInput = row ? row.querySelector(".ticket-spare-qty-input") : null;
+    const qty = qtyInput ? Number(qtyInput.value) : NaN;
+    if (!qtyInput || qtyInput.value.trim() === "" || isNaN(qty) || qty <= 0) {
+      const materialName = row ? row.querySelector("td")?.textContent?.trim() : sel.dataset.itemcode;
+      return { itemCode: sel.dataset.itemcode, materialName };
+    }
+  }
+  return null;
 }
 
 function clampTicketActualQtyInput(inp) {
@@ -9392,6 +9481,11 @@ async function checkCoverageAndApprove(ticketId, projectId, btn, storeType) {
     alert(`The Actual Quantity for ${overrunItem.materialName} is more than the JC Remaining Qty. Either reduce the Actual Quantity to match the JC Remaining Qty, or reject the entire ticket and have them create a new ticket with a Job Card Increase Request.`);
     return;
   }
+  const invalidSpare = findInvalidSpareAllocation(ticketId);
+  if (invalidSpare) {
+    alert(`Spare Store Qty is required for ${invalidSpare.materialName} since Spare Stock Needed is set to Blocked or Restricted.`);
+    return;
+  }
   const rejectBtn = document.getElementById(`btn-reject-${ticketId}`);
   btn.disabled = true;
   if (rejectBtn) rejectBtn.disabled = true;
@@ -9614,7 +9708,8 @@ async function executeStoreManagerTicketActionDecision(ticketId, decisionString)
       activeEngineer: appActiveOperatorIdentityString,
       ticketId: ticketId,
       managerDecisionCommand: decisionString,
-      actualQuantities: decisionString === "APPROVE" ? collectTicketActualQuantities(ticketId) : undefined
+      actualQuantities: decisionString === "APPROVE" ? collectTicketActualQuantities(ticketId) : undefined,
+      spareAllocations: decisionString === "APPROVE" ? collectSpareAllocations(ticketId) : undefined
     });
     if (result.success) {
       if (feedbackBanner) {
@@ -22799,6 +22894,49 @@ async function mcActivateProject(projectId) {
   }
 }
 
+let sweepBlockedAllocationsCache = [];
+
+function handleSweepTypeChange() {
+  const type = document.getElementById("sweep-type").value;
+  const isBlockedExit = type === "Blocked → Restricted" || type === "Blocked → RM Store";
+  document.getElementById("sweep-material-search-wrapper").style.display = isBlockedExit ? "none" : "block";
+  document.getElementById("sweep-allocation-picker-wrapper").style.display = isBlockedExit ? "block" : "none";
+  if (isBlockedExit) loadUnfreedBlockedAllocations();
+}
+
+async function loadUnfreedBlockedAllocations() {
+  const sel = document.getElementById("sweep-allocation-select");
+  sel.innerHTML = '<option value="">Loading...</option>';
+  try {
+    const data = await apFetch({ action: "fetchUnfreedSpareBlockedAllocations" });
+    sweepBlockedAllocationsCache = (data.success && data.allocations) ? data.allocations : [];
+    if (sweepBlockedAllocationsCache.length === 0) {
+      sel.innerHTML = '<option value="">No unfreed Blocked allocations</option>';
+      return;
+    }
+    sel.innerHTML = '<option value="">— Choose an unfreed Blocked allocation —</option>' +
+      sweepBlockedAllocationsCache.map(a =>
+        `<option value="${a.allocationId}">${a.materialName} (${a.itemCode}) — ${fmtQty(a.quantity)} — JC: ${a.jobCardNumber}</option>`
+      ).join("");
+  } catch (e) {
+    sel.innerHTML = '<option value="">Error loading allocations</option>';
+  }
+}
+
+function handleSweepAllocationPick(sel) {
+  const allocationId = sel.value;
+  if (!allocationId) return;
+  const alloc = sweepBlockedAllocationsCache.find(a => String(a.allocationId) === String(allocationId));
+  if (!alloc) return;
+  sel.value = "";
+  if (sweepBasket.some(b => b.allocationId === alloc.allocationId)) { alert("This allocation is already in the sweep list."); return; }
+  sweepBasket.push({
+    allocationId: alloc.allocationId, itemCode: alloc.itemCode, materialName: alloc.materialName,
+    unitType: "", quantity: alloc.quantity, jobCardNumber: alloc.jobCardNumber, isBlockedExit: true,
+  });
+  renderSweepBasket();
+}
+
 function handleSweepSearch(query) {
   const dropdown = document.getElementById("sweep-material-dropdown");
   if (!query || query.trim().length < 1) { dropdown.style.display = "none"; return; }
@@ -22824,7 +22962,7 @@ function addToSweepBasket(itemCode, materialName, rating, unitType) {
   document.getElementById("sweep-material-search").value = "";
   document.getElementById("sweep-material-dropdown").style.display = "none";
   if (sweepBasket.some(b => b.itemCode === itemCode)) { alert("This item is already in the sweep list — edit its quantity below instead."); return; }
-  sweepBasket.push({ itemCode, materialName, rating: rating || "", unitType: unitType || "NOS", quantity: "" });
+  sweepBasket.push({ itemCode, materialName, rating: rating || "", unitType: unitType || "NOS", quantity: "", isBlockedExit: false });
   renderSweepBasket();
 }
 
@@ -22844,7 +22982,14 @@ function renderSweepBasket() {
   if (sweepBasket.length === 0) {
     body.innerHTML = '<tr id="sweep-basket-empty"><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No items added yet.</td></tr>';
   } else {
-    body.innerHTML = sweepBasket.map(b => `
+    body.innerHTML = sweepBasket.map(b => b.isBlockedExit ? `
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px; font-family:monospace;">${b.itemCode}</td>
+        <td style="padding:8px;">${b.materialName} <span style="color:var(--muted); font-size:0.78rem;">(from JC: ${b.jobCardNumber})</span></td>
+        <td style="padding:8px; font-family:monospace; color:var(--muted);">—</td>
+        <td style="padding:8px; font-family:monospace; font-weight:700;">${fmtQty(b.quantity)}</td>
+        <td style="padding:8px;"><button onclick="removeFromSweepBasketByAllocation(${b.allocationId})" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>
+      </tr>` : `
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px; font-family:monospace;">${b.itemCode}</td>
         <td style="padding:8px;">${b.materialName}${b.rating ? ` <span style="color:var(--brand); font-weight:700;">${b.rating}</span>` : ""}</td>
@@ -22856,6 +23001,11 @@ function renderSweepBasket() {
   updateSweepSubmitState();
 }
 
+function removeFromSweepBasketByAllocation(allocationId) {
+  sweepBasket = sweepBasket.filter(b => b.allocationId !== allocationId);
+  renderSweepBasket();
+}
+
 // Submit stays enabled with blank quantities so the inline banner can
 // name the offending rows, rather than a silently dead button.
 function updateSweepSubmitState() {
@@ -22863,7 +23013,7 @@ function updateSweepSubmitState() {
 }
 
 async function submitStockSweep() {
-  const missing = sweepBasket.filter(b => !(parseFloat(b.quantity) > 0));
+  const missing = sweepBasket.filter(b => !b.isBlockedExit && !(parseFloat(b.quantity) > 0));
   if (missing.length > 0) {
     showBOQBanner("sweep-feedback",
       `<strong>Quantity Required:</strong> Enter a quantity greater than 0 for: ${missing.map(m => m.itemCode).join(", ")}.`,
@@ -22877,11 +23027,13 @@ async function submitStockSweep() {
     const data = await apFetch({
       action: "commitStockSweep",
       operatorName: appActiveOperatorIdentityString,
-      sweepItems: sweepBasket.map(b => ({
+      sweepItems: sweepBasket.map(b => b.isBlockedExit ? {
+        allocationId: b.allocationId, itemCode: b.itemCode, sweepType: document.getElementById("sweep-type").value,
+      } : {
         itemCode: b.itemCode,
         quantity: parseFloat(b.quantity),
         sweepType: document.getElementById("sweep-type").value,
-      }))
+      })
     });
     if (data.success) {
       let msg = `Sweep recorded: ${data.itemsProcessed} item(s) added and auto-distributed to BOQs.`;
