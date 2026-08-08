@@ -8284,9 +8284,11 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
   }
   
   const btn = document.getElementById("submit-ticket-final-btn");
-  btn.disabled = true; 
+  btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div> Transmitting Request to Admin...';
-  
+  if (!window.storeCreateTicketOriginalTemplateCacheHTML) {
+    window.storeCreateTicketOriginalTemplateCacheHTML = materialRequestPanelContainer.innerHTML;
+  }
   try {
     // FIXED FLAT PAYLOAD: Flattens parameters straight into the base object root to prevent router switch drops
     const flatServerRequestPayload = {
@@ -8308,10 +8310,9 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
       materialRequestPanelContainer.innerHTML = `
         <div style="background: #e0f2fe; border: 1px solid #0369a1; border-left: 4px solid #0369a1; color: #0369a1; padding: 20px; border-radius: var(--radius); text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin: 10px 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
           <div>
-            <h3 style="font-size: 1.1rem; margin: 0 0 6px 0; font-weight: 700;">BOQ Threshold Limit Overrun Dispatched!</h3>
-            <p style="font-size: 0.92rem; margin: 0 0 12px 0; font-weight:600; line-height:1.4;">An allocation review request has been safely compiled and forwarded to the System Administrator for engineering verification checks.</p>
+            <h3 style="font-size: 1.1rem; margin: 0 0 6px 0; font-weight: 700;">Job Card Limit Request Submitted</h3>
             <div style="font-size: 0.92rem; font-weight: 700; display: flex; align-items: center; gap: 4px;">
-              Assigned Audit Ticket ID:
+              Assigned Ticket ID:
               <span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #0369a1; color: #111827; margin-left: 4px; font-size: 1rem;">
                 ${result.ticketId}
               </span>
@@ -8658,128 +8659,122 @@ function renderBOQIncreaseTicketCard(ticket) {
   card.id = `boq-increase-card-${ticket.ticketId}`;
   card.style.borderLeft = "4px solid #f59e0b";
 
-  const exceededItemsHtml = (ticket.exceededItems || []).map(item => `
-    <div style="background:#fffbeb; border:1px solid #fcd34d; border-radius:var(--radius); padding:14px; margin-bottom:10px;" id="boq-item-card-${ticket.ticketId}-${item.itemCode.replace(/[^a-zA-Z0-9]/g,'_')}">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
-        <div>
-          <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.82rem;">${item.itemCode}</span>
-          <span style="font-weight:700; color:var(--text); font-size:0.88rem; margin-left:8px;">${item.itemDescription || ""}</span>
-        </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; font-size:0.75rem; font-weight:700;">
-          <span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:4px;">BOQ Remaining: ${item.boqRemainingQty || 0} ${item.unitType || ""}</span>
-          <span style="background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:4px;">Requested: ${item.requestedQty || 0} ${item.unitType || ""}</span>
-          <span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:4px;">Exceeds by: ${item.boqExceedAmount || 0} ${item.unitType || ""}</span>
-        </div>
-      </div>
-      ${item.boqIncreaseNotes ? `<div style="font-size:0.82rem; color:#78350f; background:#fffef0; border:1px solid #fcd34d; border-radius:4px; padding:8px 10px; margin-bottom:10px;"><strong>Engineer's Justification:</strong> ${item.boqIncreaseNotes}</div>` : ""}
-      <div style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;">
-        <div>
-          <label style="font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:3px;">Admin Decision</label>
-          <select id="boq-decision-${ticket.ticketId}-${item.itemCode.replace(/[^a-zA-Z0-9]/g,'_')}"
-            data-itemcode="${item.itemCode}"
-            onchange="handleBOQItemDecisionChange('${ticket.ticketId}', '${item.itemCode}')"
-            style="padding:6px 10px; font-weight:700; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.82rem;">
-            <option value="">— Choose Action —</option>
-            <option value="accept">Accept Full Increase (${item.requestedQty} ${item.unitType || ""})</option>
-            <option value="partial">Partially Accept</option>
-            <option value="reject">Reject Increase</option>
-          </select>
-        </div>
-        <div id="boq-partial-qty-zone-${ticket.ticketId}-${item.itemCode.replace(/[^a-zA-Z0-9]/g,'_')}" style="display:none;">
-          <label style="font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:3px;">Permitted Qty (max ${item.requestedQty})</label>
-          <input type="number" min="1" max="${item.requestedQty}"
-            id="boq-partial-qty-${ticket.ticketId}-${item.itemCode.replace(/[^a-zA-Z0-9]/g,'_')}"
-            placeholder="Enter qty..."
-            style="padding:6px 10px; font-weight:700; border:1.5px solid var(--brand); border-radius:var(--radius); font-size:0.82rem; width:120px;" />
-        </div>
-      </div>
-    </div>`).join("");
+  const items = ticket.exceededItems || [];
+  const justificationText = items.length > 0 ? (items[0].boqIncreaseNotes || "") : "";
+
+  const rowsHtml = items.map(item => {
+    const safeCode = item.itemCode.replace(/[^a-zA-Z0-9]/g,'_');
+    const reqQty = Number(item.requestedQty) || 0;
+    const remQty = Number(item.boqRemainingQty) || 0;
+    return `
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px; font-weight:600;">
+          <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.78rem; margin-right:6px;">${item.itemCode}</span>${item.itemDescription || ""}
+        </td>
+        <td style="padding:8px; text-align:center; color:var(--muted);">${item.unitType || "—"}</td>
+        <td style="padding:8px; text-align:center;">${fmtQty(item.boqAllottedQty)}</td>
+        <td style="padding:8px; text-align:center;">${fmtQty(item.boqUsedQty)}</td>
+        <td style="padding:8px; text-align:center; font-weight:700; color:#0369a1;">${fmtQty(remQty)}</td>
+        <td style="padding:8px; text-align:center;">${fmtQty(reqQty)}</td>
+        <td style="padding:8px; text-align:center; font-weight:700; color:#b45309;">${fmtQty(item.boqExceedAmount)}</td>
+        <td style="padding:8px; text-align:center;">
+          <input type="number" data-itemcode="${item.itemCode}" data-min="${remQty}" data-max="${reqQty}"
+            id="boq-final-qty-${ticket.ticketId}-${safeCode}"
+            value="${reqQty}" min="${remQty}" max="${reqQty}" step="any"
+            oninput="clampBOQFinalTicketQty(this)"
+            style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; border:1.5px solid var(--border); border-radius:4px;" />
+        </td>
+      </tr>`;
+  }).join("");
 
   card.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; padding-bottom:8px; border-bottom:1px dashed var(--border); flex-wrap:wrap; gap:8px;">
-      <div>
-        <span style="font-family:monospace; font-weight:800; background:#fef3c7; color:#b45309; padding:3px 8px; font-size:0.78rem; border-radius:3px;">⚠️ ${ticket.ticketId}</span>
-        <strong style="margin-left:8px; color:var(--brand);">${ticket.jobCardNumber || ticket.projectId}</strong>
-        <span style="font-size:0.72rem; color:var(--muted); margin-left:8px;">By: ${ticket.requestedBy} | ${fmtPstatDateTime(ticket.dateCreated)}</span>
-        <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:6px;">Dept: ${ticket.department || "—"} | Store: ${ticket.storeType || "—"}</span>
+    <div class="contact-summary-header-row" onclick="toggleBOQIncreaseCardBody('${ticket.ticketId}')" style="margin-bottom:0; padding-bottom:8px; cursor:pointer;">
+      <div class="contact-summary-title-info" style="width:100%;">
+        <div class="meta-row-line-block">
+          <span style="font-family:monospace; font-weight:800; background:#fef3c7; color:#b45309; padding:3px 8px; font-size:0.85rem; border-radius:3px;">${ticket.ticketId}</span>
+          <span id="boq-increase-caret-${ticket.ticketId}" style="float:right; font-weight:700; color:var(--muted);">▸</span>
+        </div>
+        <div class="meta-row-line-block" style="margin-top:8px; font-size:0.85rem;">
+          <span>By:</span> <strong style="color:#111827;">${ticket.requestedBy}</strong>
+          <span style="margin-left:8px;">|</span>
+          <strong style="color:#111827; margin-left:8px;">${fmtPstatDateTime(ticket.dateCreated)}</strong>
+          <span style="margin-left:12px;">Dept:</span> <strong style="color:#111827;">${ticket.department || "—"}</strong>
+          <span style="margin-left:8px;">|</span>
+          <span style="margin-left:8px;">Store:</span> <strong style="color:#111827;">${ticket.storeType || "—"}</strong>
+        </div>
       </div>
-      <span style="font-size:0.7rem; font-weight:700; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:4px;">Pending BOQ Increase Review</span>
     </div>
-    <div style="margin-bottom:14px;">${exceededItemsHtml}</div>
-    <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:12px;">
-      <button class="nav-btn-styled" onclick="submitBOQIncreaseDecision('${ticket.ticketId}')"
-        style="background:var(--accent); padding:8px 20px; font-weight:700;">
-        Submit Decision for This Ticket
-      </button>
+    <div id="boq-increase-body-${ticket.ticketId}" style="display:none; padding-top:12px; border-top:1px dashed var(--border); margin-top:8px;">
+      <div style="font-size:0.85rem; color:#475569; background:#f8fafc; border:1px solid var(--border); border-radius:4px; padding:10px 12px; margin-bottom:12px;">
+        <strong>Engineer's Justification:</strong> ${justificationText}
+      </div>
+      <div style="overflow-x:auto; margin-bottom:14px;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+          <thead>
+            <tr style="background:var(--highlight-bg); text-align:left;">
+              <th style="padding:8px;">Material Name</th>
+              <th style="padding:8px; text-align:center;">Unit</th>
+              <th style="padding:8px; text-align:center;">JC Allotted Qty</th>
+              <th style="padding:8px; text-align:center;">JC Used Qty</th>
+              <th style="padding:8px; text-align:center;">JC Remaining Qty</th>
+              <th style="padding:8px; text-align:center;">Requested Qty</th>
+              <th style="padding:8px; text-align:center;">Exceeds by Qty</th>
+              <th style="padding:8px; text-align:center;">Final Ticket Qty</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="nav-btn-styled" onclick="submitBOQIncreaseDecision('${ticket.ticketId}')"
+          style="background:var(--accent); padding:8px 20px; font-weight:700;">
+          Submit Decision for This Ticket
+        </button>
+      </div>
     </div>
   `;
   return card;
 }
 
-function handleBOQItemDecisionChange(ticketId, itemCode) {
-  const safeCode = itemCode.replace(/[^a-zA-Z0-9]/g,'_');
-  const decision = document.getElementById(`boq-decision-${ticketId}-${safeCode}`)?.value;
-  const partialZone = document.getElementById(`boq-partial-qty-zone-${ticketId}-${safeCode}`);
-  if (partialZone) partialZone.style.display = decision === "partial" ? "block" : "none";
+function toggleBOQIncreaseCardBody(ticketId) {
+  const body = document.getElementById(`boq-increase-body-${ticketId}`);
+  const caret = document.getElementById(`boq-increase-caret-${ticketId}`);
+  if (!body) return;
+  const isOpen = body.style.display !== "none";
+  body.style.display = isOpen ? "none" : "block";
+  if (caret) caret.textContent = isOpen ? "▸" : "▾";
+}
+
+function clampBOQFinalTicketQty(inp) {
+  const min = Number(inp.dataset.min) || 0;
+  const max = Number(inp.dataset.max) || 0;
+  let val = parseFloat(inp.value);
+  if (isNaN(val)) return;
+  if (val < min) val = min;
+  if (val > max) val = max;
+  inp.value = val;
 }
 
 async function submitBOQIncreaseDecision(ticketId) {
   const card     = document.getElementById(`boq-increase-card-${ticketId}`);
   const feedback = document.getElementById("boq-increase-approvals-feedback");
-
-  // Collect all item decisions from this card
+  // Collect Final Ticket Qty per item — always an "accept" action now,
+  // there's no separate Reject path on this screen.
   const itemDecisions = [];
-  let allDecided = true;
-  let hasPartial = false;
-  let hasReject  = false;
-  let hasAccept  = false;
-
-  card.querySelectorAll("select[id^='boq-decision-']").forEach(sel => {
-    const parts    = sel.id.split(`boq-decision-${ticketId}-`);
-    const safeCode = parts[1];
-    const decision = sel.value;
-
-    if (!decision) { allDecided = false; return; }
-
-    const permQtyInput = document.getElementById(`boq-partial-qty-${ticketId}-${safeCode}`);
-    const permittedQty = decision === "partial" ? (parseFloat(permQtyInput?.value) || 0) : null;
-
-    if (decision === "partial" && (!permittedQty || permittedQty <= 0)) {
-      allDecided = false; return;
-    }
-
-    // Reverse-map safeCode back to itemCode stored in data attribute
-    const origItemCode = sel.id.replace(`boq-decision-${ticketId}-`, "").replace(/_/g, match => {
-      // We can't reverse underscore substitution perfectly, so store itemCode in a data attribute
-      return match;
-    });
-
-    // Use a data attribute on the select to store the original itemCode
-    itemDecisions.push({
-      itemCode: sel.dataset.itemcode || safeCode,
-      decision,
-      permittedQty
-    });
-
-    if (decision === "partial") hasPartial = true;
-    if (decision === "reject")  hasReject  = true;
-    if (decision === "accept")  hasAccept  = true;
+  let hasInvalid = false;
+  card.querySelectorAll("input[id^='boq-final-qty-']").forEach(inp => {
+    const finalTicketQty = parseFloat(inp.value);
+    if (isNaN(finalTicketQty) || finalTicketQty < Number(inp.dataset.min)) { hasInvalid = true; return; }
+    itemDecisions.push({ itemCode: inp.dataset.itemcode, finalTicketQty });
   });
-
-  if (!allDecided) {
+  if (hasInvalid || itemDecisions.length === 0) {
     feedback.style.cssText = "display:block; background:#fff3c7; border-left:4px solid #b45309; color:#b45309; padding:12px; margin-bottom:12px;";
-    feedback.textContent   = "Please select a decision for every exceeded item, and enter a permitted quantity for any partially accepted items.";
+    feedback.textContent   = "Final Ticket Qty must be set, and can never be less than JC Remaining Qty, for every item.";
     return;
   }
-
-  // Determine overall adminAction
-  let adminAction = "accept";
-  if (hasReject && !hasAccept && !hasPartial) adminAction = "reject";
-  else if (hasPartial || (hasReject && (hasAccept || hasPartial))) adminAction = "partial";
-
+  const adminAction = "accept";
   const submitBtn = card.querySelector("button[onclick^='submitBOQIncreaseDecision']");
   if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...'; }
-
   try {
     const data = await apFetch({
       action:          "commitBOQLimitIncreaseRequestTicket",
