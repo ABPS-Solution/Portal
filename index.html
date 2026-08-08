@@ -1181,7 +1181,6 @@
     <h2 style="color:var(--brand); margin:0 0 6px 0;">Manufacturing Clearance</h2>
     <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">
       New projects start Inactive and stay invisible to every other department until cleared here.
-      Activation is one-way. An Active project cannot be sent back to Inactive from this screen.
     </p>
     <div style="display:flex; gap:8px; margin-bottom:16px;">
       <button id="mc-pill-active" class="nav-btn-styled" onclick="switchMcStatus('Active')" style="padding:6px 16px;">Active</button>
@@ -12090,7 +12089,7 @@ function renderPstatOnePps(elId, prn, ppsData) {
     const pos = m.purchaseOrders || [];
     const poLines = pos.length === 0 ? `<div style="color:var(--muted); font-size:0.78rem;">No PO allocations yet.</div>` : pos.map(po => `
       <div style="font-size:0.78rem; padding:2px 0; border-top:1px dashed #f1f5f9;">
-        <strong>${po.poNo}</strong> — Vendor: ${po.vendorName || "—"} | Ordered: ${fmtQty(po.orderedQty)} | Received: ${fmtQty(po.receivedQty)}
+        <strong>${po.poNo}</strong> | Vendor: ${po.vendorName || "—"} | Ordered: ${fmtQty(po.orderedQty)} | Received: ${fmtQty(po.receivedQty)}
         | Expected: ${formatDateDMY(po.expectedDelivery) || "—"} | ${po.actualDelivery ? `Delivered: ${formatDateDMY(po.actualDelivery)}` : "Not delivered"}
         | Link Status: ${po.linkStatus || "—"}
         ${po.actionPlan ? `<div style="color:#0369a1; margin-top:2px;">Action Plan: ${po.actionPlan}</div>` : ""}
@@ -15490,7 +15489,7 @@ async function initializePinvWorkspace() {
     select.innerHTML = '<option value="">— Select Project ID —</option>' +
       data.projects.map(p => `<option value="${p.projectId}">${p.projectId} — ${p.companyName || ''}</option>`).join("");
     if (data.projects.length === 0) {
-      select.innerHTML = '<option value="">No eligible projects — all Job Cards for a project must be Added to FG first</option>';
+      select.innerHTML = '<option value="">No eligible Project IDs. All Job Cards for a project must be Added to FG first</option>';
     }
   } catch(e) {
     select.innerHTML = '<option value="">Network error</option>';
