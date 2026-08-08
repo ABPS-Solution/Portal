@@ -8795,10 +8795,7 @@ async function initializeStoreManagerApprovalsWorkspace() {
   }
 }
 
-// Shared builder for the "Choose Store" dropdown's option list. The "Spare -> Raw Material"
-// transfer option only ever appears when the active ticket type is Return Material — it isn't
-// a real store to request FROM, it's a relocation of stock between two stores, and only makes
-// sense framed as a return-side action.
+// Shared builder for the "Choose Store" dropdown's option list. 
 
 // Return Material was removed — production returns now come in via Stock
 // Sweep. Spare → Raw Material stays: it's a bin-to-bin relocation, not a
@@ -8807,8 +8804,7 @@ function buildStoreScopeOptionsHtml_(placeholderText) {
   return `<option value="">${placeholderText}</option>`
     + `<option value="Raw Materials Store">Raw Materials Store</option>`
     + `<option value="Spare Store">Spare Store</option>`
-    + `<option value="Finished Goods Store">Finished Goods Store</option>`
-    + `<option value="Spare -> Raw Material">Spare → Raw Material (Transfer)</option>`;
+    + `<option value="Finished Goods Store">Finished Goods Store</option>`;
 }
 
 function ticketBOQDisplayReset(text) {
