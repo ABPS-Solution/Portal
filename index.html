@@ -8996,7 +8996,7 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
           </td>
           <td style="padding:6px; text-align:center; vertical-align:middle;">
             <input type="number" class="ticket-spare-qty-input" data-itemcode="${item.itemCode}" value="" min="0" step="any" disabled
-              style="box-sizing:border-box; width:100%; margin:0; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; border:1.5px solid var(--border); border-radius:4px; background:#f1f5f9; color:var(--muted);" />
+              style="box-sizing:border-box; width:100%; margin:0; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; font-size:1.05rem; border:1.5px solid var(--border); border-radius:4px; background:#f1f5f9; color:var(--muted);" />
           </td>` : `
           <td style="padding:6px; text-align:center; vertical-align:middle; color:var(--muted);">—</td>
           <td style="padding:6px; text-align:center; vertical-align:middle; color:var(--muted);">—</td>`;
@@ -9006,7 +9006,7 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
             ${item.materialName}
             ${item.requiresBOQIncreaseFlag ? '<span style="font-size:0.62rem; background:var(--warn); color:white; padding:1px 4px; border-radius:3px; margin-left:4px; font-weight:bold;">OVERRUN</span>' : ''}
           </td>
-          <td class="ticket-jc-allotted-cell" data-itemcode="${item.itemCode}" style="padding:6px; color:var(--muted); font-size:0.9rem; text-align:center; vertical-align:middle;">${jcAllotted}</td>
+          <td style="padding:6px; color:#111827; font-weight:600; font-size:0.9rem; text-align:center; vertical-align:middle;">${jcAllotted}</td>
           <td class="ticket-jc-remaining-cell" data-itemcode="${item.itemCode}" style="padding:6px; font-weight:700; font-size:0.9rem; text-align:center; vertical-align:middle; color:#0369a1;">${jcRemaining !== null ? fmtQty(jcRemaining) : "—"}</td>
           <td style="padding:6px; color:var(--muted); font-size:0.95rem; font-weight:600; text-align:center; vertical-align:middle;">${item.unitType || 'Pcs'}</td>
           <td style="padding:6px; font-family:monospace; font-weight:700; font-size:1.05rem; color:var(--brand); text-align:center; vertical-align:middle;">${fmtQty(reqQty)}</td>
@@ -9527,47 +9527,14 @@ async function checkCoverageAndApprove(ticketId, projectId, btn, storeType) {
     alert(`Spare Store Qty is required for ${invalidSpare.materialName} since Spare Stock Needed is set to Blocked or Restricted.`);
     return;
   }
-  const rejectBtn = document.getElementById(`btn-reject-${ticketId}`);
-  btn.disabled = true;
-  if (rejectBtn) rejectBtn.disabled = true;
-  btn.innerHTML = `<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Checking stock...`;
-  // Show the blocking overlay from the very first click, not only once the coverage check
-  // resolves — closes the gap where the button spinner was visible but the full-screen
-  // overlay hadn't appeared yet.
-  showBlockingOverlay("Checking Stock Coverage...");
-
-  try {
-    const data = await apFetch({ action: "checkStockCoverageForTicket", ticketId });
-
-    if (!data.success) {
-      hideBlockingOverlay();
-      btn.disabled = false; if (rejectBtn) rejectBtn.disabled = false;
-      btn.innerHTML = `<span>Approve & Release Items</span>`;
-      return alert("Coverage check failed: " + data.error);
-    }
-
-    if (!data.hasShortfall) {
-      // No shortfall — go straight to standard approve. executeStoreManagerTicketActionDecision
-      // will immediately re-show the overlay with its own "Releasing Stock..." message, so this
-      // stays continuously visible rather than flickering off and back on.
-      btn.disabled = false; if (rejectBtn) rejectBtn.disabled = false;
-      btn.innerHTML = `<span>Approve & Release Items</span>`;
-      executeStoreManagerTicketActionDecision(ticketId, "APPROVE");
-      return;
-    }
-
-    // Has shortfall — restore button and show modal instead of proceeding
-    hideBlockingOverlay();
-    btn.disabled = false; if (rejectBtn) rejectBtn.disabled = false;
-    btn.innerHTML = `<span>Approve & Release Items</span>`;
-    showShortfallResolutionModal(ticketId, projectId, data.coverageReport);
-
-  } catch(e) {
-    hideBlockingOverlay();
-    btn.disabled = false; if (rejectBtn) rejectBtn.disabled = false;
-    btn.innerHTML = `<span>Approve & Release Items</span>`;
-    alert("Network error: " + e.message);
-  }
+  // Skips the standalone stock-coverage pre-check/manual-reallocation modal
+  // entirely — that path relied on a backend field (coverageReport) that
+  // never actually existed, and it's superseded anyway: the Total Stock
+  // check at ticket creation already blocks anything impossible, and
+  // findAndBorrowForShortfall runs automatically inside the real approval
+  // itself, throwing a clear error if a shortfall genuinely can't be
+  // covered. Straight to approval, no separate pre-check round-trip.
+  executeStoreManagerTicketActionDecision(ticketId, "APPROVE");
 }
 
 function showShortfallResolutionModal(ticketId, projectId, coverageReport) {
