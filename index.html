@@ -578,7 +578,7 @@
           <div style="display: flex; gap: 10px; align-items: flex-end;">
             <div style="flex-grow: 1;">
               <label class="field-label" style="font-size: 0.75rem;">Material Description</label>
-              <select id="ticket-item-selection-dropdown" onchange="refreshLiveStockForSelectedMaterial(); startLiveStockPolling();" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled></select>
+              <select id="ticket-item-selection-dropdown" onchange="refreshLiveStockForSelectedMaterial(); startLiveStockPolling(); checkSpareStoreSuggestion();" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled></select>
             </div>
             <div style="width: 100px;">
               <label class="field-label" style="font-size: 0.75rem;">Quantity</label>
@@ -7930,7 +7930,7 @@ function checkSpareStoreSuggestion() {
   const spareMatch = spareCache.find(item => (item.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
 
   if (spareMatch && spareMatch.availableStock >= qty) {
-    banner.innerHTML = `⚠️ ${spareMatch.availableStock} ${spareMatch.unitType} of <strong>${selectedMaterial}</strong> already available in Spare Store. Consider requesting from Spare Store instead of opening a new packet in Raw Materials Store.`;
+    banner.innerHTML = `⚠️ ${spareMatch.availableStock} ${spareMatch.unitType} of <strong>${selectedMaterial}</strong> already available in Spare Store. Consider requesting from Spare Store instead of Raw Materials Store.`;
     banner.style.display = "block";
   } else {
     banner.style.display = "none";
@@ -8272,6 +8272,7 @@ function removeSingleBasketItemLineAtIndex(index) {
 function clearFullBasketDraftState() {
   dynamicTicketShoppingBasketArray = [];
   renderDraftBasketTableViewportRows();
+  checkSpareStoreSuggestion();
 }
 
 /**
@@ -11839,10 +11840,14 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       // Warm the same cache the pill and Add-button use — no duplicate fetch when a material is picked.
       window._ticketJobCardMaterialsCache = { key: jcmCacheKeySpare, records: jcmFetchSpare.records || [] };
 
-      if (jcmFetchSpare.success && (jcmFetchSpare.records || []).length > 0) {
+      const spareRecordsForCard = (jcmFetchSpare.records || []).filter(r =>
+        (r.typeOfStore || "").toString().trim() !== "Finished Goods Store"
+      );
+
+      if (jcmFetchSpare.success && spareRecordsForCard.length > 0) {
         itemDrop.innerHTML = '<option value="" style="font-weight:700;">— Select Material from Job Card —</option>';
         let uniqueMaterialsMapSpare = {};
-        jcmFetchSpare.records.forEach(r => {
+        spareRecordsForCard.forEach(r => {
           if (!uniqueMaterialsMapSpare[r.materialName]) {
             uniqueMaterialsMapSpare[r.materialName] = true;
             let opt = document.createElement("option");
@@ -11931,9 +11936,13 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       // the moment a material is selected.
       window._ticketJobCardMaterialsCache = { key: jcmCacheKey, records: jcmFetch.records || [] };
 
-      // No Type of Store filter — Raw and Spare draws share one unified row per Job Card +
-      // material, so both dropdowns must list the exact same set of allotted materials.
-      const rawRecordsForCard = jcmFetch.records || [];
+      // Raw and Spare draws share one unified row per Job Card + material,
+      // so both dropdowns list the same set — but Finished Goods items are
+      // a genuinely separate pool (their own dropdown branch above) and
+      // must never appear here.
+      const rawRecordsForCard = (jcmFetch.records || []).filter(r =>
+        (r.typeOfStore || "").toString().trim() !== "Finished Goods Store"
+      );
 
       if (jcmFetch.success && rawRecordsForCard.length > 0) {
         itemDrop.innerHTML = '<option value="" style="font-weight:700;">— Select Material from Job Card —</option>';
@@ -12279,6 +12288,7 @@ function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
   window._ticketBOQCache = null;
   clearFullBasketDraftState();
   document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
+  checkSpareStoreSuggestion();
 
   // Reset only the Add Item zone below Choose Store
   const itemDrop = document.getElementById("ticket-item-selection-dropdown");
