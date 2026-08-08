@@ -326,6 +326,7 @@
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-manufacturing-clearance" onclick="switchActiveDashboardModule('manufacturing-clearance')"><span class="mc-label">Manufacturing Clearance</span></div>
+        <div class="menu-card" id="mod-project-status" onclick="switchActiveDashboardModule('project-status')"><span class="mc-label">Project Status</span></div>
       </div>
     </div>
 
@@ -1221,6 +1222,39 @@
       </div>
       <div id="expected-inbounds-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="expected-inbounds-results" style="display:flex; flex-direction:column; gap:16px;"></div>
+    </div>
+  </div>
+
+  <div id="canvas-module-project-status" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitProjectStatusBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <h2 style="color:var(--brand); margin:0 0 6px 0;">Project Status</h2>
+    <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">View-only cross-department status for one project — nothing on this screen can be edited.</p>
+    <div style="display:flex; gap:10px; align-items:flex-end; margin-bottom:20px; position:relative; max-width:520px;">
+      <div style="flex:1; position:relative;">
+        <label class="field-label" style="margin-top:0;">Project ID</label>
+        <input type="text" id="pstat-project-input" placeholder="Type Project ID..." autocomplete="off"
+          oninput="handlePstatProjectInput(this.value)" onkeydown="if(event.key==='Enter')runProjectStatusSearch()"
+          style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        <div id="pstat-project-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+      </div>
+      <button class="nav-btn-styled" style="background:var(--accent); padding:9px 20px; font-weight:700;" onclick="runProjectStatusSearch()">Search</button>
+    </div>
+    <div id="pstat-results" style="display:none;">
+      <div style="margin-bottom:24px;">
+        <h3 style="color:#2563eb; font-size:1rem; margin-bottom:10px;">Design Department Status</h3>
+        <div id="pstat-design-zone"></div>
+      </div>
+      <div style="margin-bottom:24px;">
+        <h3 style="color:#2563eb; font-size:1rem; margin-bottom:10px;">Purchase Department Status</h3>
+        <div id="pstat-purchase-zone"></div>
+      </div>
+      <div style="margin-bottom:8px;">
+        <h3 style="color:#2563eb; font-size:1rem; margin-bottom:10px;">Production Department Status</h3>
+        <div id="pstat-production-zone"></div>
+      </div>
     </div>
   </div>
 
@@ -7035,6 +7069,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canAssignCurrentStock  = userPermissionsObject.assignCurrentStock  === true;
   const canExpectedInbounds = userPermissionsObject.expectedDeliveries === true;
   const canManufacturingClearance = userPermissionsObject.manufacturingClearance === true;
+  const canProjectStatus = userPermissionsObject.projectStatus === true;
   const canViewRejectedMaterial = userPermissionsObject.rejectedMaterial === true;
   const canCreatePO = userPermissionsObject.createRMPurchaseOrder === true;
   const canAuthorizePO = userPermissionsObject.authorizeRMPurchaseOrder === true;
@@ -7198,8 +7233,9 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
       }
 
       if (document.getElementById("mod-manufacturing-clearance")) document.getElementById("mod-manufacturing-clearance").style.display = canManufacturingClearance ? "block" : "none";
+      if (document.getElementById("mod-project-status")) document.getElementById("mod-project-status").style.display = canProjectStatus ? "block" : "none";
       const projectHeaderBlock = document.getElementById("dashboard-project-department-header-block");
-      if (projectHeaderBlock) projectHeaderBlock.style.display = canManufacturingClearance ? "block" : "none";
+      if (projectHeaderBlock) projectHeaderBlock.style.display = (canManufacturingClearance || canProjectStatus) ? "block" : "none";
 
       const canTourExpense = userPermissionsObject.tourExpense === true;
       if (document.getElementById("mod-tour-expense")) document.getElementById("mod-tour-expense").style.display = canTourExpense ? "block" : "none";
@@ -8255,8 +8291,9 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
   try {
     // FIXED FLAT PAYLOAD: Flattens parameters straight into the base object root to prevent router switch drops
     const flatServerRequestPayload = {
-      action: "commitBOQLimitIncreaseRequestTicket",
+      action: "createBOQLimitIncreaseRequestTicket",
       activeEngineer: operatorName,
+      operatorName: operatorName,
       projectId: projectId,
       jobCardNumber: document.getElementById("ticket-job-card-dropdown")?.value || "",
       departmentOutgoing: departmentVal,
@@ -8505,6 +8542,10 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     document.getElementById("dashboard-view").style.display = "none";
     const teCanvas = document.getElementById("canvas-module-tour-expense");
     if (teCanvas) { teCanvas.style.display = "block"; initializeTourExpensePanel(); }
+  } else if (targetCanvasModuleId === 'project-status') {
+    document.getElementById("dashboard-view").style.display = "none";
+    const psCanvas = document.getElementById("canvas-module-project-status");
+    if (psCanvas) { psCanvas.style.display = "block"; initializeProjectStatusPanel(); }
   } else if (targetCanvasModuleId === 'coming-soon') {
     document.getElementById("dashboard-view").style.display = "none";
     document.getElementById("module-workspace-container").style.display = "block";
@@ -12004,6 +12045,203 @@ function exitManufacturingClearanceBackToMenu() {
   document.getElementById("canvas-module-manufacturing-clearance").style.display = "none";
   enforceDynamicModuleRoleGateways(userPermissions);
   document.getElementById("dashboard-view").style.display = "flex";
+}
+
+function exitProjectStatusBackToMenu() {
+  document.getElementById("canvas-module-project-status").style.display = "none";
+  enforceDynamicModuleRoleGateways(userPermissions);
+  document.getElementById("dashboard-view").style.display = "flex";
+}
+
+window.pstatKnownProjectCodes = [];
+
+async function initializeProjectStatusPanel() {
+  document.getElementById("pstat-project-input").value = "";
+  document.getElementById("pstat-results").style.display = "none";
+  try {
+    const data = await apFetch({ action: "pullLiveActiveProjectCodes" });
+    window.pstatKnownProjectCodes = (data.success && data.projects) ? data.projects : [];
+  } catch (e) { window.pstatKnownProjectCodes = []; }
+}
+
+function handlePstatProjectInput(query) {
+  const dd = document.getElementById("pstat-project-dropdown");
+  if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
+  const q = query.trim().toLowerCase();
+  const matches = window.pstatKnownProjectCodes.filter(p => p.toLowerCase().includes(q)).slice(0, 10);
+  if (matches.length === 0) { dd.style.display = "none"; return; }
+  dd.innerHTML = matches.map(p => `
+    <div onclick="selectPstatProject('${p.replace(/'/g,"\\'")}')"
+      style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${p}</div>`).join("");
+  dd.style.display = "block";
+}
+function selectPstatProject(projectId) {
+  document.getElementById("pstat-project-input").value = projectId;
+  document.getElementById("pstat-project-dropdown").style.display = "none";
+}
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#pstat-project-input") && !e.target.closest("#pstat-project-dropdown")) {
+    const dd = document.getElementById("pstat-project-dropdown"); if (dd) dd.style.display = "none";
+  }
+});
+
+function fmtPstatDateTime(value) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return "—";
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${hh}:${mm} ${dd}/${mo}/${yyyy}`;
+}
+
+async function runProjectStatusSearch() {
+  const projectId = document.getElementById("pstat-project-input").value.trim();
+  if (!projectId) { alert("Enter a Project ID first."); return; }
+  document.getElementById("pstat-project-dropdown").style.display = "none";
+  const resultsZone = document.getElementById("pstat-results");
+  resultsZone.style.display = "block";
+  document.getElementById("pstat-design-zone").innerHTML = `<div style="padding:14px; color:var(--muted);">Loading...</div>`;
+  document.getElementById("pstat-purchase-zone").innerHTML = `<div style="padding:14px; color:var(--muted);">Loading...</div>`;
+  document.getElementById("pstat-production-zone").innerHTML = `<div style="padding:14px; color:var(--muted);">Loading...</div>`;
+
+  try {
+    const [designData, purchaseData, productionData] = await Promise.all([
+      apFetch({ action: "fetchProjectDesignStatus", projectId }),
+      apFetch({ action: "fetchProjectPurchaseStatus", projectId }),
+      apFetch({ action: "fetchProjectProductionStatus", projectId }),
+    ]);
+    renderPstatDesign(designData);
+    renderPstatPurchase(purchaseData);
+    renderPstatProduction(productionData);
+  } catch (e) {
+    document.getElementById("pstat-design-zone").innerHTML = `<div style="color:var(--warn); padding:12px;">Network error: ${e.message}</div>`;
+  }
+}
+
+function renderPstatDesign(data) {
+  const zone = document.getElementById("pstat-design-zone");
+  if (!data.success) { zone.innerHTML = `<div style="color:var(--warn); padding:12px;">${data.error}</div>`; return; }
+  if (!data.boqs || data.boqs.length === 0) { zone.innerHTML = `<div style="padding:14px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:4px;">No BOQs found for this project.</div>`; return; }
+  zone.innerHTML = `
+    <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+      <thead><tr style="background:var(--highlight-bg); text-align:left;">
+        <th style="padding:8px;">BOQ ID</th><th style="padding:8px;">Department</th>
+        <th style="padding:8px; text-align:center;">Order Qty</th><th style="padding:8px;">Status</th>
+        <th style="padding:8px; text-align:center;">Version</th><th style="padding:8px;">Created</th><th style="padding:8px;">Updated</th>
+      </tr></thead>
+      <tbody>
+        ${data.boqs.map(b => `
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px; font-family:monospace;">${b.pdfUrl ? `<a href="${b.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700;">${b.boqId}</a>` : b.boqId}</td>
+            <td style="padding:8px;">${b.department || "—"}</td>
+            <td style="padding:8px; text-align:center; font-family:monospace;">${fmtQty(b.orderQuantity)}</td>
+            <td style="padding:8px;">${b.status || "—"}</td>
+            <td style="padding:8px; text-align:center;">${b.version || "—"}</td>
+            <td style="padding:8px; font-size:0.8rem;">${fmtPstatDateTime(b.createdAt)}</td>
+            <td style="padding:8px; font-size:0.8rem;">${fmtPstatDateTime(b.updatedAt)}</td>
+          </tr>`).join("")}
+      </tbody>
+    </table>`;
+}
+
+async function renderPstatPurchase(data) {
+  const zone = document.getElementById("pstat-purchase-zone");
+  if (!data.success) { zone.innerHTML = `<div style="color:var(--warn); padding:12px;">${data.error}</div>`; return; }
+  if (!data.prns || data.prns.length === 0) { zone.innerHTML = `<div style="padding:14px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:4px;">No PRNs found for this project.</div>`; return; }
+  zone.innerHTML = data.prns.map(p => `<div id="pstat-pps-${p.prnId.replace(/[^a-zA-Z0-9]/g,'_')}" style="margin-bottom:18px;"><div style="padding:14px; color:var(--muted);">Loading PPS...</div></div>`).join("");
+
+  for (const prn of data.prns) {
+    const safeId = `pstat-pps-${prn.prnId.replace(/[^a-zA-Z0-9]/g,'_')}`;
+    try {
+      const ppsData = await apFetch({ action: "fetchPPSForPRN", prnId: prn.prnId });
+      renderPstatOnePps(safeId, prn, ppsData);
+    } catch (e) {
+      const el = document.getElementById(safeId);
+      if (el) el.innerHTML = `<div style="color:var(--warn); padding:12px;">Error loading PPS for ${prn.prnId}.</div>`;
+    }
+  }
+}
+
+function renderPstatOnePps(elId, prn, ppsData) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const materials = (ppsData.success && ppsData.materials) ? ppsData.materials : [];
+  const header = `
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+      ${prn.pdfUrl ? `<a href="${prn.pdfUrl}" target="_blank" style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${prn.prnId}</a>` : `<span style="font-family:monospace; font-weight:800; font-size:0.9rem;">${prn.prnId}</span>`}
+      <span style="font-size:0.68rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:3px;">${prn.status || "—"}</span>
+    </div>`;
+  if (materials.length === 0) {
+    el.innerHTML = header + `<div style="padding:10px; color:var(--muted); font-size:0.82rem;">No PPS lines for this PRN.</div>`;
+    return;
+  }
+  const rows = materials.map(m => {
+    const pos = m.purchaseOrders || [];
+    const poLines = pos.length === 0 ? `<div style="color:var(--muted); font-size:0.78rem;">No PO allocations yet.</div>` : pos.map(po => `
+      <div style="font-size:0.78rem; padding:2px 0; border-top:1px dashed #f1f5f9;">
+        <strong>${po.poNo}</strong> — Vendor: ${po.vendorName || "—"} | Ordered: ${fmtQty(po.orderedQty)} | Received: ${fmtQty(po.receivedQty)}
+        | Expected: ${formatDateDMY(po.expectedDelivery) || "—"} | ${po.actualDelivery ? `Delivered: ${formatDateDMY(po.actualDelivery)}` : "Not delivered"}
+        | Link Status: ${po.linkStatus || "—"}
+        ${po.actionPlan ? `<div style="color:#0369a1; margin-top:2px;">Action Plan: ${po.actionPlan}</div>` : ""}
+      </div>`).join("");
+    return `
+      <tr style="border-bottom:1px solid var(--border); vertical-align:top;">
+        <td style="padding:8px; font-family:monospace;">${m.itemCode}</td>
+        <td style="padding:8px;">${m.materialName}</td>
+        <td style="padding:8px; text-align:center;">${fmtQty(m.boqRequiredQty)}</td>
+        <td style="padding:8px; text-align:center;">${fmtQty(m.bufferedPurchaseQty)}</td>
+        <td style="padding:8px; text-align:center;">${fmtQty(m.stillToOrder)}</td>
+        <td style="padding:8px; text-align:center;">${fmtQty(m.receivedQty)}</td>
+        <td style="padding:8px;">${poLines}</td>
+      </tr>`;
+  }).join("");
+  el.innerHTML = header + `
+    <table style="width:100%; border-collapse:collapse; font-size:0.82rem; background:#fff; border:1px solid var(--border); border-radius:4px;">
+      <thead><tr style="background:var(--highlight-bg); text-align:left;">
+        <th style="padding:8px;">Item Code</th><th style="padding:8px;">Material</th>
+        <th style="padding:8px; text-align:center;">BOQ Req</th><th style="padding:8px; text-align:center;">Buffered Purchase</th>
+        <th style="padding:8px; text-align:center;">Still To Order</th><th style="padding:8px; text-align:center;">Received</th>
+        <th style="padding:8px;">PO Allocations</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function renderPstatProduction(data) {
+  const zone = document.getElementById("pstat-production-zone");
+  if (!data.success) { zone.innerHTML = `<div style="color:var(--warn); padding:12px;">${data.error}</div>`; return; }
+  if (!data.jobCards || data.jobCards.length === 0) { zone.innerHTML = `<div style="padding:14px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:4px;">No Job Cards found for this project.</div>`; return; }
+
+  const byBoq = {};
+  data.jobCards.forEach(jc => { (byBoq[jc.boqId] = byBoq[jc.boqId] || []).push(jc); });
+
+  zone.innerHTML = Object.entries(byBoq).map(([boqId, jcs]) => {
+    const pills = jcs.map(jc => {
+      let label;
+      if (jc.isCompleted) {
+        label = `<span style="font-weight:800;">Completed</span>`;
+      } else {
+        const allotted = Number(jc.weightedAllotted) || 0;
+        const used = Number(jc.weightedUsed) || 0;
+        const pct = allotted > 1e-9 ? Math.min(100, (used / allotted) * 100) : 0;
+        label = `${pct.toFixed(1)}%`;
+      }
+      const bg = jc.isCompleted ? "#dcfce7" : "#eff6ff";
+      const color = jc.isCompleted ? "#15803d" : "#2563eb";
+      return `<div style="background:${bg}; color:${color}; border-radius:4px; padding:8px 10px; font-size:0.8rem; font-weight:700; text-align:center;">
+                Set ${jc.setNumber}<br>${label}
+              </div>`;
+    }).join("");
+    return `
+      <div style="margin-bottom:16px;">
+        <div style="font-family:monospace; font-weight:700; color:var(--brand); margin-bottom:6px; font-size:0.85rem;">${boqId}</div>
+        <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px;">${pills}</div>
+      </div>`;
+  }).join("");
 }
 
 function exitTourExpenseBackToMenu() {
