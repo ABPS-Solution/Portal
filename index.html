@@ -385,7 +385,7 @@
         <div class="menu-card" id="mod-purchase-authorize-prn" onclick="openAuthorizePRNPanel('Delta')"><span class="mc-label">Authorize Purchase Request Note (PRN)</span></div>
         <div class="menu-card" id="mod-revise-prn" onclick="navigateToPurchaseWorkspacePanel('purchase-revise-prn')"><span class="mc-label">Revise Purchase Request Note (PRN)</span></div>
         <div class="menu-card" id="mod-authorize-prn-revision" onclick="openAuthorizePRNPanel('Revision')"><span class="mc-label">Authorize Purchase Request Note (PRN) Revision</span></div>
-        <div class="menu-card" id="mod-assign-current-stock"    onclick="navigateToStoreWorkspacePanel('assign-current-stock')"><span class="mc-label">Assign Store Stock</span></div>
+        <div class="menu-card" id="mod-assign-current-stock"    onclick="navigateToStoreWorkspacePanel('assign-current-stock')"><​span class="mc-label">Reserve Store Stock<​/span></div>
       </div>
       <div class="sec-label">Raw Materials Store Inward</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -1054,7 +1054,7 @@
     </div>
 
     <div id="canvas-module-assign-current-stock" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="color:var(--brand); margin:0 0 6px 0;">Assign Current Stock</h2>
+      <h2 style="color:var(--brand); margin:0 0 6px 0;">Reserve Store Stock</h2>
       <div id="ass-feedback" style="display:none; margin-bottom:14px;"></div>
       <div style="position:relative; margin-bottom:16px;">
         <input type="text" id="ass-material-search" placeholder="Search material name..." oninput="handleAssStockSearch(this.value)"
@@ -1063,10 +1063,15 @@
       </div>
       <div id="ass-results-zone" style="display:none;">
         <h3 id="ass-material-title" style="margin-bottom:10px;"></h3>
+        <div style="display:flex; align-items:center; gap:24px; background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); padding:12px 16px; margin-bottom:14px;">
+          <div><span style="font-size:0.7rem; color:var(--muted); text-transform:uppercase;">Total Stock</span><br><span id="ass-total-stock" style="font-weight:700; font-size:1rem;">0</span></div>
+          <div><span style="font-size:0.7rem; color:var(--muted); text-transform:uppercase;">Reserved Stock</span><br><span id="ass-reserved-stock" style="font-weight:700; font-size:1rem;">0</span></div>
+          <div><span style="font-size:0.7rem; color:var(--muted); text-transform:uppercase;">Available Stock</span><br><span id="ass-available-stock" style="font-weight:700; font-size:1rem;">0</span></div>
+          <button class="nav-btn-styled" style="margin-left:auto; background:var(--accent); padding:8px 18px; font-weight:700;" onclick="submitAssReservationChanges()">Submit Reservation</button>
+        </div>
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
           <thead><tr style="background:var(--highlight-bg); text-align:left;">
-            <th style="padding:8px;">PRN ID</th><th style="padding:8px;">BOQ ID</th><th style="padding:8px;">Project</th>
-            <th style="padding:8px;">Assigned Qty</th><th style="padding:8px;">Action</th>
+            <th style="padding:8px;">BOQ ID</th><th style="padding:8px;">Current Reserved Qty</th><th style="padding:8px;">New Reserved Qty</th>
           </tr></thead>
           <tbody id="ass-results-body"></tbody>
         </table>
@@ -7065,7 +7070,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canPurchaseRequestNote     = userPermissionsObject.purchaseRequestNote === true;
   const canViewMaterialListPurchase= userPermissionsObject.materialListForPurchase === true;
   const canCreateJobCardNumber = userPermissionsObject.createJobCardNumber === true;
-  const canAssignCurrentStock  = userPermissionsObject.assignCurrentStock  === true;
+  const canReserveStoreStock  = userPermissionsObject.reserveStoreStock  === true;
   const canExpectedInbounds = userPermissionsObject.expectedDeliveries === true;
   const canManufacturingClearance = userPermissionsObject.manufacturingClearance === true;
   const canProjectStatus = userPermissionsObject.projectStatus === true;
@@ -7196,8 +7201,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // Live Spare Store Stock card visibility
   const canLiveSpareStoreStock = userPermissionsObject.liveSpareStoreStock === true;
   if (document.getElementById("mod-live-spare-store-stock")) document.getElementById("mod-live-spare-store-stock").style.display = canLiveSpareStoreStock ? "block" : "none";
-  if (document.getElementById("mod-assign-current-stock")) document.getElementById("mod-assign-current-stock").style.display = canAssignCurrentStock ? "block" : "none";
-  if (document.getElementById("mod-stock-sweep")) document.getElementById("mod-stock-sweep").style.display = canAssignCurrentStock ? "block" : "none";
+  if (document.getElementById("mod-assign-current-stock")) document.getElementById("mod-assign-current-stock").style.display = canReserveStoreStock ? "block" : "none";
+  if (document.getElementById("mod-stock-sweep")) document.getElementById("mod-stock-sweep").style.display = canReserveStoreStock ? "block" : "none";
   if (document.getElementById("mod-expected-inbounds")) document.getElementById("mod-expected-inbounds").style.display = canExpectedInbounds ? "block" : "none";
 
   // --- DASHBOARD WRAPPER VISIBILITY (show entire wrapper, not just the card) ---
@@ -7228,7 +7233,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");
       if (storeHeaderBlock) {
-        storeHeaderBlock.style.display = (canViewLiveStock || canReleaseTicket || canSearchStoreMat || canApproveBOQIncrease || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntryAndGrn === true || userPermissionsObject.qaCheck === true || canViewLiveFinishedStock || canLiveSpareStoreStock || canAssignCurrentStock || canPurchaseRequestNote) ? "block" : "none";
+        storeHeaderBlock.style.display = (canViewLiveStock || canReleaseTicket || canSearchStoreMat || canApproveBOQIncrease || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntryAndGrn === true || userPermissionsObject.qaCheck === true || canViewLiveFinishedStock || canLiveSpareStoreStock || canReserveStoreStock || canPurchaseRequestNote) ? "block" : "none";
       }
 
       if (document.getElementById("mod-manufacturing-clearance")) document.getElementById("mod-manufacturing-clearance").style.display = canManufacturingClearance ? "block" : "none";
@@ -23281,14 +23286,14 @@ function handleAssStockSearch(query) {
   dropdown.style.display = "block";
 }
 
-let assStockCache = { itemCode: "", materialName: "", assignments: [], eligibleTargets: [] };
+let assStockCache = { itemCode: "", materialName: "", totals: { totalStock: 0, reservedStock: 0, availableStock: 0 }, assignments: [] };
 
 async function loadAssStockForItem(itemCode, materialName) {
   document.getElementById("ass-material-search").value = materialName;
   document.getElementById("ass-material-dropdown").style.display = "none";
   document.getElementById("ass-results-zone").style.display = "block";
-  document.getElementById("ass-material-title").textContent = itemCode + " — " + materialName;
-  document.getElementById("ass-results-body").innerHTML = '<tr><td colspan="5" style="padding:14px; text-align:center;">Loading...</td></tr>';
+  document.getElementById("ass-material-title").textContent = itemCode + ":" + materialName;
+  document.getElementById("ass-results-body").innerHTML = '<tr><td colspan="3" style="padding:14px; text-align:center;">Loading...</td></tr>';
   try {
     const data = await apFetch({ action: "fetchStockAssignmentsForItem", itemCode });
     if (!data.success) { showBOQBanner("ass-feedback", data.error || "Failed to load.", "error"); return; }
@@ -23301,52 +23306,51 @@ async function loadAssStockForItem(itemCode, materialName) {
 
 function renderAssStockRows() {
   const body = document.getElementById("ass-results-body");
+  updateAssSummaryDisplay();
   if (assStockCache.assignments.length === 0) {
-    body.innerHTML = '<tr><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No BOQ currently holds assigned stock for this material.</td></tr>';
+    body.innerHTML = '<tr><td colspan="3" style="padding:14px; text-align:center; color:var(--muted);">No BOQ currently holds reserved stock for this material.</td></tr>';
     return;
   }
-  body.innerHTML = assStockCache.assignments.map(a => `
+  body.innerHTML = assStockCache.assignments.map((a, i) => `
     <tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:8px;">${a.prnId}</td>
       <td style="padding:8px;">${a.boqId}</td>
-      <td style="padding:8px;">${a.projectId}</td>
-      <td style="padding:8px; font-weight:700;">${a.assignedQty}</td>
+      <td style="padding:8px; font-weight:700;">${trimNum(a.assignedQty)}</td>
       <td style="padding:8px;">
-        <button class="nav-btn-styled" style="background:#718096; padding:5px 10px; font-size:0.78rem;" onclick="doAssUnassign('${a.prnId}', ${a.assignedQty})">Unassign</button>
-        <button class="nav-btn-styled" style="background:var(--brand); padding:5px 10px; font-size:0.78rem;" onclick="openAssReassign('${a.prnId}', ${a.assignedQty})">Reassign</button>
+        <input type="number" min="0" step="any" data-row="${i}" value="${trimNum(a.assignedQty)}"
+          oninput="handleAssReservedInputChange()"
+          style="width:100px; padding:5px; border:1.5px solid var(--brand); border-radius:3px; text-align:center;" />
       </td>
     </tr>`).join("");
 }
 
-async function doAssUnassign(prnId, maxQty) {
-  const qty = parseFloat(prompt(`Unassign how much (max ${maxQty})? This returns it to the unassigned pool.`, maxQty));
-  if (!qty || qty <= 0 || qty > maxQty) return;
-  showBlockingOverlay("Unassigning stock...");
-  try {
-    const data = await apFetch({ action: "unassignStock", prnId, itemCode: assStockCache.itemCode, quantity: qty });
-    if (data.success) { showBOQBanner("ass-feedback", "Unassigned successfully.", "success"); loadAssStockForItem(assStockCache.itemCode, assStockCache.materialName); }
-    else showBOQBanner("ass-feedback", data.error || "Failed.", "error");
-  } catch(e) { showBOQBanner("ass-feedback", "Network error: " + e.message, "error"); }
-  finally { hideBlockingOverlay(); }
+function updateAssSummaryDisplay() {
+  document.getElementById("ass-total-stock").textContent = trimNum(assStockCache.totals.totalStock);
+  document.getElementById("ass-reserved-stock").textContent = trimNum(assStockCache.totals.reservedStock);
+  document.getElementById("ass-available-stock").textContent = trimNum(assStockCache.totals.availableStock);
 }
 
-function openAssReassign(sourcePrnId, maxQty) {
-  const targets = assStockCache.eligibleTargets.filter(t => t.prnId !== sourcePrnId);
-  if (targets.length === 0) { alert("No other open PRN line item exists for this material."); return; }
-  const list = targets.map((t, i) => `${i+1}. ${t.prnId} (BOQ: ${t.boqId}, Still To Order: ${t.stillToOrder})`).join("\n");
-  const choice = parseInt(prompt("Reassign to which PRN? Enter number:\n\n" + list), 10);
-  if (!choice || choice < 1 || choice > targets.length) return;
-  const target = targets[choice - 1];
-  const qty = parseFloat(prompt(`Quantity to move to ${target.prnId} (max ${maxQty})?`, maxQty));
-  if (!qty || qty <= 0 || qty > maxQty) return;
-  doAssReassign(sourcePrnId, target.prnId, qty);
+function handleAssReservedInputChange() {
+  const inputs = document.querySelectorAll('#ass-results-body input[data-row]');
+  let newReservedTotal = 0;
+  inputs.forEach(inp => { newReservedTotal += parseFloat(inp.value) || 0; });
+  const totalStock = Number(assStockCache.totals.totalStock) || 0;
+  document.getElementById("ass-reserved-stock").textContent = trimNum(newReservedTotal);
+  document.getElementById("ass-available-stock").textContent = trimNum(totalStock - newReservedTotal);
 }
 
-async function doAssReassign(sourcePrnId, targetPrnId, qty) {
-  showBlockingOverlay("Reassigning stock...");
+async function submitAssReservationChanges() {
+  const inputs = document.querySelectorAll('#ass-results-body input[data-row]');
+  const changes = [];
+  inputs.forEach(inp => {
+    const row = assStockCache.assignments[Number(inp.dataset.row)];
+    const newQty = parseFloat(inp.value) || 0;
+    if (Math.abs(newQty - Number(row.assignedQty)) > 1e-9) changes.push({ prnId: row.prnId, newQty });
+  });
+  if (changes.length === 0) { showBOQBanner("ass-feedback", "No changes to submit.", "error"); return; }
+  showBlockingOverlay("Saving reservation changes...");
   try {
-    const data = await apFetch({ action: "reassignStockBetweenPRNs", itemCode: assStockCache.itemCode, sourcePrnId, targetPrnId, quantity: qty, movedBy: appActiveOperatorIdentityString || "Unknown" });
-    if (data.success) { showBOQBanner("ass-feedback", data.message || "Reassigned successfully.", "success"); loadAssStockForItem(assStockCache.itemCode, assStockCache.materialName); }
+    const data = await apFetch({ action: "submitReserveStockChanges", itemCode: assStockCache.itemCode, changes, operatorName: appActiveOperatorIdentityString || "Unknown" });
+    if (data.success) { showBOQBanner("ass-feedback", "Reservation updated successfully.", "success"); loadAssStockForItem(assStockCache.itemCode, assStockCache.materialName); }
     else showBOQBanner("ass-feedback", data.error || "Failed.", "error");
   } catch(e) { showBOQBanner("ass-feedback", "Network error: " + e.message, "error"); }
   finally { hideBlockingOverlay(); }
