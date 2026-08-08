@@ -1231,7 +1231,6 @@
       <button class="nav-btn-styled" onclick="exitProjectStatusBackToMenu()">Return to Main Dashboard</button>
     </div>
     <h2 style="color:var(--brand); margin:0 0 6px 0;">Project Status</h2>
-    <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">View-only cross-department status for one project — nothing on this screen can be edited.</p>
     <div style="display:flex; gap:10px; align-items:flex-end; margin-bottom:20px; position:relative; max-width:520px;">
       <div style="flex:1; position:relative;">
         <label class="field-label" style="margin-top:0;">Project ID</label>
@@ -7874,7 +7873,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
           <div>
             Raw Material Store Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
-              ${fmtQty(jcmMatch.remainingQty)} ${unitToken} Currently Reserved for THIS JOB CARD
+              ${fmtQty(rawPoolRemaining !== null ? rawPoolRemaining : jcmMatch.remainingQty)} ${unitToken} Currently Reserved for THIS JOB CARD
             </span>
             <span style="font-size:0.78rem; color:var(--muted); margin-left:6px; font-weight:normal;">
               (Extra Unreserved: ${fmtQty(availableCount)} ${unitToken})
@@ -8307,20 +8306,22 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
       dynamicTicketShoppingBasketArray = [];
       materialRequestPanelContainer.style.padding = "20px";
       materialRequestPanelContainer.innerHTML = `
-        <div style="background: #e0f2fe; border: 1px solid #0369a1; border-left: 4px solid #0369a1; color: #0369a1; padding: 20px; border-radius: var(--radius); text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin: 10px 0;">
-          <h3 style="font-size: 1.1rem; margin: 0 0 6px 0; font-weight: 700;">BOQ Threshold Limit Overrun Dispatched!</h3>
-          <p style="font-size: 0.92rem; margin: 0 0 12px 0; font-weight:600; line-height:1.4;">An allocation review request has been safely compiled and forwarded to the System Administrator for engineering verification checks.</p>
-          <div style="font-size: 0.92rem; font-weight: 700; display: flex; align-items: center; gap: 4px;">
-            Assigned Audit Ticket ID: 
-            <span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #0369a1; color: #111827; margin-left: 4px; font-size: 1rem;">
-              ${result.ticketId}
-            </span>
+        <div style="background: #e0f2fe; border: 1px solid #0369a1; border-left: 4px solid #0369a1; color: #0369a1; padding: 20px; border-radius: var(--radius); text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin: 10px 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+          <div>
+            <h3 style="font-size: 1.1rem; margin: 0 0 6px 0; font-weight: 700;">BOQ Threshold Limit Overrun Dispatched!</h3>
+            <p style="font-size: 0.92rem; margin: 0 0 12px 0; font-weight:600; line-height:1.4;">An allocation review request has been safely compiled and forwarded to the System Administrator for engineering verification checks.</p>
+            <div style="font-size: 0.92rem; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+              Assigned Audit Ticket ID:
+              <span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #0369a1; color: #111827; margin-left: 4px; font-size: 1rem;">
+                ${result.ticketId}
+              </span>
+            </div>
           </div>
+          <button class="nav-btn-styled" style="background: #0369a1; color: white; padding: 10px 20px; font-weight: 700; font-size: 0.85rem;" onclick="resetStoreCreateTicketToInitialState()">
+            + Create New Ticket
+          </button>
         </div>
       `;
-      setTimeout(() => { 
-        exitStoreWorkspacePanelBackToMenu(); 
-      }, 4000);
     } else {
       alert("Submission Rejected by Server: " + result.error);
       btn.disabled = false;
@@ -8698,8 +8699,8 @@ function renderBOQIncreaseTicketCard(ticket) {
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; padding-bottom:8px; border-bottom:1px dashed var(--border); flex-wrap:wrap; gap:8px;">
       <div>
         <span style="font-family:monospace; font-weight:800; background:#fef3c7; color:#b45309; padding:3px 8px; font-size:0.78rem; border-radius:3px;">⚠️ ${ticket.ticketId}</span>
-        <strong style="margin-left:8px; color:var(--brand);">${ticket.projectId}</strong>
-        <span style="font-size:0.72rem; color:var(--muted); margin-left:8px;">By: ${ticket.requestedBy} | ${ticket.dateCreated}</span>
+        <strong style="margin-left:8px; color:var(--brand);">${ticket.jobCardNumber || ticket.projectId}</strong>
+        <span style="font-size:0.72rem; color:var(--muted); margin-left:8px;">By: ${ticket.requestedBy} | ${fmtPstatDateTime(ticket.dateCreated)}</span>
         <span style="font-size:0.65rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; margin-left:6px;">Dept: ${ticket.department || "—"} | Store: ${ticket.storeType || "—"}</span>
       </div>
       <span style="font-size:0.7rem; font-weight:700; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:4px;">Pending BOQ Increase Review</span>
