@@ -1065,9 +1065,9 @@
       <div id="ass-results-zone" style="display:none;">
         <h3 id="ass-material-title" style="margin-bottom:10px;"></h3>
         <div style="display:flex; align-items:stretch; gap:0; background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); padding:12px 16px; margin-bottom:14px;">
-          <div style="padding-right:24px;"><span style="font-size:0.7rem; color:var(--muted); text-transform:uppercase;">Total Stock</span><br><span id="ass-total-stock" style="font-weight:700; font-size:1rem; color:#000;">0</span></div>
-          <div style="border-left:1px solid var(--border); padding:0 24px;"><span style="font-size:0.7rem; color:var(--muted); text-transform:uppercase;">Reserved Stock</span><br><span id="ass-reserved-stock" style="font-weight:700; font-size:1rem; color:#000;">0</span></div>
-          <div style="border-left:1px solid var(--border); padding:0 24px;"><span style="font-size:0.7rem; color:var(--muted); text-transform:uppercase;">Available Stock</span><br><span id="ass-available-stock" style="font-weight:700; font-size:1rem; color:#000;">0</span></div>
+          <div style="padding-right:24px;"><span style="font-size:0.7rem; color:#16a34a; font-weight:700; text-transform:uppercase;">Total Stock</span><br><span id="ass-total-stock" style="font-weight:700; font-size:1rem; color:#16a34a;">0</span></div>
+          <div style="border-left:1px solid var(--border); padding:0 24px;"><span style="font-size:0.7rem; color:#16a34a; font-weight:700; text-transform:uppercase;">Reserved Stock</span><br><span id="ass-reserved-stock" style="font-weight:700; font-size:1rem; color:#16a34a;">0</span></div>
+          <div style="border-left:1px solid var(--border); padding:0 24px;"><span style="font-size:0.7rem; color:#16a34a; font-weight:700; text-transform:uppercase;">Available Stock</span><br><span id="ass-available-stock" style="font-weight:700; font-size:1rem; color:#16a34a;">0</span></div>
           <button class="nav-btn-styled" style="margin-left:auto; align-self:center; background:var(--accent); padding:8px 18px; font-weight:700;" onclick="submitAssReservationChanges()">Submit Reservation</button>
         </div>
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
@@ -23169,7 +23169,7 @@ async function loadAssStockForItem(itemCode, materialName) {
   try {
     const data = await apFetch({ action: "fetchStockAssignmentsForItem", itemCode });
     if (!data.success) { showBOQBanner("ass-feedback", data.error || "Failed to load.", "error"); return; }
-    assStockCache = data;
+    assStockCache = { ...data, materialName };
     renderAssStockRows();
   } catch(e) {
     showBOQBanner("ass-feedback", "Network error: " + e.message, "error");
@@ -23206,11 +23206,17 @@ function updateAssSummaryDisplay() {
 
 function handleAssReservedInputChange() {
   const inputs = document.querySelectorAll('#ass-results-body input[data-row]');
-  let newReservedTotal = 0;
-  inputs.forEach(inp => { newReservedTotal += parseFloat(inp.value) || 0; });
+  let originalVisibleTotal = 0, newVisibleTotal = 0;
+  inputs.forEach(inp => {
+    const row = assStockCache.assignments[Number(inp.dataset.row)];
+    originalVisibleTotal += Number(row.assignedQty) || 0;
+    newVisibleTotal += parseFloat(inp.value) || 0;
+  });
   const totalStock = Number(assStockCache.totals.totalStock) || 0;
-  document.getElementById("ass-reserved-stock").textContent = trimNum(newReservedTotal);
-  document.getElementById("ass-available-stock").textContent = trimNum(totalStock - newReservedTotal);
+  const baseReserved = Number(assStockCache.totals.reservedStock) || 0;
+  const projectedReserved = baseReserved - originalVisibleTotal + newVisibleTotal;
+  document.getElementById("ass-reserved-stock").textContent = trimNum(projectedReserved);
+  document.getElementById("ass-available-stock").textContent = trimNum(totalStock - projectedReserved);
 }
 
 async function submitAssReservationChanges() {
@@ -23225,10 +23231,27 @@ async function submitAssReservationChanges() {
   showBlockingOverlay("Saving reservation changes...");
   try {
     const data = await apFetch({ action: "submitReserveStockChanges", itemCode: assStockCache.itemCode, changes, operatorName: appActiveOperatorIdentityString || "Unknown" });
-    if (data.success) { showBOQBanner("ass-feedback", "Reservation updated successfully.", "success"); loadAssStockForItem(assStockCache.itemCode, assStockCache.materialName); }
+    if (data.success) showAssReservationSuccess(assStockCache.materialName);
     else showBOQBanner("ass-feedback", data.error || "Failed.", "error");
   } catch(e) { showBOQBanner("ass-feedback", "Network error: " + e.message, "error"); }
   finally { hideBlockingOverlay(); }
+}
+
+function showAssReservationSuccess(materialName) {
+  document.getElementById("ass-results-zone").style.display = "none";
+  const feedback = document.getElementById("ass-feedback");
+  feedback.style.display = "block";
+  feedback.innerHTML = `<div style="padding:12px; border-left:4px solid #22c55e; background:#f0fdf4; border-radius:var(--radius); color:#15803d; font-weight:600;">Reservation changed Successfully for ${materialName}</div>
+    <button id="ass-reserve-another-btn" class="nav-btn-styled" style="margin-top:10px; background:var(--brand); padding:8px 18px; font-weight:700;" onclick="resetAssReservationPanel()">+ Reserve Another Store Stock</button>`;
+}
+
+function resetAssReservationPanel() {
+  document.getElementById("ass-feedback").style.display = "none";
+  document.getElementById("ass-feedback").innerHTML = "";
+  document.getElementById("ass-results-zone").style.display = "none";
+  document.getElementById("ass-material-search").value = "";
+  document.getElementById("ass-material-title").textContent = "";
+  assStockCache = { itemCode: "", materialName: "", totals: { totalStock: 0, reservedStock: 0, availableStock: 0, unitType: '' }, assignments: [] };
 }
 
 async function initializeAssignCurrentStockPanel() {
