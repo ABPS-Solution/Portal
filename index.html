@@ -7552,16 +7552,16 @@ async function refreshLiveStockForSelectedMaterial() {
       (i.materialName||"").replace(/\s+/g,"").toLowerCase() === cleanKey
     );
     if (existing) {
-      existing.availableStock = data.availableStock;
-      existing.reservedStock  = data.reservedStock;
-      existing.unitType       = data.unitType;
+      existing.availableStock = data.stock.availableStock;
+      existing.reservedStock  = data.stock.reservedStock;
+      existing.unitType       = data.stock.unitType;
     }
 
     const spareExisting = (window.cachedSpareStoreStock||[]).find(i =>
       (i.materialName||"").replace(/\s+/g,"").toLowerCase() === cleanKey
     );
     if (spareExisting) {
-      spareExisting.availableStock = data.spareStock;
+      spareExisting.availableStock = data.stock.spareStock;
 
       // FIX: Rebuild the spare store dropdown option text with the fresh count
       if (activeStoreScope === "Spare Store") {
@@ -7577,7 +7577,7 @@ async function refreshLiveStockForSelectedMaterial() {
       }
     }
 
-    await updateSelectedLiveStockPillCounter(data);
+    await updateSelectedLiveStockPillCounter(data.stock);
   } catch(e) { console.warn("refreshLiveStockForSelectedMaterial error:", e.message); }
 }
 
@@ -8149,7 +8149,7 @@ async function addItemToShoppingBasketRow() {
   const totalStockForItem = invMatch ? Number(invMatch.totalStock) || 0 : null;
   if (totalStockForItem !== null && totalRequestedQuantity > totalStockForItem) {
     restoreAddBtn();
-    alert(`${materialName} requested quantity (${totalRequestedQuantity}) exceeds the current total stock in ${activeStoreScope} (${totalStockForItem}). Reduce the quantity, or check with Purchase on when more will arrive.`);
+    alert(`${materialName} requested quantity (${totalRequestedQuantity}) exceeds the current total stock in ${activeStoreScope} (${totalStockForItem}). Reduce the quantity, or check with Purchase Department on when more will arrive.`);
     return;
   }
 
