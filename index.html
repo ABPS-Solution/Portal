@@ -7667,7 +7667,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       counterZone.innerHTML = `
         <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
           <div>
-            Finished Good Store Count:
+            Finished Goods Store Total Stock Count:
             ${countDisplay}
           </div>
           <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
@@ -7750,15 +7750,13 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
         if (availableCountSpare === 0)  styleClassSpare = "pill-stock-empty";
         else if (availableCountSpare <= 5) styleClassSpare = "pill-stock-low";
 
+        const totalStockCountSpare = (spareInventoryMatch.totalStock !== undefined && spareInventoryMatch.totalStock !== null) ? Number(spareInventoryMatch.totalStock) : (availableCountSpare + reservedCountSpare);
         counterZone.innerHTML = `
           <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
             <div>
-              Spare Store Count:
+              Spare Store Total Stock Count:
               <span class="live-counter-pill ${styleClassSpare}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
-                ${fmtQty(jcmMatchSpare.remainingQty)} ${unitTokenSpare} Currently Reserved for THIS JOB CARD
-              </span>
-              <span style="font-size:0.78rem; color:var(--muted); margin-left:6px; font-weight:normal;">
-                (Extra Unreserved: ${fmtQty(availableCountSpare)} ${unitTokenSpare})
+                ${fmtQty(totalStockCountSpare)} ${unitTokenSpare}
               </span>
             </div>
             <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
@@ -7868,15 +7866,13 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
             &nbsp;|&nbsp; Spare Pool Remaining: <strong>${fmtQty(sparePoolRemaining)} ${unitToken}</strong>
             ${poolLowWarning ? ' — Raw pool is exhausted; a Spare Store ticket can cover the rest, or submit a Job Card Increase Request.' : ''}
           </div>` : '';
+      const totalStockCount = (inventoryMatch.totalStock !== undefined && inventoryMatch.totalStock !== null) ? Number(inventoryMatch.totalStock) : (availableCount + reservedCount);
       counterZone.innerHTML = `
         <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
           <div>
-            Raw Material Store Count:
+            Raw Material Store Total Stock Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
-              ${fmtQty(rawPoolRemaining !== null ? rawPoolRemaining : jcmMatch.remainingQty)} ${unitToken} Currently Reserved for THIS JOB CARD
-            </span>
-            <span style="font-size:0.78rem; color:var(--muted); margin-left:6px; font-weight:normal;">
-              (Extra Unreserved: ${fmtQty(availableCount)} ${unitToken})
+              ${fmtQty(totalStockCount)} ${unitToken}
             </span>
           </div>
           <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
@@ -8142,6 +8138,21 @@ async function addItemToShoppingBasketRow() {
     totalRequestedQuantity += existingLineItem.quantity;
   }
 
+  // Total Stock check runs FIRST, independently of the JC-limit check —
+  // never nested inside it. A request can sit well within this JC's own
+  // remaining_quantity and still be physically impossible if the BOQ's
+  // claim was never backed by real stock yet (e.g. still on order, no GRN
+  // yet) — in that case the JC-limit check alone would wrongly say "fine"
+  // since it only compares against paper entitlement, not what physically
+  // exists anywhere in the store.
+  const invMatch = (cachedInventoryStockCollection || []).find(i => (i.itemCode || "") === (jcmMatch.itemCode || ""));
+  const totalStockForItem = invMatch ? Number(invMatch.totalStock) || 0 : null;
+  if (totalStockForItem !== null && totalRequestedQuantity > totalStockForItem) {
+    restoreAddBtn();
+    alert(`Cannot add ${materialName} — requested quantity (${totalRequestedQuantity}) exceeds the total stock physically held in Raw Materials Store (${totalStockForItem}), even before checking this Job Card's allotment. This can never be fulfilled — reduce the quantity, or check with Purchase on when more will arrive.`);
+    return;
+  }
+
   const isOverAllottedBOQLimit = totalRequestedQuantity > Number(jcmMatch.remainingQty);
   const allottedLimit = Number(jcmMatch.remainingQty);
 
@@ -8218,7 +8229,14 @@ function renderDraftBasketTableViewportRows() {
 
 function renderBOQLimitExceededApprovalRequestWorkspaceBlock(materialsList) {
   const inlineFeedbackBanner = document.getElementById("store-ticket-runtime-inline-feedback-banner");
-  const bottomActionControlsRow = document.getElementById("submit-ticket-final-btn").parentNode;
+  // Anchored off the basket table's sibling — same stable reference
+  // resetMaterialRequestFormSubmissionActionControlsRow already uses —
+  // NOT the submit button's own parent, since that button lives inside
+  // the very content this function replaces. Using the button as the
+  // anchor meant a second call (a second over-limit item added) would
+  // resolve to a different element than the first call, leaving the
+  // original box orphaned in the DOM instead of being replaced.
+  const bottomActionControlsRow = document.getElementById("shopping-basket-preview-table").nextElementSibling;
   
   if (inlineFeedbackBanner) {
     inlineFeedbackBanner.style.cssText = "display: block; background: #fffaf0; border-left: 4px solid #dd6b20; color: #c05621; padding: 12px; font-size: 0.82rem; font-weight: 700; text-align: left; margin-bottom: 12px;";
@@ -8668,9 +8686,7 @@ function renderBOQIncreaseTicketCard(ticket) {
     const remQty = Number(item.boqRemainingQty) || 0;
     return `
       <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px; font-weight:600;">
-          <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.78rem; margin-right:6px;">${item.itemCode}</span>${item.itemDescription || ""}
-        </td>
+        <td style="padding:8px; font-weight:600;">${item.itemDescription || ""}</td>
         <td style="padding:8px; text-align:center; color:var(--muted);">${item.unitType || "—"}</td>
         <td style="padding:8px; text-align:center;">${fmtQty(item.boqAllottedQty)}</td>
         <td style="padding:8px; text-align:center;">${fmtQty(item.boqUsedQty)}</td>
@@ -8719,7 +8735,7 @@ function renderBOQIncreaseTicketCard(ticket) {
               <th style="padding:8px; text-align:center;">JC Used Qty</th>
               <th style="padding:8px; text-align:center;">JC Remaining Qty</th>
               <th style="padding:8px; text-align:center;">Requested Qty</th>
-              <th style="padding:8px; text-align:center;">Exceeds by Qty</th>
+              <th style="padding:8px; text-align:center;">Extra Qty</th>
               <th style="padding:8px; text-align:center;">Final Ticket Qty</th>
             </tr>
           </thead>
