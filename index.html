@@ -128,6 +128,7 @@
   }
   
   .directory-btn-actions-block { display: flex; gap: 6px; width: 100%; justify-content: flex-start; }
+  .directory-btn-actions-block .nav-btn-styled { padding-top: 11px; padding-bottom: 11px; }
   @media(min-width: 800px) { .directory-btn-actions-block { width: auto; justify-content: flex-end; } }
 
   /* --- COMPACT STRUCTURAL CONTROLS USER ENTRY MATRIX --- */
@@ -2786,9 +2787,9 @@
       </div>
     </div>
 
-    <div id="missing-trigger-notice-block" style="display:none;">
-      <p>No Record Matched Your Target Company Inputs.</p>
-      <button class="btn btn-sub" id="reveal-new-entry-btn" onclick="revealNewEntryFormDropdown()" style="width:auto; display:inline-flex; padding:10px 22px; font-size:0.92rem;">Create New Entry</button>
+    <div id="missing-trigger-notice-block" style="display:none; align-items:center; justify-content:space-between; gap:12px; padding:12px; background:#fff8e6; border-left:4px solid #d97706; border-radius:var(--radius); margin-top:10px;">
+      <p style="margin:0; color:#92400e; font-weight:600;">No Lead Record exists for company.</p>
+      <button class="btn btn-sub" id="reveal-new-entry-btn" onclick="revealNewEntryFormDropdown()" style="width:auto; display:inline-flex; padding:10px 22px; font-size:0.92rem; flex-shrink:0;">Create New Entry</button>
     </div>
 
     <div id="step2-new-entry-dropdown" style="display: none; padding: 0 4px; text-align: left;">
@@ -3110,9 +3111,10 @@
 </div>
 
 <div id="reusable-child-modules-template" style="display:none;">
-  <div style="display:flex; gap:8px; margin-bottom:8px;">
+  <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; position:relative;">
     <button class="nav-btn-styled trigger-fup-open" style="background:var(--accent); width:auto; padding:6px 20px;">+ Log Follow-Up</button>
     <button class="nav-btn-styled trigger-fup-close" style="display:none; background:#718096; width:auto; padding:6px 20px;">Cancel</button>
+    <span class="fup-status-label" style="display:none; position:absolute; left:50%; transform:translateX(-50%); font-weight:700; color:var(--brand); font-size:0.85rem;">Logging Follow-up</span>
   </div>
   
   <div class="template-fup-form" style="display:none; grid-template-columns:1fr 1fr; gap:8px; background:#f8fafc; padding:10px; border-radius:var(--radius); border:1px solid var(--border); margin-bottom:8px;">
@@ -3137,9 +3139,10 @@
 
   <div style="height:3px; background:var(--border); margin:8px 0;"></div>
   
-  <div style="display:flex; gap:8px; margin-bottom:8px;">
+  <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; position:relative;">
     <button class="nav-btn-styled trigger-task-open" style="background:var(--accent); width:auto; padding:6px 20px;">+ Add Task</button>
     <button class="nav-btn-styled trigger-task-close" style="display:none; background:#718096; width:auto; padding:6px 20px;">Cancel</button>
+    <span class="task-status-label" style="display:none; position:absolute; left:50%; transform:translateX(-50%); font-weight:700; color:var(--brand); font-size:0.85rem;">Creating Task</span>
   </div>
 
   <div class="template-task-form" style="display:none; grid-template-columns:1fr 1fr; gap:8px; background:#f0fdf4; padding:10px; border-radius:var(--radius); border:1px solid var(--border); margin-bottom:8px;">
@@ -4535,14 +4538,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
       const bannerHook = document.getElementById("split-missing-person-banner-hook");
       if (bannerHook) {
         const searchedForPerson = targetName && targetName.toString().trim();
-        if (searchedForPerson && (!data.leads || data.leads.length === 0)) {
-          bannerHook.innerHTML = `
-            <div class="system-runtime-inline-alert-callout">
-              <span class="alert-callout-text-msg">No records found for "${activeSearchCompany}" at all.</span>
-              <button class="nav-btn-styled" style="background:var(--accent);" onclick="revealNewEntryFormDropdownFromBanner()">Create New Entry</button>
-            </div>
-          `;
-        } else if (searchedForPerson && !data.nameMatchFound) {
+        if (searchedForPerson && !data.nameMatchFound) {
           // Card Details flow: a specific person was searched but not found.
           bannerHook.innerHTML = `
             <div class="system-runtime-inline-alert-callout">
@@ -4596,7 +4592,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
       if (inlineCanvas) inlineCanvas.style.display = "block";
 
     } else {
-      if (missingNoticeBlock) missingNoticeBlock.style.display = "block";
+      if (missingNoticeBlock) missingNoticeBlock.style.display = "flex";
       if (inlineCanvas) inlineCanvas.style.display = "none";
     }
   } catch(e) { 
@@ -4857,9 +4853,13 @@ function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
     fupForm.querySelector(".fup-leadid-input").value = leadRef;
     fupForm.querySelector(".fup-notes-input").value = ""; fupForm.querySelector(".fup-nexttarget-input").value = "";
     fupForm.style.display = "grid"; fupOpen.style.display = "none"; fupClose.style.display = "inline-flex";
+    const fupLabel = nodeScope.querySelector(".fup-status-label"); if (fupLabel) fupLabel.style.display = "inline";
   };
   
-  fupClose.onclick = function() { fupForm.style.display = "none"; fupOpen.style.display = "inline-flex"; fupClose.style.display = "none"; };
+  fupClose.onclick = function() {
+    fupForm.style.display = "none"; fupOpen.style.display = "inline-flex"; fupClose.style.display = "none";
+    const fupLabel = nodeScope.querySelector(".fup-status-label"); if (fupLabel) fupLabel.style.display = "none";
+  };
   nodeScope.querySelector(".commit-fup-btn-trigger").onclick = function() { commitIsolatedFollowUpItem(leadRef, nodeScope); };
 
   const taskForm = nodeScope.querySelector(".template-task-form");
@@ -4884,8 +4884,12 @@ function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
     taskForm.querySelector(".task-edit-id").value = ""; taskForm.querySelector(".task-desc-input").value = "";
     taskForm.querySelector(".task-targetdate-input").value = ""; taskForm.querySelector(".task-status-select").value = "Assigned";
     taskForm.style.display = "grid"; taskOpen.style.display = "none"; taskClose.style.display = "inline-flex";
+    const taskLabel = nodeScope.querySelector(".task-status-label"); if (taskLabel) taskLabel.style.display = "inline";
   };
-  taskClose.onclick = function() { taskForm.style.display = "none"; taskOpen.style.display = "inline-flex"; taskClose.style.display = "none"; };
+  taskClose.onclick = function() {
+    taskForm.style.display = "none"; taskOpen.style.display = "inline-flex"; taskClose.style.display = "none";
+    const taskLabel = nodeScope.querySelector(".task-status-label"); if (taskLabel) taskLabel.style.display = "none";
+  };
   nodeScope.querySelector(".commit-task-btn-trigger").onclick = function() { commitIsolatedTaskItem(leadRef, nodeScope); };
 }
 
@@ -5496,6 +5500,7 @@ function editIsolatedFollowUpItem(leadRef, scopeNode, f) {
   fupForm.querySelector(".fup-nextaction-input").value = f.nextActionType || "";
   fupForm.querySelector(".fup-objection-input").value = f.objectionRaised || "";
   fupForm.style.display = "grid"; scopeNode.querySelector(".trigger-fup-open").style.display = "none"; scopeNode.querySelector(".trigger-fup-close").style.display = "inline-flex";
+  const fupLabelEdit = scopeNode.querySelector(".fup-status-label"); if (fupLabelEdit) fupLabelEdit.style.display = "inline";
 }
 
 async function commitIsolatedFollowUpItem(leadRef, scopeNode) {
@@ -5525,6 +5530,7 @@ async function commitIsolatedFollowUpItem(leadRef, scopeNode) {
       form.style.display = "none"; 
       scopeNode.querySelector(".trigger-fup-open").style.display = "inline-flex"; 
       scopeNode.querySelector(".trigger-fup-close").style.display = "none";
+      const fupLabelDone = scopeNode.querySelector(".fup-status-label"); if (fupLabelDone) fupLabelDone.style.display = "none";
       const timelineBox = scopeNode.querySelector(".template-timeline-box");
       if (timelineBox) timelineBox.innerHTML = '<div style="font-size:0.8rem; color:var(--brand); font-weight:600; padding:8px; display:flex; align-items:center; gap:6px;"><span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span> Creating new follow-up...</div>';
       await globalExecutionScopeReloader(leadRef, scopeNode); 
@@ -5609,6 +5615,7 @@ function editIsolatedTaskItem(leadRef, scopeNode, t) {
   taskForm.querySelector(".task-completionnotes-input").value = t.completionNotes || "";
   taskForm.style.display = "grid"; scopeNode.querySelector(".trigger-task-open").style.display = "none";
   scopeNode.querySelector(".trigger-task-close").style.display = "inline-flex";
+  const taskLabelEdit = scopeNode.querySelector(".task-status-label"); if (taskLabelEdit) taskLabelEdit.style.display = "inline";
 }
 
 async function commitIsolatedTaskItem(leadRef, scopeNode) {
@@ -5638,6 +5645,7 @@ async function commitIsolatedTaskItem(leadRef, scopeNode) {
       form.style.display = "none"; 
       scopeNode.querySelector(".trigger-task-open").style.display = "inline-flex"; 
       scopeNode.querySelector(".trigger-task-close").style.display = "none";
+      const taskLabelDone = scopeNode.querySelector(".task-status-label"); if (taskLabelDone) taskLabelDone.style.display = "none";
       const taskBox = scopeNode.querySelector(".template-task-box");
       if (taskBox) taskBox.innerHTML = '<div style="font-size:0.8rem; color:var(--brand); font-weight:600; padding:8px; display:flex; align-items:center; gap:6px;"><span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span> Creating new task...</div>';
       await globalExecutionScopeReloader(leadRef, scopeNode); 
@@ -6047,7 +6055,7 @@ async function loadQualFilter() {
       });
       
       if (customOptionsCount === 0) {
-        container.innerHTML = '<p style="font-size:0.75rem; color:var(--muted); font-weight:600; padding:4px 0;">No unlisted custom Type of Customer stored in database yet.</p>';
+        container.innerHTML = '<p style="font-size:0.75rem; color:var(--muted); font-weight:600; padding:4px 0;">No unlisted custom Type of Customer yet.</p>';
       }
     }
   } catch(e) { console.error("Custom Types of Customer load failed:", e.message); }
