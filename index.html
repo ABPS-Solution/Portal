@@ -4535,7 +4535,14 @@ async function triggerSequentialSearch(triggerSourceMode) {
       const bannerHook = document.getElementById("split-missing-person-banner-hook");
       if (bannerHook) {
         const searchedForPerson = targetName && targetName.toString().trim();
-        if (searchedForPerson && !data.nameMatchFound) {
+        if (searchedForPerson && (!data.leads || data.leads.length === 0)) {
+          bannerHook.innerHTML = `
+            <div class="system-runtime-inline-alert-callout">
+              <span class="alert-callout-text-msg">No records found for "${activeSearchCompany}" at all.</span>
+              <button class="nav-btn-styled" style="background:var(--accent);" onclick="revealNewEntryFormDropdownFromBanner()">Create New Entry</button>
+            </div>
+          `;
+        } else if (searchedForPerson && !data.nameMatchFound) {
           // Card Details flow: a specific person was searched but not found.
           bannerHook.innerHTML = `
             <div class="system-runtime-inline-alert-callout">
