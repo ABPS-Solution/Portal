@@ -901,16 +901,10 @@
             </div>
           </div>
 
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
-            <div>
-              <label class="field-label" style="margin-top:0;">Q/A Person *</label>
-              <select id="fg-add-qa-person" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-                <option value="">— Select Person —</option>
-              </select>
-            </div>
+          <div style="display:grid; grid-template-columns:1fr; gap:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Q/A Done *</label>
-              <select id="fg-add-qa-done" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+              <select id="fg-add-qa-done" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); max-width:260px;">
                 <option value="No">No</option>
                 <option value="Yes">Yes</option>
               </select>
@@ -15076,9 +15070,7 @@ async function initializeFGAddWorkspace() {
 
   // Load personnel
   const prodDrop  = document.getElementById("fg-add-prod-person");
-  const qaDrop    = document.getElementById("fg-add-qa-person");
   prodDrop.innerHTML  = '<option value="">Loading...</option>';
-  qaDrop.innerHTML = '<option value="">Loading...</option>';
   try {
     const data = await apFetch({ action:"getStoreOperatorsList" });
     const allPersonnel = data.fullPersonnelDataRecordsTree || [];
@@ -15092,15 +15084,8 @@ async function initializeFGAddWorkspace() {
       prodDrop.appendChild(opt);
     });
 
-    const qaPeople = allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().trim().includes("quality assurance")));
-    qaDrop.innerHTML = '<option value="">— Select Person —</option>';
-    qaPeople.forEach(p => {
-      const opt = document.createElement("option"); opt.value = p.fullName; opt.textContent = p.fullName;
-      qaDrop.appendChild(opt);
-    });
-  } catch(e) {
+    } catch(e) {
     prodDrop.innerHTML  = '<option value="">Error loading personnel</option>';
-    qaDrop.innerHTML = '<option value="">Error loading personnel</option>';
   }
 
   resetFGAddForm();
@@ -15464,7 +15449,7 @@ function updateFGSubmitButtonState() {
 }
 
 function resetFGAddForm() {
-  ["fg-add-department","fg-add-project","fg-add-prod-person","fg-add-qa-person","fg-add-unit"].forEach(id => {
+  ["fg-add-department","fg-add-project","fg-add-prod-person","fg-add-unit"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
   ["fg-add-customer","fg-add-product-search","fg-add-product-name","fg-add-item-code",
@@ -15630,7 +15615,7 @@ async function submitFGAddItem() {
   const unit = document.getElementById("fg-add-unit").value.trim();
   const prodPerson = appActiveOperatorIdentityString || "";
   const remarks    = document.getElementById("fg-add-remarks").value.trim();
-  const qaPersonName = document.getElementById("fg-add-qa-person").value.trim();
+  const qaPersonName = appActiveOperatorIdentityString || "";
   const qaDone     = document.getElementById("fg-add-qa-done").value.trim();
 
   const failFG = (msg) => { _submitFGAddItemInProgress = false; return showBOQBanner("fg-add-feedback", msg, "error"); };
@@ -15639,7 +15624,6 @@ async function submitFGAddItem() {
   if (!productName) return showBOQBanner("fg-add-feedback", "Product Name is required.", "error");
   if (!serialNumber) return showBOQBanner("fg-add-feedback", "Product Serial Number is required.", "error");
   if (!window.fgBOQValidationPassed) return showBOQBanner("fg-add-feedback", "Material consumption for this Job Card does not match the BOQ. Resolve the mismatch before submitting.", "error");
-  if (!qaPersonName) return showBOQBanner("fg-add-feedback", "Q/A Person is required.", "error");
   if (qaDone !== "Yes") return showBOQBanner("fg-add-feedback", "Q/A Done must be set to Yes before this item can be submitted.", "error");
   if (!fgJobCardSheetFile)  return showBOQBanner("fg-add-feedback", "Job Card Sheet document is required (Production).", "error");
   if (!fgQATestCertFile)    return showBOQBanner("fg-add-feedback", "Test Certificate is required (Q/A).", "error");
