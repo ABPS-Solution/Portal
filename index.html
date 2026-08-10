@@ -520,10 +520,14 @@
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
           <div id="wrapper-ticket-project-id">
-            <label class="field-label" style="font-weight: 700; color: var(--brand);">Select Project ID *</label>
-            <select id="ticket-project-id-dropdown" onchange="handleCreateTicketProjectChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;">
-              <option value="">— Select Project ID —</option>
-            </select>
+            <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
+            <div style="position:relative;">
+              <input type="text" id="ticket-project-id-dropdown-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+                oninput="handleSharedProjectTypeaheadInput(this.value, 'ticket-project-id-dropdown-ta-input', 'ticket-project-id-dropdown-ta-dropdown')"
+                onchange="handleCreateTicketProjectChange(this.value)"
+                style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;" />
+              <div id="ticket-project-id-dropdown-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+            </div>
           </div>
           <div>
             <label class="field-label" style="margin-top:0;">Customer Name</label>
@@ -765,10 +769,14 @@
       <div id="fg-add-form">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
           <div>
-            <label class="field-label" style="margin-top:0;">Project ID *</label>
-            <select id="fg-add-project" onchange="handleFGAddProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-              <option value="">— Select Project ID —</option>
-            </select>
+            <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
+            <div style="position:relative;">
+              <input type="text" id="fg-add-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+                oninput="handleSharedProjectTypeaheadInput(this.value, 'fg-add-project-ta-input', 'fg-add-project-ta-dropdown')"
+                onchange="handleFGAddProjectChange(this.value)"
+                style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+              <div id="fg-add-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+            </div>
           </div>
           <div>
             <label class="field-label" style="margin-top:0;">Department *</label>
@@ -1271,10 +1279,14 @@
           <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px; letter-spacing:0.5px;">BOQ Header Information</div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
-              <label class="field-label" style="margin-top:0;">Project ID *</label>
-              <select id="cboq-project-id" onchange="handleCBOQProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-                <option value="">— Select Project ID —</option>
-              </select>
+              <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
+              <div style="position:relative;">
+                <input type="text" id="cboq-project-id-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+                  oninput="handleSharedProjectTypeaheadInput(this.value, 'cboq-project-id-ta-input', 'cboq-project-id-ta-dropdown')"
+                  onchange="handleCBOQProjectChange(this.value)"
+                  style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+                <div id="cboq-project-id-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+              </div>
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">Customer Name</label>
@@ -1386,10 +1398,14 @@
 
       <div id="update-boq-selector-zone" style="display:grid; grid-template-columns:1fr 2fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
         <div>
-          <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
-          <select id="update-boq-project" onchange="loadAuthorizedBOQsForProject(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-            <option value="">— Select Project ID —</option>
-          </select>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
+          <div style="position:relative;">
+            <input type="text" id="update-boq-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'update-boq-project-ta-input', 'update-boq-project-ta-dropdown')"
+              onchange="loadAuthorizedBOQsForProject(this.value)"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+            <div id="update-boq-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
         </div>
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select BOQ *</label>
@@ -1421,10 +1437,14 @@
 
       <div style="margin-bottom:16px;">
         <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
-          <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
-          <select id="upload-drawings-project" onchange="handleUploadDrawingsProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:4px; width:100%;">
-            <option value="">— Select Project ID —</option>
-          </select>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
+          <div style="position:relative;">
+            <input type="text" id="upload-drawings-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'upload-drawings-project-ta-input', 'upload-drawings-project-ta-dropdown')"
+              onchange="handleUploadDrawingsProjectChange(this.value)"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:4px;" />
+            <div id="upload-drawings-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
         </div>
       </div>
 
@@ -1603,10 +1623,14 @@
 
       <div id="prn-body-zone" style="display:grid; grid-template-columns:1fr 2fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
         <div>
-          <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
-          <select id="prn-project-select" onchange="handlePRNProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-            <option value="">— Select Project ID —</option>
-          </select>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
+          <div style="position:relative;">
+            <input type="text" id="prn-project-select-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'prn-project-select-ta-input', 'prn-project-select-ta-dropdown')"
+              onchange="handlePRNProjectChange(this.value)"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+            <div id="prn-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
         </div>
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select Authorized BOQ *</label>
@@ -1669,8 +1693,14 @@
       <div id="rprn-other-section" style="display:none;">
         <div id="rprn-selector-row" style="display:grid; grid-template-columns:33% 67%; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
           <div>
-            <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project ID *</label>
-            <select id="rprn-project-select" onchange="loadRevisePRNList()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Loading projects… —</option></select>
+            <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
+            <div style="position:relative;">
+              <input type="text" id="rprn-project-select-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+                oninput="handleSharedProjectTypeaheadInput(this.value, 'rprn-project-select-ta-input', 'rprn-project-select-ta-dropdown')"
+                onchange="loadRevisePRNList()"
+                style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+              <div id="rprn-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+            </div>
           </div>
           <div>
             <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
@@ -1723,8 +1753,14 @@
       <div id="pps-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div style="display:grid; grid-template-columns:2fr 1fr 3fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
         <div>
-          <label class="field-label" style="margin-top:0; color:var(--brand);">Select Project *</label>
-          <select id="pps-project-select" onchange="loadPPSPRNList()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Loading projects... —</option></select>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
+          <div style="position:relative;">
+            <input type="text" id="pps-project-select-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'pps-project-select-ta-input', 'pps-project-select-ta-dropdown')"
+              onchange="loadPPSPRNList()"
+              style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+            <div id="pps-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
         </div>
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">PRN Status *</label>
@@ -3593,6 +3629,56 @@ async function handleGooglePlatformCredentialResponse(response) {
     if (processingLoader) processingLoader.style.display = "none";
   }
 }
+
+window._sharedProjectTypeaheadLoaded = false;
+async function ensureSharedProjectTypeaheadData(forceRefresh = false) {
+  if (window._sharedProjectTypeaheadLoaded && !forceRefresh) return;
+  try {
+    const data = await apFetch({ action: "pullLiveActiveProjectCodes" });
+    window.sharedActiveProjectCodes = data.projects || [];
+    window.sharedProjectMeta = data.projectMeta || {};
+    window._sharedProjectTypeaheadLoaded = true;
+  } catch(e) {
+    window.sharedActiveProjectCodes = [];
+    window.sharedProjectMeta = {};
+  }
+}
+
+function handleSharedProjectTypeaheadInput(query, inputId, dropdownId) {
+  const dd = document.getElementById(dropdownId);
+  if (!dd) return;
+  if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
+  const q = query.trim().toLowerCase();
+  const meta = window.sharedProjectMeta || {};
+  const matches = (window.sharedActiveProjectCodes || []).filter(p => {
+    const customerName = (meta[p] && meta[p].customerName) || "";
+    return p.toLowerCase().includes(q) || customerName.toLowerCase().includes(q);
+  }).slice(0, 10);
+  if (matches.length === 0) { dd.style.display = "none"; return; }
+  dd.innerHTML = matches.map(p => {
+    const customerName = (meta[p] && meta[p].customerName) || "";
+    return `<div onclick="selectSharedProjectTypeahead('${p.replace(/'/g,"\\'")}', '${inputId}', '${dropdownId}')"
+      style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      <span style="font-weight:700;">${p}</span>${customerName ? ` <span style="color:var(--muted);">— ${customerName}</span>` : ''}
+    </div>`;
+  }).join("");
+  dd.style.display = "block";
+}
+
+function selectSharedProjectTypeahead(projectId, inputId, dropdownId) {
+  const input = document.getElementById(inputId);
+  input.value = projectId;
+  document.getElementById(dropdownId).style.display = "none";
+  input.dispatchEvent(new Event('change'));
+}
+
+document.addEventListener("click", (e) => {
+  document.querySelectorAll("[id$='-ta-dropdown']").forEach(dd => {
+    const inputId = dd.id.replace('-ta-dropdown', '-ta-input');
+    if (!e.target.closest(`#${inputId}`) && !e.target.closest(`#${dd.id}`)) dd.style.display = "none";
+  });
+});
 
 async function parseCard() {
   const btn = document.getElementById('parse-btn');
@@ -13028,7 +13114,7 @@ async function initializeCreateBOQPanel() {
   if (_g("create-boq-feedback")) _g("create-boq-feedback").style.display = "none";
 
   // Load Project IDs + item code catalog + personnel all in parallel
-  const projDrop = _g("cboq-project-id");
+  const projDrop = _g("cboq-project-id-ta-input");
   if (!projDrop) return;
   const previouslySelectedProject = isFirstVisit ? "" : projDrop.value;
   if (isFirstVisit) projDrop.innerHTML = '<option value="">Loading projects...</option>';
@@ -13058,18 +13144,14 @@ async function initializeCreateBOQPanel() {
   }
 
   if (projResult.status === "fulfilled" && projResult.value && projResult.value.projects) {
-    projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
-    projResult.value.projects.forEach(code => {
-      const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
-    });
+    window.sharedActiveProjectCodes = projResult.value.projects;
+    window.sharedProjectMeta = projResult.value.projectMeta || {};
     window.cboqProjectMeta = projResult.value.projectMeta || {};
-    // Restore whichever project was already selected before leaving,
-    // as long as it's still a valid Active project.
     if (previouslySelectedProject && projResult.value.projects.includes(previouslySelectedProject)) {
       projDrop.value = previouslySelectedProject;
     }
   } else {
-    projDrop.innerHTML = '<option value="">Error loading projects</option>';
+    projDrop.placeholder = "Error loading projects";
   }
 }
 
@@ -13356,7 +13438,7 @@ document.addEventListener("click", function(e) {
 function resetCreateBOQForm() {
   cboqMaterialRows = [];
   renderCBOQMaterialRows();
-  ["cboq-project-id","cboq-department"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  ["cboq-project-id-ta-input","cboq-department"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   ["cboq-customer-name","cboq-product-name","cboq-product-rating","cboq-prepared-by"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   const searchEl = document.getElementById("cboq-product-search");
   if (searchEl) { searchEl.value = ""; searchEl.style.height = "auto"; }
@@ -13373,7 +13455,7 @@ function resetCreateBOQForm() {
 async function submitCreateBOQ() {
   const btn      = document.getElementById("cboq-submit-btn");
   const banner   = document.getElementById("create-boq-feedback");
-  const projectId   = document.getElementById("cboq-project-id").value.trim();
+  const projectId   = document.getElementById("cboq-project-id-ta-input").value.trim();
   const productName = document.getElementById("cboq-product-name").value.trim();
   const productRating=document.getElementById("cboq-product-rating").value.trim();
   const department  = document.getElementById("cboq-department").value.trim();
@@ -14463,19 +14545,17 @@ async function initializeUpdateBOQPanel() {
     }
 
     if (projDrop) {
-      projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
-      (data.projects || []).forEach(code => {
-        const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
-      });
+      window.sharedActiveProjectCodes = data.projects || [];
+      window.sharedProjectMeta = data.projectMeta || {};
     }
     window.uboqProjectMeta = data.projectMeta || {};
   } catch(e) {
-    if (projDrop) projDrop.innerHTML = '<option value="">Error loading projects</option>';
+    if (projDrop) projDrop.placeholder = "Error loading projects";
   }
 }
 
 async function handleUpdateBOQStatusChange(selectedStatus) {
-  const projDrop = document.getElementById("update-boq-project");
+  const projDrop = document.getElementById("update-boq-project-ta-input");
   const boqDrop  = document.getElementById("update-boq-select");
   const formEl   = document.getElementById("update-boq-form");
 
@@ -14486,16 +14566,14 @@ async function handleUpdateBOQStatusChange(selectedStatus) {
   try {
     const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: selectedStatus });
     if (projDrop) {
-      projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
-      (data.projects || []).forEach(code => {
-        const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
-      });
-      if ((data.projects || []).length === 0)
-        projDrop.innerHTML = `<option value="">No projects with status: ${selectedStatus}</option>`;
+      window.sharedActiveProjectCodes = data.projects || [];
+      window.sharedProjectMeta = data.projectMeta || {};
+      projDrop.value = "";
+      projDrop.placeholder = (data.projects || []).length === 0 ? `No projects with status: ${selectedStatus}` : "Type Project ID or Customer Name...";
     }
     window.uboqProjectMeta = data.projectMeta || {};
   } catch(e) {
-    if (projDrop) projDrop.innerHTML = '<option value="">Error loading projects</option>';
+    if (projDrop) projDrop.placeholder = "Error loading projects";
   }
 }
 
@@ -15782,22 +15860,17 @@ function showBOQBanner(elementId, message, type, persist) {
 // ═══════════════════════════════════════════════════════
 
 async function initializeUploadDrawingsPanel() {
-  const projDrop   = document.getElementById("upload-drawings-project");
-  projDrop.innerHTML   = '<option value="">— Select Project ID —</option>';
+  const projDrop   = document.getElementById("upload-drawings-project-ta-input");
   document.getElementById("upload-drawings-existing-list").style.display = "none";
   document.getElementById("upload-drawings-upload-zone").style.display = "none";
   document.getElementById("upload-drawings-feedback").style.display = "none";
 
   try {
     const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: "Active" });
-
-    // Populate projects for Active only
-    projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
-    (data.projects || []).forEach(code => {
-      const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
-    });
+    window.sharedActiveProjectCodes = data.projects || [];
+    window.sharedProjectMeta = data.projectMeta || {};
   } catch(e) {
-    projDrop.innerHTML = '<option value="">Error loading projects</option>';
+    projDrop.placeholder = "Error loading projects";
   }
 }
 
