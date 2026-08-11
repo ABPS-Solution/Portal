@@ -366,7 +366,7 @@
         <div class="menu-card" id="mod-purchase-pps-tracking" onclick="navigateToPurchaseWorkspacePanel('purchase-pps-tracking')"><span class="mc-label">PPS Tracking</span></div>
         <div class="menu-card" id="mod-revise-rm-po" onclick="navigateToPurchaseWorkspacePanel('purchase-revise-po')"><span class="mc-label">Revise Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-authorize-rm-po-revision" onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po-revision')"><span class="mc-label">Authorize Raw Material Purchase Order Revision</span></div>
-        <div class="menu-card" id="mod-search-rm-po" onclick="navigateToPurchaseWorkspacePanel('purchase-search-po')"><span class="mc-label">Search by Raw Material Purchase Order</span></div>
+        <div class="menu-card" id="mod-search-rm-po" onclick="navigateToPurchaseWorkspacePanel('purchase-search-po')"><span class="mc-label">Search Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-rejected-material" onclick="navigateToPurchaseWorkspacePanel('purchase-rejected-material')"><span class="mc-label">Store Inward Rejected & Missing Material</span></div>
       </div>
     </div>
@@ -1778,7 +1778,7 @@
     </div>
 
     <div id="canvas-module-purchase-search-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="color:var(--brand); margin:0 0 6px 0;">Search by Raw Material Purchase Order</h2>
+      <h2 style="color:var(--brand); margin:0 0 6px 0;">Search Raw Material Purchase Order</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Look up any Authorized Purchase Order by PO Number, material, or Project ID.</p>
       <div id="srchpo-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -15875,25 +15875,21 @@ async function initializeUploadDrawingsPanel() {
 }
 
 async function handleUploadDrawingsStatusChange(selectedStatus) {
-  const projDrop = document.getElementById("upload-drawings-project");
+  const projDrop = document.getElementById("upload-drawings-project-ta-input");
   const listZone = document.getElementById("upload-drawings-existing-list");
   const uploadZone = document.getElementById("upload-drawings-upload-zone");
 
-  projDrop.innerHTML = '<option value="">Loading...</option>';
+  projDrop.value = "";
   listZone.style.display = "none";
   uploadZone.style.display = "none";
 
   try {
     const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: selectedStatus });
-    projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
-    (data.projects || []).forEach(code => {
-      const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
-    });
-    if ((data.projects || []).length === 0) {
-      projDrop.innerHTML = '<option value="">No projects with status: ' + selectedStatus + '</option>';
-    }
+    window.sharedActiveProjectCodes = data.projects || [];
+    window.sharedProjectMeta = data.projectMeta || {};
+    projDrop.placeholder = (data.projects || []).length === 0 ? `No projects with status: ${selectedStatus}` : "Type Project ID or Customer Name...";
   } catch(e) {
-    projDrop.innerHTML = '<option value="">Error loading projects</option>';
+    projDrop.placeholder = "Error loading projects";
   }
 }
 
@@ -15964,7 +15960,7 @@ function handleFGFileSelection(input, type) {
 }
 
 async function submitUploadDrawing() {
-  const projectId = document.getElementById("upload-drawings-project").value;
+  const projectId = document.getElementById("upload-drawings-project-ta-input").value;
   const btn       = document.getElementById("upload-drawings-submit-btn");
 
   if (!projectId) return showBOQBanner("upload-drawings-feedback", "Select a Project ID first.", "error");
@@ -16645,7 +16641,7 @@ function toggleAuthorizePOCard(poNo) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// Search by Raw Material Purchase Order — deliberately its OWN read-only
+// Search Raw Material Purchase Order — deliberately its OWN read-only
 // renderer, not a reuse of initializeCreatePOPanel/renderCPOMaterialRows.
 // Those two are shared by Create/Authorize/Revise PO and are already
 // warned about in the handoff as "trace every call site" risk — adding a
@@ -19418,17 +19414,19 @@ async function submitRPRNDelta() {
 async function initializeRevisePRNOtherTab() {
   document.getElementById("rprn-body").innerHTML = "";
   document.getElementById("rprn-prn-select").innerHTML = `<option value="">— Select a project first —</option>`;
-  const sel = document.getElementById("rprn-project-select");
+  const sel = document.getElementById("rprn-project-select-ta-input");
   try {
     const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
-    const projects = (data.success ? (data.projects || []) : []);
-    sel.innerHTML = `<option value="">— Select Project —</option>` +
-      projects.map(p => `<option value="${p.toString().replace(/"/g,'&quot;')}">${p}</option>`).join("");
-  } catch (e) { sel.innerHTML = `<option value="">Failed to load projects</option>`; }
+    window.sharedActiveProjectCodes = data.success ? (data.projects || []) : [];
+    window.sharedProjectMeta = data.success ? (data.projectMeta || {}) : {};
+  } catch (e) {
+    window.sharedActiveProjectCodes = [];
+    sel.placeholder = "Failed to load projects";
+  }
 }
 
 async function loadRevisePRNList() {
-  const projectId = document.getElementById("rprn-project-select").value;
+  const projectId = document.getElementById("rprn-project-select-ta-input").value;
   const prnSel = document.getElementById("rprn-prn-select");
   document.getElementById("rprn-body").innerHTML = "";
   if (!projectId) { prnSel.innerHTML = `<option value="">— Select a project first —</option>`; return; }
