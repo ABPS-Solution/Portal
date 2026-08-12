@@ -1,5 +1,14 @@
-node_modules/ 
+# Dependencies
+node_modules/
+
+# Environment variables and secrets
 .env 
 credentials.json 
-counter.json 
+
+# Directories
 cards/ 
+
+# Specific files (Quotes handle the spaces and special characters)
+"code.gs old.txt"
+"index (Exibition Excel sheet github hosting version).html"
+"index old.html"

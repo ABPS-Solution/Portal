@@ -3265,6 +3265,19 @@ async function acFetch(path, payload) {
   return data;
 }
 
+// driveLink — backend-generated document links (BOQ/PRN/PO PDFs, drawing
+// documents, project invoices...) point at this app's own authenticated
+// proxy (GET /api/driveFile/:fileId), not a public Drive URL — the files
+// carry no public sharing permission, so the proxy requires the viewer's
+// own session token as a query param (a plain <a href> navigation can't
+// send apFetch's JSON body). Every href/src that renders one of these
+// URLs must be wrapped in this, or the link 401s.
+function driveLink(url) {
+  if (!url) return url;
+  const token = localStorage.getItem("sessionToken") || "";
+  return url + (url.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(token);
+}
+
 async function apFetch(payload) {
   payload.sessionToken = localStorage.getItem("sessionToken");
   const res  = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
@@ -3650,17 +3663,23 @@ function handleSharedProjectTypeaheadInput(query, inputId, dropdownId) {
   if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
   const q = query.trim().toLowerCase();
   const meta = window.sharedProjectMeta || {};
+  // meta[p] is { companyName } — pullLiveActiveProjectCodes (utility.js) is
+  // the only source that ever populates sharedProjectMeta, and it has
+  // always used companyName, never customerName. Reading .customerName
+  // here meant the placeholder's "...or Customer Name" search never
+  // actually matched anything on ANY screen using this shared component —
+  // it always fell through to "" and silently only matched on Project ID.
   const matches = (window.sharedActiveProjectCodes || []).filter(p => {
-    const customerName = (meta[p] && meta[p].customerName) || "";
-    return p.toLowerCase().includes(q) || customerName.toLowerCase().includes(q);
+    const companyName = (meta[p] && meta[p].companyName) || "";
+    return p.toLowerCase().includes(q) || companyName.toLowerCase().includes(q);
   }).slice(0, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(p => {
-    const customerName = (meta[p] && meta[p].customerName) || "";
+    const companyName = (meta[p] && meta[p].companyName) || "";
     return `<div onclick="selectSharedProjectTypeahead('${p.replace(/'/g,"\\'")}', '${inputId}', '${dropdownId}')"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-weight:700;">${p}</span>${customerName ? ` <span style="color:var(--muted);">— ${customerName}</span>` : ''}
+      <span style="font-weight:700;">${p}</span>${companyName ? ` <span style="color:var(--muted);">— ${companyName}</span>` : ''}
     </div>`;
   }).join("");
   dd.style.display = "block";
@@ -5776,15 +5795,22 @@ async function globalExecutionScopeReloader(leadRef, scopeNode) {
   } catch(e) { console.error(e.message); }
 }
 
-async function combineAndUploadCardToDrive(fileFrontImg, fileBackImg, companyName, contactName) {
-  if (!fileFrontImg) return "";
+// combineCardImagesToBase64 — combines front+back card photos onto one
+// canvas (or just converts front alone) and returns raw base64, for the
+// caller to send as `base64Image` on the actual /submit call. This used
+// to pre-upload via its own apFetch call to a "uploadVisitingCardToDrive"
+// action and pass back a URL — that backend action never existed (confirmed
+// against every real route), so it always 404'd, was swallowed by this
+// function's own try/catch, and returned "" silently. Even had it
+// worked, /submit only ever reads `base64Image`, never the `imageUrl`
+// the old code sent — so no card photo from this form has ever actually
+// reached Drive. /submit (routes/marketing.js) already has working,
+// tested upload logic for exactly this base64Image + mimeType shape
+// (the "scan business card" OCR flow uses it), so this just feeds that
+// path instead of duplicating it.
+async function combineCardImagesToBase64(fileFrontImg, fileBackImg) {
+  if (!fileFrontImg) return { base64: "", mimeType: "" };
 
-  const sanitize = s => (s || "").replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_").trim();
-  const cName = sanitize(companyName);
-  const pName = sanitize(contactName);
-  const fileName = (cName && pName) ? `${cName}_${pName}.jpg` : `${cName || "VisitingCard"}.jpg`;
-
-  // Load images onto canvas
   const loadImage = file => new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = e => {
@@ -5797,9 +5823,9 @@ async function combineAndUploadCardToDrive(fileFrontImg, fileBackImg, companyNam
     reader.readAsDataURL(file);
   });
 
-  let base64;
   try {
     const frontImg = await loadImage(fileFrontImg);
+    let base64;
 
     if (fileBackImg) {
       const backImg  = await loadImage(fileBackImg);
@@ -5824,17 +5850,10 @@ async function combineAndUploadCardToDrive(fileFrontImg, fileBackImg, companyNam
       ctx.drawImage(frontImg, 0, 0);
       base64 = canvas.toDataURL("image/jpeg", 0.92).split(",")[1];
     }
+    return { base64, mimeType: "image/jpeg" };
   } catch(e) {
     console.error("Card image processing failed:", e);
-    return "";
-  }
-
-  try {
-    const data = await apFetch({ action: "uploadVisitingCardToDrive", base64, fileName, mimeType: "image/jpeg" });
-    return data.fileUrl || "";
-  } catch(e) {
-    console.error("Drive upload failed:", e);
-    return "";
+    return { base64: "", mimeType: "" };
   }
 }
 
@@ -5883,10 +5902,8 @@ async function submitLead() {
   const getRadio  = n => (activeFormContainerScopeNode.querySelector(`input[name="${n}"]:checked`) || {}).value || "No";
   
   try {
-    const companyVal = document.getElementById('dropform-company-locked')?.value.trim() || document.getElementById('f-company')?.value.trim() || "";
-    const contactVal = document.getElementById('f-name')?.value.trim() || "";
-    const imageUrl   = await combineAndUploadCardToDrive(fileFront, fileBack, companyVal, contactVal);
-    
+    const { base64: cardImageBase64, mimeType: cardImageMimeType } = await combineCardImagesToBase64(fileFront, fileBack);
+
     const lpiNode  = document.getElementById("lpi");  const selLpiNode  = document.getElementById("sel-lpi");
     const hbiNode  = document.getElementById("hbi");  const selHbiNode  = document.getElementById("sel-hbi");
     const hiNode   = document.getElementById("hi");   const selHiNode   = document.getElementById("sel-hi");
@@ -5961,12 +5978,13 @@ async function submitLead() {
 
     const res = await fetch(GAS_URL, {
       method: 'POST',
-      body: JSON.stringify({ 
-        action: 'submit', 
+      body: JSON.stringify({
+        action: 'submit',
         sessionToken: localStorage.getItem("sessionToken"),
         activeEngineer: appActiveOperatorIdentityString,
-        fields, 
-        imageUrl 
+        fields,
+        base64Image: cardImageBase64,
+        mimeType: cardImageMimeType
       })
     });
     const d = await res.json();
@@ -7261,7 +7279,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
  * Automatically respects the active "Choose Store" scope selection to feed the correct items catalog.
  */
 async function initializeMaterialRequestWorkspace() {
-  const projectDropdown = document.getElementById("ticket-project-id-dropdown");
+  const projectDropdown = document.getElementById("ticket-project-id-dropdown-ta-input");
   const itemDropdown = document.getElementById("ticket-item-selection-dropdown");
   const deptDropdown = document.getElementById("ticket-department-outgoing-dropdown");
   const storeScopeDropdown = document.getElementById("ticket-selected-store-scope-toggle");
@@ -7293,7 +7311,7 @@ async function initializeMaterialRequestWorkspace() {
   clearFullBasketDraftState();
   document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
 
-  projectDropdown.innerHTML = '<option value="">Loading Active Projects...</option>';
+  projectDropdown.placeholder = "Loading Active Projects...";
   itemDropdown.innerHTML = '<option value="">— Select Material —</option>';
   try {
     const [inventoryData, projectsData, staffData] = await Promise.all([
@@ -7301,26 +7319,25 @@ async function initializeMaterialRequestWorkspace() {
       apFetch({ action: "pullLiveActiveProjectCodes" }),
       apFetch({ action: "getStoreOperatorsList" })
     ]);
-    
+
     if (inventoryData.success && projectsData.success && staffData.success) {
       cachedInventoryStockCollection = inventoryData.inventory;
       window.cachedInventoryStockCollection = cachedInventoryStockCollection;
       window.cachedFinishedGoodsStoreStockCollection = inventoryData.finishedGoodsInventory || [];
-      globalOperatorsDatabasePayloadCache = staffData.fullPersonnelDataRecordsTree || []; 
+      globalOperatorsDatabasePayloadCache = staffData.fullPersonnelDataRecordsTree || [];
       window._ticketProjectMetaCache = projectsData.projectMeta || {};
 
-      // Seed Active Project Codes — entry point of the cascade
-      projectDropdown.innerHTML = '<option value="">— Select Project ID —</option>';
-      projectsData.projects.forEach(code => {
-        let opt = document.createElement("option"); 
-        opt.value = code; 
-        opt.textContent = code;
-        projectDropdown.appendChild(opt);
-      });
+      // Seed Active Project Codes — entry point of the cascade. The
+      // typeahead input filters/renders from these two globals itself
+      // (handleSharedProjectTypeaheadInput), not from populated <option>
+      // elements — there's no <select> here anymore to fill.
+      window.sharedActiveProjectCodes = projectsData.projects || [];
+      window.sharedProjectMeta = projectsData.projectMeta || {};
+      projectDropdown.placeholder = "Type Project ID or Customer Name...";
     }
-  } catch (error) { 
-    console.error("Critical Matrix Load Failure:", error); 
-    projectDropdown.innerHTML = '<option value="">Error loading projects</option>';
+  } catch (error) {
+    console.error("Critical Matrix Load Failure:", error);
+    projectDropdown.placeholder = "Error loading projects";
   }
 
   resetMaterialRequestCascadingLockState();
@@ -7343,7 +7360,7 @@ async function initializeMaterialRequestWorkspace() {
  * transmits the data, and displays a clean, full-panel success message for 5 seconds.
  */
 async function submitMaterialRequestTicketToBackend() {
-  const projectIdField = document.getElementById("ticket-project-id-dropdown");
+  const projectIdField = document.getElementById("ticket-project-id-dropdown-ta-input");
   const operatorDropdownField = document.getElementById("ticket-requested-by-operator-dropdown");
   const typeDropdownField = document.getElementById("ticket-action-type-toggle-dropdown");
   const submitBtn = document.getElementById("submit-ticket-final-btn");
@@ -7513,7 +7530,7 @@ function stopLiveStockPolling() {
 async function refreshLiveStockForSelectedMaterial() {
   const activeStoreScope   = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
   const selectedMaterial   = document.getElementById("ticket-item-selection-dropdown")?.value;
-  const projectId          = document.getElementById("ticket-project-id-dropdown")?.value;
+  const projectId          = document.getElementById("ticket-project-id-dropdown-ta-input")?.value;
   if (!selectedMaterial) { stopLiveStockPolling(); return; }
 
   // Strip any appended stock count suffix e.g. " (0 NOS available)" from Spare Store dropdown labels
@@ -7600,7 +7617,7 @@ function fmtQty(n) {
 
 async function updateSelectedLiveStockPillCounter(liveStockOverride) {
   const selectedMaterial = document.getElementById("ticket-item-selection-dropdown").value;
-  const projectId = document.getElementById("ticket-project-id-dropdown").value;
+  const projectId = document.getElementById("ticket-project-id-dropdown-ta-input").value;
   const counterZone = document.getElementById("ticket-live-counter-pill-zone");
   
   if (!selectedMaterial || !projectId) {
@@ -7957,7 +7974,7 @@ function checkSpareStoreSuggestion() {
 async function addItemToShoppingBasketRow() {
   const itemSelect = document.getElementById("ticket-item-selection-dropdown");
   const qtyInput = document.getElementById("ticket-item-quantity-input");
-  const projectId = document.getElementById("ticket-project-id-dropdown").value;
+  const projectId = document.getElementById("ticket-project-id-dropdown-ta-input").value;
   const activeStoreScope = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
   
   const materialName = itemSelect.value;
@@ -8295,7 +8312,7 @@ function clearFullBasketDraftState() {
  */
 async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
   const notesField = document.getElementById("boq-increase-justification-notes-input");
-  const projectId = document.getElementById("ticket-project-id-dropdown").value;
+  const projectId = document.getElementById("ticket-project-id-dropdown-ta-input").value;
   const operatorName = appActiveOperatorIdentityString;
   const departmentVal = document.getElementById("ticket-department-outgoing-dropdown").value;
   const materialRequestPanelContainer = document.getElementById("canvas-module-store-material-request");
@@ -11788,7 +11805,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
   const addBtn = document.getElementById("ticket-add-item-action-btn");
   const addZone = document.getElementById("wrapper-ticket-add-item-zone");
   const feedbackBanner = document.getElementById("store-ticket-runtime-inline-feedback-banner");
-  const chosenProjectVal = document.getElementById("ticket-project-id-dropdown").value;
+  const chosenProjectVal = document.getElementById("ticket-project-id-dropdown-ta-input").value;
 
   if (!chosenProjectVal) {
     itemDrop.disabled = true; qtyInp.disabled = true; addBtn.disabled = true;
@@ -12137,7 +12154,7 @@ function renderPstatDesign(data) {
       <tbody>
         ${data.boqs.map(b => `
           <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px; font-family:monospace;">${b.pdfUrl ? `<a href="${b.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700;">${b.boqId}</a>` : b.boqId}</td>
+            <td style="padding:8px; font-family:monospace;">${b.pdfUrl ? `<a href="${driveLink(b.pdfUrl)}" target="_blank" style="color:var(--brand); font-weight:700;">${b.boqId}</a>` : b.boqId}</td>
             <td style="padding:8px;">${b.department || "—"}</td>
             <td style="padding:8px; text-align:center; font-family:monospace;">${fmtQty(b.orderQuantity)}</td>
             <td style="padding:8px;">${b.status || "—"}</td>
@@ -12173,7 +12190,7 @@ function renderPstatOnePps(elId, prn, ppsData) {
   const materials = (ppsData.success && ppsData.materials) ? ppsData.materials : [];
   const header = `
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
-      ${prn.pdfUrl ? `<a href="${prn.pdfUrl}" target="_blank" style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${prn.prnId}</a>` : `<span style="font-family:monospace; font-weight:800; font-size:0.9rem;">${prn.prnId}</span>`}
+      ${prn.pdfUrl ? `<a href="${driveLink(prn.pdfUrl)}" target="_blank" style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${prn.prnId}</a>` : `<span style="font-family:monospace; font-weight:800; font-size:0.9rem;">${prn.prnId}</span>`}
       <span style="font-size:0.68rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:3px;">${prn.status || "—"}</span>
     </div>`;
   if (materials.length === 0) {
@@ -13968,7 +13985,7 @@ async function authorizeBOQRevision(updateId) {
     if (data.success) {
       const cardsFeed = document.getElementById("auth-boq-upd-queue-cards-feed");
       if (cardsFeed) { cardsFeed.style.display = "none"; cardsFeed.innerHTML = ""; }
-      const pdfNote = data.pdfUrl ? `<br/><a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">Revised BOQ PDF</a>` : "";
+      const pdfNote = data.pdfUrl ? `<br/><a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">Revised BOQ PDF</a>` : "";
       showBOQBanner("auth-boq-upd-feedback",
         `✅ Revision authorized for <strong>${reqItem.boqId}</strong>.${pdfNote}<br/>
         <button onclick="document.getElementById('auth-boq-upd-feedback').style.display='none'; initializeAuthorizeBOQRevisionPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another BOQ Revision</button>`,
@@ -14467,7 +14484,7 @@ async function submitEBOQAuthorize() {
 
       const pdfNote = data.pdfWarning
         ? `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — BOQ is authorized. Contact admin to verify Drive folder setup.</div>`
-        : (data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">View BOQ PDF</a></div>` : ``);
+        : (data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View BOQ PDF</a></div>` : ``);
 
       const fb = document.getElementById(feedbackId);
       if (fb) {
@@ -15133,17 +15150,18 @@ async function initializeFGAddWorkspace() {
   await loadItemCodeCatalogIntoCache();
 
   // Load projects
-  const projDrop = document.getElementById("fg-add-project");
-  projDrop.innerHTML = '<option value="">Loading...</option>';
+  const projDrop = document.getElementById("fg-add-project-ta-input");
+  projDrop.placeholder = "Loading...";
   try {
     const data = await apFetch({ action:"pullLiveActiveProjectCodes" });
-    projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
-    (data.projects || []).forEach(code => {
-      const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
-    });
+    // The typeahead input filters/renders from these two globals itself
+    // (handleSharedProjectTypeaheadInput) — no <select> to populate here.
+    window.sharedActiveProjectCodes = data.projects || [];
+    window.sharedProjectMeta = data.projectMeta || {};
     window.fgAddProjectMeta = data.projectMeta || {};
+    projDrop.placeholder = "Type Project ID or Customer Name...";
   } catch(e) {
-    projDrop.innerHTML = '<option value="">Error loading projects</option>';
+    projDrop.placeholder = "Error loading projects";
   }
 
   // Load personnel
@@ -15445,7 +15463,7 @@ function handleFGJobCardChange(jobCardNumber) {
 
 async function triggerFGBOQValidation() {
   const zone = document.getElementById("fg-boq-validation-zone");
-  const projectId    = document.getElementById("fg-add-project").value.trim();
+  const projectId    = document.getElementById("fg-add-project-ta-input").value.trim();
   const jobCardNumber= document.getElementById("fg-add-jobcard").value.trim();
   const productName  = document.getElementById("fg-add-product-name").value.trim();
   const productRating= document.getElementById("fg-add-rating").value.trim();
@@ -15512,7 +15530,7 @@ async function triggerFGBOQValidation() {
 function updateFGSubmitButtonState() {
   const btn = document.getElementById("fg-add-submit-btn");
   if (!btn) return;
-  const projectId = document.getElementById("fg-add-project").value.trim();
+  const projectId = document.getElementById("fg-add-project-ta-input").value.trim();
   if (!projectId) return; // still locked by project, no change needed
 
   if (window.fgBOQValidationPassed) {
@@ -15663,7 +15681,7 @@ async function submitPinvGeneration() {
         <div style="padding:14px; background:#f0fdf4; border-left:4px solid #22c55e; border-radius:var(--radius); color:#15803d; font-weight:600; margin-bottom:14px;">
           Invoice Generated for Project ID: ${pinvCache.projectId}
         </div>
-        <a href="${data.url}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Invoice Document ↗</a>
+        <a href="${driveLink(data.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Invoice Document ↗</a>
         <div style="margin-top:16px;">
           <button class="nav-btn-styled" style="background:var(--accent); padding:8px 20px; font-weight:700;" onclick="initializePinvWorkspace()">+ Create New Project Invoice</button>
         </div>`;
@@ -15683,7 +15701,7 @@ async function submitFGAddItem() {
   _submitFGAddItemInProgress = true;
   const btn        = document.getElementById("fg-add-submit-btn");
   const department = document.getElementById("fg-add-department").value.trim();
-  const projectId  = document.getElementById("fg-add-project").value.trim();
+  const projectId  = document.getElementById("fg-add-project-ta-input").value.trim();
   const customerName=document.getElementById("fg-add-customer").value.trim();
   const productName= document.getElementById("fg-add-product-name").value.trim();
   const itemCode   = document.getElementById("fg-add-item-code").value.trim();
@@ -15923,7 +15941,7 @@ async function refreshUploadDrawingsList(projectId) {
     }
 
     mount.innerHTML = data.documents.map(doc => `
-      <a href="${doc.url}" target="_blank" style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:0.85rem; font-weight:600;">
+      <a href="${driveLink(doc.url)}" target="_blank" style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:0.85rem; font-weight:600;">
         <span>📄 ${doc.name}</span>
         <span style="font-size:0.72rem; color:var(--muted); font-weight:400;">${formatDateTimeDMY(doc.lastUpdated) || doc.lastUpdated}</span>
       </a>`).join("");
@@ -16141,24 +16159,23 @@ async function initializePPSTrackingPanel() {
   if (prnSel) prnSel.innerHTML = `<option value="">— Select a project first —</option>`;
   const statusSel = document.getElementById("pps-status-select");
   if (statusSel) statusSel.value = "";
-  const sel = document.getElementById("pps-project-select");
-  sel.innerHTML = `<option value="">— Loading projects... —</option>`;
+  const sel = document.getElementById("pps-project-select-ta-input");
+  sel.placeholder = "Loading projects...";
   try {
     const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
-    const projects = (data.success ? (data.projects || []) : []);
-    if (projects.length === 0) {
-      sel.innerHTML = `<option value="">No active projects</option>`;
-      return;
-    }
-    sel.innerHTML = `<option value="">— Select Project —</option>` +
-      projects.map(p => `<option value="${p.toString().replace(/"/g,'&quot;')}">${p}</option>`).join("");
+    // The typeahead input filters/renders from these two globals itself
+    // (handleSharedProjectTypeaheadInput) — no <select> to populate here.
+    window.sharedActiveProjectCodes = data.success ? (data.projects || []) : [];
+    window.sharedProjectMeta = data.success ? (data.projectMeta || {}) : {};
+    sel.placeholder = window.sharedActiveProjectCodes.length === 0
+      ? "No active projects" : "Type Project ID or Customer Name...";
   } catch(e) {
-    sel.innerHTML = `<option value="">Failed to load projects</option>`;
+    sel.placeholder = "Failed to load projects";
   }
 }
 
 async function loadPPSPRNList() {
-  const projectId = document.getElementById("pps-project-select").value;
+  const projectId = document.getElementById("pps-project-select-ta-input").value;
   const prnStatus = document.getElementById("pps-status-select").value;
   const prnSel = document.getElementById("pps-prn-select");
   const body = document.getElementById("pps-results-body");
@@ -16277,27 +16294,22 @@ async function loadPPSForPRN() {
   }
 }
 
-async function savePPSActionPlans() {
-  const updates = Array.from(document.querySelectorAll(".pps-action-input")).map(inp => ({
-    prnId: inp.dataset.prnid, itemCode: inp.dataset.itemcode, poNo: inp.dataset.pono,
-    actionPlan: inp.value.trim()
-  }));
-  if (updates.length === 0) return;
-  try {
-    const data = await apFetch({ action: "updatePPSActionPlan", updates, operatorName: appActiveOperatorIdentityString });
-    showPurchaseFeedback("pps-feedback", data.success ? "Action plans saved." : (data.error || "Save failed."), data.success ? "success" : "error");
-  } catch (e) {
-    showPurchaseFeedback("pps-feedback", "Network error: " + e.message, "error");
-  }
-}
-
+// Was previously declared twice in this file — the second declaration
+// silently won (JS keeps the last `function` decl of a given name in
+// scope), and it sent `poNumber` where the backend's updatePPSActionPlan
+// route (routes/purchase.js) reads `u.poNo` — so the WHERE clause bound
+// po_no = NULL, matched zero rows, and the route returned success:true
+// anyway (it never checks rowCount). Every "Save Action Plans" click
+// showed a success banner while silently saving nothing. Fixed to the
+// field name the backend actually reads; the dead first declaration
+// (which had the right field name but the plainer UI) was removed.
 async function savePPSActionPlans(projectId) {
   const inputs = document.querySelectorAll(".pps-action-input");
   const updates = Array.from(inputs).map(inp => ({
     rowNum: parseInt(inp.dataset.rownum, 10),
     prnId: inp.dataset.prnid,
     itemCode: inp.dataset.itemcode,
-    poNumber: inp.dataset.pono,
+    poNo: inp.dataset.pono,
     actionPlan: inp.value
   }));
   const banner = document.getElementById("pps-feedback");
@@ -17776,7 +17788,7 @@ async function authorizePOFromForm() {
       if (body) body.innerHTML = "";
       banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
       let msg = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:8px;">✅ ${poNo} Authorized Successfully!</div>`;
-      if (data.pdfUrl) msg += `<a href="${data.pdfUrl}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open PO PDF</a>`;
+      if (data.pdfUrl) msg += `<a href="${driveLink(data.pdfUrl)}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open PO PDF</a>`;
       else if (data.pdfWarning) msg += `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — PO is authorized. Contact admin to verify Drive folder setup.</div>`;
       msg += `<button onclick="document.getElementById('authorize-po-feedback').style.display='none'; initializeAuthorizePOPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another PO</button>`;
       banner.innerHTML = msg;
@@ -18967,7 +18979,7 @@ async function authorizePORevisionUI(requestId, confirmStale) {
       if ((data.unwound || []).length) notes.push(`Deferred BOQ reductions completed for ${data.unwound.map(u => u.prnId).join(", ")}.`);
       let msg = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:8px;">✅ <strong>${data.poNo}</strong> revised to Rev ${data.revisionNumber}!</div>`;
       if (notes.length) msg += `<div style="font-size:0.8rem; margin-bottom:8px;">${notes.join(" ")}</div>`;
-      if (data.pdfUrl) msg += `<a href="${data.pdfUrl}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open PDF →</a>`;
+      if (data.pdfUrl) msg += `<a href="${driveLink(data.pdfUrl)}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open PDF →</a>`;
       msg += `<button onclick="document.getElementById('apor-feedback').style.display='none'; initializeAuthorizePORevisionPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another PO Revision</button>`;
       showPurchaseFeedback("apor-feedback", msg, "success", true);
     } else {
@@ -20671,9 +20683,9 @@ let prnStoreQtyLocked = false;
 async function initializePRNPanel() {
   if (window._prnStockRefreshInterval) { clearInterval(window._prnStockRefreshInterval); window._prnStockRefreshInterval = null; }
   if (window._prnCreateStockInterval)  { clearInterval(window._prnCreateStockInterval);  window._prnCreateStockInterval  = null; }
-  const projDrop = document.getElementById("prn-project-select");
+  const projDrop = document.getElementById("prn-project-select-ta-input");
   const boqDrop  = document.getElementById("prn-boq-select");
-  projDrop.innerHTML = '<option value="">Loading...</option>';
+  projDrop.placeholder = "Loading...";
   boqDrop.innerHTML  = '<option value="">— Select Project First —</option>';
   boqDrop.disabled   = true;
   boqDrop.style.opacity  = "0.5";
@@ -20699,16 +20711,17 @@ async function initializePRNPanel() {
   try {
     const data = await apFetch({ action:"pullLiveActiveProjectCodes" });
     if (!data || !data.success) {
-      projDrop.innerHTML = '<option value="">Error loading projects</option>';
+      projDrop.placeholder = "Error loading projects";
       showPurchaseFeedback("prn-feedback", (data && data.error) ? data.error : "Failed to load project list. Please refresh.", "error");
       return;
     }
-    projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
-    (data.projects || []).forEach(code => {
-      const opt = document.createElement("option"); opt.value = code; opt.textContent = code; projDrop.appendChild(opt);
-    });
+    // The typeahead input filters/renders from these two globals itself
+    // (handleSharedProjectTypeaheadInput) — no <select> to populate here.
+    window.sharedActiveProjectCodes = data.projects || [];
+    window.sharedProjectMeta = data.projectMeta || {};
+    projDrop.placeholder = "Type Project ID or Customer Name...";
   } catch(e) {
-    projDrop.innerHTML = '<option value="">Error loading projects</option>';
+    projDrop.placeholder = "Error loading projects";
     showPurchaseFeedback("prn-feedback", "Failed to load project list: " + e.message, "error");
   }
 
@@ -20764,7 +20777,7 @@ async function loadPRNNeedQueue() {
 }
 
 async function jumpToPRNFromQueue(projectId, boqId, btn) {
-  const projDrop = document.getElementById("prn-project-select");
+  const projDrop = document.getElementById("prn-project-select-ta-input");
   const boqDrop  = document.getElementById("prn-boq-select");
   if (!projDrop) return;
 
@@ -20846,7 +20859,7 @@ function syncPRNQueueButtonState() {
 }
 
 async function startNewPRNCreation() {
-  const projDrop = document.getElementById("prn-project-select");
+  const projDrop = document.getElementById("prn-project-select-ta-input");
   const boqDrop  = document.getElementById("prn-boq-select");
   const projectId = projDrop ? projDrop.value : "";
   const boqId     = boqDrop  ? boqDrop.value  : "";
@@ -20909,7 +20922,7 @@ async function handlePRNBOQChange(boqId, skipToCreate) {
   syncPRNQueueButtonState();
   if (!boqId) return;
 
-  const projectId = document.getElementById("prn-project-select").value;
+  const projectId = document.getElementById("prn-project-select-ta-input").value;
 
   // Show a loading indicator while we check for an existing PRN
   if (noPrnZone) {
@@ -21356,7 +21369,7 @@ async function authorizePRN(prnId) {
       const feed = document.getElementById("aprn-cards-feed");
       if (feed) feed.style.display = "none";
 
-      const pdfNote = data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a></div>` : ``;
+      const pdfNote = data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a></div>` : ``;
 
       const fb = document.getElementById("aprn-feedback");
       if (fb) {
@@ -21742,7 +21755,7 @@ async function submitNewPRNCreation() {
 
     const pdfNote = data.pdfWarning
       ? `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — PRN is saved. Contact admin to verify Drive folder setup.</div>`
-      : (data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${data.pdfUrl}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a></div>` : "");
+      : (data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a></div>` : "");
 
     if (successZone) {
       successZone.style.display = "block";
@@ -21800,7 +21813,7 @@ function renderAllPRNCards(prns, boqId) {
     const pdfHtml = isPending
       ? `<span style="color:#b45309; font-size:0.8rem; font-weight:700;">Pending — no PDF yet</span>`
       : (data.pdfUrl
-          ? `<a href="${data.pdfUrl}" target="_blank" style="color:var(--brand); font-weight:700; font-size:0.82rem;" onclick="event.stopPropagation();">View PDF ↗</a>`
+          ? `<a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--brand); font-weight:700; font-size:0.82rem;" onclick="event.stopPropagation();">View PDF ↗</a>`
           : `<span style="color:var(--muted); font-size:0.8rem;">Not generated</span>`);
 
     // Trims trailing zeros the same way the PDF's formatRateSmart does —
