@@ -1,14 +1,46 @@
+# ─────────────────────────────────────────────────────────────────────
+# THIS REPO IS PUBLIC. Only the frontend is published here.
+#
+# What SHOULD be tracked:
+#   abps-frontend/                     the deployed site (GitHub Pages)
+#   .github/workflows/                 the deploy workflow
+#   .gitignore
+#
+# Everything else — backend source, internal docs, credentials — is
+# deliberately excluded. The backend deploys straight from local disk:
+#   gcloud run deploy abps-backend --source ./abps-backend --region asia-south1
+# ─────────────────────────────────────────────────────────────────────
+
+# Backend source — never publish (public repo)
+abps-backend/
+
+# Internal documentation — architecture/handoff notes, not for public view
+ABPS_SYSTEM_OVERVIEW.md
+CLAUDE.md
+HANDOFF.md
+
 # Dependencies
 node_modules/
 
 # Environment variables and secrets
-.env 
-credentials.json 
+.env
+credentials.json
+*.pem
+*.key
+service-account*.json
+
+# Local tooling / editor
+.claude/
+.vscode/
+.idea/
 
 # Directories
-cards/ 
+cards/
 
-# Specific files (Quotes handle the spaces and special characters)
+# Scratch / working files
+scratch_*
+
+# Legacy files (pre-split, kept locally for reference)
 "code.gs old.txt"
 "index (Exibition Excel sheet github hosting version).html"
 "index old.html"
