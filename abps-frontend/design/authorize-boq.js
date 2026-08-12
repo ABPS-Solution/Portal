@@ -224,26 +224,24 @@ function renderEBOQForm(containerId) {
           ${eboqMode === "authorize-update" ? `
           <input type="text" value="${draft.productName}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
           ` : `
-          <div style="position:relative;">
-            <input type="text" id="eboq-product-search" value="${draft.productName}" autocomplete="off"
-              oninput="handleEBOQProductSearch(this.value); document.getElementById('eboq-product-name').value = this.value; recomputeEBOQBoqId(this.value, document.getElementById('eboq-product-rating').value);"
-              style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
-            <div id="eboq-product-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 var(--radius) var(--radius); max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
-          </div>
+          <select id="eboq-product-select" onchange="handleEBOQProductSelectChange(this.value)" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+            <option value="">Loading...</option>
+          </select>
           <input type="hidden" id="eboq-product-name" value="${draft.productName}" />
+          <input type="hidden" id="eboq-source-po-line-id" value="${draft.sourcePoLineId || ""}" />
           `}
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">${eboqMode === "authorize-update" ? "Product Rating (locked)" : "Product Rating"}</label>
           <input type="text" id="eboq-product-rating" value="${draft.productRating}"
             ${eboqMode === "authorize-update" ? 'readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);"'
-              : 'oninput="recomputeEBOQBoqId(document.getElementById(\'eboq-product-name\').value, this.value)" style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" placeholder="e.g. 300 kVAr, 11 kV, 3 Ph, 50 Hz"'}
+              : 'readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%;" placeholder="Auto-filled from Product Name"'}
           /></div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
         <div>
-          <label class="field-label" style="margin-top:0;">Order Quantity (No. of Sets) *</label>
-          <input type="number" id="eboq-order-qty" value="${formatQtyTrimmed(draft.orderQuantity)}" min="1" oninput="updateEBOQTotals()" style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          <label class="field-label" style="margin-top:0;">Current Manufacturing Clearance Quantity (No. of Sets) *</label>
+          <input type="number" id="eboq-order-qty" value="${formatQtyTrimmed(draft.orderQuantity)}" min="1" readonly oninput="updateEBOQTotals()" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Date</label>
@@ -331,7 +329,50 @@ function renderEBOQForm(containerId) {
         }).catch(() => { authByEl.innerHTML = '<option value="">Error loading personnel</option>'; });
       }
     }
+    loadEBOQAllowedProducts(draft);
   }
+}
+
+// loadEBOQAllowedProducts — same gating as Create BOQ's dropdown, plus the
+// draft's own current product folded in (even if it wouldn't otherwise be
+// offered) so an untouched draft always has a valid selection.
+async function loadEBOQAllowedProducts(draft) {
+  const select = document.getElementById("eboq-product-select");
+  if (!select) return;
+  select.innerHTML = '<option value="">Loading...</option>';
+  try {
+    const data = await apFetch({ action: "fetchAllowedBoqProducts", projectId: draft.projectId });
+    let options = (data.success && data.options) ? [...data.options] : [];
+    window.eboqAllowedOptionsByValue = {};
+
+    const currentItemCode = (window.itemCodeCatalogCache || [])
+      .find(c => c.productName === draft.productName && (c.rating || "") === (draft.productRating || ""));
+    if (currentItemCode && !options.some(o => o.itemCode === currentItemCode.itemCode)) {
+      options.push({
+        itemCode: currentItemCode.itemCode, productName: draft.productName, productRating: draft.productRating,
+        lockedQuantity: draft.orderQuantity, sourcePoLineId: draft.sourcePoLineId || null,
+      });
+    }
+
+    options.forEach(opt => { window.eboqAllowedOptionsByValue[opt.itemCode] = opt; });
+    select.innerHTML = options.map(opt =>
+      `<option value="${opt.itemCode}" ${opt.productName === draft.productName && (opt.productRating||"") === (draft.productRating||"") ? "selected" : ""}>${opt.productName}${opt.productRating ? " " + opt.productRating : ""}</option>`
+    ).join("") || '<option value="">— No Products Available —</option>';
+  } catch(e) {
+    select.innerHTML = '<option value="">Network error</option>';
+  }
+}
+
+function handleEBOQProductSelectChange(itemCode) {
+  const opt = (window.eboqAllowedOptionsByValue || {})[itemCode];
+  if (!opt) return;
+  document.getElementById("eboq-product-name").value = opt.productName;
+  document.getElementById("eboq-source-po-line-id").value = opt.sourcePoLineId || "";
+  const ratingEl = document.getElementById("eboq-product-rating");
+  if (ratingEl) ratingEl.value = opt.productRating || "";
+  const qtyEl = document.getElementById("eboq-order-qty");
+  if (qtyEl) { qtyEl.value = trimNum(opt.lockedQuantity); updateEBOQTotals(); }
+  recomputeEBOQBoqId(opt.productName, opt.productRating || "");
 }
 
 // updateEBOQId() removed -- the BOQ ID is generated once at creation
@@ -339,42 +380,9 @@ function renderEBOQForm(containerId) {
 // ID with a bogus client-side recomputation ("BOQ-<projectId>-<garbled>")
 // the moment someone touched Product Name/Rating, which is exactly the
 // wrong-ID-shown bug that got reported. Product Name/Rating are now a
-// locked item-code search (see handleEBOQProductSearch/selectEBOQProduct
-// below) rather than free text, so there's nothing left that needs to
-// recompute a preview here at all.
-function handleEBOQProductSearch(query) {
-  const dropdown = document.getElementById("eboq-product-dropdown");
-  const catalog = (window.itemCodeCatalogCache || []).map(c => ({ ...c, displayName: c.productName }));
-  if (!query || query.trim().length < 1) { dropdown.style.display = "none"; return; }
-
-  const q = query.toLowerCase();
-  const matches = catalog.filter(item => (item.productName || "").toLowerCase().includes(q)).slice(0, 10);
-
-  if (matches.length === 0) {
-    dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">
-      No matching product found. <a href="${window.location.pathname}?module=design-itemcode&q=${encodeURIComponent(query)}" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
-    </div>`;
-    dropdown.style.display = "block";
-    return;
-  }
-
-  dropdown.innerHTML = matches.map(item => `
-    <div onclick="selectEBOQProduct('${item.productName.replace(/'/g,"\\'")}', '${(item.rating||'').replace(/'/g,"\\'")}')"
-      style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
-      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>
-      ${item.displayName}${item.rating ? ` <span style="color:var(--brand); font-weight:700;">${item.rating}</span>` : ""}
-    </div>`).join("");
-  dropdown.style.display = "block";
-}
-
-function selectEBOQProduct(productName, rating) {
-  document.getElementById("eboq-product-search").value = productName;
-  document.getElementById("eboq-product-name").value = productName;
-  document.getElementById("eboq-product-rating").value = rating || "";
-  document.getElementById("eboq-product-dropdown").style.display = "none";
-  recomputeEBOQBoqId(productName, rating || "");
-}
+// locked dropdown (see loadEBOQAllowedProducts/handleEBOQProductSelectChange
+// above) rather than free text, so there's nothing left that needs to
+// recompute a preview here at all beyond a selection change.
 
 // BOQ ID format (set server-side by generateBOQId) is:
 // BOQ_<FYLabel>_<MonthAbbr>_<Company>_<PO>_<Product>_<Rating>
@@ -418,6 +426,7 @@ function renderEBOQMaterialRows() {
   }
   eboqMaterialRows.forEach((row, idx) => {
     const isRawMaterial = row.typeOfStore !== "Spare Store";
+    const isFgRow = row.typeOfStore === "Finished Goods Store";
     const totalMaterialRate = isRawMaterial ? ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0)) : 0;
     const tr = document.createElement("tr");
     tr.style.borderBottom = "1px solid #f1f5f9";
@@ -466,7 +475,7 @@ function renderEBOQMaterialRows() {
         ${isRawMaterial ? `
         <input type="number" class="boq-center-num" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
           oninput="eboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateEBOQTotals(); const r=document.getElementById('eboq-rate-${idx}'); if(r) { const v=(Number(eboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); }"
-          style="padding:5px; font-size:0.85rem; width:100%; border:1px solid var(--border); border-radius:3px;" />
+          ${isFgRow ? `title="Provisional — replaced automatically when this Finished Goods material's own BOQ is authorized" style="padding:5px; font-size:0.85rem; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
         ` : `<input type="text" class="boq-center-num" value="—" readonly style="padding:5px; font-size:0.85rem; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       </td>
       <td style="padding:4px; text-align:center;">

@@ -1,9 +1,57 @@
-let fgJobCardSheetFile    = null;
-let fgQATestCertFile      = null;
-let fgQAInspectionFile    = null;
-let fgWarrantyCardFile    = null;
-let fgOtherDocsFile       = null;
-let fgInProcessInspFile   = null;
+// Each document type now accepts multiple files (was one File per type) —
+// fgDocFiles[type] is an array, appended to on every selection rather than
+// replaced, with a running list rendered under each dropzone.
+const FG_DOC_META = {
+  jobCardSheet:         { dropzoneId: "fg-add-jobcard-sheet-dropzone", listId: "fg-add-jobcard-sheet-filelist", label: "Job Card Sheet",              placeholder: "📎 Click to attach Job Card Sheet" },
+  packedProductsImages: { dropzoneId: "fg-add-packed-images-dropzone", listId: "fg-add-packed-images-filelist", label: "Packed Products Images",      placeholder: "📎 Click to attach Packed Products Images" },
+  testCert:             { dropzoneId: "fg-add-test-cert-dropzone",     listId: "fg-add-test-cert-filelist",     label: "Test Certificate",            placeholder: "📎 Click to attach Test Certificate" },
+  inProcessInspection:  { dropzoneId: "fg-add-inprocess-dropzone",     listId: "fg-add-inprocess-filelist",     label: "In Process Inspection Sheet", placeholder: "📎 Click to attach In Process Inspection Sheet" },
+  inspectionClearance:  { dropzoneId: "fg-add-inspection-dropzone",    listId: "fg-add-inspection-filelist",    label: "Inspection Clearance",        placeholder: "📎 Click to attach Inspection Clearance" },
+  warrantyCard:         { dropzoneId: "fg-add-warranty-dropzone",      listId: "fg-add-warranty-filelist",      label: "Warranty Card",                placeholder: "📎 Click to attach Warranty Card" },
+  otherDocuments:       { dropzoneId: "fg-add-otherdocs-dropzone",     listId: "fg-add-otherdocs-filelist",     label: "Other Documents",              placeholder: "📎 Click to attach Other Documents" },
+};
+const FG_REQUIRED_DOC_TYPES = ["jobCardSheet", "packedProductsImages", "testCert", "inProcessInspection", "warrantyCard"];
+let fgDocFiles = {};
+
+function resetFGDocFiles() {
+  fgDocFiles = {};
+  Object.keys(FG_DOC_META).forEach(t => { fgDocFiles[t] = []; renderFGFileList(t); });
+}
+resetFGDocFiles();
+
+// input.value is cleared after every pick so selecting the SAME file
+// twice (or picking again right after a remove) still fires onchange.
+function handleFGFileSelectionMulti(input, type) {
+  const file = input.files[0];
+  input.value = "";
+  if (!file || !FG_DOC_META[type]) return;
+  fgDocFiles[type].push(file);
+  renderFGFileList(type);
+}
+
+function removeFGFile(type, idx) {
+  if (!fgDocFiles[type]) return;
+  fgDocFiles[type].splice(idx, 1);
+  renderFGFileList(type);
+}
+
+function renderFGFileList(type) {
+  const meta = FG_DOC_META[type];
+  if (!meta) return;
+  const files = fgDocFiles[type] || [];
+  const box = document.getElementById(meta.dropzoneId);
+  if (box) {
+    if (files.length > 0) { box.textContent = `✅ ${files.length} file${files.length > 1 ? "s" : ""} attached — click to add more`; box.classList.add("done"); }
+    else { box.textContent = meta.placeholder; box.classList.remove("done"); }
+  }
+  const list = document.getElementById(meta.listId);
+  if (!list) return;
+  list.innerHTML = files.map((f, i) => `
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:0.76rem; padding:4px 8px; background:#f8fafc; border:1px solid var(--border); border-radius:4px; margin-top:4px;">
+      <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</span>
+      <span onclick="removeFGFile('${type}', ${i})" style="cursor:pointer; color:#b91c1c; font-weight:700; flex-shrink:0;" title="Remove">✕</span>
+    </div>`).join("");
+}
 
 /**
  * SUBMIT FINISHED GOODS ADD ENTRY
@@ -96,10 +144,6 @@ document.addEventListener("click", function(e) {
   if (!e.target.closest("[id*='-mat-dropdown-']") && !e.target.closest("input") && !e.target.closest("textarea")) {
     document.querySelectorAll("[id*='-mat-dropdown-']").forEach(d => d.style.display = "none");
   }
-  if (!e.target.closest("#fg-product-dropdown") && !e.target.closest("#fg-add-product-search")) {
-    const d = document.getElementById("fg-product-dropdown");
-    if (d) d.style.display = "none";
-  }
 });
 
 async function initializeFGAddWorkspace() {
@@ -156,7 +200,7 @@ async function handleFGAddProjectChange(projectId) {
   const meta = window.fgAddProjectMeta && window.fgAddProjectMeta[projectId];
   document.getElementById("fg-add-customer").value = meta ? (meta.companyName || "") : "";
 
-  const fieldsToToggle = ["fg-add-department","fg-add-product-search","fg-add-rating","fg-add-serial","fg-add-prod-person","fg-add-qa-person","fg-add-remarks"];
+  const fieldsToToggle = ["fg-add-department","fg-add-serial","fg-add-prod-person","fg-add-qa-person","fg-add-remarks"];
   const submitBtn = document.getElementById("fg-add-submit-btn");
   const boqLabel = document.getElementById("fg-add-boq-label");
   const jobCardLabel = document.getElementById("fg-add-jobcard-label");
@@ -194,73 +238,6 @@ async function handleFGAddProjectChange(projectId) {
     fgBOQDisplayReset("— Select Project First —");
     if (boqLabel) boqLabel.style.color = "var(--muted)";
   }
-}
-
-// "Finished Good Use" no longer changes which catalog is searched — Dispatch Product Code
-// was removed; every use (including "Ready for Dispatch") now searches Item Code.
-function handleFGUseToggleChange(chosenUse) {
-  document.getElementById("fg-add-product-search").value = "";
-  document.getElementById("fg-add-product-name").value   = "";
-  document.getElementById("fg-add-item-code").value      = "";
-  document.getElementById("fg-add-rating").value          = "";
-  const dropdown = document.getElementById("fg-product-dropdown");
-  if (dropdown) dropdown.style.display = "none";
-
-  const searchInput = document.getElementById("fg-add-product-search");
-  if (searchInput) searchInput.placeholder = "Type to search item code product name...";
-
-  loadItemCodeCatalogIntoCache();
-}
-
-function handleFGProductSearch(query) {
-  const dropdown  = document.getElementById("fg-product-dropdown");
-  const catalog = (window.itemCodeCatalogCache || []).map(c => ({ ...c, displayName: c.productName }));
-
-  if (!query || query.trim().length < 1) {
-    dropdown.style.display = "none";
-    document.getElementById("fg-add-product-name").value = "";
-    document.getElementById("fg-add-item-code").value    = "";
-    document.getElementById("fg-add-rating").value        = "";
-    return;
-  }
-
-  const q = query.toLowerCase();
-  const matches = catalog.filter(item => {
-    const name = (item.productName || "").toLowerCase();
-    const combined = `${name} ${(item.rating || "").toLowerCase()}`.trim();
-    return name.includes(q) || combined.includes(q);
-  }).slice(0, 10);
-
-  if (matches.length === 0) {
-    dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">
-      No matching product found. <a href="${window.location.pathname}?module=design-itemcode&q=${encodeURIComponent(query)}" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
-    </div>`;
-    dropdown.style.display = "block";
-    document.getElementById("fg-add-product-name").value = "";
-    document.getElementById("fg-add-item-code").value    = "";
-    document.getElementById("fg-add-rating").value        = "";
-    return;
-  }
-
-  dropdown.innerHTML = matches.map(item => `
-    <div onclick="selectFGProduct('${item.productName.replace(/'/g,"\\'")}', '${item.itemCode}', '${(item.rating||'').replace(/'/g,"\\'")}', '${(item.unit||'').replace(/'/g,"\\'")}')"
-      style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
-      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>
-      ${item.displayName}${item.rating ? ` <span style="color:var(--brand); font-weight:700;">${item.rating}</span>` : ""}
-      ${item.typeOfMaterial ? `<span style="font-size:0.7rem; color:var(--muted); margin-left:6px;">(${window.typeLabelDisplay_(item.typeOfMaterial)})</span>` : ""}
-    </div>`).join("");
-  dropdown.style.display = "block";
-}
-
-function selectFGProduct(productName, itemCode, rating, unit) {
-  document.getElementById("fg-add-product-search").value = productName;
-  document.getElementById("fg-add-product-name").value   = productName;
-  document.getElementById("fg-add-item-code").value      = itemCode;
-  document.getElementById("fg-add-rating").value          = rating || "";
-  document.getElementById("fg-add-unit").value            = unit || "";
-  document.getElementById("fg-product-dropdown").style.display = "none";
-  triggerFGBOQValidation();
 }
 
 function fgBOQDisplayReset(text) {
@@ -305,9 +282,18 @@ function handleFGBOQChange(boqId) {
   if (!boqId) {
     fgJobCardDisplayReset("— Select BOQ First —");
     if (jobCardLabel) jobCardLabel.style.color = "var(--muted)";
+    document.getElementById("fg-add-product-name-display").value = "";
+    document.getElementById("fg-add-product-name").value = "";
+    document.getElementById("fg-add-rating").value = "";
+    document.getElementById("fg-add-unit").value = "";
     return;
   }
   const filtered = (window.fgJobCardsCache || []).filter(jc => jc.boqId === boqId);
+  const sample = filtered[0] || {};
+  document.getElementById("fg-add-product-name-display").value = sample.productName || "";
+  document.getElementById("fg-add-product-name").value = sample.productName || "";
+  document.getElementById("fg-add-rating").value = sample.productRating || "";
+  document.getElementById("fg-add-unit").value = "NOS";
   fgJobCardDisplayReset("— Select Job Card Number —");
   fgJobCardPopulate(filtered.map(jc => ({ value: jc.jobCardNumber, label: `${jc.jobCardNumber} (Set ${jc.setNumber})` })));
   fgJobCardDisplayEnable();
@@ -458,28 +444,26 @@ function resetFGAddForm() {
   ["fg-add-department","fg-add-project","fg-add-prod-person","fg-add-unit"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
-  ["fg-add-customer","fg-add-product-search","fg-add-product-name","fg-add-item-code",
+  ["fg-add-customer","fg-add-product-name-display","fg-add-product-name",
    "fg-add-rating","fg-add-jobcard","fg-add-boq","fg-add-serial","fg-add-remarks"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
   fgBOQDisplayReset("— Select Project First —");
   fgJobCardDisplayReset("— Select BOQ First —");
   document.getElementById("fg-add-qa-done").value = "No";
-  fgJobCardSheetFile = null; fgQATestCertFile = null; fgInProcessInspFile = null; fgQAInspectionFile = null;
-  fgWarrantyCardFile = null; fgOtherDocsFile = null;
-  [["fg-add-jobcard-sheet-dropzone","📎 Click to attach Job Card Sheet"],
-   ["fg-add-test-cert-dropzone","📎 Click to attach Test Certificate"],
-   ["fg-add-inprocess-dropzone","📎 Click to attach In Process Inspection Sheet"],
-   ["fg-add-inspection-dropzone","📎 Click to attach Inspection Clearance"],
-   ["fg-add-warranty-dropzone","📎 Click to attach Warranty Card"],
-   ["fg-add-otherdocs-dropzone","📎 Click to attach Other Documents"]
-  ].forEach(([id, label]) => { const b = document.getElementById(id); if (b) { b.textContent = label; b.classList.remove("done"); } });
-  document.getElementById("fg-product-dropdown").style.display = "none";
+  document.getElementById("fg-add-packing-quality").value = "No";
+  resetFGDocFiles();
   document.getElementById("fg-add-feedback").style.display = "none";
   const validationZone = document.getElementById("fg-boq-validation-zone");
   if (validationZone) { validationZone.style.display = "none"; validationZone.innerHTML = ""; }
   window.fgBOQValidationPassed = false;
   handleFGAddProjectChange(""); // re-lock fields
+}
+
+function startAnotherFGAddEntry() {
+  document.getElementById("fg-add-feedback").style.display = "none";
+  document.getElementById("fg-add-form").style.display = "block";
+  resetFGAddForm();
 }
 
 let pinvCache = { projectId: "", boqs: [], jobCards: [] };
@@ -492,15 +476,15 @@ async function submitFGAddItem() {
   const projectId  = document.getElementById("fg-add-project-ta-input").value.trim();
   const customerName=document.getElementById("fg-add-customer").value.trim();
   const productName= document.getElementById("fg-add-product-name").value.trim();
-  const itemCode   = document.getElementById("fg-add-item-code").value.trim();
+  const boqId      = document.getElementById("fg-add-boq").value.trim();
   const rating     = document.getElementById("fg-add-rating").value.trim();
   const jobCard    = document.getElementById("fg-add-jobcard").value.trim();
   const serialNumber = document.getElementById("fg-add-serial").value.trim();
   const unit = document.getElementById("fg-add-unit").value.trim();
-  const prodPerson = appActiveOperatorIdentityString || "";
   const remarks    = document.getElementById("fg-add-remarks").value.trim();
   const qaPersonName = appActiveOperatorIdentityString || "";
   const qaDone     = document.getElementById("fg-add-qa-done").value.trim();
+  const packingQualityConfirmation = document.getElementById("fg-add-packing-quality").value.trim();
 
   const failFG = (msg) => { _submitFGAddItemInProgress = false; return showBOQBanner("fg-add-feedback", msg, "error"); };
   if (!department)  return failFG("Department is required.");
@@ -509,52 +493,62 @@ async function submitFGAddItem() {
   if (!serialNumber) return showBOQBanner("fg-add-feedback", "Product Serial Number is required.", "error");
   if (!window.fgBOQValidationPassed) return showBOQBanner("fg-add-feedback", "Material consumption for this Job Card does not match the BOQ. Resolve the mismatch before submitting.", "error");
   if (qaDone !== "Yes") return showBOQBanner("fg-add-feedback", "Q/A Done must be set to Yes before this item can be submitted.", "error");
-  if (!fgJobCardSheetFile)  return showBOQBanner("fg-add-feedback", "Job Card Sheet document is required (Production).", "error");
-  if (!fgQATestCertFile)    return showBOQBanner("fg-add-feedback", "Test Certificate is required (Q/A).", "error");
-  if (!fgInProcessInspFile) return showBOQBanner("fg-add-feedback", "In Process Inspection Sheet is required (Q/A).", "error");
-  if (!fgWarrantyCardFile)  return showBOQBanner("fg-add-feedback", "Warranty Card is required.", "error");
+  if (packingQualityConfirmation !== "Yes") return showBOQBanner("fg-add-feedback", "Packing Quality Confirmation must be set to Yes before this item can be submitted.", "error");
+  // Neither Q/A Done nor Packing Quality Confirmation is persisted — see
+  // migration 077: a finished_goods_inventory row's mere existence already
+  // implies both, so these are submit-time gates only.
+  for (const docType of FG_REQUIRED_DOC_TYPES) {
+    if (!(fgDocFiles[docType] || []).length) {
+      return showBOQBanner("fg-add-feedback", `${FG_DOC_META[docType].label} document is required.`, "error");
+    }
+  }
   // Inspection Clearance and Other Documents are optional — no validation block.
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Uploading documents...';
 
   async function uploadFGDoc(file, docLabel, jobCardNum) {
-    if (!file) return ""; // Inspection Clearance is optional — skip cleanly if not attached.
     const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(file); });
-    const fileName = docLabel + " " + jobCardNum;
-    const upData = await apFetch({ action: "uploadProductionJobCardDocument", projectId, customerName, boqId: document.getElementById("fg-add-item-code").value.trim() || "", jobCardNumber: jobCardNum, docLabel, fileName, file: { fileName: fileName + "." + (file.name.split(".").pop() || "pdf"), base64Data: b64, mimeType: file.type || "application/octet-stream" } });
+    const upData = await apFetch({ action: "uploadProductionJobCardDocument", projectId, customerName, boqId, jobCardNumber: jobCardNum, docLabel, fileName: file.name, file: { fileName: file.name, base64Data: b64, mimeType: file.type || "application/octet-stream" } });
     return upData.success ? upData.url : "";
   }
 
-  showBlockingOverlay("Adding to Finished Goods Store...");
+  showBlockingOverlay("Uploading documents...");
   try {
-    const jobCardSheetUrl    = await uploadFGDoc(fgJobCardSheetFile,    "Job Card Sheet",             jobCard);
-    const testCertUrl        = await uploadFGDoc(fgQATestCertFile,      "Test Certificate",           jobCard);
-    const inProcessInspUrl   = await uploadFGDoc(fgInProcessInspFile,   "In Process Inspection Sheet",jobCard);
-    const inspectionClearanceUrl = await uploadFGDoc(fgQAInspectionFile,"Inspection Clearance",       jobCard);
-    const warrantyCardUrl    = await uploadFGDoc(fgWarrantyCardFile,   "Warranty Card",              jobCard);
-    const otherDocumentsUrl  = await uploadFGDoc(fgOtherDocsFile,      "Other Documents",            jobCard);
+    const documents = [];
+    for (const docType of Object.keys(FG_DOC_META)) {
+      const files = fgDocFiles[docType] || [];
+      const label = FG_DOC_META[docType].label;
+      for (const file of files) {
+        const url = await uploadFGDoc(file, label, jobCard);
+        if (!url) throw new Error(`Upload failed for "${file.name}" (${label}). Please retry.`);
+        documents.push({ docType, fileName: file.name, url });
+      }
+    }
 
-    btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Adding to Finished Goods...';
+    btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
 
     const finishedGoodUse = document.getElementById("fg-add-use-toggle")?.value || "Use in other Product";
 
     const data = await apFetch({
       action: "addFinishedGoodsItem",
       department, projectId, customerName, productName,
-      itemCode, productRating: rating, jobCardNumber: jobCard,
+      itemCode: "", productRating: rating, jobCardNumber: jobCard,
       productSerialNumber: serialNumber,
-      unit, prodResponsible: prodPerson,
-      additionalRemarks: remarks,
-      qaPersonName, qaDone, finishedGoodUse,
-      testCertUrl, inspectionClearanceUrl, inProcessInspUrl, jobCardSheetUrl,
-      warrantyCardUrl, otherDocumentsUrl
+      unit, additionalRemarks: remarks,
+      qaPersonName, finishedGoodUse, documents,
+      operatorName: appActiveOperatorIdentityString
     });
 
     hideBlockingOverlay();
     if (data.success) {
-      showBOQBanner("fg-add-feedback", `<strong>${productName}</strong> added to Finished Goods Store (${department}) successfully!`, "success");
-      resetFGAddForm();
+      document.getElementById("fg-add-form").style.display = "none";
+      showBOQBanner("fg-add-feedback",
+        `<strong>${productName}</strong> submitted for ${department} Finished Goods Store — pending FG Approval.
+         <div style="margin-top:10px;">
+           <button class="nav-btn-styled" onclick="startAnotherFGAddEntry()" style="background:#15803d; color:#fff; font-weight:700; padding:8px 18px;">+ Add Another FG Material</button>
+         </div>`,
+        "success", true);
     } else {
       showBOQBanner("fg-add-feedback", data.error || "Failed to add item.", "error");
     }

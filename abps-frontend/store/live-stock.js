@@ -58,6 +58,7 @@ function exitStoreWorkspacePanelBackToMenu() {
   if(document.getElementById("canvas-module-jc-letterhead")) document.getElementById("canvas-module-jc-letterhead").style.display = "none";
   if(document.getElementById("canvas-module-stock-sweep")) { document.getElementById("canvas-module-stock-sweep").style.display = "none"; initializeStockSweepPanel(); }
   if(document.getElementById("canvas-module-fg-add")) document.getElementById("canvas-module-fg-add").style.display = "none";
+  if(document.getElementById("canvas-module-fg-approval")) document.getElementById("canvas-module-fg-approval").style.display = "none";
   if(document.getElementById("canvas-module-project-invoice")) document.getElementById("canvas-module-project-invoice").style.display = "none";
   if(document.getElementById("canvas-module-store-live-fg")) document.getElementById("canvas-module-store-live-fg").style.display = "none";
   if(document.getElementById("canvas-module-store-live-spare")) document.getElementById("canvas-module-store-live-spare").style.display = "none";
@@ -345,7 +346,6 @@ async function triggerLiveWarehouseStockMetricsSync() {
 
     if (data.success && data.inventory) {
       cachedInventoryStockCollection = data.inventory;
-      window.cachedFinishedGoodsStoreStockCollection = data.finishedGoodsInventory || {};
       mountZone.innerHTML = "";
 
       if (!cachedInventoryStockCollection || cachedInventoryStockCollection.length === 0) {
@@ -855,12 +855,16 @@ async function commitRepairQAToBackend(grnNum, btn) {
 }
 
 async function triggerLiveFinishedGoodsStoreStockMetricsSync() {
-  // Always fetch fresh data — don't rely only on the raw materials sync cache
+  // Always fetch fresh data — don't rely only on the raw materials sync cache.
+  // This was previously calling pullLiveInventoryCounts (the RAW materials
+  // endpoint) and reading a `finishedGoodsInventory` field that route never
+  // returns, so this screen always rendered empty. The real data source is
+  // getLiveFinishedGoodsInventory, a flat array of camelCase-keyed rows
+  // (not grouped by department, and not the old capitalized-key row shape).
   try {
-    const data = await apFetch({ action: "pullLiveInventoryCounts" });
+    const data = await apFetch({ action: "getLiveFinishedGoodsInventory" });
     if (data.success) {
-      window.cachedFinishedGoodsStoreStockCollection = data.finishedGoodsInventory || {};
-      cachedInventoryStockCollection = data.inventory || cachedInventoryStockCollection;
+      window.cachedFinishedGoodsStoreStockCollection = data.inventory || [];
     }
   } catch(e) {
     console.error("FG stock sync error:", e);
@@ -875,32 +879,35 @@ async function triggerLiveFinishedGoodsStoreStockMetricsSync() {
   ];
 
   depts.forEach(dept => {
-    const rows    = (cached[dept.key] || []);
+    const rows = cached.filter(row => (row.department || "").trim().toLowerCase() === dept.key);
     const container = document.getElementById(dept.containerId);
     if (!container) return;
 
     // Group by Project ID + Product Name + Product Rating
     const groups = {};
     rows.forEach(row => {
-      const pid    = (row["Project ID"]   || "").trim();
-      const pname  = (row["Product Name"] || "").trim();
-      const prating= (row["Product Rating"]|| "").trim();
+      const pid    = (row.projectId     || "").trim();
+      const pname  = (row.productName   || "").trim();
+      const prating= (row.productRating || "").trim();
       const key    = pid + "||" + pname + "||" + prating;
       if (!groups[key]) {
         groups[key] = {
           projectId:    pid,
-          customerName: (row["Customer Name"]   || "").trim(),
-          itemCode:     (row["Item Code / Dispatched Product Code"] || "").trim(),
+          customerName: (row.customerName || "").trim(),
+          itemCode:     (row.itemCode     || "").trim(),
           productRating:prating,
           productName:  pname,
-          unit:         (row["Unit"]            || "NOS").trim(),
+          unit:         (row.unit || "NOS").trim(),
           jobCards:     [],
           inStock:      0
         };
       }
-      if ((row["Status"] || "").trim() === "In Stock") {
+      // addFinishedGoodsItem always writes status = 'In Store' — there is
+      // no other status transition yet, so this counts every row for now,
+      // but stays correct if a "Dispatched"-style transition is added later.
+      if ((row.status || "").trim() === "In Store") {
         groups[key].inStock++;
-        if (row["Job Card Number"]) groups[key].jobCards.push(row["Job Card Number"]);
+        if (row.jobCardNumber) groups[key].jobCards.push(row.jobCardNumber);
       }
     });
 

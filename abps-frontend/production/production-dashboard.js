@@ -167,7 +167,6 @@ function pd2RenderDashboard(data) {
               <div style="font-size:0.67rem; color:var(--muted);">${fg.projectId} · ${fg.department} · ${fg.jobCardNumber}</div>
             </div>
             <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
-              <span style="font-size:0.65rem; font-weight:700; padding:1px 7px; border-radius:6px; background:${fg.qaDone === 'Yes' ? '#dcfce7' : '#fef9c3'}; color:${fg.qaDone === 'Yes' ? '#15803d' : '#854d0e'};">QA ${fg.qaDone === 'Yes' ? '✓' : 'Pending'}</span>
               <span style="font-size:0.62rem; color:var(--muted);">${formatDateDMY(fg.date)}</span>
             </div>
           </div>

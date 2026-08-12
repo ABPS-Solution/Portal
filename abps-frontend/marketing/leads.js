@@ -1997,7 +1997,23 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
     if (leadDropEl) leadDropEl.focus();
     return;
   }
-  
+
+  // Order Acceptance Sent Date and Contract Review doc are compulsory on
+  // every PO upload — Special Requirement stays optional.
+  let poAcceptanceDate = "", poContractReviewFile = null;
+  if (isPO) {
+    poAcceptanceDate = document.getElementById("purchase-order-acceptance-date").value.trim();
+    if (!poAcceptanceDate) {
+      alert("Order Acceptance Sent Date is required.");
+      return;
+    }
+    poContractReviewFile = document.getElementById("purchase-order-contract-review-file").files[0];
+    if (!poContractReviewFile) {
+      alert("Contract Review document is required.");
+      return;
+    }
+  }
+
   if (feedbackBanner) feedbackBanner.style.display = "none";
   
   if (targetBtn) {
@@ -2023,6 +2039,16 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
     // (BOQ Prepared By, Job Card Created By, etc.) instead of asking.
     const fields = isPO ? { abps_owner_of_order: appActiveOperatorIdentityString || "" } : {};
 
+    let contractReviewFile = null;
+    if (isPO && poContractReviewFile) {
+      const crBase64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(poContractReviewFile);
+      });
+      contractReviewFile = { fileName: poContractReviewFile.name, base64Data: crBase64, mimeType: poContractReviewFile.type || "application/octet-stream" };
+    }
+
     const data = await apFetch({
       action: "commitMarketingOperationsDocument",
       activeEngineer: appActiveOperatorIdentityString,
@@ -2031,7 +2057,10 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
       base64Data: fileBase64Raw,
       mimeType: activeWorkingFile.type || "application/octet-stream",
       fields,
-      leadId: selectedLeadIdForSubmit
+      leadId: selectedLeadIdForSubmit,
+      specialRequirement: isPO ? document.getElementById("purchase-order-special-requirement").value.trim() : undefined,
+      orderAcceptanceSentDate: isPO ? poAcceptanceDate : undefined,
+      contractReviewFile
     });
     if (data.success) {
       // Hide the file picker input controls on success
@@ -2085,6 +2114,11 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
               if (b1) { b1.textContent = '📋 Select Dispatch Bill'; b1.classList.remove('done'); }
               if (b2) { b2.textContent = '📋 Select Commissioning Report'; b2.classList.remove('done'); }
               if (b3) { b3.textContent = '📋 Select Purchase Order'; b3.classList.remove('done'); }
+              document.getElementById('purchase-order-acceptance-date').value = '';
+              document.getElementById('purchase-order-special-requirement').value = '';
+              document.getElementById('purchase-order-contract-review-file').value = '';
+              const b4 = document.getElementById('purchase-order-contract-review-box');
+              if (b4) { b4.textContent = '📋 Select Contract Review Document *'; b4.classList.remove('done'); }
               document.getElementById('dispatch-bill-feedback-banner').style.display = 'none';
               document.getElementById('commissioning-report-feedback-banner').style.display = 'none';
               document.getElementById('purchase-order-feedback-banner').style.display = 'none';

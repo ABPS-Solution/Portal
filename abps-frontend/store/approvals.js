@@ -4,7 +4,7 @@ async function initializeBOQIncreaseApprovalsWorkspace() {
   feedback.style.display = "none";
   feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">
     <div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>
-    Loading Job Card Increase Requests...
+    Loading Excess Material Requests...
   </div>`;
 
   try {
@@ -15,7 +15,7 @@ async function initializeBOQIncreaseApprovalsWorkspace() {
     }
     if (!data.tickets || data.tickets.length === 0) {
       feed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;">
-        <h3 style="color:var(--accent);">No Pending Job Card Increase Requests</h3>
+        <h3 style="color:var(--accent);">No Pending Excess Material Requests</h3>
       </div>`;
       return;
     }
@@ -208,7 +208,7 @@ async function checkCoverageAndApprove(ticketId, projectId, btn, storeType) {
   }
   const overrunItem = findActualQtyOverJcRemaining(ticketId);
   if (overrunItem) {
-    alert(`The Actual Quantity for ${overrunItem.materialName} is more than the JC Remaining Qty. Either reduce the Actual Quantity to match the JC Remaining Qty, or reject the entire ticket and have them create a new ticket with a Job Card Increase Request.`);
+    alert(`The Actual Quantity for ${overrunItem.materialName} is more than the JC Remaining Qty. Either reduce the Actual Quantity to match the JC Remaining Qty, or reject the entire ticket and have them create a new ticket with an Excess Material Request.`);
     return;
   }
   const invalidSpare = findInvalidSpareAllocation(ticketId);

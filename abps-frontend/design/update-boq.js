@@ -56,10 +56,9 @@ async function toggleBOQRevisionExpansion(updateId) {
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
         <div>
-          <label class="field-label" style="margin-top:0;">Order Quantity (No. of Sets) *</label>
-          <input type="number" id="boqrev-order-qty-${updateId}" value="${formatQtyTrimmed(reqItem.newOrderQuantity)}" min="1"
-            oninput="reqItem.newOrderQuantity = this.value; recomputeBOQRevisionSummary(${updateId})"
-            style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          <label class="field-label" style="margin-top:0;">Current Manufacturing Clearance Quantity (No. of Sets) *</label>
+          <input type="number" id="boqrev-order-qty-${updateId}" value="${formatQtyTrimmed(reqItem.newOrderQuantity)}" min="1" readonly
+            style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Date</label>
@@ -153,6 +152,7 @@ function renderBOQRevisionRows(updateId) {
     ? `<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows. Click "+ Add Row".</td></tr>`
     : uboqRevRows.map((row, idx) => {
         const isRawMaterial = row.typeOfStore !== "Spare Store";
+        const isFgRow = row.typeOfStore === "Finished Goods Store";
         const totalMaterialRate = isRawMaterial ? ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0)) : 0;
         return `
     <tr style="border-bottom:1px solid #f1f5f9;">
@@ -199,7 +199,7 @@ function renderBOQRevisionRows(updateId) {
       <td style="padding:4px;">
         <input type="number" class="boq-center-num" value="${row.designRatePerQuantity || ""}" min="0" placeholder="0.00"
           oninput="uboqRevRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; const r=document.getElementById('boqrev-rate-${idx}'); if(r) { const v=(Number(uboqRevRows[${idx}].quantityFor1Set)||0)*(Number(uboqRevRows[${idx}].designRatePerQuantity)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); } updateBOQRevisionTotalsOnly(${updateId}); recomputeBOQRevisionSummary(${updateId});"
-          style="padding:5px; font-size:0.85rem; width:100%; border:1px solid var(--border); border-radius:3px;" />
+          ${isFgRow ? `title="Provisional — replaced automatically when this Finished Goods material's own BOQ is authorized" style="padding:5px; font-size:0.85rem; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
       </td>
       <td style="padding:4px;">
         <input type="text" id="boqrev-rate-${idx}" value="${isRawMaterial ? (Number.isInteger(totalMaterialRate) ? totalMaterialRate : totalMaterialRate.toFixed(2)) : '—'}" readonly
@@ -250,13 +250,6 @@ function renderBOQRevisionRows(updateId) {
     ta.style.height = "auto";
     ta.style.height = ta.scrollHeight + "px";
   });
-
-  const orderInput = document.getElementById(`boqrev-order-qty-${updateId}`);
-  if (orderInput) orderInput.oninput = () => { reqItem_forOrderQty(updateId).newOrderQuantity = orderInput.value; renderBOQRevisionRows(updateId); recomputeBOQRevisionSummary(updateId); };
-}
-
-function reqItem_forOrderQty(updateId) {
-  return uboqRevList.find(r => String(r.updateId) === String(updateId));
 }
 
 // Debounced-ish live re-diff as the authorizer edits, so the summary
@@ -440,8 +433,8 @@ function renderUBOQForm() {
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
-          <label class="field-label" style="margin-top:0;">Order Quantity (No. of Sets) *</label>
-          <input type="number" id="uboq-order-qty" value="${Math.round(Number(draft.orderQuantity) || 0)}" min="1" oninput="updateUBOQTotals()" style="padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          <label class="field-label" style="margin-top:0;">Current Manufacturing Clearance Quantity (No. of Sets) *</label>
+          <input type="number" id="uboq-order-qty" value="${Math.round(Number(draft.orderQuantity) || 0)}" min="1" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Date</label>
@@ -521,6 +514,7 @@ function renderUBOQMaterialRows() {
   }
   uboqMaterialRows.forEach((row, idx) => {
     const isRawMaterial = row.typeOfStore !== "Spare Store";
+    const isFgRow = row.typeOfStore === "Finished Goods Store";
     const totalMaterialRate = isRawMaterial ? ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0)) : 0;
     const tr = document.createElement("tr");
     tr.style.borderBottom = "1px solid #f1f5f9";
@@ -569,7 +563,7 @@ function renderUBOQMaterialRows() {
         ${isRawMaterial ? `
         <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
           oninput="uboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateUBOQTotals(); const r=document.getElementById('uboq-rate-${idx}'); if(r) { const v=(Number(uboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); }"
-          style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
+          ${isFgRow ? `title="Provisional — replaced automatically when this Finished Goods material's own BOQ is authorized" style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       </td>
       <td style="padding:4px; text-align:center;">

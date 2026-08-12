@@ -318,7 +318,7 @@ async function searchByMaterialUI() {
     } else {
       const data = await apFetch({ action: "searchRMPOVendorsByMaterial", itemCode: window.srchpoSelectedItemCode });
       if (!data.success) { srchpoShowFeedback(data.error, true); results.innerHTML = ""; return; }
-      renderSrchPOVendorResults(data.vendors || []);
+      renderSrchPOMaterialVendorTable(data.results || []);
     }
   } catch(e) { srchpoShowFeedback(e.message, true); results.innerHTML = ""; }
 }
@@ -357,7 +357,7 @@ function renderSrchPOResultsAsPOCards(list) {
         <div>
           <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNo}</span>
           <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
-          ${po.revisionNumber ? `<span style="margin-left:8px; font-size:0.72rem; color:var(--muted);">Rev ${po.revisionNumber}</span>` : ""}
+          ${po.revisionNumber ? `<span style="margin-left:8px; font-size:0.72rem; color:var(--muted);">V${po.revisionNumber}</span>` : ""}
         </div>
         <div style="font-size:0.85rem; color:var(--muted);">${fmtPODate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></div>
       </div>
@@ -512,6 +512,43 @@ function renderSrchPOVendorResults(vendors) {
     </div>`).join("");
 }
 
+// Material Name search inside Search Vendor Information — one row per PO
+// carrying the material (not one row per vendor), so rate/quantity can be
+// compared PO-to-PO. Already sorted by the backend (order date desc, then
+// po_no desc as the same-date tiebreak).
+function renderSrchPOMaterialVendorTable(list) {
+  const results = document.getElementById("srchpo-results");
+  if (list.length === 0) {
+    results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No matching Authorized Purchase Orders found.</div>`;
+    return;
+  }
+  const rows = list.map(r => `
+    <tr style="border-bottom:1px solid #e2e8f0;">
+      <td style="padding:8px; font-family:monospace; font-weight:700; color:var(--brand);">${r.poNo}</td>
+      <td style="padding:8px; font-weight:600;">${r.vendorName || "—"}</td>
+      <td style="padding:8px;">${r.city || "—"}${r.state ? ', ' + r.state : ''}</td>
+      <td style="padding:8px; text-align:center; font-family:monospace;">${fmtQty(r.poQuantity)}</td>
+      <td style="padding:8px; text-align:center; font-family:monospace;">${fmtQty(r.ratePerQty)}</td>
+      <td style="padding:8px;">${fmtPODate(r.orderDate) || "—"}</td>
+      <td style="padding:8px;">${fmtPODate(r.deliveryDate) || "—"}</td>
+    </tr>`).join("");
+  results.innerHTML = `
+    <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+      <table style="width:100%; border-collapse:collapse; min-width:760px;">
+        <thead><tr style="background:#f8fafc;">
+          <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">PO Number</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">Vendor Name</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">City/State</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:center; text-transform:uppercase; color:var(--muted);">PO Quantity</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:center; text-transform:uppercase; color:var(--muted);">Rate / Qty</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">Order Date</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">Delivery Date</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
 async function initializeCreatePOPanel(authorizePoNo = null, containerId = "create-po-body") {
   window.cpoMode = authorizePoNo ? 'authorize' : 'create';
   window.cpoEditingPoNo = authorizePoNo || null;
@@ -660,6 +697,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
             quantity: li.quantity, unit: li.unit || "", rate: li.rate, discountPercent: li.discountPercent || 0,
             projectIds: [], allocations: li.allocations || [],
             _allocationTouched: true, _allocatedForQty: qty,
+            designRatePerQuantity: li.designRatePerQuantity != null ? Number(li.designRatePerQuantity) : null,
           };
         });
       } else {
@@ -764,7 +802,7 @@ function handleCPOVendorChange() {
 
 function addCPOMaterialRow() {
   const id = ++window.cpoRowSeq;
-  window.cpoMaterialRows.push({ id, description: "", itemCode: "", quantity: "", unit: "", rate: "", discountPercent: "", projectIds: [], allocations: [] });
+  window.cpoMaterialRows.push({ id, description: "", itemCode: "", quantity: "", unit: "", rate: "", discountPercent: "", projectIds: [], allocations: [], designRatePerQuantity: null });
   renderCPOMaterialRows();
   persistCPODraft();
 }
@@ -792,7 +830,27 @@ function renderCPOMaterialRows() {
         + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${unallocNow}</strong></div>` : "")
       : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No PRNs allocated</span>';
 
-    return `<div data-rowid="${row.id}" style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px;">
+    // Design Rate / Qty = lowest design_rate_per_quantity among only the
+    // PRNs this row is actually allocated to (see saveCPOAllocationPicker
+    // / fetchPODraftById). Costing Difference = (Rate/Qty - Design
+    // Rate/Qty) * Quantity. Over-rate rows are flagged everywhere, but
+    // only actually blocked from submission on the Authorize screen (see
+    // authorizePOFromForm) — Create PO is allowed to carry them through.
+    const rateNow = parseFloat(row.rate) || 0;
+    const designRate = row.designRatePerQuantity;
+    const hasDesignRate = designRate != null;
+    const isOverRate = hasDesignRate && rateNow > Number(designRate) + 1e-9;
+    const costingDiff = hasDesignRate ? (rateNow - Number(designRate)) * lineQtyNow : null;
+    const isAuthMode = window.cpoMode === 'authorize';
+    const rowBg = (isAuthMode && isOverRate) ? "#fef2f2" : "#fff";
+    const rowBorderColor = (isAuthMode && isOverRate) ? "#fca5a5" : "var(--border)";
+    const overRateWarning = isOverRate
+      ? `<div style="margin-top:10px; padding:7px 10px; background:${isAuthMode ? "#fee2e2" : "#fffbeb"}; border:1px solid ${isAuthMode ? "#fca5a5" : "#fde68a"}; border-radius:4px; font-size:0.75rem; font-weight:700; color:${isAuthMode ? "#b91c1c" : "#78350f"};">
+          ⚠️ Rate / Qty (${fmtQty(rateNow)}) is higher than Design Rate / Qty (${fmtQty(designRate)}).${isAuthMode ? " Only an admin can authorize this PO as-is." : ""}
+        </div>`
+      : "";
+
+    return `<div data-rowid="${row.id}" style="background:${rowBg}; border:1px solid ${rowBorderColor}; border-radius:var(--radius); padding:12px; margin-bottom:10px;">
       <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
         <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx + 1}</div>
 
@@ -816,13 +874,21 @@ function renderCPOMaterialRows() {
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Quantity *</div>
           <input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${row.quantity}" oninput="updateCPORowField(${row.id},'quantity',this.value)" onblur="handleCPOQtyBlur(${row.id})" style="width:100%; height:36px; box-sizing:border-box; text-align:center; padding:7px 4px; border:1.5px solid var(--border); border-radius:4px;">
         </div>
+        <div style="width:100px; flex-shrink:0; text-align:center;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Design Rate / Qty</div>
+          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:700; color:#475569; font-size:0.85rem;">${hasDesignRate ? fmtQty(designRate) : '—'}</div>
+        </div>
         <div style="width:90px; flex-shrink:0;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Rate / Qty *</div>
-          <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)" style="width:100%; height:36px; box-sizing:border-box; text-align:right; padding:7px 6px; border:1.5px solid var(--border); border-radius:4px;">
+          <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)" style="width:100%; height:36px; box-sizing:border-box; text-align:right; padding:7px 6px; border:1.5px solid ${isOverRate ? '#dc2626' : 'var(--border)'}; border-radius:4px; ${isOverRate ? 'background:#fef2f2;' : ''}">
         </div>
         <div style="width:70px; flex-shrink:0;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Disc %</div>
           <input type="number" min="0" max="100" step="any" class="cpo-disc" data-rowid="${row.id}" value="${row.discountPercent}" placeholder="0" oninput="updateCPORowField(${row.id},'discountPercent',this.value)" style="width:100%; height:36px; box-sizing:border-box; text-align:center; padding:7px 4px; border:1.5px solid var(--border); border-radius:4px;">
+        </div>
+        <div style="width:110px; flex-shrink:0; text-align:right;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Costing Diff</div>
+          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:flex-end; font-family:monospace; font-weight:700; font-size:0.85rem; color:${costingDiff > 0 ? '#dc2626' : (costingDiff < 0 ? '#15803d' : '#475569')};"><span class="cpo-costing-diff">${costingDiff != null ? fmtQty(costingDiff) : '—'}</span></div>
         </div>
         <div style="width:120px; flex-shrink:0; text-align:right;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Amount</div>
@@ -839,6 +905,7 @@ function renderCPOMaterialRows() {
         </div>
         <div style="flex:1; min-width:200px; padding-top:2px;">${projectChips}</div>
       </div>
+      ${overRateWarning}
     </div>`;
   }).join("");
   window.cpoMaterialRows.forEach(r => updateCPORowAmount(r.id));
@@ -869,6 +936,7 @@ function selectCPOMaterial(rowId, itemCode, productName, rating, unitType) {
   row.unit = unitType || "Nos";
   row.allocations = []; // old allocations were tied to the previous item code
   row._allocationTouched = false;
+  row.designRatePerQuantity = null; // was derived from the old item code's allocated PRNs
   document.getElementById(`cpo-desc-dd-${rowId}`).style.display = "none";
   renderCPOMaterialRows();
   persistCPODraft();
@@ -905,6 +973,7 @@ function handleCPOQtyBlur(rowId) {
     // re-confirm via Allocate to PRNs.
     row.allocations = [];
     row._allocationTouched = false;
+    row.designRatePerQuantity = null;
   } else {
     // All-extra: extra is just "whatever's left after real PRN
     // allocations" (here, all of it), which stays automatically valid
@@ -926,6 +995,29 @@ function updateCPORowAmount(rowId) {
   row.amount = amount;
   const span = document.querySelector(`.cpo-amount[data-rowid="${rowId}"]`);
   if (span) span.textContent = amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+
+  // Costing Diff / over-rate flag are Rate-dependent — updated here (not
+  // just at render time) so typing a new Rate reflects live without a
+  // full re-render mid-keystroke (which would drop input focus).
+  const designRate = row.designRatePerQuantity;
+  const hasDesignRate = designRate != null;
+  const isOverRate = hasDesignRate && rate > Number(designRate) + 1e-9;
+  const costingDiff = hasDesignRate ? (rate - Number(designRate)) * qty : null;
+  const rowEl = document.querySelector(`[data-rowid="${rowId}"]`);
+  const diffSpan = rowEl ? rowEl.querySelector(".cpo-costing-diff") : null;
+  if (diffSpan) {
+    diffSpan.textContent = costingDiff != null ? fmtQty(costingDiff) : "—";
+    diffSpan.style.color = costingDiff > 0 ? "#dc2626" : (costingDiff < 0 ? "#15803d" : "#475569");
+  }
+  const rateInput = document.querySelector(`.cpo-rate[data-rowid="${rowId}"]`);
+  if (rateInput) {
+    rateInput.style.borderColor = isOverRate ? "#dc2626" : "var(--border)";
+    rateInput.style.background = isOverRate ? "#fef2f2" : "";
+  }
+  // The row-level red background and the warning strip below the row are
+  // static-render-only (they'd need a full re-render to move/appear) —
+  // acceptable since Authorize's authoritative block re-checks on submit
+  // regardless of whether the strip has refreshed live.
 }
 
 function recalcCPOTotals() {
@@ -1009,6 +1101,16 @@ function saveCPOAllocationPicker(rowId) {
   row.allocations = allocs;
   row._allocatedForQty = lineQty;
   row._allocationTouched = true;
+  // Design Rate / Qty = the lowest design_rate_per_quantity (from the
+  // allocated PRN's own BOQ, same item code) among only the PRNs this
+  // row actually got allocated to — not every open PRN for the material.
+  const openPrns = window._cpoAllocOpenPrns || [];
+  const rates = allocs
+    .map(a => openPrns.find(p => p.prnId === a.prnId))
+    .map(p => p && p.designRatePerQuantity)
+    .filter(r => r != null)
+    .map(Number);
+  row.designRatePerQuantity = rates.length ? Math.min(...rates) : null;
   modal.remove();
   renderCPOMaterialRows();
   persistCPODraft();
@@ -1150,6 +1252,14 @@ async function authorizePOFromForm() {
     const aSum = (row.allocations || []).reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     if (aSum > (parseFloat(row.quantity) || 0) + 1e-9) {
       return showErr(`Row ${n}: allocated ${aSum} across PRNs but only ${row.quantity} is being ordered.`);
+    }
+    // Non-admins cannot push through a rate above the BOQ's Design Rate /
+    // Qty — the server enforces this authoritatively too (see
+    // authorizePurchaseOrder), this is just the earlier, friendlier stop.
+    const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
+    const dr = row.designRatePerQuantity;
+    if (!isAdminUser && dr != null && (parseFloat(row.rate) || 0) > Number(dr) + 1e-9) {
+      return showErr(`Row ${n}: Rate / Qty (${row.rate}) is higher than Design Rate / Qty (${dr}). Only an admin can authorize this PO — hand it off to an admin.`);
     }
   }
 

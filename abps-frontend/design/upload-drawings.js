@@ -82,24 +82,6 @@ function handleUploadDrawingsFileSelection(input) {
   }
 }
 
-function handleFGFileSelection(input, type) {
-  const file = input.files[0];
-  if (!file) return;
-  const map = {
-    jobCardSheet:        { varSetter: f => fgJobCardSheetFile  = f, boxId: "fg-add-jobcard-sheet-dropzone" },
-    testCert:            { varSetter: f => fgQATestCertFile    = f, boxId: "fg-add-test-cert-dropzone" },
-    inProcessInspection: { varSetter: f => fgInProcessInspFile = f, boxId: "fg-add-inprocess-dropzone" },
-    inspectionClearance: { varSetter: f => fgQAInspectionFile  = f, boxId: "fg-add-inspection-dropzone" },
-    warrantyCard:        { varSetter: f => fgWarrantyCardFile  = f, boxId: "fg-add-warranty-dropzone" },
-    otherDocuments:      { varSetter: f => fgOtherDocsFile     = f, boxId: "fg-add-otherdocs-dropzone" }
-  };
-  const entry = map[type];
-  if (!entry) return;
-  entry.varSetter(file);
-  const box = document.getElementById(entry.boxId);
-  if (box) { box.textContent = "✅ " + file.name; box.classList.add("done"); }
-}
-
 async function submitUploadDrawing() {
   const projectId = document.getElementById("upload-drawings-project-ta-input").value;
   const btn       = document.getElementById("upload-drawings-submit-btn");

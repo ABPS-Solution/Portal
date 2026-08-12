@@ -11,6 +11,10 @@ async function openCPOAllocationPicker(rowId) {
     alert("Could not load the PRN list for this material: " + e.message);
     return;
   }
+  // Read back by saveCPOAllocationPicker to derive the row's Design Rate /
+  // Qty (lowest design_rate_per_quantity among the PRNs actually chosen)
+  // without a second round trip — only one allocation modal is ever open.
+  window._cpoAllocOpenPrns = prns;
 
   const existing = document.getElementById("cpo-alloc-modal");
   if (existing) existing.remove();
@@ -712,6 +716,8 @@ async function authorizePRN(prnId) {
     });
     hideBlockingOverlay();
     if (data.success) {
+      checkStorePRNRevisionReminder();
+      checkPurchasePORevisionReminder();
       const feed = document.getElementById("aprn-cards-feed");
       if (feed) feed.style.display = "none";
 

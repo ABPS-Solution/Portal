@@ -8,6 +8,7 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
   if (window._aprnStockInterval) { clearInterval(window._aprnStockInterval); window._aprnStockInterval = null; }
   if (window._rprnStockInterval) { clearInterval(window._rprnStockInterval); window._rprnStockInterval = null; }
 
+  checkPurchasePORevisionReminder();
   window.scrollTo(0, 0);
   setTimeout(() => window.scrollTo(0, 0), 50);
   document.getElementById("dashboard-view").style.display = "none";
@@ -125,7 +126,7 @@ async function initializeRevisePOPanel() {
         <div style="background:#fff; border:1px solid var(--border); border-left:3px solid #f59e0b; border-radius:var(--radius); padding:14px;">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap;">
             <div style="flex:1; min-width:240px;">
-              <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${po.poNo}${po.revisionNumber > 1 ? ` <span style="font-size:0.7rem; color:var(--muted);">(Rev ${po.revisionNumber})</span>` : ""}</div>
+              <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${po.poNo}${po.revisionNumber > 1 ? ` <span style="font-size:0.7rem; color:var(--muted);">(V${po.revisionNumber})</span>` : ""}</div>
               <div style="font-size:0.8rem; font-weight:600; margin-top:2px;">${po.vendorName || ""}</div>
               <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Ordered ${po.orderDate ? formatDateDMY(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatDateDMY(po.deliveryDate) : "—"}</div>
               <div style="margin-top:7px;">${chips}</div>
@@ -155,7 +156,7 @@ async function searchPOsForRevisionUI() {
     feed.innerHTML = results.map(po => `
       <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px; display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;">
         <div>
-          <div style="font-family:monospace; font-weight:800; color:var(--brand);">${po.poNo}${po.revisionNumber > 1 ? ` <span style="font-size:0.7rem; color:var(--muted);">(Rev ${po.revisionNumber})</span>` : ""}</div>
+          <div style="font-family:monospace; font-weight:800; color:var(--brand);">${po.poNo}${po.revisionNumber > 1 ? ` <span style="font-size:0.7rem; color:var(--muted);">(V${po.revisionNumber})</span>` : ""}</div>
           <div style="font-size:0.8rem; font-weight:600;">${po.vendorName || ""}</div>
           <div style="font-size:0.72rem; color:var(--muted);">Delivery ${po.deliveryDate ? formatDateDMY(po.deliveryDate) : "—"}</div>
         </div>
@@ -268,7 +269,7 @@ function renderPORevisionCard() {
         <div>
           <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:1rem;">${po.poNo}</div>
           <div style="font-size:0.85rem; font-weight:700;">${po.vendorName || ""}</div>
-          <div style="font-size:0.74rem; color:var(--muted);">Ordered ${po.orderDate ? formatDateDMY(po.orderDate) : "—"} · Currently Rev ${po.revisionNumber || 1}</div>
+          <div style="font-size:0.74rem; color:var(--muted);">Ordered ${po.orderDate ? formatDateDMY(po.orderDate) : "—"} · Currently V${po.revisionNumber || 1}</div>
         </div>
         <span style="font-size:0.7rem; font-weight:800; padding:4px 10px; border-radius:4px; background:${kind === "PRN Driven" ? "#fef3c7" : "#e0f2fe"}; color:${kind === "PRN Driven" ? "#78350f" : "#075985"};">${kind === "PRN Driven" ? "PRN-DRIVEN REVISION" : "STANDALONE REVISION"}</span>
       </div>
@@ -561,7 +562,7 @@ async function initializeAuthorizePORevisionPanel() {
       <div style="background:#fff; border:1px solid var(--border); border-left:3px solid ${r.revisionKind === "Cancellation" ? "#b91c1c" : "var(--accent)"}; border-radius:var(--radius); padding:16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; cursor:pointer;" onclick="toggleAPORCard(${r.requestId})">
           <div>
-            <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.95rem;">${r.poNo} <span style="font-size:0.7rem; color:var(--muted);">→ Rev ${(Number(r.revisionNumber)||1) + 1}</span></div>
+            <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.95rem;">${r.poNo} <span style="font-size:0.7rem; color:var(--muted);">→ V${(Number(r.revisionNumber)||1) + 1}</span></div>
             <div style="font-size:0.82rem; font-weight:700;">${r.vendorName || ""}</div>
             <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Drafted by ${r.requestedBy || "—"} · ${r.requestedAt ? formatDateDMY(r.requestedAt) : ""}</div>
           </div>
@@ -922,12 +923,13 @@ async function authorizePORevisionUI(requestId, confirmStale) {
     }
 
     if (data.success) {
+      checkPurchasePORevisionReminder();
       const feed = document.getElementById("apor-cards-feed");
       if (feed) { feed.style.display = "none"; feed.innerHTML = ""; }
       const notes = [];
       if ((data.staleNotes || []).length) notes.push(`${data.staleNotes.length} allocation(s) re-clamped to current PRN needs.`);
       if ((data.unwound || []).length) notes.push(`Deferred BOQ reductions completed for ${data.unwound.map(u => u.prnId).join(", ")}.`);
-      let msg = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:8px;">✅ <strong>${data.poNo}</strong> revised to Rev ${data.revisionNumber}!</div>`;
+      let msg = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:8px;">✅ <strong>${data.poNo}</strong> revised to V${data.revisionNumber}!</div>`;
       if (notes.length) msg += `<div style="font-size:0.8rem; margin-bottom:8px;">${notes.join(" ")}</div>`;
       if (data.pdfUrl) msg += `<a href="${driveLink(data.pdfUrl)}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open PDF →</a>`;
       msg += `<button onclick="document.getElementById('apor-feedback').style.display='none'; initializeAuthorizePORevisionPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another PO Revision</button>`;

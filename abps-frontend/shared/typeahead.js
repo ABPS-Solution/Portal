@@ -59,7 +59,8 @@ async function initializeProjectStatusPanel() {
   try {
     const data = await apFetch({ action: "pullLiveActiveProjectCodes" });
     window.pstatKnownProjectCodes = (data.success && data.projects) ? data.projects : [];
-  } catch (e) { window.pstatKnownProjectCodes = []; }
+    window.pstatProjectMeta = data.projectMeta || {};
+  } catch (e) { window.pstatKnownProjectCodes = []; window.pstatProjectMeta = {}; }
 }
 
 /**
@@ -209,14 +210,16 @@ async function initializeCreateBOQPanel() {
     cboqMaterialRows = [];
     cboqSpecFiles    = [];
     if (_g("cboq-customer-name"))  _g("cboq-customer-name").value  = "";
-    if (_g("cboq-product-search")) { _g("cboq-product-search").value = ""; _g("cboq-product-search").style.height = "auto"; }
+    if (_g("cboq-product-select")) _g("cboq-product-select").innerHTML = '<option value="">— Select Project First —</option>';
     if (_g("cboq-product-name"))   _g("cboq-product-name").value   = "";
+    if (_g("cboq-source-po-line-id")) _g("cboq-source-po-line-id").value = "";
     if (_g("cboq-product-rating")) { _g("cboq-product-rating").value = ""; _g("cboq-product-rating").style.height = "auto"; }
     if (_g("cboq-department"))     _g("cboq-department").value     = "";
-    if (_g("cboq-order-qty"))      _g("cboq-order-qty").value      = "1";
+    if (_g("cboq-order-qty"))      _g("cboq-order-qty").value      = "";
     if (_g("cboq-spec-doc-list"))  _g("cboq-spec-doc-list").innerHTML = "";
     if (_g("cboq-import-banner"))  { _g("cboq-import-banner").style.display = "none"; _g("cboq-import-banner").innerHTML = ""; }
     window.cboqImportSourceInfo = null;
+    resetCBOQImportSearch();
   }
 
   const formBody = _g("cboq-form-body");
@@ -237,17 +240,12 @@ async function initializeCreateBOQPanel() {
     apFetch({ action: "fetchBOQsForImport" })
   ]);
 
-  const importSelect = _g("cboq-import-select");
-  if (importSelect) {
-    if (importListResult.status === "fulfilled" && importListResult.value.success && importListResult.value.boqs.length > 0) {
-      importSelect.innerHTML = '<option value="">— Select a finalized BOQ —</option>' +
-        importListResult.value.boqs.map(b =>
-          `<option value="${b.boqId}">${b.productName} ${b.productRating} | Project: ${b.projectId} | Order Quantity: ${Math.round(Number(b.orderQuantity) || 0)}</option>`
-        ).join("");
-    } else {
-      importSelect.innerHTML = '<option value="">No finalized BOQs available to import</option>';
-    }
-  }
+  // Cached raw, not rendered into one giant <select> — with many BOQs
+  // that list becomes unusable. handleCBOQImportProductSearch filters this
+  // client-side as a typeahead instead (Product Name + Rating first, then
+  // only the Project IDs that actually have that BOQ).
+  window.cboqImportBOQList = (importListResult.status === "fulfilled" && importListResult.value.success)
+    ? (importListResult.value.boqs || []) : [];
 
   // Cache personnel for Prepared By (used when department is selected)
   if (personnelResult.status === "fulfilled" && personnelResult.value.fullPersonnelDataRecordsTree) {

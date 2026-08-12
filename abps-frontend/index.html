@@ -242,6 +242,91 @@
   .pill-group.business-potential-pills {display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;}
   .pill-group.business-potential-pills label {text-align: center; white-space: nowrap;}
 
+  /* ── Project Status swimlanes (.pstat-*) — scoped to canvas-module-project-status only ── */
+  #canvas-module-project-status { --pstat-complete: var(--accent); --pstat-active: var(--brand); --pstat-pending: var(--muted); --pstat-attention: var(--warn); }
+
+  .pstat-header-band { background: linear-gradient(135deg, var(--highlight-bg), #ffffff); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(16,24,40,.05); }
+  .pstat-header-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .pstat-header-id { font-size: 1.35rem; font-weight: 800; color: var(--brand-dk); }
+  .pstat-header-company { font-size: 0.9rem; font-weight: 600; color: var(--muted); text-align: right; }
+  .pstat-header-metrics { margin-top: 10px; font-size: 0.82rem; color: var(--muted); font-weight: 600; }
+  .pstat-header-metrics strong { color: var(--text); font-weight: 800; }
+  .pstat-header-metrics .pstat-metric-sep { margin: 0 8px; color: var(--border); }
+
+  .pstat-view-toggle { display: inline-flex; border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; margin-top: 12px; }
+  .pstat-view-toggle button { border: none; background: #fff; color: var(--muted); font-weight: 700; font-size: 0.78rem; padding: 7px 16px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+  .pstat-view-toggle button.pstat-view-active { background: var(--brand); color: #fff; }
+  .pstat-view-toggle button:not(.pstat-view-active):hover { background: var(--highlight-bg); }
+
+  .pstat-lanes-container { background: #f7f9fc; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .pstat-empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 0.9rem; background: #fff; border: 1px solid var(--border); border-radius: 10px; }
+
+  .pstat-lane { background: #fff; border: 1px solid var(--border); border-left: 4px solid var(--pstat-pending); border-radius: 10px; padding: 16px 20px; box-shadow: 0 1px 2px rgba(16,24,40,.05); transition: box-shadow 0.15s ease; }
+  .pstat-lane:hover { box-shadow: 0 4px 16px rgba(16,24,40,.10); }
+  .pstat-lane[data-accent="complete"]  { border-left-color: var(--pstat-complete); }
+  .pstat-lane[data-accent="active"]    { border-left-color: var(--pstat-active); }
+  .pstat-lane[data-accent="attention"] { border-left-color: var(--pstat-attention); }
+
+  .pstat-lane-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .pstat-lane-title { font-weight: 800; font-size: 0.98rem; color: var(--text); }
+  .pstat-lane-title .pstat-lane-rating { color: var(--brand); font-weight: 700; margin-left: 6px; }
+  .pstat-lane-meta { font-size: 0.8rem; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .pstat-lane-meta a { color: var(--brand); font-weight: 700; text-decoration: none; }
+  .pstat-lane-meta a:hover { text-decoration: underline; }
+
+  .pstat-stepper { display: flex; align-items: center; margin-bottom: 6px; }
+  .pstat-stepper-labels { display: flex; }
+  .pstat-stage { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; }
+  .pstat-connector { flex: 1; height: 2px; background: repeating-linear-gradient(to right, var(--border) 0 4px, transparent 4px 8px); }
+  .pstat-connector.pstat-connector-fill { background: var(--pstat-complete); }
+
+  .pstat-node { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--pstat-pending); background: #fff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #fff; font-weight: 800; }
+  .pstat-node.pstat-node-complete  { background: var(--pstat-complete); border-color: var(--pstat-complete); }
+  .pstat-node.pstat-node-active    { background: #fff; border-color: var(--pstat-active); }
+  .pstat-node.pstat-node-active::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--pstat-active); }
+  .pstat-node.pstat-node-attention { background: var(--pstat-attention); border-color: var(--pstat-attention); }
+
+  .pstat-stage-label { font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); margin-top: 8px; }
+  .pstat-stage-primary { font-size: 0.85rem; font-weight: 800; color: var(--text); margin-top: 2px; }
+  .pstat-stage-sub { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+  .pstat-stage[data-state="attention"] .pstat-stage-primary { color: var(--pstat-attention); }
+
+  .pstat-lane-detail { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); }
+  #pstat-results[data-view="summary"] .pstat-lane-detail { display: none; }
+
+  .pstat-detail-heading { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--brand); margin: 14px 0 8px; }
+  .pstat-detail-heading:first-child { margin-top: 0; }
+
+  .pstat-mat-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .pstat-mat-table th { text-align: left; padding: 6px 8px; background: var(--highlight-bg); font-size: 0.68rem; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .pstat-mat-table td { padding: 7px 8px; border-bottom: 1px solid #f1f5f9; }
+  .pstat-progress-track { background: #e8edf3; border-radius: 6px; height: 8px; width: 100%; overflow: hidden; min-width: 80px; }
+  .pstat-progress-fill { height: 100%; border-radius: 6px; background: var(--pstat-complete); }
+  .pstat-progress-fill.pstat-progress-partial { background: var(--pstat-active); }
+  .pstat-progress-label { font-size: 0.72rem; font-weight: 700; color: var(--muted); white-space: nowrap; margin-left: 6px; }
+  .pstat-progress-cell { display: flex; align-items: center; }
+
+  .pstat-po-list { display: flex; flex-direction: column; gap: 8px; }
+  .pstat-po-card { background: #fafbfc; border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; font-size: 0.8rem; }
+  .pstat-po-row1 { display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+  .pstat-po-row2 { color: var(--muted); font-size: 0.75rem; margin-top: 3px; display: flex; justify-content: space-between; align-items: center; }
+  .pstat-po-chip { font-size: 0.68rem; font-weight: 800; padding: 2px 9px; border-radius: 10px; white-space: nowrap; }
+  .pstat-po-chip-ontime { background: #dcfce7; color: #15803d; }
+  .pstat-po-chip-pending { background: #f1f5f9; color: var(--muted); }
+  .pstat-po-chip-overdue { background: #fee2e2; color: #b91c1c; }
+
+  .pstat-jc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+  .pstat-jc-tile { background: var(--highlight-bg); color: var(--brand); border-radius: 6px; padding: 8px 6px; font-size: 0.76rem; font-weight: 700; text-align: center; }
+  .pstat-jc-tile.pstat-jc-done { background: #dcfce7; color: #15803d; }
+
+  .pstat-scroll-wrap { overflow-x: auto; }
+
+  @media (max-width: 900px) {
+    .pstat-stage-label, .pstat-stage-sub { display: none; }
+    .pstat-header-row { flex-direction: column; }
+    .pstat-header-company { text-align: left; }
+  }
+
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -360,7 +445,7 @@
         </div>
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')"><span class="mc-label">Material List for Purchase</span></div>
+        <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')"><span class="mc-label">List of Material to Raise Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-create-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-create-po')"><span class="mc-label">Create Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-authorize-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po')"><span class="mc-label">Authorize Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-pps-tracking" onclick="navigateToPurchaseWorkspacePanel('purchase-pps-tracking')"><span class="mc-label">PPS Tracking</span></div>
@@ -398,9 +483,9 @@
       </div>
       <div class="sec-label">Raw Materials Store Outward</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-boq-increase-approvals"  onclick="navigateToStoreWorkspacePanel('boq-increase-approvals')"><span class="mc-label">Approve Job Card Increase</span></div>
-        <div class="menu-card" id="mod-store-approvals"         onclick="navigateToStoreWorkspacePanel('store-manager-approvals')"><span class="mc-label">Approve Store Tickets</span></div>
-        <div class="menu-card" id="mod-store-matrix"            onclick="switchActiveDashboardModule('store-history-matrix')"><span class="mc-label">Search Store Tickets</span></div>
+        <div class="menu-card" id="mod-boq-increase-approvals"  onclick="navigateToStoreWorkspacePanel('boq-increase-approvals')"><span class="mc-label">Approve Excess Material Request</span></div>
+        <div class="menu-card" id="mod-store-approvals"         onclick="navigateToStoreWorkspacePanel('store-manager-approvals')"><span class="mc-label">Approve Material Issue Tickets</span></div>
+        <div class="menu-card" id="mod-store-matrix"            onclick="switchActiveDashboardModule('store-history-matrix')"><span class="mc-label">Search Material Issue Tickets</span></div>
       </div>
       <div class="sec-label">Store Quantity</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -420,10 +505,12 @@
         </div>
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-store-ticket"            onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Store Ticket</span></div>
+        <div class="menu-card" id="mod-store-ticket"            onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Material Issue Ticket</span></div>
         <div class="menu-card" id="mod-jc-letterhead"           onclick="switchActiveDashboardModule('jc-letterhead')"><span class="mc-label">Job Card Letterhead</span></div>
         <div class="menu-card" id="mod-fg-add"                  onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
+        <div class="menu-card" id="mod-fg-approval"             onclick="switchActiveDashboardModule('fg-approval')"><span class="mc-label">Add to Finished Goods Store Approval</span></div>
         <div class="menu-card" id="mod-project-invoice"         onclick="switchActiveDashboardModule('project-invoice')"><span class="mc-label">Project Invoice Generation</span></div>
+        <div class="menu-card" id="mod-material-ack"            onclick="switchActiveDashboardModule('material-ack')"><span class="mc-label">Acknowledge Material Receipt</span></div>
       </div>
     </div>
 
@@ -452,6 +539,8 @@
       
       <button class="nav-btn-styled" onclick="exitStoreWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
     </div>
+
+    <div id="store-prn-revision-reminder-banner" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ A BOQ has been revised — check the <strong>Revise PRN</strong> section to see if a PRN needs revising.</div>
 
     <div id="canvas-module-store-gate-entry" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
       <h2 style="margin-bottom: 16px;">Store Gate Entry</h2>
@@ -512,7 +601,7 @@
 
     <div id="canvas-module-store-material-request" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:2px solid var(--bg); padding-bottom:10px;">
-        <h2 style="margin:0;">Create Store Ticket</h2>
+        <h2 style="margin:0;">Create Material Issue Ticket</h2>
       </div>
       <div id="store-ticket-runtime-inline-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid;"></div>    
       
@@ -615,14 +704,14 @@
     </div>
 
     <div id="canvas-module-boq-increase-approvals" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 16px;">Approve Job Card Increase Requests</h2>
+      <h2 style="margin-bottom: 16px;">Approve Excess Material Requests</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review tickets where engineers requested materials exceeding the Job Card allotted quantity. You can accept, partially accept, or reject each exceeded item.</p>
       <div id="boq-increase-approvals-feedback" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="boq-increase-approvals-queue-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>
 
     <div id="canvas-module-store-manager-approvals" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 4px;">Approve Store Tickets</h2>
+      <h2 style="margin-bottom: 4px;">Approve Material Issue Tickets</h2>
       <p style="margin:0 0 16px; font-size:0.82rem; color:var(--muted);">Actual Quantity can only be reduced below Requested Quantity, never increased.</p>
       <div id="store-approvals-runtime-inline-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="store-manager-approvals-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
@@ -758,7 +847,7 @@
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
         <h2 style="margin:0; color:var(--brand);">Add to Finished Goods Store</h2>
         <div>
-          <select id="fg-add-use-toggle" onchange="handleFGUseToggleChange(this.value)" style="border-color:var(--brand); font-weight:700; color:var(--brand); padding:6px;">
+          <select id="fg-add-use-toggle" style="border-color:var(--brand); font-weight:700; color:var(--brand); padding:6px;">
             <option value="Use in other Product">Use in other Product</option>
             <option value="Ready for Dispatch">Ready for Dispatch</option>
             <option value="Keep in FG Store">Keep in FG Store</option>
@@ -788,34 +877,7 @@
             </select>
           </div>
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-          <div>
-            <label class="field-label" style="margin-top:0;">Customer Name</label>
-            <input type="text" id="fg-add-customer" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Project ID" />
-          </div>
-          <div>
-            <label class="field-label" style="margin-top:0;">Product Name *</label>
-            <div style="position:relative;">
-              <input type="text" id="fg-add-product-search" disabled
-                placeholder="Type to search product name..." 
-                autocomplete="off"
-                oninput="handleFGProductSearch(this.value)"
-                style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
-              <div id="fg-product-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 var(--radius) var(--radius); max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
-            </div>
-            <input type="hidden" id="fg-add-product-name" />
-          </div>
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-          <div>
-            <label class="field-label" style="margin-top:0;" id="fg-add-item-code-label">Item Code</label>
-            <input type="text" id="fg-add-item-code" readonly style="padding:9px; background:#e0f2fe; color:var(--brand); font-family:monospace; font-weight:800; cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Product Name" />
-          </div>
-          <div>
-            <label class="field-label" style="margin-top:0;">Product Rating</label>
-            <input type="text" id="fg-add-rating" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Product Name (blank if this product has no rating)" />
-          </div>
-        </div>
+        <input type="hidden" id="fg-add-customer" />
         <div style="margin-bottom:14px; position:relative;">
           <label class="field-label" id="fg-add-boq-label" style="margin-top:0; color:var(--muted);">BOQ ID *</label>
           <div id="fg-add-boq-display" data-disabled="1" onclick="toggleFGBOQDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
@@ -824,6 +886,17 @@
           </div>
           <div id="fg-add-boq-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           <input type="hidden" id="fg-add-boq" value="" />
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+          <div>
+            <label class="field-label" style="margin-top:0;">Product Name *</label>
+            <input type="text" id="fg-add-product-name-display" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from selected BOQ ID" />
+            <input type="hidden" id="fg-add-product-name" />
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Product Rating</label>
+            <input type="text" id="fg-add-rating" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from selected BOQ ID" />
+          </div>
         </div>
         <div style="margin-bottom:14px; position:relative;">
           <label class="field-label" id="fg-add-jobcard-label" style="margin-top:0; color:var(--muted);">Job Card Number *</label>
@@ -852,17 +925,26 @@
         </div>
 
         <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-bottom:16px;">
-          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:12px; letter-spacing:0.5px;">Quality Assurance</div>
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:12px; letter-spacing:0.5px;">FG Documents</div>
 
           <!-- Production uploads -->
           <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:#7c3aed; letter-spacing:0.5px; margin-bottom:8px;">Production Documents</div>
-          <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Job Card Sheet * <span style="color:#b91c1c;">(required)</span></label>
               <div class="card-box" id="fg-add-jobcard-sheet-dropzone" onclick="document.getElementById('fg-add-jobcard-sheet-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Job Card Sheet
               </div>
-              <input type="file" id="fg-add-jobcard-sheet-input" hidden onchange="handleFGFileSelection(this, 'jobCardSheet')" />
+              <input type="file" id="fg-add-jobcard-sheet-input" hidden onchange="handleFGFileSelectionMulti(this, 'jobCardSheet')" />
+              <div id="fg-add-jobcard-sheet-filelist"></div>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Packed Products Images * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="fg-add-packed-images-dropzone" onclick="document.getElementById('fg-add-packed-images-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Packed Products Images
+              </div>
+              <input type="file" id="fg-add-packed-images-input" hidden onchange="handleFGFileSelectionMulti(this, 'packedProductsImages')" />
+              <div id="fg-add-packed-images-filelist"></div>
             </div>
           </div>
 
@@ -874,21 +956,24 @@
               <div class="card-box" id="fg-add-test-cert-dropzone" onclick="document.getElementById('fg-add-test-cert-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Test Certificate
               </div>
-              <input type="file" id="fg-add-test-cert-input" hidden onchange="handleFGFileSelection(this, 'testCert')" />
+              <input type="file" id="fg-add-test-cert-input" hidden onchange="handleFGFileSelectionMulti(this, 'testCert')" />
+              <div id="fg-add-test-cert-filelist"></div>
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">In Process Inspection Sheet * <span style="color:#b91c1c;">(required)</span></label>
               <div class="card-box" id="fg-add-inprocess-dropzone" onclick="document.getElementById('fg-add-inprocess-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach In Process Inspection Sheet
               </div>
-              <input type="file" id="fg-add-inprocess-input" hidden onchange="handleFGFileSelection(this, 'inProcessInspection')" />
+              <input type="file" id="fg-add-inprocess-input" hidden onchange="handleFGFileSelectionMulti(this, 'inProcessInspection')" />
+              <div id="fg-add-inprocess-filelist"></div>
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">Inspection Clearance <span style="color:var(--muted);">(optional)</span></label>
               <div class="card-box" id="fg-add-inspection-dropzone" onclick="document.getElementById('fg-add-inspection-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Inspection Clearance
               </div>
-              <input type="file" id="fg-add-inspection-input" hidden onchange="handleFGFileSelection(this, 'inspectionClearance')" />
+              <input type="file" id="fg-add-inspection-input" hidden onchange="handleFGFileSelectionMulti(this, 'inspectionClearance')" />
+              <div id="fg-add-inspection-filelist"></div>
             </div>
           </div>
 
@@ -898,21 +983,30 @@
               <div class="card-box" id="fg-add-warranty-dropzone" onclick="document.getElementById('fg-add-warranty-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Warranty Card
               </div>
-              <input type="file" id="fg-add-warranty-input" hidden onchange="handleFGFileSelection(this, 'warrantyCard')" />
+              <input type="file" id="fg-add-warranty-input" hidden onchange="handleFGFileSelectionMulti(this, 'warrantyCard')" />
+              <div id="fg-add-warranty-filelist"></div>
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">Other Documents <span style="color:var(--muted);">(optional)</span></label>
               <div class="card-box" id="fg-add-otherdocs-dropzone" onclick="document.getElementById('fg-add-otherdocs-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Other Documents
               </div>
-              <input type="file" id="fg-add-otherdocs-input" hidden onchange="handleFGFileSelection(this, 'otherDocuments')" />
+              <input type="file" id="fg-add-otherdocs-input" hidden onchange="handleFGFileSelectionMulti(this, 'otherDocuments')" />
+              <div id="fg-add-otherdocs-filelist"></div>
             </div>
           </div>
 
-          <div style="display:grid; grid-template-columns:1fr; gap:14px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Q/A Done *</label>
               <select id="fg-add-qa-done" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); max-width:260px;">
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Packing Quality Confirmation *</label>
+              <select id="fg-add-packing-quality" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); max-width:260px;">
                 <option value="No">No</option>
                 <option value="Yes">Yes</option>
               </select>
@@ -925,6 +1019,20 @@
           <button class="nav-btn-styled" id="fg-add-submit-btn" disabled onclick="submitFGAddItem()" style="background:var(--accent); padding:8px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;">Add to Finished Goods Store</button>
         </div>
       </div>
+    </div>
+
+    <div id="canvas-module-fg-approval" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="margin:0 0 6px; color:var(--brand);">Add to Finished Goods Store Approval</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review the Production and Quality Assurance documents uploaded for each submission before it becomes available in the Finished Goods Store.</p>
+      <div id="fg-approval-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="fg-approval-queue-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
+    </div>
+
+    <div id="canvas-module-material-ack" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 style="margin:0 0 6px; color:var(--brand);">Acknowledge Material Receipt</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Confirm that material released against an approved Material Issue Ticket was physically received. This is a record only — quantities and stock are not affected here.</p>
+      <div id="material-ack-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="material-ack-queue-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
     </div>
 
     <div id="canvas-module-project-invoice" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
@@ -968,7 +1076,7 @@
 
     <div id="canvas-module-store-history-matrix" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
       
-      <h2 style="margin-bottom: 16px;">Search Store Tickets</h2>
+      <h2 style="margin-bottom: 16px;">Search Material Issue Tickets</h2>
       <div style="background: var(--highlight-bg); border: 1.5px solid var(--border); border-left: 4px solid var(--brand); padding: 16px; border-radius: var(--radius); margin-bottom: 16px; text-align: left;">
         <div style="display: flex; flex-wrap: wrap; gap: 24px; width: 100%;">
           
@@ -1069,8 +1177,8 @@
             <option value="Production Return">Production Return</option>
             <option value="Count Correction">Count Correction</option>
             <option value="Found Stock">Found Stock</option>
-            <option value="Blocked → Restricted">Blocked → Restricted</option>
-            <option value="Blocked → RM Store">Blocked → RM Store</option>
+            <option value="Blocked → Restricted">Spare Store Blocked → Spare Store Restricted</option>
+            <option value="Blocked → RM Store">Spare Store Blocked → RM Store</option>
           </select>
         </div>
         <div id="sweep-material-search-wrapper" style="position:relative;">
@@ -1152,7 +1260,7 @@
     <h2 style="color:var(--brand); margin:0 0 6px 0;">Project Status</h2>
     <div style="display:flex; gap:10px; align-items:flex-end; margin-bottom:20px; position:relative; max-width:520px;">
       <div style="flex:1; position:relative;">
-        <label class="field-label" style="margin-top:0;">Project ID</label>
+        <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
         <input type="text" id="pstat-project-input" placeholder="Type Project ID..." autocomplete="off"
           oninput="handlePstatProjectInput(this.value)" onkeydown="if(event.key==='Enter')runProjectStatusSearch()"
           style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
@@ -1160,19 +1268,21 @@
       </div>
       <button class="nav-btn-styled" style="background:var(--accent); padding:9px 20px; font-weight:700;" onclick="runProjectStatusSearch()">Search</button>
     </div>
-    <div id="pstat-results" style="display:none;">
-      <div style="margin-bottom:24px;">
-        <h3 style="color:#2563eb; font-size:1rem; margin-bottom:10px;">Design Department Status</h3>
-        <div id="pstat-design-zone"></div>
+    <div id="pstat-results" data-view="summary" style="display:none;">
+      <div class="pstat-header-band">
+        <div class="pstat-header-row">
+          <div>
+            <div class="pstat-header-id" id="pstat-header-id"></div>
+          </div>
+          <div class="pstat-header-company" id="pstat-header-company"></div>
+        </div>
+        <div class="pstat-header-metrics" id="pstat-header-metrics"></div>
+        <div class="pstat-view-toggle">
+          <button type="button" id="pstat-view-btn-summary" class="pstat-view-active" onclick="setPstatView('summary')">Summary</button>
+          <button type="button" id="pstat-view-btn-detail" onclick="setPstatView('detail')">Full Detail</button>
+        </div>
       </div>
-      <div style="margin-bottom:24px;">
-        <h3 style="color:#2563eb; font-size:1rem; margin-bottom:10px;">Purchase Department Status</h3>
-        <div id="pstat-purchase-zone"></div>
-      </div>
-      <div style="margin-bottom:8px;">
-        <h3 style="color:#2563eb; font-size:1rem; margin-bottom:10px;">Production Department Status</h3>
-        <div id="pstat-production-zone"></div>
-      </div>
+      <div class="pstat-lanes-container" id="pstat-lanes-container"></div>
     </div>
   </div>
 
@@ -1190,13 +1300,14 @@
       <button id="mc-pill-inactive" class="nav-btn-styled" onclick="switchMcStatus('Inactive')" style="padding:6px 16px;">Inactive</button>
       <button id="mc-pill-completed" class="nav-btn-styled" onclick="switchMcStatus('Completed')" style="padding:6px 16px;">Completed</button>
     </div>
-    <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+    <table id="mc-list-table" style="width:100%; border-collapse:collapse; font-size:0.85rem;">
       <thead><tr style="background:var(--highlight-bg); text-align:left;">
         <th style="padding:8px;">Project ID</th><th style="padding:8px;">Company Name</th>
         <th style="padding:8px;">Delivery Date</th><th style="padding:8px;">Action</th>
       </tr></thead>
       <tbody id="mc-list-body"></tbody>
     </table>
+    <div id="mc-active-cards-container" style="display:none;"></div>
   </div>
 
   <div id="canvas-module-tour-expense" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
@@ -1261,20 +1372,28 @@
       <div id="cboq-import-section" style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:var(--radius); padding:16px; margin-bottom:16px;">
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#6d28d9; margin-bottom:8px; letter-spacing:0.5px;">Import an Existing BOQ (Optional)</div>
         <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Select a finalized BOQ for a similar product to pre-fill the material rows below, instead of starting from scratch.</p>
-        <div style="display:grid; grid-template-columns:2fr auto; gap:10px; align-items:end;">
-          <div>
+        <div style="display:grid; grid-template-columns:2fr 2fr auto; gap:10px; align-items:end;">
+          <div style="position:relative;">
             <label class="field-label" style="margin-top:0;">Search Product Name + Rating</label>
-            <select id="cboq-import-select" style="padding:7px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
-              <option value="">— Loading BOQs... —</option>
+            <input type="text" id="cboq-import-product-search" placeholder="Type to search product name..." autocomplete="off"
+              oninput="handleCBOQImportProductSearch(this.value)"
+              style="padding:7px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
+            <div id="cboq-import-product-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 var(--radius) var(--radius); max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Project ID</label>
+            <select id="cboq-import-project-select" disabled onchange="handleCBOQImportProjectChange(this.value)" style="padding:7px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; background:#f1f5f9; color:var(--muted);">
+              <option value="">— Select Product First —</option>
             </select>
           </div>
-          <button class="nav-btn-styled" id="cboq-import-btn" onclick="importCBOQFromExisting()" style="background:#6d28d9; color:#fff; padding:9px 18px; font-weight:700;">Import BOQ</button>
+          <button class="nav-btn-styled" id="cboq-import-btn" disabled onclick="importCBOQFromExisting()" style="background:#6d28d9; color:#fff; padding:9px 18px; font-weight:700; opacity:0.5; cursor:not-allowed;">Import BOQ</button>
         </div>
       </div>
       <div id="cboq-import-banner" style="display:none; background:#f0fdf4; border-left:4px solid #16a34a; color:#15803d; padding:10px 14px; border-radius:var(--radius); margin-bottom:16px; font-size:0.85rem; font-weight:600;"></div>
 
       <!-- Header Fields -->
       <div id="cboq-form-body">
+        <div id="cboq-pending-products-banner" style="display:none; background:#fffbeb; border-left:4px solid #f59e0b; color:#92400e; padding:10px 14px; border-radius:var(--radius); margin-bottom:16px; font-size:0.85rem; font-weight:600;"></div>
         <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
           <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px; letter-spacing:0.5px;">BOQ Header Information</div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
@@ -1296,15 +1415,11 @@
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Product Name *</label>
-              <div style="position:relative;">
-                <textarea id="cboq-product-search" disabled rows="1"
-                  placeholder="Type to search product name..."
-                  autocomplete="off"
-                  oninput="handleCBOQProductSearch(this.value); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
-                  style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; resize:none; overflow:hidden; font-family:inherit; font-size:inherit; line-height:1.4; display:block; min-height:38px;"></textarea>
-                <div id="cboq-product-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 var(--radius) var(--radius); max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
-              </div>
+              <select id="cboq-product-select" disabled onchange="handleCBOQProductSelectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+                <option value="">— Select Project First —</option>
+              </select>
               <input type="hidden" id="cboq-product-name" />
+              <input type="hidden" id="cboq-source-po-line-id" />
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">Product Rating</label>
@@ -1313,8 +1428,8 @@
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
-              <label class="field-label" style="margin-top:0;">Order Quantity (No. of Sets) *</label>
-              <input type="number" id="cboq-order-qty" min="1" value="1" disabled oninput="updateCBOQTotals()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+              <label class="field-label" style="margin-top:0;">Current Manufacturing Clearance Quantity (No. of Sets) *</label>
+              <input type="number" id="cboq-order-qty" min="1" value="" readonly oninput="updateCBOQTotals()" style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Product Name" />
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">Date</label>
@@ -1608,9 +1723,11 @@
       <div id="purchase-top-bar-left" style="grid-column:1; display:flex; align-items:center; gap:10px;">
         <button class="nav-btn-styled" id="material-list-sync-btn" onclick="loadMaterialListForPurchase()" style="display:none; background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Refresh</button>
       </div>
-      <span id="purchase-top-bar-title" style="grid-column:2; display:none; font-size:1rem; font-weight:700; color:var(--text); text-align:center; white-space:nowrap;">Material List for Purchase</span>
+      <span id="purchase-top-bar-title" style="grid-column:2; display:none; font-size:1rem; font-weight:700; color:var(--text); text-align:center; white-space:nowrap;">List of Material to Raise Purchase Order</span>
       <button class="nav-btn-styled" onclick="exitPurchaseWorkspacePanelBackToMenu()" style="grid-column:3; justify-self:end;">Return to Main Dashboard</button>
     </div>
+
+    <div id="purchase-po-revision-reminder-banner" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ A PRN has been revised — check the <strong>Revise PO</strong> section to see if a Purchase Order needs revising.</div>
 
     <!-- PRN CANVAS -->
     <div id="canvas-module-purchase-prn" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
@@ -1749,9 +1866,9 @@
 
     <div id="canvas-module-purchase-pps-tracking" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 style="color:var(--brand); margin:0 0 6px 0;">PPS Tracking</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Search a Project to see its PRNs and the Purchase Orders linked to each — with expected vs. actual delivery tracking. Add an Action Plan per line as needed.</p>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Search a Project to see its PRNs and the Purchase Orders linked to each — with expected vs. actual delivery tracking.</p>
       <div id="pps-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
-      <div style="display:grid; grid-template-columns:2fr 1fr 3fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+      <div style="display:grid; grid-template-columns:2fr 2fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
           <div style="position:relative;">
@@ -1763,17 +1880,11 @@
           </div>
         </div>
         <div>
-          <label class="field-label" style="margin-top:0; color:var(--brand);">PRN Status *</label>
-          <select id="pps-status-select" onchange="loadPPSPRNList()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
-            <option value="Pending">Pending</option>
-            <option value="Completed">Completed</option>
-          </select>
-        </div>
-        <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
           <select id="pps-prn-select" onchange="loadPPSForPRN()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
         </div>
       </div>
+      <div id="pps-prn-header" style="display:none; margin-bottom:10px; font-size:0.85rem;"></div>
       <div id="pps-results-body"></div>
     </div>
 
@@ -2120,7 +2231,7 @@
             <div class="dd-stat-label" style="color:var(--muted); font-weight:700;">Coming Soon</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Pending Job Card Increases</div>
+            <div class="dd-stat-label">Pending Excess Material Requests</div>
             <div class="dd-stat-val" id="sd-s-boqinc" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card">
@@ -2221,7 +2332,7 @@
         <!-- ROW 2: Material & Operations — 5 cards -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 13%;">
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Store Tickets Created</div>
+            <div class="dd-stat-label">Material Issue Tickets Created</div>
             <div class="dd-stat-val" id="pd2-s-tickets">—</div>
           </div>
           <div class="dd-stat-card">
@@ -2230,7 +2341,7 @@
             <div class="dd-stat-sub" id="pd2-s-boqutil-sub">avg across active projects</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Job Card Increase Requests Pending</div>
+            <div class="dd-stat-label">Excess Material Requests Pending</div>
             <div class="dd-stat-val" id="pd2-s-jc-increase" style="color:#b91c1c;">—</div>
             <div class="dd-stat-sub">live · all projects</div>
           </div>
@@ -2680,6 +2791,18 @@
             </div>
             <div class="card-box" id="purchase-order-upload-box" onclick="document.getElementById('purchase-order-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Purchase Order</div>
             <input type="file" id="purchase-order-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'purchase-order-upload-box', 'Purchase Order Added ✅')" />
+
+            <div style="margin-top: 12px;">
+              <label class="field-label">Order Acceptance Sent Date *</label>
+              <input type="date" lang="en-GB" id="purchase-order-acceptance-date" style="padding: 8px; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
+            </div>
+            <div style="margin-top: 12px;">
+              <label class="field-label">Special Requirement <span style="color:var(--muted); font-weight:400;">(optional)</span></label>
+              <input type="text" id="purchase-order-special-requirement" placeholder="Any special requirement for this order..." style="padding: 8px; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
+            </div>
+            <div class="card-box" id="purchase-order-contract-review-box" onclick="document.getElementById('purchase-order-contract-review-file').click()" style="margin-top: 12px; padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Contract Review Document *</div>
+            <input type="file" id="purchase-order-contract-review-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'purchase-order-contract-review-box', 'Contract Review Document Added ✅')" />
+
             <button class="nav-btn-styled" id="btn-ops-purchase-order-submit" style="margin-top: 14px; width: 100%; padding: 10px;" onclick="executeMarketingOperationsDocumentCommit('PURCHASE_ORDER')">Process Purchase Order with AI</button>
           </div>
         </div>
@@ -3234,7 +3357,9 @@
 <script src="production/job-cards.js"></script>
 <script src="production/job-card-sheet.js"></script>
 <script src="production/finished-goods.js"></script>
+<script src="production/fg-approval.js"></script>
 <script src="production/project-invoice.js"></script>
+<script src="production/material-acknowledgement.js"></script>
 <script src="production/production-dashboard.js"></script>
 <script src="accounts/tour-expense.js"></script>
 </body>

@@ -1,3 +1,10 @@
+// DEAD CODE: renderPstatPurchase / renderPstatOnePps rendered the old
+// Project Status Purchase zone (per-PRN table with pipe-separated PO text
+// crammed into one cell), fed the sequential await-in-loop that fired one
+// fetchPPSForPRN call per PRN. Project Status now builds per-BOQ swimlanes
+// from fetchProjectPPSBatch instead (see project/project-status.js). Kept
+// here rather than deleted per CLAUDE.md rule 6 — nothing calls these two
+// functions anymore.
 async function renderPstatPurchase(data) {
   const zone = document.getElementById("pstat-purchase-zone");
   if (!data.success) { zone.innerHTML = `<div style="color:var(--warn); padding:12px;">${data.error}</div>`; return; }
@@ -64,8 +71,8 @@ function renderPstatOnePps(elId, prn, ppsData) {
 async function initializePPSTrackingPanel() {
   const prnSel = document.getElementById("pps-prn-select");
   if (prnSel) prnSel.innerHTML = `<option value="">— Select a project first —</option>`;
-  const statusSel = document.getElementById("pps-status-select");
-  if (statusSel) statusSel.value = "";
+  const header = document.getElementById("pps-prn-header");
+  if (header) header.style.display = "none";
   const sel = document.getElementById("pps-project-select-ta-input");
   sel.placeholder = "Loading projects...";
   try {
@@ -83,18 +90,21 @@ async function initializePPSTrackingPanel() {
 
 async function loadPPSPRNList() {
   const projectId = document.getElementById("pps-project-select-ta-input").value;
-  const prnStatus = document.getElementById("pps-status-select").value;
   const prnSel = document.getElementById("pps-prn-select");
   const body = document.getElementById("pps-results-body");
+  const header = document.getElementById("pps-prn-header");
   body.innerHTML = "";
+  if (header) header.style.display = "none";
   if (!projectId) { prnSel.innerHTML = `<option value="">— Select a project first —</option>`; return; }
 
   prnSel.innerHTML = `<option value="">Loading…</option>`;
   try {
-    const data = await apFetch({ action: "fetchPRNsByProjectAndStatus", projectId, prnStatus });
+    const data = await apFetch({ action: "fetchPRNsByProjectAndStatus", projectId });
     const prns = (data.success ? (data.prns || []) : []);
+    window.ppsPrnListCache = {};
+    prns.forEach(p => { window.ppsPrnListCache[p.prnId] = p; });
     if (prns.length === 0) {
-      prnSel.innerHTML = `<option value="">No ${prnStatus.toLowerCase()} PRNs for this project</option>`;
+      prnSel.innerHTML = `<option value="">No PRNs for this project</option>`;
       return;
     }
     prnSel.innerHTML = `<option value="">— Select PRN —</option>` +
@@ -107,8 +117,16 @@ async function loadPPSPRNList() {
 async function loadPPSForPRN() {
   const prnId = document.getElementById("pps-prn-select").value;
   const body = document.getElementById("pps-results-body");
+  const header = document.getElementById("pps-prn-header");
   document.getElementById("pps-feedback").style.display = "none";
-  if (!prnId) { body.innerHTML = ""; return; }
+  if (!prnId) { body.innerHTML = ""; if (header) header.style.display = "none"; return; }
+
+  if (header) {
+    const prn = (window.ppsPrnListCache || {})[prnId];
+    header.style.display = "block";
+    header.innerHTML = `<span style="font-family:monospace; font-weight:800; color:var(--brand);">${prnId}</span>` +
+      (prn && prn.status ? ` <span style="font-size:0.68rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:3px;">${prn.status}</span>` : "");
+  }
 
   body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading PPS tracking...</div>`;
   try {
@@ -148,18 +166,6 @@ async function loadPPSForPRN() {
       const flag = m.awaitingPoRevision
         ? `<div style="font-size:0.6rem; font-weight:800; color:#b45309; margin-top:3px;">⏳ AWAITING PO REVISION</div>` : "";
 
-      const actionRows = pos.map(po => `
-        <tr style="background:#fafbfc; border-bottom:1px solid #f1f5f9;">
-          <td colspan="4" style="padding:4px 8px 4px 26px; font-size:0.72rem; color:var(--muted);">
-            ↳ <span style="font-family:monospace; font-weight:700; color:var(--brand);">${esc(po.poNo)}</span> · ${esc(po.vendorName || "")} · ${fmt(po.receivedQty)}/${fmt(po.orderedQty)} received
-          </td>
-          <td colspan="5" style="padding:4px 8px;">
-            <input type="text" class="pps-action-input" value="${(po.actionPlan||'').replace(/"/g,'&quot;')}"
-              data-prnid="${esc(prnId)}" data-itemcode="${esc(m.itemCode)}" data-pono="${esc(po.poNo)}"
-              placeholder="Add action plan…" style="width:100%; padding:4px 6px; border:1px solid var(--border); border-radius:3px; font-size:0.72rem;">
-          </td>
-        </tr>`).join("");
-
       return `
         <tr style="border-bottom:1px solid #e2e8f0;">
           <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${esc(m.itemCode)}${flag}</td>
@@ -172,7 +178,7 @@ async function loadPPSForPRN() {
           <td style="padding:8px; text-align:center;">${poCell}</td>
           <td style="padding:8px; text-align:center;">${dateCell}</td>
           <td style="padding:8px; text-align:center; min-width:110px;">${statusCell}</td>
-        </tr>${actionRows}`;
+        </tr>`;
     }).join("");
 
     body.innerHTML = `
@@ -192,49 +198,9 @@ async function loadPPSForPRN() {
           </tr></thead>
           <tbody>${rowsHtml}</tbody>
         </table>
-      </div>
-      <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-        <button class="nav-btn-styled" onclick="savePPSActionPlans()" style="background:var(--accent); color:#fff; font-weight:700; padding:8px 20px;">Save Action Plans</button>
       </div>`;
   } catch (e) {
     body.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
-  }
-}
-
-// Was previously declared twice in this file — the second declaration
-// silently won (JS keeps the last `function` decl of a given name in
-// scope), and it sent `poNumber` where the backend's updatePPSActionPlan
-// route (routes/purchase.js) reads `u.poNo` — so the WHERE clause bound
-// po_no = NULL, matched zero rows, and the route returned success:true
-// anyway (it never checks rowCount). Every "Save Action Plans" click
-// showed a success banner while silently saving nothing. Fixed to the
-// field name the backend actually reads; the dead first declaration
-// (which had the right field name but the plainer UI) was removed.
-async function savePPSActionPlans(projectId) {
-  const inputs = document.querySelectorAll(".pps-action-input");
-  const updates = Array.from(inputs).map(inp => ({
-    rowNum: parseInt(inp.dataset.rownum, 10),
-    prnId: inp.dataset.prnid,
-    itemCode: inp.dataset.itemcode,
-    poNo: inp.dataset.pono,
-    actionPlan: inp.value
-  }));
-  const banner = document.getElementById("pps-feedback");
-  showBlockingOverlay("Saving action plans...");
-  try {
-    const data = await apFetch({ action: "updatePPSActionPlan", activeEngineer: appActiveOperatorIdentityString, updates, operatorName: appActiveOperatorIdentityString });
-    hideBlockingOverlay();
-    if (data.success) {
-      banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius); font-weight:600;";
-      banner.textContent = "Action plans saved.";
-      banner.scrollIntoView({ behavior:"smooth", block:"center" });
-    } else {
-      banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
-      banner.textContent = "Error: " + data.error;
-    }
-  } catch(e) {
-    hideBlockingOverlay();
-    alert("Network error: " + e.message);
   }
 }
 

@@ -1,10 +1,109 @@
 let cboqSpecFiles = [];
 let targetBOQUploadFileRawObject = null;
 let cboqMaterialRows = [];
+// Search Product Name + Rating first (deduped across every finalized BOQ,
+// typeahead-style like the Product Name * field below) — Project ID only
+// activates and lists the projects that actually have that product+rating
+// once one is picked, since with many BOQs a flat <select> of every one
+// became unusable.
+function handleCBOQImportProductSearch(query) {
+  const dropdown = document.getElementById("cboq-import-product-dropdown");
+  const list = window.cboqImportBOQList || [];
+  resetCBOQImportResolution();
+
+  if (!query || query.trim().length < 1) { dropdown.style.display = "none"; return; }
+  const q = query.toLowerCase();
+  const seen = new Set();
+  const matches = [];
+  for (const b of list) {
+    const combined = `${b.productName || ""} ${b.productRating || ""}`.trim();
+    const key = combined.toLowerCase();
+    if (!key.includes(q) || seen.has(key)) continue;
+    seen.add(key);
+    matches.push({ productName: b.productName, productRating: b.productRating, combined });
+    if (matches.length >= 10) break;
+  }
+
+  if (matches.length === 0) { dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">No matching BOQ found.</div>`; dropdown.style.display = "block"; return; }
+
+  dropdown.innerHTML = matches.map(m => `
+    <div onclick="selectCBOQImportProduct('${(m.productName||'').replace(/'/g,"\\'")}', '${(m.productRating||'').replace(/'/g,"\\'")}')"
+      style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      ${m.productName}${m.productRating ? ` <span style="color:var(--brand); font-weight:700;">${m.productRating}</span>` : ""}
+    </div>`).join("");
+  dropdown.style.display = "block";
+}
+
+function selectCBOQImportProduct(productName, productRating) {
+  document.getElementById("cboq-import-product-search").value = productRating ? `${productName} ${productRating}` : productName;
+  document.getElementById("cboq-import-product-dropdown").style.display = "none";
+  window.cboqImportSelectedProduct = { productName, productRating };
+
+  const projSelect = document.getElementById("cboq-import-project-select");
+  const matches = (window.cboqImportBOQList || []).filter(b => b.productName === productName && (b.productRating || "") === (productRating || ""));
+  if (matches.length === 0) {
+    projSelect.innerHTML = '<option value="">— No projects found —</option>';
+    projSelect.disabled = true;
+    projSelect.style.background = "#f1f5f9"; projSelect.style.color = "var(--muted)";
+    return;
+  }
+  projSelect.innerHTML = '<option value="">— Select Project ID —</option>' +
+    matches.map(b => `<option value="${b.projectId}">${b.projectId} (Order Qty: ${Math.round(Number(b.orderQuantity) || 0)})</option>`).join("");
+  projSelect.disabled = false;
+  projSelect.style.background = "#fff"; projSelect.style.color = "var(--text)";
+  const importBtn = document.getElementById("cboq-import-btn");
+  importBtn.disabled = true; importBtn.style.opacity = "0.5"; importBtn.style.cursor = "not-allowed";
+}
+
+function handleCBOQImportProjectChange(projectId) {
+  const importBtn = document.getElementById("cboq-import-btn");
+  const sel = window.cboqImportSelectedProduct;
+  if (!projectId || !sel) {
+    window.cboqImportResolvedBoqId = null;
+    importBtn.disabled = true; importBtn.style.opacity = "0.5"; importBtn.style.cursor = "not-allowed";
+    return;
+  }
+  const match = (window.cboqImportBOQList || []).find(b =>
+    b.productName === sel.productName && (b.productRating || "") === (sel.productRating || "") && b.projectId === projectId);
+  window.cboqImportResolvedBoqId = match ? match.boqId : null;
+  const enabled = !!window.cboqImportResolvedBoqId;
+  importBtn.disabled = !enabled;
+  importBtn.style.opacity = enabled ? "1" : "0.5";
+  importBtn.style.cursor = enabled ? "pointer" : "not-allowed";
+}
+
+function resetCBOQImportResolution() {
+  window.cboqImportSelectedProduct = null;
+  window.cboqImportResolvedBoqId = null;
+  const projSelect = document.getElementById("cboq-import-project-select");
+  if (projSelect) {
+    projSelect.innerHTML = '<option value="">— Select Product First —</option>';
+    projSelect.disabled = true;
+    projSelect.style.background = "#f1f5f9"; projSelect.style.color = "var(--muted)";
+  }
+  const importBtn = document.getElementById("cboq-import-btn");
+  if (importBtn) { importBtn.disabled = true; importBtn.style.opacity = "0.5"; importBtn.style.cursor = "not-allowed"; }
+}
+
+function resetCBOQImportSearch() {
+  const searchEl = document.getElementById("cboq-import-product-search");
+  if (searchEl) searchEl.value = "";
+  const dropdown = document.getElementById("cboq-import-product-dropdown");
+  if (dropdown) dropdown.style.display = "none";
+  resetCBOQImportResolution();
+}
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#cboq-import-product-search") && !e.target.closest("#cboq-import-product-dropdown")) {
+    const d = document.getElementById("cboq-import-product-dropdown");
+    if (d) d.style.display = "none";
+  }
+});
+
 async function importCBOQFromExisting() {
-  const select = document.getElementById("cboq-import-select");
-  const boqId = select.value;
-  if (!boqId) { alert("Please select a BOQ to import first."); return; }
+  const boqId = window.cboqImportResolvedBoqId;
+  if (!boqId) { alert("Please select a Product Name + Rating and a Project ID to import first."); return; }
 
   const btn = document.getElementById("cboq-import-btn");
   btn.disabled = true;
@@ -33,23 +132,12 @@ async function importCBOQFromExisting() {
     }));
     renderCBOQMaterialRows();
 
-    // Auto-fill Product Name / Product Rating from the imported BOQ —
-    // previously left blank, forcing the user to re-select the product
-    // via the search box even though they'd just picked one to import from.
-    const productSearchEl = document.getElementById("cboq-product-search");
-    const productNameEl = document.getElementById("cboq-product-name");
-    const productRatingEl = document.getElementById("cboq-product-rating");
-    if (productSearchEl) {
-      productSearchEl.value = data.sourceProductName || "";
-      productSearchEl.disabled = false; // editable after import, even if a project hasn't been picked yet
-      productSearchEl.style.height = "auto"; productSearchEl.style.height = productSearchEl.scrollHeight + "px";
-    }
-    if (productNameEl) productNameEl.value = data.sourceProductName || "";
-    if (productRatingEl) { productRatingEl.value = data.sourceProductRating || ""; productRatingEl.style.height = "auto"; productRatingEl.style.height = productRatingEl.scrollHeight + "px"; }
-
+    // Product Name / Rating are NOT auto-filled from the imported BOQ —
+    // they're still gated by the locked dropdown, selected from whatever
+    // products are currently allowed for this project.
     const banner = document.getElementById("cboq-import-banner");
     banner.style.display = "block";
-    banner.textContent = `This BOQ is imported from Project ID: ${data.sourceProjectId} and for Product: ${data.sourceProductName} ${data.sourceProductRating}. Make the necessary changes to it.`;
+    banner.textContent = `Material rows imported from Project ID: ${data.sourceProjectId}, Product: ${data.sourceProductName} ${data.sourceProductRating}. Select the Product Name from the allowed list above.`;
 
     window.cboqImportSourceInfo = { boqId, sourceProjectId: data.sourceProjectId, sourceProductName: data.sourceProductName, sourceProductRating: data.sourceProductRating };
   } catch(e) {
@@ -64,22 +152,109 @@ function handleCBOQProjectChange(projectId) {
   const meta = window.cboqProjectMeta && window.cboqProjectMeta[projectId];
   document.getElementById("cboq-customer-name").value = meta ? (meta.companyName || "") : "";
 
-  const fieldsToToggle = ["cboq-product-search", "cboq-department", "cboq-order-qty"];
+  const fieldsToToggle = ["cboq-product-select", "cboq-department"];
   const addRowBtn = document.getElementById("cboq-add-row-btn");
   const submitBtn = document.getElementById("cboq-submit-btn");
 
+  // Product Name/Rating and the derived Order Quantity are reset every
+  // time the project changes — they're re-populated from
+  // fetchAllowedBoqProducts, never carried over from a previous project.
+  resetCBOQProductSelection();
+
   if (projectId) {
     fieldsToToggle.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = false; });
-    if (addRowBtn) { addRowBtn.disabled = false; addRowBtn.style.opacity = "1"; addRowBtn.style.cursor = "pointer"; }
     if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
     loadItemCodeCatalogIntoCache();
+    loadCboqAllowedProducts(projectId);
   } else {
     fieldsToToggle.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = true; });
     const pb = document.getElementById("cboq-prepared-by");
     if (pb) { pb.disabled = true; pb.style.opacity = "0.5"; pb.innerHTML = '<option value="">— Select Department First —</option>'; }
     if (addRowBtn) { addRowBtn.disabled = true; addRowBtn.style.opacity = "0.5"; addRowBtn.style.cursor = "not-allowed"; }
     if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = "0.5"; submitBtn.style.cursor = "not-allowed"; }
+    const banner = document.getElementById("cboq-pending-products-banner");
+    if (banner) banner.style.display = "none";
   }
+}
+
+function resetCBOQProductSelection() {
+  window.cboqAllowedOptionsByValue = {};
+  const select = document.getElementById("cboq-product-select");
+  if (select) select.innerHTML = '<option value="">— Select Project First —</option>';
+  document.getElementById("cboq-product-name").value = "";
+  document.getElementById("cboq-source-po-line-id").value = "";
+  const ratingEl = document.getElementById("cboq-product-rating");
+  if (ratingEl) ratingEl.value = "";
+  const qtyEl = document.getElementById("cboq-order-qty");
+  if (qtyEl) qtyEl.value = "";
+  const addRowBtn = document.getElementById("cboq-add-row-btn");
+  if (addRowBtn) { addRowBtn.disabled = true; addRowBtn.style.opacity = "0.5"; addRowBtn.style.cursor = "not-allowed"; }
+}
+
+// loadCboqAllowedProducts — gates Product Name to a locked dropdown: Tier 1
+// is PO products cleared for manufacturing (MFC Quantity > 0) that don't
+// have a BOQ yet; once all of those have BOQs, Tier 2 offers the Finished
+// Goods materials found inside them, recursively.
+async function loadCboqAllowedProducts(projectId) {
+  const select = document.getElementById("cboq-product-select");
+  const banner = document.getElementById("cboq-pending-products-banner");
+  if (select) select.innerHTML = '<option value="">Loading...</option>';
+  try {
+    const data = await apFetch({ action: "fetchAllowedBoqProducts", projectId });
+    if (!data.success) {
+      if (select) select.innerHTML = `<option value="">${data.error}</option>`;
+      if (banner) { banner.style.display = "block"; banner.textContent = data.error || "Could not load allowed products."; }
+      return;
+    }
+
+    window.cboqAllowedOptionsByValue = {};
+    (data.options || []).forEach(opt => { window.cboqAllowedOptionsByValue[opt.itemCode] = opt; });
+
+    if (!data.options || data.options.length === 0) {
+      if (select) select.innerHTML = `<option value="">— No Products Cleared for a New BOQ —</option>`;
+      if (banner) {
+        banner.style.display = "block";
+        banner.textContent = data.message || "No products are cleared for manufacturing yet — check Manufacturing Clearance.";
+      }
+      return;
+    }
+
+    if (select) {
+      select.innerHTML = '<option value="">— Select Product —</option>' +
+        data.options.map(opt => `<option value="${opt.itemCode}">${opt.productName}${opt.productRating ? " " + opt.productRating : ""}</option>`).join("");
+    }
+    if (banner) {
+      banner.style.display = "block";
+      banner.textContent = data.tier === "poProducts"
+        ? `${data.pendingNames.join(", ")} BOQ pending`
+        : `Finished Goods BOQs pending: ${data.pendingNames.join(", ")}`;
+    }
+  } catch(e) {
+    if (select) select.innerHTML = `<option value="">Network error</option>`;
+    if (banner) { banner.style.display = "block"; banner.textContent = "Network error loading allowed products: " + e.message; }
+  }
+}
+
+function handleCBOQProductSelectChange(itemCode) {
+  const opt = (window.cboqAllowedOptionsByValue || {})[itemCode];
+  const ratingEl = document.getElementById("cboq-product-rating");
+  const qtyEl = document.getElementById("cboq-order-qty");
+  const addRowBtn = document.getElementById("cboq-add-row-btn");
+
+  if (!opt) {
+    document.getElementById("cboq-product-name").value = "";
+    document.getElementById("cboq-source-po-line-id").value = "";
+    if (ratingEl) ratingEl.value = "";
+    if (qtyEl) qtyEl.value = "";
+    if (addRowBtn) { addRowBtn.disabled = true; addRowBtn.style.opacity = "0.5"; addRowBtn.style.cursor = "not-allowed"; }
+    return;
+  }
+
+  document.getElementById("cboq-product-name").value = opt.productName;
+  document.getElementById("cboq-source-po-line-id").value = opt.sourcePoLineId || "";
+  if (ratingEl) { ratingEl.value = opt.productRating || ""; ratingEl.style.height = "auto"; ratingEl.style.height = ratingEl.scrollHeight + "px"; }
+  if (qtyEl) { qtyEl.value = trimNum(opt.lockedQuantity); updateCBOQTotals(); }
+  if (addRowBtn) { addRowBtn.disabled = false; addRowBtn.style.opacity = "1"; addRowBtn.style.cursor = "pointer"; }
 }
 
 function addCBOQMaterialRow() {
@@ -102,6 +277,7 @@ function renderCBOQMaterialRows() {
   tbody.innerHTML = "";
   cboqMaterialRows.forEach((row, idx) => {
     const isRawMaterial = row.typeOfStore !== "Spare Store";
+    const isFgRow = row.typeOfStore === "Finished Goods Store";
     const totalMaterialRate = isRawMaterial ? ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0)) : 0;
     const tr = document.createElement("tr");
     tr.style.borderBottom = "1px solid #f1f5f9";
@@ -150,7 +326,7 @@ function renderCBOQMaterialRows() {
         ${isRawMaterial ? `
         <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
           oninput="cboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateCBOQTotals(); const r=document.getElementById('cboq-rate-${idx}'); if(r) { const v=(Number(cboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); }"
-          style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
+          ${isFgRow ? `title="Provisional — replaced automatically when this Finished Goods material's own BOQ is authorized" style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       </td>
       <td style="padding:4px; text-align:center;">
@@ -270,15 +446,13 @@ function resetCreateBOQForm() {
   renderCBOQMaterialRows();
   ["cboq-project-id-ta-input","cboq-department"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   ["cboq-customer-name","cboq-product-name","cboq-product-rating","cboq-prepared-by"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
-  const searchEl = document.getElementById("cboq-product-search");
-  if (searchEl) { searchEl.value = ""; searchEl.style.height = "auto"; }
+  resetCBOQProductSelection();
   const ratingEl = document.getElementById("cboq-product-rating");
   if (ratingEl) ratingEl.style.height = "auto";
-  document.getElementById("cboq-order-qty").value = "1";
   const fbEl = document.getElementById("create-boq-feedback"); if (fbEl) fbEl.style.display = "none";
   const importBanner = document.getElementById("cboq-import-banner"); if (importBanner) importBanner.style.display = "none";
   window.cboqImportSourceInfo = null;
-  const importSelect = document.getElementById("cboq-import-select"); if (importSelect) importSelect.value = "";
+  resetCBOQImportSearch();
   handleCBOQProjectChange(""); // re-lock fields
 }
 
@@ -292,6 +466,8 @@ async function submitCreateBOQ() {
   const orderQty    = parseInt(document.getElementById("cboq-order-qty").value) || 0;
   const customerName= document.getElementById("cboq-customer-name").value.trim();
   const preparedBy  = appActiveOperatorIdentityString || "";
+  const sourcePoLineIdRaw = document.getElementById("cboq-source-po-line-id").value.trim();
+  const sourcePoLineId = sourcePoLineIdRaw ? parseInt(sourcePoLineIdRaw) : null;
 
   if (!projectId)    return showBOQBanner("create-boq-feedback", "⚠️ Project ID is required.", "error");
   if (!productName)  return showBOQBanner("create-boq-feedback", "⚠️ Product Name is required.", "error");
@@ -319,7 +495,7 @@ async function submitCreateBOQ() {
       department, orderQuantity: orderQty,
       materialRowsList: cboqMaterialRows,
       totalCostPerSet, totalCost,
-      preparedBy
+      preparedBy, sourcePoLineId
     });
     hideBlockingOverlay();
 
@@ -436,55 +612,5 @@ async function toggleAuthBOQCardExpansion(boqId, mode) {
   } catch(e) {
     bodyEl.innerHTML = `<p style="color:var(--warn);">Error loading BOQ: ${e.message}</p>`;
   }
-}
-
-function handleCBOQProductSearch(query) {
-  const dropdown = document.getElementById("cboq-product-dropdown");
-  const catalog = window.itemCodeCatalogCache || [];
-
-  if (!query || query.trim().length < 1) {
-    dropdown.style.display = "none";
-    document.getElementById("cboq-product-name").value = "";
-    document.getElementById("cboq-product-rating").value = "";
-    return;
-  }
-
-  const q = query.toLowerCase();
-  const matches = catalog.filter(item => {
-    const name = (item.productName || "").toLowerCase();
-    const rating = (item.rating || "").toLowerCase();
-    const combined = `${name} ${rating}`.trim();
-    return name.includes(q) || rating.includes(q) || combined.includes(q);
-  }).slice(0, 10);
-
-  if (matches.length === 0) {
-    dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">
-      No matching product found. <a href="${window.location.pathname}?module=design-itemcode&q=${encodeURIComponent(query)}" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
-    </div>`;
-    dropdown.style.display = "block";
-    document.getElementById("cboq-product-name").value = "";
-    document.getElementById("cboq-product-rating").value = "";
-    return;
-  }
-
-  dropdown.innerHTML = matches.map(item => `
-    <div onclick="selectCBOQProduct('${item.productName.replace(/'/g,"\\'")}', '${(item.rating||'').replace(/'/g,"\\'")}')"
-      style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
-      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      ${item.productName}${item.rating ? ` <span style="color:var(--brand); font-weight:700;">${item.rating}</span>` : ""}
-    </div>`).join("");
-  dropdown.style.display = "block";
-}
-
-function selectCBOQProduct(productName, rating) {
-  const searchEl = document.getElementById("cboq-product-search");
-  const ratingEl = document.getElementById("cboq-product-rating");
-  searchEl.value = productName;
-  document.getElementById("cboq-product-name").value = productName;
-  ratingEl.value = rating || "";
-  document.getElementById("cboq-product-dropdown").style.display = "none";
-
-  searchEl.style.height = "auto"; searchEl.style.height = searchEl.scrollHeight + "px";
-  ratingEl.style.height = "auto"; ratingEl.style.height = ratingEl.scrollHeight + "px";
 }
 

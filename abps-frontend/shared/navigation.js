@@ -1,5 +1,26 @@
-let currentActiveModuleContext = "CARD"; 
+let currentActiveModuleContext = "CARD";
 let canvasLastParentWorkspaceId = "workspace-searchCompany";
+
+// Reminder banners shown at the top of the Store / Purchase workspace
+// enclosures — re-checked on every navigation into either enclosure so
+// they disappear on their own once the underlying revision is authorized.
+async function checkStorePRNRevisionReminder() {
+  const banner = document.getElementById("store-prn-revision-reminder-banner");
+  if (!banner) return;
+  try {
+    const data = await apFetch({ action: "checkBOQsNeedingPRNRevisionCount" });
+    banner.style.display = (data.success && data.count > 0) ? "block" : "none";
+  } catch (e) { /* non-critical — leave banner state as-is on network error */ }
+}
+
+async function checkPurchasePORevisionReminder() {
+  const banner = document.getElementById("purchase-po-revision-reminder-banner");
+  if (!banner) return;
+  try {
+    const data = await apFetch({ action: "checkPRNsNeedingPORevisionCount" });
+    banner.style.display = (data.success && data.count > 0) ? "block" : "none";
+  } catch (e) { /* non-critical — leave banner state as-is on network error */ }
+}
 async function navigateToModule(key) { 
     window.scrollTo(0, 0);
     setTimeout(() => window.scrollTo(0, 0), 50);
@@ -158,7 +179,9 @@ function returnToDashboard() {
   // FIXED REDIRECT RUNTIME REMOVES: Clear out the newly mounted Finished Goods view container as well
   if(document.getElementById("canvas-module-store-finished-goods-live-stock")) document.getElementById("canvas-module-store-finished-goods-live-stock").style.display = "none";
   if(document.getElementById("canvas-module-fg-add")) document.getElementById("canvas-module-fg-add").style.display = "none";
+  if(document.getElementById("canvas-module-fg-approval")) document.getElementById("canvas-module-fg-approval").style.display = "none";
   if(document.getElementById("canvas-module-project-invoice")) document.getElementById("canvas-module-project-invoice").style.display = "none";
+  if(document.getElementById("canvas-module-material-ack")) document.getElementById("canvas-module-material-ack").style.display = "none";
 
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("dashboard-view").style.display = "block"; 
@@ -191,6 +214,11 @@ function returnToDashboard() {
     const btn = document.getElementById(cfg.btnId);
     if (btn) { btn.disabled = false; btn.innerHTML = cfg.btnLabel; }
   });
+  const poAcceptDate = document.getElementById('purchase-order-acceptance-date'); if (poAcceptDate) poAcceptDate.value = '';
+  const poSpecialReq = document.getElementById('purchase-order-special-requirement'); if (poSpecialReq) poSpecialReq.value = '';
+  const poContractReviewInput = document.getElementById('purchase-order-contract-review-file'); if (poContractReviewInput) poContractReviewInput.value = '';
+  const poContractReviewBox = document.getElementById('purchase-order-contract-review-box');
+  if (poContractReviewBox) { poContractReviewBox.textContent = '📋 Select Contract Review Document *'; poContractReviewBox.classList.remove('done'); }
   // Reset card scan fields for next use
   fileFront = null; fileBack = null;
   const fb = document.getElementById('front-box'); if (fb) { fb.textContent = '📷 Front Side '; fb.classList.remove('done'); }
@@ -261,6 +289,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 
   // 3. EXTRACT FINISHED GOODS & DESIGN PRIVILEGES MATRIX MATRICES
   const canAddFinishedGoods = userPermissionsObject.addFinishedGoodsStore === true;
+  const canFgApproval       = userPermissionsObject.fgApproval           === true;
   const canCreateBOQ        = userPermissionsObject.createBOQ        === true;
   const canAuthorizeBOQ     = userPermissionsObject.authorizeBOQ     === true;
   const canUpdateBOQ        = userPermissionsObject.updateBOQ        === true;
@@ -334,9 +363,12 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   }
   
   if (document.getElementById("mod-fg-add")) document.getElementById("mod-fg-add").style.display = canAddFinishedGoods ? "block" : "none";
+  if (document.getElementById("mod-fg-approval")) document.getElementById("mod-fg-approval").style.display = canFgApproval ? "block" : "none";
   const canProjectInvoiceGeneration = userPermissionsObject.projectInvoiceGeneration === true;
   if (document.getElementById("mod-project-invoice")) document.getElementById("mod-project-invoice").style.display = canProjectInvoiceGeneration ? "block" : "none";
   if (document.getElementById("mod-jc-letterhead")) document.getElementById("mod-jc-letterhead").style.display = userPermissionsObject.jobCardLetterhead === true ? "block" : "none";
+  const canAcknowledgeMaterialReceipt = userPermissionsObject.acknowledgeMaterialReceipt === true;
+  if (document.getElementById("mod-material-ack")) document.getElementById("mod-material-ack").style.display = canAcknowledgeMaterialReceipt ? "block" : "none";
 
   const canApproveBOQIncrease = userPermissionsObject.approveJCIncrease === true;
   if (document.getElementById("mod-boq-increase-approvals")) {
@@ -398,7 +430,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // Production Department block visibility
   const productionHeaderBlock = document.getElementById("dashboard-production-department-header-block");
   if (productionHeaderBlock) {
-    productionHeaderBlock.style.display = (canCreateJobCardNumber || canCreateTicket || canAddFinishedGoods || canProjectInvoiceGeneration) ? "block" : "none";
+    productionHeaderBlock.style.display = (canCreateJobCardNumber || canCreateTicket || canAddFinishedGoods || canFgApproval || canProjectInvoiceGeneration || canAcknowledgeMaterialReceipt) ? "block" : "none";
   }
 
   // Live Spare Store Stock card visibility
@@ -453,6 +485,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   window.scrollTo(0, 0);
   setTimeout(() => window.scrollTo(0, 0), 50);
+  checkStorePRNRevisionReminder();
   stopLiveStockPolling();
   stopPendingTicketsQueuePolling();
   // 1. Hide the primary dashboard menu grid view and the global marketing containers completely
@@ -544,6 +577,7 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
 
 function switchActiveDashboardModule(targetCanvasModuleId) {
   window.scrollTo(0, 0);
+  checkStorePRNRevisionReminder();
   // 1. Hide the primary dashboard menu card view and inline popup filters
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
@@ -655,6 +689,14 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     if (centerTitle)  centerTitle.style.visibility  = "hidden";
     document.getElementById("canvas-module-fg-add").style.display = "block";
     initializeFGAddWorkspace()
+  } else if (targetCanvasModuleId === 'fg-approval') {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    const leftControlsFGA = document.getElementById("store-panel-left-controls");
+    const centerTitleFGA  = document.getElementById("store-panel-center-title");
+    if (leftControlsFGA) leftControlsFGA.style.visibility = "hidden";
+    if (centerTitleFGA)  centerTitleFGA.style.visibility  = "hidden";
+    document.getElementById("canvas-module-fg-approval").style.display = "block";
+    initializeFGApprovalWorkspace();
   } else if (targetCanvasModuleId === 'project-invoice') {
     document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
     const leftControls = document.getElementById("store-panel-left-controls");
@@ -663,6 +705,14 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     if (centerTitle)  centerTitle.style.visibility  = "hidden";
     document.getElementById("canvas-module-project-invoice").style.display = "block";
     initializePinvWorkspace();
+  } else if (targetCanvasModuleId === 'material-ack') {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    const leftControlsMA = document.getElementById("store-panel-left-controls");
+    const centerTitleMA  = document.getElementById("store-panel-center-title");
+    if (leftControlsMA) leftControlsMA.style.visibility = "hidden";
+    if (centerTitleMA)  centerTitleMA.style.visibility  = "hidden";
+    document.getElementById("canvas-module-material-ack").style.display = "block";
+    initializeMaterialAckWorkspace();
   } else if (targetCanvasModuleId === 'tour-expense') {
     document.getElementById("dashboard-view").style.display = "none";
     const teCanvas = document.getElementById("canvas-module-tour-expense");

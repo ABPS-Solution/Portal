@@ -49,7 +49,6 @@ async function initializeMaterialRequestWorkspace() {
     if (inventoryData.success && projectsData.success && staffData.success) {
       cachedInventoryStockCollection = inventoryData.inventory;
       window.cachedInventoryStockCollection = cachedInventoryStockCollection;
-      window.cachedFinishedGoodsStoreStockCollection = inventoryData.finishedGoodsInventory || [];
       globalOperatorsDatabasePayloadCache = staffData.fullPersonnelDataRecordsTree || [];
       window._ticketProjectMetaCache = projectsData.projectMeta || {};
 
@@ -149,7 +148,7 @@ async function submitMaterialRequestTicketToBackend() {
     window.storeCreateTicketOriginalTemplateCacheHTML = materialRequestPanelContainer.innerHTML;
   }
   
-  showBlockingOverlay("Submitting Store Ticket...");
+  showBlockingOverlay("Submitting Material Issue Ticket...");
   try {
     const jobCardNumberVal = document.getElementById("ticket-job-card-dropdown")?.value || "";
     const payload = {
@@ -181,7 +180,7 @@ async function submitMaterialRequestTicketToBackend() {
       materialRequestPanelContainer.innerHTML = `
         <div style="background: #dcfce7; border: 1px solid #15803d; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin: 10px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
           <div>
-            <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 6px; font-weight: 700;">Success! Store Ticket Created.</h3>
+            <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 6px; font-weight: 700;">Success! Material Issue Ticket Created.</h3>
             <div style="font-size: 0.92rem; font-weight: 600; display: flex; align-items: center; gap: 4px;">
               Assigned Reference Tracking ID: 
               <span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #15803d; color: #111827; margin-left: 4px; font-size: 1rem;">
@@ -754,7 +753,7 @@ async function initializeStoreManagerApprovalsWorkspace() {
   const feedbackBanner = document.getElementById("store-approvals-runtime-inline-feedback-banner");
   
   feedbackBanner.style.display = "none";
-  cardsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);"><div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>Loading Un-Actioned Store Tickets...</div>`;
+  cardsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);"><div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>Loading Un-Actioned Material Issue Tickets...</div>`;
 
   try {
     const data = await apFetch({
