@@ -1,5 +1,13 @@
 # HANDOFF — session ending 12 Aug 2026
 
+> **READ FIRST — frontend location & deploy changed at the very end of the session.**
+> The frontend now lives entirely in **`abps-frontend/`** (it was briefly at the
+> repo root). Because GitHub Pages cannot serve a subfolder via branch publishing,
+> deployment moved to a GitHub Actions workflow
+> (`.github/workflows/deploy-frontend.yml`) and the repo's Pages source was
+> switched to **"GitHub Actions"**. Deploying is still just `git push origin main`
+> — the workflow does the rest. See §7.
+
 State of the repo, what changed, what's verified, and what's still open.
 Read `CLAUDE.md` first for working rules, then this for current context.
 
@@ -12,7 +20,7 @@ half-finished or sitting uncommitted.
 
 | Component | State |
 |---|---|
-| Frontend | Live at `https://abps-solution.github.io/Portal/`, serving the new split structure from repo root |
+| Frontend | Live at `https://abps-solution.github.io/Portal/`, served from **`abps-frontend/`** via the Actions workflow (see §7) |
 | Backend | Cloud Run revision `abps-backend-00277-9ht`, 100% traffic, health check OK, clean boot logs |
 | DB | Cloud SQL `abps-erp-db`. Public IP currently **open**, authorized to `34.177.102.82/32` (a Cloud Shell IP) — see §5 |
 | Git | `main` @ `0007e39`, working tree clean |
@@ -158,6 +166,40 @@ it under real users.
 - `ABPS_SYSTEM_OVERVIEW.md` still describes the frontend as "index.html (single
   file, ~24k lines)" in §2/§3. **That's now wrong** — it predates the split. Worth
   a pass to bring it in line with `CLAUDE.md`.
+
+---
+
+## 7. FRONTEND LOCATION & DEPLOY (changed at end of session)
+
+The 41 JS files + `index.html` were moved from the repo root into
+**`abps-frontend/`**. Folder structure inside it is unchanged
+(`shared/`, `marketing/`, `design/`, `purchase/`, `store/`, `production/`,
+`project/`, `accounts/`), and all `<script src>` paths in `index.html` stayed
+relative — so nothing inside the frontend needed editing.
+
+**Why deployment had to change:** GitHub Pages' branch publishing can only serve
+a branch's **root** or **`/docs`**. It cannot serve `abps-frontend/`. Leaving
+Pages on "main → root" would have 404'd the site the moment the move landed.
+
+**What was set up instead:** `.github/workflows/deploy-frontend.yml` — on every
+push to `main` that touches `abps-frontend/**`, it uploads that folder as the
+Pages artifact and deploys. No build step; it's a straight copy, same as before.
+
+**One-time repo setting (done):** Settings → Pages → Build and deployment →
+Source = **GitHub Actions**.
+
+**Day-to-day this is unchanged:** edit files in `abps-frontend/`,
+`git push origin main`, wait ~1–2 min. Watch progress in the repo's **Actions**
+tab; re-run manually there if needed (`workflow_dispatch` is enabled).
+
+Gotchas worth knowing:
+- `abps-frontend/` is the **site root** — `shared/apFetch.js` serves at
+  `.../Portal/shared/apFetch.js`. Never prefix script paths with `abps-frontend/`.
+- Backend-only commits deploy nothing (the workflow is path-filtered). Correct.
+- Don't move the frontend back to the repo root; the workflow's
+  `path: abps-frontend` points at that folder.
+- Backend deploy is untouched:
+  `gcloud run deploy abps-backend --source ./abps-backend --region asia-south1`
 
 ---
 

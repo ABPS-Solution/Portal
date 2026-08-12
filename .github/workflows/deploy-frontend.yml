@@ -1,0 +1,53 @@
+# Publishes abps-frontend/ to GitHub Pages on every push to main.
+#
+# WHY THIS EXISTS: GitHub Pages' branch-based publishing can only serve a
+# branch's root or its /docs folder — it cannot serve an arbitrary
+# subdirectory like abps-frontend/. Since the frontend lives in
+# abps-frontend/ (and the repo root holds abps-backend/ and docs that must
+# NOT be published), Pages is set to "GitHub Actions" as its source and this
+# workflow uploads only abps-frontend/ as the site.
+#
+# REQUIRED ONE-TIME SETTING (already done, noted here for future reference):
+#   GitHub repo -> Settings -> Pages -> Build and deployment -> Source:
+#   "GitHub Actions"  (NOT "Deploy from a branch")
+#
+# There is no build step — the frontend is plain HTML/JS. This workflow just
+# copies the folder up as-is, exactly what the old branch-root deploy did.
+name: Deploy frontend to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'abps-frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:   # lets you re-deploy by hand from the Actions tab
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; let a newer push supersede an in-flight one.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+
+      - name: Upload abps-frontend as the site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: abps-frontend
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

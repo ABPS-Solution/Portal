@@ -26,17 +26,27 @@ schema traps). This file is the practical "how to work here" layer.
 
 ```
 ABPS Portal/
-├── index.html              ← frontend shell (HTML/CSS + 41 <script src> tags). No inline JS.
-├── shared/                 ← cross-department JS (load FIRST, order matters)
-├── marketing/ design/ purchase/ store/ production/ project/ accounts/
+├── abps-frontend/          ← THE ENTIRE FRONTEND. This folder IS the deployed site root.
+│   ├── index.html          ← shell (HTML/CSS + 41 <script src> tags). No inline JS.
+│   ├── shared/             ← cross-department JS (loads FIRST, order matters)
+│   └── marketing/ design/ purchase/ store/ production/ project/ accounts/
 │                           ← department JS, plain <script>, shared global scope
 ├── abps-backend/           ← Node 20 / Express on Cloud Run
+├── .github/workflows/      ← deploy-frontend.yml (publishes abps-frontend/ to Pages)
+├── CLAUDE.md  HANDOFF.md
 └── ABPS_SYSTEM_OVERVIEW.md ← business logic + schema deep-dive
 ```
 
+**Everything inside `abps-frontend/` is served as the site root.** A path like
+`shared/apFetch.js` in `index.html` resolves to
+`https://abps-solution.github.io/Portal/shared/apFetch.js` — the `abps-frontend/`
+prefix does not appear in URLs. Keep all frontend script paths relative; never
+add an `abps-frontend/` prefix inside `index.html`.
+
 ### Frontend (as of the Aug 2026 split)
 The old ~24k-line monolithic `index.html` is **gone**. It's now 3,240 lines of
-markup + 41 JS files. **All new frontend work goes in the department files.**
+markup + 41 JS files. **All new frontend work goes in the department files
+under `abps-frontend/`.**
 
 Files are **plain classic `<script>` tags sharing one global scope** — no
 bundler, no `import`/`export`, no build step. Consequences:
@@ -109,8 +119,20 @@ script pattern for diffing them in the handoff doc.)
 
 ## 4. DEPLOY
 
-**Frontend:** `git push origin main` → GitHub Pages serves repo root. That's it,
-no build, no Actions. Live at `https://abps-solution.github.io/Portal/`.
+**Frontend:** `git push origin main` → the `.github/workflows/deploy-frontend.yml`
+Actions workflow publishes **`abps-frontend/`** to GitHub Pages (~1–2 min).
+Live at `https://abps-solution.github.io/Portal/`. No build step; the workflow
+just uploads the folder as-is.
+
+- Pages source is set to **"GitHub Actions"** (Settings → Pages), *not*
+  "Deploy from a branch". This is required: branch-based Pages can only serve a
+  branch's root or `/docs`, never a subfolder like `abps-frontend/`.
+- The workflow only fires on changes under `abps-frontend/**` (or to the workflow
+  itself). A backend-only commit correctly deploys nothing.
+- Check a deploy: repo → **Actions** tab. Re-run by hand via *Run workflow*
+  (`workflow_dispatch` is enabled).
+- **Do not move `index.html` or the department folders back to the repo root** —
+  the workflow's `path: abps-frontend` expects them there.
 
 **Backend:**
 ```bash
@@ -136,15 +158,21 @@ Connect: `psql "host=<public-ip> port=5432 dbname=postgres user=postgres sslmode
 Run these after frontend changes:
 
 ```bash
+cd abps-frontend
+
 # 1. No duplicate top-level let/const across files (fatal at load)
-grep -rhoE "^(let|const) [a-zA-Z0-9_$]+" --include=*.js shared marketing design purchase store production project accounts \
+grep -rhoE "^(let|const) [a-zA-Z0-9_$]+" --include=*.js . \
   | awk '{print $2}' | sort | uniq -d
 
 # 2. Every apFetch action resolves to a real backend route
 #    (compare action names against router.post paths in abps-backend/routes/)
 
 # 3. Syntax check every file
-for f in $(find shared marketing design purchase store production project accounts -name "*.js"); do node -c "$f" || echo "FAIL $f"; done
+for f in $(find . -name "*.js"); do node -c "$f" || echo "FAIL $f"; done
+
+# 4. Every <script src> actually exists
+grep -oP '(?<=<script src=")[^"h][^"]*(?=")' index.html | while read f; do
+  [ -f "$f" ] || echo "MISSING: $f"; done
 ```
 
 Windows gotcha: **never name a file `prn.js`, `con.js`, `aux.js`, `nul.js`,
