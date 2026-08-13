@@ -150,9 +150,9 @@ async function submitStockSweep() {
     if (data.success) {
       let msg = `Sweep recorded: ${data.itemsProcessed} item(s) added and auto-distributed to BOQs.`;
       if (data.notFound && data.notFound.length) msg += ` NOT found in catalog (skipped): ${data.notFound.join(", ")}.`;
-      showBOQBanner("sweep-feedback", msg, "success");
       sweepBasket = [];
       renderSweepBasket();
+      showSuccessWithReset("sweep-feedback", msg, "Record Another Sweep", "initializeStockSweepPanel()");
     } else {
       showBOQBanner("sweep-feedback", data.error || "Failed to record sweep.", "error");
     }

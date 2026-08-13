@@ -138,6 +138,8 @@ async function submitTourAdvance() {
   try {
     const data = await acFetch("payTourAdvance", { employeeId: teSelectedEmployeeId, amount });
     if (data.success) {
+      document.getElementById("te-advance-form").style.display = "none";
+      document.getElementById("te-advance-amount").value = "";
       showBOQBanner("te-feedback", `Advance paid. New balance: ${data.newBalance}.`, "success");
       selectTourEmployee(teSelectedEmployeeId);
       renderTourEmployeeSearchResults();
@@ -170,6 +172,10 @@ async function submitTourVoucher() {
   try {
     const data = await acFetch("addTourVoucher", { employeeId: teSelectedEmployeeId, customerName, purposeOfVisit, voucherAmount });
     if (data.success) {
+      document.getElementById("te-voucher-form").style.display = "none";
+      document.getElementById("te-voucher-customer").value = "";
+      document.getElementById("te-voucher-purpose").value = "";
+      document.getElementById("te-voucher-amount").value = "";
       showBOQBanner("te-feedback", `Voucher created. New balance: ${data.newBalance}.`, "success");
       selectTourEmployee(teSelectedEmployeeId);
       renderTourEmployeeSearchResults();

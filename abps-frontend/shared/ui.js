@@ -76,6 +76,29 @@ function showPurchaseFeedback(elementId, message, type, persist) {
 }
 
 // ═══════════════════════════════════════════════════════
+// ONE CONSISTENT LOOK FOR EVERY "SUBMIT SUCCEEDED" MOMENT
+// message + optional doc link(s) + a "+ Do Another" button that resets
+// the panel back to a blank/fresh state. Never auto-hides (unlike the
+// two banners above) since there's now a button in it to act on.
+// resetFnCall is a literal inline-JS string, e.g. "initializePRNPanel()"
+// — matches the existing onclick="..." convention used everywhere else
+// in this codebase rather than passing a function reference.
+// ═══════════════════════════════════════════════════════
+function showSuccessWithReset(elementId, message, resetButtonLabel, resetFnCall, docLinks) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const links = (docLinks || []).filter(d => d && d.url).map(d =>
+    `<div style="margin-top:8px;"><a href="${d.url}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">${d.label} ↗</a></div>`
+  ).join("");
+  el.style.cssText = "display:block; background:#f0fdf4; border-left:4px solid var(--accent); color:#15803d; padding:14px; margin-bottom:14px; border-radius:var(--radius);";
+  el.innerHTML = `
+    <div style="font-weight:700; font-size:0.92rem;">${message}</div>
+    ${links}
+    <button class="nav-btn-styled" style="background:var(--accent); color:#fff; margin-top:12px; padding:7px 18px; font-weight:700; font-size:0.82rem;" onclick="${resetFnCall}">+ ${resetButtonLabel}</button>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════
 // ASSIGN CURRENT STOCK
 // ═══════════════════════════════════════════════════════
 
