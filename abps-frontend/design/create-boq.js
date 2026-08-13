@@ -234,7 +234,7 @@ async function loadCboqAllowedProducts(projectId) {
       return;
     }
 
-    if (search) search.placeholder = "Search Product Name...";
+    if (search) search.placeholder = "— Select Product —";
     if (banner) {
       banner.style.display = "block";
       const heading = data.tier === "poProducts" ? "BOQ pending for:" : "Finished Goods BOQs pending for:";
@@ -250,32 +250,21 @@ async function loadCboqAllowedProducts(projectId) {
 }
 
 // Search box shows the combined "Product Name + Rating" per option (same
-// as Import BOQ's and Manufacturing Clearance's typeaheads) so both parts
-// are searchable — but once an option is picked, selectCBOQProductOption
-// splits them straight back into their own Product Name / Product Rating
-// fields, matching how design.item_codes actually stores them
-// (material_name, rating as separate columns), same split Manufacturing
-// Clearance uses.
-function handleCBOQProductNameSearch(query) {
+// as Import BOQ's and Manufacturing Clearance's typeaheads) — still a
+// locked list, not free text; the field itself is readonly and clicking it
+// just opens the full list of allowed options (no filtering/typing) — but
+// once an option is picked, selectCBOQProductOption splits the combined
+// label straight back into its own Product Name / Product Rating fields,
+// matching how design.item_codes actually stores them (material_name,
+// rating as separate columns).
+function showCBOQProductDropdown() {
   const dropdown = document.getElementById("cboq-product-dropdown");
   if (!dropdown) return;
   const options = window.cboqAllowedOptionsList || [];
 
-  if (!query || query.trim().length < 1) { dropdown.style.display = "none"; return; }
-  const q = query.toLowerCase();
-  const matches = options.filter(opt => {
-    const name = (opt.productName || "").toLowerCase();
-    const combined = `${name} ${(opt.productRating || "").toLowerCase()}`.trim();
-    return name.includes(q) || combined.includes(q);
-  }).slice(0, 10);
+  if (options.length === 0) { dropdown.style.display = "none"; return; }
 
-  if (matches.length === 0) {
-    dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">No matching product found.</div>`;
-    dropdown.style.display = "block";
-    return;
-  }
-
-  dropdown.innerHTML = matches.map(opt => `
+  dropdown.innerHTML = options.map(opt => `
     <div onmousedown="event.preventDefault();" onclick="selectCBOQProductOption('${opt.itemCode}')"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">

@@ -1429,9 +1429,9 @@
             <div>
               <label class="field-label" style="margin-top:0;">Product Name *</label>
               <div style="position:relative;">
-                <input type="text" id="cboq-product-search" disabled placeholder="Select Project First" autocomplete="off"
-                  oninput="handleCBOQProductNameSearch(this.value)"
-                  style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;" />
+                <input type="text" id="cboq-product-search" disabled readonly placeholder="Select Project First" autocomplete="off"
+                  onclick="showCBOQProductDropdown()"
+                  style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box; cursor:pointer; background:#fff;" />
                 <div id="cboq-product-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
               </div>
               <input type="hidden" id="cboq-product-name" />
