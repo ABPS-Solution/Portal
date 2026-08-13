@@ -150,7 +150,9 @@ async function importCBOQFromExisting() {
 
 function handleCBOQProjectChange(projectId) {
   const meta = window.cboqProjectMeta && window.cboqProjectMeta[projectId];
-  document.getElementById("cboq-customer-name").value = meta ? (meta.companyName || "") : "";
+  const customerNameEl = document.getElementById("cboq-customer-name");
+  customerNameEl.value = meta ? (meta.companyName || "") : "";
+  autoGrowPoField(customerNameEl);
 
   const fieldsToToggle = ["cboq-product-search", "cboq-department"];
   const addRowBtn = document.getElementById("cboq-add-row-btn");

@@ -1,6 +1,18 @@
 let uboqSpecFiles = [];
 let uboqMaterialRows = [];
 let uboqCurrentDraft = null;
+
+// Locked/readonly value box that wraps instead of clipping — a long BOQ
+// ID/Project ID/Customer Name/Product Name/Product Rating no longer just
+// gets cut off; the box grows taller to show the whole value. `extraStyle`
+// carries the box's own visual identity (BOQ ID's monospace blue vs a
+// plain locked field); accent/color values are ${}-substituted in, but
+// their only inputs are hardcoded literals at each call site, never
+// external/user data, so no escaping risk there.
+function uboqLockedWrapField(value, extraStyle) {
+  return `<textarea readonly rows="1" style="padding:8px; ${extraStyle || ''} cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(value ?? '').toString().replace(/</g, '&lt;')}</textarea>`;
+}
+
 async function toggleBOQRevisionExpansion(updateId) {
   const bodyEl = document.getElementById(`auth-boqrev-body-${updateId}`);
   if (!bodyEl) return;
@@ -37,21 +49,21 @@ async function toggleBOQRevisionExpansion(updateId) {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Project ID (locked)</label>
-          <input type="text" value="${reqItem.projectId || ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          ${uboqLockedWrapField(reqItem.projectId, 'background:#f1f5f9; color:var(--muted);')}
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Customer Name (locked)</label>
-          <input type="text" value="${reqItem.customerName || ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          ${uboqLockedWrapField(reqItem.customerName, 'background:#f1f5f9; color:var(--muted);')}
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Product Name (locked)</label>
-          <input type="text" value="${reqItem.productName || ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          ${uboqLockedWrapField(reqItem.productName, 'background:#f1f5f9; color:var(--muted);')}
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Product Rating (locked)</label>
-          <input type="text" value="${reqItem.productRating || ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          ${uboqLockedWrapField(reqItem.productRating, 'background:#f1f5f9; color:var(--muted);')}
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
@@ -76,6 +88,7 @@ async function toggleBOQRevisionExpansion(updateId) {
       <button class="nav-btn-styled" onclick="authorizeBOQRevision(${updateId})" style="background:var(--accent); padding:8px 24px; font-weight:700;" id="boqrev-auth-btn-${updateId}">Authorize BOQ Revision</button>
     </div>
   `;
+  bodyEl.querySelectorAll('textarea[readonly]').forEach(autoGrowPoField);
 
   renderBOQRevisionRows(updateId);
 
@@ -349,10 +362,8 @@ async function loadAuthorizedBOQsForProject(projectId) {
     (data.drafts || []).forEach(draft => {
       const opt = document.createElement("option");
       opt.value = draft.boqId;
-      const cleanDate = formatDateDMY(draft.date);
-      const qtyDisplay = Math.round(Number(draft.orderQuantity) || 0);
       const pendingTag = draft.hasPendingRevision ? " — REVISION PENDING AUTHORIZATION" : "";
-      opt.textContent = `${draft.customerName} | ${draft.productName || ""}${draft.productRating ? " " + draft.productRating : ""} | ${draft.department} | Qty: ${qtyDisplay} | ${cleanDate}${pendingTag}`;
+      opt.textContent = `${draft.productName || ""}${draft.productRating ? " " + draft.productRating : ""} | ${draft.department}${pendingTag}`;
       window.uboqDraftsMeta[draft.boqId] = draft;
       boqDrop.appendChild(opt);
     });
@@ -400,7 +411,7 @@ function renderUBOQForm() {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">BOQ ID</label>
-          <input type="text" value="${draft.boqId}" readonly style="padding:8px; font-family:monospace; font-weight:800; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:var(--radius);" />
+          ${uboqLockedWrapField(draft.boqId, 'font-family:monospace; font-weight:800; background:#e0f2fe; color:var(--brand);')}
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Prepared By (locked)</label>
@@ -410,21 +421,21 @@ function renderUBOQForm() {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Project ID (locked)</label>
-          <input type="text" value="${draft.projectId}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          ${uboqLockedWrapField(draft.projectId, 'background:#f1f5f9; color:var(--muted);')}
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Customer Name (locked)</label>
-          <input type="text" value="${draft.customerName}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          ${uboqLockedWrapField(draft.customerName, 'background:#f1f5f9; color:var(--muted);')}
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Product Name (locked)</label>
-          <input type="text" id="uboq-product-name" value="${draft.productName}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <textarea id="uboq-product-name" readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(draft.productName || '').toString().replace(/</g, '&lt;')}</textarea>
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Product Rating (locked)</label>
-          <input type="text" id="uboq-product-rating" value="${draft.productRating}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <textarea id="uboq-product-rating" readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(draft.productRating || '').toString().replace(/</g, '&lt;')}</textarea>
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px;">
@@ -485,6 +496,7 @@ function renderUBOQForm() {
       <button class="nav-btn-styled" onclick="submitUpdateBOQ()" style="background:var(--accent); padding:8px 24px; font-weight:700;" id="uboq-submit-btn">Submit BOQ Revision for Authorization</button>
     </div>
   `;
+  container.querySelectorAll('textarea[readonly]').forEach(autoGrowPoField);
 
   renderUBOQMaterialRows();
 }

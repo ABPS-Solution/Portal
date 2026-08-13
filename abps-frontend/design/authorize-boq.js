@@ -147,11 +147,34 @@ async function authorizeBOQRevision(updateId) {
     if (data.success) {
       const cardsFeed = document.getElementById("auth-boq-upd-queue-cards-feed");
       if (cardsFeed) { cardsFeed.style.display = "none"; cardsFeed.innerHTML = ""; }
-      const pdfNote = data.pdfUrl ? `<br/><a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">Revised BOQ PDF</a>` : "";
-      showBOQBanner("auth-boq-upd-feedback",
-        `✅ Revision authorized for <strong>${reqItem.boqId}</strong>.${pdfNote}<br/>
-        <button onclick="document.getElementById('auth-boq-upd-feedback').style.display='none'; initializeAuthorizeBOQRevisionPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another BOQ Revision</button>`,
-        "success", true);
+
+      // Same grid-card layout as "Authorize Bill of Quantity"'s success
+      // message (submitEBOQAuthorize), not the plain one-line banner this
+      // used to show.
+      const pdfNote = data.pdfUrl
+        ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View BOQ PDF</a></div>` : ``;
+      const fb = document.getElementById("auth-boq-upd-feedback");
+      if (fb) {
+        fb.style.borderLeftColor = "var(--accent)";
+        fb.style.background      = "#f0fff4";
+        fb.style.color           = "#276749";
+        fb.style.display         = "block";
+        fb.innerHTML = `
+          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ Bill of Quantity Revision Authorized Successfully!</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">BOQ ID</span><span style="font-family:monospace; font-weight:800;">${data.boqId || reqItem.boqId}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Project ID</span><span style="font-weight:700;">${reqItem.projectId || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Customer</span><span style="font-weight:700;">${reqItem.customerName || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Name</span><span style="font-weight:700;">${reqItem.productName || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Rating</span><span style="font-weight:700;">${reqItem.productRating || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Order Qty (Sets)</span><span style="font-weight:700;">${formatQtyTrimmed(reqItem.newOrderQuantity)}</span></div>
+          </div>
+          ${pdfNote}
+          <button onclick="document.getElementById('auth-boq-upd-feedback').style.display='none'; initializeAuthorizeBOQRevisionPanel();"
+            style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
+            Authorize Another BOQ Revision
+          </button>`;
+      }
     } else {
       if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize BOQ Revision"; }
       if (rejBtn) rejBtn.disabled = false;
@@ -211,18 +234,18 @@ function renderEBOQForm(containerId) {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Project ID (locked)</label>
-          <input type="text" value="${draft.projectId}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <textarea readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(draft.projectId || '').toString().replace(/</g, '&lt;')}</textarea>
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Customer Name (locked)</label>
-          <input type="text" value="${draft.customerName}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <textarea readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(draft.customerName || '').toString().replace(/</g, '&lt;')}</textarea>
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">${eboqMode === "authorize-update" ? "Product Name (locked)" : "Product Name *"}</label>
           ${eboqMode === "authorize-update" ? `
-          <input type="text" value="${draft.productName}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <textarea readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(draft.productName || '').toString().replace(/</g, '&lt;')}</textarea>
           ` : `
           <select id="eboq-product-select" onchange="handleEBOQProductSelectChange(this.value)" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
             <option value="">Loading...</option>
@@ -233,10 +256,10 @@ function renderEBOQForm(containerId) {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">${eboqMode === "authorize-update" ? "Product Rating (locked)" : "Product Rating"}</label>
-          <input type="text" id="eboq-product-rating" value="${draft.productRating}"
-            ${eboqMode === "authorize-update" ? 'readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);"'
-              : 'readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%;" placeholder="Auto-filled from Product Name"'}
-          /></div>
+          <textarea id="eboq-product-rating" readonly rows="1"
+            style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;"
+            placeholder="${eboqMode === "authorize-update" ? "" : "Auto-filled from Product Name"}">${(draft.productRating || '').toString().replace(/</g, '&lt;')}</textarea>
+        </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
         <div>
@@ -306,8 +329,7 @@ function renderEBOQForm(containerId) {
     </div>
   `;
 
-  const boqIdBox = document.getElementById('eboq-boq-id');
-  if (boqIdBox) { boqIdBox.style.height = 'auto'; boqIdBox.style.height = boqIdBox.scrollHeight + 'px'; }
+  container.querySelectorAll('textarea[readonly]').forEach(autoGrowPoField);
 
   renderEBOQMaterialRows();
 
@@ -369,7 +391,7 @@ function handleEBOQProductSelectChange(itemCode) {
   document.getElementById("eboq-product-name").value = opt.productName;
   document.getElementById("eboq-source-po-line-id").value = opt.sourcePoLineId || "";
   const ratingEl = document.getElementById("eboq-product-rating");
-  if (ratingEl) ratingEl.value = opt.productRating || "";
+  if (ratingEl) { ratingEl.value = opt.productRating || ""; autoGrowPoField(ratingEl); }
   const qtyEl = document.getElementById("eboq-order-qty");
   if (qtyEl) { qtyEl.value = trimNum(opt.lockedQuantity); updateEBOQTotals(); }
   recomputeEBOQBoqId(opt.productName, opt.productRating || "");
