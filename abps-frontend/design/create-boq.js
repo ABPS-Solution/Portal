@@ -287,7 +287,14 @@ function selectCBOQProductOption(itemCode) {
   if (searchEl) searchEl.value = opt.productName;
   document.getElementById("cboq-product-name").value = opt.productName;
   document.getElementById("cboq-product-itemcode").value = opt.itemCode;
-  document.getElementById("cboq-source-po-line-id").value = opt.sourcePoLineId || "";
+  // resolveAllowedBoqProducts (routes/design.js) returns this field as
+  // "lineId", not "sourcePoLineId" — reading the wrong key here meant this
+  // hidden field was always empty, so source_po_line_id never got saved on
+  // BOQ creation, which meant the "does this PO line already have a BOQ"
+  // NOT EXISTS check in resolveAllowedBoqProducts could never find a match:
+  // an already-BOQ'd product kept reappearing as still-pending forever,
+  // silently allowing duplicate BOQs for the same product on one project.
+  document.getElementById("cboq-source-po-line-id").value = opt.lineId || "";
   if (ratingEl) { ratingEl.value = opt.productRating || ""; ratingEl.style.height = "auto"; ratingEl.style.height = ratingEl.scrollHeight + "px"; }
   if (qtyEl) { qtyEl.value = trimNum(opt.lockedQuantity); updateCBOQTotals(); }
   if (addRowBtn) { addRowBtn.disabled = false; addRowBtn.style.opacity = "1"; addRowBtn.style.cursor = "pointer"; }
