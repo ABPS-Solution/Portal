@@ -219,7 +219,9 @@ async function initializeCreateBOQPanel() {
     cboqMaterialRows = [];
     cboqSpecFiles    = [];
     if (_g("cboq-customer-name"))  _g("cboq-customer-name").value  = "";
-    if (_g("cboq-product-select")) _g("cboq-product-select").innerHTML = '<option value="">— Select Project First —</option>';
+    if (_g("cboq-product-search")) { _g("cboq-product-search").value = ""; _g("cboq-product-search").placeholder = "— Select Project First —"; }
+    if (_g("cboq-product-itemcode")) _g("cboq-product-itemcode").value = "";
+    if (_g("cboq-product-dropdown")) _g("cboq-product-dropdown").style.display = "none";
     if (_g("cboq-product-name"))   _g("cboq-product-name").value   = "";
     if (_g("cboq-source-po-line-id")) _g("cboq-source-po-line-id").value = "";
     if (_g("cboq-product-rating")) { _g("cboq-product-rating").value = ""; _g("cboq-product-rating").style.height = "auto"; }

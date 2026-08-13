@@ -152,7 +152,7 @@ function handleCBOQProjectChange(projectId) {
   const meta = window.cboqProjectMeta && window.cboqProjectMeta[projectId];
   document.getElementById("cboq-customer-name").value = meta ? (meta.companyName || "") : "";
 
-  const fieldsToToggle = ["cboq-product-select", "cboq-department"];
+  const fieldsToToggle = ["cboq-product-search", "cboq-department"];
   const addRowBtn = document.getElementById("cboq-add-row-btn");
   const submitBtn = document.getElementById("cboq-submit-btn");
 
@@ -179,9 +179,13 @@ function handleCBOQProjectChange(projectId) {
 
 function resetCBOQProductSelection() {
   window.cboqAllowedOptionsByValue = {};
-  const select = document.getElementById("cboq-product-select");
-  if (select) select.innerHTML = '<option value="">— Select Project First —</option>';
+  window.cboqAllowedOptionsList = [];
+  const search = document.getElementById("cboq-product-search");
+  if (search) { search.value = ""; search.placeholder = "— Select Project First —"; }
+  const dropdown = document.getElementById("cboq-product-dropdown");
+  if (dropdown) dropdown.style.display = "none";
   document.getElementById("cboq-product-name").value = "";
+  document.getElementById("cboq-product-itemcode").value = "";
   document.getElementById("cboq-source-po-line-id").value = "";
   const ratingEl = document.getElementById("cboq-product-rating");
   if (ratingEl) ratingEl.value = "";
@@ -191,10 +195,10 @@ function resetCBOQProductSelection() {
   if (addRowBtn) { addRowBtn.disabled = true; addRowBtn.style.opacity = "0.5"; addRowBtn.style.cursor = "not-allowed"; }
 }
 
-// loadCboqAllowedProducts — gates Product Name to a locked dropdown: Tier 1
-// is PO products cleared for manufacturing (MFC Quantity > 0) that don't
-// have a BOQ yet; once all of those have BOQs, Tier 2 offers the Finished
-// Goods materials found inside them, recursively.
+// loadCboqAllowedProducts — gates Product Name to a locked, search-driven
+// list: Tier 1 is PO products cleared for manufacturing (MFC Quantity > 0)
+// that don't have a BOQ yet; once all of those have BOQs, Tier 2 offers the
+// Finished Goods materials found inside them, recursively.
 // Defensive against out-of-order responses: two calls can legitimately
 // fire close together (e.g. a stray native "change" from the project
 // typeahead losing focus, followed immediately by the real click-driven
@@ -205,23 +209,24 @@ function resetCBOQProductSelection() {
 let cboqAllowedProductsRequestSeq = 0;
 async function loadCboqAllowedProducts(projectId) {
   const seq = ++cboqAllowedProductsRequestSeq;
-  const select = document.getElementById("cboq-product-select");
+  const search = document.getElementById("cboq-product-search");
   const banner = document.getElementById("cboq-pending-products-banner");
-  if (select) select.innerHTML = '<option value="">Loading...</option>';
+  if (search) { search.value = ""; search.placeholder = "Loading..."; }
   try {
     const data = await apFetch({ action: "fetchAllowedBoqProducts", projectId });
     if (seq !== cboqAllowedProductsRequestSeq) return; // superseded by a newer request — ignore
     if (!data.success) {
-      if (select) select.innerHTML = `<option value="">${data.error}</option>`;
+      if (search) search.placeholder = data.error || "Could not load allowed products.";
       if (banner) { banner.style.display = "block"; banner.textContent = data.error || "Could not load allowed products."; }
       return;
     }
 
     window.cboqAllowedOptionsByValue = {};
     (data.options || []).forEach(opt => { window.cboqAllowedOptionsByValue[opt.itemCode] = opt; });
+    window.cboqAllowedOptionsList = data.options || [];
 
     if (!data.options || data.options.length === 0) {
-      if (select) select.innerHTML = `<option value="">— No Products Cleared for a New BOQ —</option>`;
+      if (search) search.placeholder = "— No Products Cleared for a New BOQ —";
       if (banner) {
         banner.style.display = "block";
         banner.textContent = data.message || "No products are cleared for manufacturing yet. check Manufacturing Clearance.";
@@ -229,10 +234,7 @@ async function loadCboqAllowedProducts(projectId) {
       return;
     }
 
-    if (select) {
-      select.innerHTML = '<option value="">— Select Product —</option>' +
-        data.options.map(opt => `<option value="${opt.itemCode}">${opt.productName}${opt.productRating ? " " + opt.productRating : ""}</option>`).join("");
-    }
+    if (search) search.placeholder = "Search Product Name...";
     if (banner) {
       banner.style.display = "block";
       const heading = data.tier === "poProducts" ? "BOQ pending for:" : "Finished Goods BOQs pending for:";
@@ -242,32 +244,73 @@ async function loadCboqAllowedProducts(projectId) {
     }
   } catch(e) {
     if (seq !== cboqAllowedProductsRequestSeq) return;
-    if (select) select.innerHTML = `<option value="">Network error</option>`;
+    if (search) search.placeholder = "Network error";
     if (banner) { banner.style.display = "block"; banner.textContent = "Network error loading allowed products: " + e.message; }
   }
 }
 
-function handleCBOQProductSelectChange(itemCode) {
-  const opt = (window.cboqAllowedOptionsByValue || {})[itemCode];
-  const ratingEl = document.getElementById("cboq-product-rating");
-  const qtyEl = document.getElementById("cboq-order-qty");
-  const addRowBtn = document.getElementById("cboq-add-row-btn");
+// Search box shows the combined "Product Name + Rating" per option (same
+// as Import BOQ's and Manufacturing Clearance's typeaheads) so both parts
+// are searchable — but once an option is picked, selectCBOQProductOption
+// splits them straight back into their own Product Name / Product Rating
+// fields, matching how design.item_codes actually stores them
+// (material_name, rating as separate columns), same split Manufacturing
+// Clearance uses.
+function handleCBOQProductNameSearch(query) {
+  const dropdown = document.getElementById("cboq-product-dropdown");
+  if (!dropdown) return;
+  const options = window.cboqAllowedOptionsList || [];
 
-  if (!opt) {
-    document.getElementById("cboq-product-name").value = "";
-    document.getElementById("cboq-source-po-line-id").value = "";
-    if (ratingEl) ratingEl.value = "";
-    if (qtyEl) qtyEl.value = "";
-    if (addRowBtn) { addRowBtn.disabled = true; addRowBtn.style.opacity = "0.5"; addRowBtn.style.cursor = "not-allowed"; }
+  if (!query || query.trim().length < 1) { dropdown.style.display = "none"; return; }
+  const q = query.toLowerCase();
+  const matches = options.filter(opt => {
+    const name = (opt.productName || "").toLowerCase();
+    const combined = `${name} ${(opt.productRating || "").toLowerCase()}`.trim();
+    return name.includes(q) || combined.includes(q);
+  }).slice(0, 10);
+
+  if (matches.length === 0) {
+    dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">No matching product found.</div>`;
+    dropdown.style.display = "block";
     return;
   }
 
+  dropdown.innerHTML = matches.map(opt => `
+    <div onmousedown="event.preventDefault();" onclick="selectCBOQProductOption('${opt.itemCode}')"
+      style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      ${opt.productName}${opt.productRating ? ` <span style="color:var(--brand); font-weight:700;">${opt.productRating}</span>` : ""}
+    </div>`).join("");
+  dropdown.style.display = "block";
+}
+
+function selectCBOQProductOption(itemCode) {
+  const opt = (window.cboqAllowedOptionsByValue || {})[itemCode];
+  const searchEl = document.getElementById("cboq-product-search");
+  const ratingEl = document.getElementById("cboq-product-rating");
+  const qtyEl = document.getElementById("cboq-order-qty");
+  const addRowBtn = document.getElementById("cboq-add-row-btn");
+  const dropdown = document.getElementById("cboq-product-dropdown");
+  if (dropdown) dropdown.style.display = "none";
+
+  if (!opt) return;
+
+  if (searchEl) searchEl.value = opt.productName;
   document.getElementById("cboq-product-name").value = opt.productName;
+  document.getElementById("cboq-product-itemcode").value = opt.itemCode;
   document.getElementById("cboq-source-po-line-id").value = opt.sourcePoLineId || "";
   if (ratingEl) { ratingEl.value = opt.productRating || ""; ratingEl.style.height = "auto"; ratingEl.style.height = ratingEl.scrollHeight + "px"; }
   if (qtyEl) { qtyEl.value = trimNum(opt.lockedQuantity); updateCBOQTotals(); }
   if (addRowBtn) { addRowBtn.disabled = false; addRowBtn.style.opacity = "1"; addRowBtn.style.cursor = "pointer"; }
 }
+
+document.addEventListener("click", (e) => {
+  const dropdown = document.getElementById("cboq-product-dropdown");
+  if (dropdown && dropdown.style.display !== "none" &&
+      !e.target.closest("#cboq-product-search") && !e.target.closest("#cboq-product-dropdown")) {
+    dropdown.style.display = "none";
+  }
+});
 
 function addCBOQMaterialRow() {
   cboqMaterialRows.push({ typeOfStore: "Raw Materials Store", descriptionOfMaterial: "", itemCode: "", make: "", quantityFor1Set: "", unit: "", designRatePerQuantity: "" });
