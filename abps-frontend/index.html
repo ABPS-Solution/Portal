@@ -332,9 +332,13 @@
   .pstat-po-chip-pending { background: #f1f5f9; color: var(--muted); }
   .pstat-po-chip-overdue { background: #fee2e2; color: #b91c1c; }
 
-  .pstat-jc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
-  .pstat-jc-tile { background: var(--highlight-bg); color: var(--brand); border-radius: 6px; padding: 8px 6px; font-size: 0.76rem; font-weight: 700; text-align: center; }
-  .pstat-jc-tile.pstat-jc-done { background: #dcfce7; color: #15803d; }
+  .pstat-jc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 10px; }
+  .pstat-jc-tile { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .pstat-jc-ring-wrap { position: relative; width: 44px; height: 44px; }
+  .pstat-jc-ring-wrap svg { position: absolute; top: 0; left: 0; }
+  .pstat-jc-ring-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 800; color: var(--brand); }
+  .pstat-jc-ring-label.pstat-jc-ring-done { color: var(--pstat-complete); font-size: 0.9rem; }
+  .pstat-jc-set-label { font-size: 0.72rem; font-weight: 700; color: var(--muted); }
 
   .pstat-scroll-wrap { overflow-x: auto; }
 

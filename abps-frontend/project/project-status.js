@@ -263,6 +263,22 @@ function renderPstatLane(lane) {
     </div>`;
 }
 
+// pstatProgressRingSvg — small circular progress indicator for a Job Card
+// tile (replaces the old flat "Set 1 / 67%" text). Rotated -90deg so the
+// arc starts at 12 o'clock and fills clockwise, same convention as most
+// progress rings.
+function pstatProgressRingSvg(pct, isDone) {
+  const r = 18, c = 2 * Math.PI * r;
+  const clamped = Math.min(100, Math.max(0, pct));
+  const offset = c * (1 - clamped / 100);
+  const color = isDone ? "var(--pstat-complete)" : (clamped > 0 ? "var(--pstat-active)" : "var(--pstat-pending)");
+  return `<svg width="44" height="44" viewBox="0 0 44 44" style="transform:rotate(-90deg);">
+    <circle cx="22" cy="22" r="${r}" fill="none" stroke="#e8edf3" stroke-width="4"></circle>
+    <circle cx="22" cy="22" r="${r}" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round"
+      stroke-dasharray="${c}" stroke-dashoffset="${offset}" style="transition:stroke-dashoffset 0.3s ease;"></circle>
+  </svg>`;
+}
+
 function renderPstatLaneDetail(lane) {
   const { materials, jobCards } = lane;
   let html = "";
@@ -315,11 +331,16 @@ function renderPstatLaneDetail(lane) {
   if (jobCards.length > 0) {
     html += `<div class="pstat-detail-heading">Job Cards</div><div class="pstat-jc-grid">
       ${jobCards.map(jc => {
-        if (jc.isCompleted) return `<div class="pstat-jc-tile pstat-jc-done">Set ${jc.setNumber}<br>✓</div>`;
         const allotted = Number(jc.weightedAllotted) || 0;
         const used = Number(jc.weightedUsed) || 0;
-        const pct = allotted > 1e-9 ? Math.min(100, (used / allotted) * 100) : 0;
-        return `<div class="pstat-jc-tile">Set ${jc.setNumber}<br>${pct.toFixed(0)}%</div>`;
+        const pct = jc.isCompleted ? 100 : (allotted > 1e-9 ? Math.min(100, (used / allotted) * 100) : 0);
+        return `<div class="pstat-jc-tile">
+          <div class="pstat-jc-ring-wrap">
+            ${pstatProgressRingSvg(pct, jc.isCompleted)}
+            <div class="pstat-jc-ring-label ${jc.isCompleted ? "pstat-jc-ring-done" : ""}">${jc.isCompleted ? "✓" : pct.toFixed(0) + "%"}</div>
+          </div>
+          <div class="pstat-jc-set-label">Set ${jc.setNumber}</div>
+        </div>`;
       }).join("")}
     </div>`;
   }
