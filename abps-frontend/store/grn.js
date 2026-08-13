@@ -120,9 +120,8 @@ async function initializeStoreEntryWorkspaceQueue() {
           </td>
           <td style="text-align:center; width:75px; padding:6px; vertical-align:middle;">
             <input type="number" class="se-rate-${item.gateNumber}" data-idx="${idx}"
-              value="${line.ratePerQuantity || ''}" placeholder="Rate"
-              style="width:100%; text-align:center; font-weight:700; border:1.5px solid ${line.ratePerQuantity > 0 ? 'var(--brand)' : '#f59e0b'}; padding:5px; font-size:0.9rem; border-radius:3px;"
-              oninput="updateSERowAmounts('${item.gateNumber}', ${idx})">
+              value="${line.ratePerQuantity || ''}" placeholder="Rate" readonly title="Locked — calculated from the invoice's Rate/Qty and Disc %"
+              style="width:100%; text-align:center; font-weight:700; border:1.5px solid ${line.ratePerQuantity > 0 ? '#86efac' : '#f59e0b'}; background:#f0fdf4; color:#15803d; cursor:not-allowed; padding:5px; font-size:0.9rem; border-radius:3px;">
           </td>
           <td style="text-align:center; width:70px; padding:6px; vertical-align:middle;">
             <input type="number" class="se-gst-${item.gateNumber}" data-idx="${idx}"

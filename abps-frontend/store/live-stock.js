@@ -1749,10 +1749,10 @@ function renderExpectedInboundsPOCard(po, scheme) {
     return `<tr style="border-bottom:1px solid #f1f5f9;">
       <td style="padding:6px 8px; font-family:monospace; font-size:0.75rem; font-weight:700; color:var(--brand); white-space:nowrap;">${item.itemCode || "—"}</td>
       <td style="padding:6px 8px; font-size:0.8rem; font-weight:600; line-height:1.4;">${item.materialName}</td>
-      <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; white-space:nowrap;">${item.orderedQty} ${item.unit}</td>
-      <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; white-space:nowrap; color:#15803d;">${item.receivedQty}</td>
-      <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; white-space:nowrap; color:#b45309;">${item.repairQty}</td>
-      <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; white-space:nowrap; color:#b91c1c;">${item.returnMissingQty}</td>
+      <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap;">${item.orderedQty} ${item.unit}</td>
+      <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap; color:#15803d;">${item.receivedQty}</td>
+      <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap; color:#b45309;">${item.repairQty}</td>
+      <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap; color:#b91c1c;">${item.returnMissingQty}</td>
       <td style="padding:6px 8px; text-align:center;">${statusBadge}</td>
     </tr>`;
   }).join("");

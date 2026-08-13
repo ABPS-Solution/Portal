@@ -765,9 +765,9 @@ async function initializeRejectedMaterialPanel(toggle) {
         trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
           <td style="width:110px; padding:8px 6px; text-align:center; font-family:monospace; font-weight:700;">${line.itemCode}</td>
           <td style="min-width:180px; padding:8px 6px; font-size:0.85rem;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
-          <td style="width:70px; padding:8px 6px; text-align:center; font-weight:700;">${Number(line.missingQuantity) || 0}</td>
-          <td style="width:70px; padding:8px 6px; text-align:center; font-weight:700;">${line.notOkQuantity}</td>
-          <td style="width:90px; padding:8px 6px; text-align:center; font-weight:700;">${line.outstandingQuantity}</td>
+          <td style="width:70px; padding:8px 6px; text-align:center; font-weight:700; font-size:1rem;">${Number(line.missingQuantity) || 0}</td>
+          <td style="width:70px; padding:8px 6px; text-align:center; font-weight:700; font-size:1rem;">${line.notOkQuantity}</td>
+          <td style="width:90px; padding:8px 6px; text-align:center; font-weight:700; font-size:1rem;">${line.outstandingQuantity}</td>
           <td style="width:180px; padding:8px 6px; font-size:0.8rem; color:#64748b;">${(line.reasonForNotOk || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
           <td style="width:170px; padding:8px 6px;">
             ${isMissingOnly ? `<span style="font-size:0.8rem; font-weight:600; color:#64748b;">Awaiting vendor replacement</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>` :

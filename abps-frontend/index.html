@@ -580,11 +580,11 @@
 
         <div id="gate-ai-verification-workspace" style="display: none; margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 15px;">
           <div class="gate-meta-grid">
-            <div><label class="field-label">PO Number</label><input type="text" id="gate-meta-po" placeholder="e.g. PO_26-27_00002" style="background:#f1f5f9;" onblur="checkGatePONumber()" /><div id="gate-po-check-msg" style="font-size:0.68rem; font-weight:700; margin-top:3px;"></div></div>
-            <div><label class="field-label">Invoice Number</label><input type="text" id="gate-meta-invoice" style="background:#f1f5f9;" /></div>
-            <div><label class="field-label">Challan Number</label><input type="text" id="gate-meta-challan" style="background:#f1f5f9;" /></div>
-            <div><label class="field-label">Vendor Name</label><input type="text" id="gate-meta-vendor" style="background:#f1f5f9;" onblur="checkVendorOpenRejections()" /></div>
-            <div><label class="field-label">Date</label><input type="text" id="gate-meta-date" style="background:#f1f5f9;" /></div>
+            <div><label class="field-label">PO Number</label><input type="text" id="gate-meta-po" placeholder="e.g. PO_26-27_00002" readonly style="background:#f1f5f9; cursor:not-allowed;" /><div id="gate-po-check-msg" style="font-size:0.68rem; font-weight:700; margin-top:3px;"></div></div>
+            <div><label class="field-label">Invoice Number *</label><input type="text" id="gate-meta-invoice" style="background:#fff;" /></div>
+            <div><label class="field-label">Challan Number</label><input type="text" id="gate-meta-challan" readonly style="background:#f1f5f9; cursor:not-allowed;" /></div>
+            <div><label class="field-label">Vendor Name</label><input type="text" id="gate-meta-vendor" readonly style="background:#f1f5f9; cursor:not-allowed;" /></div>
+            <div><label class="field-label">Date</label><input type="text" id="gate-meta-date" readonly style="background:#f1f5f9; cursor:not-allowed;" /></div>
             <input type="hidden" id="gate-meta-time" value="" />
           </div>
           <div id="gate-vendor-rejection-banner" style="display:none; margin-bottom:16px;"></div>
