@@ -46,6 +46,11 @@ async function navigateToModule(key) {
         targetPanelKeyIdStr = "commissioningReport";
     } else if (key === "purchaseOrder") {
         targetPanelKeyIdStr = "purchaseOrder";
+        // Always start fresh — otherwise leaving via Return to Main
+        // Dashboard mid-review and coming back shows the previous
+        // session's Review Extracted Purchase Order screen instead of
+        // the blank upload form.
+        if (typeof resetPurchaseOrderWorkspace === "function") resetPurchaseOrderWorkspace();
         // Populate owner dropdown with marketing engineers
         const poOwnerDrop = document.getElementById("po-owner-of-order-dropdown");
         if (poOwnerDrop) {
