@@ -146,9 +146,12 @@ function renderMcLineItemsTable(projectId, lineItems) {
 
   const rowsHtml = lineItems.map(li => {
     const state = mcLineItemState[projectId][li.lineId];
-    const searchVal = state.standardProductName
-      ? `${state.standardProductName}${state.standardProductRating ? " " + state.standardProductRating : ""}`
-      : "";
+    // Product Name and Rating are stored as separate columns on the item
+    // code catalog (design.item_codes: material_name, rating) and on this
+    // line's own state — shown as two separate fields here, same split as
+    // Create BOQ's Product Name / Product Rating, not jammed into one box.
+    const searchVal = state.standardProductName || "";
+    const ratingVal = state.standardProductRating || "";
     return `
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px; font-weight:600; vertical-align:middle;">${li.description}</td>
@@ -160,6 +163,11 @@ function renderMcLineItemsTable(projectId, lineItems) {
             onkeydown="if(event.key==='Enter') event.preventDefault();"
             style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px;">${searchVal.replace(/</g,'&lt;')}</textarea>
           <div id="mc-std-dropdown-${safeId}-${li.lineId}" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); overflow-y:auto; min-width:280px;"></div>
+        </td>
+        <td style="padding:8px; vertical-align:middle;">
+          <textarea rows="1" id="mc-std-rating-${safeId}-${li.lineId}" readonly
+            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; background:#f1f5f9; color:var(--muted); cursor:not-allowed;"
+            placeholder="Auto-filled from Product Name">${ratingVal.replace(/</g,'&lt;')}</textarea>
         </td>
         <td style="padding:8px; text-align:center; vertical-align:middle;">${fmtQty(li.quantity)}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle;">${li.unit || "—"}</td>
@@ -177,13 +185,14 @@ function renderMcLineItemsTable(projectId, lineItems) {
     <div style="overflow-x:auto; margin-bottom:14px;">
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
         <colgroup>
-          <col style="width:34%;" /><col style="width:34%;" /><col style="width:7%;" />
+          <col style="width:24%;" /><col style="width:24%;" /><col style="width:14%;" /><col style="width:7%;" />
           <col style="width:6%;" /><col style="width:10%;" /><col style="width:9%;" />
         </colgroup>
         <thead>
           <tr style="background:var(--highlight-bg); text-align:left;">
             <th style="padding:8px;">Order Product Description</th>
             <th style="padding:8px;">Standard Product Name *</th>
+            <th style="padding:8px;">Standard Product Rating</th>
             <th style="padding:8px; text-align:center;">Order Quantity</th>
             <th style="padding:8px; text-align:center;">UOM</th>
             <th style="padding:8px; text-align:center;">Current MFC Quantity</th>
@@ -241,9 +250,13 @@ function handleMcProductSearch(query, projectId, lineId) {
   dropdown.style.width = Math.max(inputRect.width, 280) + "px";
   dropdown.style.maxHeight = Math.min(Math.max(availableHeight, 180), 280) + "px";
 
+  const ratingEl = document.getElementById(`mc-std-rating-${safeId}-${lineId}`);
+  const clearRating = () => { if (ratingEl) { ratingEl.value = ""; mcAutoGrowField(ratingEl); } };
+
   if (!query || query.trim().length < 1) {
     dropdown.style.display = "none";
     state.standardItemCode = ""; state.standardProductName = ""; state.standardProductRating = "";
+    clearRating();
     return;
   }
 
@@ -260,6 +273,7 @@ function handleMcProductSearch(query, projectId, lineId) {
     </div>`;
     dropdown.style.display = "block";
     state.standardItemCode = ""; state.standardProductName = ""; state.standardProductRating = "";
+    clearRating();
     return;
   }
 
@@ -280,7 +294,9 @@ function selectMcProduct(projectId, lineId, itemCode, productName, rating) {
   state.standardProductRating = rating || "";
 
   const searchEl = document.getElementById(`mc-std-search-${safeId}-${lineId}`);
-  if (searchEl) { searchEl.value = rating ? `${productName} ${rating}` : productName; mcAutoGrowField(searchEl); }
+  if (searchEl) { searchEl.value = productName; mcAutoGrowField(searchEl); }
+  const ratingEl = document.getElementById(`mc-std-rating-${safeId}-${lineId}`);
+  if (ratingEl) { ratingEl.value = rating || ""; mcAutoGrowField(ratingEl); }
   const dropdown = document.getElementById(`mc-std-dropdown-${safeId}-${lineId}`);
   if (dropdown) dropdown.style.display = "none";
 }

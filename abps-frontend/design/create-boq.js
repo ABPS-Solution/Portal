@@ -225,9 +225,10 @@ async function loadCboqAllowedProducts(projectId) {
     }
     if (banner) {
       banner.style.display = "block";
-      banner.textContent = data.tier === "poProducts"
-        ? `${data.pendingNames.join(", ")} BOQ pending`
-        : `Finished Goods BOQs pending: ${data.pendingNames.join(", ")}`;
+      const heading = data.tier === "poProducts" ? "BOQ pending for:" : "Finished Goods BOQs pending for:";
+      const esc = (s) => (s || "").toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const bullets = data.pendingNames.map(n => `<li>${esc(n)}</li>`).join("");
+      banner.innerHTML = `${heading}<ul style="margin:6px 0 0; padding-left:20px;">${bullets}</ul>`;
     }
   } catch(e) {
     if (select) select.innerHTML = `<option value="">Network error</option>`;
