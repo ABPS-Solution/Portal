@@ -131,8 +131,6 @@ async function initializeRevisePOPanel() {
       return;
     }
     feed.innerHTML = queue.map(po => {
-      const prns = (po.changedPrns || []).filter(p => p && p.prnId);
-      const chips = prns.map(p => `<span style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.68rem; font-family:monospace; padding:2px 7px; border-radius:4px; margin:0 4px 3px 0;">${p.prnId.replace(/^PRN_/,"")} (v${p.stampedVersion}→v${p.currentVersion})</span>`).join("");
       return `
         <div style="background:#fff; border:1px solid var(--border); border-left:3px solid #f59e0b; border-radius:var(--radius); padding:14px;">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap;">
@@ -140,7 +138,6 @@ async function initializeRevisePOPanel() {
               <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${po.poNo}${po.revisionNumber > 1 ? ` <span style="font-size:0.7rem; color:var(--muted);">(V${po.revisionNumber})</span>` : ""}</div>
               <div style="font-size:0.8rem; font-weight:600; margin-top:2px;">${po.vendorName || ""}</div>
               <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Ordered ${po.orderDate ? formatDateDMY(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatDateDMY(po.deliveryDate) : "—"}</div>
-              <div style="margin-top:7px;">${chips}</div>
             </div>
             <div style="display:flex; gap:8px; flex-shrink:0;">
               <button onclick="dismissPORevision('${po.poNo}')" style="padding:7px 14px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.8rem;">No Revision Needed</button>
@@ -186,7 +183,16 @@ async function openPORevision(poNo, changedOnly) {
   try {
     const data = await apFetch({ action: "fetchPOForRevision", poNo, changedOnly });
     if (!data.success) { zone.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${data.error}</div>`; return; }
-    window.rpoActive = { po: data.po, lineItems: data.lineItems || [], kind: changedOnly ? "PRN Driven" : "Standalone" };
+    const lineItems = (data.lineItems || []).map(li => ({
+      ...li,
+      quantity: li.orderedQty, // Vendor Discussed Qty starts at the PO's existing ordered qty, editable from there
+      // Rate/Disc already carry the PO's real committed values (unlike a
+      // brand-new Create PO row), so — unlike Create PO — nothing here is
+      // locked pending an allocation decision.
+      _workingAllocations: (li.allocations || []).map(a => ({ prnId: a.prnId, quantity: Number(a.allocatedQty) || 0 })),
+      _allocationTouched: (li.allocations || []).length > 0,
+    }));
+    window.rpoActive = { po: data.po, lineItems, kind: changedOnly ? "PRN Driven" : "Standalone" };
     renderPORevisionCard();
   } catch (e) {
     zone.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
@@ -199,55 +205,110 @@ function renderPORevisionCard() {
   const { po, lineItems, kind } = st;
   const fmt = (n) => (Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
 
-  const rows = lineItems.map((li, idx) => {
+  const rowsHtml = lineItems.map((li, idx) => {
     if (kind === "PRN Driven" && !li.changed) return ""; // unchanged — not shown, but still counted in the totals below
 
-    // Allocation inputs, one per PRN already on this line. "Needs" is that
-    // PRN's CURRENT requirement from THIS PO — its purchase quantity minus
-    // whatever other POs already cover — so a material split across two
-    // vendors is never double-counted. This block's own height is never
-    // constrained, so a line allocated across several PRNs naturally
-    // grows the row to fit every one of them — nothing to configure.
-    const allocs = li.allocations || [];
-    const allocHtml = allocs.length === 0
-      ? `<div style="font-size:0.72rem; color:var(--muted);">No PRN allocated. Entire Material Quantity is extra stock.</div>`
-      : allocs.map(a => {
-          const need = Math.max(0, (Number(a.currentPurchaseQty)||0) - (Number(a.coveredByOtherPOs)||0));
-          const stale = Number(a.prnVersion) > Number(a.stampedVersion || 0);
-          return `<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-            <span style="flex:1; font-family:monospace; font-size:0.7rem; font-weight:700; color:${stale ? "#b45309" : "var(--brand)"};">${a.prnId.replace(/^PRN_/,"")}${stale ? " ●" : ""}</span>
-            <span style="font-size:0.68rem; color:#334155; font-weight:600; white-space:nowrap;">needs ${fmt(need)}</span>
-            <input type="number" min="0" max="${need}" step="any" class="rpo-alloc" data-idx="${idx}" data-prnid="${a.prnId}" data-need="${need}"
-              value="${Math.min(Number(a.allocatedQty)||0, need)}" oninput="updateRPOLineTotals(${idx})"
-              style="width:78px; text-align:center; font-weight:700; padding:4px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.78rem;">
-          </div>`;
-        }).join("");
+    // Chips below the row — same "Allocate to PRNs" button + chip-list
+    // pattern as Create PO, sourced from li._workingAllocations (edited
+    // via the modal, see openRPOAllocationModal) instead of a fresh fetch,
+    // since the PRN list + each one's "need" is already loaded upfront here.
+    const workingAllocs = li._workingAllocations || [];
+    const vdqNow = parseFloat(li.quantity) || 0;
+    const allocSum = workingAllocs.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
+    const unallocNow = Math.round((vdqNow - allocSum) * 100) / 100;
+    const chipsHtml = (workingAllocs.length || li._allocationTouched)
+      ? workingAllocs.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId.replace(/^PRN_/,"")}: <strong>${a.quantity}</strong></div>`).join("")
+        + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${unallocNow}</strong></div>` : "")
+      : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No PRNs allocated</span>';
+
+    // Design Rate/Qty, Costing Diff, over-rate flag — same formulas as
+    // Create PO's row (see po.js renderCPOMaterialRows), just sourced from
+    // this line's own state instead of a freshly-typed row. Warn-only,
+    // same as Create PO — Revise PO doesn't block submission on this,
+    // only Authorize (PO / PO Revision) does.
+    const discNow = parseFloat(li.discountPercent) || 0;
+    const rateNow = parseFloat(li.rate) || 0;
+    const hasRateValue = li.rate !== '' && li.rate !== null && li.rate !== undefined && !isNaN(parseFloat(li.rate));
+    const effectiveRate = rateNow * (100 - discNow) / 100;
+    const designRate = li.designRatePerQuantity;
+    const hasDesignRate = designRate != null;
+    const isOverRate = hasRateValue && hasDesignRate && effectiveRate > Number(designRate) + 1e-9;
+    const costingDiff = (hasRateValue && hasDesignRate) ? (effectiveRate - Number(designRate)) * vdqNow : null;
+    const overRateWarning = isOverRate
+      ? `<div style="margin-top:10px; padding:7px 10px; background:#fffbeb; border:1px solid #fde68a; border-radius:4px; font-size:0.75rem; font-weight:700; color:#78350f;">
+          ⚠️ Rate / Qty after Disc % (${fmt(effectiveRate)}) is higher than Design Rate / Qty (${fmt(designRate)}).
+        </div>`
+      : "";
 
     const rpoRowBg = li.changed
       ? (Number(li.newRequiredQty) > Number(li.orderedQty) ? "#f0fdf4" : "#fffbeb")
-      : "";
+      : "#fff";
     return `
-      <tr style="border-bottom:1px solid #e2e8f0; ${rpoRowBg ? `background:${rpoRowBg};` : ""}">
-        <td style="padding:8px; font-size:0.8rem; font-weight:600; min-width:170px;">${li.description || ""}</td>
-        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:#1a2332;">${fmt(li.orderedQty)}</td>
-        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:800; color:${Number(li.newRequiredQty) > Number(li.orderedQty) ? "#15803d" : "#b91c1c"};">${fmt(li.newRequiredQty)}</td>
-        <td style="padding:8px; text-align:center; font-size:0.72rem; color:${Number(li.receivedQty) > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(li.receivedQty)}</td>
-        <td style="padding:8px; text-align:center;">
-          <input type="number" min="${Number(li.receivedQty)||0}" step="any" class="rpo-vdq" data-idx="${idx}"
-            value="${fmt(li.orderedQty).replace(/,/g,"")}" oninput="updateRPOLineTotals(${idx})"
-            style="width:100px; text-align:center; font-weight:800; padding:6px; border:1.5px solid #15803d; border-radius:4px; font-size:0.85rem;">
-        </td>
-        <td style="padding:8px; text-align:center;">
-          <input type="number" min="0" step="any" class="rpo-rate" data-idx="${idx}" value="${Number(li.rate)||0}" oninput="updateRPOLineTotals(${idx})"
-            style="width:90px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
-        </td>
-        <td style="padding:8px; text-align:center;">
-          <input type="number" min="0" max="100" step="any" class="rpo-disc" data-idx="${idx}" value="${Number(li.discountPercent)||0}" oninput="updateRPOLineTotals(${idx})"
-            style="width:70px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
-        </td>
-        <td id="rpo-amount-${idx}" style="padding:8px; text-align:right; font-family:monospace; font-weight:800; font-size:0.88rem;">0.00</td>
-        <td style="padding:8px; min-width:190px;">${allocHtml}<div id="rpo-sum-${idx}" style="font-size:0.65rem; font-weight:800; margin-top:4px;"></div></td>
-      </tr>`;
+    <div data-lineidx="${idx}" style="background:${isOverRate ? "#fef2f2" : rpoRowBg}; border:1px solid ${isOverRate ? "#fca5a5" : "var(--border)"}; border-radius:var(--radius); padding:12px; margin-bottom:10px;">
+      <div style="display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap;">
+        <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx + 1}</div>
+
+        <div style="flex:1; min-width:140px;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Description of Material</div>
+          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; font-size:0.82rem; font-weight:600; padding:0 4px;">${li.description || ""}</div>
+        </div>
+        <div style="width:70px; flex-shrink:0; text-align:center;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Old PO Qty</div>
+          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:700; color:#1a2332; font-size:0.85rem;">${fmt(li.orderedQty)}</div>
+        </div>
+        <div style="width:75px; flex-shrink:0; text-align:center;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">New Required Qty</div>
+          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:800; font-size:0.85rem; color:${Number(li.newRequiredQty) > Number(li.orderedQty) ? "#15803d" : "#b91c1c"};">${fmt(li.newRequiredQty)}</div>
+        </div>
+        <div style="width:70px; flex-shrink:0; text-align:center;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Already Received</div>
+          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:700; color:${Number(li.receivedQty) > 0 ? "#b45309" : "var(--muted)"};">${fmt(li.receivedQty)}</div>
+        </div>
+        <div style="width:50px; flex-shrink:0; text-align:center;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Unit</div>
+          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; color:#475569; font-size:0.85rem;">${li.unit || '—'}</div>
+        </div>
+        <div style="width:90px; flex-shrink:0;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Vendor Discussed Qty *</div>
+          <input type="number" min="${Number(li.receivedQty)||0}" step="any" class="rpo-vdq" data-idx="${idx}" value="${li.quantity}"
+            oninput="updateRPORowField(${idx},'quantity',this.value)"
+            style="width:100%; height:36px; box-sizing:border-box; text-align:center; font-weight:800; padding:6px; border:1.5px solid #15803d; border-radius:4px; font-size:0.85rem;">
+        </div>
+        <div style="width:90px; flex-shrink:0; text-align:center;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Design Rate / Qty</div>
+          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:700; color:#475569; font-size:0.85rem;">${hasDesignRate ? fmt(designRate) : '—'}</div>
+        </div>
+        <div style="width:90px; flex-shrink:0;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Rate / Qty *</div>
+          <input type="number" min="0" step="any" class="rpo-rate" data-idx="${idx}" value="${li.rate}"
+            oninput="updateRPORowField(${idx},'rate',this.value)"
+            style="width:100%; height:36px; box-sizing:border-box; text-align:center; font-weight:700; padding:6px; border:1.5px solid ${isOverRate ? '#dc2626' : 'var(--border)'}; border-radius:4px; font-size:0.82rem; ${isOverRate ? 'background:#fef2f2;' : ''}">
+        </div>
+        <div style="width:65px; flex-shrink:0;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Disc %</div>
+          <input type="number" min="0" max="100" step="any" class="rpo-disc" data-idx="${idx}" value="${li.discountPercent}"
+            oninput="updateRPORowField(${idx},'discountPercent',this.value)"
+            style="width:100%; height:36px; box-sizing:border-box; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
+        </div>
+        <div style="width:100px; flex-shrink:0; text-align:right;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Costing Diff</div>
+          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:flex-end; font-family:monospace; font-weight:700; font-size:0.85rem; color:${costingDiff > 0 ? '#dc2626' : (costingDiff < 0 ? '#15803d' : '#475569')};"><span class="rpo-costing-diff" data-idx="${idx}">${costingDiff != null ? costingDiff.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '—'}</span></div>
+        </div>
+        <div style="width:110px; flex-shrink:0; text-align:right;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Amount</div>
+          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:flex-end; font-family:monospace; font-weight:800; font-size:1.05rem; color:#0f172a;"><span id="rpo-amount-${idx}">0.00</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
+        <div style="min-width:180px;">
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">PRNs using this Material *</div>
+          <button onclick="openRPOAllocationModal(${idx})" style="font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">Allocate to PRNs</button>
+        </div>
+        <div style="flex:1; min-width:200px; padding-top:2px;">${chipsHtml}</div>
+      </div>
+      ${overRateWarning}
+    </div>`;
   }).filter(Boolean).join("");
 
   // PRN Change Summary — what changed in the PRN(s) that's PROMPTING this
@@ -303,22 +364,7 @@ function renderPORevisionCard() {
       </div>
 
       ${kind === "PRN Driven" ? `<div style="font-size:0.72rem; color:var(--muted); margin-bottom:8px;">Showing only materials whose required quantity changed and not every material in this PO.</div>` : ""}
-      <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-        <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1150px;">
-          <thead><tr style="background:#f8fafc;">
-            <th style="padding:8px; font-size:0.68rem; text-align:left; min-width:170px;">Description of Material</th>
-            <th style="padding:8px; font-size:0.68rem; text-align:center;">Old PO Qty</th>
-            <th style="padding:8px; font-size:0.68rem; text-align:center; color:var(--brand);">New Required Qty</th>
-            <th style="padding:8px; font-size:0.68rem; text-align:center;">Already Received</th>
-            <th style="padding:8px; font-size:0.68rem; text-align:center; color:#15803d;">Vendor Discussed Qty *</th>
-            <th style="padding:8px; font-size:0.68rem; text-align:center;">Rate / Qty</th>
-            <th style="padding:8px; font-size:0.68rem; text-align:center;">Disc %</th>
-            <th style="padding:8px; font-size:0.68rem; text-align:center; color:#15803d;">Amount</th>
-            <th style="padding:8px; font-size:0.68rem; text-align:left;">Allocation to PRNs</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
+      <div id="rpo-lines-wrap">${rowsHtml}</div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
         <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
@@ -357,18 +403,64 @@ function renderPORevisionCard() {
       </div>
     </div>`;
 
-  lineItems.forEach((_, idx) => updateRPOLineTotals(idx));
+  lineItems.forEach((_, idx) => updateRPORowAmount(idx));
+  updateRPOGrandTotal();
+}
+
+// updateRPORowField — same role as Create PO's updateCPORowField: keeps
+// the line's own state (li.quantity/rate/discountPercent) in sync on
+// every keystroke, so a later full re-render (e.g. after saving the
+// Allocate to PRNs modal on a DIFFERENT row) never loses an in-progress
+// edit on this one — nothing here is ever read back out of the DOM.
+function updateRPORowField(idx, field, value) {
+  const li = window.rpoActive?.lineItems[idx];
+  if (!li) return;
+  li[field] = value;
+  updateRPORowAmount(idx);
+  updateRPOGrandTotal();
+}
+
+function updateRPORowAmount(idx) {
+  const li = window.rpoActive?.lineItems[idx];
+  if (!li) return;
+  const vdq = parseFloat(li.quantity) || 0;
+  const rate = parseFloat(li.rate) || 0;
+  const disc = parseFloat(li.discountPercent) || 0;
+  const amountEl = document.getElementById(`rpo-amount-${idx}`);
+  if (amountEl) amountEl.textContent = (vdq * rate * (100 - disc) / 100).toLocaleString("en-IN",{maximumFractionDigits:2});
+
+  // Costing Diff / over-rate border — same effective-rate (after Disc %)
+  // logic as the render-time version, updated live without a full
+  // re-render mid-keystroke.
+  const hasRateValue = li.rate !== '' && li.rate !== null && li.rate !== undefined && !isNaN(parseFloat(li.rate));
+  const effectiveRate = rate * (100 - disc) / 100;
+  const designRate = li.designRatePerQuantity;
+  const hasDesignRate = designRate != null;
+  const isOverRate = hasRateValue && hasDesignRate && effectiveRate > Number(designRate) + 1e-9;
+  const costingDiff = (hasRateValue && hasDesignRate) ? (effectiveRate - Number(designRate)) * vdq : null;
+  const diffSpan = document.querySelector(`.rpo-costing-diff[data-idx="${idx}"]`);
+  if (diffSpan) {
+    diffSpan.textContent = costingDiff != null ? costingDiff.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : "—";
+    diffSpan.style.color = costingDiff > 0 ? "#dc2626" : (costingDiff < 0 ? "#15803d" : "#475569");
+  }
+  const rateInput = document.querySelector(`.rpo-rate[data-idx="${idx}"]`);
+  if (rateInput) {
+    rateInput.style.borderColor = isOverRate ? "#dc2626" : "var(--border)";
+    rateInput.style.background = isOverRate ? "#fef2f2" : "";
+  }
+  // Row background / warning strip are static-render-only (same tradeoff
+  // Create PO makes) — a full re-render is needed to move/show them,
+  // which happens naturally the next time this card re-renders.
 }
 
 function updateRPOGrandTotal() {
   let subTotal = 0;
   (window.rpoActive?.lineItems || []).forEach((li, idx) => {
-    const vdqEl = document.querySelector(`.rpo-vdq[data-idx="${idx}"]`);
-    if (vdqEl) {
-      // Rendered/editable row — use the live inputs.
-      const vdq = parseFloat(vdqEl.value) || 0;
-      const rate = parseFloat(document.querySelector(`.rpo-rate[data-idx="${idx}"]`)?.value) || 0;
-      const disc = parseFloat(document.querySelector(`.rpo-disc[data-idx="${idx}"]`)?.value) || 0;
+    const rendered = document.getElementById(`rpo-amount-${idx}`);
+    if (rendered) {
+      const vdq = parseFloat(li.quantity) || 0;
+      const rate = parseFloat(li.rate) || 0;
+      const disc = parseFloat(li.discountPercent) || 0;
       subTotal += vdq * rate * (100 - disc) / 100;
     } else {
       // Unchanged line, not rendered in PRN-driven mode — still part of
@@ -391,48 +483,119 @@ function updateRPOGrandTotal() {
   if (gtEl) gtEl.textContent = fmt(grandTotal);
 }
 
-function updateRPOLineTotals(idx) {
-  const vdq = parseFloat(document.querySelector(`.rpo-vdq[data-idx="${idx}"]`)?.value) || 0;
-  const rate = parseFloat(document.querySelector(`.rpo-rate[data-idx="${idx}"]`)?.value) || 0;
-  const disc = parseFloat(document.querySelector(`.rpo-disc[data-idx="${idx}"]`)?.value) || 0;
-  const amountEl = document.getElementById(`rpo-amount-${idx}`);
-  if (amountEl) amountEl.textContent = (vdq * rate * (100 - disc) / 100).toLocaleString("en-IN",{maximumFractionDigits:2});
+// ── Allocate to PRNs modal — same UX as Create PO's openCPOAllocationPicker
+// / saveCPOAllocationPicker, sourced from this line's own li.allocations
+// (already loaded with fetchPOForRevision) instead of a fresh fetch, since
+// Revise PO already knows every open PRN for this item + PO combination.
+function openRPOAllocationModal(idx) {
+  const li = window.rpoActive?.lineItems[idx];
+  if (!li) return;
+  const vdq = parseFloat(li.quantity) || 0;
+  const fmt = (n) => (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  const existing = document.getElementById("rpo-alloc-modal");
+  if (existing) existing.remove();
 
-  const inputs = Array.from(document.querySelectorAll(`.rpo-alloc[data-idx="${idx}"]`));
-  let sum = 0;
+  const prns = (li.allocations || []).map(a => ({
+    prnId: a.prnId,
+    need: Math.max(0, (Number(a.currentPurchaseQty) || 0) - (Number(a.coveredByOtherPOs) || 0)),
+    stale: Number(a.prnVersion) > Number(a.stampedVersion || 0),
+  }));
+  const workingByPrn = Object.fromEntries((li._workingAllocations || []).map(a => [a.prnId, a.quantity]));
+
+  const modal = document.createElement("div");
+  modal.id = "rpo-alloc-modal";
+  modal.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;";
+  modal.innerHTML = `
+    <div style="background:#fff; border-radius:var(--radius); max-width:560px; width:100%; max-height:85vh; overflow-y:auto; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
+      <div style="padding:16px 20px; border-bottom:1px solid var(--border);">
+        <div style="font-size:0.95rem; font-weight:800; color:var(--brand);">Allocate to PRNs — ${li.description || ""}</div>
+        <div style="font-size:0.78rem; color:var(--muted); margin-top:2px;">Vendor Discussed Qty: <strong>${fmt(vdq)}</strong></div>
+      </div>
+      <div style="padding:14px 20px;">
+        ${prns.length === 0 ? `<div style="font-size:0.82rem; color:var(--muted);">No PRN currently needs this material from this PO.</div>` :
+          prns.map(p => `
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+            <span style="flex:1; font-family:monospace; font-size:0.8rem; font-weight:700; color:${p.stale ? "#b45309" : "var(--brand)"};">${p.prnId.replace(/^PRN_/,"")}${p.stale ? " ●" : ""}</span>
+            <span style="font-size:0.72rem; color:#334155; font-weight:600; white-space:nowrap;">needs ${fmt(p.need)}</span>
+            <input type="number" min="0" max="${p.need}" step="any" class="rpo-alloc-modal-input" data-prnid="${p.prnId}" data-need="${p.need}"
+              value="${workingByPrn[p.prnId] !== undefined ? Math.min(workingByPrn[p.prnId], p.need) : p.need}"
+              oninput="updateRPOAllocModalSummary(${idx})"
+              style="width:90px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--brand); border-radius:4px; font-size:0.85rem;">
+          </div>`).join("")}
+      </div>
+      <div id="rpo-alloc-modal-summary" style="padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700;"></div>
+      <div style="padding:14px 20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px;">
+        <button onclick="document.getElementById('rpo-alloc-modal').remove()" style="padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.8rem;">Cancel</button>
+        <button class="nav-btn-styled" onclick="saveRPOAllocationModal(${idx})" style="background:var(--accent); color:#fff; font-weight:700; padding:8px 18px;">Save Allocation</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  updateRPOAllocModalSummary(idx);
+}
+
+function updateRPOAllocModalSummary(idx) {
+  const li = window.rpoActive?.lineItems[idx];
+  if (!li) return;
+  const vdq = parseFloat(li.quantity) || 0;
+  const fmt = (n) => (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  const inputs = Array.from(document.querySelectorAll(".rpo-alloc-modal-input"));
+  let sum = 0, overCap = [];
   inputs.forEach(inp => {
     let v = parseFloat(inp.value) || 0;
     const need = parseFloat(inp.dataset.need) || 0;
     if (v < 0) { v = 0; inp.value = "0"; }
-    if (v > need + 1e-9) { v = need; inp.value = Number.isInteger(need) ? need : need.toFixed(2); }
+    if (v > need + 1e-9) { overCap.push(inp.dataset.prnid); }
     sum += v;
-    inp.style.borderColor = "var(--brand)";
   });
-  const el = document.getElementById(`rpo-sum-${idx}`);
-  if (el) {
-    const extra = Math.round((vdq - sum) * 100) / 100;
-    if (sum > vdq + 1e-9) { el.style.color = "#b91c1c"; el.textContent = `Allocated ${sum}, but the Vendor Discussed Qty is ${vdq}.`; }
-    else if (extra > 0)  { el.style.color = "#b45309"; el.textContent = `${extra} Extra Quantity`; }
-    else                 { el.style.color = "#15803d"; el.textContent = "Fully allocated"; }
+  const el = document.getElementById("rpo-alloc-modal-summary");
+  if (!el) return;
+  const unalloc = Math.max(0, Math.round((vdq - sum) * 100) / 100);
+  if (overCap.length) {
+    el.style.color = "#b91c1c"; el.textContent = `${overCap.length} PRN(s) allocated more than they still need.`;
+  } else if (sum > vdq + 1e-9) {
+    el.style.color = "#b91c1c"; el.textContent = `Allocated ${fmt(sum)}, but the Vendor Discussed Qty is only ${fmt(vdq)}.`;
+  } else {
+    el.style.color = unalloc > 0 ? "#b45309" : "#15803d";
+    el.textContent = unalloc > 0 ? `Allocated ${fmt(sum)} of ${fmt(vdq)}. Unallocated ${fmt(unalloc)} will be extra stock.` : `All ${fmt(vdq)} allocated.`;
   }
-  updateRPOGrandTotal();
+}
+
+function saveRPOAllocationModal(idx) {
+  const li = window.rpoActive?.lineItems[idx];
+  const modal = document.getElementById("rpo-alloc-modal");
+  if (!li || !modal) return;
+  const vdq = parseFloat(li.quantity) || 0;
+  const allocs = [];
+  let sum = 0;
+  for (const inp of modal.querySelectorAll(".rpo-alloc-modal-input")) {
+    const q = parseFloat(inp.value) || 0;
+    if (q <= 0) continue;
+    const cap = parseFloat(inp.dataset.need) || 0;
+    if (q > cap + 1e-9) { alert(`${inp.dataset.prnid.replace(/^PRN_/,"")} only needs ${cap} more from this PO, cannot allocate ${q}.`); return; }
+    sum += q;
+    allocs.push({ prnId: inp.dataset.prnid, quantity: q });
+  }
+  if (sum > vdq + 1e-9) { alert(`Allocated ${sum} across PRNs but the Vendor Discussed Qty is only ${vdq}.`); return; }
+  li._workingAllocations = allocs;
+  li._allocationTouched = true;
+  modal.remove();
+  renderPORevisionCard();
 }
 
 function collectRPOLines() {
   const st = window.rpoActive;
   return st.lineItems
     .map((li, idx) => ({ li, idx }))
-    .filter(({ idx }) => document.querySelector(`.rpo-vdq[data-idx="${idx}"]`)) // skip unchanged/unrendered lines
+    .filter(({ idx }) => document.getElementById(`rpo-amount-${idx}`)) // skip unchanged/unrendered lines
     .map(({ li, idx }) => {
-      const vdq = parseFloat(document.querySelector(`.rpo-vdq[data-idx="${idx}"]`)?.value);
-      const rate = parseFloat(document.querySelector(`.rpo-rate[data-idx="${idx}"]`)?.value) || 0;
-      const discountPercent = parseFloat(document.querySelector(`.rpo-disc[data-idx="${idx}"]`)?.value) || 0;
-      const allocations = Array.from(document.querySelectorAll(`.rpo-alloc[data-idx="${idx}"]`))
-        .map(inp => ({ prnId: inp.dataset.prnid, quantity: parseFloat(inp.value) || 0 }))
-        .filter(a => a.quantity > 0);
+      const vdq = parseFloat(li.quantity);
+      const rate = parseFloat(li.rate) || 0;
+      const discountPercent = parseFloat(li.discountPercent) || 0;
+      const allocations = (li._workingAllocations || []).filter(a => a.quantity > 0);
       return { itemCode: li.itemCode, srNo: li.srNo, description: li.description, unit: li.unit,
                vendorDiscussedQty: vdq, rate, discountPercent,
-               deliveryDate: li.deliveryDate || null, allocations, _received: Number(li.receivedQty) || 0, _idx: idx };
+               deliveryDate: li.deliveryDate || null, allocations, _received: Number(li.receivedQty) || 0, _idx: idx,
+               _designRate: li.designRatePerQuantity, _sourceAllocations: li.allocations || [], _allocationTouched: li._allocationTouched };
     });
 }
 
@@ -452,18 +615,19 @@ async function submitPORevisionUI() {
     if (sum > l.vendorDiscussedQty + 1e-9) {
       return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: allocated ${sum} but the revised line is ${l.vendorDiscussedQty}.`, "error");
     }
-    // Per-PRN over-allocation — the live red border/message already
-    // flags this on the row itself, but nothing previously stopped
-    // Submit from actually sending it; the backend caught it, but only
-    // after a full round trip. Checking it here too so it's an
-    // immediate, in-place error instead of a wasted request.
+    // Per-PRN over-allocation — the modal already validates this before
+    // Save, but checking it here too so a stale saved allocation (the
+    // PRN's own need may have shifted since) is never silently sent.
     for (const a of l.allocations) {
-      const inp = document.querySelector(`.rpo-alloc[data-idx="${l._idx}"][data-prnid="${a.prnId}"]`);
-      const need = inp ? (parseFloat(inp.dataset.need) || 0) : Infinity;
+      const src = l._sourceAllocations.find(s => s.prnId === a.prnId);
+      const need = src ? Math.max(0, (Number(src.currentPurchaseQty) || 0) - (Number(src.coveredByOtherPOs) || 0)) : Infinity;
       if (a.quantity > need + 1e-9) {
         return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode} / ${a.prnId.replace(/^PRN_/,"")}: needs only ${need} from this PO, cannot allocate ${a.quantity}.`, "error");
       }
     }
+    // Rate/Qty vs Design Rate/Qty — same non-blocking warning Create PO
+    // shows (the row itself already flags it visually); Revise PO doesn't
+    // block on this, only Authorize does. Nothing to check/block here.
   }
 
   const deliveryDateRaw = document.getElementById("rpo-delivery-date")?.value.trim();
@@ -688,12 +852,23 @@ function renderAPORCard(r) {
         <ul style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;">${generalBullets.join("")}</ul>
       </div>` : "";
 
+  const designRates = r.designRatesByItemCode || {};
   const rows = revised.map((line, idx) => {
     const cur = currentByItem[line.itemCode] || {};
     const oldQty = Number(cur.quantity) || 0;
     const received = Number(cur.received) || 0;
     const newQty = Number(line.quantity) || 0;
     const rowBg = Math.abs(newQty - oldQty) < 1e-9 ? "" : (newQty > oldQty ? "#f0fdf4" : "#fffbeb");
+
+    // Same over-rate check Create/Authorize PO already have — this screen
+    // was missing it entirely, so a revision could push a rate above the
+    // BOQ's Design Rate/Qty with no warning and nothing stopping it.
+    const designRate = designRates[line.itemCode];
+    const hasDesignRate = designRate != null;
+    const rate = Number(line.rate) || 0;
+    const disc = Number(line.discountPercent) || 0;
+    const effectiveRate = rate * (100 - disc) / 100;
+    const isOverRate = hasDesignRate && effectiveRate > Number(designRate) + 1e-9;
 
     const allocs = line.allocations || [];
     const allocHtml = allocs.length === 0
@@ -711,7 +886,7 @@ function renderAPORCard(r) {
         }).join("");
 
     return `
-      <tr style="border-bottom:1px solid #e2e8f0; ${rowBg ? `background:${rowBg};` : ""}">
+      <tr style="border-bottom:1px solid #e2e8f0; ${isOverRate ? "background:#fef2f2;" : (rowBg ? `background:${rowBg};` : "")}">
         <td style="padding:8px; font-size:0.8rem; font-weight:600; min-width:170px;">${line.description || ""}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:#1a2332;">${fmt(oldQty)}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:800; color:${newQty > oldQty ? "#15803d" : "#b91c1c"};">${fmt(newQty)}</td>
@@ -721,16 +896,19 @@ function renderAPORCard(r) {
             value="${Number(line.quantity)||0}" oninput="updateAPORLineTotals(${idx}, ${rid})"
             style="width:100px; text-align:center; font-weight:800; padding:6px; border:1.5px solid #15803d; border-radius:4px; font-size:0.85rem;">
         </td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:#475569; font-size:0.82rem;" data-designrate="${idx}">${hasDesignRate ? fmt(designRate) : '—'}</td>
         <td style="padding:8px; text-align:center;">
-          <input type="number" min="0" step="any" class="apor-rate" data-idx="${idx}" value="${Number(line.rate)||0}" oninput="updateAPORLineTotals(${idx}, ${rid})"
-            style="width:90px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
+          <input type="number" min="0" step="any" class="apor-rate" data-idx="${idx}" data-requestid="${rid}" value="${Number(line.rate)||0}" oninput="updateAPORLineTotals(${idx}, ${rid})"
+            style="width:90px; text-align:center; font-weight:700; padding:6px; border:1.5px solid ${isOverRate ? '#dc2626' : 'var(--border)'}; border-radius:4px; font-size:0.82rem; ${isOverRate ? 'background:#fef2f2;' : ''}">
         </td>
         <td style="padding:8px; text-align:center;">
           <input type="number" min="0" max="100" step="any" class="apor-disc" data-idx="${idx}" value="${Number(line.discountPercent)||0}" oninput="updateAPORLineTotals(${idx}, ${rid})"
             style="width:70px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
         </td>
         <td id="apor-amount-${rid}-${idx}" style="padding:8px; text-align:right; font-family:monospace; font-weight:800; font-size:0.88rem;">0</td>
-        <td style="padding:8px; min-width:190px;">${allocHtml}<div id="apor-sum-${rid}-${idx}" style="font-size:0.65rem; font-weight:800; margin-top:4px;"></div></td>
+        <td style="padding:8px; min-width:190px;">${allocHtml}<div id="apor-sum-${rid}-${idx}" style="font-size:0.65rem; font-weight:800; margin-top:4px;"></div>
+          ${isOverRate ? `<div style="margin-top:6px; font-size:0.68rem; font-weight:700; color:#b91c1c;">⚠️ Rate after Disc % (${fmt(effectiveRate)}) is above Design Rate/Qty (${fmt(designRate)}). Only an admin can authorize.</div>` : ""}
+        </td>
       </tr>`;
   }).join("");
 
@@ -778,6 +956,7 @@ function renderAPORCard(r) {
             <th style="padding:8px; font-size:0.68rem; text-align:center; color:var(--brand);">New Required Qty</th>
             <th style="padding:8px; font-size:0.68rem; text-align:center;">Already Received</th>
             <th style="padding:8px; font-size:0.68rem; text-align:center; color:#15803d;">Vendor Discussed Qty *</th>
+            <th style="padding:8px; font-size:0.68rem; text-align:center;">Design Rate / Qty</th>
             <th style="padding:8px; font-size:0.68rem; text-align:center;">Rate / Qty</th>
             <th style="padding:8px; font-size:0.68rem; text-align:center;">Disc %</th>
             <th style="padding:8px; font-size:0.68rem; text-align:center; color:#15803d;">Amount</th>
@@ -912,6 +1091,24 @@ async function authorizePORevisionUI(requestId, confirmStale) {
     paymentTerms: document.getElementById(`apor-payment-${requestId}`)?.value || null,
     freightTerms: document.getElementById(`apor-freight-terms-${requestId}`)?.value || null,
   };
+
+  // Same non-admin block Authorize PO already has — checked here (not
+  // just visually flagged) since nothing previously stopped a revision
+  // with a rate above Design Rate/Qty from actually being authorized.
+  const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
+  if (!isAdminUser) {
+    const designRates = r?.designRatesByItemCode || {};
+    for (const line of editedLineItems) {
+      const dr = designRates[line.itemCode];
+      if (dr == null) continue;
+      const effectiveRate = (Number(line.rate) || 0) * (100 - (Number(line.discountPercent) || 0)) / 100;
+      if (effectiveRate > Number(dr) + 1e-9) {
+        if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize PO Revision"; }
+        if (rejBtn) rejBtn.disabled = false;
+        return alert(`${line.itemCode}: Rate / Qty after Disc % (${effectiveRate}) is higher than Design Rate / Qty (${dr}). Only an admin can authorize this PO revision. Hand it off to an admin.`);
+      }
+    }
+  }
 
   showBlockingOverlay("Authorizing PO revision…");
 

@@ -1278,7 +1278,7 @@ async function authorizePOFromForm() {
     const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
     const dr = row.designRatePerQuantity;
     if (!isAdminUser && dr != null && (parseFloat(row.rate) || 0) > Number(dr) + 1e-9) {
-      return showErr(`Row ${n}: Rate / Qty (${row.rate}) is higher than Design Rate / Qty (${dr}). Only an admin can authorize this PO — hand it off to an admin.`);
+      return showErr(`Row ${n}: Rate / Qty (${row.rate}) is higher than Design Rate / Qty (${dr}). Only an admin can authorize this PO. Hand it off to an admin.`);
     }
   }
 
