@@ -222,30 +222,25 @@ function renderPORevisionCard() {
         + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${unallocNow}</strong></div>` : "")
       : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No PRNs allocated</span>';
 
-    // Design Rate/Qty, Costing Diff, over-rate flag — same formulas as
-    // Create PO's row (see po.js renderCPOMaterialRows), just sourced from
-    // this line's own state instead of a freshly-typed row. Warn-only,
-    // same as Create PO — Revise PO doesn't block submission on this,
-    // only Authorize (PO / PO Revision) does.
+    // Costing Diff — same formula as Create PO's row (see po.js
+    // renderCPOMaterialRows), sourced from this line's own state. The
+    // Design Rate/Qty comparison no longer highlights/warns here — a rate
+    // above design rate was already reviewed and accepted when this PO
+    // was first created and authorized, so Costing Diff is informational
+    // only from here on.
     const discNow = parseFloat(li.discountPercent) || 0;
     const rateNow = parseFloat(li.rate) || 0;
     const hasRateValue = li.rate !== '' && li.rate !== null && li.rate !== undefined && !isNaN(parseFloat(li.rate));
     const effectiveRate = rateNow * (100 - discNow) / 100;
     const designRate = li.designRatePerQuantity;
     const hasDesignRate = designRate != null;
-    const isOverRate = hasRateValue && hasDesignRate && effectiveRate > Number(designRate) + 1e-9;
     const costingDiff = (hasRateValue && hasDesignRate) ? (effectiveRate - Number(designRate)) * vdqNow : null;
-    const overRateWarning = isOverRate
-      ? `<div style="margin-top:10px; padding:7px 10px; background:#fffbeb; border:1px solid #fde68a; border-radius:4px; font-size:0.75rem; font-weight:700; color:#78350f;">
-          ⚠️ Rate / Qty after Disc % (${fmt(effectiveRate)}) is higher than Design Rate / Qty (${fmt(designRate)}).
-        </div>`
-      : "";
 
     const rpoRowBg = li.changed
       ? (Number(li.newRequiredQty) > Number(li.orderedQty) ? "#f0fdf4" : "#fffbeb")
       : "#fff";
     return `
-    <div data-lineidx="${idx}" style="background:${isOverRate ? "#fef2f2" : rpoRowBg}; border:1px solid ${isOverRate ? "#fca5a5" : "var(--border)"}; border-radius:var(--radius); padding:12px; margin-bottom:10px;">
+    <div data-lineidx="${idx}" style="background:${rpoRowBg}; border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px;">
       <div style="display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap;">
         <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx + 1}</div>
 
@@ -276,15 +271,11 @@ function renderPORevisionCard() {
             onblur="handleRPOQtyBlur(${idx})"
             style="width:100%; height:36px; box-sizing:border-box; text-align:center; font-weight:800; padding:6px; border:1.5px solid #15803d; border-radius:4px; font-size:0.85rem;">
         </div>
-        <div style="width:90px; flex-shrink:0; text-align:center;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Design Rate / Qty</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:700; color:#475569; font-size:0.85rem;">${hasDesignRate ? fmt(designRate) : '—'}</div>
-        </div>
         <div style="width:90px; flex-shrink:0;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Rate / Qty *</div>
           <input type="number" min="0" step="any" class="rpo-rate" data-idx="${idx}" value="${formatQtyTrimmed(li.rate)}"
             oninput="updateRPORowField(${idx},'rate',this.value)"
-            style="width:100%; height:36px; box-sizing:border-box; text-align:center; font-weight:700; padding:6px; border:1.5px solid ${isOverRate ? '#dc2626' : 'var(--border)'}; border-radius:4px; font-size:0.82rem; ${isOverRate ? 'background:#fef2f2;' : ''}">
+            style="width:100%; height:36px; box-sizing:border-box; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
         </div>
         <div style="width:65px; flex-shrink:0;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Disc %</div>
@@ -309,7 +300,6 @@ function renderPORevisionCard() {
         </div>
         <div style="flex:1; min-width:200px; padding-top:2px;">${chipsHtml}</div>
       </div>
-      ${overRateWarning}
     </div>`;
   }).filter(Boolean).join("");
 
@@ -452,28 +442,19 @@ function updateRPORowAmount(idx) {
   const amountEl = document.getElementById(`rpo-amount-${idx}`);
   if (amountEl) amountEl.textContent = (vdq * rate * (100 - disc) / 100).toLocaleString("en-IN",{maximumFractionDigits:2});
 
-  // Costing Diff / over-rate border — same effective-rate (after Disc %)
-  // logic as the render-time version, updated live without a full
-  // re-render mid-keystroke.
+  // Costing Diff — same effective-rate (after Disc %) logic as the
+  // render-time version, updated live without a full re-render mid-keystroke.
+  // No longer drives any highlighting — informational only.
   const hasRateValue = li.rate !== '' && li.rate !== null && li.rate !== undefined && !isNaN(parseFloat(li.rate));
   const effectiveRate = rate * (100 - disc) / 100;
   const designRate = li.designRatePerQuantity;
   const hasDesignRate = designRate != null;
-  const isOverRate = hasRateValue && hasDesignRate && effectiveRate > Number(designRate) + 1e-9;
   const costingDiff = (hasRateValue && hasDesignRate) ? (effectiveRate - Number(designRate)) * vdq : null;
   const diffSpan = document.querySelector(`.rpo-costing-diff[data-idx="${idx}"]`);
   if (diffSpan) {
     diffSpan.textContent = costingDiff != null ? costingDiff.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : "—";
     diffSpan.style.color = costingDiff > 0 ? "#dc2626" : (costingDiff < 0 ? "#15803d" : "#475569");
   }
-  const rateInput = document.querySelector(`.rpo-rate[data-idx="${idx}"]`);
-  if (rateInput) {
-    rateInput.style.borderColor = isOverRate ? "#dc2626" : "var(--border)";
-    rateInput.style.background = isOverRate ? "#fef2f2" : "";
-  }
-  // Row background / warning strip are static-render-only (same tradeoff
-  // Create PO makes) — a full re-render is needed to move/show them,
-  // which happens naturally the next time this card re-renders.
 }
 
 function updateRPOGrandTotal() {
@@ -912,9 +893,9 @@ function renderAPORCard(r) {
   const designRates = r.designRatesByItemCode || {};
   // Card-per-line layout — identical structure/columns to Revise PO's own
   // renderPORevisionCard rows (Description / Old PO Qty / New Required Qty
-  // / Already Received / Unit / Vendor Discussed Qty / Design Rate / Qty /
-  // Rate / Qty / Disc % / Costing Diff / Amount, then an Allocate to PRNs
-  // button + chips strip below) instead of this screen's own bespoke table.
+  // / Already Received / Unit / Vendor Discussed Qty / Rate / Qty / Disc %
+  // / Costing Diff / Amount, then an Allocate to PRNs button + chips strip
+  // below) instead of this screen's own bespoke table.
   const rows = revised.map((line, idx) => {
     const cur = currentByItem[line.itemCode] || {};
     const oldQty = Number(cur.quantity) || 0;
@@ -930,28 +911,22 @@ function renderAPORCard(r) {
         + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${unallocNow}</strong></div>` : "")
       : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No PRNs allocated</span>';
 
-    // Same Rate/Qty vs Design Rate/Qty logic as Authorize PO
-    // (renderCPOMaterialRows, cpoMode='authorize'): effective rate after
-    // Disc %, full-row red highlight, "only an admin can authorize" banner.
+    // Costing Diff — same formula Authorize PO uses, informational only.
+    // A rate above design rate was already reviewed and accepted when
+    // this PO was first created and authorized, so nothing here
+    // highlights or blocks on it anymore.
     const designRate = designRates[line.itemCode];
     const hasDesignRate = designRate != null;
     const discNow = parseFloat(line.discountPercent) || 0;
     const rateNow = parseFloat(line.rate) || 0;
     const hasRateValue = line.rate !== '' && line.rate !== null && line.rate !== undefined && !isNaN(parseFloat(line.rate));
     const effectiveRate = rateNow * (100 - discNow) / 100;
-    const isOverRate = hasRateValue && hasDesignRate && effectiveRate > Number(designRate) + 1e-9;
     const costingDiff = (hasRateValue && hasDesignRate) ? (effectiveRate - Number(designRate)) * vdqNow : null;
-    const overRateWarning = isOverRate
-      ? `<div style="margin-top:10px; padding:7px 10px; background:#fee2e2; border:1px solid #fca5a5; border-radius:4px; font-size:0.75rem; font-weight:700; color:#b91c1c;">
-          ⚠️ Rate / Qty after Disc % (${fmt(effectiveRate)}) is higher than Design Rate / Qty (${fmt(designRate)}). Only an admin can authorize this PO revision as-is.
-        </div>`
-      : "";
 
-    const rowBg = isOverRate ? "#fef2f2" : (Math.abs(newQty - oldQty) < 1e-9 ? "#fff" : (newQty > oldQty ? "#f0fdf4" : "#fffbeb"));
-    const rowBorderColor = isOverRate ? "#fca5a5" : "var(--border)";
+    const rowBg = Math.abs(newQty - oldQty) < 1e-9 ? "#fff" : (newQty > oldQty ? "#f0fdf4" : "#fffbeb");
 
     return `
-    <div data-lineidx="${idx}" style="background:${rowBg}; border:1px solid ${rowBorderColor}; border-radius:var(--radius); padding:12px; margin-bottom:10px;">
+    <div data-lineidx="${idx}" style="background:${rowBg}; border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px;">
       <div style="display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap;">
         <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx + 1}</div>
 
@@ -982,15 +957,11 @@ function renderAPORCard(r) {
             onblur="handleAPORQtyBlur(${rid},${idx})"
             style="width:100%; height:36px; box-sizing:border-box; text-align:center; font-weight:800; padding:6px; border:1.5px solid #15803d; border-radius:4px; font-size:0.85rem;">
         </div>
-        <div style="width:90px; flex-shrink:0; text-align:center;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Design Rate / Qty</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:700; color:#475569; font-size:0.85rem;">${hasDesignRate ? fmt(designRate) : '—'}</div>
-        </div>
         <div style="width:90px; flex-shrink:0;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Rate / Qty *</div>
           <input type="number" min="0" step="any" class="apor-rate" data-idx="${idx}" data-requestid="${rid}" value="${formatQtyTrimmed(line.rate)}"
             oninput="updateAPORRowField(${rid},${idx},'rate',this.value)"
-            style="width:100%; height:36px; box-sizing:border-box; text-align:center; font-weight:700; padding:6px; border:1.5px solid ${isOverRate ? '#dc2626' : 'var(--border)'}; border-radius:4px; font-size:0.82rem; ${isOverRate ? 'background:#fef2f2;' : ''}">
+            style="width:100%; height:36px; box-sizing:border-box; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
         </div>
         <div style="width:65px; flex-shrink:0;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Disc %</div>
@@ -1015,7 +986,6 @@ function renderAPORCard(r) {
         </div>
         <div style="flex:1; min-width:200px; padding-top:2px;">${chipsHtml}</div>
       </div>
-      ${overRateWarning}
     </div>`;
   }).join("");
 
@@ -1138,27 +1108,19 @@ function updateAPORLineTotals(idx, requestId) {
   const amountEl = document.getElementById(`apor-amount-${requestId}-${idx}`);
   if (amountEl) amountEl.textContent = (vdq * rate * (100 - disc) / 100).toLocaleString("en-IN",{maximumFractionDigits:2});
 
-  // Costing Diff / over-rate border — same live-update-without-full-
-  // re-render tradeoff as Revise PO's updateRPORowAmount.
+  // Costing Diff — same live-update-without-full-re-render tradeoff as
+  // Revise PO's updateRPORowAmount. Informational only, no highlighting.
   const designRates = r?.designRatesByItemCode || {};
   const hasRateValue = line.rate !== '' && line.rate !== null && line.rate !== undefined && !isNaN(parseFloat(line.rate));
   const effectiveRate = rate * (100 - disc) / 100;
   const designRate = designRates[line.itemCode];
   const hasDesignRate = designRate != null;
-  const isOverRate = hasRateValue && hasDesignRate && effectiveRate > Number(designRate) + 1e-9;
   const costingDiff = (hasRateValue && hasDesignRate) ? (effectiveRate - Number(designRate)) * vdq : null;
   const diffSpan = document.querySelector(`.apor-costing-diff[data-idx="${idx}"][data-requestid="${requestId}"]`);
   if (diffSpan) {
     diffSpan.textContent = costingDiff != null ? costingDiff.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : "—";
     diffSpan.style.color = costingDiff > 0 ? "#dc2626" : (costingDiff < 0 ? "#15803d" : "#475569");
   }
-  const rateInput = document.querySelector(`.apor-rate[data-idx="${idx}"][data-requestid="${requestId}"]`);
-  if (rateInput) {
-    rateInput.style.borderColor = isOverRate ? "#dc2626" : "var(--border)";
-    rateInput.style.background = isOverRate ? "#fef2f2" : "";
-  }
-  // Row background / warning strip are static-render-only, same as
-  // Revise PO — the authoritative block re-checks on submit regardless.
 
   updateAPORGrandTotal(requestId);
 }
@@ -1336,23 +1298,11 @@ async function authorizePORevisionUI(requestId, confirmStale) {
     freightTerms: document.getElementById(`apor-freight-terms-${requestId}`)?.value || null,
   };
 
-  // Same non-admin block Authorize PO already has — checked here (not
-  // just visually flagged) since nothing previously stopped a revision
-  // with a rate above Design Rate/Qty from actually being authorized.
-  const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
-  if (!isAdminUser) {
-    const designRates = r?.designRatesByItemCode || {};
-    for (const line of editedLineItems) {
-      const dr = designRates[line.itemCode];
-      if (dr == null) continue;
-      const effectiveRate = (Number(line.rate) || 0) * (100 - (Number(line.discountPercent) || 0)) / 100;
-      if (effectiveRate > Number(dr) + 1e-9) {
-        if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize PO Revision"; }
-        if (rejBtn) rejBtn.disabled = false;
-        return alert(`${line.itemCode}: Rate / Qty after Disc % (${effectiveRate}) is higher than Design Rate / Qty (${dr}). Only an admin can authorize this PO revision. Hand it off to an admin.`);
-      }
-    }
-  }
+  // No Design Rate/Qty block here anymore — a rate above design rate was
+  // already reviewed and accepted when this PO was first created and
+  // authorized, so a revision doesn't re-litigate it (Costing Diff on the
+  // row stays informational only). Matches the backend, which no longer
+  // enforces this on authorizePORevision either.
 
   showBlockingOverlay("Authorizing PO revision…");
 
