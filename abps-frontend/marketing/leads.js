@@ -2302,30 +2302,68 @@ function updatePoReviewField(key, value) {
   }
 }
 
+// Indian digit grouping (12,34,567 not 1,234,567) for every rupee-amount
+// box in the review screen. Amount fields render as text inputs (not
+// type="number", which rejects commas outright) — sanitizeAmountInput
+// strips everything but digits/one decimal point as the user types (kept
+// unformatted while focused, so commas don't fight cursor position);
+// formatIndianCurrencyInput re-applies commas on blur / programmatic
+// updates.
+function formatIndianCurrencyInput(raw) {
+  if (raw === null || raw === undefined || raw === '') return '';
+  const num = Number(raw);
+  if (isNaN(num)) return '';
+  return num.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+function sanitizeAmountInput(el) {
+  let v = el.value.replace(/[^0-9.]/g, '');
+  const firstDot = v.indexOf('.');
+  if (firstDot !== -1) v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
+  el.value = v;
+  return v;
+}
+
 // Total Basic Price and Total Amount are derived, not typed — they recompute
 // live from Quantity/Rate and Basic Price/GST respectively. Updated directly
 // on the readonly input elements (not a full table re-render) so the field
 // the user is actively typing in never loses focus/cursor position.
+// GST Amount is *also* re-derived when Quantity or Rate changes: whatever
+// GST-to-Basic ratio was in effect before the edit is preserved against the
+// new Basic Price, rather than leaving GST frozen at a rupee figure that no
+// longer corresponds to the new quantity.
 function updatePoReviewLineItem(idx, key, value) {
   const item = poReviewState.lineItems[idx];
   if (!item) return;
-  item[key] = value;
 
   if (key === 'quantity' || key === 'ratePerQuantity') {
+    const oldBasic = parseFloat(item.totalBasicPrice);
+    const oldGst = parseFloat(item.gstAmount);
+    const gstRate = (!isNaN(oldBasic) && oldBasic > 0 && !isNaN(oldGst)) ? (oldGst / oldBasic) : null;
+
+    item[key] = value;
     const qty = parseFloat(item.quantity);
     const rate = parseFloat(item.ratePerQuantity);
     const basic = (!isNaN(qty) && !isNaN(rate)) ? qty * rate : '';
     item.totalBasicPrice = basic === '' ? '' : String(basic);
+    if (gstRate !== null && basic !== '') {
+      item.gstAmount = String(Math.round(basic * gstRate * 100) / 100);
+    }
+
     const basicEl = document.getElementById(`po-li-totalBasicPrice-${idx}`);
-    if (basicEl) basicEl.value = item.totalBasicPrice;
+    if (basicEl) basicEl.value = formatIndianCurrencyInput(item.totalBasicPrice);
+    const gstEl = document.getElementById(`po-li-gstAmount-${idx}`);
+    if (gstEl && document.activeElement !== gstEl) gstEl.value = formatIndianCurrencyInput(item.gstAmount);
+  } else {
+    item[key] = value;
   }
+
   if (key === 'quantity' || key === 'ratePerQuantity' || key === 'gstAmount') {
     const basic = parseFloat(item.totalBasicPrice);
     const gst = parseFloat(item.gstAmount);
     const total = (!isNaN(basic) && !isNaN(gst)) ? basic + gst : '';
     item.totalAmount = total === '' ? '' : String(total);
     const totalEl = document.getElementById(`po-li-totalAmount-${idx}`);
-    if (totalEl) totalEl.value = item.totalAmount;
+    if (totalEl) totalEl.value = formatIndianCurrencyInput(item.totalAmount);
   }
 }
 
@@ -2404,6 +2442,11 @@ function renderPoReviewLineItemsTable() {
   // full value wraps onto extra lines (row height grows) instead of being
   // clipped. Quantity/Rate/GST/derived totals stay single-line number inputs.
   const wrapKeys = ['itemCode', 'hsnNumber', 'description', 'unit'];
+  // Rate/Basic/GST/Total are rupee amounts — rendered with Indian comma
+  // grouping (sanitizeAmountInput/formatIndianCurrencyInput, see their
+  // definitions above updatePoReviewLineItem). Quantity is a count, not an
+  // amount, so it stays a plain number input.
+  const amountKeys = ['ratePerQuantity', 'totalBasicPrice', 'gstAmount', 'totalAmount'];
   wrap.innerHTML = `
     <table class="store-basket-data-table" style="width:100%; table-layout:fixed;">
       <colgroup>${cols.map(c => `<col style="width:${c[3]}%;" />`).join('')}<col style="width:3%;" /></colgroup>
@@ -2415,12 +2458,21 @@ function renderPoReviewLineItemsTable() {
               const isDerived = derivedKeys.includes(key);
               const isDescription = key === 'description';
               const isWrap = wrapKeys.includes(key);
+              const isAmount = amountKeys.includes(key);
               const val = (it[key] ?? '').toString();
               const valAttr = val.replace(/"/g, '&quot;');
               const centerStyle = isDescription ? '' : 'text-align:center;';
-              if (isDerived) {
-                return `<td style="vertical-align:middle;"><input id="po-li-${key}-${idx}" type="${type}" value="${valAttr}" readonly disabled
-                  style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${centerStyle} background:#eef1f5; color:var(--text); border:1px solid var(--border);" /></td>`;
+              if (isAmount) {
+                const formattedAttr = formatIndianCurrencyInput(val).replace(/"/g, '&quot;');
+                if (isDerived) {
+                  return `<td style="vertical-align:middle;"><input id="po-li-${key}-${idx}" type="text" inputmode="decimal" value="${formattedAttr}" readonly disabled
+                    style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${centerStyle} background:#eef1f5; color:var(--text); border:1px solid var(--border);" /></td>`;
+                }
+                return `<td style="vertical-align:middle;"><input id="po-li-${key}-${idx}" type="text" inputmode="decimal" value="${formattedAttr}"
+                  oninput="updatePoReviewLineItem(${idx}, '${key}', sanitizeAmountInput(this))"
+                  onfocus="this.value = (poReviewState.lineItems[${idx}]['${key}'] ?? '').toString();"
+                  onblur="this.value = formatIndianCurrencyInput(poReviewState.lineItems[${idx}]['${key}']);"
+                  style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${centerStyle}" /></td>`;
               }
               if (isWrap) {
                 return `<td style="vertical-align:middle;"><textarea rows="1" oninput="updatePoReviewLineItem(${idx}, '${key}', this.value); autoGrowPoField(this);" onfocus="autoGrowPoField(this);"
@@ -2460,11 +2512,25 @@ function renderPurchaseOrderReview() {
     const raw = s[key];
     const val = type === 'date' ? (raw ? raw.toString().slice(0, 10) : '') : fmt(raw);
     const labelText = required ? `${label} *` : label;
-    if (type === 'number' || type === 'date') {
+    // Every "number" field on this screen is a rupee amount (Basic/GST/
+    // Total PO Amount, ABG/PBG/Advance Amount) — rendered with Indian comma
+    // grouping the same way the Product List's amount columns are.
+    if (type === 'number') {
       return `
         <div class="grid-cell-item" style="${spanStyle || ''}">
           <label style="font-size:0.72rem;">${labelText}</label>
-          <input type="${type}" value="${val.replace(/"/g, '&quot;')}" oninput="updatePoReviewField('${key}', this.value)" style="font-size:0.95rem; padding:7px 8px;" />
+          <input type="text" inputmode="decimal" value="${formatIndianCurrencyInput(val).replace(/"/g, '&quot;')}"
+            oninput="updatePoReviewField('${key}', sanitizeAmountInput(this))"
+            onfocus="this.value = (poReviewState['${key}'] ?? '').toString();"
+            onblur="this.value = formatIndianCurrencyInput(poReviewState['${key}']);"
+            style="font-size:0.95rem; padding:7px 8px;" />
+        </div>`;
+    }
+    if (type === 'date') {
+      return `
+        <div class="grid-cell-item" style="${spanStyle || ''}">
+          <label style="font-size:0.72rem;">${labelText}</label>
+          <input type="date" value="${val.replace(/"/g, '&quot;')}" oninput="updatePoReviewField('${key}', this.value)" style="font-size:0.95rem; padding:7px 8px;" />
         </div>`;
     }
     return `

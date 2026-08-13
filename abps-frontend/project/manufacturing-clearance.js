@@ -79,13 +79,11 @@ function renderMcProjectCard(project) {
   card.innerHTML = `
     <div class="contact-summary-header-row" onclick="toggleMcCardBody('${project.projectId}')" style="margin-bottom:0; padding-bottom:8px; cursor:pointer;">
       <div class="contact-summary-title-info" style="width:100%;">
-        <div class="meta-row-line-block">
+        <div class="meta-row-line-block" style="display:flex; align-items:center; flex-wrap:wrap; gap:10px;">
           <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:3px 8px; font-size:0.85rem; border-radius:3px;">${project.projectId}</span>
-          <strong style="margin-left:10px; color:#111827; font-size:0.9rem;">${project.companyName}</strong>
-          <span id="mc-caret-${safeId}" style="float:right; font-weight:700; color:var(--muted);">▸</span>
-        </div>
-        <div class="meta-row-line-block" style="margin-top:8px; font-size:0.85rem;">
-          <span>Delivery Date:</span> <strong style="color:#111827;">${formatDateDMY(project.deliveryDate) || "—"}</strong>
+          <strong style="color:#111827; font-size:0.9rem;">${project.companyName}</strong>
+          <span style="font-size:0.85rem;">Delivery Date: <strong style="color:#111827;">${formatDateDMY(project.deliveryDate) || "—"}</strong></span>
+          <span id="mc-caret-${safeId}" style="margin-left:auto; font-weight:700; color:var(--muted);">▸</span>
         </div>
       </div>
     </div>
@@ -151,7 +149,7 @@ function renderMcLineItemsTable(projectId, lineItems) {
             placeholder="Search Item Code..." autocomplete="off"
             oninput="handleMcProductSearch(this.value, '${projectId}', ${li.lineId})"
             style="width:100%; min-width:180px; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px;" />
-          <div id="mc-std-dropdown-${safeId}-${li.lineId}" style="display:none; position:absolute; z-index:50; background:#fff; border:1px solid var(--border); border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.12); max-height:220px; overflow-y:auto; width:280px;"></div>
+          <div id="mc-std-dropdown-${safeId}-${li.lineId}" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); overflow-y:auto; min-width:280px;"></div>
         </td>
         <td style="padding:8px; text-align:center;">${fmtQty(li.quantity)}</td>
         <td style="padding:8px; text-align:center;">${li.unit || "—"}</td>
@@ -189,12 +187,36 @@ function renderMcLineItemsTable(projectId, lineItems) {
   `;
 }
 
+// Fixed-position dropdown, same reasoning/pattern as Create BOQ's material
+// typeahead (design/create-boq.js: handleBOQRowMaterialSearch) — the row is
+// inside a table wrapped in an overflow-x:auto scroller, so an
+// absolutely-positioned dropdown clips against that scroller instead of
+// floating over the rest of the page. Fixed positioning computed off the
+// input's own screen rect escapes that clip entirely.
+if (!window._mcDropdownScrollHandlerInstalled) {
+  window._mcDropdownScrollHandlerInstalled = true;
+  window.addEventListener('scroll', (e) => {
+    if (e.target && e.target.id && e.target.id.includes('mc-std-dropdown-')) return;
+    document.querySelectorAll('[id*="mc-std-dropdown-"]').forEach(dd => {
+      if (dd.style.display === 'block') dd.style.display = 'none';
+    });
+  }, true);
+}
+
 function handleMcProductSearch(query, projectId, lineId) {
   const safeId = projectId.replace(/[^a-zA-Z0-9]/g, "_");
   const dropdown = document.getElementById(`mc-std-dropdown-${safeId}-${lineId}`);
   if (!dropdown) return;
   const catalog = window.itemCodeCatalogCache || [];
   const state = mcLineItemState[projectId][lineId];
+
+  const inputEl = document.getElementById(`mc-std-search-${safeId}-${lineId}`);
+  const inputRect = (inputEl || dropdown.parentElement).getBoundingClientRect();
+  const availableHeight = window.innerHeight - inputRect.bottom - 12;
+  dropdown.style.left = inputRect.left + "px";
+  dropdown.style.top = inputRect.bottom + "px";
+  dropdown.style.width = Math.max(inputRect.width, 280) + "px";
+  dropdown.style.maxHeight = Math.min(Math.max(availableHeight, 180), 280) + "px";
 
   if (!query || query.trim().length < 1) {
     dropdown.style.display = "none";
