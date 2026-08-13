@@ -2378,12 +2378,32 @@ const PO_REVIEW_LI_COLS = [
   ['totalAmount', 'Total Amount (incl. GST)', 'number', 9.6],
 ];
 
+// Total Basic Price / Total Amount are always derived, never a value
+// captured as-is from AI extraction or a prior save — recomputing them here
+// (not just on the input handlers in updatePoReviewLineItem) means a line
+// item is never displayed with a stale/inconsistent total no matter how it
+// entered poReviewState (fresh AI extraction, Add Row, etc).
+function recomputePoReviewLineItemTotals(item) {
+  const qty = parseFloat(item.quantity);
+  const rate = parseFloat(item.ratePerQuantity);
+  if (!isNaN(qty) && !isNaN(rate)) item.totalBasicPrice = String(qty * rate);
+  const basic = parseFloat(item.totalBasicPrice);
+  const gst = parseFloat(item.gstAmount);
+  if (!isNaN(basic) && !isNaN(gst)) item.totalAmount = String(basic + gst);
+}
+
 function renderPoReviewLineItemsTable() {
   const wrap = document.getElementById("po-review-lineitems-wrap");
   if (!wrap) return;
   const items = poReviewState.lineItems || [];
+  items.forEach(recomputePoReviewLineItemTotals);
   const cols = PO_REVIEW_LI_COLS;
   const derivedKeys = ['totalBasicPrice', 'totalAmount'];
+  // itemCode/hsnNumber/description/unit are free text and can run longer
+  // than their column width — rendered as auto-growing textareas so the
+  // full value wraps onto extra lines (row height grows) instead of being
+  // clipped. Quantity/Rate/GST/derived totals stay single-line number inputs.
+  const wrapKeys = ['itemCode', 'hsnNumber', 'description', 'unit'];
   wrap.innerHTML = `
     <table class="store-basket-data-table" style="width:100%; table-layout:fixed;">
       <colgroup>${cols.map(c => `<col style="width:${c[3]}%;" />`).join('')}<col style="width:3%;" /></colgroup>
@@ -2394,19 +2414,26 @@ function renderPoReviewLineItemsTable() {
             ${cols.map(([key, , type]) => {
               const isDerived = derivedKeys.includes(key);
               const isDescription = key === 'description';
-              const val = (it[key] ?? '').toString().replace(/"/g, '&quot;');
+              const isWrap = wrapKeys.includes(key);
+              const val = (it[key] ?? '').toString();
+              const valAttr = val.replace(/"/g, '&quot;');
               const centerStyle = isDescription ? '' : 'text-align:center;';
               if (isDerived) {
-                return `<td style="vertical-align:middle;"><input id="po-li-${key}-${idx}" type="${type}" value="${val}" readonly disabled
+                return `<td style="vertical-align:middle;"><input id="po-li-${key}-${idx}" type="${type}" value="${valAttr}" readonly disabled
                   style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${centerStyle} background:#eef1f5; color:var(--text); border:1px solid var(--border);" /></td>`;
               }
-              return `<td style="vertical-align:middle;"><input type="${type}" value="${val}" oninput="updatePoReviewLineItem(${idx}, '${key}', this.value)"
+              if (isWrap) {
+                return `<td style="vertical-align:middle;"><textarea rows="1" oninput="updatePoReviewLineItem(${idx}, '${key}', this.value); autoGrowPoField(this);" onfocus="autoGrowPoField(this);"
+                  style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${centerStyle} resize:none; overflow:hidden; font-family:inherit; min-height:28px;">${val.replace(/</g, '&lt;')}</textarea></td>`;
+              }
+              return `<td style="vertical-align:middle;"><input type="${type}" value="${valAttr}" oninput="updatePoReviewLineItem(${idx}, '${key}', this.value)"
                 style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${centerStyle}" /></td>`;
             }).join('')}
             <td style="vertical-align:middle; text-align:center;"><button onclick="removePoReviewLineItem(${idx})" title="Remove row" style="background:none; border:none; color:#b91c1c; font-weight:700; cursor:pointer; font-size:1rem;">✕</button></td>
           </tr>`).join('')}
       </tbody>
     </table>`;
+  wrap.querySelectorAll('textarea').forEach(autoGrowPoField);
 }
 
 function renderPurchaseOrderReview() {
