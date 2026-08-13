@@ -1969,8 +1969,14 @@ document.getElementById('commissioning-report-raw-file').onchange = (e) => {
   if (box && targetCommissioningReportFileObj) { box.textContent = "Commissioning Report Document Added ✅"; box.classList.add('done'); }
 };
 
+// Purchase Order no longer calls this — it now goes through the two-step
+// extractPurchaseOrderForReview() / submitReviewedPurchaseOrder() flow
+// below, so every isPO-gated branch here is unreachable dead code (never
+// invoked with opsFlagTypeString === "PURCHASE_ORDER" anymore). Left
+// in place rather than surgically removed to avoid regressing the still-
+// live Dispatch Bill / Commissioning Report paths this function handles.
 async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
-  
+
   const isPO = opsFlagTypeString === "PURCHASE_ORDER";
   const isDispatch = opsFlagTypeString === "DISPATCH";
 
@@ -2164,6 +2170,325 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
   } finally {
     hideBlockingOverlay();
   }
+}
+
+// ═══════════════════════════════════════════════════════
+// UPLOAD PURCHASE ORDER — extract, review/edit, then commit.
+// Two-step flow: extractPurchaseOrderForReview() calls the AI-only
+// extraction route and renders an editable review table; nothing is
+// saved until submitReviewedPurchaseOrder() is clicked. poReviewState
+// holds every editable field plus the line-items array while the user
+// edits, same pattern as manufacturing-clearance.js's mcLineItemState.
+// ═══════════════════════════════════════════════════════
+let poReviewState = null;
+
+async function extractPurchaseOrderForReview() {
+  const activeWorkingFile = targetPurchaseOrderFileObj;
+  if (!activeWorkingFile) { alert("Please capture or select the Purchase Order document before running the AI engine."); return; }
+
+  const leadDropEl = document.getElementById("purchase-order-lead-dropdown");
+  if (!leadDropEl || !leadDropEl.value.trim()) {
+    alert("Please select the Company / Lead this document belongs to before processing.");
+    if (leadDropEl) leadDropEl.focus();
+    return;
+  }
+
+  // Order Acceptance Sent Date and Contract Review doc are compulsory on
+  // every PO upload — Special Requirement stays optional. Captured now
+  // (not asked again in the review screen) since these three are locked
+  // passthrough fields per the review screen's design.
+  const poAcceptanceDate = document.getElementById("purchase-order-acceptance-date").value.trim();
+  if (!poAcceptanceDate) { alert("Order Acceptance Sent Date is required."); return; }
+  const poContractReviewFile = document.getElementById("purchase-order-contract-review-file").files[0];
+  if (!poContractReviewFile) { alert("Contract Review document is required."); return; }
+
+  const feedbackBanner = document.getElementById("purchase-order-feedback-banner");
+  const targetBtn = document.getElementById("btn-ops-purchase-order-submit");
+  if (feedbackBanner) feedbackBanner.style.display = "none";
+  if (targetBtn) {
+    targetBtn.disabled = true;
+    targetBtn.innerHTML = '<div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div> AI Extracting...';
+  }
+  showBlockingOverlay("Reading Purchase Order...");
+
+  try {
+    const fileBase64Raw = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.readAsDataURL(activeWorkingFile);
+    });
+
+    const data = await apFetch({
+      action: "extractPurchaseOrderPreview",
+      leadId: leadDropEl.value.trim(),
+      fileName: activeWorkingFile.name,
+      base64Data: fileBase64Raw,
+      mimeType: activeWorkingFile.type || "application/octet-stream",
+    });
+
+    if (!data.success) {
+      showBOQBanner("purchase-order-feedback-banner", data.error || "Extraction failed.", "error", true);
+      return;
+    }
+
+    // Everything the review screen needs, plus what's carried through
+    // untouched to commit: the PO document itself (re-used, not
+    // re-uploaded by the user), the Contract Review file object, and the
+    // three locked passthrough values captured just above.
+    poReviewState = {
+      ...data,
+      _poFileName: activeWorkingFile.name, _poBase64: fileBase64Raw,
+      _poMimeType: activeWorkingFile.type || "application/octet-stream",
+      _leadId: leadDropEl.value.trim(),
+      _orderAcceptanceSentDate: poAcceptanceDate,
+      _specialRequirement: document.getElementById("purchase-order-special-requirement").value.trim(),
+      _contractReviewFileObj: poContractReviewFile,
+    };
+
+    document.getElementById("purchase-order-inputs-container").style.display = "none";
+    renderPurchaseOrderReview();
+  } catch(e) {
+    showBOQBanner("purchase-order-feedback-banner", "Network error: " + e.message, "error", true);
+  } finally {
+    hideBlockingOverlay();
+    if (targetBtn) { targetBtn.disabled = false; targetBtn.innerHTML = "Process Purchase Order with AI"; }
+  }
+}
+
+// Client-side mirror of generateAbpsProjectId (abps-backend/routes/projects.js)
+// — live preview only, so the user sees the Project ID update as they edit
+// PO Number. The server generates the authoritative value at commit time;
+// this is never sent anywhere, purely display.
+function computePoReviewProjectIdPreview() {
+  const now = new Date(Date.now() + 5.5 * 60 * 60 * 1000); // IST offset
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth() + 1;
+  const fyStart = month >= 4 ? year : year - 1;
+  const fyLabel = String(fyStart).slice(-2) + '-' + String(fyStart + 1).slice(-2);
+  const monthAbbr = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][month - 1];
+  const clean = (s) => (s || '').toString().trim().replace(/\s+/g, ' ');
+  const poSeg = clean(poReviewState.poNumber) || 'NOPO';
+  return `ABPS_${fyLabel}_${monthAbbr}_${clean(poReviewState.companyName)}_${poSeg}`;
+}
+
+function updatePoReviewField(key, value) {
+  poReviewState[key] = value;
+  if (key === 'poNumber') {
+    const preview = document.getElementById('po-review-project-id-preview');
+    if (preview) preview.textContent = computePoReviewProjectIdPreview();
+  }
+}
+
+function updatePoReviewLineItem(idx, key, value) {
+  if (!poReviewState.lineItems[idx]) return;
+  poReviewState.lineItems[idx][key] = value;
+}
+
+function addPoReviewLineItem() {
+  poReviewState.lineItems.push({ itemCode: '', hsnNumber: '', description: '', quantity: '', unit: '', ratePerQuantity: '', totalBasicPrice: '', gstAmount: '', totalAmount: '' });
+  renderPoReviewLineItemsTable();
+}
+
+function removePoReviewLineItem(idx) {
+  poReviewState.lineItems.splice(idx, 1);
+  renderPoReviewLineItemsTable();
+}
+
+function renderPoReviewLineItemsTable() {
+  const wrap = document.getElementById("po-review-lineitems-wrap");
+  if (!wrap) return;
+  const items = poReviewState.lineItems || [];
+  const cols = [
+    ['itemCode', 'Item Code', 'text'], ['hsnNumber', 'HSN Number', 'text'], ['description', 'Description', 'text'],
+    ['quantity', 'Order Quantity', 'number'], ['unit', 'UOM', 'text'], ['ratePerQuantity', 'Rate / Quantity', 'number'],
+    ['totalBasicPrice', 'Total Basic Price', 'number'], ['gstAmount', 'GST Amount', 'number'], ['totalAmount', 'Total Amount (incl. GST)', 'number'],
+  ];
+  wrap.innerHTML = `
+    <table class="store-basket-data-table" style="min-width:960px;">
+      <thead><tr>${cols.map(c => `<th>${c[1]}</th>`).join('')}<th></th></tr></thead>
+      <tbody>
+        ${items.length === 0 ? `<tr><td colspan="${cols.length + 1}" style="text-align:center; color:var(--muted);">No line items — click + Add Row</td></tr>` : items.map((it, idx) => `
+          <tr>
+            ${cols.map(([key, , type]) => `<td><input type="${type}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" oninput="updatePoReviewLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:90px; padding:4px; font-size:0.78rem;" /></td>`).join('')}
+            <td><button onclick="removePoReviewLineItem(${idx})" title="Remove row" style="background:none; border:none; color:#b91c1c; font-weight:700; cursor:pointer; font-size:1rem;">✕</button></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderPurchaseOrderReview() {
+  const zone = document.getElementById("purchase-order-review-zone");
+  const s = poReviewState;
+  const fmt = (v) => (v === null || v === undefined) ? '' : v.toString();
+
+  const lockedRow = (label, value) => `
+    <div class="grid-cell-item" style="background:#f1f5f9;">
+      <label>${label}</label>
+      <div style="padding:6px 4px; font-weight:600; color:var(--text); font-size:0.8rem;">${value || '—'}</div>
+    </div>`;
+
+  const editField = (label, key, type) => {
+    const raw = s[key];
+    const val = type === 'date' ? (raw ? raw.toString().slice(0, 10) : '') : fmt(raw);
+    return `
+      <div class="grid-cell-item">
+        <label>${label}</label>
+        <input type="${type || 'text'}" value="${val.replace(/"/g, '&quot;')}" oninput="updatePoReviewField('${key}', this.value)" />
+      </div>`;
+  };
+
+  zone.innerHTML = `
+    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:8px;">
+      <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:0.95rem;">Review Extracted Purchase Order</div>
+      <div style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">Edit anything the AI misread, then Submit PO. Nothing is saved until you submit.</div>
+
+      ${s.duplicateWarning ? `<div style="background:#fef3c7; border-left:4px solid #b45309; color:#92400e; padding:10px 12px; border-radius:4px; margin-bottom:14px; font-size:0.85rem;">⚠ ${s.duplicateWarning}</div>` : ''}
+
+      <div class="compact-fields-grid" style="margin-bottom:14px;">
+        <div class="grid-cell-item" style="background:#f1f5f9;">
+          <label>Project ID</label>
+          <div id="po-review-project-id-preview" style="padding:6px 4px; font-weight:700; color:var(--brand); font-family:monospace; font-size:0.72rem; word-break:break-all;">${computePoReviewProjectIdPreview()}</div>
+        </div>
+        ${lockedRow('Status', 'Inactive')}
+        ${editField('PO Number', 'poNumber')}
+        ${editField('PO Date', 'poDate', 'date')}
+        ${lockedRow('Company Name', s.companyName)}
+        ${editField('Head Office Address', 'headOfficeAddress')}
+        ${editField('Delivery Address', 'deliveryAddress')}
+        ${editField('GST Number', 'gstNumber')}
+        ${editField('Delivery Date', 'deliveryDate', 'date')}
+      </div>
+
+      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.85rem;">Line Items</div>
+      <div id="po-review-lineitems-wrap"></div>
+      <button class="nav-btn-styled" style="background:var(--brand); margin-top:8px; padding:6px 14px; font-size:0.8rem;" onclick="addPoReviewLineItem()">+ Add Row</button>
+
+      <div class="compact-fields-grid" style="margin-top:16px;">
+        ${editField('Freight Scope', 'freightScope')}
+        ${editField('Insurance Scope', 'insuranceScope')}
+        ${editField('Packaging and Forwarding Scope', 'packagingForwardingScope')}
+        ${editField('Delivery Schedule as per PO', 'deliverySchedule')}
+        ${editField('Warranty Terms', 'warrantyTerms')}
+        ${editField('Payment Terms', 'paymentTerms')}
+        ${editField('ABG Terms', 'abgTerms')}
+        ${editField('ABG Amount', 'abgAmount', 'number')}
+        ${editField('PBG Terms', 'pbgTerms')}
+        ${editField('PBG Amount', 'pbgAmount', 'number')}
+        ${editField('LD Clause', 'ldClause')}
+        ${editField('Inspection Terms', 'inspectionTerms')}
+        ${lockedRow('Special Requirement', s._specialRequirement)}
+        ${editField('Documents Requirement', 'documentsRequirement')}
+        ${editField('Basic PO Amount', 'poBasicAmount', 'number')}
+        ${editField('PO GST Amount', 'poGstAmount', 'number')}
+        ${editField('PO Total Amount', 'poTotalAmount', 'number')}
+        ${lockedRow('Contract Review Link', 'Generated on submit')}
+        ${lockedRow('Order Acceptance Sent Date', formatDateDMY(s._orderAcceptanceSentDate))}
+        ${editField('Advance Amount', 'advanceAmount', 'number')}
+        ${editField('Advance Received Date', 'advanceReceivedDate', 'date')}
+      </div>
+
+      <div id="purchase-order-review-feedback" style="display:none; margin-top:14px; padding:12px; border-radius:var(--radius); border-left:4px solid;"></div>
+
+      <button class="nav-btn-styled" id="btn-po-review-submit" style="margin-top:16px; width:100%; padding:12px; background:var(--accent); font-weight:700;" onclick="submitReviewedPurchaseOrder()">Submit PO</button>
+    </div>
+  `;
+  zone.style.display = "block";
+  renderPoReviewLineItemsTable();
+}
+
+async function submitReviewedPurchaseOrder() {
+  const s = poReviewState;
+  if (!s) return;
+  const btn = document.getElementById("btn-po-review-submit");
+  const fb = document.getElementById("purchase-order-review-feedback");
+  if (fb) fb.style.display = "none";
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div> Saving...';
+  }
+  showBlockingOverlay("Saving Purchase Order...");
+
+  try {
+    const crBase64 = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.readAsDataURL(s._contractReviewFileObj);
+    });
+
+    const data = await apFetch({
+      action: "commitReviewedPurchaseOrder",
+      activeEngineer: appActiveOperatorIdentityString,
+      operatorName: appActiveOperatorIdentityString || "Unknown",
+      leadId: s._leadId,
+      fileName: s._poFileName, base64Data: s._poBase64, mimeType: s._poMimeType,
+      specialRequirement: s._specialRequirement,
+      orderAcceptanceSentDate: s._orderAcceptanceSentDate,
+      contractReviewFile: { fileName: s._contractReviewFileObj.name, base64Data: crBase64, mimeType: s._contractReviewFileObj.type || "application/octet-stream" },
+      companyName: s.companyName, poNumber: s.poNumber, poDate: s.poDate,
+      headOfficeAddress: s.headOfficeAddress, deliveryAddress: s.deliveryAddress, gstNumber: s.gstNumber, deliveryDate: s.deliveryDate,
+      lineItems: s.lineItems,
+      freightScope: s.freightScope, insuranceScope: s.insuranceScope, packagingForwardingScope: s.packagingForwardingScope,
+      deliverySchedule: s.deliverySchedule, warrantyTerms: s.warrantyTerms, paymentTerms: s.paymentTerms,
+      abgTerms: s.abgTerms, abgAmount: s.abgAmount, pbgTerms: s.pbgTerms, pbgAmount: s.pbgAmount,
+      ldClause: s.ldClause, inspectionTerms: s.inspectionTerms, documentsRequirement: s.documentsRequirement,
+      poBasicAmount: s.poBasicAmount, poGstAmount: s.poGstAmount, poTotalAmount: s.poTotalAmount,
+      advanceAmount: s.advanceAmount, advanceReceivedDate: s.advanceReceivedDate,
+      productName: s.productName, summary: s.summary, scopeOfWork: s.scopeOfWork, abgRequired: s.abgRequired,
+    });
+
+    if (data.success) {
+      renderPurchaseOrderCommitSuccess(data);
+    } else {
+      // Per design: keep poReviewState and the review screen intact on
+      // failure so edits aren't lost — never fall back to the upload inputs.
+      showBOQBanner("purchase-order-review-feedback", data.error || "Failed to save Purchase Order.", "error", true);
+      if (btn) { btn.disabled = false; btn.innerHTML = "Submit PO"; }
+    }
+  } catch(e) {
+    showBOQBanner("purchase-order-review-feedback", "Network error: " + e.message, "error", true);
+    if (btn) { btn.disabled = false; btn.innerHTML = "Submit PO"; }
+  } finally {
+    hideBlockingOverlay();
+  }
+}
+
+function renderPurchaseOrderCommitSuccess(data) {
+  const zone = document.getElementById("purchase-order-review-zone");
+  zone.innerHTML = `
+    <div style="background:#f0fdf4; border-left:4px solid #15803d; color:#15803d; padding:14px; border-radius:var(--radius); margin-top:8px;">
+      <strong style="font-size:1rem;">Purchase Order Saved!</strong>
+      <div style="margin-top:10px; background:#fff; border:1px solid #86efac; border-radius:6px; padding:10px; font-size:0.82rem; color:#166534;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Number</span><br/><strong style="font-family:monospace; color:#111827;">${data.extractedPONumber || '—'}</strong></div>
+          <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Date</span><br/><strong style="color:#111827;">${formatDateDMY(data.extractedPODate) || '—'}</strong></div>
+          <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Basic Amount (excl. GST)</span><br/><strong style="color:#111827;">${data.extractedBasicAmount ? '₹' + Number(data.extractedBasicAmount).toLocaleString('en-IN') : '—'}</strong></div>
+          <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Total Amount (incl. GST)</span><br/><strong style="color:#111827;">${data.extractedTotalAmount ? '₹' + Number(data.extractedTotalAmount).toLocaleString('en-IN') : '—'}</strong></div>
+          <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Line Items Saved</span><br/><strong style="color:#111827;">${data.extractedLineItemCount || 0} items</strong></div>
+          <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Project ID Assigned</span><br/><strong style="font-family:monospace; color:#111827;">${data.generatedProjectId || '—'}</strong></div>
+        </div>
+      </div>
+      <button class="nav-btn-styled" onclick="resetPurchaseOrderWorkspace()" style="margin-top:12px; background:#15803d; color:#fff; padding:8px 14px; font-weight:700;">+ Process Another</button>
+    </div>
+  `;
+}
+
+function resetPurchaseOrderWorkspace() {
+  poReviewState = null;
+  targetPurchaseOrderFileObj = null;
+  document.getElementById('purchase-order-raw-file').value = '';
+  const box = document.getElementById('purchase-order-upload-box');
+  if (box) { box.textContent = '📋 Select Purchase Order *'; box.classList.remove('done'); }
+  document.getElementById('purchase-order-acceptance-date').value = '';
+  document.getElementById('purchase-order-special-requirement').value = '';
+  document.getElementById('purchase-order-contract-review-file').value = '';
+  const crBox = document.getElementById('purchase-order-contract-review-box');
+  if (crBox) { crBox.textContent = '📋 Select Contract Review Document *'; crBox.classList.remove('done'); }
+  const leadDrop = document.getElementById('purchase-order-lead-dropdown');
+  if (leadDrop) leadDrop.value = '';
+  document.getElementById('purchase-order-feedback-banner').style.display = 'none';
+  const zone = document.getElementById('purchase-order-review-zone');
+  zone.style.display = 'none'; zone.innerHTML = '';
+  document.getElementById('purchase-order-inputs-container').style.display = 'block';
 }
 
 function handleGateFileSelectionChange(input, boxId, textMsg) {

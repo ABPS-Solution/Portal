@@ -2806,8 +2806,9 @@
             <div class="card-box" id="purchase-order-contract-review-box" onclick="document.getElementById('purchase-order-contract-review-file').click()" style="margin-top: 12px; padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Contract Review Document *</div>
             <input type="file" id="purchase-order-contract-review-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'purchase-order-contract-review-box', 'Contract Review Document Added ✅')" />
 
-            <button class="nav-btn-styled" id="btn-ops-purchase-order-submit" style="margin-top: 14px; width: 100%; padding: 10px;" onclick="executeMarketingOperationsDocumentCommit('PURCHASE_ORDER')">Process Purchase Order with AI</button>
+            <button class="nav-btn-styled" id="btn-ops-purchase-order-submit" style="margin-top: 14px; width: 100%; padding: 10px;" onclick="extractPurchaseOrderForReview()">Process Purchase Order with AI</button>
           </div>
+          <div id="purchase-order-review-zone" style="display:none;"></div>
         </div>
       </div>
     </div>
