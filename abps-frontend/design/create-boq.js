@@ -362,8 +362,8 @@ function renderCBOQMaterialRows() {
           oninput="cboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateCBOQTotals(); const r=document.getElementById('cboq-rate-${idx}'); if(r) { const v=cboqMaterialRows[${idx}].quantityFor1Set*(Number(cboqMaterialRows[${idx}].designRatePerQuantity)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); }"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
-      <td style="padding:4px; text-align:center;">
-        <select disabled onchange="cboqMaterialRows[${idx}].unit=this.value" style="padding:4px; font-size:0.8rem; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed;">
+      <td style="padding:4px; text-align:center; vertical-align:middle;">
+        <select disabled onchange="cboqMaterialRows[${idx}].unit=this.value" style="padding:4px; font-size:0.8rem; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; text-align:center; text-align-last:center; appearance:none; -webkit-appearance:none; -moz-appearance:none;">
           <option value="" ${!row.unit?"selected":""} disabled>— Unit —</option>
           <option value="NOS" ${row.unit==="NOS"?"selected":""}>NOS</option>
           <option value="KG"  ${row.unit==="KG"?"selected":""}>KG</option>
@@ -527,8 +527,8 @@ async function submitCreateBOQ() {
   if (orderQty < 1)  return showBOQBanner("create-boq-feedback", "⚠️ Order Quantity must be at least 1.", "error");
   if (cboqMaterialRows.length === 0) return showBOQBanner("create-boq-feedback", "⚠️ Add at least one material row.", "error");
 
-  const invalidRow = cboqMaterialRows.find(r => !r.descriptionOfMaterial || !r.quantityFor1Set || !r.unit);
-  if (invalidRow) return showBOQBanner("create-boq-feedback", "⚠️ All material rows must have Description of Material, Qty / Set, and Unit filled in.", "error");
+  const invalidRow = cboqMaterialRows.find(r => !r.descriptionOfMaterial || !r.quantityFor1Set || !r.unit || !r.designRatePerQuantity);
+  if (invalidRow) return showBOQBanner("create-boq-feedback", "⚠️ All material rows must have Description of Material, Qty / Set, Unit, and Design Rate / Qty filled in.", "error");
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
