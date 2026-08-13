@@ -2234,6 +2234,11 @@ async function extractPurchaseOrderForReview() {
       reader.onload = () => resolve(reader.result.split(',')[1]);
       reader.readAsDataURL(activeWorkingFile);
     });
+    const contractReviewBase64 = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.readAsDataURL(poContractReviewFile);
+    });
 
     const data = await apFetch({
       action: "extractPurchaseOrderPreview",
@@ -2241,6 +2246,7 @@ async function extractPurchaseOrderForReview() {
       fileName: activeWorkingFile.name,
       base64Data: fileBase64Raw,
       mimeType: activeWorkingFile.type || "application/octet-stream",
+      contractReviewFile: { fileName: poContractReviewFile.name, base64Data: contractReviewBase64, mimeType: poContractReviewFile.type || "application/octet-stream" },
     });
 
     if (!data.success) {
@@ -2316,7 +2322,7 @@ function renderPoReviewLineItemsTable() {
   if (!wrap) return;
   const items = poReviewState.lineItems || [];
   const cols = [
-    ['itemCode', 'Item Code', 'text'], ['hsnNumber', 'HSN Number', 'text'], ['description', 'Description', 'text'],
+    ['itemCode', 'Customer Item Code', 'text'], ['hsnNumber', 'HSN Number', 'text'], ['description', 'Order Product Description', 'text'],
     ['quantity', 'Order Quantity', 'number'], ['unit', 'UOM', 'text'], ['ratePerQuantity', 'Rate / Quantity', 'number'],
     ['totalBasicPrice', 'Total Basic Price', 'number'], ['gstAmount', 'GST Amount', 'number'], ['totalAmount', 'Total Amount (incl. GST)', 'number'],
   ];
@@ -2324,9 +2330,9 @@ function renderPoReviewLineItemsTable() {
     <table class="store-basket-data-table" style="min-width:960px;">
       <thead><tr>${cols.map(c => `<th>${c[1]}</th>`).join('')}<th></th></tr></thead>
       <tbody>
-        ${items.length === 0 ? `<tr><td colspan="${cols.length + 1}" style="text-align:center; color:var(--muted);">No line items — click + Add Row</td></tr>` : items.map((it, idx) => `
+        ${items.length === 0 ? `<tr><td colspan="${cols.length + 1}" style="text-align:center; color:var(--muted);">No product rows extracted from the PO — click + Add Row to add one manually</td></tr>` : items.map((it, idx) => `
           <tr>
-            ${cols.map(([key, , type]) => `<td><input type="${type}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" oninput="updatePoReviewLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:90px; padding:4px; font-size:0.78rem;" /></td>`).join('')}
+            ${cols.map(([key, , type]) => `<td><input type="${type}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" oninput="updatePoReviewLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:90px; padding:5px; font-size:0.85rem;" /></td>`).join('')}
             <td><button onclick="removePoReviewLineItem(${idx})" title="Remove row" style="background:none; border:none; color:#b91c1c; font-weight:700; cursor:pointer; font-size:1rem;">✕</button></td>
           </tr>`).join('')}
       </tbody>
@@ -2340,8 +2346,8 @@ function renderPurchaseOrderReview() {
 
   const lockedRow = (label, value) => `
     <div class="grid-cell-item" style="background:#f1f5f9;">
-      <label>${label}</label>
-      <div style="padding:6px 4px; font-weight:600; color:var(--text); font-size:0.8rem;">${value || '—'}</div>
+      <label style="font-size:0.72rem;">${label}</label>
+      <div style="padding:6px 4px; font-weight:600; color:var(--text); font-size:0.95rem;">${value || '—'}</div>
     </div>`;
 
   const editField = (label, key, type) => {
@@ -2349,22 +2355,26 @@ function renderPurchaseOrderReview() {
     const val = type === 'date' ? (raw ? raw.toString().slice(0, 10) : '') : fmt(raw);
     return `
       <div class="grid-cell-item">
-        <label>${label}</label>
-        <input type="${type || 'text'}" value="${val.replace(/"/g, '&quot;')}" oninput="updatePoReviewField('${key}', this.value)" />
+        <label style="font-size:0.72rem;">${label}</label>
+        <input type="${type || 'text'}" value="${val.replace(/"/g, '&quot;')}" oninput="updatePoReviewField('${key}', this.value)" style="font-size:0.95rem; padding:7px 8px;" />
       </div>`;
   };
 
+  const contractReviewLinkHtml = s.contractReviewUrl
+    ? `<a href="${driveLink(s.contractReviewUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Document ↗</a>`
+    : '—';
+
   zone.innerHTML = `
     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:8px;">
-      <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:0.95rem;">Review Extracted Purchase Order</div>
-      <div style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">Edit anything the AI misread, then Submit PO. Nothing is saved until you submit.</div>
+      <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:1.05rem;">Review Extracted Purchase Order</div>
+      <div style="font-size:0.88rem; color:var(--muted); margin-bottom:14px;">Edit anything the AI misread, then Submit PO. Nothing is saved until you submit.</div>
 
-      ${s.duplicateWarning ? `<div style="background:#fef3c7; border-left:4px solid #b45309; color:#92400e; padding:10px 12px; border-radius:4px; margin-bottom:14px; font-size:0.85rem;">⚠ ${s.duplicateWarning}</div>` : ''}
+      ${s.duplicateWarning ? `<div style="background:#fef3c7; border-left:4px solid #b45309; color:#92400e; padding:10px 12px; border-radius:4px; margin-bottom:14px; font-size:0.92rem;">⚠ ${s.duplicateWarning}</div>` : ''}
 
       <div class="compact-fields-grid" style="margin-bottom:14px;">
         <div class="grid-cell-item" style="background:#f1f5f9;">
-          <label>Project ID</label>
-          <div id="po-review-project-id-preview" style="padding:6px 4px; font-weight:700; color:var(--brand); font-family:monospace; font-size:0.72rem; word-break:break-all;">${computePoReviewProjectIdPreview()}</div>
+          <label style="font-size:0.72rem;">Project ID</label>
+          <div id="po-review-project-id-preview" style="padding:6px 4px; font-weight:700; color:var(--brand); font-family:monospace; font-size:0.82rem; word-break:break-all;">${computePoReviewProjectIdPreview()}</div>
         </div>
         ${lockedRow('Status', 'Inactive')}
         ${editField('PO Number', 'poNumber')}
@@ -2376,9 +2386,9 @@ function renderPurchaseOrderReview() {
         ${editField('Delivery Date', 'deliveryDate', 'date')}
       </div>
 
-      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.85rem;">Line Items</div>
+      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.95rem;">Product List</div>
       <div id="po-review-lineitems-wrap"></div>
-      <button class="nav-btn-styled" style="background:var(--brand); margin-top:8px; padding:6px 14px; font-size:0.8rem;" onclick="addPoReviewLineItem()">+ Add Row</button>
+      <button class="nav-btn-styled" style="background:var(--brand); margin-top:8px; padding:6px 14px; font-size:0.85rem;" onclick="addPoReviewLineItem()">+ Add Row</button>
 
       <div class="compact-fields-grid" style="margin-top:16px;">
         ${editField('Freight Scope', 'freightScope')}
@@ -2398,7 +2408,7 @@ function renderPurchaseOrderReview() {
         ${editField('Basic PO Amount', 'poBasicAmount', 'number')}
         ${editField('PO GST Amount', 'poGstAmount', 'number')}
         ${editField('PO Total Amount', 'poTotalAmount', 'number')}
-        ${lockedRow('Contract Review Link', 'Generated on submit')}
+        ${lockedRow('Contract Review Link', contractReviewLinkHtml)}
         ${lockedRow('Order Acceptance Sent Date', formatDateDMY(s._orderAcceptanceSentDate))}
         ${editField('Advance Amount', 'advanceAmount', 'number')}
         ${editField('Advance Received Date', 'advanceReceivedDate', 'date')}
@@ -2406,7 +2416,7 @@ function renderPurchaseOrderReview() {
 
       <div id="purchase-order-review-feedback" style="display:none; margin-top:14px; padding:12px; border-radius:var(--radius); border-left:4px solid;"></div>
 
-      <button class="nav-btn-styled" id="btn-po-review-submit" style="margin-top:16px; width:100%; padding:12px; background:var(--accent); font-weight:700;" onclick="submitReviewedPurchaseOrder()">Submit PO</button>
+      <button class="nav-btn-styled" id="btn-po-review-submit" style="margin-top:16px; width:100%; padding:12px; background:var(--accent); font-weight:700; font-size:0.95rem;" onclick="submitReviewedPurchaseOrder()">Submit PO</button>
     </div>
   `;
   zone.style.display = "block";
@@ -2441,6 +2451,7 @@ async function submitReviewedPurchaseOrder() {
       specialRequirement: s._specialRequirement,
       orderAcceptanceSentDate: s._orderAcceptanceSentDate,
       contractReviewFile: { fileName: s._contractReviewFileObj.name, base64Data: crBase64, mimeType: s._contractReviewFileObj.type || "application/octet-stream" },
+      contractReviewUrl: s.contractReviewUrl,
       companyName: s.companyName, poNumber: s.poNumber, poDate: s.poDate,
       headOfficeAddress: s.headOfficeAddress, deliveryAddress: s.deliveryAddress, gstNumber: s.gstNumber, deliveryDate: s.deliveryDate,
       lineItems: s.lineItems,
