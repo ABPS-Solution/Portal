@@ -124,9 +124,9 @@ function derivePstatStages(lane) {
   if (!prn) {
     purchase = { state: "pending", primary: "—", sub: "PRN not raised" };
   } else if (prn.status === "Pending Authorization") {
-    purchase = { state: "active", primary: prn.prnId, sub: prn.status };
+    purchase = { state: "active", primary: prn.prnId, primaryUrl: prn.pdfUrl || null, sub: prn.status };
   } else {
-    purchase = { state: "complete", primary: prn.prnId, sub: prn.status || "—" };
+    purchase = { state: "complete", primary: prn.prnId, primaryUrl: prn.pdfUrl || null, sub: prn.status || "—" };
   }
 
   let po;
@@ -151,7 +151,7 @@ function derivePstatStages(lane) {
     po = {
       state,
       primary: `${Math.round(receivedPct)}%`,
-      sub: anyOverdue ? "overdue delivery" : anyAwaitingRevision ? "PO revision needed" : "received",
+      sub: anyOverdue ? "Overdue delivery" : anyAwaitingRevision ? "PO revision needed" : "Received",
     };
   }
 
@@ -232,21 +232,29 @@ function renderPstatLane(lane) {
     return `${connector}<div class="pstat-node ${nodeClass}">${sd.data.state === "attention" ? "!" : ""}</div>`;
   }).join("");
 
-  const labelsHtml = stageDefs.map(sd => `
+  const labelsHtml = stageDefs.map(sd => {
+    // Purchase's primary is a real PRN ID (identifying text, not a
+    // metric like "9%" or "0/9") — shown unbold and, when a PDF exists,
+    // as a link straight to the document instead of plain text.
+    const primaryHtml = sd.data.primaryUrl
+      ? `<a href="${driveLink(sd.data.primaryUrl)}" target="_blank" class="pstat-stage-primary pstat-stage-primary-link">${sd.data.primary}</a>`
+      : `<div class="pstat-stage-primary">${sd.data.primary}</div>`;
+    return `
     <div class="pstat-stage" data-state="${sd.data.state}">
       <div class="pstat-stage-label">${sd.label}</div>
-      <div class="pstat-stage-primary">${sd.data.primary}</div>
+      ${primaryHtml}
       <div class="pstat-stage-sub">${sd.data.sub}</div>
-    </div>`).join("");
+    </div>`;
+  }).join("");
 
   return `
     <div class="pstat-lane" data-accent="${accent}">
       <div class="pstat-lane-top">
         <div class="pstat-lane-title">${boq.productName || boq.department || boq.boqId}${boq.productRating ? `<span class="pstat-lane-rating">${boq.productRating}</span>` : ""}</div>
         <div class="pstat-lane-meta">
-          <span>${boq.department || "—"}</span>
-          <span>${fmtQty(boq.orderQuantity)} sets</span>
-          ${boq.pdfUrl ? `<a href="${driveLink(boq.pdfUrl)}" target="_blank">${boq.boqId} ↗</a>` : `<span style="font-family:monospace;">${boq.boqId}</span>`}
+          <span class="pstat-lane-meta-strong">${boq.department || "—"}</span>
+          <span class="pstat-lane-meta-strong">${fmtQty(boq.orderQuantity)} sets</span>
+          ${boq.pdfUrl ? `<a href="${driveLink(boq.pdfUrl)}" target="_blank">BOQ Link ↗</a>` : `<span style="font-family:monospace;">${boq.boqId}</span>`}
         </div>
       </div>
       <div class="pstat-stepper">${nodesHtml}</div>
@@ -292,8 +300,11 @@ function renderPstatLaneDetail(lane) {
           const overdue = po.expectedDelivery && new Date(po.expectedDelivery) < today && !po.actualDelivery;
           const chipClass = po.actualDelivery ? "pstat-po-chip-ontime" : overdue ? "pstat-po-chip-overdue" : "pstat-po-chip-pending";
           const chipLabel = po.actualDelivery ? "Delivered" : overdue ? "Overdue" : "Pending";
+          const poNoHtml = po.pdfUrl
+            ? `<a href="${driveLink(po.pdfUrl)}" target="_blank" style="font-weight:400;">${po.poNo} ↗</a>`
+            : `<span style="font-weight:400;">${po.poNo}</span>`;
           return `<div class="pstat-po-card">
-            <div class="pstat-po-row1"><span>${po.poNo} <span style="font-weight:600; color:var(--muted);">— ${po.vendorName || "—"}</span></span><span>${fmtQty(po.receivedQty)} / ${fmtQty(po.orderedQty)} recv</span></div>
+            <div class="pstat-po-row1"><span>${poNoHtml} <span style="font-weight:600; color:var(--muted);">— ${po.vendorName || "—"}</span></span><span>${fmtQty(po.receivedQty)} / ${fmtQty(po.orderedQty)} recv</span></div>
             <div class="pstat-po-row2"><span>Exp: ${formatDateDMY(po.expectedDelivery) || "—"}${po.actualDelivery ? ` · Delivered: ${formatDateDMY(po.actualDelivery)}` : ""}</span><span class="pstat-po-chip ${chipClass}">${chipLabel}</span></div>
           </div>`;
         }).join("")}

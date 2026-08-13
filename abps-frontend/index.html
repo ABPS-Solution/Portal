@@ -260,8 +260,8 @@
   .pstat-header-band { background: linear-gradient(135deg, var(--highlight-bg), #ffffff); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(16,24,40,.05); }
   .pstat-header-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
   .pstat-header-id { font-size: 1.35rem; font-weight: 800; color: var(--brand-dk); }
-  .pstat-header-company { font-size: 0.9rem; font-weight: 600; color: var(--muted); text-align: right; }
-  .pstat-header-metrics { margin-top: 10px; font-size: 0.82rem; color: var(--muted); font-weight: 600; }
+  .pstat-header-company { font-size: 1.02rem; font-weight: 600; color: var(--muted); text-align: right; }
+  .pstat-header-metrics { margin-top: 10px; font-size: 0.94rem; color: var(--muted); font-weight: 600; }
   .pstat-header-metrics strong { color: var(--text); font-weight: 800; }
   .pstat-header-metrics .pstat-metric-sep { margin: 0 8px; color: var(--border); }
 
@@ -285,6 +285,7 @@
   .pstat-lane-meta { font-size: 0.8rem; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 10px; }
   .pstat-lane-meta a { color: var(--brand); font-weight: 700; text-decoration: none; }
   .pstat-lane-meta a:hover { text-decoration: underline; }
+  .pstat-lane-meta-strong { font-size: 0.92rem; font-weight: 800; color: var(--text); }
 
   .pstat-stepper { display: flex; align-items: center; margin-bottom: 6px; }
   .pstat-stepper-labels { display: flex; }
@@ -298,10 +299,14 @@
   .pstat-node.pstat-node-active::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--pstat-active); }
   .pstat-node.pstat-node-attention { background: var(--pstat-attention); border-color: var(--pstat-attention); }
 
-  .pstat-stage-label { font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); margin-top: 8px; }
-  .pstat-stage-primary { font-size: 0.85rem; font-weight: 800; color: var(--text); margin-top: 2px; }
-  .pstat-stage-sub { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+  .pstat-stage-label { font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); margin-top: 8px; }
+  .pstat-stage-primary { font-size: 0.95rem; font-weight: 800; color: var(--text); margin-top: 2px; display: block; }
+  .pstat-stage-sub { font-size: 0.8rem; color: var(--muted); margin-top: 1px; }
   .pstat-stage[data-state="attention"] .pstat-stage-primary { color: var(--pstat-attention); }
+  /* Purchase's primary is a PRN ID, not a metric like "9%"/"0/9" — shown
+     unbold, and as a real link when the PRN's PDF exists. */
+  .pstat-stage-primary-link { font-weight: 500; color: var(--brand); text-decoration: none; }
+  .pstat-stage-primary-link:hover { text-decoration: underline; }
 
   .pstat-lane-detail { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); }
   #pstat-results[data-view="summary"] .pstat-lane-detail { display: none; }
