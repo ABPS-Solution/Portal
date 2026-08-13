@@ -830,23 +830,36 @@ function renderCPOMaterialRows() {
         + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${unallocNow}</strong></div>` : "")
       : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No PRNs allocated</span>';
 
+    // Rate / Qty is locked (can't be typed) until Quantity has a real value
+    // AND the row has actually been through Allocate to PRNs at least once
+    // — typing a rate before the material/quantity/PRN split is settled
+    // invites entering a number against the wrong basis. Re-locks itself
+    // automatically if Quantity later changes enough to invalidate real
+    // allocations (handleCPOQtyBlur clears _allocationTouched in that case).
+    const rateLocked = !(row._allocationTouched && lineQtyNow > 0);
+
     // Design Rate / Qty = lowest design_rate_per_quantity among only the
     // PRNs this row is actually allocated to (see saveCPOAllocationPicker
-    // / fetchPODraftById). Costing Difference = (Rate/Qty - Design
-    // Rate/Qty) * Quantity. Over-rate rows are flagged everywhere, but
-    // only actually blocked from submission on the Authorize screen (see
-    // authorizePOFromForm) — Create PO is allowed to carry them through.
+    // / fetchPODraftById). Costing Difference compares against the
+    // EFFECTIVE rate (after Disc %), not the raw Rate/Qty typed — a 100
+    // rate at 10% discount is really a 90 rate for costing purposes, and
+    // must track live as Disc % changes. Also only ever shown once Rate/
+    // Qty actually has a value — an empty/locked rate has nothing
+    // meaningful to compare yet, not "some rate is 0".
+    const discNow = parseFloat(row.discountPercent) || 0;
     const rateNow = parseFloat(row.rate) || 0;
+    const hasRateValue = row.rate !== '' && row.rate !== null && row.rate !== undefined && !isNaN(parseFloat(row.rate));
+    const effectiveRate = rateNow * (100 - discNow) / 100;
     const designRate = row.designRatePerQuantity;
     const hasDesignRate = designRate != null;
-    const isOverRate = hasDesignRate && rateNow > Number(designRate) + 1e-9;
-    const costingDiff = hasDesignRate ? (rateNow - Number(designRate)) * lineQtyNow : null;
+    const isOverRate = hasRateValue && hasDesignRate && effectiveRate > Number(designRate) + 1e-9;
+    const costingDiff = (hasRateValue && hasDesignRate) ? (effectiveRate - Number(designRate)) * lineQtyNow : null;
     const isAuthMode = window.cpoMode === 'authorize';
     const rowBg = (isAuthMode && isOverRate) ? "#fef2f2" : "#fff";
     const rowBorderColor = (isAuthMode && isOverRate) ? "#fca5a5" : "var(--border)";
     const overRateWarning = isOverRate
       ? `<div style="margin-top:10px; padding:7px 10px; background:${isAuthMode ? "#fee2e2" : "#fffbeb"}; border:1px solid ${isAuthMode ? "#fca5a5" : "#fde68a"}; border-radius:4px; font-size:0.75rem; font-weight:700; color:${isAuthMode ? "#b91c1c" : "#78350f"};">
-          ⚠️ Rate / Qty (${fmtQty(rateNow)}) is higher than Design Rate / Qty (${fmtQty(designRate)}).${isAuthMode ? " Only an admin can authorize this PO as-is." : ""}
+          ⚠️ Rate / Qty after Disc % (${fmtQty(effectiveRate)}) is higher than Design Rate / Qty (${fmtQty(designRate)}).${isAuthMode ? " Only an admin can authorize this PO as-is." : ""}
         </div>`
       : "";
 
@@ -880,7 +893,9 @@ function renderCPOMaterialRows() {
         </div>
         <div style="width:90px; flex-shrink:0;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Rate / Qty *</div>
-          <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)" style="width:100%; height:36px; box-sizing:border-box; text-align:right; padding:7px 6px; border:1.5px solid ${isOverRate ? '#dc2626' : 'var(--border)'}; border-radius:4px; ${isOverRate ? 'background:#fef2f2;' : ''}">
+          <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)"
+            ${rateLocked ? 'disabled title="Enter Quantity and Allocate to PRNs first"' : ''}
+            style="width:100%; height:36px; box-sizing:border-box; text-align:right; padding:7px 6px; border:1.5px solid ${isOverRate ? '#dc2626' : 'var(--border)'}; border-radius:4px; ${isOverRate ? 'background:#fef2f2;' : (rateLocked ? 'background:#f1f5f9; cursor:not-allowed;' : '')}">
         </div>
         <div style="width:70px; flex-shrink:0;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Disc %</div>
@@ -997,12 +1012,16 @@ function updateCPORowAmount(rowId) {
   if (span) span.textContent = amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 
   // Costing Diff / over-rate flag are Rate-dependent — updated here (not
-  // just at render time) so typing a new Rate reflects live without a
-  // full re-render mid-keystroke (which would drop input focus).
+  // just at render time) so typing a new Rate (or Disc %) reflects live
+  // without a full re-render mid-keystroke (which would drop input focus).
+  // Compared against the EFFECTIVE rate (after Disc %), and only once
+  // Rate/Qty actually has a value — same rule as the render-time version.
+  const hasRateValue = row.rate !== '' && row.rate !== null && row.rate !== undefined && !isNaN(parseFloat(row.rate));
+  const effectiveRate = rate * (100 - disc) / 100;
   const designRate = row.designRatePerQuantity;
   const hasDesignRate = designRate != null;
-  const isOverRate = hasDesignRate && rate > Number(designRate) + 1e-9;
-  const costingDiff = hasDesignRate ? (rate - Number(designRate)) * qty : null;
+  const isOverRate = hasRateValue && hasDesignRate && effectiveRate > Number(designRate) + 1e-9;
+  const costingDiff = (hasRateValue && hasDesignRate) ? (effectiveRate - Number(designRate)) * qty : null;
   const rowEl = document.querySelector(`[data-rowid="${rowId}"]`);
   const diffSpan = rowEl ? rowEl.querySelector(".cpo-costing-diff") : null;
   if (diffSpan) {
