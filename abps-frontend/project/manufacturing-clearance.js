@@ -44,6 +44,14 @@ async function loadManufacturingClearanceList() {
     }
 
     if (mcCurrentStatus === "Active") {
+      // cardsContainer is rebuilt from scratch every time this tab loads —
+      // every previous card's body DOM (including any already-expanded
+      // one) is gone. mcLineItemState must be cleared alongside it: it was
+      // only ever a "don't re-fetch, DOM already has the data" flag, and
+      // without this reset it kept lying that a freshly-rebuilt (empty,
+      // stuck on "Loading...") card was already populated, so
+      // toggleMcCardBody skipped calling loadMcLineItems for it entirely.
+      mcLineItemState = {};
       cardsContainer.innerHTML = "";
       data.projects.forEach(p => cardsContainer.appendChild(renderMcProjectCard(p)));
       return;
@@ -169,8 +177,8 @@ function renderMcLineItemsTable(projectId, lineItems) {
     <div style="overflow-x:auto; margin-bottom:14px;">
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
         <colgroup>
-          <col style="width:22%;" /><col style="width:34%;" /><col style="width:10%;" />
-          <col style="width:8%;" /><col style="width:14%;" /><col style="width:12%;" />
+          <col style="width:34%;" /><col style="width:34%;" /><col style="width:7%;" />
+          <col style="width:6%;" /><col style="width:10%;" /><col style="width:9%;" />
         </colgroup>
         <thead>
           <tr style="background:var(--highlight-bg); text-align:left;">
