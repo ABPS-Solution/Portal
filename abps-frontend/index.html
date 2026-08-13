@@ -1834,7 +1834,7 @@
       </div>
 
       <div id="rprn-other-section" style="display:none;">
-        <div id="rprn-selector-row" style="display:grid; grid-template-columns:33% 67%; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+        <div id="rprn-selector-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
           <div>
             <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
             <div style="position:relative;">
@@ -1877,7 +1877,7 @@
 
       <div id="rpo-other-section" style="display:none;">
         <div style="display:flex; gap:10px; align-items:end; margin-bottom:16px;">
-          <div style="flex:1; max-width:420px;">
+          <div style="flex:1;">
             <label class="field-label" style="margin-top:0; color:var(--brand);">Search by PO Number or Vendor Name</label>
             <input type="text" id="rpo-search-input" placeholder="e.g. PO_26-27_00001 or Acme Steel" onkeydown="if(event.key==='Enter')searchPOsForRevisionUI()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
           </div>
@@ -1894,20 +1894,20 @@
       <h2 class="panel-title">PPS Tracking</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Search a Project to see its PRNs and the Purchase Orders linked to each — with expected vs. actual delivery tracking.</p>
       <div id="pps-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
-      <div style="display:grid; grid-template-columns:2fr 2fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+      <div style="display:grid; grid-template-columns:1fr 2fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
           <div style="position:relative;">
             <input type="text" id="pps-project-select-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
               oninput="handleSharedProjectTypeaheadInput(this.value, 'pps-project-select-ta-input', 'pps-project-select-ta-dropdown')"
               onchange="loadPPSPRNList()"
-              style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
             <div id="pps-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
         </div>
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
-          <select id="pps-prn-select" onchange="loadPPSForPRN()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
+          <select id="pps-prn-select" onchange="loadPPSForPRN()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
         </div>
       </div>
       <div id="pps-prn-header" style="display:none; margin-bottom:10px; font-size:0.85rem;"></div>

@@ -323,7 +323,7 @@ async function loadRevisePRNList() {
     prnSel.innerHTML = prns.length === 0
       ? `<option value="">No open PRNs for this project</option>`
       : `<option value="">— Select PRN —</option>` + prns.map(p =>
-          `<option value="${p.prnId.replace(/"/g,'&quot;')}">${p.customerName ? p.customerName + " | " : ""}${p.prnId}${p.version > 1 ? ` (v${p.version})` : ""}${p.revisionPending ? " — REVISION PENDING AUTHORIZATION" : ""}</option>`).join("");
+          `<option value="${p.prnId.replace(/"/g,'&quot;')}">${p.productName || ""}${p.productRating ? " " + p.productRating : ""} | ${p.department || "—"}${p.version > 1 ? ` (v${p.version})` : ""}${p.revisionPending ? " — REVISION PENDING AUTHORIZATION" : ""}</option>`).join("");
   } catch (e) { prnSel.innerHTML = `<option value="">Failed to load PRNs</option>`; }
 }
 

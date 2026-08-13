@@ -73,7 +73,18 @@ async function initializePPSTrackingPanel() {
   if (prnSel) prnSel.innerHTML = `<option value="">— Select a project first —</option>`;
   const header = document.getElementById("pps-prn-header");
   if (header) header.style.display = "none";
+  // Previously left the typed Project ID and any prior search results
+  // sitting in the DOM on re-entry (only the PRN dropdown/header were
+  // reset) — leaving and coming back looked "stuck" on the last search
+  // instead of starting fresh, same class of bug as Revise Bill of
+  // Quantity's stale Project ID fix.
+  const body = document.getElementById("pps-results-body");
+  if (body) body.innerHTML = "";
+  const fb = document.getElementById("pps-feedback");
+  if (fb) { fb.style.display = "none"; fb.innerHTML = ""; }
+  window.ppsPrnListCache = {};
   const sel = document.getElementById("pps-project-select-ta-input");
+  sel.value = "";
   sel.placeholder = "Loading projects...";
   try {
     const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
@@ -108,7 +119,7 @@ async function loadPPSPRNList() {
       return;
     }
     prnSel.innerHTML = `<option value="">— Select PRN —</option>` +
-      prns.map(p => `<option value="${p.prnId.replace(/"/g,'&quot;')}">${p.customerName ? p.customerName + " | " : ""}${p.prnId}${p.version > 1 ? ` (v${p.version})` : ""}</option>`).join("");
+      prns.map(p => `<option value="${p.prnId.replace(/"/g,'&quot;')}">${p.productName || ""}${p.productRating ? " " + p.productRating : ""} | ${p.department || "—"}${p.version > 1 ? ` (v${p.version})` : ""}</option>`).join("");
   } catch (e) {
     prnSel.innerHTML = `<option value="">Failed to load PRNs</option>`;
   }

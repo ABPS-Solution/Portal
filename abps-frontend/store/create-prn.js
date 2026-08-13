@@ -287,7 +287,7 @@ async function handlePRNProjectChange(projectId) {
     (data.drafts || []).forEach(draft => {
       const opt = document.createElement("option");
       opt.value = draft.boqId;
-      opt.textContent = draft.boqId;
+      opt.textContent = `${draft.productName || ""}${draft.productRating ? " " + draft.productRating : ""} | ${draft.department || "—"}`;
       boqDrop.appendChild(opt);
       window.prnBOQMeta[draft.boqId] = { productName: draft.productName, productRating: draft.productRating, orderQuantity: draft.orderQuantity, customerName: draft.customerName };
     });
