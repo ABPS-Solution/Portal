@@ -656,7 +656,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
         ${isAuth
           ? `<button class="nav-btn-styled" onclick="rejectPOFromForm()" style="background:#dc2626;">Reject PO</button>
              <button class="nav-btn-styled" id="cpo-submit-btn" onclick="authorizePOFromForm()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Authorize PO</button>`
-          : `<button class="nav-btn-styled" onclick="clearCPOForm()" style="background:#718096;">Clear Form</button>
+          : `<button class="nav-btn-styled" onclick="clearCPOForm()" style="background:#718096;">Clear PO</button>
              <button class="nav-btn-styled" id="cpo-submit-btn" onclick="submitCreatePO()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Submit for Authorization</button>`}
       </div>
     </div>
@@ -864,10 +864,10 @@ function renderCPOMaterialRows() {
       : "";
 
     return `<div data-rowid="${row.id}" style="background:${rowBg}; border:1px solid ${rowBorderColor}; border-radius:var(--radius); padding:12px; margin-bottom:10px;">
-      <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+      <div style="display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap;">
         <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx + 1}</div>
 
-        <div style="flex:1; min-width:220px; position:relative;">
+        <div style="flex:1; min-width:190px; position:relative;">
           <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Description of Material *</label>
           <input type="text" class="cpo-desc-search" data-rowid="${row.id}" value="${(row.description||'').replace(/"/g,'&quot;')}" placeholder="Search material name / rating..." autocomplete="off"
             oninput="handleCPODescSearch(${row.id}, this.value)"
@@ -903,7 +903,7 @@ function renderCPOMaterialRows() {
         </div>
         <div style="width:110px; flex-shrink:0; text-align:right;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Costing Diff</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:flex-end; font-family:monospace; font-weight:700; font-size:0.85rem; color:${costingDiff > 0 ? '#dc2626' : (costingDiff < 0 ? '#15803d' : '#475569')};"><span class="cpo-costing-diff">${costingDiff != null ? fmtQty(costingDiff) : '—'}</span></div>
+          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:flex-end; font-family:monospace; font-weight:700; font-size:0.85rem; color:${costingDiff > 0 ? '#dc2626' : (costingDiff < 0 ? '#15803d' : '#475569')};"><span class="cpo-costing-diff">${costingDiff != null ? costingDiff.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '—'}</span></div>
         </div>
         <div style="width:120px; flex-shrink:0; text-align:right;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Amount</div>
@@ -1025,7 +1025,7 @@ function updateCPORowAmount(rowId) {
   const rowEl = document.querySelector(`[data-rowid="${rowId}"]`);
   const diffSpan = rowEl ? rowEl.querySelector(".cpo-costing-diff") : null;
   if (diffSpan) {
-    diffSpan.textContent = costingDiff != null ? fmtQty(costingDiff) : "—";
+    diffSpan.textContent = costingDiff != null ? costingDiff.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : "—";
     diffSpan.style.color = costingDiff > 0 ? "#dc2626" : (costingDiff < 0 ? "#15803d" : "#475569");
   }
   const rateInput = document.querySelector(`.cpo-rate[data-rowid="${rowId}"]`);
