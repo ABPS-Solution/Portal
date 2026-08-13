@@ -278,16 +278,24 @@ async function initializeUpdateBOQPanel() {
   uboqCurrentDraft = null;
   uboqMaterialRows = [];
 
-  // Reset DOM immediately — before any async calls
+  // Reset DOM immediately — before any async calls. projDrop previously
+  // looked up "update-boq-project", an id that doesn't exist anywhere in
+  // index.html (the real field is the shared typeahead input
+  // "update-boq-project-ta-input") — every block guarded by `if (projDrop)`
+  // silently no-op'd, so re-entering this panel never cleared the
+  // previously typed/selected Project ID, never refreshed
+  // sharedActiveProjectCodes/sharedProjectMeta, and the screen looked
+  // "stuck" on whatever was there the first time instead of starting fresh.
   const selectorZone = document.getElementById("update-boq-selector-zone");
-  const projDrop     = document.getElementById("update-boq-project");
-  const statusDrop   = document.getElementById("update-boq-status");
+  const projInput    = document.getElementById("update-boq-project-ta-input");
+  const projDropdown = document.getElementById("update-boq-project-ta-dropdown");
   const boqDrop      = document.getElementById("update-boq-select");
   const formEl       = document.getElementById("update-boq-form");
   const fbEl         = document.getElementById("update-boq-feedback");
 
   if (selectorZone) { selectorZone.style.display = "grid"; selectorZone.style.gridTemplateColumns = "1fr 2fr"; }
-  if (projDrop)   projDrop.innerHTML  = '<option value="">Loading...</option>';
+  if (projInput)  { projInput.value = ""; projInput.placeholder = "Type Project ID or Customer Name..."; }
+  if (projDropdown) projDropdown.style.display = "none";
   if (boqDrop)  { boqDrop.innerHTML   = '<option value="">— Select Project First —</option>'; boqDrop.disabled = true; }
   if (formEl)     formEl.style.display  = "none";
   if (fbEl)     { fbEl.style.display    = "none"; fbEl.innerHTML = ""; }
@@ -295,23 +303,11 @@ async function initializeUpdateBOQPanel() {
   await loadItemCodeCatalogIntoCache().catch(() => {});
   try {
     const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: "Active" });
-
-    if (statusDrop && data.allStatuses && data.allStatuses.length > 0) {
-      statusDrop.innerHTML = "";
-      data.allStatuses.forEach(s => {
-        const opt = document.createElement("option"); opt.value = s; opt.textContent = s;
-        if (s === "Active") opt.selected = true;
-        statusDrop.appendChild(opt);
-      });
-    }
-
-    if (projDrop) {
-      window.sharedActiveProjectCodes = data.projects || [];
-      window.sharedProjectMeta = data.projectMeta || {};
-    }
+    window.sharedActiveProjectCodes = data.projects || [];
+    window.sharedProjectMeta = data.projectMeta || {};
     window.uboqProjectMeta = data.projectMeta || {};
   } catch(e) {
-    if (projDrop) projDrop.placeholder = "Error loading projects";
+    if (projInput) projInput.placeholder = "Error loading projects";
   }
 }
 
