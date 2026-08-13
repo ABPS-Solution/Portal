@@ -531,7 +531,6 @@
         <div class="menu-card" id="mod-fg-add"                  onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
         <div class="menu-card" id="mod-fg-approval"             onclick="switchActiveDashboardModule('fg-approval')"><span class="mc-label">Add to Finished Goods Store Approval</span></div>
         <div class="menu-card" id="mod-project-invoice"         onclick="switchActiveDashboardModule('project-invoice')"><span class="mc-label">Project Invoice Generation</span></div>
-        <div class="menu-card" id="mod-material-ack"            onclick="switchActiveDashboardModule('material-ack')"><span class="mc-label">Acknowledge Material Receipt</span></div>
       </div>
     </div>
 
@@ -1047,13 +1046,6 @@
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review the Production and Quality Assurance documents uploaded for each submission before it becomes available in the Finished Goods Store.</p>
       <div id="fg-approval-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="fg-approval-queue-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
-    </div>
-
-    <div id="canvas-module-material-ack" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 class="panel-title">Acknowledge Material Receipt</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Confirm that material released against an approved Material Issue Ticket was physically received. This is a record only — quantities and stock are not affected here.</p>
-      <div id="material-ack-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
-      <div id="material-ack-queue-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
     </div>
 
     <div id="canvas-module-project-invoice" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
@@ -3396,7 +3388,6 @@
 <script src="production/finished-goods.js"></script>
 <script src="production/fg-approval.js"></script>
 <script src="production/project-invoice.js"></script>
-<script src="production/material-acknowledgement.js"></script>
 <script src="production/production-dashboard.js"></script>
 <script src="accounts/tour-expense.js"></script>
 </body>

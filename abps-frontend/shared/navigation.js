@@ -186,7 +186,6 @@ function returnToDashboard() {
   if(document.getElementById("canvas-module-fg-add")) document.getElementById("canvas-module-fg-add").style.display = "none";
   if(document.getElementById("canvas-module-fg-approval")) document.getElementById("canvas-module-fg-approval").style.display = "none";
   if(document.getElementById("canvas-module-project-invoice")) document.getElementById("canvas-module-project-invoice").style.display = "none";
-  if(document.getElementById("canvas-module-material-ack")) document.getElementById("canvas-module-material-ack").style.display = "none";
 
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("dashboard-view").style.display = "block"; 
@@ -372,8 +371,6 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canProjectInvoiceGeneration = userPermissionsObject.projectInvoiceGeneration === true;
   if (document.getElementById("mod-project-invoice")) document.getElementById("mod-project-invoice").style.display = canProjectInvoiceGeneration ? "block" : "none";
   if (document.getElementById("mod-jc-letterhead")) document.getElementById("mod-jc-letterhead").style.display = userPermissionsObject.jobCardLetterhead === true ? "block" : "none";
-  const canAcknowledgeMaterialReceipt = userPermissionsObject.acknowledgeMaterialReceipt === true;
-  if (document.getElementById("mod-material-ack")) document.getElementById("mod-material-ack").style.display = canAcknowledgeMaterialReceipt ? "block" : "none";
 
   const canApproveBOQIncrease = userPermissionsObject.approveJCIncrease === true;
   if (document.getElementById("mod-boq-increase-approvals")) {
@@ -435,7 +432,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // Production Department block visibility
   const productionHeaderBlock = document.getElementById("dashboard-production-department-header-block");
   if (productionHeaderBlock) {
-    productionHeaderBlock.style.display = (canCreateJobCardNumber || canCreateTicket || canAddFinishedGoods || canFgApproval || canProjectInvoiceGeneration || canAcknowledgeMaterialReceipt) ? "block" : "none";
+    productionHeaderBlock.style.display = (canCreateJobCardNumber || canCreateTicket || canAddFinishedGoods || canFgApproval || canProjectInvoiceGeneration) ? "block" : "none";
   }
 
   // Live Spare Store Stock card visibility
@@ -718,14 +715,6 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     if (centerTitle)  centerTitle.style.visibility  = "hidden";
     document.getElementById("canvas-module-project-invoice").style.display = "block";
     initializePinvWorkspace();
-  } else if (targetCanvasModuleId === 'material-ack') {
-    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
-    const leftControlsMA = document.getElementById("store-panel-left-controls");
-    const centerTitleMA  = document.getElementById("store-panel-center-title");
-    if (leftControlsMA) leftControlsMA.style.visibility = "hidden";
-    if (centerTitleMA)  centerTitleMA.style.visibility  = "hidden";
-    document.getElementById("canvas-module-material-ack").style.display = "block";
-    initializeMaterialAckWorkspace();
   } else if (targetCanvasModuleId === 'tour-expense') {
     document.getElementById("dashboard-view").style.display = "none";
     const teCanvas = document.getElementById("canvas-module-tour-expense");

@@ -279,7 +279,8 @@ async function executeStoreManagerTicketActionDecision(ticketId, decisionString)
         // SILENT METRICS RE-INDEX: Instantly refresh home dashboard widgets states counters fields
         if (userPermissions.liveStoreStock === true) triggerLiveWarehouseStockMetricsSync();
         feedbackBanner.style.cssText = "display: block; background: #dcfce7; border-color: #15803d; color: #15803d; padding: 12px; margin-bottom: 14px; border-left: 4px solid #15803d; font-weight:700;";
-        feedbackBanner.innerHTML = `Ticket Reference ${ticketId} successfully ${decisionString.slice(0, 6).toLowerCase()}ed`;
+        feedbackBanner.innerHTML = `Ticket Reference ${ticketId} successfully ${decisionString.slice(0, 6).toLowerCase()}ed`
+          + (result.pdfUrl ? ` &nbsp; <a href="${driveLink(result.pdfUrl)}" target="_blank" style="color:#15803d; text-decoration:underline;">Download Material Issue Ticket PDF</a>` : "");
       }
       
       // Remove visual panel node block smoothly out of sight matching flow constraints
