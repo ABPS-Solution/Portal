@@ -143,18 +143,20 @@ function renderMcLineItemsTable(projectId, lineItems) {
       : "";
     return `
       <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px; font-weight:600;">${li.description}</td>
-        <td style="padding:8px; position:relative;">
-          <input type="text" id="mc-std-search-${safeId}-${li.lineId}" value="${searchVal.replace(/"/g,'&quot;')}"
+        <td style="padding:8px; font-weight:600; vertical-align:middle;">${li.description}</td>
+        <td style="padding:8px; position:relative; vertical-align:middle;">
+          <textarea rows="1" id="mc-std-search-${safeId}-${li.lineId}"
             placeholder="Search Item Code..." autocomplete="off"
-            oninput="handleMcProductSearch(this.value, '${projectId}', ${li.lineId})"
-            style="width:100%; min-width:180px; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px;" />
+            oninput="handleMcProductSearch(this.value, '${projectId}', ${li.lineId}); mcAutoGrowField(this);"
+            onfocus="mcAutoGrowField(this);"
+            onkeydown="if(event.key==='Enter') event.preventDefault();"
+            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px;">${searchVal.replace(/</g,'&lt;')}</textarea>
           <div id="mc-std-dropdown-${safeId}-${li.lineId}" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); overflow-y:auto; min-width:280px;"></div>
         </td>
-        <td style="padding:8px; text-align:center;">${fmtQty(li.quantity)}</td>
-        <td style="padding:8px; text-align:center;">${li.unit || "—"}</td>
-        <td style="padding:8px; text-align:center; font-weight:700; color:#0369a1;">${fmtQty(li.mfcQuantity)}</td>
-        <td style="padding:8px; text-align:center;">
+        <td style="padding:8px; text-align:center; vertical-align:middle;">${fmtQty(li.quantity)}</td>
+        <td style="padding:8px; text-align:center; vertical-align:middle;">${li.unit || "—"}</td>
+        <td style="padding:8px; text-align:center; vertical-align:middle; font-weight:700; color:#0369a1;">${fmtQty(li.mfcQuantity)}</td>
+        <td style="padding:8px; text-align:center; vertical-align:middle;">
           <input type="number" id="mc-new-mfc-${safeId}-${li.lineId}" value="${trimNum(state.newMfcQuantity)}"
             min="0" max="${li.quantity}" step="any"
             oninput="clampMcNewMfcQty(this, '${projectId}', ${li.lineId})"
@@ -165,7 +167,11 @@ function renderMcLineItemsTable(projectId, lineItems) {
 
   contentEl.innerHTML = `
     <div style="overflow-x:auto; margin-bottom:14px;">
-      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
+        <colgroup>
+          <col style="width:22%;" /><col style="width:34%;" /><col style="width:10%;" />
+          <col style="width:8%;" /><col style="width:14%;" /><col style="width:12%;" />
+        </colgroup>
         <thead>
           <tr style="background:var(--highlight-bg); text-align:left;">
             <th style="padding:8px;">Order Product Description</th>
@@ -185,6 +191,15 @@ function renderMcLineItemsTable(projectId, lineItems) {
       </button>
     </div>
   `;
+  contentEl.querySelectorAll('textarea').forEach(mcAutoGrowField);
+}
+
+// Auto-grow the Standard Product Name search box so a long selected value
+// wraps onto extra lines (row height grows) instead of clipping — same
+// technique as the Upload Purchase Order review screen's autoGrowPoField.
+function mcAutoGrowField(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
 }
 
 // Fixed-position dropdown, same reasoning/pattern as Create BOQ's material
@@ -257,7 +272,7 @@ function selectMcProduct(projectId, lineId, itemCode, productName, rating) {
   state.standardProductRating = rating || "";
 
   const searchEl = document.getElementById(`mc-std-search-${safeId}-${lineId}`);
-  if (searchEl) searchEl.value = rating ? `${productName} ${rating}` : productName;
+  if (searchEl) { searchEl.value = rating ? `${productName} ${rating}` : productName; mcAutoGrowField(searchEl); }
   const dropdown = document.getElementById(`mc-std-dropdown-${safeId}-${lineId}`);
   if (dropdown) dropdown.style.display = "none";
 }
