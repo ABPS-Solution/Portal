@@ -489,6 +489,13 @@ function revealNewEntryFormDropdown() {
   
   if (!dropdownEl) return;
   document.getElementById(container).appendChild(dropdownEl);
+  // appendChild always lands the form at the END of the panel — hide any
+  // search-results canvas already rendered above it (matches
+  // revealNewEntryFormDropdownFromBanner's already-established pattern),
+  // otherwise stale/unrelated result cards sit above the form and its
+  // success message, reading as if they belong to this submission.
+  const resultsCanvas = document.getElementById("step2-inline-interaction-canvas");
+  if (resultsCanvas) resultsCanvas.style.display = "none";
 
   // These fields duplicate what's already entered in "Business Card Information" when
   // arriving via CARD mode — hide them there. In DROPDOWN mode (Search Company) they're
@@ -1430,6 +1437,9 @@ async function submitLead() {
       if (document.getElementById("step2-inline-interaction-canvas")) document.getElementById("step2-inline-interaction-canvas").style.display = "none";
       const step1CardBlock = document.getElementById("step1-card-capture-block");
       if (step1CardBlock) step1CardBlock.style.display = "none";
+      // Collapse Form no longer applies once the record is saved — nothing left to collapse.
+      const collapseBtn = document.getElementById("global-direct-inline-collapse-entry-btn");
+      if (collapseBtn) collapseBtn.style.display = "none";
 
       // B. Inject full success element view with inline "+ Create New Entry" button action loop
       if (feedbackBanner) {
@@ -1438,8 +1448,8 @@ async function submitLead() {
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div>
               <strong style="font-size: 1rem;">Success! Lead Record Created for ${fields["Company Name"] || companyVal}.</strong><br/>
-              <span style="font-size: 0.88rem; font-weight: 600;">Assigned LEAD ID: 
-                <br/><span style="font-family: monospace; font-weight: 800; background: #fff; padding: 4px 10px; border-radius: 4px; border: 1px solid #15803d; color: #111827; display: inline-block; margin-top: 6px;">${d.leadRef}</span>
+              <span style="font-size: 0.88rem; font-weight: 600;">Assigned LEAD ID:
+                <br/><span style="font-family: monospace; font-weight: 800; background: #fff; padding: 4px 10px; border-radius: 4px; border: 1px solid #15803d; color: #111827; display: inline-block; margin-top: 6px;">${d.leadId}</span>
               </span>
             </div>
             <button class="nav-btn-styled" onclick="
@@ -1507,10 +1517,17 @@ async function submitLead() {
             if (canvasNode) {
               canvasNode.style.display = "block";
               buildMultiContactDirectoryInterface(refreshData.leads, targetPersonNameParam);
-              const topFreshCardNode = document.getElementById(`contact-parent-wrapper-${d.leadRef}`);
+              const topFreshCardNode = document.getElementById(`contact-parent-wrapper-${d.leadId}`);
               if (topFreshCardNode) {
                 topFreshCardNode.style.cssText = "border: 2.5px solid var(--accent) !important; box-shadow: 0 4px 12px rgba(0, 168, 120, 0.15) !important;";
               }
+              // This canvas sits earlier in the DOM than the create-form/success
+              // message, so re-showing it here would otherwise land it ABOVE the
+              // success banner. Move it below instead, so the confirmation card
+              // reads as "here's the record you just created", not as something
+              // unrelated floating above the message.
+              const dropdownEl = document.getElementById("step2-new-entry-dropdown");
+              if (dropdownEl) dropdownEl.after(canvasNode);
             }
             // The contact just submitted now exists — clear the stale "missing person" banner
             // left over from before this lead was created.
