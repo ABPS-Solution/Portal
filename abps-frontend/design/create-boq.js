@@ -214,7 +214,7 @@ async function loadCboqAllowedProducts(projectId) {
       if (select) select.innerHTML = `<option value="">— No Products Cleared for a New BOQ —</option>`;
       if (banner) {
         banner.style.display = "block";
-        banner.textContent = data.message || "No products are cleared for manufacturing yet — check Manufacturing Clearance.";
+        banner.textContent = data.message || "No products are cleared for manufacturing yet. check Manufacturing Clearance.";
       }
       return;
     }

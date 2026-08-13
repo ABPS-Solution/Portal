@@ -72,7 +72,7 @@ async function initializeFinishedGoodsAddWorkspace(department, canvasId) {
   if (!canvas) return;
 
   canvas.innerHTML = `
-    <h2 style="margin-bottom:20px; color:var(--brand);">${department} Department: Add Material to Finished Goods Store</h2>
+    <h2 class="panel-title">${department} Department: Add Material to Finished Goods Store</h2>
     <div id="fg-feedback-${canvasId}" style="display:none; padding:16px; border-radius:var(--radius); margin-bottom:16px; border-left:4px solid;"></div>
     <div id="fg-form-${canvasId}">
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">

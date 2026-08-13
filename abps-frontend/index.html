@@ -87,8 +87,11 @@
   /* --- WORKSPACE BLOCK WRAPPERS --- */
   .workspace-panel { padding: 4px 10px; min-width: 0; max-width: 100%; box-sizing: border-box; }
   .section { background: var(--card); border-radius: var(--radius); margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); overflow: hidden; }
-  .section-header { background: none; color: var(--text); padding: 18px 18px 0 18px; margin: 0 0 14px 0; font-size: 1.3rem; font-weight: 700; text-transform: none; border: none; }
+  .section-header { background: none; color: var(--brand); padding: 18px 18px 0 18px; margin: 0 0 14px 0; font-size: 1.3rem; font-weight: 800; text-transform: none; border: none; }
   .section-body { padding: 0 16px 16px 16px; }
+
+  /* --- SHARED WORKSPACE PANEL TITLE — one look for every section's main heading --- */
+  .panel-title { color: var(--brand); font-size: 1.3rem; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 16px 0; }
 
   /* --- DYNAMIC DIVISION LABELS & DEPARTMENT SIDEBAR NAVIGATION --- */
   .nav-department-group-wrapper { padding: 6px 4px; }
@@ -543,7 +546,7 @@
     <div id="store-prn-revision-reminder-banner" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ A BOQ has been revised — check the <strong>Revise PRN</strong> section to see if a PRN needs revising.</div>
 
     <div id="canvas-module-store-gate-entry" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 16px;">Store Gate Entry</h2>
+      <h2 class="panel-title">Store Gate Entry</h2>
       <div id="store-gate-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       
       <div class="section" style="padding: 16px;">
@@ -588,20 +591,20 @@
     </div>
 
     <div id="canvas-module-store-entry" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 16px;">Raw Materials Store Entry and GRN</h2>
+      <h2 class="panel-title">Raw Materials Store Entry and GRN</h2>
       <div id="store-entry-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="store-entry-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>
 
     <div id="canvas-module-store-grn" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 16px;">Raw Materials Q/A Check</h2>
+      <h2 class="panel-title">Raw Materials Q/A Check</h2>
       <div id="store-grn-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="store-grn-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>  
 
     <div id="canvas-module-store-material-request" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:2px solid var(--bg); padding-bottom:10px;">
-        <h2 style="margin:0;">Create Material Issue Ticket</h2>
+        <h2 class="panel-title" style="margin:0;">Create Material Issue Ticket</h2>
       </div>
       <div id="store-ticket-runtime-inline-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid;"></div>    
       
@@ -704,14 +707,14 @@
     </div>
 
     <div id="canvas-module-boq-increase-approvals" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 16px;">Approve Excess Material Requests</h2>
+      <h2 class="panel-title">Approve Excess Material Requests</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review tickets where engineers requested materials exceeding the Job Card allotted quantity. You can accept, partially accept, or reject each exceeded item.</p>
       <div id="boq-increase-approvals-feedback" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="boq-increase-approvals-queue-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>
 
     <div id="canvas-module-store-manager-approvals" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <h2 style="margin-bottom: 4px;">Approve Material Issue Tickets</h2>
+      <h2 class="panel-title">Approve Material Issue Tickets</h2>
       <p style="margin:0 0 16px; font-size:0.82rem; color:var(--muted);">Actual Quantity can only be reduced below Requested Quantity, never increased.</p>
       <div id="store-approvals-runtime-inline-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="store-manager-approvals-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
@@ -797,7 +800,7 @@
     </div>
 
     <div id="canvas-module-jc-letterhead" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin:0 0 16px; color:var(--brand);">Job Card Letterhead</h2>
+      <h2 class="panel-title">Job Card Letterhead</h2>
       <div id="jclh-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
         <div>
@@ -845,7 +848,7 @@
 
     <div id="canvas-module-fg-add" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h2 style="margin:0; color:var(--brand);">Add to Finished Goods Store</h2>
+        <h2 class="panel-title" style="margin:0;">Add to Finished Goods Store</h2>
         <div>
           <select id="fg-add-use-toggle" style="border-color:var(--brand); font-weight:700; color:var(--brand); padding:6px;">
             <option value="Use in other Product">Use in other Product</option>
@@ -1022,21 +1025,21 @@
     </div>
 
     <div id="canvas-module-fg-approval" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin:0 0 6px; color:var(--brand);">Add to Finished Goods Store Approval</h2>
+      <h2 class="panel-title">Add to Finished Goods Store Approval</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review the Production and Quality Assurance documents uploaded for each submission before it becomes available in the Finished Goods Store.</p>
       <div id="fg-approval-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="fg-approval-queue-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
     </div>
 
     <div id="canvas-module-material-ack" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin:0 0 6px; color:var(--brand);">Acknowledge Material Receipt</h2>
+      <h2 class="panel-title">Acknowledge Material Receipt</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Confirm that material released against an approved Material Issue Ticket was physically received. This is a record only — quantities and stock are not affected here.</p>
       <div id="material-ack-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="material-ack-queue-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
     </div>
 
     <div id="canvas-module-project-invoice" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin:0 0 16px; color:var(--brand);">Project Invoice Generation</h2>
+      <h2 class="panel-title">Project Invoice Generation</h2>
       <div id="pinv-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
       <div id="pinv-select-zone">
@@ -1076,7 +1079,7 @@
 
     <div id="canvas-module-store-history-matrix" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
       
-      <h2 style="margin-bottom: 16px;">Search Material Issue Tickets</h2>
+      <h2 class="panel-title">Search Material Issue Tickets</h2>
       <div style="background: var(--highlight-bg); border: 1.5px solid var(--border); border-left: 4px solid var(--brand); padding: 16px; border-radius: var(--radius); margin-bottom: 16px; text-align: left;">
         <div style="display: flex; flex-wrap: wrap; gap: 24px; width: 100%;">
           
@@ -1165,7 +1168,7 @@
     </div>
 
     <div id="canvas-module-stock-sweep" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="color:var(--brand); margin:0 0 6px 0;">Stock Sweep (Weekly Return)</h2>
+      <h2 class="panel-title">Stock Sweep (Weekly Return)</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
         Record all material recovered from every department/job card in this sweep, regardless of project.
       </p>
@@ -1205,7 +1208,7 @@
     </div>
 
     <div id="canvas-module-assign-current-stock" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="color:var(--brand); margin:0 0 6px 0;">Reserve Store Stock</h2>
+      <h2 class="panel-title">Reserve Store Stock</h2>
       <div id="ass-feedback" style="display:none; margin-bottom:14px;"></div>
       <label class="field-label" style="margin-top:0;">Search Material Name</label>
       <div style="position:relative; margin-bottom:16px;">
@@ -1236,7 +1239,7 @@
 
     <div id="canvas-module-expected-inbounds" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:10px;">
-        <h2 style="color:var(--brand); margin:0;">Expected Deliveries</h2>
+        <h2 class="panel-title" style="margin:0;">Expected Deliveries</h2>
         <button class="nav-btn-styled" onclick="loadExpectedInbounds()" style="background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Refresh</button>
       </div>
       <div id="expected-inbounds-window-toggle" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
@@ -1257,8 +1260,8 @@
       <div></div>
       <button class="nav-btn-styled" onclick="exitProjectStatusBackToMenu()">Return to Main Dashboard</button>
     </div>
-    <h2 style="color:var(--brand); margin:0 0 6px 0;">Project Status</h2>
-    <div style="display:flex; gap:10px; align-items:flex-end; margin-bottom:20px; position:relative; max-width:520px;">
+    <h2 class="panel-title">Project Status</h2>
+    <div style="display:flex; gap:10px; align-items:flex-end; margin-bottom:20px; position:relative;">
       <div style="flex:1; position:relative;">
         <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
         <input type="text" id="pstat-project-input" placeholder="Type Project ID..." autocomplete="off"
@@ -1291,7 +1294,7 @@
       <div></div>
       <button class="nav-btn-styled" onclick="exitManufacturingClearanceBackToMenu()">Return to Main Dashboard</button>
     </div>
-    <h2 style="color:var(--brand); margin:0 0 6px 0;">Manufacturing Clearance</h2>
+    <h2 class="panel-title">Manufacturing Clearance</h2>
     <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">
       New projects start Inactive and stay invisible to every other department until cleared here.
     </p>
@@ -1315,7 +1318,7 @@
       <div></div>
       <button class="nav-btn-styled" onclick="exitTourExpenseBackToMenu()">Return to Main Dashboard</button>
     </div>
-    <h2 style="margin: 0 0 16px 0;">Tour Expense Tracker</h2>
+    <h2 class="panel-title">Tour Expense Tracker</h2>
     <div id="te-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
     <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center;">
@@ -1364,7 +1367,7 @@
 
     <!-- CREATE BOQ -->
     <div id="canvas-module-design-create-boq" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin-bottom:6px; color:var(--brand);">Create Bill of Quantity</h2>
+      <h2 class="panel-title">Create Bill of Quantity</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:20px;">Fill in the BOQ details and add material rows. Submit when complete and it will go for Authorization.</p>
       <div id="create-boq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -1498,7 +1501,7 @@
 
     <!-- AUTHORIZE BOQ -->
     <div id="canvas-module-design-auth-boq" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin-bottom:6px; color:var(--brand);">Authorize Bill of Quantity</h2>
+      <h2 class="panel-title">Authorize Bill of Quantity</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Click a pending BOQ to review, edit if needed, and authorize.</p>
       <div id="auth-boq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -1507,7 +1510,7 @@
 
     <!-- UPDATE BOQ -->
     <div id="canvas-module-design-update-boq" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin-bottom:6px; color:var(--brand);">Revise Bill of Quantity</h2>
+      <h2 class="panel-title">Revise Bill of Quantity</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project ID, then select the BOQ to update. Changes will go for re-authorization.</p>
       <div id="update-boq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -1537,7 +1540,7 @@
 
     <!-- AUTHORIZE BOQ UPDATE -->
     <div id="canvas-module-design-auth-boq-upd" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin-bottom:6px; color:var(--brand);">Authorize Bill of Quantity Revision</h2>
+      <h2 class="panel-title">Authorize Bill of Quantity Revision</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Click a pending BOQ update to review changes, edit if needed, then authorize.</p>
       <div id="auth-boq-upd-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -1546,7 +1549,7 @@
 
     <!-- UPLOAD DRAWINGS -->
     <div id="canvas-module-design-upload-drawings" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin-bottom:6px; color:var(--brand);">Upload Drawings</h2>
+      <h2 class="panel-title">Upload Drawings</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project ID, then upload drawing documents. Multiple uploads possible.</p>
       <div id="upload-drawings-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -1581,7 +1584,7 @@
     </div>
 
     <div id="canvas-module-design-itemcode" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin-bottom:6px; color:var(--brand);">Add / Check Item Code</h2>
+      <h2 class="panel-title">Add / Check Item Code</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:20px;">Search the catalog to find an existing Item Code, or create a new one if the material doesn't exist.</p>
       
       <div id="itemcode-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
@@ -1731,7 +1734,7 @@
 
     <!-- PRN CANVAS -->
     <div id="canvas-module-purchase-prn" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin-bottom:6px; color:var(--brand);">Create Purchase Request Note (PRN)</h2>
+      <h2 class="panel-title">Create Purchase Request Note (PRN)</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project and an authorized BOQ to view or create a Purchase Request Note.</p>
       <div id="prn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="prn-success-zone" style="display:none;"></div>
@@ -1772,28 +1775,28 @@
 
     <!-- MATERIAL LIST CANVAS -->
     <div id="canvas-module-purchase-create-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="color:var(--brand); margin:0 0 6px 0;">Create Raw Material Purchase Order</h2>
+      <h2 class="panel-title">Create Raw Material Purchase Order</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Fill in the PO details and add material rows. Tag each material with the PRN using this Material. Submit when complete and it will go for Authorization.</p>
       <div id="create-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="create-po-body"></div>
     </div>
 
     <div id="canvas-module-purchase-authorize-prn" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 id="aprn-panel-title" style="color:var(--brand); margin:0 0 6px 0;">Authorize Purchase Request Note (PRN)</h2>
+      <h2 id="aprn-panel-title" class="panel-title">Authorize Purchase Request Note (PRN)</h2>
       <p id="aprn-panel-subtitle" style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review each pending PRN, adjust Store Quantity if needed, then authorize or reject.</p>
       <div id="aprn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="aprn-cards-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
     </div>
 
     <div id="canvas-module-purchase-authorize-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="color:var(--brand); margin:0 0 6px 0;">Authorize Raw Material Purchase Order</h2>
+      <h2 class="panel-title">Authorize Raw Material Purchase Order</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review pending Purchase Orders. On authorization, the PO PDF is generated and saved, and the order is finalized.</p>
       <div id="authorize-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="authorize-po-body"></div>
     </div>
 
     <div id="canvas-module-purchase-revise-prn" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="color:var(--brand); margin:0 0 6px 0;">Revise Purchase Request Note (PRN)</h2>
+      <h2 class="panel-title">Revise Purchase Request Note (PRN)</h2>
       <div id="rprn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
       <div style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--border);">
@@ -1829,13 +1832,13 @@
     </div>
 
     <div id="canvas-module-purchase-authorize-po-revision" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="color:var(--brand); margin:0 0 6px 0;">Authorize Raw Material Purchase Order Revision</h2>
+      <h2 class="panel-title">Authorize Raw Material Purchase Order Revision</h2>
       <div id="apor-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="apor-cards-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
     </div>
 
     <div id="canvas-module-purchase-revise-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="color:var(--brand); margin:0 0 6px 0;">Revise Raw Material Purchase Order</h2>
+      <h2 class="panel-title">Revise Raw Material Purchase Order</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Revise a PO whose PRN requirements have changed, or search any authorized PO to revise it.</p>
       <div id="rpo-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -1865,7 +1868,7 @@
     </div>
 
     <div id="canvas-module-purchase-pps-tracking" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="color:var(--brand); margin:0 0 6px 0;">PPS Tracking</h2>
+      <h2 class="panel-title">PPS Tracking</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Search a Project to see its PRNs and the Purchase Orders linked to each — with expected vs. actual delivery tracking.</p>
       <div id="pps-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div style="display:grid; grid-template-columns:2fr 2fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
@@ -1889,7 +1892,7 @@
     </div>
 
     <div id="canvas-module-purchase-search-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="color:var(--brand); margin:0 0 6px 0;">Search Raw Material Purchase Order</h2>
+      <h2 class="panel-title">Search Raw Material Purchase Order</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Look up any Authorized Purchase Order by PO Number, material, or Project ID.</p>
       <div id="srchpo-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -1924,7 +1927,7 @@
     </div>
 
     <div id="canvas-module-purchase-rejected-material" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="color:var(--brand); margin:0 0 6px 0;">Store Inward Rejected & Missing Material</h2>
+      <h2 class="panel-title">Store Inward Rejected &amp; Missing Material</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
         Review Q/A-rejected material from Store and decide the action.
         Once actioned, a GRN moves from Pending Action to Action in Progress.
@@ -2527,7 +2530,7 @@
 
     <!-- RAW MATERIAL PO UPLOAD CANVAS -->
     <div id="canvas-module-purchase-upload-rm-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 style="margin-bottom:6px; color:var(--brand);">Upload Raw Material Purchase Order</h2>
+      <h2 class="panel-title">Upload Raw Material Purchase Order</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Upload a Raw Material PO. AI will extract line items and match them to your Item Code catalog.</p>
       <div id="rm-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -2696,7 +2699,7 @@
 
     <div id="workspace-coming-soon" class="workspace-panel" style="display: none; padding: 40px 20px; text-align: center;">
       <div style="font-size: 3rem; margin-bottom: 16px;">🚧</div>
-      <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--brand); margin-bottom: 8px;">Coming Soon</h2>
+      <h2 class="panel-title">Coming Soon</h2>
       <p style="font-size: 0.9rem; color: var(--muted);">This feature is currently under development and will be available soon.</p>
     </div>
     
@@ -2789,7 +2792,7 @@
                 <option value="">— Select Company / Lead —</option>
               </select>
             </div>
-            <div class="card-box" id="purchase-order-upload-box" onclick="document.getElementById('purchase-order-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Purchase Order</div>
+            <div class="card-box" id="purchase-order-upload-box" onclick="document.getElementById('purchase-order-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Purchase Order *</div>
             <input type="file" id="purchase-order-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'purchase-order-upload-box', 'Purchase Order Added ✅')" />
 
             <div style="margin-top: 12px;">
