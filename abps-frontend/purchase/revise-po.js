@@ -8,7 +8,18 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
   if (window._aprnStockInterval) { clearInterval(window._aprnStockInterval); window._aprnStockInterval = null; }
   if (window._rprnStockInterval) { clearInterval(window._rprnStockInterval); window._rprnStockInterval = null; }
 
-  checkPurchasePORevisionReminder();
+  // The "A PRN has been revised — check Revise PO" banner is Purchase-
+  // department work only, but purchase-prn/purchase-revise-prn/
+  // purchase-authorize-prn (Create/Revise/Authorize PRN) are Store-
+  // department screens that happen to share this same enclosure/banner
+  // element — showing it there was misleading Store staff into thinking
+  // a Purchase Order needed attention from them.
+  if (["purchase-prn", "purchase-revise-prn", "purchase-authorize-prn"].includes(targetModuleId)) {
+    const banner = document.getElementById("purchase-po-revision-reminder-banner");
+    if (banner) banner.style.display = "none";
+  } else {
+    checkPurchasePORevisionReminder();
+  }
   window.scrollTo(0, 0);
   setTimeout(() => window.scrollTo(0, 0), 50);
   document.getElementById("dashboard-view").style.display = "none";

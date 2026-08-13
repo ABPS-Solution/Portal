@@ -490,7 +490,15 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   window.scrollTo(0, 0);
   setTimeout(() => window.scrollTo(0, 0), 50);
-  checkStorePRNRevisionReminder();
+  // Approve Excess Material Requests and Gate Entry are their own focused
+  // workflows — the "A BOQ has been revised, check Revise PRN" reminder
+  // isn't actionable from either screen, just noise on top of them.
+  if (["boq-increase-approvals", "store-gate-entry"].includes(targetPanelModuleId)) {
+    const banner = document.getElementById("store-prn-revision-reminder-banner");
+    if (banner) banner.style.display = "none";
+  } else {
+    checkStorePRNRevisionReminder();
+  }
   stopLiveStockPolling();
   stopPendingTicketsQueuePolling();
   // 1. Hide the primary dashboard menu grid view and the global marketing containers completely
