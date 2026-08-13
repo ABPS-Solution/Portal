@@ -30,7 +30,16 @@ function handleSharedProjectTypeaheadInput(query, inputId, dropdownId) {
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(p => {
     const companyName = (meta[p] && meta[p].companyName) || "";
-    return `<div onclick="selectSharedProjectTypeahead('${p.replace(/'/g,"\\'")}', '${inputId}', '${dropdownId}')"
+    // onmousedown preventDefault stops the input from blurring before the
+    // click registers — without it, the browser blurs the still-focused
+    // input on mousedown (before this option's click handler runs), which
+    // fires a NATIVE change event carrying whatever partial text was typed
+    // (not the project actually clicked). That spurious call and the real
+    // click-driven one then race each other to the backend, and whichever
+    // response lands second wins — sometimes clobbering the correct
+    // selection with the stale/garbage one. Keeping focus on the input
+    // through the click means only the real selection ever fires change.
+    return `<div onmousedown="event.preventDefault();" onclick="selectSharedProjectTypeahead('${p.replace(/'/g,"\\'")}', '${inputId}', '${dropdownId}')"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:700;">${p}</span>${companyName ? ` <span style="color:var(--muted);">— ${companyName}</span>` : ''}

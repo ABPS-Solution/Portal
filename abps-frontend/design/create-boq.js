@@ -195,12 +195,22 @@ function resetCBOQProductSelection() {
 // is PO products cleared for manufacturing (MFC Quantity > 0) that don't
 // have a BOQ yet; once all of those have BOQs, Tier 2 offers the Finished
 // Goods materials found inside them, recursively.
+// Defensive against out-of-order responses: two calls can legitimately
+// fire close together (e.g. a stray native "change" from the project
+// typeahead losing focus, followed immediately by the real click-driven
+// one) and there's no guarantee the network returns them in request order.
+// A stale response landing after a newer one has already rendered would
+// silently clobber the correct selection with wrong data. Only ever apply
+// the response from whichever call was issued most recently.
+let cboqAllowedProductsRequestSeq = 0;
 async function loadCboqAllowedProducts(projectId) {
+  const seq = ++cboqAllowedProductsRequestSeq;
   const select = document.getElementById("cboq-product-select");
   const banner = document.getElementById("cboq-pending-products-banner");
   if (select) select.innerHTML = '<option value="">Loading...</option>';
   try {
     const data = await apFetch({ action: "fetchAllowedBoqProducts", projectId });
+    if (seq !== cboqAllowedProductsRequestSeq) return; // superseded by a newer request — ignore
     if (!data.success) {
       if (select) select.innerHTML = `<option value="">${data.error}</option>`;
       if (banner) { banner.style.display = "block"; banner.textContent = data.error || "Could not load allowed products."; }
@@ -231,6 +241,7 @@ async function loadCboqAllowedProducts(projectId) {
       banner.innerHTML = `${heading}<ul style="margin:6px 0 0; padding-left:20px;">${bullets}</ul>`;
     }
   } catch(e) {
+    if (seq !== cboqAllowedProductsRequestSeq) return;
     if (select) select.innerHTML = `<option value="">Network error</option>`;
     if (banner) { banner.style.display = "block"; banner.textContent = "Network error loading allowed products: " + e.message; }
   }
