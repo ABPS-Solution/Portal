@@ -140,6 +140,15 @@
   @media(min-width: 950px) { .compact-fields-grid { grid-template-columns: repeat(6, 1fr); } }
   @media(max-width: 599px) { .compact-fields-grid .grid-cell-item[style*="grid-column: span 2"],
     .compact-fields-grid .grid-cell-item[style*="grid-column: span 3"] { grid-column: span 2 !important; } }
+
+  /* Same idea as .compact-fields-grid, but 4x finer-grained (24 columns at
+     desktop width instead of 6) so fields can be sized to fractional
+     multiples of a base "x" unit (span 4 = 1x, span 3 = 0.75x, span 6 = 1.5x,
+     span 8 = 2x, etc.) — used by the Upload Purchase Order review screen. */
+  .po-review-fields-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; text-align: left; }
+  @media(min-width: 600px) { .po-review-fields-grid { grid-template-columns: repeat(16, 1fr); } }
+  @media(min-width: 950px) { .po-review-fields-grid { grid-template-columns: repeat(24, 1fr); } }
+
   .grid-cell-item { display: flex; flex-direction: column; background: #f8fafc; padding: 2px 4px; border: 1px solid #e2e8f0; border-radius: 4px; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
   .grid-cell-item label { font-size: 0.58rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 1px; }
   .grid-cell-item input, .grid-cell-item select, .grid-cell-item textarea { padding: 2px 4px; font-size: 0.78rem; font-weight: 600; border-radius: 3px; border: 1px solid var(--border); }

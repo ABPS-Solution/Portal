@@ -2302,9 +2302,55 @@ function updatePoReviewField(key, value) {
   }
 }
 
+// Total Basic Price and Total Amount are derived, not typed — they recompute
+// live from Quantity/Rate and Basic Price/GST respectively. Updated directly
+// on the readonly input elements (not a full table re-render) so the field
+// the user is actively typing in never loses focus/cursor position.
 function updatePoReviewLineItem(idx, key, value) {
-  if (!poReviewState.lineItems[idx]) return;
-  poReviewState.lineItems[idx][key] = value;
+  const item = poReviewState.lineItems[idx];
+  if (!item) return;
+  item[key] = value;
+
+  if (key === 'quantity' || key === 'ratePerQuantity') {
+    const qty = parseFloat(item.quantity);
+    const rate = parseFloat(item.ratePerQuantity);
+    const basic = (!isNaN(qty) && !isNaN(rate)) ? qty * rate : '';
+    item.totalBasicPrice = basic === '' ? '' : String(basic);
+    const basicEl = document.getElementById(`po-li-totalBasicPrice-${idx}`);
+    if (basicEl) basicEl.value = item.totalBasicPrice;
+  }
+  if (key === 'quantity' || key === 'ratePerQuantity' || key === 'gstAmount') {
+    const basic = parseFloat(item.totalBasicPrice);
+    const gst = parseFloat(item.gstAmount);
+    const total = (!isNaN(basic) && !isNaN(gst)) ? basic + gst : '';
+    item.totalAmount = total === '' ? '' : String(total);
+    const totalEl = document.getElementById(`po-li-totalAmount-${idx}`);
+    if (totalEl) totalEl.value = item.totalAmount;
+  }
+}
+
+// Auto-grow a text-value box so long values wrap instead of clipping.
+function autoGrowPoField(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+// "Select from a list of companies" for the review screen's Company Name —
+// mirrors the Select Lead / Company dropdown from the upload step. Company
+// names are parsed off cachedUploadLeadsList's displayLabel
+// ("Company — Contact (LEAD-42)" or "Company (LEAD-42)").
+function extractCompanyNameFromDisplayLabel(label) {
+  const noLeadId = (label || '').replace(/\s*\([^()]*\)\s*$/, '');
+  return noLeadId.split(' — ')[0].trim();
+}
+function poReviewCompanyOptions() {
+  const names = new Set();
+  (cachedUploadLeadsList || []).forEach(l => {
+    const n = extractCompanyNameFromDisplayLabel(l.displayLabel);
+    if (n) names.add(n);
+  });
+  if (poReviewState && poReviewState.companyName) names.add(poReviewState.companyName);
+  return Array.from(names).sort((a, b) => a.localeCompare(b));
 }
 
 function addPoReviewLineItem() {
@@ -2317,23 +2363,47 @@ function removePoReviewLineItem(idx) {
   renderPoReviewLineItemsTable();
 }
 
+// Column widths are deliberately unequal: Order Product Description is the
+// only free-text field people actually need to read in full, everything
+// else is short codes/numbers. Widths are % of table width.
+const PO_REVIEW_LI_COLS = [
+  ['itemCode', 'Customer Item Code', 'text', 8.6],
+  ['hsnNumber', 'HSN Number', 'text', 8.6],
+  ['description', 'Order Product Description *', 'text', 30.3],
+  ['quantity', 'Order Quantity *', 'number', 5.6],
+  ['unit', 'UOM *', 'text', 5.6],
+  ['ratePerQuantity', 'Rate / Quantity *', 'number', 9.6],
+  ['totalBasicPrice', 'Total Basic Price', 'number', 9.6],
+  ['gstAmount', 'GST Amount *', 'number', 9.6],
+  ['totalAmount', 'Total Amount (incl. GST)', 'number', 9.6],
+];
+
 function renderPoReviewLineItemsTable() {
   const wrap = document.getElementById("po-review-lineitems-wrap");
   if (!wrap) return;
   const items = poReviewState.lineItems || [];
-  const cols = [
-    ['itemCode', 'Customer Item Code', 'text'], ['hsnNumber', 'HSN Number', 'text'], ['description', 'Order Product Description', 'text'],
-    ['quantity', 'Order Quantity', 'number'], ['unit', 'UOM', 'text'], ['ratePerQuantity', 'Rate / Quantity', 'number'],
-    ['totalBasicPrice', 'Total Basic Price', 'number'], ['gstAmount', 'GST Amount', 'number'], ['totalAmount', 'Total Amount (incl. GST)', 'number'],
-  ];
+  const cols = PO_REVIEW_LI_COLS;
+  const derivedKeys = ['totalBasicPrice', 'totalAmount'];
   wrap.innerHTML = `
-    <table class="store-basket-data-table" style="min-width:960px;">
+    <table class="store-basket-data-table" style="width:100%; table-layout:fixed;">
+      <colgroup>${cols.map(c => `<col style="width:${c[3]}%;" />`).join('')}<col style="width:3%;" /></colgroup>
       <thead><tr>${cols.map(c => `<th>${c[1]}</th>`).join('')}<th></th></tr></thead>
       <tbody>
         ${items.length === 0 ? `<tr><td colspan="${cols.length + 1}" style="text-align:center; color:var(--muted);">No product rows extracted from the PO — click + Add Row to add one manually</td></tr>` : items.map((it, idx) => `
           <tr>
-            ${cols.map(([key, , type]) => `<td><input type="${type}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" oninput="updatePoReviewLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:90px; padding:5px; font-size:0.85rem;" /></td>`).join('')}
-            <td><button onclick="removePoReviewLineItem(${idx})" title="Remove row" style="background:none; border:none; color:#b91c1c; font-weight:700; cursor:pointer; font-size:1rem;">✕</button></td>
+            ${cols.map(([key, , type]) => {
+              const isDerived = derivedKeys.includes(key);
+              const isDescription = key === 'description';
+              const val = (it[key] ?? '').toString().replace(/"/g, '&quot;');
+              const centerStyle = isDescription ? '' : 'text-align:center;';
+              if (isDerived) {
+                return `<td style="vertical-align:middle;"><input id="po-li-${key}-${idx}" type="${type}" value="${val}" readonly disabled
+                  style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${centerStyle} background:#eef1f5; color:var(--text); border:1px solid var(--border);" /></td>`;
+              }
+              return `<td style="vertical-align:middle;"><input type="${type}" value="${val}" oninput="updatePoReviewLineItem(${idx}, '${key}', this.value)"
+                style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${centerStyle}" /></td>`;
+            }).join('')}
+            <td style="vertical-align:middle; text-align:center;"><button onclick="removePoReviewLineItem(${idx})" title="Remove row" style="background:none; border:none; color:#b91c1c; font-weight:700; cursor:pointer; font-size:1rem;">✕</button></td>
           </tr>`).join('')}
       </tbody>
     </table>`;
@@ -2344,19 +2414,37 @@ function renderPurchaseOrderReview() {
   const s = poReviewState;
   const fmt = (v) => (v === null || v === undefined) ? '' : v.toString();
 
-  const lockedRow = (label, value) => `
-    <div class="grid-cell-item" style="background:#f1f5f9;">
+  // Forces a hard row break in the auto-flowing grid so each labeled group
+  // of fields below the Product List starts on its own row regardless of
+  // how many columns the current viewport width gives the grid.
+  const poReviewRowBreak = `<div style="grid-column: 1 / -1; height: 0;"></div>`;
+
+  const lockedRow = (label, value, spanStyle) => `
+    <div class="grid-cell-item" style="background:#f1f5f9;${spanStyle || ''}">
       <label style="font-size:0.72rem;">${label}</label>
-      <div style="padding:6px 4px; font-weight:600; color:var(--text); font-size:0.95rem;">${value || '—'}</div>
+      <div style="padding:6px 4px; font-weight:600; color:var(--text); font-size:0.95rem; white-space:normal; word-break:break-word;">${value || '—'}</div>
     </div>`;
 
-  const editField = (label, key, type) => {
+  // Free-text fields render as an auto-growing textarea so a value that
+  // doesn't fit the box width wraps instead of clipping — the box grows
+  // taller instead of hiding the rest of the value. Number/date fields stay
+  // single-line inputs (nothing to wrap).
+  const editField = (label, key, type, spanStyle, required) => {
     const raw = s[key];
     const val = type === 'date' ? (raw ? raw.toString().slice(0, 10) : '') : fmt(raw);
+    const labelText = required ? `${label} *` : label;
+    if (type === 'number' || type === 'date') {
+      return `
+        <div class="grid-cell-item" style="${spanStyle || ''}">
+          <label style="font-size:0.72rem;">${labelText}</label>
+          <input type="${type}" value="${val.replace(/"/g, '&quot;')}" oninput="updatePoReviewField('${key}', this.value)" style="font-size:0.95rem; padding:7px 8px;" />
+        </div>`;
+    }
     return `
-      <div class="grid-cell-item">
-        <label style="font-size:0.72rem;">${label}</label>
-        <input type="${type || 'text'}" value="${val.replace(/"/g, '&quot;')}" oninput="updatePoReviewField('${key}', this.value)" style="font-size:0.95rem; padding:7px 8px;" />
+      <div class="grid-cell-item" style="${spanStyle || ''}">
+        <label style="font-size:0.72rem;">${labelText}</label>
+        <textarea rows="1" oninput="updatePoReviewField('${key}', this.value); autoGrowPoField(this);" onfocus="autoGrowPoField(this);"
+          style="font-size:0.95rem; padding:7px 8px; resize:none; overflow:hidden; font-family:inherit; min-height:32px;">${val.replace(/</g, '&lt;')}</textarea>
       </div>`;
   };
 
@@ -2364,54 +2452,72 @@ function renderPurchaseOrderReview() {
     ? `<a href="${driveLink(s.contractReviewUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Document ↗</a>`
     : '—';
 
+  const companyNameFieldHtml = `
+    <div class="grid-cell-item" style="grid-column: span 4;">
+      <label style="font-size:0.72rem;">Company Name</label>
+      <select oninput="updatePoReviewField('companyName', this.value)" style="font-size:0.95rem; padding:7px 8px;">
+        ${poReviewCompanyOptions().map(name => `<option value="${name.replace(/"/g, '&quot;')}" ${name === s.companyName ? 'selected' : ''}>${name}</option>`).join('')}
+      </select>
+    </div>`;
+
   zone.innerHTML = `
     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:8px;">
       <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:1.05rem;">Review Extracted Purchase Order</div>
-      <div style="font-size:0.88rem; color:var(--muted); margin-bottom:14px;">Edit anything the AI misread, then Submit PO. Nothing is saved until you submit.</div>
+      <div style="font-size:0.88rem; color:var(--muted); margin-bottom:14px;">Edit anything the AI misread, then Submit PO. Nothing is saved until you submit. Fields marked * are required.</div>
 
       ${s.duplicateWarning ? `<div style="background:#fef3c7; border-left:4px solid #b45309; color:#92400e; padding:10px 12px; border-radius:4px; margin-bottom:14px; font-size:0.92rem;">⚠ ${s.duplicateWarning}</div>` : ''}
 
-      <div class="compact-fields-grid" style="margin-bottom:14px;">
-        <div class="grid-cell-item" style="background:#f1f5f9;">
+      <div class="po-review-fields-grid" style="margin-bottom:14px;">
+        <div class="grid-cell-item" style="background:#f1f5f9; grid-column: span 4;">
           <label style="font-size:0.72rem;">Project ID</label>
           <div id="po-review-project-id-preview" style="padding:6px 4px; font-weight:700; color:var(--brand); font-family:monospace; font-size:0.82rem; word-break:break-all;">${computePoReviewProjectIdPreview()}</div>
         </div>
-        ${lockedRow('Status', 'Inactive')}
-        ${editField('PO Number', 'poNumber')}
-        ${editField('PO Date', 'poDate', 'date')}
-        ${lockedRow('Company Name', s.companyName)}
-        ${editField('Head Office Address', 'headOfficeAddress')}
-        ${editField('Delivery Address', 'deliveryAddress')}
-        ${editField('GST Number', 'gstNumber')}
-        ${editField('Delivery Date', 'deliveryDate', 'date')}
+        ${lockedRow('Status', 'Inactive', 'grid-column: span 4;')}
+        ${editField('PO Number', 'poNumber', 'text', 'grid-column: span 4;', true)}
+        ${editField('PO Date', 'poDate', 'date', 'grid-column: span 4;', true)}
+        ${companyNameFieldHtml}
+        ${editField('GST Number', 'gstNumber', 'text', 'grid-column: span 4;')}
+        ${poReviewRowBreak}
+
+        ${editField('Head Office Address', 'headOfficeAddress', 'text', 'grid-column: span 8;')}
+        ${editField('Delivery Address', 'deliveryAddress', 'text', 'grid-column: span 8;')}
+        ${editField('Delivery Date', 'deliveryDate', 'date', 'grid-column: span 4;')}
       </div>
 
       <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.95rem;">Product List</div>
       <div id="po-review-lineitems-wrap"></div>
       <button class="nav-btn-styled" style="background:var(--brand); margin-top:8px; padding:6px 14px; font-size:0.85rem;" onclick="addPoReviewLineItem()">+ Add Row</button>
 
-      <div class="compact-fields-grid" style="margin-top:16px;">
-        ${editField('Freight Scope', 'freightScope')}
-        ${editField('Insurance Scope', 'insuranceScope')}
-        ${editField('Packaging and Forwarding Scope', 'packagingForwardingScope')}
-        ${editField('Delivery Schedule as per PO', 'deliverySchedule')}
-        ${editField('Warranty Terms', 'warrantyTerms')}
-        ${editField('Payment Terms', 'paymentTerms')}
-        ${editField('ABG Terms', 'abgTerms')}
-        ${editField('ABG Amount', 'abgAmount', 'number')}
-        ${editField('PBG Terms', 'pbgTerms')}
-        ${editField('PBG Amount', 'pbgAmount', 'number')}
-        ${editField('LD Clause', 'ldClause')}
-        ${editField('Inspection Terms', 'inspectionTerms')}
-        ${lockedRow('Special Requirement', s._specialRequirement)}
-        ${editField('Documents Requirement', 'documentsRequirement')}
-        ${editField('Basic PO Amount', 'poBasicAmount', 'number')}
-        ${editField('PO GST Amount', 'poGstAmount', 'number')}
-        ${editField('PO Total Amount', 'poTotalAmount', 'number')}
-        ${lockedRow('Contract Review Link', contractReviewLinkHtml)}
-        ${lockedRow('Order Acceptance Sent Date', formatDateDMY(s._orderAcceptanceSentDate))}
-        ${editField('Advance Amount', 'advanceAmount', 'number')}
-        ${editField('Advance Received Date', 'advanceReceivedDate', 'date')}
+      <div class="po-review-fields-grid" style="margin-top:16px;">
+        ${editField('Freight Scope', 'freightScope', 'text', 'grid-column: span 8;')}
+        ${editField('Insurance Scope', 'insuranceScope', 'text', 'grid-column: span 8;')}
+        ${editField('Packaging and Forwarding Scope', 'packagingForwardingScope', 'text', 'grid-column: span 8;')}
+        ${poReviewRowBreak}
+
+        ${editField('Delivery Schedule as per PO', 'deliverySchedule', 'text', 'grid-column: span 8;')}
+        ${editField('Warranty Terms', 'warrantyTerms', 'text', 'grid-column: span 8;')}
+        ${editField('Payment Terms', 'paymentTerms', 'text', 'grid-column: span 8;')}
+        ${poReviewRowBreak}
+
+        ${editField('ABG Terms', 'abgTerms', 'text', 'grid-column: span 6;')}
+        ${editField('ABG Amount', 'abgAmount', 'number', 'grid-column: span 3;')}
+        ${editField('PBG Terms', 'pbgTerms', 'text', 'grid-column: span 6;')}
+        ${editField('PBG Amount', 'pbgAmount', 'number', 'grid-column: span 3;')}
+        ${editField('LD Clause', 'ldClause', 'text', 'grid-column: span 6;')}
+        ${poReviewRowBreak}
+
+        ${editField('Inspection Terms', 'inspectionTerms', 'text', 'grid-column: span 8;')}
+        ${editField('Special Requirement', '_specialRequirement', 'text', 'grid-column: span 8;')}
+        ${editField('Documents Requirement', 'documentsRequirement', 'text', 'grid-column: span 8;')}
+        ${poReviewRowBreak}
+
+        ${editField('Basic PO Amount', 'poBasicAmount', 'number', 'grid-column: span 3;', true)}
+        ${editField('PO GST Amount', 'poGstAmount', 'number', 'grid-column: span 3;', true)}
+        ${editField('PO Total Amount', 'poTotalAmount', 'number', 'grid-column: span 3;', true)}
+        ${lockedRow('Contract Review Link', contractReviewLinkHtml, 'grid-column: span 4;')}
+        ${editField('Order Acceptance Sent Date', '_orderAcceptanceSentDate', 'date', 'grid-column: span 4;', true)}
+        ${editField('Advance Amount', 'advanceAmount', 'number', 'grid-column: span 3;')}
+        ${editField('Advance Received Date', 'advanceReceivedDate', 'date', 'grid-column: span 4;')}
       </div>
 
       <div id="purchase-order-review-feedback" style="display:none; margin-top:14px; padding:12px; border-radius:var(--radius); border-left:4px solid;"></div>
@@ -2421,6 +2527,29 @@ function renderPurchaseOrderReview() {
   `;
   zone.style.display = "block";
   renderPoReviewLineItemsTable();
+  // Grow every textarea to fit its prefilled value on first render.
+  zone.querySelectorAll('.grid-cell-item textarea').forEach(autoGrowPoField);
+}
+
+// Mirrors Create BOQ's inline-banner validation pattern (no alert()s).
+function validatePoReviewBeforeSubmit(s) {
+  if (!(s.poNumber || '').toString().trim()) return "PO Number is required.";
+  if (!(s.poDate || '').toString().trim()) return "PO Date is required.";
+  const items = s.lineItems || [];
+  if (items.length === 0) return "At least one product row is required.";
+  const badRow = items.some(it =>
+    !(it.description || '').toString().trim() ||
+    !(it.quantity !== '' && it.quantity !== null && it.quantity !== undefined && it.quantity.toString().trim() !== '') ||
+    !(it.unit || '').toString().trim() ||
+    !(it.ratePerQuantity !== '' && it.ratePerQuantity !== null && it.ratePerQuantity !== undefined && it.ratePerQuantity.toString().trim() !== '') ||
+    !(it.gstAmount !== '' && it.gstAmount !== null && it.gstAmount !== undefined && it.gstAmount.toString().trim() !== '')
+  );
+  if (badRow) return "Every product row must have Order Product Description, Order Quantity, UOM, Rate / Quantity, and GST Amount filled in.";
+  if (!(s.poBasicAmount !== '' && s.poBasicAmount !== null && s.poBasicAmount !== undefined && s.poBasicAmount.toString().trim() !== '')) return "Basic PO Amount is required.";
+  if (!(s.poGstAmount !== '' && s.poGstAmount !== null && s.poGstAmount !== undefined && s.poGstAmount.toString().trim() !== '')) return "PO GST Amount is required.";
+  if (!(s.poTotalAmount !== '' && s.poTotalAmount !== null && s.poTotalAmount !== undefined && s.poTotalAmount.toString().trim() !== '')) return "PO Total Amount is required.";
+  if (!(s._orderAcceptanceSentDate || '').toString().trim()) return "Order Acceptance Sent Date is required.";
+  return null;
 }
 
 async function submitReviewedPurchaseOrder() {
@@ -2429,6 +2558,13 @@ async function submitReviewedPurchaseOrder() {
   const btn = document.getElementById("btn-po-review-submit");
   const fb = document.getElementById("purchase-order-review-feedback");
   if (fb) fb.style.display = "none";
+
+  const validationError = validatePoReviewBeforeSubmit(s);
+  if (validationError) {
+    showBOQBanner("purchase-order-review-feedback", "⚠️ " + validationError, "error", true);
+    return;
+  }
+
   if (btn) {
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div> Saving...';
