@@ -1,38 +1,65 @@
 async function initializeMaterialListPanel() {
-  const filterPills = document.getElementById("material-list-project-filter-pills");
-  filterPills.innerHTML = '<p style="font-size:0.75rem; color:var(--muted);">Loading...</p>';
   document.getElementById("material-list-results-zone").innerHTML = "";
   document.getElementById("material-list-feedback").style.display = "none";
-  materialListActiveProjectFilters = new Set();
+  materialListSelectedProjectId = null;
+  const searchInput = document.getElementById("material-list-project-ta-input");
+  if (searchInput) searchInput.value = "";
 
-  try {
-    const projData = await apFetch({ action:'pullLiveActiveProjectCodes' });
-    filterPills.innerHTML = "";
-    (projData.projects || []).forEach(code => {
-      const cleanId = "ml_prj_" + code.replace(/[^a-zA-Z0-9]/g, '_');
-      filterPills.innerHTML += `<input type="checkbox" id="${cleanId}" value="${code}" onchange="handleMaterialListProjectFilterChange()"><label for="${cleanId}">${code}</label>`;
-    });
-    if ((projData.projects || []).length === 0) {
-      filterPills.innerHTML = '<p style="font-size:0.75rem; color:var(--muted);">No active projects.</p>';
-    }
-  } catch(e) {
-    filterPills.innerHTML = '<p style="font-size:0.75rem; color:var(--warn);">Error loading projects.</p>';
-  }
-
+  await ensureSharedProjectTypeaheadData(true).catch(() => {});
+  syncMaterialListScopeUI();
   await loadMaterialListForPurchase();
 }
 
-function handleMaterialListProjectFilterChange() {
-  materialListActiveProjectFilters = new Set(
-    Array.from(document.querySelectorAll('#material-list-project-filter-pills input[type="checkbox"]:checked')).map(cb => cb.value)
-  );
+// "All Active Projects" is the default scope, highlighted like an active
+// toggle; searching a specific project unhighlights it (and vice versa) —
+// same active/inactive pill convention as Manufacturing Clearance's status
+// toggles.
+function syncMaterialListScopeUI() {
+  const btn = document.getElementById("material-list-all-projects-btn");
+  const label = document.getElementById("material-list-scope-label");
+  const isAll = !materialListSelectedProjectId;
+  if (btn) {
+    btn.style.background = isAll ? "var(--brand)" : "#e2e8f0";
+    btn.style.color = isAll ? "#fff" : "#334155";
+  }
+  if (label) {
+    label.innerHTML = isAll
+      ? `List of Material to Raise Purchase Order for <strong>ALL Active Projects</strong>`
+      : `List of Material to Raise Purchase Order for <strong>${materialListSelectedProjectId}</strong>`;
+  }
+}
+
+function selectMaterialListAllProjects() {
+  materialListSelectedProjectId = null;
+  const searchInput = document.getElementById("material-list-project-ta-input");
+  if (searchInput) searchInput.value = "";
+  document.getElementById("material-list-feedback").style.display = "none";
+  syncMaterialListScopeUI();
+  renderMaterialListFiltered();
+}
+
+function searchMaterialListByProject() {
+  const input = document.getElementById("material-list-project-ta-input");
+  const typed = (input?.value || "").trim();
+  if (!typed) { showBOQBanner("material-list-feedback", "⚠️ Type a Project ID or Customer Name and select it from the dropdown first.", "error"); return; }
+  // Must resolve to a real, known active project — a typed Customer Name
+  // narrows the dropdown but isn't itself a valid filter value, only the
+  // Project ID actually selected from it is.
+  const known = window.sharedActiveProjectCodes || [];
+  if (!known.includes(typed)) {
+    showBOQBanner("material-list-feedback", "⚠️ Select a Project ID from the dropdown list.", "error");
+    return;
+  }
+  document.getElementById("material-list-feedback").style.display = "none";
+  materialListSelectedProjectId = typed;
+  syncMaterialListScopeUI();
   renderMaterialListFiltered();
 }
 
 function renderMaterialListFiltered() {
-  const filtered = materialListActiveProjectFilters.size === 0
-    ? materialListCache
-    : materialListCache.filter(item => materialListActiveProjectFilters.has(item.projectId));
+  const filtered = materialListSelectedProjectId
+    ? materialListCache.filter(item => item.projectId === materialListSelectedProjectId)
+    : materialListCache;
   renderMaterialListByType(filtered);
 }
 
@@ -170,10 +197,10 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
   // that same data back into its per-project breakdown, no extra network call needed.
   const rows = materialListCache.filter(m => (m.itemCode || "").trim() === itemCode);
 
-  // Respect whatever project filter pills are currently active, same as the main table
-  const filteredRows = materialListActiveProjectFilters.size === 0
-    ? rows
-    : rows.filter(r => materialListActiveProjectFilters.has(r.projectId));
+  // Respect whatever project scope is currently active, same as the main table
+  const filteredRows = materialListSelectedProjectId
+    ? rows.filter(r => r.projectId === materialListSelectedProjectId)
+    : rows;
 
   const byPrn = {};
   filteredRows.forEach(r => {

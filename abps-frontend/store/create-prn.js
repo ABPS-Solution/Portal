@@ -1298,5 +1298,5 @@ async function generatePRNPDF() {
 // ═══════════════════════════════════════════════════════
 
 let materialListCache = [];
-let materialListActiveProjectFilters = new Set();
+let materialListSelectedProjectId = null; // null = ALL Active Projects
 
