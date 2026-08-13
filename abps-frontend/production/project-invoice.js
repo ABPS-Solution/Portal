@@ -106,6 +106,8 @@ async function submitPinvGeneration() {
           Invoice Generated for Project ID: ${pinvCache.projectId}
         </div>
         <a href="${driveLink(data.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Invoice Document ↗</a>
+        <br>
+        <a href="${driveLink(data.reviewUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; display:inline-block; margin-top:8px;">Open Project Review Document ↗</a>
         <div style="margin-top:16px;">
           <button class="nav-btn-styled" style="background:var(--accent); padding:8px 20px; font-weight:700;" onclick="initializePinvWorkspace()">+ Create New Project Invoice</button>
         </div>`;
