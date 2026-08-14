@@ -121,7 +121,7 @@ function sdRenderDashboard(data) {
     } else {
       const statusColors = {
         "Pending Approval":           { bg:"#fef9c3", color:"#854d0e" },
-        "Approved & Released":        { bg:"#dcfce7", color:"#15803d" },
+        "Increase Approved":          { bg:"#dcfce7", color:"#15803d" },
         "Rejected":                   { bg:"#fee2e2", color:"#b91c1c" },
         "Pending BOQ Increase Review":{ bg:"#ede9fe", color:"#6d28d9" },
         "Return Complete":            { bg:"#e0f2fe", color:"#0369a1" }
