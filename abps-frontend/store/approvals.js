@@ -46,17 +46,17 @@ function renderBOQIncreaseTicketCard(ticket) {
     return `
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px; font-weight:600;">${item.itemDescription || ""}</td>
-        <td style="padding:8px; text-align:center; color:var(--muted);">${item.unitType || "—"}</td>
-        <td style="padding:8px; text-align:center;">${fmtQty(item.boqAllottedQty)}</td>
-        <td style="padding:8px; text-align:center;">${fmtQty(item.boqUsedQty)}</td>
+        <td style="padding:8px; text-align:center; color:var(--muted); font-weight:600;">${item.unitType || "—"}</td>
+        <td style="padding:8px; text-align:center; font-weight:600;">${fmtQty(item.boqAllottedQty)}</td>
+        <td style="padding:8px; text-align:center; font-weight:600;">${fmtQty(item.boqUsedQty)}</td>
         <td style="padding:8px; text-align:center; font-weight:700; color:#0369a1;">${fmtQty(remQty)}</td>
-        <td style="padding:8px; text-align:center;">${fmtQty(reqQty)}</td>
+        <td style="padding:8px; text-align:center; font-weight:600;">${fmtQty(reqQty)}</td>
         <td style="padding:8px; text-align:center; font-weight:700; color:#b45309;">${fmtQty(item.boqExceedAmount)}</td>
         <td style="padding:8px; text-align:center;">
           <input type="number" data-itemcode="${item.itemCode}" data-min="${remQty}" data-max="${reqQty}"
             id="boq-final-qty-${ticket.ticketId}-${safeCode}"
             value="${reqQty}" min="${remQty}" max="${reqQty}" step="any"
-            oninput="clampBOQFinalTicketQty(this)"
+            onblur="clampBOQFinalTicketQty(this)"
             style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; border:1.5px solid var(--border); border-radius:4px;" />
         </td>
       </tr>`;
