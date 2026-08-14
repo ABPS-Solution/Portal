@@ -216,7 +216,7 @@ async function checkCoverageAndApprove(ticketId, projectId, btn, storeType) {
   }
   const invalidSpare = findInvalidSpareAllocation(ticketId);
   if (invalidSpare) {
-    alert(`Spare Store Qty is required for ${invalidSpare.materialName} since Spare Stock Needed is set to Blocked or Restricted.`);
+    alert(`Spare Store Extra Qty is required for ${invalidSpare.materialName} since Spare Stock Needed is set to Blocked or Restricted.`);
     return;
   }
   // Skips the standalone stock-coverage pre-check/manual-reallocation modal

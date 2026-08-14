@@ -503,20 +503,28 @@ async function submitFGAddItem() {
   const qaDone     = document.getElementById("fg-add-qa-done").value.trim();
   const packingQualityConfirmation = document.getElementById("fg-add-packing-quality").value.trim();
 
+  // Every early-return validation MUST go through failFG (not a bare
+  // showBOQBanner) — only failFG resets _submitFGAddItemInProgress. Every
+  // check that used to call showBOQBanner directly left that guard stuck
+  // true forever after the first failed attempt, so the top-of-function
+  // `if (_submitFGAddItemInProgress) return;` silently no-op'd every
+  // later click — the banner never updated again even after the actual
+  // problem (e.g. a missing Serial Number) was fixed, because Submit
+  // stopped doing anything at all.
   const failFG = (msg) => { _submitFGAddItemInProgress = false; return showBOQBanner("fg-add-feedback", msg, "error"); };
   if (!department)  return failFG("Department is required.");
-  if (!projectId)   return showBOQBanner("fg-add-feedback", "Project ID is required.", "error");
-  if (!productName) return showBOQBanner("fg-add-feedback", "Product Name is required.", "error");
-  if (!serialNumber) return showBOQBanner("fg-add-feedback", "Product Serial Number is required.", "error");
-  if (!window.fgBOQValidationRan) return showBOQBanner("fg-add-feedback", "BOQ material check for this Job Card hasn't completed yet.", "error");
-  if (qaDone !== "Yes") return showBOQBanner("fg-add-feedback", "Q/A Done must be set to Yes before this item can be submitted.", "error");
-  if (packingQualityConfirmation !== "Yes") return showBOQBanner("fg-add-feedback", "Packing Quality Confirmation must be set to Yes before this item can be submitted.", "error");
+  if (!projectId)   return failFG("Project ID is required.");
+  if (!productName) return failFG("Product Name is required.");
+  if (!serialNumber) return failFG("Product Serial Number is required.");
+  if (!window.fgBOQValidationRan) return failFG("BOQ material check for this Job Card hasn't completed yet.");
+  if (qaDone !== "Yes") return failFG("Q/A Done must be set to Yes before this item can be submitted.");
+  if (packingQualityConfirmation !== "Yes") return failFG("Packing Quality Confirmation must be set to Yes before this item can be submitted.");
   // Neither Q/A Done nor Packing Quality Confirmation is persisted — see
   // migration 077: a finished_goods_inventory row's mere existence already
   // implies both, so these are submit-time gates only.
   for (const docType of FG_REQUIRED_DOC_TYPES) {
     if (!(fgDocFiles[docType] || []).length) {
-      return showBOQBanner("fg-add-feedback", `${FG_DOC_META[docType].label} document is required.`, "error");
+      return failFG(`${FG_DOC_META[docType].label} document is required.`);
     }
   }
   // Inspection Clearance and Other Documents are optional — no validation block.
