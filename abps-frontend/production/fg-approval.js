@@ -179,23 +179,17 @@ function renderFGDocTable(fgId) {
       <td style="padding:8px; text-align:center;">
         <input type="checkbox" class="fg-approval-doc-check" data-fgid="${fgId}" ${d.qaChecked ? "checked" : ""} style="width:18px; height:18px; cursor:pointer;" onchange="handleFGDocCheckChange(${fgId}, ${d.documentId}, this.checked)" />
       </td>
-      <td style="padding:8px; text-align:center;">
+      <td style="padding:8px; text-align:center; white-space:nowrap;">
         <button onclick="triggerFGReplaceUpload(${fgId}, ${d.documentId})" style="font-size:0.72rem; font-weight:700; padding:5px 10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); border-radius:4px; cursor:pointer;">Replace</button>
+        <button onclick="removeFGDocRow(${fgId}, ${d.documentId})" title="Remove this document" style="margin-left:6px; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.85rem; width:26px; height:26px; border-radius:4px; vertical-align:middle;">✕</button>
       </td>
     </tr>`).join("");
 
   const newRows = st.newRows.map(r => {
     const typeCell = r.docType
       ? `<div style="font-weight:600;">${r.docLabel}</div>`
-      : `<div style="position:relative;">
-          <div onclick="toggleFGDocTypeDropdown(${fgId}, ${r.tempId})" style="cursor:pointer; padding:6px 8px; border:1.5px solid var(--brand); border-radius:4px; color:var(--muted); font-size:0.82rem; display:flex; justify-content:space-between; align-items:center; gap:6px; background:#fff;">
-            <span>— Select Type —</span><span>▾</span>
-          </div>
-          <div id="fg-doctype-dd-${r.tempId}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; z-index:300; box-shadow:0 6px 16px rgba(0,0,0,0.15); max-height:220px; overflow-y:auto;">
-            ${Object.entries(FG_DOC_TYPE_LABELS).map(([type, label]) => `
-              <div onclick="selectFGDocType(${fgId}, ${r.tempId}, '${type}')" style="padding:7px 10px; cursor:pointer; font-size:0.82rem; border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${label}</div>
-            `).join("")}
-          </div>
+      : `<div onclick="toggleFGDocTypeDropdown(${fgId}, ${r.tempId}, this)" style="cursor:pointer; padding:6px 8px; border:1.5px solid var(--brand); border-radius:4px; color:var(--muted); font-size:0.82rem; display:flex; justify-content:space-between; align-items:center; gap:6px; background:#fff;">
+          <span>— Select Type —</span><span>▾</span>
         </div>`;
     return `
     <tr id="fg-doc-newrow-${r.tempId}" style="border-bottom:1px solid var(--border); background:#fffbeb;">
@@ -203,8 +197,9 @@ function renderFGDocTable(fgId) {
       <td style="padding:8px; color:var(--muted);">—</td>
       <td style="padding:8px; color:var(--muted);">—</td>
       <td style="padding:8px; text-align:center; color:var(--muted);">—</td>
-      <td style="padding:8px; text-align:center;">
+      <td style="padding:8px; text-align:center; white-space:nowrap;">
         <button onclick="triggerFGNewRowUpload(${fgId}, ${r.tempId})" ${r.docType ? "" : "disabled"} style="font-size:0.72rem; font-weight:700; padding:5px 10px; background:${r.docType ? "var(--accent)" : "#cbd5e1"}; color:#fff; border:none; border-radius:4px; cursor:${r.docType ? "pointer" : "not-allowed"};">Upload</button>
+        <button onclick="removeFGDocRow(${fgId}, null, ${r.tempId})" title="Remove this row" style="margin-left:6px; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.85rem; width:26px; height:26px; border-radius:4px; vertical-align:middle;">✕</button>
       </td>
     </tr>`;
   }).join("");
@@ -245,19 +240,80 @@ function addFGDocRow(fgId) {
   refreshFGDocTable(fgId);
 }
 
-function toggleFGDocTypeDropdown(fgId, tempId) {
-  document.querySelectorAll('[id^="fg-doctype-dd-"]').forEach(el => { if (el.id !== `fg-doctype-dd-${tempId}`) el.style.display = "none"; });
-  const dd = document.getElementById(`fg-doctype-dd-${tempId}`);
-  if (dd) dd.style.display = dd.style.display === "block" ? "none" : "block";
+// The doc-type dropdown is a single shared element appended straight to
+// <body> with position:fixed, positioned via the trigger's own
+// getBoundingClientRect on open — NOT a per-row absolutely-positioned
+// child of the table. The table wrapper scrolls (overflow-x:auto, which
+// forces overflow-y clipping along with it), so an absolutely-positioned
+// dropdown nested inside it gets clipped/squashed against the wrapper's
+// own bounds instead of floating freely over the page, same as the
+// dropdown pattern already used in store/grn.js for exactly this reason.
+let _fgDocTypeDropdownFgId = null;
+let _fgDocTypeDropdownTempId = null;
+
+function ensureFGDocTypeDropdownEl() {
+  let dd = document.getElementById("fg-doctype-shared-dd");
+  if (!dd) {
+    dd = document.createElement("div");
+    dd.id = "fg-doctype-shared-dd";
+    dd.style.cssText = "display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:4px; z-index:9999; max-height:220px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);";
+    dd.innerHTML = Object.entries(FG_DOC_TYPE_LABELS).map(([type, label]) => `
+      <div onclick="selectFGDocType('${type}')" style="padding:7px 10px; cursor:pointer; font-size:0.82rem; border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${label}</div>
+    `).join("");
+    document.body.appendChild(dd);
+  }
+  return dd;
 }
 
-function selectFGDocType(fgId, tempId, docType) {
+function toggleFGDocTypeDropdown(fgId, tempId, triggerEl) {
+  const dd = ensureFGDocTypeDropdownEl();
+  const alreadyOpenForThisRow = dd.style.display === "block" && _fgDocTypeDropdownTempId === tempId;
+  if (alreadyOpenForThisRow) { dd.style.display = "none"; return; }
+  const rect = triggerEl.getBoundingClientRect();
+  dd.style.top = rect.bottom + "px";
+  dd.style.left = rect.left + "px";
+  dd.style.width = rect.width + "px";
+  dd.style.display = "block";
+  _fgDocTypeDropdownFgId = fgId;
+  _fgDocTypeDropdownTempId = tempId;
+}
+
+function selectFGDocType(docType) {
+  const fgId = _fgDocTypeDropdownFgId, tempId = _fgDocTypeDropdownTempId;
+  const dd = document.getElementById("fg-doctype-shared-dd");
+  if (dd) dd.style.display = "none";
   const st = window._fgApprovalState[fgId];
-  const row = st.newRows.find(r => r.tempId === tempId);
+  const row = st && st.newRows.find(r => r.tempId === tempId);
   if (!row) return;
   row.docType = docType;
   row.docLabel = FG_DOC_TYPE_LABELS[docType] || docType;
   refreshFGDocTable(fgId);
+}
+
+// removeFGDocRow — the "✕" next to each row's Action buttons. A
+// documentId means a real, already-uploaded row: delete it from Drive
+// and the DB, same guard (pending-only) as Replace. A null documentId
+// with a tempId means an unuploaded "+ Add Row" row with nothing on the
+// server yet — just drop it from local state, no backend call needed.
+async function removeFGDocRow(fgId, documentId, tempId) {
+  const st = window._fgApprovalState[fgId];
+  if (documentId == null) {
+    st.newRows = st.newRows.filter(r => r.tempId !== tempId);
+    refreshFGDocTable(fgId);
+    return;
+  }
+  if (!confirm("Remove this document? It will be deleted from Drive as well.")) return;
+  try {
+    const data = await apFetch({
+      action: "deleteFinishedGoodsDocument", activeEngineer: appActiveOperatorIdentityString,
+      documentId, operatorName: appActiveOperatorIdentityString,
+    });
+    if (!data.success) { alert(data.error || "Remove failed."); return; }
+    st.docs = st.docs.filter(d => d.documentId !== documentId);
+    refreshFGDocTable(fgId);
+  } catch(e) {
+    alert("Network error: " + e.message);
+  }
 }
 
 // Shared by both upload paths — opens a native file picker via a
@@ -395,6 +451,7 @@ async function submitFGApprovalDecision(fgId, action) {
 }
 
 document.addEventListener("click", (e) => {
-  if (e.target.closest('[id^="fg-doctype-dd-"]') || e.target.closest('[onclick^="toggleFGDocTypeDropdown"]')) return;
-  document.querySelectorAll('[id^="fg-doctype-dd-"]').forEach(el => el.style.display = "none");
+  if (e.target.closest('#fg-doctype-shared-dd') || e.target.closest('[onclick^="toggleFGDocTypeDropdown"]')) return;
+  const dd = document.getElementById("fg-doctype-shared-dd");
+  if (dd) dd.style.display = "none";
 });
