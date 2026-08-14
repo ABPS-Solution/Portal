@@ -117,6 +117,47 @@ async function loadItemCodeCatalogIntoCache(forceRefresh = false) {
   }
 }
 
+// Stricter than the shared fuzzyPreFilterCatalog (marketing/business-card.js
+// — kept loose on purpose for OCR'd business-card matching, where
+// looseness helps). This screen's complaint was the opposite: results
+// were too broad, because that shared scorer awards points if ANY query
+// token loosely overlaps ANY name token (including bare substring-anywhere
+// on tokens as short as 2 characters). Here EVERY query token must have a
+// real match (exact word, or a word-start match at least 3 characters
+// long) for an item to qualify at all — a short/generic word can no
+// longer single-handedly surface an unrelated item.
+function filterItemCodeCatalogStrict(query, catalog, topN) {
+  const queryWords = query.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 1);
+  if (queryWords.length === 0) return [];
+  const codeQuery = query.toLowerCase().replace(/\s+/g, '');
+
+  const scored = catalog.map(item => {
+    const nameNorm = (item.productName || "").toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
+    const nameWords = nameNorm.split(/\s+/).filter(Boolean);
+    const codeNorm = (item.itemCode || "").toLowerCase();
+    const codeMatch = codeQuery.length >= 3 && codeNorm.includes(codeQuery);
+
+    let score = 0;
+    for (const qw of queryWords) {
+      let tokenScore = 0;
+      for (const nw of nameWords) {
+        if (nw === qw) tokenScore = Math.max(tokenScore, 10);
+        else if (qw.length >= 3 && (nw.startsWith(qw) || qw.startsWith(nw))) tokenScore = Math.max(tokenScore, 6);
+      }
+      if (tokenScore === 0) return { item, score: 0, allMatched: false };
+      score += tokenScore;
+    }
+    if (codeMatch) score += 20;
+    return { item, score, allMatched: true };
+  });
+
+  return scored
+    .filter(s => s.allMatched || s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topN)
+    .map(s => s.item);
+}
+
 async function executeItemCodeSearch() {
   const query = document.getElementById("itemcode-search-input").value.trim();
   const btn   = document.getElementById("itemcode-search-btn");
@@ -151,15 +192,16 @@ async function executeItemCodeSearch() {
     const catalogToSearch = window.itemCodeCatalogCache || [];
     console.log("Searching catalog of", catalogToSearch.length, "items for query:", query);
 
-    // Direct exact match check first
+    // Direct exact match check first — whole typed phrase as one substring.
     const exactMatch = catalogToSearch.filter(item =>
       (item.productName || "").toLowerCase().includes(query.toLowerCase())
     );
     console.log("Direct includes match:", exactMatch.length, "items");
 
-    // Step 1: client-side fuzzy pre-filter → top 30
-    const top30 = fuzzyPreFilterCatalog(query, catalogToSearch, 30);
-    console.log("Fuzzy pre-filter top30:", top30.length, "items");
+    // Step 1: strict client-side pre-filter (every query word must really
+    // match, not the loose OR-scoring fuzzyPreFilterCatalog does) → top 15.
+    const top30 = filterItemCodeCatalogStrict(query, catalogToSearch, 15);
+    console.log("Strict pre-filter top15:", top30.length, "items");
 
     const candidatesToUse = top30.length > 0 ? top30 : exactMatch;
 

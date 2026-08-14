@@ -40,8 +40,6 @@ async function navigateToModule(key) {
     let targetPanelKeyIdStr = key;
     if (key === "emailLeads") {
         targetPanelKeyIdStr = "emailWhatsapp";
-    } else if (key === "dispatchBill") {
-        targetPanelKeyIdStr = "dispatchBill";
     } else if (key === "commissioningReport") {
         targetPanelKeyIdStr = "commissioningReport";
     } else if (key === "purchaseOrder") {
@@ -195,13 +193,11 @@ function returnToDashboard() {
   
   document.getElementById("multi-contact-records-container").innerHTML = "";
 
-  // Reset Upload Purchase Order / Dispatch Bill / Commissioning Report sections back to first-visit state
-  targetDispatchBillFileObj = null;
+  // Reset Upload Purchase Order / Commissioning Report sections back to first-visit state
   targetCommissioningReportFileObj = null;
   targetPurchaseOrderFileObj = null;
 
   [
-    { boxId: "dispatch-bill-upload-box",        fileId: "dispatch-bill-raw-file",        label: "📋 Select Dispatch Bill",        bannerId: "dispatch-bill-feedback-banner",        containerId: "dispatch-bill-inputs-container",        leadId: "dispatch-bill-lead-dropdown",        btnId: "btn-ops-dispatch-submit",         btnLabel: "Process Dispatch Bill with AI" },
     { boxId: "commissioning-report-upload-box", fileId: "commissioning-report-raw-file", label: "📋 Select Commissioning Report", bannerId: "commissioning-report-feedback-banner", containerId: "commissioning-report-inputs-container", leadId: "commissioning-report-lead-dropdown", btnId: "btn-ops-commission-submit",       btnLabel: "Process Commissioning Report with AI" },
     { boxId: "purchase-order-upload-box",       fileId: "purchase-order-raw-file",       label: "📋 Select Purchase Order",       bannerId: "purchase-order-feedback-banner",       containerId: "purchase-order-inputs-container",       leadId: "purchase-order-lead-dropdown",       btnId: "btn-ops-purchase-order-submit",   btnLabel: "Process Purchase Order with AI" }
   ].forEach(cfg => {
@@ -275,7 +271,6 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // 1. EXTRACT MARKETING ACCESS PRIVILEGES MATRIX
   const canEnterCard               = userPermissionsObject.cardDetails === true;
   const canViewEmailLeads          = userPermissionsObject.emailLeads === true;
-  const canUploadDispatchBill      = userPermissionsObject.dispatchBill === true;
   const canUploadCommissioning     = userPermissionsObject.commissioningReport === true;
   const canUploadPurchaseOrder     = userPermissionsObject.purchaseOrder === true;
   const canSearchCompany           = userPermissionsObject.searchCompany === true;
@@ -325,9 +320,6 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   }
   if (document.getElementById("mod-email-whatsapp")) {
     document.getElementById("mod-email-whatsapp").style.display = canViewEmailLeads ? "block" : "none";
-  }
-  if (document.getElementById("mod-dispatch-bill")) {
-    document.getElementById("mod-dispatch-bill").style.display = canUploadDispatchBill ? "block" : "none";
   }
   if (document.getElementById("mod-commissioning-report")) {
     document.getElementById("mod-commissioning-report").style.display = canUploadCommissioning ? "block" : "none";
@@ -465,7 +457,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // --- EVALUATE DEPARTMENT ENCLOSURE OVERLAYS ---
   const marketingHeaderBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingHeaderBlock) {
-    marketingHeaderBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadDispatchBill || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState) ? "block" : "none";
+    marketingHeaderBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState) ? "block" : "none";
   }
 
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");

@@ -1974,12 +1974,6 @@ function triggerStoreTicketMatrixSearch() {
   executeClientSideStoreTicketFilterSearch();
 }
 
-document.getElementById('dispatch-bill-raw-file').onchange = (e) => {
-  targetDispatchBillFileObj = e.target.files[0];
-  const box = document.getElementById('dispatch-bill-upload-box');
-  if (box && targetDispatchBillFileObj) { box.textContent = "Dispatch Bill Document Added ✅"; box.classList.add('done'); }
-};
-
 document.getElementById('commissioning-report-raw-file').onchange = (e) => {
   targetCommissioningReportFileObj = e.target.files[0];
   const box = document.getElementById('commissioning-report-upload-box');

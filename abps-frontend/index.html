@@ -104,7 +104,7 @@
   .section-body { padding: 0 16px 16px 16px; }
 
   /* --- SHARED WORKSPACE PANEL TITLE — one look for every section's main heading --- */
-  .panel-title { color: var(--brand); font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; font-size: 1.55rem; font-weight: 600; letter-spacing: 0.01em; margin: 0 0 16px 0; }
+  .panel-title { color: var(--brand); font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; font-size: 1.55rem; font-weight: 800; letter-spacing: 0.01em; margin: 0 0 16px 0; }
 
   /* --- DYNAMIC DIVISION LABELS & DEPARTMENT SIDEBAR NAVIGATION --- */
   .nav-department-group-wrapper { padding: 6px 4px; }
@@ -436,7 +436,6 @@
       <div class="sec-label">Upload Documents</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-order" onclick="navigateToModule('purchaseOrder')"><span class="mc-label">Upload Purchase Order</span></div>
-        <div class="menu-card" id="mod-dispatch-bill" onclick="navigateToModule('dispatchBill')"><span class="mc-label">Upload Dispatch Bill</span></div>
         <div class="menu-card" id="mod-commissioning-report" onclick="navigateToModule('commissioningReport')"><span class="mc-label">Upload Commissioning Report</span></div>
       </div>
       <div class="sec-label">Search</div>
@@ -2928,26 +2927,6 @@
           <label class="field-label">Address</label><textarea id="f-address" style="min-height:40px;"></textarea>
           
           <button class="btn btn-sub" id="gate-search-btn" onclick="triggerSequentialSearch('CARD')" style="margin-top:6px;">Search Marketing Database</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="workspace-dispatchBill" class="workspace-panel" style="display: none;">
-      <div class="section">
-        <div class="section-header">Upload Dispatch Bill</div>
-        <div class="section-body" style="text-align: left; padding: 16px;">
-          <div id="dispatch-bill-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
-          <div id="dispatch-bill-inputs-container" style="display: block;">
-            <div style="margin-bottom: 12px;">
-              <label class="field-label">Select Lead / Company *</label>
-              <select id="dispatch-bill-lead-dropdown" style="padding: 8px; font-weight: 600; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
-                <option value="">— Select Company / Lead —</option>
-              </select>
-            </div>
-            <div class="card-box" id="dispatch-bill-upload-box" onclick="document.getElementById('dispatch-bill-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Dispatch Bill</div>
-            <input type="file" id="dispatch-bill-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'dispatch-bill-upload-box', 'Dispatch Bill Document Added ✅')" />
-            <button class="nav-btn-styled" id="btn-ops-dispatch-submit" style="margin-top: 14px; width: 100%; padding: 10px;" onclick="executeMarketingOperationsDocumentCommit('DISPATCH')">Process Dispatch Bill with AI</button>
-          </div>
         </div>
       </div>
     </div>
