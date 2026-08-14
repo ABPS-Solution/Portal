@@ -468,6 +468,7 @@ function resetFGAddForm() {
   fgJobCardDisplayReset("— Select BOQ First —");
   document.getElementById("fg-add-qa-done").value = "No";
   document.getElementById("fg-add-packing-quality").value = "No";
+  document.getElementById("fg-add-use-toggle").value = "";
   resetFGDocFiles();
   document.getElementById("fg-add-feedback").style.display = "none";
   const validationZone = document.getElementById("fg-boq-validation-zone");
@@ -502,6 +503,7 @@ async function submitFGAddItem() {
   const qaPersonName = appActiveOperatorIdentityString || "";
   const qaDone     = document.getElementById("fg-add-qa-done").value.trim();
   const packingQualityConfirmation = document.getElementById("fg-add-packing-quality").value.trim();
+  const finishedGoodUse = document.getElementById("fg-add-use-toggle").value.trim();
 
   // Every early-return validation MUST go through failFG (not a bare
   // showBOQBanner) — only failFG resets _submitFGAddItemInProgress. Every
@@ -516,6 +518,7 @@ async function submitFGAddItem() {
   if (!projectId)   return failFG("Project ID is required.");
   if (!productName) return failFG("Product Name is required.");
   if (!serialNumber) return failFG("Product Serial Number is required.");
+  if (!finishedGoodUse) return failFG("Select Use (Use in other Product / Ready for Dispatch) before submitting.");
   if (!window.fgBOQValidationRan) return failFG("BOQ material check for this Job Card hasn't completed yet.");
   if (qaDone !== "Yes") return failFG("Q/A Done must be set to Yes before this item can be submitted.");
   if (packingQualityConfirmation !== "Yes") return failFG("Packing Quality Confirmation must be set to Yes before this item can be submitted.");
@@ -552,8 +555,6 @@ async function submitFGAddItem() {
     }
 
     btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
-
-    const finishedGoodUse = document.getElementById("fg-add-use-toggle")?.value || "Use in other Product";
 
     const data = await apFetch({
       action: "addFinishedGoodsItem",
