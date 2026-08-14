@@ -87,9 +87,9 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
             ${countDisplay}
           </div>
           <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatchFG.allottedQty)} ${unitTokenFG}</span>
-            <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED: ${fmtQty(jcmMatchFG.usedQty)} ${unitTokenFG}</span>
-            <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatchFG.remainingQty)} ${unitTokenFG}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatchFG.allottedQty)} ${unitTokenFG}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:3px 8px; border-radius:4px;">USED: ${fmtQty(jcmMatchFG.usedQty)} ${unitTokenFG}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatchFG.remainingQty)} ${unitTokenFG}</span>
           </div>
         </div>
       `;
@@ -176,9 +176,9 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
               </span>
             </div>
             <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-              <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatchSpare.allottedQty)} ${unitTokenSpare}</span>
-              <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED: ${fmtQty(jcmMatchSpare.usedQty)} ${unitTokenSpare}</span>
-              <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatchSpare.remainingQty)} ${unitTokenSpare}</span>
+              <span style="font-size:0.86rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatchSpare.allottedQty)} ${unitTokenSpare}</span>
+              <span style="font-size:0.86rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:3px 8px; border-radius:4px;">USED: ${fmtQty(jcmMatchSpare.usedQty)} ${unitTokenSpare}</span>
+              <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatchSpare.remainingQty)} ${unitTokenSpare}</span>
             </div>
           </div>
         `;
@@ -283,9 +283,9 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
             </span>
           </div>
           <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatch.allottedQty)} ${unitToken}</span>
-            <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px;">USED: ${fmtQty(jcmMatch.usedQty)} ${unitToken}</span>
-            <span style="font-size:0.72rem; font-weight:700; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatch.remainingQty)} ${unitToken}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatch.allottedQty)} ${unitToken}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:3px 8px; border-radius:4px;">USED: ${fmtQty(jcmMatch.usedQty)} ${unitToken}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatch.remainingQty)} ${unitToken}</span>
           </div>
         </div>
       `;
