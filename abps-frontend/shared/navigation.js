@@ -554,6 +554,43 @@ function selectDepartmentTab(key) {
   try { localStorage.setItem(DEPT_TAB_STORAGE_KEY, key); } catch (e) { /* storage unavailable */ }
 }
 
+// handleDepartmentTabClick — what the tab buttons actually call. A tab
+// click needs to behave like "Return to Main Dashboard" first and THEN
+// switch department, since the user may currently be deep inside some
+// workspace screen (dashboard-view itself hidden entirely) where
+// selectDepartmentTab alone would have nothing to show — it only
+// toggles visibility of blocks INSIDE dashboard-view.
+//
+// Deliberately a generic reset rather than calling whichever
+// department-specific exit…BackToMenu() function happens to apply —
+// there are ~8 of those, each hiding a different, hardcoded set of
+// panel ids, and none of them know how to leave a DIFFERENT
+// department's workspace than their own. Every workspace screen in the
+// app is one of exactly two shapes: (a) nested inside a
+// "*-workspace-enclosure-panel" (Store/Purchase/Design), or (b) a
+// standalone "canvas-module-*" panel shown directly as a sibling of
+// dashboard-view (Marketing/Project/Production/Accounts screens,
+// dashboards, etc.) — hiding every element matching those two patterns
+// covers all of them regardless of which department they belong to.
+function handleDepartmentTabClick(key) {
+  const workspaceContainer = document.getElementById('module-workspace-container');
+  if (workspaceContainer) workspaceContainer.style.display = 'none';
+  document.querySelectorAll('[id$="-workspace-enclosure-panel"]').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('[id^="canvas-module-"]').forEach(p => p.style.display = 'none');
+
+  if (typeof enforceDynamicModuleRoleGateways === 'function' && typeof userPermissions !== 'undefined') {
+    enforceDynamicModuleRoleGateways(userPermissions);
+  }
+  document.getElementById('dashboard-view').style.display = 'flex';
+  window.scrollTo(0, 0);
+
+  // enforceDynamicModuleRoleGateways above already re-ran
+  // refreshDepartmentTabsBar (and so selectDepartmentTab) against
+  // whatever department was active BEFORE this click — call it again,
+  // explicitly, so the department actually clicked wins.
+  selectDepartmentTab(key);
+}
+
 function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   window.scrollTo(0, 0);
   setTimeout(() => window.scrollTo(0, 0), 50);
