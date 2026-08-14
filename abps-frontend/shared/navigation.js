@@ -525,9 +525,9 @@ function refreshDepartmentTabsBar() {
   deptTabVisibleKeys = visibleKeys;
 
   if (visibleKeys.length === 0) { bar.style.display = 'none'; return; }
-  // A single visible department has nothing to switch between — the tab
-  // bar would just be a lone pill taking up space for no reason.
-  bar.style.display = visibleKeys.length > 1 ? 'flex' : 'none';
+  // Show the bar for however many departments this user actually has —
+  // one tab for a single-department user, all the way up to seven.
+  bar.style.display = 'flex';
 
   let activeKey = null;
   try { activeKey = localStorage.getItem(DEPT_TAB_STORAGE_KEY); } catch (e) { /* storage unavailable */ }
