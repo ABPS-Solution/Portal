@@ -153,13 +153,8 @@ function renderFGApprovalDetailBody(fgId) {
     </div>
     <button onclick="addFGDocRow(${fgId})" style="font-size:0.78rem; font-weight:700; padding:6px 14px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; margin-bottom:14px;">+ Add Row</button>
 
-    <div id="fg-approval-reject-reason-${fgId}" style="display:none; margin-bottom:12px;">
-      <label class="field-label" style="margin-top:0;">Rejection Reason</label>
-      <input type="text" id="fg-approval-reject-input-${fgId}" placeholder="Why is this being rejected..." style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
-    </div>
-
     <div style="display:flex; justify-content:flex-end; gap:10px;">
-      <button class="nav-btn-styled" onclick="toggleFGRejectReason(${fgId})" style="background:#dc2626;">Reject</button>
+      <button class="nav-btn-styled" onclick="submitFGApprovalDecision(${fgId}, 'reject')" style="background:#dc2626;">Reject</button>
       <button class="nav-btn-styled" id="fg-approval-submit-${fgId}" disabled onclick="submitFGApprovalDecision(${fgId}, 'approve')"
         style="background:var(--accent); padding:8px 20px; font-weight:700; opacity:0.5; cursor:not-allowed;">
         Approve & Add to FG Store
@@ -399,28 +394,11 @@ function updateFGApprovalSubmitState(fgId) {
   btn.style.cursor = allChecked ? "pointer" : "not-allowed";
 }
 
-function toggleFGRejectReason(fgId) {
-  const zone = document.getElementById(`fg-approval-reject-reason-${fgId}`);
-  if (!zone) return;
-  if (zone.style.display === "none") {
-    zone.style.display = "block";
-  } else {
-    submitFGApprovalDecision(fgId, "reject");
-  }
-}
-
 async function submitFGApprovalDecision(fgId, action) {
   const card = document.getElementById(`fg-approval-card-${fgId}`);
   const feedback = document.getElementById("fg-approval-feedback");
   feedback.style.display = "none";
 
-  const reason = document.getElementById(`fg-approval-reject-input-${fgId}`)?.value?.trim() || "";
-  if (action === "reject" && !reason) {
-    feedback.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
-    feedback.textContent = "Enter a rejection reason before rejecting.";
-    feedback.scrollIntoView({ behavior:"smooth", block:"center" });
-    return;
-  }
   if (action === "reject" && !confirm(`Reject this Finished Goods submission? The Job Card will need Add to Finished Goods Store redone from scratch.`)) return;
 
   const fg = window._fgApprovalState[fgId]?.fg || {};
@@ -428,7 +406,7 @@ async function submitFGApprovalDecision(fgId, action) {
   showBlockingOverlay(action === "approve" ? "Approving..." : "Rejecting...");
   try {
     const actionName = action === "approve" ? "approveFinishedGoodsItem" : "rejectFinishedGoodsItem";
-    const data = await apFetch({ action: actionName, activeEngineer: appActiveOperatorIdentityString, fgId, reason, operatorName: appActiveOperatorIdentityString });
+    const data = await apFetch({ action: actionName, activeEngineer: appActiveOperatorIdentityString, fgId, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success) {
       delete window._fgApprovalState[fgId];
