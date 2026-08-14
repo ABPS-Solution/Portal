@@ -482,6 +482,67 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
       if (document.getElementById("mod-tour-expense")) document.getElementById("mod-tour-expense").style.display = canTourExpense ? "block" : "none";
       const accountsHeaderBlock = document.getElementById("dashboard-accounts-department-header-block");
       if (accountsHeaderBlock) accountsHeaderBlock.style.display = canTourExpense ? "block" : "none";
+
+  // Every dept-block's display was just finalized above, purely from
+  // permissions — the tab bar layers on top of that rather than
+  // duplicating the permission logic: it mirrors which blocks came out
+  // visible, then narrows that down to whichever ONE tab is selected.
+  refreshDepartmentTabsBar();
+}
+
+// ── Department tab bar ───────────────────────────────────────────────────
+// Lets a user jump straight to one department's section instead of
+// scrolling past every other one. Deliberately layered on top of
+// enforceDynamicModuleRoleGateways rather than replacing it: that
+// function still owns "is this department visible to this user at all"
+// (permissions); this only owns "which ONE of the visible departments is
+// currently shown". Called at the end of enforceDynamicModuleRoleGateways
+// on every refresh, so it stays in sync with permission changes without
+// needing to be threaded through every call site separately.
+const DEPT_TAB_KEYS = ['marketing', 'project', 'design', 'purchase', 'store', 'production', 'accounts'];
+const DEPT_TAB_STORAGE_KEY = 'abpsActiveDepartmentTab';
+
+function refreshDepartmentTabsBar() {
+  const bar = document.getElementById('dept-tabs-bar');
+  if (!bar) return;
+
+  const visibleKeys = DEPT_TAB_KEYS.filter(key => {
+    const block = document.getElementById(`dashboard-${key}-department-header-block`);
+    const tab = document.getElementById(`dept-tab-${key}`);
+    const isVisible = !!block && block.style.display !== 'none';
+    if (tab) tab.style.display = isVisible ? 'inline-flex' : 'none';
+    return isVisible;
+  });
+
+  if (visibleKeys.length === 0) { bar.style.display = 'none'; return; }
+  // A single visible department has nothing to switch between — the tab
+  // bar would just be a lone pill taking up space for no reason.
+  bar.style.display = visibleKeys.length > 1 ? 'flex' : 'none';
+
+  let activeKey = null;
+  try { activeKey = localStorage.getItem(DEPT_TAB_STORAGE_KEY); } catch (e) { /* storage unavailable */ }
+  if (!activeKey || !visibleKeys.includes(activeKey)) activeKey = visibleKeys[0];
+
+  selectDepartmentTab(activeKey);
+}
+
+function selectDepartmentTab(key) {
+  DEPT_TAB_KEYS.forEach(k => {
+    const block = document.getElementById(`dashboard-${k}-department-header-block`);
+    const tab = document.getElementById(`dept-tab-${k}`);
+    // Only ever show the block if it's already permission-visible (not
+    // display:none from the gateway pass above) AND it's the active tab —
+    // never override a permission-driven hide.
+    if (block && block.style.display !== 'none') {
+      block.style.display = (k === key) ? 'block' : 'none';
+    }
+    if (tab) {
+      const isActive = k === key;
+      tab.classList.toggle('active', isActive);
+      tab.style.setProperty('--tab-accent', tab.dataset.accent || '');
+    }
+  });
+  try { localStorage.setItem(DEPT_TAB_STORAGE_KEY, key); } catch (e) { /* storage unavailable */ }
 }
 
 function navigateToStoreWorkspacePanel(targetPanelModuleId) {

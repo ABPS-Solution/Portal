@@ -75,6 +75,17 @@
   .menu-card.locked { opacity: 0.5; cursor: not-allowed; background: #e9ecef; }
   .menu-card .mc-icon { font-size:1.1rem; flex-shrink:0; }
   .menu-card .mc-label { font-size:0.88rem; font-weight:700; color:var(--text); text-align:center; white-space:normal; line-height:1.35; display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
+  /* --- DEPARTMENT TAB BAR — sits below the header, lets you jump straight
+     to one department's section instead of scrolling the whole dashboard. --- */
+  .dept-tabs-bar { position: sticky; top: 0; z-index: 90; background: var(--card); border-bottom: 1px solid var(--border); padding: 8px 16px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: thin; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .dept-tabs-bar::-webkit-scrollbar { height: 4px; }
+  .dept-tab { flex-shrink: 0; background: transparent; border: 1.5px solid var(--border); color: var(--muted); font-weight: 700; font-size: 0.8rem; padding: 7px 16px; border-radius: 20px; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; white-space: nowrap; }
+  .dept-tab:hover { background: var(--highlight-bg); color: var(--text); border-color: var(--tab-accent, var(--brand)); }
+  .dept-tab.active { background: var(--tab-accent, var(--brand)); border-color: var(--tab-accent, var(--brand)); color: #fff; }
+  @media(max-width:640px) {
+    .dept-tabs-bar { padding: 7px 10px; gap: 5px; }
+    .dept-tab { font-size: 0.76rem; padding: 6px 13px; }
+  }
   .dept-block { border-top:1px solid var(--border); padding-top:10px; margin-bottom:10px; }
   .dept-header { display: flex; align-items: center; gap: 10px; padding: 10px 12px 8px; }
   .dept-bar { width: 4px; height: 20px; border-radius: 2px; flex-shrink: 0; }
@@ -392,6 +403,16 @@
       <button class="logout-btn" onclick="executeLogout()" style="margin-top: 10px;">Sign Out</button>
     </div>
   </header>
+
+  <div id="dept-tabs-bar" class="dept-tabs-bar" style="display:none;">
+    <button class="dept-tab" id="dept-tab-marketing"  data-accent="#be185d" onclick="selectDepartmentTab('marketing')">Marketing</button>
+    <button class="dept-tab" id="dept-tab-project"    data-accent="#2563eb" onclick="selectDepartmentTab('project')">Project</button>
+    <button class="dept-tab" id="dept-tab-design"     data-accent="#2563eb" onclick="selectDepartmentTab('design')">Design</button>
+    <button class="dept-tab" id="dept-tab-purchase"   data-accent="#7c3aed" onclick="selectDepartmentTab('purchase')">Purchase</button>
+    <button class="dept-tab" id="dept-tab-store"      data-accent="#0369a1" onclick="selectDepartmentTab('store')">Store</button>
+    <button class="dept-tab" id="dept-tab-production" data-accent="#b45309" onclick="selectDepartmentTab('production')">Production</button>
+    <button class="dept-tab" id="dept-tab-accounts"   data-accent="#0f766e" onclick="selectDepartmentTab('accounts')">Accounts</button>
+  </div>
 
   <div id="dashboard-view" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 0;">
 
