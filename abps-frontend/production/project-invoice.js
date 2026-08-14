@@ -1,10 +1,87 @@
 let pinvInvoiceState = null;
 
+// Invoice Documents — one dropzone per required type, each accepting
+// multiple files, mirroring finished-goods.js's FG_DOC_META pattern.
+// All six are compulsory here (unlike FG Documents, which has two
+// optional types) since none of these are ever skippable for a real
+// dispatch.
+const PINV_DOC_META = {
+  packingList:        { dropzoneId: "pinv-doc-packingList-dropzone",        listId: "pinv-doc-packingList-filelist",        label: "Packing List",                             placeholder: "📎 Click to attach Packing List" },
+  deliveryChallan:     { dropzoneId: "pinv-doc-deliveryChallan-dropzone",    listId: "pinv-doc-deliveryChallan-filelist",    label: "Delivery Challan",                          placeholder: "📎 Click to attach Delivery Challan" },
+  lrCopy:              { dropzoneId: "pinv-doc-lrCopy-dropzone",            listId: "pinv-doc-lrCopy-filelist",             label: "LR Copy",                                   placeholder: "📎 Click to attach LR Copy" },
+  historyCard:         { dropzoneId: "pinv-doc-historyCard-dropzone",       listId: "pinv-doc-historyCard-filelist",        label: "History Card",                              placeholder: "📎 Click to attach History Card" },
+  truckLoadedImages:   { dropzoneId: "pinv-doc-truckLoadedImages-dropzone", listId: "pinv-doc-truckLoadedImages-filelist",  label: "Images of Products Loaded in Truck",        placeholder: "📎 Click to attach Images of Products Loaded in Truck" },
+  mdcc:                { dropzoneId: "pinv-doc-mdcc-dropzone",              listId: "pinv-doc-mdcc-filelist",               label: "MD cc",                                     placeholder: "📎 Click to attach MD cc" },
+};
+const PINV_REQUIRED_DOC_TYPES = Object.keys(PINV_DOC_META);
+let pinvDocFiles = {};
+
+function resetPinvDocFiles() {
+  pinvDocFiles = {};
+  Object.keys(PINV_DOC_META).forEach(t => { pinvDocFiles[t] = []; renderPinvFileList(t); });
+}
+resetPinvDocFiles();
+
+function handlePinvFileSelectionMulti(input, type) {
+  const file = input.files[0];
+  input.value = "";
+  if (!file || !PINV_DOC_META[type]) return;
+  pinvDocFiles[type].push(file);
+  renderPinvFileList(type);
+}
+
+function removePinvFile(type, idx) {
+  if (!pinvDocFiles[type]) return;
+  pinvDocFiles[type].splice(idx, 1);
+  renderPinvFileList(type);
+}
+
+function renderPinvFileList(type) {
+  const meta = PINV_DOC_META[type];
+  if (!meta) return;
+  const files = pinvDocFiles[type] || [];
+  const box = document.getElementById(meta.dropzoneId);
+  if (box) {
+    if (files.length > 0) { box.textContent = `✅ ${files.length} file${files.length > 1 ? "s" : ""} attached — click to add more`; box.classList.add("done"); }
+    else { box.textContent = meta.placeholder; box.classList.remove("done"); }
+  }
+  const list = document.getElementById(meta.listId);
+  if (!list) return;
+  list.innerHTML = files.map((f, i) => `
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:0.76rem; padding:4px 8px; background:#f8fafc; border:1px solid var(--border); border-radius:4px; margin-top:4px;">
+      <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</span>
+      <span onclick="removePinvFile('${type}', ${i})" style="cursor:pointer; color:#b91c1c; font-weight:700; flex-shrink:0;" title="Remove">✕</span>
+    </div>`).join("");
+}
+
+// Generate Invoice / Revise Invoice — two independent flows sharing the
+// panel. Revise deliberately does NOT touch project status / PRNs / stock
+// (all settled at the original Generate step) — it only regenerates the
+// Project Invoice PDF with corrected figures.
+function switchPinvMode(mode) {
+  const genBtn = document.getElementById("pinv-mode-generate-btn");
+  const revBtn = document.getElementById("pinv-mode-revise-btn");
+  document.getElementById("pinv-generate-mode").style.display = mode === "generate" ? "block" : "none";
+  document.getElementById("pinv-revise-mode").style.display = mode === "revise" ? "block" : "none";
+  genBtn.style.background = mode === "generate" ? "var(--accent)" : "#718096";
+  revBtn.style.background = mode === "revise" ? "var(--accent)" : "#718096";
+  document.getElementById("pinv-feedback").style.display = "none";
+  if (mode === "generate") initializePinvWorkspace();
+  else initializePinvReviseWorkspace();
+}
+
 async function initializePinvWorkspace() {
   document.getElementById("pinv-feedback").style.display = "none";
+  document.getElementById("pinv-generate-mode").style.display = "block";
+  document.getElementById("pinv-revise-mode").style.display = "none";
+  document.getElementById("pinv-mode-generate-btn").style.background = "var(--accent)";
+  document.getElementById("pinv-mode-revise-btn").style.background = "#718096";
   document.getElementById("pinv-detail-zone").style.display = "none";
   document.getElementById("pinv-invoice-form-zone").style.display = "none";
   document.getElementById("pinv-invoice-form-zone").innerHTML = "";
+  document.getElementById("pinv-documents-zone").style.display = "none";
+  document.getElementById("pinv-payment-received").value = "No";
+  resetPinvDocFiles();
   document.getElementById("pinv-success-zone").style.display = "none";
   document.getElementById("pinv-select-zone").style.display = "block";
   pinvInvoiceState = null;
@@ -30,6 +107,9 @@ async function handlePinvProjectChange(projectId) {
   detailZone.style.display = "block";
   invoiceFormZone.style.display = "none";
   invoiceFormZone.innerHTML = "";
+  document.getElementById("pinv-documents-zone").style.display = "none";
+  document.getElementById("pinv-payment-received").value = "No";
+  resetPinvDocFiles();
   document.getElementById("pinv-jc-body").innerHTML = '<tr><td colspan="3" style="padding:14px; text-align:center;">Loading...</td></tr>';
   document.getElementById("pinv-blockers").style.display = "none";
   document.getElementById("pinv-generate-zone").style.display = "none";
@@ -136,6 +216,7 @@ async function loadPinvInvoiceForm() {
       declaration: PINV_STANDARD_DECLARATION,
     };
     renderPinvInvoiceForm();
+    document.getElementById("pinv-documents-zone").style.display = "block";
   } catch(e) {
     zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.85rem;">Network error: ${e.message}</div>`;
   }
@@ -281,6 +362,16 @@ function openPinvConfirmModal() {
     showBOQBanner("pinv-feedback", "Invoice No. is required before generating.", "error");
     return;
   }
+  for (const docType of PINV_REQUIRED_DOC_TYPES) {
+    if (!(pinvDocFiles[docType] || []).length) {
+      showBOQBanner("pinv-feedback", `${PINV_DOC_META[docType].label} document is required.`, "error");
+      return;
+    }
+  }
+  if (document.getElementById("pinv-payment-received").value.trim() !== "Yes") {
+    showBOQBanner("pinv-feedback", "Payment Received Confirmation must be set to Yes before this invoice can be generated.", "error");
+    return;
+  }
   document.getElementById("pinv-confirm-target").textContent = pinvCache.projectId;
   document.getElementById("pinv-confirm-input").value = "";
   document.getElementById("pinv-confirm-submit-btn").disabled = true;
@@ -301,14 +392,38 @@ function handlePinvConfirmInput() {
   btn.style.cursor = match ? "pointer" : "not-allowed";
 }
 
+async function uploadPinvDoc(file, docLabel) {
+  const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(file); });
+  const upData = await apFetch({
+    action: "uploadProjectInvoiceDocument", projectId: pinvCache.projectId, docLabel,
+    file: { fileName: file.name, base64Data: b64, mimeType: file.type || "application/octet-stream" },
+    operatorName: appActiveOperatorIdentityString || "Unknown",
+  });
+  return upData.success ? upData.url : "";
+}
+
 async function submitPinvGeneration() {
   const confirmProjectId = document.getElementById("pinv-confirm-input").value.trim();
+  const paymentReceivedConfirmation = document.getElementById("pinv-payment-received").value.trim();
   closePinvConfirmModal();
-  showBlockingOverlay("Generating invoice and completing project...");
+  showBlockingOverlay("Uploading documents...");
   try {
+    const documents = [];
+    for (const docType of Object.keys(PINV_DOC_META)) {
+      const files = pinvDocFiles[docType] || [];
+      const label = PINV_DOC_META[docType].label;
+      for (const file of files) {
+        const url = await uploadPinvDoc(file, label);
+        if (!url) throw new Error(`Upload failed for "${file.name}" (${label}). Please retry.`);
+        documents.push({ docType, fileName: file.name, url });
+      }
+    }
+
+    showBlockingOverlay("Generating invoice and completing project...");
     const data = await apFetch({
       action: "generateProjectInvoiceAndComplete", projectId: pinvCache.projectId, confirmProjectId,
       operatorName: appActiveOperatorIdentityString || "Unknown", invoice: pinvInvoiceState,
+      paymentReceivedConfirmation, documents,
     });
     if (data.success) {
       document.getElementById("pinv-select-zone").style.display = "none";
@@ -324,6 +439,296 @@ async function submitPinvGeneration() {
         <a href="${driveLink(data.reviewUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; display:inline-block; margin-top:8px;">Open Project Review Document ↗</a>
         <div style="margin-top:16px;">
           <button class="nav-btn-styled" style="background:var(--accent); padding:8px 20px; font-weight:700;" onclick="initializePinvWorkspace()">+ Create New Project Invoice</button>
+        </div>`;
+    } else {
+      showBOQBanner("pinv-feedback", data.error || "Failed.", "error");
+    }
+  } catch(e) {
+    showBOQBanner("pinv-feedback", "Network error: " + e.message, "error");
+  } finally {
+    hideBlockingOverlay();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// REVISE INVOICE — search by Project ID/Customer Name, restricted to
+// projects that are Complete with an invoice already on file (NOT the
+// shared "active projects" typeahead every other screen uses — that data
+// set is the wrong universe entirely for this search). Loads the last
+// submitted invoice values back into an editable form, then regenerates
+// only the invoice PDF; project status/PRNs/stock/documents are untouched.
+// ═══════════════════════════════════════════════════════
+let pinvReviseProjectCodes = [];
+let pinvReviseProjectMeta = {};
+let pinvReviseLoaded = false;
+let pinvReviseState = null;
+let pinvReviseCache = { projectId: "", invoiceRevision: 0 };
+
+async function ensurePinvReviseProjectData(forceRefresh = false) {
+  if (pinvReviseLoaded && !forceRefresh) return;
+  try {
+    const data = await apFetch({ action: "fetchRevisableInvoiceProjects" });
+    pinvReviseProjectCodes = (data.projects || []).map(p => p.projectId);
+    pinvReviseProjectMeta = {};
+    (data.projects || []).forEach(p => { pinvReviseProjectMeta[p.projectId] = { companyName: p.companyName }; });
+    pinvReviseLoaded = true;
+  } catch(e) {
+    pinvReviseProjectCodes = [];
+    pinvReviseProjectMeta = {};
+  }
+}
+
+async function initializePinvReviseWorkspace() {
+  document.getElementById("pinv-revise-ta-input").value = "";
+  document.getElementById("pinv-revise-ta-dropdown").style.display = "none";
+  document.getElementById("pinv-revise-detail-zone").style.display = "none";
+  document.getElementById("pinv-revise-invoice-form-zone").innerHTML = "";
+  document.getElementById("pinv-revise-success-zone").style.display = "none";
+  pinvReviseState = null;
+  await ensurePinvReviseProjectData(true);
+}
+
+async function handlePinvReviseTypeaheadInput(query) {
+  await ensurePinvReviseProjectData();
+  const dd = document.getElementById("pinv-revise-ta-dropdown");
+  if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
+  const q = query.trim().toLowerCase();
+  const matches = pinvReviseProjectCodes.filter(p => {
+    const companyName = (pinvReviseProjectMeta[p] && pinvReviseProjectMeta[p].companyName) || "";
+    return p.toLowerCase().includes(q) || companyName.toLowerCase().includes(q);
+  }).slice(0, 10);
+  if (matches.length === 0) {
+    dd.innerHTML = `<div style="padding:8px 10px; font-size:0.8rem; color:var(--muted);">No completed invoiced projects match.</div>`;
+    dd.style.display = "block";
+    return;
+  }
+  dd.innerHTML = matches.map(p => {
+    const companyName = (pinvReviseProjectMeta[p] && pinvReviseProjectMeta[p].companyName) || "";
+    return `<div onmousedown="event.preventDefault();" onclick="selectPinvReviseProject('${p.replace(/'/g,"\\'")}')"
+      style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      <span style="font-weight:700;">${p}</span>${companyName ? ` <span style="color:var(--muted);">— ${companyName}</span>` : ''}
+    </div>`;
+  }).join("");
+  dd.style.display = "block";
+}
+
+function selectPinvReviseProject(projectId) {
+  document.getElementById("pinv-revise-ta-input").value = projectId;
+  document.getElementById("pinv-revise-ta-dropdown").style.display = "none";
+  loadPinvReviseForm(projectId);
+}
+
+async function loadPinvReviseForm(projectId) {
+  const detailZone = document.getElementById("pinv-revise-detail-zone");
+  const zone = document.getElementById("pinv-revise-invoice-form-zone");
+  detailZone.style.display = "block";
+  zone.innerHTML = `<div style="text-align:center; padding:14px; color:var(--muted); font-size:0.85rem;">Loading current invoice details...</div>`;
+  try {
+    const data = await apFetch({ action: "fetchProjectInvoiceRevisionPrefill", projectId });
+    if (!data.success) {
+      zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.85rem;">${data.error || "Failed to load."}</div>`;
+      return;
+    }
+    pinvReviseCache = { projectId, invoiceRevision: data.invoiceRevision || 0 };
+    const last = data.lastInvoiceDetails || {};
+    pinvReviseState = {
+      invoiceNo: last.invoiceNo || "", insuranceNo: last.insuranceNo || "", mdccNo: last.mdccNo || "",
+      transportName: last.transportName || "", lrNoDate: last.lrNoDate || "", vehicleNo: last.vehicleNo || "",
+      mobileNo: last.mobileNo || "", freight: last.freight || "",
+      poNumber: data.poNumber || "", poDate: data.poDate || "",
+      billTo: { name: "", address: "", state: "", gstNo: "", contactNo: "", ...(last.billTo || {}) },
+      shipTo: { name: "", address: "", state: "", gstNo: "", contactNo: "", ...(last.shipTo || {}) },
+      lineItems: (data.lineItems || []).map(li => ({ ...li })),
+      igstPercent: last.igstPercent || "18",
+      bankDetails: { ...PINV_STANDARD_BANK_DETAILS, ...(last.bankDetails || {}) },
+      declaration: last.declaration || PINV_STANDARD_DECLARATION,
+    };
+    renderPinvReviseInvoiceForm();
+  } catch(e) {
+    zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.85rem;">Network error: ${e.message}</div>`;
+  }
+}
+
+function renderPinvReviseInvoiceForm() {
+  const zone = document.getElementById("pinv-revise-invoice-form-zone");
+  const s = pinvReviseState;
+  const esc = (v) => (v == null ? '' : v.toString()).replace(/"/g, '&quot;');
+
+  const field = (label, key, path) => {
+    const val = path ? (s[path[0]][path[1]] || '') : (s[key] || '');
+    const setter = path ? `updatePinvReviseNested('${path[0]}','${path[1]}', this.value)` : `updatePinvReviseField('${key}', this.value)`;
+    return `<div class="grid-cell-item"><label>${label}</label><input type="text" value="${esc(val)}" oninput="${setter}" /></div>`;
+  };
+
+  zone.innerHTML = `
+    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:16px;">
+      <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:0.95rem;">Current Invoice Details — Revision V${(pinvReviseCache.invoiceRevision || 0) + 1}</div>
+      <div style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">Prefilled from the last generated invoice. Edit anything, then generate the revised doc — this replaces the invoice shown on the project going forward; project status, PRNs, and stock are not touched.</div>
+
+      <div class="compact-fields-grid" style="margin-bottom:14px;">
+        ${field('Invoice No. *', 'invoiceNo')}
+        <div class="grid-cell-item" style="background:#f1f5f9;"><label>P.O. No.</label><div style="padding:6px 4px; font-weight:600;">${s.poNumber || '—'}</div></div>
+        <div class="grid-cell-item" style="background:#f1f5f9;"><label>PO Date</label><div style="padding:6px 4px; font-weight:600;">${s.poDate || '—'}</div></div>
+        ${field('Insurance No.', 'insuranceNo')}
+        ${field('MDCC NO', 'mdccNo')}
+        ${field('Transport Name', 'transportName')}
+        ${field('LR No & Date', 'lrNoDate')}
+        ${field('Vehicle No.', 'vehicleNo')}
+        ${field('Mobile No', 'mobileNo')}
+        ${field('Freight', 'freight')}
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div style="border:1px solid var(--border); border-radius:var(--radius); padding:10px; background:#fff;">
+          <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.82rem;">BILL TO PARTY</div>
+          ${field('Name', null, ['billTo','name'])}
+          ${field('Address', null, ['billTo','address'])}
+          ${field('State', null, ['billTo','state'])}
+          ${field('GST No.', null, ['billTo','gstNo'])}
+          ${field('Contact No.', null, ['billTo','contactNo'])}
+        </div>
+        <div style="border:1px solid var(--border); border-radius:var(--radius); padding:10px; background:#fff;">
+          <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.82rem;">SHIP TO PARTY</div>
+          ${field('Name', null, ['shipTo','name'])}
+          ${field('Address', null, ['shipTo','address'])}
+          ${field('State', null, ['shipTo','state'])}
+          ${field('GST No.', null, ['shipTo','gstNo'])}
+          ${field('Contact No.', null, ['shipTo','contactNo'])}
+        </div>
+      </div>
+
+      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.85rem;">Item Details</div>
+      <div id="pinv-revise-lineitems-wrap"></div>
+
+      <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+        <div style="width:300px; display:flex; flex-direction:column; gap:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#f1f5f9; border-radius:4px; padding:6px 10px;">
+            <span style="font-size:0.78rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Sub Total</span>
+            <strong id="pinv-revise-subtotal-display">₹0</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
+            <span style="font-size:0.78rem; font-weight:700; color:var(--muted); text-transform:uppercase;">IGST %</span>
+            <input type="number" value="${esc(s.igstPercent)}" oninput="updatePinvReviseField('igstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#f0fdf4; border-radius:4px; padding:6px 10px;">
+            <span style="font-size:0.78rem; font-weight:700; color:#15803d; text-transform:uppercase;">Grand Total</span>
+            <strong id="pinv-revise-grandtotal-display" style="color:#15803d;">₹0</strong>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.85rem;">Bank Details</div>
+      <div class="compact-fields-grid">
+        ${field('Bank Name', null, ['bankDetails','bankName'])}
+        ${field('IFSC Code For RTGS/NEFT', null, ['bankDetails','ifsc'])}
+        ${field('A/C', null, ['bankDetails','ac'])}
+        ${field('Address', null, ['bankDetails','address'])}
+        ${field('Branch Name & Code', null, ['bankDetails','branch'])}
+      </div>
+
+      <div style="margin-top:14px;">
+        <label class="field-label" style="margin-top:0;">Declaration</label>
+        <textarea rows="4" style="width:100%; padding:8px; font-size:0.78rem; border:1.5px solid var(--border); border-radius:var(--radius);" oninput="updatePinvReviseField('declaration', this.value)">${s.declaration}</textarea>
+      </div>
+
+      <div style="margin-top:14px; font-size:0.8rem; color:var(--muted);">Total Invoice Amount in Words: <strong id="pinv-revise-words-display" style="color:var(--text);">—</strong></div>
+    </div>
+  `;
+  renderPinvReviseLineItemsTable();
+  recalcPinvReviseTotals();
+}
+
+function renderPinvReviseLineItemsTable() {
+  const wrap = document.getElementById("pinv-revise-lineitems-wrap");
+  if (!wrap) return;
+  const items = pinvReviseState.lineItems || [];
+  const cols = [
+    ['description', 'Description', 'text'], ['hsnNumber', 'HSN Code', 'text'], ['quantity', 'Qty', 'number'],
+    ['unit', 'Unit', 'text'], ['ratePerQuantity', 'Rate', 'number'], ['totalBasicPrice', 'Amount', 'number'],
+  ];
+  wrap.innerHTML = `
+    <table class="store-basket-data-table" style="min-width:820px;">
+      <thead><tr><th>Sr No</th>${cols.map(c => `<th>${c[1]}</th>`).join('')}</tr></thead>
+      <tbody>
+        ${items.length === 0 ? `<tr><td colspan="${cols.length + 1}" style="text-align:center; color:var(--muted);">No PO line items found for this project</td></tr>` : items.map((it, idx) => `
+          <tr>
+            <td style="text-align:center; font-weight:700;">${idx + 1}</td>
+            ${cols.map(([key, , type]) => `<td><input type="${type}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" oninput="updatePinvReviseLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:80px; padding:4px; font-size:0.78rem;" /></td>`).join('')}
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function updatePinvReviseField(key, value) { pinvReviseState[key] = value; }
+function updatePinvReviseNested(parentKey, childKey, value) { pinvReviseState[parentKey][childKey] = value; }
+function updatePinvReviseLineItem(idx, key, value) {
+  if (!pinvReviseState.lineItems[idx]) return;
+  pinvReviseState.lineItems[idx][key] = value;
+  if (key === 'totalBasicPrice') recalcPinvReviseTotals();
+}
+
+function recalcPinvReviseTotals() {
+  const items = pinvReviseState.lineItems || [];
+  const subTotal = items.reduce((sum, it) => sum + (parseFloat(it.totalBasicPrice) || 0), 0);
+  const igstPercent = parseFloat(pinvReviseState.igstPercent) || 0;
+  const igstAmount = subTotal * igstPercent / 100;
+  const grandTotal = subTotal + igstAmount;
+  const st = document.getElementById("pinv-revise-subtotal-display");
+  const gt = document.getElementById("pinv-revise-grandtotal-display");
+  const w = document.getElementById("pinv-revise-words-display");
+  if (st) st.textContent = "₹" + subTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  if (gt) gt.textContent = "₹" + grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  if (w) w.textContent = numberToWordsINRClient(grandTotal);
+}
+
+function openPinvReviseConfirmModal() {
+  if (!pinvReviseState?.invoiceNo?.trim()) {
+    showBOQBanner("pinv-feedback", "Invoice No. is required before generating.", "error");
+    return;
+  }
+  document.getElementById("pinv-revise-confirm-target").textContent = pinvReviseCache.projectId;
+  document.getElementById("pinv-revise-confirm-input").value = "";
+  document.getElementById("pinv-revise-confirm-submit-btn").disabled = true;
+  document.getElementById("pinv-revise-confirm-submit-btn").style.opacity = "0.5";
+  document.getElementById("pinv-revise-confirm-submit-btn").style.cursor = "not-allowed";
+  document.getElementById("pinv-revise-confirm-modal").style.display = "flex";
+}
+
+function closePinvReviseConfirmModal() {
+  document.getElementById("pinv-revise-confirm-modal").style.display = "none";
+}
+
+function handlePinvReviseConfirmInput() {
+  const match = document.getElementById("pinv-revise-confirm-input").value.trim() === pinvReviseCache.projectId;
+  const btn = document.getElementById("pinv-revise-confirm-submit-btn");
+  btn.disabled = !match;
+  btn.style.opacity = match ? "1" : "0.5";
+  btn.style.cursor = match ? "pointer" : "not-allowed";
+}
+
+async function submitPinvRevision() {
+  const confirmProjectId = document.getElementById("pinv-revise-confirm-input").value.trim();
+  if (confirmProjectId !== pinvReviseCache.projectId) return;
+  closePinvReviseConfirmModal();
+  showBlockingOverlay("Generating revised invoice...");
+  try {
+    const data = await apFetch({
+      action: "reviseProjectInvoice", projectId: pinvReviseCache.projectId,
+      operatorName: appActiveOperatorIdentityString || "Unknown", invoice: pinvReviseState,
+    });
+    if (data.success) {
+      document.getElementById("pinv-revise-select-zone").style.display = "none";
+      document.getElementById("pinv-revise-detail-zone").style.display = "none";
+      const successZone = document.getElementById("pinv-revise-success-zone");
+      successZone.style.display = "block";
+      successZone.innerHTML = `
+        <div style="padding:14px; background:#f0fdf4; border-left:4px solid #22c55e; border-radius:var(--radius); color:#15803d; font-weight:600; margin-bottom:14px;">
+          Invoice Revised (V${data.revision}) for Project ID: ${pinvReviseCache.projectId}
+        </div>
+        <a href="${driveLink(data.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Revised Invoice Document ↗</a>
+        <div style="margin-top:16px;">
+          <button class="nav-btn-styled" style="background:var(--accent); padding:8px 20px; font-weight:700;" onclick="initializePinvReviseWorkspace(); document.getElementById('pinv-revise-select-zone').style.display='block';">+ Revise Another Invoice</button>
         </div>`;
     } else {
       showBOQBanner("pinv-feedback", data.error || "Failed.", "error");

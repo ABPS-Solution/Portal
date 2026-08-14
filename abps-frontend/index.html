@@ -1081,6 +1081,12 @@
       <h2 class="panel-title">Project Invoice Generation</h2>
       <div id="pinv-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
+      <div style="display:flex; gap:10px; margin-bottom:18px;">
+        <button class="nav-btn-styled" id="pinv-mode-generate-btn" onclick="switchPinvMode('generate')" style="background:var(--accent); font-weight:700; padding:9px 20px;">Generate Invoice</button>
+        <button class="nav-btn-styled" id="pinv-mode-revise-btn" onclick="switchPinvMode('revise')" style="background:#718096; font-weight:700; padding:9px 20px;">Revise Invoice</button>
+      </div>
+
+      <div id="pinv-generate-mode">
       <div id="pinv-select-zone">
         <label class="field-label" style="margin-top:0;">Project ID *</label>
         <select id="pinv-project-select" onchange="handlePinvProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
@@ -1097,12 +1103,100 @@
           <tbody id="pinv-jc-body"></tbody>
         </table>
         <div id="pinv-invoice-form-zone" style="display:none;"></div>
+
+        <div id="pinv-documents-zone" style="display:none; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-top:16px;">
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:12px; letter-spacing:0.5px;">Invoice Documents</div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Packing List * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="pinv-doc-packingList-dropzone" onclick="document.getElementById('pinv-doc-packingList-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Packing List
+              </div>
+              <input type="file" id="pinv-doc-packingList-input" hidden onchange="handlePinvFileSelectionMulti(this, 'packingList')" />
+              <div id="pinv-doc-packingList-filelist"></div>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Delivery Challan * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="pinv-doc-deliveryChallan-dropzone" onclick="document.getElementById('pinv-doc-deliveryChallan-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Delivery Challan
+              </div>
+              <input type="file" id="pinv-doc-deliveryChallan-input" hidden onchange="handlePinvFileSelectionMulti(this, 'deliveryChallan')" />
+              <div id="pinv-doc-deliveryChallan-filelist"></div>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">LR Copy * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="pinv-doc-lrCopy-dropzone" onclick="document.getElementById('pinv-doc-lrCopy-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach LR Copy
+              </div>
+              <input type="file" id="pinv-doc-lrCopy-input" hidden onchange="handlePinvFileSelectionMulti(this, 'lrCopy')" />
+              <div id="pinv-doc-lrCopy-filelist"></div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">History Card * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="pinv-doc-historyCard-dropzone" onclick="document.getElementById('pinv-doc-historyCard-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach History Card
+              </div>
+              <input type="file" id="pinv-doc-historyCard-input" hidden onchange="handlePinvFileSelectionMulti(this, 'historyCard')" />
+              <div id="pinv-doc-historyCard-filelist"></div>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Images of Products Loaded in Truck * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="pinv-doc-truckLoadedImages-dropzone" onclick="document.getElementById('pinv-doc-truckLoadedImages-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Images of Products Loaded in Truck
+              </div>
+              <input type="file" id="pinv-doc-truckLoadedImages-input" hidden onchange="handlePinvFileSelectionMulti(this, 'truckLoadedImages')" />
+              <div id="pinv-doc-truckLoadedImages-filelist"></div>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">MD cc * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="pinv-doc-mdcc-dropzone" onclick="document.getElementById('pinv-doc-mdcc-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach MD cc
+              </div>
+              <input type="file" id="pinv-doc-mdcc-input" hidden onchange="handlePinvFileSelectionMulti(this, 'mdcc')" />
+              <div id="pinv-doc-mdcc-filelist"></div>
+            </div>
+          </div>
+
+          <div>
+            <label class="field-label" style="margin-top:0;">Payment Received Confirmation *</label>
+            <select id="pinv-payment-received" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); max-width:260px;">
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </div>
+        </div>
+
         <div id="pinv-generate-zone" style="display:none; text-align:right; margin-top:16px;">
           <button class="nav-btn-styled" style="background:var(--accent); padding:10px 24px; font-weight:700;" onclick="openPinvConfirmModal()">Generate Invoice Doc</button>
         </div>
       </div>
 
       <div id="pinv-success-zone" style="display:none; margin-top:20px;"></div>
+      </div>
+
+      <div id="pinv-revise-mode" style="display:none;">
+        <div id="pinv-revise-select-zone" style="position:relative;">
+          <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
+          <input type="text" id="pinv-revise-ta-input" autocomplete="off" placeholder="Type Project ID or Customer Name..."
+            oninput="handlePinvReviseTypeaheadInput(this.value)" onfocus="handlePinvReviseTypeaheadInput(this.value)"
+            style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
+          <div id="pinv-revise-ta-dropdown" style="display:none; position:absolute; z-index:50; background:#fff; border:1px solid var(--border); border-radius:var(--radius); max-height:240px; overflow-y:auto; width:100%; box-shadow:0 4px 14px rgba(0,0,0,0.08);"></div>
+          <div style="font-size:0.78rem; color:var(--muted); margin-top:6px;">Only projects with an already-generated invoice (Complete status) appear here.</div>
+        </div>
+
+        <div id="pinv-revise-detail-zone" style="display:none; margin-top:20px;">
+          <div id="pinv-revise-invoice-form-zone"></div>
+          <div style="text-align:right; margin-top:16px;">
+            <button class="nav-btn-styled" style="background:var(--accent); padding:10px 24px; font-weight:700;" onclick="openPinvReviseConfirmModal()">Generate Revised Invoice Doc</button>
+          </div>
+        </div>
+
+        <div id="pinv-revise-success-zone" style="display:none; margin-top:20px;"></div>
+      </div>
     </div>
 
     <div id="pinv-confirm-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
@@ -1113,6 +1207,18 @@
         <div style="display:flex; justify-content:flex-end; gap:10px;">
           <button class="nav-btn-styled" style="background:#718096;" onclick="closePinvConfirmModal()">Cancel</button>
           <button class="nav-btn-styled" id="pinv-confirm-submit-btn" disabled style="background:var(--accent); opacity:0.5; cursor:not-allowed;" onclick="submitPinvGeneration()">Generate Invoice Doc</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="pinv-revise-confirm-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:var(--radius); padding:24px; max-width:420px; width:90%; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+        <h3 style="margin:0 0 10px; color:var(--brand);">Confirm Invoice Revision</h3>
+        <p style="font-size:0.85rem; color:var(--muted); margin-bottom:14px;">This will generate a new Project Invoice PDF for <strong id="pinv-revise-confirm-target"></strong> and update the project's saved invoice link. Project status, PRNs, and stock are not affected. Type the Project ID to confirm.</p>
+        <input type="text" id="pinv-revise-confirm-input" style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); margin-bottom:14px;" oninput="handlePinvReviseConfirmInput()" />
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button class="nav-btn-styled" style="background:#718096;" onclick="closePinvReviseConfirmModal()">Cancel</button>
+          <button class="nav-btn-styled" id="pinv-revise-confirm-submit-btn" disabled style="background:var(--accent); opacity:0.5; cursor:not-allowed;" onclick="submitPinvRevision()">Generate Revised Invoice Doc</button>
         </div>
       </div>
     </div>

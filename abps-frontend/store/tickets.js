@@ -264,8 +264,11 @@ async function refreshLiveStockForSelectedMaterial() {
   try {
     // PERF: render the pill immediately from whatever's already cached (JobCardMaterials was
     // warmed the moment Store was selected, well before this material-pick moment) — no BOQ
-    // round-trip needed here anymore, that cache is no longer what the pill reads from.
-    if (projectId && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Spare Store")) {
+    // round-trip needed here anymore, that cache is no longer what the pill reads from. Finished
+    // Goods Store belongs in this immediate render too — it was left out, which meant the whole
+    // FG pill (including ALLOTTED/USED/REMAINING, which don't need any live network call at all)
+    // silently never appeared until the live-count fetch below succeeded.
+    if (projectId && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Spare Store" || activeStoreScope === "Finished Goods Store")) {
       await updateSelectedLiveStockPillCounter(null);
     }
 
@@ -279,11 +282,21 @@ async function refreshLiveStockForSelectedMaterial() {
     const matchedCatalogEntry = (window.itemCodeCatalogCache || []).find(
       c => (c.productName || "").replace(/\s+/g, "").toLowerCase() === cleanKeyForLookup
     );
-    if (!matchedCatalogEntry) return; // no Item Code found for this material -- nothing to look up
+    // Fall back to the JobCardMaterials cache's own itemCode when the name doesn't
+    // resolve in the Item Code catalog (e.g. a Finished Goods material whose
+    // production.job_card_materials row already carries the right itemCode
+    // regardless of catalog naming) — without this, a catalog miss silently
+    // killed the live total-stock count even though ALLOTTED/USED/REMAINING
+    // above already rendered fine from the JCM cache alone.
+    const jcmFallbackForItemCode = (window._ticketJobCardMaterialsCache?.records || []).find(
+      r => (r.materialName || "").replace(/\s+/g, "").toLowerCase() === cleanKeyForLookup
+    );
+    const resolvedItemCode = matchedCatalogEntry?.itemCode || jcmFallbackForItemCode?.itemCode;
+    if (!resolvedItemCode) return; // no Item Code found for this material -- nothing to look up
 
     // NOW fire the single network call for live stock counts
     const jobCardNumberForPill = document.getElementById("ticket-job-card-dropdown")?.value || "";
-    const data = await apFetch({ action: "getLiveStockForItem", itemCode: matchedCatalogEntry.itemCode, projectId: projectId, jobCardNumber: jobCardNumberForPill });
+    const data = await apFetch({ action: "getLiveStockForItem", itemCode: resolvedItemCode, projectId: projectId, jobCardNumber: jobCardNumberForPill });
     if (!data.success) return;
 
     // Also refresh job_card_materials on every tick — a QA check completing,
@@ -441,6 +454,7 @@ async function addItemToShoppingBasketRow() {
       });
     }
     qtyInput.value = "";
+    restoreAddBtn();
     renderDraftBasketTableViewportRows();
     return;
   }
@@ -492,6 +506,7 @@ async function addItemToShoppingBasketRow() {
       });
     }
     qtyInput.value = "";
+    restoreAddBtn();
     renderDraftBasketTableViewportRows();
     return;
   }
