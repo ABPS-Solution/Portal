@@ -150,6 +150,15 @@ async function initializeFGAddWorkspace() {
   if (fgAddWorkspaceInitInProgress) return;
   fgAddWorkspaceInitInProgress = true;
   document.getElementById("fg-add-feedback").style.display = "none";
+  // A successful submission hides fg-add-form and shows the success
+  // banner instead (see submitFGAddItem) — that display:none only gets
+  // undone by clicking "+ Add Another FG Material" (startAnotherFGAddEntry).
+  // Navigating away and back into this screen without clicking it left the
+  // form permanently hidden — just header/toggle visible, blank body —
+  // since this init function never restored it. Every fresh entry must
+  // show the form regardless of how the screen was left last time.
+  const formEl = document.getElementById("fg-add-form");
+  if (formEl) formEl.style.display = "block";
   try {
   await loadItemCodeCatalogIntoCache();
 
