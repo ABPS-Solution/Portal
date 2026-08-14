@@ -501,6 +501,15 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 // needing to be threaded through every call site separately.
 const DEPT_TAB_KEYS = ['marketing', 'project', 'design', 'purchase', 'store', 'production', 'accounts'];
 const DEPT_TAB_STORAGE_KEY = 'abpsActiveDepartmentTab';
+// Which departments are actually permission-visible, as of the last
+// enforceDynamicModuleRoleGateways pass. selectDepartmentTab consults
+// THIS (not each block's live display) to decide what it's allowed to
+// show — reading live display instead was the bug: after switching to
+// department A, every other department's block sits at display:none
+// from that switch itself, indistinguishable from a permission-driven
+// hide, so switching back to department B found its own block already
+// display:none and (wrongly) refused to un-hide it.
+let deptTabVisibleKeys = DEPT_TAB_KEYS.slice();
 
 function refreshDepartmentTabsBar() {
   const bar = document.getElementById('dept-tabs-bar');
@@ -513,6 +522,7 @@ function refreshDepartmentTabsBar() {
     if (tab) tab.style.display = isVisible ? 'inline-flex' : 'none';
     return isVisible;
   });
+  deptTabVisibleKeys = visibleKeys;
 
   if (visibleKeys.length === 0) { bar.style.display = 'none'; return; }
   // A single visible department has nothing to switch between — the tab
@@ -530,10 +540,9 @@ function selectDepartmentTab(key) {
   DEPT_TAB_KEYS.forEach(k => {
     const block = document.getElementById(`dashboard-${k}-department-header-block`);
     const tab = document.getElementById(`dept-tab-${k}`);
-    // Only ever show the block if it's already permission-visible (not
-    // display:none from the gateway pass above) AND it's the active tab —
-    // never override a permission-driven hide.
-    if (block && block.style.display !== 'none') {
+    // Only ever show the block if it's permission-visible AND it's the
+    // active tab — never override a permission-driven hide.
+    if (block && deptTabVisibleKeys.includes(k)) {
       block.style.display = (k === key) ? 'block' : 'none';
     }
     if (tab) {

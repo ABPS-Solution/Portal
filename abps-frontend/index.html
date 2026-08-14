@@ -11,7 +11,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
 
-<title>ABPS Portal</title>
+<title>ABPS ERP</title>
 
 <style>
   /* --- BASE RESET & CORE VARIABLES --- */
@@ -77,14 +77,16 @@
   .menu-card .mc-label { font-size:0.88rem; font-weight:700; color:var(--text); text-align:center; white-space:normal; line-height:1.35; display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
   /* --- DEPARTMENT TAB BAR — sits below the header, lets you jump straight
      to one department's section instead of scrolling the whole dashboard. --- */
-  .dept-tabs-bar { position: sticky; top: 0; z-index: 90; background: var(--card); border-bottom: 1px solid var(--border); padding: 8px 16px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: thin; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .dept-tabs-bar { position: sticky; top: 0; z-index: 90; background: var(--card); border-bottom: 1px solid var(--border); padding: 10px 8px; display: flex; align-items: center; gap: 10px; overflow-x: auto; scrollbar-width: thin; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
   .dept-tabs-bar::-webkit-scrollbar { height: 4px; }
-  .dept-tab { flex-shrink: 0; background: transparent; border: 1.5px solid var(--border); color: var(--muted); font-weight: 700; font-size: 0.8rem; padding: 7px 16px; border-radius: 20px; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; white-space: nowrap; }
+  .dept-tabs-label { flex-shrink: 0; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); padding-left: 6px; }
+  .dept-tab { flex-shrink: 0; background: transparent; border: 1.5px solid var(--border); color: var(--muted); font-weight: 700; font-size: 0.9rem; padding: 9px 22px; border-radius: 22px; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; white-space: nowrap; }
   .dept-tab:hover { background: var(--highlight-bg); color: var(--text); border-color: var(--tab-accent, var(--brand)); }
   .dept-tab.active { background: var(--tab-accent, var(--brand)); border-color: var(--tab-accent, var(--brand)); color: #fff; }
   @media(max-width:640px) {
-    .dept-tabs-bar { padding: 7px 10px; gap: 5px; }
-    .dept-tab { font-size: 0.76rem; padding: 6px 13px; }
+    .dept-tabs-bar { padding: 8px 6px; gap: 7px; }
+    .dept-tabs-label { display: none; }
+    .dept-tab { font-size: 0.8rem; padding: 7px 16px; }
   }
   .dept-block { border-top:1px solid var(--border); padding-top:10px; margin-bottom:10px; }
   .dept-header { display: flex; align-items: center; gap: 10px; padding: 10px 12px 8px; }
@@ -368,7 +370,7 @@
 
 <div id="auth-container">
   <div class="auth-card" style="max-width: 440px; padding: 30px;">
-    <div class="auth-title" style="margin-bottom: 10px;">ABPS Portal</div>
+    <div class="auth-title" style="margin-bottom: 10px;">ABPS ERP</div>
 
     <div style="text-align: left; background: #f8fafc; padding: 15px; border: 1px dashed var(--border); border-radius: 8px; margin-bottom: 20px;">
       <label class="field-label" style="margin-top: 0; margin-bottom: 4px; color: var(--brand);">1. Select Your Department *</label>
@@ -394,7 +396,7 @@
 
 <div id="app-container" style="display: none;">
   <header>
-    <h1>ABPS Portal</h1>
+    <h1>ABPS ERP</h1>
     <div class="header-actions-block">
       <div class="user-profile-meta">
         <div class="user-full-name" id="display-full-name"></div>
@@ -405,6 +407,7 @@
   </header>
 
   <div id="dept-tabs-bar" class="dept-tabs-bar" style="display:none;">
+    <span class="dept-tabs-label">Departments</span>
     <button class="dept-tab" id="dept-tab-marketing"  data-accent="#be185d" onclick="selectDepartmentTab('marketing')">Marketing</button>
     <button class="dept-tab" id="dept-tab-project"    data-accent="#2563eb" onclick="selectDepartmentTab('project')">Project</button>
     <button class="dept-tab" id="dept-tab-design"     data-accent="#2563eb" onclick="selectDepartmentTab('design')">Design</button>
