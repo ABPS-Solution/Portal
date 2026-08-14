@@ -151,6 +151,7 @@ async function submitBOQIncreaseDecision(ticketId) {
   const adminAction = "accept";
   const submitBtn = card.querySelector("button[onclick^='submitBOQIncreaseDecision']");
   if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...'; }
+  showBlockingOverlay("Submitting decision…");
   try {
     const data = await apFetch({
       action:          "commitBOQLimitIncreaseRequestTicket",
@@ -159,6 +160,7 @@ async function submitBOQIncreaseDecision(ticketId) {
       adminAction,
       itemDecisions
     });
+    hideBlockingOverlay();
 
     if (data.success) {
       feedback.style.cssText = "display:block; background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:12px; margin-bottom:12px; font-weight:700;";
@@ -172,6 +174,7 @@ async function submitBOQIncreaseDecision(ticketId) {
       if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Submit Decision for This Ticket"; }
     }
   } catch(e) {
+    hideBlockingOverlay();
     if (e.message !== "SESSION_EXPIRED") {
       feedback.style.cssText = "display:block; background:#fee2e2; border-left:4px solid #b91c1c; color:#b91c1c; padding:12px; margin-bottom:12px;";
       feedback.textContent   = "Network error: " + e.message;
