@@ -303,13 +303,20 @@ function handleFGBOQChange(boqId) {
   // finished_goods_inventory row (and its Sheet mirror) isn't left with
   // item_code permanently blank, same as every other screen that resolves
   // an item code from a product name instead of collecting it directly.
+  // Whitespace-collapsed comparison, not just trim() — matches the
+  // normalization every other product-name lookup in the app uses
+  // (tickets.js, job-cards.js). A plain trim+lowercase left this silently
+  // blank whenever the Job Card's product name/rating had different
+  // internal spacing than the catalog entry (e.g. a double space), which is
+  // exactly why some existing finished_goods_inventory rows have no
+  // item_code — this hardens future submissions, it does not backfill those.
   const catalog = window.itemCodeCatalogCache || [];
-  const normName = (sample.productName || "").trim().toLowerCase();
-  const normRating = (sample.productRating || "").trim().toLowerCase();
+  const collapse = (s) => (s || "").replace(/\s+/g, "").toLowerCase();
+  const normName = collapse(sample.productName);
+  const normRating = collapse(sample.productRating);
   const matchedItem = catalog.find(it =>
-    (it.productName || "").trim().toLowerCase() === normName &&
-    (it.rating || "").trim().toLowerCase() === normRating
-  ) || catalog.find(it => (it.productName || "").trim().toLowerCase() === normName);
+    collapse(it.productName) === normName && collapse(it.rating) === normRating
+  ) || catalog.find(it => collapse(it.productName) === normName);
   document.getElementById("fg-add-item-code-display").value = matchedItem ? matchedItem.itemCode : "";
   document.getElementById("fg-add-item-code").value = matchedItem ? matchedItem.itemCode : "";
 

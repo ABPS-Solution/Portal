@@ -488,10 +488,23 @@ async function addItemToShoppingBasketRow() {
 
     const existingLineItem = dynamicTicketShoppingBasketArray.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
     let totalRequestedQuantity = quantity;
+    if (existingLineItem) totalRequestedQuantity += existingLineItem.quantity;
+
+    // Finished Goods Store has no BOQ Increase / Excess Material Request
+    // path at all (see handleBOQIncreaseDecision / createBOQLimitIncreaseRequestTicket
+    // — both hardcoded to Raw Materials Store only), so unlike Raw/Spare a
+    // request over this Job Card's remaining allotment is a hard lockout
+    // here, not a soft "flag for admin approval" — there is no admin
+    // approval flow on the other end to catch it.
+    if (totalRequestedQuantity > Number(jcmMatchFGAdd.remainingQty)) {
+      restoreAddBtn();
+      alert(`Finished Goods Store Lockout: Only ${fmtQty(jcmMatchFGAdd.remainingQty)} ${jcmMatchFGAdd.unitType || 'units'} of ${materialName} remain allotted to this Job Card. Reduce the quantity — Finished Goods Store requests cannot exceed the Job Card allotment.`);
+      return;
+    }
+
     if (existingLineItem) {
-      totalRequestedQuantity += existingLineItem.quantity;
       existingLineItem.quantity = totalRequestedQuantity;
-      existingLineItem.requiresBOQIncreaseFlag = totalRequestedQuantity > jcmMatchFGAdd.remainingQty;
+      existingLineItem.requiresBOQIncreaseFlag = false;
       existingLineItem.allottedRemainingLimit = jcmMatchFGAdd.remainingQty;
     } else {
       dynamicTicketShoppingBasketArray.push({
@@ -499,7 +512,7 @@ async function addItemToShoppingBasketRow() {
         itemCode: jcmMatchFGAdd.itemCode || "",
         quantity: totalRequestedQuantity,
         unitType: (fgCatalogEntry && fgCatalogEntry.unit) ? fgCatalogEntry.unit : "NOS",
-        requiresBOQIncreaseFlag: totalRequestedQuantity > jcmMatchFGAdd.remainingQty,
+        requiresBOQIncreaseFlag: false,
         allottedRemainingLimit: jcmMatchFGAdd.remainingQty,
         boqId: jcmMatchFGAdd.boqId || "",
         jcmRowIdx: jcmMatchFGAdd.jcmRowIdx

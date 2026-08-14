@@ -13,7 +13,13 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
   // Show an immediate loading state the instant a material is picked, regardless of cache
   // state below — closes the visible gap between selecting a material and the pill actually
   // rendering, even on a cache hit where the "Evaluating..." message further down never fires.
-  counterZone.innerHTML = `<span style="font-size:0.75rem; color:var(--muted); font-weight:600;">🔄 Loading stock &amp; allotment…</span>`;
+  // Only do this when the zone is still empty (first render for this selection) — this
+  // function is also called twice per 5s poll tick (once from cache, once with live data),
+  // and wiping already-rendered content back to this placeholder on every one of those calls
+  // was producing a visible flicker every 5 seconds even though nothing had changed.
+  if (!counterZone.innerHTML.trim()) {
+    counterZone.innerHTML = `<span style="font-size:0.75rem; color:var(--muted); font-weight:600;">🔄 Loading stock &amp; allotment…</span>`;
+  }
 
   const activeStoreScope = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
 
