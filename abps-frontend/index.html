@@ -551,7 +551,7 @@
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-store-ticket"            onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Material Issue Ticket</span></div>
-        <div class="menu-card" id="mod-jc-letterhead"           onclick="switchActiveDashboardModule('jc-letterhead')"><span class="mc-label">Job Card Letterhead</span></div>
+        <div class="menu-card" id="mod-jc-letterhead"           onclick="switchActiveDashboardModule('jc-letterhead')"><span class="mc-label">Job Card & In Process Sheet</span></div>
         <div class="menu-card" id="mod-fg-add"                  onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
         <div class="menu-card" id="mod-fg-approval"             onclick="switchActiveDashboardModule('fg-approval')"><span class="mc-label">Add to Finished Goods Store Approval</span></div>
         <div class="menu-card" id="mod-project-invoice"         onclick="switchActiveDashboardModule('project-invoice')"><span class="mc-label">Project Invoice Generation</span></div>
@@ -841,14 +841,18 @@
     </div>
 
     <div id="canvas-module-jc-letterhead" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 class="panel-title">Job Card Letterhead</h2>
+      <h2 class="panel-title">Job Card & In Process Sheet</h2>
       <div id="jclh-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
         <div>
-          <label class="field-label" style="margin-top:0;">Project ID *</label>
-          <select id="jclh-project" onchange="handleJCLHProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-            <option value="">— Select Project ID —</option>
-          </select>
+          <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
+          <div style="position:relative;">
+            <input type="text" id="jclh-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'jclh-project-ta-input', 'jclh-project-ta-dropdown')"
+              onchange="handleJCLHProjectChange(this.value)"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+            <div id="jclh-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Customer Name</label>
@@ -874,11 +878,33 @@
           <input type="text" id="jclh-product-rating" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from BOQ ID (blank if none)" />
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:20px;">
+      <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
         <div>
           <label class="field-label" style="margin-top:0;">Job Card Number *</label>
           <select id="jclh-jobcard" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
             <option value="">— Select BOQ ID First —</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Product Type *</label>
+          <select id="jclh-product-type" onchange="updateJCLHDownloadButtonState()" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <option value="">— Select Job Card Number First —</option>
+            <option value="Air Core Reactor">Air Core Reactor</option>
+            <option value="Thyristor Switches">Thyristor Switches</option>
+            <option value="APFC Panel">APFC Panel</option>
+            <option value="Structure Panel">Structure Panel</option>
+            <option value="HT Capacitor">HT Capacitor</option>
+            <option value="LT Capacitor">LT Capacitor</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Sheet Type *</label>
+          <select id="jclh-sheet-type" onchange="updateJCLHDownloadButtonState()" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <option value="">— Select Job Card Number First —</option>
+            <option value="Job Card">Job Card</option>
+            <option value="In Process">In Process</option>
           </select>
         </div>
       </div>

@@ -157,12 +157,20 @@ async function initializeFGAddWorkspace() {
   const projDrop = document.getElementById("fg-add-project-ta-input");
   projDrop.placeholder = "Loading...";
   try {
-    const data = await apFetch({ action:"pullLiveActiveProjectCodes" });
-    // The typeahead input filters/renders from these two globals itself
-    // (handleSharedProjectTypeaheadInput) — no <select> to populate here.
-    window.sharedActiveProjectCodes = data.projects || [];
-    window.sharedProjectMeta = data.projectMeta || {};
-    window.fgAddProjectMeta = data.projectMeta || {};
+    // fetchFGEligibleProjects, not the shared pullLiveActiveProjectCodes —
+    // this screen's Project ID search should only ever surface a project
+    // that still has at least one job card without an FG entry (see
+    // handleFGAddProjectChange's own job-card filtering below for the
+    // matching BOQ/Job-Card-level cut). The shared typeahead globals still
+    // get (re)populated here since handleSharedProjectTypeaheadInput reads
+    // them directly — every other screen re-populates them fresh on its
+    // own entry, so this doesn't leak a filtered list elsewhere.
+    const data = await apFetch({ action:"fetchFGEligibleProjects" });
+    const projectMeta = {};
+    (data.projects || []).forEach(p => { projectMeta[p.projectId] = { companyName: p.companyName }; });
+    window.sharedActiveProjectCodes = (data.projects || []).map(p => p.projectId);
+    window.sharedProjectMeta = projectMeta;
+    window.fgAddProjectMeta = projectMeta;
     projDrop.placeholder = "Type Project ID or Customer Name...";
   } catch(e) {
     projDrop.placeholder = "Error loading projects";
@@ -215,7 +223,13 @@ async function handleFGAddProjectChange(projectId) {
     fgBOQDisplayReset("Loading...");
     try {
       const data = await apFetch({ action:"fetchJobCardsForProject", projectId });
-      window.fgJobCardsCache = data.jobCards || [];
+      // Job cards that already have a live FG entry (hasFgEntry) are
+      // dropped from the cache entirely here — both the BOQ dropdown below
+      // and handleFGBOQChange's Job Card Number list read from this same
+      // cache, so filtering once at this single point keeps a completed
+      // Job Card out of both, and a BOQ whose every Job Card is done out
+      // of the BOQ list (it simply never gets a boqMap entry).
+      window.fgJobCardsCache = (data.jobCards || []).filter(jc => !jc.hasFgEntry);
       const boqMap = {};
       window.fgJobCardsCache.forEach(jc => {
         if (jc.boqId && !boqMap[jc.boqId]) boqMap[jc.boqId] = jc.boqId;

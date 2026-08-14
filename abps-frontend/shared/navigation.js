@@ -370,7 +370,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-fg-approval")) document.getElementById("mod-fg-approval").style.display = canFgApproval ? "block" : "none";
   const canProjectInvoiceGeneration = userPermissionsObject.projectInvoiceGeneration === true;
   if (document.getElementById("mod-project-invoice")) document.getElementById("mod-project-invoice").style.display = canProjectInvoiceGeneration ? "block" : "none";
-  if (document.getElementById("mod-jc-letterhead")) document.getElementById("mod-jc-letterhead").style.display = userPermissionsObject.jobCardLetterhead === true ? "block" : "none";
+  if (document.getElementById("mod-jc-letterhead")) document.getElementById("mod-jc-letterhead").style.display = userPermissionsObject.jobCardInProcessSheet === true ? "block" : "none";
 
   const canApproveBOQIncrease = userPermissionsObject.approveJCIncrease === true;
   if (document.getElementById("mod-boq-increase-approvals")) {

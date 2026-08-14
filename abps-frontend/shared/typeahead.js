@@ -280,19 +280,16 @@ async function initializeJCLHWorkspace() {
   resetJCLHWorkspace();                // guarantee first-time-like state on every entry
   jclhWorkspaceInitInProgress = true;
   try {
-    const projDrop = document.getElementById("jclh-project");
-    projDrop.innerHTML = '<option value="">Loading...</option>';
     const data = await apFetch({ action: "pullLiveActiveProjectCodes" });
     window.jclhProjectMeta = data.projectMeta || {};
-    projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
-    (data.projects || []).forEach(code => {
-      const opt = document.createElement("option");
-      opt.value = code; opt.textContent = code;
-      projDrop.appendChild(opt);
-    });
+    // Same shared typeahead component Create BOQ uses (handleSharedProjectTypeaheadInput /
+    // selectSharedProjectTypeahead) — it filters window.sharedActiveProjectCodes /
+    // window.sharedProjectMeta, so this screen must keep those populated too.
+    window.sharedActiveProjectCodes = data.projects || [];
+    window.sharedProjectMeta = data.projectMeta || {};
     handleJCLHProjectChange("");
   } catch(e) {
-    document.getElementById("jclh-project").innerHTML = '<option value="">Error loading projects</option>';
+    // Typeahead input just stays empty/unresponsive on failure — no dropdown to fall back to.
   } finally {
     jclhWorkspaceInitInProgress = false;
   }

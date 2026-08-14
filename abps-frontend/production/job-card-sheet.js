@@ -6,12 +6,16 @@ function resetJCLHWorkspace() {
   const feedback = document.getElementById("jclh-feedback");
   if (feedback) feedback.style.display = "none";
 
-  const projDrop = document.getElementById("jclh-project");
+  const projInput = document.getElementById("jclh-project-ta-input");
   const boqDrop  = document.getElementById("jclh-boq");
   const jcDrop   = document.getElementById("jclh-jobcard");
-  if (projDrop) projDrop.innerHTML = '<option value="">— Select Project ID —</option>';
+  const typeDrop = document.getElementById("jclh-product-type");
+  const sheetDrop = document.getElementById("jclh-sheet-type");
+  if (projInput) projInput.value = "";
   if (boqDrop)  { boqDrop.innerHTML = '<option value="">— Select Project First —</option>'; boqDrop.disabled = true; }
   if (jcDrop)   { jcDrop.innerHTML  = '<option value="">— Select BOQ ID First —</option>'; jcDrop.disabled = true; }
+  if (typeDrop) { typeDrop.value = ""; typeDrop.disabled = true; }
+  if (sheetDrop) { sheetDrop.value = ""; sheetDrop.disabled = true; }
 
   const customer = document.getElementById("jclh-customer");
   const dept     = document.getElementById("jclh-department");
@@ -111,8 +115,20 @@ function resetJCLHDownstreamFields() {
 function updateJCLHDownloadButtonState() {
   const btn = document.getElementById("jclh-download-btn");
   const jc  = document.getElementById("jclh-jobcard").value.trim();
+  const typeDrop = document.getElementById("jclh-product-type");
+  const sheetDrop = document.getElementById("jclh-sheet-type");
   if (!btn) return;
-  if (jc) {
+
+  // Product Type / Sheet Type only unlock once a Job Card Number is picked.
+  [typeDrop, sheetDrop].forEach(el => {
+    if (!el) return;
+    el.disabled = !jc;
+    if (!jc) el.value = "";
+  });
+
+  const productType = typeDrop ? typeDrop.value.trim() : "";
+  const sheetType   = sheetDrop ? sheetDrop.value.trim() : "";
+  if (jc && productType && sheetType) {
     btn.disabled = false; btn.style.opacity = "1"; btn.style.cursor = "pointer";
   } else {
     btn.disabled = true; btn.style.opacity = "0.5"; btn.style.cursor = "not-allowed";
@@ -125,29 +141,30 @@ async function submitJCLHDownload() {
   const btn = document.getElementById("jclh-download-btn");
   const originalText = btn.textContent;
   btn.disabled = true; btn.textContent = "Generating...";
-  showBlockingOverlay("Downloading Job Card Letterhead...");
 
-  const projectId     = document.getElementById("jclh-project").value.trim();
+  const projectId     = document.getElementById("jclh-project-ta-input").value.trim();
   const customerName  = document.getElementById("jclh-customer").value.trim();
-  const boqId          = document.getElementById("jclh-boq").value.trim();
   const productName   = document.getElementById("jclh-product-name").value.trim();
   const productRating = document.getElementById("jclh-product-rating").value.trim();
-  const department     = document.getElementById("jclh-department").value.trim();
   const jobCardNumber = document.getElementById("jclh-jobcard").value.trim();
+  const productType   = document.getElementById("jclh-product-type").value.trim();
+  const sheetType      = document.getElementById("jclh-sheet-type").value.trim();
+
+  showBlockingOverlay(`Downloading ${sheetType} Sheet...`);
 
   try {
     const data = await apFetch({
-      action: "generateJobCardLetterheadPdf",
-      projectId, customerName, boqId, productName, productRating, department, jobCardNumber
+      action: "generateJobCardOrInProcessSheetPdf",
+      projectId, customerName, productName, productRating, jobCardNumber, productType, sheetType
     });
     if (data.success) {
       const link = document.createElement("a");
       link.href = "data:application/pdf;base64," + data.base64;
-      link.download = data.fileName || "JobCard_Letterhead.pdf";
+      link.download = data.fileName || `${sheetType}_Sheet.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      showBOQBanner("jclh-feedback", "Letterhead PDF downloaded.", "success");
+      showBOQBanner("jclh-feedback", `${sheetType} Sheet PDF downloaded.`, "success");
     } else {
       showBOQBanner("jclh-feedback", data.error || "Failed to generate PDF.", "error");
     }

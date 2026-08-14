@@ -278,25 +278,26 @@ async function executeStoreManagerTicketActionDecision(ticketId, decisionString)
       spareAllocations: decisionString === "APPROVE" ? collectSpareAllocations(ticketId) : undefined
     });
     if (result.success) {
-      if (feedbackBanner) {
-        // SILENT METRICS RE-INDEX: Instantly refresh home dashboard widgets states counters fields
-        if (userPermissions.liveStoreStock === true) triggerLiveWarehouseStockMetricsSync();
-        feedbackBanner.style.cssText = "display: block; background: #dcfce7; border-color: #15803d; color: #15803d; padding: 12px; margin-bottom: 14px; border-left: 4px solid #15803d; font-weight:700;";
-        feedbackBanner.innerHTML = `Ticket Reference ${ticketId} successfully ${decisionString.slice(0, 6).toLowerCase()}ed`
-          + (result.pdfUrl ? ` &nbsp; <a href="${driveLink(result.pdfUrl)}" target="_blank" style="color:#15803d; text-decoration:underline;">Download Material Issue Ticket PDF</a>` : "");
-      }
-      
+      // SILENT METRICS RE-INDEX: Instantly refresh home dashboard widgets states counters fields
+      if (userPermissions.liveStoreStock === true) triggerLiveWarehouseStockMetricsSync();
+
       // Remove visual panel node block smoothly out of sight matching flow constraints
       if (cardNode) cardNode.remove();
 
       hideBlockingOverlay();
-      setTimeout(() => {
-        if (feedbackBanner) feedbackBanner.style.display = "none";
-        const remainingQueueItems = document.getElementById("store-manager-approvals-queue-cards-feed").children.length;
-        if (remainingQueueItems === 0) {
-          initializeStoreManagerApprovalsWorkspace();
-        }
-      }, 3000);
+
+      // Persistent banner + explicit "+ Approve Another Ticket" reset button,
+      // matching Authorize BOQ's convention — was previously a setTimeout
+      // auto-hide with no way to reload the queue on demand.
+      if (feedbackBanner) {
+        showSuccessWithReset(
+          "store-approvals-runtime-inline-feedback-banner",
+          `Ticket Reference ${ticketId} successfully ${decisionString.slice(0, 6).toLowerCase()}ed`,
+          "Approve Another Ticket",
+          "initializeStoreManagerApprovalsWorkspace()",
+          result.pdfUrl ? [{ url: driveLink(result.pdfUrl), label: "Download Material Issue Ticket PDF" }] : []
+        );
+      }
 
     } else {
       hideBlockingOverlay();
