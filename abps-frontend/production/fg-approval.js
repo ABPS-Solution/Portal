@@ -423,6 +423,8 @@ async function submitFGApprovalDecision(fgId, action) {
   }
   if (action === "reject" && !confirm(`Reject this Finished Goods submission? The Job Card will need Add to Finished Goods Store redone from scratch.`)) return;
 
+  const fg = window._fgApprovalState[fgId]?.fg || {};
+
   showBlockingOverlay(action === "approve" ? "Approving..." : "Rejecting...");
   try {
     const actionName = action === "approve" ? "approveFinishedGoodsItem" : "rejectFinishedGoodsItem";
@@ -436,6 +438,27 @@ async function submitFGApprovalDecision(fgId, action) {
         feed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;">
           <h3 style="color:var(--accent);">No Pending FG Approvals</h3>
         </div>`;
+      }
+
+      // Same success-banner-with-details-grid-and-"+ Another" convention
+      // as Authorize BOQ — the feed itself just quietly loses the card,
+      // this is the persistent confirmation of what actually happened.
+      if (action === "approve") {
+        feedback.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#f0fff4; color:#276749; border-radius:var(--radius);";
+        feedback.innerHTML = `
+          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ Finished Good Approved & Added to FG Store!</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Job Card Number</span><span style="font-weight:700;">${fg.jobCardNumber || "—"}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Name</span><span style="font-weight:700;">${fg.productName || "—"}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Rating</span><span style="font-weight:700;">${fg.productRating || "—"}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Department</span><span style="font-weight:700;">${fg.department || "—"}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Serial Number</span><span style="font-weight:700;">${fg.productSerialNumber || "—"}</span></div>
+          </div>
+          <button onclick="document.getElementById('fg-approval-feedback').style.display='none'; initializeFGApprovalWorkspace();"
+            style="margin-top:4px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
+            + Approve Another FG Store Product
+          </button>`;
+        feedback.scrollIntoView({ behavior:"smooth", block:"center" });
       }
     } else {
       feedback.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
