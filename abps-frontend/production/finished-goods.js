@@ -286,6 +286,8 @@ function handleFGBOQChange(boqId) {
     document.getElementById("fg-add-product-name").value = "";
     document.getElementById("fg-add-rating").value = "";
     document.getElementById("fg-add-unit").value = "";
+    document.getElementById("fg-add-item-code-display").value = "";
+    document.getElementById("fg-add-item-code").value = "";
     return;
   }
   const filtered = (window.fgJobCardsCache || []).filter(jc => jc.boqId === boqId);
@@ -294,6 +296,23 @@ function handleFGBOQChange(boqId) {
   document.getElementById("fg-add-product-name").value = sample.productName || "";
   document.getElementById("fg-add-rating").value = sample.productRating || "";
   document.getElementById("fg-add-unit").value = "NOS";
+
+  // Item Code isn't a job_cards/BOQ column — it only exists in the
+  // design.item_codes catalog, keyed by Material Name + Rating (the same
+  // catalog Create PO/Create Ticket search against). Matched here so the
+  // finished_goods_inventory row (and its Sheet mirror) isn't left with
+  // item_code permanently blank, same as every other screen that resolves
+  // an item code from a product name instead of collecting it directly.
+  const catalog = window.itemCodeCatalogCache || [];
+  const normName = (sample.productName || "").trim().toLowerCase();
+  const normRating = (sample.productRating || "").trim().toLowerCase();
+  const matchedItem = catalog.find(it =>
+    (it.productName || "").trim().toLowerCase() === normName &&
+    (it.rating || "").trim().toLowerCase() === normRating
+  ) || catalog.find(it => (it.productName || "").trim().toLowerCase() === normName);
+  document.getElementById("fg-add-item-code-display").value = matchedItem ? matchedItem.itemCode : "";
+  document.getElementById("fg-add-item-code").value = matchedItem ? matchedItem.itemCode : "";
+
   fgJobCardDisplayReset("— Select Job Card Number —");
   fgJobCardPopulate(filtered.map(jc => ({ value: jc.jobCardNumber, label: `${jc.jobCardNumber} (Set ${jc.setNumber})` })));
   fgJobCardDisplayEnable();
@@ -461,7 +480,8 @@ function resetFGAddForm() {
     const el = document.getElementById(id); if (el) el.value = "";
   });
   ["fg-add-customer","fg-add-product-name-display","fg-add-product-name",
-   "fg-add-rating","fg-add-jobcard","fg-add-boq","fg-add-serial","fg-add-remarks"].forEach(id => {
+   "fg-add-rating","fg-add-item-code-display","fg-add-item-code",
+   "fg-add-jobcard","fg-add-boq","fg-add-serial","fg-add-remarks"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
   fgBOQDisplayReset("— Select Project First —");
@@ -496,6 +516,7 @@ async function submitFGAddItem() {
   const productName= document.getElementById("fg-add-product-name").value.trim();
   const boqId      = document.getElementById("fg-add-boq").value.trim();
   const rating     = document.getElementById("fg-add-rating").value.trim();
+  const itemCode   = document.getElementById("fg-add-item-code").value.trim();
   const jobCard    = document.getElementById("fg-add-jobcard").value.trim();
   const serialNumber = document.getElementById("fg-add-serial").value.trim();
   const unit = document.getElementById("fg-add-unit").value.trim();
@@ -559,7 +580,7 @@ async function submitFGAddItem() {
     const data = await apFetch({
       action: "addFinishedGoodsItem",
       department, projectId, customerName, productName,
-      itemCode: "", productRating: rating, jobCardNumber: jobCard,
+      itemCode, productRating: rating, jobCardNumber: jobCard,
       productSerialNumber: serialNumber,
       unit, additionalRemarks: remarks,
       qaPersonName, finishedGoodUse, documents,
