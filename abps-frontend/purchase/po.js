@@ -645,6 +645,10 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
         <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Payment Terms</label><input type="text" id="cpo-payment" placeholder="e.g. 60 Days Credit PDC" oninput="persistCPODraft()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         <div><label class="field-label" style="margin-top:0;">Freight Terms</label><input type="text" id="cpo-freight-terms" placeholder="e.g. To Pay" oninput="persistCPODraft()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
       </div>
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; grid-column:1 / -1;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Notes (optional)</div>
+        <textarea id="cpo-notes" rows="2" placeholder="Anything worth printing on the PO document below the material rows — left blank, nothing extra appears on the document." oninput="persistCPODraft()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%; font-family:inherit; font-size:0.85rem;"></textarea>
+      </div>
     </div>
 
     <div style="display:flex; justify-content:space-between; align-items:center; background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius); padding:14px; margin-bottom:16px;">
@@ -685,6 +689,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
         if (po.warranty) document.getElementById("cpo-warranty").value = po.warranty;
         if (po.paymentTerms) document.getElementById("cpo-payment").value = po.paymentTerms;
         if (po.freightTerms) document.getElementById("cpo-freight-terms").value = po.freightTerms;
+        if (po.notes) document.getElementById("cpo-notes").value = po.notes;
 
         // These rows already went through allocation once at creation —
         // marking them touched avoids re-triggering the "must allocate"
@@ -726,6 +731,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
     if (draft.warranty) document.getElementById("cpo-warranty").value = draft.warranty;
     if (draft.payment) document.getElementById("cpo-payment").value = draft.payment;
     if (draft.freightTerms) document.getElementById("cpo-freight-terms").value = draft.freightTerms;
+    if (draft.notes) document.getElementById("cpo-notes").value = draft.notes;
   }
   renderCPOMaterialRows();
   recalcCPOTotals();
@@ -757,6 +763,7 @@ function persistCPODraft() {
       warranty: document.getElementById("cpo-warranty").value,
       payment: document.getElementById("cpo-payment").value,
       freightTerms: document.getElementById("cpo-freight-terms").value,
+      notes: document.getElementById("cpo-notes").value,
       materialRows: window.cpoMaterialRows || [],
       rowSeq: window.cpoRowSeq || 0,
     };
@@ -1200,6 +1207,7 @@ async function submitCreatePO() {
     warranty: document.getElementById("cpo-warranty").value.trim(),
     paymentTerms: document.getElementById("cpo-payment").value.trim(),
     freightTerms: document.getElementById("cpo-freight-terms").value.trim(),
+    notes: document.getElementById("cpo-notes").value.trim(),
     preparedBy: appActiveOperatorIdentityString || ""
   };
 
@@ -1303,6 +1311,7 @@ async function authorizePOFromForm() {
     warranty: document.getElementById("cpo-warranty").value.trim(),
     paymentTerms: document.getElementById("cpo-payment").value.trim(),
     freightTerms: document.getElementById("cpo-freight-terms").value.trim(),
+    notes: document.getElementById("cpo-notes").value.trim(),
   };
 
   const btn = document.getElementById("cpo-submit-btn");

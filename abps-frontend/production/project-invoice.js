@@ -88,18 +88,23 @@ async function initializePinvWorkspace() {
   const select = document.getElementById("pinv-project-select");
   select.innerHTML = '<option value="">Loading...</option>';
   try {
-    const data = await apFetch({ action: "fetchInvoiceEligibleProjects" });
+    const data = await apFetch({ action: "fetchPartialInvoiceEligibleProjects" });
     if (!data.success) { select.innerHTML = '<option value="">Failed to load</option>'; return; }
     select.innerHTML = '<option value="">— Select Project ID —</option>' +
       data.projects.map(p => `<option value="${p.projectId}">${p.projectId} — ${p.companyName || ''}</option>`).join("");
     if (data.projects.length === 0) {
-      select.innerHTML = '<option value="">No eligible Project IDs. All Job Cards for a project must be Added to FG first</option>';
+      select.innerHTML = '<option value="">No eligible Project IDs — at least one product\'s Job Cards must be QA-passed and not yet invoiced</option>';
     }
   } catch(e) {
     select.innerHTML = '<option value="">Network error</option>';
   }
 }
 
+// pinvCache.lines — one row per PO line item, joined to its BOQ's Job Card
+// readiness stats (jcTotal / jcQaPassed / alreadyInvoicedQty /
+// readyToInvoiceQty). Lines with no linked BOQ (freight/service items)
+// aren't gated by Job Card completion at all — they're only billable on
+// the Final Invoice, same as the old single-shot flow allowed.
 async function handlePinvProjectChange(projectId) {
   const detailZone = document.getElementById("pinv-detail-zone");
   const invoiceFormZone = document.getElementById("pinv-invoice-form-zone");
@@ -110,53 +115,107 @@ async function handlePinvProjectChange(projectId) {
   document.getElementById("pinv-documents-zone").style.display = "none";
   document.getElementById("pinv-payment-received").value = "No";
   resetPinvDocFiles();
-  document.getElementById("pinv-jc-body").innerHTML = '<tr><td colspan="3" style="padding:14px; text-align:center;">Loading...</td></tr>';
+  document.getElementById("pinv-jc-body").innerHTML = '<tr><td colspan="9" style="padding:14px; text-align:center;">Loading...</td></tr>';
   document.getElementById("pinv-blockers").style.display = "none";
   document.getElementById("pinv-generate-zone").style.display = "none";
   try {
-    const data = await apFetch({ action: "fetchProjectInvoiceDetail", projectId });
-    if (!data.success) { showBOQBanner("pinv-feedback", data.error || "Failed to load.", "error"); return; }
-    pinvCache = data;
+    const [lineData, prefillData] = await Promise.all([
+      apFetch({ action: "fetchProjectInvoiceLineDetail", projectId }),
+      apFetch({ action: "fetchProjectInvoicePrefill", projectId }),
+    ]);
+    if (!lineData.success) { showBOQBanner("pinv-feedback", lineData.error || "Failed to load.", "error"); return; }
+    pinvCache = { projectId, lines: lineData.lines, poNumber: prefillData.poNumber || "", poDate: prefillData.poDate || "" };
+    initPinvInvoiceStateFromLines();
     renderPinvDetail();
   } catch(e) {
     showBOQBanner("pinv-feedback", "Network error: " + e.message, "error");
   }
 }
 
+function initPinvInvoiceStateFromLines() {
+  pinvInvoiceState = {
+    invoiceNo: "", insuranceNo: "", mdccNo: "", transportName: "", lrNoDate: "", vehicleNo: "", mobileNo: "", freight: "",
+    poNumber: pinvCache.poNumber, poDate: pinvCache.poDate,
+    billTo: { name: "", address: "", state: "", gstNo: "", contactNo: "" },
+    shipTo: { name: "", address: "", state: "", gstNo: "", contactNo: "" },
+    lineItems: pinvCache.lines.map(l => {
+      const qty = l.boqId ? l.readyToInvoiceQty : 0;
+      return {
+        lineId: l.lineId, description: l.description, hsnNumber: l.hsnNumber, unit: l.unit,
+        quantity: qty, ratePerQuantity: l.ratePerQuantity, totalBasicPrice: qty * (parseFloat(l.ratePerQuantity) || 0),
+      };
+    }),
+    igstPercent: "18",
+    bankDetails: { ...PINV_STANDARD_BANK_DETAILS },
+    declaration: PINV_STANDARD_DECLARATION,
+  };
+}
+
 function renderPinvDetail() {
   const body = document.getElementById("pinv-jc-body");
-  const jcByBoq = {};
-  pinvCache.jobCards.forEach(jc => { (jcByBoq[jc.boqId] = jcByBoq[jc.boqId] || []).push(jc); });
-  body.innerHTML = pinvCache.boqs.map(b => {
-    const jcs = jcByBoq[b.boqId] || [];
-    if (jcs.length === 0) {
-      return `<tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;">${b.boqId}</td><td style="padding:8px; color:var(--warn); font-weight:700;" colspan="2">⚠ No Job Cards found for this BOQ</td></tr>`;
-    }
-    return jcs.map((jc, i) => {
-      const useLabel = jc.finishedGoodUse === 'Use in other Product' ? 'Used in other Product'
-                      : jc.finishedGoodUse === 'Keep in FG Store' ? 'Ready for Dispatch' : '—';
-      return `<tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px;">${i === 0 ? b.boqId : ''}</td>
-        <td style="padding:8px;">✅ JC_Set${jc.setNumber}</td>
-        <td style="padding:8px;">${useLabel}</td>
-      </tr>`;
-    }).join("");
+  body.innerHTML = pinvCache.lines.map((l, idx) => {
+    const hasBoq = !!l.boqId;
+    const blockerMsgs = [];
+    if (l.pendingTicketsCount > 0) blockerMsgs.push(`${l.pendingTicketsCount} pending store ticket(s)`);
+    if (l.pendingBoqIncreaseCount > 0) blockerMsgs.push(`${l.pendingBoqIncreaseCount} open BOQ Increase Request(s)`);
+    const maxQty = hasBoq ? l.readyToInvoiceQty : l.orderedQuantity;
+    return `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:8px;">${l.productName || l.description}${blockerMsgs.length ? `<div style="color:#b91c1c; font-size:0.72rem; font-weight:700; margin-top:2px;">⚠ ${blockerMsgs.join(', ')} — this product is blocked</div>` : ''}</td>
+      <td style="padding:8px; text-align:center;">${hasBoq ? l.orderedQuantity : '—'}</td>
+      <td style="padding:8px; text-align:center;">${hasBoq ? l.jcTotal : '—'}</td>
+      <td style="padding:8px; text-align:center;">${hasBoq ? l.jcQaPassed : '—'}</td>
+      <td style="padding:8px; text-align:center;">${hasBoq ? l.alreadyInvoicedQty : '—'}</td>
+      <td style="padding:8px; text-align:center; font-weight:700; color:${maxQty > 0 ? '#15803d' : 'var(--muted)'};">${hasBoq ? l.readyToInvoiceQty : 'Final only'}</td>
+      <td style="padding:8px; text-align:center;">
+        <input type="number" min="0" max="${maxQty}" value="${pinvInvoiceState.lineItems[idx].quantity}"
+          ${blockerMsgs.length ? 'disabled' : ''}
+          oninput="updatePinvClaimQty(${idx}, this.value, ${maxQty})"
+          style="width:70px; text-align:center; padding:4px; font-size:0.8rem;" />
+      </td>
+    </tr>`;
   }).join("");
 
   const blockersDiv = document.getElementById("pinv-blockers");
-  const msgs = [];
-  if (pinvCache.pendingTicketsCount > 0) msgs.push(`${pinvCache.pendingTicketsCount} pending store ticket(s) exist for this project's job cards — resolve them first.`);
-  if (pinvCache.pendingBoqIncreaseCount > 0) msgs.push(`${pinvCache.pendingBoqIncreaseCount} open BOQ Increase Request(s) exist for this project — resolve them first.`);
-  if (msgs.length > 0) {
-    blockersDiv.style.display = "block";
-    blockersDiv.innerHTML = msgs.map(m => `<div style="padding:12px; margin-bottom:8px; background:#fff5f5; border-left:4px solid #e53e3e; border-radius:var(--radius); color:#b91c1c; font-weight:600;">${m}</div>`).join("");
-    document.getElementById("pinv-generate-zone").style.display = "none";
-    document.getElementById("pinv-invoice-form-zone").style.display = "none";
-  } else {
-    blockersDiv.style.display = "none";
-    document.getElementById("pinv-generate-zone").style.display = "block";
-    loadPinvInvoiceForm();
-  }
+  blockersDiv.style.display = "none";
+  document.getElementById("pinv-generate-zone").style.display = "flex";
+  document.getElementById("pinv-documents-zone").style.display = "block";
+  renderPinvInvoiceForm();
+  updatePinvGenerateButtonsState();
+}
+
+// Qty typed against a per-line readiness cap (readyToInvoiceQty for a
+// BOQ-linked line, orderedQuantity for a freight/service line) — the
+// server re-validates and re-claims independently, this is only what's
+// shown/sent.
+function updatePinvClaimQty(idx, value, maxQty) {
+  const qty = Math.max(0, Math.min(Number(value) || 0, maxQty));
+  const li = pinvInvoiceState.lineItems[idx];
+  li.quantity = qty;
+  li.totalBasicPrice = qty * (parseFloat(li.ratePerQuantity) || 0);
+  renderPinvLineItemsTable();
+  recalcPinvTotals();
+  updatePinvGenerateButtonsState();
+}
+
+// Final Invoice only unlocks once every BOQ-linked line has nothing left
+// to produce — already invoiced + currently ready together cover the full
+// ordered quantity, and every Job Card that exists is QA-passed.
+function updatePinvGenerateButtonsState() {
+  const partialBtn = document.getElementById("pinv-generate-partial-btn");
+  const finalBtn = document.getElementById("pinv-generate-final-btn");
+  if (!partialBtn || !finalBtn) return;
+  const anyQty = (pinvInvoiceState.lineItems || []).some(li => Number(li.quantity) > 0);
+  const anyBlocked = pinvCache.lines.some(l => l.pendingTicketsCount > 0 || l.pendingBoqIncreaseCount > 0);
+  partialBtn.disabled = !anyQty || anyBlocked;
+  partialBtn.style.opacity = partialBtn.disabled ? "0.5" : "1";
+  partialBtn.style.cursor = partialBtn.disabled ? "not-allowed" : "pointer";
+
+  const allSettled = pinvCache.lines.filter(l => l.boqId).every(l =>
+    l.jcTotal > 0 && l.jcQaPassed === l.jcTotal && (l.alreadyInvoicedQty + l.readyToInvoiceQty) >= l.orderedQuantity
+  );
+  finalBtn.disabled = !allSettled || anyBlocked;
+  finalBtn.style.opacity = finalBtn.disabled ? "0.5" : "1";
+  finalBtn.style.cursor = finalBtn.disabled ? "not-allowed" : "pointer";
 }
 
 // ═══════════════════════════════════════════════════════
@@ -197,33 +256,9 @@ function numberToWordsINRClient(amount) {
   return words.trim() + ' Rupees Only';
 }
 
-async function loadPinvInvoiceForm() {
-  const zone = document.getElementById("pinv-invoice-form-zone");
-  zone.style.display = "block";
-  zone.innerHTML = `<div style="text-align:center; padding:14px; color:var(--muted); font-size:0.85rem;">Loading invoice details...</div>`;
-  try {
-    const data = await apFetch({ action: "fetchProjectInvoicePrefill", projectId: pinvCache.projectId });
-    if (!data.success) { zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.85rem;">${data.error || "Failed to load invoice prefill."}</div>`; return; }
-
-    pinvInvoiceState = {
-      invoiceNo: "", insuranceNo: "", mdccNo: "", transportName: "", lrNoDate: "", vehicleNo: "", mobileNo: "", freight: "",
-      poNumber: data.poNumber || "", poDate: data.poDate || "",
-      billTo: { name: "", address: "", state: "", gstNo: "", contactNo: "" },
-      shipTo: { name: "", address: "", state: "", gstNo: "", contactNo: "" },
-      lineItems: (data.lineItems || []).map(li => ({ ...li })),
-      igstPercent: "18",
-      bankDetails: { ...PINV_STANDARD_BANK_DETAILS },
-      declaration: PINV_STANDARD_DECLARATION,
-    };
-    renderPinvInvoiceForm();
-    document.getElementById("pinv-documents-zone").style.display = "block";
-  } catch(e) {
-    zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.85rem;">Network error: ${e.message}</div>`;
-  }
-}
-
 function renderPinvInvoiceForm() {
   const zone = document.getElementById("pinv-invoice-form-zone");
+  zone.style.display = "block";
   const s = pinvInvoiceState;
   const today = new Date();
   const todayDMY = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
@@ -357,7 +392,9 @@ function recalcPinvTotals() {
   if (w) w.textContent = numberToWordsINRClient(grandTotal);
 }
 
-function openPinvConfirmModal() {
+let pinvSubmitMode = 'partial'; // set by openPinvConfirmModal, read by submitPinvGeneration
+
+function openPinvConfirmModal(mode) {
   if (!pinvInvoiceState?.invoiceNo?.trim()) {
     showBOQBanner("pinv-feedback", "Invoice No. is required before generating.", "error");
     return;
@@ -372,6 +409,12 @@ function openPinvConfirmModal() {
     showBOQBanner("pinv-feedback", "Payment Received Confirmation must be set to Yes before this invoice can be generated.", "error");
     return;
   }
+  pinvSubmitMode = mode; // 'partial' | 'final'
+  const warningEl = document.getElementById("pinv-confirm-warning");
+  warningEl.textContent = mode === 'final'
+    ? "This will force-close remaining PRNs, release unused reserved stock, and mark the project Complete. This cannot be undone from here."
+    : "This bills only the quantities entered above. Project status, PRNs, and stock reservations are left untouched — other products can still be invoiced separately later.";
+  document.getElementById("pinv-confirm-title").textContent = mode === 'final' ? "Confirm Final Invoice Generation" : "Confirm Partial Invoice Generation";
   document.getElementById("pinv-confirm-target").textContent = pinvCache.projectId;
   document.getElementById("pinv-confirm-input").value = "";
   document.getElementById("pinv-confirm-submit-btn").disabled = true;
@@ -419,9 +462,11 @@ async function submitPinvGeneration() {
       }
     }
 
-    showBlockingOverlay("Generating invoice and completing project...");
+    const isFinal = pinvSubmitMode === 'final';
+    showBlockingOverlay(isFinal ? "Generating Final Invoice and completing project..." : "Generating Partial Invoice...");
     const data = await apFetch({
-      action: "generateProjectInvoiceAndComplete", projectId: pinvCache.projectId, confirmProjectId,
+      action: isFinal ? "generateFinalProjectInvoice" : "generatePartialProjectInvoice",
+      projectId: pinvCache.projectId, confirmProjectId,
       operatorName: appActiveOperatorIdentityString || "Unknown", invoice: pinvInvoiceState,
       paymentReceivedConfirmation, documents,
     });
@@ -432,11 +477,10 @@ async function submitPinvGeneration() {
       successZone.style.display = "block";
       successZone.innerHTML = `
         <div style="padding:14px; background:#f0fdf4; border-left:4px solid #22c55e; border-radius:var(--radius); color:#15803d; font-weight:600; margin-bottom:14px;">
-          Invoice Generated for Project ID: ${pinvCache.projectId}
+          ${isFinal ? 'Final' : 'Partial'} Invoice Generated for Project ID: ${pinvCache.projectId}
         </div>
         <a href="${driveLink(data.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Invoice Document ↗</a>
-        <br>
-        <a href="${driveLink(data.reviewUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; display:inline-block; margin-top:8px;">Open Project Review Document ↗</a>
+        ${data.reviewUrl ? `<br><a href="${driveLink(data.reviewUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; display:inline-block; margin-top:8px;">Open Project Review Document ↗</a>` : ''}
         <div style="margin-top:16px;">
           <button class="nav-btn-styled" style="background:var(--accent); padding:8px 20px; font-weight:700;" onclick="initializePinvWorkspace()">+ Create New Project Invoice</button>
         </div>`;
@@ -462,12 +506,12 @@ let pinvReviseProjectCodes = [];
 let pinvReviseProjectMeta = {};
 let pinvReviseLoaded = false;
 let pinvReviseState = null;
-let pinvReviseCache = { projectId: "", invoiceRevision: 0 };
+let pinvReviseCache = { invoiceId: null, projectId: "", invoiceType: "", invoiceRevision: 0 };
 
 async function ensurePinvReviseProjectData(forceRefresh = false) {
   if (pinvReviseLoaded && !forceRefresh) return;
   try {
-    const data = await apFetch({ action: "fetchRevisableInvoiceProjects" });
+    const data = await apFetch({ action: "fetchInvoicedProjectsForRevise" });
     pinvReviseProjectCodes = (data.projects || []).map(p => p.projectId);
     pinvReviseProjectMeta = {};
     (data.projects || []).forEach(p => { pinvReviseProjectMeta[p.projectId] = { companyName: p.companyName }; });
@@ -482,9 +526,11 @@ async function initializePinvReviseWorkspace() {
   document.getElementById("pinv-revise-ta-input").value = "";
   document.getElementById("pinv-revise-ta-dropdown").style.display = "none";
   document.getElementById("pinv-revise-detail-zone").style.display = "none";
+  document.getElementById("pinv-revise-history-zone").innerHTML = "";
   document.getElementById("pinv-revise-invoice-form-zone").innerHTML = "";
   document.getElementById("pinv-revise-success-zone").style.display = "none";
   pinvReviseState = null;
+  pinvReviseCache = { invoiceId: null, projectId: "", invoiceType: "", invoiceRevision: 0 };
   await ensurePinvReviseProjectData(true);
 }
 
@@ -516,21 +562,56 @@ async function handlePinvReviseTypeaheadInput(query) {
 function selectPinvReviseProject(projectId) {
   document.getElementById("pinv-revise-ta-input").value = projectId;
   document.getElementById("pinv-revise-ta-dropdown").style.display = "none";
-  loadPinvReviseForm(projectId);
+  loadPinvReviseHistory(projectId);
 }
 
-async function loadPinvReviseForm(projectId) {
+// A project can now carry several invoices (multiple Partials + a Final)
+// — show the list first, then load whichever one the user picks into the
+// same editable form Revise always used.
+async function loadPinvReviseHistory(projectId) {
   const detailZone = document.getElementById("pinv-revise-detail-zone");
+  const historyZone = document.getElementById("pinv-revise-history-zone");
   const zone = document.getElementById("pinv-revise-invoice-form-zone");
   detailZone.style.display = "block";
+  zone.innerHTML = "";
+  historyZone.innerHTML = `<div style="text-align:center; padding:14px; color:var(--muted); font-size:0.85rem;">Loading invoice history...</div>`;
+  try {
+    const data = await apFetch({ action: "fetchProjectInvoiceHistory", projectId });
+    if (!data.success || !(data.invoices || []).length) {
+      historyZone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.85rem;">${data.error || "No invoices found for this project."}</div>`;
+      return;
+    }
+    historyZone.innerHTML = `
+      <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.85rem;">Invoice History — ${projectId}</div>
+      <table style="width:100%; border-collapse:collapse; font-size:0.82rem; margin-bottom:10px;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:6px;">Type</th><th style="padding:6px;">Invoice No.</th><th style="padding:6px;">Rev</th><th style="padding:6px;">PDF</th><th style="padding:6px;"></th>
+        </tr></thead>
+        <tbody>
+          ${data.invoices.map(inv => `<tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:6px; font-weight:700;">${inv.invoiceType}</td>
+            <td style="padding:6px;">${inv.invoiceNo}</td>
+            <td style="padding:6px;">V${inv.revision}</td>
+            <td style="padding:6px;">${inv.pdfUrl ? `<a href="${driveLink(inv.pdfUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a>` : '—'}</td>
+            <td style="padding:6px;"><button class="nav-btn-styled" style="background:var(--accent); padding:5px 12px; font-size:0.78rem;" onclick="loadPinvReviseForm(${inv.invoiceId})">Revise</button></td>
+          </tr>`).join("")}
+        </tbody>
+      </table>`;
+  } catch(e) {
+    historyZone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.85rem;">Network error: ${e.message}</div>`;
+  }
+}
+
+async function loadPinvReviseForm(invoiceId) {
+  const zone = document.getElementById("pinv-revise-invoice-form-zone");
   zone.innerHTML = `<div style="text-align:center; padding:14px; color:var(--muted); font-size:0.85rem;">Loading current invoice details...</div>`;
   try {
-    const data = await apFetch({ action: "fetchProjectInvoiceRevisionPrefill", projectId });
+    const data = await apFetch({ action: "fetchProjectInvoiceRevisionPrefillById", invoiceId });
     if (!data.success) {
       zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.85rem;">${data.error || "Failed to load."}</div>`;
       return;
     }
-    pinvReviseCache = { projectId, invoiceRevision: data.invoiceRevision || 0 };
+    pinvReviseCache = { invoiceId: data.invoiceId, projectId: data.projectId, invoiceType: data.invoiceType, invoiceRevision: data.revision || 0 };
     const last = data.lastInvoiceDetails || {};
     pinvReviseState = {
       invoiceNo: last.invoiceNo || "", insuranceNo: last.insuranceNo || "", mdccNo: last.mdccNo || "",
@@ -563,8 +644,8 @@ function renderPinvReviseInvoiceForm() {
 
   zone.innerHTML = `
     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:16px;">
-      <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:0.95rem;">Current Invoice Details — Revision V${(pinvReviseCache.invoiceRevision || 0) + 1}</div>
-      <div style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">Prefilled from the last generated invoice. Edit anything, then generate the revised doc — this replaces the invoice shown on the project going forward; project status, PRNs, and stock are not touched.</div>
+      <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:0.95rem;">${pinvReviseCache.invoiceType} Invoice ${pinvReviseCache.invoiceId} — Revision V${(pinvReviseCache.invoiceRevision || 0) + 1}</div>
+      <div style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">Prefilled from this specific invoice. Edit anything, then generate the revised doc — this only replaces THIS invoice; other invoices on the project, project status, PRNs, and stock are not touched.</div>
 
       <div class="compact-fields-grid" style="margin-bottom:14px;">
         ${field('Invoice No. *', 'invoiceNo')}
@@ -714,7 +795,7 @@ async function submitPinvRevision() {
   showBlockingOverlay("Generating revised invoice...");
   try {
     const data = await apFetch({
-      action: "reviseProjectInvoice", projectId: pinvReviseCache.projectId,
+      action: "reviseProjectInvoiceById", invoiceId: pinvReviseCache.invoiceId,
       operatorName: appActiveOperatorIdentityString || "Unknown", invoice: pinvReviseState,
     });
     if (data.success) {

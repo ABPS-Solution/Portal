@@ -361,12 +361,13 @@ async function triggerLiveWarehouseStockMetricsSync() {
       // Group items by Type of Material
       const typeGroups = {};
       const typeOrder = [
-        "Fabrication","Switchgear","Cables","Busbar","Lugs","Hardware","Meters","Relay","Fans",
-        "Air Core Reactor","Fiber Glass Material","HT Capacitors","Iron Core Reactor","Conductor",
-        "LT Capacitors","Associated Equipment","Insulators","Electronic Card","Resin Hardener",
-        "Paint","Varnish","Thinner","HT Capacitors Resistors","Tin Zinc/Lead","Insulating Material",
-        "TSM","SCR","Heatsink","Laminations","Consumables","Gas Cylinders","Packing Material",
-        "Assembly Material",""
+        "Fabrication","Switchgear","Cables","Busbar","Lugs","Hardware","Meters","Fiber Glass Material",
+        "Relay","Fans","Air Core Reactor","Measuring Equipment","HT Capacitors","Iron Core Reactor",
+        "Conductor","Fuses","LT Capacitors","Associated Equipment","Insulators","Electronic Card",
+        "Resin Hardener and Varnish","Paint and Thinner","Power Factor Controller","Harmonic Filter Bank",
+        "APFC","Damping Resistors","HT Capacitor Raw Material","Insulating Material","TSM","SCR",
+        "Heatsink","Laminations","Consumables","Consumable Spares","Gas Cylinders","Packing Material",
+        "Assembly Material","Capital Goods",""
       ];
       // Shared display helper — stored values are the full Type of Material name directly.
       // Defined once here since this is the first place it's needed.

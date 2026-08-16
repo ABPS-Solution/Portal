@@ -377,6 +377,10 @@ function renderPORevisionCard() {
           <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Payment Terms</label><input type="text" id="rpo-payment" value="${(po.paymentTerms||"").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           <div><label class="field-label" style="margin-top:0;">Freight Terms</label><input type="text" id="rpo-freight-terms" value="${(po.freightTerms||"").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         </div>
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; grid-column:1 / -1;">
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Notes (optional)</div>
+          <textarea id="rpo-notes" rows="2" placeholder="Left blank, nothing extra appears on the document." style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%; font-family:inherit; font-size:0.85rem;">${(po.notes||"")}</textarea>
+        </div>
       </div>
 
       <div style="display:flex; justify-content:space-between; align-items:center; background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius); padding:14px; margin-top:14px;">
@@ -686,6 +690,7 @@ async function submitPORevisionUI() {
       warranty: document.getElementById("rpo-warranty")?.value.trim() || null,
       paymentTerms: document.getElementById("rpo-payment")?.value.trim() || null,
       freightTerms: document.getElementById("rpo-freight-terms")?.value.trim() || null,
+      notes: document.getElementById("rpo-notes")?.value.trim() || null,
     });
     hideBlockingOverlay();
     if (data.success) {
@@ -863,6 +868,7 @@ function renderAPORCard(r) {
     { label: "Warranty", cur: r.warranty, rev: hc.warranty, isText: true },
     { label: "Payment Terms", cur: r.paymentTerms, rev: hc.paymentTerms, isText: true },
     { label: "Freight Terms", cur: r.freightTerms, rev: hc.freightTerms, isText: true },
+    { label: "Notes", cur: r.notes, rev: hc.notes, isText: true },
   ];
   const generalBullets = generalFieldDefs.filter(changedField).map(bulletHtml);
 
@@ -1047,6 +1053,10 @@ function renderAPORCard(r) {
           <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Warranty</label><input type="text" id="apor-warranty-${rid}" value="${(hc.warranty != null ? hc.warranty : r.warranty || "").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Payment Terms</label><input type="text" id="apor-payment-${rid}" value="${(hc.paymentTerms != null ? hc.paymentTerms : r.paymentTerms || "").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           <div><label class="field-label" style="margin-top:0;">Freight Terms</label><input type="text" id="apor-freight-terms-${rid}" value="${(hc.freightTerms != null ? hc.freightTerms : r.freightTerms || "").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+        </div>
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; grid-column:1 / -1;">
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Notes (optional)</div>
+          <textarea id="apor-notes-${rid}" rows="2" placeholder="Left blank, nothing extra appears on the document." style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%; font-family:inherit; font-size:0.85rem;">${(hc.notes != null ? hc.notes : r.notes || "")}</textarea>
         </div>
       </div>
 
@@ -1296,6 +1306,7 @@ async function authorizePORevisionUI(requestId, confirmStale) {
     warranty: document.getElementById(`apor-warranty-${requestId}`)?.value || null,
     paymentTerms: document.getElementById(`apor-payment-${requestId}`)?.value || null,
     freightTerms: document.getElementById(`apor-freight-terms-${requestId}`)?.value || null,
+    notes: document.getElementById(`apor-notes-${requestId}`)?.value || null,
   };
 
   // No Design Rate/Qty block here anymore — a rate above design rate was

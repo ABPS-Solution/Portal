@@ -152,7 +152,8 @@ async function submitStockSweep() {
       if (data.notFound && data.notFound.length) msg += ` NOT found in catalog (skipped): ${data.notFound.join(", ")}.`;
       sweepBasket = [];
       renderSweepBasket();
-      showSuccessWithReset("sweep-feedback", msg, "Record Another Sweep", "initializeStockSweepPanel()");
+      const docLinks = data.pdfUrl ? [{ url: driveLink(data.pdfUrl), label: "Download Stock Sweep Record PDF" }] : [];
+      showSuccessWithReset("sweep-feedback", msg, "Record Another Sweep", "initializeStockSweepPanel()", docLinks);
     } else {
       showBOQBanner("sweep-feedback", data.error || "Failed to record sweep.", "error");
     }
