@@ -589,6 +589,7 @@
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-tour-expense" onclick="switchActiveDashboardModule('tour-expense')"><span class="mc-label">Tour Expense Tracker</span></div>
+        <div class="menu-card" id="mod-security-admin" onclick="switchActiveDashboardModule('security-admin')"><span class="mc-label">Security &amp; Login Access</span></div>
       </div>
     </div>
     
@@ -1646,6 +1647,91 @@
         </tr></thead>
         <tbody id="te-voucher-list-body"></tbody>
       </table>
+    </div>
+  </div>
+
+  <div id="canvas-module-security-admin" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitSecurityAdminBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <h2 class="panel-title">Security &amp; Login Access</h2>
+    <div id="sa-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+    <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
+      <button id="sa-tab-users" class="nav-btn-styled" onclick="switchSecurityAdminTab('users')" style="padding:8px 18px;">Login Anywhere</button>
+      <button id="sa-tab-networks" class="nav-btn-styled" onclick="switchSecurityAdminTab('networks')" style="padding:8px 18px;">Office Networks</button>
+      <button id="sa-tab-devices" class="nav-btn-styled" onclick="switchSecurityAdminTab('devices')" style="padding:8px 18px;">Trusted Devices</button>
+      <button id="sa-tab-log" class="nav-btn-styled" onclick="switchSecurityAdminTab('log')" style="padding:8px 18px;">Login Log</button>
+      <button id="sa-tab-settings" class="nav-btn-styled" onclick="switchSecurityAdminTab('settings')" style="padding:8px 18px;">Settings</button>
+    </div>
+
+    <!-- LOGIN ANYWHERE -->
+    <div id="sa-panel-users">
+      <input type="text" id="sa-user-search" placeholder="Search by name or email..." oninput="renderSecurityAdminUsers()" style="max-width:340px; margin-bottom:14px;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:8px;">Name</th><th style="padding:8px;">Email</th><th style="padding:8px;">Department</th>
+          <th style="padding:8px;">Status</th><th style="padding:8px; text-align:center;">Login Anywhere</th>
+        </tr></thead>
+        <tbody id="sa-user-list-body"></tbody>
+      </table>
+    </div>
+
+    <!-- OFFICE NETWORKS -->
+    <div id="sa-panel-networks" style="display:none;">
+      <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:flex-end;">
+        <div>
+          <label class="field-label" style="margin-top:0;">CIDR (e.g. 27.107.1.226/32)</label>
+          <input type="text" id="sa-network-cidr" placeholder="x.x.x.x/32" style="min-width:220px;">
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Label</label>
+          <input type="text" id="sa-network-label" placeholder="e.g. Chakan Office" style="min-width:260px;">
+        </div>
+        <button class="nav-btn-styled" onclick="submitAddAllowedNetwork()">+ Add Network</button>
+      </div>
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:8px;">CIDR</th><th style="padding:8px;">Label</th><th style="padding:8px;">Active</th>
+          <th style="padding:8px;">Added</th><th style="padding:8px;">Action</th>
+        </tr></thead>
+        <tbody id="sa-network-list-body"></tbody>
+      </table>
+    </div>
+
+    <!-- TRUSTED DEVICES -->
+    <div id="sa-panel-devices" style="display:none;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:8px;">User</th><th style="padding:8px;">Device</th><th style="padding:8px;">Created</th>
+          <th style="padding:8px;">Last Used</th><th style="padding:8px;">Expires</th><th style="padding:8px;">Status</th><th style="padding:8px;">Action</th>
+        </tr></thead>
+        <tbody id="sa-device-list-body"></tbody>
+      </table>
+    </div>
+
+    <!-- LOGIN LOG -->
+    <div id="sa-panel-log" style="display:none;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:8px;">When</th><th style="padding:8px;">Email</th><th style="padding:8px;">IP</th>
+          <th style="padding:8px;">Allowed</th><th style="padding:8px;">Reason</th><th style="padding:8px;">City/Country</th>
+          <th style="padding:8px;">ISP/ASN</th><th style="padding:8px;">VPN</th>
+        </tr></thead>
+        <tbody id="sa-log-list-body"></tbody>
+      </table>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="sa-panel-settings" style="display:none; max-width:420px;">
+      <label class="field-label" style="margin-top:0;">Business Hours Start</label>
+      <input type="time" id="sa-settings-hours-start">
+      <label class="field-label">Business Hours End</label>
+      <input type="time" id="sa-settings-hours-end">
+      <label class="field-label">Outage Grace Period (minutes)</label>
+      <input type="number" id="sa-settings-outage-minutes" min="1">
+      <button class="nav-btn-styled" style="margin-top:16px;" onclick="submitSecuritySettings()">Save Settings</button>
     </div>
   </div>
 
@@ -3743,5 +3829,6 @@
 <script src="production/project-invoice.js"></script>
 <script src="production/production-dashboard.js"></script>
 <script src="accounts/tour-expense.js"></script>
+<script src="accounts/security-admin.js"></script>
 </body>
 </html>

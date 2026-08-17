@@ -482,8 +482,10 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 
       const canTourExpense = userPermissionsObject.tourExpense === true;
       if (document.getElementById("mod-tour-expense")) document.getElementById("mod-tour-expense").style.display = canTourExpense ? "block" : "none";
+      const canSecurityAdmin = userPermissionsObject.admin === true;
+      if (document.getElementById("mod-security-admin")) document.getElementById("mod-security-admin").style.display = canSecurityAdmin ? "block" : "none";
       const accountsHeaderBlock = document.getElementById("dashboard-accounts-department-header-block");
-      if (accountsHeaderBlock) accountsHeaderBlock.style.display = canTourExpense ? "block" : "none";
+      if (accountsHeaderBlock) accountsHeaderBlock.style.display = (canTourExpense || canSecurityAdmin) ? "block" : "none";
 
   // Every dept-block's display was just finalized above, purely from
   // permissions — the tab bar layers on top of that rather than
@@ -828,6 +830,10 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     document.getElementById("dashboard-view").style.display = "none";
     const teCanvas = document.getElementById("canvas-module-tour-expense");
     if (teCanvas) { teCanvas.style.display = "block"; initializeTourExpensePanel(); }
+  } else if (targetCanvasModuleId === 'security-admin') {
+    document.getElementById("dashboard-view").style.display = "none";
+    const saCanvas = document.getElementById("canvas-module-security-admin");
+    if (saCanvas) { saCanvas.style.display = "block"; initializeSecurityAdminPanel(); }
   } else if (targetCanvasModuleId === 'project-status') {
     document.getElementById("dashboard-view").style.display = "none";
     const psCanvas = document.getElementById("canvas-module-project-status");
