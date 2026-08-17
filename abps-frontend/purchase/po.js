@@ -40,13 +40,13 @@ function handleAPODescSearch(rowId, query) {
   const q = query.toLowerCase();
   const matches = catalog.filter(it => (it.productName||"").toLowerCase().includes(q) || (it.rating||"").toLowerCase().includes(q)).slice(0,10);
   if (matches.length === 0) { dd.style.display="none"; return; }
-  dd.innerHTML = matches.map(it => `<div onclick="selectAPOMaterial(${rowId}, '${it.itemCode}', \`${(it.productName||'').replace(/\`/g,"'")}\`, \`${(it.rating||'').replace(/\`/g,"'")}\`, '${(it.unit||'Nos').replace(/'/g,'')}')" style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'"><span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.productName}${it.rating?` <span style="color:var(--brand); font-weight:700;">${it.rating}</span>`:''}</div>`).join("");
+  dd.innerHTML = matches.map(it => `<div onclick="selectAPOMaterial(${rowId}, '${it.itemCode}', \`${(it.productName||'').replace(/\`/g,"'")}\`, \`${(it.rating||'').replace(/\`/g,"'")}\`, '${(it.unit||'Nos').replace(/'/g,'')}')" style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'"><span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.productName}${it.rating?` - <span style="color:var(--brand); font-weight:700;">${it.rating}</span>`:''}</div>`).join("");
   dd.style.display = "block";
 }
 function selectAPOMaterial(rowId, itemCode, productName, rating, unit) {
   const row = window.apoEditRows.find(r => r.id === rowId);
   if (!row) return;
-  row.description = rating ? `${productName} ${rating}` : productName;
+  row.description = rating ? `${productName} - ${rating}` : productName;
   row.itemCode = itemCode; row.unit = unit || "Nos";
   document.getElementById(`apo-desc-dd-${rowId}`).style.display = "none";
   renderAPOEditRows();
@@ -242,14 +242,14 @@ function handleSrchPOMaterialInput(query) {
     <div onclick="selectSrchPOMaterial('${it.itemCode}', \`${(it.productName||'').replace(/\`/g,"'")}\`, \`${(it.rating||'').replace(/\`/g,"'")}\`)"
       style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.productName}${it.rating ? ` <span style="color:var(--brand); font-weight:700;">${it.rating}</span>` : ''}
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.productName}${it.rating ? ` - <span style="color:var(--brand); font-weight:700;">${it.rating}</span>` : ''}
     </div>`).join("");
   dd.style.display = "block";
 }
 
 function selectSrchPOMaterial(itemCode, productName, rating) {
   window.srchpoSelectedItemCode = itemCode;
-  document.getElementById("srchpo-material-input").value = rating ? `${productName} ${rating}` : productName;
+  document.getElementById("srchpo-material-input").value = rating ? `${productName} - ${rating}` : productName;
   document.getElementById("srchpo-material-dd").style.display = "none";
 }
 
@@ -945,7 +945,7 @@ function handleCPODescSearch(rowId, query) {
     <div onclick="selectCPOMaterial(${rowId}, '${it.itemCode}', \`${(it.productName||'').replace(/\`/g,"'")}\`, \`${(it.rating||'').replace(/\`/g,"'")}\`, '${(it.unit||'Nos').replace(/'/g,'')}')"
       style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.productName}${it.rating ? ` <span style="color:var(--brand); font-weight:700;">${it.rating}</span>` : ''}
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.productName}${it.rating ? ` - <span style="color:var(--brand); font-weight:700;">${it.rating}</span>` : ''}
     </div>`).join("");
   dd.style.display = "block";
 }
@@ -953,7 +953,7 @@ function handleCPODescSearch(rowId, query) {
 function selectCPOMaterial(rowId, itemCode, productName, rating, unitType) {
   const row = window.cpoMaterialRows.find(r => r.id === rowId);
   if (!row) return;
-  row.description = rating ? `${productName} ${rating}` : productName;
+  row.description = rating ? `${productName} - ${rating}` : productName;
   row.itemCode = itemCode;
   row.unit = unitType || "Nos";
   row.allocations = []; // old allocations were tied to the previous item code

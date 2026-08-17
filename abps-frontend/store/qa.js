@@ -279,7 +279,7 @@ async function openQARevisionDetail(grnNumber) {
             <th style="width:110px; text-align:center; font-size:0.72rem; padding:8px 6px;">Item Code</th>
             <th style="text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Material Description</th>
             <th style="text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name</th>
-            <th style="width:55px; text-align:center; font-size:0.72rem; padding:8px 6px;">Unit</th>
+            <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px;">Item Code Unit</th>
             <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px;">Received</th>
             <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px;">OK Qty</th>
             <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px;">Not OK</th>
@@ -465,7 +465,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
                   <th style="width:9%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
                   <th style="width:26%; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name</th>
                   <th style="width:18%; text-align:left; font-size:0.72rem; padding:8px 6px;">Action Selected</th>
-                  <th style="width:7%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit</th>
+                  <th style="width:9%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code Unit</th>
                   <th style="width:10%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Total Not OK Qty</th>
                   <th style="width:10%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Pending Qty</th>
                   <th style="width:20%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Repaired Qty (assumed OK)</th>
@@ -562,7 +562,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
                   <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
                   <th style="width:180px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Material Description</th>
                   <th style="width:220px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name</th>
-                  <th style="width:55px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit</th>
+                  <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code Unit</th>
                   <th style="width:65px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Received Qty</th>
                   <th style="width:65px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">OK Qty</th>
                   <th style="width:55px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Not OK</th>

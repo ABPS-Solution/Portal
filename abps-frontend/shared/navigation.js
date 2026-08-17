@@ -42,6 +42,14 @@ async function navigateToModule(key) {
         targetPanelKeyIdStr = "emailWhatsapp";
     } else if (key === "commissioningReport") {
         targetPanelKeyIdStr = "commissioningReport";
+        // Project ID typeahead needs sharedActiveProjectCodes/sharedProjectMeta
+        // populated before the user can type into it — same reasoning
+        // Create BOQ's panel-open hook has for the identical component.
+        if (typeof ensureSharedProjectTypeaheadData === "function") ensureSharedProjectTypeaheadData();
+        const crProjectInput = document.getElementById("commissioning-report-project-ta-input");
+        const crCustomerName = document.getElementById("commissioning-report-customer-name");
+        if (crProjectInput) crProjectInput.value = "";
+        if (crCustomerName) crCustomerName.value = "";
     } else if (key === "purchaseOrder") {
         targetPanelKeyIdStr = "purchaseOrder";
         // Always start fresh — otherwise leaving via Return to Main

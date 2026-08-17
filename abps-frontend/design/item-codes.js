@@ -61,6 +61,17 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
       document.getElementById("itemcode-no-results-zone").style.display       = "none";
       document.getElementById("itemcode-create-form-zone").style.display      = "none";
       document.getElementById("itemcode-feedback-banner").style.display       = "none";
+      window.icfSearchSelectedType = "";
+      const searchTypeInput = document.getElementById("icf-search-type-ta-input");
+      if (searchTypeInput) searchTypeInput.value = "";
+      // Admin-only "Add / Change Item Code Format" toggle — server routes
+      // independently enforce perm_admin regardless of this, same
+      // "localStorage is forgeable, the backend is the real gate" reasoning
+      // already established at project/customer-queries.js's admin delete.
+      const fmtBtn = document.getElementById("icf-mode-btn-format");
+      if (fmtBtn) fmtBtn.style.display = localStorage.getItem("isUserAdminGlobal") === "true" ? "inline-block" : "none";
+      switchItemCodeMode('search');
+      loadItemCodeTypeConfigIntoCache();
     }
   } else if (targetModuleId === 'design-create-boq') {
     const el = document.getElementById("canvas-module-design-create-boq");
@@ -189,7 +200,14 @@ async function executeItemCodeSearch() {
     // Always reload catalog before searching to ensure fresh data
     await loadItemCodeCatalogIntoCache();
 
-    const catalogToSearch = window.itemCodeCatalogCache || [];
+    // Optional Type of Material narrowing (search zone's typeahead) — when
+    // set, the search runs only within that type instead of the whole
+    // catalog, same idea as pointed to in the request ("like search
+    // Project ID... this will make the search more specific").
+    const allCatalog = window.itemCodeCatalogCache || [];
+    const catalogToSearch = window.icfSearchSelectedType
+      ? allCatalog.filter(item => item.typeOfMaterial === window.icfSearchSelectedType)
+      : allCatalog;
     console.log("Searching catalog of", catalogToSearch.length, "items for query:", query);
 
     // Direct exact match check first — whole typed phrase as one substring.
@@ -307,7 +325,7 @@ async function revealItemCodeCreateForm() {
   const createZone = document.getElementById("itemcode-create-form-zone");
   const codeInput  = document.getElementById("itemcode-new-code");
   const nameInput  = document.getElementById("itemcode-new-name");
-  const typeSelect = document.getElementById("itemcode-new-type");
+  const typeInput  = document.getElementById("icf-new-type-ta-input");
   const banner     = document.getElementById("itemcode-feedback-banner");
 
   // Hide both "Create New Item Code" trigger buttons
@@ -316,12 +334,17 @@ async function revealItemCodeCreateForm() {
   if (noneMatchBanner) noneMatchBanner.style.display = "none";
   if (noResultsBtn)    noResultsBtn.style.display    = "none";
 
-  // Pre-fill product name from search query
+  // Pre-fill product name from search query — only meaningful for the
+  // Free Form fallback fields; the Fixed Format path builds its own name
+  // from the chosen template instead.
   const query = document.getElementById("itemcode-search-input").value.trim();
   nameInput.value  = query;
-  typeSelect.value = "";
+  typeInput.value  = "";
   codeInput.value  = "Loading...";
   banner.style.display = "none";
+  document.getElementById("icf-new-fixed-zone").style.display = "none";
+  document.getElementById("icf-new-freeform-zone").style.display = "none";
+  await loadItemCodeTypeConfigIntoCache();
 
   createZone.style.display = "block";
   createZone.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -341,17 +364,46 @@ async function submitNewItemCode() {
   const btn        = document.getElementById("itemcode-create-submit-btn");
   const banner     = document.getElementById("itemcode-feedback-banner");
   const itemCode   = document.getElementById("itemcode-new-code").value.trim();
-  const materialName= document.getElementById("itemcode-new-name").value.trim();
-  const rating     = document.getElementById("itemcode-new-rating").value.trim();
-  const typeOfMat  = document.getElementById("itemcode-new-type").value.trim();
-  const unit       = document.getElementById("itemcode-new-unit").value.trim();
+  const typeOfMat  = document.getElementById("icf-new-type-ta-input").value.trim();
 
-  if (!materialName) { alert("Material Name is required."); return; }
-  if (!typeOfMat)    { alert("Type of Material is required."); return; }
-  if (!unit)         { alert("Unit is required."); return; }
+  if (!typeOfMat) { alert("Type of Material is required."); return; }
   if (!itemCode || itemCode === "Loading..." || itemCode === "Error — refresh") {
     alert("Item Code not loaded yet. Please wait or refresh.");
     return;
+  }
+
+  // Which path: the Fixed Format template form, or the manual/Free-Form
+  // fields (used directly for Free Form types, or as the admin bypass for
+  // a Fixed Format type). The server re-checks this same distinction
+  // itself — see createItemCode — this is only what decides the payload
+  // shape, not a trust boundary.
+  const usingFormat = document.getElementById("icf-new-fixed-zone").style.display !== "none"
+    && !document.getElementById("icf-new-admin-manual-checkbox").checked;
+
+  let payload;
+  let materialName, rating, unit; // used only for the success banner text below
+
+  if (usingFormat) {
+    if (!icfSelectedFormat) { alert("Select a Sub-Option first."); return; }
+    const nameValues = icfNameGetValues ? icfNameGetValues() : [];
+    const ratingValues = icfRatingGetValues ? icfRatingGetValues() : [];
+    const nameErr = icfValidateValues(icfSelectedFormat.materialNameTemplate, nameValues);
+    if (nameErr) { showBOQBanner("itemcode-feedback-banner", "⚠️ Material Name: " + nameErr, "error"); return; }
+    if (icfSelectedFormat.ratingTemplate) {
+      const ratingErr = icfValidateValues(icfSelectedFormat.ratingTemplate, ratingValues);
+      if (ratingErr) { showBOQBanner("itemcode-feedback-banner", "⚠️ Rating: " + ratingErr, "error"); return; }
+    }
+    payload = { formatId: icfSelectedFormat.formatId, materialNameValues: nameValues, ratingValues };
+    materialName = document.getElementById("icf-new-preview-name").textContent;
+    rating = document.getElementById("icf-new-preview-rating").textContent;
+    unit = icfSelectedFormat.unit;
+  } else {
+    materialName = document.getElementById("itemcode-new-name").value.trim();
+    rating = document.getElementById("itemcode-new-rating").value.trim();
+    unit = document.getElementById("itemcode-new-unit").value.trim();
+    if (!materialName) { alert("Material Name is required."); return; }
+    if (!unit)         { alert("Unit is required."); return; }
+    payload = { materialName, rating, typeOfMaterial: typeOfMat, unit };
   }
 
   btn.disabled = true;
@@ -360,12 +412,9 @@ async function submitNewItemCode() {
   try {
     const data = await apFetch({
       action: "createItemCode",
-      itemCode,
-      materialName,
-      rating,
-      typeOfMaterial: typeOfMat,
-      unit,
-      createdBy: appActiveOperatorIdentityString
+      ...payload,
+      createdBy: appActiveOperatorIdentityString,
+      operatorName: appActiveOperatorIdentityString
     });
 
     if (data.success) {
@@ -381,7 +430,7 @@ async function submitNewItemCode() {
         <strong style="font-size:0.95rem;">Item Code Created Successfully!</strong><br/>
         <div style="margin-top:8px; display:flex; gap:16px; flex-wrap:wrap;">
           <span>Code: <strong style="font-family:monospace; font-size:1rem; background:#fff; padding:2px 8px; border-radius:4px; border:1px solid #15803d;">${data.itemCode || itemCode}</strong></span>
-          <span>Product: <strong>${materialName}${rating ? " " + rating : ""}</strong></span>
+          <span>Product: <strong>${materialName}${rating ? " - " + rating : ""}</strong></span>
           <span>Type: <strong>${window.typeLabelDisplay_(typeOfMat)}</strong></span>
           <span>Unit: <strong>${unit}</strong></span>
         </div>
@@ -413,6 +462,313 @@ async function submitNewItemCode() {
   } finally {
     btn.disabled = false;
     btn.textContent = "Create Item Code";
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Template-driven Item Code creation (16 Aug 2026) — see
+// ABPS_SYSTEM_OVERVIEW.md §21 and abps-backend/lib/itemCodeFormat.js for
+// the template notation. The server is the ONLY authority on what a
+// format actually renders to (see createItemCode) — everything below is
+// convenience/preview, matching the numberToWordsINRClient precedent.
+// ═══════════════════════════════════════════════════════════════════════
+
+async function loadItemCodeTypeConfigIntoCache(forceRefresh = false) {
+  const CACHE_TTL_MS = 5 * 60 * 1000;
+  const now = Date.now();
+  if (!forceRefresh && window.itemCodeTypeConfigCache && window.itemCodeTypeConfigCache.length > 0 &&
+      window._itemCodeTypeConfigLoadedAt && (now - window._itemCodeTypeConfigLoadedAt) < CACHE_TTL_MS) {
+    return;
+  }
+  try {
+    const data = await apFetch({ action: "fetchItemCodeTypeConfig" });
+    if (data.success) {
+      window.itemCodeTypeConfigCache = data.types;
+      window._itemCodeTypeConfigLoadedAt = Date.now();
+    }
+  } catch(e) {
+    console.error("Item Code type config load failed:", e);
+  }
+}
+
+function switchItemCodeMode(mode) {
+  document.getElementById("icf-mode-search").style.display = mode === 'search' ? "block" : "none";
+  document.getElementById("icf-mode-format").style.display = mode === 'format' ? "block" : "none";
+  document.getElementById("icf-mode-btn-search").style.background = mode === 'search' ? "var(--accent)" : "#718096";
+  document.getElementById("icf-mode-btn-format").style.background = mode === 'format' ? "var(--accent)" : "#718096";
+  document.getElementById("itemcode-feedback-banner").style.display = "none";
+}
+
+// ── Generic Type of Material typeahead — shared/typeahead.js's project
+// typeahead is hardcoded to project data, so this is a sibling following
+// the same shape/id convention (-ta-input/-ta-dropdown, load-bearing for
+// the global outside-click closer in that same file). Used by three
+// inputs: the search-zone filter, the create form's Type of Material, and
+// the format editor's Type of Material.
+function handleIcfTypeTypeaheadInput(query, inputId, dropdownId) {
+  const dd = document.getElementById(dropdownId);
+  if (!dd) return;
+  if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
+  const q = query.trim().toLowerCase();
+  const matches = (window.itemCodeTypeConfigCache || [])
+    .filter(t => t.typeOfMaterial.toLowerCase().includes(q)).slice(0, 15);
+  if (matches.length === 0) { dd.style.display = "none"; return; }
+  dd.innerHTML = matches.map(t => `
+    <div onmousedown="event.preventDefault();" onclick="selectIcfTypeTypeahead('${t.typeOfMaterial.replace(/'/g,"\\'")}', '${inputId}', '${dropdownId}')"
+      style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      <span style="font-weight:700;">${t.typeOfMaterial}</span>
+      <span style="font-size:0.7rem; color:var(--muted); margin-left:6px;">${t.entryMode}</span>
+    </div>`).join("");
+  dd.style.display = "block";
+}
+
+function selectIcfTypeTypeahead(typeOfMaterial, inputId, dropdownId) {
+  const input = document.getElementById(inputId);
+  input.value = typeOfMaterial;
+  document.getElementById(dropdownId).style.display = "none";
+  input.dispatchEvent(new Event('change'));
+}
+
+// ── Search zone: optional Type of Material narrowing ───────────────────
+function handleIcfSearchTypeChange(typeOfMaterial) {
+  window.icfSearchSelectedType = (typeOfMaterial || "").trim();
+}
+
+// ── Create New Item Code: progressive flow ──────────────────────────────
+let icfCurrentFormats = [];
+let icfNameGetValues = null;
+let icfRatingGetValues = null;
+let icfSelectedFormat = null;
+
+async function handleIcfNewTypeChange(typeOfMaterial) {
+  const type = (typeOfMaterial || "").trim();
+  const fixedZone = document.getElementById("icf-new-fixed-zone");
+  const freeformZone = document.getElementById("icf-new-freeform-zone");
+  const fixedForm = document.getElementById("icf-new-fixed-form");
+  const subSelect = document.getElementById("icf-new-suboption-select");
+  const adminToggleWrap = document.getElementById("icf-new-admin-manual-toggle");
+  const adminCheckbox = document.getElementById("icf-new-admin-manual-checkbox");
+
+  icfSelectedFormat = null;
+  fixedForm.style.display = "none";
+  subSelect.innerHTML = '<option value="">— Select Sub-Option —</option>';
+  adminCheckbox.checked = false;
+
+  const cfg = (window.itemCodeTypeConfigCache || []).find(t => t.typeOfMaterial === type);
+  if (!type || !cfg) {
+    fixedZone.style.display = "none";
+    freeformZone.style.display = "none";
+    return;
+  }
+
+  const isAdmin = localStorage.getItem("isUserAdminGlobal") === "true";
+  if (cfg.entryMode === 'Free Form') {
+    fixedZone.style.display = "none";
+    freeformZone.style.display = "block";
+    return;
+  }
+
+  // Fixed Format
+  freeformZone.style.display = "none";
+  fixedZone.style.display = "block";
+  adminToggleWrap.style.display = isAdmin ? "block" : "none";
+
+  try {
+    const data = await apFetch({ action: "fetchItemCodeFormats", typeOfMaterial: type });
+    icfCurrentFormats = data.success ? data.formats : [];
+  } catch(e) { icfCurrentFormats = []; }
+
+  subSelect.innerHTML = '<option value="">— Select Sub-Option —</option>' +
+    icfCurrentFormats.map(f => `<option value="${f.formatId}">${f.subOption}</option>`).join("");
+}
+
+function handleIcfSubOptionChange(formatIdStr) {
+  const fixedForm = document.getElementById("icf-new-fixed-form");
+  icfSelectedFormat = icfCurrentFormats.find(f => String(f.formatId) === String(formatIdStr)) || null;
+  if (!icfSelectedFormat) { fixedForm.style.display = "none"; return; }
+
+  fixedForm.style.display = "block";
+  icfNameGetValues = icfRenderFormInputs(
+    document.getElementById("icf-new-name-inputs"), icfSelectedFormat.materialNameTemplate, updateIcfNewPreview, "icf-new-name"
+  );
+  const ratingContainer = document.getElementById("icf-new-rating-inputs");
+  if (icfSelectedFormat.ratingTemplate && icfSelectedFormat.ratingTemplate.trim()) {
+    icfRatingGetValues = icfRenderFormInputs(ratingContainer, icfSelectedFormat.ratingTemplate, updateIcfNewPreview, "icf-new-rating");
+  } else {
+    ratingContainer.innerHTML = '<span style="color:var(--muted); font-size:0.82rem;">— No Rating for this Sub-Option —</span>';
+    icfRatingGetValues = () => [];
+  }
+  document.getElementById("icf-new-preview-unit").textContent = icfSelectedFormat.unit;
+  updateIcfNewPreview();
+}
+
+function updateIcfNewPreview() {
+  if (!icfSelectedFormat) return;
+  const nameEl = document.getElementById("icf-new-preview-name");
+  const ratingEl = document.getElementById("icf-new-preview-rating");
+  try {
+    nameEl.textContent = icfRenderTemplate(icfSelectedFormat.materialNameTemplate, icfNameGetValues ? icfNameGetValues() : []) || "—";
+  } catch(e) { nameEl.textContent = "—"; }
+  try {
+    ratingEl.textContent = icfSelectedFormat.ratingTemplate
+      ? (icfRenderTemplate(icfSelectedFormat.ratingTemplate, icfRatingGetValues ? icfRatingGetValues() : []) || "—")
+      : "—";
+  } catch(e) { ratingEl.textContent = "—"; }
+}
+
+// Admin-only backup: bypass the format entirely for this Fixed Format
+// type, falling back to the same free-text fields Free Form types use.
+function handleIcfAdminManualToggle(checked) {
+  document.getElementById("icf-new-fixed-form").style.display = checked ? "none" : "block";
+  document.getElementById("icf-new-suboption-select").disabled = checked;
+  document.getElementById("icf-new-freeform-zone").style.display = checked ? "block" : "none";
+}
+
+// ── Admin: Add / Change Item Code Format ────────────────────────────────
+let icfFmtCurrentType = "";
+
+async function handleIcfFormatTypeChange(typeOfMaterial) {
+  const type = (typeOfMaterial || "").trim();
+  icfFmtCurrentType = type;
+  const listZone = document.getElementById("icf-fmt-list-zone");
+  const entryModeSelect = document.getElementById("icf-fmt-entry-mode");
+  closeIcfFormatEditor();
+  if (!type) { listZone.style.display = "none"; return; }
+
+  const cfg = (window.itemCodeTypeConfigCache || []).find(t => t.typeOfMaterial === type);
+  entryModeSelect.value = cfg ? cfg.entryMode : 'Fixed Format';
+
+  listZone.style.display = "block";
+  const listEl = document.getElementById("icf-fmt-formats-list");
+  listEl.innerHTML = '<div style="color:var(--muted); font-size:0.85rem;">Loading...</div>';
+  try {
+    const data = await apFetch({ action: "fetchItemCodeFormats", typeOfMaterial: type });
+    icfCurrentFormats = data.success ? data.formats : [];
+  } catch(e) { icfCurrentFormats = []; }
+
+  if (icfCurrentFormats.length === 0) {
+    listEl.innerHTML = '<div style="color:var(--muted); font-size:0.85rem;">No formats yet for this Type of Material.</div>';
+    return;
+  }
+  listEl.innerHTML = icfCurrentFormats.map(f => `
+    <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px 16px;">
+      <div>
+        <div style="font-weight:700; color:var(--brand);">${f.subOption}</div>
+        <div style="font-size:0.78rem; color:var(--muted); font-family:monospace; margin-top:2px;">${f.materialNameTemplate}</div>
+        ${f.ratingTemplate ? `<div style="font-size:0.78rem; color:var(--muted); font-family:monospace;">${f.ratingTemplate}</div>` : ''}
+        <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Unit: <strong>${f.unit}</strong></div>
+      </div>
+      <button onclick="editIcfFormat(${f.formatId})" style="background:var(--brand); color:#fff; border:none; padding:6px 14px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.8rem;">Edit</button>
+    </div>`).join("");
+}
+
+async function handleIcfEntryModeChange(newMode) {
+  if (!icfFmtCurrentType) return;
+  try {
+    await apFetch({ action: "saveItemCodeTypeConfig", typeOfMaterial: icfFmtCurrentType, entryMode: newMode, operatorName: appActiveOperatorIdentityString });
+    await loadItemCodeTypeConfigIntoCache(true);
+  } catch(e) {
+    showBOQBanner("itemcode-feedback-banner", "⚠️ Failed to update entry mode: " + e.message, "error");
+  }
+}
+
+function openIcfAddFormatEditor() {
+  document.getElementById("icf-fmt-editor-formatid").value = "";
+  document.getElementById("icf-fmt-editor-suboption").value = "";
+  document.getElementById("icf-fmt-editor-name-template").value = "";
+  document.getElementById("icf-fmt-editor-rating-template").value = "";
+  document.getElementById("icf-fmt-editor-unit").value = "";
+  document.getElementById("icf-fmt-editor-deactivate-btn").style.display = "none";
+  document.getElementById("icf-fmt-editor-name-error").textContent = "";
+  document.getElementById("icf-fmt-editor-rating-error").textContent = "";
+  document.getElementById("icf-fmt-editor-zone").style.display = "block";
+  renderIcfFormatEditorPreview();
+  document.getElementById("icf-fmt-editor-zone").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function editIcfFormat(formatId) {
+  const f = icfCurrentFormats.find(x => x.formatId === formatId);
+  if (!f) return;
+  document.getElementById("icf-fmt-editor-formatid").value = f.formatId;
+  document.getElementById("icf-fmt-editor-suboption").value = f.subOption;
+  document.getElementById("icf-fmt-editor-name-template").value = f.materialNameTemplate;
+  document.getElementById("icf-fmt-editor-rating-template").value = f.ratingTemplate || "";
+  document.getElementById("icf-fmt-editor-unit").value = f.unit;
+  document.getElementById("icf-fmt-editor-deactivate-btn").style.display = "inline-block";
+  document.getElementById("icf-fmt-editor-name-error").textContent = "";
+  document.getElementById("icf-fmt-editor-rating-error").textContent = "";
+  document.getElementById("icf-fmt-editor-zone").style.display = "block";
+  renderIcfFormatEditorPreview();
+  document.getElementById("icf-fmt-editor-zone").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function closeIcfFormatEditor() {
+  document.getElementById("icf-fmt-editor-zone").style.display = "none";
+}
+
+// Admin's live preview — same parser as the operator's create form, just
+// rendered with a no-op onChange since nothing here needs to be submitted.
+function renderIcfFormatEditorPreview() {
+  const nameTemplate = document.getElementById("icf-fmt-editor-name-template").value;
+  const ratingTemplate = document.getElementById("icf-fmt-editor-rating-template").value;
+  const nameErrEl = document.getElementById("icf-fmt-editor-name-error");
+  const ratingErrEl = document.getElementById("icf-fmt-editor-rating-error");
+  const namePreview = document.getElementById("icf-fmt-editor-name-preview");
+  const ratingPreview = document.getElementById("icf-fmt-editor-rating-preview");
+
+  const nameParsed = icfParseTemplate(nameTemplate);
+  nameErrEl.textContent = nameParsed.error || "";
+  icfRenderFormInputs(namePreview, nameTemplate, () => {}, "icf-fmt-editor-name-preview-ph");
+
+  if (ratingTemplate.trim()) {
+    const ratingParsed = icfParseTemplate(ratingTemplate);
+    ratingErrEl.textContent = ratingParsed.error || "";
+    icfRenderFormInputs(ratingPreview, ratingTemplate, () => {}, "icf-fmt-editor-rating-preview-ph");
+  } else {
+    ratingErrEl.textContent = "";
+    ratingPreview.innerHTML = '<span style="color:var(--muted); font-size:0.82rem;">— No Rating —</span>';
+  }
+}
+
+async function submitIcfSaveFormat() {
+  const formatId = document.getElementById("icf-fmt-editor-formatid").value.trim();
+  const subOption = document.getElementById("icf-fmt-editor-suboption").value.trim();
+  const nameTemplate = document.getElementById("icf-fmt-editor-name-template").value.trim();
+  const ratingTemplate = document.getElementById("icf-fmt-editor-rating-template").value.trim();
+  const unit = document.getElementById("icf-fmt-editor-unit").value.trim();
+
+  if (!subOption) return showBOQBanner("itemcode-feedback-banner", "⚠️ Sub-Option is required.", "error");
+  if (!nameTemplate) return showBOQBanner("itemcode-feedback-banner", "⚠️ Material Name Template is required.", "error");
+  if (!unit) return showBOQBanner("itemcode-feedback-banner", "⚠️ Unit is required.", "error");
+
+  try {
+    const data = await apFetch({
+      action: "saveItemCodeFormat", formatId: formatId || null, typeOfMaterial: icfFmtCurrentType,
+      subOption, materialNameTemplate: nameTemplate, ratingTemplate: ratingTemplate || null, unit,
+      operatorName: appActiveOperatorIdentityString
+    });
+    if (!data.success) return showBOQBanner("itemcode-feedback-banner", "⚠️ " + data.error, "error");
+    showBOQBanner("itemcode-feedback-banner", `✅ Format "${subOption}" saved.`, "success");
+    closeIcfFormatEditor();
+    handleIcfFormatTypeChange(icfFmtCurrentType);
+  } catch(e) {
+    showBOQBanner("itemcode-feedback-banner", "⚠️ Network error: " + e.message, "error");
+  }
+}
+
+async function submitIcfDeactivateFormat() {
+  const formatId = document.getElementById("icf-fmt-editor-formatid").value.trim();
+  if (!formatId) return;
+  if (!confirm("Deactivate this Item Code format? Existing item codes already created from it are unaffected.")) return;
+  try {
+    const data = await apFetch({ action: "deactivateItemCodeFormat", formatId, operatorName: appActiveOperatorIdentityString });
+    if (!data.success) return showBOQBanner("itemcode-feedback-banner", "⚠️ " + data.error, "error");
+    showBOQBanner("itemcode-feedback-banner", "✅ Format deactivated.", "success");
+    closeIcfFormatEditor();
+    handleIcfFormatTypeChange(icfFmtCurrentType);
+  } catch(e) {
+    showBOQBanner("itemcode-feedback-banner", "⚠️ Network error: " + e.message, "error");
   }
 }
 
@@ -456,7 +812,7 @@ function handleSENameSearch(inputEl, gateNum, idx) {
     dropdown.style.display = "block"; return;
   }
   dropdown.innerHTML = matches.map(c => `
-    <div onclick="selectSENameMatch('${gateNum}', ${idx}, '${c.itemCode}', '${(c.combinedName || c.productName).replace(/'/g,"\\'")}', '${c.typeOfMaterial || ""}')"
+    <div onclick="selectSENameMatch('${gateNum}', ${idx}, '${c.itemCode}', '${(c.combinedName || c.productName).replace(/'/g,"\\'")}', '${c.typeOfMaterial || ""}', '${c.unit || ""}')"
       style="padding:7px 10px; cursor:pointer; font-size:0.78rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:600;">${c.combinedName || c.productName}</span>
@@ -465,10 +821,10 @@ function handleSENameSearch(inputEl, gateNum, idx) {
   dropdown.style.display = "block";
 }
 
-function selectSENameMatch(gateNum, idx, itemCode, productName, typeOfMaterial) {
+function selectSENameMatch(gateNum, idx, itemCode, productName, typeOfMaterial, unit) {
   const dropdown    = document.getElementById(`se-drop-${gateNum}-${idx}`);
   const searchInput = document.getElementById(`se-search-${gateNum}-${idx}`);
-  selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, typeOfMaterial, null);
+  selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, typeOfMaterial, null, unit);
   if (searchInput) searchInput.style.display = "none";
   if (dropdown)    dropdown.style.display = "none";
 }
@@ -480,10 +836,11 @@ document.addEventListener("click", function(e) {
   }
 });
 
-function selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, typeOfMaterial, clickedEl) {
+function selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, typeOfMaterial, clickedEl, unit) {
   const codeInput   = document.querySelector(`.se-item-code-${gateNum}[data-idx="${idx}"]`);
   const nameInput   = document.querySelector(`.se-mat-name-${gateNum}[data-idx="${idx}"]`);
   const typeInput   = document.querySelector(`.se-material-type-${gateNum}[data-idx="${idx}"]`);
+  const unitInput   = document.querySelector(`.se-item-code-unit-${gateNum}[data-idx="${idx}"]`);
   const nameDisplay = document.querySelector(`.se-mat-name-display-${gateNum}[data-idx="${idx}"]`);
   const typeDisplay = document.querySelector(`.se-material-type-display-${gateNum}[data-idx="${idx}"]`);
   const searchInput = document.getElementById(`se-search-${gateNum}-${idx}`);
@@ -500,6 +857,7 @@ function selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, type
   }
   if (nameInput) nameInput.value = productName;
   if (typeInput) typeInput.value = typeOfMaterial;
+  if (unitInput) unitInput.value = unit || "NOS";
 
   if (nameDisplay) {
     nameDisplay.style.display = "block";

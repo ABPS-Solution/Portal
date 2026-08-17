@@ -30,13 +30,13 @@ function handleCBOQImportProductSearch(query) {
     <div onclick="selectCBOQImportProduct('${(m.productName||'').replace(/'/g,"\\'")}', '${(m.productRating||'').replace(/'/g,"\\'")}')"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      ${m.productName}${m.productRating ? ` <span style="color:var(--brand); font-weight:700;">${m.productRating}</span>` : ""}
+      ${m.productName}${m.productRating ? ` - <span style="color:var(--brand); font-weight:700;">${m.productRating}</span>` : ""}
     </div>`).join("");
   dropdown.style.display = "block";
 }
 
 function selectCBOQImportProduct(productName, productRating) {
-  document.getElementById("cboq-import-product-search").value = productRating ? `${productName} ${productRating}` : productName;
+  document.getElementById("cboq-import-product-search").value = productRating ? `${productName} - ${productRating}` : productName;
   document.getElementById("cboq-import-product-dropdown").style.display = "none";
   window.cboqImportSelectedProduct = { productName, productRating };
 
@@ -270,7 +270,7 @@ function showCBOQProductDropdown() {
     <div onmousedown="event.preventDefault();" onclick="selectCBOQProductOption('${opt.itemCode}')"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      ${opt.productName}${opt.productRating ? ` <span style="color:var(--brand); font-weight:700;">${opt.productRating}</span>` : ""}
+      ${opt.productName}${opt.productRating ? ` - <span style="color:var(--brand); font-weight:700;">${opt.productRating}</span>` : ""}
     </div>`).join("");
   dropdown.style.display = "block";
 }

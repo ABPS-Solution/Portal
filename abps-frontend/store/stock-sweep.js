@@ -65,7 +65,7 @@ function handleSweepSearch(query) {
     <div onclick="addToSweepBasket('${item.itemCode}', \`${item.productName.replace(/`/g,"'")}\`, \`${(item.rating||'').replace(/`/g,"'")}\`, '${(item.unitType||'NOS').replace(/'/g,"")}')"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>${item.productName}${item.rating ? ` <span style="color:var(--brand); font-weight:700;">${item.rating}</span>` : ""}
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>${item.productName}${item.rating ? ` - <span style="color:var(--brand); font-weight:700;">${item.rating}</span>` : ""}
     </div>`).join("");
   dropdown.style.display = "block";
 }
@@ -104,7 +104,7 @@ function renderSweepBasket() {
       </tr>` : `
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px; font-family:monospace;">${b.itemCode}</td>
-        <td style="padding:8px;">${b.materialName}${b.rating ? ` <span style="color:var(--brand); font-weight:700;">${b.rating}</span>` : ""}</td>
+        <td style="padding:8px;">${b.materialName}${b.rating ? ` - <span style="color:var(--brand); font-weight:700;">${b.rating}</span>` : ""}</td>
         <td style="padding:8px; font-family:monospace; color:var(--muted);">${b.unitType || "NOS"}</td>
         <td style="padding:8px;"><input type="number" min="0.01" step="any" required value="${b.quantity}" oninput="updateSweepBasketField('${b.itemCode}','quantity',this.value)" style="width:90px; padding:5px; border:1px solid var(--border); border-radius:4px;"></td>
         <td style="padding:8px;"><button onclick="removeFromSweepBasket('${b.itemCode}')" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>

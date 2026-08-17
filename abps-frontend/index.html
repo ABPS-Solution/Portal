@@ -617,6 +617,7 @@
                 <tr>
                   <th style="width:160px;">Item Code</th>
                   <th style="min-width:280px;">Description of Material</th>
+                  <th style="width:90px; text-align:center; color:#64748b; font-size:0.75rem; font-weight:700; text-transform:uppercase;">Invoice Unit</th>
                   <th style="width:140px; text-align:center; color:#64748b; font-size:0.75rem; font-weight:700; text-transform:uppercase;">Invoice Quantity</th>
                 </tr>
               </thead>
@@ -633,6 +634,7 @@
 
     <div id="canvas-module-store-entry" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
       <h2 class="panel-title">Raw Materials Store Entry and GRN</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin:-6px 0 14px;">Stock is recorded in <strong>Item Code Unit</strong> — convert the quantity from Invoice Unit if they differ.</p>
       <div id="store-entry-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="store-entry-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>
@@ -1854,21 +1856,41 @@
 
     <div id="canvas-module-design-itemcode" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Add / Check Item Code</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:20px;">Search the catalog to find an existing Item Code, or create a new one if the material doesn't exist.</p>
-      
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">Search the catalog to find an existing Item Code, or create a new one if the material doesn't exist.</p>
+
+      <div style="display:flex; gap:10px; margin-bottom:18px;">
+        <button class="nav-btn-styled" id="icf-mode-btn-search" onclick="switchItemCodeMode('search')" style="background:var(--accent); font-weight:700; padding:9px 20px;">Search / Add Item Code</button>
+        <button class="nav-btn-styled" id="icf-mode-btn-format" onclick="switchItemCodeMode('format')" style="display:none; background:#718096; font-weight:700; padding:9px 20px;">Add / Change Item Code Format</button>
+      </div>
+
       <div id="itemcode-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <!-- ═══════ MODE: SEARCH / ADD ═══════ -->
+      <div id="icf-mode-search">
 
       <!-- SEARCH ZONE -->
       <div id="itemcode-search-zone-wrapper" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
-        <label class="field-label" style="margin-top:0; color:var(--brand);">Search Material Name *</label>
-        <div style="display:flex; gap:10px; align-items:flex-end; margin-top:4px;">
-          <div style="flex-grow:1;">
-            <input type="text" id="itemcode-search-input" placeholder="e.g. HT Capacitor 413KVAR, Aluminum Busbar 40x10mm..." 
-              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius);"
-              onkeydown="if(event.key==='Enter') executeItemCodeSearch()" />
+        <div style="display:grid; grid-template-columns:1fr 2fr; gap:14px;">
+          <div style="position:relative;">
+            <label class="field-label" style="margin-top:0;">Type of Material (optional)</label>
+            <input type="text" id="icf-search-type-ta-input" placeholder="Narrow by type..." autocomplete="off"
+              oninput="handleIcfTypeTypeaheadInput(this.value, 'icf-search-type-ta-input', 'icf-search-type-ta-dropdown')"
+              onchange="handleIcfSearchTypeChange(this.value)"
+              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
+            <div id="icf-search-type-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
-          <button class="nav-btn-styled" id="itemcode-search-btn" onclick="executeItemCodeSearch()" 
-            style="padding:10px 24px; font-weight:700; background:var(--brand);">Search</button>
+          <div>
+            <label class="field-label" style="margin-top:0; color:var(--brand);">Search Material Name *</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <div style="flex-grow:1;">
+                <input type="text" id="itemcode-search-input" placeholder="e.g. HT Capacitor 413KVAR, Aluminum Busbar 40x10mm..."
+                  style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"
+                  onkeydown="if(event.key==='Enter') executeItemCodeSearch()" />
+              </div>
+              <button class="nav-btn-styled" id="itemcode-search-btn" onclick="executeItemCodeSearch()"
+                style="padding:10px 24px; font-weight:700; background:var(--brand); flex-shrink:0;">Search</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1878,10 +1900,10 @@
           Did you mean one of these?
         </div>
         <div id="itemcode-suggestions-mount" style="display:flex; flex-direction:column; gap:8px;"></div>
-        
+
         <div id="itemcode-none-match-banner" style="margin-top:14px; padding:10px 14px; background:#fffbeb; border:1px solid #f59e0b; border-radius:var(--radius); font-size:0.82rem; color:#92400e; font-weight:600;">
-          None of these match your product? 
-          <button onclick="revealItemCodeCreateForm()" 
+          None of these match your product?
+          <button onclick="revealItemCodeCreateForm()"
             style="background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; font-size:0.78rem; font-weight:700; cursor:pointer; margin-left:8px;">
             Create New Item Code
           </button>
@@ -1891,7 +1913,7 @@
       <!-- NO RESULTS ZONE -->
       <div id="itemcode-no-results-zone" style="display:none; margin-bottom:16px; padding:14px; background:#fff5f5; border:1px solid #fca5a5; border-radius:var(--radius); font-size:0.85rem; color:#b91c1c; font-weight:600;">
         No similar materials found in the catalog.
-        <button id="itemcode-no-results-create-btn" onclick="revealItemCodeCreateForm()" 
+        <button id="itemcode-no-results-create-btn" onclick="revealItemCodeCreateForm()"
           style="background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; font-size:0.78rem; font-weight:700; cursor:pointer; margin-left:10px;">
           Create New Item Code
         </button>
@@ -1900,98 +1922,157 @@
       <!-- CREATE NEW FORM -->
       <div id="itemcode-create-form-zone" style="display:none; background:#f0fdf4; border:2px solid var(--accent); border-radius:var(--radius); padding:16px;">
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--accent); margin-bottom:14px; letter-spacing:0.5px;">Create New Item Code</div>
-        
+
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
           <div>
             <label class="field-label" style="margin-top:0;">Item Code (Auto-assigned)</label>
-            <input type="text" id="itemcode-new-code" readonly 
+            <input type="text" id="itemcode-new-code" readonly
               style="padding:10px; font-family:monospace; font-size:1rem; font-weight:800; color:var(--brand); background:#e0f2fe; border:1.5px solid var(--brand); border-radius:var(--radius); cursor:not-allowed;" />
           </div>
-          <div>
+          <div style="position:relative;">
             <label class="field-label" style="margin-top:0;">Type of Material *</label>
-            <select id="itemcode-new-type" style="padding:10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-              <option value="">— Select Type —</option>
-              <option value="Fabrication">Fabrication</option>
-              <option value="Switchgear">Switchgear</option>
-              <option value="Cables">Cables</option>
-              <option value="Busbar">Busbar</option>
-              <option value="Lugs">Lugs</option>
-              <option value="Hardware">Hardware</option>
-              <option value="Meters">Meters</option>
-              <option value="Fiber Glass Material">Fiber Glass Material</option>
-              <option value="Relay">Relay</option>
-              <option value="Fans">Fans</option>
-              <option value="Air Core Reactor">Air Core Reactor</option>
-              <option value="Measuring Equipment">Measuring Equipment</option>
-              <option value="HT Capacitors">HT Capacitors</option>
-              <option value="Iron Core Reactor">Iron Core Reactor</option>
-              <option value="Conductor">Conductor</option>
-              <option value="Fuses">Fuses</option>
-              <option value="LT Capacitors">LT Capacitors</option>
-              <option value="Associated Equipment">Associated Equipment</option>
-              <option value="Insulators">Insulators</option>
-              <option value="Electronic Card">Electronic Card</option>
-              <option value="Resin Hardener and Varnish">Resin Hardener and Varnish</option>
-              <option value="Paint and Thinner">Paint and Thinner</option>
-              <option value="Power Factor Controller">Power Factor Controller</option>
-              <option value="Harmonic Filter Bank">Harmonic Filter Bank</option>
-              <option value="APFC">APFC</option>
-              <option value="Damping Resistors">Damping Resistors</option>
-              <option value="HT Capacitor Raw Material">HT Capacitor Raw Material</option>
-              <option value="Insulating Material">Insulating Material</option>
-              <option value="TSM">TSM</option>
-              <option value="SCR">SCR</option>
-              <option value="Heatsink">Heatsink</option>
-              <option value="Laminations">Laminations</option>
-              <option value="Consumables">Consumables</option>
-              <option value="Consumable Spares">Consumable Spares</option>
-              <option value="Gas Cylinders">Gas Cylinders</option>
-              <option value="Packing Material">Packing Material</option>
-              <option value="Assembly Material">Assembly Material</option>
-              <option value="Capital Goods">Capital Goods</option>
+            <input type="text" id="icf-new-type-ta-input" placeholder="Type to search..." autocomplete="off"
+              oninput="handleIcfTypeTypeaheadInput(this.value, 'icf-new-type-ta-input', 'icf-new-type-ta-dropdown')"
+              onchange="handleIcfNewTypeChange(this.value)"
+              style="padding:10px; font-size:0.9rem; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
+            <div id="icf-new-type-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+        </div>
+
+        <!-- Fixed-Format sub-flow: sub-option picker + dynamic template form -->
+        <div id="icf-new-fixed-zone" style="display:none; margin-bottom:14px;">
+          <label class="field-label" style="margin-top:0;">Sub-Option *</label>
+          <select id="icf-new-suboption-select" onchange="handleIcfSubOptionChange(this.value)" style="padding:10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; margin-bottom:12px;">
+            <option value="">— Select Sub-Option —</option>
+          </select>
+          <div id="icf-new-fixed-form" style="display:none; background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px;">
+            <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">Material Name</div>
+            <div id="icf-new-name-inputs" style="display:flex; flex-wrap:wrap; align-items:flex-end;"></div>
+            <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin:12px 0 6px;">Rating</div>
+            <div id="icf-new-rating-inputs" style="display:flex; flex-wrap:wrap; align-items:flex-end;"></div>
+          </div>
+          <div style="background:#f1f5f9; border-radius:4px; padding:10px; font-size:0.85rem;">
+            <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:var(--muted); margin-bottom:4px;">Preview</div>
+            <div><strong>Material Name:</strong> <span id="icf-new-preview-name" style="color:var(--brand); font-weight:700;">—</span></div>
+            <div><strong>Rating:</strong> <span id="icf-new-preview-rating" style="color:var(--brand); font-weight:700;">—</span></div>
+            <div><strong>Unit:</strong> <span id="icf-new-preview-unit" style="color:var(--brand); font-weight:700;">—</span></div>
+          </div>
+          <div id="icf-new-admin-manual-toggle" style="display:none; margin-top:10px;">
+            <label style="font-size:0.8rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" id="icf-new-admin-manual-checkbox" onchange="handleIcfAdminManualToggle(this.checked)" /> Create manually (admin bypass — ignores the format)
+            </label>
+          </div>
+        </div>
+
+        <!-- Free-Form sub-flow: today's plain fields -->
+        <div id="icf-new-freeform-zone" style="display:none;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Material Name *</label>
+              <input type="text" id="itemcode-new-name"
+                style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"
+                placeholder="Enter the full standard product name..." />
+              <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Full descriptive name. Cannot be changed later without admin access.</div>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Rating (optional)</label>
+              <input type="text" id="itemcode-new-rating"
+                style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"
+                placeholder="e.g. 300 kVAr, 11 kV, 3 Ph, 50 Hz" />
+              <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Combined with Material Name wherever this code is looked up. Leave blank if not applicable.</div>
+            </div>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label class="field-label" style="margin-top:0;">Unit *</label>
+            <select id="itemcode-new-unit" style="padding:10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+              <option value="">— Select Unit —</option>
+              <option value="NOS">NOS (Numbers)</option>
+              <option value="KG"> KG (Kilograms)</option>
+              <option value="MTR">MTR (Metres)</option>
+              <option value="SET">SET (Sets)</option>
+              <option value="LTR">LTR (Litres)</option>
+              <option value="ROL">ROL (Rolls)</option>
             </select>
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-          <div>
-            <label class="field-label" style="margin-top:0;">Material Name *</label>
-            <input type="text" id="itemcode-new-name" 
-              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"
-              placeholder="Enter the full standard product name..." />
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Full descriptive name. Cannot be changed later without admin access.</div>
-          </div>
-          <div>
-            <label class="field-label" style="margin-top:0;">Rating (optional)</label>
-            <input type="text" id="itemcode-new-rating" 
-              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"
-              placeholder="e.g. 300 kVAr, 11 kV, 3 Ph, 50 Hz" />
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Combined with Material Name wherever this code is looked up. Leave blank if not applicable.</div>
-          </div>
-        </div>
-
-        <div style="margin-bottom:14px;">
-          <label class="field-label" style="margin-top:0;">Unit *</label>
-          <select id="itemcode-new-unit" style="padding:10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-            <option value="">— Select Unit —</option>
-            <option value="NOS">NOS (Numbers)</option>
-            <option value="KG"> KG (Kilograms)</option>
-            <option value="MTR">MTR (Metres)</option>
-            <option value="SET">SET (Sets)</option>
-            <option value="LTR">LTR (Litres)</option>
-            <option value="ROL">ROL (Rolls)</option>
-          </select>
-        </div>
-
         <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #86efac; padding-top:14px;">
-          <button onclick="document.getElementById('itemcode-create-form-zone').style.display='none';" 
+          <button onclick="document.getElementById('itemcode-create-form-zone').style.display='none';"
             style="background:#718096; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">Cancel</button>
-          <button id="itemcode-create-submit-btn" onclick="submitNewItemCode()" 
+          <button id="itemcode-create-submit-btn" onclick="submitNewItemCode()"
             style="background:var(--accent); color:#fff; border:none; padding:8px 20px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">
             Create Item Code
           </button>
         </div>
       </div>
+      </div>
+      <!-- ═══════ /MODE: SEARCH / ADD ═══════ -->
+
+      <!-- ═══════ MODE: ADD / CHANGE ITEM CODE FORMAT (admin) ═══════ -->
+      <div id="icf-mode-format" style="display:none;">
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px; position:relative;">
+          <label class="field-label" style="margin-top:0;">Type of Material</label>
+          <input type="text" id="icf-fmt-type-ta-input" placeholder="Type to search..." autocomplete="off"
+            oninput="handleIcfTypeTypeaheadInput(this.value, 'icf-fmt-type-ta-input', 'icf-fmt-type-ta-dropdown')"
+            onchange="handleIcfFormatTypeChange(this.value)"
+            style="padding:10px; font-size:0.9rem; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; max-width:420px;" />
+          <div id="icf-fmt-type-ta-dropdown" style="display:none; position:absolute; top:68px; left:16px; width:calc(100% - 32px); max-width:420px; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <div style="margin-top:10px;">
+            <label style="font-size:0.8rem; font-weight:600;">Entry Mode:</label>
+            <select id="icf-fmt-entry-mode" onchange="handleIcfEntryModeChange(this.value)" style="padding:6px; font-weight:600; border:1.5px solid var(--border); border-radius:4px; margin-left:8px;">
+              <option value="Fixed Format">Fixed Format</option>
+              <option value="Free Form">Free Form</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="icf-fmt-list-zone" style="display:none;">
+          <div id="icf-fmt-formats-list" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;"></div>
+          <button class="nav-btn-styled" style="background:var(--brand);" onclick="openIcfAddFormatEditor()">+ Add Item Code Format</button>
+        </div>
+
+        <!-- One format editor (shared for edit-existing and add-new) -->
+        <div id="icf-fmt-editor-zone" style="display:none; background:#fffbeb; border:2px solid #f59e0b; border-radius:var(--radius); padding:16px; margin-top:16px;">
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:12px;">Format Editor</div>
+          <input type="hidden" id="icf-fmt-editor-formatid" value="" />
+          <label class="field-label" style="margin-top:0;">Sub-Option *</label>
+          <input type="text" id="icf-fmt-editor-suboption" placeholder="e.g. HT Capacitor Bank" style="padding:8px; border:1.5px solid var(--border); border-radius:4px; width:100%; margin-bottom:10px;" />
+
+          <label class="field-label" style="margin-top:0;">Material Name Template *</label>
+          <textarea id="icf-fmt-editor-name-template" rows="2" placeholder="e.g. HT Capacitor Bank" oninput="renderIcfFormatEditorPreview()" style="padding:8px; border:1.5px solid var(--border); border-radius:4px; width:100%; font-family:monospace; font-size:0.85rem; margin-bottom:6px;"></textarea>
+          <div id="icf-fmt-editor-name-error" style="font-size:0.75rem; color:#b91c1c; font-weight:600; margin-bottom:8px;"></div>
+
+          <label class="field-label" style="margin-top:0;">Rating Template (optional)</label>
+          <textarea id="icf-fmt-editor-rating-template" rows="3" placeholder="e.g. <Indoor or Outdoor>, nph kVAr, nph kV, nph Ph, nph Hz" oninput="renderIcfFormatEditorPreview()" style="padding:8px; border:1.5px solid var(--border); border-radius:4px; width:100%; font-family:monospace; font-size:0.85rem; margin-bottom:6px;"></textarea>
+          <div id="icf-fmt-editor-rating-error" style="font-size:0.75rem; color:#b91c1c; font-weight:600; margin-bottom:8px;"></div>
+
+          <label class="field-label" style="margin-top:0;">Unit *</label>
+          <select id="icf-fmt-editor-unit" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:4px; margin-bottom:10px;">
+            <option value="">— Select Unit —</option>
+            <option value="NOS">NOS</option>
+            <option value="KG">KG</option>
+            <option value="MTR">MTR</option>
+            <option value="SET">SET</option>
+            <option value="LTR">LTR</option>
+            <option value="ROL">ROL</option>
+          </select>
+
+          <div style="background:#fff; border:1px solid var(--border); border-radius:4px; padding:10px; margin-bottom:10px;">
+            <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:var(--muted); margin-bottom:6px;">Live Preview — what the operator will see</div>
+            <div style="margin-bottom:8px;"><strong>Material Name form:</strong><div id="icf-fmt-editor-name-preview" style="margin-top:4px;"></div></div>
+            <div><strong>Rating form:</strong><div id="icf-fmt-editor-rating-preview" style="margin-top:4px;"></div></div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #fcd34d; padding-top:12px;">
+            <button id="icf-fmt-editor-deactivate-btn" onclick="submitIcfDeactivateFormat()" style="display:none; background:#b91c1c; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">Deactivate This Format</button>
+            <div style="display:flex; gap:10px; margin-left:auto;">
+              <button onclick="closeIcfFormatEditor()" style="background:#718096; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">Cancel</button>
+              <button onclick="submitIcfSaveFormat()" style="background:var(--accent); color:#fff; border:none; padding:8px 20px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">Save Format</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ═══════ /MODE: ADD / CHANGE ITEM CODE FORMAT ═══════ -->
     </div>
   </div>
 
@@ -3031,10 +3112,18 @@
           <div id="commissioning-report-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
           <div id="commissioning-report-inputs-container" style="display: block;">
             <div style="margin-bottom: 12px;">
-              <label class="field-label">Select Lead / Company *</label>
-              <select id="commissioning-report-lead-dropdown" style="padding: 8px; font-weight: 600; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
-                <option value="">— Select Company / Lead —</option>
-              </select>
+              <label class="field-label">Project ID or Customer Name *</label>
+              <div style="position:relative;">
+                <input type="text" id="commissioning-report-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+                  oninput="handleSharedProjectTypeaheadInput(this.value, 'commissioning-report-project-ta-input', 'commissioning-report-project-ta-dropdown')"
+                  onchange="handleCommissioningReportProjectChange(this.value)"
+                  style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+                <div id="commissioning-report-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+              </div>
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label class="field-label">Customer Name</label>
+              <textarea id="commissioning-report-customer-name" readonly placeholder="Auto-filled from Project ID" style="min-height:38px; padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; background:#f8fafc;"></textarea>
             </div>
             <div class="card-box" id="commissioning-report-upload-box" onclick="document.getElementById('commissioning-report-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Commissioning Report</div>
             <input type="file" id="commissioning-report-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'commissioning-report-upload-box', 'Commissioning Report Document Added ✅')" />
@@ -3601,6 +3690,7 @@
 <script src="marketing/email-processing.js"></script>
 <script src="marketing/business-card.js"></script>
 <script src="marketing/marketing-dashboard.js"></script>
+<script src="design/item-code-format.js"></script>
 <script src="design/item-codes.js"></script>
 <script src="design/create-boq.js"></script>
 <script src="design/authorize-boq.js"></script>

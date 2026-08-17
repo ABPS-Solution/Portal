@@ -20,7 +20,7 @@ async function fetchAndPopulateUploadLeadDropdowns() {
     const d = await apFetch({ action: "getLeadsForDocumentUploadDropdown", activeEngineer: appActiveOperatorIdentityString });
     if (!d.success) return;
     cachedUploadLeadsList = d.leads;
-    ["dispatch-bill-lead-dropdown", "commissioning-report-lead-dropdown", "purchase-order-lead-dropdown"].forEach(id => {
+    ["dispatch-bill-lead-dropdown", "purchase-order-lead-dropdown"].forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
       const prevVal = el.value;
@@ -1986,6 +1986,15 @@ document.getElementById('commissioning-report-raw-file').onchange = (e) => {
 // invoked with opsFlagTypeString === "PURCHASE_ORDER" anymore). Left
 // in place rather than surgically removed to avoid regressing the still-
 // live Dispatch Bill / Commissioning Report paths this function handles.
+// Customer Name auto-fill for the Commissioning Report Project ID
+// typeahead — same lookup Create BOQ's handleCBOQProjectChange does
+// against the shared sharedProjectMeta cache.
+function handleCommissioningReportProjectChange(projectId) {
+  const meta = window.sharedProjectMeta && window.sharedProjectMeta[projectId];
+  const customerNameEl = document.getElementById("commissioning-report-customer-name");
+  if (customerNameEl) customerNameEl.value = meta ? (meta.companyName || "") : "";
+}
+
 async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
 
   const isPO = opsFlagTypeString === "PURCHASE_ORDER";
@@ -2007,12 +2016,25 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
     return;
   }
 
-  const leadDropdownIds = { "DISPATCH": "dispatch-bill-lead-dropdown", "COMMISSION": "commissioning-report-lead-dropdown", "PURCHASE_ORDER": "purchase-order-lead-dropdown" };
-  const leadDropEl = document.getElementById(leadDropdownIds[opsFlagTypeString]);
-  if (!leadDropEl || !leadDropEl.value || leadDropEl.value.trim() === "") {
-    alert("Please select the Company / Lead this document belongs to before processing.");
-    if (leadDropEl) leadDropEl.focus();
-    return;
+  // COMMISSION keys off a Project ID typeahead now, not a Lead dropdown —
+  // see handleCommissioningReportProjectChange. The other two doc types
+  // are unchanged.
+  const isCommission = opsFlagTypeString === "COMMISSION";
+  if (isCommission) {
+    const projectInput = document.getElementById("commissioning-report-project-ta-input");
+    if (!projectInput || !projectInput.value.trim()) {
+      showBOQBanner("commissioning-report-feedback-banner", "⚠️ Project ID or Customer Name is required.", "error");
+      if (projectInput) projectInput.focus();
+      return;
+    }
+  } else {
+    const leadDropdownIds = { "DISPATCH": "dispatch-bill-lead-dropdown", "PURCHASE_ORDER": "purchase-order-lead-dropdown" };
+    const leadDropEl = document.getElementById(leadDropdownIds[opsFlagTypeString]);
+    if (!leadDropEl || !leadDropEl.value || leadDropEl.value.trim() === "") {
+      alert("Please select the Company / Lead this document belongs to before processing.");
+      if (leadDropEl) leadDropEl.focus();
+      return;
+    }
   }
 
   // Order Acceptance Sent Date and Contract Review doc are compulsory on
@@ -2048,8 +2070,9 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
       reader.readAsDataURL(activeWorkingFile);
     });
 
-    const leadDropdownIdsForSubmit = { "DISPATCH": "dispatch-bill-lead-dropdown", "COMMISSION": "commissioning-report-lead-dropdown", "PURCHASE_ORDER": "purchase-order-lead-dropdown" };
-    const selectedLeadIdForSubmit = document.getElementById(leadDropdownIdsForSubmit[opsFlagTypeString]).value.trim();
+    const leadDropdownIdsForSubmit = { "DISPATCH": "dispatch-bill-lead-dropdown", "PURCHASE_ORDER": "purchase-order-lead-dropdown" };
+    const selectedLeadIdForSubmit = isCommission ? "" : document.getElementById(leadDropdownIdsForSubmit[opsFlagTypeString]).value.trim();
+    const selectedProjectIdForSubmit = isCommission ? document.getElementById("commissioning-report-project-ta-input").value.trim() : "";
 
     // Owner of Order used to be a manual selection -- now auto-filled from
     // the logged-in operator, matching the same approach used elsewhere
@@ -2075,6 +2098,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
       mimeType: activeWorkingFile.type || "application/octet-stream",
       fields,
       leadId: selectedLeadIdForSubmit,
+      projectId: isCommission ? selectedProjectIdForSubmit : undefined,
       specialRequirement: isPO ? document.getElementById("purchase-order-special-requirement").value.trim() : undefined,
       orderAcceptanceSentDate: isPO ? poAcceptanceDate : undefined,
       contractReviewFile
@@ -2124,6 +2148,8 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
               targetPurchaseOrderFileObj = null;
               document.getElementById('dispatch-bill-raw-file').value = '';
               document.getElementById('commissioning-report-raw-file').value = '';
+              document.getElementById('commissioning-report-project-ta-input').value = '';
+              document.getElementById('commissioning-report-customer-name').value = '';
               document.getElementById('purchase-order-raw-file').value = '';
               const b1 = document.getElementById('dispatch-bill-upload-box');
               const b2 = document.getElementById('commissioning-report-upload-box');

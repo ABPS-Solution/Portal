@@ -360,7 +360,12 @@ async function triggerLiveWarehouseStockMetricsSync() {
 
       // Group items by Type of Material
       const typeGroups = {};
-      const typeOrder = [
+      // Type of Material order now lives in design.item_code_type_config
+      // (16 Aug 2026, see design/item-codes.js's loadItemCodeTypeConfigIntoCache)
+      // — this hardcoded list is kept as a fallback ONLY, so a failed/not-yet-run
+      // fetch (e.g. this screen opened before Item Code's cache warmed up)
+      // can't break Live Stock's grouping.
+      const FALLBACK_TYPE_ORDER = [
         "Fabrication","Switchgear","Cables","Busbar","Lugs","Hardware","Meters","Fiber Glass Material",
         "Relay","Fans","Air Core Reactor","Measuring Equipment","HT Capacitors","Iron Core Reactor",
         "Conductor","Fuses","LT Capacitors","Associated Equipment","Insulators","Electronic Card",
@@ -369,6 +374,11 @@ async function triggerLiveWarehouseStockMetricsSync() {
         "Heatsink","Laminations","Consumables","Consumable Spares","Gas Cylinders","Packing Material",
         "Assembly Material","Capital Goods",""
       ];
+      const typeOrder = (window.itemCodeTypeConfigCache && window.itemCodeTypeConfigCache.length > 0)
+        ? [...window.itemCodeTypeConfigCache.map(t => t.typeOfMaterial), ""]
+        : FALLBACK_TYPE_ORDER;
+      // Fire-and-forget warm-up for next time — doesn't block this render.
+      if (typeof loadItemCodeTypeConfigIntoCache === "function") loadItemCodeTypeConfigIntoCache();
       // Shared display helper — stored values are the full Type of Material name directly.
       // Defined once here since this is the first place it's needed.
       window.typeLabelDisplay_ = window.typeLabelDisplay_ || function(t) {
@@ -599,6 +609,16 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
   });
   document.querySelectorAll(`.se-phys-qty-${gateNum}`).forEach(inp => {
     itemData.lineItems[parseInt(inp.dataset.idx, 10)].verifiedPhysicalQuantity = parseInt(inp.value, 10) || 0;
+  });
+  // Invoice Unit (editable, carried from Gate Entry) and Item Code Unit
+  // (resolved from design.item_codes.unit via the material match) — the
+  // latter is what actually governs stock from here on, see
+  // commitStoreEntryPipelineStep.
+  document.querySelectorAll(`.se-invoice-unit-${gateNum}`).forEach(inp => {
+    itemData.lineItems[parseInt(inp.dataset.idx, 10)].unitType = inp.value.trim() || 'NOS';
+  });
+  document.querySelectorAll(`.se-item-code-unit-${gateNum}`).forEach(inp => {
+    itemData.lineItems[parseInt(inp.dataset.idx, 10)].itemCodeUnit = inp.value.trim() || null;
   });
 
   let materialTypeMissing = false;
@@ -1400,7 +1420,7 @@ function handleAssStockSearch(query) {
   if (!query || query.trim().length < 1) { dropdown.style.display = "none"; return; }
   const catalog = window.itemCodeCatalogCache || [];
   const q = query.toLowerCase();
-  const combinedLabel = (item) => item.rating ? `${item.productName} ${item.rating}` : item.productName;
+  const combinedLabel = (item) => item.rating ? `${item.productName} - ${item.rating}` : item.productName;
   const matches = catalog.filter(item => combinedLabel(item).toLowerCase().includes(q)).slice(0, 10);
   if (matches.length === 0) { dropdown.style.display = "none"; return; }
   dropdown.innerHTML = matches.map(item => `
@@ -1583,13 +1603,13 @@ function handleEiDelivMaterialInput(query) {
     <div onclick="selectEiDelivMaterial(\`${(it.productName||'').replace(/\`/g,"'")}\`, \`${(it.rating||'').replace(/\`/g,"'")}\`)"
       style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.productName}${it.rating ? ` <span style="color:var(--brand); font-weight:700;">${it.rating}</span>` : ''}
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.productName}${it.rating ? ` - <span style="color:var(--brand); font-weight:700;">${it.rating}</span>` : ''}
     </div>`).join("");
   dd.style.display = "block";
 }
 
 function selectEiDelivMaterial(productName, rating) {
-  document.getElementById("ei-deliv-material-input").value = rating ? `${productName} ${rating}` : productName;
+  document.getElementById("ei-deliv-material-input").value = rating ? `${productName} - ${rating}` : productName;
   document.getElementById("ei-deliv-material-dd").style.display = "none";
 }
 

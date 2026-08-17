@@ -70,6 +70,7 @@ async function initializeStoreEntryWorkspaceQueue() {
           : null;
         const preFilledName = catalogHit ? (catalogHit.combinedName || catalogHit.productName) : (line.materialName || "");
         const preFilledType = catalogHit ? (catalogHit.typeOfMaterial || "") : "";
+        const preFilledUnit = catalogHit ? (catalogHit.unit || "") : "";
         const isPreFilled   = !!existingCode;
 
         const codeStyle = isPreFilled
@@ -106,8 +107,13 @@ async function initializeStoreEntryWorkspaceQueue() {
             </div>
             ${isPreFilled ? '' : suggestionHtml}
           </td>
-          <td style="text-align:center; color:#64748b; font-weight:700; vertical-align:middle; width:55px; font-family:monospace; font-size:0.9rem;">
-            ${line.unitType || "NOS"}
+          <td style="width:70px; padding:6px; vertical-align:middle;">
+            <input type="text" class="se-invoice-unit-${item.gateNumber}" data-idx="${idx}" value="${line.unitType || 'NOS'}"
+              style="width:100%; text-align:center; font-family:monospace; font-weight:700; border:1px solid var(--border); padding:5px 2px; border-radius:3px;">
+          </td>
+          <td style="width:70px; padding:6px; text-align:center; vertical-align:middle;">
+            <input type="text" class="se-item-code-unit-${item.gateNumber}" data-idx="${idx}" value="${preFilledUnit}" readonly
+              style="width:100%; text-align:center; font-family:monospace; font-weight:700; border:none; background:transparent; color:#1e293b;">
           </td>
           <td style="text-align:center; color:#1e293b; font-weight:800; vertical-align:middle; width:65px; font-family:monospace; font-size:0.95rem;">
             ${line.gateQuantity}
@@ -173,7 +179,8 @@ async function initializeStoreEntryWorkspaceQueue() {
                   <th style="width:95px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
                   <th style="width:250px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Material Description</th>
                   <th style="width:280px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name *</th>
-                  <th style="width:55px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit</th>
+                  <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Invoice Unit</th>
+                  <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code Unit</th>
                   <th style="width:65px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Invoice Qty</th>
                   <th style="width:85px; text-align:center; font-size:0.72rem; padding:8px 6px 8px 16px; white-space:nowrap;">Received Qty *</th>
                   <th style="width:75px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Rate / Qty</th>
@@ -232,13 +239,21 @@ async function initializeStoreEntryWorkspaceQueue() {
           if (existing) existing.remove();
           const pills = result.matches.map((m) => {
             const c = confColors[m.confidence] || confColors.low;
-            return `<div 
-              onclick="selectStoreEntryItemCodeMatch('${li.gateNumber}', ${li.lineIdx}, '${m.itemCode}', \`${m.productName.replace(/`/g,"'")}\`, '${m.typeOfMaterial}', this)"
+            // Gemini's match result only ever carries {itemCode, confidence}
+            // (see lib/gemini.js's matchStoreEntryItemCodes prompt schema) —
+            // productName/typeOfMaterial/unit have to be resolved locally
+            // against the catalog cache already loaded for this screen.
+            const catHit = catalog.find(cc => (cc.itemCode || "").toUpperCase() === (m.itemCode || "").toUpperCase());
+            const displayName = catHit ? (catHit.combinedName || catHit.productName) : m.itemCode;
+            const typeOfMaterial = catHit ? (catHit.typeOfMaterial || "") : "";
+            const unit = catHit ? (catHit.unit || "") : "";
+            return `<div
+              onclick="selectStoreEntryItemCodeMatch('${li.gateNumber}', ${li.lineIdx}, '${m.itemCode}', \`${displayName.replace(/`/g,"'")}\`, '${typeOfMaterial}', this, '${unit}')"
               style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; border:1.5px solid ${c.border}; border-radius:4px; background:${c.bg}; cursor:pointer; margin-bottom:3px; transition:all 0.15s ease;"
               onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
               <div style="flex:1; min-width:0;">
                 <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.75rem;">${m.itemCode}</span>
-                <span style="font-size:0.75rem; font-weight:600; color:#1e293b; margin-left:6px; word-break:break-word;">${m.productName}</span>
+                <span style="font-size:0.75rem; font-weight:600; color:#1e293b; margin-left:6px; word-break:break-word;">${displayName}</span>
               </div>
               <span style="font-size:0.63rem; font-weight:700; color:${c.color}; padding:1px 4px; background:#fff; border-radius:3px; border:1px solid ${c.border}; white-space:nowrap; margin-left:6px; flex-shrink:0;">${(m.confidence||"low").toUpperCase()}</span>
             </div>`;
