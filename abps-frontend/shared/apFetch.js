@@ -215,14 +215,21 @@ async function handleGooglePlatformCredentialResponse(response) {
   try {
     const res = await fetch(GAS_URL, {
       method: "POST",
-      body: JSON.stringify({ 
-        action: "googleLogin", 
+      body: JSON.stringify({
+        action: "googleLogin",
         idToken: response.credential,
-        requestedEngineer: selectedEngineer
+        requestedEngineer: selectedEngineer,
+        // Location-restricted login (ABPS_SYSTEM_OVERVIEW.md §18.3): a device
+        // that's ever logged in from the office network gets a trust token
+        // back, stored here and replayed on every subsequent login so it
+        // keeps working from mobile data during an office outage. Persists
+        // across logout on purpose — see the preserved-key comment in
+        // executeLogout().
+        deviceToken: localStorage.getItem("abpsDeviceToken") || null,
       })
     });
     const data = await res.json();
-    
+
     if (data.success) {
       localStorage.setItem("sessionToken",    data.sessionToken);
       localStorage.setItem("sessionExpiry",   data.expires);
@@ -234,6 +241,7 @@ async function handleGooglePlatformCredentialResponse(response) {
       // Write permissions to localStorage only as a session bootstrap cache.
       // On every subsequent page load, permissions are re-fetched from the server (D1).
       localStorage.setItem("userPermissions", JSON.stringify(data.permissions));
+      if (data.deviceToken) localStorage.setItem("abpsDeviceToken", data.deviceToken);
       appActiveOperatorIdentityString = selectedEngineer;
       userPermissions = data.permissions;
 
@@ -242,6 +250,10 @@ async function handleGooglePlatformCredentialResponse(response) {
       localStorage.setItem("isUserAdminGlobal", isUserAdminGlobal ? "true" : "false");
 
       showAppView();
+    } else if (data.code === "LOCATION_BLOCKED") {
+      alert(data.error);
+      if (googleBtnMount) googleBtnMount.style.display = "flex";
+      if (processingLoader) processingLoader.style.display = "none";
     } else {
       alert("Authentication Error: " + data.error);
       // RESTORATION FALLBACK: Bring the button back if access is explicitly denied by server row checks
@@ -262,14 +274,30 @@ function executeLogout() {
   // 1. Force the Google Identity library script to kill any cached silent-sign-in listeners on phones
   try {
     if (google && google.accounts && google.accounts.id) {
-      google.accounts.id.cancel(); 
+      google.accounts.id.cancel();
     }
-  } catch(e) { 
-    console.warn("Google identity platform context cleanup skip:", e.message); 
+  } catch(e) {
+    console.warn("Google identity platform context cleanup skip:", e.message);
   }
 
-  // 2. Clear out local data maps entirely
-  localStorage.clear(); 
+  // 1b. Invalidate the session server-side (fire-and-forget) — previously
+  // logout only cleared localStorage, leaving the DB session_token valid
+  // for up to the remaining 12h (ABPS_SYSTEM_OVERVIEW.md §18.2, finding H-2).
+  const outgoingSessionToken = localStorage.getItem("sessionToken");
+  if (outgoingSessionToken) {
+    fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "logout", sessionToken: outgoingSessionToken }),
+    }).catch(e => console.warn("Server-side logout call failed (session will still expire naturally):", e.message));
+  }
+
+  // 2. Clear out local data maps entirely, EXCEPT the device-trust token —
+  // that represents "this browser has been on the office network before",
+  // which stays true across a logout and is what keeps a later login
+  // working from mobile data during an office outage.
+  const deviceTokenToKeep = localStorage.getItem("abpsDeviceToken");
+  localStorage.clear();
+  if (deviceTokenToKeep) localStorage.setItem("abpsDeviceToken", deviceTokenToKeep);
   appActiveOperatorIdentityString = "";
   
   // 3. Reset the dashboard workspace visibilities
