@@ -60,18 +60,19 @@
   .logout-btn { background: transparent; border: 1px solid rgba(255,255,255,0.4); color: white; padding: 2px 5px; border-radius: 4px; cursor: pointer; font-size: 0.65rem; margin-top: 1px; text-transform: uppercase; }
   
   /* --- DASHBOARD WRAPPER RESPONSIVE GRID FRAMES --- */
-  .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+  .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
   @media(max-width:640px) {
     .dashboard-grid { gap: 8px; }
-    .menu-card { height: auto; min-height: 64px; padding: 10px 8px; }
-    .menu-card .mc-label { font-size: 0.82rem; line-height: 1.25; }
+    .menu-card { height: auto; min-height: 76px; padding: 14px 10px; }
+    .menu-card .mc-label { font-size: 0.88rem; line-height: 1.3; }
   }
-  .menu-card { background: var(--card); border: 1.5px solid var(--border); padding: 0 14px; border-radius: 7px; cursor: pointer; font-weight: 700; font-size: 0.88rem; height: 64px; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 1px 2px rgba(0,0,0,0.04); transition:box-shadow 0.15s, border-color 0.15s; position:relative; overflow:hidden; }
-  .menu-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--dept-accent, var(--brand)); border-radius:7px 7px 0 0; }
-  .menu-card:hover { box-shadow:0 3px 10px rgba(0,0,0,0.1); border-color:var(--dept-accent, var(--brand)); }
+  .menu-card { background: var(--card); border: 1.5px solid var(--border); padding: 0 20px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.95rem; height: 84px; display:flex; align-items:center; justify-content:center; gap:12px; box-shadow:0 1px 2px rgba(0,0,0,0.04); transition:box-shadow 0.15s, border-color 0.15s, transform 0.15s; position:relative; overflow:hidden; }
+  .menu-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background:var(--dept-accent, var(--brand)); border-radius:10px 10px 0 0; }
+  .menu-card:hover { box-shadow:0 4px 14px rgba(0,0,0,0.1); border-color:var(--dept-accent, var(--brand)); transform:translateY(-2px); }
   .menu-card.locked { opacity: 0.5; cursor: not-allowed; background: #e9ecef; }
-  .menu-card .mc-icon { font-size:1.1rem; flex-shrink:0; }
-  .menu-card .mc-label { font-size:0.88rem; font-weight:700; color:var(--text); text-align:center; white-space:normal; line-height:1.35; display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
+  .menu-card.locked:hover { transform:none; }
+  .menu-card .mc-icon { font-size:1.3rem; flex-shrink:0; }
+  .menu-card .mc-label { font-size:0.95rem; font-weight:700; color:var(--text); text-align:center; white-space:normal; line-height:1.4; display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
   /* --- DEPARTMENT TAB BAR — sits below the header, lets you jump straight
      to one department's section instead of scrolling the whole dashboard. --- */
   .dept-tabs-bar { position: sticky; top: 0; z-index: 90; background: var(--card); border-bottom: 1px solid var(--border); padding: 10px 8px; display: flex; align-items: center; gap: 10px; overflow-x: auto; scrollbar-width: thin; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
