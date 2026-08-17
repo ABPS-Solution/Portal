@@ -390,12 +390,17 @@ async function archiveEmailLeadFromSystemDatabaseCache(messageId, elementIndex) 
   deleteBtn.textContent = "Processing...";
   
   try {
+    // Previously posted to saveFollowUp with a key that route never
+    // handled — nothing was ever actually deleted server-side, and the
+    // client-side isUserAdminGlobal check gating this button's visibility
+    // is itself just a localStorage flag anyone could set. deleteProcessedEmail
+    // is a real route, requirePermission('perm_admin')-gated on the server.
     const r = await apFetch({
-      action: "saveFollowUp", 
-      activeEngineer: appActiveOperatorIdentityString,
-      followUpData: { archiveTargetEmailIdString: messageId }
+      action: "deleteProcessedEmail",
+      operatorName: appActiveOperatorIdentityString,
+      messageId: messageId
     });
-    
+
     // FIXED: Catch backend authorization block
     if (!r.success) {
         alert(r.error || "An unexpected error occurred.");

@@ -53,29 +53,27 @@ async function executeInboundEmailSyncPipelineFetch() {
   `;
   
   try {
-    // 3. Fire the secure fetch request payload down to your backend doPost router
-    const data = await apFetch({
+    // 3. Poll for new mail first (fetchAndProcessInboundEmailLeads only
+    // ever returns poll counts — {processed, leads, errors} — never the
+    // rows themselves, so it can't populate the feed on its own), then
+    // fetch the actual list. This two-step call is the fix for the bug
+    // where the feed always rendered empty: previously there was no
+    // route that returned emailLeads at all.
+    const pollData = await apFetch({
       action: "fetchAndProcessInboundEmailLeads",
       activeEngineer: appActiveOperatorIdentityString
     });
-    
+    if (!pollData.success) {
+      feedbackNode.style.cssText = "display: block; padding: 12px; border-radius: var(--radius); background: #fff5f5; border: 1px solid var(--warn); color: var(--warn); font-weight: 700; text-align: center; margin-bottom: 16px;";
+      feedbackNode.textContent = "Sync failed: " + (pollData.error || "Unknown backend error context.");
+      return;
+    }
+
+    const data = await apFetch({ action: "fetchEmailLeadsList" });
+
     // 4. Handle response success states and mount elements to your interface canvas
     if (data.success) {
-      // Pull old local storage cache if it exists, otherwise initialize an empty list
-      let localSavedLeads = [];
-      
-      const newIncomingLeads = data.emailLeads || [];
-      
-      // Merge unique emails based on Message ID reference parameters
-      newIncomingLeads.forEach(newMail => {
-        const isDuplicate = localSavedLeads.some(oldMail => oldMail.messageIdReference === newMail.messageIdReference);
-        if (!isDuplicate) {
-          localSavedLeads.push(newMail);
-        }
-      });
-      
-      // Update global application session scope data array
-      cachedInboundEmailLeadsArray = localSavedLeads;
+      cachedInboundEmailLeadsArray = data.emailLeads || [];
       try {
         localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray));
       } catch(storageErr) {
@@ -85,18 +83,12 @@ async function executeInboundEmailSyncPipelineFetch() {
         }
         try { localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray)); } catch(e2) { /* silent fail */ }
       }
-      
-      renderEmailLeadsFeedInterface(cachedInboundEmailLeadsArray);
 
-      if (data.partial) {
-        feedbackNode.style.cssText = "display:block; padding:10px 14px; border-radius:var(--radius); background:#fffbeb; border:1px solid #f59e0b; color:#92400e; font-weight:700; font-size:0.82rem; margin-bottom:16px; text-align:center;";
-        feedbackNode.innerHTML = `⚡ Processed ${data.newProcessed || 0} emails this run — inbox still has more. <button onclick="executeInboundEmailSyncPipelineFetch()" style="margin-left:10px; padding:4px 12px; background:#f59e0b; color:#fff; border:none; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.8rem;">Continue Sync</button>`;
-      } else {
-        feedbackNode.style.display = "none";
-      }
+      renderEmailLeadsFeedInterface(cachedInboundEmailLeadsArray);
+      feedbackNode.style.display = "none";
     } else {
       feedbackNode.style.cssText = "display: block; padding: 12px; border-radius: var(--radius); background: #fff5f5; border: 1px solid var(--warn); color: var(--warn); font-weight: 700; text-align: center; margin-bottom: 16px;";
-      feedbackNode.textContent = "Sync failed: " + (data.error || "Unknown backend error context.");
+      feedbackNode.textContent = "Failed to load leads: " + (data.error || "Unknown backend error context.");
     }
   } catch (error) {
     feedbackNode.style.cssText = "display: block; padding: 12px; border-radius: var(--radius); background: #fff5f5; border: 1px solid var(--warn); color: var(--warn); font-weight: 700; text-align: center; margin-bottom: 16px;";

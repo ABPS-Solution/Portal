@@ -467,8 +467,10 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 
       if (document.getElementById("mod-manufacturing-clearance")) document.getElementById("mod-manufacturing-clearance").style.display = canManufacturingClearance ? "block" : "none";
       if (document.getElementById("mod-project-status")) document.getElementById("mod-project-status").style.display = canProjectStatus ? "block" : "none";
+      const canCustomerQueryManagement = userPermissionsObject.customerQueryManagement === true;
+      if (document.getElementById("mod-customer-queries")) document.getElementById("mod-customer-queries").style.display = canCustomerQueryManagement ? "block" : "none";
       const projectHeaderBlock = document.getElementById("dashboard-project-department-header-block");
-      if (projectHeaderBlock) projectHeaderBlock.style.display = (canManufacturingClearance || canProjectStatus) ? "block" : "none";
+      if (projectHeaderBlock) projectHeaderBlock.style.display = (canManufacturingClearance || canProjectStatus || canCustomerQueryManagement) ? "block" : "none";
 
       const canTourExpense = userPermissionsObject.tourExpense === true;
       if (document.getElementById("mod-tour-expense")) document.getElementById("mod-tour-expense").style.display = canTourExpense ? "block" : "none";
@@ -822,6 +824,10 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     document.getElementById("dashboard-view").style.display = "none";
     const psCanvas = document.getElementById("canvas-module-project-status");
     if (psCanvas) { psCanvas.style.display = "block"; initializeProjectStatusPanel(); }
+  } else if (targetCanvasModuleId === 'customer-queries') {
+    document.getElementById("dashboard-view").style.display = "none";
+    const cqCanvas = document.getElementById("canvas-module-customer-queries");
+    if (cqCanvas) { cqCanvas.style.display = "block"; initializeCustomerQueriesWorkspace(); }
   } else if (targetCanvasModuleId === 'coming-soon') {
     document.getElementById("dashboard-view").style.display = "none";
     document.getElementById("module-workspace-container").style.display = "block";
