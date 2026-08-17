@@ -802,7 +802,7 @@ async function initializeRejectedMaterialPanel(toggle) {
             <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:900px; border-collapse:collapse;">
               <thead><tr style="background:#f8fafc;">
                 <th style="width:100px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
-                <th style="width:140px; text-align:left; font-size:0.72rem; padding:8px 6px;">Description of Material</th>
+                <th style="width:140px; text-align:left; font-size:0.72rem; padding:8px 6px;">Material Name</th>
                 <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Missing Qty</th>
                 <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Not OK</th>
                 <th style="width:110px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Pending Qty</th>

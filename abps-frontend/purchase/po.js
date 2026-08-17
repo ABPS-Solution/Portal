@@ -12,7 +12,7 @@ function renderAPOEditRows() {
       <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
         <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx+1}</div>
         <div style="flex:1; min-width:220px; position:relative;">
-          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Description of Material *</label>
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Material Name *</label>
           <input type="text" value="${(row.description||'').replace(/"/g,'&quot;')}" placeholder="Search material name / rating..." autocomplete="off" oninput="handleAPODescSearch(${row.id}, this.value)" style="width:100%; padding:7px; border:1.5px solid ${row.itemCode?'var(--brand)':'#f59e0b'}; border-radius:4px; font-size:0.82rem; margin-top:2px;">
           <div id="apo-desc-dd-${row.id}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
         </div>
@@ -448,7 +448,7 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
         </colgroup>
         <thead>
           <tr style="background:#f1f5f9; text-align:left;">
-            <th style="padding:8px;">Description of Material</th>
+            <th style="padding:8px;">Material Name</th>
             <th style="padding:8px; text-align:center;">Unit</th>
             <th style="padding:8px; text-align:right;">Quantity</th>
             <th style="padding:8px; text-align:right;">Rate/Qty</th>
@@ -875,7 +875,7 @@ function renderCPOMaterialRows() {
         <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx + 1}</div>
 
         <div style="flex:1; min-width:190px; position:relative;">
-          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Description of Material *</label>
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Material Name *</label>
           <input type="text" class="cpo-desc-search" data-rowid="${row.id}" value="${(row.description||'').replace(/"/g,'&quot;')}" placeholder="Search material name / rating..." autocomplete="off"
             oninput="handleCPODescSearch(${row.id}, this.value)"
             style="width:100%; height:36px; box-sizing:border-box; padding:7px; border:1.5px solid ${row.itemCode ? 'var(--brand)' : '#f59e0b'}; border-radius:4px; font-size:0.82rem;">

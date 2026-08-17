@@ -245,7 +245,7 @@ function renderPORevisionCard() {
         <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx + 1}</div>
 
         <div style="flex:1; min-width:140px;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Description of Material</div>
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Material Name</div>
           <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; font-size:0.82rem; font-weight:600; padding:0 4px;">${li.description || ""}</div>
         </div>
         <div style="width:70px; flex-shrink:0; text-align:center;">
@@ -937,7 +937,7 @@ function renderAPORCard(r) {
         <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx + 1}</div>
 
         <div style="flex:1; min-width:140px;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Description of Material</div>
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Material Name</div>
           <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; font-size:0.82rem; font-weight:600; padding:0 4px;">${line.description || ""}</div>
         </div>
         <div style="width:70px; flex-shrink:0; text-align:center;">

@@ -77,16 +77,18 @@
   .menu-card .mc-label { font-size:0.88rem; font-weight:700; color:var(--text); text-align:center; white-space:normal; line-height:1.35; display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
   /* --- DEPARTMENT TAB BAR — sits below the header, lets you jump straight
      to one department's section instead of scrolling the whole dashboard. --- */
-  .dept-tabs-bar { position: sticky; top: 0; z-index: 90; background: var(--card); border-bottom: 1px solid var(--border); padding: 10px 8px; display: flex; align-items: center; gap: 10px; overflow-x: auto; scrollbar-width: thin; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .dept-tabs-bar { position: sticky; top: 0; z-index: 90; background: var(--card); border-bottom: 1px solid var(--border); padding: 8px 8px; display: flex; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: thin; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
   .dept-tabs-bar::-webkit-scrollbar { height: 4px; }
-  .dept-tabs-label { flex-shrink: 0; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: #000; padding-left: 6px; }
-  .dept-tab { flex-shrink: 0; background: transparent; border: 1.5px solid var(--border); color: var(--muted); font-weight: 700; font-size: 0.9rem; padding: 9px 22px; border-radius: 22px; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; white-space: nowrap; }
-  .dept-tab:hover { background: var(--highlight-bg); color: var(--text); border-color: var(--tab-accent, var(--brand)); }
-  .dept-tab.active { background: var(--tab-accent, var(--brand)); border-color: var(--tab-accent, var(--brand)); color: #fff; }
+  .dept-tabs-label { flex-shrink: 0; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); padding-left: 6px; padding-right: 2px; }
+  .dept-tab { position: relative; flex-shrink: 0; background: transparent; border: 1.5px solid transparent; color: var(--muted); font-weight: 700; font-size: 0.85rem; padding: 8px 16px; border-radius: var(--radius); cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; white-space: nowrap; overflow: hidden; }
+  .dept-tab::after { content: ''; position: absolute; left: 8px; right: 8px; bottom: 0; height: 2.5px; border-radius: 2px 2px 0 0; background: var(--tab-accent, var(--brand)); transform: scaleX(0); transition: transform 0.15s; }
+  .dept-tab:hover { background: var(--highlight-bg); color: var(--text); border-color: var(--border); }
+  .dept-tab.active { background: var(--highlight-bg); border-color: var(--border); color: var(--tab-accent, var(--brand)); font-weight: 800; }
+  .dept-tab.active::after { transform: scaleX(1); }
   @media(max-width:640px) {
-    .dept-tabs-bar { padding: 8px 6px; gap: 7px; }
+    .dept-tabs-bar { padding: 7px 6px; gap: 4px; }
     .dept-tabs-label { display: none; }
-    .dept-tab { font-size: 0.8rem; padding: 7px 16px; }
+    .dept-tab { font-size: 0.78rem; padding: 7px 12px; }
   }
   .dept-block { border-top:1px solid var(--border); padding-top:10px; margin-bottom:10px; }
   .dept-header { display: flex; align-items: center; gap: 10px; padding: 10px 12px 8px; }
@@ -616,7 +618,7 @@
               <thead>
                 <tr>
                   <th style="width:160px;">Item Code</th>
-                  <th style="min-width:280px;">Description of Material</th>
+                  <th style="min-width:280px;">Material Name</th>
                   <th style="width:90px; text-align:center; color:#64748b; font-size:0.75rem; font-weight:700; text-transform:uppercase;">Invoice Unit</th>
                   <th style="width:140px; text-align:center; color:#64748b; font-size:0.75rem; font-weight:700; text-transform:uppercase;">Invoice Quantity</th>
                 </tr>
@@ -1733,7 +1735,7 @@
               <tr style="background:#f8fafc;">
                 <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
                 <th style="width:90px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-                <th style="width:310px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+                <th style="width:310px; padding:8px; font-size:0.7rem;">Material Name *</th>
                 <th style="width:65px; padding:8px; font-size:0.7rem;">Item Code</th>
                 <th style="width:90px; padding:8px; font-size:0.7rem;">Make</th>
                 <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>

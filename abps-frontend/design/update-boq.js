@@ -235,7 +235,7 @@ function renderBOQRevisionRows(updateId) {
           <tr style="background:#f8fafc;">
             <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
             <th style="width:110px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-            <th style="width:240px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+            <th style="width:240px; padding:8px; font-size:0.7rem;">Material Name *</th>
             <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
             <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
             <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
@@ -466,7 +466,7 @@ function renderUBOQForm() {
             <tr style="background:#f8fafc;">
               <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
               <th style="width:110px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-              <th style="width:240px; padding:8px; font-size:0.7rem;">Description of Material *</th>
+              <th style="width:240px; padding:8px; font-size:0.7rem;">Material Name *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
               <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>

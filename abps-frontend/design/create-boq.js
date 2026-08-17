@@ -530,7 +530,7 @@ async function submitCreateBOQ() {
   if (cboqMaterialRows.length === 0) return showBOQBanner("create-boq-feedback", "⚠️ Add at least one material row.", "error");
 
   const invalidRow = cboqMaterialRows.find(r => !r.descriptionOfMaterial || !r.quantityFor1Set || !r.unit || !r.designRatePerQuantity);
-  if (invalidRow) return showBOQBanner("create-boq-feedback", "⚠️ All material rows must have Description of Material, Qty / Set, Unit, and Design Rate / Qty filled in.", "error");
+  if (invalidRow) return showBOQBanner("create-boq-feedback", "⚠️ All material rows must have Material Name, Qty / Set, Unit, and Design Rate / Qty filled in.", "error");
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
