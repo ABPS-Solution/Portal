@@ -3284,11 +3284,10 @@
       <div id="company-dropdown-selector-block" class="section">
         <div class="section-body" style="padding: 6px; text-align: left;">
           <label class="field-label">Select Company Name</label>
-          <div style="position:relative; margin-bottom: 6px;">
+          <div style="margin-bottom: 6px;">
             <input type="text" id="lookup-module-company-dropdown" placeholder="Start typing a company name..." autocomplete="off"
               oninput="handleCompanySearchTypeaheadInput(this.value)"
               style="width:100%; font-size:0.95rem; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
-            <div id="lookup-module-company-dropdown-suggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
           <button class="btn btn-sub" id="lookup-module-search-btn" onclick="triggerSequentialSearch('DROPDOWN')">Search Company</button>
         </div>

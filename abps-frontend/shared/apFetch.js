@@ -460,9 +460,26 @@ async function triggerCompanyDropdownArrayFetch() {
   } catch(e) { console.error("Company list refresh failed:", e.message); }
 }
 
+// The suggestion list is a single shared element appended straight to
+// <body> with position:fixed, positioned via the input's own
+// getBoundingClientRect on every keystroke — NOT an absolutely-positioned
+// child nested inside the Search by Company panel's .section, which has
+// overflow:hidden and clipped/squashed the list against its own bounds.
+// Same pattern already established in store/grn.js and
+// production/fg-approval.js for exactly this reason.
+function ensureCompanySearchDropdownEl() {
+  let dd = document.getElementById("lookup-module-company-dropdown-suggestions");
+  if (!dd) {
+    dd = document.createElement("div");
+    dd.id = "lookup-module-company-dropdown-suggestions";
+    dd.style.cssText = "display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:4px; z-index:9999; max-height:240px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);";
+    document.body.appendChild(dd);
+  }
+  return dd;
+}
+
 function handleCompanySearchTypeaheadInput(query) {
-  const dd = document.getElementById("lookup-module-company-dropdown-suggestions");
-  if (!dd) return;
+  const dd = ensureCompanySearchDropdownEl();
   if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
   const q = query.trim().toLowerCase();
   const matches = (window.cachedCompanySearchList || [])
@@ -474,13 +491,19 @@ function handleCompanySearchTypeaheadInput(query) {
       style="padding:9px 12px; cursor:pointer; font-size:0.88rem; border-bottom:1px solid var(--border);"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">${item.displayLabel}</div>
   `).join("");
+  const input = document.getElementById("lookup-module-company-dropdown");
+  const rect = input.getBoundingClientRect();
+  dd.style.top = rect.bottom + "px";
+  dd.style.left = rect.left + "px";
+  dd.style.width = rect.width + "px";
   dd.style.display = "block";
 }
 
 function selectCompanySearchTypeahead(companyValue) {
   const input = document.getElementById("lookup-module-company-dropdown");
   input.value = companyValue;
-  document.getElementById("lookup-module-company-dropdown-suggestions").style.display = "none";
+  const dd = document.getElementById("lookup-module-company-dropdown-suggestions");
+  if (dd) dd.style.display = "none";
 }
 
 document.addEventListener("click", (e) => {
