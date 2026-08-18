@@ -437,32 +437,59 @@ async function showAppView() {
   }
 }
 
+// lookup-module-company-dropdown used to be a <select> (hence the name);
+// it's now a type-to-search text input (Search by Company Name), same
+// pattern as Material Name / Project ID typeahead elsewhere — company
+// lists run into the hundreds and a plain <select> made picking one a
+// scroll-fest. The element keeps its original id and .value semantics on
+// purpose so every other screen that reads/sets it (triggerSequentialSearch,
+// navigation.js's searchCompany gate, the reset in returnToDashboard) needed
+// zero changes. This function now just caches the list in memory for
+// handleCompanySearchTypeaheadInput to filter as the user types, instead of
+// building <option> elements.
 async function triggerCompanyDropdownArrayFetch() {
   try {
-    const dropdown = document.getElementById("lookup-module-company-dropdown");
-    // Cache the currently selected value before the network request drops
-    const previousSelectedValue = dropdown ? dropdown.value : "";
-
-    const d = await apFetch({ 
+    const d = await apFetch({
       action: "getUniqueCompaniesList",
       activeEngineer: appActiveOperatorIdentityString
     });
-    if (d.success && dropdown) {
-      dropdown.innerHTML = '<option value="">— Select Company —</option>';
-      d.companies.forEach(item => {
-        let opt = document.createElement("option"); 
-        opt.value = item.companyValue; 
-        opt.textContent = item.displayLabel; 
-        dropdown.appendChild(opt);
-      });
-      
-      // RESTORATION FIX: Restore the selection value index if it exists in the new listing
-      if (previousSelectedValue) {
-        dropdown.value = previousSelectedValue;
-      }
-    }
-  } catch(e) { console.error("Dropdown refresh layout fail:", e.message); }
+    // A value the user already typed/selected before this refresh landed
+    // (e.g. returning to the screen) is left untouched — only the
+    // suggestion data backing it refreshes.
+    if (d.success) window.cachedCompanySearchList = d.companies || [];
+  } catch(e) { console.error("Company list refresh failed:", e.message); }
 }
+
+function handleCompanySearchTypeaheadInput(query) {
+  const dd = document.getElementById("lookup-module-company-dropdown-suggestions");
+  if (!dd) return;
+  if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
+  const q = query.trim().toLowerCase();
+  const matches = (window.cachedCompanySearchList || [])
+    .filter(item => (item.displayLabel || "").toLowerCase().includes(q) || (item.companyValue || "").toLowerCase().includes(q))
+    .slice(0, 10);
+  if (matches.length === 0) { dd.style.display = "none"; return; }
+  dd.innerHTML = matches.map(item => `
+    <div onmousedown="event.preventDefault(); selectCompanySearchTypeahead('${item.companyValue.replace(/'/g, "\\'")}')"
+      style="padding:9px 12px; cursor:pointer; font-size:0.88rem; border-bottom:1px solid var(--border);"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">${item.displayLabel}</div>
+  `).join("");
+  dd.style.display = "block";
+}
+
+function selectCompanySearchTypeahead(companyValue) {
+  const input = document.getElementById("lookup-module-company-dropdown");
+  input.value = companyValue;
+  document.getElementById("lookup-module-company-dropdown-suggestions").style.display = "none";
+}
+
+document.addEventListener("click", (e) => {
+  const dd = document.getElementById("lookup-module-company-dropdown-suggestions");
+  if (!dd) return;
+  if (!e.target.closest("#lookup-module-company-dropdown") && !e.target.closest("#lookup-module-company-dropdown-suggestions")) {
+    dd.style.display = "none";
+  }
+});
 
 async function loadQualFilter() {
   const container = document.getElementById("qual-filter-checkboxes"); 

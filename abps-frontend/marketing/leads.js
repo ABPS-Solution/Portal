@@ -517,9 +517,12 @@ function revealNewEntryFormDropdown() {
                     ? document.getElementById("f-name").value.trim() 
                     : (document.getElementById("dropform-name") ? document.getElementById("dropform-name").value.trim() : "");
   } else {
+      // lookup-module-company-dropdown is a type-to-search text input now
+      // (was a <select>) — .value is already the clean company name, no
+      // .options/.selectedIndex to read.
       const dropdown = document.getElementById("lookup-module-company-dropdown");
-      if (dropdown && dropdown.selectedIndex >= 0) {
-        companyName = dropdown.options[dropdown.selectedIndex].text.split(" (")[0].trim();
+      if (dropdown && dropdown.value) {
+        companyName = dropdown.value.split(" (")[0].trim();
       }
   }
   
