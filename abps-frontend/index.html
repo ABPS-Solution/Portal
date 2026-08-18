@@ -3181,233 +3181,197 @@
       <p style="font-size: 0.9rem; color: var(--muted);">This feature is currently under development and will be available soon.</p>
     </div>
     
-    <div id="workspace-cardDetails" class="workspace-panel" style="display: none;">
+    <div id="workspace-cardDetails" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Enter Visiting Card Details</h2>
-      <div id="step1-card-capture-block" class="section">
-        <div class="section-body" style="padding: 5px;">
-          <div class="card-row">
-            <div class="card-box" id="front-box" onclick="document.getElementById('card-front').click()">📷 Front Side </div>
-            <div class="card-box" id="back-box" onclick="document.getElementById('card-back').click()">📷 Back Side (Optional)</div>
-          </div>
-          <input type="file" id="card-front" accept="image/*" hidden />
-          <input type="file" id="card-back" accept="image/*" hidden />
-          <button class="btn btn-ai" id="parse-btn" onclick="parseCard()">Process Card with AI</button>
-          
-          <label class="field-label">Company Name *</label><input type="text" id="f-company" placeholder="Enter Company Name..." />
-          <div class="card-details-grid-2">
-            <div><label class="field-label">Contact Person Name</label><input type="text" id="f-name" /></div>
-            <div><label class="field-label">Position</label><input type="text" id="f-position" /></div>
-          </div>
-          <div class="card-details-grid-2">
-            <div><label class="field-label">Phone</label><input type="tel" id="f-phone" /></div>
-            <div><label class="field-label">Alt Phone</label><input type="tel" id="f-altphone" /></div>
-          </div>
-          <div class="card-details-grid-2">
-            <div><label class="field-label">Email</label><input type="email" id="f-email" /></div>
-            <div><label class="field-label">Website</label><input type="url" id="f-website" /></div>
-          </div>
-          <div class="card-details-grid-3">
-            <div><label class="field-label">City *</label><input type="text" id="f-city" /></div>
-            <div><label class="field-label">State *</label><input type="text" id="f-state" /></div>
-            <div><label class="field-label">Country *</label><input type="text" id="f-country" /></div>
-          </div>
-          <label class="field-label">Address</label><textarea id="f-address" style="min-height:40px;"></textarea>
-          
-          <button class="btn btn-sub" id="gate-search-btn" onclick="triggerSequentialSearch('CARD')" style="margin-top:6px;">Search Marketing Database</button>
+      <div id="step1-card-capture-block">
+        <div class="card-row">
+          <div class="card-box" id="front-box" onclick="document.getElementById('card-front').click()">📷 Front Side </div>
+          <div class="card-box" id="back-box" onclick="document.getElementById('card-back').click()">📷 Back Side (Optional)</div>
         </div>
+        <input type="file" id="card-front" accept="image/*" hidden />
+        <input type="file" id="card-back" accept="image/*" hidden />
+        <button class="btn btn-ai" id="parse-btn" onclick="parseCard()">Process Card with AI</button>
+
+        <label class="field-label">Company Name *</label><input type="text" id="f-company" placeholder="Enter Company Name..." />
+        <div class="card-details-grid-2">
+          <div><label class="field-label">Contact Person Name</label><input type="text" id="f-name" /></div>
+          <div><label class="field-label">Position</label><input type="text" id="f-position" /></div>
+        </div>
+        <div class="card-details-grid-2">
+          <div><label class="field-label">Phone</label><input type="tel" id="f-phone" /></div>
+          <div><label class="field-label">Alt Phone</label><input type="tel" id="f-altphone" /></div>
+        </div>
+        <div class="card-details-grid-2">
+          <div><label class="field-label">Email</label><input type="email" id="f-email" /></div>
+          <div><label class="field-label">Website</label><input type="url" id="f-website" /></div>
+        </div>
+        <div class="card-details-grid-3">
+          <div><label class="field-label">City *</label><input type="text" id="f-city" /></div>
+          <div><label class="field-label">State *</label><input type="text" id="f-state" /></div>
+          <div><label class="field-label">Country *</label><input type="text" id="f-country" /></div>
+        </div>
+        <label class="field-label">Address</label><textarea id="f-address" style="min-height:40px;"></textarea>
+
+        <button class="btn btn-sub" id="gate-search-btn" onclick="triggerSequentialSearch('CARD')" style="margin-top:6px;">Search Marketing Database</button>
       </div>
     </div>
 
-    <div id="workspace-commissioningReport" class="workspace-panel" style="display: none;">
+    <div id="workspace-commissioningReport" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Upload Commissioning Report</h2>
-      <div class="section">
-        <div class="section-body" style="text-align: left; padding: 16px;">
-          <div id="commissioning-report-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
-          <div id="commissioning-report-inputs-container" style="display: block;">
-            <div style="margin-bottom: 12px;">
-              <label class="field-label">Project ID or Customer Name *</label>
-              <div style="position:relative;">
-                <input type="text" id="commissioning-report-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
-                  oninput="handleSharedProjectTypeaheadInput(this.value, 'commissioning-report-project-ta-input', 'commissioning-report-project-ta-dropdown')"
-                  onchange="handleCommissioningReportProjectChange(this.value)"
-                  style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
-                <div id="commissioning-report-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
-              </div>
-            </div>
-            <div style="margin-bottom: 12px;">
-              <label class="field-label">Customer Name</label>
-              <textarea id="commissioning-report-customer-name" readonly placeholder="Auto-filled from Project ID" style="min-height:38px; padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; background:#f8fafc;"></textarea>
-            </div>
-            <div class="card-box" id="commissioning-report-upload-box" onclick="document.getElementById('commissioning-report-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Commissioning Report</div>
-            <input type="file" id="commissioning-report-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'commissioning-report-upload-box', 'Commissioning Report Document Added ✅')" />
-            <button class="nav-btn-styled" id="btn-ops-commission-submit" style="margin-top: 14px; width: 100%; padding: 10px;" onclick="executeMarketingOperationsDocumentCommit('COMMISSION')">Process Commissioning Report with AI</button>
+      <div id="commissioning-report-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
+      <div id="commissioning-report-inputs-container" style="display: block;">
+        <div style="margin-bottom: 12px;">
+          <label class="field-label">Project ID or Customer Name *</label>
+          <div style="position:relative;">
+            <input type="text" id="commissioning-report-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'commissioning-report-project-ta-input', 'commissioning-report-project-ta-dropdown')"
+              onchange="handleCommissioningReportProjectChange(this.value)"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+            <div id="commissioning-report-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
         </div>
+        <div style="margin-bottom: 12px;">
+          <label class="field-label">Customer Name</label>
+          <textarea id="commissioning-report-customer-name" readonly placeholder="Auto-filled from Project ID" style="min-height:38px; padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; background:#f8fafc;"></textarea>
+        </div>
+        <div class="card-box" id="commissioning-report-upload-box" onclick="document.getElementById('commissioning-report-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Commissioning Report</div>
+        <input type="file" id="commissioning-report-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'commissioning-report-upload-box', 'Commissioning Report Document Added ✅')" />
+        <button class="nav-btn-styled" id="btn-ops-commission-submit" style="margin-top: 14px; width: 100%; padding: 10px;" onclick="executeMarketingOperationsDocumentCommit('COMMISSION')">Process Commissioning Report with AI</button>
       </div>
     </div>
 
-    <div id="workspace-purchaseOrder" class="workspace-panel" style="display: none;">
+    <div id="workspace-purchaseOrder" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Upload Purchase Order</h2>
-      <div class="section">
-        <div class="section-body" style="text-align: left; padding: 16px;">
-          <div id="purchase-order-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
-          <div id="purchase-order-inputs-container" style="display: block;">
-            <div style="margin-bottom: 12px;">
-              <label class="field-label">Select Lead / Company *</label>
-              <select id="purchase-order-lead-dropdown" style="padding: 8px; font-weight: 600; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
-                <option value="">— Select Company / Lead —</option>
-              </select>
-            </div>
-            <div class="card-box" id="purchase-order-upload-box" onclick="document.getElementById('purchase-order-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Purchase Order *</div>
-            <input type="file" id="purchase-order-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'purchase-order-upload-box', 'Purchase Order Added ✅')" />
-
-            <div style="margin-top: 12px;">
-              <label class="field-label">Order Acceptance Sent Date *</label>
-              <input type="date" lang="en-GB" id="purchase-order-acceptance-date" style="padding: 8px; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
-            </div>
-            <div style="margin-top: 12px;">
-              <label class="field-label">Special Requirement <span style="color:var(--muted); font-weight:400;">(optional)</span></label>
-              <input type="text" id="purchase-order-special-requirement" placeholder="Any special requirement for this order..." style="padding: 8px; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
-            </div>
-            <div class="card-box" id="purchase-order-contract-review-box" onclick="document.getElementById('purchase-order-contract-review-file').click()" style="margin-top: 12px; padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Contract Review Document *</div>
-            <input type="file" id="purchase-order-contract-review-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'purchase-order-contract-review-box', 'Contract Review Document Added ✅')" />
-
-            <button class="nav-btn-styled" id="btn-ops-purchase-order-submit" style="margin-top: 14px; width: 100%; padding: 10px;" onclick="extractPurchaseOrderForReview()">Process Purchase Order with AI</button>
-          </div>
-          <div id="purchase-order-review-zone" style="display:none;"></div>
+      <div id="purchase-order-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
+      <div id="purchase-order-inputs-container" style="display: block;">
+        <div style="margin-bottom: 12px;">
+          <label class="field-label">Select Lead / Company *</label>
+          <select id="purchase-order-lead-dropdown" style="padding: 8px; font-weight: 600; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
+            <option value="">— Select Company / Lead —</option>
+          </select>
         </div>
+        <div class="card-box" id="purchase-order-upload-box" onclick="document.getElementById('purchase-order-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Purchase Order *</div>
+        <input type="file" id="purchase-order-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'purchase-order-upload-box', 'Purchase Order Added ✅')" />
+
+        <div style="margin-top: 12px;">
+          <label class="field-label">Order Acceptance Sent Date *</label>
+          <input type="date" lang="en-GB" id="purchase-order-acceptance-date" style="padding: 8px; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
+        </div>
+        <div style="margin-top: 12px;">
+          <label class="field-label">Special Requirement <span style="color:var(--muted); font-weight:400;">(optional)</span></label>
+          <input type="text" id="purchase-order-special-requirement" placeholder="Any special requirement for this order..." style="padding: 8px; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
+        </div>
+        <div class="card-box" id="purchase-order-contract-review-box" onclick="document.getElementById('purchase-order-contract-review-file').click()" style="margin-top: 12px; padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Contract Review Document *</div>
+        <input type="file" id="purchase-order-contract-review-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'purchase-order-contract-review-box', 'Contract Review Document Added ✅')" />
+
+        <button class="nav-btn-styled" id="btn-ops-purchase-order-submit" style="margin-top: 14px; width: 100%; padding: 10px;" onclick="extractPurchaseOrderForReview()">Process Purchase Order with AI</button>
       </div>
+      <div id="purchase-order-review-zone" style="display:none;"></div>
     </div>
 
-    <div id="workspace-searchCompany" class="workspace-panel" style="display: none;">
+    <div id="workspace-searchCompany" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Search by Company Name</h2>
-      <div id="company-dropdown-selector-block" class="section">
-        <div class="section-body" style="padding: 6px; text-align: left;">
-          <label class="field-label">Select Company Name</label>
-          <div style="margin-bottom: 6px;">
-            <input type="text" id="lookup-module-company-dropdown" placeholder="Start typing a company name..." autocomplete="off"
-              oninput="handleCompanySearchTypeaheadInput(this.value)"
-              style="width:100%; font-size:0.95rem; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
-          </div>
-          <button class="btn btn-sub" id="lookup-module-search-btn" onclick="triggerSequentialSearch('DROPDOWN')">Search Company</button>
+      <div id="company-dropdown-selector-block">
+        <label class="field-label">Select Company Name</label>
+        <div style="margin-bottom: 6px;">
+          <input type="text" id="lookup-module-company-dropdown" placeholder="Start typing a company name..." autocomplete="off"
+            oninput="handleCompanySearchTypeaheadInput(this.value)"
+            style="width:100%; font-size:0.95rem; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
         </div>
+        <button class="btn btn-sub" id="lookup-module-search-btn" onclick="triggerSequentialSearch('DROPDOWN')">Search Company</button>
       </div>
     </div>
 
-    <div id="workspace-searchQualification" class="workspace-panel" style="display: none;">
+    <div id="workspace-searchQualification" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Search by Type of Customer</h2>
-      <div class="section">
-        <div class="section-body">
-          <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">Select Types of Customer</label>
-          <div id="selected-quals-display" style="font-size: 0.8rem; font-weight: bold; color: var(--brand); margin-bottom: 8px;"></div>
-          
-          <div class="pill-group" id="core-qualification-static-pills" style="margin: 10px 0 5px;">
-            <input type="checkbox" name="searchQual" value="Industry" id="sq_industry" onchange="updateSelectedDisplay()"><label for="sq_industry">Industry</label>
-            <input type="checkbox" name="searchQual" value="EPC" id="sq_epc" onchange="updateSelectedDisplay()"><label for="sq_epc">EPC</label>
-            <input type="checkbox" name="searchQual" value="Govt/PSU" id="sq_govt" onchange="updateSelectedDisplay()"><label for="sq_govt">Govt/PSU</label>
-            <input type="checkbox" name="searchQual" value="Consultant" id="sq_consultant" onchange="updateSelectedDisplay()"><label for="sq_consultant">Consultant</label>
-            <input type="checkbox" name="searchQual" value="Developer" id="sq_developer" onchange="updateSelectedDisplay()"><label for="sq_developer">Developer</label>
-            <input type="checkbox" name="searchQual" value="Electrical Contractor" id="sq_contractor" onchange="updateSelectedDisplay()"><label for="sq_contractor">Electrical Contractor</label>
-            <input type="checkbox" name="searchQual" value="Dealer" id="sq_dealer" onchange="updateSelectedDisplay()"><label for="sq_dealer">Dealer</label>
-            <input type="checkbox" name="searchQual" value="Vendor" id="sq_vendor" onchange="updateSelectedDisplay()"><label for="sq_vendor">Vendor</label>  
-          </div>
-          
-          <div id="custom-qualifications-sub-drawer" style="display: block; background: #f8fafc; border: 1px dashed var(--border); border-radius: var(--radius); padding: 10px; margin: 5px 0 15px; text-align: left;">
-            <span style="display: block; font-size: 0.65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 6px;">Other Types of Customer</span>
-             <div class="pill-group" id="qual-filter-checkboxes" style="margin: 0; gap: 6px;"></div>
-          </div>
-          
-          <button class="btn btn-sub" id="qual-search-btn" onclick="triggerQualificationSearch()" style="margin-top: 5px;">Search Types of Customer</button>
-        </div>
+      <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">Select Types of Customer</label>
+      <div id="selected-quals-display" style="font-size: 0.8rem; font-weight: bold; color: var(--brand); margin-bottom: 8px;"></div>
+
+      <div class="pill-group" id="core-qualification-static-pills" style="margin: 10px 0 5px;">
+        <input type="checkbox" name="searchQual" value="Industry" id="sq_industry" onchange="updateSelectedDisplay()"><label for="sq_industry">Industry</label>
+        <input type="checkbox" name="searchQual" value="EPC" id="sq_epc" onchange="updateSelectedDisplay()"><label for="sq_epc">EPC</label>
+        <input type="checkbox" name="searchQual" value="Govt/PSU" id="sq_govt" onchange="updateSelectedDisplay()"><label for="sq_govt">Govt/PSU</label>
+        <input type="checkbox" name="searchQual" value="Consultant" id="sq_consultant" onchange="updateSelectedDisplay()"><label for="sq_consultant">Consultant</label>
+        <input type="checkbox" name="searchQual" value="Developer" id="sq_developer" onchange="updateSelectedDisplay()"><label for="sq_developer">Developer</label>
+        <input type="checkbox" name="searchQual" value="Electrical Contractor" id="sq_contractor" onchange="updateSelectedDisplay()"><label for="sq_contractor">Electrical Contractor</label>
+        <input type="checkbox" name="searchQual" value="Dealer" id="sq_dealer" onchange="updateSelectedDisplay()"><label for="sq_dealer">Dealer</label>
+        <input type="checkbox" name="searchQual" value="Vendor" id="sq_vendor" onchange="updateSelectedDisplay()"><label for="sq_vendor">Vendor</label>
       </div>
+
+      <div id="custom-qualifications-sub-drawer" style="display: block; background: #f8fafc; border: 1px dashed var(--border); border-radius: var(--radius); padding: 10px; margin: 5px 0 15px; text-align: left;">
+        <span style="display: block; font-size: 0.65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 6px;">Other Types of Customer</span>
+         <div class="pill-group" id="qual-filter-checkboxes" style="margin: 0; gap: 6px;"></div>
+      </div>
+
+      <button class="btn btn-sub" id="qual-search-btn" onclick="triggerQualificationSearch()" style="margin-top: 5px;">Search Types of Customer</button>
     </div>
 
-    <div id="workspace-searchCityState" class="workspace-panel" style="display: none;">
+    <div id="workspace-searchCityState" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Search by City, State and Country</h2>
-      <div class="section">
-        <div class="section-body">
-          <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">Select Target Countries</label>
-          <div class="pill-group" id="location-country-checkboxes-mount" style="margin: 6px 0 14px;"></div>
+      <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">Select Target Countries</label>
+      <div class="pill-group" id="location-country-checkboxes-mount" style="margin: 6px 0 14px;"></div>
 
-          <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">Select Target States</label>
-          <div class="pill-group" id="location-state-checkboxes-mount" style="margin: 6px 0 14px;"></div>
-          
-          <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">Select Specific Cities</label>
-          <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 12px;">
-             <div class="pill-group" id="location-city-checkboxes-mount" style="margin: 0;"></div>
-          </div>
-          
-          <button class="btn btn-sub" id="city-state-search-submit-btn" onclick="triggerCityStateQuerySearchExecution()">Search Location</button>
-        </div>
+      <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">Select Target States</label>
+      <div class="pill-group" id="location-state-checkboxes-mount" style="margin: 6px 0 14px;"></div>
+
+      <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">Select Specific Cities</label>
+      <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 12px;">
+         <div class="pill-group" id="location-city-checkboxes-mount" style="margin: 0;"></div>
       </div>
+
+      <button class="btn btn-sub" id="city-state-search-submit-btn" onclick="triggerCityStateQuerySearchExecution()">Search Location</button>
     </div>
 
-    <div id="workspace-searchStatus" class="workspace-panel" style="display: none;">
+    <div id="workspace-searchStatus" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Search Leads by ABPS Engineer Name and Status</h2>
-      <div class="section">
-        <div class="section-body" style="text-align: left;">
-          <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Filter By Engineers</label>
-          <div class="pill-group" id="lead-matrix-engineer-checkboxes-mount" style="margin:8px 0 16px;"></div>
-          <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Filter By Lead Status</label>
-          <div class="pill-group" id="lead-matrix-status-checkboxes-mount" style="margin:8px 0 16px;">
-            <input type="checkbox" name="leadMatrixStatusFilter" value="New Lead" id="lms_st1"><label for="lms_st1">New Lead</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Technical Discussion" id="lms_st2"><label for="lms_st2">Technical Discussion</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Inquire Received" id="lms_st3"><label for="lms_st3">Inquire Received</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Offer Sent" id="lms_st4"><label for="lms_st4">Offer Sent</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Order Received" id="lms_st5"><label for="lms_st5">Order Received</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Order Dispatched" id="lms_st6"><label for="lms_st6">Order Dispatched</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Product Commissioned" id="lms_st7"><label for="lms_st7">Product Commissioned</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Lead Failed" id="lms_st8"><label for="lms_st8">Lead Failed</label>
-            <input type="checkbox" name="leadMatrixStatusFilter" value="Order not Received" id="lms_st9"><label for="lms_st9">Order not Received</label>
-          </div>
-          
-          <button class="btn btn-sub" id="lead-matrix-search-submit-btn" onclick="executeLeadMatrixFilterSearch()">Run Leads Search</button>
-          <div id="lead-matrix-active-filters-display" style="display:none; font-size:0.78rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-top:8px;"></div>
-        </div>
+      <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Filter By Engineers</label>
+      <div class="pill-group" id="lead-matrix-engineer-checkboxes-mount" style="margin:8px 0 16px;"></div>
+      <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Filter By Lead Status</label>
+      <div class="pill-group" id="lead-matrix-status-checkboxes-mount" style="margin:8px 0 16px;">
+        <input type="checkbox" name="leadMatrixStatusFilter" value="New Lead" id="lms_st1"><label for="lms_st1">New Lead</label>
+        <input type="checkbox" name="leadMatrixStatusFilter" value="Technical Discussion" id="lms_st2"><label for="lms_st2">Technical Discussion</label>
+        <input type="checkbox" name="leadMatrixStatusFilter" value="Inquire Received" id="lms_st3"><label for="lms_st3">Inquire Received</label>
+        <input type="checkbox" name="leadMatrixStatusFilter" value="Offer Sent" id="lms_st4"><label for="lms_st4">Offer Sent</label>
+        <input type="checkbox" name="leadMatrixStatusFilter" value="Order Received" id="lms_st5"><label for="lms_st5">Order Received</label>
+        <input type="checkbox" name="leadMatrixStatusFilter" value="Order Dispatched" id="lms_st6"><label for="lms_st6">Order Dispatched</label>
+        <input type="checkbox" name="leadMatrixStatusFilter" value="Product Commissioned" id="lms_st7"><label for="lms_st7">Product Commissioned</label>
+        <input type="checkbox" name="leadMatrixStatusFilter" value="Lead Failed" id="lms_st8"><label for="lms_st8">Lead Failed</label>
+        <input type="checkbox" name="leadMatrixStatusFilter" value="Order not Received" id="lms_st9"><label for="lms_st9">Order not Received</label>
       </div>
+
+      <button class="btn btn-sub" id="lead-matrix-search-submit-btn" onclick="executeLeadMatrixFilterSearch()">Run Leads Search</button>
+      <div id="lead-matrix-active-filters-display" style="display:none; font-size:0.78rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-top:8px;"></div>
     </div>
 
-    <div id="workspace-searchEngineer" class="workspace-panel" style="display: none;">
+    <div id="workspace-searchEngineer" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Filter Leads by Engineer</h2>
-      <div class="section">
-        <div class="section-body">
-          <label class="field-label">Select Engineer</label>
-          <select id="engineer-filter-select" style="margin-bottom:10px;"><option value="">— Select Engineer —</option></select>
-          <button class="btn btn-sub" id="eng-search-btn" onclick="triggerEngineerSearch()">Search Leads</button>
-        </div>
-      </div>
+      <label class="field-label">Select Engineer</label>
+      <select id="engineer-filter-select" style="margin-bottom:10px;"><option value="">— Select Engineer —</option></select>
+      <button class="btn btn-sub" id="eng-search-btn" onclick="triggerEngineerSearch()">Search Leads</button>
     </div>
 
-    <div id="workspace-searchTasks" class="workspace-panel" style="display: none;">
+    <div id="workspace-searchTasks" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Search Tasks by ABPS Engineer Name and Status</h2>
-      <div class="section">
-        <div class="section-body" style="text-align: left;">
-          <label class="field-label" style="font-size:0.8rem; color:var(--brand);">Filter By Engineers</label>
-          <div class="pill-group" id="task-matrix-engineer-checkboxes" style="margin:8px 0 16px;"></div>
-          
-          <label class="field-label" style="font-size:0.8rem; color:var(--brand);">Filter By Task Status</label>
-          <div class="pill-group" id="task-matrix-status-checkboxes" style="margin:8px 0 16px;">
-            <input type="checkbox" name="taskMatrixStatus" value="Assigned" id="tms_ts1"><label for="tms_ts1">Assigned</label>
-            <input type="checkbox" name="taskMatrixStatus" value="In Progress" id="tms_ts2"><label for="tms_ts2">In Progress</label>
-            <input type="checkbox" name="taskMatrixStatus" value="Under Review" id="tms_ts3"><label for="tms_ts3">Under Review</label>
-            <input type="checkbox" name="taskMatrixStatus" value="Resolved" id="tms_ts4"><label for="tms_ts4">Resolved</label>
-          </div>
-          
-          <button class="btn btn-sub" id="task-matrix-search-btn" onclick="executeTaskMatrixSearch()">Run Tasks Search</button>
-          <div id="task-matrix-active-filters-display" style="display:none; font-size:0.78rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-top:8px;"></div>
-        </div>
+      <label class="field-label" style="font-size:0.8rem; color:var(--brand);">Filter By Engineers</label>
+      <div class="pill-group" id="task-matrix-engineer-checkboxes" style="margin:8px 0 16px;"></div>
+
+      <label class="field-label" style="font-size:0.8rem; color:var(--brand);">Filter By Task Status</label>
+      <div class="pill-group" id="task-matrix-status-checkboxes" style="margin:8px 0 16px;">
+        <input type="checkbox" name="taskMatrixStatus" value="Assigned" id="tms_ts1"><label for="tms_ts1">Assigned</label>
+        <input type="checkbox" name="taskMatrixStatus" value="In Progress" id="tms_ts2"><label for="tms_ts2">In Progress</label>
+        <input type="checkbox" name="taskMatrixStatus" value="Under Review" id="tms_ts3"><label for="tms_ts3">Under Review</label>
+        <input type="checkbox" name="taskMatrixStatus" value="Resolved" id="tms_ts4"><label for="tms_ts4">Resolved</label>
       </div>
+
+      <button class="btn btn-sub" id="task-matrix-search-btn" onclick="executeTaskMatrixSearch()">Run Tasks Search</button>
+      <div id="task-matrix-active-filters-display" style="display:none; font-size:0.78rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-top:8px;"></div>
       <div id="task-matrix-results-output-node" style="margin-top:12px;"></div>
     </div>
 
-    <div id="workspace-emailWhatsapp" class="workspace-panel" style="display: none;">
+    <div id="workspace-emailWhatsapp" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Leads Received through Email</h2>
-      <div class="section" style="border-top: none; box-shadow: none;">
-        <div class="section-body" style="padding: 10px;">
-          <div id="email-leads-runtime-status-feedback" style="display:none; margin-bottom:10px; padding:8px; border-radius:4px; font-size:0.8rem; font-weight:700; text-align:center;"></div>
-          <div id="email-leads-inbound-feed-canvas" style="display:flex; flex-direction:column; gap:12px;"></div>
-        </div>
-      </div>
+      <div id="email-leads-runtime-status-feedback" style="display:none; margin-bottom:10px; padding:8px; border-radius:4px; font-size:0.8rem; font-weight:700; text-align:center;"></div>
+      <div id="email-leads-inbound-feed-canvas" style="display:flex; flex-direction:column; gap:12px;"></div>
     </div>
 
     <div id="missing-trigger-notice-block" style="display:none; align-items:center; justify-content:space-between; gap:12px; padding:12px; background:#fff8e6; border-left:4px solid #d97706; border-radius:var(--radius); margin-top:10px;">
