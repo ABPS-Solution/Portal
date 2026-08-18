@@ -189,9 +189,8 @@ function renderBOQRevisionRows(updateId) {
           style="padding:5px; font-size:0.78rem; font-family:monospace; font-weight:700; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:3px; border:1px solid #bae6fd; width:100%;" />
       </td>
       <td style="padding:4px;">
-        <input type="text" value="${row.make || ""}" placeholder="Make..."
-          oninput="uboqRevRows[${idx}].make=this.value"
-          style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px;" />
+        <input type="text" value="${row.make || ""}" readonly placeholder="—"
+          style="padding:5px; font-size:0.82rem; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
@@ -547,9 +546,8 @@ function renderUBOQMaterialRows() {
           style="padding:5px; font-size:0.78rem; font-family:monospace; font-weight:700; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:3px; border:1px solid #bae6fd; width:100%;" />
       </td>
       <td style="padding:4px;">
-        <input type="text" value="${row.make || ""}" placeholder="Make..."
-          oninput="uboqMaterialRows[${idx}].make=this.value"
-          style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px;" />
+        <input type="text" value="${row.make || ""}" readonly placeholder="—"
+          style="padding:5px; font-size:0.82rem; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
@@ -629,11 +627,13 @@ function selectBOQRowMaterial(rowIdx, productName, itemCode, formPrefix) {
     }
     rows[rowIdx].descriptionOfMaterial = productName;
     rows[rowIdx].itemCode = itemCode;
-    // Auto-fill unit from catalog cache
+    // Auto-fill unit + Make from catalog cache — Make is now locked to
+    // whatever's on the Item Code (18 Aug 2026), never freely typed per row.
     const catalogEntry = (window.itemCodeCatalogCache || []).find(c => c.itemCode === itemCode);
     if (catalogEntry && catalogEntry.unit) {
       rows[rowIdx].unit = catalogEntry.unit;
     }
+    rows[rowIdx].make = (catalogEntry && catalogEntry.make) || "";
     renderMap[formPrefix]();
   }
 

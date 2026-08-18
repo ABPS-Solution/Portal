@@ -1758,16 +1758,17 @@
         <div style="display:grid; grid-template-columns:2fr 2fr auto; gap:10px; align-items:end;">
           <div style="position:relative;">
             <label class="field-label" style="margin-top:0;">Search Product Name + Rating *</label>
-            <input type="text" id="cboq-import-product-search" placeholder="Type to search product name..." autocomplete="off"
-              oninput="handleCBOQImportProductSearch(this.value)"
-              style="padding:7px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
+            <textarea id="cboq-import-product-search" rows="1" placeholder="Type to search product name..." autocomplete="off"
+              oninput="handleCBOQImportProductSearch(this.value); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+              style="padding:7px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; box-sizing:border-box;"></textarea>
             <div id="cboq-import-product-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 var(--radius) var(--radius); max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
           </div>
-          <div>
+          <div style="position:relative;">
             <label class="field-label" style="margin-top:0;">Project ID *</label>
-            <select id="cboq-import-project-select" disabled onchange="handleCBOQImportProjectChange(this.value)" style="padding:7px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; background:#f1f5f9; color:var(--muted);">
-              <option value="">— Select Product First —</option>
-            </select>
+            <input type="text" id="cboq-import-project-search" disabled placeholder="Select Product First" autocomplete="off"
+              oninput="handleCBOQImportProjectSearch(this.value)"
+              style="padding:7px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; background:#f1f5f9; color:var(--muted); box-sizing:border-box;" />
+            <div id="cboq-import-project-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 var(--radius) var(--radius); max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
           </div>
           <button class="nav-btn-styled" id="cboq-import-btn" disabled onclick="importCBOQFromExisting()" style="background:#6d28d9; color:#fff; padding:9px 18px; font-weight:700; opacity:0.5; cursor:not-allowed;">Import BOQ</button>
         </div>
@@ -2064,6 +2065,12 @@
             <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin:12px 0 6px;">Rating</div>
             <div id="icf-new-rating-inputs" style="display:flex; flex-wrap:wrap; align-items:flex-end;"></div>
           </div>
+          <div style="margin-bottom:12px;">
+            <label class="field-label" style="margin-top:0;">Make (optional)</label>
+            <input type="text" id="icf-new-fixed-make" oninput="this.value=this.value.toUpperCase()"
+              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; text-transform:uppercase;"
+              placeholder="OPTIONAL — MANUFACTURER/BRAND, IF ANY. DO NOT ENTER ABPS AS MAKE — ONLY OTHER COMPANIES." />
+          </div>
           <div style="background:#f1f5f9; border-radius:4px; padding:10px; font-size:0.85rem;">
             <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:var(--muted); margin-bottom:4px;">Preview</div>
             <div><strong>Material Name:</strong> <span id="icf-new-preview-name" style="color:var(--brand); font-weight:700;">—</span></div>
@@ -2094,6 +2101,12 @@
                 placeholder="e.g. 300 kVAr, 11 kV, 3 Ph, 50 Hz" />
               <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Combined with Material Name wherever this code is looked up. Leave blank if not applicable.</div>
             </div>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label class="field-label" style="margin-top:0;">Make (optional)</label>
+            <input type="text" id="itemcode-new-make" oninput="this.value=this.value.toUpperCase()"
+              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; text-transform:uppercase;"
+              placeholder="OPTIONAL — MANUFACTURER/BRAND, IF ANY. DO NOT ENTER ABPS AS MAKE — ONLY OTHER COMPANIES." />
           </div>
           <div style="margin-bottom:14px;">
             <label class="field-label" style="margin-top:0;">Unit *</label>

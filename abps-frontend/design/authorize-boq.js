@@ -473,9 +473,8 @@ function renderEBOQMaterialRows() {
           style="padding:5px; font-size:0.78rem; font-family:monospace; font-weight:700; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:3px; border:1px solid #bae6fd; width:100%;" />
       </td>
       <td style="padding:4px;">
-        <input type="text" value="${row.make || ""}" placeholder="Make..."
-          oninput="eboqMaterialRows[${idx}].make=this.value"
-          style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px;" />
+        <input type="text" value="${row.make || ""}" readonly placeholder="—"
+          style="padding:5px; font-size:0.82rem; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"

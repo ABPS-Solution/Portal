@@ -344,6 +344,8 @@ async function revealItemCodeCreateForm() {
   banner.style.display = "none";
   document.getElementById("icf-new-fixed-zone").style.display = "none";
   document.getElementById("icf-new-freeform-zone").style.display = "none";
+  if (document.getElementById("icf-new-fixed-make")) document.getElementById("icf-new-fixed-make").value = "";
+  if (document.getElementById("itemcode-new-make")) document.getElementById("itemcode-new-make").value = "";
   await loadItemCodeTypeConfigIntoCache();
 
   createZone.style.display = "block";
@@ -383,6 +385,17 @@ async function submitNewItemCode() {
   let payload;
   let materialName, rating, unit; // used only for the success banner text below
 
+  // Make is shared across both paths (it's not part of either template) —
+  // read from whichever zone is actually visible, uppercase it defensively
+  // (the input already forces this as-typed) and block any case of "ABPS"
+  // client-side too, so the error surfaces before a round-trip.
+  const makeInput = usingFormat ? document.getElementById("icf-new-fixed-make") : document.getElementById("itemcode-new-make");
+  const make = (makeInput ? makeInput.value.trim().toUpperCase() : "");
+  if (make && make.includes("ABPS")) {
+    showBOQBanner("itemcode-feedback-banner", "⚠️ Make cannot be \"ABPS\" — leave Make blank for ABPS-made materials, and only enter another company's name.", "error");
+    return;
+  }
+
   if (usingFormat) {
     if (!icfSelectedFormat) { alert("Select a Sub-Option first."); return; }
     const nameValues = icfNameGetValues ? icfNameGetValues() : [];
@@ -393,7 +406,7 @@ async function submitNewItemCode() {
       const ratingErr = icfValidateValues(icfSelectedFormat.ratingTemplate, ratingValues);
       if (ratingErr) { showBOQBanner("itemcode-feedback-banner", "⚠️ Rating: " + ratingErr, "error"); return; }
     }
-    payload = { formatId: icfSelectedFormat.formatId, materialNameValues: nameValues, ratingValues };
+    payload = { formatId: icfSelectedFormat.formatId, materialNameValues: nameValues, ratingValues, make };
     materialName = document.getElementById("icf-new-preview-name").textContent;
     rating = document.getElementById("icf-new-preview-rating").textContent;
     unit = icfSelectedFormat.unit;
@@ -403,7 +416,7 @@ async function submitNewItemCode() {
     unit = document.getElementById("itemcode-new-unit").value.trim();
     if (!materialName) { alert("Material Name is required."); return; }
     if (!unit)         { alert("Unit is required."); return; }
-    payload = { materialName, rating, typeOfMaterial: typeOfMat, unit };
+    payload = { materialName, rating, typeOfMaterial: typeOfMat, unit, make };
   }
 
   btn.disabled = true;
@@ -430,7 +443,7 @@ async function submitNewItemCode() {
         <strong style="font-size:0.95rem;">Item Code Created Successfully!</strong><br/>
         <div style="margin-top:8px; display:flex; gap:16px; flex-wrap:wrap;">
           <span>Code: <strong style="font-family:monospace; font-size:1rem; background:#fff; padding:2px 8px; border-radius:4px; border:1px solid #15803d;">${data.itemCode || itemCode}</strong></span>
-          <span>Product: <strong>${materialName}${rating ? " - " + rating : ""}</strong></span>
+          <span>Product: <strong>${materialName}${rating ? " - " + rating : ""}${make ? " - Make: " + make : ""}</strong></span>
           <span>Type: <strong>${window.typeLabelDisplay_(typeOfMat)}</strong></span>
           <span>Unit: <strong>${unit}</strong></span>
         </div>
