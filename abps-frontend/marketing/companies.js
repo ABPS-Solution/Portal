@@ -115,11 +115,10 @@ async function triggerSequentialSearch(triggerSourceMode) {
         globalNavHeaderBar.insertBefore(inlineControlsBlock, globalNavHeaderBar.firstChild);
       }
       
-      // Enforce clean layout context flags
-      const normalizedContext = (triggerSourceMode === "CARD") ? "CARD" : "DROPDOWN";
-      if (controlHeaderBtn) {
-        controlHeaderBtn.style.display = (normalizedContext === "CARD" && data.nameMatchFound) ? "inline-flex" : "none";
-      }
+      // The top-left header Create New Entry / Collapse Form pair is never
+      // used on Card Details or Search by Company Name — both screens open
+      // the form via their own in-page banner button instead.
+      if (controlHeaderBtn) controlHeaderBtn.style.display = "none";
       if (controlCollapseBtn) controlCollapseBtn.style.display = "none";
       if (inlineCanvas) inlineCanvas.style.display = "block";
 

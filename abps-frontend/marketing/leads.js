@@ -478,9 +478,10 @@ function toggleDropdownNo(selectNode, inputId) {
 function collapseNewEntryDropdownFormExplicitly() {
   document.getElementById("step2-new-entry-dropdown").style.display = "none";
   document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
-  if (document.getElementById("step2-inline-interaction-canvas").style.display === "block" && (currentActiveModuleContext === "CARD" || currentActiveModuleContext === "DROPDOWN")) {
-    document.getElementById("global-direct-inline-create-entry-btn").style.display = "inline-flex";
-  }
+  // The top-left header Create New Entry / Collapse Form pair is never used
+  // in Card Details (CARD) or Search by Company Name (DROPDOWN) — those
+  // screens only ever open the form via the in-page banner button, and
+  // close it via Cancel & Back, so this pair stays hidden for both.
 }
 
 function revealNewEntryFormDropdown() { 
@@ -546,13 +547,10 @@ function revealNewEntryFormDropdown() {
   if (document.getElementById("dropform-country")) document.getElementById("dropform-country").value = (currentActiveModuleContext === "CARD" && document.getElementById("f-country")) ? document.getElementById("f-country").value : "";
   if (document.getElementById("dropform-address")) document.getElementById("dropform-address").value = (currentActiveModuleContext === "CARD" && document.getElementById("f-address")) ? document.getElementById("f-address").value : "";
 
+  // Neither header button is ever shown in CARD/DROPDOWN — Cancel & Back
+  // (staged-back-button-row) is the only way out of this form on these screens.
   if (document.getElementById("global-direct-inline-create-entry-btn")) document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
-  // Card Details flow relies on Cancel & Back to exit the form — Collapse
-  // Form has no canvas to fall back to there (no search has necessarily run
-  // yet), so it would leave a blank panel. Keep it for the DROPDOWN
-  // (Search by Company) flow, where collapseNewEntryDropdownFormExplicitly's
-  // canvas-visible check holds.
-  if (document.getElementById("global-direct-inline-collapse-entry-btn")) document.getElementById("global-direct-inline-collapse-entry-btn").style.display = (currentActiveModuleContext === "CARD") ? "none" : "inline-flex";
+  if (document.getElementById("global-direct-inline-collapse-entry-btn")) document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
 
   const rowNode = document.getElementById("staged-back-button-row");
   if (rowNode) rowNode.style.display = "flex";
@@ -608,14 +606,10 @@ function revealNewEntryFormDropdownFromBanner() {
 function returnToDirectoryCardsFromFormView() {
   document.getElementById("step2-new-entry-dropdown").style.display = "none";
   document.getElementById("staged-back-button-row").style.display = "none";
-  // Only the Card Details flow uses the top-left button — in Search-by-
-  // Company the banner already carries its own Create New Entry, so
-  // re-showing this one here produces a duplicate.
-  document.getElementById("global-direct-inline-create-entry-btn").style.display =
-    (currentActiveModuleContext === "CARD") ? "inline-flex" : "none";
-  // Collapse Form was never re-shown by revealNewEntryFormDropdown() in CARD
-  // mode, but it could still be left over from a DROPDOWN-mode visit — always
-  // clear it here so Cancel & Back never leaves it showing alongside Create New Entry.
+  // The top-left header pair is never used on Card Details or Search by
+  // Company — the in-page banner button (e.g. reveal-new-entry-btn) is the
+  // only Create New Entry control on these screens.
+  document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
   document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
   document.getElementById("step2-inline-interaction-canvas").style.display = "block";
 }
