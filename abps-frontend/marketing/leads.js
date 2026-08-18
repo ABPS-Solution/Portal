@@ -547,13 +547,18 @@ function revealNewEntryFormDropdown() {
   if (document.getElementById("dropform-address")) document.getElementById("dropform-address").value = (currentActiveModuleContext === "CARD" && document.getElementById("f-address")) ? document.getElementById("f-address").value : "";
 
   if (document.getElementById("global-direct-inline-create-entry-btn")) document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
-  if (document.getElementById("global-direct-inline-collapse-entry-btn")) document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "inline-flex";
-  
+  // Card Details flow relies on Cancel & Back to exit the form — Collapse
+  // Form has no canvas to fall back to there (no search has necessarily run
+  // yet), so it would leave a blank panel. Keep it for the DROPDOWN
+  // (Search by Company) flow, where collapseNewEntryDropdownFormExplicitly's
+  // canvas-visible check holds.
+  if (document.getElementById("global-direct-inline-collapse-entry-btn")) document.getElementById("global-direct-inline-collapse-entry-btn").style.display = (currentActiveModuleContext === "CARD") ? "none" : "inline-flex";
+
   const rowNode = document.getElementById("staged-back-button-row");
   if (rowNode) rowNode.style.display = "flex";
 
-  dropdownEl.style.display = "block"; 
-  window.scrollTo(0,0); 
+  dropdownEl.style.display = "block";
+  window.scrollTo(0,0);
 }
 
 function revealNewEntryFormDropdownFromBanner() {
@@ -608,6 +613,10 @@ function returnToDirectoryCardsFromFormView() {
   // re-showing this one here produces a duplicate.
   document.getElementById("global-direct-inline-create-entry-btn").style.display =
     (currentActiveModuleContext === "CARD") ? "inline-flex" : "none";
+  // Collapse Form was never re-shown by revealNewEntryFormDropdown() in CARD
+  // mode, but it could still be left over from a DROPDOWN-mode visit — always
+  // clear it here so Cancel & Back never leaves it showing alongside Create New Entry.
+  document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
   document.getElementById("step2-inline-interaction-canvas").style.display = "block";
 }
 
@@ -847,8 +856,11 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
       if (key === "Approx Requirement")             cell.style.gridColumn = "span 1";
       if (key === "Products Discussed")             cell.style.gridColumn = "span 2";
 
-      let label = document.createElement("label"); 
-      label.textContent = (["Date of Meeting", "ABPS Business Vertical"].indexOf(key) !== -1) ? key + " *" : key;
+      let label = document.createElement("label");
+      // Display-only relabel — the underlying key/dataset.headerKey stays
+      // "Engineer Name" to match the backend's column alias unchanged.
+      const displayKeyText = (key === "Engineer Name") ? "ABPS Engineer Name" : key;
+      label.textContent = (["Date of Meeting", "ABPS Business Vertical"].indexOf(key) !== -1) ? displayKeyText + " *" : displayKeyText;
       cell.appendChild(label);
 
       // --- 1. CORE PIPELINE CONTROLLER ROUTINES ---
@@ -943,9 +955,9 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         label.style.display = "none"; 
         let wrapper = document.createElement("div"); wrapper.style.cssText = "display: flex; flex-direction: column; gap: 6px; padding: 4px 0;";
         wrapper.innerHTML = `
-          <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Contract Demand (MVA)</span><input type="number" step="any" min="0" class="live-lead-field-input-${leadRef}" data-header-key="Contract Demand (MVA)" value="${leadMap["Contract Demand (MVA)"] || ""}"></div>
-          <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Running Demand (MVA)</span><input type="number" step="any" min="0" class="live-lead-field-input-${leadRef}" data-header-key="Running Demand (MVA)" value="${leadMap["Running Demand (MVA)"] || ""}"></div>
-          <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Monthly Average Power Factor</span><input type="number" step="any" class="live-lead-field-input-${leadRef}" data-header-key="Monthly Average Power Factor" value="${leadMap["Monthly Average Power Factor"] || ""}"></div>
+          <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Contract Demand (MVA)</span><input type="number" step="any" min="0" class="live-lead-field-input-${leadRef}" data-header-key="Contract Demand (MVA)" value="${formatQtyTrimmed(leadMap["Contract Demand (MVA)"])}"></div>
+          <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Running Demand (MVA)</span><input type="number" step="any" min="0" class="live-lead-field-input-${leadRef}" data-header-key="Running Demand (MVA)" value="${formatQtyTrimmed(leadMap["Running Demand (MVA)"])}"></div>
+          <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Monthly Average Power Factor</span><input type="number" step="any" class="live-lead-field-input-${leadRef}" data-header-key="Monthly Average Power Factor" value="${formatQtyTrimmed(leadMap["Monthly Average Power Factor"])}"></div>
         `;
         cell.appendChild(wrapper);
       } 
@@ -1307,7 +1319,7 @@ async function submitLead() {
   if (!statusField.value) { alert("Lead Status is compulsory."); return; }
 
   const engineerField = document.getElementById('engName');
-  if (!engineerField || !engineerField.value) { alert("Engineer Name is a compulsory question."); return; }
+  if (!engineerField || !engineerField.value) { alert("ABPS Engineer Name is a compulsory question."); return; }
 
   const meetingDateField = document.getElementById('meetingDate');
   if (!meetingDateField || !meetingDateField.value) { alert("Please select a Date of Meeting."); return; }

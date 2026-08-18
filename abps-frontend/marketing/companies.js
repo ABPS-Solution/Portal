@@ -118,7 +118,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
       // Enforce clean layout context flags
       const normalizedContext = (triggerSourceMode === "CARD") ? "CARD" : "DROPDOWN";
       if (controlHeaderBtn) {
-        controlHeaderBtn.style.display = ((normalizedContext === "CARD" || normalizedContext === "DROPDOWN") && data.nameMatchFound) ? "inline-flex" : "none";
+        controlHeaderBtn.style.display = (normalizedContext === "CARD" && data.nameMatchFound) ? "inline-flex" : "none";
       }
       if (controlCollapseBtn) controlCollapseBtn.style.display = "none";
       if (inlineCanvas) inlineCanvas.style.display = "block";

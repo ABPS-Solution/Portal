@@ -14,7 +14,7 @@ async function commitIsolatedFollowUpItem(leadRef, scopeNode) {
     outcome: form.querySelector(".fup-outcome-select").value, mode: form.querySelector(".fup-mode-select").value,
     nextActionType: form.querySelector(".fup-nextaction-input").value, objectionRaised: form.querySelector(".fup-objection-input").value
   };
-  if (!followUpData.eng || !followUpData.eng.trim()) return alert("Engineer Name is a compulsory field.");
+  if (!followUpData.eng || !followUpData.eng.trim()) return alert("ABPS Engineer Name is a compulsory field.");
   if (!followUpData.notes) return alert("Interaction Notes required.");
   
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...';
