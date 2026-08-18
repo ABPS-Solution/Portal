@@ -2430,7 +2430,7 @@
     <div id="canvas-module-design-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- DASHBOARD BODY -->
-      <div id="dd-body" style="padding:6px 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+      <div id="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: 5 Stat Cards -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 13%;">
@@ -2541,7 +2541,7 @@
     <div id="canvas-module-purchase-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- BODY -->
-      <div id="pd-body" style="padding:6px 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+      <div id="pd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: 7 stat cards -->
         <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:8px; flex:0 0 13%;">
@@ -2680,7 +2680,7 @@
     <div id="canvas-module-store-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- DASHBOARD BODY -->
-      <div id="sd-body" style="padding:6px 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+      <div id="sd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Operational Pulse -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 13%;">
@@ -2781,7 +2781,7 @@
     <div id="canvas-module-production-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- DASHBOARD BODY -->
-      <div id="pd2-body" style="padding:6px 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+      <div id="pd2-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Job Card Pulse — 5 cards -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 13%;">
@@ -2901,7 +2901,7 @@
     <div id="canvas-module-marketing-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- DASHBOARD BODY -->
-      <div id="md-body" style="padding:6px 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+      <div id="md-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Lead Funnel Pulse -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 13%;">
@@ -3182,8 +3182,8 @@
     </div>
     
     <div id="workspace-cardDetails" class="workspace-panel" style="display: none;">
+      <h2 class="panel-title">Enter Visiting Card Details</h2>
       <div id="step1-card-capture-block" class="section">
-        <div class="section-header">Business Card Information</div>
         <div class="section-body" style="padding: 5px;">
           <div class="card-row">
             <div class="card-box" id="front-box" onclick="document.getElementById('card-front').click()">📷 Front Side </div>
@@ -3219,8 +3219,8 @@
     </div>
 
     <div id="workspace-commissioningReport" class="workspace-panel" style="display: none;">
+      <h2 class="panel-title">Upload Commissioning Report</h2>
       <div class="section">
-        <div class="section-header">Upload Commissioning Report</div>
         <div class="section-body" style="text-align: left; padding: 16px;">
           <div id="commissioning-report-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
           <div id="commissioning-report-inputs-container" style="display: block;">
@@ -3247,8 +3247,8 @@
     </div>
 
     <div id="workspace-purchaseOrder" class="workspace-panel" style="display: none;">
+      <h2 class="panel-title">Upload Purchase Order</h2>
       <div class="section">
-        <div class="section-header">Upload Purchase Order</div>
         <div class="section-body" style="text-align: left; padding: 16px;">
           <div id="purchase-order-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
           <div id="purchase-order-inputs-container" style="display: block;">
@@ -3280,8 +3280,8 @@
     </div>
 
     <div id="workspace-searchCompany" class="workspace-panel" style="display: none;">
+      <h2 class="panel-title">Search by Company Name</h2>
       <div id="company-dropdown-selector-block" class="section">
-        <div class="section-header">Choose Target Company Profile</div>
         <div class="section-body" style="padding: 6px; text-align: left;">
           <label class="field-label">Select Company Name</label>
           <select id="lookup-module-company-dropdown" style="margin-bottom: 6px; font-size:0.95rem; padding:6px;"><option value="">Loading Unique Company Names...</option></select>
@@ -3291,8 +3291,8 @@
     </div>
 
     <div id="workspace-searchQualification" class="workspace-panel" style="display: none;">
+      <h2 class="panel-title">Search by Type of Customer</h2>
       <div class="section">
-        <div class="section-header">Filter Leads by Type of Customer</div>
         <div class="section-body">
           <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">Select Types of Customer</label>
           <div id="selected-quals-display" style="font-size: 0.8rem; font-weight: bold; color: var(--brand); margin-bottom: 8px;"></div>
@@ -3319,8 +3319,8 @@
     </div>
 
     <div id="workspace-searchCityState" class="workspace-panel" style="display: none;">
+      <h2 class="panel-title">Search by City, State and Country</h2>
       <div class="section">
-        <div class="section-header">Filter Leads by Location</div>
         <div class="section-body">
           <label class="field-label" style="font-size: 0.8rem; color: var(--brand);">Select Target Countries</label>
           <div class="pill-group" id="location-country-checkboxes-mount" style="margin: 6px 0 14px;"></div>
@@ -3339,8 +3339,8 @@
     </div>
 
     <div id="workspace-searchStatus" class="workspace-panel" style="display: none;">
+      <h2 class="panel-title">Search Leads by ABPS Engineer Name and Status</h2>
       <div class="section">
-        <div class="section-header">Search Leads</div>
         <div class="section-body" style="text-align: left;">
           <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Filter By Engineers</label>
           <div class="pill-group" id="lead-matrix-engineer-checkboxes-mount" style="margin:8px 0 16px;"></div>
@@ -3364,8 +3364,8 @@
     </div>
 
     <div id="workspace-searchEngineer" class="workspace-panel" style="display: none;">
+      <h2 class="panel-title">Filter Leads by Engineer</h2>
       <div class="section">
-        <div class="section-header">Filter Leads by Engineer</div>
         <div class="section-body">
           <label class="field-label">Select Engineer</label>
           <select id="engineer-filter-select" style="margin-bottom:10px;"><option value="">— Select Engineer —</option></select>
@@ -3375,8 +3375,8 @@
     </div>
 
     <div id="workspace-searchTasks" class="workspace-panel" style="display: none;">
+      <h2 class="panel-title">Search Tasks by ABPS Engineer Name and Status</h2>
       <div class="section">
-        <div class="section-header">Search Tasks</div>
         <div class="section-body" style="text-align: left;">
           <label class="field-label" style="font-size:0.8rem; color:var(--brand);">Filter By Engineers</label>
           <div class="pill-group" id="task-matrix-engineer-checkboxes" style="margin:8px 0 16px;"></div>
@@ -3397,11 +3397,7 @@
     </div>
 
     <div id="workspace-emailWhatsapp" class="workspace-panel" style="display: none;">
-      <div class="navigation-action-header-row" style="margin-bottom: 15px; position: relative; display: flex; align-items: center; justify-content: space-between; min-height: 48px; background: #ffffff; border-radius: 6px; border: 1px solid var(--border); padding: 4px 10px;">
-        
-        <span id="email-panel-center-title" style="position: absolute; left: 50%; transform: translateX(-50%); font-size: 1.1rem; font-weight: 700; color: var(--text); letter-spacing: 0.2px; white-space: nowrap;">Email Leads</span>
-      </div>
-
+      <h2 class="panel-title">Leads Received through Email</h2>
       <div class="section" style="border-top: none; box-shadow: none;">
         <div class="section-body" style="padding: 10px;">
           <div id="email-leads-runtime-status-feedback" style="display:none; margin-bottom:10px; padding:8px; border-radius:4px; font-size:0.8rem; font-weight:700; text-align:center;"></div>

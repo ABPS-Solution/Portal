@@ -211,7 +211,16 @@ function dashboardGlobalReturnClick() {
 function syncDashboardCanvasTopPadding() {
   const toolbar = document.getElementById("dashboard-global-toolbar");
   if (!toolbar || toolbar.style.display === "none") return;
-  const h = toolbar.offsetHeight;
+  // Every dashboard canvas lives inside module-purchase-workspace-enclosure-panel
+  // (see ddShowAllWorkspaceEnclosures), which carries its own fixed 12px top
+  // padding (.workspace-panel's shared padding:12px 10px) — that's ALWAYS
+  // there regardless of toolbar height, so it's subtracted out here and
+  // GAP_BELOW_TOOLBAR added back on top, landing on an exact, deliberate gap
+  // that matches the row-to-row gap inside the dashboard body (10px) rather
+  // than an accidental leftover amount.
+  const ENCLOSURE_PANEL_TOP_PADDING = 12;
+  const GAP_BELOW_TOOLBAR = 10;
+  const h = toolbar.offsetHeight - ENCLOSURE_PANEL_TOP_PADDING + GAP_BELOW_TOOLBAR;
   document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => {
     if (c.style.display === "block") c.style.paddingTop = h + "px";
   });
