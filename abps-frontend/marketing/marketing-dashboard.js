@@ -156,8 +156,22 @@ function exitMarketingDashboardBackToMenu() {
 // display:none right below, so this can't leak stale content, it just
 // guarantees whichever ancestor actually contains the target canvas is
 // no longer display:none.
+// Despite the name (kept for compatibility with every navigateTo*Dashboard
+// call site — not worth touching 5 call sites for a rename), this no
+// longer shows every enclosure panel. All 5 dashboard canvases were
+// confirmed (18 Aug 2026, via DOM ancestor trace) to live inside the SAME
+// one — module-purchase-workspace-enclosure-panel — regardless of which
+// department's dashboard is open. Showing every OTHER enclosure panel too
+// was pure dead weight: each one renders its own 12px 10px padding box
+// even with zero visible content inside, and those empty boxes stacked up
+// BEFORE the real content in DOM order, silently pushing every dashboard's
+// row 1 down by ~24px per empty panel shown. This was the real cause of
+// the "huge gap below the toolbar" bug — not the toolbar-height padding
+// math (lib/ipAccess-style tuning of that already happened and was
+// correct on its own; it just wasn't the whole gap).
 function ddShowAllWorkspaceEnclosures() {
-  document.querySelectorAll('[id$="-workspace-enclosure-panel"]').forEach(p => p.style.display = "block");
+  const panel = document.getElementById('module-purchase-workspace-enclosure-panel');
+  if (panel) panel.style.display = "block";
 }
 
 // Single dispatcher for the shared toolbar's ONE Return button — set by
@@ -166,7 +180,6 @@ function ddShowAllWorkspaceEnclosures() {
 let activeDashboardReturnFn = null;
 function dashboardGlobalReturnClick() {
   document.getElementById("dashboard-global-toolbar").style.display = "none";
-  document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => c.style.paddingTop = "");
   const appHeader = document.querySelector('header');
   if (appHeader) appHeader.style.display = "";
   // Restore each enclosure panel's own header row (Return button included)
@@ -181,6 +194,7 @@ function dashboardGlobalReturnClick() {
   // department it belongs to, and Marketing/Production's own exit
   // functions were never written expecting that.
   document.querySelectorAll('[id$="-workspace-enclosure-panel"]').forEach(p => p.style.display = "none");
+  document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => c.style.paddingTop = "");
   if (activeDashboardReturnFn) activeDashboardReturnFn();
   activeDashboardReturnFn = null;
 }
@@ -188,21 +202,16 @@ function dashboardGlobalReturnClick() {
 // Recomputes the visible dashboard canvas's top padding from the shared
 // toolbar's REAL current height, every time that height can change (the
 // toolbar grows ~40px when a dashboard's own Custom row opens/closes) —
-// not just once at dashboard-open time. The old version only ran once
-// (on open, before Custom's row existed) and used a flat "-44" magic
-// number tuned only for the single-row case, so opening Custom afterward
-// grew the toolbar without ever updating the stale padding, leaving a
-// wrong gap. This canvas paddingTop is now the ONLY thing controlling
-// top spacing — pd-body/dd-body/sd-body/md-body/pd2-body's own top
-// padding was removed (kept their side/bottom padding) so there's a
-// single source of truth instead of two paddings whose sum was hard to
-// reason about. GAP_BELOW_TOOLBAR is the deliberate small breathing
-// room between the toolbar and the first row.
+// called on open AND from every *SetPeriod function, not just once, so it
+// never goes stale. Flush against the toolbar (no extra buffer) — the
+// *-body div's own small bottom/side padding is what's left providing any
+// breathing room; its own top padding was removed so there's exactly one
+// thing controlling top spacing, not two paddings whose sum was hard to
+// reason about.
 function syncDashboardCanvasTopPadding() {
   const toolbar = document.getElementById("dashboard-global-toolbar");
   if (!toolbar || toolbar.style.display === "none") return;
-  const GAP_BELOW_TOOLBAR = 8;
-  const h = toolbar.offsetHeight + GAP_BELOW_TOOLBAR;
+  const h = toolbar.offsetHeight;
   document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => {
     if (c.style.display === "block") c.style.paddingTop = h + "px";
   });
