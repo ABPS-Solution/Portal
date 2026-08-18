@@ -940,9 +940,9 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         label.style.display = "none"; 
         let wrapper = document.createElement("div"); wrapper.style.cssText = "display: flex; flex-direction: column; gap: 6px; padding: 4px 0;";
         wrapper.innerHTML = `
-          <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Contract Demand (MVA)</span><input type="number" step="any" class="live-lead-field-input-${leadRef}" data-header-key="Contract Demand (MVA)" value="${leadMap["Contract Demand (MVA)"] || ""}"></div>
-          <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Running Demand (MVA)</span><input type="number" step="any" class="live-lead-field-input-${leadRef}" data-header-key="Running Demand (MVA)" value="${leadMap["Running Demand (MVA)"] || ""}"></div>
-          <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Monthly Average Power Factor</span><input type="number" step="any" class="live-lead-field-input-${leadRef}" data-header-key="Monthly Average Power Factor" value="${leadMap["Monthly Average Power Factor"] || ""}"></div>
+          <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Contract Demand (MVA)</span><input type="number" step="any" min="0" class="live-lead-field-input-${leadRef}" data-header-key="Contract Demand (MVA)" value="${leadMap["Contract Demand (MVA)"] || ""}"></div>
+          <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Running Demand (MVA)</span><input type="number" step="any" min="0" class="live-lead-field-input-${leadRef}" data-header-key="Running Demand (MVA)" value="${leadMap["Running Demand (MVA)"] || ""}"></div>
+          <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Monthly Average Power Factor</span><input type="number" step="0.001" min="0" max="1" title="Power factor is between 0 and 1 (e.g. 0.92)" class="live-lead-field-input-${leadRef}" data-header-key="Monthly Average Power Factor" value="${leadMap["Monthly Average Power Factor"] || ""}"></div>
         `;
         cell.appendChild(wrapper);
       } 
