@@ -17,8 +17,9 @@ function pdSetPeriod(btn) {
   btn.classList.add("active");
   pdCurrentPeriod = btn.dataset.period;
   const cz = document.getElementById("pd-custom-zone");
-  if (pdCurrentPeriod === "custom") { cz.style.display = "flex"; return; }
+  if (pdCurrentPeriod === "custom") { cz.style.display = "flex"; requestAnimationFrame(syncDashboardCanvasTopPadding); return; }
   cz.style.display = "none";
+  requestAnimationFrame(syncDashboardCanvasTopPadding);
   pdLoadDashboard();
 }
 

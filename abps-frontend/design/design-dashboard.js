@@ -59,8 +59,9 @@ function ddSetPeriod(btn) {
   const p = btn.dataset.period;
   ddCurrentPeriod = p;
   const customZone = document.getElementById("dd-custom-zone");
-  if (p === "custom") { customZone.style.display = "flex"; return; }
+  if (p === "custom") { customZone.style.display = "flex"; requestAnimationFrame(syncDashboardCanvasTopPadding); return; }
   customZone.style.display = "none";
+  requestAnimationFrame(syncDashboardCanvasTopPadding);
   ddLoadDashboard();
 }
 

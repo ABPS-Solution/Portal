@@ -4,8 +4,9 @@ function mdSetPeriod(btn) {
   const p = btn.dataset.period;
   mdCurrentPeriod = p;
   const customZone = document.getElementById("md-custom-zone");
-  if (p === "custom") { customZone.style.display = "flex"; return; }
+  if (p === "custom") { customZone.style.display = "flex"; requestAnimationFrame(syncDashboardCanvasTopPadding); return; }
   customZone.style.display = "none";
+  requestAnimationFrame(syncDashboardCanvasTopPadding);
   mdLoadDashboard();
 }
 
@@ -184,6 +185,29 @@ function dashboardGlobalReturnClick() {
   activeDashboardReturnFn = null;
 }
 
+// Recomputes the visible dashboard canvas's top padding from the shared
+// toolbar's REAL current height, every time that height can change (the
+// toolbar grows ~40px when a dashboard's own Custom row opens/closes) —
+// not just once at dashboard-open time. The old version only ran once
+// (on open, before Custom's row existed) and used a flat "-44" magic
+// number tuned only for the single-row case, so opening Custom afterward
+// grew the toolbar without ever updating the stale padding, leaving a
+// wrong gap. This canvas paddingTop is now the ONLY thing controlling
+// top spacing — pd-body/dd-body/sd-body/md-body/pd2-body's own top
+// padding was removed (kept their side/bottom padding) so there's a
+// single source of truth instead of two paddings whose sum was hard to
+// reason about. GAP_BELOW_TOOLBAR is the deliberate small breathing
+// room between the toolbar and the first row.
+function syncDashboardCanvasTopPadding() {
+  const toolbar = document.getElementById("dashboard-global-toolbar");
+  if (!toolbar || toolbar.style.display === "none") return;
+  const GAP_BELOW_TOOLBAR = 8;
+  const h = toolbar.offsetHeight + GAP_BELOW_TOOLBAR;
+  document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => {
+    if (c.style.display === "block") c.style.paddingTop = h + "px";
+  });
+}
+
 // Shows the shared toolbar, sets its title, and reveals only the one
 // period-button-group/custom-zone pair that belongs to the dashboard
 // being opened (the other 4 pairs live in the same toolbar but stay
@@ -209,17 +233,7 @@ function showDashboardGlobalToolbar(title, periodBtnsId, returnFn) {
   // Fixed positioning takes the toolbar out of normal flow, so the visible
   // canvas needs top padding equal to the toolbar's real height or its
   // content starts underneath the floating bar.
-  requestAnimationFrame(() => {
-    // Subtracting here, not adding the full toolbar height — the canvas's
-    // own inner *-body div (sd-body/md-body/etc.) already carries its own
-    // top padding, so using the toolbar's full height on top of that
-    // double-counted the gap. This snugs content right up against the
-    // fixed toolbar instead.
-    const h = Math.max(0, toolbar.offsetHeight - 44);
-    document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => {
-      if (c.style.display === "block") c.style.paddingTop = h + "px";
-    });
-  });
+  requestAnimationFrame(syncDashboardCanvasTopPadding);
   document.getElementById("dash-global-title").textContent = title;
   ["dd-period-btns","pd-period-btns","sd-period-btns","md-period-btns","pd2-period-btns"].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = (id === periodBtnsId) ? "flex" : "none";

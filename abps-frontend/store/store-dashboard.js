@@ -3,8 +3,9 @@ function sdSetPeriod(btn) {
   btn.classList.add("active");
   sdCurrentPeriod = btn.dataset.period;
   const customZone = document.getElementById("sd-custom-zone");
-  if (sdCurrentPeriod === "custom") { customZone.style.display = "flex"; return; }
+  if (sdCurrentPeriod === "custom") { customZone.style.display = "flex"; requestAnimationFrame(syncDashboardCanvasTopPadding); return; }
   customZone.style.display = "none";
+  requestAnimationFrame(syncDashboardCanvasTopPadding);
   sdLoadDashboard();
 }
 

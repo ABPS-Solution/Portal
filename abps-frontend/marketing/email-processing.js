@@ -146,8 +146,8 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
             <span style="background:#cbd5e1; color:#1e293b; font-weight:700;">${formatDateDMY(mail.receivedDate)} at ${formatTime12h(mail.receivedTime) || mail.receivedTime}</span>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px;">
-            <span style="background:#e2e8f0;">Company:</span><strong style="margin-right:20px; color:var(--brand);">${mail.extractedCompany}</strong>
-            <span style="background:#edf2f7;">Contact Person Name:</span><strong>${mail.extractedContactName}</strong>
+            <span style="background:#e2e8f0;">Company:</span><strong style="margin-right:20px; color:var(--brand);">${escapeHtml(mail.extractedCompany)}</strong>
+            <span style="background:#edf2f7;">Contact Person Name:</span><strong>${escapeHtml(mail.extractedContactName)}</strong>
           </div>
         </div>
         <div class="directory-btn-actions-block" style="margin-top:4px; display:flex; gap:6px; align-items:center;">
@@ -157,7 +157,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
       </div>
       
       <div style="font-size:0.85rem; background:#f8fafc; border:1px solid #e2e8f0; padding:8px; border-radius:4px; margin:6px 0; line-height:1.4; color:var(--text);">
-        <strong>AI Email Summary:</strong> ${mail.aiSummaryText}
+        <strong>AI Email Summary:</strong> ${escapeHtml(mail.aiSummaryText)}
       </div>
       
       <div style="font-size:0.72rem; font-weight:700; color:var(--muted); margin-bottom:8px;">
@@ -167,10 +167,10 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
       <div style="margin-top:8px;">
         <div style="display:flex; align-items:center; gap:12px; margin-bottom:3px;">
           <label style="font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Notes</label>
-          <span id="email-note-creator-${mIdx}" style="font-size:0.7rem; color:var(--muted); font-style:italic;">${mail.creatorOfNote ? "Last saved by: " + mail.creatorOfNote : ""}</span>
+          <span id="email-note-creator-${mIdx}" style="font-size:0.7rem; color:var(--muted); font-style:italic;">${mail.creatorOfNote ? "Last saved by: " + escapeHtml(mail.creatorOfNote) : ""}</span>
         </div>
         <div style="display:flex; align-items:flex-end; gap:8px;">
-          <textarea id="email-note-${mIdx}" placeholder="Add notes about this email lead..." style="flex:1; min-height:38px; padding:5px 8px; font-size:0.82rem; border:1px solid var(--border); border-radius:4px; resize:vertical;">${mail.notes || ""}</textarea>
+          <textarea id="email-note-${mIdx}" placeholder="Add notes about this email lead..." style="flex:1; min-height:38px; padding:5px 8px; font-size:0.82rem; border:1px solid var(--border); border-radius:4px; resize:vertical;">${escapeHtml(mail.notes || "")}</textarea>
           <button class="nav-btn-styled" style="background:var(--brand); font-size:0.75rem; padding:4px 10px; white-space:nowrap; flex-shrink:0;" onclick="saveEmailLeadNote(${mIdx}, '${mail.messageIdReference}')">Save Note</button>
         </div>
       </div>

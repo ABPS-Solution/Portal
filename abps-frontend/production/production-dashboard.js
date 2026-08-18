@@ -3,8 +3,9 @@ function pd2SetPeriod(btn) {
   btn.classList.add("active");
   pd2CurrentPeriod = btn.dataset.period;
   const customZone = document.getElementById("pd2-custom-zone");
-  if (pd2CurrentPeriod === "custom") { customZone.style.display = "flex"; return; }
+  if (pd2CurrentPeriod === "custom") { customZone.style.display = "flex"; requestAnimationFrame(syncDashboardCanvasTopPadding); return; }
   customZone.style.display = "none";
+  requestAnimationFrame(syncDashboardCanvasTopPadding);
   pd2LoadDashboard();
 }
 

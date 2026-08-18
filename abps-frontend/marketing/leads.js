@@ -1413,18 +1413,13 @@ async function submitLead() {
       followUpRequired: document.getElementById('act7').value
     };
 
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'submit',
-        sessionToken: localStorage.getItem("sessionToken"),
-        activeEngineer: appActiveOperatorIdentityString,
-        fields,
-        base64Image: cardImageBase64,
-        mimeType: cardImageMimeType
-      })
+    const d = await apFetch({
+      action: 'submit',
+      activeEngineer: appActiveOperatorIdentityString,
+      fields,
+      base64Image: cardImageBase64,
+      mimeType: cardImageMimeType
     });
-    const d = await res.json();
     
     if (d.success) { 
       // A. Instantly hide the input form fields below the banner
@@ -1546,11 +1541,16 @@ async function submitLead() {
     else {
       alert("Submission failed: " + (d.error || "Unknown server error."));
     }
-  } catch (e) { 
-    alert("Submission failed. Please check your network connection.\n" + e.message); 
-  } finally { 
-    btn.disabled = false; 
-    btn.innerHTML = 'Submit Lead'; 
+  } catch (e) {
+    // apFetch already shows its own "session expired, please log in again"
+    // message and redirects — an extra "Submission failed" alert on top of
+    // that would be redundant and confusing.
+    if (e.message !== "SESSION_EXPIRED") {
+      alert("Submission failed. Please check your network connection.\n" + e.message);
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Submit Lead';
     hideBlockingOverlay();
   }
 }
@@ -1779,7 +1779,7 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
 
       nestedWorkspace.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:4px; border-bottom:1px solid var(--border);">
-          <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--brand);">🏢 Existing records for ${mailObject.extractedCompany}</span>
+          <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--brand);">🏢 Existing records for ${escapeHtml(mailObject.extractedCompany)}</span>
           <button class="nav-btn-styled" style="background:#718096; font-size:0.72rem; padding:3px 10px;" onclick="
             document.getElementById('email-nested-inline-database-workspace-anchor-${index}').style.display='none';
             document.getElementById('email-nested-inline-database-workspace-anchor-${index}').innerHTML='';

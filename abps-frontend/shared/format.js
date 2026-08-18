@@ -6,6 +6,19 @@ window.typeLabelDisplay_ = window.typeLabelDisplay_ || function(t) {
   return clean || "Uncategorized";
 };
 
+// Escapes a value before it's interpolated into an innerHTML template string.
+// Use for any field whose content isn't fully controlled by internal staff —
+// most importantly AI-extracted / inbound-email-derived text (Email Leads),
+// where the source is an external, unauthenticated sender.
+function escapeHtml(value) {
+  return (value === null || value === undefined ? "" : String(value))
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function cleanISTTimestamp(rawStr) {
   if (!rawStr) return "";
   let str = rawStr.toString().trim();

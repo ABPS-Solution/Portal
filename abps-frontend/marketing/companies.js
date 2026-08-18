@@ -312,7 +312,7 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
     expandDiv.style.display = "block";
     btn.textContent = "View Company";
     btn.style.background = "var(--brand)";
-  }mountPoint.innerHTML = "";
+  }
   btn.disabled = false;
 }
 
