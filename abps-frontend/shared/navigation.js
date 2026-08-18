@@ -477,15 +477,15 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
       if (document.getElementById("mod-project-status")) document.getElementById("mod-project-status").style.display = canProjectStatus ? "block" : "none";
       const canCustomerQueryManagement = userPermissionsObject.customerQueryManagement === true;
       if (document.getElementById("mod-customer-queries")) document.getElementById("mod-customer-queries").style.display = canCustomerQueryManagement ? "block" : "none";
+      const canSecurityAdmin = userPermissionsObject.securityLoginAccess === true;
+      if (document.getElementById("mod-security-admin")) document.getElementById("mod-security-admin").style.display = canSecurityAdmin ? "block" : "none";
       const projectHeaderBlock = document.getElementById("dashboard-project-department-header-block");
-      if (projectHeaderBlock) projectHeaderBlock.style.display = (canManufacturingClearance || canProjectStatus || canCustomerQueryManagement) ? "block" : "none";
+      if (projectHeaderBlock) projectHeaderBlock.style.display = (canManufacturingClearance || canProjectStatus || canCustomerQueryManagement || canSecurityAdmin) ? "block" : "none";
 
       const canTourExpense = userPermissionsObject.tourExpense === true;
       if (document.getElementById("mod-tour-expense")) document.getElementById("mod-tour-expense").style.display = canTourExpense ? "block" : "none";
-      const canSecurityAdmin = userPermissionsObject.admin === true;
-      if (document.getElementById("mod-security-admin")) document.getElementById("mod-security-admin").style.display = canSecurityAdmin ? "block" : "none";
       const accountsHeaderBlock = document.getElementById("dashboard-accounts-department-header-block");
-      if (accountsHeaderBlock) accountsHeaderBlock.style.display = (canTourExpense || canSecurityAdmin) ? "block" : "none";
+      if (accountsHeaderBlock) accountsHeaderBlock.style.display = canTourExpense ? "block" : "none";
 
   // Every dept-block's display was just finalized above, purely from
   // permissions — the tab bar layers on top of that rather than

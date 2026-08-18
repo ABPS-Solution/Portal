@@ -13,7 +13,7 @@ function renderAPOEditRows() {
         <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx+1}</div>
         <div style="flex:1; min-width:220px; position:relative;">
           <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Material Name *</label>
-          <input type="text" value="${(row.description||'').replace(/"/g,'&quot;')}" placeholder="Search material name / rating..." autocomplete="off" oninput="handleAPODescSearch(${row.id}, this.value)" style="width:100%; padding:7px; border:1.5px solid ${row.itemCode?'var(--brand)':'#f59e0b'}; border-radius:4px; font-size:0.82rem; margin-top:2px;">
+          <textarea rows="2" placeholder="Search material name / rating..." autocomplete="off" oninput="handleAPODescSearch(${row.id}, this.value)" style="width:100%; padding:7px; border:1.5px solid ${row.itemCode?'var(--brand)':'#f59e0b'}; border-radius:4px; font-size:0.82rem; margin-top:2px; font-family:inherit; resize:none; overflow-y:auto; box-sizing:border-box;">${(row.description||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
           <div id="apo-desc-dd-${row.id}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
         </div>
         <div style="width:95px; flex-shrink:0; text-align:center;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Item Code</div><div style="font-family:monospace; font-weight:700; color:var(--brand); font-size:0.85rem;">${row.itemCode||'—'}</div></div>
@@ -876,9 +876,9 @@ function renderCPOMaterialRows() {
 
         <div style="flex:1; min-width:190px; position:relative;">
           <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Material Name *</label>
-          <input type="text" class="cpo-desc-search" data-rowid="${row.id}" value="${(row.description||'').replace(/"/g,'&quot;')}" placeholder="Search material name / rating..." autocomplete="off"
+          <textarea rows="2" class="cpo-desc-search" data-rowid="${row.id}" placeholder="Search material name / rating..." autocomplete="off"
             oninput="handleCPODescSearch(${row.id}, this.value)"
-            style="width:100%; height:36px; box-sizing:border-box; padding:7px; border:1.5px solid ${row.itemCode ? 'var(--brand)' : '#f59e0b'}; border-radius:4px; font-size:0.82rem;">
+            style="width:100%; box-sizing:border-box; padding:7px; border:1.5px solid ${row.itemCode ? 'var(--brand)' : '#f59e0b'}; border-radius:4px; font-size:0.82rem; font-family:inherit; resize:none; overflow-y:auto;">${(row.description||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
           <div id="cpo-desc-dd-${row.id}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
         </div>
 

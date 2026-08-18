@@ -460,6 +460,7 @@
         <span class="dept-name">Project Department</span>
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-security-admin" onclick="switchActiveDashboardModule('security-admin')"><span class="mc-label">Security &amp; Login Access</span></div>
         <div class="menu-card" id="mod-manufacturing-clearance" onclick="switchActiveDashboardModule('manufacturing-clearance')"><span class="mc-label">Manufacturing Clearance</span></div>
         <div class="menu-card" id="mod-project-status" onclick="switchActiveDashboardModule('project-status')"><span class="mc-label">Project Status</span></div>
         <div class="menu-card" id="mod-customer-queries" onclick="switchActiveDashboardModule('customer-queries')"><span class="mc-label">Customer Queries Received through Email</span></div>
@@ -589,7 +590,6 @@
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-tour-expense" onclick="switchActiveDashboardModule('tour-expense')"><span class="mc-label">Tour Expense Tracker</span></div>
-        <div class="menu-card" id="mod-security-admin" onclick="switchActiveDashboardModule('security-admin')"><span class="mc-label">Security &amp; Login Access</span></div>
       </div>
     </div>
     
@@ -1673,6 +1673,7 @@
         <thead><tr style="background:var(--highlight-bg); text-align:left;">
           <th style="padding:8px;">Name</th><th style="padding:8px;">Email</th><th style="padding:8px;">Department</th>
           <th style="padding:8px;">Status</th><th style="padding:8px; text-align:center;">Login Anywhere</th>
+          <th style="padding:8px; text-align:center;">Security &amp; Login Access</th>
         </tr></thead>
         <tbody id="sa-user-list-body"></tbody>
       </table>
@@ -1724,14 +1725,17 @@
     </div>
 
     <!-- SETTINGS -->
-    <div id="sa-panel-settings" style="display:none; max-width:420px;">
+    <div id="sa-panel-settings" style="display:none; max-width:520px;">
       <label class="field-label" style="margin-top:0;">Business Hours Start</label>
       <input type="time" id="sa-settings-hours-start">
       <label class="field-label">Business Hours End</label>
       <input type="time" id="sa-settings-hours-end">
-      <label class="field-label">Outage Grace Period (minutes)</label>
-      <input type="number" id="sa-settings-outage-minutes" min="1">
       <button class="nav-btn-styled" style="margin-top:16px;" onclick="submitSecuritySettings()">Save Settings</button>
+
+      <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--border);">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">Outage Mode</div>
+        <div id="sa-outage-mode-status" style="padding:12px 14px; border-left:4px solid; border-radius:var(--radius); font-size:0.85rem;"></div>
+      </div>
     </div>
   </div>
 
@@ -3793,6 +3797,7 @@
 <script src="project/manufacturing-clearance.js"></script>
 <script src="project/project-status.js"></script>
 <script src="project/customer-queries.js"></script>
+<script src="project/security-admin.js"></script>
 <script src="marketing/leads.js"></script>
 <script src="marketing/companies.js"></script>
 <script src="marketing/tasks-followups.js"></script>
@@ -3829,6 +3834,5 @@
 <script src="production/project-invoice.js"></script>
 <script src="production/production-dashboard.js"></script>
 <script src="accounts/tour-expense.js"></script>
-<script src="accounts/security-admin.js"></script>
 </body>
 </html>

@@ -1,10 +1,12 @@
 // ═══════════════════════════════════════════════════════════════════════
-// accounts/security-admin.js — admin screen for location-restricted login
-// (ABPS_SYSTEM_OVERVIEW.md §18.3): toggle Login Anywhere per user, manage
-// the office IP allowlist and trusted devices, view the login log, and
-// edit business-hours/outage settings. Backend: routes/security.js,
-// perm_admin-gated on every route (also gated client-side via
-// userPermissions.admin, same pattern as other admin-only elements).
+// project/security-admin.js — screen for location-restricted login
+// (ABPS_SYSTEM_OVERVIEW.md §18.3, migrations 099/100): toggle Login
+// Anywhere and Security & Login Access per user, manage the office IP
+// allowlist and trusted devices, view the login log, edit business hours,
+// and manually activate/deactivate Outage Mode. Backend: routes/security.js,
+// gated by perm_security_login_access on every route (client-side gated
+// via userPermissions.securityLoginAccess — a dedicated permission, not
+// perm_admin, so it can be granted selectively; mostly admins in practice).
 // ═══════════════════════════════════════════════════════════════════════
 let saAllUsers = [];
 
@@ -56,7 +58,10 @@ function renderSecurityAdminUsers() {
       <td style="padding:8px; text-align:center;">
         <input type="checkbox" ${u.perm_login_anywhere ? 'checked' : ''} onchange="toggleUserLoginAnywhere('${u.email}', this.checked)">
       </td>
-    </tr>`).join('') || `<tr><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No users found.</td></tr>`;
+      <td style="padding:8px; text-align:center;">
+        <input type="checkbox" ${u.perm_security_login_access ? 'checked' : ''} onchange="toggleUserSecurityLoginAccess('${u.email}', this.checked)">
+      </td>
+    </tr>`).join('') || `<tr><td colspan="6" style="padding:14px; text-align:center; color:var(--muted);">No users found.</td></tr>`;
 }
 
 async function toggleUserLoginAnywhere(email, enabled) {
@@ -69,6 +74,23 @@ async function toggleUserLoginAnywhere(email, enabled) {
     } else {
       showBOQBanner("sa-feedback", data.error || "Failed to update.", "error");
       renderSecurityAdminUsers(); // revert the checkbox to server state
+    }
+  } catch (e) {
+    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+    renderSecurityAdminUsers();
+  }
+}
+
+async function toggleUserSecurityLoginAccess(email, enabled) {
+  try {
+    const data = await apFetch({ action: "setUserSecurityLoginAccess", email, enabled });
+    if (data.success) {
+      showBOQBanner("sa-feedback", `${enabled ? 'Enabled' : 'Disabled'} Security & Login Access for ${email}.`, "success");
+      const u = saAllUsers.find(x => x.email === email);
+      if (u) u.perm_security_login_access = enabled;
+    } else {
+      showBOQBanner("sa-feedback", data.error || "Failed to update.", "error");
+      renderSecurityAdminUsers();
     }
   } catch (e) {
     showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
@@ -180,7 +202,7 @@ async function loadSecuritySettings() {
     if (data.success && data.settings) {
       document.getElementById("sa-settings-hours-start").value = (data.settings.business_hours_start || '').slice(0, 5);
       document.getElementById("sa-settings-hours-end").value = (data.settings.business_hours_end || '').slice(0, 5);
-      document.getElementById("sa-settings-outage-minutes").value = data.settings.outage_grace_minutes;
+      renderOutageModeStatus(data.settings);
     }
   } catch (e) { console.error("loadSecuritySettings failed:", e); }
 }
@@ -188,11 +210,57 @@ async function loadSecuritySettings() {
 async function submitSecuritySettings() {
   const businessHoursStart = document.getElementById("sa-settings-hours-start").value;
   const businessHoursEnd = document.getElementById("sa-settings-hours-end").value;
-  const outageGraceMinutes = parseInt(document.getElementById("sa-settings-outage-minutes").value, 10) || null;
   try {
-    const data = await apFetch({ action: "updateSecuritySettings", businessHoursStart, businessHoursEnd, outageGraceMinutes });
+    const data = await apFetch({ action: "updateSecuritySettings", businessHoursStart, businessHoursEnd });
     if (data.success) showBOQBanner("sa-feedback", "Settings saved.", "success");
     else showBOQBanner("sa-feedback", data.error || "Failed to save settings.", "error");
+  } catch (e) {
+    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+  }
+}
+
+// Manual Outage Mode (migration 100) — deliberately NOT automatic. A real
+// human with Security & Login Access flips this on when there's a
+// confirmed office network/power outage, so any user who's previously
+// logged in from the office can sign in remotely on a brand-new device
+// while it's active. Always has an expiry (max 12h) so it can't be left
+// on by accident. Trusted Devices already covers returning devices
+// without needing this at all.
+function renderOutageModeStatus(settings) {
+  const box = document.getElementById("sa-outage-mode-status");
+  const active = settings.outage_mode_active && settings.outage_mode_expires_at && new Date(settings.outage_mode_expires_at) > new Date();
+  if (active) {
+    box.innerHTML = `⚠️ <strong>Outage Mode is ACTIVE</strong> — activated by ${settings.outage_mode_activated_by || 'unknown'} at ${new Date(settings.outage_mode_started_at).toLocaleString()}, expires ${new Date(settings.outage_mode_expires_at).toLocaleString()}.
+      <button class="nav-btn-styled" style="margin-left:10px; padding:4px 12px; font-size:0.78rem;" onclick="deactivateOutageModeNow()">Deactivate Now</button>`;
+    box.style.background = '#fef3c7'; box.style.borderLeftColor = '#f59e0b'; box.style.color = '#78350f';
+  } else {
+    box.innerHTML = `Outage Mode is off. Only use this for a confirmed office network/power outage — Trusted Devices already covers returning staff on their own devices without it.
+      <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
+        <label style="font-size:0.8rem;">Duration (hours):</label>
+        <input type="number" id="sa-outage-hours" value="4" min="0.5" max="12" step="0.5" style="width:80px;">
+        <button class="nav-btn-styled" style="padding:6px 14px;" onclick="activateOutageModeNow()">Activate Outage Mode</button>
+      </div>`;
+    box.style.background = 'var(--highlight-bg)'; box.style.borderLeftColor = 'var(--brand)'; box.style.color = 'var(--text)';
+  }
+}
+
+async function activateOutageModeNow() {
+  const hours = parseFloat(document.getElementById("sa-outage-hours").value) || 4;
+  if (!confirm(`Activate Outage Mode for ${hours} hour(s)? Any user who has logged in from the office before will be able to sign in remotely until it expires.`)) return;
+  try {
+    const data = await apFetch({ action: "activateOutageMode", hours });
+    if (data.success) { showBOQBanner("sa-feedback", "Outage Mode activated.", "success"); loadSecuritySettings(); }
+    else showBOQBanner("sa-feedback", data.error || "Failed to activate.", "error");
+  } catch (e) {
+    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+  }
+}
+
+async function deactivateOutageModeNow() {
+  try {
+    const data = await apFetch({ action: "deactivateOutageMode" });
+    if (data.success) { showBOQBanner("sa-feedback", "Outage Mode deactivated.", "success"); loadSecuritySettings(); }
+    else showBOQBanner("sa-feedback", data.error || "Failed to deactivate.", "error");
   } catch (e) {
     showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
   }

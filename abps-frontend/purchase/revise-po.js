@@ -246,7 +246,7 @@ function renderPORevisionCard() {
 
         <div style="flex:1; min-width:140px;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Material Name</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; font-size:0.82rem; font-weight:600; padding:0 4px;">${li.description || ""}</div>
+          <div style="min-height:36px; box-sizing:border-box; display:flex; align-items:center; font-size:0.82rem; font-weight:600; padding:6px 4px; word-break:break-word; white-space:normal;">${li.description || ""}</div>
         </div>
         <div style="width:70px; flex-shrink:0; text-align:center;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Old PO Qty</div>
@@ -938,7 +938,7 @@ function renderAPORCard(r) {
 
         <div style="flex:1; min-width:140px;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Material Name</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; font-size:0.82rem; font-weight:600; padding:0 4px;">${line.description || ""}</div>
+          <div style="min-height:36px; box-sizing:border-box; display:flex; align-items:center; font-size:0.82rem; font-weight:600; padding:6px 4px; word-break:break-word; white-space:normal;">${line.description || ""}</div>
         </div>
         <div style="width:70px; flex-shrink:0; text-align:center;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Old PO Qty</div>
