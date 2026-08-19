@@ -119,16 +119,22 @@ function updateJCLHDownloadButtonState() {
   const sheetDrop = document.getElementById("jclh-sheet-type");
   if (!btn) return;
 
-  // Product Type / Sheet Type only unlock once a Job Card Number is picked.
-  [typeDrop, sheetDrop].forEach(el => {
-    if (!el) return;
-    el.disabled = !jc;
-    if (!jc) el.value = "";
-  });
+  // Sheet Type unlocks once a Job Card Number is picked. Product Type is
+  // sequenced one step further — it stays disabled until Sheet Type has a
+  // value, per explicit request (Sheet Type is chosen first, then Product
+  // Type). Clearing/changing Sheet Type re-locks and clears Product Type.
+  if (sheetDrop) {
+    sheetDrop.disabled = !jc;
+    if (!jc) sheetDrop.value = "";
+  }
+  const sheetType = sheetDrop ? sheetDrop.value.trim() : "";
+  if (typeDrop) {
+    typeDrop.disabled = !sheetType;
+    if (!sheetType) typeDrop.value = "";
+  }
 
   const productType = typeDrop ? typeDrop.value.trim() : "";
-  const sheetType   = sheetDrop ? sheetDrop.value.trim() : "";
-  if (jc && productType && sheetType) {
+  if (jc && sheetType && productType) {
     btn.disabled = false; btn.style.opacity = "1"; btn.style.cursor = "pointer";
   } else {
     btn.disabled = true; btn.style.opacity = "0.5"; btn.style.cursor = "not-allowed";
