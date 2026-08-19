@@ -343,21 +343,56 @@ async function triggerLiveWarehouseStockMetricsSync() {
 
   try {
     const data = await apFetch({ action: "pullLiveInventoryCounts" });
-
     if (data.success && data.inventory) {
       cachedInventoryStockCollection = data.inventory;
-      mountZone.innerHTML = "";
+      renderRawMaterialsStockGrid();
+    }
+  } catch (error) {
+    console.error(error);
+    mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--warn);">⚠️ Sync Exception: Couldn't refresh active inventory balances.</div>`;
+  } finally {
+    if (syncBtn) { syncBtn.disabled = false; syncBtn.innerHTML = "🔄 Refresh"; }
+  }
+}
 
-      if (!cachedInventoryStockCollection || cachedInventoryStockCollection.length === 0) {
-        mountZone.innerHTML = `
-          <div style="grid-column:1/-1; text-align:center; padding:40px 20px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);">
-            <div style="font-size:2rem; margin-bottom:10px;">📦</div>
-            <div style="font-size:0.95rem; font-weight:700; color:var(--muted);">Raw Materials Store is Empty</div>
-            <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">No items have been added to the store yet.</div>
-          </div>`;
-        return;
-      }
+// Search Material box above the Raw Materials Store grid — filters the
+// already-fetched cache client-side, same "type to narrow, no re-fetch"
+// shape as the other typeaheads in the app, but this one just filters
+// visible cards rather than resolving to a single selection.
+window.rawStockSearchQuery = "";
+function handleRawStockSearchInput(query) {
+  window.rawStockSearchQuery = (query || "").trim().toLowerCase();
+  renderRawMaterialsStockGrid();
+}
 
+function renderRawMaterialsStockGrid() {
+  const mountZone = document.getElementById("dashboard-live-inventory-metrics-mount-zone");
+  if (!mountZone) return;
+  mountZone.innerHTML = "";
+
+  const q = window.rawStockSearchQuery || "";
+  const filteredCollection = !q ? (cachedInventoryStockCollection || []) :
+    (cachedInventoryStockCollection || []).filter(item =>
+      `${item.materialName || ""} ${item.itemCode || ""}`.toLowerCase().includes(q));
+
+  if (!cachedInventoryStockCollection || cachedInventoryStockCollection.length === 0) {
+    mountZone.innerHTML = `
+      <div style="grid-column:1/-1; text-align:center; padding:40px 20px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);">
+        <div style="font-size:2rem; margin-bottom:10px;">📦</div>
+        <div style="font-size:0.95rem; font-weight:700; color:var(--muted);">Raw Materials Store is Empty</div>
+        <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">No items have been added to the store yet.</div>
+      </div>`;
+    return;
+  }
+  if (filteredCollection.length === 0) {
+    mountZone.innerHTML = `
+      <div style="grid-column:1/-1; text-align:center; padding:30px 20px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);">
+        <div style="font-size:0.9rem; font-weight:700; color:var(--muted);">No materials matched "${q}".</div>
+      </div>`;
+    return;
+  }
+
+  {
       // Group items by Type of Material
       const typeGroups = {};
       // Type of Material order now lives in design.item_code_type_config
@@ -386,7 +421,7 @@ async function triggerLiveWarehouseStockMetricsSync() {
         return clean || "Uncategorized";
       };
       
-      cachedInventoryStockCollection.forEach(item => {
+      filteredCollection.forEach(item => {
         const type = (item.typeOfMaterial || item.typematerial || "").toString().trim() || "Uncategorized";
         if (!typeGroups[type]) typeGroups[type] = [];
         typeGroups[type].push(item);
@@ -471,12 +506,6 @@ async function triggerLiveWarehouseStockMetricsSync() {
         section.appendChild(bodyDiv);
         mountZone.appendChild(section);
       });
-    }
-  } catch (error) {
-    console.error(error);
-    mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--warn);">⚠️ Sync Exception: Couldn't refresh active inventory balances.</div>`;
-  } finally {
-    if (syncBtn) { syncBtn.disabled = false; syncBtn.innerHTML = "🔄 Refresh"; }
   }
 }
 
@@ -489,14 +518,44 @@ async function triggerLiveSpareStoreStockMetricsSync() {
 
   try {
     const data = await apFetch({ action: "getSpareStoreStock" });
+    if (!data.success) { mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--warn);">⚠️ ${data.error || 'Could not load Spare Store.'}</div>`; return; }
+    window.cachedSpareStoreStockCollection = data.stock || [];
+    renderSpareStoreStockGrid();
+  } catch(e) {
+    mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--warn);">⚠️ Refresh failed: ${e.message}</div>`;
+  } finally {
+    if (syncBtn) { syncBtn.disabled = false; syncBtn.innerHTML = "🔄 Refresh"; }
+  }
+}
 
-    if (!data.success || !data.stock || data.stock.length === 0) {
-      mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px 20px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);"><div style="font-size:2rem; margin-bottom:10px;">📦</div><div style="font-size:0.95rem; font-weight:700; color:var(--muted);">Spare Store is Empty</div></div>`;
-      return;
-    }
+window.spareStockSearchQuery = "";
+function handleSpareStockSearchInput(query) {
+  window.spareStockSearchQuery = (query || "").trim().toLowerCase();
+  renderSpareStoreStockGrid();
+}
 
+function renderSpareStoreStockGrid() {
+  const mountZone = document.getElementById("dashboard-live-spare-inventory-metrics-mount-zone");
+  if (!mountZone) return;
+  const fullStock = window.cachedSpareStoreStockCollection || [];
+
+  if (fullStock.length === 0) {
+    mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px 20px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);"><div style="font-size:2rem; margin-bottom:10px;">📦</div><div style="font-size:0.95rem; font-weight:700; color:var(--muted);">Spare Store is Empty</div></div>`;
+    return;
+  }
+
+  const q = window.spareStockSearchQuery || "";
+  const filteredStock = !q ? fullStock : fullStock.filter(item =>
+    `${item.materialName || ""} ${item.itemCode || ""}`.toLowerCase().includes(q));
+
+  if (filteredStock.length === 0) {
+    mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:30px 20px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);"><div style="font-size:0.9rem; font-weight:700; color:var(--muted);">No materials matched "${q}".</div></div>`;
+    return;
+  }
+
+  {
     const typeGroups = {};
-    data.stock.forEach(item => {
+    filteredStock.forEach(item => {
       const type = item.typeOfMaterial || "Uncategorized";
       if (!typeGroups[type]) typeGroups[type] = [];
       typeGroups[type].push(item);
@@ -567,10 +626,6 @@ async function triggerLiveSpareStoreStockMetricsSync() {
       section.appendChild(bodyDiv);
       mountZone.appendChild(section);
     });
-  } catch(e) {
-    mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--warn);">⚠️ Refresh failed: ${e.message}</div>`;
-  } finally {
-    if (syncBtn) { syncBtn.disabled = false; syncBtn.innerHTML = "🔄 Refresh"; }
   }
 }
 
@@ -890,8 +945,22 @@ async function triggerLiveFinishedGoodsStoreStockMetricsSync() {
   } catch(e) {
     console.error("FG stock sync error:", e);
   }
+  renderFinishedGoodsStoreStockTables();
+}
+
+window.fgStockSearchQuery = "";
+function handleFgStockSearchInput(query) {
+  window.fgStockSearchQuery = (query || "").trim().toLowerCase();
+  renderFinishedGoodsStoreStockTables();
+}
+
+function renderFinishedGoodsStoreStockTables() {
   const cached = window.cachedFinishedGoodsStoreStockCollection;
   if (!cached) return;
+
+  const q = window.fgStockSearchQuery || "";
+  const filteredCached = !q ? cached : cached.filter(row =>
+    `${row.productName || ""} ${row.productRating || ""} ${row.descriptionOfMaterial || ""} ${row.make || ""}`.toLowerCase().includes(q));
 
   const depts = [
     { key: "reactor",   label: "Reactor",   containerId: "fg-stock-reactor-rows"   },
@@ -900,7 +969,7 @@ async function triggerLiveFinishedGoodsStoreStockMetricsSync() {
   ];
 
   depts.forEach(dept => {
-    const rows = cached.filter(row => (row.department || "").trim().toLowerCase() === dept.key);
+    const rows = filteredCached.filter(row => (row.department || "").trim().toLowerCase() === dept.key);
     const container = document.getElementById(dept.containerId);
     if (!container) return;
 
@@ -914,10 +983,10 @@ async function triggerLiveFinishedGoodsStoreStockMetricsSync() {
       if (!groups[key]) {
         groups[key] = {
           projectId:    pid,
-          customerName: (row.customerName || "").trim(),
-          itemCode:     (row.itemCode     || "").trim(),
           productRating:prating,
           productName:  pname,
+          descriptionOfMaterial: (row.descriptionOfMaterial || "").trim(),
+          make:         (row.make || "").trim(),
           unit:         (row.unit || "NOS").trim(),
           jobCards:     [],
           inStock:      0
@@ -935,17 +1004,17 @@ async function triggerLiveFinishedGoodsStoreStockMetricsSync() {
     const groupArr = Object.values(groups);
 
     if (groupArr.length === 0) {
-      container.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No items in ${dept.label} Finished Goods Store.</td></tr>`;
+      container.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">${q ? `No materials matched "${q}".` : `No items in ${dept.label} Finished Goods Store.`}</td></tr>`;
       return;
     }
 
     container.innerHTML = groupArr.map(g => `
       <tr style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:8px; font-weight:700; font-size:0.82rem;">${g.projectId}</td>
-        <td style="padding:8px; font-size:0.82rem;">${g.customerName}</td>
-        <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${g.itemCode || "—"}</td>
         <td style="padding:8px; font-size:0.82rem;">${g.productRating || "—"}</td>
         <td style="padding:8px; font-size:0.82rem;">${g.productName}</td>
+        <td style="padding:8px; font-size:0.82rem;">${g.descriptionOfMaterial || "—"}</td>
+        <td style="padding:8px; font-size:0.82rem;">${g.make || "—"}</td>
         <td style="padding:8px; font-size:0.82rem;">${g.unit}</td>
         <td style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:${g.inStock > 0 ? "var(--accent)" : "#b91c1c"};">
           ${g.inStock}

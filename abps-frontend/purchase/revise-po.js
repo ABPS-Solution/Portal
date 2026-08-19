@@ -27,7 +27,7 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
   document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
 
-  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po","canvas-module-purchase-rejected-material","canvas-module-purchase-create-po","canvas-module-purchase-authorize-prn","canvas-module-purchase-authorize-po","canvas-module-purchase-pps-tracking","canvas-module-purchase-revise-po","canvas-module-purchase-authorize-po-revision","canvas-module-purchase-revise-prn","canvas-module-purchase-search-po"].forEach(id => {
+  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po","canvas-module-purchase-rejected-material","canvas-module-purchase-create-po","canvas-module-purchase-authorize-prn","canvas-module-purchase-authorize-po","canvas-module-purchase-pps-tracking","canvas-module-purchase-revise-po","canvas-module-purchase-authorize-po-revision","canvas-module-purchase-revise-prn","canvas-module-purchase-search-po","canvas-module-purchase-vendor-costing"].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = "none";
   });
 
@@ -96,6 +96,9 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
   } else if (targetModuleId === "purchase-search-po") {
     document.getElementById("canvas-module-purchase-search-po").style.display = "block";
     initializeSearchRMPOPanel();
+  } else if (targetModuleId === "purchase-vendor-costing") {
+    document.getElementById("canvas-module-purchase-vendor-costing").style.display = "block";
+    initializeSearchVendorCostingInfoPanel();
   }
 }
 

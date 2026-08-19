@@ -321,6 +321,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canReviseRMPO = userPermissionsObject.reviseRMPO === true;
   const canAuthorizeRMPORevision = userPermissionsObject.authorizeRMPORevision === true;
   const canSearchRMPO = userPermissionsObject.searchRMPO === true;
+  const canSearchVendorCostingInfo = userPermissionsObject.searchVendorCostingInfo === true;
 
   // --- SET INDIVIDUAL VISIBILITY FOR MARKETING TARGET CARDS ---
   if (document.getElementById("mod-card")) {
@@ -424,9 +425,10 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-revise-rm-po")) document.getElementById("mod-revise-rm-po").style.display = canReviseRMPO ? "block" : "none";
   if (document.getElementById("mod-authorize-rm-po-revision")) document.getElementById("mod-authorize-rm-po-revision").style.display = canAuthorizeRMPORevision ? "block" : "none";
   if (document.getElementById("mod-search-rm-po")) document.getElementById("mod-search-rm-po").style.display = canSearchRMPO ? "block" : "none";
+  if (document.getElementById("mod-search-vendor-costing-info")) document.getElementById("mod-search-vendor-costing-info").style.display = canSearchVendorCostingInfo ? "block" : "none";
   const purchaseHeaderBlock = document.getElementById("dashboard-purchase-department-header-block");
   if (purchaseHeaderBlock) {
-    purchaseHeaderBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || canPPSTracking || userPermissionsObject.viewPurchaseDashboard === true) ? "block" : "none";
+    purchaseHeaderBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || canPPSTracking || canSearchVendorCostingInfo || userPermissionsObject.viewPurchaseDashboard === true) ? "block" : "none";
   }
 
   // Production Department block visibility

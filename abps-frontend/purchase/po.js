@@ -166,7 +166,6 @@ function toggleAuthorizePOCard(poNo) {
 // ═══════════════════════════════════════════════════════════════════════
 
 async function initializeSearchRMPOPanel() {
-  window.srchpoToggle = 'po';
   window.srchpoSelectedItemCode = null;
   window.srchpoSelectedProjectId = null;
   window.srchpoExpandedPoNo = null;
@@ -181,32 +180,11 @@ async function initializeSearchRMPOPanel() {
   if (fb) { fb.style.display = "none"; fb.innerHTML = ""; }
   const lbl = document.getElementById("srchpo-search-label");
   if (lbl) lbl.style.display = "none";
-  switchSearchRMPOToggle('po');
   loadItemCodeCatalogIntoCache();
   try {
     const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
     window.srchpoActiveProjects = (data.success ? (data.projects || []) : []);
   } catch(e) { window.srchpoActiveProjects = []; }
-}
-
-function switchSearchRMPOToggle(mode) {
-  window.srchpoToggle = mode;
-  document.getElementById("srchpo-results").innerHTML = "";
-  const lbl = document.getElementById("srchpo-search-label");
-  if (lbl) lbl.style.display = "none";
-  const poTab = document.getElementById("srchpo-tab-po");
-  const vendorTab = document.getElementById("srchpo-tab-vendor");
-  const poField = document.getElementById("srchpo-po-field");
-  if (mode === 'po') {
-    poTab.style.color = "var(--brand)"; poTab.style.borderBottomColor = "var(--brand)"; poTab.style.fontWeight = "800";
-    vendorTab.style.color = "var(--muted)"; vendorTab.style.borderBottomColor = "transparent"; vendorTab.style.fontWeight = "700";
-    if (poField) poField.style.display = "block";
-  } else {
-    vendorTab.style.color = "var(--brand)"; vendorTab.style.borderBottomColor = "var(--brand)"; vendorTab.style.fontWeight = "800";
-    poTab.style.color = "var(--muted)"; poTab.style.borderBottomColor = "transparent"; poTab.style.fontWeight = "700";
-    // PO Number search doesn't apply to vendor lookup — hidden per spec.
-    if (poField) poField.style.display = "none";
-  }
 }
 
 let srchpoPODebounce = null;
@@ -311,15 +289,9 @@ async function searchByMaterialUI() {
   const results = document.getElementById("srchpo-results");
   results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
   try {
-    if (window.srchpoToggle === 'po') {
-      const data = await apFetch({ action: "searchRMPOsByMaterial", itemCode: window.srchpoSelectedItemCode });
-      if (!data.success) { srchpoShowFeedback(data.error, true); results.innerHTML = ""; return; }
-      renderSrchPOResultsAsPOCards(data.results || []);
-    } else {
-      const data = await apFetch({ action: "searchRMPOVendorsByMaterial", itemCode: window.srchpoSelectedItemCode });
-      if (!data.success) { srchpoShowFeedback(data.error, true); results.innerHTML = ""; return; }
-      renderSrchPOMaterialVendorTable(data.results || []);
-    }
+    const data = await apFetch({ action: "searchRMPOsByMaterial", itemCode: window.srchpoSelectedItemCode });
+    if (!data.success) { srchpoShowFeedback(data.error, true); results.innerHTML = ""; return; }
+    renderSrchPOResultsAsPOCards(data.results || []);
   } catch(e) { srchpoShowFeedback(e.message, true); results.innerHTML = ""; }
 }
 
@@ -331,15 +303,9 @@ async function searchByProjectIdUI() {
   const results = document.getElementById("srchpo-results");
   results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
   try {
-    if (window.srchpoToggle === 'po') {
-      const data = await apFetch({ action: "searchRMPOsByProjectId", projectId });
-      if (!data.success) { srchpoShowFeedback(data.error, true); results.innerHTML = ""; return; }
-      renderSrchPOResultsAsPOCards(data.results || []);
-    } else {
-      const data = await apFetch({ action: "searchRMPOVendorsByProjectId", projectId });
-      if (!data.success) { srchpoShowFeedback(data.error, true); results.innerHTML = ""; return; }
-      renderSrchPOVendorResults(data.vendors || []);
-    }
+    const data = await apFetch({ action: "searchRMPOsByProjectId", projectId });
+    if (!data.success) { srchpoShowFeedback(data.error, true); results.innerHTML = ""; return; }
+    renderSrchPOResultsAsPOCards(data.results || []);
   } catch(e) { srchpoShowFeedback(e.message, true); results.innerHTML = ""; }
 }
 
@@ -489,64 +455,6 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
       </div>
     </div>
   `;
-}
-
-function renderSrchPOVendorResults(vendors) {
-  const results = document.getElementById("srchpo-results");
-  if (vendors.length === 0) {
-    results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No matching vendors found.</div>`;
-    return;
-  }
-  results.innerHTML = vendors.map(v => `
-    <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
-      <div style="font-weight:700; font-size:0.95rem; color:var(--brand); margin-bottom:8px;">${v.vendorName} ${v.status ? `<span style="font-size:0.7rem; font-weight:600; color:${v.status === 'Active' ? '#16a34a' : '#b91c1c'};">(${v.status})</span>` : ""}</div>
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; font-size:0.82rem;">
-        <div><span style="color:var(--muted);">GSTIN/UIN:</span> ${v.gstinUin || '—'}</div>
-        <div><span style="color:var(--muted);">Type:</span> ${v.typeOfVendor || '—'}</div>
-        <div><span style="color:var(--muted);">Contact Person:</span> ${v.contactPerson || '—'}</div>
-        <div><span style="color:var(--muted);">Phone:</span> ${v.phoneNumber || '—'}</div>
-        <div><span style="color:var(--muted);">Email:</span> ${v.email || '—'}</div>
-        <div><span style="color:var(--muted);">City/State:</span> ${v.city || '—'}${v.state ? ', ' + v.state : ''} ${v.stateCode ? `(${v.stateCode})` : ''}</div>
-        <div style="grid-column:1 / -1;"><span style="color:var(--muted);">Address:</span> ${v.address || '—'}</div>
-      </div>
-    </div>`).join("");
-}
-
-// Material Name search inside Search Vendor Information — one row per PO
-// carrying the material (not one row per vendor), so rate/quantity can be
-// compared PO-to-PO. Already sorted by the backend (order date desc, then
-// po_no desc as the same-date tiebreak).
-function renderSrchPOMaterialVendorTable(list) {
-  const results = document.getElementById("srchpo-results");
-  if (list.length === 0) {
-    results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No matching Authorized Purchase Orders found.</div>`;
-    return;
-  }
-  const rows = list.map(r => `
-    <tr style="border-bottom:1px solid #e2e8f0;">
-      <td style="padding:8px; font-family:monospace; font-weight:700; color:var(--brand);">${r.poNo}</td>
-      <td style="padding:8px; font-weight:600;">${r.vendorName || "—"}</td>
-      <td style="padding:8px;">${r.city || "—"}${r.state ? ', ' + r.state : ''}</td>
-      <td style="padding:8px; text-align:center; font-family:monospace;">${fmtQty(r.poQuantity)}</td>
-      <td style="padding:8px; text-align:center; font-family:monospace;">${fmtQty(r.ratePerQty)}</td>
-      <td style="padding:8px;">${fmtPODate(r.orderDate) || "—"}</td>
-      <td style="padding:8px;">${fmtPODate(r.deliveryDate) || "—"}</td>
-    </tr>`).join("");
-  results.innerHTML = `
-    <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-      <table style="width:100%; border-collapse:collapse; min-width:760px;">
-        <thead><tr style="background:#f8fafc;">
-          <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">PO Number</th>
-          <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">Vendor Name</th>
-          <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">City/State</th>
-          <th style="padding:8px; font-size:0.7rem; text-align:center; text-transform:uppercase; color:var(--muted);">PO Quantity</th>
-          <th style="padding:8px; font-size:0.7rem; text-align:center; text-transform:uppercase; color:var(--muted);">Rate / Qty</th>
-          <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">Order Date</th>
-          <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">Delivery Date</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
 }
 
 async function initializeCreatePOPanel(authorizePoNo = null, containerId = "create-po-body") {
