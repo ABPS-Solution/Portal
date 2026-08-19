@@ -99,6 +99,25 @@ function showSuccessWithReset(elementId, message, resetButtonLabel, resetFnCall,
 }
 
 // ═══════════════════════════════════════════════════════
+// AUTO-GROW TEXT FIELD — generic version of the per-screen autoGrowPoField/
+// mcAutoGrowField helpers (leads.js, manufacturing-clearance.js). Grows a
+// textarea's height to fit wrapped content instead of clipping it at
+// rows="1"/overflow:hidden. Call once on input/focus for live-typed fields,
+// and via autoGrowAllIn(container) right after any innerHTML render that
+// drops in readonly/prefilled textareas (their content never fires input,
+// so nothing else would ever measure them).
+// ═══════════════════════════════════════════════════════
+function autoGrowTextField(el) {
+  if (!el) return;
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + "px";
+}
+function autoGrowAllIn(container) {
+  (container ? container.querySelectorAll("textarea") : document.querySelectorAll("textarea"))
+    .forEach(autoGrowTextField);
+}
+
+// ═══════════════════════════════════════════════════════
 // ASSIGN CURRENT STOCK
 // ═══════════════════════════════════════════════════════
 

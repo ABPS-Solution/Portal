@@ -1838,9 +1838,9 @@
             <div>
               <label class="field-label" style="margin-top:0;">Product Name *</label>
               <div style="position:relative;">
-                <input type="text" id="cboq-product-search" disabled readonly placeholder="Select Project First" autocomplete="off"
+                <textarea id="cboq-product-search" rows="1" disabled readonly placeholder="Select Project First" autocomplete="off"
                   onclick="showCBOQProductDropdown()"
-                  style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box; cursor:pointer; background:#fff;" />
+                  style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box; cursor:pointer; background:#fff; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; font-family:inherit; font-size:inherit; min-height:38px;"></textarea>
                 <div id="cboq-product-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
               </div>
               <input type="hidden" id="cboq-product-name" />
@@ -1855,9 +1855,10 @@
           <div style="display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-bottom:14px;">
             <div style="position:relative;">
               <label class="field-label" style="margin-top:0;">Description of Material (optional)</label>
-              <input type="text" id="cboq-desc-input" placeholder="Type to search or create a description..." autocomplete="off"
-                oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'cboq-desc-input', 'cboq-desc-dropdown', 'cboq-description-id')"
-                style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;" />
+              <textarea id="cboq-desc-input" rows="1" placeholder="Type to search or create a description..." autocomplete="off"
+                oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'cboq-desc-input', 'cboq-desc-dropdown', 'cboq-description-id'); autoGrowTextField(this);"
+                onkeydown="if(event.key==='Enter') event.preventDefault();"
+                style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; font-family:inherit; font-size:inherit; min-height:38px;"></textarea>
               <div id="cboq-desc-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
               <input type="hidden" id="cboq-description-id" />
             </div>

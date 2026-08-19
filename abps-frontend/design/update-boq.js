@@ -69,9 +69,10 @@ async function toggleBOQRevisionExpansion(updateId) {
       <div style="display:grid; grid-template-columns:2fr 1fr; gap:12px; margin-bottom:12px;">
         <div style="position:relative;">
           <label class="field-label" style="margin-top:0;">Description of Material (optional)</label>
-          <input type="text" id="boqrev-desc-input-${updateId}" value="${(reqItem.newDescriptionOfMaterial || '').toString().replace(/"/g, '&quot;')}" placeholder="Type to search or create a description..." autocomplete="off"
-            oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'boqrev-desc-input-${updateId}', 'boqrev-desc-dropdown-${updateId}', 'boqrev-description-id-${updateId}')"
-            style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;" />
+          <textarea id="boqrev-desc-input-${updateId}" rows="1" placeholder="Type to search or create a description..." autocomplete="off"
+            oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'boqrev-desc-input-${updateId}', 'boqrev-desc-dropdown-${updateId}', 'boqrev-description-id-${updateId}'); autoGrowTextField(this);"
+            onkeydown="if(event.key==='Enter') event.preventDefault();"
+            style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; font-family:inherit; font-size:inherit; min-height:34px;">${(reqItem.newDescriptionOfMaterial || '').toString().replace(/</g, '&lt;')}</textarea>
           <div id="boqrev-desc-dropdown-${updateId}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           <input type="hidden" id="boqrev-description-id-${updateId}" value="${reqItem.newDescriptionId || ''}" />
         </div>
@@ -102,7 +103,7 @@ async function toggleBOQRevisionExpansion(updateId) {
       <button class="nav-btn-styled" onclick="authorizeBOQRevision(${updateId})" style="background:var(--accent); padding:8px 24px; font-weight:700;" id="boqrev-auth-btn-${updateId}">Authorize BOQ Revision</button>
     </div>
   `;
-  bodyEl.querySelectorAll('textarea[readonly]').forEach(autoGrowPoField);
+  bodyEl.querySelectorAll('textarea').forEach(autoGrowPoField);
 
   renderBOQRevisionRows(updateId);
 
@@ -461,9 +462,10 @@ function renderUBOQForm() {
       <div style="display:grid; grid-template-columns:2fr 1fr; gap:12px; margin-bottom:12px;">
         <div style="position:relative;">
           <label class="field-label" style="margin-top:0;">Description of Material (optional)</label>
-          <input type="text" id="uboq-desc-input" value="${(draft.descriptionOfMaterial || '').toString().replace(/"/g, '&quot;')}" placeholder="Type to search or create a description..." autocomplete="off"
-            oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'uboq-desc-input', 'uboq-desc-dropdown', 'uboq-description-id')"
-            style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;" />
+          <textarea id="uboq-desc-input" rows="1" placeholder="Type to search or create a description..." autocomplete="off"
+            oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'uboq-desc-input', 'uboq-desc-dropdown', 'uboq-description-id'); autoGrowTextField(this);"
+            onkeydown="if(event.key==='Enter') event.preventDefault();"
+            style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; font-family:inherit; font-size:inherit; min-height:34px;">${(draft.descriptionOfMaterial || '').toString().replace(/</g, '&lt;')}</textarea>
           <div id="uboq-desc-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           <input type="hidden" id="uboq-description-id" value="${draft.descriptionId || ''}" />
         </div>
@@ -529,7 +531,7 @@ function renderUBOQForm() {
       <button class="nav-btn-styled" onclick="submitUpdateBOQ()" style="background:var(--accent); padding:8px 24px; font-weight:700;" id="uboq-submit-btn">Submit BOQ Revision for Authorization</button>
     </div>
   `;
-  container.querySelectorAll('textarea[readonly]').forEach(autoGrowPoField);
+  container.querySelectorAll('textarea').forEach(autoGrowPoField);
 
   renderUBOQMaterialRows();
 }

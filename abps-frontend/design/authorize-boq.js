@@ -272,9 +272,10 @@ function renderEBOQForm(containerId) {
       <div style="display:grid; grid-template-columns:2fr 1fr; gap:12px; margin-bottom:12px;">
         <div style="position:relative;">
           <label class="field-label" style="margin-top:0;">Description of Material (optional)</label>
-          <input type="text" id="eboq-desc-input" value="${(draft.descriptionOfMaterial || '').toString().replace(/"/g, '&quot;')}" placeholder="Type to search or create a description..." autocomplete="off"
-            oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'eboq-desc-input', 'eboq-desc-dropdown', 'eboq-description-id')"
-            style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;" />
+          <textarea id="eboq-desc-input" rows="1" placeholder="Type to search or create a description..." autocomplete="off"
+            oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'eboq-desc-input', 'eboq-desc-dropdown', 'eboq-description-id'); autoGrowTextField(this);"
+            onkeydown="if(event.key==='Enter') event.preventDefault();"
+            style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; font-family:inherit; font-size:inherit; min-height:34px;">${(draft.descriptionOfMaterial || '').toString().replace(/</g, '&lt;')}</textarea>
           <div id="eboq-desc-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           <input type="hidden" id="eboq-description-id" value="${draft.descriptionId || ''}" />
         </div>
@@ -350,7 +351,7 @@ function renderEBOQForm(containerId) {
     </div>
   `;
 
-  container.querySelectorAll('textarea[readonly]').forEach(autoGrowPoField);
+  container.querySelectorAll('textarea').forEach(autoGrowPoField);
 
   renderEBOQMaterialRows();
 
@@ -438,7 +439,7 @@ function handleEBOQProductSelectChange(compositeKey, skipBoqIdPreview) {
   const descInput = document.getElementById("eboq-desc-input");
   const descIdField = document.getElementById("eboq-description-id");
   const makeField = document.getElementById("eboq-header-make");
-  if (descInput) descInput.value = opt.descriptionOfMaterial || "";
+  if (descInput) { descInput.value = opt.descriptionOfMaterial || ""; autoGrowTextField(descInput); }
   if (descIdField) descIdField.value = opt.descriptionId || "";
   if (makeField) makeField.value = opt.make || "";
   if (!skipBoqIdPreview) recomputeEBOQBoqId(opt.productName, opt.productRating || "");

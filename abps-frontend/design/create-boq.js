@@ -268,7 +268,7 @@ function resetCBOQProductSelection() {
   window.cboqAllowedOptionsByValue = {};
   window.cboqAllowedOptionsList = [];
   const search = document.getElementById("cboq-product-search");
-  if (search) { search.value = ""; search.placeholder = "— Select Project First —"; }
+  if (search) { search.value = ""; search.placeholder = "— Select Project First —"; autoGrowTextField(search); }
   const dropdown = document.getElementById("cboq-product-dropdown");
   if (dropdown) dropdown.style.display = "none";
   document.getElementById("cboq-product-name").value = "";
@@ -283,7 +283,7 @@ function resetCBOQProductSelection() {
   const descInput = document.getElementById("cboq-desc-input");
   const descIdField = document.getElementById("cboq-description-id");
   const makeField = document.getElementById("cboq-header-make");
-  if (descInput) descInput.value = "";
+  if (descInput) { descInput.value = ""; autoGrowTextField(descInput); }
   if (descIdField) descIdField.value = "";
   if (makeField) makeField.value = "";
 }
@@ -304,7 +304,7 @@ async function loadCboqAllowedProducts(projectId) {
   const seq = ++cboqAllowedProductsRequestSeq;
   const search = document.getElementById("cboq-product-search");
   const banner = document.getElementById("cboq-pending-products-banner");
-  if (search) { search.value = ""; search.placeholder = "Loading..."; }
+  if (search) { search.value = ""; search.placeholder = "Loading..."; autoGrowTextField(search); }
   try {
     const data = await apFetch({ action: "fetchAllowedBoqProducts", projectId });
     if (seq !== cboqAllowedProductsRequestSeq) return; // superseded by a newer request — ignore
@@ -381,7 +381,7 @@ function selectCBOQProductOption(itemCode, descriptionId) {
 
   if (!opt) return;
 
-  if (searchEl) searchEl.value = opt.productName;
+  if (searchEl) { searchEl.value = opt.productName; autoGrowTextField(searchEl); }
   document.getElementById("cboq-product-name").value = opt.productName;
   document.getElementById("cboq-product-itemcode").value = opt.itemCode;
   // resolveAllowedBoqProducts (routes/design.js) returns this field as
@@ -401,7 +401,7 @@ function selectCBOQProductOption(itemCode, descriptionId) {
   const descInput = document.getElementById("cboq-desc-input");
   const descIdField = document.getElementById("cboq-description-id");
   const makeField = document.getElementById("cboq-header-make");
-  if (descInput) descInput.value = opt.descriptionOfMaterial || "";
+  if (descInput) { descInput.value = opt.descriptionOfMaterial || ""; autoGrowTextField(descInput); }
   if (descIdField) descIdField.value = opt.descriptionId || "";
   if (makeField) makeField.value = opt.make || "";
   if (addRowBtn) { addRowBtn.disabled = false; addRowBtn.style.opacity = "1"; addRowBtn.style.cursor = "pointer"; }
