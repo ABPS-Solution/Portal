@@ -1011,8 +1011,8 @@ function renderFinishedGoodsStoreStockTables() {
     container.innerHTML = groupArr.map(g => `
       <tr style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:8px; font-weight:700; font-size:0.82rem;">${g.projectId}</td>
-        <td style="padding:8px; font-size:0.82rem;">${g.productRating || "—"}</td>
         <td style="padding:8px; font-size:0.82rem;">${g.productName}</td>
+        <td style="padding:8px; font-size:0.82rem;">${g.productRating || "—"}</td>
         <td style="padding:8px; font-size:0.82rem;">${g.descriptionOfMaterial || "—"}</td>
         <td style="padding:8px; font-size:0.82rem;">${g.make || "—"}</td>
         <td style="padding:8px; font-size:0.82rem;">${g.unit}</td>

@@ -135,7 +135,10 @@ async function loadPPSForPRN() {
   if (header) {
     const prn = (window.ppsPrnListCache || {})[prnId];
     header.style.display = "block";
-    header.innerHTML = `<span style="font-family:monospace; font-weight:800; color:var(--brand);">${prnId}</span>` +
+    const prnIdHtml = (prn && prn.pdfUrl)
+      ? `<a href="${driveLink(prn.pdfUrl)}" target="_blank" style="font-family:monospace; font-weight:800; color:var(--brand); text-decoration:underline;">${prnId}</a>`
+      : `<span style="font-family:monospace; font-weight:800; color:var(--brand);">${prnId}</span>`;
+    header.innerHTML = prnIdHtml +
       (prn && prn.status ? ` <span style="font-size:0.68rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:3px;">${prn.status}</span>` : "");
   }
 
@@ -154,21 +157,31 @@ async function loadPPSForPRN() {
 
     const rowsHtml = materials.map(m => {
       const pos = m.purchaseOrders || [];
-      const ordered = Number(m.purchaseQty) || 0;
-      const received = Number(m.receivedQty) || 0;
-      const pct = ordered > 0 ? Math.min(100, (received / ordered) * 100) : 100;
+      const purchaseNeeded = Number(m.purchaseQty) || 0;
+      // "Received / PO Qty" means received against what's actually been
+      // PLACED on a purchase order — summed from the PO allocations
+      // themselves, not the line's full purchase requirement
+      // (m.purchaseQty). Using purchaseQty as the denominator understated
+      // this as "under-received" for any line that's fully received
+      // against the POs placed so far but still has more still_to_order
+      // left to be put on a future PO — that was the actual bug.
+      const orderedOnPO = pos.reduce((s, po) => s + (Number(po.orderedQty) || 0), 0);
+      const receivedOnPO = pos.reduce((s, po) => s + (Number(po.receivedQty) || 0), 0);
+      const pct = orderedOnPO > 0 ? Math.min(100, (receivedOnPO / orderedOnPO) * 100) : 0;
       // Status reads received/ordered — a purchase quantity of 0 means the
       // line is fully covered from store and has nothing to wait for.
-      const statusCell = ordered <= 0
+      const statusCell = purchaseNeeded <= 0
         ? `<span style="font-size:0.72rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px;">From store</span>`
-        : `<div style="font-weight:800; font-family:monospace; font-size:0.85rem; color:${received >= ordered ? "#15803d" : "#b45309"};">${fmt(received)} / ${fmt(ordered)}</div>
-           <div style="height:4px; background:#e2e8f0; border-radius:2px; margin-top:4px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:${received >= ordered ? "#15803d" : "#f59e0b"};"></div></div>`;
+        : orderedOnPO <= 0
+        ? `<span style="font-size:0.72rem; font-weight:700; color:#b91c1c; background:#fee2e2; padding:2px 8px; border-radius:4px;">Not yet ordered</span>`
+        : `<div style="font-weight:800; font-family:monospace; font-size:0.85rem; color:${receivedOnPO >= orderedOnPO ? "#15803d" : "#b45309"};">${fmt(receivedOnPO)} / ${fmt(orderedOnPO)}</div>
+           <div style="height:4px; background:#e2e8f0; border-radius:2px; margin-top:4px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:${receivedOnPO >= orderedOnPO ? "#15803d" : "#f59e0b"};"></div></div>`;
 
       const poCell = pos.length === 0
         ? (Number(m.stillToOrder) > 0
             ? `<span style="font-size:0.72rem; font-weight:700; color:#b91c1c; background:#fee2e2; padding:2px 8px; border-radius:4px;">Not yet ordered</span>`
             : `<span style="color:var(--muted); font-size:0.75rem;">—</span>`)
-        : pos.map(po => `<div style="font-family:monospace; font-size:0.72rem; font-weight:700; color:var(--brand);">${esc(po.poNo)} <span style="color:var(--muted); font-weight:600;">(${fmt(po.orderedQty)})</span></div>`).join("");
+        : pos.map(po => `<div style="font-family:monospace; font-size:0.72rem; font-weight:700;">${po.pdfUrl ? `<a href="${driveLink(po.pdfUrl)}" target="_blank" style="color:var(--brand); text-decoration:underline;">${esc(po.poNo)}</a>` : `<span style="color:var(--brand);">${esc(po.poNo)}</span>`} <span style="color:var(--muted); font-weight:600;">(${fmt(po.orderedQty)})</span></div>`).join("");
 
       const dateCell = pos.length === 0
         ? `<span style="color:var(--muted); font-size:0.75rem;">—</span>`
