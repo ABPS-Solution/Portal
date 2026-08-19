@@ -4,10 +4,16 @@ let mcCurrentStatus = "Inactive";
 // re-renders (typeahead selection, New MFC Quantity) so a caret toggle or
 // a submit-triggered reload doesn't lose in-progress edits.
 let mcLineItemState = {};
+// Per-project gating-field state (the 4 fields shown once above the
+// table) — keyed by projectId. Mirrors what's persisted on
+// project.projects; each field auto-saves individually on change so a
+// user can fill one today and the rest tomorrow (migration 113).
+let mcGatingState = {};
 
 function initializeManufacturingClearancePanel() {
   mcCurrentStatus = "Inactive";
   mcLineItemState = {};
+  mcGatingState = {};
   syncMcStatusPills();
   loadItemCodeCatalogIntoCache().catch(() => {});
   loadManufacturingClearanceList();
@@ -52,6 +58,7 @@ async function loadManufacturingClearanceList() {
       // stuck on "Loading...") card was already populated, so
       // toggleMcCardBody skipped calling loadMcLineItems for it entirely.
       mcLineItemState = {};
+      mcGatingState = {};
       cardsContainer.innerHTML = "";
       data.projects.forEach(p => cardsContainer.appendChild(renderMcProjectCard(p)));
       return;
@@ -134,6 +141,7 @@ async function loadMcLineItems(projectId) {
         newMfcQuantity: li.mfcQuantity || 0,
       };
     });
+    mcGatingState[projectId] = { ...data.gating };
     renderMcLineItemsTable(projectId, data.lineItems);
   } catch(e) {
     contentEl.innerHTML = `<span style="color:#b91c1c;">Network error: ${e.message}</span>`;
@@ -143,6 +151,9 @@ async function loadMcLineItems(projectId) {
 function renderMcLineItemsTable(projectId, lineItems) {
   const safeId = projectId.replace(/[^a-zA-Z0-9]/g, "_");
   const contentEl = document.getElementById(`mc-body-content-${safeId}`);
+  const gating = mcGatingState[projectId] || {};
+  const gatingComplete = !!gating.complete;
+  const disabledAttr = gatingComplete ? "" : "disabled";
 
   const rowsHtml = lineItems.map(li => {
     const state = mcLineItemState[projectId][li.lineId];
@@ -156,12 +167,12 @@ function renderMcLineItemsTable(projectId, lineItems) {
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px; font-weight:600; vertical-align:middle;">${li.description}</td>
         <td style="padding:8px; position:relative; vertical-align:middle;">
-          <textarea rows="1" id="mc-std-search-${safeId}-${li.lineId}"
+          <textarea rows="1" id="mc-std-search-${safeId}-${li.lineId}" ${disabledAttr}
             placeholder="Search Item Code..." autocomplete="off"
             oninput="handleMcProductSearch(this.value, '${projectId}', ${li.lineId}); mcAutoGrowField(this);"
             onfocus="mcAutoGrowField(this);"
             onkeydown="if(event.key==='Enter') event.preventDefault();"
-            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px;">${searchVal.replace(/</g,'&lt;')}</textarea>
+            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px;${gatingComplete ? "" : " background:#f1f5f9; cursor:not-allowed;"}">${searchVal.replace(/</g,'&lt;')}</textarea>
           <div id="mc-std-dropdown-${safeId}-${li.lineId}" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); overflow-y:auto; min-width:280px;"></div>
         </td>
         <td style="padding:8px; vertical-align:middle;">
@@ -173,42 +184,131 @@ function renderMcLineItemsTable(projectId, lineItems) {
         <td style="padding:8px; text-align:center; vertical-align:middle;">${li.unit || "—"}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle; font-weight:700; color:#0369a1;">${fmtQty(li.mfcQuantity)}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle;">
-          <input type="number" id="mc-new-mfc-${safeId}-${li.lineId}" value="${trimNum(state.newMfcQuantity)}"
+          <input type="number" id="mc-new-mfc-${safeId}-${li.lineId}" value="${trimNum(state.newMfcQuantity)}" ${disabledAttr}
             min="0" max="${li.quantity}" step="any"
             oninput="clampMcNewMfcQty(this, '${projectId}', ${li.lineId})"
-            style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; border:1.5px solid var(--border); border-radius:4px;" />
+            style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; border:1.5px solid var(--border); border-radius:4px;${gatingComplete ? "" : " background:#f1f5f9; cursor:not-allowed;"}" />
         </td>
       </tr>`;
   }).join("");
 
   contentEl.innerHTML = `
-    <div style="overflow-x:auto; margin-bottom:14px;">
-      <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
-        <colgroup>
-          <col style="width:24%;" /><col style="width:24%;" /><col style="width:14%;" /><col style="width:7%;" />
-          <col style="width:6%;" /><col style="width:10%;" /><col style="width:9%;" />
-        </colgroup>
-        <thead>
-          <tr style="background:var(--highlight-bg); text-align:left;">
-            <th style="padding:8px;">Order Product Description</th>
-            <th style="padding:8px;">Standard Product Name *</th>
-            <th style="padding:8px;">Standard Product Rating</th>
-            <th style="padding:8px; text-align:center;">Order Quantity</th>
-            <th style="padding:8px; text-align:center;">UOM</th>
-            <th style="padding:8px; text-align:center;">Current MFC Quantity</th>
-            <th style="padding:8px; text-align:center;">New MFC Quantity</th>
-          </tr>
-        </thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
-    </div>
-    <div style="display:flex; justify-content:flex-end;">
-      <button class="nav-btn-styled" onclick="submitMcClearance('${projectId}')" style="background:var(--accent); padding:8px 20px; font-weight:700;">
-        Submit Manufacturing Clearance
-      </button>
+    <div id="mc-gating-panel-${safeId}">${buildMcGatingPanelHtml(projectId, gating)}</div>
+    <div id="mc-table-wrap-${safeId}">
+      <div style="overflow-x:auto; margin-bottom:14px;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
+          <colgroup>
+            <col style="width:24%;" /><col style="width:24%;" /><col style="width:14%;" /><col style="width:7%;" />
+            <col style="width:6%;" /><col style="width:10%;" /><col style="width:9%;" />
+          </colgroup>
+          <thead>
+            <tr style="background:var(--highlight-bg); text-align:left;">
+              <th style="padding:8px;">Order Product Description</th>
+              <th style="padding:8px;">Standard Product Name *</th>
+              <th style="padding:8px;">Standard Product Rating</th>
+              <th style="padding:8px; text-align:center;">Order Quantity</th>
+              <th style="padding:8px; text-align:center;">UOM</th>
+              <th style="padding:8px; text-align:center;">Current MFC Quantity</th>
+              <th style="padding:8px; text-align:center;">New MFC Quantity</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+      <div style="display:flex; justify-content:flex-end;">
+        <button class="nav-btn-styled" onclick="submitMcClearance('${projectId}')" style="background:var(--accent); padding:8px 20px; font-weight:700;" ${disabledAttr}>
+          Submit Manufacturing Clearance
+        </button>
+      </div>
     </div>
   `;
   contentEl.querySelectorAll('textarea').forEach(mcAutoGrowField);
+}
+
+// setMcTableEnabled — toggles the product table's inputs/Submit button
+// between locked and unlocked without rebuilding the table DOM, so a
+// gating-field save (which can happen after some table edits are already
+// in progress, e.g. a typeahead selection not yet submitted) never
+// discards unsaved in-progress row state the way a full re-render would.
+function setMcTableEnabled(projectId, enabled) {
+  const safeId = projectId.replace(/[^a-zA-Z0-9]/g, "_");
+  const wrap = document.getElementById(`mc-table-wrap-${safeId}`);
+  if (!wrap) return;
+  wrap.querySelectorAll('textarea:not([readonly]), input[type="number"], button').forEach(el => {
+    el.disabled = !enabled;
+    if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
+      el.style.background = enabled ? '' : '#f1f5f9';
+      el.style.cursor = enabled ? '' : 'not-allowed';
+    }
+  });
+}
+
+// buildMcGatingPanelHtml — the 4 project-level fields shown once above the
+// product table (migration 113). Each field auto-saves on change via
+// saveMcGatingField so partial progress survives a logout/return-tomorrow;
+// the banner text and the table below only unlock once all 4 are filled.
+function buildMcGatingPanelHtml(projectId, gating) {
+  const complete = !!gating.complete;
+  const bannerColor = complete ? "#15803d" : "#b91c1c";
+  const bannerText = complete
+    ? "Project is Eligible for Manufacturing Clearance"
+    : "Complete All of the Tasks before Project is Eligible for Manufacturing Clearance";
+  const sentYes = gating.drawingSentForApproval === "Yes" ? "selected" : "";
+  const sentNo = gating.drawingSentForApproval !== "Yes" ? "selected" : "";
+
+  return `
+    <div style="background:var(--highlight-bg); border:1px solid var(--border); border-radius:6px; padding:14px; margin-bottom:16px;">
+      <div style="font-weight:800; font-size:0.9rem; color:${bannerColor}; margin-bottom:12px;">${bannerText}</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+        <div>
+          <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Drawing Sent for Approval</label>
+          <select onchange="saveMcGatingField('${projectId}', 'drawingSentForApproval', this.value)"
+            style="width:100%; padding:7px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px;">
+            <option value="No" ${sentNo}>No</option>
+            <option value="Yes" ${sentYes}>Yes</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Drawing Sent Date</label>
+          <input type="date" value="${gating.drawingSentDate ? gating.drawingSentDate.slice(0,10) : ""}"
+            onchange="saveMcGatingField('${projectId}', 'drawingSentDate', this.value)"
+            style="width:100%; padding:6px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Drawing Approval Received Date</label>
+          <input type="date" value="${gating.drawingApprovalReceivedDate ? gating.drawingApprovalReceivedDate.slice(0,10) : ""}"
+            onchange="saveMcGatingField('${projectId}', 'drawingApprovalReceivedDate', this.value)"
+            style="width:100%; padding:6px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Date of MFC Received from Customer</label>
+          <input type="date" value="${gating.dateOfMfcReceivedFromCustomer ? gating.dateOfMfcReceivedFromCustomer.slice(0,10) : ""}"
+            onchange="saveMcGatingField('${projectId}', 'dateOfMfcReceivedFromCustomer', this.value)"
+            style="width:100%; padding:6px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px;" />
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function saveMcGatingField(projectId, field, value) {
+  try {
+    const data = await apFetch({ action: "saveMcGatingField", projectId, field, value });
+    if (!data.success) {
+      alert(data.error || "Failed to save.");
+      return;
+    }
+    mcGatingState[projectId] = { ...mcGatingState[projectId], [field]: value, complete: data.complete };
+    // Update the banner + table lock in place rather than reloading —
+    // reloading would refetch line items from the server and discard any
+    // in-progress (not-yet-submitted) typeahead/quantity edits in the table.
+    const safeId = projectId.replace(/[^a-zA-Z0-9]/g, "_");
+    const panelEl = document.getElementById(`mc-gating-panel-${safeId}`);
+    if (panelEl) panelEl.innerHTML = buildMcGatingPanelHtml(projectId, mcGatingState[projectId]);
+    setMcTableEnabled(projectId, data.complete);
+  } catch (e) {
+    alert("Network error: " + e.message);
+  }
 }
 
 // Auto-grow the Standard Product Name search box so a long selected value
