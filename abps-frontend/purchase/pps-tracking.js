@@ -130,6 +130,10 @@ async function loadPPSForPRN() {
   const body = document.getElementById("pps-results-body");
   const header = document.getElementById("pps-prn-header");
   document.getElementById("pps-feedback").style.display = "none";
+  // Fresh load — drop any in-progress (unsaved) schedule edits from
+  // whichever PRN was showing before, same as every other reset-on-
+  // navigate pattern in this app.
+  window.ppsScheduleState = {};
   if (!prnId) { body.innerHTML = ""; if (header) header.style.display = "none"; return; }
 
   if (header) {
@@ -183,9 +187,23 @@ async function loadPPSForPRN() {
             : `<span style="color:var(--muted); font-size:0.75rem;">—</span>`)
         : pos.map(po => `<div style="font-family:monospace; font-size:0.72rem; font-weight:700;">${po.pdfUrl ? `<a href="${driveLink(po.pdfUrl)}" target="_blank" style="color:var(--brand); text-decoration:underline;">${esc(po.poNo)}</a>` : `<span style="color:var(--brand);">${esc(po.poNo)}</span>`} <span style="color:var(--muted); font-weight:600;">(${fmt(po.orderedQty)})</span></div>`).join("");
 
+      // Expected Delivery is now an editable, per-tranche delivery
+      // schedule (migration 112) — a single PO allocation can be split
+      // into several planned quantity+date tranches that the user fills
+      // in themselves and Saves, rather than one system-guessed date. See
+      // ppsRenderScheduleEditor / savePPSDeliverySchedule below.
       const dateCell = pos.length === 0
         ? `<span style="color:var(--muted); font-size:0.75rem;">—</span>`
-        : pos.map(po => `<div style="font-size:0.72rem;">${po.expectedDelivery ? esc(formatDateDMY(po.expectedDelivery)) : "—"}${po.actualDelivery ? ` <span style="color:#15803d; font-weight:700;">✓ ${esc(formatDateDMY(po.actualDelivery))}</span>` : ""}</div>`).join("");
+        : pos.map(po => {
+            const key = ppsScheduleKey(prnId, m.itemCode, po.poNo);
+            if (!window.ppsScheduleState[key]) {
+              window.ppsScheduleState[key] = (po.schedule || []).map(s => ({
+                scheduleId: s.scheduleId, plannedQty: s.plannedQty, plannedDate: isoFromPODate(s.plannedDate),
+                originalPlannedDate: isoFromPODate(s.originalPlannedDate), fulfilledQty: s.fulfilledQty, status: s.status
+              }));
+            }
+            return `<div id="ppssched-${key}">${ppsRenderScheduleEditor(key)}</div>`;
+          }).join("");
 
       const flag = m.awaitingPoRevision
         ? `<div style="font-size:0.6rem; font-weight:800; color:#b45309; margin-top:3px;">⏳ AWAITING PO REVISION</div>` : "";
@@ -222,9 +240,116 @@ async function loadPPSForPRN() {
           </tr></thead>
           <tbody>${rowsHtml}</tbody>
         </table>
+      </div>
+      <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+        <button class="nav-btn-styled" id="pps-save-schedule-btn" onclick="savePPSDeliverySchedule('${prnId}', this)" style="background:var(--accent); padding:8px 20px; font-weight:700;">Save Delivery Schedule</button>
       </div>`;
   } catch (e) {
     body.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// DELIVERY SCHEDULE EDITOR (migration 112) — replaces the single
+// system-guessed "Expected Delivery" date with a per-PO-allocation set of
+// planned quantity+date tranches that Purchase fills in themselves.
+// Starts blank (no tranches) until a human plans it — that's deliberate,
+// see routes/purchase.js:savePODeliverySchedule's own comment.
+// State lives in window.ppsScheduleState, keyed by
+// "<prnId>|<itemCode>|<poNo>" -> array of {scheduleId, plannedQty,
+// plannedDate, originalPlannedDate, fulfilledQty, status}, seeded once
+// per key from the server response the first time that cell renders
+// (see loadPPSForPRN above) so repeated re-renders while editing don't
+// stomp on unsaved changes.
+// ═══════════════════════════════════════════════════════
+window.ppsScheduleState = window.ppsScheduleState || {};
+
+function ppsScheduleKey(prnId, itemCode, poNo) {
+  return `${prnId}|${itemCode}|${poNo}`.replace(/[^a-zA-Z0-9|_-]/g, "_");
+}
+
+function ppsRenderScheduleEditor(key) {
+  const tranches = window.ppsScheduleState[key] || [];
+  const fmt = (n) => (parseFloat(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  const rows = tranches.map((t, i) => {
+    const slipped = t.originalPlannedDate && t.plannedDate && t.originalPlannedDate !== t.plannedDate;
+    const isReceived = t.status === 'Received';
+    return `
+      <div style="display:flex; align-items:center; gap:4px; margin-bottom:3px;">
+        <input type="number" min="0" step="any" value="${t.plannedQty ?? ''}" ${isReceived ? "disabled" : ""}
+          oninput="ppsUpdateTrancheField('${key}', ${i}, 'plannedQty', this.value)"
+          style="width:60px; padding:3px 4px; font-size:0.72rem; border:1px solid var(--border); border-radius:3px;" placeholder="Qty" />
+        <input type="date" value="${t.plannedDate || ''}" ${isReceived ? "disabled" : ""}
+          onchange="ppsUpdateTrancheField('${key}', ${i}, 'plannedDate', this.value)"
+          style="padding:3px 4px; font-size:0.7rem; border:1px solid var(--border); border-radius:3px;" />
+        ${!isReceived ? `<button type="button" onclick="ppsRemoveTranche('${key}', ${i})" title="Remove tranche" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.65rem; font-weight:700; padding:1px 5px; cursor:pointer;">✕</button>` : ""}
+        ${t.fulfilledQty > 0 ? `<span style="font-size:0.62rem; color:#15803d; font-weight:700;">${fmt(t.fulfilledQty)} recv'd</span>` : ""}
+        ${slipped ? `<span style="font-size:0.6rem; color:#b45309;" title="Originally planned ${t.originalPlannedDate}">slipped from ${t.originalPlannedDate}</span>` : ""}
+      </div>`;
+  }).join("");
+  const empty = tranches.length === 0
+    ? `<div style="font-size:0.68rem; color:var(--muted); font-style:italic; margin-bottom:3px;">Not yet scheduled</div>` : "";
+  return `${empty}${rows}<button type="button" onclick="ppsAddTranche('${key}')" style="background:none; border:1px dashed var(--brand); color:var(--brand); border-radius:3px; font-size:0.65rem; font-weight:700; padding:2px 6px; cursor:pointer; margin-top:2px;">+ Add Tranche</button>`;
+}
+
+function ppsRerenderSchedule(key) {
+  const el = document.getElementById(`ppssched-${key}`);
+  if (el) el.innerHTML = ppsRenderScheduleEditor(key);
+}
+
+function ppsAddTranche(key) {
+  window.ppsScheduleState[key] = window.ppsScheduleState[key] || [];
+  window.ppsScheduleState[key].push({ scheduleId: null, plannedQty: '', plannedDate: '', originalPlannedDate: null, fulfilledQty: 0, status: 'Planned' });
+  ppsRerenderSchedule(key);
+}
+
+function ppsRemoveTranche(key, idx) {
+  const list = window.ppsScheduleState[key];
+  if (!list) return;
+  list.splice(idx, 1);
+  ppsRerenderSchedule(key);
+}
+
+function ppsUpdateTrancheField(key, idx, field, value) {
+  const list = window.ppsScheduleState[key];
+  if (!list || !list[idx]) return;
+  list[idx][field] = field === 'plannedQty' ? (parseFloat(value) || '') : value;
+}
+
+// Saves every schedule currently in window.ppsScheduleState for this PRN
+// in one batch — matches savePODeliverySchedule's "send the FULL desired
+// tranche list per row" contract (not a delta).
+async function savePPSDeliverySchedule(prnId, btn) {
+  const updates = [];
+  const keys = Object.keys(window.ppsScheduleState).filter(key => key.startsWith(prnId + "|"));
+  for (const key of keys) {
+    const [, itemCode, poNo] = key.split("|");
+    const tranches = window.ppsScheduleState[key];
+    if (tranches.some(t => !(Number(t.plannedQty) > 0) || !t.plannedDate)) {
+      showBOQBanner("pps-feedback", `⚠️ ${itemCode}: every tranche needs a quantity and a date before saving.`, "error");
+      return;
+    }
+    updates.push({
+      prnId, itemCode, poNo,
+      tranches: tranches.map(t => ({ scheduleId: t.scheduleId, plannedQty: t.plannedQty, plannedDate: t.plannedDate }))
+    });
+  }
+  if (updates.length === 0) { showBOQBanner("pps-feedback", "No delivery schedule changes to save.", "error"); return; }
+
+  const originalText = btn.textContent;
+  btn.disabled = true; btn.textContent = "Saving...";
+  try {
+    const data = await apFetch({ action: "savePODeliverySchedule", updates, operatorName: appActiveOperatorIdentityString });
+    if (data.success) {
+      showBOQBanner("pps-feedback", "✅ Delivery schedule saved.", "success");
+      loadPPSForPRN();
+    } else {
+      showBOQBanner("pps-feedback", data.error || "Failed to save delivery schedule.", "error");
+    }
+  } catch (e) {
+    showBOQBanner("pps-feedback", "Network error: " + e.message, "error");
+  } finally {
+    btn.disabled = false; btn.textContent = originalText;
   }
 }
 

@@ -1760,7 +1760,14 @@ async function loadExpectedInbounds() {
     }
 
     zone.innerHTML = "";
-    const totalCount = (data.today || []).length + (data.overdue || []).length + (data.upcoming || []).length;
+    // Unscheduled (migration 112) — POs whose still-outstanding lines have
+    // no delivery schedule tranches planned yet at all. Computed by the
+    // backend on every request regardless of filterMode (own bucket, not
+    // folded into whichever date window is selected) so it's always
+    // visible alongside Overdue/Today/Upcoming, not hidden behind a
+    // separate tab — the whole point of this bucket existing is that
+    // unplanned material shouldn't be able to go unnoticed.
+    const totalCount = (data.today || []).length + (data.overdue || []).length + (data.upcoming || []).length + (data.unscheduled || []).length;
 
     if (totalCount === 0) {
       zone.innerHTML = `<div style="text-align:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted);">
@@ -1773,12 +1780,14 @@ async function loadExpectedInbounds() {
     const schemeDueToday = { sectionBg: "#fff7ed", sectionBorder: "#f59e0b", headerColor: "#b45309", badgeBg: "#fef3c7", badgeColor: "#b45309", icon: "🕐" };
     const schemeOverdue  = { sectionBg: "#fff5f5", sectionBorder: "#fca5a5", headerColor: "#b91c1c", badgeBg: "#fee2e2", badgeColor: "#b91c1c", icon: "🚨" };
     const schemeUpcoming = { sectionBg: "#f0fdf4", sectionBorder: "#86efac", headerColor: "#15803d", badgeBg: "#dcfce7", badgeColor: "#15803d", icon: "📅" };
+    const schemeUnscheduled = { sectionBg: "#f8fafc", sectionBorder: "#cbd5e1", headerColor: "#475569", badgeBg: "#f1f5f9", badgeColor: "#475569", icon: "❓" };
 
     // Overdue/Today called out first regardless of window; Upcoming is already
     // sorted ascending by daysRemaining from the backend.
     if ((data.overdue || []).length > 0)  zone.appendChild(renderExpectedInboundsSection("Overdue",   data.overdue,  schemeOverdue));
     if ((data.today || []).length > 0)    zone.appendChild(renderExpectedInboundsSection("Due Today", data.today,    schemeDueToday));
     if ((data.upcoming || []).length > 0) zone.appendChild(renderExpectedInboundsSection("Upcoming",  data.upcoming, schemeUpcoming));
+    if ((data.unscheduled || []).length > 0) zone.appendChild(renderExpectedInboundsSection("Unscheduled", data.unscheduled, schemeUnscheduled));
 
   } catch(e) {
     zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${e.message}</div>`;
@@ -1823,7 +1832,8 @@ function renderExpectedInboundsPOCard(po, scheme) {
   const progressColor = allPending ? "#b91c1c" : partial ? "#b45309" : "#15803d";
 
   let daysLabel = "";
-  if (po.daysOverdue > 0)     daysLabel = `<span style="font-size:0.72rem; font-weight:800; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:4px;">${po.daysOverdue} day${po.daysOverdue !== 1 ? "s" : ""} overdue</span>`;
+  if (!po.deliveryDate) daysLabel = `<span style="font-size:0.72rem; font-weight:800; background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:4px;">Not Scheduled</span>`;
+  else if (po.daysOverdue > 0)     daysLabel = `<span style="font-size:0.72rem; font-weight:800; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:4px;">${po.daysOverdue} day${po.daysOverdue !== 1 ? "s" : ""} overdue</span>`;
   else if (po.daysRemaining > 0) daysLabel = `<span style="font-size:0.72rem; font-weight:800; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:4px;">${po.daysRemaining} day${po.daysRemaining !== 1 ? "s" : ""} remaining</span>`;
   else daysLabel = `<span style="font-size:0.72rem; font-weight:800; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:4px;">Due Today</span>`;
 
@@ -1836,6 +1846,17 @@ function renderExpectedInboundsPOCard(po, scheme) {
     } else {
       statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:3px;">Pending</span>`;
     }
+    // Delivery schedule (migration 112) — each still-outstanding tranche
+    // shown as its own qty-on-date chip, so a line split into several
+    // planned deliveries reads as several distinct dated amounts rather
+    // than one collapsed date. A line with nothing planned yet (and not
+    // fully received) shows the same "Unscheduled" flag this PO-level
+    // Unscheduled bucket itself is built from.
+    const pending = (item.pendingTranches || []);
+    const scheduleCell = item.fullyReceived ? `<span style="color:var(--muted); font-size:0.72rem;">—</span>`
+      : pending.length === 0
+        ? `<span style="font-size:0.68rem; font-weight:700; background:#f1f5f9; color:#64748b; padding:2px 6px; border-radius:3px;">Unscheduled</span>`
+        : pending.map(s => `<div style="font-size:0.68rem; white-space:nowrap;"><strong>${(parseFloat(s.plannedQty)||0)}</strong> on ${formatDateDMY(s.plannedDate)}</div>`).join("");
     return `<tr style="border-bottom:1px solid #f1f5f9;">
       <td style="padding:6px 8px; font-family:monospace; font-size:0.75rem; font-weight:700; color:var(--brand); white-space:nowrap;">${item.itemCode || "—"}</td>
       <td style="padding:6px 8px; font-size:0.8rem; font-weight:600; line-height:1.4;">${item.materialName}</td>
@@ -1843,6 +1864,7 @@ function renderExpectedInboundsPOCard(po, scheme) {
       <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap; color:#15803d;">${item.receivedQty}</td>
       <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap; color:#b45309;">${item.repairQty}</td>
       <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap; color:#b91c1c;">${item.returnMissingQty}</td>
+      <td style="padding:6px 8px; text-align:center;">${scheduleCell}</td>
       <td style="padding:6px 8px; text-align:center;">${statusBadge}</td>
     </tr>`;
   }).join("");
@@ -1874,15 +1896,16 @@ function renderExpectedInboundsPOCard(po, scheme) {
       </div>
 
       <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; min-width:920px; table-layout:fixed;">
+        <table style="width:100%; border-collapse:collapse; min-width:1040px; table-layout:fixed;">
           <colgroup>
             <col style="width:7%;">
-            <col style="width:38%;">
+            <col style="width:32%;">
+            <col style="width:10%;">
+            <col style="width:10%;">
+            <col style="width:10%;">
+            <col style="width:10%;">
             <col style="width:11%;">
-            <col style="width:11%;">
-            <col style="width:11%;">
-            <col style="width:11%;">
-            <col style="width:11%;">
+            <col style="width:10%;">
           </colgroup>
           <thead>
             <tr style="background:#f8fafc; border-bottom:1px solid var(--border);">
@@ -1892,6 +1915,7 @@ function renderExpectedInboundsPOCard(po, scheme) {
               <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Received<br>Qty</th>
               <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Being Repaired<br>at ABPS Qty</th>
               <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Return to Vendor<br>/ Missing Qty</th>
+              <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Delivery Schedule</th>
               <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Status</th>
             </tr>
           </thead>
