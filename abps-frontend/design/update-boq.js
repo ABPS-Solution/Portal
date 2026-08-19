@@ -66,6 +66,20 @@ async function toggleBOQRevisionExpansion(updateId) {
           ${uboqLockedWrapField(reqItem.productRating, 'background:#f1f5f9; color:var(--muted);')}
         </div>
       </div>
+      <div style="display:grid; grid-template-columns:2fr 1fr; gap:12px; margin-bottom:12px;">
+        <div style="position:relative;">
+          <label class="field-label" style="margin-top:0;">Description of Material (optional)</label>
+          <input type="text" id="boqrev-desc-input-${updateId}" value="${(reqItem.newDescriptionOfMaterial || '').toString().replace(/"/g, '&quot;')}" placeholder="Type to search or create a description..." autocomplete="off"
+            oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'boqrev-desc-input-${updateId}', 'boqrev-desc-dropdown-${updateId}', 'boqrev-description-id-${updateId}')"
+            style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;" />
+          <div id="boqrev-desc-dropdown-${updateId}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="boqrev-description-id-${updateId}" value="${reqItem.newDescriptionId || ''}" />
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Make</label>
+          <input type="text" readonly value="${(() => { const c=(window.itemCodeCatalogCache||[]).find(x=>x.productName===reqItem.productName && (x.rating||'')===(reqItem.productRating||'')); return c ? (c.make||'') : ''; })()}" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; box-sizing:border-box;" placeholder="Auto-filled from Product Name" />
+        </div>
+      </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Current Manufacturing Clearance Quantity (No. of Sets) *</label>
@@ -112,8 +126,8 @@ function renderBOQChangeBullets(changes) {
   if (!changes || changes.length === 0) return "<li>No changes detected.</li>";
   return changes.map(c => {
     let s = c.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    // Field word right before "changed" (quantity/design rate/make/store type).
-    s = s.replace(/\b(quantity|design rate|make|store type)\b(?=\s+changed\b)/i,
+    // Field word right before "changed" (quantity/design rate/make/store type/description of material).
+    s = s.replace(/\b(quantity|design rate|make|store type|description of material)\b(?=\s+changed\b)/i,
       `<strong style="color:var(--brand);">$1</strong>`);
     // Action verbs.
     s = s.replace(/\bchanged\b/i, `<strong style="color:var(--brand);">changed</strong>`);
@@ -162,7 +176,7 @@ function renderBOQRevisionRows(updateId) {
   const totalCost = totalPerSet * orderQty;
 
   const rowsHtml = uboqRevRows.length === 0
-    ? `<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows. Click "+ Add Row".</td></tr>`
+    ? `<tr><td colspan="9" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows. Click "+ Add Row".</td></tr>`
     : uboqRevRows.map((row, idx) => {
         const isRawMaterial = row.typeOfStore !== "Spare Store";
         const isFgRow = row.typeOfStore === "Finished Goods Store";
@@ -181,16 +195,12 @@ function renderBOQRevisionRows(updateId) {
           oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'boqrev'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'boqrev'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; display:block;"
-        >${row.descriptionOfMaterial || ""}</textarea>
+        >${row.materialName || ""}</textarea>
         <div id="boqrev-mat-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
       </td>
       <td style="padding:4px;">
         <input type="text" value="${row.itemCode || ""}" readonly
           style="padding:5px; font-size:0.78rem; font-family:monospace; font-weight:700; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:3px; border:1px solid #bae6fd; width:100%;" />
-      </td>
-      <td style="padding:4px;">
-        <input type="text" value="${row.make || ""}" readonly placeholder="—"
-          style="padding:5px; font-size:0.82rem; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
@@ -220,13 +230,24 @@ function renderBOQRevisionRows(updateId) {
       <td style="padding:4px; text-align:center;">
         <button onclick="uboqRevRows.splice(${idx},1); renderBOQRevisionRows(${updateId}); recomputeBOQRevisionSummary(${updateId});" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:3px 8px; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:700;">✕</button>
       </td>
-    </tr>`;
+    </tr>${isFgRow ? `
+    <tr style="border-bottom:1px solid #f1f5f9;">
+      <td></td>
+      <td colspan="8" style="padding:4px 4px 8px 4px; position:relative;">
+        <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:3px;">Description of Material (optional, for this Finished Goods row)</label>
+        <input type="text" id="boqrev-row-desc-${idx}" value="${row.descriptionOfMaterial || ""}" placeholder="Type to search or create a description..." autocomplete="off"
+          oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'boqrev-row-desc-${idx}', 'boqrev-row-desc-dropdown-${idx}', 'boqrev-row-desc-id-${idx}', 'boqRowDescOnSelect', 'boqrev:${idx}'); uboqRevRows[${idx}].descriptionOfMaterial=this.value; uboqRevRows[${idx}].descriptionId=null;"
+          style="padding:6px; font-size:0.82rem; width:60%; border:1px solid var(--border); border-radius:3px;" />
+        <div id="boqrev-row-desc-dropdown-${idx}" style="display:none; position:absolute; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:280px;"></div>
+        <input type="hidden" id="boqrev-row-desc-id-${idx}" value="${row.descriptionId || ""}" />
+      </td>
+    </tr>` : ''}`;
       }).join("");
 
   mount.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand);">Material Rows *</div>
-      <button onclick="uboqRevRows.push({typeOfStore:'Raw Materials Store',descriptionOfMaterial:'',itemCode:'',make:'',quantityFor1Set:'',unit:'NOS',designRatePerQuantity:''}); renderBOQRevisionRows(${updateId});" style="background:var(--accent); color:#fff; border:none; border-radius:4px; padding:5px 12px; font-size:0.78rem; font-weight:700; cursor:pointer;">+ Add Row</button>
+      <button onclick="uboqRevRows.push({typeOfStore:'Raw Materials Store',materialName:'',itemCode:'',make:'',quantityFor1Set:'',unit:'NOS',designRatePerQuantity:''}); renderBOQRevisionRows(${updateId});" style="background:var(--accent); color:#fff; border:none; border-radius:4px; padding:5px 12px; font-size:0.78rem; font-weight:700; cursor:pointer;">+ Add Row</button>
     </div>
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
       <table class="store-basket-data-table" style="width:100%; min-width:1050px; border-collapse:collapse;">
@@ -234,9 +255,8 @@ function renderBOQRevisionRows(updateId) {
           <tr style="background:#f8fafc;">
             <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
             <th style="width:110px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-            <th style="width:240px; padding:8px; font-size:0.7rem;">Material Name *</th>
+            <th style="width:350px; padding:8px; font-size:0.7rem;">Material Name *</th>
             <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
-            <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
             <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
             <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
             <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
@@ -313,6 +333,7 @@ async function initializeUpdateBOQPanel() {
   if (fbEl)     { fbEl.style.display    = "none"; fbEl.innerHTML = ""; }
 
   await loadItemCodeCatalogIntoCache().catch(() => {});
+  await loadMaterialDescriptionsIntoCache().catch(() => {});
   try {
     const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: "Active" });
     window.sharedActiveProjectCodes = data.projects || [];
@@ -437,6 +458,20 @@ function renderUBOQForm() {
           <textarea id="uboq-product-rating" readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(draft.productRating || '').toString().replace(/</g, '&lt;')}</textarea>
         </div>
       </div>
+      <div style="display:grid; grid-template-columns:2fr 1fr; gap:12px; margin-bottom:12px;">
+        <div style="position:relative;">
+          <label class="field-label" style="margin-top:0;">Description of Material (optional)</label>
+          <input type="text" id="uboq-desc-input" value="${(draft.descriptionOfMaterial || '').toString().replace(/"/g, '&quot;')}" placeholder="Type to search or create a description..." autocomplete="off"
+            oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'uboq-desc-input', 'uboq-desc-dropdown', 'uboq-description-id')"
+            style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;" />
+          <div id="uboq-desc-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="uboq-description-id" value="${draft.descriptionId || ''}" />
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Make</label>
+          <input type="text" id="uboq-header-make" readonly value="${(() => { const c=(window.itemCodeCatalogCache||[]).find(x=>x.productName===draft.productName && (x.rating||'')===(draft.productRating||'')); return c ? (c.make||'') : ''; })()}" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; box-sizing:border-box;" placeholder="Auto-filled from Product Name" />
+        </div>
+      </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Current Manufacturing Clearance Quantity (No. of Sets) *</label>
@@ -465,9 +500,8 @@ function renderUBOQForm() {
             <tr style="background:#f8fafc;">
               <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
               <th style="width:110px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-              <th style="width:240px; padding:8px; font-size:0.7rem;">Material Name *</th>
+              <th style="width:350px; padding:8px; font-size:0.7rem;">Material Name *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
-              <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
               <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
@@ -501,7 +535,7 @@ function renderUBOQForm() {
 }
 
 function addUBOQMaterialRow() {
-  uboqMaterialRows.push({ typeOfStore:"Raw Materials Store", descriptionOfMaterial:"", itemCode:"", make:"", quantityFor1Set:"", unit:"", designRatePerQuantity:"" });
+  uboqMaterialRows.push({ typeOfStore:"Raw Materials Store", materialName:"", itemCode:"", make:"", quantityFor1Set:"", unit:"", designRatePerQuantity:"" });
   renderUBOQMaterialRows();
 }
 
@@ -515,7 +549,7 @@ function renderUBOQMaterialRows() {
   if (!tbody) return;
   tbody.innerHTML = "";
   if (uboqMaterialRows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows. Click "+ Add Row".</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows. Click "+ Add Row".</td></tr>';
     updateUBOQTotals();
     return;
   }
@@ -538,16 +572,12 @@ function renderUBOQMaterialRows() {
           oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'uboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'uboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; display:block;"
-        >${row.descriptionOfMaterial || ""}</textarea>
+        >${row.materialName || ""}</textarea>
         <div id="uboq-mat-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
       </td>
       <td style="padding:4px;">
         <input type="text" value="${row.itemCode || ""}" readonly
           style="padding:5px; font-size:0.78rem; font-family:monospace; font-weight:700; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:3px; border:1px solid #bae6fd; width:100%;" />
-      </td>
-      <td style="padding:4px;">
-        <input type="text" value="${row.make || ""}" readonly placeholder="—"
-          style="padding:5px; font-size:0.82rem; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
@@ -580,6 +610,26 @@ function renderUBOQMaterialRows() {
         <button onclick="deleteUBOQMaterialRow(${idx})" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:3px 8px; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:700;">✕</button>
       </td>`;
     tbody.appendChild(tr);
+
+    if (isFgRow) {
+      const descTr = document.createElement("tr");
+      descTr.style.borderBottom = "1px solid #f1f5f9";
+      descTr.innerHTML = `
+        <td></td>
+        <td colspan="8" style="padding:4px 4px 8px 4px; position:relative;">
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:3px;">Description of Material (optional, for this Finished Goods row)${row.descriptionLocked ? ' — locked: this item already has its own Authorized BOQ' : ''}</label>
+          ${row.descriptionLocked ? `
+          <input type="text" value="${row.descriptionOfMaterial || ""}" readonly title="Revise this item's own BOQ instead — this parent will auto-update." style="padding:6px; font-size:0.82rem; width:60%; border:1px solid var(--border); border-radius:3px; background:#f1f5f9; color:var(--muted); cursor:not-allowed;" />
+          ` : `
+          <input type="text" id="uboq-row-desc-${idx}" value="${row.descriptionOfMaterial || ""}" placeholder="Type to search or create a description..." autocomplete="off"
+            oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'uboq-row-desc-${idx}', 'uboq-row-desc-dropdown-${idx}', 'uboq-row-desc-id-${idx}', 'boqRowDescOnSelect', 'uboq:${idx}'); uboqMaterialRows[${idx}].descriptionOfMaterial=this.value; uboqMaterialRows[${idx}].descriptionId=null;"
+            style="padding:6px; font-size:0.82rem; width:60%; border:1px solid var(--border); border-radius:3px;" />
+          <div id="uboq-row-desc-dropdown-${idx}" style="display:none; position:absolute; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:280px;"></div>
+          <input type="hidden" id="uboq-row-desc-id-${idx}" value="${row.descriptionId || ""}" />
+          `}
+        </td>`;
+      tbody.appendChild(descTr);
+    }
   });
 
   tbody.querySelectorAll("textarea").forEach(ta => {
@@ -625,7 +675,7 @@ function selectBOQRowMaterial(rowIdx, productName, itemCode, formPrefix) {
       if (dropdown) dropdown.style.display = "none";
       return; // Block the selection
     }
-    rows[rowIdx].descriptionOfMaterial = productName;
+    rows[rowIdx].materialName = productName;
     rows[rowIdx].itemCode = itemCode;
     // Auto-fill unit + Make from catalog cache — Make is now locked to
     // whatever's on the Item Code (18 Aug 2026), never freely typed per row.
@@ -652,6 +702,9 @@ async function submitUpdateBOQ() {
   const productRating= document.getElementById("uboq-product-rating")?.value.trim() || "";
   const department   = document.getElementById("uboq-department")?.value.trim() || "";
   const orderQty     = parseInt(document.getElementById("uboq-order-qty")?.value) || 0;
+  const descriptionOfMaterial = document.getElementById("uboq-desc-input")?.value.trim() || null;
+  const descriptionIdRaw = document.getElementById("uboq-description-id")?.value.trim() || "";
+  const descriptionId = descriptionIdRaw ? parseInt(descriptionIdRaw) : null;
 
   const _uValidationFail = (msg) => { _submitUpdateBOQInProgress = false; showBOQBanner(feedbackId, msg, "error"); };
 
@@ -661,7 +714,7 @@ async function submitUpdateBOQ() {
   if (orderQty < 1)   { _uValidationFail("⚠️ Order Quantity must be at least 1."); return; }
   if (uboqMaterialRows.length === 0) { _uValidationFail("⚠️ At least one material row is required."); return; }
 
-  const invalidRow = uboqMaterialRows.find(r => !r.descriptionOfMaterial || !r.quantityFor1Set);
+  const invalidRow = uboqMaterialRows.find(r => !r.materialName || !r.quantityFor1Set);
   if (invalidRow) { _uValidationFail("⚠️ All rows must have Description and Quantity."); return; }
 
   btn.disabled = true;
@@ -673,7 +726,8 @@ async function submitUpdateBOQ() {
       action: "submitBOQUpdate",
       boqId: uboqCurrentDraft.boqId,
       newMaterialRows: uboqMaterialRows,
-      newOrderQuantity: orderQty
+      newOrderQuantity: orderQty,
+      descriptionId, descriptionOfMaterial
     });
     hideBlockingOverlay();
 

@@ -42,22 +42,66 @@ function selectCBOQImportProduct(productName, productRating) {
   document.getElementById("cboq-import-product-dropdown").style.display = "none";
   window.cboqImportSelectedProduct = { productName, productRating };
 
-  const projSearch = document.getElementById("cboq-import-project-search");
+  const descSelect = document.getElementById("cboq-import-description-select");
   const matches = (window.cboqImportBOQList || []).filter(b => b.productName === productName && (b.productRating || "") === (productRating || ""));
-  window.cboqImportProjectMatches = matches;
+  window.cboqImportProductMatches = matches;
+  resetCBOQImportProjectStage();
+
   if (matches.length === 0) {
-    projSearch.value = "";
-    projSearch.placeholder = "No projects found for this product";
-    projSearch.disabled = true;
-    projSearch.style.background = "#f1f5f9"; projSearch.style.color = "var(--muted)";
+    descSelect.innerHTML = '<option value="">— No BOQs found for this product —</option>';
+    descSelect.disabled = true;
+    descSelect.style.background = "#f1f5f9"; descSelect.style.color = "var(--muted)";
     return;
   }
+
+  // Distinct descriptions among BOQs for this exact product+rating —
+  // includes a "no description" option since not every variant has one.
+  const seenDesc = new Map(); // descriptionId (or "" for none) -> text
+  matches.forEach(b => { seenDesc.set(b.descriptionId || "", b.descriptionOfMaterial || ""); });
+  const descOptions = Array.from(seenDesc.entries());
+
+  descSelect.disabled = false;
+  descSelect.style.background = "#fff"; descSelect.style.color = "var(--text)";
+  if (descOptions.length === 1) {
+    // Only one variant (with or without a description) — skip straight to Project ID.
+    descSelect.innerHTML = `<option value="${descOptions[0][0]}" selected>${descOptions[0][1] || "— No Description of Material —"}</option>`;
+    handleCBOQImportDescriptionChange(String(descOptions[0][0]));
+  } else {
+    descSelect.innerHTML = '<option value="">— Select Description of Material —</option>' +
+      descOptions.map(([id, text]) => `<option value="${id}">${text || "— No Description of Material —"}</option>`).join("");
+  }
+}
+
+function handleCBOQImportDescriptionChange(descriptionIdStr) {
+  const projSearch = document.getElementById("cboq-import-project-search");
+  resetCBOQImportProjectStage();
+  if (descriptionIdStr === "" && (window.cboqImportProductMatches || []).some(b => b.descriptionId)) {
+    // Placeholder re-selected on a product that DOES have real options — wait for a real pick.
+    return;
+  }
+  const matches = (window.cboqImportProductMatches || []).filter(b => String(b.descriptionId || "") === descriptionIdStr);
+  window.cboqImportProjectMatches = matches;
+  if (matches.length === 0) return;
   projSearch.value = "";
   projSearch.placeholder = "Type to search Project ID...";
   projSearch.disabled = false;
   projSearch.style.background = "#fff"; projSearch.style.color = "var(--text)";
+}
+
+function resetCBOQImportProjectStage() {
+  const projSearch = document.getElementById("cboq-import-project-search");
+  window.cboqImportProjectMatches = [];
+  window.cboqImportResolvedBoqId = null;
+  if (projSearch) {
+    projSearch.value = "";
+    projSearch.placeholder = "Select Description First";
+    projSearch.disabled = true;
+    projSearch.style.background = "#f1f5f9"; projSearch.style.color = "var(--muted)";
+  }
+  const projDropdown = document.getElementById("cboq-import-project-dropdown");
+  if (projDropdown) projDropdown.style.display = "none";
   const importBtn = document.getElementById("cboq-import-btn");
-  importBtn.disabled = true; importBtn.style.opacity = "0.5"; importBtn.style.cursor = "not-allowed";
+  if (importBtn) { importBtn.disabled = true; importBtn.style.opacity = "0.5"; importBtn.style.cursor = "not-allowed"; }
 }
 
 // Project ID is a free-text typeahead, not a <select> — only ever offering
@@ -97,19 +141,16 @@ function selectCBOQImportProjectOption(projectId, boqId) {
 
 function resetCBOQImportResolution() {
   window.cboqImportSelectedProduct = null;
-  window.cboqImportProjectMatches = [];
-  window.cboqImportResolvedBoqId = null;
+  window.cboqImportProductMatches = [];
+  resetCBOQImportProjectStage();
   const projSearch = document.getElementById("cboq-import-project-search");
-  if (projSearch) {
-    projSearch.value = "";
-    projSearch.placeholder = "Select Product First";
-    projSearch.disabled = true;
-    projSearch.style.background = "#f1f5f9"; projSearch.style.color = "var(--muted)";
+  if (projSearch) projSearch.placeholder = "Select Product First";
+  const descSelect = document.getElementById("cboq-import-description-select");
+  if (descSelect) {
+    descSelect.innerHTML = '<option value="">— Select Product First —</option>';
+    descSelect.disabled = true;
+    descSelect.style.background = "#f1f5f9"; descSelect.style.color = "var(--muted)";
   }
-  const projDropdown = document.getElementById("cboq-import-project-dropdown");
-  if (projDropdown) projDropdown.style.display = "none";
-  const importBtn = document.getElementById("cboq-import-btn");
-  if (importBtn) { importBtn.disabled = true; importBtn.style.opacity = "0.5"; importBtn.style.cursor = "not-allowed"; }
 }
 
 function resetCBOQImportSearch() {
@@ -160,12 +201,14 @@ async function importCBOQFromExisting() {
       const catalogEntry = catalogForImport.find(c => c.itemCode === row.itemCode);
       return {
         typeOfStore: row.typeOfStore || "Raw Materials Store",
-        descriptionOfMaterial: row.descriptionOfMaterial || "",
+        materialName: row.materialName || "",
         itemCode: row.itemCode || "",
         make: (catalogEntry && catalogEntry.make) || row.make || "",
         quantityFor1Set: row.quantityFor1Set !== null && row.quantityFor1Set !== undefined ? cleanNum(row.quantityFor1Set) : "",
         unit: row.unit || "",
-        designRatePerQuantity: row.designRatePerQuantity !== null && row.designRatePerQuantity !== undefined ? cleanNum(row.designRatePerQuantity) : ""
+        designRatePerQuantity: row.designRatePerQuantity !== null && row.designRatePerQuantity !== undefined ? cleanNum(row.designRatePerQuantity) : "",
+        descriptionId: row.descriptionId || null,
+        descriptionOfMaterial: row.descriptionOfMaterial || ""
       };
     });
     renderCBOQMaterialRows();
@@ -205,6 +248,7 @@ function handleCBOQProjectChange(projectId) {
     fieldsToToggle.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = false; });
     if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
     loadItemCodeCatalogIntoCache();
+    loadMaterialDescriptionsIntoCache();
     loadCboqAllowedProducts(projectId);
   } else {
     fieldsToToggle.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = true; });
@@ -233,6 +277,12 @@ function resetCBOQProductSelection() {
   if (qtyEl) qtyEl.value = "";
   const addRowBtn = document.getElementById("cboq-add-row-btn");
   if (addRowBtn) { addRowBtn.disabled = true; addRowBtn.style.opacity = "0.5"; addRowBtn.style.cursor = "not-allowed"; }
+  const descInput = document.getElementById("cboq-desc-input");
+  const descIdField = document.getElementById("cboq-description-id");
+  const makeField = document.getElementById("cboq-header-make");
+  if (descInput) descInput.value = "";
+  if (descIdField) descIdField.value = "";
+  if (makeField) makeField.value = "";
 }
 
 // loadCboqAllowedProducts — gates Product Name to a locked, search-driven
@@ -261,8 +311,12 @@ async function loadCboqAllowedProducts(projectId) {
       return;
     }
 
+    // Keyed by itemCode + descriptionId (not itemCode alone) — Tier 2 can
+    // now offer two Description of Material variants of the same item
+    // code as separate options; a bare itemCode key would let the second
+    // one silently overwrite the first in this map.
     window.cboqAllowedOptionsByValue = {};
-    (data.options || []).forEach(opt => { window.cboqAllowedOptionsByValue[opt.itemCode] = opt; });
+    (data.options || []).forEach(opt => { window.cboqAllowedOptionsByValue[opt.itemCode + '|' + (opt.descriptionId || '')] = opt; });
     window.cboqAllowedOptionsList = data.options || [];
 
     if (!data.options || data.options.length === 0) {
@@ -305,16 +359,16 @@ function showCBOQProductDropdown() {
   if (options.length === 0) { dropdown.style.display = "none"; return; }
 
   dropdown.innerHTML = options.map(opt => `
-    <div onmousedown="event.preventDefault();" onclick="selectCBOQProductOption('${opt.itemCode}')"
+    <div onmousedown="event.preventDefault();" onclick="selectCBOQProductOption('${opt.itemCode}', '${(opt.descriptionId || '')}')"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      ${opt.productName}${opt.productRating ? ` - <span style="color:var(--brand); font-weight:700;">${opt.productRating}</span>` : ""}
+      ${opt.displayLabel || opt.productName}
     </div>`).join("");
   dropdown.style.display = "block";
 }
 
-function selectCBOQProductOption(itemCode) {
-  const opt = (window.cboqAllowedOptionsByValue || {})[itemCode];
+function selectCBOQProductOption(itemCode, descriptionId) {
+  const opt = (window.cboqAllowedOptionsByValue || {})[itemCode + '|' + (descriptionId || '')];
   const searchEl = document.getElementById("cboq-product-search");
   const ratingEl = document.getElementById("cboq-product-rating");
   const qtyEl = document.getElementById("cboq-order-qty");
@@ -337,6 +391,16 @@ function selectCBOQProductOption(itemCode) {
   document.getElementById("cboq-source-po-line-id").value = opt.lineId || "";
   if (ratingEl) { ratingEl.value = opt.productRating || ""; ratingEl.style.height = "auto"; ratingEl.style.height = ratingEl.scrollHeight + "px"; }
   if (qtyEl) { qtyEl.value = trimNum(opt.lockedQuantity); updateCBOQTotals(); }
+
+  // Description of Material / Make — Tier 2 (Finished Goods) options carry
+  // these from the FG row they were sourced from; Tier 1 (fresh PO
+  // products) never have either yet, so both stay blank for those.
+  const descInput = document.getElementById("cboq-desc-input");
+  const descIdField = document.getElementById("cboq-description-id");
+  const makeField = document.getElementById("cboq-header-make");
+  if (descInput) descInput.value = opt.descriptionOfMaterial || "";
+  if (descIdField) descIdField.value = opt.descriptionId || "";
+  if (makeField) makeField.value = opt.make || "";
   if (addRowBtn) { addRowBtn.disabled = false; addRowBtn.style.opacity = "1"; addRowBtn.style.cursor = "pointer"; }
 }
 
@@ -349,7 +413,7 @@ document.addEventListener("click", (e) => {
 });
 
 function addCBOQMaterialRow() {
-  cboqMaterialRows.push({ typeOfStore: "Raw Materials Store", descriptionOfMaterial: "", itemCode: "", make: "", quantityFor1Set: "", unit: "", designRatePerQuantity: "" });
+  cboqMaterialRows.push({ typeOfStore: "Raw Materials Store", materialName: "", itemCode: "", make: "", quantityFor1Set: "", unit: "", designRatePerQuantity: "" });
   renderCBOQMaterialRows();
 }
 
@@ -361,7 +425,7 @@ function deleteCBOQMaterialRow(idx) {
 function renderCBOQMaterialRows() {
   const tbody = document.getElementById("cboq-material-rows-body");
   if (cboqMaterialRows.length === 0) {
-    tbody.innerHTML = '<tr id="cboq-empty-row"><td colspan="10" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows added yet. Click "+ Add Row" to begin.</td></tr>';
+    tbody.innerHTML = '<tr id="cboq-empty-row"><td colspan="9" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows added yet. Click "+ Add Row" to begin.</td></tr>';
     updateCBOQTotals();
     return;
   }
@@ -385,16 +449,12 @@ function renderCBOQMaterialRows() {
           oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'cboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'cboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; display:block;"
-        >${row.descriptionOfMaterial || ""}</textarea>
+        >${row.materialName || ""}</textarea>
         <div id="cboq-mat-dropdown-${idx}" onmousedown="event.stopPropagation();" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
       </td>
       <td style="padding:4px;">
         <input type="text" value="${row.itemCode || ""}" readonly 
           style="padding:5px; font-size:0.78rem; font-family:monospace; font-weight:700; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:3px; border:1px solid #bae6fd; width:100%;" />
-      </td>
-      <td style="padding:4px;">
-        <input type="text" value="${row.make || ""}" readonly placeholder="—"
-          style="padding:5px; font-size:0.82rem; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
@@ -427,6 +487,22 @@ function renderCBOQMaterialRows() {
         <button onclick="deleteCBOQMaterialRow(${idx})" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:3px 8px; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:700;">✕</button>
       </td>`;
     tbody.appendChild(tr);
+
+    if (isFgRow) {
+      const descTr = document.createElement("tr");
+      descTr.style.borderBottom = "1px solid #f1f5f9";
+      descTr.innerHTML = `
+        <td></td>
+        <td colspan="8" style="padding:4px 4px 8px 4px; position:relative;">
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:3px;">Description of Material (optional, for this Finished Goods row)</label>
+          <input type="text" id="cboq-row-desc-${idx}" value="${row.descriptionOfMaterial || ""}" placeholder="Type to search or create a description..." autocomplete="off"
+            oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'cboq-row-desc-${idx}', 'cboq-row-desc-dropdown-${idx}', 'cboq-row-desc-id-${idx}', 'boqRowDescOnSelect', 'cboq:${idx}'); cboqMaterialRows[${idx}].descriptionOfMaterial=this.value; cboqMaterialRows[${idx}].descriptionId=null;"
+            style="padding:6px; font-size:0.82rem; width:60%; border:1px solid var(--border); border-radius:3px;" />
+          <div id="cboq-row-desc-dropdown-${idx}" style="display:none; position:absolute; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:280px;"></div>
+          <input type="hidden" id="cboq-row-desc-id-${idx}" value="${row.descriptionId || ""}" />
+        </td>`;
+      tbody.appendChild(descTr);
+    }
   });
 
   // Auto-size all description textareas to fit existing content on initial render
@@ -513,13 +589,22 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
     return;
   }
 
-  dropdown.innerHTML = matches.map(item => `
-    <div onclick="selectBOQRowMaterial(${rowIdx}, '${(item.combinedName || item.productName).replace(/'/g,"\\'")}', '${item.itemCode}', '${formPrefix}')"
+  dropdown.innerHTML = matches.map(item => {
+    // materialName stored on the row is bare "Name - Rating" (Make deliberately
+    // excluded here) — Make lives in its own row.make field, so the BOQ Material
+    // column can compose "Name - Rating - Description - Make: X" in the right
+    // order at display time instead of Make being baked into the middle of the
+    // string. The dropdown suggestion itself still SHOWS combinedName (with
+    // Make) so the picker remains unambiguous.
+    const bareNameRating = item.productName + (item.rating ? ' - ' + item.rating : '');
+    return `
+    <div onclick="selectBOQRowMaterial(${rowIdx}, '${bareNameRating.replace(/'/g,"\\'")}', '${item.itemCode}', '${formPrefix}')"
       style="padding:9px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; display:flex; align-items:center; gap:10px; background:#fff; transition:background 0.1s;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:600; color:var(--text); flex:1;">${item.combinedName || item.productName}</span>
       <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px; white-space:nowrap; flex-shrink:0;">${window.typeLabelDisplay_(item.typeOfMaterial)}</span>
-    </div>`).join("");
+    </div>`;
+  }).join("");
   dropdown.style.display = "block";
 }
 
@@ -558,6 +643,10 @@ async function submitCreateBOQ() {
   const preparedBy  = appActiveOperatorIdentityString || "";
   const sourcePoLineIdRaw = document.getElementById("cboq-source-po-line-id").value.trim();
   const sourcePoLineId = sourcePoLineIdRaw ? parseInt(sourcePoLineIdRaw) : null;
+  const productItemCode = document.getElementById("cboq-product-itemcode").value.trim() || null;
+  const descriptionOfMaterial = document.getElementById("cboq-desc-input").value.trim() || null;
+  const descriptionIdRaw = document.getElementById("cboq-description-id").value.trim();
+  const descriptionId = descriptionIdRaw ? parseInt(descriptionIdRaw) : null;
 
   if (!projectId)    return showBOQBanner("create-boq-feedback", "⚠️ Project ID is required.", "error");
   if (!productName)  return showBOQBanner("create-boq-feedback", "⚠️ Product Name is required.", "error");
@@ -566,8 +655,11 @@ async function submitCreateBOQ() {
   if (orderQty < 1)  return showBOQBanner("create-boq-feedback", "⚠️ Order Quantity must be at least 1.", "error");
   if (cboqMaterialRows.length === 0) return showBOQBanner("create-boq-feedback", "⚠️ Add at least one material row.", "error");
 
-  const invalidRow = cboqMaterialRows.find(r => !r.descriptionOfMaterial || !r.quantityFor1Set || !r.unit || !r.designRatePerQuantity);
+  const invalidRow = cboqMaterialRows.find(r => !r.materialName || !r.quantityFor1Set || !r.unit || !r.designRatePerQuantity);
   if (invalidRow) return showBOQBanner("create-boq-feedback", "⚠️ All material rows must have Material Name, Qty / Set, Unit, and Design Rate / Qty filled in.", "error");
+  if (descriptionOfMaterial && !descriptionId) {
+    return showBOQBanner("create-boq-feedback", "⚠️ Pick the Description of Material from the dropdown (or create it there) instead of leaving it as free text.", "error");
+  }
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
@@ -585,7 +677,8 @@ async function submitCreateBOQ() {
       department, orderQuantity: orderQty,
       materialRowsList: cboqMaterialRows,
       totalCostPerSet, totalCost,
-      preparedBy, sourcePoLineId
+      preparedBy, sourcePoLineId,
+      productItemCode, descriptionId, descriptionOfMaterial
     });
     hideBlockingOverlay();
 

@@ -23,6 +23,7 @@ async function initializeAuthorizeBOQPanel(mode) {
   const fbEl = document.getElementById(feedbackId); if (fbEl) { fbEl.style.display = "none"; fbEl.innerHTML = ""; }
 
   await loadItemCodeCatalogIntoCache().catch(() => {});
+  await loadMaterialDescriptionsIntoCache().catch(() => {});
 
   try {
     const data = await apFetch({ action:"fetchBOQDraftsQueue", status });
@@ -81,6 +82,7 @@ async function initializeAuthorizeBOQRevisionPanel() {
   cardsFeed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);"><div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>Loading pending revisions...</div>`;
 
   await loadItemCodeCatalogIntoCache().catch(() => {});
+  await loadMaterialDescriptionsIntoCache().catch(() => {});
   uboqRevExpandedId = null;
   uboqRevRows = [];
 
@@ -124,7 +126,7 @@ async function initializeAuthorizeBOQRevisionPanel() {
 async function authorizeBOQRevision(updateId) {
   const reqItem = uboqRevList.find(r => String(r.updateId) === String(updateId));
   if (!reqItem) return;
-  const invalid = uboqRevRows.find(r => !r.descriptionOfMaterial || r.quantityFor1Set === "" || r.quantityFor1Set === null || r.quantityFor1Set === undefined);
+  const invalid = uboqRevRows.find(r => !r.materialName || r.quantityFor1Set === "" || r.quantityFor1Set === null || r.quantityFor1Set === undefined);
   if (invalid) { showBOQBanner("auth-boq-upd-feedback", "⚠️ Every row must have a Material Description and Qty/Set.", "error"); return; }
   if (uboqRevRows.length === 0) { showBOQBanner("auth-boq-upd-feedback", "⚠️ At least one material row is required.", "error"); return; }
 
@@ -135,13 +137,19 @@ async function authorizeBOQRevision(updateId) {
   showBlockingOverlay("Authorizing Bill of Quantity Revision...");
   // (button labels intentionally stay "Authorizing..."/"Rejecting..." mid-flight, not the full renamed text — keeps the in-progress state visually distinct)
 
+  const revDescInput = document.getElementById(`boqrev-desc-input-${updateId}`);
+  const revDescIdField = document.getElementById(`boqrev-description-id-${updateId}`);
+  const editedDescriptionOfMaterial = revDescInput ? (revDescInput.value.trim() || null) : undefined;
+  const editedDescriptionId = revDescIdField ? (revDescIdField.value.trim() ? parseInt(revDescIdField.value.trim()) : null) : undefined;
+
   try {
     const data = await apFetch({
       action: "submitBOQUpdateAuthorize",
       updateId,
       editedMaterialRows: uboqRevRows,
       editedOrderQuantity: reqItem.newOrderQuantity,
-      authorizedBy: appActiveOperatorIdentityString || ""
+      authorizedBy: appActiveOperatorIdentityString || "",
+      editedDescriptionId, editedDescriptionOfMaterial
     });
     hideBlockingOverlay();
     if (data.success) {
@@ -261,6 +269,20 @@ function renderEBOQForm(containerId) {
             placeholder="${eboqMode === "authorize-update" ? "" : "Auto-filled from Product Name"}">${(draft.productRating || '').toString().replace(/</g, '&lt;')}</textarea>
         </div>
       </div>
+      <div style="display:grid; grid-template-columns:2fr 1fr; gap:12px; margin-bottom:12px;">
+        <div style="position:relative;">
+          <label class="field-label" style="margin-top:0;">Description of Material (optional)</label>
+          <input type="text" id="eboq-desc-input" value="${(draft.descriptionOfMaterial || '').toString().replace(/"/g, '&quot;')}" placeholder="Type to search or create a description..." autocomplete="off"
+            oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'eboq-desc-input', 'eboq-desc-dropdown', 'eboq-description-id')"
+            style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;" />
+          <div id="eboq-desc-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="eboq-description-id" value="${draft.descriptionId || ''}" />
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Make</label>
+          <input type="text" id="eboq-header-make" readonly value="" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; box-sizing:border-box;" placeholder="Auto-filled from Product Name" />
+        </div>
+      </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Current Manufacturing Clearance Quantity (No. of Sets) *</label>
@@ -296,9 +318,8 @@ function renderEBOQForm(containerId) {
             <tr style="background:#f8fafc;">
               <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
               <th style="width:110px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-              <th style="width:240px; padding:8px; font-size:0.7rem;">Material Name *</th>
+              <th style="width:350px; padding:8px; font-size:0.7rem;">Material Name *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
-              <th style="width:110px; padding:8px; font-size:0.7rem;">Make</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
@@ -367,26 +388,46 @@ async function loadEBOQAllowedProducts(draft) {
     let options = (data.success && data.options) ? [...data.options] : [];
     window.eboqAllowedOptionsByValue = {};
 
-    const currentItemCode = (window.itemCodeCatalogCache || [])
-      .find(c => c.productName === draft.productName && (c.rating || "") === (draft.productRating || ""));
-    if (currentItemCode && !options.some(o => o.itemCode === currentItemCode.itemCode)) {
+    // Fold the draft's own current product in, even if it wouldn't
+    // otherwise be offered, so an untouched draft always has a valid
+    // selection — matched by product_item_code (set at createBOQDraft
+    // time) rather than a name+rating lookup into the catalog, which
+    // breaks once two Description of Material variants can share one
+    // name+rating.
+    if (draft.productItemCode && !options.some(o => o.itemCode === draft.productItemCode && (o.descriptionId || null) === (draft.descriptionId || null))) {
+      const catalogEntry = (window.itemCodeCatalogCache || []).find(c => c.itemCode === draft.productItemCode);
       options.push({
-        itemCode: currentItemCode.itemCode, productName: draft.productName, productRating: draft.productRating,
+        itemCode: draft.productItemCode, descriptionId: draft.descriptionId || null,
+        productName: draft.productName, productRating: draft.productRating,
+        descriptionOfMaterial: draft.descriptionOfMaterial || null, make: catalogEntry ? catalogEntry.make : null,
+        displayLabel: `${draft.productName}${draft.productRating ? " - " + draft.productRating : ""}${draft.descriptionOfMaterial ? " - " + draft.descriptionOfMaterial : ""}${catalogEntry && catalogEntry.make ? " - Make: " + catalogEntry.make : ""}`,
         lockedQuantity: draft.orderQuantity, sourcePoLineId: draft.sourcePoLineId || null,
       });
     }
 
-    options.forEach(opt => { window.eboqAllowedOptionsByValue[opt.itemCode] = opt; });
-    select.innerHTML = options.map(opt =>
-      `<option value="${opt.itemCode}" ${opt.productName === draft.productName && (opt.productRating||"") === (draft.productRating||"") ? "selected" : ""}>${opt.productName}${opt.productRating ? " " + opt.productRating : ""}</option>`
-    ).join("") || '<option value="">— No Products Available —</option>';
+    // Keyed by itemCode + descriptionId — see the same fix in create-boq.js.
+    options.forEach(opt => { window.eboqAllowedOptionsByValue[opt.itemCode + '|' + (opt.descriptionId || '')] = opt; });
+    select.innerHTML = options.map(opt => {
+      const isCurrent = opt.itemCode === draft.productItemCode && (opt.descriptionId || null) === (draft.descriptionId || null);
+      return `<option value="${opt.itemCode}|${opt.descriptionId || ''}" ${isCurrent ? "selected" : ""}>${opt.displayLabel || opt.productName}</option>`;
+    }).join("") || '<option value="">— No Products Available —</option>';
+
+    if (options.length > 0) {
+      const selectedOpt = options.find(o => o.itemCode === draft.productItemCode && (o.descriptionId || null) === (draft.descriptionId || null)) || options[0];
+      handleEBOQProductSelectChange(selectedOpt.itemCode + '|' + (selectedOpt.descriptionId || ''), true);
+    }
   } catch(e) {
     select.innerHTML = '<option value="">Network error</option>';
   }
 }
 
-function handleEBOQProductSelectChange(itemCode) {
-  const opt = (window.eboqAllowedOptionsByValue || {})[itemCode];
+// compositeKey is "<itemCode>|<descriptionId-or-empty>" — the <select>'s
+// own option value, matching the keying fix above. skipBoqIdPreview is
+// true only when this is called from the initial render (loadEBOQAllowedProducts),
+// where the BOQ ID is already correct and shouldn't be recomputed from a
+// "change" that didn't actually happen.
+function handleEBOQProductSelectChange(compositeKey, skipBoqIdPreview) {
+  const opt = (window.eboqAllowedOptionsByValue || {})[compositeKey];
   if (!opt) return;
   document.getElementById("eboq-product-name").value = opt.productName;
   document.getElementById("eboq-source-po-line-id").value = opt.sourcePoLineId || "";
@@ -394,7 +435,13 @@ function handleEBOQProductSelectChange(itemCode) {
   if (ratingEl) { ratingEl.value = opt.productRating || ""; autoGrowPoField(ratingEl); }
   const qtyEl = document.getElementById("eboq-order-qty");
   if (qtyEl) { qtyEl.value = trimNum(opt.lockedQuantity); updateEBOQTotals(); }
-  recomputeEBOQBoqId(opt.productName, opt.productRating || "");
+  const descInput = document.getElementById("eboq-desc-input");
+  const descIdField = document.getElementById("eboq-description-id");
+  const makeField = document.getElementById("eboq-header-make");
+  if (descInput) descInput.value = opt.descriptionOfMaterial || "";
+  if (descIdField) descIdField.value = opt.descriptionId || "";
+  if (makeField) makeField.value = opt.make || "";
+  if (!skipBoqIdPreview) recomputeEBOQBoqId(opt.productName, opt.productRating || "");
 }
 
 // updateEBOQId() removed -- the BOQ ID is generated once at creation
@@ -418,17 +465,23 @@ function handleEBOQProductSelectChange(itemCode) {
 function recomputeEBOQBoqId(productName, rating) {
   const boqIdBox = document.getElementById('eboq-boq-id');
   if (!boqIdBox || !eboqCurrentDraft?.boqId) return;
-  const parts = eboqCurrentDraft.boqId.split('_');
+  // Strip any trailing "_<n>" variant suffix BEFORE the segment split, so
+  // it survives this preview rebuild instead of being silently dropped —
+  // same fix as the server-side parseBOQIdVariantSuffix (routes/design.js).
+  const suffixMatch = /^(.*)_(\d+)$/.exec(eboqCurrentDraft.boqId);
+  const base = suffixMatch ? suffixMatch[1] : eboqCurrentDraft.boqId;
+  const variantSuffix = suffixMatch && Number(suffixMatch[2]) > 1 ? `_${suffixMatch[2]}` : '';
+  const parts = base.split('_');
   if (parts.length < 7) return; // unexpected format — leave the original ID untouched rather than risk mangling it
   const prefix = parts.slice(0, 5).join('_');
   const cleanSeg = (s) => (s || '').toString().trim().replace(/\s+/g, ' ');
-  const newBoqId = `${prefix}_${cleanSeg(productName)}_${cleanSeg(rating)}`;
+  const newBoqId = `${prefix}_${cleanSeg(productName)}_${cleanSeg(rating)}${variantSuffix}`;
   boqIdBox.value = newBoqId;
   boqIdBox.style.height = 'auto'; boqIdBox.style.height = boqIdBox.scrollHeight + 'px';
 }
 
 function addEBOQMaterialRow() {
-  eboqMaterialRows.push({ typeOfStore:"Raw Materials Store", descriptionOfMaterial:"", itemCode:"", make:"", quantityFor1Set:"", unit:"", designRatePerQuantity:"" });
+  eboqMaterialRows.push({ typeOfStore:"Raw Materials Store", materialName:"", itemCode:"", make:"", quantityFor1Set:"", unit:"", designRatePerQuantity:"" });
   renderEBOQMaterialRows();
 }
 
@@ -442,7 +495,7 @@ function renderEBOQMaterialRows() {
   if (!tbody) return;
   tbody.innerHTML = "";
   if (eboqMaterialRows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows. Click "+ Add Row".</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows. Click "+ Add Row".</td></tr>';
     updateEBOQTotals();
     return;
   }
@@ -465,16 +518,12 @@ function renderEBOQMaterialRows() {
           oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'eboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'eboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; display:block;"
-        >${row.descriptionOfMaterial || ""}</textarea>
+        >${row.materialName || ""}</textarea>
         <div id="eboq-mat-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
       </td>
       <td style="padding:4px;">
         <input type="text" value="${row.itemCode || ""}" readonly 
           style="padding:5px; font-size:0.78rem; font-family:monospace; font-weight:700; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:3px; border:1px solid #bae6fd; width:100%;" />
-      </td>
-      <td style="padding:4px;">
-        <input type="text" value="${row.make || ""}" readonly placeholder="—"
-          style="padding:5px; font-size:0.82rem; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
@@ -507,6 +556,22 @@ function renderEBOQMaterialRows() {
         <button onclick="deleteEBOQMaterialRow(${idx})" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:3px 8px; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:700;">✕</button>
       </td>`;
     tbody.appendChild(tr);
+
+    if (isFgRow) {
+      const descTr = document.createElement("tr");
+      descTr.style.borderBottom = "1px solid #f1f5f9";
+      descTr.innerHTML = `
+        <td></td>
+        <td colspan="8" style="padding:4px 4px 8px 4px; position:relative;">
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:3px;">Description of Material (optional, for this Finished Goods row)</label>
+          <input type="text" id="eboq-row-desc-${idx}" value="${row.descriptionOfMaterial || ""}" placeholder="Type to search or create a description..." autocomplete="off"
+            oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'eboq-row-desc-${idx}', 'eboq-row-desc-dropdown-${idx}', 'eboq-row-desc-id-${idx}', 'boqRowDescOnSelect', 'eboq:${idx}'); eboqMaterialRows[${idx}].descriptionOfMaterial=this.value; eboqMaterialRows[${idx}].descriptionId=null;"
+            style="padding:6px; font-size:0.82rem; width:60%; border:1px solid var(--border); border-radius:3px;" />
+          <div id="eboq-row-desc-dropdown-${idx}" style="display:none; position:absolute; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:280px;"></div>
+          <input type="hidden" id="eboq-row-desc-id-${idx}" value="${row.descriptionId || ""}" />
+        </td>`;
+      tbody.appendChild(descTr);
+    }
   });
 
   requestAnimationFrame(() => {
@@ -546,6 +611,9 @@ async function submitEBOQAuthorize() {
   const department   = document.getElementById("eboq-department")?.value.trim() || "";
   const orderQty     = parseInt(document.getElementById("eboq-order-qty")?.value) || 0;
   const authorizedBy = appActiveOperatorIdentityString || "";
+  const descriptionOfMaterial = document.getElementById("eboq-desc-input")?.value.trim() || null;
+  const descriptionIdRaw = document.getElementById("eboq-description-id")?.value.trim() || "";
+  const descriptionId = descriptionIdRaw ? parseInt(descriptionIdRaw) : null;
 
   const _validationFail = (msg) => { _submitBOQAuthorizeInProgress = false; showBOQBanner(feedbackId, msg, "error"); };
 
@@ -556,7 +624,7 @@ async function submitEBOQAuthorize() {
   if (eboqMaterialRows.length === 0) { _validationFail("⚠️ At least one material row is required."); return; }
   if (eboqMode === "authorize" && !authorizedBy) { _validationFail("⚠️ Authorized By is required."); return; }
 
-  const invalidRow = eboqMaterialRows.find(r => !r.descriptionOfMaterial || !r.quantityFor1Set);
+  const invalidRow = eboqMaterialRows.find(r => !r.materialName || !r.quantityFor1Set);
   if (invalidRow) { _validationFail("⚠️ All rows must have Material Description and Quantity."); return; }
 
   btn.disabled = true;
@@ -570,7 +638,8 @@ async function submitEBOQAuthorize() {
       productName, productRating, department,
       orderQuantity: orderQty,
       materialRowsList: eboqMaterialRows,
-      authorizedBy
+      authorizedBy,
+      descriptionId, descriptionOfMaterial
     });
     hideBlockingOverlay();
 

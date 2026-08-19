@@ -311,6 +311,9 @@ function handleFGBOQChange(boqId) {
     document.getElementById("fg-add-unit").value = "";
     document.getElementById("fg-add-item-code-display").value = "";
     document.getElementById("fg-add-item-code").value = "";
+    document.getElementById("fg-add-description").value = "";
+    document.getElementById("fg-add-description-id").value = "";
+    document.getElementById("fg-add-make").value = "";
     return;
   }
   const filtered = (window.fgJobCardsCache || []).filter(jc => jc.boqId === boqId);
@@ -320,28 +323,19 @@ function handleFGBOQChange(boqId) {
   document.getElementById("fg-add-rating").value = sample.productRating || "";
   document.getElementById("fg-add-unit").value = "NOS";
 
-  // Item Code isn't a job_cards/BOQ column — it only exists in the
-  // design.item_codes catalog, keyed by Material Name + Rating (the same
-  // catalog Create PO/Create Ticket search against). Matched here so the
-  // finished_goods_inventory row (and its Sheet mirror) isn't left with
-  // item_code permanently blank, same as every other screen that resolves
-  // an item code from a product name instead of collecting it directly.
-  // Whitespace-collapsed comparison, not just trim() — matches the
-  // normalization every other product-name lookup in the app uses
-  // (tickets.js, job-cards.js). A plain trim+lowercase left this silently
-  // blank whenever the Job Card's product name/rating had different
-  // internal spacing than the catalog entry (e.g. a double space), which is
-  // exactly why some existing finished_goods_inventory rows have no
-  // item_code — this hardens future submissions, it does not backfill those.
-  const catalog = window.itemCodeCatalogCache || [];
-  const collapse = (s) => (s || "").replace(/\s+/g, "").toLowerCase();
-  const normName = collapse(sample.productName);
-  const normRating = collapse(sample.productRating);
-  const matchedItem = catalog.find(it =>
-    collapse(it.productName) === normName && collapse(it.rating) === normRating
-  ) || catalog.find(it => collapse(it.productName) === normName);
-  document.getElementById("fg-add-item-code-display").value = matchedItem ? matchedItem.itemCode : "";
-  document.getElementById("fg-add-item-code").value = matchedItem ? matchedItem.itemCode : "";
+  // Item Code, Description of Material and Make (18 Aug 2026) now come
+  // straight off the BOQ itself (design.boq_drafts.product_item_code /
+  // description_of_material, joined to item_codes.make in
+  // fetchJobCardsForProject) instead of a fuzzy Material Name + Rating
+  // match against the catalog — that match could silently land on the
+  // wrong Item Code once two Description of Material variants shared one
+  // name+rating, and it also left some rows with no item_code at all
+  // whenever internal spacing differed. This is the direct fix for both.
+  document.getElementById("fg-add-item-code-display").value = sample.productItemCode || "";
+  document.getElementById("fg-add-item-code").value = sample.productItemCode || "";
+  document.getElementById("fg-add-description").value = sample.descriptionOfMaterial || "";
+  document.getElementById("fg-add-description-id").value = sample.descriptionId || "";
+  document.getElementById("fg-add-make").value = sample.make || "";
 
   fgJobCardDisplayReset("— Select Job Card Number —");
   fgJobCardPopulate(filtered.map(jc => ({ value: jc.jobCardNumber, label: `${jc.jobCardNumber} (Set ${jc.setNumber})` })));
@@ -511,7 +505,8 @@ function resetFGAddForm() {
   });
   ["fg-add-customer","fg-add-product-name-display","fg-add-product-name",
    "fg-add-rating","fg-add-item-code-display","fg-add-item-code",
-   "fg-add-jobcard","fg-add-boq","fg-add-serial","fg-add-remarks"].forEach(id => {
+   "fg-add-jobcard","fg-add-boq","fg-add-serial","fg-add-remarks",
+   "fg-add-description","fg-add-description-id","fg-add-make"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
   fgBOQDisplayReset("— Select Project First —");
@@ -551,6 +546,10 @@ async function submitFGAddItem() {
   const serialNumber = document.getElementById("fg-add-serial").value.trim();
   const unit = document.getElementById("fg-add-unit").value.trim();
   const remarks    = document.getElementById("fg-add-remarks").value.trim();
+  const descriptionOfMaterial = document.getElementById("fg-add-description").value.trim() || null;
+  const descriptionIdRaw = document.getElementById("fg-add-description-id").value.trim();
+  const descriptionId = descriptionIdRaw ? parseInt(descriptionIdRaw) : null;
+  const make = document.getElementById("fg-add-make").value.trim() || null;
   const qaPersonName = appActiveOperatorIdentityString || "";
   const qaDone     = document.getElementById("fg-add-qa-done").value.trim();
   const packingQualityConfirmation = document.getElementById("fg-add-packing-quality").value.trim();
@@ -614,6 +613,7 @@ async function submitFGAddItem() {
       productSerialNumber: serialNumber,
       unit, additionalRemarks: remarks,
       qaPersonName, finishedGoodUse, documents,
+      descriptionOfMaterial, descriptionId, make,
       operatorName: appActiveOperatorIdentityString
     });
 
