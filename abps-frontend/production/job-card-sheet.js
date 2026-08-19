@@ -21,10 +21,14 @@ function resetJCLHWorkspace() {
   const dept     = document.getElementById("jclh-department");
   const pname    = document.getElementById("jclh-product-name");
   const prating  = document.getElementById("jclh-product-rating");
+  const pdesc    = document.getElementById("jclh-description-of-material");
+  const pmake    = document.getElementById("jclh-make");
   if (customer) customer.value = "";
   if (dept)     dept.value     = "";
   if (pname)    pname.value    = "";
   if (prating)  prating.value  = "";
+  if (pdesc)    pdesc.value    = "";
+  if (pmake)    pmake.value    = "";
 
   updateJCLHDownloadButtonState();
 }
@@ -79,6 +83,8 @@ function handleJCLHBoqChange(boqId) {
   document.getElementById("jclh-department").value     = "";
   document.getElementById("jclh-product-name").value   = "";
   document.getElementById("jclh-product-rating").value = "";
+  document.getElementById("jclh-description-of-material").value = "";
+  document.getElementById("jclh-make").value = "";
   updateJCLHDownloadButtonState();
 
   if (!boqId) {
@@ -92,6 +98,11 @@ function handleJCLHBoqChange(boqId) {
     document.getElementById("jclh-department").value     = matches[0].department || "";
     document.getElementById("jclh-product-name").value   = matches[0].productName || "";
     document.getElementById("jclh-product-rating").value = matches[0].productRating || "";
+    // Description of Material + Make (both BOQ/Item-Code-level, per the
+    // product this Job Card is for) — composed into a single "Product:"
+    // line on the printed sheet, see submitJCLHDownload.
+    document.getElementById("jclh-description-of-material").value = matches[0].descriptionOfMaterial || "";
+    document.getElementById("jclh-make").value = matches[0].make || "";
   }
 
   jcDrop.innerHTML = '<option value="">— Select Job Card Number —</option>';
@@ -109,6 +120,8 @@ function resetJCLHDownstreamFields() {
   document.getElementById("jclh-department").value     = "";
   document.getElementById("jclh-product-name").value   = "";
   document.getElementById("jclh-product-rating").value = "";
+  document.getElementById("jclh-description-of-material").value = "";
+  document.getElementById("jclh-make").value = "";
   updateJCLHDownloadButtonState();
 }
 
@@ -152,6 +165,8 @@ async function submitJCLHDownload() {
   const customerName  = document.getElementById("jclh-customer").value.trim();
   const productName   = document.getElementById("jclh-product-name").value.trim();
   const productRating = document.getElementById("jclh-product-rating").value.trim();
+  const descriptionOfMaterial = document.getElementById("jclh-description-of-material").value.trim();
+  const make           = document.getElementById("jclh-make").value.trim();
   const jobCardNumber = document.getElementById("jclh-jobcard").value.trim();
   const productType   = document.getElementById("jclh-product-type").value.trim();
   const sheetType      = document.getElementById("jclh-sheet-type").value.trim();
@@ -161,7 +176,7 @@ async function submitJCLHDownload() {
   try {
     const data = await apFetch({
       action: "generateJobCardOrInProcessSheetPdf",
-      projectId, customerName, productName, productRating, jobCardNumber, productType, sheetType
+      projectId, customerName, productName, productRating, descriptionOfMaterial, make, jobCardNumber, productType, sheetType
     });
     if (data.success) {
       const link = document.createElement("a");
