@@ -136,6 +136,8 @@ function renderFGApprovalDetailBody(fgId) {
       ${field("Department", fg.department)}
       ${field("Product Name", fg.productName)}
       ${field("Product Rating", fg.productRating)}
+      ${field("Description of Material", fg.descriptionOfMaterial)}
+      ${field("Make", fg.make)}
       ${field("Job Card Number *", fg.jobCardNumber)}
       ${field("Unit *", fg.unit)}
       ${field("Product Serial Number *", fg.productSerialNumber)}
