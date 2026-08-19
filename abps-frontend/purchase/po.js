@@ -172,9 +172,13 @@ async function initializeSearchRMPOPanel() {
   const poInput = document.getElementById("srchpo-po-input");
   const matInput = document.getElementById("srchpo-material-input");
   const projInput = document.getElementById("srchpo-project-input");
+  const fromInput = document.getElementById("srchpo-date-from");
+  const toInput = document.getElementById("srchpo-date-to");
   if (poInput) poInput.value = "";
   if (matInput) matInput.value = "";
   if (projInput) projInput.value = "";
+  if (fromInput) fromInput.value = "";
+  if (toInput) toInput.value = "";
   document.getElementById("srchpo-results").innerHTML = "";
   const fb = document.getElementById("srchpo-feedback");
   if (fb) { fb.style.display = "none"; fb.innerHTML = ""; }
@@ -252,13 +256,6 @@ function selectSrchPOProject(projectId) {
   document.getElementById("srchpo-project-dd").style.display = "none";
 }
 
-function srchpoSetSearchingLabel(text) {
-  const el = document.getElementById("srchpo-search-label");
-  if (!el) return;
-  el.textContent = text;
-  el.style.display = "block";
-}
-
 function srchpoShowFeedback(msg, isError) {
   const fb = document.getElementById("srchpo-feedback");
   fb.style.display = "block";
@@ -268,42 +265,65 @@ function srchpoShowFeedback(msg, isError) {
   fb.innerHTML = msg;
 }
 
-async function searchByPONumberUI() {
-  const q = document.getElementById("srchpo-po-input").value.trim();
-  if (!q || q.length < 2) { srchpoShowFeedback("Enter at least 2 characters of a PO number.", true); return; }
-  document.getElementById("srchpo-feedback").style.display = "none";
-  srchpoSetSearchingLabel(`Searching for "${q}"`);
-  const results = document.getElementById("srchpo-results");
-  results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
-  try {
-    const data = await apFetch({ action: "searchRMPOsByPONumber", query: q });
-    if (!data.success) { srchpoShowFeedback(data.error, true); results.innerHTML = ""; return; }
-    renderSrchPOResultsAsPOCards(data.results || []);
-  } catch(e) { srchpoShowFeedback(e.message, true); results.innerHTML = ""; }
+// e.g. "10 Aug 2026" — same display convention as Search Vendor Costing
+// Information's own svciFmtDisplayDate.
+function srchpoFmtDisplayDate(isoOrDateStr) {
+  if (!isoOrDateStr) return "";
+  const dt = new Date(isoOrDateStr);
+  if (isNaN(dt.getTime())) return "";
+  return `${String(dt.getDate()).padStart(2,'0')} ${dt.toLocaleString('en-US',{month:'short'})} ${dt.getFullYear()}`;
 }
 
-async function searchByMaterialUI() {
-  if (!window.srchpoSelectedItemCode) { srchpoShowFeedback("Select a material from the dropdown list.", true); return; }
+// searchRMPOMatrixUI — the single Search button behind every field on this
+// screen. Every field is optional and ANDed together server-side
+// (searchRMPOsMatrix); a blank field imposes no filter at all, rather than
+// meaning "match blank".
+async function searchRMPOMatrixUI() {
   document.getElementById("srchpo-feedback").style.display = "none";
-  srchpoSetSearchingLabel(`Searching for "${document.getElementById("srchpo-material-input").value.trim()}"`);
-  const results = document.getElementById("srchpo-results");
-  results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
-  try {
-    const data = await apFetch({ action: "searchRMPOsByMaterial", itemCode: window.srchpoSelectedItemCode });
-    if (!data.success) { srchpoShowFeedback(data.error, true); results.innerHTML = ""; return; }
-    renderSrchPOResultsAsPOCards(data.results || []);
-  } catch(e) { srchpoShowFeedback(e.message, true); results.innerHTML = ""; }
-}
 
-async function searchByProjectIdUI() {
+  const poNumberQuery = document.getElementById("srchpo-po-input").value.trim();
+  const materialLabel = document.getElementById("srchpo-material-input").value.trim();
   const projectId = window.srchpoSelectedProjectId || document.getElementById("srchpo-project-input").value.trim();
-  if (!projectId) { srchpoShowFeedback("Select or enter a Project ID.", true); return; }
-  document.getElementById("srchpo-feedback").style.display = "none";
-  srchpoSetSearchingLabel(`Searching for "${projectId}"`);
+  let dateFrom = document.getElementById("srchpo-date-from").value;
+  let dateTo = document.getElementById("srchpo-date-to").value;
+
+  if (materialLabel && !window.srchpoSelectedItemCode) {
+    srchpoShowFeedback("Select a Material Name from the dropdown list, or clear the field to search all materials.", true);
+    return;
+  }
+  if (dateTo && !dateFrom) {
+    srchpoShowFeedback("Date Range From is required if Date Range To is set — a To-only range isn't supported.", true);
+    return;
+  }
+  // From-only means "from that date through today" — the same way a
+  // human would read an open-ended range.
+  if (dateFrom && !dateTo) {
+    dateTo = new Date().toISOString().slice(0, 10);
+  }
+
   const results = document.getElementById("srchpo-results");
   results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
+  const lbl = document.getElementById("srchpo-search-label");
+  lbl.style.display = "block";
+  const esc = (s) => (s || "").toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const black = (s) => `<span style="color:#000;">${s}</span>`;
+  const val = (s) => `<span style="color:var(--brand);">${esc(s)}</span>`;
+  const dateRangeDisplay = dateFrom ? `${srchpoFmtDisplayDate(dateFrom)} to ${srchpoFmtDisplayDate(dateTo)}` : "All Dates";
+  lbl.innerHTML = `${black("Searching for")}<br>`
+    + `${black("PO Number :")} ${val(poNumberQuery || "All POs")}<br>`
+    + `${black("Material Name:")} ${val(materialLabel || "All Materials")}<br>`
+    + `${black("Project ID:")} ${val(projectId || "All Project IDs")}<br>`
+    + `${black("Date Range:")} ${val(dateRangeDisplay)}`;
+
   try {
-    const data = await apFetch({ action: "searchRMPOsByProjectId", projectId });
+    const data = await apFetch({
+      action: "searchRMPOsMatrix",
+      poNumberQuery: poNumberQuery || null,
+      itemCode: window.srchpoSelectedItemCode || null,
+      projectId: projectId || null,
+      dateFrom: dateFrom || null,
+      dateTo: dateTo || null
+    });
     if (!data.success) { srchpoShowFeedback(data.error, true); results.innerHTML = ""; return; }
     renderSrchPOResultsAsPOCards(data.results || []);
   } catch(e) { srchpoShowFeedback(e.message, true); results.innerHTML = ""; }

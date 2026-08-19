@@ -136,7 +136,8 @@ async function searchVendorCostingInfoUI() {
   const lbl = document.getElementById("svci-search-label");
   lbl.style.display = "block";
   const esc = (s) => (s || "").toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  lbl.innerHTML = `Searching for<br>Material: ${esc(materialLabel)}<br>Vendor: ${esc(vendorLabel)}<br>Date Range: ${esc(dateRangeLabel)}`;
+  const val = (s) => `<span style="color:var(--brand);">${esc(s)}</span>`;
+  lbl.innerHTML = `<span style="color:#000;">Searching for</span><br><span style="color:#000;">Material:</span> ${val(materialLabel)}<br><span style="color:#000;">Vendor:</span> ${val(vendorLabel)}<br><span style="color:#000;">Date Range:</span> ${val(dateRangeLabel)}`;
 
   try {
     const data = await apFetch({
@@ -147,7 +148,12 @@ async function searchVendorCostingInfoUI() {
     });
     if (!data.success) { svciShowFeedback(data.error, true); results.innerHTML = ""; return; }
     window.svciResultsCache = data.results || [];
-    window.svciSortState = { col: null, dir: 'desc' };
+    // Default sort: most recent Delivery Date first — matches the
+    // backend's own default ORDER BY, re-applied here so the active
+    // column/arrow in the table header reflects it too.
+    window.svciSortState = { col: 'deliveryDate', dir: 'desc' };
+    const getVal = SVCI_SORTABLE_COLS.deliveryDate;
+    window.svciResultsCache.sort((a, b) => getVal(b) - getVal(a));
     window.svciLastSearchMeta = { materialLabel, vendorLabel, dateRangeLabel };
     renderSVCIResultsTable();
   } catch(e) { svciShowFeedback(e.message, true); results.innerHTML = ""; }
@@ -205,9 +211,9 @@ function renderSVCIResultsTable() {
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
       <table style="width:100%; border-collapse:collapse; min-width:760px;">
         <thead><tr style="background:#f8fafc;">
-          <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">PO Number</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">PO No</th>
           <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">Vendor Name</th>
-          <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">City/State</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">City, State</th>
           <th style="padding:8px; font-size:0.7rem; text-align:center; text-transform:uppercase; color:var(--muted);">PO Quantity</th>
           ${svciSortableHeader('ratePerQty', 'Rate / Qty')}
           ${svciSortableHeader('orderDate', 'Order Date')}
@@ -235,12 +241,17 @@ async function downloadSVCIPdf(btn) {
   const originalText = btn.textContent;
   btn.disabled = true;
   btn.textContent = "Generating PDF...";
+  const SVCI_SORT_COL_LABELS = { ratePerQty: "Rate / Qty", orderDate: "Order Date", deliveryDate: "Delivery Date" };
+  const st = window.svciSortState || {};
+  const sortColumnLabel = SVCI_SORT_COL_LABELS[st.col] || "";
+  const sortDirectionLabel = st.dir === 'asc' ? "Ascending" : "Descending";
   try {
     const data = await apFetch({
       action: "generateVendorCostingInformationPdf",
       materialName: meta.materialLabel,
       vendorName: meta.vendorLabel === "All Vendors" ? "" : meta.vendorLabel,
       dateRangeText: meta.dateRangeLabel,
+      sortColumnLabel, sortDirectionLabel,
       rows: list
     });
     if (!data.success) { alert("Could not generate PDF: " + data.error); return; }
