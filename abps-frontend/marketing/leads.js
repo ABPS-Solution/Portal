@@ -813,7 +813,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
     { type: "SEC1", keys: ["Date of Meeting", "Time of Meeting", "Meeting Venue", "Venue Name / City", "Additional Meeting Details (if any)"] },
     { type: "SEC2", keys: ["ABPS Business Vertical", "Type of Customer", "Type of Vendor"] }, 
     { type: "SEC3", keys: ["Low Power Factor Issue", "High Electricity Bill Issue", "Harmonics Issue", "Transformer Heating / Breakdown Issue", "Grid Stability Issue", "Tender Inquire", "Existing System Details", "Contract Demand (MVA)", "Voltage Level Requirements"] }, 
-    { type: "SEC4", keys: ["Existing Project", "Products Discussed", "Expected Tender / RFQ Date", "Approx Requirement"] },
+    { type: "SEC4", keys: ["Existing Project", "Products Discussed", "Expected Tender / RFQ Date", "Approx Requirement", "Technical Discussion Summary", "Competitor Details", "Approx Business Potential"] },
     { type: "SEC5", keys: ["Send Company Profile", "Send Technical Presentation", "Arrange Site Visit", "Get Enquiry", "Send Offer", "Follow-Up Required"] },
 
   ];
@@ -899,7 +899,14 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
           let op = document.createElement("option"); op.textContent = opText; if(leadMap[key] === opText) op.selected = true; sel.appendChild(op);
         });
         cell.appendChild(sel);
-      } 
+      }
+      else if (key === "Approx Business Potential") {
+        let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
+        ["<10L", "10-50L", "50L-2cr", ">2cr"].forEach(opText => {
+          let op = document.createElement("option"); op.textContent = opText; if(leadMap[key] === opText) op.selected = true; sel.appendChild(op);
+        });
+        cell.appendChild(sel);
+      }
       
       // FIXED DESIGN BLOCK: Combined vertical dropdown layout fields inputs mapping box
       else if (key === "ABPS Business Vertical") {
