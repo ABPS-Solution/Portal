@@ -19,7 +19,7 @@ async function initializeSearchVendorCostingInfoPanel() {
   const vendInput = document.getElementById("svci-vendor-input");
   const fromInput = document.getElementById("svci-date-from");
   const toInput = document.getElementById("svci-date-to");
-  if (matInput) matInput.value = "";
+  if (matInput) { matInput.value = ""; matInput.style.height = "auto"; }
   if (vendInput) vendInput.value = "";
   if (fromInput) fromInput.value = "";
   if (toInput) toInput.value = "";
@@ -58,7 +58,9 @@ function handleSVCIMaterialInput(query) {
 
 function selectSVCIMaterial(itemCode, productName, rating) {
   window.svciSelectedItemCode = itemCode;
-  document.getElementById("svci-material-input").value = rating ? `${productName} - ${rating}` : productName;
+  const inputEl = document.getElementById("svci-material-input");
+  inputEl.value = rating ? `${productName} - ${rating}` : productName;
+  inputEl.style.height = "auto"; inputEl.style.height = inputEl.scrollHeight + "px";
   document.getElementById("svci-material-dd").style.display = "none";
 }
 
@@ -133,7 +135,8 @@ async function searchVendorCostingInfoUI() {
   results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
   const lbl = document.getElementById("svci-search-label");
   lbl.style.display = "block";
-  lbl.textContent = `Searching for Material: ${materialLabel} for Vendor: ${vendorLabel} between Date Range: ${dateRangeLabel}`;
+  const esc = (s) => (s || "").toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  lbl.innerHTML = `Searching for<br>Material: ${esc(materialLabel)}<br>Vendor: ${esc(vendorLabel)}<br>Date Range: ${esc(dateRangeLabel)}`;
 
   try {
     const data = await apFetch({
@@ -194,8 +197,8 @@ function renderSVCIResultsTable() {
       <td style="padding:8px;">${r.city || "—"}${r.state ? ', ' + r.state : ''}</td>
       <td style="padding:8px; text-align:center; font-family:monospace; font-size:1rem; font-weight:700;">${fmtQty(r.poQuantity)}</td>
       <td style="padding:8px; text-align:center; font-family:monospace; font-size:1rem; font-weight:700;">${fmtQty(r.ratePerQty)}</td>
-      <td style="padding:8px;">${fmtPODate(r.orderDate) || "—"}</td>
-      <td style="padding:8px;">${fmtPODate(r.deliveryDate) || "—"}</td>
+      <td style="padding:8px; text-align:center; white-space:nowrap;">${fmtPODate(r.orderDate) || "—"}</td>
+      <td style="padding:8px; text-align:center; white-space:nowrap;">${fmtPODate(r.deliveryDate) || "—"}</td>
     </tr>`).join("");
 
   results.innerHTML = `
@@ -246,9 +249,10 @@ async function downloadSVCIPdf(btn) {
     for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
     const blob = new Blob([new Uint8Array(byteNumbers)], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
+    const safeName = (s) => (s || "").toString().replace(/[\\/:*?"<>|]/g, "").trim();
     const a = document.createElement("a");
     a.href = url;
-    a.download = "Vendor_Costing_Information.pdf";
+    a.download = `Vendor Costing Information for ${safeName(meta.materialLabel)} for ${safeName(meta.vendorLabel)}.pdf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

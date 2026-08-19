@@ -251,6 +251,12 @@ function renderPORevisionCard() {
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Material Name</div>
           <div style="min-height:36px; box-sizing:border-box; display:flex; align-items:center; font-size:0.82rem; font-weight:600; padding:6px 4px; word-break:break-word; white-space:normal;">${li.description || ""}</div>
         </div>
+        <div style="width:100%; order:99;">
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Description of Material</label>
+          <textarea rows="1" placeholder="Optional free-text note about this line (e.g. color, variant, spec detail)..."
+            oninput="updateRPORowField(${idx},'additionalDescription',this.value)"
+            style="width:100%; box-sizing:border-box; padding:7px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem; font-family:inherit; resize:vertical;">${(li.additionalDescription||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+        </div>
         <div style="width:70px; flex-shrink:0; text-align:center;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Old PO Qty</div>
           <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:700; color:#1a2332; font-size:0.85rem;">${fmt(li.orderedQty)}</div>
@@ -377,6 +383,7 @@ function renderPORevisionCard() {
         <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
           <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Terms</div>
           <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Warranty</label><input type="text" id="rpo-warranty" value="${(po.warranty||"").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Insurance</label><input type="text" id="rpo-insurance" value="${(po.insurance||"").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Payment Terms</label><input type="text" id="rpo-payment" value="${(po.paymentTerms||"").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           <div><label class="field-label" style="margin-top:0;">Freight Terms</label><input type="text" id="rpo-freight-terms" value="${(po.freightTerms||"").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         </div>
@@ -486,7 +493,10 @@ function updateRPOGrandTotal() {
   const freight = parseFloat(document.getElementById("rpo-freight")?.value) || 0;
   const other = parseFloat(document.getElementById("rpo-other")?.value) || 0;
   const roundOff = parseFloat(document.getElementById("rpo-roundoff")?.value) || 0;
-  const grandTotal = subTotal + subTotal*cgstP/100 + subTotal*sgstP/100 + subTotal*igstP/100 + packing + freight + other + roundOff;
+  // GST applies to Packing/Freight/Other too, not just the material
+  // sub-total — matches routes/purchase.js's authorizePORevision formula.
+  const taxableBase = subTotal + packing + freight + other;
+  const grandTotal = taxableBase + taxableBase*cgstP/100 + taxableBase*sgstP/100 + taxableBase*igstP/100 + roundOff;
   const fmt = (n) => n.toLocaleString("en-IN",{maximumFractionDigits:2});
   const stEl = document.getElementById("rpo-subtotal-disp");
   const gtEl = document.getElementById("rpo-grandtotal-disp");
@@ -626,7 +636,7 @@ function collectRPOLines() {
       const rate = parseFloat(li.rate) || 0;
       const discountPercent = parseFloat(li.discountPercent) || 0;
       const allocations = (li._workingAllocations || []).filter(a => a.quantity > 0);
-      return { itemCode: li.itemCode, srNo: li.srNo, description: li.description, unit: li.unit,
+      return { itemCode: li.itemCode, srNo: li.srNo, description: li.description, additionalDescription: li.additionalDescription || "", unit: li.unit,
                vendorDiscussedQty: vdq, rate, discountPercent,
                deliveryDate: li.deliveryDate || null, allocations, _received: Number(li.receivedQty) || 0, _idx: idx,
                _designRate: li.designRatePerQuantity, _sourceAllocations: li.allocations || [], _allocationTouched: li._allocationTouched };
@@ -691,6 +701,7 @@ async function submitPORevisionUI() {
       other: parseFloat(document.getElementById("rpo-other")?.value) || 0,
       roundOff: parseFloat(document.getElementById("rpo-roundoff")?.value) || 0,
       warranty: document.getElementById("rpo-warranty")?.value.trim() || null,
+      insurance: document.getElementById("rpo-insurance")?.value.trim() || null,
       paymentTerms: document.getElementById("rpo-payment")?.value.trim() || null,
       freightTerms: document.getElementById("rpo-freight-terms")?.value.trim() || null,
       notes: document.getElementById("rpo-notes")?.value.trim() || null,
@@ -869,6 +880,7 @@ function renderAPORCard(r) {
     { label: "Other", cur: r.other, rev: hc.other },
     { label: "Round Off", cur: r.roundOff, rev: hc.roundOff },
     { label: "Warranty", cur: r.warranty, rev: hc.warranty, isText: true },
+    { label: "Insurance", cur: r.insurance, rev: hc.insurance, isText: true },
     { label: "Payment Terms", cur: r.paymentTerms, rev: hc.paymentTerms, isText: true },
     { label: "Freight Terms", cur: r.freightTerms, rev: hc.freightTerms, isText: true },
     { label: "Notes", cur: r.notes, rev: hc.notes, isText: true },
@@ -887,8 +899,9 @@ function renderAPORCard(r) {
   const draftSubTotal = revised.reduce((sum, line) => sum + (Number(line.quantity)||0) * (Number(line.rate)||0) * (100 - (Number(line.discountPercent)||0)) / 100, 0)
     + (r.currentLines || []).filter(cur => !revised.some(l => l.itemCode === cur.itemCode))
         .reduce((sum, cur) => sum + (Number(cur.amount) || 0), 0);
-  const draftGrandTotal = draftSubTotal + draftSubTotal*effForSummary.cgstPercent/100 + draftSubTotal*effForSummary.sgstPercent/100
-    + draftSubTotal*effForSummary.igstPercent/100 + effForSummary.packing + effForSummary.freight + effForSummary.other + effForSummary.roundOff;
+  const draftTaxableBase = draftSubTotal + effForSummary.packing + effForSummary.freight + effForSummary.other;
+  const draftGrandTotal = draftTaxableBase + draftTaxableBase*effForSummary.cgstPercent/100 + draftTaxableBase*effForSummary.sgstPercent/100
+    + draftTaxableBase*effForSummary.igstPercent/100 + effForSummary.roundOff;
   const oldSubTotal = Number(r.subTotal) || 0, oldGrandTotal = Number(r.grandTotal) || 0;
   if (Math.abs(draftSubTotal - oldSubTotal) > 1e-9) generalBullets.push(`<li><strong>Sub Total</strong>: ${fmt(oldSubTotal)} → <span style="font-weight:700; color:${draftSubTotal > oldSubTotal ? "#15803d" : "#b91c1c"};">${fmt(draftSubTotal)}</span></li>`);
   if (Math.abs(draftGrandTotal - oldGrandTotal) > 1e-9) generalBullets.push(`<li><strong>Grand Total</strong>: ${fmt(oldGrandTotal)} → <span style="font-weight:700; color:${draftGrandTotal > oldGrandTotal ? "#15803d" : "#b91c1c"};">${fmt(draftGrandTotal)}</span></li>`);
@@ -942,6 +955,12 @@ function renderAPORCard(r) {
         <div style="flex:1; min-width:140px;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Material Name</div>
           <div style="min-height:36px; box-sizing:border-box; display:flex; align-items:center; font-size:0.82rem; font-weight:600; padding:6px 4px; word-break:break-word; white-space:normal;">${line.description || ""}</div>
+        </div>
+        <div style="width:100%; order:99;">
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Description of Material</label>
+          <textarea rows="1" placeholder="Optional free-text note about this line (e.g. color, variant, spec detail)..."
+            oninput="updateAPORRowField(${rid},${idx},'additionalDescription',this.value)"
+            style="width:100%; box-sizing:border-box; padding:7px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem; font-family:inherit; resize:vertical;">${(line.additionalDescription||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
         </div>
         <div style="width:70px; flex-shrink:0; text-align:center;">
           <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Old PO Qty</div>
@@ -1054,6 +1073,7 @@ function renderAPORCard(r) {
         <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
           <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Terms</div>
           <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Warranty</label><input type="text" id="apor-warranty-${rid}" value="${(hc.warranty != null ? hc.warranty : r.warranty || "").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Insurance</label><input type="text" id="apor-insurance-${rid}" value="${(hc.insurance != null ? hc.insurance : r.insurance || "").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Payment Terms</label><input type="text" id="apor-payment-${rid}" value="${(hc.paymentTerms != null ? hc.paymentTerms : r.paymentTerms || "").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           <div><label class="field-label" style="margin-top:0;">Freight Terms</label><input type="text" id="apor-freight-terms-${rid}" value="${(hc.freightTerms != null ? hc.freightTerms : r.freightTerms || "").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         </div>
@@ -1152,7 +1172,10 @@ function updateAPORGrandTotal(requestId) {
   const freight = parseFloat(document.getElementById(`apor-freight-${requestId}`)?.value) || 0;
   const other = parseFloat(document.getElementById(`apor-other-${requestId}`)?.value) || 0;
   const roundOff = parseFloat(document.getElementById(`apor-roundoff-${requestId}`)?.value) || 0;
-  const grandTotal = subTotal + subTotal*cgst/100 + subTotal*sgst/100 + subTotal*igst/100 + packing + freight + other + roundOff;
+  // GST applies to Packing/Freight/Other too, not just the material
+  // sub-total — matches routes/purchase.js's authorizePORevision formula.
+  const taxableBase = subTotal + packing + freight + other;
+  const grandTotal = taxableBase + taxableBase*cgst/100 + taxableBase*sgst/100 + taxableBase*igst/100 + roundOff;
   const subEl = document.getElementById(`apor-subtotal-disp-${requestId}`);
   const gtEl = document.getElementById(`apor-grandtotal-disp-${requestId}`);
   if (subEl) subEl.textContent = subTotal.toLocaleString("en-IN",{maximumFractionDigits:2});
@@ -1307,6 +1330,7 @@ async function authorizePORevisionUI(requestId, confirmStale) {
     other: parseFloat(document.getElementById(`apor-other-${requestId}`)?.value) || 0,
     roundOff: parseFloat(document.getElementById(`apor-roundoff-${requestId}`)?.value) || 0,
     warranty: document.getElementById(`apor-warranty-${requestId}`)?.value || null,
+    insurance: document.getElementById(`apor-insurance-${requestId}`)?.value || null,
     paymentTerms: document.getElementById(`apor-payment-${requestId}`)?.value || null,
     freightTerms: document.getElementById(`apor-freight-terms-${requestId}`)?.value || null,
     notes: document.getElementById(`apor-notes-${requestId}`)?.value || null,

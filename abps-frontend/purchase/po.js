@@ -375,7 +375,7 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
           ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px;">Extra: <strong>${fmt(extraQty)}</strong></div>`
           : '<span style="color:var(--muted); font-size:0.75rem;">No allocation on record</span>');
     return `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:8px;">${l.description || ''}<div style="font-family:monospace; color:var(--brand); font-size:0.75rem;">${l.itemCode || ''}</div></td>
+      <td style="padding:8px;">${l.description || ''}${l.additionalDescription ? `<div style="font-size:0.75rem; color:#475569; margin-top:2px;">${l.additionalDescription}</div>` : ''}<div style="font-family:monospace; color:var(--brand); font-size:0.75rem;">${l.itemCode || ''}</div></td>
       <td style="padding:8px; text-align:center;">${l.unit || '—'}</td>
       <td style="padding:8px; text-align:right;">${fmt(l.quantity)}</td>
       <td style="padding:8px; text-align:right;">${fmt(l.rate)}</td>
@@ -443,6 +443,7 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Terms</div>
         ${field("Warranty", po.warranty)}
+        <div style="margin-top:8px;">${field("Insurance", po.insurance)}</div>
         <div style="margin-top:8px;">${field("Payment Terms", po.paymentTerms)}</div>
         <div style="margin-top:8px;">${field("Freight Terms", po.freightTerms)}</div>
       </div>
@@ -550,6 +551,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Terms</div>
         <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Warranty</label><input type="text" id="cpo-warranty" placeholder="e.g. 24 Months From Date Of Commissioning" oninput="persistCPODraft()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+        <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Insurance</label><input type="text" id="cpo-insurance" placeholder="e.g. Transit Insurance by Vendor" oninput="persistCPODraft()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Payment Terms</label><input type="text" id="cpo-payment" placeholder="e.g. 60 Days Credit PDC" oninput="persistCPODraft()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         <div><label class="field-label" style="margin-top:0;">Freight Terms</label><input type="text" id="cpo-freight-terms" placeholder="e.g. To Pay" oninput="persistCPODraft()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
       </div>
@@ -595,6 +597,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
         if (po.other != null) document.getElementById("cpo-other").value = Number(po.other) || 0;
         if (po.roundOff != null) document.getElementById("cpo-roundoff").value = Number(po.roundOff) || 0;
         if (po.warranty) document.getElementById("cpo-warranty").value = po.warranty;
+        if (po.insurance) document.getElementById("cpo-insurance").value = po.insurance;
         if (po.paymentTerms) document.getElementById("cpo-payment").value = po.paymentTerms;
         if (po.freightTerms) document.getElementById("cpo-freight-terms").value = po.freightTerms;
         if (po.notes) document.getElementById("cpo-notes").value = po.notes;
@@ -606,7 +609,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
           window.cpoRowSeq = (window.cpoRowSeq || 0) + 1;
           const qty = Number(li.quantity) || 0;
           return {
-            id: window.cpoRowSeq, description: li.description || "", itemCode: li.itemCode || "",
+            id: window.cpoRowSeq, description: li.description || "", additionalDescription: li.additionalDescription || "", itemCode: li.itemCode || "",
             quantity: li.quantity, unit: li.unit || "", rate: li.rate, discountPercent: li.discountPercent || 0,
             projectIds: [], allocations: li.allocations || [],
             _allocationTouched: true, _allocatedForQty: qty,
@@ -637,6 +640,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
     if (draft.other) document.getElementById("cpo-other").value = draft.other;
     if (draft.roundoff) document.getElementById("cpo-roundoff").value = draft.roundoff;
     if (draft.warranty) document.getElementById("cpo-warranty").value = draft.warranty;
+    if (draft.insurance) document.getElementById("cpo-insurance").value = draft.insurance;
     if (draft.payment) document.getElementById("cpo-payment").value = draft.payment;
     if (draft.freightTerms) document.getElementById("cpo-freight-terms").value = draft.freightTerms;
     if (draft.notes) document.getElementById("cpo-notes").value = draft.notes;
@@ -669,6 +673,7 @@ function persistCPODraft() {
       other: document.getElementById("cpo-other").value,
       roundoff: document.getElementById("cpo-roundoff").value,
       warranty: document.getElementById("cpo-warranty").value,
+      insurance: document.getElementById("cpo-insurance").value,
       payment: document.getElementById("cpo-payment").value,
       freightTerms: document.getElementById("cpo-freight-terms").value,
       notes: document.getElementById("cpo-notes").value,
@@ -717,7 +722,7 @@ function handleCPOVendorChange() {
 
 function addCPOMaterialRow() {
   const id = ++window.cpoRowSeq;
-  window.cpoMaterialRows.push({ id, description: "", itemCode: "", quantity: "", unit: "", rate: "", discountPercent: "", projectIds: [], allocations: [], designRatePerQuantity: null });
+  window.cpoMaterialRows.push({ id, description: "", additionalDescription: "", itemCode: "", quantity: "", unit: "", rate: "", discountPercent: "", projectIds: [], allocations: [], designRatePerQuantity: null });
   renderCPOMaterialRows();
   persistCPODraft();
 }
@@ -826,6 +831,13 @@ function renderCPOMaterialRows() {
         </div>
 
         <button onclick="removeCPOMaterialRow(${row.id})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.95rem; width:32px; height:36px; border-radius:4px; display:flex; align-items:center; justify-content:center; flex-shrink:0; align-self:flex-end;">✕</button>
+      </div>
+
+      <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">
+        <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Description of Material</label>
+        <textarea rows="1" data-rowid="${row.id}" placeholder="Optional free-text note about this line (e.g. color, variant, spec detail)..."
+          oninput="updateCPORowField(${row.id},'additionalDescription',this.value)"
+          style="width:100%; box-sizing:border-box; padding:7px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem; font-family:inherit; resize:vertical;">${(row.additionalDescription||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
       </div>
 
       <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
@@ -966,14 +978,19 @@ function recalcCPOTotals() {
   // default, not just a hint) — everything else genuinely defaults to 0.
   const cgstPct = document.getElementById("cpo-cgst").value.trim() === "" ? 9 : (parseFloat(document.getElementById("cpo-cgst").value) || 0);
   const sgstPct = document.getElementById("cpo-sgst").value.trim() === "" ? 9 : (parseFloat(document.getElementById("cpo-sgst").value) || 0);
-  const cgst = subTotal * cgstPct / 100;
-  const sgst = subTotal * sgstPct / 100;
-  const igst = subTotal * (parseFloat(document.getElementById("cpo-igst").value) || 0) / 100;
+  const igstPct = parseFloat(document.getElementById("cpo-igst").value) || 0;
   const packing = parseFloat(document.getElementById("cpo-packing").value) || 0;
   const freight = parseFloat(document.getElementById("cpo-freight").value) || 0;
   const other = parseFloat(document.getElementById("cpo-other").value) || 0;
   const roundOff = parseFloat(document.getElementById("cpo-roundoff").value) || 0;
-  const grandTotal = subTotal + cgst + sgst + igst + packing + freight + other + roundOff;
+  // GST applies to Packing/Freight/Other too, not just the material
+  // sub-total — matches routes/purchase.js's commitPurchaseOrderDraft/
+  // authorizePurchaseOrder formula.
+  const taxableBase = subTotal + packing + freight + other;
+  const cgst = taxableBase * cgstPct / 100;
+  const sgst = taxableBase * sgstPct / 100;
+  const igst = taxableBase * igstPct / 100;
+  const grandTotal = taxableBase + cgst + sgst + igst + roundOff;
   const fmt = (n) => n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
   document.getElementById("cpo-subtotal-disp").textContent = fmt(subTotal);
   document.getElementById("cpo-grandtotal-disp").textContent = fmt(grandTotal);
@@ -1099,7 +1116,8 @@ async function submitCreatePO() {
     orderDate: document.getElementById("cpo-order-date").value.trim(),
     deliveryDate,
     lineItems: window.cpoMaterialRows.map(r => ({
-      description: r.description, itemCode: r.itemCode, quantity: parseFloat(r.quantity) || 0,
+      description: r.description, additionalDescription: r.additionalDescription || "",
+      itemCode: r.itemCode, quantity: parseFloat(r.quantity) || 0,
       unit: r.unit, rate: parseFloat(r.rate) || 0, discountPercent: parseFloat(r.discountPercent) || 0,
       amount: Number(r.amount) || 0,
       deliveryDate: r.deliveryDate || null,
@@ -1113,6 +1131,7 @@ async function submitCreatePO() {
     other: parseFloat(document.getElementById("cpo-other").value) || 0,
     roundOff: parseFloat(document.getElementById("cpo-roundoff").value) || 0,
     warranty: document.getElementById("cpo-warranty").value.trim(),
+    insurance: document.getElementById("cpo-insurance").value.trim(),
     paymentTerms: document.getElementById("cpo-payment").value.trim(),
     freightTerms: document.getElementById("cpo-freight-terms").value.trim(),
     notes: document.getElementById("cpo-notes").value.trim(),
@@ -1203,7 +1222,8 @@ async function authorizePOFromForm() {
     supplierRef: document.getElementById("cpo-supplier-ref").value.trim(),
     deliveryDate,
     lineItems: window.cpoMaterialRows.map(r => ({
-      description: r.description, itemCode: r.itemCode, quantity: parseFloat(r.quantity) || 0,
+      description: r.description, additionalDescription: r.additionalDescription || "",
+      itemCode: r.itemCode, quantity: parseFloat(r.quantity) || 0,
       unit: r.unit, rate: parseFloat(r.rate) || 0, discountPercent: parseFloat(r.discountPercent) || 0,
       amount: Number(r.amount) || 0,
       deliveryDate: r.deliveryDate || null,
@@ -1217,6 +1237,7 @@ async function authorizePOFromForm() {
     other: parseFloat(document.getElementById("cpo-other").value) || 0,
     roundOff: parseFloat(document.getElementById("cpo-roundoff").value) || 0,
     warranty: document.getElementById("cpo-warranty").value.trim(),
+    insurance: document.getElementById("cpo-insurance").value.trim(),
     paymentTerms: document.getElementById("cpo-payment").value.trim(),
     freightTerms: document.getElementById("cpo-freight-terms").value.trim(),
     notes: document.getElementById("cpo-notes").value.trim(),
