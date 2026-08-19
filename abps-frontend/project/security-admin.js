@@ -1,12 +1,15 @@
 // ═══════════════════════════════════════════════════════════════════════
 // project/security-admin.js — screen for location-restricted login
 // (ABPS_SYSTEM_OVERVIEW.md §18.3, migrations 099/100): toggle Login
-// Anywhere and Security & Login Access per user, manage the office IP
-// allowlist and trusted devices, view the login log, edit business hours,
-// and manually activate/deactivate Outage Mode. Backend: routes/security.js,
-// gated by perm_security_login_access on every route (client-side gated
-// via userPermissions.securityLoginAccess — a dedicated permission, not
-// perm_admin, so it can be granted selectively; mostly admins in practice).
+// Anywhere per user, manage the office IP allowlist and trusted devices,
+// view the login log, edit business hours, and manually activate/
+// deactivate Outage Mode. Backend: routes/security.js, gated by
+// perm_security_login_access on every route (client-side gated via
+// userPermissions.securityLoginAccess). perm_security_login_access itself
+// (who can even open this screen) is deliberately NOT toggleable from
+// here (18 Aug 2026) — it's managed only via a direct admin_db.users
+// update or the Users Sheet, outside the app, since it's the permission
+// that gates this exact screen.
 // ═══════════════════════════════════════════════════════════════════════
 let saAllUsers = [];
 
@@ -58,10 +61,7 @@ function renderSecurityAdminUsers() {
       <td style="padding:8px; text-align:center;">
         <input type="checkbox" ${u.perm_login_anywhere ? 'checked' : ''} onchange="toggleUserLoginAnywhere('${u.email}', this.checked)">
       </td>
-      <td style="padding:8px; text-align:center;">
-        <input type="checkbox" ${u.perm_security_login_access ? 'checked' : ''} onchange="toggleUserSecurityLoginAccess('${u.email}', this.checked)">
-      </td>
-    </tr>`).join('') || `<tr><td colspan="6" style="padding:14px; text-align:center; color:var(--muted);">No users found.</td></tr>`;
+    </tr>`).join('') || `<tr><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No users found.</td></tr>`;
 }
 
 async function toggleUserLoginAnywhere(email, enabled) {
@@ -74,23 +74,6 @@ async function toggleUserLoginAnywhere(email, enabled) {
     } else {
       showBOQBanner("sa-feedback", data.error || "Failed to update.", "error");
       renderSecurityAdminUsers(); // revert the checkbox to server state
-    }
-  } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
-    renderSecurityAdminUsers();
-  }
-}
-
-async function toggleUserSecurityLoginAccess(email, enabled) {
-  try {
-    const data = await apFetch({ action: "setUserSecurityLoginAccess", email, enabled });
-    if (data.success) {
-      showBOQBanner("sa-feedback", `${enabled ? 'Enabled' : 'Disabled'} Security & Login Access for ${email}.`, "success");
-      const u = saAllUsers.find(x => x.email === email);
-      if (u) u.perm_security_login_access = enabled;
-    } else {
-      showBOQBanner("sa-feedback", data.error || "Failed to update.", "error");
-      renderSecurityAdminUsers();
     }
   } catch (e) {
     showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
