@@ -9,11 +9,17 @@ let mcLineItemState = {};
 // project.projects; each field auto-saves individually on change so a
 // user can fill one today and the rest tomorrow (migration 113).
 let mcGatingState = {};
+// Per-project, per-line ORIGINAL description/Current MFC Quantity as last
+// loaded from the server — kept separate from mcLineItemState (which holds
+// the user's in-progress edits) so submitMcClearance's success summary can
+// show "before → after" without the after-value having already clobbered it.
+let mcLineItemMeta = {};
 
 function initializeManufacturingClearancePanel() {
   mcCurrentStatus = "Inactive";
   mcLineItemState = {};
   mcGatingState = {};
+  mcLineItemMeta = {};
   syncMcStatusPills();
   loadItemCodeCatalogIntoCache().catch(() => {});
   loadManufacturingClearanceList();
@@ -59,6 +65,7 @@ async function loadManufacturingClearanceList() {
       // toggleMcCardBody skipped calling loadMcLineItems for it entirely.
       mcLineItemState = {};
       mcGatingState = {};
+      mcLineItemMeta = {};
       cardsContainer.innerHTML = "";
       data.projects.forEach(p => cardsContainer.appendChild(renderMcProjectCard(p)));
       return;
@@ -133,12 +140,17 @@ async function loadMcLineItems(projectId) {
       return;
     }
     mcLineItemState[projectId] = {};
+    mcLineItemMeta[projectId] = {};
     data.lineItems.forEach(li => {
       mcLineItemState[projectId][li.lineId] = {
         standardItemCode: li.standardItemCode || "",
         standardProductName: li.standardProductName || "",
         standardProductRating: li.standardProductRating || "",
         newMfcQuantity: li.mfcQuantity || 0,
+      };
+      mcLineItemMeta[projectId][li.lineId] = {
+        description: li.description,
+        currentMfcQuantity: li.mfcQuantity || 0,
       };
     });
     mcGatingState[projectId] = { ...data.gating };
@@ -442,8 +454,19 @@ async function submitMcClearance(projectId) {
   try {
     const data = await apFetch({ action: "submitManufacturingClearance", projectId, rows });
     if (data.success) {
+      // Build the before→after summary off mcLineItemMeta (the
+      // as-loaded-from-server snapshot) + rows (what was just submitted) —
+      // both are still intact here, submitManufacturingClearance's success
+      // wipes neither until we explicitly clear state below.
+      const meta = mcLineItemMeta[projectId] || {};
+      const summaryRows = rows.map(r => {
+        const before = meta[r.lineId] ? meta[r.lineId].currentMfcQuantity : 0;
+        const label = r.standardProductName || (meta[r.lineId] && meta[r.lineId].description) || `Line ${r.lineId}`;
+        return { label, before, after: r.newMfcQuantity };
+      });
       delete mcLineItemState[projectId];
-      await loadMcLineItems(projectId);
+      delete mcLineItemMeta[projectId];
+      renderMcSubmitSuccess(projectId, summaryRows);
     } else {
       alert(data.error || "Failed to submit Manufacturing Clearance.");
     }
@@ -452,6 +475,43 @@ async function submitMcClearance(projectId) {
   } finally {
     hideBlockingOverlay();
   }
+}
+
+// renderMcSubmitSuccess — replaces the card body (table + gating panel)
+// with a confirmation once Submit Manufacturing Clearance succeeds, since
+// reloading straight back into the (now-consumed) editable table gave no
+// feedback on what was actually just changed. "+ Another Manufacturing
+// Clearance" hands the user back to the Active Projects list rather than
+// re-opening this same card, since the whole point is picking a DIFFERENT
+// project next.
+function renderMcSubmitSuccess(projectId, summaryRows) {
+  const safeId = projectId.replace(/[^a-zA-Z0-9]/g, "_");
+  const contentEl = document.getElementById(`mc-body-content-${safeId}`);
+  if (!contentEl) return;
+
+  const bulletsHtml = summaryRows.map(r =>
+    `<li style="margin-bottom:4px;">${r.label}: <strong>${trimNum(r.before)}</strong> → <strong style="color:#15803d;">${trimNum(r.after)}</strong></li>`
+  ).join("");
+
+  contentEl.innerHTML = `
+    <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:6px; padding:16px;">
+      <div style="font-weight:800; font-size:0.92rem; color:#15803d; margin-bottom:6px;">
+        Manufacturing Clearance submitted for <span style="font-family:monospace;">${projectId}</span>
+      </div>
+      <ul style="margin:8px 0 14px 18px; padding:0; font-size:0.85rem; color:#111827;">${bulletsHtml}</ul>
+      <button class="nav-btn-styled" onclick="mcAnotherClearance('${projectId}')" style="background:var(--brand); padding:8px 20px; font-weight:700;">
+        + Another Manufacturing Clearance
+      </button>
+    </div>
+  `;
+}
+
+// mcAnotherClearance — collapses back out to the Active Projects list
+// (re-fetched fresh) so the user can expand a different project's card.
+async function mcAnotherClearance(projectId) {
+  mcCurrentStatus = "Active";
+  syncMcStatusPills();
+  await loadManufacturingClearanceList();
 }
 
 async function mcActivateProject(projectId) {
