@@ -360,7 +360,14 @@ function ppsClampDeliveryQty(key, idx, inputEl) {
 // tranche list per row" contract (not a delta).
 async function savePPSDeliverySchedule(prnId, btn) {
   const updates = [];
-  const keys = Object.keys(window.ppsScheduleState).filter(key => key.startsWith(prnId + "|"));
+  // ppsScheduleKey sanitizes the WHOLE combined key (spaces/slashes/colons
+  // in a real PRN ID all become "_"), so the prefix check here has to
+  // sanitize prnId the exact same way before comparing — matching against
+  // the raw prnId never found anything, since every real PRN ID contains
+  // exactly those characters, which is why this silently always reported
+  // "No delivery schedule changes to save" regardless of what was edited.
+  const safePrnId = prnId.replace(/[^a-zA-Z0-9|_-]/g, "_");
+  const keys = Object.keys(window.ppsScheduleState).filter(key => key.startsWith(safePrnId + "|"));
   for (const key of keys) {
     const [, itemCode, poNo] = key.split("|");
     const tranches = window.ppsScheduleState[key];
