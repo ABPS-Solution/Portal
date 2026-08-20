@@ -539,7 +539,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
           <input type="text" id="cpo-supplier-ref" placeholder="e.g. SEW/OFF/2026/0042" oninput="persistCPODraft()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
         </div>
         <div>
-          <label class="field-label" style="margin-top:0;">Delivery Date *</label>
+          <label class="field-label" style="margin-top:0;">Delivery Date</label>
           <input type="date" lang="en-GB" id="cpo-delivery-date" oninput="persistCPODraft()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
         </div>
       </div>
@@ -1108,7 +1108,6 @@ async function submitCreatePO() {
     }
   }
   if (!vendorName) return showErr("Please select a Vendor.");
-  if (!deliveryDate) return showErr("Please enter a Delivery Date.");
   if (window.cpoMaterialRows.length === 0) return showErr("Add at least one material row.");
 
   for (let i = 0; i < window.cpoMaterialRows.length; i++) {
@@ -1211,7 +1210,6 @@ async function authorizePOFromForm() {
       deliveryDate = `${dd}-${mmm}-${d.getFullYear()}`;
     }
   }
-  if (!deliveryDate) return showErr("Please enter a Delivery Date.");
   if (window.cpoMaterialRows.length === 0) return showErr("Add at least one material row.");
 
   for (let i = 0; i < window.cpoMaterialRows.length; i++) {

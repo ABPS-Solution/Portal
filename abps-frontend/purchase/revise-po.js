@@ -353,7 +353,7 @@ function renderPORevisionCard() {
           <input type="text" id="rpo-supplier-ref" value="${(po.supplierRef||"").replace(/"/g,"&quot;")}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
         </div>
         <div>
-          <label class="field-label" style="margin-top:0;">Delivery Date *</label>
+          <label class="field-label" style="margin-top:0;">Delivery Date</label>
           <input type="date" lang="en-GB" id="rpo-delivery-date" value="${po.deliveryDate ? new Date(po.deliveryDate).toISOString().slice(0,10) : ""}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
         </div>
       </div>
@@ -1042,7 +1042,7 @@ function renderAPORCard(r) {
           <input type="text" id="apor-supplier-ref-${rid}" value="${(hc.supplierRef != null ? hc.supplierRef : r.supplierRef || "").replace(/"/g,"&quot;")}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
         </div>
         <div>
-          <label class="field-label" style="margin-top:0;">Delivery Date *</label>
+          <label class="field-label" style="margin-top:0;">Delivery Date</label>
           <input type="date" lang="en-GB" id="apor-delivery-date-${rid}" value="${parseDMYDate(hc.deliveryDate) || parseDMYDate(r.deliveryDate)}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
         </div>
       </div>

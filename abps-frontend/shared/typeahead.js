@@ -327,7 +327,7 @@ async function enterPOEditMode(poNumber) {
       <div><label class="field-label" style="margin-top:0;">Vendor (locked)</label><div style="padding:9px; background:#f1f5f9; border-radius:var(--radius); font-weight:600;">${po.vendorName}</div></div>
       <div><label class="field-label" style="margin-top:0;">Order Date (locked)</label><div style="padding:9px; background:#f1f5f9; border-radius:var(--radius);">${fmtPODate(po.orderDate)}</div></div>
       <div><label class="field-label" style="margin-top:0;">Supplier Offer No</label><input type="text" id="apo-supplier-ref" value="${(po.supplierRef||'').replace(/"/g,'&quot;')}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"></div>
-      <div><label class="field-label" style="margin-top:0;">Delivery Date *</label><input type="date" id="apo-delivery-date" value="${isoFromPODate(po.deliveryDate)}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"></div>
+      <div><label class="field-label" style="margin-top:0;">Delivery Date</label><input type="date" id="apo-delivery-date" value="${isoFromPODate(po.deliveryDate)}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"></div>
     </div>
 
     <div style="display:flex; justify-content:space-between; align-items:center; margin:16px 0 10px;">
