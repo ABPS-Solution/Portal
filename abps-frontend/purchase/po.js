@@ -1505,6 +1505,7 @@ async function commitRawMaterialPOToBackend() {
   if (!vendorName) { showPurchaseFeedback("rm-po-feedback", "⚠️ Vendor Name could not be extracted from the document. Please re-process the PO.", "error"); return; }
   if (!uploadedBy) { showPurchaseFeedback("rm-po-feedback", "⚠️ Uploaded By is required.", "error"); return; }
   if (!poNumber)   { showPurchaseFeedback("rm-po-feedback", "⚠️ PO Number is required.", "error"); return; }
+  if (!deliveryDate) { showPurchaseFeedback("rm-po-feedback", "⚠️ Delivery Date is required.", "error"); return; }
 
   // Sync current input values back into payload
   const codeInputs = document.querySelectorAll(".rm-po-item-code-input");
