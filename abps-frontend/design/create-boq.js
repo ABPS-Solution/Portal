@@ -683,6 +683,17 @@ async function submitCreateBOQ() {
     hideBlockingOverlay();
 
     if (data.success) {
+      // Clear all in-progress state right away — Create BOQ deliberately
+      // preserves an unfinished draft across navigation (see
+      // initializeCreateBOQPanel's isFirstVisit gate), but that same
+      // preservation was also keeping a just-SUBMITTED BOQ's data sitting
+      // in the form forever (isFirstVisit only ever resets once per
+      // session), so leaving without clicking "+ Create New Bill of
+      // Quantity" showed the already-submitted BOQ again on return. Reset
+      // BEFORE building the success banner below — resetCreateBOQForm()
+      // hides #create-boq-feedback, which the banner then re-shows with
+      // its own content right after.
+      resetCreateBOQForm();
       const fb = document.getElementById("create-boq-feedback");
       if (fb) {
         const formBody = document.getElementById("cboq-form-body");
