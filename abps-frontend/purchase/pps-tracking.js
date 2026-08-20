@@ -178,14 +178,14 @@ async function loadPPSForPRN() {
         ? `<span style="font-size:0.72rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px;">From store</span>`
         : orderedOnPO <= 0
         ? `<span style="font-size:0.72rem; font-weight:700; color:#b91c1c; background:#fee2e2; padding:2px 8px; border-radius:4px;">Not yet ordered</span>`
-        : `<div style="font-weight:800; font-family:monospace; font-size:0.85rem; color:${receivedOnPO >= orderedOnPO ? "#15803d" : "#b45309"};">${fmt(receivedOnPO)} / ${fmt(orderedOnPO)}</div>
+        : `<div style="font-weight:800; font-family:monospace; font-size:0.98rem; color:${receivedOnPO >= orderedOnPO ? "#15803d" : "#b45309"};">${fmt(receivedOnPO)} / ${fmt(orderedOnPO)}</div>
            <div style="height:4px; background:#e2e8f0; border-radius:2px; margin-top:4px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:${receivedOnPO >= orderedOnPO ? "#15803d" : "#f59e0b"};"></div></div>`;
 
       const poCell = pos.length === 0
         ? (Number(m.stillToOrder) > 0
             ? `<span style="font-size:0.72rem; font-weight:700; color:#b91c1c; background:#fee2e2; padding:2px 8px; border-radius:4px;">Not yet ordered</span>`
             : `<span style="color:var(--muted); font-size:0.75rem;">—</span>`)
-        : pos.map(po => `<div style="font-family:monospace; font-size:0.72rem; font-weight:700;">${po.pdfUrl ? `<a href="${driveLink(po.pdfUrl)}" target="_blank" style="color:var(--brand); text-decoration:underline;">${esc(po.poNo)}</a>` : `<span style="color:var(--brand);">${esc(po.poNo)}</span>`} <span style="color:var(--muted); font-weight:600;">(${fmt(po.orderedQty)})</span></div>`).join("");
+        : pos.map(po => `<div style="font-family:monospace; font-size:0.72rem; font-weight:700;">${po.pdfUrl ? `<a href="${driveLink(po.pdfUrl)}" target="_blank" style="color:var(--brand); text-decoration:underline;">${esc(po.poNo)}</a>` : `<span style="color:var(--brand);">${esc(po.poNo)}</span>`} <span style="color:var(--muted); font-weight:700; font-size:0.98rem;">(${fmt(po.orderedQty)})</span></div>`).join("");
 
       // Expected Delivery is now an editable, per-tranche delivery
       // schedule (migration 112) — a single PO allocation can be split
@@ -217,11 +217,11 @@ async function loadPPSForPRN() {
         <tr style="border-bottom:1px solid #e2e8f0;">
           <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${esc(m.itemCode)}${flag}</td>
           <td style="padding:8px; font-size:0.82rem; font-weight:600;">${esc(m.materialName)}</td>
-          <td style="padding:8px; text-align:center; font-family:monospace;">${fmt(m.boqRequiredQty)}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.98rem;">${fmt(m.boqRequiredQty)}</td>
           <td style="padding:8px; text-align:center; color:#b45309; font-weight:700;">${fmt(m.bufferPct)}%</td>
-          <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(m.bufferedPurchaseQty)}</td>
-          <td style="padding:8px; text-align:center; font-family:monospace;">${fmt(m.storeQty)}</td>
-          <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${fmt(m.purchaseQty)}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand); font-size:0.98rem;">${fmt(m.bufferedPurchaseQty)}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.98rem;">${fmt(m.storeQty)}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:0.98rem;">${fmt(m.purchaseQty)}</td>
           <td style="padding:8px; text-align:center;">${poCell}</td>
           <td style="padding:8px; text-align:center;">${dateCell}</td>
           <td style="padding:8px; text-align:center; min-width:110px;">${statusCell}</td>
@@ -387,8 +387,13 @@ async function savePPSDeliverySchedule(prnId, btn) {
   try {
     const data = await apFetch({ action: "savePODeliverySchedule", updates, operatorName: appActiveOperatorIdentityString });
     if (data.success) {
+      // loadPPSForPRN unconditionally hides #pps-feedback the instant it
+      // runs (a fresh-load reset, same as every other screen) — showing
+      // the success banner BEFORE that reload meant it got wiped out
+      // again within the same tick, before anyone could ever see it.
+      // Await the reload first, then show the banner after.
+      await loadPPSForPRN();
       showBOQBanner("pps-feedback", "✅ Delivery schedule saved.", "success");
-      loadPPSForPRN();
     } else {
       showBOQBanner("pps-feedback", data.error || "Failed to save delivery schedule.", "error");
     }
