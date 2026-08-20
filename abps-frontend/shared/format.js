@@ -6,6 +6,22 @@ window.typeLabelDisplay_ = window.typeLabelDisplay_ || function(t) {
   return clean || "Uncategorized";
 };
 
+// Client-side mirror of routes/design.js's buildMaterialDisplayLabel — same
+// "Name - Rating - Description of Material - Make: X" convention, Make
+// only appended when it actually has a value. Used anywhere a screen needs
+// to build this label itself instead of getting a ready-made displayLabel
+// back from the server.
+function buildMaterialDisplayLabel(materialName, rating, descriptionOfMaterial, make) {
+  const parts = [(materialName || "").toString().trim()];
+  const r = (rating || "").toString().trim();
+  if (r) parts.push(r);
+  const d = (descriptionOfMaterial || "").toString().trim();
+  if (d) parts.push(d);
+  const m = (make || "").toString().trim();
+  if (m) parts.push(`Make: ${m}`);
+  return parts.join(" - ");
+}
+
 // Escapes a value before it's interpolated into an innerHTML template string.
 // Use for any field whose content isn't fully controlled by internal staff —
 // most importantly AI-extracted / inbound-email-derived text (Email Leads),

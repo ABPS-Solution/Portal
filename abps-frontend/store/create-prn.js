@@ -217,7 +217,7 @@ async function loadPRNNeedQueue() {
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #f1f5f9;">
           <div style="min-width:0;">
             <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${item.boqId}</span>
-            <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} <strong> | </strong>  ${item.productName || ""} ${item.productRating || ""}</div>
+            <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} <strong> | </strong>  ${item.productDisplayLabel || item.productName || ""}</div>
           </div>
           <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
             <button class="nav-btn-styled prn-queue-create-btn" data-boqid="${item.boqId.replace(/"/g,"&quot;")}" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
@@ -289,7 +289,8 @@ async function handlePRNProjectChange(projectId) {
       opt.value = draft.boqId;
       opt.textContent = `${draft.productName || ""}${draft.productRating ? " " + draft.productRating : ""} | ${draft.department || "—"}`;
       boqDrop.appendChild(opt);
-      window.prnBOQMeta[draft.boqId] = { productName: draft.productName, productRating: draft.productRating, orderQuantity: draft.orderQuantity, customerName: draft.customerName };
+      window.prnBOQMeta[draft.boqId] = { productName: draft.productName, productRating: draft.productRating, orderQuantity: draft.orderQuantity, customerName: draft.customerName,
+        descriptionOfMaterial: draft.descriptionOfMaterial, make: draft.make };
     });
     boqDrop.disabled = false; boqDrop.style.opacity = "1"; boqDrop.style.cursor = "pointer";
   } catch(e) {
@@ -869,8 +870,17 @@ function renderPRNCreateTable() {
     }
   });
 
+  const prnHeaderMeta = (window.prnBOQMeta || {})[pending.boqId] || {};
+  const prnHeaderProductLabel = buildMaterialDisplayLabel(
+    prnHeaderMeta.productName, prnHeaderMeta.productRating, prnHeaderMeta.descriptionOfMaterial, prnHeaderMeta.make);
+
   createZone.innerHTML = `
-    <div style="font-size:0.85rem; font-weight:700; color:var(--brand); margin-bottom:12px;">${isDelta ? "Revised" : "New"} Purchase Request Note for ${pending.boqId} ${revBadge}</div>
+    <div style="margin-bottom:12px;">
+      <div style="font-size:0.85rem; font-weight:700; color:#111827;">${isDelta ? "Revised" : "New"} Purchase Request Note for</div>
+      <div style="font-size:0.85rem; font-weight:700; color:var(--brand); margin-top:2px;">${pending.boqId} ${revBadge}</div>
+      <div style="font-size:0.82rem; margin-top:6px;"><span style="color:#111827; font-weight:700;">Company Name:</span> <span style="color:var(--brand); font-weight:600;">${prnHeaderMeta.customerName || "—"}</span></div>
+      <div style="font-size:0.82rem; margin-top:2px;"><span style="color:#111827; font-weight:700;">Product:</span> <span style="color:var(--brand); font-weight:600;">${prnHeaderProductLabel || "—"}</span></div>
+    </div>
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
       <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
         <thead>
