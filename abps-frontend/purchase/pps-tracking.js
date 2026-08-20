@@ -196,6 +196,11 @@ async function loadPPSForPRN() {
         ? `<span style="color:var(--muted); font-size:0.75rem;">—</span>`
         : pos.map(po => {
             const key = ppsScheduleKey(prnId, m.itemCode, po.poNo);
+            // Refreshed every render (unlike ppsScheduleState, which is
+            // seeded once so in-progress edits survive a re-render) — the
+            // deliveries planned against this PO line can never add up to
+            // more than what was actually ordered on it.
+            window.ppsScheduleMeta[key] = Number(po.orderedQty) || 0;
             if (!window.ppsScheduleState[key]) {
               window.ppsScheduleState[key] = (po.schedule || []).map(s => ({
                 scheduleId: s.scheduleId, plannedQty: s.plannedQty, plannedDate: isoFromPODate(s.plannedDate),
@@ -263,33 +268,46 @@ async function loadPPSForPRN() {
 // stomp on unsaved changes.
 // ═══════════════════════════════════════════════════════
 window.ppsScheduleState = window.ppsScheduleState || {};
+// orderedQty per key ("<prnId>|<itemCode>|<poNo>") — the cap every
+// delivery's quantity is checked against, see ppsClampDeliveryQty.
+window.ppsScheduleMeta = window.ppsScheduleMeta || {};
 
 function ppsScheduleKey(prnId, itemCode, poNo) {
   return `${prnId}|${itemCode}|${poNo}`.replace(/[^a-zA-Z0-9|_-]/g, "_");
 }
 
 function ppsRenderScheduleEditor(key) {
-  const tranches = window.ppsScheduleState[key] || [];
+  const deliveries = window.ppsScheduleState[key] || [];
+  const orderedQty = Number(window.ppsScheduleMeta[key]) || 0;
   const fmt = (n) => (parseFloat(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
-  const rows = tranches.map((t, i) => {
+  const rows = deliveries.map((t, i) => {
     const slipped = t.originalPlannedDate && t.plannedDate && t.originalPlannedDate !== t.plannedDate;
     const isReceived = t.status === 'Received';
+    const note = t.fulfilledQty > 0 || slipped
+      ? `<div style="font-size:0.62rem; margin:2px 0 0 2px;">
+           ${t.fulfilledQty > 0 ? `<span style="color:#15803d; font-weight:700;">${fmt(t.fulfilledQty)} received</span>` : ""}
+           ${slipped ? `<span style="color:#b45309; margin-left:6px;" title="Originally planned ${t.originalPlannedDate}">slipped from ${t.originalPlannedDate}</span>` : ""}
+         </div>` : "";
     return `
-      <div style="display:flex; align-items:center; gap:4px; margin-bottom:3px;">
-        <input type="number" min="0" step="any" value="${t.plannedQty ?? ''}" ${isReceived ? "disabled" : ""}
-          oninput="ppsUpdateTrancheField('${key}', ${i}, 'plannedQty', this.value)"
-          style="width:60px; padding:3px 4px; font-size:0.72rem; border:1px solid var(--border); border-radius:3px;" placeholder="Qty" />
-        <input type="date" value="${t.plannedDate || ''}" ${isReceived ? "disabled" : ""}
-          onchange="ppsUpdateTrancheField('${key}', ${i}, 'plannedDate', this.value)"
-          style="padding:3px 4px; font-size:0.7rem; border:1px solid var(--border); border-radius:3px;" />
-        ${!isReceived ? `<button type="button" onclick="ppsRemoveTranche('${key}', ${i})" title="Remove tranche" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.65rem; font-weight:700; padding:1px 5px; cursor:pointer;">✕</button>` : ""}
-        ${t.fulfilledQty > 0 ? `<span style="font-size:0.62rem; color:#15803d; font-weight:700;">${fmt(t.fulfilledQty)} recv'd</span>` : ""}
-        ${slipped ? `<span style="font-size:0.6rem; color:#b45309;" title="Originally planned ${t.originalPlannedDate}">slipped from ${t.originalPlannedDate}</span>` : ""}
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:5px; padding:5px 6px; margin-bottom:5px;">
+        <div style="display:flex; align-items:center; gap:5px;">
+          <input type="number" min="0" step="any" max="${orderedQty}" value="${t.plannedQty ?? ''}" ${isReceived ? "disabled" : ""}
+            oninput="ppsClampDeliveryQty('${key}', ${i}, this)"
+            style="width:58px; padding:4px 5px; font-size:0.72rem; border:1px solid var(--border); border-radius:3px; text-align:center; background:#fff; box-sizing:border-box;" placeholder="Qty" />
+          <input type="date" value="${t.plannedDate || ''}" ${isReceived ? "disabled" : ""}
+            onchange="ppsUpdateDeliveryField('${key}', ${i}, 'plannedDate', this.value)"
+            style="flex:1; min-width:0; padding:4px 5px; font-size:0.7rem; border:1px solid var(--border); border-radius:3px; background:#fff; box-sizing:border-box;" />
+          ${!isReceived ? `<button type="button" onclick="ppsRemoveDelivery('${key}', ${i})" title="Remove this delivery" style="flex-shrink:0; background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.7rem; font-weight:700; padding:3px 7px; cursor:pointer; line-height:1;">✕</button>` : ""}
+        </div>
+        ${note}
       </div>`;
   }).join("");
-  const empty = tranches.length === 0
-    ? `<div style="font-size:0.68rem; color:var(--muted); font-style:italic; margin-bottom:3px;">Not yet scheduled</div>` : "";
-  return `${empty}${rows}<button type="button" onclick="ppsAddTranche('${key}')" style="background:none; border:1px dashed var(--brand); color:var(--brand); border-radius:3px; font-size:0.65rem; font-weight:700; padding:2px 6px; cursor:pointer; margin-top:2px;">+ Add Tranche</button>`;
+  const empty = deliveries.length === 0
+    ? `<div style="font-size:0.68rem; color:var(--muted); font-style:italic; margin-bottom:4px;">Not yet scheduled</div>` : "";
+  const usedQty = deliveries.reduce((s, t) => s + (Number(t.plannedQty) || 0), 0);
+  const remaining = Math.max(0, orderedQty - usedQty);
+  const addLabel = deliveries.length > 0 && remaining > 0 ? `+ Add Delivery (${fmt(remaining)} left)` : "+ Add Delivery";
+  return `<div style="min-width:200px;">${empty}${rows}<button type="button" onclick="ppsAddDelivery('${key}')" style="display:block; width:100%; background:none; border:1.5px dashed var(--brand); color:var(--brand); border-radius:4px; font-size:0.68rem; font-weight:700; padding:5px 6px; cursor:pointer; box-sizing:border-box;">${addLabel}</button></div>`;
 }
 
 function ppsRerenderSchedule(key) {
@@ -297,23 +315,44 @@ function ppsRerenderSchedule(key) {
   if (el) el.innerHTML = ppsRenderScheduleEditor(key);
 }
 
-function ppsAddTranche(key) {
+function ppsAddDelivery(key) {
   window.ppsScheduleState[key] = window.ppsScheduleState[key] || [];
-  window.ppsScheduleState[key].push({ scheduleId: null, plannedQty: '', plannedDate: '', originalPlannedDate: null, fulfilledQty: 0, status: 'Planned' });
+  const list = window.ppsScheduleState[key];
+  const orderedQty = Number(window.ppsScheduleMeta[key]) || 0;
+  const used = list.reduce((s, t) => s + (Number(t.plannedQty) || 0), 0);
+  const remaining = Math.max(0, orderedQty - used);
+  list.push({ scheduleId: null, plannedQty: remaining > 0 ? remaining : '', plannedDate: '', originalPlannedDate: null, fulfilledQty: 0, status: 'Planned' });
   ppsRerenderSchedule(key);
 }
 
-function ppsRemoveTranche(key, idx) {
+function ppsRemoveDelivery(key, idx) {
   const list = window.ppsScheduleState[key];
   if (!list) return;
   list.splice(idx, 1);
   ppsRerenderSchedule(key);
 }
 
-function ppsUpdateTrancheField(key, idx, field, value) {
+function ppsUpdateDeliveryField(key, idx, field, value) {
   const list = window.ppsScheduleState[key];
   if (!list || !list[idx]) return;
-  list[idx][field] = field === 'plannedQty' ? (parseFloat(value) || '') : value;
+  list[idx][field] = value;
+}
+
+// Clamps a delivery's quantity so every delivery for this PO line
+// together never exceeds what was actually ordered on it — typing over
+// the remaining amount silently caps back down to it, and each
+// subsequently-added delivery starts prefilled with whatever's left.
+function ppsClampDeliveryQty(key, idx, inputEl) {
+  const list = window.ppsScheduleState[key];
+  if (!list || !list[idx]) return;
+  let v = parseFloat(inputEl.value) || 0;
+  if (v < 0) v = 0;
+  const orderedQty = Number(window.ppsScheduleMeta[key]) || 0;
+  const othersTotal = list.reduce((sum, t, i) => i === idx ? sum : sum + (Number(t.plannedQty) || 0), 0);
+  const cap = Math.max(0, orderedQty - othersTotal);
+  if (v > cap) v = cap;
+  inputEl.value = v || '';
+  list[idx].plannedQty = v || '';
 }
 
 // Saves every schedule currently in window.ppsScheduleState for this PRN
@@ -326,7 +365,7 @@ async function savePPSDeliverySchedule(prnId, btn) {
     const [, itemCode, poNo] = key.split("|");
     const tranches = window.ppsScheduleState[key];
     if (tranches.some(t => !(Number(t.plannedQty) > 0) || !t.plannedDate)) {
-      showBOQBanner("pps-feedback", `⚠️ ${itemCode}: every tranche needs a quantity and a date before saving.`, "error");
+      showBOQBanner("pps-feedback", `⚠️ ${itemCode}: every delivery needs a quantity and a date before saving.`, "error");
       return;
     }
     updates.push({
