@@ -262,6 +262,7 @@ async function openQARevisionDetail(grnNumber) {
             <option value="Return to Vendor for Repair" ${line.actionForRejectedMaterial==='Return to Vendor for Repair'?'selected':''}>Return to Vendor for Repair</option>
             <option value="Ask Vendor to repair at ABPS" ${line.actionForRejectedMaterial==='Ask Vendor to repair at ABPS'?'selected':''}>Ask Vendor to repair at ABPS</option>
             <option value="Ask ABPS to Repair at ABPS" ${line.actionForRejectedMaterial==='Ask ABPS to Repair at ABPS'?'selected':''}>Ask ABPS to Repair at ABPS</option>
+            <option value="Under Deviation" ${line.actionForRejectedMaterial==='Under Deviation'?'selected':''}>Under Deviation</option>
           </select>
         </td>
       </tr>`;
@@ -532,6 +533,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
                 <option value="Return to Vendor for Repair">Return to Vendor for Repair</option>
                 <option value="Ask Vendor to repair at ABPS">Ask Vendor to repair at ABPS</option>
                 <option value="Ask ABPS to Repair at ABPS">Ask ABPS to Repair at ABPS</option>
+                <option value="Under Deviation">Under Deviation</option>
               </select>
             </td>
             <td style="width:60px; padding:6px; text-align:center; vertical-align:middle;">
@@ -707,7 +709,7 @@ async function initializeRejectedMaterialPanel(toggle) {
 
   const cleanVendor = (window.rejMaterialVendorFilter || "").toString().trim();
   const selectedActions = window.rejMaterialActionFilter || [];
-  const ALL_ACTIONS = ["Return to Vendor for Replacement", "Return to Vendor for Repair", "Ask Vendor to repair at ABPS", "Ask ABPS to Repair at ABPS"];
+  const ALL_ACTIONS = ["Return to Vendor for Replacement", "Return to Vendor for Repair", "Ask Vendor to repair at ABPS", "Ask ABPS to Repair at ABPS", "Under Deviation"];
 
   const filterSummaryText = isCompleted
     ? `Filtering for ${selectedActions.length === 0 ? "All Action for Rejected" : selectedActions.join(", or ")}${cleanVendor ? ` • Vendor: "${cleanVendor}"` : ""}`
@@ -777,6 +779,7 @@ async function initializeRejectedMaterialPanel(toggle) {
                 <option value="Return to Vendor for Repair" ${line.actionForRejectedMaterial==='Return to Vendor for Repair'?'selected':''}>Return to Vendor for Repair</option>
                 <option value="Ask Vendor to repair at ABPS" ${line.actionForRejectedMaterial==='Ask Vendor to repair at ABPS'?'selected':''}>Ask Vendor to repair at ABPS</option>
                 <option value="Ask ABPS to Repair at ABPS" ${line.actionForRejectedMaterial==='Ask ABPS to Repair at ABPS'?'selected':''}>Ask ABPS to Repair at ABPS</option>
+                <option value="Under Deviation" ${line.actionForRejectedMaterial==='Under Deviation'?'selected':''}>Under Deviation</option>
               </select>` : `<span style="font-size:0.8rem; font-weight:600;">${line.actionForRejectedMaterial}</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>`}
           </td>
         </tr>`;
@@ -830,6 +833,17 @@ async function commitRejectedMaterialActionToBackend(grnNum, btn) {
     lineItems.push({ rejectionId: sel.dataset.rejid, actionForRejectedMaterial: sel.value });
   });
   if (lineItems.length === 0) return;
+
+  // "Under Deviation" is selectable by anyone (it's just flagging the row
+  // for review), but the actual submission from THIS screen is gated to
+  // admin users — checked client-side for a fast/clear message, and again
+  // server-side (authoritative — never trust this check alone).
+  const isAdmin = localStorage.getItem("isUserAdminGlobal") === "true";
+  if (!isAdmin && lineItems.some(li => li.actionForRejectedMaterial === "Under Deviation")) {
+    banner.style.cssText = "display: block; background: #fef2f2; border-left: 4px solid #dc2626; color: #b91c1c; padding: 16px; border-radius: var(--radius); margin-bottom:15px; font-weight:700;";
+    banner.textContent = 'One or more rows are marked "Under Deviation" — discuss with Alok Sir first. Submission with this action can only be done by an admin user in this section.';
+    return;
+  }
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';

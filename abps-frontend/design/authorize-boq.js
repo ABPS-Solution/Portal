@@ -47,10 +47,12 @@ async function initializeAuthorizeBOQPanel(mode) {
               <span style="background:#edf2f7;">Project ID:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:700; color:var(--brand); margin-right:15px;">${draft.projectId}</span>
               <span style="background:#edf2f7;">Prepared By:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${draft.preparedBy}</span>
             </div>
+            <div class="meta-row-line-block" style="margin-bottom:6px;">
+              <span style="background:#e2e8f0;">Product:</span><strong>${draft.productName} ${draft.productRating}</strong>
+            </div>
             <div class="meta-row-line-block">
-              <span style="background:#e2e8f0;">Product:</span><strong style="margin-right:15px;">${draft.productName} ${draft.productRating}</strong>
               <span style="background:#edf2f7;">Department:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${draft.department}</span>
-              <span style="background:#edf2f7;">Qty:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${formatQtyTrimmed(draft.orderQuantity)}</span>
+              <span style="background:#edf2f7;">MFC Qty:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${formatQtyTrimmed(draft.orderQuantity)}</span>
               <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${formatDateDMY(draft.date)}</span>
             </div>
           </div>
@@ -105,11 +107,15 @@ async function initializeAuthorizeBOQRevisionPanel() {
           <div class="contact-summary-title-info" style="width:100%;">
             <div class="meta-row-line-block" style="margin-bottom:6px;">
               <span style="background:#edf2f7;">Customer:</span><strong style="margin-right:15px;">${reqItem.customerName || ""}</strong>
-              <span style="background:#edf2f7;">Project ID:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:700; color:var(--brand);">${reqItem.projectId || ""}</span>
+              <span style="background:#edf2f7;">Project ID:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:700; color:var(--brand); margin-right:15px;">${reqItem.projectId || ""}</span>
+              <span style="background:#edf2f7;">Requested By:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${reqItem.requestedBy || ""}</span>
             </div>
             <div class="meta-row-line-block" style="margin-bottom:6px;">
-              <span style="background:#e2e8f0;">Product:</span><strong style="margin-right:15px;">${reqItem.productName || ""} ${reqItem.productRating || ""}</strong>
-              <span style="background:#edf2f7;">Requested By:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${reqItem.requestedBy || ""}</span>
+              <span style="background:#e2e8f0;">Product:</span><strong>${reqItem.productName || ""} ${reqItem.productRating || ""}</strong>
+            </div>
+            <div class="meta-row-line-block">
+              <span style="background:#edf2f7;">Department:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${reqItem.department || ""}</span>
+              <span style="background:#edf2f7;">MFC Qty:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${formatQtyTrimmed(reqItem.newOrderQuantity)}</span>
               <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${formatDateDMY(reqItem.createdAt)}</span>
             </div>
           </div>
@@ -255,9 +261,12 @@ function renderEBOQForm(containerId) {
           ${eboqMode === "authorize-update" ? `
           <textarea readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(draft.productName || '').toString().replace(/</g, '&lt;')}</textarea>
           ` : `
-          <select id="eboq-product-select" onchange="handleEBOQProductSelectChange(this.value)" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
-            <option value="">Loading...</option>
-          </select>
+          <div style="position:relative;">
+            <textarea id="eboq-product-search" rows="1" readonly placeholder="Loading..." autocomplete="off"
+              onclick="showEBOQProductDropdown()"
+              style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box; cursor:pointer; background:#fff; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; font-family:inherit; font-size:inherit; min-height:38px;"></textarea>
+            <div id="eboq-product-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
           <input type="hidden" id="eboq-product-name" value="${draft.productName}" />
           <input type="hidden" id="eboq-source-po-line-id" value="${draft.sourcePoLineId || ""}" />
           `}
@@ -381,9 +390,9 @@ function renderEBOQForm(containerId) {
 // draft's own current product folded in (even if it wouldn't otherwise be
 // offered) so an untouched draft always has a valid selection.
 async function loadEBOQAllowedProducts(draft) {
-  const select = document.getElementById("eboq-product-select");
-  if (!select) return;
-  select.innerHTML = '<option value="">Loading...</option>';
+  const search = document.getElementById("eboq-product-search");
+  if (!search) return;
+  search.value = ""; search.placeholder = "Loading...";
   try {
     const data = await apFetch({ action: "fetchAllowedBoqProducts", projectId: draft.projectId });
     let options = (data.success && data.options) ? [...data.options] : [];
@@ -408,25 +417,65 @@ async function loadEBOQAllowedProducts(draft) {
 
     // Keyed by itemCode + descriptionId — see the same fix in create-boq.js.
     options.forEach(opt => { window.eboqAllowedOptionsByValue[opt.itemCode + '|' + (opt.descriptionId || '')] = opt; });
-    select.innerHTML = options.map(opt => {
-      const isCurrent = opt.itemCode === draft.productItemCode && (opt.descriptionId || null) === (draft.descriptionId || null);
-      return `<option value="${opt.itemCode}|${opt.descriptionId || ''}" ${isCurrent ? "selected" : ""}>${opt.displayLabel || opt.productName}</option>`;
-    }).join("") || '<option value="">— No Products Available —</option>';
+    window.eboqAllowedOptionsList = options;
+    search.placeholder = options.length ? "— Select Product —" : "— No Products Available —";
 
     if (options.length > 0) {
       const selectedOpt = options.find(o => o.itemCode === draft.productItemCode && (o.descriptionId || null) === (draft.descriptionId || null)) || options[0];
+      search.value = selectedOpt.displayLabel || selectedOpt.productName;
+      autoGrowPoField(search);
       handleEBOQProductSelectChange(selectedOpt.itemCode + '|' + (selectedOpt.descriptionId || ''), true);
     }
   } catch(e) {
-    select.innerHTML = '<option value="">Network error</option>';
+    search.placeholder = "Network error";
   }
 }
 
-// compositeKey is "<itemCode>|<descriptionId-or-empty>" — the <select>'s
-// own option value, matching the keying fix above. skipBoqIdPreview is
-// true only when this is called from the initial render (loadEBOQAllowedProducts),
-// where the BOQ ID is already correct and shouldn't be recomputed from a
-// "change" that didn't actually happen.
+// showEBOQProductDropdown / selectEBOQProductOption — same pattern as
+// Create BOQ's showCBOQProductDropdown/selectCBOQProductOption: a locked
+// list (not free text), textarea just triggers the floating option list so
+// a long selected label wraps and grows the box instead of clipping the
+// way the old native <select> always did.
+function showEBOQProductDropdown() {
+  const dropdown = document.getElementById("eboq-product-dropdown");
+  if (!dropdown) return;
+  const options = window.eboqAllowedOptionsList || [];
+  if (options.length === 0) { dropdown.style.display = "none"; return; }
+
+  dropdown.innerHTML = options.map(opt => `
+    <div onmousedown="event.preventDefault();" onclick="selectEBOQProductOption('${opt.itemCode}', '${(opt.descriptionId || '')}')"
+      style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      ${opt.displayLabel || opt.productName}
+    </div>`).join("");
+  dropdown.style.display = "block";
+}
+
+document.addEventListener("click", (e) => {
+  const dropdown = document.getElementById("eboq-product-dropdown");
+  if (dropdown && dropdown.style.display !== "none" &&
+      !e.target.closest("#eboq-product-search") && !e.target.closest("#eboq-product-dropdown")) {
+    dropdown.style.display = "none";
+  }
+});
+
+function selectEBOQProductOption(itemCode, descriptionId) {
+  const compositeKey = itemCode + '|' + (descriptionId || '');
+  const opt = (window.eboqAllowedOptionsByValue || {})[compositeKey];
+  const dropdown = document.getElementById("eboq-product-dropdown");
+  if (dropdown) dropdown.style.display = "none";
+  if (!opt) return;
+
+  const search = document.getElementById("eboq-product-search");
+  if (search) { search.value = opt.displayLabel || opt.productName; autoGrowPoField(search); }
+  handleEBOQProductSelectChange(compositeKey);
+}
+
+// compositeKey is "<itemCode>|<descriptionId-or-empty>", matching the
+// keying fix above. skipBoqIdPreview is true only when this is called from
+// the initial render (loadEBOQAllowedProducts), where the BOQ ID is already
+// correct and shouldn't be recomputed from a "change" that didn't actually
+// happen.
 function handleEBOQProductSelectChange(compositeKey, skipBoqIdPreview) {
   const opt = (window.eboqAllowedOptionsByValue || {})[compositeKey];
   if (!opt) return;
