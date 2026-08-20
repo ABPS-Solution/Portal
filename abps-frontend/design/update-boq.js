@@ -205,7 +205,7 @@ function renderBOQRevisionRows(updateId) {
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
-          oninput="uboqRevRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; const r=document.getElementById('boqrev-rate-${idx}'); if(r) { const v=uboqRevRows[${idx}].quantityFor1Set*(Number(uboqRevRows[${idx}].designRatePerQuantity)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); } updateBOQRevisionTotalsOnly(${updateId}); recomputeBOQRevisionSummary(${updateId});"
+          oninput="uboqRevRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; const r=document.getElementById('boqrev-rate-${idx}'); if(r) { const v=uboqRevRows[${idx}].quantityFor1Set*(Number(uboqRevRows[${idx}].designRatePerQuantity)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); } updateBOQRevisionTotalsOnly(${updateId}); recomputeBOQRevisionSummary(${updateId});"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -221,11 +221,11 @@ function renderBOQRevisionRows(updateId) {
       </td>
       <td style="padding:4px;">
         <input type="number" class="boq-center-num" value="${row.designRatePerQuantity || ""}" min="0" placeholder="0.00"
-          oninput="uboqRevRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; const r=document.getElementById('boqrev-rate-${idx}'); if(r) { const v=(Number(uboqRevRows[${idx}].quantityFor1Set)||0)*(Number(uboqRevRows[${idx}].designRatePerQuantity)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); } updateBOQRevisionTotalsOnly(${updateId}); recomputeBOQRevisionSummary(${updateId});"
+          oninput="uboqRevRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; const r=document.getElementById('boqrev-rate-${idx}'); if(r) { const v=(Number(uboqRevRows[${idx}].quantityFor1Set)||0)*(Number(uboqRevRows[${idx}].designRatePerQuantity)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); } updateBOQRevisionTotalsOnly(${updateId}); recomputeBOQRevisionSummary(${updateId});"
           ${isFgRow ? `title="Provisional — replaced automatically when this Finished Goods material's own BOQ is authorized" style="padding:5px; font-size:0.85rem; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
       </td>
       <td style="padding:4px;">
-        <input type="text" id="boqrev-rate-${idx}" value="${isRawMaterial ? (Number.isInteger(totalMaterialRate) ? totalMaterialRate : totalMaterialRate.toFixed(2)) : '—'}" readonly
+        <input type="text" id="boqrev-rate-${idx}" value="${isRawMaterial ? totalMaterialRate.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '—'}" readonly
           style="padding:5px; font-size:0.85rem; font-weight:700; text-align:center; width:100%; background:#f0fdf4; color:var(--accent); cursor:not-allowed; border-radius:3px; border:1px solid #86efac;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -583,7 +583,7 @@ function renderUBOQMaterialRows() {
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
-          oninput="uboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateUBOQTotals(); const r=document.getElementById('uboq-rate-${idx}'); if(r) { const v=uboqMaterialRows[${idx}].quantityFor1Set*(Number(uboqMaterialRows[${idx}].designRatePerQuantity)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); }"
+          oninput="uboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateUBOQTotals(); const r=document.getElementById('uboq-rate-${idx}'); if(r) { const v=uboqMaterialRows[${idx}].quantityFor1Set*(Number(uboqMaterialRows[${idx}].designRatePerQuantity)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -600,12 +600,12 @@ function renderUBOQMaterialRows() {
       <td style="padding:4px; text-align:center;">
         ${isRawMaterial ? `
         <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
-          oninput="uboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateUBOQTotals(); const r=document.getElementById('uboq-rate-${idx}'); if(r) { const v=(Number(uboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=Number.isInteger(v)?v:v.toFixed(2); }"
+          oninput="uboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateUBOQTotals(); const r=document.getElementById('uboq-rate-${idx}'); if(r) { const v=(Number(uboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
           ${isFgRow ? `title="Provisional — replaced automatically when this Finished Goods material's own BOQ is authorized" style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       </td>
       <td style="padding:4px; text-align:center;">
-        <input type="text" id="uboq-rate-${idx}" value="${isRawMaterial ? (Number.isInteger(totalMaterialRate) ? totalMaterialRate : totalMaterialRate.toFixed(2)) : '—'}" readonly
+        <input type="text" id="uboq-rate-${idx}" value="${isRawMaterial ? totalMaterialRate.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '—'}" readonly
           style="padding:5px; font-size:0.85rem; font-weight:700; text-align:center; width:100%; background:#f0fdf4; color:var(--accent); cursor:not-allowed; border-radius:3px; border:1px solid #86efac;" />
       </td>
       <td style="padding:4px; text-align:center;">
