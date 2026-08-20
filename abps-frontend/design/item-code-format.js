@@ -84,6 +84,31 @@ function icfValidateValues(template, values) {
   return null;
 }
 
+// Client-side mirror of lib/itemCodeFormat.js's applyMhOhmAutoCalc — live
+// preview only; the server recomputes and overwrites this authoritatively
+// on write regardless of what this sends. Ohm = 314.16 × mH ÷ 1000.
+function icfWireMhOhmAutoCalc(placeholders, containerEl, idPrefix) {
+  const mhPh = placeholders.find(p => p.kind === 'number' && /^mh$/i.test(p.label.trim()));
+  const ohmPh = placeholders.find(p => p.kind === 'number' && /^ohm/i.test(p.label.trim()));
+  if (!mhPh || !ohmPh) return;
+  const mhEl = document.getElementById(`${idPrefix}-ph-${mhPh.index}`);
+  const ohmEl = document.getElementById(`${idPrefix}-ph-${ohmPh.index}`);
+  if (!mhEl || !ohmEl) return;
+  ohmEl.readOnly = true;
+  ohmEl.style.background = '#f1f5f9';
+  ohmEl.style.color = 'var(--muted)';
+  ohmEl.title = 'Auto-calculated as 314.16 × mH ÷ 1000';
+  const recompute = () => {
+    const mhVal = parseFloat(mhEl.value);
+    ohmEl.value = isNaN(mhVal) ? '' : String(Math.round((314.16 * mhVal / 1000) * 1000) / 1000);
+  };
+  // Registered before the generic onChange listener below (see call site),
+  // so ohmEl's value is already up to date by the time that listener reads
+  // it back out for the live preview on the same keystroke.
+  mhEl.addEventListener('input', recompute);
+  recompute();
+}
+
 function icfRenderTemplate(template, values) {
   const { segments, error } = icfParseTemplate(template);
   if (error) throw new Error(error);
@@ -103,7 +128,7 @@ function icfRenderTemplate(template, values) {
 // its live preview. Returns a getValues() closure the caller uses to read
 // current values back out in placeholder order.
 function icfRenderFormInputs(containerEl, template, onChange, idPrefix) {
-  const { segments, error } = icfParseTemplate(template);
+  const { segments, placeholders, error } = icfParseTemplate(template);
   if (error) {
     containerEl.innerHTML = `<div style="color:#b91c1c; font-size:0.8rem; font-weight:600;">⚠ ${error}</div>`;
     return () => [];
@@ -133,6 +158,12 @@ function icfRenderFormInputs(containerEl, template, onChange, idPrefix) {
         style="width:90px; padding:5px; border:1px solid var(--border); border-radius:3px; font-size:0.82rem;">
     </span>`;
   }).join('');
+
+  // Must run BEFORE the generic onChange listeners below are attached —
+  // it registers its own 'input' listener on the mH field first, so ohmEl
+  // is already recomputed by the time onChange's own listener (also on
+  // that same field) reads values back out for the live preview.
+  icfWireMhOhmAutoCalc(placeholders, containerEl, idPrefix);
 
   if (typeof onChange === 'function') {
     containerEl.querySelectorAll('input[type="text"], input[type="number"]').forEach(el => el.addEventListener('input', onChange));
