@@ -220,7 +220,7 @@ function renderOutageModeStatus(settings) {
     box.innerHTML = `Outage Mode is off. Only use this for a confirmed office network/power outage — Trusted Devices already covers returning staff on their own devices without it.
       <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
         <label style="font-size:0.8rem;">Duration (hours):</label>
-        <input type="number" id="sa-outage-hours" value="4" min="0.5" max="12" step="0.5" style="width:80px;">
+        <input type="number" id="sa-outage-hours" value="1" min="0.5" max="12" step="0.5" style="width:80px;">
         <button class="nav-btn-styled" style="padding:6px 14px;" onclick="activateOutageModeNow()">Activate Outage Mode</button>
       </div>`;
     box.style.background = 'var(--highlight-bg)'; box.style.borderLeftColor = 'var(--brand)'; box.style.color = 'var(--text)';
@@ -228,7 +228,7 @@ function renderOutageModeStatus(settings) {
 }
 
 async function activateOutageModeNow() {
-  const hours = parseFloat(document.getElementById("sa-outage-hours").value) || 4;
+  const hours = parseFloat(document.getElementById("sa-outage-hours").value) || 1;
   if (!confirm(`Activate Outage Mode for ${hours} hour(s)? Any user who has logged in from the office before will be able to sign in remotely until it expires.`)) return;
   try {
     const data = await apFetch({ action: "activateOutageMode", hours });
