@@ -104,7 +104,7 @@ function renderMcProjectCard(project) {
         <div class="meta-row-line-block" style="display:flex; align-items:center; flex-wrap:wrap; gap:10px;">
           <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:3px 8px; font-size:0.85rem; border-radius:3px;">${project.projectId}</span>
           <strong style="color:#111827; font-size:0.9rem;">${project.companyName}</strong>
-          <span style="font-size:0.85rem;">Delivery Date: <strong style="color:#111827;">${formatDateDMY(project.deliveryDate) || "—"}</strong></span>
+          <span style="font-size:0.85rem;">Tentative Delivery Date: <strong style="color:#111827;">${formatDateDMY(project.deliveryDate) || "—"}</strong></span>
           <span id="mc-caret-${safeId}" style="margin-left:auto; font-weight:700; color:var(--muted);">▸</span>
         </div>
       </div>
@@ -133,6 +133,7 @@ async function loadMcLineItems(projectId) {
   const safeId = projectId.replace(/[^a-zA-Z0-9]/g, "_");
   const contentEl = document.getElementById(`mc-body-content-${safeId}`);
   try {
+    await loadItemCodeCatalogIntoCache().catch(() => {});
     const data = await apFetch({ action: "fetchProjectMfcLineItems", projectId });
     if (!data.success) { contentEl.innerHTML = `<span style="color:#b91c1c;">${data.error}</span>`; return; }
     if (!data.lineItems || data.lineItems.length === 0) {
@@ -142,10 +143,17 @@ async function loadMcLineItems(projectId) {
     mcLineItemState[projectId] = {};
     mcLineItemMeta[projectId] = {};
     data.lineItems.forEach(li => {
+      // Make/Item Code UOM aren't stored on customer_po_line_items — they're
+      // resolved live from the matching item code catalog entry, same as a
+      // fresh selectMcProduct pick, so a project reopened after a prior
+      // clearance still shows them for its already-mapped rows.
+      const catalogMatch = (window.itemCodeCatalogCache || []).find(c => c.itemCode === li.standardItemCode);
       mcLineItemState[projectId][li.lineId] = {
         standardItemCode: li.standardItemCode || "",
         standardProductName: li.standardProductName || "",
         standardProductRating: li.standardProductRating || "",
+        make: (catalogMatch && catalogMatch.make) || "",
+        itemCodeUnit: (catalogMatch && catalogMatch.unit) || "",
         newMfcQuantity: li.mfcQuantity || 0,
       };
       mcLineItemMeta[projectId][li.lineId] = {
@@ -175,6 +183,8 @@ function renderMcLineItemsTable(projectId, lineItems) {
     // Create BOQ's Product Name / Product Rating, not jammed into one box.
     const searchVal = state.standardProductName || "";
     const ratingVal = state.standardProductRating || "";
+    const makeVal = state.make || "";
+    const itemCodeUnitVal = state.itemCodeUnit || "";
     return `
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px; font-weight:600; vertical-align:middle;">${li.description}</td>
@@ -192,8 +202,14 @@ function renderMcLineItemsTable(projectId, lineItems) {
             style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; background:#f1f5f9; color:var(--muted); cursor:not-allowed;"
             placeholder="Auto-filled from Product Name">${ratingVal.replace(/</g,'&lt;')}</textarea>
         </td>
+        <td style="padding:8px; vertical-align:middle;">
+          <textarea rows="1" id="mc-std-make-${safeId}-${li.lineId}" readonly
+            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; background:#f1f5f9; color:var(--muted); cursor:not-allowed;"
+            placeholder="Auto-filled from Item Code">${makeVal.replace(/</g,'&lt;')}</textarea>
+        </td>
         <td style="padding:8px; text-align:center; vertical-align:middle;">${fmtQty(li.quantity)}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle;">${li.unit || "—"}</td>
+        <td style="padding:8px; text-align:center; vertical-align:middle;" id="mc-std-itemcode-unit-${safeId}-${li.lineId}">${itemCodeUnitVal || "—"}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle; font-weight:700; color:#0369a1;">${fmtQty(li.mfcQuantity)}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle;">
           <input type="number" id="mc-new-mfc-${safeId}-${li.lineId}" value="${trimNum(state.newMfcQuantity)}" ${disabledAttr}
@@ -210,16 +226,19 @@ function renderMcLineItemsTable(projectId, lineItems) {
       <div style="overflow-x:auto; margin-bottom:14px;">
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
           <colgroup>
-            <col style="width:24%;" /><col style="width:24%;" /><col style="width:14%;" /><col style="width:7%;" />
-            <col style="width:6%;" /><col style="width:10%;" /><col style="width:9%;" />
+            <col style="width:18%;" /><col style="width:18%;" /><col style="width:11%;" /><col style="width:11%;" />
+            <col style="width:6%;" /><col style="width:8%;" /><col style="width:8%;" />
+            <col style="width:9%;" /><col style="width:9%;" />
           </colgroup>
           <thead>
             <tr style="background:var(--highlight-bg); text-align:left;">
               <th style="padding:8px;">Order Product Description</th>
               <th style="padding:8px;">Standard Product Name *</th>
               <th style="padding:8px;">Standard Product Rating</th>
+              <th style="padding:8px;">Make</th>
               <th style="padding:8px; text-align:center;">Order Quantity</th>
-              <th style="padding:8px; text-align:center;">UOM</th>
+              <th style="padding:8px; text-align:center;">Order Product UOM</th>
+              <th style="padding:8px; text-align:center;">Item Code UOM</th>
               <th style="padding:8px; text-align:center;">Current MFC Quantity</th>
               <th style="padding:8px; text-align:center;">New MFC Quantity</th>
             </tr>
@@ -298,6 +317,12 @@ function buildMcGatingPanelHtml(projectId, gating) {
             onchange="saveMcGatingField('${projectId}', 'dateOfMfcReceivedFromCustomer', this.value)"
             style="width:100%; padding:6px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px;" />
         </div>
+        <div>
+          <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Actual Delivery Date</label>
+          <input type="date" value="${gating.actualDeliveryDate ? gating.actualDeliveryDate.slice(0,10) : ""}"
+            onchange="saveMcGatingField('${projectId}', 'actualDeliveryDate', this.value)"
+            style="width:100%; padding:6px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px;" />
+        </div>
       </div>
     </div>
   `;
@@ -363,11 +388,17 @@ function handleMcProductSearch(query, projectId, lineId) {
   dropdown.style.maxHeight = Math.min(Math.max(availableHeight, 180), 280) + "px";
 
   const ratingEl = document.getElementById(`mc-std-rating-${safeId}-${lineId}`);
-  const clearRating = () => { if (ratingEl) { ratingEl.value = ""; mcAutoGrowField(ratingEl); } };
+  const makeEl = document.getElementById(`mc-std-make-${safeId}-${lineId}`);
+  const itemCodeUnitEl = document.getElementById(`mc-std-itemcode-unit-${safeId}-${lineId}`);
+  const clearRating = () => {
+    if (ratingEl) { ratingEl.value = ""; mcAutoGrowField(ratingEl); }
+    if (makeEl) { makeEl.value = ""; mcAutoGrowField(makeEl); }
+    if (itemCodeUnitEl) itemCodeUnitEl.textContent = "—";
+  };
 
   if (!query || query.trim().length < 1) {
     dropdown.style.display = "none";
-    state.standardItemCode = ""; state.standardProductName = ""; state.standardProductRating = "";
+    state.standardItemCode = ""; state.standardProductName = ""; state.standardProductRating = ""; state.make = ""; state.itemCodeUnit = "";
     clearRating();
     return;
   }
@@ -384,13 +415,13 @@ function handleMcProductSearch(query, projectId, lineId) {
       No matching product found. <a href="${window.location.pathname}?module=design-itemcode&q=${encodeURIComponent(query)}" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
     </div>`;
     dropdown.style.display = "block";
-    state.standardItemCode = ""; state.standardProductName = ""; state.standardProductRating = "";
+    state.standardItemCode = ""; state.standardProductName = ""; state.standardProductRating = ""; state.make = ""; state.itemCodeUnit = "";
     clearRating();
     return;
   }
 
   dropdown.innerHTML = matches.map(item => `
-    <div onclick="selectMcProduct('${projectId}', ${lineId}, '${item.itemCode}', '${item.productName.replace(/'/g,"\\'")}', '${(item.rating||'').replace(/'/g,"\\'")}')"
+    <div onclick="selectMcProduct('${projectId}', ${lineId}, '${item.itemCode}', '${item.productName.replace(/'/g,"\\'")}', '${(item.rating||'').replace(/'/g,"\\'")}', '${(item.make||'').replace(/'/g,"\\'")}', '${(item.unit||'').replace(/'/g,"\\'")}')"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       ${item.productName}${item.rating ? ` - <span style="color:var(--brand); font-weight:700;">${item.rating}</span>` : ""}
@@ -398,17 +429,23 @@ function handleMcProductSearch(query, projectId, lineId) {
   dropdown.style.display = "block";
 }
 
-function selectMcProduct(projectId, lineId, itemCode, productName, rating) {
+function selectMcProduct(projectId, lineId, itemCode, productName, rating, make, itemCodeUnit) {
   const safeId = projectId.replace(/[^a-zA-Z0-9]/g, "_");
   const state = mcLineItemState[projectId][lineId];
   state.standardItemCode = itemCode;
   state.standardProductName = productName;
   state.standardProductRating = rating || "";
+  state.make = make || "";
+  state.itemCodeUnit = itemCodeUnit || "";
 
   const searchEl = document.getElementById(`mc-std-search-${safeId}-${lineId}`);
   if (searchEl) { searchEl.value = productName; mcAutoGrowField(searchEl); }
   const ratingEl = document.getElementById(`mc-std-rating-${safeId}-${lineId}`);
   if (ratingEl) { ratingEl.value = rating || ""; mcAutoGrowField(ratingEl); }
+  const makeEl = document.getElementById(`mc-std-make-${safeId}-${lineId}`);
+  if (makeEl) { makeEl.value = make || ""; mcAutoGrowField(makeEl); }
+  const itemCodeUnitEl = document.getElementById(`mc-std-itemcode-unit-${safeId}-${lineId}`);
+  if (itemCodeUnitEl) itemCodeUnitEl.textContent = itemCodeUnit || "—";
   const dropdown = document.getElementById(`mc-std-dropdown-${safeId}-${lineId}`);
   if (dropdown) dropdown.style.display = "none";
 }

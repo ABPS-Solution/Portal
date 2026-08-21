@@ -2610,7 +2610,7 @@ function renderPurchaseOrderReview() {
 
         ${editField('Head Office Address', 'headOfficeAddress', 'text', 'grid-column: span 8;')}
         ${editField('Delivery Address', 'deliveryAddress', 'text', 'grid-column: span 8;')}
-        ${editField('Delivery Date', 'deliveryDate', 'date', 'grid-column: span 4;')}
+        ${editField('Tentative Delivery Date', 'deliveryDate', 'date', 'grid-column: span 4;', true)}
       </div>
 
       <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.95rem;">Product List</div>
@@ -2664,6 +2664,7 @@ function renderPurchaseOrderReview() {
 function validatePoReviewBeforeSubmit(s) {
   if (!(s.poNumber || '').toString().trim()) return "PO Number is required.";
   if (!(s.poDate || '').toString().trim()) return "PO Date is required.";
+  if (!(s.deliveryDate || '').toString().trim()) return "Tentative Delivery Date is required.";
   const items = s.lineItems || [];
   if (items.length === 0) return "At least one product row is required.";
   const badRow = items.some(it =>
