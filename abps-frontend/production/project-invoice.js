@@ -382,10 +382,10 @@ function renderPinvLineItemsTable() {
   const cols = PINV_LINEITEM_COLS;
   wrap.innerHTML = `
     <table class="store-basket-data-table" style="min-width:820px; table-layout:fixed;">
-      <colgroup><col style="width:3%;" />${cols.map(c => `<col style="width:${c[3]};" />`).join('')}</colgroup>
-      <thead><tr><th>Sr No</th>${cols.map(c => `<th>${c[1]}</th>`).join('')}</tr></thead>
+      <colgroup><col style="width:3%;" />${cols.map(c => `<col style="width:${c[3]};" />`).join('')}<col style="width:36px;" /></colgroup>
+      <thead><tr><th>Sr No</th>${cols.map(c => `<th>${c[1]}</th>`).join('')}<th></th></tr></thead>
       <tbody>
-        ${items.length === 0 ? `<tr><td colspan="${cols.length + 1}" style="text-align:center; color:var(--muted);">No PO line items found for this project</td></tr>` : items.map((it, idx) => `
+        ${items.length === 0 ? `<tr><td colspan="${cols.length + 2}" style="text-align:center; color:var(--muted);">No PO line items found for this project</td></tr>` : items.map((it, idx) => `
           <tr>
             <td style="text-align:center; font-weight:700;">${idx + 1}</td>
             ${cols.map(([key, , type]) => {
@@ -401,10 +401,30 @@ function renderPinvLineItemsTable() {
                 ? `<td><textarea rows="1" oninput="updatePinvLineItem(${idx}, '${key}', this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; min-width:80px; padding:4px; font-size:0.78rem; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`
                 : `<td><input type="${type}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" oninput="updatePinvLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:80px; padding:4px; font-size:0.78rem;" /></td>`;
             }).join('')}
+            <td style="text-align:center;"><button type="button" onclick="pinvDeleteLineItem(${idx})" title="Remove this line from the invoice"
+              style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.7rem; font-weight:700; padding:3px 7px; cursor:pointer;">✕</button></td>
           </tr>`).join('')}
       </tbody>
     </table>`;
   wrap.querySelectorAll('textarea').forEach(pinvAutoGrowField);
+}
+
+// Delete-only, not add: every row here is tied to a real
+// project.customer_po_line_items row via lineId, and
+// project_invoice_line_items.po_line_id is NOT NULL + FK'd to that table --
+// a freely-typed new row with no backing PO line item would just be
+// silently dropped by generatePartialProjectInvoice/generateFinalProjectInvoice
+// at submit time, since both only ever bill lines that resolve to a real PO
+// line. Removing an existing line from THIS invoice is safe (same effect as
+// zeroing its quantity) and keeps pinvCache.lines in step with
+// pinvInvoiceState.lineItems since the JC-readiness table above (Ordered
+// Qty/JCs Total/etc.) is index-aligned against pinvCache.lines by the same
+// idx — re-rendering both via renderPinvDetail() keeps them in sync.
+function pinvDeleteLineItem(idx) {
+  if (!pinvInvoiceState.lineItems[idx]) return;
+  pinvInvoiceState.lineItems.splice(idx, 1);
+  pinvCache.lines.splice(idx, 1);
+  renderPinvDetail();
 }
 
 function updatePinvField(key, value) { pinvInvoiceState[key] = value; }
