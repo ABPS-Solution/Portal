@@ -256,6 +256,11 @@ function numberToWordsINRClient(amount) {
   return words.trim() + ' Rupees Only';
 }
 
+function pinvAutoGrowField(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
 function renderPinvInvoiceForm() {
   const zone = document.getElementById("pinv-invoice-form-zone");
   zone.style.display = "block";
@@ -264,10 +269,14 @@ function renderPinvInvoiceForm() {
   const todayDMY = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
   const esc = (v) => (v == null ? '' : v.toString()).replace(/"/g, '&quot;');
 
+  // Auto-growing textarea instead of a single-line <input> — a long Bill
+  // To/Ship To address or bank branch name used to clip silently; same
+  // rows="1" + scrollHeight-on-input technique as Manufacturing Clearance's
+  // mcAutoGrowField / Upload Purchase Order's autoGrowPoField.
   const field = (label, key, path) => {
     const val = path ? (s[path[0]][path[1]] || '') : (s[key] || '');
     const setter = path ? `updatePinvNested('${path[0]}','${path[1]}', this.value)` : `updatePinvField('${key}', this.value)`;
-    return `<div class="grid-cell-item"><label>${label}</label><input type="text" value="${esc(val)}" oninput="${setter}" /></div>`;
+    return `<div class="grid-cell-item"><label>${label}</label><textarea rows="1" oninput="${setter}; pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(val)}</textarea></div>`;
   };
 
   zone.innerHTML = `
@@ -347,6 +356,7 @@ function renderPinvInvoiceForm() {
   `;
   renderPinvLineItemsTable();
   recalcPinvTotals();
+  zone.querySelectorAll('.grid-cell-item textarea').forEach(pinvAutoGrowField);
 }
 
 function renderPinvLineItemsTable() {
@@ -364,10 +374,14 @@ function renderPinvLineItemsTable() {
         ${items.length === 0 ? `<tr><td colspan="${cols.length + 1}" style="text-align:center; color:var(--muted);">No PO line items found for this project</td></tr>` : items.map((it, idx) => `
           <tr>
             <td style="text-align:center; font-weight:700;">${idx + 1}</td>
-            ${cols.map(([key, , type]) => `<td><input type="${type}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" oninput="updatePinvLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:80px; padding:4px; font-size:0.78rem;" /></td>`).join('')}
+            ${cols.map(([key, , type]) => type === 'text'
+              ? `<td><textarea rows="1" oninput="updatePinvLineItem(${idx}, '${key}', this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; min-width:80px; padding:4px; font-size:0.78rem; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`
+              : `<td><input type="${type}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" oninput="updatePinvLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:80px; padding:4px; font-size:0.78rem;" /></td>`
+            ).join('')}
           </tr>`).join('')}
       </tbody>
     </table>`;
+  wrap.querySelectorAll('textarea').forEach(pinvAutoGrowField);
 }
 
 function updatePinvField(key, value) { pinvInvoiceState[key] = value; }
