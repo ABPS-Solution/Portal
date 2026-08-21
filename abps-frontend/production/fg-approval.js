@@ -9,6 +9,7 @@ async function initializeFGApprovalWorkspace() {
   const feed     = document.getElementById("fg-approval-queue-feed");
   const feedback = document.getElementById("fg-approval-feedback");
   feedback.style.display = "none";
+  feed.style.display = ""; // undo the approve-success hide (submitFGApprovalDecision)
   feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">
     <div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>
     Loading pending FG approvals...
@@ -414,16 +415,16 @@ async function submitFGApprovalDecision(fgId, action) {
       delete window._fgApprovalState[fgId];
       if (card) card.remove();
       const feed = document.getElementById("fg-approval-queue-feed");
-      if (feed && feed.children.length === 0) {
-        feed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;">
-          <h3 style="color:var(--accent);">No Pending FG Approvals</h3>
-        </div>`;
-      }
 
       // Same success-banner-with-details-grid-and-"+ Another" convention
-      // as Authorize BOQ — the feed itself just quietly loses the card,
-      // this is the persistent confirmation of what actually happened.
+      // as Authorize BOQ — but unlike that screen, the queue itself (empty
+      // placeholder OR any other still-pending cards) stays hidden the
+      // whole time the success banner is up, so it doesn't render "No
+      // Pending FG Approvals" or an unrelated pending card right under a
+      // just-succeeded approval. It only comes back — freshly reloaded —
+      // when "+ Approve Another FG Store Product" is clicked below.
       if (action === "approve") {
+        if (feed) feed.style.display = "none";
         feedback.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#f0fff4; color:#276749; border-radius:var(--radius);";
         feedback.innerHTML = `
           <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ Finished Good Approved & Added to FG Store!</div>
@@ -439,6 +440,10 @@ async function submitFGApprovalDecision(fgId, action) {
             + Approve Another FG Store Product
           </button>`;
         feedback.scrollIntoView({ behavior:"smooth", block:"center" });
+      } else if (feed && feed.children.length === 0) {
+        feed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;">
+          <h3 style="color:var(--accent);">No Pending FG Approvals</h3>
+        </div>`;
       }
     } else {
       feedback.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
