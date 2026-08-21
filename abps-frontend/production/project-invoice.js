@@ -359,25 +359,48 @@ function renderPinvInvoiceForm() {
   zone.querySelectorAll('.grid-cell-item textarea').forEach(pinvAutoGrowField);
 }
 
+// Column widths: Sr No 3%, Invoice Material Description 50%, HSN Code 7%,
+// Qty/Unit/Rate per Qty/Amount 10% each (100% total) -- needs table-layout:
+// fixed for the colgroup percentages to actually hold.
+const PINV_LINEITEM_COLS = [
+  ['description', 'Invoice Material Description', 'text', '50%'],
+  ['hsnNumber', 'HSN Code', 'text', '7%'],
+  ['quantity', 'Qty', 'number', '10%'],
+  ['unit', 'Unit', 'text', '10%'],
+  ['ratePerQuantity', 'Rate / Qty', 'number', '10%'],
+  ['totalBasicPrice', 'Amount', 'number', '10%'],
+];
+
 function renderPinvLineItemsTable() {
   const wrap = document.getElementById("pinv-lineitems-wrap");
   if (!wrap) return;
   const items = pinvInvoiceState.lineItems || [];
-  const cols = [
-    ['description', 'Description', 'text'], ['hsnNumber', 'HSN Code', 'text'], ['quantity', 'Qty', 'number'],
-    ['unit', 'Unit', 'text'], ['ratePerQuantity', 'Rate', 'number'], ['totalBasicPrice', 'Amount', 'number'],
-  ];
+  // Amount is always derived, so re-derive it here too -- covers rows
+  // prefilled from the server before this locking was added, or any state
+  // where quantity/rate changed without going through updatePinvLineItem.
+  items.forEach(it => { it.totalBasicPrice = (parseFloat(it.quantity) || 0) * (parseFloat(it.ratePerQuantity) || 0); });
+  const cols = PINV_LINEITEM_COLS;
   wrap.innerHTML = `
-    <table class="store-basket-data-table" style="min-width:820px;">
+    <table class="store-basket-data-table" style="min-width:820px; table-layout:fixed;">
+      <colgroup><col style="width:3%;" />${cols.map(c => `<col style="width:${c[3]};" />`).join('')}</colgroup>
       <thead><tr><th>Sr No</th>${cols.map(c => `<th>${c[1]}</th>`).join('')}</tr></thead>
       <tbody>
         ${items.length === 0 ? `<tr><td colspan="${cols.length + 1}" style="text-align:center; color:var(--muted);">No PO line items found for this project</td></tr>` : items.map((it, idx) => `
           <tr>
             <td style="text-align:center; font-weight:700;">${idx + 1}</td>
-            ${cols.map(([key, , type]) => type === 'text'
-              ? `<td><textarea rows="1" oninput="updatePinvLineItem(${idx}, '${key}', this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; min-width:80px; padding:4px; font-size:0.78rem; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`
-              : `<td><input type="${type}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" oninput="updatePinvLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:80px; padding:4px; font-size:0.78rem;" /></td>`
-            ).join('')}
+            ${cols.map(([key, , type]) => {
+              if (key === 'totalBasicPrice') {
+                // Locked -- always derived from Qty x Rate/Qty, never
+                // independently operator-entered, same "never trust a
+                // hand-typed total" stance as the Item Code Format engine's
+                // auto-calc fields.
+                return `<td><input type="number" id="pinv-amount-${idx}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" readonly
+                  style="width:100%; min-width:80px; padding:4px; font-size:0.78rem; background:#f1f5f9; color:var(--muted); cursor:not-allowed;" /></td>`;
+              }
+              return type === 'text'
+                ? `<td><textarea rows="1" oninput="updatePinvLineItem(${idx}, '${key}', this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; min-width:80px; padding:4px; font-size:0.78rem; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`
+                : `<td><input type="${type}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" oninput="updatePinvLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:80px; padding:4px; font-size:0.78rem;" /></td>`;
+            }).join('')}
           </tr>`).join('')}
       </tbody>
     </table>`;
@@ -387,9 +410,16 @@ function renderPinvLineItemsTable() {
 function updatePinvField(key, value) { pinvInvoiceState[key] = value; }
 function updatePinvNested(parentKey, childKey, value) { pinvInvoiceState[parentKey][childKey] = value; }
 function updatePinvLineItem(idx, key, value) {
-  if (!pinvInvoiceState.lineItems[idx]) return;
-  pinvInvoiceState.lineItems[idx][key] = value;
-  if (key === 'totalBasicPrice') recalcPinvTotals();
+  const item = pinvInvoiceState.lineItems[idx];
+  if (!item) return;
+  item[key] = value;
+  if (key === 'quantity' || key === 'ratePerQuantity') {
+    const amount = (parseFloat(item.quantity) || 0) * (parseFloat(item.ratePerQuantity) || 0);
+    item.totalBasicPrice = amount;
+    const amountEl = document.getElementById(`pinv-amount-${idx}`);
+    if (amountEl) amountEl.value = amount;
+    recalcPinvTotals();
+  }
 }
 
 function recalcPinvTotals() {
