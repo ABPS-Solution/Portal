@@ -585,10 +585,14 @@ async function submitFGAddItem() {
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Uploading documents...';
 
+  // Returns the server-renamed fileName (buildFGDocFileName, routes/production.js
+  // — "<Doc Label>_<Job Card Number>.<ext>"), not the raw browser file.name,
+  // so the Approval screen's "Uploaded Document" link shows the intended
+  // naming from the very first submission, same as a later Replace/+Add Row.
   async function uploadFGDoc(file, docLabel, jobCardNum) {
     const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(file); });
     const upData = await apFetch({ action: "uploadProductionJobCardDocument", projectId, customerName, boqId, jobCardNumber: jobCardNum, docLabel, fileName: file.name, file: { fileName: file.name, base64Data: b64, mimeType: file.type || "application/octet-stream" } });
-    return upData.success ? upData.url : "";
+    return upData.success ? { url: upData.url, fileName: upData.fileName || file.name } : null;
   }
 
   showBlockingOverlay("Uploading documents...");
@@ -598,9 +602,9 @@ async function submitFGAddItem() {
       const files = fgDocFiles[docType] || [];
       const label = FG_DOC_META[docType].label;
       for (const file of files) {
-        const url = await uploadFGDoc(file, label, jobCard);
-        if (!url) throw new Error(`Upload failed for "${file.name}" (${label}). Please retry.`);
-        documents.push({ docType, fileName: file.name, url });
+        const uploaded = await uploadFGDoc(file, label, jobCard);
+        if (!uploaded) throw new Error(`Upload failed for "${file.name}" (${label}). Please retry.`);
+        documents.push({ docType, fileName: uploaded.fileName, url: uploaded.url });
       }
     }
 
