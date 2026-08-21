@@ -186,36 +186,36 @@ function renderMcLineItemsTable(projectId, lineItems) {
     const makeVal = state.make || "";
     const itemCodeUnitVal = state.itemCodeUnit || "";
     return `
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px; font-weight:600; vertical-align:middle;">${li.description}</td>
+      <tr style="border-bottom:1px solid var(--border); color:#111827;">
+        <td style="padding:8px; font-weight:600; vertical-align:middle; color:#111827;">${li.description}</td>
         <td style="padding:8px; position:relative; vertical-align:middle;">
           <textarea rows="1" id="mc-std-search-${safeId}-${li.lineId}" ${disabledAttr}
             placeholder="Search Item Code..." autocomplete="off"
             oninput="handleMcProductSearch(this.value, '${projectId}', ${li.lineId}); mcAutoGrowField(this);"
             onfocus="mcAutoGrowField(this);"
             onkeydown="if(event.key==='Enter') event.preventDefault();"
-            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px;${gatingComplete ? "" : " background:#f1f5f9; cursor:not-allowed;"}">${searchVal.replace(/</g,'&lt;')}</textarea>
+            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; color:#111827;${gatingComplete ? "" : " background:#f1f5f9; cursor:not-allowed;"}">${searchVal.replace(/</g,'&lt;')}</textarea>
           <div id="mc-std-dropdown-${safeId}-${li.lineId}" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); overflow-y:auto; min-width:280px;"></div>
         </td>
         <td style="padding:8px; vertical-align:middle;">
           <textarea rows="1" id="mc-std-rating-${safeId}-${li.lineId}" readonly
-            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; background:#f1f5f9; color:var(--muted); cursor:not-allowed;"
+            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; background:#f1f5f9; color:#111827; cursor:not-allowed;"
             placeholder="Auto-filled from Product Name">${ratingVal.replace(/</g,'&lt;')}</textarea>
         </td>
         <td style="padding:8px; vertical-align:middle;">
           <textarea rows="1" id="mc-std-make-${safeId}-${li.lineId}" readonly
-            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; background:#f1f5f9; color:var(--muted); cursor:not-allowed;"
+            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; background:#f1f5f9; color:#111827; cursor:not-allowed;"
             placeholder="Auto-filled from Item Code">${makeVal.replace(/</g,'&lt;')}</textarea>
         </td>
-        <td style="padding:8px; text-align:center; vertical-align:middle;">${fmtQty(li.quantity)}</td>
-        <td style="padding:8px; text-align:center; vertical-align:middle;">${li.unit || "—"}</td>
-        <td style="padding:8px; text-align:center; vertical-align:middle;" id="mc-std-itemcode-unit-${safeId}-${li.lineId}">${itemCodeUnitVal || "—"}</td>
-        <td style="padding:8px; text-align:center; vertical-align:middle; font-weight:700; color:#0369a1;">${fmtQty(li.mfcQuantity)}</td>
+        <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:600; color:#111827;">${fmtQty(li.quantity)}</td>
+        <td style="padding:8px; text-align:center; vertical-align:middle; color:#111827;">${li.unit || "—"}</td>
+        <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:600; color:#111827;" id="mc-std-itemcode-unit-${safeId}-${li.lineId}">${itemCodeUnitVal || "—"}</td>
+        <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:700; color:#111827;">${fmtQty(li.mfcQuantity)}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle;">
           <input type="number" id="mc-new-mfc-${safeId}-${li.lineId}" value="${trimNum(state.newMfcQuantity)}" ${disabledAttr}
             min="0" max="${li.quantity}" step="any"
             oninput="clampMcNewMfcQty(this, '${projectId}', ${li.lineId})"
-            style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; border:1.5px solid var(--border); border-radius:4px;${gatingComplete ? "" : " background:#f1f5f9; cursor:not-allowed;"}" />
+            style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-size:1rem; font-weight:700; color:#111827; border:1.5px solid var(--border); border-radius:4px;${gatingComplete ? "" : " background:#f1f5f9; cursor:not-allowed;"}" />
         </td>
       </tr>`;
   }).join("");
