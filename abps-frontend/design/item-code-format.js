@@ -176,7 +176,12 @@ function icfInitStepListWidget(ph, containerEl, idPrefix, stepState, onChange) {
   const targetCountEl = () => document.getElementById(`${idPrefix}-ph-${ph.stepSizesOf}`);
   const targetKvarEl = () => document.getElementById(`${idPrefix}-ph-${ph.kvarTargetOf}`);
 
-  function render() {
+  // updateSummary() only touches the two summary text lines, never the row
+  // inputs — a full innerHTML rebuild on every keystroke was destroying and
+  // recreating the row <input> elements each time, which dropped focus after
+  // the first character typed (had to re-click the box for every digit).
+  // Row inputs are only rebuilt by render(), which runs solely on add/remove.
+  function updateSummary() {
     const rows = stepState[ph.index];
     const sumCount = rows.reduce((s, r) => s + (Number(r.count) || 0), 0);
     const sumKvar = rows.reduce((s, r) => s + (Number(r.rating) || 0) * (Number(r.count) || 0), 0);
@@ -184,6 +189,14 @@ function icfInitStepListWidget(ph, containerEl, idPrefix, stepState, onChange) {
     const targetKvar = Number((targetKvarEl() || {}).value) || 0;
     const countOk = Math.abs(sumCount - targetCount) < 1e-9;
     const kvarOk = Math.abs(sumKvar - targetKvar) < 1e-6;
+    const countEl = mount.querySelector('[data-summary="count"]');
+    const kvarEl = mount.querySelector('[data-summary="kvar"]');
+    if (countEl) { countEl.textContent = `Steps: ${sumCount} / ${targetCount || '?'}`; countEl.style.color = countOk ? '#15803d' : '#b91c1c'; }
+    if (kvarEl) { kvarEl.textContent = `kVAr: ${sumKvar} / ${targetKvar || '?'}`; kvarEl.style.color = kvarOk ? '#15803d' : '#b91c1c'; }
+  }
+
+  function render() {
+    const rows = stepState[ph.index];
 
     mount.innerHTML = `
       ${rows.map((r, i) => `
@@ -196,23 +209,26 @@ function icfInitStepListWidget(ph, containerEl, idPrefix, stepState, onChange) {
           ${rows.length > 1 ? `<button type="button" data-remove="${i}" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.65rem; font-weight:700; padding:1px 5px; cursor:pointer;">✕</button>` : ''}
         </div>`).join('')}
       <button type="button" data-add="1" style="background:none; border:1px dashed var(--brand); color:var(--brand); border-radius:3px; font-size:0.65rem; font-weight:700; padding:2px 6px; cursor:pointer; margin-top:2px;">+ Add Step</button>
-      <div style="font-size:0.66rem; margin-top:4px; color:${countOk ? '#15803d' : '#b91c1c'};">Steps: ${sumCount} / ${targetCount || '?'}</div>
-      <div style="font-size:0.66rem; color:${kvarOk ? '#15803d' : '#b91c1c'};">kVAr: ${sumKvar} / ${targetKvar || '?'}</div>
+      <div data-summary="count" style="font-size:0.66rem; margin-top:4px;"></div>
+      <div data-summary="kvar" style="font-size:0.66rem;"></div>
     `;
 
     mount.querySelectorAll('input[data-row]').forEach(el => el.addEventListener('input', () => {
       const i = Number(el.dataset.row), field = el.dataset.field;
       stepState[ph.index][i][field] = el.value;
-      render();
+      updateSummary();
       if (typeof onChange === 'function') onChange();
     }));
     const addBtn = mount.querySelector('[data-add]');
-    if (addBtn) addBtn.addEventListener('click', () => { stepState[ph.index].push({ rating: '', count: '' }); render(); });
+    if (addBtn) addBtn.addEventListener('click', () => { stepState[ph.index].push({ rating: '', count: '' }); render(); updateSummary(); });
     mount.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', () => {
       stepState[ph.index].splice(Number(btn.dataset.remove), 1);
       render();
+      updateSummary();
       if (typeof onChange === 'function') onChange();
     }));
+
+    updateSummary();
   }
 
   render();
@@ -220,8 +236,8 @@ function icfInitStepListWidget(ph, containerEl, idPrefix, stepState, onChange) {
   // fields it targets change — those are plain nph inputs elsewhere in
   // the same form.
   const countSrc = targetCountEl(), kvarSrc = targetKvarEl();
-  if (countSrc) countSrc.addEventListener('input', render);
-  if (kvarSrc) kvarSrc.addEventListener('input', render);
+  if (countSrc) countSrc.addEventListener('input', updateSummary);
+  if (kvarSrc) kvarSrc.addEventListener('input', updateSummary);
 }
 
 // Client-side mirror of lib/itemCodeFormat.js's applyMhOhmAutoCalc — live
