@@ -265,6 +265,36 @@ function icfWireMhOhmAutoCalc(placeholders, containerEl, idPrefix) {
   recompute();
 }
 
+// Client-side mirror of lib/itemCodeFormat.js's applyTotalKvarAutoCalc —
+// live preview only; the server recomputes and overwrites this
+// authoritatively on write regardless of what this sends.
+// Total kVAr = 3 × A² × ohm ÷ 1000 (Iron Core Reactor's rating template).
+function icfWireTotalKvarAutoCalc(placeholders, containerEl, idPrefix) {
+  const ampPh = placeholders.find(p => p.kind === 'number' && /^a$/i.test(p.label.trim()));
+  const ohmPh = placeholders.find(p => p.kind === 'number' && /^ohm/i.test(p.label.trim()));
+  const totalKvarPh = placeholders.find(p => p.kind === 'number' && /^total\s*kvar$/i.test(p.label.trim()));
+  if (!ampPh || !ohmPh || !totalKvarPh) return;
+  const ampEl = document.getElementById(`${idPrefix}-ph-${ampPh.index}`);
+  const ohmEl = document.getElementById(`${idPrefix}-ph-${ohmPh.index}`);
+  const totalKvarEl = document.getElementById(`${idPrefix}-ph-${totalKvarPh.index}`);
+  if (!ampEl || !ohmEl || !totalKvarEl) return;
+  totalKvarEl.readOnly = true;
+  totalKvarEl.style.background = '#f1f5f9';
+  totalKvarEl.style.color = 'var(--muted)';
+  totalKvarEl.title = 'Auto-calculated as 3 × A² × ohm ÷ 1000';
+  const recompute = () => {
+    const ampVal = parseFloat(ampEl.value);
+    const ohmVal = parseFloat(ohmEl.value);
+    totalKvarEl.value = (isNaN(ampVal) || isNaN(ohmVal)) ? '' : String(Math.round((3 * ampVal * ampVal * ohmVal / 1000) * 1000) / 1000);
+  };
+  // Registered before the generic onChange listener at the call site, same
+  // ordering reasoning as icfWireMhOhmAutoCalc — and after that function's
+  // own mH->ohm listener, so ohm is already current when this reads it.
+  ampEl.addEventListener('input', recompute);
+  ohmEl.addEventListener('input', recompute);
+  recompute();
+}
+
 function icfRenderTemplate(template, values) {
   const { segments, error } = icfParseTemplate(template);
   if (error) throw new Error(error);
@@ -333,6 +363,7 @@ function icfRenderFormInputs(containerEl, template, onChange, idPrefix) {
   // listener (also on that same source field) reads values back out for
   // the live preview.
   icfWireMhOhmAutoCalc(placeholders, containerEl, idPrefix);
+  icfWireTotalKvarAutoCalc(placeholders, containerEl, idPrefix);
   icfWireMirrorFields(placeholders, containerEl, idPrefix);
   const stepListState = {};
   placeholders.filter(p => p.kind === 'steplist').forEach(ph => icfInitStepListWidget(ph, containerEl, idPrefix, stepListState, onChange));
