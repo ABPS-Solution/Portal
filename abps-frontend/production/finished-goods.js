@@ -511,7 +511,6 @@ function resetFGAddForm() {
   });
   fgBOQDisplayReset("— Select Project First —");
   fgJobCardDisplayReset("— Select BOQ First —");
-  document.getElementById("fg-add-qa-done").value = "No";
   document.getElementById("fg-add-packing-quality").value = "No";
   document.getElementById("fg-add-use-toggle").value = "";
   resetFGDocFiles();
@@ -550,8 +549,7 @@ async function submitFGAddItem() {
   const descriptionIdRaw = document.getElementById("fg-add-description-id").value.trim();
   const descriptionId = descriptionIdRaw ? parseInt(descriptionIdRaw) : null;
   const make = document.getElementById("fg-add-make").value.trim() || null;
-  const qaPersonName = appActiveOperatorIdentityString || "";
-  const qaDone     = document.getElementById("fg-add-qa-done").value.trim();
+  const productionPersonName = appActiveOperatorIdentityString || "";
   const packingQualityConfirmation = document.getElementById("fg-add-packing-quality").value.trim();
   const finishedGoodUse = document.getElementById("fg-add-use-toggle").value.trim();
 
@@ -570,11 +568,11 @@ async function submitFGAddItem() {
   if (!serialNumber) return failFG("Product Serial Number is required.");
   if (!finishedGoodUse) return failFG("Select Use (Use in other Product / Ready for Dispatch) before submitting.");
   if (!window.fgBOQValidationRan) return failFG("BOQ material check for this Job Card hasn't completed yet.");
-  if (qaDone !== "Yes") return failFG("Q/A Done must be set to Yes before this item can be submitted.");
   if (packingQualityConfirmation !== "Yes") return failFG("Packing Quality Confirmation must be set to Yes before this item can be submitted.");
-  // Neither Q/A Done nor Packing Quality Confirmation is persisted — see
-  // migration 077: a finished_goods_inventory row's mere existence already
-  // implies both, so these are submit-time gates only.
+  // Packing Quality Confirmation is not persisted — see migration 077: a
+  // finished_goods_inventory row's mere existence already implies it (and,
+  // historically, Q/A Done — that field was removed since this screen is
+  // filled by Production, not QA; actual QA sign-off happens at FG Approval).
   for (const docType of FG_REQUIRED_DOC_TYPES) {
     if (!(fgDocFiles[docType] || []).length) {
       return failFG(`${FG_DOC_META[docType].label} document is required.`);
@@ -616,7 +614,7 @@ async function submitFGAddItem() {
       itemCode, productRating: rating, jobCardNumber: jobCard,
       productSerialNumber: serialNumber,
       unit, additionalRemarks: remarks,
-      qaPersonName, finishedGoodUse, documents,
+      productionPersonName, finishedGoodUse, documents,
       descriptionOfMaterial, descriptionId, make,
       operatorName: appActiveOperatorIdentityString
     });

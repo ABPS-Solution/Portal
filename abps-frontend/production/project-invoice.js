@@ -1,10 +1,9 @@
 let pinvInvoiceState = null;
 
-// Invoice Documents — one dropzone per required type, each accepting
-// multiple files, mirroring finished-goods.js's FG_DOC_META pattern.
-// All six are compulsory here (unlike FG Documents, which has two
-// optional types) since none of these are ever skippable for a real
-// dispatch.
+// Invoice Documents — one dropzone per type, each accepting multiple
+// files, mirroring finished-goods.js's FG_DOC_META pattern. lrCopy and
+// mdcc are optional (see PINV_REQUIRED_DOC_TYPES below) -- everything
+// else is compulsory since it's never skippable for a real dispatch.
 const PINV_DOC_META = {
   packingList:        { dropzoneId: "pinv-doc-packingList-dropzone",        listId: "pinv-doc-packingList-filelist",        label: "Packing List",                             placeholder: "📎 Click to attach Packing List" },
   deliveryChallan:     { dropzoneId: "pinv-doc-deliveryChallan-dropzone",    listId: "pinv-doc-deliveryChallan-filelist",    label: "Delivery Challan",                          placeholder: "📎 Click to attach Delivery Challan" },
@@ -13,7 +12,7 @@ const PINV_DOC_META = {
   truckLoadedImages:   { dropzoneId: "pinv-doc-truckLoadedImages-dropzone", listId: "pinv-doc-truckLoadedImages-filelist",  label: "Images of Products Loaded in Truck",        placeholder: "📎 Click to attach Images of Products Loaded in Truck" },
   mdcc:                { dropzoneId: "pinv-doc-mdcc-dropzone",              listId: "pinv-doc-mdcc-filelist",               label: "MD cc",                                     placeholder: "📎 Click to attach MD cc" },
 };
-const PINV_REQUIRED_DOC_TYPES = Object.keys(PINV_DOC_META);
+const PINV_REQUIRED_DOC_TYPES = Object.keys(PINV_DOC_META).filter(t => t !== 'lrCopy' && t !== 'mdcc');
 let pinvDocFiles = {};
 
 function resetPinvDocFiles() {

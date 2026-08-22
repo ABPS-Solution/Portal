@@ -52,7 +52,7 @@ function renderFGApprovalCard(item) {
         </div>
         <div class="meta-row-line-block" style="margin-top:8px; font-size:0.85rem;">
           <span>Product:</span> <strong style="color:#111827;">${item.productName || "—"} ${item.productRating || ""}</strong>
-          <span style="margin-left:12px;">Created By:</span> <strong style="color:#111827;">${item.qaPerson || "—"}</strong>
+          <span style="margin-left:12px;">Created By:</span> <strong style="color:#111827;">${item.productionPerson || "—"}</strong>
         </div>
       </div>
     </div>
