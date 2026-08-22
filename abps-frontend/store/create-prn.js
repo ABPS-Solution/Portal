@@ -212,18 +212,25 @@ async function loadPRNNeedQueue() {
       zone.innerHTML = `<div style="padding:10px 14px; background:#f0fff4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-size:0.8rem; font-weight:600;">✅ No new BOQs need a PRN.</div>`;
       return;
     }
+    // Held BOQs stay in the queue, greyed with an "On Hold" badge instead
+    // of the Create PRN button — the real block is server-side
+    // (createPurchaseRequestNote's assertBoqNotOnHold), this is purely so
+    // the operator sees WHY a BOQ they expect can't get a PRN raised.
     const rows = queue.map(item => {
+      const heldBadge = item.onHold
+        ? `<span title="${(item.holdReason || '').replace(/"/g,'&quot;')}" style="background:#fee2e2; color:#b91c1c; font-size:0.65rem; font-weight:800; padding:2px 7px; border-radius:10px; text-transform:uppercase; white-space:nowrap; flex-shrink:0;">⏸ On Hold</span>`
+        : `<button class="nav-btn-styled prn-queue-create-btn" data-boqid="${item.boqId.replace(/"/g,"&quot;")}" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
+              onclick="jumpToPRNFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.boqId.replace(/'/g, "\\'")}', this)">
+              Create PRN →
+            </button>`;
       return `
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #f1f5f9;">
-          <div style="min-width:0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #f1f5f9;${item.onHold ? ' background:#fef2f2;' : ''}">
+          <div style="min-width:0;${item.onHold ? ' opacity:0.7;' : ''}">
             <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${item.boqId}</span>
             <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} <strong> | </strong>  ${item.productDisplayLabel || item.productName || ""}</div>
           </div>
           <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
-            <button class="nav-btn-styled prn-queue-create-btn" data-boqid="${item.boqId.replace(/"/g,"&quot;")}" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
-              onclick="jumpToPRNFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.boqId.replace(/'/g, "\\'")}', this)">
-              Create PRN →
-            </button>
+            ${heldBadge}
           </div>
         </div>`;
     }).join("");

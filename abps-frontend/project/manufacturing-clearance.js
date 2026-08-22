@@ -155,6 +155,7 @@ async function loadMcLineItems(projectId) {
         make: (catalogMatch && catalogMatch.make) || "",
         itemCodeUnit: (catalogMatch && catalogMatch.unit) || "",
         newMfcQuantity: li.mfcQuantity || 0,
+        onHold: !!li.onHold, holdReason: li.holdReason || "",
       };
       mcLineItemMeta[projectId][li.lineId] = {
         description: li.description,
@@ -175,6 +176,8 @@ function renderMcLineItemsTable(projectId, lineItems) {
   const gatingComplete = !!gating.complete;
   const disabledAttr = gatingComplete ? "" : "disabled";
 
+  const isAdmin = localStorage.getItem("isUserAdminGlobal") === "true"; // server re-checks perm_admin regardless
+
   const rowsHtml = lineItems.map(li => {
     const state = mcLineItemState[projectId][li.lineId];
     // Product Name and Rating are stored as separate columns on the item
@@ -185,16 +188,27 @@ function renderMcLineItemsTable(projectId, lineItems) {
     const ratingVal = state.standardProductRating || "";
     const makeVal = state.make || "";
     const itemCodeUnitVal = state.itemCodeUnit || "";
+    // Hold Product — a held row is parked entirely: every input disables
+    // regardless of the project-level gating state, greyed, with the
+    // reason as a tooltip on the badge. Only an admin sees the Hold/Un-hold
+    // button (server re-checks perm_admin regardless — same convention as
+    // design/item-codes.js's isAdmin usage).
+    const isHeld = !!state.onHold;
+    const rowDisabledAttr = (gatingComplete && !isHeld) ? "" : "disabled";
+    const rowBg = isHeld ? " background:#fef2f2;" : "";
     return `
-      <tr style="border-bottom:1px solid var(--border); color:#111827;">
-        <td style="padding:8px; font-weight:600; vertical-align:middle; color:#111827;">${li.description}</td>
+      <tr data-line-id="${li.lineId}" style="border-bottom:1px solid var(--border); color:#111827;${rowBg}">
+        <td style="padding:8px; font-weight:600; vertical-align:middle; color:#111827;">
+          ${li.description}
+          ${isHeld ? `<div style="margin-top:4px;"><span style="display:inline-block; background:#fee2e2; color:#b91c1c; font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:10px; text-transform:uppercase; letter-spacing:0.3px;" title="${(state.holdReason || '').replace(/"/g,'&quot;')}">⏸ On Hold</span></div>` : ''}
+        </td>
         <td style="padding:8px; position:relative; vertical-align:middle;">
-          <textarea rows="1" id="mc-std-search-${safeId}-${li.lineId}" ${disabledAttr}
+          <textarea rows="1" id="mc-std-search-${safeId}-${li.lineId}" ${rowDisabledAttr}
             placeholder="Search Item Code..." autocomplete="off"
             oninput="handleMcProductSearch(this.value, '${projectId}', ${li.lineId}); mcAutoGrowField(this);"
             onfocus="mcAutoGrowField(this);"
             onkeydown="if(event.key==='Enter') event.preventDefault();"
-            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; color:#111827;${gatingComplete ? "" : " background:#f1f5f9; cursor:not-allowed;"}">${searchVal.replace(/</g,'&lt;')}</textarea>
+            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; color:#111827;${(gatingComplete && !isHeld) ? "" : " background:#f1f5f9; cursor:not-allowed;"}">${searchVal.replace(/</g,'&lt;')}</textarea>
           <div id="mc-std-dropdown-${safeId}-${li.lineId}" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); overflow-y:auto; min-width:280px;"></div>
         </td>
         <td style="padding:8px; vertical-align:middle;">
@@ -212,10 +226,16 @@ function renderMcLineItemsTable(projectId, lineItems) {
         <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:600; color:#111827;" id="mc-std-itemcode-unit-${safeId}-${li.lineId}">${itemCodeUnitVal || "—"}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:700; color:#111827;">${fmtQty(li.mfcQuantity)}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle;">
-          <input type="number" id="mc-new-mfc-${safeId}-${li.lineId}" value="${trimNum(state.newMfcQuantity)}" ${disabledAttr}
+          <input type="number" id="mc-new-mfc-${safeId}-${li.lineId}" value="${trimNum(state.newMfcQuantity)}" ${rowDisabledAttr}
             min="0" max="${li.quantity}" step="any"
             oninput="clampMcNewMfcQty(this, '${projectId}', ${li.lineId})"
-            style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-size:1rem; font-weight:700; color:#111827; border:1.5px solid var(--border); border-radius:4px;${gatingComplete ? "" : " background:#f1f5f9; cursor:not-allowed;"}" />
+            style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-size:1rem; font-weight:700; color:#111827; border:1.5px solid var(--border); border-radius:4px;${(gatingComplete && !isHeld) ? "" : " background:#f1f5f9; cursor:not-allowed;"}" />
+        </td>
+        <td style="padding:8px; text-align:center; vertical-align:middle;">
+          ${isAdmin ? (isHeld
+            ? `<button class="nav-btn-styled" data-mc-hold-btn onclick="unholdMcProduct('${projectId}', ${li.lineId})" style="background:#15803d; padding:5px 10px; font-size:0.72rem;">Un-hold</button>`
+            : `<button class="nav-btn-styled" data-mc-hold-btn onclick="holdMcProduct('${projectId}', ${li.lineId})" style="background:#b91c1c; padding:5px 10px; font-size:0.72rem;">Hold</button>`)
+            : '<span style="color:var(--muted); font-size:0.72rem;">—</span>'}
         </td>
       </tr>`;
   }).join("");
@@ -226,9 +246,9 @@ function renderMcLineItemsTable(projectId, lineItems) {
       <div style="overflow-x:auto; margin-bottom:14px;">
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
           <colgroup>
-            <col style="width:18%;" /><col style="width:18%;" /><col style="width:11%;" /><col style="width:11%;" />
-            <col style="width:6%;" /><col style="width:8%;" /><col style="width:8%;" />
-            <col style="width:9%;" /><col style="width:9%;" />
+            <col style="width:16%;" /><col style="width:16%;" /><col style="width:10%;" /><col style="width:10%;" />
+            <col style="width:6%;" /><col style="width:7%;" /><col style="width:7%;" />
+            <col style="width:8%;" /><col style="width:8%;" /><col style="width:8%;" />
           </colgroup>
           <thead>
             <tr style="background:var(--highlight-bg); text-align:left;">
@@ -241,6 +261,7 @@ function renderMcLineItemsTable(projectId, lineItems) {
               <th style="padding:8px; text-align:center;">Item Code UOM</th>
               <th style="padding:8px; text-align:center;">Current MFC Quantity</th>
               <th style="padding:8px; text-align:center;">New MFC Quantity</th>
+              <th style="padding:8px; text-align:center;">Hold</th>
             </tr>
           </thead>
           <tbody>${rowsHtml}</tbody>
@@ -261,17 +282,28 @@ function renderMcLineItemsTable(projectId, lineItems) {
 // gating-field save (which can happen after some table edits are already
 // in progress, e.g. a typeahead selection not yet submitted) never
 // discards unsaved in-progress row state the way a full re-render would.
+// Hold/Un-hold buttons ([data-mc-hold-btn]) are deliberately excluded —
+// they're a separate admin action, not gated by MFC gating completeness,
+// so they must stay clickable even while the rest of the table is locked.
+// Rows whose product is On Hold are skipped entirely: they stay
+// disabled/greyed regardless of `enabled`, since Hold parks the row
+// independent of the project-level gating state.
 function setMcTableEnabled(projectId, enabled) {
   const safeId = projectId.replace(/[^a-zA-Z0-9]/g, "_");
   const wrap = document.getElementById(`mc-table-wrap-${safeId}`);
   if (!wrap) return;
-  wrap.querySelectorAll('textarea:not([readonly]), input[type="number"], button').forEach(el => {
-    el.disabled = !enabled;
-    if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
-      el.style.background = enabled ? '' : '#f1f5f9';
-      el.style.cursor = enabled ? '' : 'not-allowed';
-    }
+  const state = mcLineItemState[projectId] || {};
+  wrap.querySelectorAll('tr[data-line-id]').forEach(tr => {
+    const lineId = tr.dataset.lineId;
+    const rowHeld = !!(state[lineId] && state[lineId].onHold);
+    const rowEnabled = enabled && !rowHeld;
+    tr.querySelectorAll('textarea:not([readonly]), input[type="number"]').forEach(el => {
+      el.disabled = !rowEnabled;
+      el.style.background = rowEnabled ? '' : '#f1f5f9';
+      el.style.cursor = rowEnabled ? '' : 'not-allowed';
+    });
   });
+  wrap.querySelectorAll('button:not([data-mc-hold-btn])').forEach(el => { el.disabled = !enabled; });
 }
 
 // buildMcGatingPanelHtml — the 4 project-level fields shown once above the
@@ -464,13 +496,21 @@ async function submitMcClearance(projectId) {
   const state = mcLineItemState[projectId];
   if (!state) return;
 
-  const rows = Object.keys(state).map(lineId => ({
+  // Held rows are excluded entirely — the server rejects a submission that
+  // includes one anyway (submitManufacturingClearance), but skipping them
+  // here means a held row never blocks submitting clearance for every
+  // OTHER product on the project.
+  const rows = Object.keys(state).filter(lineId => !state[lineId].onHold).map(lineId => ({
     lineId: Number(lineId),
     standardItemCode: state[lineId].standardItemCode,
     standardProductName: state[lineId].standardProductName,
     standardProductRating: state[lineId].standardProductRating,
     newMfcQuantity: state[lineId].newMfcQuantity,
   }));
+  if (rows.length === 0) {
+    alert("Every product row on this project is currently On Hold — nothing to submit.");
+    return;
+  }
 
   const missing = rows.filter(r => !r.standardItemCode);
   if (missing.length > 0) {
@@ -511,6 +551,53 @@ async function submitMcClearance(projectId) {
     alert("Network error: " + e.message);
   } finally {
     hideBlockingOverlay();
+  }
+}
+
+// holdMcProduct / unholdMcProduct — admin-only (server re-checks
+// perm_admin regardless of the isAdmin check that renders this button at
+// all). Hold releases this product's reserved store stock back to the
+// free pool and blocks new BOQ/PRN/PO/Job Card/Store Ticket work for it;
+// work already in flight (an Authorized PO's GRN/QA receipt, an approved
+// ticket, an open Job Card) is untouched. See routes/projects.js's
+// holdProjectProduct/unholdProjectProduct and lib/productHold.js.
+async function holdMcProduct(projectId, lineId) {
+  const reason = prompt("Reason for placing this product On Hold (required):");
+  if (reason === null) return; // cancelled
+  if (!reason.trim()) { alert("A reason is required to place a Hold."); return; }
+  if (!confirm(`Hold this product on ${projectId}?\n\nThis releases its currently-reserved store stock back to the free pool — the material becomes claimable by other projects' PRNs. No new BOQ/PRN/PO/Job Card/Store Ticket can be raised for it until un-held. Work already in progress (open POs, approved tickets, open Job Cards) is not affected.`)) return;
+
+  showBlockingOverlay("Placing Hold...");
+  try {
+    const data = await apFetch({ action: "holdProjectProduct", projectId, lineId, reason: reason.trim(), operatorName: appActiveOperatorIdentityString });
+    hideBlockingOverlay();
+    if (!data.success) { alert(data.error || "Failed to place Hold."); return; }
+    const releasedSummary = (data.released || []).map(r => `${r.materialName || r.itemCode}: ${trimNum(r.releasedQty)}`).join("\n");
+    if (releasedSummary) alert(`Hold placed. Released back to free stock:\n${releasedSummary}`);
+    await loadMcLineItems(projectId);
+  } catch(e) {
+    hideBlockingOverlay();
+    alert("Network error: " + e.message);
+  }
+}
+
+async function unholdMcProduct(projectId, lineId) {
+  if (!confirm(`Remove the Hold on this product for ${projectId}? This tries to re-reserve its stock from whatever is currently free — if another project has since claimed it, only part (or none) may come back.`)) return;
+
+  showBlockingOverlay("Removing Hold...");
+  try {
+    const data = await apFetch({ action: "unholdProjectProduct", projectId, lineId, operatorName: appActiveOperatorIdentityString });
+    hideBlockingOverlay();
+    if (!data.success) { alert(data.error || "Failed to remove Hold."); return; }
+    const shortfalls = (data.reclaimed || []).filter(r => r.shortfall > 1e-9);
+    if (shortfalls.length > 0) {
+      const msg = shortfalls.map(r => `${r.materialName || r.itemCode}: reclaimed ${trimNum(r.reclaimed)} of ${trimNum(r.wanted)} — ${trimNum(r.shortfall)} already claimed elsewhere`).join("\n");
+      alert(`Hold removed. Some stock could not be fully reclaimed:\n${msg}`);
+    }
+    await loadMcLineItems(projectId);
+  } catch(e) {
+    hideBlockingOverlay();
+    alert("Network error: " + e.message);
   }
 }
 

@@ -361,7 +361,16 @@ function showCBOQProductDropdown() {
 
   if (options.length === 0) { dropdown.style.display = "none"; return; }
 
-  dropdown.innerHTML = options.map(opt => `
+  // Held options render greyed and non-selectable with an "On Hold" badge
+  // — the real block is server-side (createBOQDraft's assertPoLineNotOnHold),
+  // this is purely so the operator sees WHY a product they expect isn't
+  // pickable instead of thinking the list is wrong.
+  dropdown.innerHTML = options.map(opt => opt.onHold ? `
+    <div title="${(opt.holdReason || '').replace(/"/g,'&quot;')}"
+      style="padding:8px 12px; cursor:not-allowed; border-bottom:1px solid #f1f5f9; font-size:0.82rem; color:var(--muted); background:#f8fafc; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+      <span>${opt.displayLabel || opt.productName}</span>
+      <span style="background:#fee2e2; color:#b91c1c; font-size:0.65rem; font-weight:800; padding:2px 7px; border-radius:10px; text-transform:uppercase; white-space:nowrap;">⏸ On Hold</span>
+    </div>` : `
     <div onmousedown="event.preventDefault();" onclick="selectCBOQProductOption('${opt.itemCode}', '${(opt.descriptionId || '')}')"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
@@ -372,6 +381,7 @@ function showCBOQProductDropdown() {
 
 function selectCBOQProductOption(itemCode, descriptionId) {
   const opt = (window.cboqAllowedOptionsByValue || {})[itemCode + '|' + (descriptionId || '')];
+  if (opt && opt.onHold) { alert(`This product is On Hold — ${opt.holdReason || 'no reason given'}. An admin must remove the Hold before a BOQ can be created for it.`); return; }
   const searchEl = document.getElementById("cboq-product-search");
   const ratingEl = document.getElementById("cboq-product-rating");
   const qtyEl = document.getElementById("cboq-order-qty");
