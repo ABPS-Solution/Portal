@@ -73,6 +73,13 @@ async function initializeStoreEntryWorkspaceQueue() {
         const preFilledUnit = catalogHit ? (catalogHit.unit || "") : "";
         const isPreFilled   = !!existingCode;
 
+        // Unit Converter: locked at 1 when Invoice Unit already matches
+        // Item Code Unit (the common case), otherwise blank and required --
+        // see updateSEUnitConverterLock, which re-derives this same
+        // same-unit check live as either unit input changes.
+        const invoiceUnitVal = (line.unitType || "NOS").toString().trim();
+        const sameUnit = preFilledUnit && invoiceUnitVal.toLowerCase() === preFilledUnit.toLowerCase();
+
         const codeStyle = isPreFilled
           ? "font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #86efac; text-align:center; width:100%; background:#f0fdf4; color:var(--brand); border-radius:3px;"
           : "font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #fca5a5; text-align:center; width:100%; background:#fff7f7; color:#b91c1c; border-radius:3px;";
@@ -108,12 +115,20 @@ async function initializeStoreEntryWorkspaceQueue() {
             ${isPreFilled ? '' : suggestionHtml}
           </td>
           <td style="width:70px; padding:6px; vertical-align:middle;">
-            <input type="text" class="se-invoice-unit-${item.gateNumber}" data-idx="${idx}" value="${line.unitType || 'NOS'}"
-              style="width:100%; text-align:center; font-family:monospace; font-weight:700; border:1px solid var(--border); padding:5px 2px; border-radius:3px;">
+            <input type="text" class="se-invoice-unit-${item.gateNumber}" data-idx="${idx}" value="${invoiceUnitVal}"
+              style="width:100%; text-align:center; font-family:monospace; font-weight:700; border:1px solid var(--border); padding:5px 2px; border-radius:3px;"
+              onblur="updateSEUnitConverterLock('${item.gateNumber}', ${idx})">
           </td>
           <td style="width:70px; padding:6px; text-align:center; vertical-align:middle;">
             <input type="text" class="se-item-code-unit-${item.gateNumber}" data-idx="${idx}" value="${preFilledUnit}" readonly
               style="width:100%; text-align:center; font-family:monospace; font-weight:700; border:none; background:transparent; color:#1e293b;">
+          </td>
+          <td style="width:85px; padding:6px; text-align:center; vertical-align:middle;">
+            <input type="number" class="se-unit-converter-${item.gateNumber}" data-idx="${idx}"
+              value="${sameUnit ? '1' : ''}" ${sameUnit ? 'readonly' : ''} step="any" min="0"
+              placeholder="${sameUnit ? '' : 'Factor'}"
+              title="${sameUnit ? 'Locked at 1 — Invoice Unit already matches Item Code Unit' : 'Units differ — enter the factor that converts Invoice Unit to Item Code Unit'}"
+              style="width:100%; text-align:center; font-weight:700; padding:5px; font-size:0.85rem; border-radius:3px;${sameUnit ? ' border:1px solid var(--border); background:#f1f5f9; color:var(--muted); cursor:not-allowed;' : ' border:1.5px solid #f59e0b; background:#fffbeb;'}">
           </td>
           <td style="text-align:center; color:#1e293b; font-weight:800; vertical-align:middle; width:65px; font-family:monospace; font-size:0.95rem;">
             ${line.gateQuantity}
@@ -121,24 +136,7 @@ async function initializeStoreEntryWorkspaceQueue() {
           <td style="text-align:center; width:85px; padding:6px 6px 6px 16px; vertical-align:middle;">
             <input type="number" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}"
               value="${line.gateQuantity}"
-              style="width:100%; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:5px; font-size:0.9rem; border-radius:3px;"
-              oninput="updateSERowAmounts('${item.gateNumber}', ${idx})">
-          </td>
-          <td style="text-align:center; width:75px; padding:6px; vertical-align:middle;">
-            <input type="number" class="se-rate-${item.gateNumber}" data-idx="${idx}"
-              value="${line.ratePerQuantity || ''}" placeholder="Rate" readonly title="Locked — calculated from the invoice's Rate/Qty and Disc %"
-              style="width:100%; text-align:center; font-weight:700; border:1.5px solid ${line.ratePerQuantity > 0 ? '#86efac' : '#f59e0b'}; background:#f0fdf4; color:#15803d; cursor:not-allowed; padding:5px; font-size:0.9rem; border-radius:3px;">
-          </td>
-          <td style="text-align:center; width:70px; padding:6px; vertical-align:middle;">
-            <input type="number" class="se-gst-${item.gateNumber}" data-idx="${idx}"
-              value="${line.gstPercent || 18}" placeholder="GST%"
-              style="width:100%; text-align:center; font-weight:700; border:1px solid var(--border); padding:5px; font-size:0.9rem; border-radius:3px;"
-              oninput="updateSERowAmounts('${item.gateNumber}', ${idx})">
-          </td>
-          <td style="text-align:right; width:100px; padding:6px; vertical-align:middle; font-family:monospace; font-size:0.95rem; font-weight:700;">
-            <span class="se-amount-display-${item.gateNumber}" data-idx="${idx}">${(((line.gateQuantity || 0) * (line.ratePerQuantity || 0)) * (1 + (line.gstPercent || 18) / 100)).toLocaleString("en-IN",{maximumFractionDigits:2})}</span>
-            <input type="hidden" class="se-basic-amt-${item.gateNumber}" data-idx="${idx}" value="${((line.gateQuantity || 0) * (line.ratePerQuantity || 0)).toFixed(2)}" />
-            <input type="hidden" class="se-inv-amt-${item.gateNumber}" data-idx="${idx}" value="${(((line.gateQuantity || 0) * (line.ratePerQuantity || 0)) * (1 + (line.gstPercent || 18) / 100)).toFixed(2)}" />
+              style="width:100%; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:5px; font-size:0.9rem; border-radius:3px;">
           </td>
         </tr>`;
       });
@@ -173,19 +171,17 @@ async function initializeStoreEntryWorkspaceQueue() {
             <div id="se-po-check-msg-${item.gateNumber}" style="font-size:0.68rem; font-weight:700; margin-top:3px;"></div>
           </div>
           <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
-            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:900px; border-collapse:collapse;">
+            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:820px; border-collapse:collapse;">
               <thead>
                 <tr style="background:#f8fafc;">
-                  <th style="width:95px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
-                  <th style="width:250px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Material Description</th>
-                  <th style="width:280px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name *</th>
-                  <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Invoice Unit</th>
-                  <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code Unit</th>
-                  <th style="width:65px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Invoice Qty</th>
-                  <th style="width:85px; text-align:center; font-size:0.72rem; padding:8px 6px 8px 16px; white-space:nowrap;">Received Qty *</th>
-                  <th style="width:75px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Rate / Qty</th>
-                  <th style="width:60px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">GST %</th>
-                  <th style="width:95px; text-align:right; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Amount (Incl. GST)</th>
+                  <th style="width:100px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
+                  <th style="width:230px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Material Description</th>
+                  <th style="width:260px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name *</th>
+                  <th style="width:75px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Invoice Unit</th>
+                  <th style="width:75px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code Unit</th>
+                  <th style="width:90px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit Converter</th>
+                  <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Invoice Qty</th>
+                  <th style="width:100px; text-align:center; font-size:0.72rem; padding:8px 6px 8px 16px; white-space:nowrap;">Received Qty *</th>
                 </tr>
               </thead>
               <tbody>${trs}</tbody>

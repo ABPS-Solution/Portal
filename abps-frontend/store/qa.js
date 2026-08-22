@@ -135,24 +135,41 @@ function updateGateRejectionLinkQty(rejectionId, val) {
   }
 }
 
-function updateSERowAmounts(gateNumber, idx) {
-  const qtyInput  = document.querySelector(`.se-phys-qty-${gateNumber}[data-idx="${idx}"]`);
-  const rateInput = document.querySelector(`.se-rate-${gateNumber}[data-idx="${idx}"]`);
-  const gstInput  = document.querySelector(`.se-gst-${gateNumber}[data-idx="${idx}"]`);
-  const basicHidden = document.querySelector(`.se-basic-amt-${gateNumber}[data-idx="${idx}"]`);
-  const invHidden    = document.querySelector(`.se-inv-amt-${gateNumber}[data-idx="${idx}"]`);
-  const displaySpan  = document.querySelector(`.se-amount-display-${gateNumber}[data-idx="${idx}"]`);
+// updateSEUnitConverterLock — re-evaluates one row's Unit Converter lock
+// state whenever either unit it compares could have changed (Invoice Unit
+// edited directly, or Item Code Unit re-resolved via a new item code
+// selection — see selectStoreEntryItemCodeMatch, design/item-codes.js).
+// Locks to 1 and clears whatever was typed when the units now match;
+// unlocks (blank, must be filled) when they don't.
+function updateSEUnitConverterLock(gateNumber, idx) {
+  const invoiceUnitInput   = document.querySelector(`.se-invoice-unit-${gateNumber}[data-idx="${idx}"]`);
+  const itemCodeUnitInput  = document.querySelector(`.se-item-code-unit-${gateNumber}[data-idx="${idx}"]`);
+  const converterInput     = document.querySelector(`.se-unit-converter-${gateNumber}[data-idx="${idx}"]`);
+  if (!invoiceUnitInput || !itemCodeUnitInput || !converterInput) return;
 
-  const qty  = parseFloat(qtyInput?.value)  || 0;
-  const rate = parseFloat(rateInput?.value) || 0;
-  const gst  = parseFloat(gstInput?.value)  || 0;
+  const invoiceUnit  = invoiceUnitInput.value.trim();
+  const itemCodeUnit = itemCodeUnitInput.value.trim();
+  const sameUnit = !!itemCodeUnit && invoiceUnit.toLowerCase() === itemCodeUnit.toLowerCase();
 
-  const basicAmt = qty * rate;
-  const invAmt   = basicAmt * (1 + gst / 100);
-
-  if (basicHidden) basicHidden.value = basicAmt.toFixed(2);
-  if (invHidden) invHidden.value = invAmt.toFixed(2);
-  if (displaySpan) displaySpan.textContent = invAmt.toLocaleString("en-IN",{maximumFractionDigits:2});
+  if (sameUnit) {
+    converterInput.value = '1';
+    converterInput.readOnly = true;
+    converterInput.placeholder = '';
+    converterInput.title = 'Locked at 1 — Invoice Unit already matches Item Code Unit';
+    converterInput.style.border = '1px solid var(--border)';
+    converterInput.style.background = '#f1f5f9';
+    converterInput.style.color = 'var(--muted)';
+    converterInput.style.cursor = 'not-allowed';
+  } else {
+    converterInput.value = '';
+    converterInput.readOnly = false;
+    converterInput.placeholder = 'Factor';
+    converterInput.title = 'Units differ — enter the factor that converts Invoice Unit to Item Code Unit';
+    converterInput.style.border = '1.5px solid #f59e0b';
+    converterInput.style.background = '#fffbeb';
+    converterInput.style.color = '';
+    converterInput.style.cursor = '';
+  }
 }
 
 async function checkVendorOpenRejections() {

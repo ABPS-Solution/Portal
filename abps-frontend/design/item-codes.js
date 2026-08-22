@@ -871,6 +871,10 @@ function selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, type
   if (nameInput) nameInput.value = productName;
   if (typeInput) typeInput.value = typeOfMaterial;
   if (unitInput) unitInput.value = unit || "NOS";
+  // Item Code Unit just (re)resolved -- re-evaluate whether the Unit
+  // Converter should lock to 1 (units now match) or open up for manual
+  // entry (they don't), same trigger as editing Invoice Unit directly.
+  if (typeof updateSEUnitConverterLock === "function") updateSEUnitConverterLock(gateNum, idx);
 
   if (nameDisplay) {
     nameDisplay.style.display = "block";

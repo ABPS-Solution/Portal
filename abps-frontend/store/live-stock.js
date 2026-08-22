@@ -662,9 +662,6 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
   document.querySelectorAll(`.se-mat-name-${gateNum}`).forEach(inp => {
     itemData.lineItems[parseInt(inp.dataset.idx, 10)].materialName = inp.value.trim();
   });
-  document.querySelectorAll(`.se-phys-qty-${gateNum}`).forEach(inp => {
-    itemData.lineItems[parseInt(inp.dataset.idx, 10)].verifiedPhysicalQuantity = parseInt(inp.value, 10) || 0;
-  });
   // Invoice Unit (editable, carried from Gate Entry) and Item Code Unit
   // (resolved from design.item_codes.unit via the material match) — the
   // latter is what actually governs stock from here on, see
@@ -678,6 +675,7 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
 
   let materialTypeMissing = false;
   let itemCodeMissing = false;
+  let unitConverterMissing = false;
 
   document.querySelectorAll(`.se-material-type-${gateNum}`).forEach(inp => {
     const val = inp.value.trim();
@@ -685,17 +683,26 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
     itemData.lineItems[parseInt(inp.dataset.idx, 10)].materialType = val;
   });
 
-  document.querySelectorAll(`.se-rate-${gateNum}`).forEach(inp => {
-    itemData.lineItems[parseInt(inp.dataset.idx, 10)].ratePerQuantity = parseFloat(inp.value) || 0;
-  });
-  document.querySelectorAll(`.se-gst-${gateNum}`).forEach(inp => {
-    itemData.lineItems[parseInt(inp.dataset.idx, 10)].gstPercent = parseFloat(inp.value) || 18;
-  });
-  document.querySelectorAll(`.se-basic-amt-${gateNum}`).forEach(inp => {
-    itemData.lineItems[parseInt(inp.dataset.idx, 10)].totalBasicAmount = parseFloat(inp.value) || 0;
-  });
-  document.querySelectorAll(`.se-inv-amt-${gateNum}`).forEach(inp => {
-    itemData.lineItems[parseInt(inp.dataset.idx, 10)].totalInvoiceAmount = parseFloat(inp.value) || 0;
+  // Received Qty (verifiedPhysicalQuantity) is what the operator physically
+  // counted, in Invoice Unit terms -- sent as-entered, unmultiplied. The
+  // Unit Converter factor goes along separately; commitStoreEntryPipelineStep
+  // is what actually multiplies them into the Item-Code-Unit quantity that
+  // gets written to stock, never trusting a client-side-computed total. A
+  // row whose units differ but has no factor entered blocks submission
+  // entirely rather than letting the server default it to 1 and silently
+  // write the wrong stock quantity.
+  document.querySelectorAll(`.se-phys-qty-${gateNum}`).forEach(inp => {
+    const idx = parseInt(inp.dataset.idx, 10);
+    itemData.lineItems[idx].verifiedPhysicalQuantity = parseFloat(inp.value) || 0;
+    const converterInput = document.querySelector(`.se-unit-converter-${gateNum}[data-idx="${idx}"]`);
+    const factorRaw = converterInput ? converterInput.value.trim() : '1';
+    const factor = parseFloat(factorRaw);
+    if (!factorRaw || isNaN(factor) || factor <= 0) {
+      unitConverterMissing = true;
+      itemData.lineItems[idx].unitConverter = null;
+      return;
+    }
+    itemData.lineItems[idx].unitConverter = factor;
   });
 
   // Attach linked rejection resolutions, matched by item code now that Store Entry has resolved them
@@ -733,6 +740,14 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
 
   if (itemCodeMissing || materialTypeMissing) {
     showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Every line item must have a material selected. If no match exists, create the Item Code first.", "error");
+    banner.scrollIntoView({ behavior: "smooth", block: "center" });
+    btn.disabled = false;
+    btn.textContent = "Submit Store Entry and GRN";
+    return;
+  }
+
+  if (unitConverterMissing) {
+    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Every line item whose Invoice Unit differs from its Item Code Unit needs a Unit Converter factor before this can be submitted.", "error");
     banner.scrollIntoView({ behavior: "smooth", block: "center" });
     btn.disabled = false;
     btn.textContent = "Submit Store Entry and GRN";
