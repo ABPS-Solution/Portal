@@ -118,12 +118,19 @@ async function handlePinvProjectChange(projectId) {
   document.getElementById("pinv-blockers").style.display = "none";
   document.getElementById("pinv-generate-zone").style.display = "none";
   try {
-    const [lineData, prefillData] = await Promise.all([
+    const [lineData, prefillData, invoiceNoData] = await Promise.all([
       apFetch({ action: "fetchProjectInvoiceLineDetail", projectId }),
       apFetch({ action: "fetchProjectInvoicePrefill", projectId }),
+      apFetch({ action: "fetchNextInvoiceNumberPreview" }),
     ]);
     if (!lineData.success) { showBOQBanner("pinv-feedback", lineData.error || "Failed to load.", "error"); return; }
-    pinvCache = { projectId, lines: lineData.lines, poNumber: prefillData.poNumber || "", poDate: prefillData.poDate || "" };
+    pinvCache = {
+      projectId, lines: lineData.lines, poNumber: prefillData.poNumber || "", poDate: prefillData.poDate || "",
+      // Preview only -- the server mints the real number atomically at
+      // submit time (allocateNextInvoiceNumber, routes/projects.js) and
+      // never trusts this value; see fetchNextInvoiceNumberPreview.
+      invoiceNoPreview: invoiceNoData.success ? invoiceNoData.invoiceNo : "",
+    };
     initPinvInvoiceStateFromLines();
     renderPinvDetail();
   } catch(e) {
@@ -133,7 +140,7 @@ async function handlePinvProjectChange(projectId) {
 
 function initPinvInvoiceStateFromLines() {
   pinvInvoiceState = {
-    invoiceNo: "", insuranceNo: "", mdccNo: "", transportName: "", lrNoDate: "", vehicleNo: "", mobileNo: "", freight: "",
+    invoiceNo: pinvCache.invoiceNoPreview || "", insuranceNo: "", mdccNo: "", transportName: "", lrNoDate: "", vehicleNo: "", mobileNo: "", freight: "",
     poNumber: pinvCache.poNumber, poDate: pinvCache.poDate,
     billTo: { name: "", address: "", state: "", gstNo: "", contactNo: "" },
     shipTo: { name: "", address: "", state: "", gstNo: "", contactNo: "" },
@@ -284,7 +291,7 @@ function renderPinvInvoiceForm() {
       <div style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">Fill in what the invoice needs, edit any product row if needed, then Generate Invoice Doc.</div>
 
       <div class="compact-fields-grid" style="margin-bottom:14px;">
-        ${field('Invoice No. *', 'invoiceNo')}
+        <div class="grid-cell-item" style="background:#f1f5f9;"><label>Invoice No.</label><div style="padding:6px 4px; font-weight:600; color:var(--brand);" title="Auto-generated -- assigned for real, atomically, when you generate the invoice">${s.invoiceNo || '—'}</div></div>
         <div class="grid-cell-item" style="background:#f1f5f9;"><label>Date</label><div style="padding:6px 4px; font-weight:600;">${todayDMY}</div></div>
         <div class="grid-cell-item" style="background:#f1f5f9;"><label>P.O. No.</label><div style="padding:6px 4px; font-weight:600;">${s.poNumber || '—'}</div></div>
         <div class="grid-cell-item" style="background:#f1f5f9;"><label>PO Date</label><div style="padding:6px 4px; font-weight:600;">${s.poDate || '—'}</div></div>
@@ -540,7 +547,7 @@ async function submitPinvGeneration() {
       successZone.style.display = "block";
       successZone.innerHTML = `
         <div style="padding:14px; background:#f0fdf4; border-left:4px solid #22c55e; border-radius:var(--radius); color:#15803d; font-weight:600; margin-bottom:14px;">
-          ${isFinal ? 'Final' : 'Partial'} Invoice Generated for Project ID: ${pinvCache.projectId}
+          ${isFinal ? 'Final' : 'Partial'} Invoice ${data.invoiceNo ? `<strong>${data.invoiceNo}</strong> ` : ''}Generated for Project ID: ${pinvCache.projectId}
         </div>
         <a href="${driveLink(data.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Invoice Document ↗</a>
         ${data.reviewUrl ? `<br><a href="${driveLink(data.reviewUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; display:inline-block; margin-top:8px;">Open Project Review Document ↗</a>` : ''}
