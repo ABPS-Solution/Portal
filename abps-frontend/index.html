@@ -792,15 +792,71 @@
     </div>
 
     <div id="canvas-module-store-live-stock" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-      <div style="margin-bottom:14px;">
-        <input type="text" id="raw-stock-search-input" placeholder="🔎 Search Material..." autocomplete="off"
-          oninput="handleRawStockSearchInput(this.value)"
-          style="width:100%; max-width:420px; padding:9px 12px; font-size:0.85rem; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+      <div style="display:flex; gap:10px; margin-bottom:16px;">
+        <button class="nav-btn-styled" id="rm-toggle-live" onclick="switchStoreLedgerView('rm', 'live')" style="flex:1; padding:9px; background:var(--accent);">Live Store Stock</button>
+        <button class="nav-btn-styled" id="rm-toggle-ledger" onclick="switchStoreLedgerView('rm', 'ledger')" style="flex:1; padding:9px; background:#718096;">Store Ledger</button>
       </div>
-      <div class="dashboard-grid" id="dashboard-live-inventory-metrics-mount-zone" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap:10px; padding:0;"></div>
+      <div id="rm-live-view">
+        <div style="margin-bottom:14px;">
+          <input type="text" id="raw-stock-search-input" placeholder="🔎 Search Material..." autocomplete="off"
+            oninput="handleRawStockSearchInput(this.value)"
+            style="width:100%; max-width:420px; padding:9px 12px; font-size:0.85rem; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+        </div>
+        <div class="dashboard-grid" id="dashboard-live-inventory-metrics-mount-zone" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap:10px; padding:0;"></div>
+      </div>
+      <div id="rm-ledger-view" style="display:none;">
+        <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:14px; align-items:end; margin-bottom:14px;">
+          <div><label class="field-label" style="margin-top:0;">Start Date</label><input type="date" id="rm-ledger-start" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <div><label class="field-label" style="margin-top:0;">End Date</label><input type="date" id="rm-ledger-end" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <button class="nav-btn-styled" onclick="generateStoreLedgerReport('rm', 'Raw Materials')" style="background:var(--accent); padding:9px 20px; font-weight:700; white-space:nowrap;">Generate Report</button>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; font-weight:700; margin-bottom:8px; cursor:pointer;">
+            <input type="checkbox" id="rm-ledger-all-materials" checked onchange="toggleStoreLedgerAllMaterials('rm')" /> All Materials
+          </label>
+          <div id="rm-ledger-material-picker" style="display:none;">
+            <div style="position:relative; max-width:420px;">
+              <input type="text" id="rm-ledger-material-search" placeholder="🔎 Search and add material..." autocomplete="off"
+                oninput="handleStoreLedgerMaterialSearch('rm', this.value)"
+                style="width:100%; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+              <div id="rm-ledger-material-dropdown" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); overflow-y:auto; min-width:280px;"></div>
+            </div>
+            <div id="rm-ledger-selected-materials" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <div id="rm-ledger-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+        <div id="rm-ledger-results" style="display:none;">
+          <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+            <button class="nav-btn-styled" onclick="downloadStoreLedgerReportFile('rm', 'Raw Materials')" style="background:var(--brand); padding:8px 18px; font-weight:700;">⬇ Download Excel</button>
+          </div>
+          <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+            <table style="width:100%; border-collapse:collapse; min-width:800px;">
+              <thead>
+                <tr style="background:#f8fafc;">
+                  <th style="padding:8px; font-size:0.72rem; text-align:left;">Material Name</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Unit</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:left;">Type of Material</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Starting Stock</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Inward Stock</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Ticket Issued</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Ending Stock</th>
+                </tr>
+              </thead>
+              <tbody id="rm-ledger-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="canvas-module-store-live-fg" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <div style="display:flex; gap:10px; margin-bottom:16px;">
+        <button class="nav-btn-styled" id="fgstock-toggle-live" onclick="switchStoreLedgerView('fgstock', 'live')" style="flex:1; padding:9px; background:var(--accent);">Live Store Stock</button>
+        <button class="nav-btn-styled" id="fgstock-toggle-ledger" onclick="switchStoreLedgerView('fgstock', 'ledger')" style="flex:1; padding:9px; background:#718096;">Store Ledger</button>
+      </div>
+      <div id="fgstock-live-view">
       <div style="margin-bottom:14px;">
         <input type="text" id="fg-stock-search-input" placeholder="🔎 Search Material..." autocomplete="off"
           oninput="handleFgStockSearchInput(this.value)"
@@ -874,15 +930,112 @@
           </table>
         </div>
       </div>
+      </div>
+      <div id="fgstock-ledger-view" style="display:none;">
+        <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:14px; align-items:end; margin-bottom:14px;">
+          <div><label class="field-label" style="margin-top:0;">Start Date</label><input type="date" id="fgstock-ledger-start" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <div><label class="field-label" style="margin-top:0;">End Date</label><input type="date" id="fgstock-ledger-end" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <button class="nav-btn-styled" onclick="generateStoreLedgerReport('fgstock', 'Finished Goods')" style="background:var(--accent); padding:9px 20px; font-weight:700; white-space:nowrap;">Generate Report</button>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; font-weight:700; margin-bottom:8px; cursor:pointer;">
+            <input type="checkbox" id="fgstock-ledger-all-materials" checked onchange="toggleStoreLedgerAllMaterials('fgstock')" /> All Materials
+          </label>
+          <div id="fgstock-ledger-material-picker" style="display:none;">
+            <div style="position:relative; max-width:420px;">
+              <input type="text" id="fgstock-ledger-material-search" placeholder="🔎 Search and add material..." autocomplete="off"
+                oninput="handleStoreLedgerMaterialSearch('fgstock', this.value)"
+                style="width:100%; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+              <div id="fgstock-ledger-material-dropdown" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); overflow-y:auto; min-width:280px;"></div>
+            </div>
+            <div id="fgstock-ledger-selected-materials" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <div id="fgstock-ledger-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+        <div id="fgstock-ledger-results" style="display:none;">
+          <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+            <button class="nav-btn-styled" onclick="downloadStoreLedgerReportFile('fgstock', 'Finished Goods')" style="background:var(--brand); padding:8px 18px; font-weight:700;">⬇ Download Excel</button>
+          </div>
+          <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+            <table style="width:100%; border-collapse:collapse; min-width:800px;">
+              <thead>
+                <tr style="background:#f8fafc;">
+                  <th style="padding:8px; font-size:0.72rem; text-align:left;">Material Name</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Unit</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:left;">Type of Material</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Starting Stock</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Inward Stock</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Ticket Issued</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Ending Stock</th>
+                </tr>
+              </thead>
+              <tbody id="fgstock-ledger-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="canvas-module-store-live-spare" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <div style="display:flex; gap:10px; margin-bottom:16px;">
+        <button class="nav-btn-styled" id="spare-toggle-live" onclick="switchStoreLedgerView('spare', 'live')" style="flex:1; padding:9px; background:var(--accent);">Live Store Stock</button>
+        <button class="nav-btn-styled" id="spare-toggle-ledger" onclick="switchStoreLedgerView('spare', 'ledger')" style="flex:1; padding:9px; background:#718096;">Store Ledger</button>
+      </div>
+      <div id="spare-live-view">
       <div style="margin-bottom:14px;">
         <input type="text" id="spare-stock-search-input" placeholder="🔎 Search Material..." autocomplete="off"
           oninput="handleSpareStockSearchInput(this.value)"
           style="width:100%; max-width:420px; padding:9px 12px; font-size:0.85rem; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
       </div>
       <div class="dashboard-grid" id="dashboard-live-spare-inventory-metrics-mount-zone" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap:10px; padding:0;"></div>
+      </div>
+      <div id="spare-ledger-view" style="display:none;">
+        <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:14px; align-items:end; margin-bottom:14px;">
+          <div><label class="field-label" style="margin-top:0;">Start Date</label><input type="date" id="spare-ledger-start" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <div><label class="field-label" style="margin-top:0;">End Date</label><input type="date" id="spare-ledger-end" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <button class="nav-btn-styled" onclick="generateStoreLedgerReport('spare', 'Spare')" style="background:var(--accent); padding:9px 20px; font-weight:700; white-space:nowrap;">Generate Report</button>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; font-weight:700; margin-bottom:8px; cursor:pointer;">
+            <input type="checkbox" id="spare-ledger-all-materials" checked onchange="toggleStoreLedgerAllMaterials('spare')" /> All Materials
+          </label>
+          <div id="spare-ledger-material-picker" style="display:none;">
+            <div style="position:relative; max-width:420px;">
+              <input type="text" id="spare-ledger-material-search" placeholder="🔎 Search and add material..." autocomplete="off"
+                oninput="handleStoreLedgerMaterialSearch('spare', this.value)"
+                style="width:100%; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+              <div id="spare-ledger-material-dropdown" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); overflow-y:auto; min-width:280px;"></div>
+            </div>
+            <div id="spare-ledger-selected-materials" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <div id="spare-ledger-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+        <div id="spare-ledger-results" style="display:none;">
+          <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+            <button class="nav-btn-styled" onclick="downloadStoreLedgerReportFile('spare', 'Spare')" style="background:var(--brand); padding:8px 18px; font-weight:700;">⬇ Download Excel</button>
+          </div>
+          <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+            <table style="width:100%; border-collapse:collapse; min-width:800px;">
+              <thead>
+                <tr style="background:#f8fafc;">
+                  <th style="padding:8px; font-size:0.72rem; text-align:left;">Material Name</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Unit</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:left;">Type of Material</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Starting Stock</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Inward Stock</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Ticket Issued</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Ending Stock</th>
+                </tr>
+              </thead>
+              <tbody id="spare-ledger-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="canvas-module-jc-letterhead" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
@@ -3878,6 +4031,7 @@
 <script src="store/tickets.js"></script>
 <script src="store/approvals.js"></script>
 <script src="store/live-stock.js"></script>
+<script src="store/store-ledger.js"></script>
 <script src="store/stock-sweep.js"></script>
 <script src="store/store-history.js"></script>
 <script src="store/store-dashboard.js"></script>
