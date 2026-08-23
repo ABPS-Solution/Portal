@@ -636,6 +636,7 @@ async function initializePinvReviseWorkspace() {
   document.getElementById("pinv-revise-detail-zone").style.display = "none";
   document.getElementById("pinv-revise-history-zone").innerHTML = "";
   document.getElementById("pinv-revise-invoice-form-zone").innerHTML = "";
+  document.getElementById("pinv-revise-generate-btn-wrap").style.display = "none";
   document.getElementById("pinv-revise-success-zone").style.display = "none";
   pinvReviseState = null;
   pinvReviseCache = { invoiceId: null, projectId: "", invoiceType: "", invoiceRevision: 0 };
@@ -682,6 +683,10 @@ async function loadPinvReviseHistory(projectId) {
   const zone = document.getElementById("pinv-revise-invoice-form-zone");
   detailZone.style.display = "block";
   zone.innerHTML = "";
+  // The Generate button only makes sense once a specific invoice has been
+  // picked from the history table below (loadPinvReviseForm) — hide it
+  // again whenever the history itself (re)loads.
+  document.getElementById("pinv-revise-generate-btn-wrap").style.display = "none";
   historyZone.innerHTML = `<div style="text-align:center; padding:14px; color:var(--muted); font-size:0.85rem;">Loading invoice history...</div>`;
   try {
     const data = await apFetch({ action: "fetchProjectInvoiceHistory", projectId });
@@ -735,6 +740,7 @@ async function loadPinvReviseForm(invoiceId) {
       declaration: last.declaration || PINV_STANDARD_DECLARATION,
     };
     renderPinvReviseInvoiceForm();
+    document.getElementById("pinv-revise-generate-btn-wrap").style.display = "block";
   } catch(e) {
     zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.85rem;">Network error: ${e.message}</div>`;
   }
@@ -760,7 +766,7 @@ function renderPinvReviseInvoiceForm() {
       <div style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">Prefilled from this specific invoice. Edit anything, then generate the revised doc — this only replaces THIS invoice; other invoices on the project, project status, PRNs, and stock are not touched.</div>
 
       <div class="compact-fields-grid" style="margin-bottom:14px;">
-        ${field('Invoice No. *', 'invoiceNo')}
+        <div class="grid-cell-item" style="background:#f1f5f9;"><label>Invoice No.</label><div style="padding:6px 4px; font-weight:600; color:var(--brand);" title="A revision keeps the invoice's original number — it's never re-minted or hand-edited here">${s.invoiceNo || '—'}</div></div>
         <div class="grid-cell-item" style="background:#f1f5f9;"><label>P.O. No.</label><div style="padding:6px 4px; font-weight:600;">${s.poNumber || '—'}</div></div>
         <div class="grid-cell-item" style="background:#f1f5f9;"><label>PO Date</label><div style="padding:6px 4px; font-weight:600;">${s.poDate || '—'}</div></div>
         ${field('Insurance No.', 'insuranceNo')}
