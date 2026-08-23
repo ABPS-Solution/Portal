@@ -507,8 +507,10 @@ async function loadItemCodeTypeConfigIntoCache(forceRefresh = false) {
 function switchItemCodeMode(mode) {
   document.getElementById("icf-mode-search").style.display = mode === 'search' ? "block" : "none";
   document.getElementById("icf-mode-format").style.display = mode === 'format' ? "block" : "none";
-  document.getElementById("icf-mode-btn-search").style.background = mode === 'search' ? "var(--accent)" : "#718096";
-  document.getElementById("icf-mode-btn-format").style.background = mode === 'format' ? "var(--accent)" : "#718096";
+  document.getElementById("icf-mode-btn-search").style.background = mode === 'search' ? "var(--brand)" : "#e2e8f0";
+  document.getElementById("icf-mode-btn-search").style.color = mode === 'search' ? "#fff" : "#334155";
+  document.getElementById("icf-mode-btn-format").style.background = mode === 'format' ? "var(--brand)" : "#e2e8f0";
+  document.getElementById("icf-mode-btn-format").style.color = mode === 'format' ? "#fff" : "#334155";
   document.getElementById("itemcode-feedback-banner").style.display = "none";
 }
 

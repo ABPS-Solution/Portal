@@ -33,8 +33,8 @@ function exitSecurityAdminBackToMenu() {
 function switchSecurityAdminTab(tab) {
   ['users', 'networks', 'devices', 'log', 'settings'].forEach(t => {
     document.getElementById(`sa-panel-${t}`).style.display = (t === tab) ? 'block' : 'none';
-    document.getElementById(`sa-tab-${t}`).style.background = (t === tab) ? 'var(--brand)' : '';
-    document.getElementById(`sa-tab-${t}`).style.color = (t === tab) ? '#fff' : '';
+    document.getElementById(`sa-tab-${t}`).style.background = (t === tab) ? 'var(--brand)' : '#e2e8f0';
+    document.getElementById(`sa-tab-${t}`).style.color = (t === tab) ? '#fff' : '#334155';
   });
 }
 

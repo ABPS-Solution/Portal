@@ -594,6 +594,7 @@
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-tour-expense" onclick="switchActiveDashboardModule('tour-expense')"><span class="mc-label">Tour Expense Tracker</span></div>
+        <div class="menu-card" id="mod-cash-expenses" onclick="switchActiveDashboardModule('cash-expenses')"><span class="mc-label">Daily Cash / UPI Expenses</span></div>
       </div>
     </div>
     
@@ -1792,10 +1793,10 @@
     <div id="te-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
     <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
-      <button id="te-toggle-advance" class="nav-btn-styled" onclick="switchTourExpenseToggle('advance')" style="padding:8px 18px;">Advance Vouchers</button>
-      <button id="te-toggle-check" class="nav-btn-styled" onclick="switchTourExpenseToggle('check')" style="padding:8px 18px;">Employee Tour Expense Vouchers</button>
-      <button id="te-toggle-search" class="nav-btn-styled" onclick="switchTourExpenseToggle('search')" style="padding:8px 18px;">Search Tour Expense Vouchers</button>
-      <button id="te-toggle-employees" class="nav-btn-styled" onclick="switchTourExpenseToggle('employees')" style="padding:8px 18px;">Employee Details</button>
+      <button id="te-toggle-advance" class="nav-btn-styled" onclick="switchTourExpenseToggle('advance')" style="flex:1; padding:11px 16px;">Advance Vouchers</button>
+      <button id="te-toggle-check" class="nav-btn-styled" onclick="switchTourExpenseToggle('check')" style="flex:1; padding:11px 16px;">Employee Tour Expense Vouchers</button>
+      <button id="te-toggle-search" class="nav-btn-styled" onclick="switchTourExpenseToggle('search')" style="flex:1; padding:11px 16px;">Search Tour Expense Vouchers</button>
+      <button id="te-toggle-employees" class="nav-btn-styled" onclick="switchTourExpenseToggle('employees')" style="flex:1; padding:11px 16px;">Employee Details</button>
     </div>
 
     <!-- ADVANCE VOUCHERS -->
@@ -1811,6 +1812,34 @@
     <div id="te-panel-employees" style="display:none;"></div>
   </div>
 
+  <div id="canvas-module-cash-expenses" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitCashExpensesBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <h2 class="panel-title">Daily Cash / UPI Expenses</h2>
+    <div id="ce-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+    <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
+      <button id="ce-toggle-expenses" class="nav-btn-styled" onclick="switchCashExpenseToggle('expenses')" style="flex:1; padding:11px 16px;">Expenses</button>
+      <button id="ce-toggle-balance" class="nav-btn-styled" onclick="switchCashExpenseToggle('balance')" style="flex:1; padding:11px 16px;">Add to Account Balance</button>
+      <button id="ce-toggle-search" class="nav-btn-styled" onclick="switchCashExpenseToggle('search')" style="flex:1; padding:11px 16px;">Search Cash Expense Vouchers</button>
+      <button id="ce-toggle-employees" class="nav-btn-styled" onclick="switchCashExpenseToggle('employees')" style="flex:1; padding:11px 16px;">Employee Details</button>
+    </div>
+
+    <!-- EXPENSES -->
+    <div id="ce-panel-expenses"></div>
+
+    <!-- ADD TO ACCOUNT BALANCE -->
+    <div id="ce-panel-balance" style="display:none;"></div>
+
+    <!-- SEARCH CASH EXPENSE VOUCHERS -->
+    <div id="ce-panel-search" style="display:none;"></div>
+
+    <!-- EMPLOYEE DETAILS -->
+    <div id="ce-panel-employees" style="display:none;"></div>
+  </div>
+
   <div id="canvas-module-security-admin" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
       <div></div>
@@ -1820,11 +1849,11 @@
     <div id="sa-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
     <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
-      <button id="sa-tab-users" class="nav-btn-styled" onclick="switchSecurityAdminTab('users')" style="padding:8px 18px;">Login Anywhere</button>
-      <button id="sa-tab-networks" class="nav-btn-styled" onclick="switchSecurityAdminTab('networks')" style="padding:8px 18px;">Office Networks</button>
-      <button id="sa-tab-devices" class="nav-btn-styled" onclick="switchSecurityAdminTab('devices')" style="padding:8px 18px;">Trusted Devices</button>
-      <button id="sa-tab-log" class="nav-btn-styled" onclick="switchSecurityAdminTab('log')" style="padding:8px 18px;">Login Log</button>
-      <button id="sa-tab-settings" class="nav-btn-styled" onclick="switchSecurityAdminTab('settings')" style="padding:8px 18px;">Settings</button>
+      <button id="sa-tab-users" class="nav-btn-styled" onclick="switchSecurityAdminTab('users')" style="flex:1; padding:11px 16px;">Login Anywhere</button>
+      <button id="sa-tab-networks" class="nav-btn-styled" onclick="switchSecurityAdminTab('networks')" style="flex:1; padding:11px 16px;">Office Networks</button>
+      <button id="sa-tab-devices" class="nav-btn-styled" onclick="switchSecurityAdminTab('devices')" style="flex:1; padding:11px 16px;">Trusted Devices</button>
+      <button id="sa-tab-log" class="nav-btn-styled" onclick="switchSecurityAdminTab('log')" style="flex:1; padding:11px 16px;">Login Log</button>
+      <button id="sa-tab-settings" class="nav-btn-styled" onclick="switchSecurityAdminTab('settings')" style="flex:1; padding:11px 16px;">Settings</button>
     </div>
 
     <!-- LOGIN ANYWHERE -->
@@ -2153,8 +2182,8 @@
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">Search the catalog to find an existing Item Code, or create a new one if the material doesn't exist.</p>
 
       <div style="display:flex; gap:10px; margin-bottom:18px;">
-        <button class="nav-btn-styled" id="icf-mode-btn-search" onclick="switchItemCodeMode('search')" style="background:var(--accent); font-weight:700; padding:9px 20px;">Search / Add Item Code</button>
-        <button class="nav-btn-styled" id="icf-mode-btn-format" onclick="switchItemCodeMode('format')" style="display:none; background:#718096; font-weight:700; padding:9px 20px;">Add / Change Item Code Format</button>
+        <button class="nav-btn-styled" id="icf-mode-btn-search" onclick="switchItemCodeMode('search')" style="flex:1; background:var(--brand); color:#fff; font-weight:700; padding:11px 16px;">Search / Add Item Code</button>
+        <button class="nav-btn-styled" id="icf-mode-btn-format" onclick="switchItemCodeMode('format')" style="display:none; flex:1; background:#e2e8f0; color:#334155; font-weight:700; padding:11px 16px;">Add / Change Item Code Format</button>
       </div>
 
       <div id="itemcode-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
@@ -4034,5 +4063,10 @@
 <script src="accounts/voucher-check.js"></script>
 <script src="accounts/voucher-search.js"></script>
 <script src="accounts/employee-details.js"></script>
+<script src="accounts/cash-expense-shell.js"></script>
+<script src="accounts/cash-expense-entry.js"></script>
+<script src="accounts/cash-balance.js"></script>
+<script src="accounts/cash-expense-search.js"></script>
+<script src="accounts/cash-expense-employees.js"></script>
 </body>
 </html>

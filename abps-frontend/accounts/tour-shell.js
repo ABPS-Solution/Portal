@@ -23,7 +23,7 @@ function switchTourExpenseToggle(toggle) {
     const panel = document.getElementById(`te-panel-${t}`);
     const btn = document.getElementById(`te-toggle-${t}`);
     if (panel) panel.style.display = (t === toggle) ? "block" : "none";
-    if (btn) { btn.style.background = (t === toggle) ? "var(--brand)" : ""; btn.style.color = (t === toggle) ? "#fff" : ""; }
+    if (btn) { btn.style.background = (t === toggle) ? "var(--brand)" : "#e2e8f0"; btn.style.color = (t === toggle) ? "#fff" : "#334155"; }
   });
   if (toggle === "advance" && typeof initializeAdvanceVoucherPanel === "function") initializeAdvanceVoucherPanel();
   if (toggle === "check" && typeof initializeVoucherCheckPanel === "function") initializeVoucherCheckPanel();

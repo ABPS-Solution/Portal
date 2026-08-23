@@ -422,10 +422,10 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
   const feed = document.getElementById("store-grn-queue-cards-feed");
 
   const toggleBar = `
-    <div style="display:flex; gap:8px; margin-bottom:16px;">
-      <button class="nav-btn-styled" onclick="initializeStoreGrnWorkspaceQueue('pending')" style="background:${window.activeQAToggle==='pending' ? 'var(--brand)' : '#e2e8f0'}; color:${window.activeQAToggle==='pending' ? '#fff' : '#334155'}; font-weight:700;">Pending Q/A</button>
-      <button class="nav-btn-styled" onclick="initializeStoreGrnWorkspaceQueue('repair')" style="background:${window.activeQAToggle==='repair' ? 'var(--brand)' : '#e2e8f0'}; color:${window.activeQAToggle==='repair' ? '#fff' : '#334155'}; font-weight:700;">Being Repaired at ABPS</button>
-      <button class="nav-btn-styled" onclick="initializeStoreGrnWorkspaceQueue('revision')" style="background:${window.activeQAToggle==='revision' ? 'var(--brand)' : '#e2e8f0'}; color:${window.activeQAToggle==='revision' ? '#fff' : '#334155'}; font-weight:700;">Q/A Revision</button>
+    <div style="display:flex; gap:14px; margin-bottom:16px;">
+      <button class="nav-btn-styled" onclick="initializeStoreGrnWorkspaceQueue('pending')" style="flex:1; padding:11px 16px; background:${window.activeQAToggle==='pending' ? 'var(--brand)' : '#e2e8f0'}; color:${window.activeQAToggle==='pending' ? '#fff' : '#334155'}; font-weight:700;">Pending Q/A</button>
+      <button class="nav-btn-styled" onclick="initializeStoreGrnWorkspaceQueue('repair')" style="flex:1; padding:11px 16px; background:${window.activeQAToggle==='repair' ? 'var(--brand)' : '#e2e8f0'}; color:${window.activeQAToggle==='repair' ? '#fff' : '#334155'}; font-weight:700;">Being Repaired at ABPS</button>
+      <button class="nav-btn-styled" onclick="initializeStoreGrnWorkspaceQueue('revision')" style="flex:1; padding:11px 16px; background:${window.activeQAToggle==='revision' ? 'var(--brand)' : '#e2e8f0'}; color:${window.activeQAToggle==='revision' ? '#fff' : '#334155'}; font-weight:700;">Q/A Revision</button>
     </div>`;
 
   feed.innerHTML = toggleBar + `
