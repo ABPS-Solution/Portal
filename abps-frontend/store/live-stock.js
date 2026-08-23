@@ -646,92 +646,101 @@ showAppView = async function() {
 };
 
 async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
-  const itemData = JSON.parse(decodeURIComponent(encodedItem));
+  const srcItem = JSON.parse(decodeURIComponent(encodedItem)); // server-supplied fixed line list — used only as a per-row lookup; splits exist purely in the DOM
   const banner = document.getElementById('store-entry-runtime-feedback-banner');
   const btn = event.target;
   banner.style.display = "none";
-  
+
   // Activate frontend button compression animation
-  btn.disabled = true; 
+  btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Saving Entry...';
-  
-  // Capture Item Code inputs and physically received quantities from the active table row coordinates
-  document.querySelectorAll(`.se-item-code-${gateNum}`).forEach(inp => {
-    itemData.lineItems[parseInt(inp.dataset.idx, 10)].itemCode = inp.value.trim(); // Must match itemCode
-  });
-  document.querySelectorAll(`.se-mat-name-${gateNum}`).forEach(inp => {
-    itemData.lineItems[parseInt(inp.dataset.idx, 10)].materialName = inp.value.trim();
-  });
-  // Invoice Unit (editable, carried from Gate Entry) and Item Code Unit
-  // (resolved from design.item_codes.unit via the material match) — the
-  // latter is what actually governs stock from here on, see
-  // commitStoreEntryPipelineStep.
-  document.querySelectorAll(`.se-invoice-unit-${gateNum}`).forEach(inp => {
-    itemData.lineItems[parseInt(inp.dataset.idx, 10)].unitType = inp.value.trim() || 'NOS';
-  });
-  document.querySelectorAll(`.se-item-code-unit-${gateNum}`).forEach(inp => {
-    itemData.lineItems[parseInt(inp.dataset.idx, 10)].itemCodeUnit = inp.value.trim() || null;
-  });
 
   let materialTypeMissing = false;
   let itemCodeMissing = false;
   let unitConverterMissing = false;
+  const usedRejectionIds = new Set(); // a rejectionId is attached to exactly one part, never broadcast to every matching line
 
-  document.querySelectorAll(`.se-material-type-${gateNum}`).forEach(inp => {
-    const val = inp.value.trim();
-    if (!val) materialTypeMissing = true;
-    itemData.lineItems[parseInt(inp.dataset.idx, 10)].materialType = val;
-  });
+  // Row-level fields (Item Code, Material Name/Type, Invoice Unit, Item
+  // Code Unit, Unit Converter) are read once per data-idx. Part-level
+  // fields (Purchase Order, this part's slice of the invoice qty, this
+  // part's Received Qty) are read once per [data-idx][data-part] — an
+  // unsplit line has exactly one part (0), so this produces the same
+  // wire shape as before when nothing was split.
+  const builtLineItems = [];
+  document.querySelectorAll(`.se-po-part-${gateNum}`).forEach(partEl => {
+    const idx = parseInt(partEl.dataset.idx, 10);
+    const part = parseInt(partEl.dataset.part, 10);
+    const src = srcItem.lineItems[idx] || {};
 
-  // Received Qty (verifiedPhysicalQuantity) is what the operator physically
-  // counted, in Invoice Unit terms -- sent as-entered, unmultiplied. The
-  // Unit Converter factor goes along separately; commitStoreEntryPipelineStep
-  // is what actually multiplies them into the Item-Code-Unit quantity that
-  // gets written to stock, never trusting a client-side-computed total. A
-  // row whose units differ but has no factor entered blocks submission
-  // entirely rather than letting the server default it to 1 and silently
-  // write the wrong stock quantity.
-  document.querySelectorAll(`.se-phys-qty-${gateNum}`).forEach(inp => {
-    const idx = parseInt(inp.dataset.idx, 10);
-    itemData.lineItems[idx].verifiedPhysicalQuantity = parseFloat(inp.value) || 0;
+    const itemCode = (document.querySelector(`.se-item-code-${gateNum}[data-idx="${idx}"]`)?.value || '').trim();
+    const materialName = (document.querySelector(`.se-mat-name-${gateNum}[data-idx="${idx}"]`)?.value || '').trim();
+    const materialType = (document.querySelector(`.se-material-type-${gateNum}[data-idx="${idx}"]`)?.value || '').trim();
+    const unitType = (document.querySelector(`.se-invoice-unit-${gateNum}[data-idx="${idx}"]`)?.value || '').trim() || 'NOS';
+    const itemCodeUnit = (document.querySelector(`.se-item-code-unit-${gateNum}[data-idx="${idx}"]`)?.value || '').trim() || null;
+    if (part === 0) {
+      if (!itemCode) itemCodeMissing = true;
+      if (!materialType) materialTypeMissing = true;
+    }
+
     const converterInput = document.querySelector(`.se-unit-converter-${gateNum}[data-idx="${idx}"]`);
     const factorRaw = converterInput ? converterInput.value.trim() : '1';
     const factor = parseFloat(factorRaw);
-    if (!factorRaw || isNaN(factor) || factor <= 0) {
-      unitConverterMissing = true;
-      itemData.lineItems[idx].unitConverter = null;
-      return;
+    let unitConverter = 1;
+    if (unitType.toLowerCase() !== (itemCodeUnit || '').toLowerCase()) {
+      if (!factorRaw || isNaN(factor) || factor <= 0) { unitConverterMissing = true; unitConverter = null; }
+      else unitConverter = factor;
     }
-    itemData.lineItems[idx].unitConverter = factor;
-  });
 
-  // Attach linked rejection resolutions, matched by item code now that Store Entry has resolved them
-  itemData.lineItems.forEach(li => {
-    const code = (li.itemCode || "").toString().trim().toUpperCase();
+    const poNo = (document.querySelector(`.se-po-value-${gateNum}[data-idx="${idx}"][data-part="${part}"]`)?.value || '').trim();
+    const gateQuantity = parseFloat(document.querySelector(`.se-invqty-input-${gateNum}[data-idx="${idx}"][data-part="${part}"]`)?.value) || 0;
+    const verifiedPhysicalQuantity = parseFloat(document.querySelector(`.se-phys-qty-${gateNum}[data-idx="${idx}"][data-part="${part}"]`)?.value) || 0;
+
+    const line = {
+      ledgerId: src.ledgerId, itemCode, materialName, materialType, unitType, itemCodeUnit, unitConverter,
+      poNo, gateQuantity, verifiedPhysicalQuantity,
+      ratePerQuantity: src.ratePerQuantity, gstPercent: src.gstPercent,
+    };
+
+    // Rejection link — matched by item code, attached to exactly one part.
     for (const [rejId, link] of Object.entries(window.activeGateRejectionLinks || {})) {
-      if ((link.itemCode || "").toString().trim().toUpperCase() === code) {
-        li.resolvesRejectionId = rejId;
-        li.resolvedQuantity = link.linkedQty;
+      if (usedRejectionIds.has(rejId)) continue;
+      if ((link.itemCode || '').toString().trim().toUpperCase() === itemCode.toUpperCase()) {
+        line.resolvesRejectionId = rejId;
+        line.resolvedQuantity = link.linkedQty;
+        usedRejectionIds.add(rejId);
         break;
       }
     }
+    builtLineItems.push(line);
   });
 
-  itemData.storePerson = appActiveOperatorIdentityString || "";
-
-  document.querySelectorAll(`.se-item-code-${gateNum}`).forEach(inp => {
-    const val = inp.value.trim();
-    if (!val) itemCodeMissing = true;
-  });
-
-  itemData.storePerson = appActiveOperatorIdentityString || "";
+  const itemData = { gateNumber: srcItem.gateNumber, storePerson: appActiveOperatorIdentityString || "", lineItems: builtLineItems };
 
   const poNoInput = document.getElementById(`se-po-number-${gateNum}`);
-  const poNoVal = poNoInput ? poNoInput.value.trim() : "";
-  itemData.poNo = poNoVal;
+  itemData.poNo = poNoInput ? poNoInput.value.trim() : ""; // header default — only used as a fallback for a part left unassigned
 
-  if (!poNoVal) {
-    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ PO Number is required — QA cannot be completed without a linked Purchase Order.", "error");
+  const poMissing = builtLineItems.some(l => !l.poNo && !itemData.poNo);
+  const sumMismatch = (() => {
+    const byIdx = {};
+    builtLineItems.forEach(l => { byIdx[l.ledgerId] = (byIdx[l.ledgerId] || 0) + (l.gateQuantity || 0); });
+    return Object.entries(byIdx).some(([ledgerId, sum]) => {
+      const partsForLedger = builtLineItems.filter(l => l.ledgerId == ledgerId);
+      if (partsForLedger.length <= 1) return false; // unsplit lines always match by construction
+      const original = srcItem.lineItems.find(l => l.ledgerId == ledgerId);
+      return original && Math.abs(sum - (Number(original.gateQuantity) || 0)) > 1e-9;
+    });
+  })();
+
+  if (poMissing) {
+    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Every line item needs a Purchase Order — pick one per line, or set a Default PO above for lines left unassigned.", "error");
+    banner.scrollIntoView({ behavior: "smooth", block: "center" });
+    btn.disabled = false;
+    btn.textContent = "Submit Store Entry and GRN";
+    return;
+  }
+
+  if (sumMismatch) {
+    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ A split line's allocated invoice quantities don't add up to its total invoice quantity.", "error");
     banner.scrollIntoView({ behavior: "smooth", block: "center" });
     btn.disabled = false;
     btn.textContent = "Submit Store Entry and GRN";
@@ -756,10 +765,10 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
 
   showBlockingOverlay("Verifying Store Entry...");
   try {
-    const data = await apFetch({ 
-      action: "commitStoreEntryPipelineStep", 
-      activeEngineer: appActiveOperatorIdentityString, 
-      payload: itemData 
+    const data = await apFetch({
+      action: "commitStoreEntryPipelineStep",
+      activeEngineer: appActiveOperatorIdentityString,
+      payload: itemData
     });
     hideBlockingOverlay();
     

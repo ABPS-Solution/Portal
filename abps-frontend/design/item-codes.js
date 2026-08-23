@@ -875,6 +875,17 @@ function selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, type
   // Converter should lock to 1 (units now match) or open up for manual
   // entry (they don't), same trigger as editing Invoice Unit directly.
   if (typeof updateSEUnitConverterLock === "function") updateSEUnitConverterLock(gateNum, idx);
+  // Item code just changed — whatever PO was picked for this row was
+  // keyed to the OLD item code, so it's no longer meaningful.
+  if (typeof resetSEPOSelectionsForRow === "function") resetSEPOSelectionsForRow(gateNum, idx);
+  // Item code resolved via the material search (not from Gate Entry), so
+  // the initial queue-load PO-options batch never covered it — fetch it
+  // now, lazily, if not already cached.
+  if (itemCode && window._sePoOptionsCache && !window._sePoOptionsCache[itemCode]) {
+    apFetch({ action: "fetchStoreEntryPOOptions", itemCodes: [itemCode] })
+      .then(d => { if (d.success) Object.assign(window._sePoOptionsCache, d.optionsByItemCode || {}); })
+      .catch(e => console.error("fetchStoreEntryPOOptions (lazy) failed:", e));
+  }
 
   if (nameDisplay) {
     nameDisplay.style.display = "block";
