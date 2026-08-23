@@ -170,7 +170,19 @@
   .grid-cell-item { display: flex; flex-direction: column; background: #f8fafc; padding: 2px 4px; border: 1px solid #e2e8f0; border-radius: 4px; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
   .grid-cell-item label { font-size: 0.58rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 1px; }
   .grid-cell-item input, .grid-cell-item select, .grid-cell-item textarea { padding: 2px 4px; font-size: 0.78rem; font-weight: 600; border-radius: 3px; border: 1px solid var(--border); }
-  
+
+  /* Project Invoice Generation/Revise use the same shared .grid-cell-item
+     question/value fields as several other screens (Manufacturing
+     Clearance, Upload PO...) -- scoped up slightly here only, so this
+     one screen's question labels and values read a bit larger without
+     touching the shared class everywhere else it's used. */
+  #canvas-module-project-invoice .grid-cell-item label { font-size: 0.66rem; }
+  #canvas-module-project-invoice .grid-cell-item input,
+  #canvas-module-project-invoice .grid-cell-item select,
+  #canvas-module-project-invoice .grid-cell-item textarea { font-size: 0.87rem; }
+  #canvas-module-project-invoice .store-basket-data-table th { font-size: 0.82rem; }
+  #canvas-module-project-invoice .store-basket-data-table td { font-size: 0.9rem; }
+
   .aoc-split-row-box { display: grid; grid-template-columns: 85px 1fr; gap: 8px; align-items: center; width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 6px; }
   .aoc-split-row-box select { padding: 4px 6px; font-weight: 700; color: var(--brand); text-align: center; }
   .aoc-split-row-box input { border: 1px solid var(--border); }

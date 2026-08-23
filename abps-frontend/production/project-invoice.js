@@ -47,7 +47,7 @@ function renderPinvFileList(type) {
   const list = document.getElementById(meta.listId);
   if (!list) return;
   list.innerHTML = files.map((f, i) => `
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:0.76rem; padding:4px 8px; background:#f8fafc; border:1px solid var(--border); border-radius:4px; margin-top:4px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:0.82rem; padding:4px 8px; background:#f8fafc; border:1px solid var(--border); border-radius:4px; margin-top:4px;">
       <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</span>
       <span onclick="removePinvFile('${type}', ${i})" style="cursor:pointer; color:#b91c1c; font-weight:700; flex-shrink:0;" title="Remove">✕</span>
     </div>`).join("");
@@ -174,7 +174,7 @@ function renderPinvDetail() {
     if (l.pendingBoqIncreaseCount > 0) blockerMsgs.push(`${l.pendingBoqIncreaseCount} open BOQ Increase Request(s)`);
     const maxQty = hasBoq ? l.readyToInvoiceQty : l.orderedQuantity;
     return `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:8px;">${l.productName || l.description}${blockerMsgs.length ? `<div style="color:#b91c1c; font-size:0.72rem; font-weight:700; margin-top:2px;">⚠ ${blockerMsgs.join(', ')} — this product is blocked</div>` : ''}</td>
+      <td style="padding:8px;">${l.productName || l.description}${blockerMsgs.length ? `<div style="color:#b91c1c; font-size:0.78rem; font-weight:700; margin-top:2px;">⚠ ${blockerMsgs.join(', ')} — this product is blocked</div>` : ''}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.orderedQuantity : '—'}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.jcTotal : '—'}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.jcQaPassed : '—'}</td>
@@ -184,7 +184,7 @@ function renderPinvDetail() {
         <input type="number" min="0" max="${maxQty}" value="${pinvInvoiceState.lineItems[idx].quantity}"
           ${blockerMsgs.length ? 'disabled' : ''}
           oninput="updatePinvClaimQty(${idx}, this.value, ${maxQty})"
-          style="width:70px; text-align:center; padding:4px; font-size:0.8rem;" />
+          style="width:70px; text-align:center; padding:4px; font-size:0.87rem;" />
       </td>
     </tr>`;
   }).join("");
@@ -295,8 +295,8 @@ function renderPinvInvoiceForm() {
 
   zone.innerHTML = `
     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:16px;">
-      <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:0.95rem;">Invoice Details</div>
-      <div style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">Fill in what the invoice needs, edit any product row if needed, then Generate Invoice Doc.</div>
+      <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:1rem;">Invoice Details</div>
+      <div style="font-size:0.87rem; color:var(--muted); margin-bottom:14px;">Fill in what the invoice needs, edit any product row if needed, then Generate Invoice Doc.</div>
 
       <div class="compact-fields-grid" style="margin-bottom:14px;">
         <div class="grid-cell-item" style="background:#f1f5f9;"><label>Invoice No.</label><div style="padding:6px 4px; font-weight:600; color:var(--brand);" title="Auto-generated -- assigned for real, atomically, when you generate the invoice">${s.invoiceNo || '—'}</div></div>
@@ -314,7 +314,7 @@ function renderPinvInvoiceForm() {
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
         <div style="border:1px solid var(--border); border-radius:var(--radius); padding:10px; background:#fff;">
-          <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.82rem;">BILL TO PARTY</div>
+          <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.88rem;">BILL TO PARTY</div>
           ${field('Name', null, ['billTo','name'])}
           ${field('Address', null, ['billTo','address'])}
           ${field('State', null, ['billTo','state'])}
@@ -323,7 +323,7 @@ function renderPinvInvoiceForm() {
           ${field('Contact No.', null, ['billTo','contactNo'])}
         </div>
         <div style="border:1px solid var(--border); border-radius:var(--radius); padding:10px; background:#fff;">
-          <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.82rem;">SHIP TO PARTY</div>
+          <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.88rem;">SHIP TO PARTY</div>
           ${field('Name', null, ['shipTo','name'])}
           ${field('Address', null, ['shipTo','address'])}
           ${field('State', null, ['shipTo','state'])}
@@ -333,39 +333,39 @@ function renderPinvInvoiceForm() {
         </div>
       </div>
 
-      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.85rem;">Item Details</div>
+      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.9rem;">Item Details</div>
       <div id="pinv-lineitems-wrap"></div>
 
       <div style="display:flex; justify-content:flex-end; margin-top:12px;">
         <div style="width:300px; display:flex; flex-direction:column; gap:6px;">
           <div style="display:flex; justify-content:space-between; align-items:center; background:#f1f5f9; border-radius:4px; padding:6px 10px;">
-            <span style="font-size:0.78rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Sub Total</span>
+            <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Sub Total</span>
             <strong id="pinv-subtotal-display">₹0</strong>
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
-            <span style="font-size:0.78rem; font-weight:700; color:var(--muted); text-transform:uppercase;">CGST %</span>
+            <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">CGST %</span>
             <input type="number" placeholder="0" value="${esc(s.cgstPercent)}" oninput="updatePinvField('cgstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
-            <span style="font-size:0.78rem; font-weight:700; color:var(--muted); text-transform:uppercase;">SGST %</span>
+            <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">SGST %</span>
             <input type="number" placeholder="0" value="${esc(s.sgstPercent)}" oninput="updatePinvField('sgstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
-            <span style="font-size:0.78rem; font-weight:700; color:var(--muted); text-transform:uppercase;">IGST %</span>
+            <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">IGST %</span>
             <input type="number" value="${esc(s.igstPercent)}" oninput="updatePinvField('igstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
-            <span style="font-size:0.78rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Round Off</span>
+            <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Round Off</span>
             <input type="number" value="${esc(s.roundOff)}" oninput="updatePinvField('roundOff', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; background:#f0fdf4; border-radius:4px; padding:6px 10px;">
-            <span style="font-size:0.78rem; font-weight:700; color:#15803d; text-transform:uppercase;">Grand Total</span>
+            <span style="font-size:0.85rem; font-weight:700; color:#15803d; text-transform:uppercase;">Grand Total</span>
             <strong id="pinv-grandtotal-display" style="color:#15803d;">₹0</strong>
           </div>
         </div>
       </div>
 
-      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.85rem;">Bank Details</div>
+      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.9rem;">Bank Details</div>
       <div class="compact-fields-grid">
         ${field('Bank Name', null, ['bankDetails','bankName'])}
         ${field('IFSC Code For RTGS/NEFT', null, ['bankDetails','ifsc'])}
@@ -375,11 +375,11 @@ function renderPinvInvoiceForm() {
       </div>
 
       <div style="margin-top:14px;">
-        <label class="field-label" style="margin-top:0;">Declaration</label>
-        <textarea rows="4" style="width:100%; padding:8px; font-size:0.78rem; border:1.5px solid var(--border); border-radius:var(--radius);" oninput="updatePinvField('declaration', this.value)">${s.declaration}</textarea>
+        <label class="field-label" style="margin-top:0; font-size:0.76rem;">Declaration</label>
+        <textarea rows="4" style="width:100%; padding:8px; font-size:0.85rem; border:1.5px solid var(--border); border-radius:var(--radius);" oninput="updatePinvField('declaration', this.value)">${s.declaration}</textarea>
       </div>
 
-      <div style="margin-top:14px; font-size:0.8rem; color:var(--muted);">Total Invoice Amount in Words: <strong id="pinv-words-display" style="color:var(--text);">—</strong></div>
+      <div style="margin-top:14px; font-size:0.87rem; color:var(--muted);">Total Invoice Amount in Words: <strong id="pinv-words-display" style="color:var(--text);">—</strong></div>
     </div>
   `;
   renderPinvLineItemsTable();
@@ -423,14 +423,14 @@ function renderPinvLineItemsTable() {
                 // hand-typed total" stance as the Item Code Format engine's
                 // auto-calc fields.
                 return `<td><input type="number" id="pinv-amount-${idx}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" readonly
-                  style="width:100%; min-width:80px; padding:4px; font-size:0.78rem; background:#f1f5f9; color:var(--muted); cursor:not-allowed;" /></td>`;
+                  style="width:100%; min-width:80px; padding:4px; font-size:0.85rem; background:#f1f5f9; color:var(--muted); cursor:not-allowed;" /></td>`;
               }
               return type === 'text'
-                ? `<td><textarea rows="1" oninput="updatePinvLineItem(${idx}, '${key}', this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; min-width:80px; padding:4px; font-size:0.78rem; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`
-                : `<td><input type="${type}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" oninput="updatePinvLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:80px; padding:4px; font-size:0.78rem;" /></td>`;
+                ? `<td><textarea rows="1" oninput="updatePinvLineItem(${idx}, '${key}', this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; min-width:80px; padding:4px; font-size:0.85rem; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`
+                : `<td><input type="${type}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" oninput="updatePinvLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:80px; padding:4px; font-size:0.85rem;" /></td>`;
             }).join('')}
             <td style="text-align:center;"><button type="button" onclick="pinvDeleteLineItem(${idx})" title="Remove this line from the invoice"
-              style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.7rem; font-weight:700; padding:3px 7px; cursor:pointer;">✕</button></td>
+              style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.76rem; font-weight:700; padding:3px 7px; cursor:pointer;">✕</button></td>
           </tr>`).join('')}
       </tbody>
     </table>`;
@@ -653,14 +653,14 @@ async function handlePinvReviseTypeaheadInput(query) {
     return p.toLowerCase().includes(q) || companyName.toLowerCase().includes(q);
   }).slice(0, 10);
   if (matches.length === 0) {
-    dd.innerHTML = `<div style="padding:8px 10px; font-size:0.8rem; color:var(--muted);">No completed invoiced projects match.</div>`;
+    dd.innerHTML = `<div style="padding:8px 10px; font-size:0.87rem; color:var(--muted);">No completed invoiced projects match.</div>`;
     dd.style.display = "block";
     return;
   }
   dd.innerHTML = matches.map(p => {
     const companyName = (pinvReviseProjectMeta[p] && pinvReviseProjectMeta[p].companyName) || "";
     return `<div onmousedown="event.preventDefault();" onclick="selectPinvReviseProject('${p.replace(/'/g,"\\'")}')"
-      style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
+      style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.88rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:700;">${p}</span>${companyName ? ` <span style="color:var(--muted);">— ${companyName}</span>` : ''}
     </div>`;
@@ -687,16 +687,16 @@ async function loadPinvReviseHistory(projectId) {
   // picked from the history table below (loadPinvReviseForm) — hide it
   // again whenever the history itself (re)loads.
   document.getElementById("pinv-revise-generate-btn-wrap").style.display = "none";
-  historyZone.innerHTML = `<div style="text-align:center; padding:14px; color:var(--muted); font-size:0.85rem;">Loading invoice history...</div>`;
+  historyZone.innerHTML = `<div style="text-align:center; padding:14px; color:var(--muted); font-size:0.9rem;">Loading invoice history...</div>`;
   try {
     const data = await apFetch({ action: "fetchProjectInvoiceHistory", projectId });
     if (!data.success || !(data.invoices || []).length) {
-      historyZone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.85rem;">${data.error || "No invoices found for this project."}</div>`;
+      historyZone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">${data.error || "No invoices found for this project."}</div>`;
       return;
     }
     historyZone.innerHTML = `
-      <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.85rem;">Invoice History — ${projectId}</div>
-      <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:0.82rem; margin-bottom:10px;">
+      <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.9rem;">Invoice History — ${projectId}</div>
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:0.88rem; margin-bottom:10px;">
         <colgroup><col style="width:14%;" /><col style="width:26%;" /><col style="width:10%;" /><col style="width:16%;" /><col style="width:34%;" /></colgroup>
         <thead><tr style="background:var(--highlight-bg); text-align:left;">
           <th style="padding:6px;">Type</th><th style="padding:6px;">Invoice No.</th><th style="padding:6px;">Rev</th><th style="padding:6px;">PDF</th><th style="padding:6px; text-align:right;"></th>
@@ -707,22 +707,22 @@ async function loadPinvReviseHistory(projectId) {
             <td style="padding:6px; word-wrap:break-word;">${inv.invoiceNo}</td>
             <td style="padding:6px;">V${inv.revision}</td>
             <td style="padding:6px;">${inv.pdfUrl ? `<a href="${driveLink(inv.pdfUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a>` : '—'}</td>
-            <td style="padding:6px; text-align:right;"><button class="nav-btn-styled" style="background:var(--accent); padding:5px 12px; font-size:0.78rem;" onclick="loadPinvReviseForm(${inv.invoiceId})">Revise</button></td>
+            <td style="padding:6px; text-align:right;"><button class="nav-btn-styled" style="background:var(--accent); padding:5px 12px; font-size:0.85rem;" onclick="loadPinvReviseForm(${inv.invoiceId})">Revise</button></td>
           </tr>`).join("")}
         </tbody>
       </table>`;
   } catch(e) {
-    historyZone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.85rem;">Network error: ${e.message}</div>`;
+    historyZone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">Network error: ${e.message}</div>`;
   }
 }
 
 async function loadPinvReviseForm(invoiceId) {
   const zone = document.getElementById("pinv-revise-invoice-form-zone");
-  zone.innerHTML = `<div style="text-align:center; padding:14px; color:var(--muted); font-size:0.85rem;">Loading current invoice details...</div>`;
+  zone.innerHTML = `<div style="text-align:center; padding:14px; color:var(--muted); font-size:0.9rem;">Loading current invoice details...</div>`;
   try {
     const data = await apFetch({ action: "fetchProjectInvoiceRevisionPrefillById", invoiceId });
     if (!data.success) {
-      zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.85rem;">${data.error || "Failed to load."}</div>`;
+      zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">${data.error || "Failed to load."}</div>`;
       return;
     }
     pinvReviseCache = { invoiceId: data.invoiceId, projectId: data.projectId, invoiceType: data.invoiceType, invoiceRevision: data.revision || 0 };
@@ -742,7 +742,7 @@ async function loadPinvReviseForm(invoiceId) {
     renderPinvReviseInvoiceForm();
     document.getElementById("pinv-revise-generate-btn-wrap").style.display = "block";
   } catch(e) {
-    zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.85rem;">Network error: ${e.message}</div>`;
+    zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">Network error: ${e.message}</div>`;
   }
 }
 
@@ -762,8 +762,8 @@ function renderPinvReviseInvoiceForm() {
 
   zone.innerHTML = `
     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:16px;">
-      <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:0.95rem;">${pinvReviseCache.invoiceType} Invoice ${pinvReviseCache.invoiceId} — Revision V${(pinvReviseCache.invoiceRevision || 0) + 1}</div>
-      <div style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">Prefilled from this specific invoice. Edit anything, then generate the revised doc — this only replaces THIS invoice; other invoices on the project, project status, PRNs, and stock are not touched.</div>
+      <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:1rem;">${pinvReviseCache.invoiceType} Invoice ${pinvReviseCache.invoiceId} — Revision V${(pinvReviseCache.invoiceRevision || 0) + 1}</div>
+      <div style="font-size:0.87rem; color:var(--muted); margin-bottom:14px;">Prefilled from this specific invoice. Edit anything, then generate the revised doc — this only replaces THIS invoice; other invoices on the project, project status, PRNs, and stock are not touched.</div>
 
       <div class="compact-fields-grid" style="margin-bottom:14px;">
         <div class="grid-cell-item" style="background:#f1f5f9;"><label>Invoice No.</label><div style="padding:6px 4px; font-weight:600; color:var(--brand);" title="A revision keeps the invoice's original number — it's never re-minted or hand-edited here">${s.invoiceNo || '—'}</div></div>
@@ -780,7 +780,7 @@ function renderPinvReviseInvoiceForm() {
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
         <div style="border:1px solid var(--border); border-radius:var(--radius); padding:10px; background:#fff;">
-          <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.82rem;">BILL TO PARTY</div>
+          <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.88rem;">BILL TO PARTY</div>
           ${field('Name', null, ['billTo','name'])}
           ${field('Address', null, ['billTo','address'])}
           ${field('State', null, ['billTo','state'])}
@@ -789,7 +789,7 @@ function renderPinvReviseInvoiceForm() {
           ${field('Contact No.', null, ['billTo','contactNo'])}
         </div>
         <div style="border:1px solid var(--border); border-radius:var(--radius); padding:10px; background:#fff;">
-          <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.82rem;">SHIP TO PARTY</div>
+          <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.88rem;">SHIP TO PARTY</div>
           ${field('Name', null, ['shipTo','name'])}
           ${field('Address', null, ['shipTo','address'])}
           ${field('State', null, ['shipTo','state'])}
@@ -799,39 +799,39 @@ function renderPinvReviseInvoiceForm() {
         </div>
       </div>
 
-      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.85rem;">Item Details</div>
+      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.9rem;">Item Details</div>
       <div id="pinv-revise-lineitems-wrap"></div>
 
       <div style="display:flex; justify-content:flex-end; margin-top:12px;">
         <div style="width:300px; display:flex; flex-direction:column; gap:6px;">
           <div style="display:flex; justify-content:space-between; align-items:center; background:#f1f5f9; border-radius:4px; padding:6px 10px;">
-            <span style="font-size:0.78rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Sub Total</span>
+            <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Sub Total</span>
             <strong id="pinv-revise-subtotal-display">₹0</strong>
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
-            <span style="font-size:0.78rem; font-weight:700; color:var(--muted); text-transform:uppercase;">CGST %</span>
+            <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">CGST %</span>
             <input type="number" placeholder="0" value="${esc(s.cgstPercent)}" oninput="updatePinvReviseField('cgstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
-            <span style="font-size:0.78rem; font-weight:700; color:var(--muted); text-transform:uppercase;">SGST %</span>
+            <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">SGST %</span>
             <input type="number" placeholder="0" value="${esc(s.sgstPercent)}" oninput="updatePinvReviseField('sgstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
-            <span style="font-size:0.78rem; font-weight:700; color:var(--muted); text-transform:uppercase;">IGST %</span>
+            <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">IGST %</span>
             <input type="number" value="${esc(s.igstPercent)}" oninput="updatePinvReviseField('igstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
-            <span style="font-size:0.78rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Round Off</span>
+            <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Round Off</span>
             <input type="number" value="${esc(s.roundOff)}" oninput="updatePinvReviseField('roundOff', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; background:#f0fdf4; border-radius:4px; padding:6px 10px;">
-            <span style="font-size:0.78rem; font-weight:700; color:#15803d; text-transform:uppercase;">Grand Total</span>
+            <span style="font-size:0.85rem; font-weight:700; color:#15803d; text-transform:uppercase;">Grand Total</span>
             <strong id="pinv-revise-grandtotal-display" style="color:#15803d;">₹0</strong>
           </div>
         </div>
       </div>
 
-      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.85rem;">Bank Details</div>
+      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.9rem;">Bank Details</div>
       <div class="compact-fields-grid">
         ${field('Bank Name', null, ['bankDetails','bankName'])}
         ${field('IFSC Code For RTGS/NEFT', null, ['bankDetails','ifsc'])}
@@ -841,11 +841,11 @@ function renderPinvReviseInvoiceForm() {
       </div>
 
       <div style="margin-top:14px;">
-        <label class="field-label" style="margin-top:0;">Declaration</label>
-        <textarea rows="4" style="width:100%; padding:8px; font-size:0.78rem; border:1.5px solid var(--border); border-radius:var(--radius);" oninput="updatePinvReviseField('declaration', this.value)">${s.declaration}</textarea>
+        <label class="field-label" style="margin-top:0; font-size:0.76rem;">Declaration</label>
+        <textarea rows="4" style="width:100%; padding:8px; font-size:0.85rem; border:1.5px solid var(--border); border-radius:var(--radius);" oninput="updatePinvReviseField('declaration', this.value)">${s.declaration}</textarea>
       </div>
 
-      <div style="margin-top:14px; font-size:0.8rem; color:var(--muted);">Total Invoice Amount in Words: <strong id="pinv-revise-words-display" style="color:var(--text);">—</strong></div>
+      <div style="margin-top:14px; font-size:0.87rem; color:var(--muted);">Total Invoice Amount in Words: <strong id="pinv-revise-words-display" style="color:var(--text);">—</strong></div>
     </div>
   `;
   renderPinvReviseLineItemsTable();
@@ -875,14 +875,14 @@ function renderPinvReviseLineItemsTable() {
             ${cols.map(([key, , type]) => {
               if (key === 'totalBasicPrice') {
                 return `<td><input type="number" id="pinv-revise-amount-${idx}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" readonly
-                  style="width:100%; min-width:80px; padding:4px; font-size:0.78rem; background:#f1f5f9; color:var(--muted); cursor:not-allowed;" /></td>`;
+                  style="width:100%; min-width:80px; padding:4px; font-size:0.85rem; background:#f1f5f9; color:var(--muted); cursor:not-allowed;" /></td>`;
               }
               return type === 'text'
-                ? `<td><textarea rows="1" oninput="updatePinvReviseLineItem(${idx}, '${key}', this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; min-width:80px; padding:4px; font-size:0.78rem; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`
-                : `<td><input type="${type}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" oninput="updatePinvReviseLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:80px; padding:4px; font-size:0.78rem;" /></td>`;
+                ? `<td><textarea rows="1" oninput="updatePinvReviseLineItem(${idx}, '${key}', this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; min-width:80px; padding:4px; font-size:0.85rem; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`
+                : `<td><input type="${type}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" oninput="updatePinvReviseLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:80px; padding:4px; font-size:0.85rem;" /></td>`;
             }).join('')}
             <td style="text-align:center;"><button type="button" onclick="pinvReviseDeleteLineItem(${idx})" title="Remove this line from the invoice"
-              style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.7rem; font-weight:700; padding:3px 7px; cursor:pointer;">✕</button></td>
+              style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.76rem; font-weight:700; padding:3px 7px; cursor:pointer;">✕</button></td>
           </tr>`).join('')}
       </tbody>
     </table>`;
