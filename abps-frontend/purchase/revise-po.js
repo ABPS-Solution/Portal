@@ -750,10 +750,14 @@ async function cancelPOEntirely(poNo) {
 }
 
 async function dismissPORevision(poNo) {
-  const reason = prompt(`Mark ${poNo} as needing no revision?\n\nUse this when you covered the PRN change with a NEW purchase order instead. Optionally note why:`);
-  if (reason === null) return;
+  // Plain confirm(), not prompt() — this action never required a
+  // justification (routes/purchase.js's dismissPORevisionQueue only ever
+  // validated poNo, reason was always optional), but the old prompt()'s
+  // wording read as if typing something was mandatory.
+  const ok = confirm(`Mark ${poNo} as needing no revision?\n\nUse this when you covered the PRN change with a NEW purchase order instead.`);
+  if (!ok) return;
   try {
-    const data = await apFetch({ action: "dismissPORevisionQueue", poNo, reason, operatorName: appActiveOperatorIdentityString });
+    const data = await apFetch({ action: "dismissPORevisionQueue", poNo, operatorName: appActiveOperatorIdentityString });
     if (data.success) {
       showPurchaseFeedback("rpo-feedback", `${poNo} removed from the revision queue.`, "success");
       initializeRevisePOPanel();
