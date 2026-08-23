@@ -1791,42 +1791,24 @@
     <h2 class="panel-title">Tour Expense Tracker</h2>
     <div id="te-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
-    <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center;">
-      <button id="te-tab-employee" class="nav-btn-styled" onclick="switchTourExpenseTab('employee')" style="padding:8px 18px;">Search Employee</button>
-      <button id="te-tab-voucher" class="nav-btn-styled" onclick="switchTourExpenseTab('voucher')" style="padding:8px 18px;">Search Voucher</button>
-      <button class="nav-btn-styled" onclick="openAddTourEmployeeForm()" style="padding:8px 18px; margin-left:auto;">+ Add Employee</button>
+    <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
+      <button id="te-toggle-advance" class="nav-btn-styled" onclick="switchTourExpenseToggle('advance')" style="padding:8px 18px;">Advance Vouchers</button>
+      <button id="te-toggle-check" class="nav-btn-styled" onclick="switchTourExpenseToggle('check')" style="padding:8px 18px;">Employee Tour Expense Vouchers</button>
+      <button id="te-toggle-search" class="nav-btn-styled" onclick="switchTourExpenseToggle('search')" style="padding:8px 18px;">Search Tour Expense Vouchers</button>
+      <button id="te-toggle-employees" class="nav-btn-styled" onclick="switchTourExpenseToggle('employees')" style="padding:8px 18px;">Employee Details</button>
     </div>
 
-    <!-- SEARCH EMPLOYEE TAB -->
-    <div id="te-panel-employee">
-      <div id="te-add-employee-form" style="display:none; background:var(--highlight-bg); padding:16px; border-radius:var(--radius); margin-bottom:20px;">
-        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
-          <input type="text" id="te-new-employee-name" placeholder="Employee Name" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; flex:1; min-width:200px;">
-          <select id="te-new-employee-dept" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; flex:1; min-width:200px;">
-            <option value="">Select Department</option>
-          </select>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <button class="nav-btn-styled" onclick="submitAddTourEmployee()">Submit</button>
-          <button class="nav-btn-styled" onclick="document.getElementById('te-add-employee-form').style.display='none';">Cancel</button>
-        </div>
-      </div>
-      <input type="text" id="te-employee-search-input" placeholder="Search employee by name..." style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; width:300px; margin-bottom:16px;" oninput="renderTourEmployeeSearchResults()">
-      <div id="te-employee-list" style="margin-bottom:20px; display:flex; flex-wrap:wrap; gap:10px;"></div>
-      <div id="te-employee-detail"></div>
-    </div>
+    <!-- ADVANCE VOUCHERS -->
+    <div id="te-panel-advance"></div>
 
-    <!-- SEARCH VOUCHER TAB -->
-    <div id="te-panel-voucher" style="display:none;">
-      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
-        <thead><tr style="background:var(--highlight-bg); text-align:left;">
-          <th style="padding:8px;">Date</th><th style="padding:8px;">Department</th><th style="padding:8px;">Employee Name</th>
-          <th style="padding:8px;">Customer Name</th><th style="padding:8px;">Purpose of Visit</th><th style="padding:8px;">Voucher Amount</th>
-          <th style="padding:8px;">Checked Amount</th><th style="padding:8px;">Action</th>
-        </tr></thead>
-        <tbody id="te-voucher-list-body"></tbody>
-      </table>
-    </div>
+    <!-- EMPLOYEE TOUR EXPENSE VOUCHERS (checking queue) -->
+    <div id="te-panel-check" style="display:none;"></div>
+
+    <!-- SEARCH TOUR EXPENSE VOUCHERS -->
+    <div id="te-panel-search" style="display:none;"></div>
+
+    <!-- EMPLOYEE DETAILS -->
+    <div id="te-panel-employees" style="display:none;"></div>
   </div>
 
   <div id="canvas-module-security-admin" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
@@ -4047,6 +4029,10 @@
 <script src="production/fg-approval.js"></script>
 <script src="production/project-invoice.js"></script>
 <script src="production/production-dashboard.js"></script>
-<script src="accounts/tour-expense.js"></script>
+<script src="accounts/tour-shell.js"></script>
+<script src="accounts/advance-vouchers.js"></script>
+<script src="accounts/voucher-check.js"></script>
+<script src="accounts/voucher-search.js"></script>
+<script src="accounts/employee-details.js"></script>
 </body>
 </html>

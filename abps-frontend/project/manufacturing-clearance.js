@@ -15,6 +15,23 @@ let mcGatingState = {};
 // show "before → after" without the after-value having already clobbered it.
 let mcLineItemMeta = {};
 
+// switchMcStatus / syncMcStatusPills — moved here from
+// accounts/tour-expense.js (where they were misfiled) during the Tour
+// Expense Tracker rebuild; this is where they actually belong.
+function switchMcStatus(status) {
+  mcCurrentStatus = status;
+  syncMcStatusPills();
+  loadManufacturingClearanceList();
+}
+
+function syncMcStatusPills() {
+  ["Active", "Inactive", "Completed"].forEach(s => {
+    const btn = document.getElementById("mc-pill-" + s.toLowerCase());
+    if (btn) btn.style.background = (s === mcCurrentStatus) ? "var(--brand)" : "#e2e8f0";
+    if (btn) btn.style.color = (s === mcCurrentStatus) ? "#fff" : "#334155";
+  });
+}
+
 function initializeManufacturingClearancePanel() {
   mcCurrentStatus = "Inactive";
   mcLineItemState = {};
