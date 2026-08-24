@@ -344,15 +344,15 @@ function renderPinvInvoiceForm() {
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">CGST %</span>
-            <input type="number" placeholder="0" value="${esc(s.cgstPercent)}" oninput="updatePinvField('cgstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
+            <input type="number" min="0" placeholder="0" value="${esc(s.cgstPercent)}" oninput="updatePinvField('cgstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">SGST %</span>
-            <input type="number" placeholder="0" value="${esc(s.sgstPercent)}" oninput="updatePinvField('sgstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
+            <input type="number" min="0" placeholder="0" value="${esc(s.sgstPercent)}" oninput="updatePinvField('sgstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">IGST %</span>
-            <input type="number" value="${esc(s.igstPercent)}" oninput="updatePinvField('igstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
+            <input type="number" min="0" value="${esc(s.igstPercent)}" oninput="updatePinvField('igstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Round Off</span>
@@ -696,10 +696,10 @@ async function loadPinvReviseHistory(projectId) {
     }
     historyZone.innerHTML = `
       <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.9rem;">Invoice History — ${projectId}</div>
-      <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:0.88rem; margin-bottom:10px;">
-        <colgroup><col style="width:14%;" /><col style="width:26%;" /><col style="width:10%;" /><col style="width:16%;" /><col style="width:34%;" /></colgroup>
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:0.88rem; margin-bottom:6px;">
+        <colgroup><col style="width:13%;" /><col style="width:23%;" /><col style="width:8%;" /><col style="width:13%;" /><col style="width:13%;" /><col style="width:30%;" /></colgroup>
         <thead><tr style="background:var(--highlight-bg); text-align:left;">
-          <th style="padding:6px;">Type</th><th style="padding:6px;">Invoice No.</th><th style="padding:6px;">Rev</th><th style="padding:6px;">PDF</th><th style="padding:6px; text-align:right;"></th>
+          <th style="padding:6px;">Type</th><th style="padding:6px;">Invoice No.</th><th style="padding:6px;">Rev</th><th style="padding:6px;">PDF</th><th style="padding:6px;">Docs</th><th style="padding:6px; text-align:right;"></th>
         </tr></thead>
         <tbody>
           ${data.invoices.map(inv => `<tr style="border-bottom:1px solid var(--border);">
@@ -707,12 +707,40 @@ async function loadPinvReviseHistory(projectId) {
             <td style="padding:6px; word-wrap:break-word;">${inv.invoiceNo}</td>
             <td style="padding:6px;">V${inv.revision}</td>
             <td style="padding:6px;">${inv.pdfUrl ? `<a href="${driveLink(inv.pdfUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a>` : '—'}</td>
+            <td style="padding:6px;"><button class="nav-btn-styled" style="background:var(--muted); padding:3px 10px; font-size:0.78rem;" onclick="togglePinvDocuments(${inv.invoiceId})">View</button></td>
             <td style="padding:6px; text-align:right;"><button class="nav-btn-styled" style="background:var(--accent); padding:5px 12px; font-size:0.85rem;" onclick="loadPinvReviseForm(${inv.invoiceId})">Revise</button></td>
+          </tr>
+          <tr id="pinv-docs-row-${inv.invoiceId}" style="display:none;">
+            <td colspan="6" style="padding:4px 6px 10px 6px;"><div id="pinv-docs-zone-${inv.invoiceId}" style="font-size:0.82rem; color:var(--muted);"></div></td>
           </tr>`).join("")}
         </tbody>
       </table>`;
   } catch(e) {
     historyZone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">Network error: ${e.message}</div>`;
+  }
+}
+
+// project.project_invoice_documents was write-only from application code
+// before 24 Aug 2026 — this is the first screen that reads it back, so a
+// user can actually see what was attached to a given invoice. Toggled
+// per-row rather than loaded eagerly with the history table, since most
+// invoices in a long history will never need this looked at.
+async function togglePinvDocuments(invoiceId) {
+  const row = document.getElementById(`pinv-docs-row-${invoiceId}`);
+  const zone = document.getElementById(`pinv-docs-zone-${invoiceId}`);
+  if (!row || !zone) return;
+  if (row.style.display === "table-row") { row.style.display = "none"; return; }
+  row.style.display = "table-row";
+  zone.innerHTML = "Loading documents...";
+  try {
+    const data = await apFetch({ action: "fetchProjectInvoiceDocuments", invoiceId });
+    if (!data.success) { zone.innerHTML = `<span style="color:#b91c1c;">${data.error || "Failed to load documents."}</span>`; return; }
+    if (!(data.documents || []).length) { zone.innerHTML = "No documents attached to this invoice."; return; }
+    zone.innerHTML = data.documents.map(d =>
+      `<div style="margin-bottom:2px;">${d.docLabel}${d.fileName ? ` — ${d.fileName}` : ""}: <a href="${driveLink(d.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`
+    ).join("");
+  } catch(e) {
+    zone.innerHTML = `<span style="color:#b91c1c;">Network error: ${e.message}</span>`;
   }
 }
 
@@ -810,15 +838,15 @@ function renderPinvReviseInvoiceForm() {
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">CGST %</span>
-            <input type="number" placeholder="0" value="${esc(s.cgstPercent)}" oninput="updatePinvReviseField('cgstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
+            <input type="number" min="0" placeholder="0" value="${esc(s.cgstPercent)}" oninput="updatePinvReviseField('cgstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">SGST %</span>
-            <input type="number" placeholder="0" value="${esc(s.sgstPercent)}" oninput="updatePinvReviseField('sgstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
+            <input type="number" min="0" placeholder="0" value="${esc(s.sgstPercent)}" oninput="updatePinvReviseField('sgstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">IGST %</span>
-            <input type="number" value="${esc(s.igstPercent)}" oninput="updatePinvReviseField('igstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
+            <input type="number" min="0" value="${esc(s.igstPercent)}" oninput="updatePinvReviseField('igstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Round Off</span>

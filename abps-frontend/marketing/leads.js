@@ -2810,9 +2810,9 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
         </div>`;
       mount.innerHTML = `
         <div style="border-top:2px solid var(--border); padding-top:12px; margin-top:4px;">
-          <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--text); margin-bottom:10px; letter-spacing:0.5px;">📄 Uploaded Documents</div>
+          <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--text); margin-bottom:10px; letter-spacing:0.5px;">📄 Documents</div>
           ${renderEmptyPlaceholder("Purchase Order", "#0056b3")}
-          ${renderEmptyPlaceholder("Dispatch Bill", "#059669")}
+          ${renderEmptyPlaceholder("Project Invoice", "#059669")}
           ${renderEmptyPlaceholder("Commissioning Report", "#7c3aed")}
         </div>`;
       return;
@@ -2826,10 +2826,14 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
       "Purchase Order GST Amount", "Purchase Order Total Amount", "Payment Terms",
       "Name of ABPS Owner of Order", "Purchase Order Warranty Terms", "ABG Required", "Scope of Work"
     ];
-    const dispatchFields = [
-      "Dispatch Bill Invoice Number", "Dispatch Bill Invoice Date", "Customer PO Number",
-      "Customer PO Date", "Basic Dispatch Bill Amount (in Rs)", "Dispatch Bill GST Amount",
-      "Total Dispatch Bill Amount"
+    // "Dispatch Bill" was retired as a standalone upload back in migration
+    // 091 — Project Invoice Generation replaced it. These fields are now
+    // server-computed from the actual invoice, not typed in (see
+    // routes/projects.js's syncProjectInvoiceToMarketing).
+    const projectInvoiceFields = [
+      "Project Invoice Number", "Project Invoice Date", "Customer PO Number",
+      "Customer PO Date", "Basic Project Invoice Amount (in Rs)", "Project Invoice GST Amount",
+      "Total Project Invoice Amount"
     ];
     const commissionFields = [
       "Date of Product Commissioning", "Commissioning ABPS Engineer Name",
@@ -2837,7 +2841,7 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
     ];
 
     const hasPO         = poFields.some(f => row[f] && row[f] !== "");
-    const hasDispatch   = dispatchFields.some(f => row[f] && row[f] !== "");
+    const hasInvoice    = projectInvoiceFields.some(f => row[f] && row[f] !== "");
     const hasCommission = commissionFields.some(f => row[f] && row[f] !== "");
 
     // Always show the section — with data if available, with placeholder if not
@@ -2850,7 +2854,7 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
       </div>`;
     };
 
-    const renderSection = (title, color, fields) => {
+    const renderSection = (title, color, fields, extraHtml) => {
       const hasData = fields.some(f => row[f] && row[f] !== "");
       if (!hasData) return "";
       const fieldsHtml = fields.map(f => renderFieldRow(f, row[f])).join("");
@@ -2862,6 +2866,7 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
           <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:6px;">
             ${fieldsHtml}
           </div>
+          ${extraHtml || ""}
         </div>`;
     };
 
@@ -2875,11 +2880,18 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
         </div>
       </div>`;
 
+    // Project Invoice's own PDF, kept live in sync by routes/projects.js —
+    // link out to it the same way the Project Review Doc link works
+    // elsewhere (driveLink() wraps the private Drive proxy URL).
+    const invoiceDocLink = row.projectInvoiceDocumentUrl
+      ? `<a href="${driveLink(row.projectInvoiceDocumentUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; font-size:0.8rem; display:inline-block; margin-top:4px;">Open Project Invoice ↗</a>`
+      : "";
+
     mount.innerHTML = `
       <div style="border-top:2px solid var(--border); padding-top:12px; margin-top:4px;">
-        <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--text); margin-bottom:10px; letter-spacing:0.5px;">📄 Uploaded Documents</div>
+        <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--text); margin-bottom:10px; letter-spacing:0.5px;">📄 Documents</div>
         ${hasPO         ? renderSection("Purchase Order", "#0056b3", poFields)             : renderEmptySection("Purchase Order", "#0056b3")}
-        ${hasDispatch   ? renderSection("Dispatch Bill", "#059669", dispatchFields)        : renderEmptySection("Dispatch Bill", "#059669")}
+        ${hasInvoice    ? renderSection("Project Invoice", "#059669", projectInvoiceFields, invoiceDocLink) : renderEmptySection("Project Invoice", "#059669")}
         ${hasCommission ? renderSection("Commissioning Report", "#7c3aed", commissionFields) : renderEmptySection("Commissioning Report", "#7c3aed")}
       </div>`;
 
