@@ -37,11 +37,11 @@ async function loadEmployeeDetailsTable() {
     const data = await acFetch("listAllTourEmployees", {});
     if (!data.success) { wrap.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
     const rows = data.employees.map(e => `
-      <tr style="border-bottom:1px solid var(--border); opacity:${e.status === 'Inactive' ? '0.55' : '1'};" data-employee-id="${e.employeeId}">
+      <tr style="border-bottom:1px solid var(--border); opacity:${e.status === 'Inactive' ? '0.55' : '1'};" data-employee-id="${e.employeeId}" data-balance="${e.balance}">
         <td style="padding:7px;"><input type="text" class="ed-f-name" value="${escapeHtml(e.employeeName)}" style="width:100%; padding:5px; border:1px solid var(--border); border-radius:4px;"></td>
         <td style="padding:7px;"><input type="text" class="ed-f-empcode" value="${escapeHtml(e.empCode || '')}" style="width:100%; padding:5px; border:1px solid var(--border); border-radius:4px;"></td>
         <td style="padding:7px;"><input type="text" class="ed-f-dept" value="${escapeHtml(e.departmentName || '')}" style="width:100%; padding:5px; border:1px solid var(--border); border-radius:4px;"></td>
-        <td style="padding:7px; text-align:right; font-weight:700;">${trimNum(e.balance)}</td>
+        <td style="padding:7px; text-align:right; font-weight:700;">${formatINRComma(e.balance)}</td>
         <td style="padding:7px; text-align:center;">${e.status === 'Active' ? 'Active' : '<span style="color:#b91c1c; font-weight:700;">Inactive</span>'}</td>
         <td style="padding:7px; white-space:nowrap;">
           <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem;" onclick="submitUpdateEmployee(${e.employeeId})">Save</button>
@@ -73,8 +73,8 @@ async function submitAddEmployee() {
     if (data.success) {
       document.getElementById("ed-add-form").style.display = "none";
       ["ed-new-name", "ed-new-empcode", "ed-new-dept", "ed-new-balance"].forEach(id => document.getElementById(id).value = "");
-      showTourFeedback("Employee added.", "success");
       loadEmployeeDetailsTable();
+      showTourSuccess("Employee added.", "Add Another Employee", "edToggleAddForm()");
     } else {
       showTourFeedback(data.error, "error");
     }
@@ -92,18 +92,25 @@ async function submitUpdateEmployee(employeeId) {
   try {
     const data = await acFetch("updateTourEmployee", { employeeId, employeeName, empCode, departmentName });
     hideBlockingOverlay();
-    if (data.success) { showTourFeedback("Saved.", "success"); loadEmployeeDetailsTable(); }
+    if (data.success) { loadEmployeeDetailsTable(); showTourSuccess("Saved.", "Edit Another Employee", "document.getElementById('te-success').style.display='none';"); }
     else showTourFeedback(data.error, "error");
   } catch (e) { hideBlockingOverlay(); showTourFeedback("Network error: " + e.message, "error"); }
 }
 
 async function submitSetEmployeeStatus(employeeId, status) {
-  if (status === 'Inactive' && !confirm("Deactivate this employee? They'll disappear from the voucher page and every picker, but their history stays intact.")) return;
+  if (status === 'Inactive') {
+    const row = document.querySelector(`tr[data-employee-id="${employeeId}"]`);
+    const balance = Number(row?.dataset.balance) || 0;
+    if (balance !== 0) {
+      return showTourFeedback(`Cannot deactivate — Current Balance must be exactly 0 (it's ${formatINRComma(balance)}).`, "error");
+    }
+    if (!confirm("Deactivate this employee? They'll disappear from the voucher page and every picker, but their history stays intact.")) return;
+  }
   showBlockingOverlay("Updating...");
   try {
     const data = await acFetch("setTourEmployeeStatus", { employeeId, status });
     hideBlockingOverlay();
-    if (data.success) { showTourFeedback(`Employee set to ${status}.`, "success"); loadEmployeeDetailsTable(); }
+    if (data.success) { loadEmployeeDetailsTable(); showTourSuccess(`Employee set to ${status}.`, "Back to Employee Details", "document.getElementById('te-success').style.display='none';"); }
     else showTourFeedback(data.error, "error");
   } catch (e) { hideBlockingOverlay(); showTourFeedback("Network error: " + e.message, "error"); }
 }

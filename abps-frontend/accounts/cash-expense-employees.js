@@ -68,8 +68,8 @@ async function submitAddCashExpenseEmployee() {
     if (data.success) {
       document.getElementById("cee-add-form").style.display = "none";
       ["cee-new-name", "cee-new-empcode", "cee-new-dept"].forEach(id => document.getElementById(id).value = "");
-      showCashExpenseFeedback("Employee added.", "success");
       loadCashExpenseEmployeesTable();
+      showCashExpenseSuccess("Employee added.", "Add Another Employee", "ceeToggleAddForm()");
     } else {
       showCashExpenseFeedback(data.error, "error");
     }
@@ -87,7 +87,7 @@ async function submitUpdateCashExpenseEmployee(employeeId) {
   try {
     const data = await acFetch("updateCashExpenseEmployee", { employeeId, employeeName, empCode, departmentName });
     hideBlockingOverlay();
-    if (data.success) { showCashExpenseFeedback("Saved.", "success"); loadCashExpenseEmployeesTable(); }
+    if (data.success) { loadCashExpenseEmployeesTable(); showCashExpenseSuccess("Saved.", "Edit Another Employee", "document.getElementById('ce-success').style.display='none';"); }
     else showCashExpenseFeedback(data.error, "error");
   } catch (e) { hideBlockingOverlay(); showCashExpenseFeedback("Network error: " + e.message, "error"); }
 }
@@ -98,7 +98,7 @@ async function submitSetCashExpenseEmployeeStatus(employeeId, status) {
   try {
     const data = await acFetch("setCashExpenseEmployeeStatus", { employeeId, status });
     hideBlockingOverlay();
-    if (data.success) { showCashExpenseFeedback(`Employee set to ${status}.`, "success"); loadCashExpenseEmployeesTable(); }
+    if (data.success) { loadCashExpenseEmployeesTable(); showCashExpenseSuccess(`Employee set to ${status}.`, "Back to Employee Details", "document.getElementById('ce-success').style.display='none';"); }
     else showCashExpenseFeedback(data.error, "error");
   } catch (e) { hideBlockingOverlay(); showCashExpenseFeedback("Network error: " + e.message, "error"); }
 }

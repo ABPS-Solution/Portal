@@ -26,7 +26,7 @@ async function initializeAdvanceVoucherPanel() {
           <input type="text" id="adv-emp-dept" readonly style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; background:#f1f5f9;"></div>
       </div>
       <div style="margin-bottom:12px; position:relative;">
-        <label class="field-label">Place of Visit *</label>
+        <label class="field-label">Company of Visit *</label>
         <input type="text" id="adv-place-search" placeholder="Type to search or add a place..." autocomplete="off"
           style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;"
           oninput="advHandlePlaceSearch(this.value)">
@@ -144,7 +144,7 @@ async function submitTourAdvance() {
   const startDate = document.getElementById("adv-start-date").value;
   const estimatedDays = document.getElementById("adv-est-days").value;
   if (!advSelectedEmployeeId) return showTourFeedback("Select an employee from the dropdown.", "error");
-  if (!advSelectedPlace.trim()) return showTourFeedback("Place of Visit is required.", "error");
+  if (!advSelectedPlace.trim()) return showTourFeedback("Company of Visit is required.", "error");
   if (!startDate) return showTourFeedback("Start Date of Visit is required.", "error");
   if (!amount || amount <= 0) return showTourFeedback("A positive Advance Amount is required.", "error");
 
@@ -156,8 +156,8 @@ async function submitTourAdvance() {
     });
     hideBlockingOverlay();
     if (data.success) {
-      showTourFeedback(`Advance recorded. New balance: ${trimNum(data.newBalance)}.`, "success");
       initializeAdvanceVoucherPanel();
+      showTourSuccess(`Advance recorded. New balance: ${formatINRComma(data.newBalance)}.`, "Record Another Advance", "initializeAdvanceVoucherPanel()");
     } else {
       showTourFeedback(data.error, "error");
     }

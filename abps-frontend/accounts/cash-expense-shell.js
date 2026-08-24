@@ -13,10 +13,13 @@ const CASH_FOOD_SNACKS_SUB_TYPES = ['Snacks for OT', 'Staff Snacks'];
 
 function initializeCashExpensesPanel() {
   document.getElementById("ce-feedback").style.display = "none";
+  document.getElementById("ce-success").style.display = "none";
   switchCashExpenseToggle("expenses");
 }
 
 function switchCashExpenseToggle(toggle) {
+  document.getElementById("ce-feedback").style.display = "none";
+  document.getElementById("ce-success").style.display = "none";
   CASH_EXPENSE_TOGGLES.forEach(t => {
     const panel = document.getElementById(`ce-panel-${t}`);
     const btn = document.getElementById(`ce-toggle-${t}`);
@@ -29,14 +32,30 @@ function switchCashExpenseToggle(toggle) {
   if (toggle === "employees" && typeof initializeCashExpenseEmployeesPanel === "function") initializeCashExpenseEmployeesPanel();
 }
 
+// ERROR ONLY — success has its own mount (#ce-success, showCashExpenseSuccess
+// below), same reasoning as Tour Expense Tracker's showTourFeedback.
 function showCashExpenseFeedback(message, type) {
   const el = document.getElementById("ce-feedback");
   if (!el) return;
-  const isError = type === "error";
+  if (type !== "error") { el.style.display = "none"; return; }
   el.style.display = "block";
-  el.style.background = isError ? "#fee2e2" : "#dcfce7";
-  el.style.borderLeftColor = isError ? "#b91c1c" : "#15803d";
-  el.style.color = isError ? "#b91c1c" : "#15803d";
+  el.style.background = "#fee2e2";
+  el.style.borderLeftColor = "#b91c1c";
+  el.style.color = "#b91c1c";
   el.textContent = message;
   el.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function showCashExpenseSuccess(message, resetLabel, resetFnCall) {
+  document.getElementById("ce-feedback").style.display = "none";
+  const el = document.getElementById("ce-success");
+  if (!el) return;
+  el.style.display = "block";
+  showSuccessWithReset("ce-success", message, resetLabel, resetFnCall);
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+// Trimmed + comma-grouped (Indian digit grouping) — "16000" -> "16,000".
+function formatINRComma(n) {
+  return Number(trimNum(n)).toLocaleString('en-IN');
 }

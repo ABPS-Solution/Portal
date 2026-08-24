@@ -127,7 +127,7 @@ async function submitCashExpense() {
       document.getElementById("ce-panel-expenses").innerHTML = `
         <div style="background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:20px; border-radius:var(--radius); max-width:520px;">
           <strong>Expense recorded.</strong><br/>
-          New ${data.paymentMode} balance: <strong style="font-size:1.05rem;">${trimNum(data.newBalance)}</strong>
+          New ${data.paymentMode} balance: <strong style="font-size:1.05rem;">${formatINRComma(data.newBalance)}</strong>
           <div style="margin-top:12px;">
             <button class="nav-btn-styled" onclick="initializeCashExpenseEntryPanel()">+ Create New Cash Expense</button>
           </div>

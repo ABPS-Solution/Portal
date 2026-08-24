@@ -27,8 +27,9 @@ async function loadVoucherCheckQueue() {
 function tvcRenderCard(v) {
   const lines = v.lines || [];
   const rows = lines.map(l => {
-    const billCell = l.billUrl
-      ? `<a href="${driveLink(l.billUrl)}" target="_blank" rel="noopener">${escapeHtml(l.billFileName || 'View')}</a>`
+    const bills = (l.bills && l.bills.length > 0) ? l.bills : (l.billUrl ? [{ fileName: l.billFileName, url: l.billUrl }] : []);
+    const billCell = bills.length > 0
+      ? bills.map(b => `<a href="${driveLink(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.fileName || 'View')}</a>`).join("<br>")
       : `<span style="color:var(--muted);">— no bill required —</span>`;
     const typeLabel = l.expenseType === 'Local Conveyance' && l.conveyanceMode ? `Local Conveyance (${escapeHtml(l.conveyanceMode)})`
       : l.expenseType === 'Others' && l.otherText ? `Others (${escapeHtml(l.otherText)})` : escapeHtml(l.expenseType);
@@ -37,7 +38,7 @@ function tvcRenderCard(v) {
       <td style="padding:7px;">${formatDateDMY(l.expenseDate)}</td>
       <td style="padding:7px;">${typeLabel}</td>
       <td style="padding:7px;">${billCell}</td>
-      <td style="padding:7px; text-align:right;">${trimNum(l.amount)}</td>
+      <td style="padding:7px; text-align:right;">${formatINRComma(l.amount)}</td>
       <td style="padding:7px;"><input type="number" class="tvc-actual-input" data-line-id="${l.lineId}" value="${trimNum(l.amount)}" min="0"
             style="width:100px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:right;"
             oninput="tvcRecalcTotals(${v.voucherId})"></td>
@@ -64,7 +65,7 @@ function tvcRenderCard(v) {
           </div>
           <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
             ${escapeHtml(v.purposeOfVisit === 'Others' ? v.purposeOtherText : v.purposeOfVisit)} · ${escapeHtml(v.placeOfVisit)} ·
-            ${formatDateDMY(v.visitStartDate)} to ${formatDateDMY(v.visitEndDate)} · Total Claimed: ${trimNum(v.totalAmount)}
+            ${formatDateDMY(v.visitStartDate)} to ${formatDateDMY(v.visitEndDate)} · Total Claimed: ${formatINRComma(v.totalAmount)}
           </div>
           ${peopleLine}${serviceReportLine}
         </div>
@@ -81,7 +82,7 @@ function tvcRenderCard(v) {
           </table>
         </div>
         <div style="display:flex; justify-content:flex-end; gap:24px; margin-top:14px; align-items:center; flex-wrap:wrap;">
-          <div style="font-weight:700;">Total Voucher Actual Amount: <span id="tvc-actual-total-${v.voucherId}">${trimNum(v.totalAmount)}</span></div>
+          <div style="font-weight:700;">Total Voucher Actual Amount: <span id="tvc-actual-total-${v.voucherId}">${formatINRComma(v.totalAmount)}</span></div>
           <div style="font-weight:700;">Total Voucher Amount Difference: <span id="tvc-diff-${v.voucherId}">0</span></div>
           <button class="nav-btn-styled" onclick="submitTourVoucherCheck(${v.voucherId})">Submit</button>
         </div>
@@ -94,13 +95,15 @@ function tvcRecalcTotals(voucherId) {
   if (!card) return;
   let claimedTotal = 0, actualTotal = 0;
   card.querySelectorAll("tbody tr").forEach(tr => {
-    const claimedCell = tr.children[4].textContent;
+    // Amount cell now renders comma-grouped (formatINRComma) — strip
+    // commas before parsing, or "16,000" reads as NaN/16.
+    const claimedCell = tr.children[4].textContent.replace(/,/g, '');
     claimedTotal += Number(claimedCell) || 0;
     const actualInput = tr.querySelector(".tvc-actual-input");
     actualTotal += Number(actualInput.value) || 0;
   });
-  document.getElementById(`tvc-actual-total-${voucherId}`).textContent = trimNum(actualTotal);
-  document.getElementById(`tvc-diff-${voucherId}`).textContent = trimNum(claimedTotal - actualTotal);
+  document.getElementById(`tvc-actual-total-${voucherId}`).textContent = formatINRComma(actualTotal);
+  document.getElementById(`tvc-diff-${voucherId}`).textContent = formatINRComma(claimedTotal - actualTotal);
 }
 
 async function submitTourVoucherCheck(voucherId) {
@@ -126,7 +129,7 @@ async function submitTourVoucherCheck(voucherId) {
       document.getElementById("tvc-feed").innerHTML = `
         <div style="background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:20px; border-radius:var(--radius);">
           <strong>Voucher checked successfully.</strong><br/>
-          Employee's new balance: <strong style="font-size:1.05rem;">${trimNum(data.newBalance)}</strong>
+          Employee's new balance: <strong style="font-size:1.05rem;">${formatINRComma(data.newBalance)}</strong>
           <div style="margin-top:12px;">
             <button class="nav-btn-styled" onclick="loadVoucherCheckQueue()">+ Check New Tour Expense Vouchers</button>
           </div>

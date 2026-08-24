@@ -35,8 +35,8 @@ async function loadCashUpiBalance() {
   try {
     const data = await acFetch("fetchCashUpiBalance", {});
     if (data.success) {
-      document.getElementById("cb-cash-balance").textContent = trimNum(data.cashBalance);
-      document.getElementById("cb-upi-balance").textContent = trimNum(data.upiBalance);
+      document.getElementById("cb-cash-balance").textContent = formatINRComma(data.cashBalance);
+      document.getElementById("cb-upi-balance").textContent = formatINRComma(data.upiBalance);
     }
   } catch (e) { console.error("fetchCashUpiBalance failed:", e.message); }
 }
@@ -52,10 +52,10 @@ async function submitCashUpiTopup() {
     const data = await acFetch("addCashUpiTopup", { paymentMode, amount });
     hideBlockingOverlay();
     if (data.success) {
-      showCashExpenseFeedback(`Added ${trimNum(amount)} to ${paymentMode} balance.`, "success");
       document.getElementById("cb-amount").value = "";
       document.querySelectorAll('input[name="cb-mode"]').forEach(r => r.checked = false);
       loadCashUpiBalance();
+      showCashExpenseSuccess(`Added ${formatINRComma(amount)} to ${paymentMode} balance.`, "Add Another Top-Up", "document.getElementById('ce-success').style.display='none';");
     } else {
       showCashExpenseFeedback(data.error, "error");
     }

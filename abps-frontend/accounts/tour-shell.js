@@ -15,10 +15,18 @@ const TOUR_PURPOSES = ["Marketing", "Service", "QA", "Others"];
 
 function initializeTourExpensePanel() {
   document.getElementById("te-feedback").style.display = "none";
+  document.getElementById("te-success").style.display = "none";
   switchTourExpenseToggle("advance");
 }
 
+// Trimmed + comma-grouped (Indian digit grouping) — "16000" -> "16,000".
+function formatINRComma(n) {
+  return Number(trimNum(n)).toLocaleString('en-IN');
+}
+
 function switchTourExpenseToggle(toggle) {
+  document.getElementById("te-feedback").style.display = "none";
+  document.getElementById("te-success").style.display = "none";
   TOUR_TOGGLES.forEach(t => {
     const panel = document.getElementById(`te-panel-${t}`);
     const btn = document.getElementById(`te-toggle-${t}`);
@@ -31,17 +39,31 @@ function switchTourExpenseToggle(toggle) {
   if (toggle === "employees" && typeof initializeEmployeeDetailsPanel === "function") initializeEmployeeDetailsPanel();
 }
 
-// Shared feedback banner, same visual pattern used across the portal
-// (see showBOQBanner) — kept local to this module since #te-feedback is
-// this panel's own element, not a shared id.
+// Shared feedback banner — ERROR ONLY. Success never renders here (it used
+// to, sharing the same red/green div as errors, which meant a resolved
+// error's banner and a fresh success message were indistinguishable at a
+// glance) — see showTourSuccess below for the real success path.
 function showTourFeedback(message, type) {
   const el = document.getElementById("te-feedback");
   if (!el) return;
-  const isError = type === "error";
+  if (type !== "error") { el.style.display = "none"; return; }
   el.style.display = "block";
-  el.style.background = isError ? "#fee2e2" : "#dcfce7";
-  el.style.borderLeftColor = isError ? "#b91c1c" : "#15803d";
-  el.style.color = isError ? "#b91c1c" : "#15803d";
+  el.style.background = "#fee2e2";
+  el.style.borderLeftColor = "#b91c1c";
+  el.style.color = "#b91c1c";
   el.textContent = message;
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+// One consistent "action succeeded" moment for the whole Tour Expense
+// Tracker — message + a "+ Do Another" button, never sharing the error
+// banner. Always clears any stale error first, same reasoning as
+// showSuccessWithReset (shared/ui.js) which this wraps.
+function showTourSuccess(message, resetLabel, resetFnCall) {
+  document.getElementById("te-feedback").style.display = "none";
+  const el = document.getElementById("te-success");
+  if (!el) return;
+  el.style.display = "block";
+  showSuccessWithReset("te-success", message, resetLabel, resetFnCall);
   el.scrollIntoView({ behavior: "smooth", block: "center" });
 }
