@@ -129,7 +129,9 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
     card.id = `email-lead-wrapper-node-${mIdx}`;
     card.style.borderLeft = "4px solid var(--accent)";
     
-    const attsLabel = mail.attachments && mail.attachments.length > 0 ? mail.attachments.join(", ") : "None";
+    // attachments is a plain comma-separated text column, not an array
+    const attsLabel = mail.attachments && String(mail.attachments).trim() ? mail.attachments : "None";
+    const receivedTimeLabel = mail.receivedTime ? ` at ${formatTime12h(mail.receivedTime)}` : "";
     
     // FIXED: Enforce role visibility restriction boundaries to guard delete actions
     const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
@@ -143,7 +145,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
           <div class="meta-row-line-block">
             <span style="background:var(--accent); color:#fff;">SOURCE: EMAIL</span>
             <span style="background:var(--highlight-bg); border:1px solid var(--brand); color:var(--brand); font-family:monospace; text-transform:none;">${mail.destinationInboxAccount}</span>
-            <span style="background:#cbd5e1; color:#1e293b; font-weight:700;">${formatDateDMY(mail.receivedDate)} at ${formatTime12h(mail.receivedTime) || mail.receivedTime}</span>
+            <span style="background:#cbd5e1; color:#1e293b; font-weight:700;">${formatDateDMY(mail.receivedDate)}${receivedTimeLabel}</span>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px;">
             <span style="background:#e2e8f0;">Company:</span><strong style="margin-right:20px; color:var(--brand);">${escapeHtml(mail.extractedCompany)}</strong>
@@ -151,17 +153,26 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
           </div>
         </div>
         <div class="directory-btn-actions-block" style="margin-top:4px; display:flex; gap:6px; align-items:center;">
-          <a href="${mail.originalDeepLinkThreadUrl}" target="_blank" class="nav-btn-styled" style="background:#4a5568; text-decoration:none; font-size:0.75rem; padding:4px 8px; display:inline-flex; align-items:center;">Open Email ↗</a>
           ${deleteActionHtml}
         </div>
       </div>
-      
+
       <div style="font-size:0.85rem; background:#f8fafc; border:1px solid #e2e8f0; padding:8px; border-radius:4px; margin:6px 0; line-height:1.4; color:var(--text);">
         <strong>AI Email Summary:</strong> ${escapeHtml(mail.aiSummaryText)}
       </div>
-      
+
+      <div style="margin-bottom:8px;">
+        <div style="font-size:0.78rem; font-weight:700; color:var(--brand); cursor:pointer; user-select:none; display:inline-flex; align-items:center; gap:4px;" onclick="toggleEmailLeadFullMessage(${mIdx})" id="email-full-message-toggle-${mIdx}">
+          <span id="email-full-message-caret-${mIdx}">▸</span> View Full Email
+        </div>
+        <div id="email-full-message-body-${mIdx}" style="display:none; margin-top:6px; background:#fff; border:1px solid var(--border); border-radius:4px; padding:10px; font-size:0.82rem; color:var(--text);">
+          <div style="font-weight:700; margin-bottom:6px;">${escapeHtml(mail.subject || "(no subject)")}</div>
+          <div style="white-space:pre-wrap; line-height:1.5; max-height:400px; overflow-y:auto;">${escapeHtml(mail.body || "(no body content available)")}</div>
+        </div>
+      </div>
+
       <div style="font-size:0.72rem; font-weight:700; color:var(--muted); margin-bottom:8px;">
-        📎 Attachments: <span style="color:#4a5568; font-family:monospace;">${attsLabel}</span>
+        📎 Attachments: <span style="color:#4a5568; font-family:monospace;">${escapeHtml(attsLabel)}</span>
       </div>
 
       <div style="margin-top:8px;">
@@ -183,6 +194,15 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
     `;
     canvas.appendChild(card);
   });
+}
+
+function toggleEmailLeadFullMessage(idx) {
+  const body = document.getElementById(`email-full-message-body-${idx}`);
+  const caret = document.getElementById(`email-full-message-caret-${idx}`);
+  if (!body || !caret) return;
+  const expanded = body.style.display !== "none";
+  body.style.display = expanded ? "none" : "block";
+  caret.textContent = expanded ? "▸" : "▾";
 }
 
 async function saveEmailLeadNote(idx, messageId) {
