@@ -700,9 +700,16 @@ function toggleContactExpansionView(leadRef, encodedLeadMap) {
     document.querySelectorAll(".contact-expanded-workspace-payload-drawer").forEach(d => d.style.display = "none");
     document.querySelectorAll('[id^="expand-trigger-"]').forEach(b => b.textContent = "View Details");
     document.querySelectorAll(".child-injected-modules-mount-point").forEach(m => m.innerHTML = "");
-    
+
+    // Show the drawer BEFORE building its form — buildTargetedLeadsFormCanvas
+    // auto-sizes every textarea off scrollHeight, which is always 0 inside a
+    // display:none ancestor. That silently collapsed every text field (Contact
+    // Person Name, Position, Phone, City, etc.) to zero height, making populated
+    // data look blank even though .value was set correctly the whole time.
+    drawer.style.display = "block"; triggerBtn.textContent = "Collapse Details";
+
     const leadMap = JSON.parse(decodeURIComponent(encodedLeadMap));
-    activeSearchRef = leadRef; 
+    activeSearchRef = leadRef;
     buildTargetedLeadsFormCanvas(leadRef, leadMap);
     
     const templateSource = document.getElementById("reusable-child-modules-template");
@@ -720,8 +727,6 @@ function toggleContactExpansionView(leadRef, encodedLeadMap) {
     renderIsolatedFollowUpTimeline(leadRef, globalFollowUpsCacheMap[leadRef] || [], templateClone);
     renderIsolatedTaskItemsList(leadRef, globalTasksCacheMap[leadRef] || [], templateClone);
     renderIsolatedDocumentInfoSection(leadRef, leadMap["Lead ID"] || leadRef, templateClone);
-
-    drawer.style.display = "block"; triggerBtn.textContent = "Collapse Details";
   }
 }
 

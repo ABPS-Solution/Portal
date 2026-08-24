@@ -143,7 +143,6 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
       <div class="contact-summary-header-row" style="margin-bottom:6px;">
         <div class="contact-summary-title-info">
           <div class="meta-row-line-block">
-            <span style="background:var(--accent); color:#fff;">SOURCE: EMAIL</span>
             <span style="background:var(--highlight-bg); border:1px solid var(--brand); color:var(--brand); font-family:monospace; text-transform:none;">${mail.destinationInboxAccount}</span>
             <span style="background:#cbd5e1; color:#1e293b; font-weight:700;">${formatDateDMY(mail.receivedDate)}${receivedTimeLabel}</span>
           </div>
