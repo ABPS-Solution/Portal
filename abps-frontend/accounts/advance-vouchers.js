@@ -1,12 +1,13 @@
 // accounts/advance-vouchers.js — "Advance Vouchers" toggle. Pay an
-// advance against an employee; Place of Visit is a typeahead with
-// inline add-new (shared accounts.tour_places, same table the public
-// voucher page reads/writes).
+// advance against an employee; Company of Visit is a typeahead with
+// inline add-new (shared accounts.tour_companies, same table the public
+// voucher page reads/writes). Renamed from "Place of Visit" /
+// accounts.tour_places 25 Aug 2026.
 
 let advCachedEmployees = [];
 let advSelectedEmployeeId = null;
-let advCachedPlaces = [];
-let advSelectedPlace = "";
+let advCachedCompanies = [];
+let advSelectedCompany = "";
 
 async function initializeAdvanceVoucherPanel() {
   const panel = document.getElementById("te-panel-advance");
@@ -27,10 +28,10 @@ async function initializeAdvanceVoucherPanel() {
       </div>
       <div style="margin-bottom:12px; position:relative;">
         <label class="field-label">Company of Visit *</label>
-        <input type="text" id="adv-place-search" placeholder="Type to search or add a place..." autocomplete="off"
+        <input type="text" id="adv-company-search" placeholder="Type to search or add a company..." autocomplete="off"
           style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;"
-          oninput="advHandlePlaceSearch(this.value)">
-        <div id="adv-place-dropdown" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:4px; z-index:9999; max-height:220px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          oninput="advHandleCompanySearch(this.value)">
+        <div id="adv-company-dropdown" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:4px; z-index:9999; max-height:220px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
       </div>
       <div style="display:flex; gap:10px; margin-bottom:12px;">
         <div style="flex:1;"><label class="field-label">Start Date of Visit *</label>
@@ -46,14 +47,14 @@ async function initializeAdvanceVoucherPanel() {
     </div>`;
 
   advSelectedEmployeeId = null;
-  advSelectedPlace = "";
+  advSelectedCompany = "";
   try {
-    const [empData, placeData] = await Promise.all([
+    const [empData, companyData] = await Promise.all([
       acFetch("searchTourEmployees", {}),
-      acFetch("listTourPlaces", {}),
+      acFetch("listTourCompanies", {}),
     ]);
     advCachedEmployees = empData.success ? empData.employees : [];
-    advCachedPlaces = placeData.success ? placeData.places : [];
+    advCachedCompanies = companyData.success ? companyData.companies : [];
   } catch (e) { console.error("Advance Vouchers bootstrap failed:", e.message); }
   enhanceAllDateInputsForDMY();
 }
@@ -89,51 +90,51 @@ function advSelectEmployee(employeeId) {
   document.getElementById("adv-emp-dropdown").style.display = "none";
 }
 
-function advHandlePlaceSearch(query) {
-  const dd = document.getElementById("adv-place-dropdown");
-  advSelectedPlace = query;
+function advHandleCompanySearch(query) {
+  const dd = document.getElementById("adv-company-dropdown");
+  advSelectedCompany = query;
   const q = (query || "").trim().toLowerCase();
   if (!q) { dd.style.display = "none"; return; }
-  const matches = advCachedPlaces.filter(p => p.placeName.toLowerCase().includes(q)).slice(0, 15);
-  const exactHit = advCachedPlaces.some(p => p.placeName.trim().toLowerCase() === q);
-  let html = matches.map(p => `
-    <div onmousedown="event.preventDefault(); advSelectPlace('${p.placeName.replace(/'/g, "\\'")}')"
+  const matches = advCachedCompanies.filter(c => c.companyName.toLowerCase().includes(q)).slice(0, 15);
+  const exactHit = advCachedCompanies.some(c => c.companyName.trim().toLowerCase() === q);
+  let html = matches.map(c => `
+    <div onmousedown="event.preventDefault(); advSelectCompany('${c.companyName.replace(/'/g, "\\'")}')"
       style="padding:8px 10px; cursor:pointer; font-size:0.85rem; border-bottom:1px solid #f1f5f9;"
-      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${escapeHtml(p.placeName)}</div>`).join("");
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${escapeHtml(c.companyName)}</div>`).join("");
   if (!exactHit && query.trim()) {
-    html += `<div onmousedown="event.preventDefault(); advAddNewPlace('${query.trim().replace(/'/g, "\\'")}')"
+    html += `<div onmousedown="event.preventDefault(); advAddNewCompany('${query.trim().replace(/'/g, "\\'")}')"
       style="padding:8px 10px; cursor:pointer; font-size:0.85rem; color:var(--brand); font-weight:700;"
-      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">+ Add "${escapeHtml(query.trim())}" as a new place</div>`;
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">+ Add "${escapeHtml(query.trim())}" as a new company</div>`;
   }
   if (!html) { dd.style.display = "none"; return; }
   dd.innerHTML = html;
-  const input = document.getElementById("adv-place-search");
+  const input = document.getElementById("adv-company-search");
   const rect = input.getBoundingClientRect();
   dd.style.top = rect.bottom + "px"; dd.style.left = rect.left + "px"; dd.style.width = rect.width + "px";
   dd.style.display = "block";
 }
 
-function advSelectPlace(placeName) {
-  advSelectedPlace = placeName;
-  document.getElementById("adv-place-search").value = placeName;
-  document.getElementById("adv-place-dropdown").style.display = "none";
+function advSelectCompany(companyName) {
+  advSelectedCompany = companyName;
+  document.getElementById("adv-company-search").value = companyName;
+  document.getElementById("adv-company-dropdown").style.display = "none";
 }
 
-async function advAddNewPlace(placeName) {
-  document.getElementById("adv-place-dropdown").style.display = "none";
+async function advAddNewCompany(companyName) {
+  document.getElementById("adv-company-dropdown").style.display = "none";
   try {
-    const data = await acFetch("addTourPlace", { placeName });
+    const data = await acFetch("addTourCompany", { companyName });
     if (data.success) {
-      advCachedPlaces.push(data.place);
-      advSelectPlace(data.place.placeName);
+      advCachedCompanies.push(data.company);
+      advSelectCompany(data.company.companyName);
     } else {
-      alert("Could not add place: " + data.error);
+      alert("Could not add company: " + data.error);
     }
-  } catch (e) { alert("Network error adding place: " + e.message); }
+  } catch (e) { alert("Network error adding company: " + e.message); }
 }
 
 document.addEventListener("click", (e) => {
-  ["adv-emp-dropdown", "adv-place-dropdown"].forEach(id => {
+  ["adv-emp-dropdown", "adv-company-dropdown"].forEach(id => {
     const dd = document.getElementById(id);
     if (dd && !e.target.closest(`#${id}`) && e.target.id !== id.replace("-dropdown", "-search")) dd.style.display = "none";
   });
@@ -144,14 +145,14 @@ async function submitTourAdvance() {
   const startDate = document.getElementById("adv-start-date").value;
   const estimatedDays = document.getElementById("adv-est-days").value;
   if (!advSelectedEmployeeId) return showTourFeedback("Select an employee from the dropdown.", "error");
-  if (!advSelectedPlace.trim()) return showTourFeedback("Company of Visit is required.", "error");
+  if (!advSelectedCompany.trim()) return showTourFeedback("Company of Visit is required.", "error");
   if (!startDate) return showTourFeedback("Start Date of Visit is required.", "error");
   if (!amount || amount <= 0) return showTourFeedback("A positive Advance Amount is required.", "error");
 
   showBlockingOverlay("Recording advance...");
   try {
     const data = await acFetch("payTourAdvance", {
-      employeeId: advSelectedEmployeeId, placeOfVisit: advSelectedPlace.trim(),
+      employeeId: advSelectedEmployeeId, placeOfVisit: advSelectedCompany.trim(),
       startDate, estimatedDays: estimatedDays || null, amount,
     });
     hideBlockingOverlay();
