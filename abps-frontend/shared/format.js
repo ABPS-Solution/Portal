@@ -153,5 +153,17 @@ function enhanceOneDateInputForDMY(input) {
 }
 
 function enhanceAllDateInputsForDMY() {
-  document.querySelectorAll('input[type="date"]:not([data-dmy-enhanced])').forEach(enhanceOneDateInputForDMY);
+  // #reusable-child-modules-template (Follow-up/Task forms) is a hidden
+  // master copy that gets cloneNode(true)'d fresh for every lead — never
+  // enhance the master itself, or every clone inherits the wrapper/overlay
+  // markup and transparent input styling via cloneNode WITHOUT the sync
+  // event listeners cloneNode can't copy, leaving Target Date / Next
+  // Follow-Up Date looking frozen and unresponsive on every clone. Skipping
+  // the master here means each clone's own date input is still plain and
+  // gets enhanced fresh, with working listeners, on the next poll tick
+  // after it's inserted into the visible DOM.
+  document.querySelectorAll('input[type="date"]:not([data-dmy-enhanced])').forEach(input => {
+    if (input.closest('#reusable-child-modules-template')) return;
+    enhanceOneDateInputForDMY(input);
+  });
 }
