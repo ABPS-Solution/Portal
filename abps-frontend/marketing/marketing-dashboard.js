@@ -203,26 +203,32 @@ function dashboardGlobalReturnClick() {
 // toolbar's REAL current height, every time that height can change (the
 // toolbar grows ~40px when a dashboard's own Custom row opens/closes) —
 // called on open AND from every *SetPeriod function, not just once, so it
-// never goes stale. Flush against the toolbar (no extra buffer) — the
-// *-body div's own small bottom/side padding is what's left providing any
-// breathing room; its own top padding was removed so there's exactly one
-// thing controlling top spacing, not two paddings whose sum was hard to
-// reason about.
+// never goes stale.
+//
+// Fixed 24 Aug 2026: the previous version computed padding as
+// `toolbar.offsetHeight - ENCLOSURE_PANEL_TOP_PADDING(hardcoded 12) +
+// GAP_BELOW_TOOLBAR(10)` — a hardcoded assumption about the enclosure
+// panel's own top padding baked into the formula. Any drift between that
+// assumed 12px and the enclosure panel's REAL top padding (a separate,
+// independently-edited CSS rule) leaks 1:1 into the visible gap above row
+// 1, with no way to tell from the formula alone that it had drifted — this
+// is what produced a much-larger-than-intended gap in practice. Replaced
+// with a self-correcting measurement: reset the canvas's own top padding,
+// measure where its content naturally starts, then add exactly enough
+// padding to land it GAP_BELOW_TOOLBAR px under the toolbar's real bottom
+// edge. This can never drift, because it never assumes any ancestor's
+// padding value — it measures the actual rendered position instead.
 function syncDashboardCanvasTopPadding() {
   const toolbar = document.getElementById("dashboard-global-toolbar");
   if (!toolbar || toolbar.style.display === "none") return;
-  // Every dashboard canvas lives inside module-purchase-workspace-enclosure-panel
-  // (see ddShowAllWorkspaceEnclosures), which carries its own fixed 12px top
-  // padding (.workspace-panel's shared padding:12px 10px) — that's ALWAYS
-  // there regardless of toolbar height, so it's subtracted out here and
-  // GAP_BELOW_TOOLBAR added back on top, landing on an exact, deliberate gap
-  // that matches the row-to-row gap inside the dashboard body (10px) rather
-  // than an accidental leftover amount.
-  const ENCLOSURE_PANEL_TOP_PADDING = 12;
   const GAP_BELOW_TOOLBAR = 10;
-  const h = toolbar.offsetHeight - ENCLOSURE_PANEL_TOP_PADDING + GAP_BELOW_TOOLBAR;
+  const toolbarBottom = toolbar.getBoundingClientRect().bottom;
   document.querySelectorAll('.workspace-panel[id^="canvas-module-"][id*="dashboard"]').forEach(c => {
-    if (c.style.display === "block") c.style.paddingTop = h + "px";
+    if (c.style.display !== "block") return;
+    c.style.paddingTop = "0px";
+    const naturalTop = c.getBoundingClientRect().top;
+    const needed = Math.max(0, toolbarBottom + GAP_BELOW_TOOLBAR - naturalTop);
+    c.style.paddingTop = needed + "px";
   });
 }
 
