@@ -204,17 +204,20 @@ async function submitSecuritySettings() {
 
 // Manual Outage Mode (migration 100) — deliberately NOT automatic. A real
 // human with Security & Login Access flips this on when there's a
-// confirmed office network/power outage, so any user who's previously
-// logged in from the office can sign in remotely on a brand-new device
-// while it's active. Always has an expiry (max 12h) so it can't be left
-// on by accident. Trusted Devices already covers returning devices
-// without needing this at all.
+// confirmed office network/power outage, so ANY user can sign in remotely
+// on a brand-new device while it's active (widened 24 Aug 2026 — was
+// previously restricted to accounts with prior office-login history).
+// Always has an expiry (max 12h) so it can't be left on by accident.
+// Trusted Devices already covers returning devices without needing this.
 function renderOutageModeStatus(settings) {
   const box = document.getElementById("sa-outage-mode-status");
   const active = settings.outage_mode_active && settings.outage_mode_expires_at && new Date(settings.outage_mode_expires_at) > new Date();
   if (active) {
-    box.innerHTML = `⚠️ <strong>Outage Mode is ACTIVE</strong> — activated by ${settings.outage_mode_activated_by || 'unknown'} at ${new Date(settings.outage_mode_started_at).toLocaleString()}, expires ${new Date(settings.outage_mode_expires_at).toLocaleString()}.
-      <button class="nav-btn-styled" style="margin-left:10px; padding:4px 12px; font-size:0.78rem;" onclick="deactivateOutageModeNow()">Deactivate Now</button>`;
+    box.innerHTML = `
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+        <div style="line-height:1.5;">⚠️ <strong>Outage Mode is ACTIVE</strong> — activated by ${escapeHtml(settings.outage_mode_activated_by || 'unknown')} at ${formatDateTimeDMY(settings.outage_mode_started_at)}, expires ${formatDateTimeDMY(settings.outage_mode_expires_at)}.</div>
+        <button class="nav-btn-styled" style="padding:6px 16px; font-size:0.8rem; flex-shrink:0; white-space:nowrap;" onclick="deactivateOutageModeNow()">Deactivate Now</button>
+      </div>`;
     box.style.background = '#fef3c7'; box.style.borderLeftColor = '#f59e0b'; box.style.color = '#78350f';
   } else {
     box.innerHTML = `Outage Mode is off. Only use this for a confirmed office network/power outage — Trusted Devices already covers returning staff on their own devices without it.
