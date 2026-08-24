@@ -2869,13 +2869,26 @@ function handleGateFileSelectionChange(input, boxId, textMsg) {
   box.textContent = textMsg; box.classList.add('done');
 }
 
+function togglePinvDocCard(bodyId) {
+  const body = document.getElementById(bodyId);
+  const caret = document.getElementById(`${bodyId}-caret`);
+  if (!body) return;
+  const expanded = body.style.display !== "none";
+  body.style.display = expanded ? "none" : "grid";
+  if (caret) caret.textContent = expanded ? "▸" : "▾";
+}
+
 async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
   const mount = scopeNode.querySelector(".doc-info-mount-point");
   if (!mount) return;
   mount.innerHTML = '<p style="color:var(--muted); font-size:0.82rem; padding:8px 0;">Loading Document Information...</p>';
 
   try {
-    const data = await apFetch({ action: "fetchUploadedDocumentInfo", leadId: leadId });
+    const [data, invoiceData] = await Promise.all([
+      apFetch({ action: "fetchUploadedDocumentInfo", leadId: leadId }),
+      apFetch({ action: "fetchProjectInvoicesForDocuments", leadId: leadId }),
+    ]);
+    const invoices = (invoiceData.success && invoiceData.invoices) ? invoiceData.invoices : [];
 
     if (!data.success || !data.row) {
       const renderEmptyPlaceholder = (title, color) => `
@@ -2897,40 +2910,48 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
 
     const poFields = [
       "Project ID", "Purchase Order Number", "Purchase Order Date", "Committed Delivery Date",
-      "Purchase Order Product Name", "Purchase Order Summary", "Basic Purchase Order Amount (in Rs)",
-      "Purchase Order GST Amount", "Purchase Order Total Amount", "Payment Terms",
-      "Name of ABPS Owner of Order", "Purchase Order Warranty Terms", "ABG Required", "Scope of Work"
-    ];
-    // "Dispatch Bill" was retired as a standalone upload back in migration
-    // 091 — Project Invoice Generation replaced it. These fields are now
-    // server-computed from the actual invoice, not typed in (see
-    // routes/projects.js's syncProjectInvoiceToMarketing).
-    const projectInvoiceFields = [
-      "Project Invoice Number", "Project Invoice Date", "Customer PO Number",
-      "Customer PO Date", "Basic Project Invoice Amount (in Rs)", "Project Invoice GST Amount",
-      "Total Project Invoice Amount"
+      "Order Product Description", "Name of ABPS Owner of Order",
+      "Basic Purchase Order Amount (in Rs)", "Purchase Order GST Amount", "Purchase Order Total Amount",
+      "Freight Scope", "Insurance Scope", "Packaging and Forwarding Scope", "Delivery Schedule as per PO",
+      "Warranty Terms", "Payment Terms", "LD Clause", "Inspection Terms", "Special Requirement",
+      "Documents Requirement", "ABG Required"
     ];
     const commissionFields = [
       "Date of Product Commissioning", "Commissioning ABPS Engineer Name",
       "Commissioned Product", "Customer Contact Person"
     ];
 
-    const hasPO         = poFields.some(f => row[f] && row[f] !== "");
-    const hasInvoice    = projectInvoiceFields.some(f => row[f] && row[f] !== "");
-    const hasCommission = commissionFields.some(f => row[f] && row[f] !== "");
+    const hasPO         = poFields.some(f => row[f] !== null && row[f] !== undefined && row[f] !== "");
+    const hasInvoice    = invoices.length > 0;
+    const hasCommission = commissionFields.some(f => row[f] !== null && row[f] !== undefined && row[f] !== "");
+
+    // Fields whose raw value needs formatting before display — pure dates
+    // as DD/MM/YYYY (was showing the raw "2025-09-11T00:00:00.000Z" string),
+    // currency amounts trimmed of trailing decimal zeros (CLAUDE.md rule —
+    // trimNum/formatQtyTrimmed).
+    const dateFieldLabels = new Set([
+      "Purchase Order Date", "Committed Delivery Date", "Date of Product Commissioning"
+    ]);
+    const amountFieldLabels = new Set([
+      "Basic Purchase Order Amount (in Rs)", "Purchase Order GST Amount", "Purchase Order Total Amount"
+    ]);
 
     // Always show the section — with data if available, with placeholder if not
 
-    const renderFieldRow = (label, value) => {
-      if (!value || value === "") return "";
+    const renderFieldRow = (label, rawValue) => {
+      if (rawValue === null || rawValue === undefined || rawValue === "") return "";
+      let value = rawValue;
+      if (typeof value === "boolean") value = value ? "Yes" : "No";
+      else if (dateFieldLabels.has(label)) value = formatDateDMY(value);
+      else if (amountFieldLabels.has(label)) value = formatQtyTrimmed(value);
       return `<div style="display:flex; flex-direction:column; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px 8px; min-width:0; word-break:break-word;">
-        <span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">${label}</span>
-        <span style="font-size:0.82rem; font-weight:600; color:var(--text);">${value}</span>
+        <span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">${escapeHtml(label)}</span>
+        <span style="font-size:0.82rem; font-weight:600; color:var(--text);">${escapeHtml(String(value))}</span>
       </div>`;
     };
 
     const renderSection = (title, color, fields, extraHtml) => {
-      const hasData = fields.some(f => row[f] && row[f] !== "");
+      const hasData = fields.some(f => row[f] !== null && row[f] !== undefined && row[f] !== "");
       if (!hasData) return "";
       const fieldsHtml = fields.map(f => renderFieldRow(f, row[f])).join("");
       return `
@@ -2955,18 +2976,61 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
         </div>
       </div>`;
 
-    // Project Invoice's own PDF, kept live in sync by routes/projects.js —
-    // link out to it the same way the Project Review Doc link works
-    // elsewhere (driveLink() wraps the private Drive proxy URL).
-    const invoiceDocLink = row.projectInvoiceDocumentUrl
-      ? `<a href="${driveLink(row.projectInvoiceDocumentUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; font-size:0.8rem; display:inline-block; margin-top:4px;">Open Project Invoice ↗</a>`
-      : "";
+    // Project Invoice — multiple invoices (Partial x N + Final) all live
+    // under one project; the old flat columns this used to read
+    // (marketing.po_invoice_report_information.project_invoice_number/date/
+    // amounts) get OVERWRITTEN on every new invoice generated, so a Partial
+    // invoice's numbers were silently lost the moment a second invoice was
+    // created. Each invoice from fetchProjectInvoicesForDocuments now gets
+    // its own card; a single invoice renders flat with no collapse wrapper,
+    // more than one renders each collapsed behind its own toggle.
+    const invoiceFieldsHtml = (inv) => {
+      const fields = [
+        ["Invoice Number", inv.invoiceNo],
+        ["Invoice Type", inv.invoiceType + (inv.revision > 1 ? ` (Revision ${inv.revision})` : "")],
+        ["Invoice Date", inv.createdAt ? formatDateTimeDMY(inv.createdAt) : ""],
+        ["Basic Invoice Amount (in Rs)", formatQtyTrimmed(inv.basicAmount)],
+        ["Invoice GST Amount", formatQtyTrimmed(inv.gstAmount)],
+        ["Total Invoice Amount", formatQtyTrimmed(inv.totalAmount)],
+      ];
+      const fieldsHtml = fields.map(([label, value]) => renderFieldRow(label, value)).join("");
+      const pdfLink = inv.pdfUrl
+        ? `<a href="${driveLink(inv.pdfUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; font-size:0.8rem; display:inline-block; margin-top:6px;">Open Invoice ↗</a>`
+        : "";
+      return { fieldsHtml, pdfLink };
+    };
+
+    let invoiceSectionInnerHtml = "";
+    if (invoices.length === 1) {
+      const { fieldsHtml, pdfLink } = invoiceFieldsHtml(invoices[0]);
+      invoiceSectionInnerHtml = `<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:6px;">${fieldsHtml}</div>${pdfLink}`;
+    } else if (invoices.length > 1) {
+      invoiceSectionInnerHtml = invoices.map((inv, idx) => {
+        const { fieldsHtml, pdfLink } = invoiceFieldsHtml(inv);
+        const bodyId = `pinv-doc-card-body-${leadRef}-${inv.invoiceId}`;
+        return `
+          <div style="margin-bottom:8px; border:1px solid #d1fae5; border-radius:4px; overflow:hidden;">
+            <div onclick="togglePinvDocCard('${bodyId}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:#ecfdf5; padding:6px 10px;">
+              <strong style="font-size:0.8rem; color:#047857;">${escapeHtml(inv.invoiceType)} Invoice — ${escapeHtml(inv.invoiceNo)}${inv.revision > 1 ? ` (Rev ${inv.revision})` : ""}</strong>
+              <span id="${bodyId}-caret" style="font-size:0.7rem; color:#047857;">▸</span>
+            </div>
+            <div id="${bodyId}" style="display:none; grid-template-columns:repeat(2,1fr); gap:6px; padding:8px 10px;">
+              ${fieldsHtml}
+            </div>
+            ${pdfLink ? `<div style="padding:0 10px 8px;">${pdfLink}</div>` : ""}
+          </div>`;
+      }).join("");
+    }
 
     mount.innerHTML = `
       <div style="border-top:2px solid var(--border); padding-top:12px; margin-top:4px;">
         <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--text); margin-bottom:10px; letter-spacing:0.5px;">📄 Documents</div>
-        ${hasPO         ? renderSection("Purchase Order", "#0056b3", poFields)             : renderEmptySection("Purchase Order", "#0056b3")}
-        ${hasInvoice    ? renderSection("Project Invoice", "#059669", projectInvoiceFields, invoiceDocLink) : renderEmptySection("Project Invoice", "#059669")}
+        ${hasPO ? renderSection("Purchase Order", "#0056b3", poFields) : renderEmptySection("Purchase Order", "#0056b3")}
+        ${hasInvoice ? `
+          <div style="margin-bottom:12px;">
+            <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#059669; background:#05966918; padding:4px 10px; border-radius:4px; margin-bottom:8px; letter-spacing:0.5px;">Project Invoice</div>
+            ${invoiceSectionInnerHtml}
+          </div>` : renderEmptySection("Project Invoice", "#059669")}
         ${hasCommission ? renderSection("Commissioning Report", "#7c3aed", commissionFields) : renderEmptySection("Commissioning Report", "#7c3aed")}
       </div>`;
 
