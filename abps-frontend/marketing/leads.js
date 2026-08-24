@@ -940,7 +940,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         
         let subCellInd = document.createElement("div"); subCellInd.className = "grid-cell-item";
         subCellInd.innerHTML = `<label class="field-label" style="margin-top:0;">Type of Industry</label>
-                                <input type="text" class="live-lead-field-input-${leadRef}" data-header-key="Type of Industry" value="${leadMap["Type of Industry"] || ""}" placeholder="e.g. Cement, Steel" />`;
+                                <textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Type of Industry" placeholder="e.g. Cement, Steel" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Type of Industry"] || "")}</textarea>`;
         
         container.appendChild(subCellBv); container.appendChild(subCellInd);
         cell.appendChild(container);
@@ -990,28 +990,28 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         
         wrapper.innerHTML = `
           <div><span style="font-size:0.62rem; font-weight:700; color:var(--brand); text-transform:uppercase;">Expected Tender / RFQ Date</span><input type="date" class="live-lead-field-input-${leadRef}" data-header-key="Expected Tender / RFQ Date" value="${cleanDate}"></div>
-          <div><span style="font-size:0.62rem; font-weight:700; color:var(--brand); text-transform:uppercase;">Expected Order Timeline</span><input type="text" class="live-lead-field-input-${leadRef}" data-header-key="Expected Order Timeline" value="${leadMap["Expected Order Timeline"] || ""}"></div>
+          <div><span style="font-size:0.62rem; font-weight:700; color:var(--brand); text-transform:uppercase;">Expected Order Timeline</span><textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Expected Order Timeline" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Expected Order Timeline"] || "")}</textarea></div>
         `;
         cell.appendChild(wrapper);
-      } 
-      
+      }
+
       else if (key === "Existing Project") {
         label.style.display = "none";
         let wrapper = document.createElement("div"); wrapper.style.cssText = "display: flex; flex-direction: column; gap: 6px;";
         wrapper.innerHTML = `
-          <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Existing Project</span><input type="text" class="live-lead-field-input-${leadRef}" data-header-key="Existing Project" value="${leadMap["Existing Project"] || ""}"></div>
-          <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Upcoming Project</span><input type="text" class="live-lead-field-input-${leadRef}" data-header-key="Upcoming Project" value="${leadMap["Upcoming Project"] || ""}"></div>
+          <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Existing Project</span><textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Existing Project" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Existing Project"] || "")}</textarea></div>
+          <div><span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Upcoming Project</span><textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Upcoming Project" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Upcoming Project"] || "")}</textarea></div>
         `;
         cell.appendChild(wrapper);
-      } 
+      }
 
       // FIXED DESIGN BLOCK: Repositioned Tender + Purchase inquiries to line up at the start of the clean row matrix line item
       else if (key === "Tender Inquire") {
         label.style.display = "none";
         let wrapper = document.createElement("div"); wrapper.style.cssText = "display: flex; flex-direction: column; gap: 6px; width:100%;";
         wrapper.innerHTML = `
-          <div><span style="font-size:0.58rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Tender Inquire</span><input type="text" class="live-lead-field-input-${leadRef}" data-header-key="Tender Inquire" placeholder="Name of End User" value="${leadMap["Tender Inquire"] || ""}"></div>
-          <div><span style="font-size:0.58rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Purchase Inquire</span><input type="text" class="live-lead-field-input-${leadRef}" data-header-key="Purchase Inquire" placeholder="Name of End User" value="${leadMap["Purchase Inquire"] || ""}"></div>
+          <div><span style="font-size:0.58rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Tender Inquire</span><textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Tender Inquire" placeholder="Name of End User" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Tender Inquire"] || "")}</textarea></div>
+          <div><span style="font-size:0.58rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Purchase Inquire</span><textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Purchase Inquire" placeholder="Name of End User" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Purchase Inquire"] || "")}</textarea></div>
         `;
         cell.appendChild(wrapper);
       }
@@ -1021,18 +1021,20 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         label.style.display = "none";
         let wrapper = document.createElement("div"); wrapper.style.cssText = "display: flex; flex-direction: column; gap: 6px; width:100%;";
         wrapper.innerHTML = `
-          <div><span style="font-size:0.58rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Existing System Details</span><input type="text" class="live-lead-field-input-${leadRef}" data-header-key="Existing System Details" value="${leadMap["Existing System Details"] || ""}"></div>
-          <div><span style="font-size:0.58rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Problem Observed</span><input type="text" class="live-lead-field-input-${leadRef}" data-header-key="Problem Observed" value="${leadMap["Problem Observed"] || ""}"></div>
+          <div><span style="font-size:0.58rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Existing System Details</span><textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Existing System Details" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Existing System Details"] || "")}</textarea></div>
+          <div><span style="font-size:0.58rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Problem Observed</span><textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Problem Observed" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Problem Observed"] || "")}</textarea></div>
         `;
         cell.appendChild(wrapper);
       }
 
       // --- 6. SECTION 3 FREE-TEXT DIAGNOSTIC FIELDS ---
       else if (["Low Power Factor Issue", "High Electricity Bill Issue", "Harmonics Issue", "Transformer Heating / Breakdown Issue", "Grid Stability Issue"].indexOf(key) !== -1) {
-        let inp = document.createElement("input"); inp.type = "text";
+        let inp = document.createElement("textarea"); inp.rows = 1;
         inp.className = 'live-lead-field-input-' + leadRef; inp.dataset.headerKey = key;
         inp.value = leadMap[key] || "";
         inp.placeholder = "Describe, if any";
+        inp.oninput = function() { autoGrowPoField(this); };
+        inp.onfocus = function() { autoGrowPoField(this); };
         cell.appendChild(inp);
       }
 
@@ -1066,20 +1068,24 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         pillGroup.appendChild(otherChk); pillGroup.appendChild(otherLbl);
         mainWrapper.appendChild(pillGroup);
 
-        let txtBox = document.createElement("input"); txtBox.type = "text";
+        let txtBox = document.createElement("textarea"); txtBox.rows = 1;
         txtBox.id = `live-subset-other-text-${leadRef}-Type_of_Vendor`;
         txtBox.placeholder = "Specify other vendor details...";
         txtBox.value = customTextVal;
+        txtBox.oninput = function() { autoGrowPoField(this); };
+        txtBox.onfocus = function() { autoGrowPoField(this); };
         mainWrapper.appendChild(txtBox);
-        
+
         let conditionalMaterialSubBlock = document.createElement("div");
         conditionalMaterialSubBlock.id = `live-conditional-materials-block-mount-${leadRef}`;
-        
+
         let matLabel = document.createElement("div"); matLabel.style.cssText = "font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-top:8px; margin-bottom:2px;";
         matLabel.textContent = "Name of Materials Supplied";
-        let matInput = document.createElement("input"); matInput.type = "text";
+        let matInput = document.createElement("textarea"); matInput.rows = 1;
         matInput.className = `live-lead-field-input-${leadRef}`; matInput.dataset.headerKey = "Name of Materials Supplied";
         matInput.value = leadMap["Name of Materials Supplied"] || "";
+        matInput.oninput = function() { autoGrowPoField(this); };
+        matInput.onfocus = function() { autoGrowPoField(this); };
         
         conditionalMaterialSubBlock.appendChild(matLabel); 
         conditionalMaterialSubBlock.appendChild(matInput);
@@ -1154,10 +1160,12 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         });
 
         if (hasOtherInputBox) {
-          let txtBox = document.createElement("input"); txtBox.type = "text";
+          let txtBox = document.createElement("textarea"); txtBox.rows = 1;
           txtBox.id = `live-subset-other-text-${leadRef}-${key.replace(/\s+/g, '_')}`;
           txtBox.placeholder = "Enter custom parameters details...";
           txtBox.style.marginTop = "2px";
+          txtBox.oninput = function() { autoGrowPoField(this); };
+          txtBox.onfocus = function() { autoGrowPoField(this); };
           
           let excludedKeywords = [];
           if(key === "Type of Customer") excludedKeywords = ["Industry","EPC","Govt/PSU","Consultant","Developer","Electrical Contractor","Dealer","Vendor"];
