@@ -19,13 +19,17 @@ function resetFGDocFiles() {
 }
 resetFGDocFiles();
 
-// input.value is cleared after every pick so selecting the SAME file
+// input.value is cleared after every pick so selecting the SAME file(s)
 // twice (or picking again right after a remove) still fires onchange.
+// The <input> itself carries `multiple` (index.html) so the OS file
+// picker lets someone select several files in one go — this loops
+// input.files rather than just files[0], the previous behavior forced a
+// separate click-and-select round trip per file.
 function handleFGFileSelectionMulti(input, type) {
-  const file = input.files[0];
+  const files = [...(input.files || [])];
   input.value = "";
-  if (!file || !FG_DOC_META[type]) return;
-  fgDocFiles[type].push(file);
+  if (files.length === 0 || !FG_DOC_META[type]) return;
+  fgDocFiles[type].push(...files);
   renderFGFileList(type);
 }
 

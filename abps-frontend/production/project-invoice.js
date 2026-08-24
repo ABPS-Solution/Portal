@@ -21,11 +21,14 @@ function resetPinvDocFiles() {
 }
 resetPinvDocFiles();
 
+// The <input> carries `multiple` (index.html) so the OS file picker lets
+// several files be selected in one go, instead of a separate click-and-
+// select round trip per file.
 function handlePinvFileSelectionMulti(input, type) {
-  const file = input.files[0];
+  const files = [...(input.files || [])];
   input.value = "";
-  if (!file || !PINV_DOC_META[type]) return;
-  pinvDocFiles[type].push(file);
+  if (files.length === 0 || !PINV_DOC_META[type]) return;
+  pinvDocFiles[type].push(...files);
   renderPinvFileList(type);
 }
 
