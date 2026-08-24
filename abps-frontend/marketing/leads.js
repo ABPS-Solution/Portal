@@ -405,6 +405,34 @@ function populateEngineerDropdowns() {
   });
 }
 
+// "Enter Visiting Card Details" (CARD) runs on one shared phone login used by
+// multiple marketing staff, so the app genuinely can't know who's holding the
+// phone — that screen keeps the manual "ABPS Engineer Name" dropdown. Every
+// other entry point into this same form is an individual laptop login, so
+// there's no reason to make someone pick their own name from a list every
+// time (and it removes the chance of picking the wrong one) — lock it to
+// whoever is actually logged in. Falls back to leaving it editable if the
+// logged-in display name isn't found in cachedEngineers, rather than locking
+// someone out of a field they can't fix.
+function applyEngineerFieldLockState() {
+  const el = document.getElementById("engName");
+  if (!el) return;
+  if (currentActiveModuleContext === "CARD") {
+    el.disabled = false;
+    el.title = "";
+    return;
+  }
+  const self = cachedEngineers.find(eng => eng.name === appActiveOperatorIdentityString);
+  if (self) {
+    el.value = self.email;
+    el.disabled = true;
+    el.title = "Set automatically from your logged-in account.";
+  } else {
+    el.disabled = false;
+    el.title = "";
+  }
+}
+
 function handleOpsFileChange(inputNode, uploadBoxId, confirmationMsg) {
   const fileObj = inputNode.files[0];
   const box = document.getElementById(uploadBoxId);
@@ -555,6 +583,7 @@ function revealNewEntryFormDropdown() {
   const rowNode = document.getElementById("staged-back-button-row");
   if (rowNode) rowNode.style.display = "flex";
 
+  applyEngineerFieldLockState();
   dropdownEl.style.display = "block";
   window.scrollTo(0,0);
 }
@@ -597,8 +626,9 @@ function revealNewEntryFormDropdownFromBanner() {
   if (document.getElementById("global-direct-inline-collapse-entry-btn")) document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none"; 
   
   const rowNode = document.getElementById("staged-back-button-row");
-  if (rowNode) rowNode.style.display = "flex"; 
+  if (rowNode) rowNode.style.display = "flex";
 
+  applyEngineerFieldLockState();
   dropdownEl.style.display = "block";
   window.scrollTo(0,0);
 }
@@ -1910,6 +1940,12 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
         if (dropCompanyLocked) dropCompanyLocked.value = mailObject.extractedCompany;
         if (dropName) dropName.value = mailObject.extractedContactName;
         if (dropEmailField && mailObject.destinationInboxAccount) dropEmailField.value = mailObject.destinationInboxAccount;
+
+        // Email Leads is always an individual laptop login, never the shared
+        // Visiting Card Details phone — force out of any leftover "CARD"
+        // context so the Engineer Name field locks to the logged-in user.
+        currentActiveModuleContext = "DROPDOWN";
+        applyEngineerFieldLockState();
 
         // Always keep global nav buttons hidden
         document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
