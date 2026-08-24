@@ -339,7 +339,14 @@ async function showAppView() {
     { id: "mod-card", key: "cardDetails" },
     { id: "mod-company", key: "searchCompany" },
     { id: "mod-email-whatsapp", key: "emailLeads" },
-    { id: "mod-dispatch-commissioning", key: "dispatchCommissioning" },
+    // Was "mod-dispatch-commissioning"/"dispatchCommissioning" — neither ever
+    // existed (real id is mod-commissioning-report, real permission key is
+    // commissioningReport), so this entry's `if (el)` guard silently no-op'd
+    // forever. Not an access-control gap (enforceDynamicModuleRoleGateways
+    // above already hides the card outright via display:none for a user
+    // without the permission) — just the .locked greyed-out visual state
+    // never applying to this one card. Fixed 24 Aug 2026.
+    { id: "mod-commissioning-report", key: "commissioningReport" },
     { id: "mod-tasks", key: "searchTasks" },
     { id: "mod-status", key: "searchStatus" },
     { id: "mod-qual", key: "searchQualification" },

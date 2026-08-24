@@ -941,12 +941,23 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         cell.appendChild(container);
       }
       
-      else if (["Meeting Venue", "Send Company Profile", "Send Technical Presentation", "Arrange Site Visit", "Get Enquiry", "Follow-Up Required"].indexOf(key) !== -1) {
+      else if (["Meeting Venue", "Send Company Profile", "Send Technical Presentation", "Arrange Site Visit", "Get Enquiry", "Send Offer", "Follow-Up Required"].indexOf(key) !== -1) {
         let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
         let opts = ["No", "Yes"];
         if(key === "Meeting Venue") opts = ["ABPS Office", "Exhibition", "Customer's Place", "Other"];
+        // Send Company Profile / Send Technical Presentation / Arrange Site
+        // Visit / Get Enquiry / Follow-Up Required are real Postgres BOOLEAN
+        // columns — pg returns those as JS true/false, not the strings
+        // "Yes"/"No" this dropdown compares against. A strict === always
+        // failed for both options, so every one of these fields silently
+        // rendered as unselected/defaulting to "No" regardless of the real
+        // stored value. Normalize to a Yes/No string before comparing so it
+        // works for both the boolean columns and Send Offer (a plain TEXT
+        // column already storing "Yes"/"No" directly, migration 017).
+        const rawVal = leadMap[key];
+        const normalizedVal = (typeof rawVal === "boolean") ? (rawVal ? "Yes" : "No") : rawVal;
         opts.forEach(o => {
-          let op = document.createElement("option"); op.textContent = o; if(leadMap[key] === o) op.selected = true; sel.appendChild(op);
+          let op = document.createElement("option"); op.textContent = o; if(normalizedVal === o) op.selected = true; sel.appendChild(op);
         });
         cell.appendChild(sel);
       } 
@@ -1152,14 +1163,25 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         }
         cell.appendChild(mainWrapper);
       } else if (["Technical Discussion Summary", "Company Address", "Company Name", "Problem Observed", "Existing System Details"].indexOf(key) !== -1) {
-        let inpTypeElement = (key === "Technical Discussion Summary" || key === "Company Address") ? document.createElement("textarea") : document.createElement("input");
-        inpTypeElement.type = "text"; inpTypeElement.className = 'live-lead-field-input-' + leadRef; inpTypeElement.dataset.headerKey = key;
-        inpTypeElement.value = leadMap[key] || ""; if (key === "Technical Discussion Summary" || key === "Company Address") inpTypeElement.style.minHeight = "80px";
+        let inpTypeElement = document.createElement("textarea"); inpTypeElement.rows = 1;
+        inpTypeElement.className = 'live-lead-field-input-' + leadRef; inpTypeElement.dataset.headerKey = key;
+        inpTypeElement.value = leadMap[key] || "";
+        inpTypeElement.oninput = function() { autoGrowPoField(this); };
+        inpTypeElement.onfocus = function() { autoGrowPoField(this); };
         cell.appendChild(inpTypeElement);
-      } 
+      }
       else {
-        let inp = document.createElement("input"); inp.type = "text"; inp.className = 'live-lead-field-input-' + leadRef;
-        inp.dataset.headerKey = key; inp.value = leadMap[key] || ""; cell.appendChild(inp);
+        // Auto-growing textarea instead of a single-line <input> — a long
+        // saved value (Competitor Details, Additional Meeting Details,
+        // Upcoming Project, etc.) used to be clipped/scrolled inside a
+        // fixed-height input instead of wrapping visibly. rows="1" +
+        // autoGrowPoField is the same technique already used for the
+        // Purchase Order review screen just below in this file.
+        let inp = document.createElement("textarea"); inp.rows = 1; inp.className = 'live-lead-field-input-' + leadRef;
+        inp.dataset.headerKey = key; inp.value = leadMap[key] || "";
+        inp.oninput = function() { autoGrowPoField(this); };
+        inp.onfocus = function() { autoGrowPoField(this); };
+        cell.appendChild(inp);
       }
       
       // Suppress standalone rendering of child items that are nested into parent compound objects boxes
@@ -1169,6 +1191,10 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
     });
   });
   canvas.appendChild(gridWrapper);
+  // Size every auto-grow textarea to its prefilled value immediately — they
+  // only grow on input/focus otherwise, so a long saved value would still
+  // render clipped until the user clicks into the field.
+  gridWrapper.querySelectorAll('textarea').forEach(autoGrowPoField);
 
   // Carries the Company ID through to the save handler — this form mixes Company-level
   // fields (City/State/Website/etc.) with Lead-level fields, and the save handler needs

@@ -170,6 +170,13 @@
   .grid-cell-item { display: flex; flex-direction: column; background: #f8fafc; padding: 2px 4px; border: 1px solid #e2e8f0; border-radius: 4px; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
   .grid-cell-item label { font-size: 0.58rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 1px; }
   .grid-cell-item input, .grid-cell-item select, .grid-cell-item textarea { padding: 2px 4px; font-size: 0.78rem; font-weight: 600; border-radius: 3px; border: 1px solid var(--border); }
+  /* View Details' free-text fields moved from <input> to auto-growing
+     <textarea rows="1"> (24 Aug 2026) so a long saved value wraps and the
+     box grows to fit it, instead of clipping/scrolling in a single-line
+     box — resize:none/overflow:hidden since JS (autoGrowPoField) owns the
+     height, width:100% since textarea doesn't stretch to its grid cell by
+     default the way input does. */
+  .grid-cell-item textarea { width: 100%; resize: none; overflow: hidden; font-family: inherit; box-sizing: border-box; }
 
   /* Project Invoice Generation/Revise use the same shared .grid-cell-item
      question/value fields as several other screens (Manufacturing
