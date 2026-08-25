@@ -121,7 +121,7 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
             <th style="width:6%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Target Time</th>
             <th style="width:6%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Target Date</th>
             <th style="width:6%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Priority</th>
-            <th style="width:30%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Description</th>
+            <th style="width:30%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Task Description</th>
             <th style="width:17.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Completion Notes / Outcome</th>
             <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}"></th>
           </tr>

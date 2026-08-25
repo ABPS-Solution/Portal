@@ -54,6 +54,33 @@ function cleanISTTimestamp(rawStr) {
   return `${hourPart}:${minutePart} ${ampmPart}`;
 }
 
+// Formats a plain "HH:MM:SS" (Postgres TIME WITHOUT TIME ZONE, e.g.
+// marketing.follow_ups.event_time) as 12-hour "h:mm am/pm". No timezone
+// conversion here — the value was already written as IST wall-clock time
+// (LOCALTIME on a connection pinned to Asia/Kolkata), so treating it as a
+// UTC instant and re-converting (cleanISTTimestamp's job) would double
+// -shift it. Deliberately separate from cleanISTTimestamp, which is for
+// real timestamptz/instant values, not a bare time-of-day.
+function formatPlainTimeOfDay(rawStr) {
+  if (!rawStr) return "";
+  const m = rawStr.toString().trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return "";
+  let hours = parseInt(m[1], 10);
+  const minutes = m[2];
+  const ampm = hours >= 12 ? 'pm' : 'am';
+  hours = hours % 12; hours = hours ? hours : 12;
+  return `${hours}:${minutes} ${ampm}`;
+}
+
+// Combines a plain event_date + event_time pair (see formatPlainTimeOfDay)
+// into "h:mm am/pm DD-MM-YYYY" for a created/last-edited timestamp column.
+function formatFollowUpTimestamp(dateVal, timeVal) {
+  const datePart = formatCleanDateOnly(dateVal);
+  const timePart = formatPlainTimeOfDay(timeVal);
+  if (!datePart && !timePart) return "";
+  return `${timePart} ${datePart}`.trim();
+}
+
 // Extracts the YYYY-MM-DD portion from a raw date/timestamp value so it can
 // be assigned directly to a native <input type="date">.value — that input
 // ONLY accepts YYYY-MM-DD; assigning it a DD-MM-YYYY string (e.g. from

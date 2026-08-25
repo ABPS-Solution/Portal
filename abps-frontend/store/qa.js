@@ -44,14 +44,15 @@ function renderIsolatedFollowUpTimeline(leadRef, list, scopeNode) {
       : `<span id="trigger-inner-delete-fup-${leadRef}-${f.num}" style="display:none;"></span>`;
     return `
       <tr style="border-bottom:1px solid #edf2f7;">
-        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} overflow-wrap:anywhere;">${f.eng}</td>
+        <td style="width:10%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered}">${formatFollowUpTimestamp(f.date, f.time)}</td>
+        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} overflow-wrap:anywhere; ${colBorder}">${f.eng}</td>
         <td style="width:7.5%; padding:6px 4px; vertical-align:middle; ${centered} ${colBorder}">${f.outcome ? `<span style="font-size:0.72rem; font-weight:700; color:#fff; background:${outcomeColor}; padding:1px 6px; border-radius:3px;">${f.outcome}</span>` : '—'}</td>
-        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${f.mode || "—"}</td>
+        <td style="width:5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${f.mode || "—"}</td>
         <td style="width:30%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; ${colBorder}">${f.notes || 'None'}</td>
         <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${formatCleanDateOnly(f.nextDate)}</td>
-        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${f.nextTime || "—"}</td>
-        <td style="width:10%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; ${colBorder}">${f.nextActionType || "—"}</td>
-        <td style="width:15%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; ${colBorder}">${f.objectionRaised || "—"}</td>
+        <td style="width:5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${f.nextTime || "—"}</td>
+        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; ${colBorder}">${f.nextActionType || "—"}</td>
+        <td style="width:12.5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; ${colBorder}">${f.objectionRaised || "—"}</td>
         <td style="width:7.5%; padding:6px 4px; vertical-align:middle; ${colBorder}">
           <div style="display:flex; justify-content:center; gap:6px;">
             <button class="nav-btn-styled" id="trigger-inner-edit-fup-${leadRef}-${f.num}" style="font-size:0.7rem; padding:3px 6px;">Edit</button>
@@ -67,14 +68,15 @@ function renderIsolatedFollowUpTimeline(leadRef, list, scopeNode) {
       <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <thead>
           <tr style="background:#f8fafc; border-bottom:2px solid var(--border);">
-            <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Logged By</th>
+            <th style="width:10%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Timestamp</th>
+            <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Logged By</th>
             <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Outcome</th>
-            <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Mode</th>
+            <th style="width:5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Mode</th>
             <th style="width:30%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Interaction Notes</th>
             <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Next Follow-Up Date</th>
-            <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Next Follow-Up Time</th>
-            <th style="width:10%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Next Action Type</th>
-            <th style="width:15%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Objection Raised</th>
+            <th style="width:5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Next Follow-Up Time</th>
+            <th style="width:7.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Next Action Type</th>
+            <th style="width:12.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Objection Raised</th>
             <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}"></th>
           </tr>
         </thead>
