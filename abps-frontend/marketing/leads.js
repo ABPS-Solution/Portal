@@ -807,13 +807,14 @@ function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
     taskForm.querySelector(".task-targetdate-input").value = ""; taskForm.querySelector(".task-status-select").value = "Assigned";
     // Full reset — this same form node is reused for both "+ Add Task"
     // and Edit, so anything an Edit populated (Type, Target Completion
-    // Time, Priority, Completion Notes) was otherwise still sitting
-    // there on a fresh "+ Add Task" open.
-    taskForm.querySelector(".task-type-select").value = "Site Visit";
-    taskForm.querySelector(".task-shift-select").value = "Morning";
-    taskForm.querySelector(".task-priority-select").value = "Medium";
+    // Time, Priority, Assigned To, Completion Notes) was otherwise still
+    // sitting there on a fresh "+ Add Task" open. Every field starts
+    // blank except Task Status, which defaults to "Assigned".
+    taskForm.querySelector(".task-type-select").value = "";
+    taskForm.querySelector(".task-shift-select").value = "";
+    taskForm.querySelector(".task-priority-select").value = "";
     taskForm.querySelector(".task-completionnotes-input").value = "";
-    if (taskSelfEngineer) taskEngSelect.value = taskSelfEngineer.email;
+    taskEngSelect.value = "";
     // Fields may still be disabled from a previous Edit on this same
     // (reused) form node, restricted to whoever assigned that task — a
     // fresh task being created has no such restriction yet.

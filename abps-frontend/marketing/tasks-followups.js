@@ -90,7 +90,7 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
     const colBorder = "border-left:2px solid var(--border);";
     const centered = "text-align:center;";
     return `
-      <tr style="border-bottom:1px solid #edf2f7;">
+      <tr style="border-bottom:2px solid var(--border);">
         <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered}">${t.status}</td>
         <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${t.type}</td>
         <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere; vertical-align:middle; ${centered} ${colBorder}">${t.eng}</td>
