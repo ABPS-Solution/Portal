@@ -2209,7 +2209,7 @@
 
     <div id="canvas-module-design-itemcode" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Add / Check Item Code</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">Search the catalog to find an existing Item Code, or create a new one if the material doesn't exist.</p>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">Create a new Item Code directly below, or search the catalog first if you just want to check what already exists — Item Code is never used as a standalone lookup anywhere else in the system, so searching first is optional, not required.</p>
 
       <div style="display:flex; gap:10px; margin-bottom:18px;">
         <button class="nav-btn-styled" id="icf-mode-btn-search" onclick="switchItemCodeMode('search')" style="flex:1; background:var(--brand); color:#fff; font-weight:700; padding:11px 16px;">Search / Add Item Code</button>
@@ -2220,6 +2220,17 @@
 
       <!-- ═══════ MODE: SEARCH / ADD ═══════ -->
       <div id="icf-mode-search">
+
+      <!-- Direct entry point — Create no longer requires searching first.
+           Duplicate protection (server-side, on Material Name + Rating +
+           Make) is what actually prevents duplicate item codes; the old
+           search-first gate was a workaround for not having that check. -->
+      <div style="margin-bottom:16px;">
+        <button class="nav-btn-styled" id="itemcode-direct-create-btn" onclick="revealItemCodeCreateForm()"
+          style="width:100%; padding:12px 16px; font-weight:700; background:var(--accent); font-size:0.95rem;">+ Create New Item Code</button>
+      </div>
+
+      <div style="text-align:center; font-size:0.72rem; font-weight:700; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px; margin-bottom:12px;">— or search the catalog first —</div>
 
       <!-- SEARCH ZONE -->
       <div id="itemcode-search-zone-wrapper" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
