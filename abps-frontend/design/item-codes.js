@@ -348,6 +348,14 @@ async function revealItemCodeCreateForm() {
   if (subSelectReset) subSelectReset.disabled = false;
   codeInput.value  = "Loading...";
   banner.style.display = "none";
+  // The success banner from a prior create hides the whole search zone
+  // (and its own "+ Search / Add Another Item" button is the only thing
+  // that used to bring it back) — the persistent "+ Create New Item
+  // Code" button is a second, direct entry point into this same
+  // function, so it must restore the search zone itself rather than
+  // leaving it hidden with nothing left on screen to un-hide it.
+  const searchZoneWrapper = document.getElementById("itemcode-search-zone-wrapper");
+  if (searchZoneWrapper) searchZoneWrapper.style.display = "block";
   document.getElementById("icf-new-fixed-zone").style.display = "none";
   document.getElementById("icf-new-freeform-zone").style.display = "none";
   if (document.getElementById("icf-new-fixed-make")) document.getElementById("icf-new-fixed-make").value = "";
