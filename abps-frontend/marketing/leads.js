@@ -769,7 +769,17 @@ function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
     fupForm.querySelector(".fup-is-edit-flag").value = "false";
     fupForm.querySelector(".fup-num-input").value = currentFollowUpCount + 1;
     fupForm.querySelector(".fup-leadid-input").value = leadRef;
-    fupForm.querySelector(".fup-notes-input").value = ""; fupForm.querySelector(".fup-nexttarget-input").value = "";
+    // Full reset — this same form node is reused for both "+ Log
+    // Follow-Up" and Edit, so anything an Edit populated (Outcome, Mode,
+    // Next Follow-Up Time, Next Action Type, Objection Raised) was
+    // otherwise still sitting there on a fresh "+ Log Follow-Up" open.
+    fupForm.querySelector(".fup-notes-input").value = "";
+    fupForm.querySelector(".fup-nexttarget-input").value = "";
+    fupForm.querySelector(".fup-outcome-select").value = "";
+    fupForm.querySelector(".fup-mode-select").value = "";
+    fupForm.querySelector(".fup-nexttime-select").value = "";
+    fupForm.querySelector(".fup-nextaction-input").value = "";
+    fupForm.querySelector(".fup-objection-input").value = "";
     fupForm.style.display = "grid"; fupOpen.style.display = "none"; fupClose.style.display = "inline-flex";
     const fupLabel = nodeScope.querySelector(".fup-status-label"); if (fupLabel) { fupLabel.textContent = "Logging Follow-up"; fupLabel.style.display = "inline"; }
   };
@@ -795,6 +805,15 @@ function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
   taskOpen.onclick = function() {
     taskForm.querySelector(".task-edit-id").value = ""; taskForm.querySelector(".task-desc-input").value = "";
     taskForm.querySelector(".task-targetdate-input").value = ""; taskForm.querySelector(".task-status-select").value = "Assigned";
+    // Full reset — this same form node is reused for both "+ Add Task"
+    // and Edit, so anything an Edit populated (Type, Target Completion
+    // Time, Priority, Completion Notes) was otherwise still sitting
+    // there on a fresh "+ Add Task" open.
+    taskForm.querySelector(".task-type-select").value = "Site Visit";
+    taskForm.querySelector(".task-shift-select").value = "Morning";
+    taskForm.querySelector(".task-priority-select").value = "Medium";
+    taskForm.querySelector(".task-completionnotes-input").value = "";
+    if (taskSelfEngineer) taskEngSelect.value = taskSelfEngineer.email;
     // Fields may still be disabled from a previous Edit on this same
     // (reused) form node, restricted to whoever assigned that task — a
     // fresh task being created has no such restriction yet.
