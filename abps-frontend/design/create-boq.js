@@ -97,6 +97,7 @@ function resetCBOQImportProjectStage() {
     projSearch.placeholder = "Select Description First";
     projSearch.disabled = true;
     projSearch.style.background = "#f1f5f9"; projSearch.style.color = "var(--muted)";
+    autoGrowTextField(projSearch);
   }
   const projDropdown = document.getElementById("cboq-import-project-dropdown");
   if (projDropdown) projDropdown.style.display = "none";
@@ -132,7 +133,9 @@ function handleCBOQImportProjectSearch(query) {
 }
 
 function selectCBOQImportProjectOption(projectId, boqId) {
-  document.getElementById("cboq-import-project-search").value = projectId;
+  const projSearch = document.getElementById("cboq-import-project-search");
+  projSearch.value = projectId;
+  autoGrowTextField(projSearch);
   document.getElementById("cboq-import-project-dropdown").style.display = "none";
   window.cboqImportResolvedBoqId = boqId;
   const importBtn = document.getElementById("cboq-import-btn");
