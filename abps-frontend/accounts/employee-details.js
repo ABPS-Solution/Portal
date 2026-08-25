@@ -1,9 +1,10 @@
 // accounts/employee-details.js — "Employee Details" toggle. Name/EMP
 // ID/Department are editable inline; Current Balance never is (it only
 // ever moves via Pay Advance / Check Voucher). Add supports a non-zero
-// opening balance. Remove = deactivate (status='Inactive'), history
-// preserved — a matching Reactivate exists for the same reason a status
-// column exists at all: to undo a mistaken deactivation.
+// opening balance. Delete removes the employee row entirely (25 Aug 2026,
+// replacing the old Deactivate) — the backend still refuses to delete an
+// employee with a non-zero balance or any advance/voucher history, same
+// underlying FK-safety reasoning the old Deactivate had.
 
 async function initializeEmployeeDetailsPanel() {
   const panel = document.getElementById("te-panel-employees");
@@ -45,7 +46,7 @@ async function loadEmployeeDetailsTable() {
         <td style="padding:7px; text-align:center;">${e.status === 'Active' ? 'Active' : '<span style="color:#b91c1c; font-weight:700;">Inactive</span>'}</td>
         <td style="padding:7px; white-space:nowrap;">
           <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem;" onclick="submitUpdateEmployee(${e.employeeId})">Save</button>
-          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem;" onclick="submitSetEmployeeStatus(${e.employeeId}, '${e.status === 'Active' ? 'Inactive' : 'Active'}')">${e.status === 'Active' ? 'Deactivate' : 'Reactivate'}</button>
+          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem; background:#b91c1c; color:#fff;" onclick="submitDeleteEmployee(${e.employeeId}, '${escapeHtml(e.employeeName).replace(/'/g, "\\'")}')">Delete</button>
         </td>
       </tr>`).join("");
     wrap.innerHTML = `
@@ -74,7 +75,7 @@ async function submitAddEmployee() {
       document.getElementById("ed-add-form").style.display = "none";
       ["ed-new-name", "ed-new-empcode", "ed-new-dept", "ed-new-balance"].forEach(id => document.getElementById(id).value = "");
       loadEmployeeDetailsTable();
-      showTourSuccess("Employee added.", "Add Another Employee", "edToggleAddForm()");
+      showTourSuccess("Employee added.", "Add Another Employee", "switchTourExpenseToggle('employees'); edToggleAddForm();");
     } else {
       showTourFeedback(data.error, "error");
     }
@@ -92,25 +93,18 @@ async function submitUpdateEmployee(employeeId) {
   try {
     const data = await acFetch("updateTourEmployee", { employeeId, employeeName, empCode, departmentName });
     hideBlockingOverlay();
-    if (data.success) { loadEmployeeDetailsTable(); showTourSuccess("Saved.", "Edit Another Employee", "document.getElementById('te-success').style.display='none';"); }
+    if (data.success) { loadEmployeeDetailsTable(); showTourSuccess("Saved.", "Edit Another Employee", "switchTourExpenseToggle('employees')"); }
     else showTourFeedback(data.error, "error");
   } catch (e) { hideBlockingOverlay(); showTourFeedback("Network error: " + e.message, "error"); }
 }
 
-async function submitSetEmployeeStatus(employeeId, status) {
-  if (status === 'Inactive') {
-    const row = document.querySelector(`tr[data-employee-id="${employeeId}"]`);
-    const balance = Number(row?.dataset.balance) || 0;
-    if (balance !== 0) {
-      return showTourFeedback(`Cannot deactivate — Current Balance must be exactly 0 (it's ${formatINRComma(balance)}).`, "error");
-    }
-    if (!confirm("Deactivate this employee? They'll disappear from the voucher page and every picker, but their history stays intact.")) return;
-  }
-  showBlockingOverlay("Updating...");
+async function submitDeleteEmployee(employeeId, employeeName) {
+  if (!confirm(`Permanently delete "${employeeName}"? This cannot be undone. (Blocked if their balance isn't 0 or they have any advance/voucher history.)`)) return;
+  showBlockingOverlay("Deleting...");
   try {
-    const data = await acFetch("setTourEmployeeStatus", { employeeId, status });
+    const data = await acFetch("deleteTourEmployee", { employeeId });
     hideBlockingOverlay();
-    if (data.success) { loadEmployeeDetailsTable(); showTourSuccess(`Employee set to ${status}.`, "Back to Employee Details", "document.getElementById('te-success').style.display='none';"); }
+    if (data.success) { loadEmployeeDetailsTable(); showTourSuccess(`"${employeeName}" deleted.`, "Back to Employee Details", "switchTourExpenseToggle('employees')"); }
     else showTourFeedback(data.error, "error");
   } catch (e) { hideBlockingOverlay(); showTourFeedback("Network error: " + e.message, "error"); }
 }

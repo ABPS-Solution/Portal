@@ -158,7 +158,7 @@ async function submitTourAdvance() {
     hideBlockingOverlay();
     if (data.success) {
       initializeAdvanceVoucherPanel();
-      showTourSuccess(`Advance recorded. New balance: ${formatINRComma(data.newBalance)}.`, "Record Another Advance", "initializeAdvanceVoucherPanel()");
+      showTourSuccess(`Advance recorded. New balance: ${formatINRComma(data.newBalance)}.`, "Record Another Advance", "switchTourExpenseToggle('advance')");
     } else {
       showTourFeedback(data.error, "error");
     }

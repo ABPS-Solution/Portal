@@ -55,7 +55,7 @@ async function submitCashUpiTopup() {
       document.getElementById("cb-amount").value = "";
       document.querySelectorAll('input[name="cb-mode"]').forEach(r => r.checked = false);
       loadCashUpiBalance();
-      showCashExpenseSuccess(`Added ${formatINRComma(amount)} to ${paymentMode} balance.`, "Add Another Top-Up", "document.getElementById('ce-success').style.display='none';");
+      showCashExpenseSuccess(`Added ${formatINRComma(amount)} to ${paymentMode} balance.`, "Add Another Top-Up", "switchCashExpenseToggle('balance')");
     } else {
       showCashExpenseFeedback(data.error, "error");
     }

@@ -1,7 +1,8 @@
 // accounts/cash-expense-employees.js — "Employee Details" toggle for
 // Daily Cash/UPI Expenses. Independent employee list from Tour Expense
 // Tracker's (explicit decision) — Name/EMP ID/Department editable inline;
-// remove = deactivate (status='Inactive'), history preserved.
+// Delete removes the employee row entirely (25 Aug 2026, replacing the
+// old Deactivate) — the backend refuses if they have any expense history.
 
 async function initializeCashExpenseEmployeesPanel() {
   const panel = document.getElementById("ce-panel-employees");
@@ -41,7 +42,7 @@ async function loadCashExpenseEmployeesTable() {
         <td style="padding:7px; text-align:center;">${e.status === 'Active' ? 'Active' : '<span style="color:#b91c1c; font-weight:700;">Inactive</span>'}</td>
         <td style="padding:7px; white-space:nowrap;">
           <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem;" onclick="submitUpdateCashExpenseEmployee(${e.employeeId})">Save</button>
-          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem;" onclick="submitSetCashExpenseEmployeeStatus(${e.employeeId}, '${e.status === 'Active' ? 'Inactive' : 'Active'}')">${e.status === 'Active' ? 'Deactivate' : 'Reactivate'}</button>
+          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem; background:#b91c1c; color:#fff;" onclick="submitDeleteCashExpenseEmployee(${e.employeeId}, '${escapeHtml(e.employeeName).replace(/'/g, "\\'")}')">Delete</button>
         </td>
       </tr>`).join("");
     wrap.innerHTML = `
@@ -69,7 +70,7 @@ async function submitAddCashExpenseEmployee() {
       document.getElementById("cee-add-form").style.display = "none";
       ["cee-new-name", "cee-new-empcode", "cee-new-dept"].forEach(id => document.getElementById(id).value = "");
       loadCashExpenseEmployeesTable();
-      showCashExpenseSuccess("Employee added.", "Add Another Employee", "ceeToggleAddForm()");
+      showCashExpenseSuccess("Employee added.", "Add Another Employee", "switchCashExpenseToggle('employees'); ceeToggleAddForm();");
     } else {
       showCashExpenseFeedback(data.error, "error");
     }
@@ -87,18 +88,18 @@ async function submitUpdateCashExpenseEmployee(employeeId) {
   try {
     const data = await acFetch("updateCashExpenseEmployee", { employeeId, employeeName, empCode, departmentName });
     hideBlockingOverlay();
-    if (data.success) { loadCashExpenseEmployeesTable(); showCashExpenseSuccess("Saved.", "Edit Another Employee", "document.getElementById('ce-success').style.display='none';"); }
+    if (data.success) { loadCashExpenseEmployeesTable(); showCashExpenseSuccess("Saved.", "Edit Another Employee", "switchCashExpenseToggle('employees')"); }
     else showCashExpenseFeedback(data.error, "error");
   } catch (e) { hideBlockingOverlay(); showCashExpenseFeedback("Network error: " + e.message, "error"); }
 }
 
-async function submitSetCashExpenseEmployeeStatus(employeeId, status) {
-  if (status === 'Inactive' && !confirm("Deactivate this employee? They'll disappear from every picker, but their expense history stays intact.")) return;
-  showBlockingOverlay("Updating...");
+async function submitDeleteCashExpenseEmployee(employeeId, employeeName) {
+  if (!confirm(`Permanently delete "${employeeName}"? This cannot be undone. (Blocked if they have any expense history.)`)) return;
+  showBlockingOverlay("Deleting...");
   try {
-    const data = await acFetch("setCashExpenseEmployeeStatus", { employeeId, status });
+    const data = await acFetch("deleteCashExpenseEmployee", { employeeId });
     hideBlockingOverlay();
-    if (data.success) { loadCashExpenseEmployeesTable(); showCashExpenseSuccess(`Employee set to ${status}.`, "Back to Employee Details", "document.getElementById('ce-success').style.display='none';"); }
+    if (data.success) { loadCashExpenseEmployeesTable(); showCashExpenseSuccess(`"${employeeName}" deleted.`, "Back to Employee Details", "switchCashExpenseToggle('employees')"); }
     else showCashExpenseFeedback(data.error, "error");
   } catch (e) { hideBlockingOverlay(); showCashExpenseFeedback("Network error: " + e.message, "error"); }
 }

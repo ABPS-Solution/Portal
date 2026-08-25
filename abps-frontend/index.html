@@ -1087,11 +1087,14 @@
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
-        <div>
+        <div style="position:relative;">
           <label class="field-label" style="margin-top:0;">BOQ ID *</label>
-          <select id="jclh-boq" onchange="handleJCLHBoqChange(this.value)" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-            <option value="">— Select Project First —</option>
-          </select>
+          <div id="jclh-boq-display" data-disabled="1" onclick="toggleJCLHBOQDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="jclh-boq-display-text" style="white-space:normal; word-break:break-word;">— Select Project First —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="jclh-boq-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="jclh-boq" value="" />
         </div>
         <input type="hidden" id="jclh-department" value="" />
         <input type="hidden" id="jclh-description-of-material" value="" />
@@ -1100,19 +1103,24 @@
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
         <div>
           <label class="field-label" style="margin-top:0;">Product Name</label>
-          <input type="text" id="jclh-product-name" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from BOQ ID" />
+          <textarea id="jclh-product-name" readonly rows="1" oninput="autoGrowTextField(this)"
+            style="width:100%; padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); border:1px solid var(--border); resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; font-family:inherit; line-height:1.3; box-sizing:border-box;" placeholder="Auto-filled from BOQ ID"></textarea>
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Product Rating</label>
-          <input type="text" id="jclh-product-rating" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from BOQ ID (blank if none)" />
+          <textarea id="jclh-product-rating" readonly rows="1" oninput="autoGrowTextField(this)"
+            style="width:100%; padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); border:1px solid var(--border); resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; font-family:inherit; line-height:1.3; box-sizing:border-box;" placeholder="Auto-filled from BOQ ID (blank if none)"></textarea>
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
-        <div>
+        <div style="position:relative;">
           <label class="field-label" style="margin-top:0;">Job Card Number *</label>
-          <select id="jclh-jobcard" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-            <option value="">— Select BOQ ID First —</option>
-          </select>
+          <div id="jclh-jobcard-display" data-disabled="1" onclick="toggleJCLHJobCardDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="jclh-jobcard-display-text" style="white-space:normal; word-break:break-word;">— Select BOQ ID First —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="jclh-jobcard-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="jclh-jobcard" value="" />
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px;">
@@ -1821,10 +1829,10 @@
     <div id="te-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
     <div id="te-success" style="display:none; margin-bottom:12px;"></div>
 
-    <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
+    <div id="te-toggle-bar" style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
       <button id="te-toggle-advance" class="nav-btn-styled" onclick="switchTourExpenseToggle('advance')" style="flex:1; padding:11px 16px;">Advance Vouchers</button>
       <button id="te-toggle-check" class="nav-btn-styled" onclick="switchTourExpenseToggle('check')" style="flex:1; padding:11px 16px;">Employee Tour Expense Vouchers</button>
-      <button id="te-toggle-search" class="nav-btn-styled" onclick="switchTourExpenseToggle('search')" style="flex:1; padding:11px 16px;">Search Tour Expense Vouchers</button>
+      <button id="te-toggle-search" class="nav-btn-styled" onclick="switchTourExpenseToggle('search')" style="flex:1; padding:11px 16px;">Search Vouchers</button>
       <button id="te-toggle-employees" class="nav-btn-styled" onclick="switchTourExpenseToggle('employees')" style="flex:1; padding:11px 16px;">Employee Details</button>
     </div>
 
@@ -1850,7 +1858,7 @@
     <div id="ce-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
     <div id="ce-success" style="display:none; margin-bottom:12px;"></div>
 
-    <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
+    <div id="ce-toggle-bar" style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
       <button id="ce-toggle-expenses" class="nav-btn-styled" onclick="switchCashExpenseToggle('expenses')" style="flex:1; padding:11px 16px;">Expenses</button>
       <button id="ce-toggle-balance" class="nav-btn-styled" onclick="switchCashExpenseToggle('balance')" style="flex:1; padding:11px 16px;">Add to Account Balance</button>
       <button id="ce-toggle-search" class="nav-btn-styled" onclick="switchCashExpenseToggle('search')" style="flex:1; padding:11px 16px;">Search Cash Expense Vouchers</button>

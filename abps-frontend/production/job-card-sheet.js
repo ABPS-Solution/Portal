@@ -1,3 +1,103 @@
+// BOQ ID / Job Card Number are custom click-to-open dropdowns (not native
+// <select>) — same pattern as Add to Finished Goods Store's
+// fg-add-boq-display/fg-add-jobcard-display — because a native select's
+// closed-box text can't wrap, and these values (BOQ ID especially) run
+// long enough to get clipped. jclh-boq/jclh-jobcard stay as hidden inputs
+// holding the actual value; everything else here just reads/writes those.
+function jclhBOQDisplayReset(text) {
+  const disp = document.getElementById("jclh-boq-display");
+  const textEl = document.getElementById("jclh-boq-display-text");
+  const hidden = document.getElementById("jclh-boq");
+  const list = document.getElementById("jclh-boq-dropdown-list");
+  if (textEl) textEl.textContent = text;
+  if (hidden) hidden.value = "";
+  if (list) { list.style.display = "none"; list.innerHTML = ""; }
+  if (disp) { disp.dataset.disabled = "1"; disp.style.opacity = "0.5"; disp.style.cursor = "not-allowed"; disp.style.color = "var(--muted)"; disp.style.background = "#f1f5f9"; }
+}
+function jclhBOQDisplayEnable() {
+  const disp = document.getElementById("jclh-boq-display");
+  if (disp) { disp.dataset.disabled = "0"; disp.style.opacity = "1"; disp.style.cursor = "pointer"; disp.style.color = "var(--text)"; disp.style.background = "#fff"; }
+}
+function jclhBOQPopulate(options) {
+  const list = document.getElementById("jclh-boq-dropdown-list");
+  if (!list) return;
+  list.innerHTML = options.map(o => `
+    <div onclick="event.stopPropagation(); selectJCLHBOQ('${o.value.replace(/'/g,"\\'")}', \`${o.label.replace(/\`/g,"'")}\`)"
+      style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
+}
+function toggleJCLHBOQDropdown() {
+  const disp = document.getElementById("jclh-boq-display");
+  if (!disp || disp.dataset.disabled === "1") return;
+  const list = document.getElementById("jclh-boq-dropdown-list");
+  const isOpen = list.style.display === "block";
+  document.querySelectorAll("[id$='-dropdown-list']").forEach(l => l.style.display = "none");
+  list.style.display = isOpen ? "none" : "block";
+}
+function selectJCLHBOQ(boqId, label) {
+  document.getElementById("jclh-boq").value = boqId;
+  document.getElementById("jclh-boq-display-text").textContent = label;
+  document.getElementById("jclh-boq-dropdown-list").style.display = "none";
+  handleJCLHBoqChange(boqId);
+}
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#jclh-boq-display") && !e.target.closest("#jclh-boq-dropdown-list")) {
+    const l = document.getElementById("jclh-boq-dropdown-list"); if (l) l.style.display = "none";
+  }
+});
+
+function jclhJobCardDisplayReset(text) {
+  const disp = document.getElementById("jclh-jobcard-display");
+  const textEl = document.getElementById("jclh-jobcard-display-text");
+  const hidden = document.getElementById("jclh-jobcard");
+  const list = document.getElementById("jclh-jobcard-dropdown-list");
+  if (textEl) textEl.textContent = text;
+  if (hidden) hidden.value = "";
+  if (list) { list.style.display = "none"; list.innerHTML = ""; }
+  if (disp) { disp.dataset.disabled = "1"; disp.style.opacity = "0.5"; disp.style.cursor = "not-allowed"; disp.style.color = "var(--muted)"; disp.style.background = "#f1f5f9"; }
+}
+function jclhJobCardDisplayEnable() {
+  const disp = document.getElementById("jclh-jobcard-display");
+  if (disp) { disp.dataset.disabled = "0"; disp.style.opacity = "1"; disp.style.cursor = "pointer"; disp.style.color = "var(--text)"; disp.style.background = "#fff"; }
+}
+function jclhJobCardPopulate(options) {
+  const list = document.getElementById("jclh-jobcard-dropdown-list");
+  if (!list) return;
+  list.innerHTML = options.map(o => `
+    <div onclick="event.stopPropagation(); selectJCLHJobCard('${o.value.replace(/'/g,"\\'")}', \`${o.label.replace(/\`/g,"'")}\`)"
+      style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
+}
+function toggleJCLHJobCardDropdown() {
+  const disp = document.getElementById("jclh-jobcard-display");
+  if (!disp || disp.dataset.disabled === "1") return;
+  const list = document.getElementById("jclh-jobcard-dropdown-list");
+  const isOpen = list.style.display === "block";
+  document.querySelectorAll("[id$='-dropdown-list']").forEach(l => l.style.display = "none");
+  list.style.display = isOpen ? "none" : "block";
+}
+function selectJCLHJobCard(jobCardNumber, label) {
+  document.getElementById("jclh-jobcard").value = jobCardNumber;
+  document.getElementById("jclh-jobcard-display-text").textContent = label;
+  document.getElementById("jclh-jobcard-dropdown-list").style.display = "none";
+  updateJCLHDownloadButtonState();
+}
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#jclh-jobcard-display") && !e.target.closest("#jclh-jobcard-dropdown-list")) {
+    const l = document.getElementById("jclh-jobcard-dropdown-list"); if (l) l.style.display = "none";
+  }
+});
+
+// Sets a readonly auto-grow textarea's value and re-measures its height —
+// a plain .value = assignment never fires 'input', so the box would stay
+// collapsed at rows="1" even once long text is poured in.
+function jclhSetAutoGrowValue(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = value || "";
+  autoGrowTextField(el);
+}
+
 function resetJCLHWorkspace() {
   // Full clean-slate wipe: dropdown state, cached lookups, and read-only autofill fields.
   jclhAllJobCardsForProject = [];
@@ -7,26 +107,22 @@ function resetJCLHWorkspace() {
   if (feedback) feedback.style.display = "none";
 
   const projInput = document.getElementById("jclh-project-ta-input");
-  const boqDrop  = document.getElementById("jclh-boq");
-  const jcDrop   = document.getElementById("jclh-jobcard");
   const typeDrop = document.getElementById("jclh-product-type");
   const sheetDrop = document.getElementById("jclh-sheet-type");
   if (projInput) projInput.value = "";
-  if (boqDrop)  { boqDrop.innerHTML = '<option value="">— Select Project First —</option>'; boqDrop.disabled = true; }
-  if (jcDrop)   { jcDrop.innerHTML  = '<option value="">— Select BOQ ID First —</option>'; jcDrop.disabled = true; }
+  jclhBOQDisplayReset("— Select Project First —");
+  jclhJobCardDisplayReset("— Select BOQ ID First —");
   if (typeDrop) { typeDrop.value = ""; typeDrop.disabled = true; }
   if (sheetDrop) { sheetDrop.value = ""; sheetDrop.disabled = true; }
 
   const customer = document.getElementById("jclh-customer");
   const dept     = document.getElementById("jclh-department");
-  const pname    = document.getElementById("jclh-product-name");
-  const prating  = document.getElementById("jclh-product-rating");
   const pdesc    = document.getElementById("jclh-description-of-material");
   const pmake    = document.getElementById("jclh-make");
   if (customer) customer.value = "";
   if (dept)     dept.value     = "";
-  if (pname)    pname.value    = "";
-  if (prating)  prating.value  = "";
+  jclhSetAutoGrowValue("jclh-product-name", "");
+  jclhSetAutoGrowValue("jclh-product-rating", "");
   if (pdesc)    pdesc.value    = "";
   if (pmake)    pmake.value    = "";
 
@@ -37,20 +133,15 @@ async function handleJCLHProjectChange(projectId) {
   const meta = window.jclhProjectMeta && window.jclhProjectMeta[projectId];
   document.getElementById("jclh-customer").value = meta ? (meta.companyName || "") : "";
 
-  const boqDrop = document.getElementById("jclh-boq");
-  const jcDrop  = document.getElementById("jclh-jobcard");
   resetJCLHDownstreamFields();
 
   if (!projectId) {
-    boqDrop.innerHTML = '<option value="">— Select Project First —</option>';
-    boqDrop.disabled = true;
-    jcDrop.innerHTML  = '<option value="">— Select BOQ ID First —</option>';
-    jcDrop.disabled   = true;
+    jclhBOQDisplayReset("— Select Project First —");
+    jclhJobCardDisplayReset("— Select BOQ ID First —");
     return;
   }
 
-  boqDrop.innerHTML = '<option value="">Loading...</option>';
-  boqDrop.disabled = true;
+  jclhBOQDisplayReset("Loading...");
   try {
     const data = await apFetch({ action: "fetchJobCardsForProject", projectId });
     jclhAllJobCardsForProject = data.jobCards || [];
@@ -65,39 +156,32 @@ async function handleJCLHProjectChange(projectId) {
       }
     });
 
-    boqDrop.innerHTML = '<option value="">— Select BOQ ID —</option>';
-    boqOptions.forEach(jc => {
-      const opt = document.createElement("option");
-      opt.value = jc.boqId;
-      opt.textContent = `${jc.boqId} | ${jc.productName}${jc.productRating ? " " + jc.productRating : ""}`;
-      boqDrop.appendChild(opt);
-    });
-    boqDrop.disabled = false;
+    jclhBOQDisplayReset("— Select BOQ ID —");
+    jclhBOQPopulate(boqOptions.map(jc => ({ value: jc.boqId, label: `${jc.boqId} | ${jc.productName}${jc.productRating ? " " + jc.productRating : ""}` })));
+    jclhBOQDisplayEnable();
   } catch(e) {
-    boqDrop.innerHTML = '<option value="">Error loading BOQs</option>';
+    jclhBOQDisplayReset("Error loading BOQs");
   }
 }
 
 function handleJCLHBoqChange(boqId) {
-  const jcDrop = document.getElementById("jclh-jobcard");
   document.getElementById("jclh-department").value     = "";
-  document.getElementById("jclh-product-name").value   = "";
-  document.getElementById("jclh-product-rating").value = "";
+  jclhSetAutoGrowValue("jclh-product-name", "");
+  jclhSetAutoGrowValue("jclh-product-rating", "");
   document.getElementById("jclh-description-of-material").value = "";
   document.getElementById("jclh-make").value = "";
   updateJCLHDownloadButtonState();
 
   if (!boqId) {
-    jcDrop.innerHTML = '<option value="">— Select BOQ ID First —</option>';
-    jcDrop.disabled = true;
+    jclhJobCardDisplayReset("— Select BOQ ID First —");
     return;
   }
 
   const matches = jclhAllJobCardsForProject.filter(jc => jc.boqId === boqId);
   if (matches.length > 0) {
     document.getElementById("jclh-department").value     = matches[0].department || "";
-    document.getElementById("jclh-product-name").value   = matches[0].productName || "";
-    document.getElementById("jclh-product-rating").value = matches[0].productRating || "";
+    jclhSetAutoGrowValue("jclh-product-name", matches[0].productName || "");
+    jclhSetAutoGrowValue("jclh-product-rating", matches[0].productRating || "");
     // Description of Material + Make (both BOQ/Item-Code-level, per the
     // product this Job Card is for) — composed into a single "Product:"
     // line on the printed sheet, see submitJCLHDownload.
@@ -105,21 +189,15 @@ function handleJCLHBoqChange(boqId) {
     document.getElementById("jclh-make").value = matches[0].make || "";
   }
 
-  jcDrop.innerHTML = '<option value="">— Select Job Card Number —</option>';
-  matches.forEach(jc => {
-    const opt = document.createElement("option");
-    opt.value = jc.jobCardNumber;
-    opt.textContent = `${jc.jobCardNumber} (Set ${jc.setNumber})`;
-    jcDrop.appendChild(opt);
-  });
-  jcDrop.disabled = false;
-  jcDrop.onchange = updateJCLHDownloadButtonState;
+  jclhJobCardDisplayReset("— Select Job Card Number —");
+  jclhJobCardPopulate(matches.map(jc => ({ value: jc.jobCardNumber, label: `${jc.jobCardNumber} (Set ${jc.setNumber})` })));
+  jclhJobCardDisplayEnable();
 }
 
 function resetJCLHDownstreamFields() {
   document.getElementById("jclh-department").value     = "";
-  document.getElementById("jclh-product-name").value   = "";
-  document.getElementById("jclh-product-rating").value = "";
+  jclhSetAutoGrowValue("jclh-product-name", "");
+  jclhSetAutoGrowValue("jclh-product-rating", "");
   document.getElementById("jclh-description-of-material").value = "";
   document.getElementById("jclh-make").value = "";
   updateJCLHDownloadButtonState();

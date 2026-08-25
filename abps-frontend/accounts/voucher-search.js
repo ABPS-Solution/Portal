@@ -1,4 +1,5 @@
-// accounts/voucher-search.js — "Search Tour Expense Vouchers" toggle.
+// accounts/voucher-search.js — "Search Vouchers" toggle (renamed from
+// "Search Tour Expense Vouchers" 25 Aug 2026).
 // Read-only: filters + two balance-bucket lists + a Checked-only total.
 // Has its own inner Expense/Advance toggle — same filters (Employee,
 // Department, Date range, Place) apply to both, but Purpose/Type/Status
@@ -141,6 +142,15 @@ async function runTourVoucherSearch() {
   lbl.innerHTML = tvsBuildSearchLabel();
 
   const resultsEl = document.getElementById("tvs-results");
+
+  const fromVal = document.getElementById("tvs-f-from").value;
+  const toVal = document.getElementById("tvs-f-to").value;
+  if (fromVal && toVal && toVal < fromVal) {
+    resultsEl.innerHTML = `<p style="color:var(--warn);">Date To can't be before Date From.</p>`;
+    document.getElementById("tvs-total").textContent = "";
+    return;
+  }
+
   resultsEl.innerHTML = `<div style="padding:20px; text-align:center; color:var(--muted);">Searching...</div>`;
 
   // Balance buckets are global (not affected by filters) — refreshed on
@@ -248,6 +258,15 @@ function tvsRenderCard(v) {
     </tr>`;
   }).join("");
   const statusColor = v.status === 'Checked' ? '#15803d' : '#b45309';
+  // Claimed/Actual summary sums straight off `lines` rather than
+  // v.totalAmount/v.totalActualAmount — when a Type filter is active the
+  // backend already trims `lines` down to just the matching type, so this
+  // keeps the card header consistent with what the expanded table shows
+  // (a mixed-type voucher's header no longer says "Claimed 50,000" while
+  // the table underneath only lists a 10,000 Travel line).
+  const cardClaimed = lines.reduce((s, l) => s + (Number(l.amount) || 0), 0);
+  const anyActualSet = lines.some(l => l.actualAmount !== null && l.actualAmount !== undefined);
+  const cardActual = lines.reduce((s, l) => s + (Number(l.actualAmount) || 0), 0);
   return `
     <div class="contact-summary-card-parent">
       <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
@@ -262,7 +281,7 @@ function tvsRenderCard(v) {
           <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
             ${escapeHtml(v.departmentName || '—')} · ${escapeHtml(v.purposeOfVisit)} · ${escapeHtml(v.placeOfVisit)} ·
             ${formatDateDMY(v.visitStartDate)}–${formatDateDMY(v.visitEndDate)} ·
-            Claimed ${formatINRComma(v.totalAmount)}${v.totalActualAmount !== null ? ' · Actual ' + formatINRComma(v.totalActualAmount) : ''}
+            Claimed ${formatINRComma(cardClaimed)}${anyActualSet ? ' · Actual ' + formatINRComma(cardActual) : ''}
           </div>
         </div>
       </div>

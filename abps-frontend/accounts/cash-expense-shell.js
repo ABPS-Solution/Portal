@@ -20,6 +20,7 @@ function initializeCashExpensesPanel() {
 function switchCashExpenseToggle(toggle) {
   document.getElementById("ce-feedback").style.display = "none";
   document.getElementById("ce-success").style.display = "none";
+  document.getElementById("ce-toggle-bar").style.display = "flex";
   CASH_EXPENSE_TOGGLES.forEach(t => {
     const panel = document.getElementById(`ce-panel-${t}`);
     const btn = document.getElementById(`ce-toggle-${t}`);
@@ -50,6 +51,11 @@ function showCashExpenseSuccess(message, resetLabel, resetFnCall) {
   document.getElementById("ce-feedback").style.display = "none";
   const el = document.getElementById("ce-success");
   if (!el) return;
+  // Same "hide everything but the success banner until +Do Another" pattern
+  // as Tour Expense Tracker's showTourSuccess — resetFnCall is expected to
+  // call switchCashExpenseToggle(...), which restores both.
+  document.getElementById("ce-toggle-bar").style.display = "none";
+  CASH_EXPENSE_TOGGLES.forEach(t => { const panel = document.getElementById(`ce-panel-${t}`); if (panel) panel.style.display = "none"; });
   el.style.display = "block";
   showSuccessWithReset("ce-success", message, resetLabel, resetFnCall);
   el.scrollIntoView({ behavior: "smooth", block: "center" });

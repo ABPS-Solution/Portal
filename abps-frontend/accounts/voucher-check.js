@@ -46,6 +46,17 @@ function tvcRenderCard(v) {
     </tr>`;
   }).join("");
 
+  // Daily Total Food flag — a same-day sanity check for the checker
+  // (multiple Food lines on one date summed together), one line per
+  // unique date that actually has a Food line, in date order.
+  const foodTotalsByDate = {};
+  lines.filter(l => l.expenseType === 'Food').forEach(l => {
+    foodTotalsByDate[l.expenseDate] = (foodTotalsByDate[l.expenseDate] || 0) + (Number(l.amount) || 0);
+  });
+  const dailyFoodTotalsLine = Object.keys(foodTotalsByDate).sort().map(date =>
+    `<div>Daily Total Food for ${formatDateDMY(date)}: <strong>${formatINRComma(foodTotalsByDate[date])}</strong></div>`
+  ).join("");
+
   const peopleLine = (v.additionalPeople || []).length
     ? `<div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">With: ${v.additionalPeople.map(escapeHtml).join(", ")}</div>` : "";
   const serviceReportLine = v.serviceReportUrl
@@ -81,6 +92,7 @@ function tvcRenderCard(v) {
             <tbody>${rows}</tbody>
           </table>
         </div>
+        ${dailyFoodTotalsLine ? `<div style="margin-top:12px; font-size:0.85rem; color:var(--muted);">${dailyFoodTotalsLine}</div>` : ""}
         <div style="display:flex; justify-content:flex-end; gap:24px; margin-top:14px; align-items:center; flex-wrap:wrap;">
           <div style="font-weight:700;">Total Voucher Actual Amount: <span id="tvc-actual-total-${v.voucherId}">${formatINRComma(v.totalAmount)}</span></div>
           <div style="font-weight:700;">Total Voucher Amount Difference: <span id="tvc-diff-${v.voucherId}">0</span></div>

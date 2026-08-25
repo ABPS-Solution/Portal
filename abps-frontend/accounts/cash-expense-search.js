@@ -65,6 +65,15 @@ async function runCashExpenseSearch() {
   lbl.style.display = "block";
   lbl.innerHTML = cesBuildSearchLabel();
 
+  const resultsElEarly = document.getElementById("ces-results");
+  const fromVal = document.getElementById("ces-f-from").value;
+  const toVal = document.getElementById("ces-f-to").value;
+  if (fromVal && toVal && toVal < fromVal) {
+    resultsElEarly.innerHTML = `<p style="color:var(--warn);">Date To can't be before Date From.</p>`;
+    document.getElementById("ces-total").textContent = "";
+    return;
+  }
+
   const filters = {
     employeeId: document.getElementById("ces-f-employee").value || null,
     departmentName: document.getElementById("ces-f-dept").value || null,

@@ -1,6 +1,6 @@
 // accounts/tour-shell.js — toggle bar + shared feedback banner for the
 // rebuilt Tour Expense Tracker (4 toggles: Advance Vouchers, Employee
-// Tour Expense Vouchers, Search Tour Expense Vouchers, Employee Details).
+// Tour Expense Vouchers, Search Vouchers, Employee Details).
 // Each toggle's own render/submit logic lives in its own sibling file
 // (accounts/advance-vouchers.js, voucher-check.js, voucher-search.js,
 // employee-details.js) — this file only owns switching between them.
@@ -27,6 +27,7 @@ function formatINRComma(n) {
 function switchTourExpenseToggle(toggle) {
   document.getElementById("te-feedback").style.display = "none";
   document.getElementById("te-success").style.display = "none";
+  document.getElementById("te-toggle-bar").style.display = "flex";
   TOUR_TOGGLES.forEach(t => {
     const panel = document.getElementById(`te-panel-${t}`);
     const btn = document.getElementById(`te-toggle-${t}`);
@@ -63,6 +64,12 @@ function showTourSuccess(message, resetLabel, resetFnCall) {
   document.getElementById("te-feedback").style.display = "none";
   const el = document.getElementById("te-success");
   if (!el) return;
+  // Hide the toggle bar and every panel while the success banner is up —
+  // resetFnCall is expected to call switchTourExpenseToggle(...), which
+  // restores both, so nothing else (toggle buttons, other panels' stale
+  // state) is visible until the user explicitly asks to do another.
+  document.getElementById("te-toggle-bar").style.display = "none";
+  TOUR_TOGGLES.forEach(t => { const panel = document.getElementById(`te-panel-${t}`); if (panel) panel.style.display = "none"; });
   el.style.display = "block";
   showSuccessWithReset("te-success", message, resetLabel, resetFnCall);
   el.scrollIntoView({ behavior: "smooth", block: "center" });
