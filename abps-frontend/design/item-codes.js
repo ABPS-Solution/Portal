@@ -296,8 +296,10 @@ async function executeItemCodeSearch() {
       const unit   = catalogUnitLookup[(match.itemCode || "").toUpperCase()] || match.unit || "";
       const card   = document.createElement("div");
       card.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#fff; border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 16px; cursor:pointer; transition:all 0.15s ease;";
+      card.title = "Click to clone this item code into the Create form — change what's different, then Create to save it as a new item code.";
       card.onmouseover = () => { card.style.borderColor = "var(--brand)"; card.style.background = "var(--highlight-bg)"; };
       card.onmouseout  = () => { card.style.borderColor = "var(--border)";  card.style.background = "#fff"; };
+      card.onclick = () => cloneItemCodeIntoCreateForm(match.itemCode);
       card.innerHTML = `
         <div style="flex:1; min-width:0;">
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
@@ -306,6 +308,7 @@ async function executeItemCodeSearch() {
           <div style="font-size:0.88rem; font-weight:600; color:var(--text); line-height:1.4;">${match.productName}</div>
           <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">${match.typeOfMaterial}${_unit ? ` &nbsp;·&nbsp; <strong style="color:var(--text);">Unit: ${_unit}</strong>` : ""}</div>
         </div>
+        <span style="color:var(--brand); font-size:0.78rem; font-weight:700; flex-shrink:0; margin-left:10px;">Clone →</span>
       `;
       suggestMount.appendChild(card);
     });
@@ -340,6 +343,9 @@ async function revealItemCodeCreateForm() {
   const query = document.getElementById("itemcode-search-input").value.trim();
   nameInput.value  = query;
   typeInput.value  = "";
+  typeInput.disabled = false;
+  const subSelectReset = document.getElementById("icf-new-suboption-select");
+  if (subSelectReset) subSelectReset.disabled = false;
   codeInput.value  = "Loading...";
   banner.style.display = "none";
   document.getElementById("icf-new-fixed-zone").style.display = "none";
@@ -598,24 +604,72 @@ async function handleIcfNewTypeChange(typeOfMaterial) {
     icfCurrentFormats.map(f => `<option value="${f.formatId}">${f.subOption}</option>`).join("");
 }
 
-function handleIcfSubOptionChange(formatIdStr) {
+// initialValues (optional) — { materialNameValues, ratingValues }, same
+// shape as item_codes.format_values — pre-fills the rendered fields when
+// cloning an existing item code (see cloneItemCodeIntoCreateForm).
+function handleIcfSubOptionChange(formatIdStr, initialValues) {
   const fixedForm = document.getElementById("icf-new-fixed-form");
   icfSelectedFormat = icfCurrentFormats.find(f => String(f.formatId) === String(formatIdStr)) || null;
   if (!icfSelectedFormat) { fixedForm.style.display = "none"; return; }
 
   fixedForm.style.display = "block";
   icfNameGetValues = icfRenderFormInputs(
-    document.getElementById("icf-new-name-inputs"), icfSelectedFormat.materialNameTemplate, updateIcfNewPreview, "icf-new-name"
+    document.getElementById("icf-new-name-inputs"), icfSelectedFormat.materialNameTemplate, updateIcfNewPreview, "icf-new-name",
+    initialValues ? initialValues.materialNameValues : undefined
   );
   const ratingContainer = document.getElementById("icf-new-rating-inputs");
   if (icfSelectedFormat.ratingTemplate && icfSelectedFormat.ratingTemplate.trim()) {
-    icfRatingGetValues = icfRenderFormInputs(ratingContainer, icfSelectedFormat.ratingTemplate, updateIcfNewPreview, "icf-new-rating");
+    icfRatingGetValues = icfRenderFormInputs(ratingContainer, icfSelectedFormat.ratingTemplate, updateIcfNewPreview, "icf-new-rating",
+      initialValues ? initialValues.ratingValues : undefined);
   } else {
     ratingContainer.innerHTML = '<span style="color:var(--muted); font-size:0.82rem;">— No Rating for this Sub-Option —</span>';
     icfRatingGetValues = () => [];
   }
   document.getElementById("icf-new-preview-unit").textContent = icfSelectedFormat.unit;
   updateIcfNewPreview();
+}
+
+// cloneItemCodeIntoCreateForm — "Did you mean one of these?" search result
+// cards are clickable: pre-fills the Create form from an existing item
+// code so the user can tweak one or two things and Create a NEW item
+// code, instead of retyping everything from scratch. For a Fixed Format
+// type, Type of Material and Sub-Option are locked (only the format's
+// own value fields + Make stay editable) — the user explicitly asked
+// that nothing outside the fixed format be changeable in that case. For
+// Free Form, every field stays editable, just pre-filled. Either way this
+// always creates a NEW row; the existing item code is never modified —
+// the server's Name+Rating+Make duplicate check is what stops a no-op
+// "clone" from creating an actual duplicate.
+async function cloneItemCodeIntoCreateForm(itemCode) {
+  const item = (window.itemCodeCatalogCache || []).find(c => c.itemCode === itemCode);
+  if (!item) { alert("Could not find that item code's details — try refreshing the search."); return; }
+
+  await revealItemCodeCreateForm();
+
+  const typeInput = document.getElementById("icf-new-type-ta-input");
+  const subSelect = document.getElementById("icf-new-suboption-select");
+  typeInput.value = item.typeOfMaterial || "";
+  await handleIcfNewTypeChange(item.typeOfMaterial || "");
+
+  if (item.formatId) {
+    // format_values is a JSONB column — the pg driver already hands it
+    // back as a parsed object, not a JSON string; no JSON.parse here.
+    const initialValues = item.formatValues || null;
+    subSelect.value = item.formatId;
+    handleIcfSubOptionChange(String(item.formatId), initialValues);
+    if (document.getElementById("icf-new-fixed-make")) document.getElementById("icf-new-fixed-make").value = item.make || "";
+    typeInput.disabled = true;
+    subSelect.disabled = true;
+  } else {
+    if (document.getElementById("itemcode-new-name"))  document.getElementById("itemcode-new-name").value  = item.productName || "";
+    if (document.getElementById("itemcode-new-rating")) document.getElementById("itemcode-new-rating").value = item.rating || "";
+    if (document.getElementById("itemcode-new-unit"))  document.getElementById("itemcode-new-unit").value  = item.unit || "";
+    if (document.getElementById("itemcode-new-make"))  document.getElementById("itemcode-new-make").value  = item.make || "";
+  }
+
+  const banner = document.getElementById("itemcode-feedback-banner");
+  banner.style.cssText = "display:block; background:#eff6ff; border-color:var(--brand); color:var(--brand); padding:10px; border-left:4px solid var(--brand); border-radius:var(--radius); font-size:0.85rem;";
+  banner.textContent = `Cloned from ${itemCode}${item.formatId ? " — Type of Material and Sub-Option are locked to match its fixed format" : ""}. Change what's different, then Create to save as a new item code.`;
 }
 
 function updateIcfNewPreview() {

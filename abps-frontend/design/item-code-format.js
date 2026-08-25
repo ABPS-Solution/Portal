@@ -319,7 +319,12 @@ function icfRenderTemplate(template, values) {
 // global scope and can't see closure state) so the caller can recompute
 // its live preview. Returns a getValues() closure the caller uses to read
 // current values back out in placeholder order.
-function icfRenderFormInputs(containerEl, template, onChange, idPrefix) {
+// initialValues (optional) — same order as the template's placeholders
+// (i.e. exactly the array shape stored in item_codes.format_values /
+// sent as materialNameValues/ratingValues) — pre-fills every field with
+// an existing item code's values, e.g. for "clone an existing code, tweak
+// one or two things" in Add / Check Item Code.
+function icfRenderFormInputs(containerEl, template, onChange, idPrefix, initialValues) {
   const { segments, placeholders, error } = icfParseTemplate(template);
   if (error) {
     containerEl.innerHTML = `<div style="color:#b91c1c; font-size:0.8rem; font-weight:600;">⚠ ${error}</div>`;
@@ -357,6 +362,32 @@ function icfRenderFormInputs(containerEl, template, onChange, idPrefix) {
     </span>`;
   }).join('');
 
+  // Pre-fill from an existing item code's stored values, before any
+  // auto-calc/mirror wiring below runs (so a derived field's first
+  // computation, if any, sees real source values rather than blanks).
+  // steplist gets its raw JSON parsed into stepListState directly, since
+  // icfInitStepListWidget only seeds a blank default row when its state
+  // entry is empty.
+  const stepListState = {};
+  if (Array.isArray(initialValues)) {
+    placeholders.forEach((ph, i) => {
+      const v = initialValues[i];
+      if (v === undefined || v === null || v === '') return;
+      if (ph.kind === 'choice') {
+        const radio = containerEl.querySelector(`input[name="${idPrefix}-ph-${ph.index}-group"][value="${CSS.escape(String(v))}"]`);
+        if (radio) radio.checked = true;
+      } else if (ph.kind === 'steplist') {
+        try {
+          const parsed = JSON.parse(v);
+          if (Array.isArray(parsed) && parsed.length > 0) stepListState[ph.index] = parsed;
+        } catch (e) { /* malformed/legacy value — leave the widget's own default */ }
+      } else {
+        const el = document.getElementById(`${idPrefix}-ph-${ph.index}`);
+        if (el) el.value = v;
+      }
+    });
+  }
+
   // Must run BEFORE the generic onChange listeners below are attached —
   // each registers its own 'input' listener on its SOURCE field first, so
   // the derived field is already recomputed by the time onChange's own
@@ -365,7 +396,6 @@ function icfRenderFormInputs(containerEl, template, onChange, idPrefix) {
   icfWireMhOhmAutoCalc(placeholders, containerEl, idPrefix);
   icfWireTotalKvarAutoCalc(placeholders, containerEl, idPrefix);
   icfWireMirrorFields(placeholders, containerEl, idPrefix);
-  const stepListState = {};
   placeholders.filter(p => p.kind === 'steplist').forEach(ph => icfInitStepListWidget(ph, containerEl, idPrefix, stepListState, onChange));
 
   if (typeof onChange === 'function') {
