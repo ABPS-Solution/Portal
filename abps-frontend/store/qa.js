@@ -23,53 +23,70 @@ function exitCanvasToCardView() {
   }
 }
 
-function toggleFollowUpAccordion(headerElement) {
-  const bodyPanel = headerElement.closest('.fup-item-card').querySelector('.fup-item-body');
-  const statusIndicator = headerElement.querySelector('span:last-child');
-  if (bodyPanel.style.display === "block" || bodyPanel.style.display === "") {
-    bodyPanel.style.display = "none"; if (statusIndicator) statusIndicator.textContent = "View details ▾";
-  } else {
-    bodyPanel.style.display = "block"; if (statusIndicator) statusIndicator.textContent = "Collapse details ▴";
-  }
-}
-
+// Table, not accordion cards — same reasoning as the Tasks table.
+// Column widths sum to 100%. List arrives pre-sorted by creation order
+// (backend: f.follow_up_id ASC).
 function renderIsolatedFollowUpTimeline(leadRef, list, scopeNode) {
   const box = scopeNode.querySelector(".template-timeline-box");
-  box.innerHTML = list.length === 0 ? '<p style="color:var(--muted); font-size:0.85rem; padding:10px;">No Follow-up Records</p>' : '';
-  
-  list.forEach(f => {
-    let card = document.createElement("div"); card.className = "fup-item-card";
-    const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
-    const deleteActionHtml = isAdminUser 
-      ? `<button class="nav-btn-styled" id="trigger-inner-delete-fup-${leadRef}-${f.num}" style="font-size:0.7rem; background:var(--warn); padding:4px 8px;">Delete Follow-Up</button>` 
-      : `<span id="trigger-inner-delete-fup-${leadRef}-${f.num}" style="display:none;"></span>`;
+  if (list.length === 0) {
+    box.innerHTML = '<p style="color:var(--muted); font-size:0.85rem; padding:10px;">No Follow-up Records</p>';
+    return;
+  }
+  const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
+  const outcomeColors = { "Positive": "#15803d", "Neutral": "#64748b", "Negative": "#b91c1c", "No Response": "#b45309" };
+  const colBorder = "border-left:2px solid var(--border);";
+  const centered = "text-align:center;";
 
-    card.innerHTML = `
-      <div class="fup-item-header" onclick="toggleFollowUpAccordion(this)">
-        <span>Follow-Up ${f.num} (${formatCleanDateOnly(f.date)} ${cleanISTTimestamp(f.time)})</span>
-        <span style="color:var(--brand); font-size:0.75rem;">View details ▾</span>
-      </div>
-      <div class="fup-item-body">
-        <div style="font-size:0.93rem; line-height:1.6; color:#000; margin-bottom:6px;">
-          <strong>Logged By:</strong> ${f.eng}<br/>
-          <strong>Next Follow-Up Date:</strong> ${formatCleanDateOnly(f.nextDate)} | <strong>Time:</strong> ${f.nextTime || "None"}<br/>
-          <strong>Outcome:</strong> ${f.outcome || "—"} | <strong>Mode:</strong> ${f.mode || "—"}<br/>
-          <strong>Next Action:</strong> ${f.nextActionType || "—"} | <strong>Objection:</strong> ${f.objectionRaised || "—"}
-        </div>
-        <div style="font-size:0.95rem; color:#000; padding:6px 0; border-top:1px solid #edf2f7; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"><strong>Notes:</strong> ${f.notes}</div>
-        <div style="margin-top:8px; display:flex; gap:8px;">
-          <button class="nav-btn-styled" id="trigger-inner-edit-fup-${leadRef}-${f.num}" style="font-size:0.7rem; padding:4px 8px;">Edit</button>
-          ${deleteActionHtml}
-        </div>
-      </div>`;
-    box.appendChild(card);
-    
-    // Guard event attachments to prevent null runtime reference crashes
+  const rowsHtml = list.map(f => {
+    const outcomeColor = outcomeColors[f.outcome] || "#64748b";
+    const deleteBtnHtml = isAdminUser
+      ? `<button class="nav-btn-styled" id="trigger-inner-delete-fup-${leadRef}-${f.num}" style="font-size:0.7rem; background:var(--warn); padding:3px 6px;">Delete</button>`
+      : `<span id="trigger-inner-delete-fup-${leadRef}-${f.num}" style="display:none;"></span>`;
+    return `
+      <tr style="border-bottom:1px solid #edf2f7;">
+        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} overflow-wrap:anywhere;">${f.eng}</td>
+        <td style="width:7.5%; padding:6px 4px; vertical-align:middle; ${centered} ${colBorder}">${f.outcome ? `<span style="font-size:0.72rem; font-weight:700; color:#fff; background:${outcomeColor}; padding:1px 6px; border-radius:3px;">${f.outcome}</span>` : '—'}</td>
+        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${f.mode || "—"}</td>
+        <td style="width:30%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; ${colBorder}">${f.notes || 'None'}</td>
+        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${formatCleanDateOnly(f.nextDate)}</td>
+        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${f.nextTime || "—"}</td>
+        <td style="width:10%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; ${colBorder}">${f.nextActionType || "—"}</td>
+        <td style="width:15%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; ${colBorder}">${f.objectionRaised || "—"}</td>
+        <td style="width:7.5%; padding:6px 4px; vertical-align:middle; ${colBorder}">
+          <div style="display:flex; justify-content:center; gap:6px;">
+            <button class="nav-btn-styled" id="trigger-inner-edit-fup-${leadRef}-${f.num}" style="font-size:0.7rem; padding:3px 6px;">Edit</button>
+            ${deleteBtnHtml}
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  const headerColBorder = "border-left:2px solid var(--border);";
+  box.innerHTML = `
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+        <thead>
+          <tr style="background:#f8fafc; border-bottom:2px solid var(--border);">
+            <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Logged By</th>
+            <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Outcome</th>
+            <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Mode</th>
+            <th style="width:30%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Interaction Notes</th>
+            <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Next Follow-Up Date</th>
+            <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Next Follow-Up Time</th>
+            <th style="width:10%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Next Action Type</th>
+            <th style="width:15%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Objection Raised</th>
+            <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}"></th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+
+  list.forEach(f => {
     if (isAdminUser && document.getElementById(`trigger-inner-delete-fup-${leadRef}-${f.num}`)) {
       document.getElementById(`trigger-inner-delete-fup-${leadRef}-${f.num}`).onclick = function(e) { removeIsolatedFollowUpItem(leadRef, f.num, e); };
     }
     document.getElementById('trigger-inner-edit-fup-' + leadRef + '-' + f.num).onclick = function() { editIsolatedFollowUpItem(leadRef, scopeNode, f); };
-    document.getElementById('trigger-inner-delete-fup-' + leadRef + '-' + f.num).onclick = function(e) { removeIsolatedFollowUpItem(leadRef, f.num, e); };
   });
 }
 
