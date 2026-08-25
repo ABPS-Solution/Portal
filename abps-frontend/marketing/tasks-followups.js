@@ -86,7 +86,7 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
     const deleteBtnHtml = isAdminUser
       ? `<button class="nav-btn-styled" id="trigger-inner-delete-task-${leadRef}-${t.id}" style="font-size:0.7rem; background:var(--warn); padding:3px 6px;">Delete</button>`
       : `<span id="trigger-inner-delete-task-${leadRef}-${t.id}" style="display:none;"></span>`;
-    const colBorder = "border-left:1px solid #edf2f7;";
+    const colBorder = "border-left:2px solid var(--border);";
     return `
       <tr style="border-bottom:1px solid #edf2f7;">
         <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000;">${t.status}</td>
@@ -105,7 +105,7 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
       </tr>`;
   }).join('');
 
-  const headerColBorder = "border-left:1px solid var(--border);";
+  const headerColBorder = "border-left:2px solid var(--border);";
   box.innerHTML = `
     <div style="overflow-x:auto;">
       <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
@@ -269,8 +269,8 @@ async function executeTaskMatrixSearch() {
 
   const checkedEngineers = Array.from(document.querySelectorAll('input[name="taskMatrixEngineer"]:checked')).map(i => i.value);
   const checkedStatuses = Array.from(document.querySelectorAll('input[name="taskMatrixStatus"]:checked')).map(i => i.value);
-  const dateFilterEl = document.getElementById("task-matrix-date-filter");
-  const dateFilter = dateFilterEl ? dateFilterEl.value : "";
+  const dateFilterChecked = document.querySelector('input[name="taskMatrixDate"]:checked');
+  const dateFilter = dateFilterChecked ? dateFilterChecked.value : "";
   const dateFilterLabels = { Overdue: "Overdue", Today: "Today", ThisWeek: "This Week", NextWeek: "Next Week", ThisMonth: "This Month" };
 
   if (checkedEngineers.length === 0 && checkedStatuses.length === 0 && !dateFilter) {

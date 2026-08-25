@@ -3651,15 +3651,12 @@
       </div>
 
       <label class="field-label" style="font-size:0.8rem; color:var(--brand);">Filter By Target Date</label>
-      <div style="margin:8px 0 16px;">
-        <select id="task-matrix-date-filter" style="padding:8px; border:1px solid var(--border); border-radius:6px; min-width:160px;">
-          <option value="">All</option>
-          <option value="Overdue">Overdue</option>
-          <option value="Today">Today</option>
-          <option value="ThisWeek">This Week</option>
-          <option value="NextWeek">Next Week</option>
-          <option value="ThisMonth">This Month</option>
-        </select>
+      <div class="pill-group" id="task-matrix-date-checkboxes" style="margin:8px 0 16px;">
+        <input type="radio" name="taskMatrixDate" value="Overdue" id="tmd_1"><label for="tmd_1">Overdue</label>
+        <input type="radio" name="taskMatrixDate" value="Today" id="tmd_2"><label for="tmd_2">Today</label>
+        <input type="radio" name="taskMatrixDate" value="ThisWeek" id="tmd_3"><label for="tmd_3">This Week</label>
+        <input type="radio" name="taskMatrixDate" value="NextWeek" id="tmd_4"><label for="tmd_4">Next Week</label>
+        <input type="radio" name="taskMatrixDate" value="ThisMonth" id="tmd_5"><label for="tmd_5">This Month</label>
       </div>
 
       <button class="btn btn-sub" id="task-matrix-search-btn" onclick="executeTaskMatrixSearch()">Run Tasks Search</button>
