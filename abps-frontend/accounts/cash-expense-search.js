@@ -54,9 +54,10 @@ function cesBuildSearchLabel() {
   const from = document.getElementById("ces-f-from").value;
   const to = document.getElementById("ces-f-to").value;
   const dateRangeLabel = (from || to) ? `${from ? formatDateDMY(from) : '…'} to ${to ? formatDateDMY(to) : '…'}` : "All";
-  return `<span style="color:#000;">Searching for</span><br><span style="color:#000;">Employee:</span> ${val(employeeLabel)}` +
-    `<br><span style="color:#000;">Department:</span> ${val(deptLabel)}<br><span style="color:#000;">Type of Expense:</span> ${val(typeLabel)}` +
-    `<br><span style="color:#000;">Payment Mode:</span> ${val(modeLabel)}<br><span style="color:#000;">Date Range:</span> ${val(dateRangeLabel)}`;
+  return `<span style="color:#000;">Searching for</span>` +
+    `<br><span style="color:#000;">Employee:</span> ${val(employeeLabel)} &nbsp; <span style="color:#000;">Department:</span> ${val(deptLabel)}` +
+    `<br><span style="color:#000;">Type of Expense:</span> ${val(typeLabel)} &nbsp; <span style="color:#000;">Payment Mode:</span> ${val(modeLabel)}` +
+    `<br><span style="color:#000;">Date Range:</span> ${val(dateRangeLabel)}`;
 }
 
 async function runCashExpenseSearch() {

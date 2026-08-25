@@ -118,16 +118,20 @@ function tvsBuildSearchLabel() {
   const from = document.getElementById("tvs-f-from").value;
   const to = document.getElementById("tvs-f-to").value;
   const dateRangeLabel = (from || to) ? `${from ? formatDateDMY(from) : '…'} to ${to ? formatDateDMY(to) : '…'}` : "All";
-  let html = `<span style="color:#000;">Searching for</span><br><span style="color:#000;">Mode:</span> ${val(tvsSearchMode === "expense" ? "Expense Vouchers" : "Advance Vouchers")}` +
-    `<br><span style="color:#000;">Employee:</span> ${val(employeeLabel)}<br><span style="color:#000;">Department:</span> ${val(deptLabel)}`;
+  let html = `<span style="color:#000;">Searching for</span>` +
+    `<br><span style="color:#000;">Mode:</span> ${val(tvsSearchMode === "expense" ? "Expense Vouchers" : "Advance Vouchers")}`;
   if (tvsSearchMode === "expense") {
     const purposeLabel = document.getElementById("tvs-f-purpose").value || "All";
     const typeLabel = document.getElementById("tvs-f-type").value || "All";
     const statusLabel = document.getElementById("tvs-f-status").value || "All";
-    html += `<br><span style="color:#000;">Purpose:</span> ${val(purposeLabel)}<br><span style="color:#000;">Type:</span> ${val(typeLabel)}<br><span style="color:#000;">Status:</span> ${val(statusLabel)}`;
+    const placeLabel = document.getElementById("tvs-f-place").value || "All";
+    html += `<br><span style="color:#000;">Employee:</span> ${val(employeeLabel)} &nbsp; <span style="color:#000;">Department:</span> ${val(deptLabel)}` +
+      `<br><span style="color:#000;">Purpose:</span> ${val(purposeLabel)} &nbsp; <span style="color:#000;">Type:</span> ${val(typeLabel)} &nbsp; <span style="color:#000;">Status:</span> ${val(statusLabel)} &nbsp; <span style="color:#000;">Place:</span> ${val(placeLabel)}`;
+  } else {
+    const placeLabel = document.getElementById("tvs-f-place").value || "All";
+    html += `<br><span style="color:#000;">Employee:</span> ${val(employeeLabel)} &nbsp; <span style="color:#000;">Department:</span> ${val(deptLabel)} &nbsp; <span style="color:#000;">Place:</span> ${val(placeLabel)}`;
   }
-  const placeLabel = document.getElementById("tvs-f-place").value || "All";
-  html += `<br><span style="color:#000;">Place:</span> ${val(placeLabel)}<br><span style="color:#000;">Date Range:</span> ${val(dateRangeLabel)}`;
+  html += `<br><span style="color:#000;">Date Range:</span> ${val(dateRangeLabel)}`;
   return html;
 }
 
