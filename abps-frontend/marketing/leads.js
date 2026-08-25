@@ -377,7 +377,7 @@ async function triggerCityStateQuerySearchExecution() {
         document.getElementById("workspace-searchCityState").appendChild(canvas);
         
         document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `
-          <div class="qualification-status-bar" style="width:100%; text-align:center; font-size:0.75rem; margin-bottom:10px;">
+          <div class="qualification-status-bar" style="width:100%; text-align:center; font-size:0.95rem; margin-bottom:10px;">
              Location: [Countries: ${selectedCountries.join(", ")}] [States: ${selectedStates.join(", ")}] | [Cities: ${selectedCities.length > 5 ? 'Multi Selected (' + selectedCities.length + ')' : selectedCities.join(", ")}]
           </div>
         `;
@@ -686,7 +686,7 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
       : ""; // Non-admins get absolutely nothing rendered
 
     wrapperCard.innerHTML = `
-      <div class="contact-summary-header-row" style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+      <div class="contact-summary-header-row" style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; cursor:pointer;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)">
         <div class="contact-summary-title-info" style="flex:1; display:grid; grid-template-columns: minmax(220px, 1fr) minmax(200px, 1fr); gap:10px 24px;">
           <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
             <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Company</span>
@@ -705,9 +705,9 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
             <strong id="card-lbl-pos-${tRef}" style="font-size:0.95rem;">${lead["Position"] || "Unspecified"}</strong>
           </div>
         </div>
-        <div class="directory-btn-actions-block" style="display:flex; gap:8px; flex-shrink:0;">
-          <button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)" id="expand-trigger-${tRef}">View Details</button>
+        <div class="directory-btn-actions-block" style="display:flex; align-items:center; gap:8px; flex-shrink:0;" onclick="event.stopPropagation()">
           ${deleteButtonHtml}
+          <span id="expand-trigger-${tRef}" style="color:var(--brand); font-size:1.3rem; font-weight:700; line-height:1; padding:4px 6px;">▾</span>
         </div>
       </div>
       <div class="contact-expanded-workspace-payload-drawer" id="drawer-panel-${tRef}" style="display:none; padding-top:4px;">
@@ -725,10 +725,10 @@ function toggleContactExpansionView(leadRef, encodedLeadMap) {
   const mountPoint = document.getElementById('modules-mount-' + leadRef);
   
   if (drawer.style.display === "block") {
-    drawer.style.display = "none"; triggerBtn.textContent = "View Details"; mountPoint.innerHTML = ""; 
+    drawer.style.display = "none"; if (triggerBtn) triggerBtn.textContent = "▾"; mountPoint.innerHTML = "";
   } else {
     document.querySelectorAll(".contact-expanded-workspace-payload-drawer").forEach(d => d.style.display = "none");
-    document.querySelectorAll('[id^="expand-trigger-"]').forEach(b => b.textContent = "View Details");
+    document.querySelectorAll('[id^="expand-trigger-"]').forEach(b => b.textContent = "▾");
     document.querySelectorAll(".child-injected-modules-mount-point").forEach(m => m.innerHTML = "");
 
     // Show the drawer BEFORE building its form — buildTargetedLeadsFormCanvas
@@ -736,7 +736,7 @@ function toggleContactExpansionView(leadRef, encodedLeadMap) {
     // display:none ancestor. That silently collapsed every text field (Contact
     // Person Name, Position, Phone, City, etc.) to zero height, making populated
     // data look blank even though .value was set correctly the whole time.
-    drawer.style.display = "block"; triggerBtn.textContent = "Collapse Details";
+    drawer.style.display = "block"; if (triggerBtn) triggerBtn.textContent = "▴";
 
     const leadMap = JSON.parse(decodeURIComponent(encodedLeadMap));
     activeSearchRef = leadRef;
@@ -771,7 +771,7 @@ function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
     fupForm.querySelector(".fup-leadid-input").value = leadRef;
     fupForm.querySelector(".fup-notes-input").value = ""; fupForm.querySelector(".fup-nexttarget-input").value = "";
     fupForm.style.display = "grid"; fupOpen.style.display = "none"; fupClose.style.display = "inline-flex";
-    const fupLabel = nodeScope.querySelector(".fup-status-label"); if (fupLabel) fupLabel.style.display = "inline";
+    const fupLabel = nodeScope.querySelector(".fup-status-label"); if (fupLabel) { fupLabel.textContent = "Logging Follow-up"; fupLabel.style.display = "inline"; }
   };
   
   fupClose.onclick = function() {
@@ -795,8 +795,13 @@ function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
   taskOpen.onclick = function() {
     taskForm.querySelector(".task-edit-id").value = ""; taskForm.querySelector(".task-desc-input").value = "";
     taskForm.querySelector(".task-targetdate-input").value = ""; taskForm.querySelector(".task-status-select").value = "Assigned";
+    // Fields may still be disabled from a previous Edit on this same
+    // (reused) form node, restricted to whoever assigned that task — a
+    // fresh task being created has no such restriction yet.
+    taskForm.querySelectorAll("select, input, textarea").forEach(el => { el.disabled = false; });
+    const commitBtn = taskForm.querySelector(".commit-task-btn-trigger"); if (commitBtn) commitBtn.style.display = "";
     taskForm.style.display = "grid"; taskOpen.style.display = "none"; taskClose.style.display = "inline-flex";
-    const taskLabel = nodeScope.querySelector(".task-status-label"); if (taskLabel) taskLabel.style.display = "inline";
+    const taskLabel = nodeScope.querySelector(".task-status-label"); if (taskLabel) { taskLabel.textContent = "Creating Task"; taskLabel.style.display = "inline"; }
   };
   taskClose.onclick = function() {
     taskForm.style.display = "none"; taskOpen.style.display = "inline-flex"; taskClose.style.display = "none";

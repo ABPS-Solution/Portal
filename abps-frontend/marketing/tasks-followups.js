@@ -67,33 +67,69 @@ async function removeIsolatedFollowUpItem(leadRef, fNum, event) {
   }
 }
 
+// Table, not stacked cards — a wrapper card easily holds a dozen+ tasks,
+// and each task-item-card was taking a full block of vertical space.
+// Column widths sum to 100%; wrapped in overflow-x:auto so it degrades to
+// a scrollbar rather than crushing content on a narrow viewport. List
+// arrives pre-sorted by creation order (backend: t.task_id ASC).
 function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
   const box = scopeNode.querySelector(".template-task-box");
-  box.innerHTML = list.length === 0 ? '<p style="color:var(--muted); font-size:0.85rem; padding:10px;">No Active Tasks</p>' : '';
-  list.forEach(t => {
-    let div = document.createElement("div"); div.className = "task-item-card";
-    const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
-    const deleteActionHtml = isAdminUser 
-      ? `<button class="nav-btn-styled" id="trigger-inner-delete-task-${leadRef}-${t.id}" style="font-size:0.75rem; background:var(--warn); padding:2px 6px;">Delete</button>` 
-      : `<span id="trigger-inner-delete-task-${leadRef}-${t.id}" style="display:none;"></span>`;
+  if (list.length === 0) {
+    box.innerHTML = '<p style="color:var(--muted); font-size:0.85rem; padding:10px;">No Active Tasks</p>';
+    return;
+  }
+  const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
+  const priorityColors = { "Urgent": "#b91c1c", "High": "#b45309", "Medium": "#2563eb", "Low": "#65a30d" };
 
-    const priorityColors = { "Urgent": "#b91c1c", "High": "#b45309", "Medium": "#2563eb", "Low": "#65a30d" };
+  const rowsHtml = list.map(t => {
     const priorityColor = priorityColors[t.priority] || "#64748b";
-    div.innerHTML = `<strong style="font-size:1rem; color:#000;">${t.type}</strong> - <span style="font-size:0.95rem; color:#000;">${t.eng}</span> <span style="font-size:0.75rem; font-weight:700; color:#fff; background:${priorityColor}; padding:1px 6px; border-radius:3px; margin-left:4px;">${t.priority || "Medium"}</span><br/><small style="font-size:0.9rem; color:#000;">Target Completion Time: ${t.shift} | Target Date: ${formatCleanDateOnly(t.targetDate)}</small>
-                     <p style="font-size:0.95rem; margin-top:4px; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"><strong>Desc:</strong> ${t.desc || 'None'}</p>
-                     ${t.completionNotes ? `<p style="font-size:0.93rem; margin-top:4px; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"><strong>Outcome:</strong> ${t.completionNotes}</p>` : ''}
-                     <div style="font-size:0.88rem; font-weight:bold; color:#000; margin-top:4px;">Status: ${t.status} | Assigned By: ${t.assigner || "System"}</div>
-                     <div style="margin-top:8px; display:flex; gap:6px;">
-                       <button class="nav-btn-styled" id="trigger-inner-edit-task-${leadRef}-${t.id}" style="font-size:0.75rem; padding:2px 6px;">Edit</button>
-                       ${deleteActionHtml}
-                     </div>`;
-    box.appendChild(div);
-    
+    const deleteBtnHtml = isAdminUser
+      ? `<button class="nav-btn-styled" id="trigger-inner-delete-task-${leadRef}-${t.id}" style="font-size:0.7rem; background:var(--warn); padding:3px 6px;">Delete</button>`
+      : `<span id="trigger-inner-delete-task-${leadRef}-${t.id}" style="display:none;"></span>`;
+    return `
+      <tr style="border-bottom:1px solid #edf2f7;">
+        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000;">${t.status}</td>
+        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000;">${t.type}</td>
+        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere;">${t.eng}</td>
+        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere;">${t.assigner || "System"}</td>
+        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000;">${t.shift}</td>
+        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000;">${formatCleanDateOnly(t.targetDate)}</td>
+        <td style="width:6%; padding:6px 4px;"><span style="font-size:0.72rem; font-weight:700; color:#fff; background:${priorityColor}; padding:1px 6px; border-radius:3px;">${t.priority || "Medium"}</span></td>
+        <td style="width:30%; padding:6px 4px; font-size:0.85rem; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;">${t.desc || 'None'}</td>
+        <td style="width:17.5%; padding:6px 4px; font-size:0.85rem; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;">${t.completionNotes || '—'}</td>
+        <td style="width:7.5%; padding:6px 4px; display:flex; gap:6px;">
+          <button class="nav-btn-styled" id="trigger-inner-edit-task-${leadRef}-${t.id}" style="font-size:0.7rem; padding:3px 6px;">Edit</button>
+          ${deleteBtnHtml}
+        </td>
+      </tr>`;
+  }).join('');
+
+  box.innerHTML = `
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+        <thead>
+          <tr style="background:#f0fdf4; border-bottom:2px solid var(--border);">
+            <th style="width:6%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Status</th>
+            <th style="width:6%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Type</th>
+            <th style="width:7.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Assigned To</th>
+            <th style="width:7.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Assigned By</th>
+            <th style="width:6%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Target Time</th>
+            <th style="width:6%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Target Date</th>
+            <th style="width:6%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Priority</th>
+            <th style="width:30%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Description</th>
+            <th style="width:17.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Completion Notes / Outcome</th>
+            <th style="width:7.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);"></th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+
+  list.forEach(t => {
     if (isAdminUser && document.getElementById(`trigger-inner-delete-task-${leadRef}-${t.id}`)) {
       document.getElementById(`trigger-inner-delete-task-${leadRef}-${t.id}`).onclick = function(e) { removeIsolatedTaskItem(leadRef, t.id, e); };
     }
     document.getElementById('trigger-inner-edit-task-' + leadRef + '-' + t.id).onclick = function() { editIsolatedTaskItem(leadRef, scopeNode, t); };
-    document.getElementById('trigger-inner-delete-task-' + leadRef + '-' + t.id).onclick = function(e) { removeIsolatedTaskItem(leadRef, t.id, e); };
   });
 }
 
@@ -106,6 +142,32 @@ function normalizeTaskStatusForEdit(status) {
   if (status === "In Progress" || status === "Under Review") return "In Process";
   if (status === "Resolved") return "Completed";
   return status || "Assigned";
+}
+
+// Target Completion Time / Target Date / Task Priority / Task Description /
+// Assigned To are "assignment decisions" — only the person who assigned
+// the task (or an admin) may change them. Task Status / Task Type /
+// Completion Notes are "execution" fields — the assigner, the assignee,
+// or an admin may change those. Mirrors the server-side check in
+// routes/marketing.js's saveTask, which is the real enforcement; this is
+// just so the form doesn't invite an edit it'll reject.
+function applyTaskFieldPermissions(taskForm, t) {
+  const isAdmin = localStorage.getItem("isUserAdminGlobal") === "true";
+  const isAssigner = isAdmin || t.assigner === appActiveOperatorIdentityString;
+  const isAssignedTo = isAdmin || t.eng === appActiveOperatorIdentityString;
+  const assignerOnlyFields = [".task-shift-select", ".task-targetdate-input", ".task-priority-select", ".task-desc-input", ".task-eng-select"];
+  assignerOnlyFields.forEach(sel => {
+    const el = taskForm.querySelector(sel);
+    if (el) el.disabled = !isAssigner;
+  });
+  const openFields = [".task-completionnotes-input", ".task-type-select", ".task-status-select"];
+  const canEditAnything = isAssigner || isAssignedTo;
+  openFields.forEach(sel => {
+    const el = taskForm.querySelector(sel);
+    if (el) el.disabled = !canEditAnything;
+  });
+  const commitBtn = taskForm.querySelector(".commit-task-btn-trigger");
+  if (commitBtn) commitBtn.style.display = canEditAnything ? "" : "none";
 }
 
 function editIsolatedTaskItem(leadRef, scopeNode, t) {
@@ -125,9 +187,11 @@ function editIsolatedTaskItem(leadRef, scopeNode, t) {
   taskForm.querySelector(".task-targetdate-input").value = toDateInputValue(t.targetDate);
   taskForm.querySelector(".task-priority-select").value = t.priority || "Medium";
   taskForm.querySelector(".task-completionnotes-input").value = t.completionNotes || "";
+  applyTaskFieldPermissions(taskForm, t);
   taskForm.style.display = "grid"; scopeNode.querySelector(".trigger-task-open").style.display = "none";
   scopeNode.querySelector(".trigger-task-close").style.display = "inline-flex";
-  const taskLabelEdit = scopeNode.querySelector(".task-status-label"); if (taskLabelEdit) taskLabelEdit.style.display = "inline";
+  const taskLabelEdit = scopeNode.querySelector(".task-status-label");
+  if (taskLabelEdit) { taskLabelEdit.textContent = "Editing Task"; taskLabelEdit.style.display = "inline"; }
 }
 
 async function commitIsolatedTaskItem(leadRef, scopeNode) {
@@ -203,21 +267,29 @@ async function executeTaskMatrixSearch() {
 
   const checkedEngineers = Array.from(document.querySelectorAll('input[name="taskMatrixEngineer"]:checked')).map(i => i.value);
   const checkedStatuses = Array.from(document.querySelectorAll('input[name="taskMatrixStatus"]:checked')).map(i => i.value);
+  const dateFilterEl = document.getElementById("task-matrix-date-filter");
+  const dateFilter = dateFilterEl ? dateFilterEl.value : "";
+  const dateFilterLabels = { Overdue: "Overdue", Today: "Today", ThisWeek: "This Week", NextWeek: "Next Week", ThisMonth: "This Month" };
 
-  if (checkedEngineers.length === 0 && checkedStatuses.length === 0) {
-    alert("Please select at least one Engineer or Task Status filter before searching.");
+  if (checkedEngineers.length === 0 && checkedStatuses.length === 0 && !dateFilter) {
+    alert("Please select at least one Engineer, Task Status, or Target Date filter before searching.");
     return;
   }
 
   btn.classList.add("loading"); btn.textContent = "Filtering Tasks...";
 
-  // Show active filters summary
-  const filterDisplay = document.getElementById("task-matrix-active-filters-display");
-  if (filterDisplay) {
+  const buildFilterParts = () => {
     const parts = [];
     if (checkedEngineers.length > 0) parts.push("Engineers: " + engineerEmailsToNames(checkedEngineers).join(", "));
     if (checkedStatuses.length > 0) parts.push("Status: " + checkedStatuses.join(", "));
-    filterDisplay.textContent = "Filtering for → " + parts.join(" | ");
+    if (dateFilter) parts.push("Target Date: " + dateFilterLabels[dateFilter]);
+    return parts;
+  };
+
+  // Show active filters summary
+  const filterDisplay = document.getElementById("task-matrix-active-filters-display");
+  if (filterDisplay) {
+    filterDisplay.textContent = "Filtering for → " + buildFilterParts().join(" | ");
     filterDisplay.style.display = "block";
     filterDisplay.style.color = "var(--brand)";
     filterDisplay.style.background = "var(--highlight-bg)";
@@ -225,11 +297,12 @@ async function executeTaskMatrixSearch() {
   }
 
   try {
-    const data = await apFetch({ 
-      action: "searchTasksMatrix", 
+    const data = await apFetch({
+      action: "searchTasksMatrix",
       activeEngineer: appActiveOperatorIdentityString,
-      engineers: checkedEngineers, 
-      statuses: checkedStatuses 
+      engineers: checkedEngineers,
+      statuses: checkedStatuses,
+      dateFilter: dateFilter,
     });
 
     if (data.success) {
@@ -237,10 +310,7 @@ async function executeTaskMatrixSearch() {
 
       if (data.tasks.length === 0) {
         if (filterDisplay) {
-          const parts = [];
-          if (checkedEngineers.length > 0) parts.push("Engineers: " + engineerEmailsToNames(checkedEngineers).join(", "));
-          if (checkedStatuses.length > 0) parts.push("Status: " + checkedStatuses.join(", "));
-          filterDisplay.textContent = "No tasks found for → " + parts.join(" | ");
+          filterDisplay.textContent = "No tasks found for → " + buildFilterParts().join(" | ");
           filterDisplay.style.color = "var(--warn)";
           filterDisplay.style.background = "#fff5f5";
           filterDisplay.style.borderColor = "#fca5a5";
@@ -325,6 +395,7 @@ function injectMatrixInlineTaskForm(taskItem, parentCardNode) {
   coreTaskForm.querySelector(".task-targetdate-input").value = toDateInputValue(taskItem.targetDate);
   coreTaskForm.querySelector(".task-priority-select").value = taskItem.priority || "Medium";
   coreTaskForm.querySelector(".task-completionnotes-input").value = taskItem.completionNotes || "";
+  applyTaskFieldPermissions(coreTaskForm, taskItem);
 
   coreTaskForm.style.display = "grid";
   

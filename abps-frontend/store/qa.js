@@ -51,7 +51,7 @@ function renderIsolatedFollowUpTimeline(leadRef, list, scopeNode) {
       </div>
       <div class="fup-item-body">
         <div style="font-size:0.93rem; line-height:1.6; color:#000; margin-bottom:6px;">
-          <strong>Lead ID:</strong> ${f.leadId}<br/><strong>Logged By:</strong> ${f.eng}<br/>
+          <strong>Logged By:</strong> ${f.eng}<br/>
           <strong>Next Follow-Up Date:</strong> ${formatCleanDateOnly(f.nextDate)} | <strong>Time:</strong> ${f.nextTime || "None"}<br/>
           <strong>Outcome:</strong> ${f.outcome || "—"} | <strong>Mode:</strong> ${f.mode || "—"}<br/>
           <strong>Next Action:</strong> ${f.nextActionType || "—"} | <strong>Objection:</strong> ${f.objectionRaised || "—"}
@@ -90,7 +90,8 @@ function editIsolatedFollowUpItem(leadRef, scopeNode, f) {
   fupForm.querySelector(".fup-nextaction-input").value = f.nextActionType || "";
   fupForm.querySelector(".fup-objection-input").value = f.objectionRaised || "";
   fupForm.style.display = "grid"; scopeNode.querySelector(".trigger-fup-open").style.display = "none"; scopeNode.querySelector(".trigger-fup-close").style.display = "inline-flex";
-  const fupLabelEdit = scopeNode.querySelector(".fup-status-label"); if (fupLabelEdit) fupLabelEdit.style.display = "inline";
+  const fupLabelEdit = scopeNode.querySelector(".fup-status-label");
+  if (fupLabelEdit) { fupLabelEdit.textContent = "Editing Follow-up"; fupLabelEdit.style.display = "inline"; }
 }
 
 async function renderStoreEntryRejectionBanner(cardEl, gateNum, vendorName, lineItems) {

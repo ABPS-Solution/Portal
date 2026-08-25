@@ -273,7 +273,7 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
       if (isTarget) card.style.cssText = "border:2.5px solid var(--brand) !important; background:var(--highlight-bg) !important; box-shadow:0 4px 12px rgba(0,86,179,0.15) !important;";
 
       card.innerHTML = `
-        <div class="contact-summary-header-row">
+        <div class="contact-summary-header-row" style="cursor:pointer;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)">
           <div class="contact-summary-title-info">
             <div class="meta-row-line-block" style="margin-bottom:6px;">
               <span style="background:#e2e8f0;">Company:</span><strong style="margin-right:20px;">${lead["Company Name"] || companyName}</strong>
@@ -285,9 +285,9 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
               <span style="background:#edf2f7;">Position:</span><strong id="card-lbl-pos-${tRef}">${lead["Position"] || "Unspecified"}</strong>
             </div>
           </div>
-          <div class="directory-btn-actions-block">
-            <button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)" id="expand-trigger-${tRef}">View Details</button>
+          <div class="directory-btn-actions-block" onclick="event.stopPropagation()">
             ${deleteHtml}
+            <span id="expand-trigger-${tRef}" style="color:var(--brand); font-size:1.3rem; font-weight:700; line-height:1; padding:4px 6px;">▾</span>
           </div>
         </div>
         <div class="contact-expanded-workspace-payload-drawer" id="drawer-panel-${tRef}" style="display:none; padding-top:4px;">

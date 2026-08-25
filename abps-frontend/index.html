@@ -190,6 +190,15 @@
   #canvas-module-project-invoice .store-basket-data-table th { font-size: 0.82rem; }
   #canvas-module-project-invoice .store-basket-data-table td { font-size: 0.9rem; }
 
+  /* Same shared .grid-cell-item scoping trick, this time for a lead's
+     View Details drawer (text/dropdown value boxes only — checkbox
+     inputs never appear in this canvas, but excluded explicitly anyway
+     for clarity, since the request was specifically about value boxes
+     and dropdowns, not checkbox options). */
+  .leads-editable-fields-box-canvas .grid-cell-item input:not([type="checkbox"]),
+  .leads-editable-fields-box-canvas .grid-cell-item select,
+  .leads-editable-fields-box-canvas .grid-cell-item textarea { font-size: 1rem; }
+
   .aoc-split-row-box { display: grid; grid-template-columns: 85px 1fr; gap: 8px; align-items: center; width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 6px; }
   .aoc-split-row-box select { padding: 4px 6px; font-weight: 700; color: var(--brand); text-align: center; }
   .aoc-split-row-box input { border: 1px solid var(--border); }
@@ -3619,7 +3628,7 @@
       </div>
 
       <button class="btn btn-sub" id="lead-matrix-search-submit-btn" onclick="executeLeadMatrixFilterSearch()">Run Leads Search</button>
-      <div id="lead-matrix-active-filters-display" style="display:none; font-size:0.78rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-top:8px;"></div>
+      <div id="lead-matrix-active-filters-display" style="display:none; font-size:1rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-top:8px;"</div>
     </div>
 
     <div id="workspace-searchEngineer" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
@@ -3641,8 +3650,20 @@
         <input type="checkbox" name="taskMatrixStatus" value="Completed" id="tms_ts4"><label for="tms_ts4">Completed</label>
       </div>
 
+      <label class="field-label" style="font-size:0.8rem; color:var(--brand);">Filter By Target Date</label>
+      <div style="margin:8px 0 16px;">
+        <select id="task-matrix-date-filter" style="padding:8px; border:1px solid var(--border); border-radius:6px; min-width:160px;">
+          <option value="">All</option>
+          <option value="Overdue">Overdue</option>
+          <option value="Today">Today</option>
+          <option value="ThisWeek">This Week</option>
+          <option value="NextWeek">Next Week</option>
+          <option value="ThisMonth">This Month</option>
+        </select>
+      </div>
+
       <button class="btn btn-sub" id="task-matrix-search-btn" onclick="executeTaskMatrixSearch()">Run Tasks Search</button>
-      <div id="task-matrix-active-filters-display" style="display:none; font-size:0.78rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-top:8px;"></div>
+      <div id="task-matrix-active-filters-display" style="display:none; font-size:1rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-top:8px;"</div>
       <div id="task-matrix-results-output-node" style="margin-top:12px;"></div>
     </div>
 

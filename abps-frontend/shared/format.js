@@ -165,6 +165,14 @@ function enhanceOneDateInputForDMY(input) {
   };
   input.addEventListener('input', sync);
   input.addEventListener('change', sync);
+  // Exposed so enhanceAllDateInputsForDMY's poll can re-sync an ALREADY-
+  // enhanced input — code that sets `.value = ...` directly (e.g. Edit
+  // Follow-Up/Edit Task populating a date field from existing data) never
+  // fires a real 'input'/'change' event, so the overlay silently kept
+  // showing its stale/placeholder text over a native input whose real
+  // value had actually updated correctly — looked exactly like the date
+  // "going blank" on Edit even though the underlying value was fine.
+  input._dmySync = sync;
   sync();
 }
 
@@ -178,8 +186,12 @@ function enhanceAllDateInputsForDMY() {
   // the master here means each clone's own date input is still plain and
   // gets enhanced fresh, with working listeners, on the next poll tick
   // after it's inserted into the visible DOM.
-  document.querySelectorAll('input[type="date"]:not([data-dmy-enhanced])').forEach(input => {
+  document.querySelectorAll('input[type="date"]').forEach(input => {
     if (input.closest('#reusable-child-modules-template')) return;
-    enhanceOneDateInputForDMY(input);
+    if (input.dataset.dmyEnhanced) {
+      if (input._dmySync) input._dmySync();
+    } else {
+      enhanceOneDateInputForDMY(input);
+    }
   });
 }

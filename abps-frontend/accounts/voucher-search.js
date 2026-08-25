@@ -6,6 +6,36 @@
 // plain Advance payment record (accounts.tour_advances).
 
 let tvsSearchMode = "expense"; // "expense" | "advance"
+let tvsCachedCompanies = [];
+
+// Same typeahead pattern as advance-vouchers.js's Company of Visit field,
+// minus the "add new" branch — this is a search filter, not data entry,
+// so only existing companies are ever offered.
+function tvsHandlePlaceSearch(query) {
+  const dd = document.getElementById("tvs-place-dropdown");
+  const q = (query || "").trim().toLowerCase();
+  if (!q) { dd.style.display = "none"; return; }
+  const matches = tvsCachedCompanies.filter(c => c.companyName.toLowerCase().includes(q)).slice(0, 15);
+  if (matches.length === 0) { dd.style.display = "none"; return; }
+  dd.innerHTML = matches.map(c => `
+    <div onmousedown="event.preventDefault(); tvsSelectPlace('${c.companyName.replace(/'/g, "\\'")}')"
+      style="padding:8px 10px; cursor:pointer; font-size:0.85rem; border-bottom:1px solid #f1f5f9;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${escapeHtml(c.companyName)}</div>`).join("");
+  const input = document.getElementById("tvs-f-place");
+  const rect = input.getBoundingClientRect();
+  dd.style.top = rect.bottom + "px"; dd.style.left = rect.left + "px"; dd.style.width = rect.width + "px";
+  dd.style.display = "block";
+}
+
+function tvsSelectPlace(companyName) {
+  document.getElementById("tvs-f-place").value = companyName;
+  document.getElementById("tvs-place-dropdown").style.display = "none";
+}
+
+document.addEventListener("click", (e) => {
+  const dd = document.getElementById("tvs-place-dropdown");
+  if (dd && !e.target.closest("#tvs-place-dropdown") && e.target.id !== "tvs-f-place") dd.style.display = "none";
+});
 
 async function initializeVoucherSearchPanel() {
   tvsSearchMode = "expense";
@@ -35,8 +65,11 @@ async function initializeVoucherSearchPanel() {
             <select id="tvs-f-status" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
               <option value="">All</option><option value="Unchecked">Unchecked</option><option value="Checked">Checked</option></select></div>
         </div>
-        <div><label class="field-label">Place of Visit</label>
-          <input type="text" id="tvs-f-place" style="padding:8px; border:1px solid var(--border); border-radius:6px; min-width:140px;"></div>
+        <div style="position:relative;"><label class="field-label">Place of Visit</label>
+          <input type="text" id="tvs-f-place" placeholder="Type to search..." autocomplete="off"
+            style="padding:8px; border:1px solid var(--border); border-radius:6px; min-width:140px;"
+            oninput="tvsHandlePlaceSearch(this.value)">
+          <div id="tvs-place-dropdown" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:4px; z-index:9999; max-height:220px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>
         <div><label class="field-label">Date From</label>
           <input type="date" id="tvs-f-from" style="padding:8px; border:1px solid var(--border); border-radius:6px;"></div>
         <div><label class="field-label">Date To</label>
@@ -50,13 +83,16 @@ async function initializeVoucherSearchPanel() {
     <div id="tvs-results"></div>`;
 
   try {
-    const [empData, deptData] = await Promise.all([acFetch("searchTourEmployees", {}), acFetch("listTourDepartments", {})]);
+    const [empData, deptData, companyData] = await Promise.all([
+      acFetch("searchTourEmployees", {}), acFetch("listTourDepartments", {}), acFetch("listTourCompanies", {}),
+    ]);
     if (empData.success) {
       document.getElementById("tvs-f-employee").innerHTML += empData.employees.map(e => `<option value="${e.employeeId}">${escapeHtml(e.employeeName)}</option>`).join("");
     }
     if (deptData.success) {
       document.getElementById("tvs-f-dept").innerHTML += deptData.departments.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join("");
     }
+    tvsCachedCompanies = companyData.success ? companyData.companies : [];
   } catch (e) { console.error("Search filter bootstrap failed:", e.message); }
 
   enhanceAllDateInputsForDMY();
