@@ -445,11 +445,18 @@ async function submitNewItemCode() {
     });
 
     if (data.success) {
-      // Hide form and search zone
+      // Hide form and search zone — including the persistent direct-create
+      // button and its divider, since "+ Search / Add Another Item" below
+      // is the one action offered on this banner; a second, redundant
+      // "+ Create New Item Code" bar right underneath it was confusing.
       document.getElementById("itemcode-create-form-zone").style.display  = "none";
       document.getElementById("itemcode-search-results-zone").style.display = "none";
       document.getElementById("itemcode-no-results-zone").style.display    = "none";
       document.getElementById("itemcode-search-zone-wrapper").style.display = "none";
+      const directCreateWrap = document.getElementById("itemcode-direct-create-btn-wrap");
+      const orSearchDivider  = document.getElementById("itemcode-or-search-divider");
+      if (directCreateWrap) directCreateWrap.style.display = "none";
+      if (orSearchDivider)  orSearchDivider.style.display  = "none";
 
       // Show success banner
       banner.style.cssText = "display:block; background:#dcfce7; border-color:#15803d; color:#15803d; padding:14px; border-left:4px solid #15803d; border-radius:var(--radius);";
@@ -468,6 +475,8 @@ async function submitNewItemCode() {
           document.getElementById('itemcode-no-results-zone').style.display='none';
           document.getElementById('itemcode-create-form-zone').style.display='none';
           document.getElementById('itemcode-search-zone-wrapper').style.display='block';
+          const dc = document.getElementById('itemcode-direct-create-btn-wrap'); if(dc) dc.style.display='block';
+          const osd = document.getElementById('itemcode-or-search-divider'); if(osd) osd.style.display='block';
           const nm = document.getElementById('itemcode-none-match-banner'); if(nm) nm.style.display='block';
           const nb = document.getElementById('itemcode-no-results-create-btn'); if(nb) nb.style.display='inline';
         " style="margin-top:10px; background:#15803d; color:#fff; border:none; padding:6px 14px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.8rem;">
