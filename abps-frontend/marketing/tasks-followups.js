@@ -86,39 +86,41 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
     const deleteBtnHtml = isAdminUser
       ? `<button class="nav-btn-styled" id="trigger-inner-delete-task-${leadRef}-${t.id}" style="font-size:0.7rem; background:var(--warn); padding:3px 6px;">Delete</button>`
       : `<span id="trigger-inner-delete-task-${leadRef}-${t.id}" style="display:none;"></span>`;
+    const colBorder = "border-left:1px solid #edf2f7;";
     return `
       <tr style="border-bottom:1px solid #edf2f7;">
         <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000;">${t.status}</td>
-        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000;">${t.type}</td>
-        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere;">${t.eng}</td>
-        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere;">${t.assigner || "System"}</td>
-        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000;">${t.shift}</td>
-        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000;">${formatCleanDateOnly(t.targetDate)}</td>
-        <td style="width:6%; padding:6px 4px;"><span style="font-size:0.72rem; font-weight:700; color:#fff; background:${priorityColor}; padding:1px 6px; border-radius:3px;">${t.priority || "Medium"}</span></td>
-        <td style="width:30%; padding:6px 4px; font-size:0.85rem; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;">${t.desc || 'None'}</td>
-        <td style="width:17.5%; padding:6px 4px; font-size:0.85rem; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;">${t.completionNotes || '—'}</td>
-        <td style="width:7.5%; padding:6px 4px; display:flex; gap:6px;">
+        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; ${colBorder}">${t.type}</td>
+        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere; ${colBorder}">${t.eng}</td>
+        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere; ${colBorder}">${t.assigner || "System"}</td>
+        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; ${colBorder}">${t.shift}</td>
+        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; ${colBorder}">${formatCleanDateOnly(t.targetDate)}</td>
+        <td style="width:6%; padding:6px 4px; ${colBorder}"><span style="font-size:0.72rem; font-weight:700; color:#fff; background:${priorityColor}; padding:1px 6px; border-radius:3px;">${t.priority || "Medium"}</span></td>
+        <td style="width:30%; padding:6px 4px; font-size:0.85rem; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; ${colBorder}">${t.desc || 'None'}</td>
+        <td style="width:17.5%; padding:6px 4px; font-size:0.85rem; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; ${colBorder}">${t.completionNotes || '—'}</td>
+        <td style="width:7.5%; padding:6px 4px; display:flex; gap:6px; ${colBorder}">
           <button class="nav-btn-styled" id="trigger-inner-edit-task-${leadRef}-${t.id}" style="font-size:0.7rem; padding:3px 6px;">Edit</button>
           ${deleteBtnHtml}
         </td>
       </tr>`;
   }).join('');
 
+  const headerColBorder = "border-left:1px solid var(--border);";
   box.innerHTML = `
     <div style="overflow-x:auto;">
       <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <thead>
           <tr style="background:#f0fdf4; border-bottom:2px solid var(--border);">
             <th style="width:6%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Status</th>
-            <th style="width:6%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Type</th>
-            <th style="width:7.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Assigned To</th>
-            <th style="width:7.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Assigned By</th>
-            <th style="width:6%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Target Time</th>
-            <th style="width:6%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Target Date</th>
-            <th style="width:6%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Priority</th>
-            <th style="width:30%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Description</th>
-            <th style="width:17.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Completion Notes / Outcome</th>
-            <th style="width:7.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted);"></th>
+            <th style="width:6%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Type</th>
+            <th style="width:7.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Assigned To</th>
+            <th style="width:7.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Assigned By</th>
+            <th style="width:6%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Target Time</th>
+            <th style="width:6%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Target Date</th>
+            <th style="width:6%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Priority</th>
+            <th style="width:30%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Description</th>
+            <th style="width:17.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Completion Notes / Outcome</th>
+            <th style="width:7.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}"></th>
           </tr>
         </thead>
         <tbody>${rowsHtml}</tbody>
