@@ -1565,22 +1565,17 @@ async function submitLead() {
       }
 
       if (activeEmailLeadContextIndex !== null) {
-        const mailObject = cachedInboundEmailLeadsArray[activeEmailLeadContextIndex];
-        const targetMsgId = mailObject.messageIdReference;
-        const cardWrapperNode = document.getElementById(`email-lead-wrapper-node-${activeEmailLeadContextIndex}`);
-        
-        cachedInboundEmailLeadsArray = cachedInboundEmailLeadsArray.filter(item => item.messageIdReference !== targetMsgId);
+        const capturedEmailLeadIndex = activeEmailLeadContextIndex;
 
         const formTemplateSource = document.getElementById("step2-new-entry-dropdown");
         if (formTemplateSource) {
           formTemplateSource.style.display = "none";
           document.body.appendChild(formTemplateSource);
         }
-        if (cardWrapperNode) cardWrapperNode.remove();
-        if (document.getElementById("email-leads-inbound-feed-canvas").children.length === 0) {
-          renderEmailLeadsFeedInterface([]);
-        }
         activeEmailLeadContextIndex = null;
+        // Persists actioned=true server-side (not just this session's DOM),
+        // so the card stays gone next time the feed is refreshed/reopened.
+        markEmailLeadActionedAndRemoveCard(capturedEmailLeadIndex);
       }
 
       window.scrollTo({ top: 0, behavior: 'smooth' });

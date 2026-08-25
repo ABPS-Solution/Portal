@@ -204,6 +204,41 @@ function toggleEmailLeadFullMessage(idx) {
   caret.textContent = expanded ? "▸" : "▾";
 }
 
+// Called after a follow-up, task, or new lead is successfully created off
+// an Email Leads card (either directly, or from the nested existing-company
+// directory opened via triggerEmailLeadDatabaseActionPipeline) — persists
+// the "acted on" state server-side (markEmailLeadActioned) so the card stays
+// gone on the next Refresh Leads / re-open, not just in this session's DOM.
+async function markEmailLeadActionedAndRemoveCard(idx) {
+  const mail = cachedInboundEmailLeadsArray[idx];
+  if (!mail) return;
+  const messageId = mail.messageIdReference;
+  try {
+    await apFetch({ action: "markEmailLeadActioned", activeEngineer: appActiveOperatorIdentityString, messageId });
+  } catch (e) {
+    console.error("markEmailLeadActioned failed:", e);
+  }
+  cachedInboundEmailLeadsArray = cachedInboundEmailLeadsArray.filter(item => item.messageIdReference !== messageId);
+  try { localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray)); } catch(e) { /* quota — ok */ }
+  const cardNode = document.getElementById(`email-lead-wrapper-node-${idx}`);
+  if (cardNode) cardNode.remove();
+  if (document.getElementById("email-leads-inbound-feed-canvas")?.children.length === 0) {
+    renderEmailLeadsFeedInterface([]);
+  }
+}
+
+// If scopeNode (a follow-up/task form's containing element) is inside the
+// nested "existing company" directory opened from an Email Leads card,
+// resolves and marks that card actioned. Returns silently otherwise — this
+// same commit function is shared by every other lead/follow-up screen in
+// Marketing, most of which have nothing to do with Email Leads.
+function markEmailLeadActionedIfInEmailContext(scopeNode) {
+  const anchor = scopeNode && scopeNode.closest('[id^="email-nested-inline-database-workspace-anchor-"]');
+  if (!anchor) return;
+  const idx = parseInt(anchor.id.replace("email-nested-inline-database-workspace-anchor-", ""), 10);
+  if (!isNaN(idx)) markEmailLeadActionedAndRemoveCard(idx);
+}
+
 async function saveEmailLeadNote(idx, messageId) {
   const noteText = document.getElementById(`email-note-${idx}`)?.value?.trim() || "";
   const btn = event.target;

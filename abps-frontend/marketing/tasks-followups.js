@@ -29,7 +29,8 @@ async function commitIsolatedFollowUpItem(leadRef, scopeNode) {
       const fupLabelDone = scopeNode.querySelector(".fup-status-label"); if (fupLabelDone) fupLabelDone.style.display = "none";
       const timelineBox = scopeNode.querySelector(".template-timeline-box");
       if (timelineBox) timelineBox.innerHTML = '<div style="font-size:0.8rem; color:var(--brand); font-weight:600; padding:8px; display:flex; align-items:center; gap:6px;"><span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span> Creating new follow-up...</div>';
-      await globalExecutionScopeReloader(leadRef, scopeNode); 
+      await globalExecutionScopeReloader(leadRef, scopeNode);
+      markEmailLeadActionedIfInEmailContext(scopeNode);
     }
   } catch(e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = "Save Follow-Up"; }
 }
@@ -228,7 +229,8 @@ async function commitIsolatedTaskItem(leadRef, scopeNode) {
       const taskLabelDone = scopeNode.querySelector(".task-status-label"); if (taskLabelDone) taskLabelDone.style.display = "none";
       const taskBox = scopeNode.querySelector(".template-task-box");
       if (taskBox) taskBox.innerHTML = '<div style="font-size:0.8rem; color:var(--brand); font-weight:600; padding:8px; display:flex; align-items:center; gap:6px;"><span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span> Creating new task...</div>';
-      await globalExecutionScopeReloader(leadRef, scopeNode); 
+      await globalExecutionScopeReloader(leadRef, scopeNode);
+      markEmailLeadActionedIfInEmailContext(scopeNode);
     }
   } catch(e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = "Save Task"; }
 }
