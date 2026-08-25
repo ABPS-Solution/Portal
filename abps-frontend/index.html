@@ -3637,9 +3637,8 @@
       <label class="field-label" style="font-size:0.8rem; color:var(--brand);">Filter By Task Status</label>
       <div class="pill-group" id="task-matrix-status-checkboxes" style="margin:8px 0 16px;">
         <input type="checkbox" name="taskMatrixStatus" value="Assigned" id="tms_ts1"><label for="tms_ts1">Assigned</label>
-        <input type="checkbox" name="taskMatrixStatus" value="In Progress" id="tms_ts2"><label for="tms_ts2">In Progress</label>
-        <input type="checkbox" name="taskMatrixStatus" value="Under Review" id="tms_ts3"><label for="tms_ts3">Under Review</label>
-        <input type="checkbox" name="taskMatrixStatus" value="Resolved" id="tms_ts4"><label for="tms_ts4">Resolved</label>
+        <input type="checkbox" name="taskMatrixStatus" value="In Process" id="tms_ts2"><label for="tms_ts2">In Process</label>
+        <input type="checkbox" name="taskMatrixStatus" value="Completed" id="tms_ts4"><label for="tms_ts4">Completed</label>
       </div>
 
       <button class="btn btn-sub" id="task-matrix-search-btn" onclick="executeTaskMatrixSearch()">Run Tasks Search</button>
@@ -3679,12 +3678,6 @@
             </select>
           </div>
 
-          <div style="margin-bottom: 12px;">
-            <label class="field-label" > ABPS Engineer Name *</label>
-            <select id="engName" style="padding: 8px; font-weight: 600;">
-              <option value="">— Select ABPS Engineer Name —</option>
-            </select>
-          </div>
 
           <div id="dropform-duplicate-fields-block">
             <div style="margin-bottom: 12px;">
@@ -3987,15 +3980,13 @@
     <input type="hidden" class="fup-is-edit-flag" value="false">
     <input type="hidden" class="fup-leadid-input">
     <input type="hidden" class="fup-num-input">
-    <div><label class="field-label">Follow-Up Status</label><select class="fup-status-select"><option value="Pending">Pending</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></select></div>
-    <div><label class="field-label">ABPS Engineer Name *</label><select class="fup-eng-select"></select></div>
-    <div><label class="field-label">Next Follow-Up Date</label><input type="date" class="fup-nexttarget-input"></div>
-    <div><label class="field-label">Next Follow-Up Time</label><select class="fup-nexttime-select"><option value="">— Select —</option><option value="Morning">Morning</option><option value="Afternoon">Afternoon</option><option value="Evening">Evening</option></select></div>
     <div><label class="field-label">Interaction Outcome</label><select class="fup-outcome-select"><option value="">— Select —</option><option value="Positive">Positive</option><option value="Neutral">Neutral</option><option value="Negative">Negative</option><option value="No Response">No Response</option></select></div>
     <div><label class="field-label">Interaction Mode</label><select class="fup-mode-select"><option value="">— Select —</option><option value="Phone Call">Phone Call</option><option value="Email">Email</option><option value="WhatsApp">WhatsApp</option><option value="In-Person Visit">In-Person Visit</option><option value="Video Call">Video Call</option></select></div>
+    <div style="grid-column:span 2;"><label class="field-label">Interaction Notes *</label><textarea class="fup-notes-input" style="min-height:50px;"></textarea></div>
+    <div><label class="field-label">Next Follow-Up Date</label><input type="date" class="fup-nexttarget-input"></div>
+    <div><label class="field-label">Next Follow-Up Time</label><select class="fup-nexttime-select"><option value="">— Select —</option><option value="Morning">Morning</option><option value="Afternoon">Afternoon</option><option value="Evening">Evening</option></select></div>
     <div><label class="field-label">Next Action Type</label><input type="text" class="fup-nextaction-input" placeholder="e.g. Send Offer, Site Visit..." /></div>
     <div><label class="field-label">Objection Raised</label><input type="text" class="fup-objection-input" placeholder="e.g. Price, Timeline, Already has vendor..." /></div>
-    <div style="grid-column:span 2;"><label class="field-label">Interaction Notes *</label><textarea class="fup-notes-input" style="min-height:50px;"></textarea></div>
     <div style="grid-column:span 2; display:flex; justify-content:flex-end;">
       <button class="nav-btn-styled commit-fup-btn-trigger" style="background:var(--accent); padding:8px 20px;">Save Follow-Up</button>
     </div>
@@ -4014,10 +4005,9 @@
   <div class="template-task-form" style="display:none; grid-template-columns:1fr 1fr; gap:8px; background:#f0fdf4; padding:10px; border-radius:var(--radius); border:1px solid var(--border); margin-bottom:8px;">
     <input type="hidden" class="task-edit-id">
     <div><label class="field-label">Task Type</label><select class="task-type-select"><option value="Site Visit">Site Visit</option><option value="Call">Call</option><option value="Email">Email</option><option value="Meeting">Meeting</option><option value="Proposal">Proposal</option><option value="Other">Other</option></select></div>
-    <div><label class="field-label">Task Status</label><select class="task-status-select"><option value="Assigned">Assigned</option><option value="In Progress">In Progress</option><option value="Under Review">Under Review</option><option value="Resolved">Resolved</option></select></div>
+    <div><label class="field-label">Task Status</label><select class="task-status-select"><option value="Assigned">Assigned</option><option value="In Process">In Process</option><option value="Completed">Completed</option></select></div>
     <div><label class="field-label">Assigned To (ABPS Engineer) *</label><select class="task-eng-select"></select></div>
-    <div><label class="field-label">Assigned By (ABPS Engineer) *</label><select class="task-assigner-select"></select></div>
-    <div><label class="field-label">Shift / Time Slot *</label><select class="task-shift-select"><option value="Morning">Morning</option><option value="Afternoon">Afternoon</option><option value="Evening">Evening</option></select></div>
+    <div><label class="field-label">Target Completion Time</label><select class="task-shift-select"><option value="Morning">Morning</option><option value="Afternoon">Afternoon</option><option value="Evening">Evening</option></select></div>
     <div><label class="field-label">Target Date *</label><input type="date" class="task-targetdate-input"></div>
     <div><label class="field-label">Task Priority</label><select class="task-priority-select"><option value="Low">Low</option><option value="Medium" selected>Medium</option><option value="High">High</option><option value="Urgent">Urgent</option></select></div>
     <div style="grid-column:span 2;"><label class="field-label">Task Description *</label><textarea class="task-desc-input" style="min-height:45px;"></textarea></div>

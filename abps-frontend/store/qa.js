@@ -50,13 +50,13 @@ function renderIsolatedFollowUpTimeline(leadRef, list, scopeNode) {
         <span style="color:var(--brand); font-size:0.75rem;">View details ▾</span>
       </div>
       <div class="fup-item-body">
-        <div style="font-size:0.82rem; line-height:1.5; color:var(--muted); margin-bottom:6px;">
-          <strong>Status:</strong> ${f.status}<br/><strong>Lead ID:</strong> ${f.leadId}<br/><strong>ABPS Engineer Name:</strong> ${f.eng}<br/>
+        <div style="font-size:0.93rem; line-height:1.6; color:#000; margin-bottom:6px;">
+          <strong>Lead ID:</strong> ${f.leadId}<br/><strong>Logged By:</strong> ${f.eng}<br/>
           <strong>Next Follow-Up Date:</strong> ${formatCleanDateOnly(f.nextDate)} | <strong>Time:</strong> ${f.nextTime || "None"}<br/>
           <strong>Outcome:</strong> ${f.outcome || "—"} | <strong>Mode:</strong> ${f.mode || "—"}<br/>
           <strong>Next Action:</strong> ${f.nextActionType || "—"} | <strong>Objection:</strong> ${f.objectionRaised || "—"}
         </div>
-        <div style="font-size:0.85rem; color:#2d3748; padding:6px 0; border-top:1px solid #edf2f7; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"><strong>Notes:</strong> ${f.notes}</div>
+        <div style="font-size:0.95rem; color:#000; padding:6px 0; border-top:1px solid #edf2f7; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"><strong>Notes:</strong> ${f.notes}</div>
         <div style="margin-top:8px; display:flex; gap:8px;">
           <button class="nav-btn-styled" id="trigger-inner-edit-fup-${leadRef}-${f.num}" style="font-size:0.7rem; padding:4px 8px;">Edit</button>
           ${deleteActionHtml}
@@ -76,12 +76,13 @@ function renderIsolatedFollowUpTimeline(leadRef, list, scopeNode) {
 function editIsolatedFollowUpItem(leadRef, scopeNode, f) {
   const fupForm = scopeNode.querySelector(".template-fup-form");
   fupForm.querySelector(".fup-is-edit-flag").value = "true";
-  fupForm.querySelector(".fup-status-select").value = f.status;
   fupForm.querySelector(".fup-num-input").value = f.num;
   fupForm.querySelector(".fup-leadid-input").value = leadRef;
-  fupForm.querySelector(".fup-eng-select").value = f.eng;
   fupForm.querySelector(".fup-notes-input").value = f.notes;
-  fupForm.querySelector(".fup-nexttarget-input").value = formatCleanDateOnly(f.nextDate);
+  // A native <input type="date"> only accepts YYYY-MM-DD — formatCleanDateOnly
+  // returns DD-MM-YYYY, which silently fails to assign (looked like the
+  // date resetting/Edit not working).
+  fupForm.querySelector(".fup-nexttarget-input").value = toDateInputValue(f.nextDate);
   fupForm.querySelector(".fup-nexttime-select").value = f.nextTime || "Morning";
   
   fupForm.querySelector(".fup-outcome-select").value = f.outcome || "";

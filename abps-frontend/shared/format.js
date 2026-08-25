@@ -40,13 +40,29 @@ function cleanISTTimestamp(rawStr) {
   let str = rawStr.toString().trim();
   if (!str) return "";
   if (str.indexOf("T") === -1 && (str.indexOf("am") !== -1 || str.indexOf("pm") !== -1)) return str;
-  
+
   let dateObj = new Date(str);
   if (isNaN(dateObj.getTime())) return str;
-  
-  let hours = dateObj.getHours(); let minutes = dateObj.getMinutes();
-  let ampm = hours >= 12 ? 'pm' : 'am'; hours = hours % 12; hours = hours ? hours : 12;
-  return hours + ":" + String(minutes).padStart(2,'0') + " " + ampm;
+
+  // Explicitly convert to IST rather than reading getHours()/getMinutes(),
+  // which return the BROWSER's local timezone — wrong for any user not
+  // physically on IST-offset system clock. Same reasoning as formatDateDMY.
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true }).formatToParts(dateObj);
+  const hourPart = parts.find(p => p.type === 'hour')?.value || '12';
+  const minutePart = parts.find(p => p.type === 'minute')?.value || '00';
+  const ampmPart = (parts.find(p => p.type === 'dayPeriod')?.value || 'AM').toLowerCase();
+  return `${hourPart}:${minutePart} ${ampmPart}`;
+}
+
+// Extracts the YYYY-MM-DD portion from a raw date/timestamp value so it can
+// be assigned directly to a native <input type="date">.value — that input
+// ONLY accepts YYYY-MM-DD; assigning it a DD-MM-YYYY string (e.g. from
+// formatCleanDateOnly) silently fails and leaves the field blank, which
+// looked like the value being "reset" on Edit.
+function toDateInputValue(rawStr) {
+  if (!rawStr) return "";
+  const m = rawStr.toString().match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : "";
 }
 
 function formatCleanDateOnly(rawStr) {

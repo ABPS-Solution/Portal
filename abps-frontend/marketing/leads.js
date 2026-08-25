@@ -682,7 +682,7 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
     const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
     const escForOnclick = s => (s || "").toString().replace(/\\/g, "\\\\").replace(/'/g, "\\'");
     const deleteButtonHtml = isAdminUser 
-      ? `<button class="nav-btn-styled" style="font-size:0.92rem; padding:6px 14px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}', '${escForOnclick(companyLabelName)}', '${escForOnclick(cardDisplayName)}')">Delete Record</button>` 
+      ? `<button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}', '${escForOnclick(companyLabelName)}', '${escForOnclick(cardDisplayName)}')">Delete Record</button>`
       : ""; // Non-admins get absolutely nothing rendered
 
     wrapperCard.innerHTML = `
@@ -706,7 +706,7 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
           </div>
         </div>
         <div class="directory-btn-actions-block" style="display:flex; gap:8px; flex-shrink:0;">
-          <button class="nav-btn-styled" style="font-size:0.92rem; padding:6px 14px;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)" id="expand-trigger-${tRef}">View Details</button>
+          <button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)" id="expand-trigger-${tRef}">View Details</button>
           ${deleteButtonHtml}
         </div>
       </div>
@@ -764,14 +764,6 @@ function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
   const fupForm = nodeScope.querySelector(".template-fup-form");
   const fupOpen = nodeScope.querySelector(".trigger-fup-open");
   const fupClose = nodeScope.querySelector(".trigger-fup-close");
-  const fupEngSelect = nodeScope.querySelector(".fup-eng-select");
-  
-  fupEngSelect.innerHTML = '<option value="">— Select Engineer —</option>';
-  cachedEngineers.forEach(eng => {
-    let o1 = document.createElement("option"); o1.value = eng.email; o1.textContent = eng.name; fupEngSelect.appendChild(o1);
-  });
-  const fupSelfEngineer = cachedEngineers.find(eng => eng.name === appActiveOperatorIdentityString);
-  if (fupSelfEngineer) fupEngSelect.value = fupSelfEngineer.email;
 
   fupOpen.onclick = function() {
     fupForm.querySelector(".fup-is-edit-flag").value = "false";
@@ -792,19 +784,13 @@ function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
   const taskOpen = nodeScope.querySelector(".trigger-task-open");
   const taskClose = nodeScope.querySelector(".trigger-task-close");
   const taskEngSelect = nodeScope.querySelector(".task-eng-select");
-  const taskAssignerSelect = nodeScope.querySelector(".task-assigner-select");
 
   taskEngSelect.innerHTML = '<option value="">— Select Engineer —</option>';
-  taskAssignerSelect.innerHTML = '<option value="">— Select Engineer —</option>';
   cachedEngineers.forEach(eng => {
     let o2 = document.createElement("option"); o2.value = eng.email; o2.textContent = eng.name; taskEngSelect.appendChild(o2);
-    let o3 = document.createElement("option"); o3.value = eng.email; o3.textContent = eng.name; taskAssignerSelect.appendChild(o3);
   });
   const taskSelfEngineer = cachedEngineers.find(eng => eng.name === appActiveOperatorIdentityString);
-  if (taskSelfEngineer) {
-    taskEngSelect.value = taskSelfEngineer.email;
-    taskAssignerSelect.value = taskSelfEngineer.email;
-  }
+  if (taskSelfEngineer) taskEngSelect.value = taskSelfEngineer.email;
 
   taskOpen.onclick = function() {
     taskForm.querySelector(".task-edit-id").value = ""; taskForm.querySelector(".task-desc-input").value = "";
@@ -843,7 +829,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
   
   // MATCHED LAYOUT BLUEPRINT Blueprints
   const customSectionLayout = [
-    { type: "META", keys: ["Status", "Engineer Name"] },
+    { type: "META", keys: ["Status"] },
     { type: "CARD", keys: ["Contact Person Name", "Company Name", "Position", "Phone", "Alt Phone", "Email", "Website", "City", "State", "Country", "Company Address"] },
     { type: "SEC1", keys: ["Date of Meeting", "Time of Meeting", "Meeting Venue", "Venue Name / City", "Additional Meeting Details (if any)"] },
     { type: "SEC2", keys: ["ABPS Business Vertical", "Type of Customer", "Type of Vendor"] }, 
@@ -1388,9 +1374,6 @@ async function submitLead() {
   
   if (!statusField.value) { alert("Lead Status is compulsory."); return; }
 
-  const engineerField = document.getElementById('engName');
-  if (!engineerField || !engineerField.value) { alert("ABPS Engineer Name is a compulsory question."); return; }
-
   const meetingDateField = document.getElementById('meetingDate');
   if (!meetingDateField || !meetingDateField.value) { alert("Please select a Date of Meeting."); return; }
 
@@ -1446,7 +1429,9 @@ async function submitLead() {
 
     const fields = {
       status: statusField.value,
-      engineerName: engineerField.value, 
+      // Engineer Name field removed (25 Aug 2026) — attribution now always
+      // comes from whoever is actually logged in, never a picked value.
+      engineerName: localStorage.getItem("sessionUser") || "",
       "Contact Person Name": document.getElementById('dropform-name').value.trim() || (document.getElementById('f-name') ? document.getElementById('f-name').value.trim() : ""), 
       "Company Name": document.getElementById('dropform-company-locked').value.trim(),
       position: document.getElementById('dropform-position').value.trim() || (document.getElementById('f-position') ? document.getElementById('f-position').value.trim() : ""), 

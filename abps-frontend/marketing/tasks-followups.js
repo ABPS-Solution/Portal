@@ -6,15 +6,13 @@ async function commitIsolatedFollowUpItem(leadRef, scopeNode) {
   const btn = scopeNode.querySelector(".commit-fup-btn-trigger");
   const followUpData = {
     isEdit: form.querySelector(".fup-is-edit-flag").value === "true",
-    status: form.querySelector(".fup-status-select").value,
     num: form.querySelector(".fup-num-input").value,
     leadRef: leadRef, company: activeSearchCompany,
-    eng: form.querySelector(".fup-eng-select").value, notes: form.querySelector(".fup-notes-input").value,
+    notes: form.querySelector(".fup-notes-input").value,
     nextDate: form.querySelector(".fup-nexttarget-input").value, nextTime: form.querySelector(".fup-nexttime-select").value,
     outcome: form.querySelector(".fup-outcome-select").value, mode: form.querySelector(".fup-mode-select").value,
     nextActionType: form.querySelector(".fup-nextaction-input").value, objectionRaised: form.querySelector(".fup-objection-input").value
   };
-  if (!followUpData.eng || !followUpData.eng.trim()) return alert("ABPS Engineer Name is a compulsory field.");
   if (!followUpData.notes) return alert("Interaction Notes required.");
   
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...';
@@ -81,10 +79,10 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
 
     const priorityColors = { "Urgent": "#b91c1c", "High": "#b45309", "Medium": "#2563eb", "Low": "#65a30d" };
     const priorityColor = priorityColors[t.priority] || "#64748b";
-    div.innerHTML = `<strong>${t.type}</strong> - ${t.eng} <span style="font-size:0.68rem; font-weight:700; color:#fff; background:${priorityColor}; padding:1px 6px; border-radius:3px; margin-left:4px;">${t.priority || "Medium"}</span><br/><small>Time: ${t.shift} | Target Date: ${formatCleanDateOnly(t.targetDate)}</small>
-                     <p style="font-size:0.82rem; margin-top:4px; color:var(--text); word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"><strong>Desc:</strong> ${t.desc || 'None'}</p>
-                     ${t.completionNotes ? `<p style="font-size:0.8rem; margin-top:4px; color:#15803d; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"><strong>Outcome:</strong> ${t.completionNotes}</p>` : ''}
-                     <div style="font-size:0.75rem; font-weight:bold; color:var(--brand); margin-top:4px;">Status: ${t.status} | Assigned By: ${t.assigner || "System"}</div>
+    div.innerHTML = `<strong style="font-size:1rem; color:#000;">${t.type}</strong> - <span style="font-size:0.95rem; color:#000;">${t.eng}</span> <span style="font-size:0.75rem; font-weight:700; color:#fff; background:${priorityColor}; padding:1px 6px; border-radius:3px; margin-left:4px;">${t.priority || "Medium"}</span><br/><small style="font-size:0.9rem; color:#000;">Target Completion Time: ${t.shift} | Target Date: ${formatCleanDateOnly(t.targetDate)}</small>
+                     <p style="font-size:0.95rem; margin-top:4px; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"><strong>Desc:</strong> ${t.desc || 'None'}</p>
+                     ${t.completionNotes ? `<p style="font-size:0.93rem; margin-top:4px; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"><strong>Outcome:</strong> ${t.completionNotes}</p>` : ''}
+                     <div style="font-size:0.88rem; font-weight:bold; color:#000; margin-top:4px;">Status: ${t.status} | Assigned By: ${t.assigner || "System"}</div>
                      <div style="margin-top:8px; display:flex; gap:6px;">
                        <button class="nav-btn-styled" id="trigger-inner-edit-task-${leadRef}-${t.id}" style="font-size:0.75rem; padding:2px 6px;">Edit</button>
                        ${deleteActionHtml}
@@ -99,16 +97,32 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
   });
 }
 
+// Legacy Task Status values collapse onto the current 3-option set — a
+// value the <select> has no matching <option> for silently fails to
+// assign, which read as "Assigned To/Target Date reset on Edit" (really
+// the whole select fell back to its first option). Normalizes any
+// pre-25-Aug-2026 status still in the DB.
+function normalizeTaskStatusForEdit(status) {
+  if (status === "In Progress" || status === "Under Review") return "In Process";
+  if (status === "Resolved") return "Completed";
+  return status || "Assigned";
+}
+
 function editIsolatedTaskItem(leadRef, scopeNode, t) {
   const taskForm = scopeNode.querySelector(".template-task-form");
-  taskForm.querySelector(".task-edit-id").value = t.id; 
-  taskForm.querySelector(".task-status-select").value = t.status || "Assigned";
-  taskForm.querySelector(".task-eng-select").value = t.eng; 
-  taskForm.querySelector(".task-assigner-select").value = t.assigner || "";
-  taskForm.querySelector(".task-type-select").value = t.type; 
+  taskForm.querySelector(".task-edit-id").value = t.id;
+  taskForm.querySelector(".task-status-select").value = normalizeTaskStatusForEdit(t.status);
+  // t.eng is a resolved display NAME (server-side COALESCE), but the
+  // select's <option> values are emails — match by name, submit the email.
+  const engMatch = cachedEngineers.find(eng => eng.name === t.eng);
+  taskForm.querySelector(".task-eng-select").value = engMatch ? engMatch.email : "";
+  taskForm.querySelector(".task-type-select").value = t.type;
   taskForm.querySelector(".task-desc-input").value = t.desc;
-  taskForm.querySelector(".task-shift-select").value = t.shift; 
-  taskForm.querySelector(".task-targetdate-input").value = formatCleanDateOnly(t.targetDate);
+  taskForm.querySelector(".task-shift-select").value = t.shift;
+  // A native <input type="date"> only accepts YYYY-MM-DD — formatCleanDateOnly
+  // returns DD-MM-YYYY, which silently fails to assign and looked like the
+  // Target Date resetting on Edit.
+  taskForm.querySelector(".task-targetdate-input").value = toDateInputValue(t.targetDate);
   taskForm.querySelector(".task-priority-select").value = t.priority || "Medium";
   taskForm.querySelector(".task-completionnotes-input").value = t.completionNotes || "";
   taskForm.style.display = "grid"; scopeNode.querySelector(".trigger-task-open").style.display = "none";
@@ -123,15 +137,14 @@ async function commitIsolatedTaskItem(leadRef, scopeNode) {
   const editId = form.querySelector(".task-edit-id").value;
   const taskData = {
     id: editId || "NEW", isNew: !editId, fupNum: currentFollowUpCount, leadRef: leadRef, company: activeSearchCompany,
-    engineer: form.querySelector(".task-eng-select").value, assigner: form.querySelector(".task-assigner-select").value,
-    type: form.querySelector(".task-type-select").value, desc: form.querySelector(".task-desc-input").value, 
+    engineer: form.querySelector(".task-eng-select").value,
+    type: form.querySelector(".task-type-select").value, desc: form.querySelector(".task-desc-input").value,
     shift: form.querySelector(".task-shift-select").value, targetDate: form.querySelector(".task-targetdate-input").value, status: form.querySelector(".task-status-select").value,
     priority: form.querySelector(".task-priority-select").value, completionNotes: form.querySelector(".task-completionnotes-input").value
   };
   if (!taskData.targetDate) return alert("Target Date required.");
   if (!desc || desc.trim() === "") return alert("Task Description is a compulsory field.");
   if (!taskData.engineer || !taskData.engineer.trim()) return alert("Assigned To (Engineer) is a compulsory field.");
-  if (!taskData.assigner || !taskData.assigner.trim()) return alert("Assigned By is a compulsory field.");
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...';
   try {
     const r = await apFetch({ 
@@ -252,12 +265,12 @@ async function executeTaskMatrixSearch() {
             </div>
             <button class="nav-btn-styled" id="view-company-btn-${t.id}" onclick="toggleTaskCompanyExpand('${t.id}', '${encodeURIComponent(t.companyName)}', '${encodeURIComponent(t.personName)}')" style="font-size:0.7rem; padding:3px 10px; background:var(--brand); white-space:nowrap;">View Company</button>
           </div>
-          <div style="font-size:0.8rem; line-height:1.4; color:var(--text);">
+          <div style="font-size:0.93rem; line-height:1.5; color:#000;">
             <strong>Engineer:</strong> ${t.eng} | <strong>Assigner:</strong> ${t.assigner || "System"}<br/>
-            <strong>Target Date:</strong> ${formatCleanDateOnly(t.targetDate)} | <strong>Shift:</strong> ${t.shift}<br/>
+            <strong>Target Date:</strong> ${formatCleanDateOnly(t.targetDate)} | <strong>Target Completion Time:</strong> ${t.shift}<br/>
             <strong>Lead Reference:</strong> ${t.companyName} (${t.personName})
           </div>
-          <div style="font-size:0.82rem; color:#4a5568; padding:6px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; margin-top:6px; white-space:pre-wrap;"><strong>Description:</strong> ${t.desc || 'None'}</div>
+          <div style="font-size:0.93rem; color:#000; padding:6px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; margin-top:6px; white-space:pre-wrap;"><strong>Description:</strong> ${t.desc || 'None'}</div>
           <div style="margin-top:10px; display:flex; gap:8px;">
             <button class="nav-btn-styled" id="matrix-edit-task-btn-${t.id}" style="font-size:0.72rem; padding:3px 8px; background:var(--accent);">Edit Task Details</button>
             ${deleteActionHtml}
@@ -294,25 +307,25 @@ function injectMatrixInlineTaskForm(taskItem, parentCardNode) {
   const templateClone = templateSource.cloneNode(true);
   
   const coreTaskForm = templateClone.querySelector(".template-task-form");
-  
+
   const taskEngSelect = coreTaskForm.querySelector(".task-eng-select");
-  const taskAssignerSelect = coreTaskForm.querySelector(".task-assigner-select");
-  
-  taskEngSelect.innerHTML = ""; taskAssignerSelect.innerHTML = "";
-  // taskItem.eng/assigner are resolved display names now (from
+
+  taskEngSelect.innerHTML = "";
+  // taskItem.eng is a resolved display name now (from
   // fetchFollowupsAndTasksMaps' COALESCE) — match on .name, submit .email.
   cachedEngineers.forEach(eng => {
     let o1 = document.createElement("option"); o1.value = eng.email; o1.textContent = eng.name; if(taskItem.eng === eng.name) o1.selected = true; taskEngSelect.appendChild(o1);
-    let o2 = document.createElement("option"); o2.value = eng.email; o2.textContent = eng.name; if(taskItem.assigner === eng.name) o2.selected = true; taskAssignerSelect.appendChild(o2);
   });
 
   coreTaskForm.querySelector(".task-edit-id").value = taskItem.id;
-  coreTaskForm.querySelector(".task-status-select").value = taskItem.status;
+  coreTaskForm.querySelector(".task-status-select").value = normalizeTaskStatusForEdit(taskItem.status);
   coreTaskForm.querySelector(".task-type-select").value = taskItem.type;
   coreTaskForm.querySelector(".task-desc-input").value = taskItem.desc || "";
   coreTaskForm.querySelector(".task-shift-select").value = taskItem.shift || "Morning";
-  coreTaskForm.querySelector(".task-targetdate-input").value = formatCleanDateOnly(taskItem.targetDate);
-  
+  coreTaskForm.querySelector(".task-targetdate-input").value = toDateInputValue(taskItem.targetDate);
+  coreTaskForm.querySelector(".task-priority-select").value = taskItem.priority || "Medium";
+  coreTaskForm.querySelector(".task-completionnotes-input").value = taskItem.completionNotes || "";
+
   coreTaskForm.style.display = "grid";
   
   const commitBtn = coreTaskForm.querySelector(".commit-task-btn-trigger");
@@ -336,12 +349,13 @@ async function commitMatrixTaskMutations(formNode, fallbackLeadId, btnNode) {
   const taskData = {
     id: editId, isNew: false, leadRef: fallbackLeadId,
     engineer: formNode.querySelector(".task-eng-select").value,
-    assigner: formNode.querySelector(".task-assigner-select").value,
     type: formNode.querySelector(".task-type-select").value,
     desc: desc,
     shift: formNode.querySelector(".task-shift-select").value,
     targetDate: targetDate,
-    status: formNode.querySelector(".task-status-select").value
+    status: formNode.querySelector(".task-status-select").value,
+    priority: formNode.querySelector(".task-priority-select").value,
+    completionNotes: formNode.querySelector(".task-completionnotes-input").value
   };
 
   btnNode.disabled = true; btnNode.innerHTML = 'Saving Changes...';

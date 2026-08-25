@@ -264,7 +264,7 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
       const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
       const escForOnclick2 = s => (s || "").toString().replace(/\\/g, "\\\\").replace(/'/g, "\\'");
       const deleteHtml = isAdminUser
-        ? `<button class="nav-btn-styled" style="font-size:0.82rem; padding:5px 12px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}', '${escForOnclick2(companyName)}', '${escForOnclick2(cardName)}')">Delete Record</button>`
+        ? `<button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}', '${escForOnclick2(companyName)}', '${escForOnclick2(cardName)}')">Delete Record</button>`
         : "";
 
       const card = document.createElement("div");
@@ -286,7 +286,7 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
             </div>
           </div>
           <div class="directory-btn-actions-block">
-            <button class="nav-btn-styled" style="font-size:0.82rem; padding:6px 14px;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)" id="expand-trigger-${tRef}">View Details</button>
+            <button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)" id="expand-trigger-${tRef}">View Details</button>
             ${deleteHtml}
           </div>
         </div>
