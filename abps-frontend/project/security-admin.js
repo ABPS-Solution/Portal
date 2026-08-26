@@ -43,7 +43,33 @@ function switchSecurityAdminTab(tab) {
   });
 }
 
-// ── Login Anywhere ──────────────────────────────────────────────────────
+// ── Login Anywhere — presented as a department family tree ──────────────
+// Deliberately built from saAllUsers fresh on every load (fetchAdminUserList
+// -> live admin_db.users/departments), never a hardcoded department or
+// person list — a new person added via the Users Sheet, in ANY department,
+// shows up here automatically the next time this tab loads. Adding a new
+// admin_db.departments row (see the DEPARTMENT ORDER note below) is the
+// only case that needs a one-line update here.
+//
+// DEPARTMENT ORDER (26 Aug 2026) — matches admin_db.departments exactly,
+// including 'Project' and 'Accounts', added as real assignable departments
+// specifically so this tree could include them (they didn't exist before).
+// Colors are distinct from each other on purpose (unlike the 7-department
+// Permissions Matrix, which reuses Project's blue for Design, ALL NINE of
+// these render side-by-side at once here so every color must be tellable
+// apart from its neighbors).
+const LA_DEPARTMENTS = [
+  { name: 'Admin', color: '#1e293b' },
+  { name: 'Marketing', color: '#be185d' },
+  { name: 'Project', color: '#2563eb' },
+  { name: 'Design', color: '#4338ca' },
+  { name: 'Purchase', color: '#7c3aed' },
+  { name: 'Store', color: '#0369a1' },
+  { name: 'Production', color: '#b45309' },
+  { name: 'Quality Assurance', color: '#dc2626' },
+  { name: 'Accounts', color: '#0f766e' },
+];
+
 async function loadSecurityAdminUsers() {
   try {
     const data = await apFetch({ action: "fetchAdminUserList" });
@@ -54,21 +80,50 @@ async function loadSecurityAdminUsers() {
   } catch (e) { console.error("loadSecurityAdminUsers failed:", e); }
 }
 
+function laPersonButtonHtml(u, color) {
+  const granted = !!u.perm_login_anywhere;
+  const border = granted ? `3px solid #0f172a` : `1.5px solid #cbd5e1`;
+  return `
+    <div style="display:flex; flex-direction:column; align-items:center;">
+      <div style="width:2px; height:16px; background:${color};"></div>
+      <button onclick="handleLoginAnywhereButtonClick('${u.email}')"
+        title="${granted ? 'Click to revoke' : 'Click to grant'} Login Anywhere access"
+        style="border:${border}; background:#fff; border-radius:9px; padding:9px 16px; cursor:pointer;
+               font-weight:${granted ? 800 : 600}; font-size:0.85rem; color:#1e293b; white-space:nowrap;
+               box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+        ${u.first_name || ''} ${u.last_name || ''}
+      </button>
+    </div>`;
+}
+
 function renderSecurityAdminUsers() {
   const q = (document.getElementById("sa-user-search").value || "").toLowerCase().trim();
-  const tbody = document.getElementById("sa-user-list-body");
-  const filtered = saAllUsers.filter(u => !q ||
-    `${u.first_name} ${u.last_name}`.toLowerCase().includes(q) ||
-    (u.email || "").toLowerCase().includes(q));
-  tbody.innerHTML = filtered.map(u => `
-    <tr style="border-top:1px solid var(--border);">
-      <td style="padding:8px;">${u.first_name || ''} ${u.last_name || ''}</td>
-      <td style="padding:8px;">${u.department || '—'}</td>
-      <td style="padding:8px;">${u.status}</td>
-      <td style="padding:8px; text-align:center;">
-        <input type="checkbox" ${u.perm_login_anywhere ? 'checked' : ''} onchange="toggleUserLoginAnywhere('${u.email}', this.checked)">
-      </td>
-    </tr>`).join('') || `<tr><td colspan="4" style="padding:14px; text-align:center; color:var(--muted);">No users found.</td></tr>`;
+  const root = document.getElementById("sa-user-tree-root");
+  if (!root) return;
+
+  root.innerHTML = LA_DEPARTMENTS.map(dept => {
+    const people = saAllUsers.filter(u => (u.department || '') === dept.name && (!q ||
+      `${u.first_name} ${u.last_name}`.toLowerCase().includes(q)));
+    if (q && people.length === 0) return ''; // hide whole branch while searching with no match
+    return `
+      <div style="margin-bottom:38px;">
+        <div style="display:flex; flex-direction:column; align-items:center;">
+          <div style="font-weight:800; font-size:1.05rem; letter-spacing:0.3px; color:${dept.color}; padding-bottom:10px;">${dept.name}</div>
+          <div style="height:2px; width:92%; max-width:960px; background:${dept.color};"></div>
+        </div>
+        ${people.length === 0
+          ? `<div style="text-align:center; color:var(--muted); font-size:0.8rem; padding:14px 0 0;">No one in this department yet.</div>`
+          : `<div style="display:flex; flex-wrap:wrap; justify-content:center; gap:22px 18px; max-width:960px; margin:0 auto; padding-top:2px;">
+               ${people.map(u => laPersonButtonHtml(u, dept.color)).join('')}
+             </div>`}
+      </div>`;
+  }).join('') || `<div style="text-align:center; color:var(--muted); padding:20px;">No users found.</div>`;
+}
+
+async function handleLoginAnywhereButtonClick(email) {
+  const u = saAllUsers.find(x => x.email === email);
+  if (!u) return;
+  await toggleUserLoginAnywhere(email, !u.perm_login_anywhere);
 }
 
 async function toggleUserLoginAnywhere(email, enabled) {
@@ -78,9 +133,10 @@ async function toggleUserLoginAnywhere(email, enabled) {
       showBOQBanner("sa-feedback", `${enabled ? 'Enabled' : 'Disabled'} Login Anywhere for ${email}.`, "success");
       const u = saAllUsers.find(x => x.email === email);
       if (u) u.perm_login_anywhere = enabled;
+      renderSecurityAdminUsers();
     } else {
       showBOQBanner("sa-feedback", data.error || "Failed to update.", "error");
-      renderSecurityAdminUsers(); // revert the checkbox to server state
+      renderSecurityAdminUsers(); // revert the button to server state
     }
   } catch (e) {
     showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
@@ -449,7 +505,7 @@ async function selectPermissionMatrixUser(email) {
 
 function pmPillHtml(perm) {
   const enabled = !!pmUserValues[perm.dbColumn];
-  const color = perm.systemWide ? PM_SYSTEM_COLOR : (PM_CARD_ORDER.find(c => c.key === perm.department || `dashboard-${c.key}` === perm.department) || {}).color || PM_SYSTEM_COLOR;
+  const color = (PM_CARD_ORDER.find(c => c.key === perm.department || `dashboard-${c.key}` === perm.department) || {}).color || PM_SYSTEM_COLOR;
   const isDashboard = (perm.department || '').startsWith('dashboard-');
   const label = isDashboard ? `📊 ${perm.label}` : perm.label;
   const style = enabled
@@ -464,7 +520,7 @@ function renderPermissionMatrix() {
   if (!pmSelectedUser) { root.innerHTML = ""; return; }
 
   const cards = PM_CARD_ORDER.map(card => {
-    const pills = pmCatalog.filter(p => !p.systemWide && (p.department === card.key || p.department === `dashboard-${card.key}`));
+    const pills = pmCatalog.filter(p => p.department === card.key || p.department === `dashboard-${card.key}`);
     // Dashboard pill (if this department has one) shown first within its card.
     pills.sort((a, b) => (b.department.startsWith('dashboard-') ? 1 : 0) - (a.department.startsWith('dashboard-') ? 1 : 0));
     if (pills.length === 0) return '';
@@ -480,24 +536,12 @@ function renderPermissionMatrix() {
       </div>`;
   }).join('');
 
-  const systemPills = pmCatalog.filter(p => p.systemWide);
-  const systemCard = systemPills.length === 0 ? '' : `
-      <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:14px;">
-        <div style="display:flex; align-items:center; gap:10px; padding:10px 16px; background:#33415512; border-bottom:1px solid var(--border);">
-          <div style="width:5px; height:18px; border-radius:2px; background:${PM_SYSTEM_COLOR};"></div>
-          <span style="font-weight:800; color:${PM_SYSTEM_COLOR}; font-size:0.95rem;">System-Wide</span>
-        </div>
-        <div style="padding:14px 16px; display:flex; flex-wrap:wrap; gap:8px;">
-          ${systemPills.map(pmPillHtml).join('')}
-        </div>
-      </div>`;
-
   root.innerHTML = `
     <div style="font-weight:700; font-size:0.95rem; margin-bottom:14px;">
       Editing access for: ${pmSelectedUser.first_name || ''} ${pmSelectedUser.last_name || ''}
       <span style="color:var(--muted); font-weight:500; font-size:0.82rem;"> (${pmSelectedUser.department || 'No department'})</span>
     </div>
-    ${cards}${systemCard}`;
+    ${cards}`;
 }
 
 async function togglePermissionMatrixPill(dbColumn) {

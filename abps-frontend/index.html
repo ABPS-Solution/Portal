@@ -1945,11 +1945,11 @@
     <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
       <button id="sa-tab-permissions" class="nav-btn-styled" onclick="switchSecurityAdminTab('permissions')" style="flex:1; padding:11px 16px;">Permissions</button>
       <button id="sa-tab-users" class="nav-btn-styled" onclick="switchSecurityAdminTab('users')" style="flex:1; padding:11px 16px;">Login Anywhere</button>
-      <button id="sa-tab-networks" class="nav-btn-styled" onclick="switchSecurityAdminTab('networks')" style="flex:1; padding:11px 16px;">Office Networks</button>
-      <button id="sa-tab-devices" class="nav-btn-styled" onclick="switchSecurityAdminTab('devices')" style="flex:1; padding:11px 16px;">Trusted Devices</button>
-      <button id="sa-tab-log" class="nav-btn-styled" onclick="switchSecurityAdminTab('log')" style="flex:1; padding:11px 16px;">Login Log</button>
       <button id="sa-tab-pins" class="nav-btn-styled" onclick="switchSecurityAdminTab('pins')" style="flex:1; padding:11px 16px;">Login PINs</button>
       <button id="sa-tab-registeredpcs" class="nav-btn-styled" onclick="switchSecurityAdminTab('registeredpcs')" style="flex:1; padding:11px 16px;">Registered Devices</button>
+      <button id="sa-tab-log" class="nav-btn-styled" onclick="switchSecurityAdminTab('log')" style="flex:1; padding:11px 16px;">Login Log</button>
+      <button id="sa-tab-devices" class="nav-btn-styled" onclick="switchSecurityAdminTab('devices')" style="flex:1; padding:11px 16px;">Trusted Devices</button>
+      <button id="sa-tab-networks" class="nav-btn-styled" onclick="switchSecurityAdminTab('networks')" style="flex:1; padding:11px 16px;">Office Networks</button>
       <button id="sa-tab-settings" class="nav-btn-styled" onclick="switchSecurityAdminTab('settings')" style="flex:1; padding:11px 16px;">Settings</button>
     </div>
 
@@ -1970,16 +1970,18 @@
       <div id="pm-matrix-root"></div>
     </div>
 
-    <!-- LOGIN ANYWHERE -->
+    <!-- LOGIN ANYWHERE — a department "family tree": every active person,
+         branching down from their department name in that department's
+         color. A thick black border on a name means they have Login
+         Anywhere access; click any name to grant/revoke it. Built fresh
+         from fetchAdminUserList on every load, so a person added via the
+         Users Sheet in any department appears here automatically. -->
     <div id="sa-panel-users">
-      <input type="text" id="sa-user-search" placeholder="Search by Name..." oninput="renderSecurityAdminUsers()" style="max-width:340px; margin-bottom:14px;">
-      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
-        <thead><tr style="background:var(--highlight-bg); text-align:left;">
-          <th style="padding:8px;">Name</th><th style="padding:8px;">Department</th>
-          <th style="padding:8px;">Status</th><th style="padding:8px; text-align:center;">Login Anywhere</th>
-        </tr></thead>
-        <tbody id="sa-user-list-body"></tbody>
-      </table>
+      <p style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">
+        Click a person's name to grant or revoke Login Anywhere (bypasses the office-network requirement). A thick black border means they already have it.
+      </p>
+      <input type="text" id="sa-user-search" placeholder="Search by Name..." oninput="renderSecurityAdminUsers()" style="max-width:340px; margin-bottom:20px;">
+      <div id="sa-user-tree-root"></div>
     </div>
 
     <!-- OFFICE NETWORKS -->
