@@ -514,14 +514,15 @@ async function selectPermissionMatrixUser(email) {
   }
 }
 
-function pmPillHtml(perm) {
+function pmPillHtml(perm, color) {
   const enabled = !!pmUserValues[perm.dbColumn];
-  const color = (PM_CARD_ORDER.find(c => c.key === perm.department || `dashboard-${c.key}` === perm.department) || {}).color || PM_SYSTEM_COLOR;
   const isDashboard = (perm.department || '').startsWith('dashboard-');
   const label = isDashboard ? `📊 ${perm.label}` : perm.label;
+  // Text is always black; only the background carries the department
+  // color, and only once the person actually has access (26 Aug 2026).
   const style = enabled
-    ? `background:${color}1f; border:1.5px solid ${color}; color:${color}; font-weight:700;`
-    : `background:#f1f5f9; border:1.5px solid #cbd5e1; color:#94a3b8; font-weight:600;`;
+    ? `background:${color}; border:1.5px solid ${color}; color:#0f172a; font-weight:700;`
+    : `background:#f1f5f9; border:1.5px solid #cbd5e1; color:#0f172a; font-weight:600;`;
   return `<button onclick="togglePermissionMatrixPill('${perm.dbColumn}')"
       style="${style} padding:7px 14px; border-radius:999px; font-size:0.8rem; cursor:pointer; transition:all 0.12s;">${label}</button>`;
 }
@@ -531,18 +532,31 @@ function renderPermissionMatrix() {
   if (!pmSelectedUser) { root.innerHTML = ""; return; }
 
   const cards = PM_CARD_ORDER.map(card => {
-    const pills = pmCatalog.filter(p => p.department === card.key || p.department === `dashboard-${card.key}`);
-    // Dashboard pill (if this department has one) shown first within its card.
-    pills.sort((a, b) => (b.department.startsWith('dashboard-') ? 1 : 0) - (a.department.startsWith('dashboard-') ? 1 : 0));
-    if (pills.length === 0) return '';
+    const perms = pmCatalog.filter(p => p.department === card.key || p.department === `dashboard-${card.key}`);
+    if (perms.length === 0) return '';
+    // Group into sub-rows (row 0 = Dashboard, always its own row; the
+    // rest mirror that department's real sec-label groupings in
+    // index.html — see lib/permissionCatalog.js's header comment).
+    const rowNumbers = [...new Set(perms.map(p => p.row))].sort((a, b) => a - b);
+    const rowsHtml = rowNumbers.map(rowNum => {
+      const rowPerms = perms.filter(p => p.row === rowNum);
+      const rowLabel = rowPerms[0].rowLabel;
+      return `
+        <div style="margin-bottom:10px;">
+          ${rowLabel ? `<div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); margin-bottom:6px;">${rowLabel}</div>` : ''}
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            ${rowPerms.map(p => pmPillHtml(p, card.color)).join('')}
+          </div>
+        </div>`;
+    }).join('');
     return `
       <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:14px;">
         <div style="display:flex; align-items:center; gap:10px; padding:10px 16px; background:${card.color}0f; border-bottom:1px solid var(--border);">
           <div style="width:5px; height:18px; border-radius:2px; background:${card.color};"></div>
           <span style="font-weight:800; color:${card.color}; font-size:0.95rem;">${card.label}</span>
         </div>
-        <div style="padding:14px 16px; display:flex; flex-wrap:wrap; gap:8px;">
-          ${pills.map(pmPillHtml).join('')}
+        <div style="padding:14px 16px;">
+          ${rowsHtml}
         </div>
       </div>`;
   }).join('');
