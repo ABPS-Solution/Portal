@@ -398,15 +398,20 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-design-update-boq"))   document.getElementById("mod-design-update-boq").style.display   = canUpdateBOQ ? "block" : "none";
   if (document.getElementById("mod-design-auth-boq-upd")) document.getElementById("mod-design-auth-boq-upd").style.display = canAuthorizeBOQUpdate ? "block" : "none";
   if (document.getElementById("mod-design-upload-drawings")) document.getElementById("mod-design-upload-drawings").style.display = canUploadDrawings ? "block" : "none";
-  const canSeeItemCode = canCreateBOQ || canAuthorizeBOQ || canUpdateBOQ || canAuthorizeBOQUpdate || canUploadDrawings
-    || userPermissionsObject.storeEntryAndGrn === true
-    || userPermissionsObject.qaCheck === true
-    || userPermissionsObject.itemCodeAccess === true;
+  // Sole gate (26 Aug 2026) — this card used to also open for anyone with
+  // any of the BOQ/upload-drawings/store-entry/QA permissions, so it had
+  // no permission of its own that fully controlled it. Checked against
+  // live data before narrowing: zero active users relied on that fallback
+  // without already having itemCodeAccess directly, so this was a
+  // no-impact change. Every Permissions Matrix pill must map to exactly
+  // one section this way — don't reintroduce a composite OR here.
+  const canSeeItemCode = userPermissionsObject.itemCodeAccess === true;
   if (document.getElementById("mod-design-itemcode")) {
     document.getElementById("mod-design-itemcode").style.display = canSeeItemCode ? "block" : "none";
   }
 
-  // Design block visibility
+  // Design block visibility — a container, not a section, so it's still
+  // correctly an OR across every permission that lives inside it.
   const designHeaderBlock = document.getElementById("dashboard-design-department-header-block");
   if (designHeaderBlock) {
     designHeaderBlock.style.display = (canCreateBOQ || canAuthorizeBOQ || canUpdateBOQ || canAuthorizeBOQUpdate || canUploadDrawings || canSeeItemCode) ? "block" : "none";
