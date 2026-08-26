@@ -445,7 +445,7 @@
       <div id="pin-login-not-registered-notice" style="display:none; background:#fef3c7; border:1px solid #f59e0b; color:#78350f; padding:10px 12px; border-radius:6px; font-size:0.8rem; margin-bottom:12px;">
         This PC hasn't been set up for PIN login yet. Choose "Enrollment Code" above to set it up.
       </div>
-      <div id="pin-login-input-wrap">
+      <div id="pin-login-input-wrap" style="display:flex; flex-direction:column; align-items:center; text-align:center;">
         <label class="field-label" style="margin-top:0; margin-bottom:4px;">Enter 4-Digit PIN *</label>
         <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="pin-login-pin-input"
           oninput="handlePinDigitInput()" style="padding:10px; font-weight:700; font-size:1.2rem; letter-spacing:6px; width:100px; text-align:center;" />
@@ -462,12 +462,18 @@
       <label class="field-label" style="margin-top:0; margin-bottom:4px;">PC Label (e.g. "My Laptop")</label>
       <input type="text" id="device-enrollment-label-input" placeholder="My Laptop"
         style="padding:10px; font-size:0.9rem; width:100%; margin-bottom:10px;" />
-      <label class="field-label" style="margin-top:0; margin-bottom:4px;">Choose a 4-Digit PIN *</label>
-      <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="device-enrollment-pin-input"
-        style="padding:10px; font-weight:700; font-size:1.1rem; letter-spacing:5px; width:90px; text-align:center; margin-bottom:10px;" />
-      <label class="field-label" style="margin-top:0; margin-bottom:4px;">Confirm PIN *</label>
-      <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="device-enrollment-pin-confirm-input"
-        style="padding:10px; font-weight:700; font-size:1.1rem; letter-spacing:5px; width:90px; text-align:center;" />
+      <div style="display:flex; gap:16px; margin-bottom:10px;">
+        <div>
+          <label class="field-label" style="margin-top:0; margin-bottom:4px;">Choose a 4-Digit PIN *</label>
+          <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="device-enrollment-pin-input"
+            style="padding:10px; font-weight:700; font-size:1.1rem; letter-spacing:5px; width:90px; text-align:center;" />
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0; margin-bottom:4px;">Confirm PIN *</label>
+          <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="device-enrollment-pin-confirm-input"
+            style="padding:10px; font-weight:700; font-size:1.1rem; letter-spacing:5px; width:90px; text-align:center;" />
+        </div>
+      </div>
       <button class="nav-btn-styled" onclick="submitDeviceEnrollmentCode()" style="margin-top:14px; display:block;">Activate</button>
       <div id="device-enrollment-feedback" style="display:none; margin-top:8px; font-size:0.82rem; font-weight:700;"></div>
     </div>
