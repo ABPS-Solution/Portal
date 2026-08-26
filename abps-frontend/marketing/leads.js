@@ -88,7 +88,16 @@ function initializeGoogleAuthPlatformEngine() {
     const freshMountNode = document.createElement("div");
     freshMountNode.id = "google-auth-button-mount-point";
     freshMountNode.style.cssText = "display: flex; justify-content: center; margin-top: 15px; min-height: 40px;";
-    parentContainer.insertBefore(freshMountNode, document.getElementById("auth-portal-processing-loader"));
+    // Was insertBefore(..., auth-portal-processing-loader) — that assumed
+    // the loader is a sibling of this mount node, which broke when the
+    // login screen was restructured to wrap the Google flow in its own
+    // #google-login-block (the loader stayed outside that wrapper, at the
+    // .auth-card level). insertBefore throws when the reference node
+    // isn't actually a child of parentContainer, which silently killed
+    // the Google button (uncaught exception inside this setTimeout
+    // callback — no visible error, just an empty space where it should
+    // render). Plain appendChild has no such assumption.
+    parentContainer.appendChild(freshMountNode);
 
     // 2. INITIALIZE GOOGLE WITH MOBILE CACHE OVERRIDES
     google.accounts.id.initialize({
