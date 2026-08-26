@@ -114,11 +114,17 @@ function icfParseStepListValue(raw) {
 }
 
 // Mirrors lib/itemCodeFormat.js's isValidNumericPlaceholderValue — a "V"
-// (bare Voltage) label may hold a dual value like "240/415", every other
-// numeric label stays strictly single-number.
+// (bare Voltage) label may hold a dual value like "240/415", and any
+// "...Ratio"-labeled placeholder (CT Ratio, Turns Ratio, etc.) is a ratio
+// by definition, e.g. "100/5" — every other numeric label stays strictly
+// single-number.
+function icfIsSlashAllowedLabel(label) {
+  const l = (label || '').trim();
+  return /^v$/i.test(l) || /\bratio\b/i.test(l);
+}
 function icfIsValidNumericPlaceholderValue(v, label) {
   if (/^-?\d+(\.\d+)?$/.test(v)) return true;
-  return /^v$/i.test((label || '').trim()) && /^-?\d+(\.\d+)?(\s*\/\s*-?\d+(\.\d+)?)+$/.test(v);
+  return icfIsSlashAllowedLabel(label) && /^-?\d+(\.\d+)?(\s*\/\s*-?\d+(\.\d+)?)+$/.test(v);
 }
 
 function icfValidateValues(template, values) {
@@ -146,8 +152,8 @@ function icfValidateValues(template, values) {
     const v = raw == null ? '' : String(raw).trim();
     if (!v) return `"${ph.label}" is required.`;
     if ((ph.kind === 'number' || ph.kind === 'mirror') && !icfIsValidNumericPlaceholderValue(v, ph.label)) {
-      return /^v$/i.test((ph.label || '').trim())
-        ? `"${ph.label}" must be a number (e.g. 415, or multiple like 240/415).`
+      return icfIsSlashAllowedLabel(ph.label)
+        ? `"${ph.label}" must be a number (e.g. 415, or a ratio/multi-value like 240/415).`
         : `"${ph.label}" must be a number.`;
     }
     if (ph.kind === 'choice' && !ph.options.includes(v)) return `"${ph.label}" must be one of: ${ph.options.join(', ')}.`;
@@ -366,14 +372,13 @@ function icfRenderFormInputs(containerEl, template, onChange, idPrefix, initialV
         <div id="${id}-steplist" style="border:1px solid var(--border); border-radius:4px; padding:6px; min-width:230px;"></div>
       </span>`;
     }
-    // A "V"-labeled field (bare Voltage) can hold a dual value like
-    // "240/415" — a native <input type="number"> blocks the "/" character
-    // outright, so it must stay type="text" for that one label even
-    // though every other number/mirror placeholder uses the numeric
-    // keypad/spinner. Server-side validation (lib/itemCodeFormat.js) is
-    // still the authority; this only affects what the input widget allows.
-    const isVoltage = /^v$/i.test((seg.label || '').trim());
-    const inputType = (seg.kind === 'number' || seg.kind === 'mirror') && !isVoltage ? 'number' : 'text';
+    // A "V" (Voltage) or "...Ratio"-labeled field can hold a slash value
+    // like "240/415" or "100/5" — a native <input type="number"> blocks
+    // the "/" character outright, so it must stay type="text" for those
+    // labels even though every other number/mirror placeholder uses the
+    // numeric keypad/spinner. Server-side validation (lib/itemCodeFormat.js)
+    // is still the authority; this only affects what the input widget allows.
+    const inputType = (seg.kind === 'number' || seg.kind === 'mirror') && !icfIsSlashAllowedLabel(seg.label) ? 'number' : 'text';
     return `<span style="display:inline-flex; flex-direction:column; margin:4px 6px;">
       <label style="font-size:0.68rem; font-weight:700; color:var(--brand); text-transform:uppercase;">${seg.label}</label>
       <input type="${inputType}" id="${id}" data-idx="${seg.index}"
