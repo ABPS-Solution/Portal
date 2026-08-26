@@ -405,24 +405,59 @@
   <div class="auth-card" style="max-width: 440px; padding: 30px;">
     <div class="auth-title" style="margin-bottom: 10px;">ABPS Portal Testing</div>
 
-    <div style="text-align: left; background: #f8fafc; padding: 15px; border: 1px dashed var(--border); border-radius: 8px; margin-bottom: 20px;">
-      <label class="field-label" style="margin-top: 0; margin-bottom: 4px; color: var(--brand);">1. Select Your Department *</label>
-      <select id="app-auth-active-department-identity" onchange="handleLoginDepartmentSelectionChange(this.value)" style="padding: 10px; font-weight: 600; font-size: 0.9rem; margin-bottom: 12px;">
-        <option value="">— Select Department —</option>
+    <!-- PIN login (migration 140) — shown only when THIS PC has already
+         been enrolled (localStorage holds abpsPcDeviceSecret). Renders
+         entirely via renderPinLoginUiForThisDevice() in shared/pinLogin.js;
+         markup here is just the container + a manual fallback link. -->
+    <div id="pin-login-section" style="display:none; text-align:left; background:#f0fdf4; padding:15px; border:1px solid var(--accent); border-radius:8px; margin-bottom:20px;">
+      <div style="font-weight:700; color:var(--brand); margin-bottom:8px;">💻 This PC: <span id="pin-login-device-label"></span></div>
+      <label class="field-label" style="margin-top:0; margin-bottom:4px;">Select Your Name *</label>
+      <select id="pin-login-user-select" style="padding:10px; font-weight:600; font-size:0.9rem; margin-bottom:12px; width:100%;">
+        <option value="">— Select —</option>
       </select>
-
-      <label class="field-label" style="margin-top: 0; margin-bottom: 4px; color: var(--brand);">2. Select Your Name *</label>
-      <select id="app-auth-active-engineer-identity" style="padding: 10px; font-weight: 600; font-size: 0.9rem; margin-bottom: 5px;" disabled>
-        <option value="">— Choose Department First —</option>
-      </select>
+      <label class="field-label" style="margin-top:0; margin-bottom:4px;">Enter 4-Digit PIN *</label>
+      <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="pin-login-pin-input"
+        style="padding:10px; font-weight:700; font-size:1.2rem; letter-spacing:6px; width:100px; text-align:center;" />
+      <button class="nav-btn-styled" id="pin-login-submit-btn" onclick="submitPinLoginAttempt()" style="margin-top:12px; display:block; background:var(--accent);">Log In</button>
+      <div id="pin-login-feedback" style="display:none; margin-top:8px; font-size:0.82rem; font-weight:700;"></div>
+      <div style="margin-top:10px; text-align:right;">
+        <a href="#" onclick="document.getElementById('pin-login-section').style.display='none'; document.getElementById('google-login-block').style.display='block'; return false;" style="font-size:0.75rem;">Use Google Sign-In instead</a>
+      </div>
     </div>
 
-    <label class="field-label" style="text-align: left; color: var(--text); font-weight: 700;">VERIFY ACCESS ACCOUNT</label>
-    <div id="google-auth-button-mount-point" style="display: flex; justify-content: center; margin-top: 15px; min-height: 40px;"></div>
-    
+    <div id="google-login-block">
+      <div style="text-align: left; background: #f8fafc; padding: 15px; border: 1px dashed var(--border); border-radius: 8px; margin-bottom: 20px;">
+        <label class="field-label" style="margin-top: 0; margin-bottom: 4px; color: var(--brand);">1. Select Your Department *</label>
+        <select id="app-auth-active-department-identity" onchange="handleLoginDepartmentSelectionChange(this.value)" style="padding: 10px; font-weight: 600; font-size: 0.9rem; margin-bottom: 12px;">
+          <option value="">— Select Department —</option>
+        </select>
+
+        <label class="field-label" style="margin-top: 0; margin-bottom: 4px; color: var(--brand);">2. Select Your Name *</label>
+        <select id="app-auth-active-engineer-identity" style="padding: 10px; font-weight: 600; font-size: 0.9rem; margin-bottom: 5px;" disabled>
+          <option value="">— Choose Department First —</option>
+        </select>
+      </div>
+
+      <label class="field-label" style="text-align: left; color: var(--text); font-weight: 700;">VERIFY ACCESS ACCOUNT</label>
+      <div id="google-auth-button-mount-point" style="display: flex; justify-content: center; margin-top: 15px; min-height: 40px;"></div>
+    </div>
+
     <div id="auth-portal-processing-loader" style="display: none; align-items: center; justify-content: center; gap: 10px; margin-top: 15px; padding: 10px; background: var(--highlight-bg); border: 1px solid var(--border); border-radius: 4px;">
        <div class="spinner" style="width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--brand); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
        <span style="font-size: 0.85rem; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 0.5px;">Logging in... Please wait</span>
+    </div>
+
+    <!-- One-time "make this PC PIN-capable" step — separate from the login
+         forms above since it only ever runs once per machine. -->
+    <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); text-align: center;">
+      <a href="#" id="device-enrollment-toggle-link" onclick="toggleDeviceEnrollmentPanel(); return false;" style="font-size: 0.75rem; color: var(--muted);">Set up this PC for PIN login</a>
+      <div id="device-enrollment-section" style="display:none; text-align:left; background:#f8fafc; padding:15px; border:1px dashed var(--border); border-radius:8px; margin-top:12px;">
+        <label class="field-label" style="margin-top:0; margin-bottom:4px;">Enrollment Code (from your administrator)</label>
+        <input type="text" id="device-enrollment-code-input" maxlength="8"
+          style="padding:10px; font-weight:700; font-size:1rem; letter-spacing:2px; text-transform:uppercase; width:160px;" />
+        <button class="nav-btn-styled" onclick="submitDeviceEnrollmentCode()" style="margin-top:10px; display:block;">Activate</button>
+        <div id="device-enrollment-feedback" style="display:none; margin-top:8px; font-size:0.82rem; font-weight:700;"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1892,6 +1927,8 @@
       <button id="sa-tab-devices" class="nav-btn-styled" onclick="switchSecurityAdminTab('devices')" style="flex:1; padding:11px 16px;">Trusted Devices</button>
       <button id="sa-tab-log" class="nav-btn-styled" onclick="switchSecurityAdminTab('log')" style="flex:1; padding:11px 16px;">Login Log</button>
       <button id="sa-tab-settings" class="nav-btn-styled" onclick="switchSecurityAdminTab('settings')" style="flex:1; padding:11px 16px;">Settings</button>
+      <button id="sa-tab-pins" class="nav-btn-styled" onclick="switchSecurityAdminTab('pins')" style="flex:1; padding:11px 16px;">PIN Login</button>
+      <button id="sa-tab-registeredpcs" class="nav-btn-styled" onclick="switchSecurityAdminTab('registeredpcs')" style="flex:1; padding:11px 16px;">Registered PCs</button>
     </div>
 
     <!-- LOGIN ANYWHERE -->
@@ -1963,6 +2000,53 @@
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">Outage Mode</div>
         <div id="sa-outage-mode-status" style="padding:12px 14px; border-left:4px solid; border-radius:var(--radius); font-size:0.85rem;"></div>
       </div>
+    </div>
+
+    <!-- PIN LOGIN (migration 140) — admin sets/resets PINs; users can
+         never change their own, per the confirmed design. -->
+    <div id="sa-panel-pins" style="display:none;">
+      <p style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">
+        Only people who also have a PIN set here AND are assigned to a
+        registered PC (see the "Registered PCs" tab) can PIN-login.
+        4-digit PINs only; the system locks a PIN after repeated wrong
+        attempts — use "Unlock" below if that happens to someone
+        legitimately.
+      </p>
+      <input type="text" id="sa-pin-user-search" placeholder="Search by name or email..." oninput="renderSecurityAdminPinUsers()" style="max-width:340px; margin-bottom:14px;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:8px;">Name</th><th style="padding:8px;">Email</th>
+          <th style="padding:8px;">PIN Status</th><th style="padding:8px;">Set PIN</th><th style="padding:8px;">Action</th>
+        </tr></thead>
+        <tbody id="sa-pin-user-list-body"></tbody>
+      </table>
+    </div>
+
+    <!-- REGISTERED PCs (migration 140) — how a PC becomes PIN-login
+         capable: generate a one-time code here, the operator enters it
+         once on that PC (the "Set up this PC for PIN login" link on the
+         login screen). No OAuth redirect involved, unlike Gmail's
+         connection flow. -->
+    <div id="sa-panel-registeredpcs" style="display:none;">
+      <div style="background:#f8fafc; border:1px dashed var(--border); border-radius:8px; padding:14px; margin-bottom:20px;">
+        <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px;">Generate a New Enrollment Code</div>
+        <label class="field-label" style="margin-top:0;">PC Label (e.g. "Store Front Desk PC")</label>
+        <input type="text" id="sa-devicecode-label" placeholder="Store Front Desk PC" style="min-width:260px; margin-bottom:10px;">
+        <label class="field-label">Allowed Users (who may PIN-login on this PC)</label>
+        <select id="sa-devicecode-users" multiple size="6" style="width:100%; max-width:420px; margin-bottom:10px;"></select>
+        <div>
+          <button class="nav-btn-styled" onclick="submitCreateDeviceEnrollmentCode()">Generate Code</button>
+        </div>
+        <div id="sa-devicecode-result" style="display:none; margin-top:12px; padding:12px; background:#dcfce7; border:1px solid #15803d; border-radius:6px;"></div>
+      </div>
+
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:8px;">PC Label</th><th style="padding:8px;">Allowed Users</th><th style="padding:8px;">Status</th>
+          <th style="padding:8px;">Registered</th><th style="padding:8px;">Last Used</th><th style="padding:8px;">Action</th>
+        </tr></thead>
+        <tbody id="sa-registereddevice-list-body"></tbody>
+      </table>
     </div>
   </div>
 
@@ -4060,6 +4144,7 @@
 </div>
 
 <script src="shared/apFetch.js"></script>
+<script src="shared/pinLogin.js"></script>
 <script src="shared/format.js"></script>
 <script src="shared/ui.js"></script>
 <script src="shared/typeahead.js"></script>

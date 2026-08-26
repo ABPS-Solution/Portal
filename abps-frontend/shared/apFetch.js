@@ -6,6 +6,23 @@
 // your actual deployed Cloud Run service URL once you've deployed.
 const GAS_URL = "https://abps-backend-244281871074.asia-south1.run.app/exec";
 
+// clearAppLocalStorageKeepingDeviceKeys — a bare localStorage.clear() used
+// to wipe abpsDeviceToken (the Gmail-login location-trust bearer secret)
+// and abpsPcDeviceSecret (the PIN-login registered-PC secret, migration
+// 140) on every session-expiry / bootstrap-failure path, contrary to what
+// their own comments claimed ("persists across logout on purpose") — only
+// executeLogout()'s own clear actually preserved them. Route every clear
+// through here instead of a bare call, or a per-device secret silently
+// stops surviving the next session expiry and that PC/browser has to be
+// re-enrolled for no reason.
+function clearAppLocalStorageKeepingDeviceKeys() {
+  const deviceToken = localStorage.getItem("abpsDeviceToken");
+  const pcDeviceSecret = localStorage.getItem("abpsPcDeviceSecret");
+  localStorage.clear();
+  if (deviceToken) localStorage.setItem("abpsDeviceToken", deviceToken);
+  if (pcDeviceSecret) localStorage.setItem("abpsPcDeviceSecret", pcDeviceSecret);
+}
+
 // Direct REST helper for new modules — per server.js's own comment, new
 // modules should call real REST paths, not the /exec legacy-action bridge.
 // Derives the backend's base URL from GAS_URL so there's only one place
@@ -18,7 +35,7 @@ async function acFetch(path, payload) {
   });
   const data = await res.json();
   if (!data.success && data.code === "SESSION_EXPIRED") {
-    localStorage.clear();
+    clearAppLocalStorageKeepingDeviceKeys();
     document.getElementById("app-container").style.display  = "none";
     document.getElementById("auth-container").style.display = "flex";
     initializeGoogleAuthPlatformEngine();
@@ -45,7 +62,7 @@ async function apFetch(payload) {
   const res  = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
   const data = await res.json();
   if (!data.success && data.code === "SESSION_EXPIRED") {
-    localStorage.clear();
+    clearAppLocalStorageKeepingDeviceKeys();
     document.getElementById("app-container").style.display   = "none";
     document.getElementById("auth-container").style.display  = "flex";
     // Show a clean message on the auth card
@@ -141,18 +158,18 @@ window.onload = async function() {
         localStorage.setItem("userPermissions", JSON.stringify(userPermissions));
         showAppView();
       } else {
-        localStorage.clear();
+        clearAppLocalStorageKeepingDeviceKeys();
         syncPlatformPersonnelDropdownOptionsList();
         initializeGoogleAuthPlatformEngine();
       }
     } catch(e) {
       if (e.message === "SESSION_EXPIRED") return; // apFetch already handled redirect + clear
-      localStorage.clear();
+      clearAppLocalStorageKeepingDeviceKeys();
       syncPlatformPersonnelDropdownOptionsList();
       initializeGoogleAuthPlatformEngine();
     }
   } else {
-    localStorage.clear();
+    clearAppLocalStorageKeepingDeviceKeys();
     syncPlatformPersonnelDropdownOptionsList();
     initializeGoogleAuthPlatformEngine();
   }
@@ -198,6 +215,34 @@ async function syncPlatformPersonnelDropdownOptionsList() {
   }
 }
 
+// completeSuccessfulLogin — the shared tail end of every login path
+// (Google today, PIN login as of migration 140): writes the same
+// localStorage keys, sets the same in-memory globals, and calls
+// showAppView(). Both callers already have a `data` matching googleLogin's
+// response shape and the display name to use as activeOperatorSignature.
+// isUserAdminGlobal is passed in rather than re-derived here because the
+// two paths compute it differently: Google's login screen has no
+// authoritative admin signal to hand this function other than the
+// department-dropdown text it already reads itself, while PIN login can
+// (and should) use the real data.permissions.admin the server sent.
+function completeSuccessfulLogin(data, activeOperatorDisplayName, isUserAdminGlobal) {
+  localStorage.setItem("sessionToken",    data.sessionToken);
+  localStorage.setItem("sessionExpiry",   data.expires);
+  localStorage.setItem("sessionUser",     data.email);
+  localStorage.setItem("userFirstName",   data.firstName);
+  localStorage.setItem("userLastName",    data.lastName);
+  localStorage.setItem("activeOperatorSignature", activeOperatorDisplayName);
+  localStorage.setItem("abps_user_raw_departments", data.rawDepartmentsString || "");
+  // Write permissions to localStorage only as a session bootstrap cache.
+  // On every subsequent page load, permissions are re-fetched from the server (D1).
+  localStorage.setItem("userPermissions", JSON.stringify(data.permissions));
+  if (data.deviceToken) localStorage.setItem("abpsDeviceToken", data.deviceToken);
+  localStorage.setItem("isUserAdminGlobal", isUserAdminGlobal ? "true" : "false");
+  appActiveOperatorIdentityString = activeOperatorDisplayName;
+  userPermissions = data.permissions;
+  showAppView();
+}
+
 async function handleGooglePlatformCredentialResponse(response) {
   const selectedEngineer = document.getElementById("app-auth-active-engineer-identity").value;
   if (!selectedEngineer) {
@@ -231,25 +276,9 @@ async function handleGooglePlatformCredentialResponse(response) {
     const data = await res.json();
 
     if (data.success) {
-      localStorage.setItem("sessionToken",    data.sessionToken);
-      localStorage.setItem("sessionExpiry",   data.expires);
-      localStorage.setItem("sessionUser",     data.email);
-      localStorage.setItem("userFirstName",   data.firstName);
-      localStorage.setItem("userLastName",    data.lastName);
-      localStorage.setItem("activeOperatorSignature", selectedEngineer);
-      localStorage.setItem("abps_user_raw_departments", data.rawDepartmentsString || "");
-      // Write permissions to localStorage only as a session bootstrap cache.
-      // On every subsequent page load, permissions are re-fetched from the server (D1).
-      localStorage.setItem("userPermissions", JSON.stringify(data.permissions));
-      if (data.deviceToken) localStorage.setItem("abpsDeviceToken", data.deviceToken);
-      appActiveOperatorIdentityString = selectedEngineer;
-      userPermissions = data.permissions;
-
       const activeDeptRaw = document.getElementById("app-auth-active-department-identity").value || "";
       const isUserAdminGlobal = activeDeptRaw.toLowerCase().includes("admin");
-      localStorage.setItem("isUserAdminGlobal", isUserAdminGlobal ? "true" : "false");
-
-      showAppView();
+      completeSuccessfulLogin(data, selectedEngineer, isUserAdminGlobal);
     } else if (data.code === "LOCATION_BLOCKED") {
       alert(data.error);
       if (googleBtnMount) googleBtnMount.style.display = "flex";
@@ -291,13 +320,14 @@ function executeLogout() {
     }).catch(e => console.warn("Server-side logout call failed (session will still expire naturally):", e.message));
   }
 
-  // 2. Clear out local data maps entirely, EXCEPT the device-trust token —
-  // that represents "this browser has been on the office network before",
-  // which stays true across a logout and is what keeps a later login
-  // working from mobile data during an office outage.
-  const deviceTokenToKeep = localStorage.getItem("abpsDeviceToken");
-  localStorage.clear();
-  if (deviceTokenToKeep) localStorage.setItem("abpsDeviceToken", deviceTokenToKeep);
+  // 2. Clear out local data maps entirely, EXCEPT the device-trust
+  // secrets — abpsDeviceToken represents "this browser has been on the
+  // office network before" (stays true across a logout, keeps a later
+  // Google login working from mobile data during an office outage);
+  // abpsPcDeviceSecret represents "this PC is admin-registered for PIN
+  // login" (migration 140) — logging out obviously shouldn't un-enroll
+  // the machine either.
+  clearAppLocalStorageKeepingDeviceKeys();
   appActiveOperatorIdentityString = "";
   
   // 3. Reset the dashboard workspace visibilities

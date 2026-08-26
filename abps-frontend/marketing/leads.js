@@ -68,10 +68,11 @@ function initializeGoogleAuthPlatformEngine() {
     document.getElementById("auth-portal-processing-loader").style.display = "none";
   }
   
-  localStorage.clear();
+  clearAppLocalStorageKeepingDeviceKeys();
   appActiveOperatorIdentityString = "";
   document.getElementById("app-container").style.display = "none";
   document.getElementById("auth-container").style.display = "flex";
+  renderPinLoginUiForThisDevice();
   
   setTimeout(() => {
     const mountNode = document.getElementById("google-auth-button-mount-point");

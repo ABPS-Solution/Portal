@@ -12,6 +12,7 @@
 // that gates this exact screen.
 // ═══════════════════════════════════════════════════════════════════════
 let saAllUsers = [];
+let saAllPinUsers = [];
 
 async function initializeSecurityAdminPanel() {
   switchSecurityAdminTab('users');
@@ -21,6 +22,8 @@ async function initializeSecurityAdminPanel() {
     loadTrustedDevices(),
     loadLoginLog(),
     loadSecuritySettings(),
+    loadSecurityAdminPinUsers(),
+    loadRegisteredDevices(),
   ]);
 }
 
@@ -31,7 +34,7 @@ function exitSecurityAdminBackToMenu() {
 }
 
 function switchSecurityAdminTab(tab) {
-  ['users', 'networks', 'devices', 'log', 'settings'].forEach(t => {
+  ['users', 'networks', 'devices', 'log', 'settings', 'pins', 'registeredpcs'].forEach(t => {
     document.getElementById(`sa-panel-${t}`).style.display = (t === tab) ? 'block' : 'none';
     document.getElementById(`sa-tab-${t}`).style.background = (t === tab) ? 'var(--brand)' : '#e2e8f0';
     document.getElementById(`sa-tab-${t}`).style.color = (t === tab) ? '#fff' : '#334155';
@@ -42,7 +45,14 @@ function switchSecurityAdminTab(tab) {
 async function loadSecurityAdminUsers() {
   try {
     const data = await apFetch({ action: "fetchAdminUserList" });
-    if (data.success) { saAllUsers = data.users; renderSecurityAdminUsers(); }
+    if (data.success) {
+      saAllUsers = data.users;
+      renderSecurityAdminUsers();
+      // Registered PCs' allowed-users multi-select depends on this same
+      // list — populate it here too so it's ready regardless of which of
+      // the two parallel loads (see initializeSecurityAdminPanel) wins.
+      populateDeviceCodeUserSelect();
+    }
   } catch (e) { console.error("loadSecurityAdminUsers failed:", e); }
 }
 
@@ -247,6 +257,149 @@ async function deactivateOutageModeNow() {
     const data = await apFetch({ action: "deactivateOutageMode" });
     if (data.success) { showBOQBanner("sa-feedback", "Outage Mode deactivated.", "success"); loadSecuritySettings(); }
     else showBOQBanner("sa-feedback", data.error || "Failed to deactivate.", "error");
+  } catch (e) {
+    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+  }
+}
+
+// ── PIN Login (migration 140) ───────────────────────────────────────────
+// Admin-only: sets/resets a user's PIN and can clear a lockout. Users
+// never change their own PIN — no such route exists server-side.
+async function loadSecurityAdminPinUsers() {
+  try {
+    const data = await apFetch({ action: "fetchPinUsers" });
+    if (data.success) { saAllPinUsers = data.users; renderSecurityAdminPinUsers(); }
+  } catch (e) { console.error("loadSecurityAdminPinUsers failed:", e); }
+}
+
+function pinStatusLabel(u) {
+  if (u.pin_disabled) return '<span style="color:#dc2626; font-weight:700;">Disabled (too many fails)</span>';
+  if (u.pin_locked_until && new Date(u.pin_locked_until) > new Date()) {
+    return `<span style="color:#d97706; font-weight:700;">Locked until ${new Date(u.pin_locked_until).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>`;
+  }
+  if (u.pin_set) return '<span style="color:#16a34a;">PIN set</span>';
+  return '<span style="color:var(--muted);">No PIN</span>';
+}
+
+function renderSecurityAdminPinUsers() {
+  const q = (document.getElementById("sa-pin-user-search").value || "").toLowerCase().trim();
+  const tbody = document.getElementById("sa-pin-user-list-body");
+  const filtered = saAllPinUsers.filter(u => !q ||
+    `${u.first_name} ${u.last_name}`.toLowerCase().includes(q) ||
+    (u.email || "").toLowerCase().includes(q));
+  tbody.innerHTML = filtered.map(u => `
+    <tr style="border-top:1px solid var(--border);">
+      <td style="padding:8px;">${u.first_name || ''} ${u.last_name || ''}</td>
+      <td style="padding:8px;">${u.email}</td>
+      <td style="padding:8px;">${pinStatusLabel(u)}</td>
+      <td style="padding:8px;">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="4-digit PIN"
+          id="sa-pin-input-${u.email.replace(/[^a-zA-Z0-9]/g, '_')}"
+          style="width:80px; padding:5px; letter-spacing:3px; text-align:center;">
+        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitSetUserPin('${u.email}')">Save</button>
+      </td>
+      <td style="padding:8px;">
+        ${(u.pin_disabled || u.pin_locked_until) ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitClearUserPinLockout('${u.email}')">Unlock</button>` : '—'}
+      </td>
+    </tr>`).join('') || `<tr><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No users found.</td></tr>`;
+}
+
+async function submitSetUserPin(email) {
+  const input = document.getElementById(`sa-pin-input-${email.replace(/[^a-zA-Z0-9]/g, '_')}`);
+  const pin = (input.value || "").trim();
+  if (!/^\d{4}$/.test(pin)) return showBOQBanner("sa-feedback", "PIN must be exactly 4 digits.", "error");
+  try {
+    const data = await apFetch({ action: "setUserPin", email, pin });
+    if (data.success) {
+      showBOQBanner("sa-feedback", `PIN set for ${email}.`, "success");
+      input.value = "";
+      loadSecurityAdminPinUsers();
+    } else {
+      showBOQBanner("sa-feedback", data.error || "Failed to set PIN.", "error");
+    }
+  } catch (e) {
+    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+  }
+}
+
+async function submitClearUserPinLockout(email) {
+  if (!confirm(`Clear the PIN lockout for ${email}? Their existing PIN stays the same.`)) return;
+  try {
+    const data = await apFetch({ action: "clearUserPinLockout", email });
+    if (data.success) { showBOQBanner("sa-feedback", "Lockout cleared.", "success"); loadSecurityAdminPinUsers(); }
+    else showBOQBanner("sa-feedback", data.error || "Failed to clear lockout.", "error");
+  } catch (e) {
+    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+  }
+}
+
+// ── Registered PCs (migration 140) ──────────────────────────────────────
+// A registered PC is how PIN login becomes possible at all — an admin
+// generates a one-time code here, the operator enters it once on that PC
+// (no OAuth redirect, unlike the Gmail connection flow), and only the
+// users explicitly listed here may then PIN-login on it.
+async function loadRegisteredDevices() {
+  try {
+    // Reuses fetchAdminUserList (already loaded for the Login Anywhere
+    // tab) to populate the allowed-users multi-select, rather than a
+    // second near-identical query.
+    if (saAllUsers.length > 0) populateDeviceCodeUserSelect();
+    const data = await apFetch({ action: "fetchRegisteredDevices" });
+    if (data.success) renderRegisteredDevicesList(data.devices);
+  } catch (e) { console.error("loadRegisteredDevices failed:", e); }
+}
+
+function populateDeviceCodeUserSelect() {
+  const select = document.getElementById("sa-devicecode-users");
+  if (!select || select.options.length > 0) return;
+  select.innerHTML = saAllUsers.filter(u => u.status === 'Active').map(u =>
+    `<option value="${u.email}">${u.first_name} ${u.last_name} (${u.email})</option>`).join('');
+}
+
+function renderRegisteredDevicesList(devices) {
+  const tbody = document.getElementById("sa-registereddevice-list-body");
+  tbody.innerHTML = devices.map(d => `
+    <tr style="border-top:1px solid var(--border);">
+      <td style="padding:8px;">${d.device_label}</td>
+      <td style="padding:8px; font-size:0.78rem;">${(d.allowed_users || []).join(', ') || '—'}</td>
+      <td style="padding:8px;">${d.status}</td>
+      <td style="padding:8px;">${new Date(d.created_at).toLocaleDateString()}</td>
+      <td style="padding:8px;">${d.last_used_at ? new Date(d.last_used_at).toLocaleDateString() : '—'}</td>
+      <td style="padding:8px;">${d.status === 'Active' ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitRevokeRegisteredDevice(${d.device_id})">Revoke</button>` : '—'}</td>
+    </tr>`).join('') || `<tr><td colspan="6" style="padding:14px; text-align:center; color:var(--muted);">No PCs registered yet.</td></tr>`;
+}
+
+async function submitCreateDeviceEnrollmentCode() {
+  const deviceLabel = document.getElementById("sa-devicecode-label").value.trim();
+  const select = document.getElementById("sa-devicecode-users");
+  const allowedEmails = Array.from(select.selectedOptions).map(o => o.value);
+  if (!deviceLabel) return showBOQBanner("sa-feedback", "PC Label is required.", "error");
+  if (allowedEmails.length === 0) return showBOQBanner("sa-feedback", "Select at least one allowed user.", "error");
+  try {
+    const data = await apFetch({ action: "createDeviceEnrollmentCode", deviceLabel, allowedEmails });
+    if (data.success) {
+      const resultBox = document.getElementById("sa-devicecode-result");
+      resultBox.style.display = "block";
+      resultBox.innerHTML = `
+        <div style="font-weight:700; color:#15803d; margin-bottom:6px;">Enrollment code (valid 15 minutes, single use):</div>
+        <div style="font-family:monospace; font-size:1.4rem; font-weight:800; letter-spacing:3px; color:#111827;">${data.code}</div>
+        <div style="font-size:0.78rem; color:var(--muted); margin-top:6px;">Give this to whoever is at "${deviceLabel}" — they enter it under "Set up this PC for PIN login" on the login screen.</div>`;
+      document.getElementById("sa-devicecode-label").value = "";
+      loadRegisteredDevices();
+    } else {
+      showBOQBanner("sa-feedback", data.error || "Failed to generate code.", "error");
+    }
+  } catch (e) {
+    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+  }
+}
+
+async function submitRevokeRegisteredDevice(deviceId) {
+  if (!confirm("Revoke this PC? No one will be able to PIN-login on it until it's re-enrolled with a new code.")) return;
+  try {
+    const data = await apFetch({ action: "revokeRegisteredDevice", deviceId });
+    if (data.success) { showBOQBanner("sa-feedback", "Device revoked.", "success"); loadRegisteredDevices(); }
+    else showBOQBanner("sa-feedback", data.error || "Failed to revoke.", "error");
   } catch (e) {
     showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
   }

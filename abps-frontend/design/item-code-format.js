@@ -390,6 +390,51 @@ function icfWireReactorBilAutoCalc(template, containerEl, idPrefix) {
   }
 }
 
+// Client-side mirror of lib/itemCodeFormat.js's applyApfcRatedCurrentAutoCalc
+// — live preview only; the server recomputes and overwrites this
+// authoritatively on write whenever it CAN compute one (see that
+// function's comment for why a dual-voltage reference is left alone
+// instead of overwritten). Matched structurally, same reasoning as
+// icfWireReactorBilAutoCalc above — these templates reuse the "kVAr"/"V"
+// labels twice more later (a "(designed to ...)" pair and again near
+// "Step Rating = ... at N kVAr / M V"), so label matching alone would
+// grab the wrong occurrence.
+function icfWireApfcRatedCurrentAutoCalc(template, containerEl, idPrefix) {
+  const { segments } = icfParseTemplate(template);
+  if (!segments) return;
+  for (let i = 0; i < segments.length - 4; i++) {
+    const kvarSeg = segments[i], lit1 = segments[i + 1], vkvSeg = segments[i + 2], lit2 = segments[i + 3], curSeg = segments[i + 4];
+    if (kvarSeg.kind !== 'literal' && lit1.kind === 'literal' &&
+        vkvSeg.kind !== 'literal' && lit2.kind === 'literal' && /rated current/i.test(lit2.text) &&
+        curSeg.kind === 'number') {
+      const kvarEl = document.getElementById(`${idPrefix}-ph-${kvarSeg.index}`);
+      const vkvEl = document.getElementById(`${idPrefix}-ph-${vkvSeg.index}`);
+      const curEl = document.getElementById(`${idPrefix}-ph-${curSeg.index}`);
+      if (!kvarEl || !vkvEl || !curEl) return;
+      const isKv = /^kv$/i.test((vkvSeg.label || '').trim());
+      curEl.title = isKv
+        ? 'Auto-calculated as kVAr ÷ (√3 × kV) when possible'
+        : 'Auto-calculated as (kVAr × 1000) ÷ (√3 × V) when possible';
+      // NOT forced read-only, unlike the other auto-calc fields — the V/kV
+      // reference can legitimately be a dual value like "415/240" (tph,
+      // free text), in which case there's no single defensible current to
+      // compute and the operator needs to be able to type one in by hand.
+      const recompute = () => {
+        const kvarVal = parseFloat(kvarEl.value);
+        const refRaw = (vkvEl.value || '').trim();
+        if (isNaN(kvarVal) || !/^-?\d+(\.\d+)?$/.test(refRaw)) return; // leave whatever's there — manual entry
+        const refVal = parseFloat(refRaw);
+        const current = isKv ? kvarVal / (Math.sqrt(3) * refVal) : (kvarVal * 1000) / (Math.sqrt(3) * refVal);
+        curEl.value = String(Math.round(current * 1000) / 1000);
+      };
+      kvarEl.addEventListener('input', recompute);
+      vkvEl.addEventListener('input', recompute);
+      recompute();
+      return;
+    }
+  }
+}
+
 function icfRenderTemplate(template, values) {
   const { segments, error } = icfParseTemplate(template);
   if (error) throw new Error(error);
@@ -498,6 +543,7 @@ function icfRenderFormInputs(containerEl, template, onChange, idPrefix, initialV
   icfWireTotalKvarAutoCalc(placeholders, containerEl, idPrefix);
   icfWireKvarAutoCalc(placeholders, containerEl, idPrefix);
   icfWireReactorBilAutoCalc(template, containerEl, idPrefix);
+  icfWireApfcRatedCurrentAutoCalc(template, containerEl, idPrefix);
   icfWireMirrorFields(placeholders, containerEl, idPrefix);
   placeholders.filter(p => p.kind === 'steplist').forEach(ph => icfInitStepListWidget(ph, containerEl, idPrefix, stepListState, onChange));
 
