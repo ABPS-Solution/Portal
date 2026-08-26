@@ -520,8 +520,10 @@ function pmPillHtml(perm, color) {
   const label = isDashboard ? `📊 ${perm.label}` : perm.label;
   // Text is always black; only the background carries the department
   // color, and only once the person actually has access (26 Aug 2026).
+  // A light tint (not the solid color) keeps black text readable against
+  // every department's color, including the darker ones.
   const style = enabled
-    ? `background:${color}; border:1.5px solid ${color}; color:#0f172a; font-weight:700;`
+    ? `background:${color}26; border:1.5px solid ${color}; color:#0f172a; font-weight:700;`
     : `background:#f1f5f9; border:1.5px solid #cbd5e1; color:#0f172a; font-weight:600;`;
   return `<button onclick="togglePermissionMatrixPill('${perm.dbColumn}')"
       style="${style} padding:7px 14px; border-radius:999px; font-size:0.8rem; cursor:pointer; transition:all 0.12s;">${label}</button>`;
