@@ -352,16 +352,16 @@ function renderRegisteredDevicesList(devices) {
       <td style="padding:8px;">${d.status}</td>
       <td style="padding:8px;">${new Date(d.created_at).toLocaleDateString()}</td>
       <td style="padding:8px;">${d.last_used_at ? new Date(d.last_used_at).toLocaleDateString() : '—'}</td>
-      <td style="padding:8px;">${d.status === 'Active' ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitRevokeRegisteredDevice(${d.device_id})">Revoke</button>` : '—'}</td>
+      <td style="padding:8px;"><button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitDeleteRegisteredDevice(${d.device_id})">Delete</button></td>
     </tr>`).join('') || `<tr><td colspan="6" style="padding:14px; text-align:center; color:var(--muted);">No PCs registered yet.</td></tr>`;
 }
 
-async function submitRevokeRegisteredDevice(deviceId) {
-  if (!confirm("Revoke this PC? No one will be able to PIN-login on it until it's re-enrolled with a new code.")) return;
+async function submitDeleteRegisteredDevice(deviceId) {
+  if (!confirm("Delete this PC? No one will be able to PIN-login on it until it's re-enrolled with a new code.")) return;
   try {
-    const data = await apFetch({ action: "revokeRegisteredDevice", deviceId });
-    if (data.success) { showBOQBanner("sa-feedback", "Device revoked.", "success"); loadRegisteredDevices(); }
-    else showBOQBanner("sa-feedback", data.error || "Failed to revoke.", "error");
+    const data = await apFetch({ action: "deleteRegisteredDevice", deviceId });
+    if (data.success) { showBOQBanner("sa-feedback", "Device deleted.", "success"); loadRegisteredDevices(); }
+    else showBOQBanner("sa-feedback", data.error || "Failed to delete.", "error");
   } catch (e) {
     showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
   }
