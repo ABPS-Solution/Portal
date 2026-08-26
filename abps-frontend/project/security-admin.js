@@ -61,13 +61,12 @@ function renderSecurityAdminUsers() {
   tbody.innerHTML = filtered.map(u => `
     <tr style="border-top:1px solid var(--border);">
       <td style="padding:8px;">${u.first_name || ''} ${u.last_name || ''}</td>
-      <td style="padding:8px;">${u.email}</td>
       <td style="padding:8px;">${u.department || '—'}</td>
       <td style="padding:8px;">${u.status}</td>
       <td style="padding:8px; text-align:center;">
         <input type="checkbox" ${u.perm_login_anywhere ? 'checked' : ''} onchange="toggleUserLoginAnywhere('${u.email}', this.checked)">
       </td>
-    </tr>`).join('') || `<tr><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No users found.</td></tr>`;
+    </tr>`).join('') || `<tr><td colspan="4" style="padding:14px; text-align:center; color:var(--muted);">No users found.</td></tr>`;
 }
 
 async function toggleUserLoginAnywhere(email, enabled) {
@@ -142,7 +141,7 @@ async function loadTrustedDevices() {
     const tbody = document.getElementById("sa-device-list-body");
     tbody.innerHTML = data.devices.map(d => `
       <tr style="border-top:1px solid var(--border);">
-        <td style="padding:8px;">${d.user_email}</td>
+        <td style="padding:8px;">${d.user_name || '—'}</td>
         <td style="padding:8px; font-size:0.78rem; color:var(--muted); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.device_label || '—'}</td>
         <td style="padding:8px;">${formatDateDMY(d.created_at)}</td>
         <td style="padding:8px;">${d.last_used_at ? formatDateDMY(d.last_used_at) : '—'}</td>
