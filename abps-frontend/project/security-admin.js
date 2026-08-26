@@ -606,7 +606,7 @@ function pmPillHtml(perm, color) {
     ? `background:${color}26; border:1.5px solid ${color}; color:#0f172a; font-weight:700;`
     : `background:#f1f5f9; border:1.5px solid #cbd5e1; color:#0f172a; font-weight:600;`;
   return `<button onclick="togglePermissionMatrixPill('${perm.dbColumn}')"
-      style="${style} padding:7px 14px; border-radius:999px; font-size:0.8rem; cursor:pointer; transition:all 0.12s;">${label}</button>`;
+      style="${style} padding:8px 16px; border-radius:999px; font-size:0.92rem; cursor:pointer; transition:all 0.12s;">${label}</button>`;
 }
 
 function renderPermissionMatrix() {
@@ -625,7 +625,7 @@ function renderPermissionMatrix() {
       const rowLabel = rowPerms[0].rowLabel;
       return `
         <div style="margin-bottom:10px;">
-          ${rowLabel ? `<div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); margin-bottom:6px;">${rowLabel}</div>` : ''}
+          ${rowLabel ? `<div style="font-size:0.8rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); margin-bottom:6px;">${rowLabel}</div>` : ''}
           <div style="display:flex; flex-wrap:wrap; gap:8px;">
             ${rowPerms.map(p => pmPillHtml(p, card.color)).join('')}
           </div>
@@ -635,7 +635,7 @@ function renderPermissionMatrix() {
       <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:14px;">
         <div style="display:flex; align-items:center; gap:10px; padding:10px 16px; background:${card.color}0f; border-bottom:1px solid var(--border);">
           <div style="width:5px; height:18px; border-radius:2px; background:${card.color};"></div>
-          <span style="font-weight:800; color:${card.color}; font-size:0.95rem;">${card.label}</span>
+          <span style="font-weight:800; color:${card.color}; font-size:1.15rem;">${card.label}</span>
         </div>
         <div style="padding:14px 16px;">
           ${rowsHtml}
@@ -644,9 +644,9 @@ function renderPermissionMatrix() {
   }).join('');
 
   root.innerHTML = `
-    <div style="font-weight:700; font-size:0.95rem; margin-bottom:14px;">
+    <div style="font-weight:700; font-size:1.1rem; margin-bottom:14px;">
       Editing access for: ${pmSelectedUser.first_name || ''} ${pmSelectedUser.last_name || ''}
-      <span style="color:var(--muted); font-weight:500; font-size:0.82rem;"> (${pmSelectedUser.department || 'No department'})</span>
+      <span style="color:var(--muted); font-weight:500; font-size:0.95rem;"> (${pmSelectedUser.department || 'No department'})</span>
     </div>
     ${cards}`;
 }
