@@ -50,7 +50,12 @@ function selectLoginMode(mode) {
     document.getElementById('pin-login-not-registered-notice').style.display = hasDevice ? 'none' : 'block';
     document.getElementById('pin-login-input-wrap').style.display = hasDevice ? 'flex' : 'none';
     const pinInput = document.getElementById('pin-login-pin-input');
-    if (pinInput) { pinInput.value = ''; if (hasDevice) pinInput.focus(); }
+    // .disabled is left `true` after a SUCCESSFUL login (submitPinLoginAttempt
+    // only ever re-enables it on failure, since success normally navigates
+    // away) — logging back out without a full page refresh re-showed this
+    // same input still disabled, with no way to type into it. Always reset
+    // it here so re-entering PIN mode never inherits a stale disabled state.
+    if (pinInput) { pinInput.value = ''; pinInput.disabled = false; if (hasDevice) pinInput.focus(); }
     const feedback = document.getElementById('pin-login-feedback');
     if (feedback) feedback.style.display = 'none';
   }
