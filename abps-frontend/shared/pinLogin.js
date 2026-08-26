@@ -23,7 +23,9 @@ let activeLoginMode = null;
 // reflects this browser's current enrollment state.
 function renderPinLoginUiForThisDevice() {
   const hasDevice = !!localStorage.getItem("abpsPcDeviceSecret");
-  selectLoginMode(hasDevice ? 'pin' : 'google');
+  // Google mode's own selector button is hidden (26 Aug 2026, pending
+  // discussion) — never default into a mode with no visible way back to it.
+  selectLoginMode(hasDevice ? 'pin' : 'enroll');
 }
 
 function selectLoginMode(mode) {

@@ -54,10 +54,10 @@
   /* --- PORTAL STICKY APP HEADER --- */
   header { background: linear-gradient(135deg, var(--brand-dk), var(--brand)); color: #fff; padding: 10px 16px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
   header h1 { font-size: 1.05rem; font-weight: 700; }
-  .header-actions-block { display: flex; flex-direction: column; align-items: flex-end; }
-  .user-full-name { font-size: 0.8rem; font-weight: 700; }
+  .header-actions-block { display: flex; flex-direction: row; align-items: center; gap: 12px; }
+  .user-full-name { font-size: 1.05rem; font-weight: 700; }
   .user-display-username { font-size: 0.68rem; color: #d0d9e4; font-family: monospace; }
-  .logout-btn { background: transparent; border: 1px solid rgba(255,255,255,0.4); color: white; padding: 2px 5px; border-radius: 4px; cursor: pointer; font-size: 0.65rem; margin-top: 1px; text-transform: uppercase; }
+  .logout-btn { background: transparent; border: 1px solid rgba(255,255,255,0.4); color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; text-transform: uppercase; }
   
   /* --- DASHBOARD WRAPPER RESPONSIVE GRID FRAMES --- */
   .dashboard-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
@@ -416,7 +416,7 @@
       <label class="field-label" style="margin-top: 0; margin-bottom: 4px;">How would you like to log in?</label>
       <div style="display: flex; gap: 6px;">
         <button type="button" id="login-mode-btn-pin" class="nav-btn-styled" onclick="selectLoginMode('pin')" style="flex: 1; padding: 8px 4px; font-size: 0.76rem;">PIN</button>
-        <button type="button" id="login-mode-btn-google" class="nav-btn-styled" onclick="selectLoginMode('google')" style="flex: 1; padding: 8px 4px; font-size: 0.76rem;">Google Account</button>
+        <button type="button" id="login-mode-btn-google" class="nav-btn-styled" onclick="selectLoginMode('google')" style="display:none; flex: 1; padding: 8px 4px; font-size: 0.76rem;">Google Account</button>
         <button type="button" id="login-mode-btn-enroll" class="nav-btn-styled" onclick="selectLoginMode('enroll')" style="flex: 1; padding: 8px 4px; font-size: 0.76rem;">Enrollment Code</button>
       </div>
     </div>
@@ -492,7 +492,7 @@
       <div class="user-profile-meta">
         <div class="user-full-name" id="display-full-name"></div>
       </div>
-      <button class="logout-btn" onclick="executeLogout()" style="margin-top: 10px;">Sign Out</button>
+      <button class="logout-btn" onclick="executeLogout()">Sign Out</button>
     </div>
   </header>
 
@@ -2042,7 +2042,7 @@
       <input type="text" id="sa-pin-user-search" placeholder="Search by name or email..." oninput="renderSecurityAdminPinUsers()" style="max-width:340px; margin-bottom:14px;">
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
         <thead><tr style="background:var(--highlight-bg); text-align:left;">
-          <th style="padding:8px;">Name</th>
+          <th style="padding:8px;">Name</th><th style="padding:8px;">Department</th>
           <th style="padding:8px;">PIN</th><th style="padding:8px;">Action</th>
         </tr></thead>
         <tbody id="sa-pin-user-list-body"></tbody>

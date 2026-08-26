@@ -291,12 +291,13 @@ function renderSecurityAdminPinUsers() {
   tbody.innerHTML = filtered.map(u => `
     <tr style="border-top:1px solid var(--border);">
       <td style="padding:8px;">${u.first_name || ''} ${u.last_name || ''}</td>
+      <td style="padding:8px;">${u.department || '—'}</td>
       <td style="padding:8px;">${pinValueCell(u)}</td>
       <td style="padding:8px; display:flex; gap:6px;">
         <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitCreateDeviceEnrollmentCode('${u.email}')">Generate Enrollment Code</button>
         ${(u.pin_disabled || u.pin_locked_until) ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitClearUserPinLockout('${u.email}')">Unlock</button>` : ''}
       </td>
-    </tr>`).join('') || `<tr><td colspan="3" style="padding:14px; text-align:center; color:var(--muted);">No users found.</td></tr>`;
+    </tr>`).join('') || `<tr><td colspan="4" style="padding:14px; text-align:center; color:var(--muted);">No users found.</td></tr>`;
 }
 
 async function submitClearUserPinLockout(email) {
