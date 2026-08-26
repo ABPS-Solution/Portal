@@ -82,15 +82,18 @@ async function loadSecurityAdminUsers() {
 
 function laPersonButtonHtml(u, color) {
   const granted = !!u.perm_login_anywhere;
-  const border = granted ? `3px solid #0f172a` : `1.5px solid #cbd5e1`;
+  const border = granted ? `3px solid #0f172a` : `1.5px solid #dde3ea`;
   return `
     <div style="display:flex; flex-direction:column; align-items:center;">
-      <div style="width:2px; height:16px; background:${color};"></div>
+      <div style="width:2px; height:20px; background:${color};"></div>
+      <div style="width:7px; height:7px; border-radius:50%; background:${color}; margin-bottom:-1px;"></div>
       <button onclick="handleLoginAnywhereButtonClick('${u.email}')"
         title="${granted ? 'Click to revoke' : 'Click to grant'} Login Anywhere access"
-        style="border:${border}; background:#fff; border-radius:9px; padding:9px 16px; cursor:pointer;
-               font-weight:${granted ? 800 : 600}; font-size:0.85rem; color:#1e293b; white-space:nowrap;
-               box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+        style="border:${border}; background:#fff; border-radius:12px; padding:13px 22px; cursor:pointer;
+               font-weight:${granted ? 800 : 650}; font-size:0.92rem; color:#1e293b; white-space:nowrap;
+               box-shadow:0 1px 3px rgba(15,23,42,0.08); transition:transform 0.12s, box-shadow 0.12s;"
+        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 14px rgba(15,23,42,0.14)';"
+        onmouseout="this.style.transform=''; this.style.boxShadow='0 1px 3px rgba(15,23,42,0.08)';">
         ${u.first_name || ''} ${u.last_name || ''}
       </button>
     </div>`;
@@ -101,23 +104,29 @@ function renderSecurityAdminUsers() {
   const root = document.getElementById("sa-user-tree-root");
   if (!root) return;
 
-  root.innerHTML = LA_DEPARTMENTS.map(dept => {
+  const branches = LA_DEPARTMENTS.map(dept => {
     const people = saAllUsers.filter(u => (u.department || '') === dept.name && (!q ||
       `${u.first_name} ${u.last_name}`.toLowerCase().includes(q)));
     if (q && people.length === 0) return ''; // hide whole branch while searching with no match
     return `
-      <div style="margin-bottom:38px;">
-        <div style="display:flex; flex-direction:column; align-items:center;">
-          <div style="font-weight:800; font-size:1.05rem; letter-spacing:0.3px; color:${dept.color}; padding-bottom:10px;">${dept.name}</div>
-          <div style="height:2px; width:92%; max-width:960px; background:${dept.color};"></div>
+      <div style="margin-bottom:44px;">
+        <div style="display:flex; align-items:center; justify-content:center; gap:10px; padding-bottom:12px;">
+          <span style="font-weight:800; font-size:1.15rem; letter-spacing:0.3px; color:${dept.color};">${dept.name}</span>
+          ${people.length > 0 ? `<span style="background:${dept.color}1a; color:${dept.color}; font-size:0.72rem; font-weight:800; padding:2px 9px; border-radius:999px;">${people.length}</span>` : ''}
         </div>
+        <div style="height:3px; width:100%; border-radius:2px; background:${dept.color};"></div>
         ${people.length === 0
-          ? `<div style="text-align:center; color:var(--muted); font-size:0.8rem; padding:14px 0 0;">No one in this department yet.</div>`
-          : `<div style="display:flex; flex-wrap:wrap; justify-content:center; gap:22px 18px; max-width:960px; margin:0 auto; padding-top:2px;">
+          ? `<div style="text-align:center; color:var(--muted); font-size:0.82rem; padding:16px 0 0;">No one in this department yet.</div>`
+          : `<div style="display:flex; flex-wrap:wrap; justify-content:center; gap:26px 22px; width:100%; padding-top:4px;">
                ${people.map(u => laPersonButtonHtml(u, dept.color)).join('')}
              </div>`}
       </div>`;
-  }).join('') || `<div style="text-align:center; color:var(--muted); padding:20px;">No users found.</div>`;
+  }).join('');
+
+  root.innerHTML = `
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:32px clamp(16px, 4vw, 48px); width:100%; box-sizing:border-box;">
+      ${branches || `<div style="text-align:center; color:var(--muted); padding:20px;">No users found.</div>`}
+    </div>`;
 }
 
 async function handleLoginAnywhereButtonClick(email) {
@@ -130,7 +139,9 @@ async function toggleUserLoginAnywhere(email, enabled) {
   try {
     const data = await apFetch({ action: "setUserLoginAnywhere", email, enabled });
     if (data.success) {
-      showBOQBanner("sa-feedback", `${enabled ? 'Enabled' : 'Disabled'} Login Anywhere for ${email}.`, "success");
+      const named = saAllUsers.find(x => x.email === email);
+      const displayLabel = named ? `${named.first_name || ''} ${named.last_name || ''}`.trim() : email;
+      showBOQBanner("sa-feedback", `${enabled ? 'Enabled' : 'Disabled'} Login Anywhere for ${displayLabel}.`, "success");
       const u = saAllUsers.find(x => x.email === email);
       if (u) u.perm_login_anywhere = enabled;
       renderSecurityAdminUsers();
