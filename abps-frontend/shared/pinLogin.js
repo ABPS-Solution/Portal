@@ -46,7 +46,7 @@ function selectLoginMode(mode) {
   if (mode === 'pin') {
     const hasDevice = !!localStorage.getItem("abpsPcDeviceSecret");
     document.getElementById('pin-login-not-registered-notice').style.display = hasDevice ? 'none' : 'block';
-    document.getElementById('pin-login-input-wrap').style.display = hasDevice ? 'block' : 'none';
+    document.getElementById('pin-login-input-wrap').style.display = hasDevice ? 'flex' : 'none';
     const pinInput = document.getElementById('pin-login-pin-input');
     if (pinInput) { pinInput.value = ''; if (hasDevice) pinInput.focus(); }
     const feedback = document.getElementById('pin-login-feedback');

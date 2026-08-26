@@ -355,8 +355,7 @@ async function showAppView() {
   document.getElementById("module-workspace-container").style.display = "none";
   
   document.getElementById("display-full-name").textContent = localStorage.getItem("userFirstName") + " " + localStorage.getItem("userLastName");
-  document.getElementById("display-username").textContent = "@" + localStorage.getItem("sessionUser");
-  
+
   // DIAGNOSTIC: surface exactly what permissions object the dashboard is being built
   // from. If this ever logs an empty object, every menu card will silently stay hidden
   // with no thrown error — that's the failure mode this guards against.

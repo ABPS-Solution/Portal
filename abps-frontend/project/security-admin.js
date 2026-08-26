@@ -144,9 +144,9 @@ async function loadTrustedDevices() {
       <tr style="border-top:1px solid var(--border);">
         <td style="padding:8px;">${d.user_email}</td>
         <td style="padding:8px; font-size:0.78rem; color:var(--muted); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.device_label || '—'}</td>
-        <td style="padding:8px;">${new Date(d.created_at).toLocaleDateString()}</td>
-        <td style="padding:8px;">${d.last_used_at ? new Date(d.last_used_at).toLocaleDateString() : '—'}</td>
-        <td style="padding:8px;">${new Date(d.expires_at).toLocaleDateString()}</td>
+        <td style="padding:8px;">${formatDateDMY(d.created_at)}</td>
+        <td style="padding:8px;">${d.last_used_at ? formatDateDMY(d.last_used_at) : '—'}</td>
+        <td style="padding:8px;">${formatDateDMY(d.expires_at)}</td>
         <td style="padding:8px;">${d.revoked ? 'Revoked' : 'Active'}</td>
         <td style="padding:8px;">${!d.revoked ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="revokeDevice(${d.device_id})">Revoke</button>` : '—'}</td>
       </tr>`).join('') || `<tr><td colspan="7" style="padding:14px; text-align:center; color:var(--muted);">No trusted devices yet.</td></tr>`;
@@ -172,7 +172,7 @@ async function loadLoginLog() {
     const tbody = document.getElementById("sa-log-list-body");
     tbody.innerHTML = data.entries.map(l => `
       <tr style="border-top:1px solid var(--border); ${l.allowed ? '' : 'background:#fef2f2;'}">
-        <td style="padding:8px; white-space:nowrap;">${new Date(l.created_at).toLocaleString()}</td>
+        <td style="padding:8px; white-space:nowrap;">${formatDateTimeDMY(l.created_at)}</td>
         <td style="padding:8px;">${l.email || l.google_verified_email || '—'}</td>
         <td style="padding:8px; font-family:monospace;">${l.ip || '—'}</td>
         <td style="padding:8px; font-weight:700; color:${l.allowed ? '#16a34a' : '#dc2626'};">${l.allowed ? 'Allowed' : 'Blocked'}</td>
@@ -278,7 +278,7 @@ function pinValueCell(u) {
       ? ` <span style="color:#d97706; font-weight:700; font-size:0.72rem;">(locked until ${new Date(u.pin_locked_until).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })})</span>`
       : '';
   const value = u.pin_value
-    ? `<span style="font-family:monospace; font-weight:700; letter-spacing:2px;">${u.pin_value}</span>`
+    ? `<span style="font-family:monospace; font-weight:700; letter-spacing:2px; font-size:1.15rem;">${u.pin_value}</span>`
     : '<span style="color:var(--muted);">Not set</span>';
   return value + lockNote;
 }
@@ -292,13 +292,12 @@ function renderSecurityAdminPinUsers() {
   tbody.innerHTML = filtered.map(u => `
     <tr style="border-top:1px solid var(--border);">
       <td style="padding:8px;">${u.first_name || ''} ${u.last_name || ''}</td>
-      <td style="padding:8px;">${u.email}</td>
       <td style="padding:8px;">${pinValueCell(u)}</td>
       <td style="padding:8px; display:flex; gap:6px;">
         <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitCreateDeviceEnrollmentCode('${u.email}')">Generate Enrollment Code</button>
         ${(u.pin_disabled || u.pin_locked_until) ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitClearUserPinLockout('${u.email}')">Unlock</button>` : ''}
       </td>
-    </tr>`).join('') || `<tr><td colspan="4" style="padding:14px; text-align:center; color:var(--muted);">No users found.</td></tr>`;
+    </tr>`).join('') || `<tr><td colspan="3" style="padding:14px; text-align:center; color:var(--muted);">No users found.</td></tr>`;
 }
 
 async function submitClearUserPinLockout(email) {
@@ -350,8 +349,8 @@ function renderRegisteredDevicesList(devices) {
       <td style="padding:8px;">${d.device_label}</td>
       <td style="padding:8px; font-size:0.78rem;">${(d.allowed_users || []).join(', ') || '—'}</td>
       <td style="padding:8px;">${d.status}</td>
-      <td style="padding:8px;">${new Date(d.created_at).toLocaleDateString()}</td>
-      <td style="padding:8px;">${d.last_used_at ? new Date(d.last_used_at).toLocaleDateString() : '—'}</td>
+      <td style="padding:8px;">${formatDateDMY(d.created_at)}</td>
+      <td style="padding:8px;">${d.last_used_at ? formatDateDMY(d.last_used_at) : '—'}</td>
       <td style="padding:8px;"><button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitDeleteRegisteredDevice(${d.device_id})">Delete</button></td>
     </tr>`).join('') || `<tr><td colspan="6" style="padding:14px; text-align:center; color:var(--muted);">No PCs registered yet.</td></tr>`;
 }
