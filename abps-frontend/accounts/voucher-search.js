@@ -253,6 +253,7 @@ function tvsRenderCard(v) {
       <td style="padding:6px;">${l.srNo}</td><td style="padding:6px;">${formatDateDMY(l.expenseDate)}</td>
       <td style="padding:6px;">${escapeHtml(l.expenseType)}${l.conveyanceMode ? ' (' + escapeHtml(l.conveyanceMode) + ')' : ''}</td>
       <td style="padding:6px; text-align:right;">${formatINRComma(l.amount)}</td>
+      <td style="padding:6px; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
       <td style="padding:6px; text-align:right;">${l.actualAmount !== null && l.actualAmount !== undefined ? formatINRComma(l.actualAmount) : '—'}</td>
       <td style="padding:6px;">${billCell}</td>
     </tr>`;
@@ -289,7 +290,7 @@ function tvsRenderCard(v) {
         <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
           <thead><tr style="background:var(--highlight-bg); text-align:left;">
             <th style="padding:6px;">Sr No</th><th style="padding:6px;">Date</th><th style="padding:6px;">Type</th>
-            <th style="padding:6px; text-align:right;">Amount</th><th style="padding:6px; text-align:right;">Actual</th><th style="padding:6px;">Bill</th>
+            <th style="padding:6px; text-align:right;">Amount</th><th style="padding:6px;">Description</th><th style="padding:6px; text-align:right;">Actual</th><th style="padding:6px;">Bill</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>

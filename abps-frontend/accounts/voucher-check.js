@@ -39,6 +39,7 @@ function tvcRenderCard(v) {
       <td style="padding:7px;">${typeLabel}</td>
       <td style="padding:7px;">${billCell}</td>
       <td style="padding:7px; text-align:right;">${formatINRComma(l.amount)}</td>
+      <td style="padding:7px; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
       <td style="padding:7px;"><input type="number" class="tvc-actual-input" data-line-id="${l.lineId}" value="${trimNum(l.amount)}" min="0"
             style="width:100px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:right;"
             oninput="tvcRecalcTotals(${v.voucherId})"></td>
@@ -87,6 +88,7 @@ function tvcRenderCard(v) {
             <thead><tr style="background:var(--highlight-bg); text-align:left;">
               <th style="padding:7px;">Sr No</th><th style="padding:7px;">Date</th><th style="padding:7px;">Type</th>
               <th style="padding:7px;">Uploaded Bill</th><th style="padding:7px; text-align:right;">Amount</th>
+              <th style="padding:7px;">Description</th>
               <th style="padding:7px;">Actual Amount</th><th style="padding:7px;">Bill Checked?</th>
             </tr></thead>
             <tbody>${rows}</tbody>
