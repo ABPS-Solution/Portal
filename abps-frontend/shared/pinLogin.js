@@ -157,7 +157,7 @@ async function submitDeviceEnrollmentCode() {
   const pinConfirm = pinConfirmInput.value.trim();
 
   if (!code) return showFeedback("Enter the enrollment code.", true);
-  if (!deviceLabel) return showFeedback("Give this PC a label (e.g. \"My Laptop\").", true);
+  if (!deviceLabel) return showFeedback("Give this device a label (e.g. \"My Laptop\").", true);
   if (!/^\d{4}$/.test(pin)) return showFeedback("Choose a 4-digit PIN.", true);
   if (pin !== pinConfirm) return showFeedback("PIN and Confirm PIN don't match.", true);
 

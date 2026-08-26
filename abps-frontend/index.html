@@ -443,7 +443,7 @@
          separate Log In button (see handlePinDigitInput in pinLogin.js). -->
     <div id="login-section-pin" style="display:none; text-align:left;">
       <div id="pin-login-not-registered-notice" style="display:none; background:#fef3c7; border:1px solid #f59e0b; color:#78350f; padding:10px 12px; border-radius:6px; font-size:0.8rem; margin-bottom:12px;">
-        This PC hasn't been set up for PIN login yet. Choose "Enrollment Code" above to set it up.
+        This device hasn't been set up for PIN login yet. Choose "Enrollment Code" above to set it up.
       </div>
       <div id="pin-login-input-wrap" style="display:flex; flex-direction:column; align-items:center; text-align:center;">
         <label class="field-label" style="margin-top:0; margin-bottom:4px;">Enter 4-Digit PIN *</label>
@@ -454,12 +454,12 @@
     </div>
 
     <!-- ENROLLMENT CODE mode — self-service: the person redeeming the code
-         picks their own PC label and their own PIN right here. -->
+         picks their own device label and their own PIN right here. -->
     <div id="login-section-enroll" style="display:none; text-align:left;">
       <label class="field-label" style="margin-top:0; margin-bottom:4px;">Enrollment Code (from your administrator)</label>
       <input type="text" id="device-enrollment-code-input" maxlength="8"
         style="padding:10px; font-weight:700; font-size:1rem; letter-spacing:2px; text-transform:uppercase; width:100%; margin-bottom:10px;" />
-      <label class="field-label" style="margin-top:0; margin-bottom:4px;">PC Label (e.g. "My Laptop")</label>
+      <label class="field-label" style="margin-top:0; margin-bottom:4px;">Device Label (e.g. "My Laptop")</label>
       <input type="text" id="device-enrollment-label-input" placeholder="My Laptop"
         style="padding:10px; font-size:0.9rem; width:100%; margin-bottom:10px;" />
       <div style="display:flex; gap:16px; margin-bottom:10px;">
@@ -1948,14 +1948,14 @@
       <button id="sa-tab-networks" class="nav-btn-styled" onclick="switchSecurityAdminTab('networks')" style="flex:1; padding:11px 16px;">Office Networks</button>
       <button id="sa-tab-devices" class="nav-btn-styled" onclick="switchSecurityAdminTab('devices')" style="flex:1; padding:11px 16px;">Trusted Devices</button>
       <button id="sa-tab-log" class="nav-btn-styled" onclick="switchSecurityAdminTab('log')" style="flex:1; padding:11px 16px;">Login Log</button>
-      <button id="sa-tab-settings" class="nav-btn-styled" onclick="switchSecurityAdminTab('settings')" style="flex:1; padding:11px 16px;">Settings</button>
       <button id="sa-tab-pins" class="nav-btn-styled" onclick="switchSecurityAdminTab('pins')" style="flex:1; padding:11px 16px;">Login PINs</button>
-      <button id="sa-tab-registeredpcs" class="nav-btn-styled" onclick="switchSecurityAdminTab('registeredpcs')" style="flex:1; padding:11px 16px;">Registered PCs</button>
+      <button id="sa-tab-registeredpcs" class="nav-btn-styled" onclick="switchSecurityAdminTab('registeredpcs')" style="flex:1; padding:11px 16px;">Registered Devices</button>
+      <button id="sa-tab-settings" class="nav-btn-styled" onclick="switchSecurityAdminTab('settings')" style="flex:1; padding:11px 16px;">Settings</button>
     </div>
 
     <!-- LOGIN ANYWHERE -->
     <div id="sa-panel-users">
-      <input type="text" id="sa-user-search" placeholder="Search by name or email..." oninput="renderSecurityAdminUsers()" style="max-width:340px; margin-bottom:14px;">
+      <input type="text" id="sa-user-search" placeholder="Search by Name..." oninput="renderSecurityAdminUsers()" style="max-width:340px; margin-bottom:14px;">
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
         <thead><tr style="background:var(--highlight-bg); text-align:left;">
           <th style="padding:8px;">Name</th><th style="padding:8px;">Department</th>
@@ -2000,9 +2000,10 @@
 
     <!-- LOGIN LOG -->
     <div id="sa-panel-log" style="display:none;">
+      <input type="text" id="sa-log-search" placeholder="Search by Name..." oninput="renderLoginLog()" style="max-width:340px; margin-bottom:14px;">
       <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
         <thead><tr style="background:var(--highlight-bg); text-align:left;">
-          <th style="padding:8px;">When</th><th style="padding:8px;">Email</th><th style="padding:8px;">IP</th>
+          <th style="padding:8px;">When</th><th style="padding:8px;">Name</th><th style="padding:8px;">IP</th>
           <th style="padding:8px;">Allowed</th><th style="padding:8px;">Reason</th><th style="padding:8px;">City/Country</th>
           <th style="padding:8px;">ISP/ASN</th><th style="padding:8px;">VPN</th>
         </tr></thead>
@@ -2033,13 +2034,13 @@
     <div id="sa-panel-pins" style="display:none;">
       <p style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">
         Generate a one-time enrollment code for someone below — they
-        redeem it on their own PC (login screen → "Enrollment Code"),
-        choosing that PC's label and their own PIN. Only people with a PIN
-        set here AND an enrolled PC can PIN-login. The system locks a PIN
+        redeem it on their own device (login screen → "Enrollment Code"),
+        choosing that device's label and their own PIN. Only people with a PIN
+        set here AND an enrolled device can PIN-login. The system locks a PIN
         after repeated wrong attempts — use "Unlock" if that happens to
         someone legitimately.
       </p>
-      <input type="text" id="sa-pin-user-search" placeholder="Search by name or email..." oninput="renderSecurityAdminPinUsers()" style="max-width:340px; margin-bottom:14px;">
+      <input type="text" id="sa-pin-user-search" placeholder="Search by Name..." oninput="renderSecurityAdminPinUsers()" style="max-width:340px; margin-bottom:14px;">
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
         <thead><tr style="background:var(--highlight-bg); text-align:left;">
           <th style="padding:8px;">Name</th><th style="padding:8px;">Department</th>
@@ -2058,7 +2059,7 @@
     <div id="sa-panel-registeredpcs" style="display:none;">
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
         <thead><tr style="background:var(--highlight-bg); text-align:left;">
-          <th style="padding:8px;">PC Label</th><th style="padding:8px;">Allowed Users</th><th style="padding:8px;">Status</th>
+          <th style="padding:8px;">Device Label</th><th style="padding:8px;">Allowed Users</th><th style="padding:8px;">Status</th>
           <th style="padding:8px;">Registered</th><th style="padding:8px;">Last Used</th><th style="padding:8px;">Action</th>
         </tr></thead>
         <tbody id="sa-registereddevice-list-body"></tbody>

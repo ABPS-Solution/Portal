@@ -13,6 +13,7 @@
 // ═══════════════════════════════════════════════════════════════════════
 let saAllUsers = [];
 let saAllPinUsers = [];
+let saAllLoginLogEntries = [];
 
 async function initializeSecurityAdminPanel() {
   switchSecurityAdminTab('users');
@@ -147,17 +148,17 @@ async function loadTrustedDevices() {
         <td style="padding:8px;">${d.last_used_at ? formatDateDMY(d.last_used_at) : '—'}</td>
         <td style="padding:8px;">${formatDateDMY(d.expires_at)}</td>
         <td style="padding:8px;">${d.revoked ? 'Revoked' : 'Active'}</td>
-        <td style="padding:8px;">${!d.revoked ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="revokeDevice(${d.device_id})">Revoke</button>` : '—'}</td>
+        <td style="padding:8px;"><button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitDeleteTrustedDevice(${d.device_id})">Delete</button></td>
       </tr>`).join('') || `<tr><td colspan="7" style="padding:14px; text-align:center; color:var(--muted);">No trusted devices yet.</td></tr>`;
   } catch (e) { console.error("loadTrustedDevices failed:", e); }
 }
 
-async function revokeDevice(deviceId) {
-  if (!confirm("Revoke this device? It will need to log in from the office network again to be trusted.")) return;
+async function submitDeleteTrustedDevice(deviceId) {
+  if (!confirm("Delete this trusted device? It will need to log in from the office network again to be trusted.")) return;
   try {
-    const data = await apFetch({ action: "revokeTrustedDevice", deviceId });
-    if (data.success) { showBOQBanner("sa-feedback", "Device revoked.", "success"); loadTrustedDevices(); }
-    else showBOQBanner("sa-feedback", data.error || "Failed to revoke.", "error");
+    const data = await apFetch({ action: "deleteTrustedDevice", deviceId });
+    if (data.success) { showBOQBanner("sa-feedback", "Trusted device deleted.", "success"); loadTrustedDevices(); }
+    else showBOQBanner("sa-feedback", data.error || "Failed to delete.", "error");
   } catch (e) {
     showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
   }
@@ -168,11 +169,19 @@ async function loadLoginLog() {
   try {
     const data = await apFetch({ action: "fetchLoginLog" });
     if (!data.success) return;
-    const tbody = document.getElementById("sa-log-list-body");
-    tbody.innerHTML = data.entries.map(l => `
+    saAllLoginLogEntries = data.entries;
+    renderLoginLog();
+  } catch (e) { console.error("loadLoginLog failed:", e); }
+}
+
+function renderLoginLog() {
+  const q = (document.getElementById("sa-log-search").value || "").toLowerCase().trim();
+  const tbody = document.getElementById("sa-log-list-body");
+  const filtered = saAllLoginLogEntries.filter(l => !q || (l.user_name || "").toLowerCase().includes(q));
+  tbody.innerHTML = filtered.map(l => `
       <tr style="border-top:1px solid var(--border); ${l.allowed ? '' : 'background:#fef2f2;'}">
         <td style="padding:8px; white-space:nowrap;">${formatDateTimeDMY(l.created_at)}</td>
-        <td style="padding:8px;">${l.email || l.google_verified_email || '—'}</td>
+        <td style="padding:8px;">${l.user_name || '—'}</td>
         <td style="padding:8px; font-family:monospace;">${l.ip || '—'}</td>
         <td style="padding:8px; font-weight:700; color:${l.allowed ? '#16a34a' : '#dc2626'};">${l.allowed ? 'Allowed' : 'Blocked'}</td>
         <td style="padding:8px;">${l.reason}</td>
@@ -180,7 +189,6 @@ async function loadLoginLog() {
         <td style="padding:8px;">${l.isp_asn || '—'}</td>
         <td style="padding:8px;">${l.is_vpn ? '⚠️ Yes' : 'No'}</td>
       </tr>`).join('') || `<tr><td colspan="8" style="padding:14px; text-align:center; color:var(--muted);">No login attempts recorded yet.</td></tr>`;
-  } catch (e) { console.error("loadLoginLog failed:", e); }
 }
 
 // ── Settings ──────────────────────────────────────────────────────────
@@ -330,11 +338,12 @@ async function submitCreateDeviceEnrollmentCode(targetEmail) {
   }
 }
 
-// ── Registered PCs (migration 140) ──────────────────────────────────────
-// A registered PC is how PIN login becomes possible at all — an admin
-// generates a one-time code here, the operator enters it once on that PC
-// (no OAuth redirect, unlike the Gmail connection flow), and only the
-// users explicitly listed here may then PIN-login on it.
+// ── Registered Devices (migration 140) ───────────────────────────────────
+// A registered device (laptop, phone, tablet) is how PIN login becomes
+// possible at all — an admin generates a one-time code here, the operator
+// enters it once on that device (no OAuth redirect, unlike the Gmail
+// connection flow), and only the users explicitly listed here may then
+// PIN-login on it.
 async function loadRegisteredDevices() {
   try {
     const data = await apFetch({ action: "fetchRegisteredDevices" });
@@ -356,7 +365,7 @@ function renderRegisteredDevicesList(devices) {
 }
 
 async function submitDeleteRegisteredDevice(deviceId) {
-  if (!confirm("Delete this PC? No one will be able to PIN-login on it until it's re-enrolled with a new code.")) return;
+  if (!confirm("Delete this device? No one will be able to PIN-login on it until it's re-enrolled with a new code.")) return;
   try {
     const data = await apFetch({ action: "deleteRegisteredDevice", deviceId });
     if (data.success) { showBOQBanner("sa-feedback", "Device deleted.", "success"); loadRegisteredDevices(); }
