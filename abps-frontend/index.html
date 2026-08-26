@@ -2053,22 +2053,16 @@
          admins can't type one in directly here anymore. -->
     <div id="sa-panel-pins" style="display:none;">
       <p style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">
-        Generate a one-time enrollment code for someone below — they
-        redeem it on their own device (login screen → "Enrollment Code"),
-        choosing that device's label and their own PIN. Only people with a PIN
-        set here AND an enrolled device can PIN-login. The system locks a PIN
-        after repeated wrong attempts — use "Unlock" if that happens to
-        someone legitimately.
+        Click a person's name to flip their card. In <strong>PIN</strong> mode it reveals their current PIN (or "None"). In
+        <strong>Generate Enrollment Code</strong> mode it generates a fresh one-time code on the spot — give it to them to redeem
+        on the login screen ("Enrollment Code"), where they'll choose their own device label and PIN. Click again to flip back.
       </p>
-      <input type="text" id="sa-pin-user-search" placeholder="Search by Name..." oninput="renderSecurityAdminPinUsers()" style="max-width:340px; margin-bottom:14px;">
-      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
-        <thead><tr style="background:var(--highlight-bg); text-align:left;">
-          <th style="padding:8px;">Name</th><th style="padding:8px;">Department</th>
-          <th style="padding:8px;">PIN</th><th style="padding:8px;">Action</th>
-        </tr></thead>
-        <tbody id="sa-pin-user-list-body"></tbody>
-      </table>
-      <div id="sa-devicecode-result" style="display:none; margin-top:14px; padding:12px; background:#dcfce7; border:1px solid #15803d; border-radius:6px;"></div>
+      <div style="display:flex; gap:6px; margin-bottom:14px; max-width:480px;">
+        <button type="button" id="pinmode-btn-pin" class="nav-btn-styled" onclick="selectPinTreeMode('pin')" style="flex:1; padding:9px 10px; font-size:0.8rem;">PIN</button>
+        <button type="button" id="pinmode-btn-enroll" class="nav-btn-styled" onclick="selectPinTreeMode('enroll')" style="flex:1; padding:9px 10px; font-size:0.8rem;">Generate Enrollment Code</button>
+      </div>
+      <input type="text" id="sa-pin-user-search" placeholder="Search by Name..." oninput="renderSecurityAdminPinUsers()" style="max-width:340px; margin-bottom:20px;">
+      <div id="sa-pin-tree-root"></div>
     </div>
 
     <!-- REGISTERED PCs (migration 140) — read-only summary. Enrollment

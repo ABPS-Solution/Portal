@@ -27,6 +27,7 @@ async function initializeSecurityAdminPanel() {
     loadRegisteredDevices(),
     loadPermissionCatalog(),
   ]);
+  selectPinTreeMode('pin'); // sets the mode-button active styling; re-render is harmless, data's already loaded
 }
 
 function exitSecurityAdminBackToMenu() {
@@ -346,34 +347,132 @@ async function loadSecurityAdminPinUsers() {
   } catch (e) { console.error("loadSecurityAdminPinUsers failed:", e); }
 }
 
-function pinValueCell(u) {
-  const lockNote = u.pin_disabled
-    ? ' <span style="color:#dc2626; font-weight:700; font-size:0.72rem;">(disabled — too many fails)</span>'
-    : (u.pin_locked_until && new Date(u.pin_locked_until) > new Date())
-      ? ` <span style="color:#d97706; font-weight:700; font-size:0.72rem;">(locked until ${new Date(u.pin_locked_until).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })})</span>`
-      : '';
-  const value = u.pin_value
-    ? `<span style="font-family:monospace; font-weight:700; letter-spacing:2px; font-size:1.15rem;">${u.pin_value}</span>`
-    : '<span style="color:var(--muted);">Not set</span>';
-  return value + lockNote;
+// Flip-card tree (26 Aug 2026) — same department-tree shape/colors as
+// Login Anywhere, minus the thick-border "granted" styling (a PIN's
+// state is shown on the card's back face, not via border weight). Each
+// card starts showing the person's name; clicking flips it to reveal
+// either their PIN (pinTreeMode 'pin', instant, data already loaded) or
+// a freshly generated enrollment code (pinTreeMode 'enroll', one network
+// call per flip — no cooldown server-side, so generating for several
+// people back-to-back is fine). Clicking again flips back to the name.
+let pinTreeMode = 'pin';
+let pinFlippedState = {}; // email -> true while showing the back face
+let pinEnrollCodeCache = {}; // email -> last-generated {code, expiresAt} for redisplay without re-hitting the API mid-flip-animation
+
+function selectPinTreeMode(mode) {
+  pinTreeMode = mode;
+  pinFlippedState = {}; // switching modes always resets every card to its front face
+  ['pin', 'enroll'].forEach(m => {
+    const btn = document.getElementById(`pinmode-btn-${m}`);
+    if (!btn) return;
+    btn.style.background = (m === mode) ? 'var(--brand)' : '#e2e8f0';
+    btn.style.color = (m === mode) ? '#fff' : '#334155';
+  });
+  renderSecurityAdminPinUsers();
+}
+
+async function loadSecurityAdminPinUsers() {
+  try {
+    const data = await apFetch({ action: "fetchPinUsers" });
+    if (data.success) { saAllPinUsers = data.users; renderSecurityAdminPinUsers(); }
+  } catch (e) { console.error("loadSecurityAdminPinUsers failed:", e); }
+}
+
+function pinLockBadgeHtml(u) {
+  if (u.pin_disabled) {
+    return `<div style="font-size:0.68rem; color:#dc2626; font-weight:700; margin-top:4px;">Disabled (too many fails) — <a href="#" onclick="submitClearUserPinLockout('${u.email}'); return false;" style="color:#dc2626;">Unlock</a></div>`;
+  }
+  if (u.pin_locked_until && new Date(u.pin_locked_until) > new Date()) {
+    const until = new Date(u.pin_locked_until).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    return `<div style="font-size:0.68rem; color:#d97706; font-weight:700; margin-top:4px;">Locked until ${until} — <a href="#" onclick="submitClearUserPinLockout('${u.email}'); return false;" style="color:#d97706;">Unlock</a></div>`;
+  }
+  return '';
+}
+
+function pinFlipCardHtml(u, color) {
+  const name = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+  const safeId = u.email.replace(/[^a-zA-Z0-9]/g, '_');
+  const flipped = !!pinFlippedState[u.email];
+  const cached = pinEnrollCodeCache[u.email];
+  const backText = pinTreeMode === 'pin'
+    ? (u.pin_value || 'None')
+    : (cached ? cached.code : '…');
+  const backIsCode = pinTreeMode === 'enroll';
+  return `
+    <div style="display:flex; flex-direction:column; align-items:center;">
+      <div style="width:2px; height:20px; background:${color};"></div>
+      <div style="width:7px; height:7px; border-radius:50%; background:${color}; margin-bottom:-1px;"></div>
+      <div id="pinflip-outer-${safeId}" onclick="handlePinFlipClick('${u.email}')"
+        style="width:180px; height:52px; perspective:800px; cursor:pointer;">
+        <div id="pinflip-inner-${safeId}" style="position:relative; width:100%; height:100%; transition:transform 0.5s; transform-style:preserve-3d; transform:${flipped ? 'rotateY(180deg)' : 'rotateY(0deg)'};">
+          <div style="position:absolute; inset:0; backface-visibility:hidden; display:flex; align-items:center; justify-content:center; text-align:center; padding:0 10px;
+                      border:1.5px solid #dde3ea; border-radius:12px; background:#fff; box-shadow:0 1px 3px rgba(15,23,42,0.08); font-weight:650; font-size:0.88rem; color:#1e293b;">
+            ${name}
+          </div>
+          <div id="pinflip-back-${safeId}" style="position:absolute; inset:0; backface-visibility:hidden; transform:rotateY(180deg); display:flex; align-items:center; justify-content:center; text-align:center; padding:0 8px;
+                      border:1.5px solid ${color}; border-radius:12px; background:${color}14; font-weight:800; font-size:${backIsCode ? '1.02rem' : '1.05rem'}; color:#0f172a; font-family:${backIsCode || u.pin_value ? 'monospace' : 'inherit'}; letter-spacing:${backIsCode || u.pin_value ? '2px' : 'normal'};">
+            ${backText}
+          </div>
+        </div>
+      </div>
+      ${pinLockBadgeHtml(u)}
+    </div>`;
+}
+
+async function handlePinFlipClick(email) {
+  const u = saAllPinUsers.find(x => x.email === email);
+  if (!u) return;
+  const safeId = email.replace(/[^a-zA-Z0-9]/g, '_');
+  const nowFlipped = !pinFlippedState[email];
+
+  // Flipping TO the back face in enroll mode: fetch a fresh code first so
+  // the reveal shows a real value instead of a placeholder mid-animation.
+  if (nowFlipped && pinTreeMode === 'enroll') {
+    try {
+      const data = await apFetch({ action: "createDeviceEnrollmentCode", targetEmail: email });
+      if (!data.success) { showBOQBanner("sa-feedback", data.error || "Failed to generate code.", "error"); return; }
+      pinEnrollCodeCache[email] = { code: data.code, expiresAt: data.expiresAt };
+      const backEl = document.getElementById(`pinflip-back-${safeId}`);
+      if (backEl) backEl.textContent = data.code;
+    } catch (e) {
+      showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+      return;
+    }
+  }
+
+  pinFlippedState[email] = nowFlipped;
+  const inner = document.getElementById(`pinflip-inner-${safeId}`);
+  if (inner) inner.style.transform = nowFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
 }
 
 function renderSecurityAdminPinUsers() {
   const q = (document.getElementById("sa-pin-user-search").value || "").toLowerCase().trim();
-  const tbody = document.getElementById("sa-pin-user-list-body");
-  const filtered = saAllPinUsers.filter(u => !q ||
-    `${u.first_name} ${u.last_name}`.toLowerCase().includes(q) ||
-    (u.email || "").toLowerCase().includes(q));
-  tbody.innerHTML = filtered.map(u => `
-    <tr style="border-top:1px solid var(--border);">
-      <td style="padding:8px;">${u.first_name || ''} ${u.last_name || ''}</td>
-      <td style="padding:8px;">${u.department || '—'}</td>
-      <td style="padding:8px;">${pinValueCell(u)}</td>
-      <td style="padding:8px; display:flex; gap:6px;">
-        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitCreateDeviceEnrollmentCode('${u.email}')">Generate Enrollment Code</button>
-        ${(u.pin_disabled || u.pin_locked_until) ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitClearUserPinLockout('${u.email}')">Unlock</button>` : ''}
-      </td>
-    </tr>`).join('') || `<tr><td colspan="4" style="padding:14px; text-align:center; color:var(--muted);">No users found.</td></tr>`;
+  const root = document.getElementById("sa-pin-tree-root");
+  if (!root) return;
+
+  const branches = LA_DEPARTMENTS.map(dept => {
+    const people = saAllPinUsers.filter(u => (u.department || '') === dept.name && (!q ||
+      `${u.first_name} ${u.last_name}`.toLowerCase().includes(q)));
+    if (q && people.length === 0) return '';
+    return `
+      <div style="margin-bottom:44px;">
+        <div style="display:flex; align-items:center; justify-content:center; gap:10px; padding-bottom:12px;">
+          <span style="font-weight:800; font-size:1.15rem; letter-spacing:0.3px; color:${dept.color};">${dept.name}</span>
+          ${people.length > 0 ? `<span style="background:${dept.color}1a; color:${dept.color}; font-size:0.72rem; font-weight:800; padding:2px 9px; border-radius:999px;">${people.length}</span>` : ''}
+        </div>
+        <div style="height:3px; width:100%; border-radius:2px; background:${dept.color};"></div>
+        ${people.length === 0
+          ? `<div style="text-align:center; color:var(--muted); font-size:0.82rem; padding:16px 0 0;">No one in this department yet.</div>`
+          : `<div style="display:flex; flex-wrap:wrap; justify-content:center; gap:26px 22px; width:100%; padding-top:4px;">
+               ${people.map(u => pinFlipCardHtml(u, dept.color)).join('')}
+             </div>`}
+      </div>`;
+  }).join('');
+
+  root.innerHTML = `
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:32px clamp(16px, 4vw, 48px); width:100%; box-sizing:border-box;">
+      ${branches || `<div style="text-align:center; color:var(--muted); padding:20px;">No users found.</div>`}
+    </div>`;
 }
 
 async function submitClearUserPinLockout(email) {
@@ -382,25 +481,6 @@ async function submitClearUserPinLockout(email) {
     const data = await apFetch({ action: "clearUserPinLockout", email });
     if (data.success) { showBOQBanner("sa-feedback", "Lockout cleared.", "success"); loadSecurityAdminPinUsers(); }
     else showBOQBanner("sa-feedback", data.error || "Failed to clear lockout.", "error");
-  } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
-  }
-}
-
-async function submitCreateDeviceEnrollmentCode(targetEmail) {
-  try {
-    const data = await apFetch({ action: "createDeviceEnrollmentCode", targetEmail });
-    if (data.success) {
-      const resultBox = document.getElementById("sa-devicecode-result");
-      resultBox.style.display = "block";
-      resultBox.innerHTML = `
-        <div style="font-weight:700; color:#15803d; margin-bottom:6px;">Enrollment code for ${targetEmail} (valid 15 minutes, single use):</div>
-        <div style="font-family:monospace; font-size:1.4rem; font-weight:800; letter-spacing:3px; color:#111827;">${data.code}</div>
-        <div style="font-size:0.78rem; color:var(--muted); margin-top:6px;">Give this to them — on the login screen they choose "Enrollment Code", select their own name, and enter this code to set up their PC and PIN.</div>`;
-      resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    } else {
-      showBOQBanner("sa-feedback", data.error || "Failed to generate code.", "error");
-    }
   } catch (e) {
     showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
   }
