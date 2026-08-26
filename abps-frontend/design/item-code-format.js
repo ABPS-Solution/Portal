@@ -275,6 +275,14 @@ function icfWireMhOhmAutoCalc(placeholders, containerEl, idPrefix) {
   const recompute = () => {
     const mhVal = parseFloat(mhEl.value);
     ohmEl.value = isNaN(mhVal) ? '' : String(Math.round((314.16 * mhVal / 1000) * 1000) / 1000);
+    // Setting .value directly does NOT fire an 'input' event, so anything
+    // that in turn derives FROM ohm (Total kVAr / kVAr, both of which
+    // listen for 'input' on the ohm field) never saw this change — the
+    // ohm box visibly updated but the downstream kVAr stayed stale until
+    // the operator separately touched A or ohm, at which point it jumped
+    // to reflect the ohm value that had already silently changed. Dispatch
+    // one explicitly so the whole chain (mH -> ohm -> kVAr) stays live.
+    ohmEl.dispatchEvent(new Event('input'));
   };
   // Registered before the generic onChange listener below (see call site),
   // so ohmEl's value is already up to date by the time that listener reads
