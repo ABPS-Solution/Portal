@@ -170,7 +170,7 @@ async function submitDeviceEnrollmentCode() {
 
     if (data.success) {
       localStorage.setItem("abpsPcDeviceSecret", data.deviceSecret);
-      showFeedback(`✅ This PC is set up as "${data.deviceLabel}". Reloading...`, false);
+      showFeedback(`✅ This device is set up as "${data.deviceLabel}". Reloading...`, false);
       setTimeout(() => window.location.reload(), 1200);
     } else {
       showFeedback(data.error || "Enrollment failed.", true);
