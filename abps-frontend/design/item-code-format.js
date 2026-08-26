@@ -113,6 +113,14 @@ function icfParseStepListValue(raw) {
   return steps.map(s => ({ rating: Number(s.rating), count: Number(s.count) }));
 }
 
+// Mirrors lib/itemCodeFormat.js's isValidNumericPlaceholderValue — a "V"
+// (bare Voltage) label may hold a dual value like "240/415", every other
+// numeric label stays strictly single-number.
+function icfIsValidNumericPlaceholderValue(v, label) {
+  if (/^-?\d+(\.\d+)?$/.test(v)) return true;
+  return /^v$/i.test((label || '').trim()) && /^-?\d+(\.\d+)?(\s*\/\s*-?\d+(\.\d+)?)+$/.test(v);
+}
+
 function icfValidateValues(template, values) {
   const { placeholders, error } = icfParseTemplate(template);
   if (error) return error;
@@ -137,7 +145,11 @@ function icfValidateValues(template, values) {
 
     const v = raw == null ? '' : String(raw).trim();
     if (!v) return `"${ph.label}" is required.`;
-    if ((ph.kind === 'number' || ph.kind === 'mirror') && !/^-?\d+(\.\d+)?$/.test(v)) return `"${ph.label}" must be a number.`;
+    if ((ph.kind === 'number' || ph.kind === 'mirror') && !icfIsValidNumericPlaceholderValue(v, ph.label)) {
+      return /^v$/i.test((ph.label || '').trim())
+        ? `"${ph.label}" must be a number (e.g. 415, or multiple like 240/415).`
+        : `"${ph.label}" must be a number.`;
+    }
     if (ph.kind === 'choice' && !ph.options.includes(v)) return `"${ph.label}" must be one of: ${ph.options.join(', ')}.`;
   }
   return null;
@@ -354,7 +366,14 @@ function icfRenderFormInputs(containerEl, template, onChange, idPrefix, initialV
         <div id="${id}-steplist" style="border:1px solid var(--border); border-radius:4px; padding:6px; min-width:230px;"></div>
       </span>`;
     }
-    const inputType = (seg.kind === 'number' || seg.kind === 'mirror') ? 'number' : 'text';
+    // A "V"-labeled field (bare Voltage) can hold a dual value like
+    // "240/415" — a native <input type="number"> blocks the "/" character
+    // outright, so it must stay type="text" for that one label even
+    // though every other number/mirror placeholder uses the numeric
+    // keypad/spinner. Server-side validation (lib/itemCodeFormat.js) is
+    // still the authority; this only affects what the input widget allows.
+    const isVoltage = /^v$/i.test((seg.label || '').trim());
+    const inputType = (seg.kind === 'number' || seg.kind === 'mirror') && !isVoltage ? 'number' : 'text';
     return `<span style="display:inline-flex; flex-direction:column; margin:4px 6px;">
       <label style="font-size:0.68rem; font-weight:700; color:var(--brand); text-transform:uppercase;">${seg.label}</label>
       <input type="${inputType}" id="${id}" data-idx="${seg.index}"
