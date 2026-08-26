@@ -1943,6 +1943,7 @@
     <div id="sa-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
     <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
+      <button id="sa-tab-permissions" class="nav-btn-styled" onclick="switchSecurityAdminTab('permissions')" style="flex:1; padding:11px 16px;">Permissions</button>
       <button id="sa-tab-users" class="nav-btn-styled" onclick="switchSecurityAdminTab('users')" style="flex:1; padding:11px 16px;">Login Anywhere</button>
       <button id="sa-tab-networks" class="nav-btn-styled" onclick="switchSecurityAdminTab('networks')" style="flex:1; padding:11px 16px;">Office Networks</button>
       <button id="sa-tab-devices" class="nav-btn-styled" onclick="switchSecurityAdminTab('devices')" style="flex:1; padding:11px 16px;">Trusted Devices</button>
@@ -1950,6 +1951,23 @@
       <button id="sa-tab-pins" class="nav-btn-styled" onclick="switchSecurityAdminTab('pins')" style="flex:1; padding:11px 16px;">Login PINs</button>
       <button id="sa-tab-registeredpcs" class="nav-btn-styled" onclick="switchSecurityAdminTab('registeredpcs')" style="flex:1; padding:11px 16px;">Registered Devices</button>
       <button id="sa-tab-settings" class="nav-btn-styled" onclick="switchSecurityAdminTab('settings')" style="flex:1; padding:11px 16px;">Settings</button>
+    </div>
+
+    <!-- PERMISSIONS MATRIX — a visual, per-user, department-colored view
+         over every real perm_* column. Search for a person, then click
+         any section pill to grant (gray -> colored) or revoke (colored ->
+         gray) their access to it. Backend: routes/security.js's
+         fetchPermissionCatalog / fetchUserPermissionValues /
+         toggleUserPermission, whitelisted against lib/permissionCatalog.js. -->
+    <div id="sa-panel-permissions" style="display:none;">
+      <p style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">
+        Search for a person to see every section of the portal, grouped by department.
+        Colored = they have access. Click a colored section to revoke it, click a gray one to grant it.
+      </p>
+      <input type="text" id="pm-user-search" placeholder="Search by Name..." autocomplete="off"
+        oninput="handlePermissionMatrixSearchInput(this.value)" style="max-width:340px; margin-bottom:10px;">
+      <div id="pm-user-search-results" style="display:none; max-width:340px; margin-bottom:14px; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;"></div>
+      <div id="pm-matrix-root"></div>
     </div>
 
     <!-- LOGIN ANYWHERE -->

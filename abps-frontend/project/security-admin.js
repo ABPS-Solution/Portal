@@ -16,7 +16,7 @@ let saAllPinUsers = [];
 let saAllLoginLogEntries = [];
 
 async function initializeSecurityAdminPanel() {
-  switchSecurityAdminTab('users');
+  switchSecurityAdminTab('permissions');
   await Promise.all([
     loadSecurityAdminUsers(),
     loadAllowedNetworks(),
@@ -25,6 +25,7 @@ async function initializeSecurityAdminPanel() {
     loadSecuritySettings(),
     loadSecurityAdminPinUsers(),
     loadRegisteredDevices(),
+    loadPermissionCatalog(),
   ]);
 }
 
@@ -35,7 +36,7 @@ function exitSecurityAdminBackToMenu() {
 }
 
 function switchSecurityAdminTab(tab) {
-  ['users', 'networks', 'devices', 'log', 'settings', 'pins', 'registeredpcs'].forEach(t => {
+  ['permissions', 'users', 'networks', 'devices', 'log', 'settings', 'pins', 'registeredpcs'].forEach(t => {
     document.getElementById(`sa-panel-${t}`).style.display = (t === tab) ? 'block' : 'none';
     document.getElementById(`sa-tab-${t}`).style.background = (t === tab) ? 'var(--brand)' : '#e2e8f0';
     document.getElementById(`sa-tab-${t}`).style.color = (t === tab) ? '#fff' : '#334155';
@@ -371,6 +372,151 @@ async function submitDeleteRegisteredDevice(deviceId) {
     if (data.success) { showBOQBanner("sa-feedback", "Device deleted.", "success"); loadRegisteredDevices(); }
     else showBOQBanner("sa-feedback", data.error || "Failed to delete.", "error");
   } catch (e) {
+    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+  }
+}
+
+// ── Permissions Matrix (26 Aug 2026) ──────────────────────────────────────
+// A visual, per-user, department-colored view over every real perm_*
+// column on admin_db.users — "a glorified Users Sheet for section access".
+// pmCatalog is fetched once (it's effectively static config); pmUserValues
+// is refetched per selected user. Card grouping/colors are defined here in
+// parallel with lib/permissionCatalog.js's DEPARTMENT_META on the backend
+// (same 7 departments, same colors, same dept-tabs-bar accents) — adding a
+// NEW permission to an EXISTING department needs only one line in
+// permissionCatalog.js and it appears here automatically; adding a whole
+// new department needs one more entry in PM_CARD_ORDER below too.
+const PM_CARD_ORDER = [
+  { key: 'marketing', label: 'Marketing', color: '#be185d' },
+  { key: 'project', label: 'Project', color: '#2563eb' },
+  { key: 'design', label: 'Design', color: '#2563eb' },
+  { key: 'purchase', label: 'Purchase', color: '#7c3aed' },
+  { key: 'store', label: 'Store', color: '#0369a1' },
+  { key: 'production', label: 'Production', color: '#b45309' },
+  { key: 'accounts', label: 'Accounts', color: '#0f766e' },
+];
+const PM_SYSTEM_COLOR = '#334155';
+
+let pmCatalog = [];
+let pmSelectedUser = null;
+let pmUserValues = {};
+
+async function loadPermissionCatalog() {
+  try {
+    const data = await apFetch({ action: "fetchPermissionCatalog" });
+    if (data.success) pmCatalog = data.catalog;
+  } catch (e) { console.error("loadPermissionCatalog failed:", e); }
+}
+
+function handlePermissionMatrixSearchInput(rawQuery) {
+  const q = (rawQuery || "").toLowerCase().trim();
+  const box = document.getElementById("pm-user-search-results");
+  if (!q) { box.style.display = "none"; box.innerHTML = ""; return; }
+  const matches = saAllUsers.filter(u => `${u.first_name} ${u.last_name}`.toLowerCase().includes(q)).slice(0, 8);
+  if (matches.length === 0) {
+    box.style.display = "block";
+    box.innerHTML = `<div style="padding:10px; font-size:0.82rem; color:var(--muted);">No users found.</div>`;
+    return;
+  }
+  box.style.display = "block";
+  box.innerHTML = matches.map(u => `
+    <div onclick="selectPermissionMatrixUser('${u.email}')" style="padding:9px 12px; cursor:pointer; border-top:1px solid var(--border); font-size:0.85rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">
+      <strong>${u.first_name || ''} ${u.last_name || ''}</strong>
+      <span style="color:var(--muted); font-size:0.78rem;"> — ${u.department || 'No department'}</span>
+    </div>`).join('');
+}
+
+async function selectPermissionMatrixUser(email) {
+  const user = saAllUsers.find(u => u.email === email);
+  if (!user) return;
+  document.getElementById("pm-user-search").value = `${user.first_name || ''} ${user.last_name || ''}`;
+  document.getElementById("pm-user-search-results").style.display = "none";
+  document.getElementById("pm-matrix-root").innerHTML = `<div style="padding:20px; color:var(--muted); font-size:0.85rem;">Loading…</div>`;
+  try {
+    const data = await apFetch({ action: "fetchUserPermissionValues", email });
+    if (!data.success) {
+      document.getElementById("pm-matrix-root").innerHTML = `<div style="padding:14px; color:var(--warn);">${data.error || 'Failed to load permissions.'}</div>`;
+      return;
+    }
+    pmSelectedUser = user;
+    pmUserValues = data.values;
+    renderPermissionMatrix();
+  } catch (e) {
+    document.getElementById("pm-matrix-root").innerHTML = `<div style="padding:14px; color:var(--warn);">Connection error: ${e.message}</div>`;
+  }
+}
+
+function pmPillHtml(perm) {
+  const enabled = !!pmUserValues[perm.dbColumn];
+  const color = perm.systemWide ? PM_SYSTEM_COLOR : (PM_CARD_ORDER.find(c => c.key === perm.department || `dashboard-${c.key}` === perm.department) || {}).color || PM_SYSTEM_COLOR;
+  const isDashboard = (perm.department || '').startsWith('dashboard-');
+  const label = isDashboard ? `📊 ${perm.label}` : perm.label;
+  const style = enabled
+    ? `background:${color}1f; border:1.5px solid ${color}; color:${color}; font-weight:700;`
+    : `background:#f1f5f9; border:1.5px solid #cbd5e1; color:#94a3b8; font-weight:600;`;
+  return `<button onclick="togglePermissionMatrixPill('${perm.dbColumn}')"
+      style="${style} padding:7px 14px; border-radius:999px; font-size:0.8rem; cursor:pointer; transition:all 0.12s;">${label}</button>`;
+}
+
+function renderPermissionMatrix() {
+  const root = document.getElementById("pm-matrix-root");
+  if (!pmSelectedUser) { root.innerHTML = ""; return; }
+
+  const cards = PM_CARD_ORDER.map(card => {
+    const pills = pmCatalog.filter(p => !p.systemWide && (p.department === card.key || p.department === `dashboard-${card.key}`));
+    // Dashboard pill (if this department has one) shown first within its card.
+    pills.sort((a, b) => (b.department.startsWith('dashboard-') ? 1 : 0) - (a.department.startsWith('dashboard-') ? 1 : 0));
+    if (pills.length === 0) return '';
+    return `
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:14px;">
+        <div style="display:flex; align-items:center; gap:10px; padding:10px 16px; background:${card.color}0f; border-bottom:1px solid var(--border);">
+          <div style="width:5px; height:18px; border-radius:2px; background:${card.color};"></div>
+          <span style="font-weight:800; color:${card.color}; font-size:0.95rem;">${card.label}</span>
+        </div>
+        <div style="padding:14px 16px; display:flex; flex-wrap:wrap; gap:8px;">
+          ${pills.map(pmPillHtml).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  const systemPills = pmCatalog.filter(p => p.systemWide);
+  const systemCard = systemPills.length === 0 ? '' : `
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:14px;">
+        <div style="display:flex; align-items:center; gap:10px; padding:10px 16px; background:#33415512; border-bottom:1px solid var(--border);">
+          <div style="width:5px; height:18px; border-radius:2px; background:${PM_SYSTEM_COLOR};"></div>
+          <span style="font-weight:800; color:${PM_SYSTEM_COLOR}; font-size:0.95rem;">System-Wide</span>
+        </div>
+        <div style="padding:14px 16px; display:flex; flex-wrap:wrap; gap:8px;">
+          ${systemPills.map(pmPillHtml).join('')}
+        </div>
+      </div>`;
+
+  root.innerHTML = `
+    <div style="font-weight:700; font-size:0.95rem; margin-bottom:14px;">
+      Editing access for: ${pmSelectedUser.first_name || ''} ${pmSelectedUser.last_name || ''}
+      <span style="color:var(--muted); font-weight:500; font-size:0.82rem;"> (${pmSelectedUser.department || 'No department'})</span>
+    </div>
+    ${cards}${systemCard}`;
+}
+
+async function togglePermissionMatrixPill(dbColumn) {
+  if (!pmSelectedUser) return;
+  const wasEnabled = !!pmUserValues[dbColumn];
+  const enabled = !wasEnabled;
+  // Optimistic update so the pill flips instantly; reverted on failure.
+  pmUserValues[dbColumn] = enabled;
+  renderPermissionMatrix();
+  try {
+    const data = await apFetch({ action: "toggleUserPermission", email: pmSelectedUser.email, dbColumn, enabled });
+    if (!data.success) {
+      pmUserValues[dbColumn] = wasEnabled;
+      renderPermissionMatrix();
+      showBOQBanner("sa-feedback", data.error || "Failed to update permission.", "error");
+    }
+  } catch (e) {
+    pmUserValues[dbColumn] = wasEnabled;
+    renderPermissionMatrix();
     showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
   }
 }
