@@ -313,6 +313,75 @@ function icfWireTotalKvarAutoCalc(placeholders, containerEl, idPrefix) {
   recompute();
 }
 
+// Client-side mirror of lib/itemCodeFormat.js's applyReactorAutoCalcs —
+// live preview only; the server recomputes and overwrites both
+// authoritatively on write. kVAr = A² × ohm ÷ 1000 (bare "kVAr" label,
+// distinct from Iron Core Reactor's "Total kVAr").
+function icfWireKvarAutoCalc(placeholders, containerEl, idPrefix) {
+  const ampPh = placeholders.find(p => p.kind === 'number' && /^a$/i.test(p.label.trim()));
+  const ohmPh = placeholders.find(p => p.kind === 'number' && /^ohm/i.test(p.label.trim()));
+  const kvarPh = placeholders.find(p => p.kind === 'number' && /^kvar$/i.test(p.label.trim()));
+  if (!ampPh || !ohmPh || !kvarPh) return;
+  const ampEl = document.getElementById(`${idPrefix}-ph-${ampPh.index}`);
+  const ohmEl = document.getElementById(`${idPrefix}-ph-${ohmPh.index}`);
+  const kvarEl = document.getElementById(`${idPrefix}-ph-${kvarPh.index}`);
+  if (!ampEl || !ohmEl || !kvarEl) return;
+  kvarEl.readOnly = true;
+  kvarEl.style.background = '#f1f5f9';
+  kvarEl.style.color = 'var(--muted)';
+  kvarEl.title = 'Auto-calculated as A² × ohm ÷ 1000';
+  const recompute = () => {
+    const ampVal = parseFloat(ampEl.value);
+    const ohmVal = parseFloat(ohmEl.value);
+    kvarEl.value = (isNaN(ampVal) || isNaN(ohmVal)) ? '' : String(Math.round((ampVal * ampVal * ohmVal / 1000) * 1000) / 1000);
+  };
+  ampEl.addEventListener('input', recompute);
+  ohmEl.addEventListener('input', recompute);
+  recompute();
+}
+
+// Client-side mirror of applyReactorAutoCalcs' BIL lookup — found
+// structurally (a "Bil"-containing literal followed by nph / nph), same
+// reasoning as the server-side function's own comment. Wired off the kV
+// choice's radio group, since these two fields have no source <input> of
+// their own to listen on.
+const ICF_REACTOR_BIL_BY_KV = {
+  '3.3': [10, 40], '6.6': [20, 60], '11': [28, 75], '22': [50, 125],
+  '33': [70, 170], '66': [140, 325], '132': [275, 550],
+};
+function icfWireReactorBilAutoCalc(template, containerEl, idPrefix) {
+  const { segments } = icfParseTemplate(template);
+  if (!segments) return;
+  for (let i = 0; i < segments.length - 3; i++) {
+    const litBefore = segments[i], nph1 = segments[i + 1], litSlash = segments[i + 2], nph2 = segments[i + 3];
+    if (litBefore.kind === 'literal' && /\bbil\b/i.test(litBefore.text) &&
+        nph1.kind === 'number' && litSlash.kind === 'literal' && litSlash.text.trim() === '/' &&
+        nph2.kind === 'number') {
+      const kvChoice = segments.find(s => s.kind === 'choice' && s.options.length === 7 &&
+        ['3.3', '6.6', '11', '22', '33', '66', '132'].every((v, oi) => s.options[oi] === v));
+      if (!kvChoice) return;
+      const nph1El = document.getElementById(`${idPrefix}-ph-${nph1.index}`);
+      const nph2El = document.getElementById(`${idPrefix}-ph-${nph2.index}`);
+      if (!nph1El || !nph2El) return;
+      [nph1El, nph2El].forEach(el => {
+        el.readOnly = true;
+        el.style.background = '#f1f5f9';
+        el.style.color = 'var(--muted)';
+        el.title = 'Auto-filled from the selected kV rating (standard BIL levels)';
+      });
+      const recompute = () => {
+        const checked = containerEl.querySelector(`input[name="${idPrefix}-ph-${kvChoice.index}-group"]:checked`);
+        const pair = checked ? ICF_REACTOR_BIL_BY_KV[checked.value.trim()] : null;
+        nph1El.value = pair ? String(pair[0]) : '';
+        nph2El.value = pair ? String(pair[1]) : '';
+      };
+      containerEl.querySelectorAll(`input[name="${idPrefix}-ph-${kvChoice.index}-group"]`).forEach(el => el.addEventListener('change', recompute));
+      recompute();
+      return;
+    }
+  }
+}
+
 function icfRenderTemplate(template, values) {
   const { segments, error } = icfParseTemplate(template);
   if (error) throw new Error(error);
@@ -419,6 +488,8 @@ function icfRenderFormInputs(containerEl, template, onChange, idPrefix, initialV
   // the live preview.
   icfWireMhOhmAutoCalc(placeholders, containerEl, idPrefix);
   icfWireTotalKvarAutoCalc(placeholders, containerEl, idPrefix);
+  icfWireKvarAutoCalc(placeholders, containerEl, idPrefix);
+  icfWireReactorBilAutoCalc(template, containerEl, idPrefix);
   icfWireMirrorFields(placeholders, containerEl, idPrefix);
   placeholders.filter(p => p.kind === 'steplist').forEach(ph => icfInitStepListWidget(ph, containerEl, idPrefix, stepListState, onChange));
 
