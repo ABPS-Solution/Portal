@@ -48,10 +48,6 @@ async function loadSecurityAdminUsers() {
     if (data.success) {
       saAllUsers = data.users;
       renderSecurityAdminUsers();
-      // Registered PCs' allowed-users multi-select depends on this same
-      // list — populate it here too so it's ready regardless of which of
-      // the two parallel loads (see initializeSecurityAdminPanel) wins.
-      populateDeviceCodeUserSelect();
     }
   } catch (e) { console.error("loadSecurityAdminUsers failed:", e); }
 }
@@ -262,9 +258,12 @@ async function deactivateOutageModeNow() {
   }
 }
 
-// ── PIN Login (migration 140) ───────────────────────────────────────────
-// Admin-only: sets/resets a user's PIN and can clear a lockout. Users
-// never change their own PIN — no such route exists server-side.
+// ── PIN Login (migration 140, redesigned 26 Aug 2026) ───────────────────
+// View-only PIN values (confirmed design — see lib/pinAuth.js's header
+// comment on reversible encryption) + a per-person "Generate Enrollment
+// Code" action, which is now the ONLY way a PIN gets set or changed: the
+// person redeeming the code chooses their own PIN self-service on the
+// login screen. Admins can no longer type a PIN in directly here.
 async function loadSecurityAdminPinUsers() {
   try {
     const data = await apFetch({ action: "fetchPinUsers" });
@@ -272,13 +271,16 @@ async function loadSecurityAdminPinUsers() {
   } catch (e) { console.error("loadSecurityAdminPinUsers failed:", e); }
 }
 
-function pinStatusLabel(u) {
-  if (u.pin_disabled) return '<span style="color:#dc2626; font-weight:700;">Disabled (too many fails)</span>';
-  if (u.pin_locked_until && new Date(u.pin_locked_until) > new Date()) {
-    return `<span style="color:#d97706; font-weight:700;">Locked until ${new Date(u.pin_locked_until).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>`;
-  }
-  if (u.pin_set) return '<span style="color:#16a34a;">PIN set</span>';
-  return '<span style="color:var(--muted);">No PIN</span>';
+function pinValueCell(u) {
+  const lockNote = u.pin_disabled
+    ? ' <span style="color:#dc2626; font-weight:700; font-size:0.72rem;">(disabled — too many fails)</span>'
+    : (u.pin_locked_until && new Date(u.pin_locked_until) > new Date())
+      ? ` <span style="color:#d97706; font-weight:700; font-size:0.72rem;">(locked until ${new Date(u.pin_locked_until).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })})</span>`
+      : '';
+  const value = u.pin_value
+    ? `<span style="font-family:monospace; font-weight:700; letter-spacing:2px;">${u.pin_value}</span>`
+    : '<span style="color:var(--muted);">Not set</span>';
+  return value + lockNote;
 }
 
 function renderSecurityAdminPinUsers() {
@@ -291,35 +293,12 @@ function renderSecurityAdminPinUsers() {
     <tr style="border-top:1px solid var(--border);">
       <td style="padding:8px;">${u.first_name || ''} ${u.last_name || ''}</td>
       <td style="padding:8px;">${u.email}</td>
-      <td style="padding:8px;">${pinStatusLabel(u)}</td>
-      <td style="padding:8px;">
-        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="4-digit PIN"
-          id="sa-pin-input-${u.email.replace(/[^a-zA-Z0-9]/g, '_')}"
-          style="width:80px; padding:5px; letter-spacing:3px; text-align:center;">
-        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitSetUserPin('${u.email}')">Save</button>
+      <td style="padding:8px;">${pinValueCell(u)}</td>
+      <td style="padding:8px; display:flex; gap:6px;">
+        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitCreateDeviceEnrollmentCode('${u.email}')">Generate Enrollment Code</button>
+        ${(u.pin_disabled || u.pin_locked_until) ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitClearUserPinLockout('${u.email}')">Unlock</button>` : ''}
       </td>
-      <td style="padding:8px;">
-        ${(u.pin_disabled || u.pin_locked_until) ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitClearUserPinLockout('${u.email}')">Unlock</button>` : '—'}
-      </td>
-    </tr>`).join('') || `<tr><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No users found.</td></tr>`;
-}
-
-async function submitSetUserPin(email) {
-  const input = document.getElementById(`sa-pin-input-${email.replace(/[^a-zA-Z0-9]/g, '_')}`);
-  const pin = (input.value || "").trim();
-  if (!/^\d{4}$/.test(pin)) return showBOQBanner("sa-feedback", "PIN must be exactly 4 digits.", "error");
-  try {
-    const data = await apFetch({ action: "setUserPin", email, pin });
-    if (data.success) {
-      showBOQBanner("sa-feedback", `PIN set for ${email}.`, "success");
-      input.value = "";
-      loadSecurityAdminPinUsers();
-    } else {
-      showBOQBanner("sa-feedback", data.error || "Failed to set PIN.", "error");
-    }
-  } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
-  }
+    </tr>`).join('') || `<tr><td colspan="4" style="padding:14px; text-align:center; color:var(--muted);">No users found.</td></tr>`;
 }
 
 async function submitClearUserPinLockout(email) {
@@ -333,6 +312,25 @@ async function submitClearUserPinLockout(email) {
   }
 }
 
+async function submitCreateDeviceEnrollmentCode(targetEmail) {
+  try {
+    const data = await apFetch({ action: "createDeviceEnrollmentCode", targetEmail });
+    if (data.success) {
+      const resultBox = document.getElementById("sa-devicecode-result");
+      resultBox.style.display = "block";
+      resultBox.innerHTML = `
+        <div style="font-weight:700; color:#15803d; margin-bottom:6px;">Enrollment code for ${targetEmail} (valid 15 minutes, single use):</div>
+        <div style="font-family:monospace; font-size:1.4rem; font-weight:800; letter-spacing:3px; color:#111827;">${data.code}</div>
+        <div style="font-size:0.78rem; color:var(--muted); margin-top:6px;">Give this to them — on the login screen they choose "Enrollment Code", select their own name, and enter this code to set up their PC and PIN.</div>`;
+      resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+      showBOQBanner("sa-feedback", data.error || "Failed to generate code.", "error");
+    }
+  } catch (e) {
+    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+  }
+}
+
 // ── Registered PCs (migration 140) ──────────────────────────────────────
 // A registered PC is how PIN login becomes possible at all — an admin
 // generates a one-time code here, the operator enters it once on that PC
@@ -340,20 +338,9 @@ async function submitClearUserPinLockout(email) {
 // users explicitly listed here may then PIN-login on it.
 async function loadRegisteredDevices() {
   try {
-    // Reuses fetchAdminUserList (already loaded for the Login Anywhere
-    // tab) to populate the allowed-users multi-select, rather than a
-    // second near-identical query.
-    if (saAllUsers.length > 0) populateDeviceCodeUserSelect();
     const data = await apFetch({ action: "fetchRegisteredDevices" });
     if (data.success) renderRegisteredDevicesList(data.devices);
   } catch (e) { console.error("loadRegisteredDevices failed:", e); }
-}
-
-function populateDeviceCodeUserSelect() {
-  const select = document.getElementById("sa-devicecode-users");
-  if (!select || select.options.length > 0) return;
-  select.innerHTML = saAllUsers.filter(u => u.status === 'Active').map(u =>
-    `<option value="${u.email}">${u.first_name} ${u.last_name} (${u.email})</option>`).join('');
 }
 
 function renderRegisteredDevicesList(devices) {
@@ -367,31 +354,6 @@ function renderRegisteredDevicesList(devices) {
       <td style="padding:8px;">${d.last_used_at ? new Date(d.last_used_at).toLocaleDateString() : '—'}</td>
       <td style="padding:8px;">${d.status === 'Active' ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitRevokeRegisteredDevice(${d.device_id})">Revoke</button>` : '—'}</td>
     </tr>`).join('') || `<tr><td colspan="6" style="padding:14px; text-align:center; color:var(--muted);">No PCs registered yet.</td></tr>`;
-}
-
-async function submitCreateDeviceEnrollmentCode() {
-  const deviceLabel = document.getElementById("sa-devicecode-label").value.trim();
-  const select = document.getElementById("sa-devicecode-users");
-  const allowedEmails = Array.from(select.selectedOptions).map(o => o.value);
-  if (!deviceLabel) return showBOQBanner("sa-feedback", "PC Label is required.", "error");
-  if (allowedEmails.length === 0) return showBOQBanner("sa-feedback", "Select at least one allowed user.", "error");
-  try {
-    const data = await apFetch({ action: "createDeviceEnrollmentCode", deviceLabel, allowedEmails });
-    if (data.success) {
-      const resultBox = document.getElementById("sa-devicecode-result");
-      resultBox.style.display = "block";
-      resultBox.innerHTML = `
-        <div style="font-weight:700; color:#15803d; margin-bottom:6px;">Enrollment code (valid 15 minutes, single use):</div>
-        <div style="font-family:monospace; font-size:1.4rem; font-weight:800; letter-spacing:3px; color:#111827;">${data.code}</div>
-        <div style="font-size:0.78rem; color:var(--muted); margin-top:6px;">Give this to whoever is at "${deviceLabel}" — they enter it under "Set up this PC for PIN login" on the login screen.</div>`;
-      document.getElementById("sa-devicecode-label").value = "";
-      loadRegisteredDevices();
-    } else {
-      showBOQBanner("sa-feedback", data.error || "Failed to generate code.", "error");
-    }
-  } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
-  }
 }
 
 async function submitRevokeRegisteredDevice(deviceId) {

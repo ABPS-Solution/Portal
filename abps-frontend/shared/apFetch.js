@@ -125,6 +125,11 @@ window.addEventListener("unhandledrejection", function(event) {
   
 
 let globalPersonnelAuthDirectoryTreePayloadCache = {};
+// Flat {department, name, email} list from the same directory call — PIN
+// login / device enrollment (migration 140) need to resolve the selected
+// department+name back to an email, which personnelTree above doesn't
+// carry. Populated alongside it in syncPlatformPersonnelDropdownOptionsList.
+let globalPersonnelEmailLookupCache = [];
 let globalOperatorsDatabasePayloadCache = []
 let appActiveOperatorIdentityString = "";
 let userPermissions = { cardDetails: false, searchCompany: false, searchStatus: false, searchEngineer: false, searchTasks: false, emailWhatsapp: false, dispatchCommissioning: true }; 
@@ -194,7 +199,8 @@ async function syncPlatformPersonnelDropdownOptionsList() {
     if (data.success && data.departmentsList && data.personnelTree) {
       // Cache the full interactive dictionary response locally
       globalPersonnelAuthDirectoryTreePayloadCache = data.personnelTree;
-      
+      globalPersonnelEmailLookupCache = data.people || [];
+
       // Populate Department choices option array lines
       deptSelect.innerHTML = '<option value="">— Select Department —</option>';
       data.departmentsList.forEach(deptName => {
