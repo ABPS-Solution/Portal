@@ -2336,14 +2336,16 @@ async function extractPurchaseOrderForReview() {
     return;
   }
 
-  // Order Acceptance Sent Date and Contract Review doc are compulsory on
-  // every PO upload — Special Requirement stays optional. Captured now
-  // (not asked again in the review screen) since these three are locked
-  // passthrough fields per the review screen's design.
+  // Order Acceptance Sent Date, Contract Review doc, and Order Acceptance
+  // doc are compulsory on every PO upload — Special Requirement stays
+  // optional. Captured now (not asked again in the review screen) since
+  // these are locked passthrough fields per the review screen's design.
   const poAcceptanceDate = document.getElementById("purchase-order-acceptance-date").value.trim();
   if (!poAcceptanceDate) { alert("Order Acceptance Sent Date is required."); return; }
   const poContractReviewFile = document.getElementById("purchase-order-contract-review-file").files[0];
   if (!poContractReviewFile) { alert("Contract Review document is required."); return; }
+  const poOrderAcceptanceFile = document.getElementById("purchase-order-order-acceptance-file").files[0];
+  if (!poOrderAcceptanceFile) { alert("Order Acceptance document is required."); return; }
 
   const feedbackBanner = document.getElementById("purchase-order-feedback-banner");
   const targetBtn = document.getElementById("btn-ops-purchase-order-submit");
@@ -2365,6 +2367,11 @@ async function extractPurchaseOrderForReview() {
       reader.onload = () => resolve(reader.result.split(',')[1]);
       reader.readAsDataURL(poContractReviewFile);
     });
+    const orderAcceptanceBase64 = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.readAsDataURL(poOrderAcceptanceFile);
+    });
 
     const data = await apFetch({
       action: "extractPurchaseOrderPreview",
@@ -2373,6 +2380,7 @@ async function extractPurchaseOrderForReview() {
       base64Data: fileBase64Raw,
       mimeType: activeWorkingFile.type || "application/octet-stream",
       contractReviewFile: { fileName: poContractReviewFile.name, base64Data: contractReviewBase64, mimeType: poContractReviewFile.type || "application/octet-stream" },
+      orderAcceptanceFile: { fileName: poOrderAcceptanceFile.name, base64Data: orderAcceptanceBase64, mimeType: poOrderAcceptanceFile.type || "application/octet-stream" },
     });
 
     if (!data.success) {
@@ -2392,6 +2400,7 @@ async function extractPurchaseOrderForReview() {
       _orderAcceptanceSentDate: poAcceptanceDate,
       _specialRequirement: document.getElementById("purchase-order-special-requirement").value.trim(),
       _contractReviewFileObj: poContractReviewFile,
+      _orderAcceptanceFileObj: poOrderAcceptanceFile,
     };
 
     document.getElementById("purchase-order-inputs-container").style.display = "none";
@@ -2667,6 +2676,9 @@ function renderPurchaseOrderReview() {
       </div>`;
   };
 
+  const orderAcceptanceLinkHtml = s.orderAcceptanceUrl
+    ? `<a href="${driveLink(s.orderAcceptanceUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Document ↗</a>`
+    : '—';
   const contractReviewLinkHtml = s.contractReviewUrl
     ? `<a href="${driveLink(s.contractReviewUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Document ↗</a>`
     : '—';
@@ -2733,6 +2745,7 @@ function renderPurchaseOrderReview() {
         ${editField('Basic PO Amount', 'poBasicAmount', 'number', 'grid-column: span 3;', true)}
         ${editField('PO GST Amount', 'poGstAmount', 'number', 'grid-column: span 3;', true)}
         ${editField('PO Total Amount', 'poTotalAmount', 'number', 'grid-column: span 3;', true)}
+        ${lockedRow('Order Acceptance Link', orderAcceptanceLinkHtml, 'grid-column: span 4;')}
         ${lockedRow('Contract Review Link', contractReviewLinkHtml, 'grid-column: span 4;')}
         ${editField('Order Acceptance Sent Date', '_orderAcceptanceSentDate', 'date', 'grid-column: span 4;', true)}
         ${editField('Advance Amount', 'advanceAmount', 'number', 'grid-column: span 3;')}
@@ -2797,6 +2810,11 @@ async function submitReviewedPurchaseOrder() {
       reader.onload = () => resolve(reader.result.split(',')[1]);
       reader.readAsDataURL(s._contractReviewFileObj);
     });
+    const oaBase64 = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.readAsDataURL(s._orderAcceptanceFileObj);
+    });
 
     const data = await apFetch({
       action: "commitReviewedPurchaseOrder",
@@ -2808,6 +2826,8 @@ async function submitReviewedPurchaseOrder() {
       orderAcceptanceSentDate: s._orderAcceptanceSentDate,
       contractReviewFile: { fileName: s._contractReviewFileObj.name, base64Data: crBase64, mimeType: s._contractReviewFileObj.type || "application/octet-stream" },
       contractReviewUrl: s.contractReviewUrl,
+      orderAcceptanceFile: { fileName: s._orderAcceptanceFileObj.name, base64Data: oaBase64, mimeType: s._orderAcceptanceFileObj.type || "application/octet-stream" },
+      orderAcceptanceUrl: s.orderAcceptanceUrl,
       companyName: s.companyName, poNumber: s.poNumber, poDate: s.poDate,
       headOfficeAddress: s.headOfficeAddress, deliveryAddress: s.deliveryAddress, gstNumber: s.gstNumber, deliveryDate: s.deliveryDate,
       lineItems: s.lineItems,
@@ -2867,6 +2887,9 @@ function resetPurchaseOrderWorkspace() {
   document.getElementById('purchase-order-contract-review-file').value = '';
   const crBox = document.getElementById('purchase-order-contract-review-box');
   if (crBox) { crBox.textContent = '📋 Select Contract Review Document *'; crBox.classList.remove('done'); }
+  document.getElementById('purchase-order-order-acceptance-file').value = '';
+  const oaBox = document.getElementById('purchase-order-order-acceptance-box');
+  if (oaBox) { oaBox.textContent = '📋 Select Order Acceptance Document *'; oaBox.classList.remove('done'); }
   const leadDrop = document.getElementById('purchase-order-lead-dropdown');
   if (leadDrop) leadDrop.value = '';
   document.getElementById('purchase-order-feedback-banner').style.display = 'none';

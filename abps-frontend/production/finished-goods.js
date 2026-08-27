@@ -6,7 +6,6 @@ const FG_DOC_META = {
   packedProductsImages: { dropzoneId: "fg-add-packed-images-dropzone", listId: "fg-add-packed-images-filelist", label: "Packed Products Images",      placeholder: "📎 Click to attach Packed Products Images" },
   testCert:             { dropzoneId: "fg-add-test-cert-dropzone",     listId: "fg-add-test-cert-filelist",     label: "Test Certificate",            placeholder: "📎 Click to attach Test Certificate" },
   inProcessInspection:  { dropzoneId: "fg-add-inprocess-dropzone",     listId: "fg-add-inprocess-filelist",     label: "In Process Inspection Sheet", placeholder: "📎 Click to attach In Process Inspection Sheet" },
-  inspectionClearance:  { dropzoneId: "fg-add-inspection-dropzone",    listId: "fg-add-inspection-filelist",    label: "Inspection Clearance",        placeholder: "📎 Click to attach Inspection Clearance" },
   warrantyCard:         { dropzoneId: "fg-add-warranty-dropzone",      listId: "fg-add-warranty-filelist",      label: "Warranty Card",                placeholder: "📎 Click to attach Warranty Card" },
   otherDocuments:       { dropzoneId: "fg-add-otherdocs-dropzone",     listId: "fg-add-otherdocs-filelist",     label: "Other Documents",              placeholder: "📎 Click to attach Other Documents" },
 };
@@ -582,7 +581,7 @@ async function submitFGAddItem() {
       return failFG(`${FG_DOC_META[docType].label} document is required.`);
     }
   }
-  // Inspection Clearance and Other Documents are optional — no validation block.
+  // Other Documents is optional — no validation block.
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Uploading documents...';

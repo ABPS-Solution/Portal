@@ -70,7 +70,6 @@ const FG_DOC_TYPE_LABELS = {
   packedProductsImages: "Packed Products Images",
   testCert: "Test Certificate",
   inProcessInspection: "In Process Inspection Sheet",
-  inspectionClearance: "Inspection Clearance",
   warrantyCard: "Warranty Card",
   otherDocuments: "Other Documents",
 };

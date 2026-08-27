@@ -1,9 +1,12 @@
 let pinvInvoiceState = null;
 
 // Invoice Documents — one dropzone per type, each accepting multiple
-// files, mirroring finished-goods.js's FG_DOC_META pattern. lrCopy and
-// mdcc are optional (see PINV_REQUIRED_DOC_TYPES below) -- everything
-// else is compulsory since it's never skippable for a real dispatch.
+// files, mirroring finished-goods.js's FG_DOC_META pattern. lrCopy, mdcc,
+// and inspectionClearance are optional (see PINV_REQUIRED_DOC_TYPES
+// below) -- everything else is compulsory since it's never skippable for
+// a real dispatch. inspectionClearance moved here from Add to Finished
+// Goods Store / Add to Finished Goods Store Approval — it's project-level
+// now, not tied to one Job Card's finished good.
 const PINV_DOC_META = {
   packingList:        { dropzoneId: "pinv-doc-packingList-dropzone",        listId: "pinv-doc-packingList-filelist",        label: "Packing List",                             placeholder: "📎 Click to attach Packing List" },
   deliveryChallan:     { dropzoneId: "pinv-doc-deliveryChallan-dropzone",    listId: "pinv-doc-deliveryChallan-filelist",    label: "Delivery Challan",                          placeholder: "📎 Click to attach Delivery Challan" },
@@ -11,8 +14,9 @@ const PINV_DOC_META = {
   historyCard:         { dropzoneId: "pinv-doc-historyCard-dropzone",       listId: "pinv-doc-historyCard-filelist",        label: "History Card",                              placeholder: "📎 Click to attach History Card" },
   truckLoadedImages:   { dropzoneId: "pinv-doc-truckLoadedImages-dropzone", listId: "pinv-doc-truckLoadedImages-filelist",  label: "Images of Products Loaded in Truck",        placeholder: "📎 Click to attach Images of Products Loaded in Truck" },
   mdcc:                { dropzoneId: "pinv-doc-mdcc-dropzone",              listId: "pinv-doc-mdcc-filelist",               label: "MD cc",                                     placeholder: "📎 Click to attach MD cc" },
+  inspectionClearance: { dropzoneId: "pinv-doc-inspectionClearance-dropzone", listId: "pinv-doc-inspectionClearance-filelist", label: "Inspection Clearance",                    placeholder: "📎 Click to attach Inspection Clearance" },
 };
-const PINV_REQUIRED_DOC_TYPES = Object.keys(PINV_DOC_META).filter(t => t !== 'lrCopy' && t !== 'mdcc');
+const PINV_REQUIRED_DOC_TYPES = Object.keys(PINV_DOC_META).filter(t => t !== 'lrCopy' && t !== 'mdcc' && t !== 'inspectionClearance');
 let pinvDocFiles = {};
 
 function resetPinvDocFiles() {

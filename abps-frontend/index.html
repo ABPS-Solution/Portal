@@ -1331,7 +1331,7 @@
 
           <!-- QA uploads -->
           <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:#0056b3; letter-spacing:0.5px; margin-bottom:8px;">Quality Assurance Documents</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Test Certificate * <span style="color:#b91c1c;">(required)</span></label>
               <div class="card-box" id="fg-add-test-cert-dropzone" onclick="document.getElementById('fg-add-test-cert-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
@@ -1347,14 +1347,6 @@
               </div>
               <input type="file" id="fg-add-inprocess-input" multiple hidden onchange="handleFGFileSelectionMulti(this, 'inProcessInspection')" />
               <div id="fg-add-inprocess-filelist"></div>
-            </div>
-            <div>
-              <label class="field-label" style="margin-top:0;">Inspection Clearance</label>
-              <div class="card-box" id="fg-add-inspection-dropzone" onclick="document.getElementById('fg-add-inspection-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-                📎 Click to attach Inspection Clearance
-              </div>
-              <input type="file" id="fg-add-inspection-input" multiple hidden onchange="handleFGFileSelectionMulti(this, 'inspectionClearance')" />
-              <div id="fg-add-inspection-filelist"></div>
             </div>
           </div>
 
@@ -1488,6 +1480,17 @@
               </div>
               <input type="file" id="pinv-doc-mdcc-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'mdcc')" />
               <div id="pinv-doc-mdcc-filelist"></div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Inspection Clearance</label>
+              <div class="card-box" id="pinv-doc-inspectionClearance-dropzone" onclick="document.getElementById('pinv-doc-inspectionClearance-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Inspection Clearance
+              </div>
+              <input type="file" id="pinv-doc-inspectionClearance-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'inspectionClearance')" />
+              <div id="pinv-doc-inspectionClearance-filelist"></div>
             </div>
           </div>
 
@@ -3685,8 +3688,12 @@
           <label class="field-label">Special Requirement <span style="color:var(--muted); font-weight:400;">(optional)</span></label>
           <input type="text" id="purchase-order-special-requirement" placeholder="Any special requirement for this order..." style="padding: 8px; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
         </div>
-        <div class="card-box" id="purchase-order-contract-review-box" onclick="document.getElementById('purchase-order-contract-review-file').click()" style="margin-top: 12px; padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Contract Review Document *</div>
+        <div style="margin-top: 12px; display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="card-box" id="purchase-order-contract-review-box" onclick="document.getElementById('purchase-order-contract-review-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Contract Review Document *</div>
+          <div class="card-box" id="purchase-order-order-acceptance-box" onclick="document.getElementById('purchase-order-order-acceptance-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Order Acceptance Document *</div>
+        </div>
         <input type="file" id="purchase-order-contract-review-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'purchase-order-contract-review-box', 'Contract Review Document Added ✅')" />
+        <input type="file" id="purchase-order-order-acceptance-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'purchase-order-order-acceptance-box', 'Order Acceptance Document Added ✅')" />
 
         <button class="nav-btn-styled" id="btn-ops-purchase-order-submit" style="margin-top: 14px; width: 100%; padding: 10px;" onclick="extractPurchaseOrderForReview()">Process Purchase Order with AI</button>
       </div>
