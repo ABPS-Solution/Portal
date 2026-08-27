@@ -351,9 +351,20 @@ function executeLogout() {
 async function showAppView() {
   document.getElementById("auth-container").style.display = "none"; 
   document.getElementById("app-container").style.display = "block";
-  document.getElementById("dashboard-view").style.display = "block"; 
+  document.getElementById("dashboard-view").style.display = "block";
   document.getElementById("module-workspace-container").style.display = "none";
-  
+  // canvas-module-security-admin (and similar full-screen canvases like
+  // tour-expense/cash-expenses/project-invoice/project-status/
+  // customer-queries) live as top-level siblings OUTSIDE
+  // module-workspace-container, not nested inside it — hiding that
+  // container above does nothing for them. If one was left visible from
+  // an earlier visit in this same tab (e.g. logging out and back in
+  // without a full page refresh, so the DOM never resets), it kept
+  // showing indefinitely, stacked below the dashboard on every login
+  // afterward. Sweep every such panel closed here so a fresh login is
+  // always a clean single view regardless of what was open before.
+  document.querySelectorAll(".workspace-panel").forEach(p => { p.style.display = "none"; });
+
   document.getElementById("display-full-name").textContent = localStorage.getItem("userFirstName") + " " + localStorage.getItem("userLastName");
 
   // DIAGNOSTIC: surface exactly what permissions object the dashboard is being built
