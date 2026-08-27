@@ -30,7 +30,9 @@ function tvcRenderCard(v) {
     const bills = (l.bills && l.bills.length > 0) ? l.bills : (l.billUrl ? [{ fileName: l.billFileName, url: l.billUrl }] : []);
     const billCell = bills.length > 0
       ? bills.map(b => `<a href="${driveLink(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.fileName || 'View')}</a>`).join("<br>")
-      : `<span style="color:var(--muted);">— no bill required —</span>`;
+      : l.noBillReason
+        ? `<span style="color:var(--muted); font-style:italic;">Reason: ${escapeHtml(l.noBillReason)}</span>`
+        : `<span style="color:var(--muted);">— no bill required —</span>`;
     const typeLabel = l.expenseType === 'Local Conveyance' && l.conveyanceMode ? `Local Conveyance (${escapeHtml(l.conveyanceMode)})`
       : l.expenseType === 'Others' && l.otherText ? `Others (${escapeHtml(l.otherText)})` : escapeHtml(l.expenseType);
     return `<tr style="border-bottom:1px solid var(--border);" data-line-id="${l.lineId}">
@@ -56,6 +58,15 @@ function tvcRenderCard(v) {
   });
   const dailyFoodTotalsLine = Object.keys(foodTotalsByDate).sort().map(date =>
     `<div>Daily Total Food for ${formatDateDMY(date)}: <strong>${formatINRComma(foodTotalsByDate[date])}</strong></div>`
+  ).join("");
+
+  // Same pattern, for Local Conveyance.
+  const conveyanceTotalsByDate = {};
+  lines.filter(l => l.expenseType === 'Local Conveyance').forEach(l => {
+    conveyanceTotalsByDate[l.expenseDate] = (conveyanceTotalsByDate[l.expenseDate] || 0) + (Number(l.amount) || 0);
+  });
+  const dailyConveyanceTotalsLine = Object.keys(conveyanceTotalsByDate).sort().map(date =>
+    `<div>Daily Total Local Conveyance for ${formatDateDMY(date)}: <strong>${formatINRComma(conveyanceTotalsByDate[date])}</strong></div>`
   ).join("");
 
   const peopleLine = (v.additionalPeople || []).length
@@ -94,7 +105,7 @@ function tvcRenderCard(v) {
             <tbody>${rows}</tbody>
           </table>
         </div>
-        ${dailyFoodTotalsLine ? `<div style="margin-top:12px; font-size:0.85rem; color:var(--muted);">${dailyFoodTotalsLine}</div>` : ""}
+        ${(dailyFoodTotalsLine || dailyConveyanceTotalsLine) ? `<div style="margin-top:12px; font-size:0.85rem; color:var(--muted);">${dailyFoodTotalsLine}${dailyConveyanceTotalsLine}</div>` : ""}
         <div style="display:flex; justify-content:flex-end; gap:24px; margin-top:14px; align-items:center; flex-wrap:wrap;">
           <div style="font-weight:700;">Total Voucher Actual Amount: <span id="tvc-actual-total-${v.voucherId}">${formatINRComma(v.totalAmount)}</span></div>
           <div style="font-weight:700;">Total Voucher Amount Difference: <span id="tvc-diff-${v.voucherId}">0</span></div>

@@ -15,6 +15,24 @@ function initializeCashExpensesPanel() {
   document.getElementById("ce-feedback").style.display = "none";
   document.getElementById("ce-success").style.display = "none";
   switchCashExpenseToggle("expenses");
+  loadCashExpenseShellRangeFlag();
+}
+
+// A persistent copy of the combined-balance out-of-range banner
+// (renderCashBoxRangeFlag, cash-balance.js), shown above the toggle bar so
+// it's visible no matter which of the 4 toggles is open — not just the
+// "Add to Cash Box" panel. Fetched once on load and refreshed whenever
+// cash-balance.js's own load/topup flow re-fetches the balance.
+async function loadCashExpenseShellRangeFlag() {
+  try {
+    const data = await acFetch("fetchCashUpiBalance", {});
+    if (data.success) refreshCashExpenseShellRangeFlag(data.cashBalance, data.upiBalance);
+  } catch (e) { console.error("loadCashExpenseShellRangeFlag failed:", e.message); }
+}
+
+function refreshCashExpenseShellRangeFlag(cashBalance, upiBalance) {
+  const el = document.getElementById("ce-shell-range-flag");
+  if (el && typeof renderCashBoxRangeFlag === "function") renderCashBoxRangeFlag(el, cashBalance, upiBalance);
 }
 
 function switchCashExpenseToggle(toggle) {

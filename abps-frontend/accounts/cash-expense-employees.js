@@ -1,8 +1,10 @@
 // accounts/cash-expense-employees.js — "Employee Details" toggle for
-// Daily Cash/UPI Expenses. Independent employee list from Tour Expense
-// Tracker's (explicit decision) — Name/EMP ID/Department editable inline;
-// Delete removes the employee row entirely (25 Aug 2026, replacing the
-// old Deactivate) — the backend refuses if they have any expense history.
+// Daily Cash/UPI Expenses. Shares accounts.tour_employees with Tour
+// Expense Tracker (migration 141) — Name/EMP ID/Department editable
+// inline, Balance is read-only here (only Tour Expense's advance/voucher
+// flow moves it). Delete removes the employee row entirely (25 Aug 2026,
+// replacing the old Deactivate) — the backend refuses if they have any
+// expense/advance/voucher history, or are still Active in Tour Expense.
 
 async function initializeCashExpenseEmployeesPanel() {
   const panel = document.getElementById("ce-panel-employees");
@@ -39,6 +41,7 @@ async function loadCashExpenseEmployeesTable() {
         <td style="padding:7px;"><input type="text" class="cee-f-name" value="${escapeHtml(e.employeeName)}" style="width:100%; padding:5px; border:1px solid var(--border); border-radius:4px;"></td>
         <td style="padding:7px;"><input type="text" class="cee-f-empcode" value="${escapeHtml(e.empCode || '')}" style="width:100%; padding:5px; border:1px solid var(--border); border-radius:4px;"></td>
         <td style="padding:7px;"><input type="text" class="cee-f-dept" value="${escapeHtml(e.departmentName || '')}" style="width:100%; padding:5px; border:1px solid var(--border); border-radius:4px;"></td>
+        <td style="padding:7px; text-align:right; color:var(--muted);">${formatINRComma(e.balance || 0)}</td>
         <td style="padding:7px; text-align:center;">${e.status === 'Active' ? 'Active' : '<span style="color:#b91c1c; font-weight:700;">Inactive</span>'}</td>
         <td style="padding:7px; white-space:nowrap;">
           <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem;" onclick="submitUpdateCashExpenseEmployee(${e.employeeId})">Save</button>
@@ -49,7 +52,7 @@ async function loadCashExpenseEmployeesTable() {
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
         <thead><tr style="background:var(--highlight-bg); text-align:left;">
           <th style="padding:8px;">Name</th><th style="padding:8px;">EMP ID</th><th style="padding:8px;">Department</th>
-          <th style="padding:8px;">Status</th><th style="padding:8px;">Actions</th>
+          <th style="padding:8px;">Balance</th><th style="padding:8px;">Status</th><th style="padding:8px;">Actions</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
@@ -94,7 +97,7 @@ async function submitUpdateCashExpenseEmployee(employeeId) {
 }
 
 async function submitDeleteCashExpenseEmployee(employeeId, employeeName) {
-  if (!confirm(`Permanently delete "${employeeName}"? This cannot be undone. (Blocked if they have any expense history.)`)) return;
+  if (!confirm(`Permanently delete "${employeeName}"? This cannot be undone. (Blocked if they have any expense/advance/voucher history, or are still Active in Tour Expense Tracker.)`)) return;
   showBlockingOverlay("Deleting...");
   try {
     const data = await acFetch("deleteCashExpenseEmployee", { employeeId });

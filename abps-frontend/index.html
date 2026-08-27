@@ -1914,10 +1914,11 @@
     <h2 class="panel-title">Daily Cash / UPI Expenses</h2>
     <div id="ce-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
     <div id="ce-success" style="display:none; margin-bottom:12px;"></div>
+    <div id="ce-shell-range-flag"></div>
 
     <div id="ce-toggle-bar" style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
       <button id="ce-toggle-expenses" class="nav-btn-styled" onclick="switchCashExpenseToggle('expenses')" style="flex:1; padding:11px 16px;">Expenses</button>
-      <button id="ce-toggle-balance" class="nav-btn-styled" onclick="switchCashExpenseToggle('balance')" style="flex:1; padding:11px 16px;">Add to Account Balance</button>
+      <button id="ce-toggle-balance" class="nav-btn-styled" onclick="switchCashExpenseToggle('balance')" style="flex:1; padding:11px 16px;">Add to Cash Box</button>
       <button id="ce-toggle-search" class="nav-btn-styled" onclick="switchCashExpenseToggle('search')" style="flex:1; padding:11px 16px;">Search Cash Expense Vouchers</button>
       <button id="ce-toggle-employees" class="nav-btn-styled" onclick="switchCashExpenseToggle('employees')" style="flex:1; padding:11px 16px;">Employee Details</button>
     </div>
@@ -1925,7 +1926,7 @@
     <!-- EXPENSES -->
     <div id="ce-panel-expenses"></div>
 
-    <!-- ADD TO ACCOUNT BALANCE -->
+    <!-- ADD TO CASH BOX -->
     <div id="ce-panel-balance" style="display:none;"></div>
 
     <!-- SEARCH CASH EXPENSE VOUCHERS -->

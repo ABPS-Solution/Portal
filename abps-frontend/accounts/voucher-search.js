@@ -66,6 +66,11 @@ async function initializeVoucherSearchPanel() {
             <select id="tvs-f-status" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
               <option value="">All</option><option value="Unchecked">Unchecked</option><option value="Checked">Checked</option></select></div>
         </div>
+        <div id="tvs-advance-only-filters" style="display:none;">
+          <div><label class="field-label">Purpose of Visit</label>
+            <select id="tvs-f-adv-purpose" style="padding:8px; border:1px solid var(--border); border-radius:6px; min-width:140px;">
+              <option value="">All</option>${TOUR_PURPOSES.map(p => `<option value="${p}">${p}</option>`).join("")}</select></div>
+        </div>
         <div style="position:relative;"><label class="field-label">Place of Visit</label>
           <input type="text" id="tvs-f-place" placeholder="Type to search..." autocomplete="off"
             style="padding:8px; border:1px solid var(--border); border-radius:6px; min-width:140px;"
@@ -107,6 +112,7 @@ function tvsSetSearchMode(mode) {
   document.getElementById("tvs-mode-advance").style.background = mode === "advance" ? "var(--brand)" : "#e2e8f0";
   document.getElementById("tvs-mode-advance").style.color = mode === "advance" ? "#fff" : "#334155";
   document.getElementById("tvs-expense-only-filters").style.display = mode === "expense" ? "contents" : "none";
+  document.getElementById("tvs-advance-only-filters").style.display = mode === "advance" ? "contents" : "none";
   runTourVoucherSearch();
 }
 
@@ -130,7 +136,8 @@ function tvsBuildSearchLabel() {
       `<br><span style="color:#000;">Purpose:</span> ${val(purposeLabel)} &nbsp; <span style="color:#000;">Type:</span> ${val(typeLabel)} &nbsp; <span style="color:#000;">Status:</span> ${val(statusLabel)} &nbsp; <span style="color:#000;">Place:</span> ${val(placeLabel)}`;
   } else {
     const placeLabel = document.getElementById("tvs-f-place").value || "All";
-    html += `<br><span style="color:#000;">Employee:</span> ${val(employeeLabel)} &nbsp; <span style="color:#000;">Department:</span> ${val(deptLabel)} &nbsp; <span style="color:#000;">Place:</span> ${val(placeLabel)}`;
+    const advPurposeLabel = document.getElementById("tvs-f-adv-purpose").value || "All";
+    html += `<br><span style="color:#000;">Employee:</span> ${val(employeeLabel)} &nbsp; <span style="color:#000;">Department:</span> ${val(deptLabel)} &nbsp; <span style="color:#000;">Place:</span> ${val(placeLabel)} &nbsp; <span style="color:#000;">Purpose:</span> ${val(advPurposeLabel)}`;
   }
   html += `<br><span style="color:#000;">Date Range:</span> ${val(dateRangeLabel)}`;
   return html;
@@ -165,7 +172,11 @@ async function runTourVoucherSearch() {
     };
 
     if (tvsSearchMode === "advance") {
-      const data = await acFetch("searchTourAdvances", filters);
+      const advanceFilters = {
+        ...filters,
+        purposeOfVisit: document.getElementById("tvs-f-adv-purpose").value || null,
+      };
+      const data = await acFetch("searchTourAdvances", advanceFilters);
       if (!data.success) { resultsEl.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
       document.getElementById("tvs-balance-buckets").innerHTML = "";
       document.getElementById("tvs-total").textContent = `Total Advance Amount: ${formatINRComma(data.totalAmount)}`;
@@ -235,9 +246,11 @@ function tvsRenderAdvanceCard(a) {
           <span style="background:var(--brand); color:#fff; font-weight:700; font-size:0.85rem; padding:3px 10px; border-radius:3px;">${formatINRComma(a.amount)}</span>
         </div>
         <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
-          ${escapeHtml(a.placeOfVisit || '—')} · Start ${formatDateDMY(a.startDate)}${a.estimatedDays ? ` · ${a.estimatedDays} day(s)` : ''} ·
+          ${escapeHtml(a.placeOfVisit || '—')}${a.purposeOfVisit ? ' · ' + escapeHtml(a.purposeOfVisit) : ''} ·
+          Start ${formatDateDMY(a.startDate)}${a.estimatedDays ? ` · ${a.estimatedDays} day(s)` : ''} ·
           Paid ${formatDateDMY(a.paidDate)}${a.createdBy ? ' by ' + escapeHtml(a.createdBy) : ''}
         </div>
+        ${a.remarks ? `<div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">Remarks: ${escapeHtml(a.remarks)}</div>` : ''}
       </div>
     </div>`;
 }
@@ -248,7 +261,7 @@ function tvsRenderCard(v) {
     const bills = (l.bills && l.bills.length > 0) ? l.bills : (l.billUrl ? [{ fileName: l.billFileName, url: l.billUrl }] : []);
     const billCell = bills.length > 0
       ? bills.map(b => `<a href="${driveLink(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.fileName || 'View')}</a>`).join("<br>")
-      : "—";
+      : l.noBillReason ? `<span style="font-style:italic;">Reason: ${escapeHtml(l.noBillReason)}</span>` : "—";
     return `<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:6px;">${l.srNo}</td><td style="padding:6px;">${formatDateDMY(l.expenseDate)}</td>
       <td style="padding:6px;">${escapeHtml(l.expenseType)}${l.conveyanceMode ? ' (' + escapeHtml(l.conveyanceMode) + ')' : ''}</td>
