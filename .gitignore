@@ -14,6 +14,11 @@
 # Backend source — never publish (public repo)
 abps-backend/
 
+# ABPS-Tour-Vouchers — its own separate git repo/remote (ABPS-Solution/
+# ABPS-Tour-Vouchers), just kept as a nested folder here on disk for
+# convenience. Not part of this repo's history or deploy.
+ABPS-Tour-Vouchers/
+
 # Internal documentation — architecture/handoff notes, not for public view
 ABPS_SYSTEM_OVERVIEW.md
 CLAUDE.md
