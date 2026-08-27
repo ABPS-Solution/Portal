@@ -358,11 +358,23 @@ async function loadSecurityAdminPinUsers() {
 let pinTreeMode = 'pin';
 let pinFlippedState = {}; // email -> true while showing the back face
 let pinEnrollCodeCache = {}; // email -> last-generated {code, expiresAt} for redisplay without re-hitting the API mid-flip-animation
+let pinChangeEditingState = {}; // email -> true while its Change PIN card has an open edit input (suppresses hover-driven flip-back)
+
+function showPinChangeBanner(msg, isError) {
+  const box = document.getElementById("sa-pin-change-banner");
+  if (!box) return;
+  box.textContent = msg;
+  box.style.background = isError ? '#fef2f2' : '#dcfce7';
+  box.style.color = isError ? '#991b1b' : '#166534';
+  box.style.display = 'block';
+  setTimeout(() => { box.style.display = 'none'; }, 3000);
+}
 
 function selectPinTreeMode(mode) {
   pinTreeMode = mode;
   pinFlippedState = {}; // switching modes always resets every card to its front face
-  ['pin', 'enroll'].forEach(m => {
+  pinChangeEditingState = {};
+  ['pin', 'changepin', 'enroll'].forEach(m => {
     const btn = document.getElementById(`pinmode-btn-${m}`);
     if (!btn) return;
     btn.style.background = (m === mode) ? 'var(--brand)' : '#e2e8f0';
@@ -394,22 +406,27 @@ function pinFlipCardHtml(u, color) {
   const safeId = u.email.replace(/[^a-zA-Z0-9]/g, '_');
   const flipped = !!pinFlippedState[u.email];
   const cached = pinEnrollCodeCache[u.email];
-  const backText = pinTreeMode === 'pin'
-    ? (u.pin_value || 'None')
-    : (cached ? cached.code : '…');
+  const isChangeMode = pinTreeMode === 'changepin';
+  const backText = pinTreeMode === 'enroll'
+    ? (cached ? cached.code : '…')
+    : (u.pin_value || 'None');
   const backIsCode = pinTreeMode === 'enroll';
+  const outerHandlers = isChangeMode
+    ? `onmouseenter="handleChangePinHover('${u.email}', true)" onmouseleave="handleChangePinHover('${u.email}', false)"`
+    : `onclick="handlePinFlipClick('${u.email}')"`;
+  const backOnClick = isChangeMode ? ` onclick="handleChangePinBackClick('${u.email}'); event.stopPropagation();"` : '';
   return `
     <div style="display:flex; flex-direction:column; align-items:center;">
       <div style="width:2px; height:20px; background:${color};"></div>
       <div style="width:7px; height:7px; border-radius:50%; background:${color}; margin-bottom:-1px;"></div>
-      <div id="pinflip-outer-${safeId}" onclick="handlePinFlipClick('${u.email}')"
+      <div id="pinflip-outer-${safeId}" ${outerHandlers}
         style="width:180px; height:52px; perspective:800px; cursor:pointer;">
         <div id="pinflip-inner-${safeId}" style="position:relative; width:100%; height:100%; transition:transform 0.5s; transform-style:preserve-3d; transform:${flipped ? 'rotateY(180deg)' : 'rotateY(0deg)'};">
           <div style="position:absolute; inset:0; backface-visibility:hidden; display:flex; align-items:center; justify-content:center; text-align:center; padding:0 10px;
                       border:1.5px solid #dde3ea; border-radius:12px; background:#fff; box-shadow:0 1px 3px rgba(15,23,42,0.08); font-weight:650; font-size:0.88rem; color:#1e293b;">
             ${name}
           </div>
-          <div id="pinflip-back-${safeId}" style="position:absolute; inset:0; backface-visibility:hidden; transform:rotateY(180deg); display:flex; align-items:center; justify-content:center; text-align:center; padding:0 8px;
+          <div id="pinflip-back-${safeId}"${backOnClick} style="position:absolute; inset:0; backface-visibility:hidden; transform:rotateY(180deg); display:flex; align-items:center; justify-content:center; text-align:center; padding:0 8px;
                       border:1.5px solid ${color}; border-radius:12px; background:${color}14; font-weight:800; font-size:${backIsCode ? '1.02rem' : '1.05rem'}; color:#0f172a; font-family:${backIsCode || u.pin_value ? 'monospace' : 'inherit'}; letter-spacing:${backIsCode || u.pin_value ? '2px' : 'normal'};">
             ${backText}
           </div>
@@ -443,6 +460,66 @@ async function handlePinFlipClick(email) {
   pinFlippedState[email] = nowFlipped;
   const inner = document.getElementById(`pinflip-inner-${safeId}`);
   if (inner) inner.style.transform = nowFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
+}
+
+// ── Change PIN mode ───────────────────────────────────────────────────
+// Hover flips the card to show the current PIN (view-only); clicking
+// that revealed PIN swaps it for an editable input. Typing a new
+// 4-digit PIN auto-submits (same convention as the login screen's PIN
+// field) straight to adminResetUserPin, which invalidates every session
+// for that person server-side — this IS the "reset someone's PIN" flow.
+function handleChangePinHover(email, entering) {
+  if (pinChangeEditingState[email]) return; // an edit is in progress — hover must not interrupt it
+  const safeId = email.replace(/[^a-zA-Z0-9]/g, '_');
+  const inner = document.getElementById(`pinflip-inner-${safeId}`);
+  if (inner) inner.style.transform = entering ? 'rotateY(180deg)' : 'rotateY(0deg)';
+}
+
+function handleChangePinBackClick(email) {
+  if (pinChangeEditingState[email]) return; // already editing
+  pinChangeEditingState[email] = true;
+  const safeId = email.replace(/[^a-zA-Z0-9]/g, '_');
+  const backEl = document.getElementById(`pinflip-back-${safeId}`);
+  if (!backEl) return;
+  backEl.innerHTML = `<input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4"
+    id="pinchange-input-${safeId}" style="width:80px; text-align:center; font-weight:800; font-size:1.05rem; letter-spacing:4px; font-family:monospace; border:1.5px solid #cbd5e1; border-radius:6px; padding:4px;"
+    oninput="handleChangePinInputTyping('${email}', this)" onclick="event.stopPropagation();">`;
+  const input = document.getElementById(`pinchange-input-${safeId}`);
+  if (input) input.focus();
+}
+
+function handleChangePinInputTyping(email, inputEl) {
+  const digitsOnly = inputEl.value.replace(/\D/g, '').slice(0, 4);
+  if (inputEl.value !== digitsOnly) inputEl.value = digitsOnly;
+  if (digitsOnly.length === 4) submitAdminResetPin(email, digitsOnly);
+}
+
+async function submitAdminResetPin(email, newPin) {
+  const safeId = email.replace(/[^a-zA-Z0-9]/g, '_');
+  const input = document.getElementById(`pinchange-input-${safeId}`);
+  if (input) input.disabled = true;
+  try {
+    const data = await apFetch({ action: "adminResetUserPin", email, newPin });
+    const u = saAllPinUsers.find(x => x.email === email);
+    if (data.success) {
+      if (u) u.pin_value = newPin;
+      const displayName = u ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : email;
+      showPinChangeBanner(`PIN updated for ${displayName}. They're signed out everywhere and must use the new PIN.`, false);
+      const backEl = document.getElementById(`pinflip-back-${safeId}`);
+      if (backEl) {
+        backEl.innerHTML = newPin;
+      }
+      pinChangeEditingState[email] = false;
+      const inner = document.getElementById(`pinflip-inner-${safeId}`);
+      if (inner) inner.style.transform = 'rotateY(0deg)';
+    } else {
+      showPinChangeBanner(data.error || "Failed to update PIN.", true);
+      if (input) { input.disabled = false; input.value = ''; input.focus(); }
+    }
+  } catch (e) {
+    showPinChangeBanner("Connection error: " + e.message, true);
+    if (input) { input.disabled = false; input.value = ''; input.focus(); }
+  }
 }
 
 function renderSecurityAdminPinUsers() {
