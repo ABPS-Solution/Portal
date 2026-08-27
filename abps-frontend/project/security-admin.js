@@ -27,7 +27,7 @@ async function initializeSecurityAdminPanel() {
     loadRegisteredDevices(),
     loadPermissionCatalog(),
   ]);
-  selectPinTreeMode('pin'); // sets the mode-button active styling; re-render is harmless, data's already loaded
+  selectPinTreeMode('changepin'); // sets the mode-button active styling; re-render is harmless, data's already loaded
 }
 
 function exitSecurityAdminBackToMenu() {
@@ -374,7 +374,7 @@ function selectPinTreeMode(mode) {
   pinTreeMode = mode;
   pinFlippedState = {}; // switching modes always resets every card to its front face
   pinChangeEditingState = {};
-  ['pin', 'changepin', 'enroll'].forEach(m => {
+  ['changepin', 'enroll'].forEach(m => {
     const btn = document.getElementById(`pinmode-btn-${m}`);
     if (!btn) return;
     btn.style.background = (m === mode) ? 'var(--brand)' : '#e2e8f0';

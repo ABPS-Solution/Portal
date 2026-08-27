@@ -2053,14 +2053,12 @@
          admins can't type one in directly here anymore. -->
     <div id="sa-panel-pins" style="display:none;">
       <p style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">
-        In <strong>Current PIN</strong> mode, click a name to flip and reveal their PIN (or "None"). In
-        <strong>Change PIN</strong> mode, hover a name to reveal their current PIN, then click it to type a new one —
-        saving it immediately signs that person out of every device and they must use the new PIN from then on. In
-        <strong>Generate Enrollment Code</strong> mode, click a name to generate a fresh one-time code on the spot.
+        In <strong>PINs</strong> mode, hover a name to reveal their current PIN (or "None"), then click it to type a new
+        one — saving it immediately signs that person out of every device and they must use the new PIN from then on.
+        In <strong>Generate Enrollment Code</strong> mode, click a name to generate a fresh one-time code on the spot.
       </p>
-      <div style="display:flex; gap:6px; margin-bottom:14px; max-width:640px;">
-        <button type="button" id="pinmode-btn-pin" class="nav-btn-styled" onclick="selectPinTreeMode('pin')" style="flex:1; padding:9px 10px; font-size:0.8rem;">Current PIN</button>
-        <button type="button" id="pinmode-btn-changepin" class="nav-btn-styled" onclick="selectPinTreeMode('changepin')" style="flex:1; padding:9px 10px; font-size:0.8rem;">Change PIN</button>
+      <div style="display:flex; gap:6px; margin-bottom:14px; max-width:480px;">
+        <button type="button" id="pinmode-btn-changepin" class="nav-btn-styled" onclick="selectPinTreeMode('changepin')" style="flex:1; padding:9px 10px; font-size:0.8rem;">PINs</button>
         <button type="button" id="pinmode-btn-enroll" class="nav-btn-styled" onclick="selectPinTreeMode('enroll')" style="flex:1; padding:9px 10px; font-size:0.8rem;">Generate Enrollment Code</button>
       </div>
       <div id="sa-pin-change-banner" style="display:none; margin-bottom:14px; padding:10px 14px; border-radius:var(--radius); font-size:0.85rem; font-weight:700;"></div>
