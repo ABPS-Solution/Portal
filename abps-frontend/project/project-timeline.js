@@ -1,13 +1,15 @@
 // project/project-timeline.js — Project Timeline Tracking (Project
-// department, after Manufacturing Clearance). Stages 1-3 render as a
-// plain list (single line, nothing to branch — the SVG schematic from
-// the design exploration earns its keep starting at Stage 4, which has
-// real product lanes). Stage 4 is a real read/write surface: submit an
-// initial plan once per BOQ, then revise target dates and tick
+// department, after Manufacturing Clearance). Stages 1-3 and 5 render as
+// a plain list (Stage 5 has no lanes of its own to branch — the SVG
+// schematic from the design exploration earns its keep at Stage 4, which
+// has real product lanes). Stage 4 is a real read/write surface: submit
+// an initial plan once per BOQ, then revise target dates and tick
 // non-terminal steps as work happens; the terminal "Packing and Adding
-// to FG" step is derived automatically, never a button here. Stage 5
-// (QA/dispatch) still has no table — routes/timeline.js's mfcComplete
-// flag (not a guess made here) is what the placeholder is keyed on.
+// to FG" step is derived automatically, never a button here. Stage 5's
+// four QA/dispatch milestones take a real entered date (booked ahead or
+// logged after the fact), not a same-day "mark done" — Inspection Call
+// Release is the one item in the whole screen that's flagged but never
+// enterable: it's purely a computed deadline.
 //
 // Write permission isn't checked client-side beyond perm_project_timeline
 // gating the whole screen — every write button is shown to anyone who can
@@ -26,9 +28,10 @@
 // inventing new tokens.
 const PTL_COLORS = {
   marketing: '#be185d', project: '#0056b3', design: '#00a878',
-  store: '#0369a1', purchase: '#7c3aed',
+  store: '#0369a1', purchase: '#7c3aed', qa: '#dc2626',
 };
-const PTL_DEPT_NAME = { marketing: 'Marketing', project: 'Project', design: 'Design', store: 'Store', purchase: 'Purchase' };
+const PTL_DEPT_NAME = { marketing: 'Marketing', project: 'Project', design: 'Design', store: 'Store', purchase: 'Purchase', qa: 'Quality Assurance' };
+const PTL_QA_CHAIN = new Set(['customer_inspection', 'inspection_clearance_note', 'dispatch_clearance', 'dispatched']);
 
 let ptlProjects = [];
 let ptlData = null;
@@ -157,11 +160,15 @@ function ptlRender() {
     return;
   }
 
-  body.innerHTML = header + ptlRenderList(trunk, today)
+  // prodPlan (Stage 3/4 boundary) renders before the lanes it summarizes;
+  // inspCall + the QA chain (Stage 4/5 boundary onward) render after —
+  // they depend on the lanes' own terminal-step dates.
+  const preLanes = trunk.filter(n => n.stage <= 3 || n.id === 'prodPlan');
+  const postLanes = trunk.filter(n => n.id === 'inspCall' || n.stage === 5);
+  body.innerHTML = header + ptlRenderList(preLanes, today)
     + ptlRenderLanes(ptlData.lanes || [])
-    + `<div style="margin-top:18px; background:var(--highlight-bg); border:1px dashed var(--border); border-radius:var(--radius); padding:14px; font-size:0.82rem; color:var(--muted);">
-        Stage 5 (Inspection &amp; Dispatch) is not built yet — it lands with its own screen once Stage 4 has run for a while.
-      </div>`;
+    + `<div style="margin-top:20px; font-weight:800; font-size:0.95rem; color:var(--text); margin-bottom:4px;">Stage 5 — Inspection &amp; Dispatch</div>`
+    + ptlRenderList(postLanes, today);
 }
 
 /* ── Stage 4 — one card per in-scope BOQ. ─────────────────────────── */
@@ -309,13 +316,35 @@ function ptlRenderList(nodes, today) {
           </div>
           <div style="font-size:0.8rem; color:${late ? 'var(--warn)' : 'var(--muted)'}; margin-top:2px;">${escapeHtml(dateTxt)}${late ? ` · ${Math.abs(ptlBdBetween(eff, today))} business days late` : ''}</div>
           ${n.chip ? `<span style="display:inline-block; margin-top:5px; font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(n.chip)}</span>` : ''}
-          ${n.kind === 'manual' && !n.actual ? `<div style="margin-top:7px;"><button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlMarkMilestoneDone('${n.id}')">Mark Done</button></div>` : ''}
+          ${n.kind === 'manual' && !n.actual && !PTL_QA_CHAIN.has(n.id) ? `<div style="margin-top:7px;"><button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlMarkMilestoneDone('${n.id}')">Mark Done</button></div>` : ''}
+          ${PTL_QA_CHAIN.has(n.id) && !n.actual ? `
+            <div style="margin-top:7px; display:flex; align-items:center; gap:8px;">
+              <input type="date" id="ptl-qa-date-${n.id}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;" />
+              <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlSetQaMilestoneDate('${n.id}')">Set Date</button>
+            </div>` : ''}
         </div>
       </div>`;
   }).join("") + `</div>`;
 }
 
 const PTL_MILESTONE_KEY = { costing: 'costing_released', wdesign: 'working_designs_released' };
+
+async function ptlSetQaMilestoneDate(milestoneKey) {
+  if (!ptlData) return;
+  const el = document.getElementById(`ptl-qa-date-${milestoneKey}`);
+  const date = el ? el.value : "";
+  if (!date) { alert("Pick a date first."); return; }
+  const projectId = ptlData.project.projectId;
+  try {
+    const data = await apFetch({ action: "saveTimelineMilestoneDate", operatorName: appActiveOperatorIdentityString, projectId, milestoneKey, date });
+    if (!data.success) { alert(data.error || "Could not set this date."); return; }
+    const node = ptlData.trunk.find(n => n.id === milestoneKey);
+    if (node) node.actual = data.actualDate;
+    ptlRender();
+  } catch (e) {
+    alert("Network error: " + e.message);
+  }
+}
 
 async function ptlMarkMilestoneDone(nodeId) {
   const milestoneKey = PTL_MILESTONE_KEY[nodeId];
