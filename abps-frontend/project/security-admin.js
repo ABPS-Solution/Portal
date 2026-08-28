@@ -83,9 +83,11 @@ async function loadSecurityAdminUsers() {
 
 // Reactor/Capacitor/Panel is Project Timeline Stage 4's own attribute
 // (migration 147, production_sub_dept) — only meaningful for someone in
-// the Production department, so it only renders here. Not a toggle:
-// clicking a pill that's already selected clears it (nobody set), any
-// other pill switches to it.
+// the Production department, so it only renders on their Login PINs
+// card (alongside the PIN itself, not Login Anywhere — this is a role
+// assignment, not a login permission). Not a toggle: clicking a pill
+// that's already selected clears it (nobody set), any other pill
+// switches to it.
 const PROD_SUB_DEPTS = ['Reactor', 'Capacitor', 'Panel'];
 
 function laSubDeptPillsHtml(u) {
@@ -118,19 +120,18 @@ function laPersonButtonHtml(u, color) {
         onmouseout="this.style.transform=''; this.style.boxShadow='0 1px 3px rgba(15,23,42,0.08)';">
         ${u.first_name || ''} ${u.last_name || ''}
       </button>
-      ${u.department === 'Production' ? laSubDeptPillsHtml(u) : ''}
     </div>`;
 }
 
 async function handleProductionSubDeptClick(email, subDept) {
-  const u = saAllUsers.find(x => x.email === email);
+  const u = saAllPinUsers.find(x => x.email === email);
   if (!u) return;
   const newValue = u.productionSubDept === subDept ? null : subDept;
   try {
     const data = await apFetch({ action: "setProductionSubDepartment", email, subDept: newValue });
     if (data.success) {
       u.productionSubDept = newValue;
-      renderSecurityAdminUsers();
+      renderSecurityAdminPinUsers();
     } else {
       showBOQBanner("sa-feedback", data.error || "Failed to update.", "error");
     }
@@ -470,6 +471,7 @@ function pinFlipCardHtml(u, color) {
         </div>
       </div>
       ${pinLockBadgeHtml(u)}
+      ${u.department === 'Production' ? laSubDeptPillsHtml(u) : ''}
     </div>`;
 }
 
