@@ -1,9 +1,12 @@
 // accounts/cash-expense-shell.js — toggle bar + shared feedback banner
-// for Daily Cash / UPI Expenses (4 toggles: Expenses, Add to Account
-// Balance, Search Cash Expense Vouchers, Employee Details). Each
-// toggle's own render/submit logic lives in its own sibling file.
+// for Daily Cash / UPI Expenses (5 toggles: Daily Advance, Daily Expense
+// Vouchers, Add to Cash Box, Search Cash Expense Vouchers, Employee
+// Details). Each toggle's own render/submit logic lives in its own
+// sibling file. "Expenses" (now "Daily Advance") hands money to an
+// employee immediately; "Daily Expense Vouchers" closes that advance out
+// once the actual spend is known — see cash-expense-vouchers.js.
 
-const CASH_EXPENSE_TOGGLES = ["expenses", "balance", "search", "employees"];
+const CASH_EXPENSE_TOGGLES = ["expenses", "vouchers", "balance", "search", "employees"];
 
 // Mirrors abps-backend/routes/cashExpenses.js's EXPENSE_TYPES /
 // FOOD_SNACKS_SUB_TYPES constants.
@@ -46,6 +49,7 @@ function switchCashExpenseToggle(toggle) {
     if (btn) { btn.style.background = (t === toggle) ? "var(--brand)" : "#e2e8f0"; btn.style.color = (t === toggle) ? "#fff" : "#334155"; }
   });
   if (toggle === "expenses" && typeof initializeCashExpenseEntryPanel === "function") initializeCashExpenseEntryPanel();
+  if (toggle === "vouchers" && typeof initializeCashExpenseVouchersPanel === "function") initializeCashExpenseVouchersPanel();
   if (toggle === "balance" && typeof initializeCashBalancePanel === "function") initializeCashBalancePanel();
   if (toggle === "search" && typeof initializeCashExpenseSearchPanel === "function") initializeCashExpenseSearchPanel();
   if (toggle === "employees" && typeof initializeCashExpenseEmployeesPanel === "function") initializeCashExpenseEmployeesPanel();

@@ -1,6 +1,9 @@
-// accounts/cash-expense-entry.js — "Expenses" toggle. Records one expense
-// receipt and immediately deducts it from the picked Cash/UPI pool
-// balance — there's no review/check step like Tour Expense Vouchers.
+// accounts/cash-expense-entry.js — "Daily Advance" toggle. Hands an
+// advance to an employee, deducted immediately from the picked Cash/UPI
+// pool balance — there's no review/check step like Tour Expense
+// Vouchers. The advance stays an open voucher (see
+// cash-expense-vouchers.js) until Daily Expense Vouchers records what
+// was actually spent and reconciles the difference back into the balance.
 
 let ceCachedEmployees = [];
 let ceSelectedEmployeeId = null;
@@ -41,7 +44,7 @@ async function initializeCashExpenseEntryPanel() {
           <input type="text" id="ce-emp-dept" readonly style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; background:#f1f5f9;"></div>
       </div>
       <div style="margin-bottom:12px;">
-        <label class="field-label">Amount *</label>
+        <label class="field-label">Advance Amount *</label>
         <input type="number" id="ce-amount" min="0" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
       </div>
       <div style="margin-bottom:16px;">
@@ -114,7 +117,7 @@ async function submitCashExpense() {
   if (expenseType === "Food & Snacks" && !subType) return showCashExpenseFeedback("Select a Food & Snacks sub-type.", "error");
   if (expenseType === "Others" && !otherText) return showCashExpenseFeedback('Type "Others" requires the free-text description.', "error");
   if (!ceSelectedEmployeeId) return showCashExpenseFeedback("Select an employee from the dropdown.", "error");
-  if (!amount || amount <= 0) return showCashExpenseFeedback("A positive Amount is required.", "error");
+  if (!amount || amount <= 0) return showCashExpenseFeedback("A positive Advance Amount is required.", "error");
   if (!paymentMode) return showCashExpenseFeedback("Select Cash or UPI.", "error");
 
   showBlockingOverlay("Recording expense...");
@@ -126,10 +129,10 @@ async function submitCashExpense() {
     if (data.success) {
       document.getElementById("ce-panel-expenses").innerHTML = `
         <div style="background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:20px; border-radius:var(--radius); max-width:520px;">
-          <strong>Expense recorded.</strong><br/>
+          <strong>Advance recorded.</strong> Close it out later in Daily Expense Vouchers once the actual spend is known.<br/>
           New ${data.paymentMode} balance: <strong style="font-size:1.05rem;">${formatINRComma(data.newBalance)}</strong>
           <div style="margin-top:12px;">
-            <button class="nav-btn-styled" onclick="initializeCashExpenseEntryPanel()">+ Create New Cash Expense</button>
+            <button class="nav-btn-styled" onclick="initializeCashExpenseEntryPanel()">+ Give New Advance</button>
           </div>
         </div>`;
     } else {

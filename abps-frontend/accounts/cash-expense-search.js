@@ -113,7 +113,7 @@ async function runCashExpenseSearch() {
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
           <thead><tr style="background:var(--highlight-bg); text-align:left;">
             <th style="padding:8px;">Date</th><th style="padding:8px;">Employee</th><th style="padding:8px;">Department</th>
-            <th style="padding:8px;">Type</th><th style="padding:8px;">Payment Mode</th><th style="padding:8px; text-align:right;">Amount</th>
+            <th style="padding:8px;">Type</th><th style="padding:8px;">Payment Mode</th><th style="padding:8px; text-align:right;">Actual Amount</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
