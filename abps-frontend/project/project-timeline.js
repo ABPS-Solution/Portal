@@ -992,9 +992,9 @@ function ptlRenderFullscreen() {
 function ptlTipHtml(info) {
   const row = (k, v) => `<div style="display:flex; justify-content:space-between; gap:14px; font-size:0.74rem; color:var(--muted); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"><span>${k}</span><span style="color:var(--text);">${escapeHtml(v)}</span></div>`;
   let h = `<b style="display:block; font-size:0.82rem; font-weight:700; margin-bottom:6px;">${escapeHtml(info.label)}</b>`;
-  h += row("Owner", info.owner || "—");
+  h += row("Department", info.owner || "—");
   h += row("Planned", info.planned ? ptlFmt(info.planned) : "—");
-  h += row("Target", info.eff ? ptlFmt(info.eff) : "—");
+  h += row("New Target", info.eff ? ptlFmt(info.eff) : "—");
   h += row("Actual", info.actual ? ptlFmt(info.actual) : "—");
   if (info.late) h += `<div style="margin-top:5px; font-size:0.74rem; font-weight:700; color:#e84545;">${info.late} business day${info.late === 1 ? "" : "s"} late</div>`;
   return h;
