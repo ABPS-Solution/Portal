@@ -1,11 +1,20 @@
 // project/project-timeline.js — Project Timeline Tracking (Project
-// department, after Manufacturing Clearance). Phase 1: Stages 1-3 only,
-// rendered on the schematic-timeline canvas designed and verified in
-// prototype form (business-day math, branching-capable node/label
-// renderer, colour-as-state). Stage 4 (production lanes) and Stage 5
-// (QA/dispatch) render as a locked placeholder until their own tables
-// and screens land — routes/timeline.js's mfcComplete flag is what gates
-// that, not a guess made here.
+// department, after Manufacturing Clearance). Stages 1-3 render as a
+// plain list (single line, nothing to branch — the SVG schematic from
+// the design exploration earns its keep starting at Stage 4, which has
+// real product lanes). Stage 4 is a real read/write surface: submit an
+// initial plan once per BOQ, then revise target dates and tick
+// non-terminal steps as work happens; the terminal "Packing and Adding
+// to FG" step is derived automatically, never a button here. Stage 5
+// (QA/dispatch) still has no table — routes/timeline.js's mfcComplete
+// flag (not a guess made here) is what the placeholder is keyed on.
+//
+// Write permission isn't checked client-side beyond perm_project_timeline
+// gating the whole screen — every write button is shown to anyone who can
+// see the screen, and the real "own department, or admin" gate lives
+// server-side in routes/timeline.js. A rejected write surfaces the
+// server's message via alert() rather than silently hiding the control,
+// same trade-off Stage 3's Mark Done button already made.
 //
 // Design tokens/engine mirror the ABPS Portal's own :root variables
 // (see index.html) rather than inventing a palette — this screen sits
@@ -148,10 +157,130 @@ function ptlRender() {
     return;
   }
 
-  body.innerHTML = header + ptlRenderList(trunk, today) + `
-    <div style="margin-top:18px; background:var(--highlight-bg); border:1px dashed var(--border); border-radius:var(--radius); padding:14px; font-size:0.82rem; color:var(--muted);">
-      Stage 4 (Production) and Stage 5 (Inspection &amp; Dispatch) are not built yet — they land with their own screens (production planning per product, then QA/dispatch).
+  body.innerHTML = header + ptlRenderList(trunk, today)
+    + ptlRenderLanes(ptlData.lanes || [])
+    + `<div style="margin-top:18px; background:var(--highlight-bg); border:1px dashed var(--border); border-radius:var(--radius); padding:14px; font-size:0.82rem; color:var(--muted);">
+        Stage 5 (Inspection &amp; Dispatch) is not built yet — it lands with its own screen once Stage 4 has run for a while.
+      </div>`;
+}
+
+/* ── Stage 4 — one card per in-scope BOQ. ─────────────────────────── */
+const PTL_LANE_COLOR = { Reactor: '#b45309', Capacitor: '#047857', Panel: '#c2410c' };
+
+function ptlRenderLanes(lanes) {
+  if (lanes.length === 0) {
+    return `<div style="margin-top:18px; background:var(--highlight-bg); border:1px dashed var(--border); border-radius:var(--radius); padding:14px; font-size:0.82rem; color:var(--muted);">
+      Stage 4 — Production Planning: no Authorized BOQ on this project falls under Reactor, Capacitor, or Panel Production yet.
     </div>`;
+  }
+  return `<div style="margin-top:20px;">
+    <div style="font-weight:800; font-size:0.95rem; color:var(--text); margin-bottom:10px;">Stage 4 — Production Planning</div>
+    ${lanes.map(ptlRenderLane).join("")}
+  </div>`;
+}
+
+function ptlRenderLane(lane) {
+  const c = PTL_LANE_COLOR[lane.ownerDept] || 'var(--muted)';
+  const doneCount = lane.steps.filter(s => !!s.actual).length;
+  return `
+    <div style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:14px; overflow:hidden;">
+      <div style="padding:10px 14px; background:${c}14; border-left:4px solid ${c}; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div>
+          <span style="font-weight:800; color:${c};">${escapeHtml(lane.name)}</span>
+          <span style="color:var(--muted); font-size:0.82rem;"> — ${escapeHtml(lane.productName || '')} ${escapeHtml(lane.productRating || '')}</span>
+          <span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:${c}; margin-left:6px;">${escapeHtml(lane.ownerDept)} Production</span>
+        </div>
+        <span style="font-size:0.72rem; font-weight:700; font-family:monospace; color:${c};">${doneCount}/${lane.steps.length} steps done</span>
+      </div>
+      <div style="padding:12px 14px;">
+        ${lane.planInitialized ? ptlRenderLaneSteps(lane, c) : ptlRenderLaneInitialPlanForm(lane)}
+      </div>
+    </div>`;
+}
+
+function ptlRenderLaneInitialPlanForm(lane) {
+  const nonTerminal = lane.steps.filter(s => !s.terminal);
+  return `
+    <div style="font-size:0.82rem; color:var(--muted); margin-bottom:10px;">
+      No plan submitted yet. ${escapeHtml(lane.ownerDept)} Production enters a planned date for every step below, all at once — Material Issue Tickets for this product's Job Cards stay blocked until then.
+    </div>
+    <div style="display:flex; flex-direction:column; gap:7px;">
+      ${nonTerminal.map(s => `
+        <div style="display:flex; align-items:center; gap:10px;">
+          <label style="flex:1; font-size:0.85rem;">${escapeHtml(s.label)}</label>
+          <input type="date" id="ptl-plan-${lane.boqId}-${s.id}" style="padding:6px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        </div>`).join("")}
+    </div>
+    <div style="margin-top:12px;">
+      <button class="nav-btn-styled" onclick="ptlSubmitInitialPlan('${lane.boqId}')">Submit Initial Plan</button>
+    </div>`;
+}
+
+function ptlRenderLaneSteps(lane, c) {
+  const today = ptlToday();
+  return lane.steps.map(s => {
+    const done = !!s.actual;
+    const eff = s.actual || s.target || s.planned;
+    const late = !done && eff && eff < today;
+    const dotBorder = late ? 'var(--warn)' : c;
+    let rightCell;
+    if (s.terminal) {
+      rightCell = `<span style="font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(s.chip || '')}</span>`;
+    } else if (done) {
+      rightCell = `<span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${ptlFmt(s.actual)}</span>`;
+    } else {
+      rightCell = `
+        <input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
+          style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;" />
+        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.74rem;" onclick="ptlMarkStepDone('${lane.boqId}','${s.id}')">Mark Done</button>`;
+    }
+    return `
+      <div style="display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid #f1f5f9; flex-wrap:wrap;">
+        <div style="width:14px; height:14px; border-radius:50%; flex:none; background:${done ? c : '#fff'}; border:2px solid ${dotBorder};"></div>
+        <div style="flex:1; min-width:170px; font-size:0.85rem; font-weight:600; color:${late ? 'var(--warn)' : 'var(--text)'};">${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.72rem;">(automatic)</span>' : ''}</div>
+        <div style="font-size:0.72rem; color:var(--muted); font-family:monospace;">Planned ${ptlFmt(s.planned)}</div>
+        ${rightCell}
+      </div>`;
+  }).join("");
+}
+
+async function ptlSubmitInitialPlan(boqId) {
+  const lane = (ptlData.lanes || []).find(l => l.boqId === boqId);
+  if (!lane) return;
+  const steps = [];
+  for (const s of lane.steps.filter(x => !x.terminal)) {
+    const el = document.getElementById(`ptl-plan-${boqId}-${s.id}`);
+    const val = el ? el.value : "";
+    if (!val) { alert(`Enter a planned date for "${s.label}".`); return; }
+    steps.push({ stepKey: s.id, plannedDate: val });
+  }
+  try {
+    const data = await apFetch({ action: "submitInitialProductPlan", operatorName: appActiveOperatorIdentityString, boqId, steps });
+    if (!data.success) { alert(data.error || "Could not submit the plan."); return; }
+    await selectPtlProject(ptlData.project.projectId); // reload real server state rather than guess it locally
+  } catch (e) { alert("Network error: " + e.message); }
+}
+
+async function ptlUpdateTarget(boqId, stepKey, targetDate) {
+  if (!targetDate) return;
+  try {
+    const data = await apFetch({ action: "updateProductPlanStepTarget", boqId, stepKey, targetDate });
+    if (!data.success) { alert(data.error || "Could not update the target date."); ptlRender(); return; }
+    const lane = ptlData.lanes.find(l => l.boqId === boqId);
+    const step = lane && lane.steps.find(s => s.id === stepKey);
+    if (step) step.target = data.targetDate;
+  } catch (e) { alert("Network error: " + e.message); }
+}
+
+async function ptlMarkStepDone(boqId, stepKey) {
+  try {
+    const data = await apFetch({ action: "markProductPlanStepDone", operatorName: appActiveOperatorIdentityString, boqId, stepKey });
+    if (!data.success) { alert(data.error || "Could not mark this step done."); return; }
+    const lane = ptlData.lanes.find(l => l.boqId === boqId);
+    const step = lane && lane.steps.find(s => s.id === stepKey);
+    if (step) step.actual = data.actualDate;
+    ptlRender();
+  } catch (e) { alert("Network error: " + e.message); }
 }
 
 // A plain, honest list — the branching SVG schematic from the design
