@@ -126,7 +126,7 @@ function renderMcProjectCard(project) {
   card.id = `mc-card-${safeId}`;
 
   const status = mcStatusPill(project);
-  const deliveryLabel = project.mfcInt ? "Actual Delivery Date" : "Tentative Delivery Date";
+  const deliveryLabel = project.mfcInt ? "Expected Delivery Date" : "Tentative Delivery Date";
   const deliveryValue = project.mfcInt ? project.actualDeliveryDate : project.deliveryDate;
 
   card.innerHTML = `
@@ -382,7 +382,7 @@ function buildMcGatingPanelHtml(projectId, gating) {
             style="width:100%; padding:6px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px;" />
         </div>
         <div>
-          <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Actual Delivery Date</label>
+          <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Expected Delivery Date</label>
           <input type="date" value="${gating.actualDeliveryDate ? gating.actualDeliveryDate.slice(0,10) : ""}"
             onchange="saveMcGatingField('${projectId}', 'actualDeliveryDate', this.value)"
             style="width:100%; padding:6px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px;" />
