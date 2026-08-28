@@ -558,13 +558,24 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Taxes & Charges</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+          <div><label class="field-label" style="margin-top:0;">Import / Export</label>
+            <select id="cpo-trade-type" onchange="onCPOTradeTypeChange()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;">
+              <option value="Import">Import</option><option value="Export">Export</option>
+            </select>
+          </div>
+          <div id="cpo-usd-rate-wrap" style="display:none;"><label class="field-label" style="margin-top:0;">INR to USD Rate</label><input type="number" min="0" step="0.01" id="cpo-usd-rate" placeholder="e.g. 95.3" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+        </div>
+        <div id="cpo-gst-note" style="display:none; font-size:0.78rem; color:var(--muted); margin-bottom:8px;">No GST for Export POs.</div>
+        <div id="cpo-gst-fields" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
           <div><label class="field-label" style="margin-top:0;">CGST %</label><input type="number" min="0" id="cpo-cgst" placeholder="9" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           <div><label class="field-label" style="margin-top:0;">SGST %</label><input type="number" min="0" id="cpo-sgst" placeholder="9" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           <div><label class="field-label" style="margin-top:0;">IGST %</label><input type="number" min="0" id="cpo-igst" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-          <div><label class="field-label" style="margin-top:0;">Packing</label><input type="number" id="cpo-packing" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-          <div><label class="field-label" style="margin-top:0;">Freight</label><input type="number" id="cpo-freight" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-          <div><label class="field-label" style="margin-top:0;">Other</label><input type="number" id="cpo-other" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+          <div><label class="field-label" style="margin-top:0;">Packing (including GST)</label><input type="number" id="cpo-packing" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Freight (including GST)</label><input type="number" id="cpo-freight" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Other (including GST)</label><input type="number" id="cpo-other" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="cpo-roundoff" placeholder="0" step="any" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         </div>
       </div>
@@ -616,6 +627,11 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
         if (po.freight != null) document.getElementById("cpo-freight").value = Number(po.freight) || 0;
         if (po.other != null) document.getElementById("cpo-other").value = Number(po.other) || 0;
         if (po.roundOff != null) document.getElementById("cpo-roundoff").value = Number(po.roundOff) || 0;
+        if (po.tradeType === "Export") {
+          document.getElementById("cpo-trade-type").value = "Export";
+          if (po.usdRate != null) document.getElementById("cpo-usd-rate").value = Number(po.usdRate) || "";
+          onCPOTradeTypeChange();
+        }
         if (po.warranty) document.getElementById("cpo-warranty").value = po.warranty;
         if (po.insurance) document.getElementById("cpo-insurance").value = po.insurance;
         if (po.paymentTerms) document.getElementById("cpo-payment").value = po.paymentTerms;
@@ -659,6 +675,11 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
     if (draft.freight) document.getElementById("cpo-freight").value = draft.freight;
     if (draft.other) document.getElementById("cpo-other").value = draft.other;
     if (draft.roundoff) document.getElementById("cpo-roundoff").value = draft.roundoff;
+    if (draft.tradeType === "Export") {
+      document.getElementById("cpo-trade-type").value = "Export";
+      if (draft.usdRate) document.getElementById("cpo-usd-rate").value = draft.usdRate;
+      onCPOTradeTypeChange();
+    }
     if (draft.warranty) document.getElementById("cpo-warranty").value = draft.warranty;
     if (draft.insurance) document.getElementById("cpo-insurance").value = draft.insurance;
     if (draft.payment) document.getElementById("cpo-payment").value = draft.payment;
@@ -692,6 +713,8 @@ function persistCPODraft() {
       freight: document.getElementById("cpo-freight").value,
       other: document.getElementById("cpo-other").value,
       roundoff: document.getElementById("cpo-roundoff").value,
+      tradeType: document.getElementById("cpo-trade-type")?.value || "Import",
+      usdRate: document.getElementById("cpo-usd-rate")?.value || "",
       warranty: document.getElementById("cpo-warranty").value,
       insurance: document.getElementById("cpo-insurance").value,
       payment: document.getElementById("cpo-payment").value,
@@ -986,6 +1009,14 @@ function updateCPORowAmount(rowId) {
   // regardless of whether the strip has refreshed live.
 }
 
+function onCPOTradeTypeChange() {
+  const isExport = document.getElementById("cpo-trade-type").value === "Export";
+  document.getElementById("cpo-usd-rate-wrap").style.display = isExport ? "block" : "none";
+  document.getElementById("cpo-gst-fields").style.display = isExport ? "none" : "grid";
+  document.getElementById("cpo-gst-note").style.display = isExport ? "block" : "none";
+  recalcCPOTotals();
+  persistCPODraft();
+}
 function recalcCPOTotals() {
   let subTotal = 0;
   window.cpoMaterialRows.forEach(row => {
@@ -1003,17 +1034,23 @@ function recalcCPOTotals() {
   const freight = parseFloat(document.getElementById("cpo-freight").value) || 0;
   const other = parseFloat(document.getElementById("cpo-other").value) || 0;
   const roundOff = parseFloat(document.getElementById("cpo-roundoff").value) || 0;
-  // GST applies to Packing/Freight/Other too, not just the material
-  // sub-total — matches routes/purchase.js's commitPurchaseOrderDraft/
+  // Packing/Freight/Other are entered GST-inclusive (they may carry their
+  // own GST at a rate different from the material line items'), so they're
+  // never part of the GST-taxable base -- that's the material sub-total
+  // alone. Matches routes/purchase.js's commitPurchaseOrderDraft/
   // authorizePurchaseOrder formula.
-  const taxableBase = subTotal + packing + freight + other;
-  const cgst = taxableBase * cgstPct / 100;
-  const sgst = taxableBase * sgstPct / 100;
-  const igst = taxableBase * igstPct / 100;
-  const grandTotal = taxableBase + cgst + sgst + igst + roundOff;
+  const isExport = document.getElementById("cpo-trade-type")?.value === "Export";
+  const usdRate = parseFloat(document.getElementById("cpo-usd-rate")?.value) || 0;
+  const conv = (n) => (isExport && usdRate > 0) ? n / usdRate : n;
+  const taxableBase = conv(subTotal);
+  const cgst = isExport ? 0 : taxableBase * cgstPct / 100;
+  const sgst = isExport ? 0 : taxableBase * sgstPct / 100;
+  const igst = isExport ? 0 : taxableBase * igstPct / 100;
+  const grandTotal = taxableBase + cgst + sgst + igst + conv(packing) + conv(freight) + conv(other) + roundOff;
   const fmt = (n) => n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
-  document.getElementById("cpo-subtotal-disp").textContent = fmt(subTotal);
-  document.getElementById("cpo-grandtotal-disp").textContent = fmt(grandTotal);
+  const symbol = isExport ? "$" : "";
+  document.getElementById("cpo-subtotal-disp").textContent = symbol + fmt(taxableBase);
+  document.getElementById("cpo-grandtotal-disp").textContent = symbol + fmt(grandTotal);
   persistCPODraft();
 }
 
@@ -1149,6 +1186,8 @@ async function submitCreatePO() {
     freight: parseFloat(document.getElementById("cpo-freight").value) || 0,
     other: parseFloat(document.getElementById("cpo-other").value) || 0,
     roundOff: parseFloat(document.getElementById("cpo-roundoff").value) || 0,
+    tradeType: document.getElementById("cpo-trade-type")?.value || "Import",
+    usdRate: parseFloat(document.getElementById("cpo-usd-rate")?.value) || null,
     warranty: document.getElementById("cpo-warranty").value.trim(),
     insurance: document.getElementById("cpo-insurance").value.trim(),
     paymentTerms: document.getElementById("cpo-payment").value.trim(),
@@ -1254,6 +1293,8 @@ async function authorizePOFromForm() {
     freight: parseFloat(document.getElementById("cpo-freight").value) || 0,
     other: parseFloat(document.getElementById("cpo-other").value) || 0,
     roundOff: parseFloat(document.getElementById("cpo-roundoff").value) || 0,
+    tradeType: document.getElementById("cpo-trade-type")?.value || "Import",
+    usdRate: parseFloat(document.getElementById("cpo-usd-rate")?.value) || null,
     warranty: document.getElementById("cpo-warranty").value.trim(),
     insurance: document.getElementById("cpo-insurance").value.trim(),
     paymentTerms: document.getElementById("cpo-payment").value.trim(),
