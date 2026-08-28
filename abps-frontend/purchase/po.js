@@ -1,101 +1,3 @@
-function renderAPOEditRows() {
-  const body = document.getElementById("apo-edit-rows-body");
-  if (window.apoEditRows.length === 0) {
-    body.innerHTML = `<div style="padding:12px; text-align:center; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:var(--radius);">No material rows.</div>`;
-    return;
-  }
-  body.innerHTML = window.apoEditRows.map((row, idx) => {
-    const chips = row.projectIds.length
-      ? row.projectIds.map(p => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;">${p}</div>`).join("")
-      : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No projects selected</span>';
-    return `<div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px;">
-      <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
-        <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx+1}</div>
-        <div style="flex:1; min-width:220px; position:relative;">
-          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Material Name *</label>
-          <textarea rows="2" placeholder="Search material name / rating..." autocomplete="off" oninput="handleAPODescSearch(${row.id}, this.value)" style="width:100%; padding:7px; border:1.5px solid ${row.itemCode?'var(--brand)':'#f59e0b'}; border-radius:4px; font-size:0.82rem; margin-top:2px; font-family:inherit; resize:none; overflow-y:auto; box-sizing:border-box;">${(row.description||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
-          <div id="apo-desc-dd-${row.id}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
-        </div>
-        <div style="width:95px; flex-shrink:0; text-align:center;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Item Code</div><div style="font-family:monospace; font-weight:700; color:var(--brand); font-size:0.85rem;">${row.itemCode||'—'}</div></div>
-        <div style="width:50px; flex-shrink:0; text-align:center;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Unit</div><div style="font-family:monospace; color:#475569; font-size:0.85rem; padding-top:2px;">${row.unit||'—'}</div></div>
-        <div style="width:80px; flex-shrink:0;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px; text-align:center;">Quantity *</div><input type="number" min="0" step="any" value="${row.quantity}" oninput="updateAPORowField(${row.id},'quantity',this.value)" style="width:100%; text-align:center; padding:7px 4px; border:1px solid var(--border); border-radius:4px;"></div>
-        <div style="width:90px; flex-shrink:0;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px; text-align:center;">Rate / Qty *</div><input type="number" min="0" step="any" value="${row.rate}" oninput="updateAPORowField(${row.id},'rate',this.value)" style="width:100%; text-align:right; padding:7px 6px; border:1px solid var(--border); border-radius:4px;"></div>
-        <div style="width:70px; flex-shrink:0;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px; text-align:center;">Disc %</div><input type="number" min="0" max="100" step="any" value="${row.discountPercent}" placeholder="0" oninput="updateAPORowField(${row.id},'discountPercent',this.value)" style="width:100%; text-align:center; padding:7px 4px; border:1px solid var(--border); border-radius:4px;"></div>
-        <div style="width:120px; flex-shrink:0; text-align:right;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Amount</div><div style="font-family:monospace; font-weight:800; font-size:1.05rem; color:#0f172a; padding-top:2px;"><span class="apo-amount" data-rowid="${row.id}">0.00</span></div></div>
-        <button onclick="removeAPOEditRow(${row.id})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.95rem; width:32px; height:36px; border-radius:4px; display:flex; align-items:center; justify-content:center; flex-shrink:0; align-self:flex-end;">✕</button>
-      </div>
-      <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
-        <div style="min-width:180px;"><div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">PRNs using this Material *</div><button onclick="openAPOProjectPicker(${row.id})" style="font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">Select Projects</button></div>
-        <div style="flex:1; min-width:200px; padding-top:2px;">${chips}</div>
-      </div>
-    </div>`;
-  }).join("");
-  window.apoEditRows.forEach(r => updateAPORowAmount(r.id));
-}
-function handleAPODescSearch(rowId, query) {
-  updateAPORowField(rowId, 'description', query);
-  const dd = document.getElementById(`apo-desc-dd-${rowId}`);
-  const catalog = window.itemCodeCatalogCache || [];
-  if (!query || query.trim().length < 1) { dd.style.display="none"; return; }
-  const q = query.toLowerCase();
-  const matches = catalog.filter(it => (it.productName||"").toLowerCase().includes(q) || (it.rating||"").toLowerCase().includes(q)).slice(0,10);
-  if (matches.length === 0) { dd.style.display="none"; return; }
-  dd.innerHTML = matches.map(it => `<div onclick="selectAPOMaterial(${rowId}, '${it.itemCode}', \`${(it.productName||'').replace(/\`/g,"'")}\`, \`${(it.rating||'').replace(/\`/g,"'")}\`, '${(it.unit||'Nos').replace(/'/g,'')}')" style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'"><span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.productName}${it.rating?` - <span style="color:var(--brand); font-weight:700;">${it.rating}</span>`:''}</div>`).join("");
-  dd.style.display = "block";
-}
-function selectAPOMaterial(rowId, itemCode, productName, rating, unit) {
-  const row = window.apoEditRows.find(r => r.id === rowId);
-  if (!row) return;
-  row.description = rating ? `${productName} - ${rating}` : productName;
-  row.itemCode = itemCode; row.unit = unit || "Nos";
-  document.getElementById(`apo-desc-dd-${rowId}`).style.display = "none";
-  renderAPOEditRows();
-}
-function updateAPORowField(rowId, field, value) {
-  const row = window.apoEditRows.find(r => r.id === rowId);
-  if (!row) return;
-  row[field] = value;
-  if (field==='quantity'||field==='rate'||field==='discountPercent') { updateAPORowAmount(rowId); recalcAPOTotals(); }
-}
-function updateAPORowAmount(rowId) {
-  const row = window.apoEditRows.find(r => r.id === rowId);
-  if (!row) return;
-  const amt = (parseFloat(row.quantity)||0) * (parseFloat(row.rate)||0) * (100-(parseFloat(row.discountPercent)||0))/100;
-  const span = document.querySelector(`.apo-amount[data-rowid="${rowId}"]`);
-  if (span) span.textContent = amt.toLocaleString("en-IN",{maximumFractionDigits:2});
-}
-function recalcAPOTotals() {
-  let sub = 0;
-  window.apoEditRows.forEach(r => sub += (parseFloat(r.quantity)||0)*(parseFloat(r.rate)||0)*(100-(parseFloat(r.discountPercent)||0))/100);
-  const v = id => parseFloat(document.getElementById(id).value)||0;
-  const gt = sub + sub*v("apo-cgst")/100 + sub*v("apo-sgst")/100 + sub*v("apo-igst")/100 + v("apo-packing") + v("apo-freight") + v("apo-other") + v("apo-roundoff");
-  const fmt = n => n.toLocaleString("en-IN",{maximumFractionDigits:2});
-  document.getElementById("apo-subtotal-disp").textContent = fmt(sub);
-  document.getElementById("apo-grandtotal-disp").textContent = fmt(gt);
-}
-function openAPOProjectPicker(rowId) {
-  const row = window.apoEditRows.find(r => r.id === rowId);
-  if (!row) return;
-  if (window.apoEditProjects.length === 0) { alert("No active projects loaded."); return; }
-  const existing = document.getElementById("apo-project-modal"); if (existing) existing.remove();
-  const modal = document.createElement("div");
-  modal.id = "apo-project-modal";
-  modal.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;";
-  const checks = window.apoEditProjects.map((p,i) => `<label for="apo-proj-cb-${i}" style="display:flex; align-items:center; gap:12px; padding:11px 12px; border:1px solid var(--border); border-radius:6px; margin-bottom:6px; cursor:pointer; font-size:0.85rem;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'"><input type="checkbox" id="apo-proj-cb-${i}" value="${p.replace(/"/g,'&quot;')}" ${row.projectIds.includes(p)?'checked':''} style="width:16px; height:16px; flex-shrink:0;"><span style="font-weight:600;">${p}</span></label>`).join("");
-  modal.innerHTML = `<div style="background:#fff; border-radius:12px; width:100%; max-width:520px; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
-    <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;"><div style="font-weight:800; font-size:1rem; color:var(--brand);">Select Projects this Material is Used by</div></div>
-    <div style="overflow-y:auto; flex:1; padding:16px 20px;">${checks}</div>
-    <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid var(--border); background:#f8fafc;"><button onclick="document.getElementById('apo-project-modal').remove()" style="padding:9px 18px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600;">Cancel</button><button onclick="saveAPOProjectPicker(${rowId})" style="padding:9px 22px; background:var(--brand); color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:700;">Save Selection</button></div>
-  </div>`;
-  document.body.appendChild(modal);
-}
-function saveAPOProjectPicker(rowId) {
-  const row = window.apoEditRows.find(r => r.id === rowId);
-  const modal = document.getElementById("apo-project-modal");
-  if (!row || !modal) return;
-  row.projectIds = Array.from(modal.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-  modal.remove(); renderAPOEditRows();
-}
 
 async function initializeAuthorizePOPanel() {
   window.cpoExpandedPoNo = null;
@@ -573,9 +475,9 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
           <div><label class="field-label" style="margin-top:0;">IGST %</label><input type="number" min="0" id="cpo-igst" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
-          <div><label class="field-label" style="margin-top:0;">Packing (including GST)</label><input type="number" id="cpo-packing" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-          <div><label class="field-label" style="margin-top:0;">Freight (including GST)</label><input type="number" id="cpo-freight" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-          <div><label class="field-label" style="margin-top:0;">Other (including GST)</label><input type="number" id="cpo-other" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Packing<span id="cpo-pkg-gst-note"> (including GST)</span></label><input type="number" id="cpo-packing" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Freight<span id="cpo-frt-gst-note"> (including GST)</span></label><input type="number" id="cpo-freight" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Other<span id="cpo-oth-gst-note"> (including GST)</span></label><input type="number" id="cpo-other" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="cpo-roundoff" placeholder="0" step="any" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         </div>
       </div>
@@ -1014,6 +916,12 @@ function onCPOTradeTypeChange() {
   document.getElementById("cpo-usd-rate-wrap").style.display = isExport ? "block" : "none";
   document.getElementById("cpo-gst-fields").style.display = isExport ? "none" : "grid";
   document.getElementById("cpo-gst-note").style.display = isExport ? "block" : "none";
+  // Export POs carry no GST at all, so "(including GST)" is meaningless
+  // on them -- Packing/Freight/Other are just plain amounts there.
+  ["cpo-pkg-gst-note", "cpo-frt-gst-note", "cpo-oth-gst-note"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = isExport ? "none" : "inline";
+  });
   recalcCPOTotals();
   persistCPODraft();
 }

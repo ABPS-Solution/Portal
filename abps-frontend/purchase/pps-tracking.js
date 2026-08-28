@@ -434,12 +434,6 @@ function fmtPODate(raw) {
   return formatDateDMY(raw);
 }
 
-// ── Editable Authorize PO state (standalone, apo* prefix) ──
-window.apoEditRows = [];
-window.apoEditRowSeq = 0;
-window.apoEditProjects = [];
-window.apoEditPO = null;
-
 function isoFromPODate(raw) {
   // Convert "15-Feb-2026" or a Date string to yyyy-mm-dd for <input type=date>
   if (!raw) return "";
