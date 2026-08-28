@@ -310,6 +310,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canReserveStoreStock  = userPermissionsObject.reserveStoreStock  === true;
   const canExpectedInbounds = userPermissionsObject.expectedDeliveries === true;
   const canManufacturingClearance = userPermissionsObject.manufacturingClearance === true;
+  const canProjectTimeline = userPermissionsObject.projectTimeline === true;
   const canProjectStatus = userPermissionsObject.projectStatus === true;
   const canViewRejectedMaterial = userPermissionsObject.rejectedMaterial === true;
   const canCreatePO = userPermissionsObject.createRMPurchaseOrder === true;
@@ -481,13 +482,14 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
       }
 
       if (document.getElementById("mod-manufacturing-clearance")) document.getElementById("mod-manufacturing-clearance").style.display = canManufacturingClearance ? "block" : "none";
+      if (document.getElementById("mod-project-timeline")) document.getElementById("mod-project-timeline").style.display = canProjectTimeline ? "block" : "none";
       if (document.getElementById("mod-project-status")) document.getElementById("mod-project-status").style.display = canProjectStatus ? "block" : "none";
       const canCustomerQueryManagement = userPermissionsObject.customerQueryManagement === true;
       if (document.getElementById("mod-customer-queries")) document.getElementById("mod-customer-queries").style.display = canCustomerQueryManagement ? "block" : "none";
       const canSecurityAdmin = userPermissionsObject.securityLoginAccess === true;
       if (document.getElementById("mod-security-admin")) document.getElementById("mod-security-admin").style.display = canSecurityAdmin ? "block" : "none";
       const projectHeaderBlock = document.getElementById("dashboard-project-department-header-block");
-      if (projectHeaderBlock) projectHeaderBlock.style.display = (canManufacturingClearance || canProjectStatus || canCustomerQueryManagement || canSecurityAdmin) ? "block" : "none";
+      if (projectHeaderBlock) projectHeaderBlock.style.display = (canManufacturingClearance || canProjectTimeline || canProjectStatus || canCustomerQueryManagement || canSecurityAdmin) ? "block" : "none";
 
       const canTourExpense = userPermissionsObject.tourExpense === true;
       if (document.getElementById("mod-tour-expense")) document.getElementById("mod-tour-expense").style.display = canTourExpense ? "block" : "none";
@@ -847,6 +849,10 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     document.getElementById("dashboard-view").style.display = "none";
     const saCanvas = document.getElementById("canvas-module-security-admin");
     if (saCanvas) { saCanvas.style.display = "block"; initializeSecurityAdminPanel(); }
+  } else if (targetCanvasModuleId === 'project-timeline') {
+    document.getElementById("dashboard-view").style.display = "none";
+    const ptlCanvas = document.getElementById("canvas-module-project-timeline");
+    if (ptlCanvas) { ptlCanvas.style.display = "block"; initializeProjectTimelinePanel(); }
   } else if (targetCanvasModuleId === 'project-status') {
     document.getElementById("dashboard-view").style.display = "none";
     const psCanvas = document.getElementById("canvas-module-project-status");
@@ -865,6 +871,12 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
 
 function exitManufacturingClearanceBackToMenu() {
   document.getElementById("canvas-module-manufacturing-clearance").style.display = "none";
+  enforceDynamicModuleRoleGateways(userPermissions);
+  document.getElementById("dashboard-view").style.display = "flex";
+}
+
+function exitProjectTimelineBackToMenu() {
+  document.getElementById("canvas-module-project-timeline").style.display = "none";
   enforceDynamicModuleRoleGateways(userPermissions);
   document.getElementById("dashboard-view").style.display = "flex";
 }

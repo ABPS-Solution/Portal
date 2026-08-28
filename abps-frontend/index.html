@@ -547,6 +547,7 @@
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-security-admin" onclick="switchActiveDashboardModule('security-admin')"><span class="mc-label">Security &amp; Login Access</span></div>
         <div class="menu-card" id="mod-manufacturing-clearance" onclick="switchActiveDashboardModule('manufacturing-clearance')"><span class="mc-label">Manufacturing Clearance</span></div>
+        <div class="menu-card" id="mod-project-timeline" onclick="switchActiveDashboardModule('project-timeline')"><span class="mc-label">Project Timeline</span></div>
         <div class="menu-card" id="mod-project-status" onclick="switchActiveDashboardModule('project-status')"><span class="mc-label">Project Status</span></div>
         <div class="menu-card" id="mod-customer-queries" onclick="switchActiveDashboardModule('customer-queries')"><span class="mc-label">Customer Queries Received through Email</span></div>
       </div>
@@ -1741,6 +1742,15 @@
       <div id="expected-inbounds-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="expected-inbounds-results" style="display:flex; flex-direction:column; gap:16px;"></div>
     </div>
+  </div>
+
+  <div id="canvas-module-project-timeline" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitProjectTimelineBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <h2 class="panel-title">Project Timeline</h2>
+    <div id="ptl-mount"></div>
   </div>
 
   <div id="canvas-module-project-status" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
@@ -4190,6 +4200,7 @@
 <script src="shared/typeahead.js"></script>
 <script src="shared/navigation.js"></script>
 <script src="project/manufacturing-clearance.js"></script>
+<script src="project/project-timeline.js"></script>
 <script src="project/project-status.js"></script>
 <script src="project/customer-queries.js"></script>
 <script src="project/security-admin.js"></script>
