@@ -380,6 +380,12 @@ function ptlToggleNodeDetail(nodeId) {
 // drawing); Stages 1-3 are a single line, so a list reads better than a
 // canvas here and ships without carrying that engine's full weight.
 function ptlRenderList(nodes, today) {
+  // Stage 5's QA dates are refused server-side until every in-scope
+  // product has a Stage 4 plan on file (routes/timeline.js) — reflect
+  // that client-side too, rather than letting the input take a value
+  // that only surfaces as an alert() after Set Date is clicked.
+  const prodPlanNode = ptlData && ptlData.trunk && ptlData.trunk.find(n => n.id === 'prodPlan');
+  const prodPlanDone = !!(prodPlanNode && prodPlanNode.done);
   return `<div style="display:flex; flex-direction:column; gap:0;">` + nodes.map(n => {
     const c = PTL_COLORS[n.dept] || 'var(--muted)';
     const done = !!n.actual || n.done === true;
@@ -390,7 +396,8 @@ function ptlRenderList(nodes, today) {
     const hasDetail = Array.isArray(n.detail);
     const expanded = hasDetail && ptlExpandedNodes.has(n.id);
     const manualCanEdit = n.kind === 'manual' && !PTL_QA_CHAIN.has(n.id) && (!n.actual || ptlIsAdmin());
-    const qaCanEdit = PTL_QA_CHAIN.has(n.id) && (!n.actual || ptlIsAdmin());
+    const qaCanEdit = PTL_QA_CHAIN.has(n.id) && prodPlanDone && (!n.actual || ptlIsAdmin());
+    const qaBlockedByPlan = PTL_QA_CHAIN.has(n.id) && !n.actual && !prodPlanDone;
     return `
       <div id="ptl-row-${n.id}" ${hasDetail ? `onclick="ptlToggleNodeDetail('${n.id}')"` : ''} style="display:flex; align-items:flex-start; gap:12px; padding:10px 4px; border-bottom:1px solid var(--border); border-radius:4px;${hasDetail ? ' cursor:pointer;' : ''}">
         <div style="flex:none; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
@@ -413,10 +420,11 @@ function ptlRenderList(nodes, today) {
               <input type="date" id="ptl-qa-date-${n.id}" value="${n.actual || ''}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;" />
               <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlSetQaMilestoneDate('${n.id}')">${n.actual ? 'Update (admin)' : 'Set Date'}</button>
             </div>` : ''}
+          ${qaBlockedByPlan ? `<div style="margin-top:7px; font-size:0.76rem; color:var(--muted); font-style:italic;">Stage 4 Production Planning has to be submitted for every in-scope product before this can be entered.</div>` : ''}
         </div>
       </div>
       ${hasDetail && expanded ? `<div style="margin:0 0 10px 40px; padding:10px 12px; background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); font-size:0.8rem; color:var(--text);">
-        ${n.detail.length ? `<ul style="margin:0; padding-left:18px;">${n.detail.map(d => `<li>${escapeHtml(d)}</li>`).join("")}</ul>` : '<span style="color:var(--muted);">Nothing left — this row is fully covered.</span>'}
+        ${n.detail.length ? `<ul style="margin:0; padding-left:18px;">${n.detail.map(d => `<li>${escapeHtml(d)}</li>`).join("")}</ul>` : `<span style="color:var(--muted);">${escapeHtml(n.blocked || 'Nothing left — this row is fully covered.')}</span>`}
       </div>` : ''}`;
   }).join("") + `</div>`;
 }
@@ -548,15 +556,25 @@ function ptlRenderCanvas(containerId) {
   // Stage 1-3 have nothing to branch, so it's just a straight line down
   // the middle. Lanes (once Production Planning is submitted) fan out
   // symmetrically above and below that same centre, never displacing it.
+  // Hard container height, and the container never scrolls vertically
+  // (see ptl-fs-scroller's overflow-y:hidden) — so FAN below MUST adapt
+  // to how many nodes actually share the busiest date, or a 4-way
+  // same-day cluster (e.g. MFC from Customer landing on the same day
+  // Stage 3's +3-business-day offsets do) needs more vertical room than
+  // exists and either clips or forces a scrollbar.
   const H = Math.max(480, wrap.clientHeight || 520);
   const top = RULER_H + (DENSE ? 120 : 90) * ptlFS;
   const bot = H - 46 * ptlFS;
   const gap = Math.max(90 * ptlFS, Math.min(220 * ptlFS, (bot - top) / 2.4));
-  // Vertical spread for nodes that land on the same date — matches the
-  // design prototype's own ratio (a tighter one here left same-day
-  // clusters like "All BOQs Released / Final Costing / Working Designs"
-  // stacked close enough that their labels overlapped).
-  const FAN = Math.min(96 * ptlFS, gap * 0.86);
+  const dateGroupSizes = {};
+  [...spine, ...tail].forEach(n => { const d = ptlEff(n); if (d) dateGroupSizes[d] = (dateGroupSizes[d] || 0) + 1; });
+  const maxGroupSize = Math.max(1, ...Object.values(dateGroupSizes));
+  // Leave room above/below the fanned group for its own label + date
+  // stacks, then fit within whatever's left.
+  const vertRoomForFan = Math.max(80, (bot - top) - 150 * ptlFS);
+  const FAN = maxGroupSize > 1
+    ? Math.min(96 * ptlFS, gap * 0.86, vertRoomForFan / (maxGroupSize - 1))
+    : Math.min(96 * ptlFS, gap * 0.86);
   const spineY = (top + bot) / 2;
   const laneCount = lanes.length;
   const laneYs = lanes.map((_, i) => spineY + (i - (laneCount - 1) / 2) * gap);
@@ -937,7 +955,7 @@ function ptlRenderFullscreen() {
     </div>
     <div style="flex:1 1 auto; display:flex; min-height:0;">
       <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column;">
-        <div id="ptl-fs-scroller" style="flex:1 1 auto; min-height:0; overflow:auto; cursor:grab; background:var(--bg,#f0f4f8);"></div>
+        <div id="ptl-fs-scroller" style="flex:1 1 auto; min-height:0; overflow-x:auto; overflow-y:hidden; cursor:grab; background:var(--bg,#f0f4f8);"></div>
         <div style="flex:none; border-top:1px solid var(--border); background:var(--card); padding:8px 18px; display:flex; flex-wrap:wrap; align-items:center; gap:6px 20px; font-size:0.74rem; color:var(--muted);">
           <span>● Complete</span><span>○ Scheduled</span><span style="color:#e84545;">○ Overdue</span><span>— Done so far</span><span style="opacity:.6;">┄ Still to come</span>
           <span style="margin-left:auto;">Click a point to jump to it in Steps. Hover for its date.</span>
