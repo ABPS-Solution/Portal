@@ -402,7 +402,7 @@ function renderPinvInvoiceForm() {
           ${field('Name', null, ['billTo','name'])}
           ${field('Address', null, ['billTo','address'])}
           ${field('State', null, ['billTo','state'])}
-          ${field('GST No.', null, ['billTo','gstNo'])}
+          <div class="grid-cell-item"><label>GST No.</label><textarea rows="1" oninput="pinvAutoSetGstFromBillToGst(this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(s.billTo.gstNo || '')}</textarea></div>
           ${field('Contact Name', null, ['billTo','contactName'])}
           ${field('Contact No.', null, ['billTo','contactNo'])}
         </div>
@@ -431,15 +431,15 @@ function renderPinvInvoiceForm() {
           ` : `
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">CGST %</span>
-            <input type="number" min="0" placeholder="0" value="${esc(s.cgstPercent)}" oninput="updatePinvField('cgstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
+            <input id="pinv-cgst-input" type="number" min="0" placeholder="0" value="${esc(s.cgstPercent)}" oninput="updatePinvField('cgstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">SGST %</span>
-            <input type="number" min="0" placeholder="0" value="${esc(s.sgstPercent)}" oninput="updatePinvField('sgstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
+            <input id="pinv-sgst-input" type="number" min="0" placeholder="0" value="${esc(s.sgstPercent)}" oninput="updatePinvField('sgstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">IGST %</span>
-            <input type="number" min="0" value="${esc(s.igstPercent)}" oninput="updatePinvField('igstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
+            <input id="pinv-igst-input" type="number" min="0" value="${esc(s.igstPercent)}" oninput="updatePinvField('igstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>`}
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Round Off</span>
@@ -553,6 +553,27 @@ function pinvDeleteLineItem(idx) {
 
 function updatePinvField(key, value) { pinvInvoiceState[key] = value; }
 function updatePinvNested(parentKey, childKey, value) { pinvInvoiceState[parentKey][childKey] = value; }
+// ABPS is Maharashtra-based (GSTIN prefix 27) -- a Bill To GST No. also
+// starting 27 is an intra-state (same-state) supply, so CGST+SGST applies;
+// any other state prefix is inter-state, so IGST applies. Recomputed on
+// every keystroke rather than only once, since a corrected GST No. should
+// re-derive the default too -- this does mean a manual override of the %
+// fields gets reset if the GST No. is edited again afterward, which is the
+// intended tradeoff (the operator can always re-adjust the %s after).
+function pinvAutoSetGstFromBillToGst(value) {
+  updatePinvNested('billTo', 'gstNo', value);
+  const isMaharashtra = (value || '').trim().slice(0, 2) === '27';
+  pinvInvoiceState.cgstPercent = isMaharashtra ? '9' : '0';
+  pinvInvoiceState.sgstPercent = isMaharashtra ? '9' : '0';
+  pinvInvoiceState.igstPercent = isMaharashtra ? '0' : '18';
+  const cgstEl = document.getElementById('pinv-cgst-input');
+  const sgstEl = document.getElementById('pinv-sgst-input');
+  const igstEl = document.getElementById('pinv-igst-input');
+  if (cgstEl) cgstEl.value = pinvInvoiceState.cgstPercent;
+  if (sgstEl) sgstEl.value = pinvInvoiceState.sgstPercent;
+  if (igstEl) igstEl.value = pinvInvoiceState.igstPercent;
+  recalcPinvTotals();
+}
 // Switching to Export clears GST% (no GST on an export invoice, enforced
 // again server-side in renderProjectInvoiceHTML) and clears the IFSC/Swift
 // field, since Swift Code is always typed manually, never carried over from
@@ -984,7 +1005,7 @@ function renderPinvReviseInvoiceForm() {
           ${field('Name', null, ['billTo','name'])}
           ${field('Address', null, ['billTo','address'])}
           ${field('State', null, ['billTo','state'])}
-          ${field('GST No.', null, ['billTo','gstNo'])}
+          <div class="grid-cell-item"><label>GST No.</label><textarea rows="1" oninput="pinvAutoSetReviseGstFromBillToGst(this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(s.billTo.gstNo || '')}</textarea></div>
           ${field('Contact Name', null, ['billTo','contactName'])}
           ${field('Contact No.', null, ['billTo','contactNo'])}
         </div>
@@ -1013,15 +1034,15 @@ function renderPinvReviseInvoiceForm() {
           ` : `
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">CGST %</span>
-            <input type="number" min="0" placeholder="0" value="${esc(s.cgstPercent)}" oninput="updatePinvReviseField('cgstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
+            <input id="pinv-revise-cgst-input" type="number" min="0" placeholder="0" value="${esc(s.cgstPercent)}" oninput="updatePinvReviseField('cgstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">SGST %</span>
-            <input type="number" min="0" placeholder="0" value="${esc(s.sgstPercent)}" oninput="updatePinvReviseField('sgstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
+            <input id="pinv-revise-sgst-input" type="number" min="0" placeholder="0" value="${esc(s.sgstPercent)}" oninput="updatePinvReviseField('sgstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">IGST %</span>
-            <input type="number" min="0" value="${esc(s.igstPercent)}" oninput="updatePinvReviseField('igstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
+            <input id="pinv-revise-igst-input" type="number" min="0" value="${esc(s.igstPercent)}" oninput="updatePinvReviseField('igstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>`}
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Round Off</span>
@@ -1110,6 +1131,20 @@ function pinvReviseDeleteLineItem(idx) {
 
 function updatePinvReviseField(key, value) { pinvReviseState[key] = value; }
 function updatePinvReviseNested(parentKey, childKey, value) { pinvReviseState[parentKey][childKey] = value; }
+function pinvAutoSetReviseGstFromBillToGst(value) {
+  updatePinvReviseNested('billTo', 'gstNo', value);
+  const isMaharashtra = (value || '').trim().slice(0, 2) === '27';
+  pinvReviseState.cgstPercent = isMaharashtra ? '9' : '0';
+  pinvReviseState.sgstPercent = isMaharashtra ? '9' : '0';
+  pinvReviseState.igstPercent = isMaharashtra ? '0' : '18';
+  const cgstEl = document.getElementById('pinv-revise-cgst-input');
+  const sgstEl = document.getElementById('pinv-revise-sgst-input');
+  const igstEl = document.getElementById('pinv-revise-igst-input');
+  if (cgstEl) cgstEl.value = pinvReviseState.cgstPercent;
+  if (sgstEl) sgstEl.value = pinvReviseState.sgstPercent;
+  if (igstEl) igstEl.value = pinvReviseState.igstPercent;
+  recalcPinvReviseTotals();
+}
 function updatePinvReviseTradeType(value) {
   pinvReviseState.tradeType = value;
   if (value === 'Export') {
