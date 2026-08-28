@@ -40,6 +40,16 @@ let ptlProjects = [];
 let ptlData = null;
 let ptlSelected = null;
 
+// Admin-only test backdate — server re-checks perm_admin regardless (see
+// resolveAdminBackdate in routes/timeline.js), this just decides whether
+// to show the control at all. A blank value means "today", same as
+// every non-admin's Mark Done always meant.
+const ptlIsAdmin = () => localStorage.getItem("isUserAdminGlobal") === "true";
+const ptlAsOfInputHtml = (id) => ptlIsAdmin()
+  ? `<input type="date" id="ptl-asof-${id}" title="Admin only — backdate this completion for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.74rem;" />`
+  : "";
+const ptlReadAsOf = (id) => { const el = document.getElementById(`ptl-asof-${id}`); return el && el.value ? el.value : undefined; };
+
 async function initializeProjectTimelinePanel() {
   const mount = document.getElementById("ptl-mount");
   if (!mount) return;
@@ -263,6 +273,7 @@ function ptlRenderLaneSteps(lane, c) {
       rightCell = `
         <input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
           style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;" />
+        ${ptlAsOfInputHtml(`${lane.boqId}-${s.id}`)}
         <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.74rem;" onclick="ptlMarkStepDone('${lane.boqId}','${s.id}')">Mark Done</button>`;
     }
     return `
@@ -305,7 +316,8 @@ async function ptlUpdateTarget(boqId, stepKey, targetDate) {
 
 async function ptlMarkStepDone(boqId, stepKey) {
   try {
-    const data = await apFetch({ action: "markProductPlanStepDone", operatorName: appActiveOperatorIdentityString, boqId, stepKey });
+    const asOfDate = ptlReadAsOf(`${boqId}-${stepKey}`);
+    const data = await apFetch({ action: "markProductPlanStepDone", operatorName: appActiveOperatorIdentityString, boqId, stepKey, asOfDate });
     if (!data.success) { alert(data.error || "Could not mark this step done."); return; }
     const lane = ptlData.lanes.find(l => l.boqId === boqId);
     const step = lane && lane.steps.find(s => s.id === stepKey);
@@ -341,7 +353,7 @@ function ptlRenderList(nodes, today) {
           </div>
           <div style="font-size:0.8rem; color:${late ? 'var(--warn)' : 'var(--muted)'}; margin-top:2px;">${escapeHtml(dateTxt)}${late ? ` · ${Math.abs(ptlBdBetween(eff, today))} business days late` : ''}</div>
           ${n.chip ? `<span style="display:inline-block; margin-top:5px; font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(n.chip)}</span>` : ''}
-          ${n.kind === 'manual' && !n.actual && !PTL_QA_CHAIN.has(n.id) ? `<div style="margin-top:7px;"><button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlMarkMilestoneDone('${n.id}')">Mark Done</button></div>` : ''}
+          ${n.kind === 'manual' && !n.actual && !PTL_QA_CHAIN.has(n.id) ? `<div style="margin-top:7px; display:flex; align-items:center; gap:8px;">${ptlAsOfInputHtml(n.id)}<button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlMarkMilestoneDone('${n.id}')">Mark Done</button></div>` : ''}
           ${PTL_QA_CHAIN.has(n.id) && !n.actual ? `
             <div style="margin-top:7px; display:flex; align-items:center; gap:8px;">
               <input type="date" id="ptl-qa-date-${n.id}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;" />
@@ -916,7 +928,8 @@ async function ptlMarkMilestoneDone(nodeId) {
   if (!milestoneKey || !ptlData) return;
   const projectId = ptlData.project.projectId;
   try {
-    const data = await apFetch({ action: "saveTimelineManualMilestone", operatorName: appActiveOperatorIdentityString, projectId, milestoneKey });
+    const asOfDate = ptlReadAsOf(nodeId);
+    const data = await apFetch({ action: "saveTimelineManualMilestone", operatorName: appActiveOperatorIdentityString, projectId, milestoneKey, asOfDate });
     if (!data.success) { alert(data.error || "Could not mark this done."); return; }
     const node = ptlData.trunk.find(n => n.id === nodeId);
     if (node) node.actual = data.actualDate;
