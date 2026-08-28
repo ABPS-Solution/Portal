@@ -188,6 +188,7 @@ async function loadMcLineItems(projectId) {
         itemCodeUnit: (catalogMatch && catalogMatch.unit) || "",
         newMfcQuantity: li.mfcQuantity || 0,
         onHold: !!li.onHold, holdReason: li.holdReason || "",
+        boqIds: li.boqIds || [],
       };
       mcLineItemMeta[projectId][li.lineId] = {
         description: li.description,
@@ -228,6 +229,14 @@ function renderMcLineItemsTable(projectId, lineItems) {
     const isHeld = !!state.onHold;
     const rowDisabledAttr = (gatingComplete && !isHeld) ? "" : "disabled";
     const rowBg = isHeld ? " background:#fef2f2;" : "";
+    // Once a BOQ exists, the product name is baked into boq_id/prn_id/
+    // job_card_number — the plain search field is locked (server also
+    // refuses a plain re-submit, see submitManufacturingClearance's
+    // guard) and only renameStandardProduct (admin-only, via the "Change
+    // Product" button below) can change it from here on.
+    const hasBoq = (state.boqIds || []).length > 0;
+    const productSearchDisabledAttr = hasBoq ? "disabled" : rowDisabledAttr;
+    const productSearchStyleExtra = hasBoq ? " background:#f1f5f9; cursor:not-allowed;" : ((gatingComplete && !isHeld) ? "" : " background:#f1f5f9; cursor:not-allowed;");
     return `
       <tr data-line-id="${li.lineId}" style="border-bottom:1px solid var(--border); color:#111827;${rowBg}">
         <td style="padding:8px; font-weight:600; vertical-align:middle; color:#111827;">
@@ -235,13 +244,14 @@ function renderMcLineItemsTable(projectId, lineItems) {
           ${isHeld ? `<div style="margin-top:4px;"><span style="display:inline-block; background:#fee2e2; color:#b91c1c; font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:10px; text-transform:uppercase; letter-spacing:0.3px;" title="${(state.holdReason || '').replace(/"/g,'&quot;')}">⏸ On Hold</span></div>` : ''}
         </td>
         <td style="padding:8px; position:relative; vertical-align:middle;">
-          <textarea rows="1" id="mc-std-search-${safeId}-${li.lineId}" ${rowDisabledAttr}
+          <textarea rows="1" id="mc-std-search-${safeId}-${li.lineId}" ${productSearchDisabledAttr}
             placeholder="Search Item Code..." autocomplete="off"
             oninput="handleMcProductSearch(this.value, '${projectId}', ${li.lineId}); mcAutoGrowField(this);"
             onfocus="mcAutoGrowField(this);"
             onkeydown="if(event.key==='Enter') event.preventDefault();"
-            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; color:#111827;${(gatingComplete && !isHeld) ? "" : " background:#f1f5f9; cursor:not-allowed;"}">${searchVal.replace(/</g,'&lt;')}</textarea>
+            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; color:#111827;${productSearchStyleExtra}">${searchVal.replace(/</g,'&lt;')}</textarea>
           <div id="mc-std-dropdown-${safeId}-${li.lineId}" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); overflow-y:auto; min-width:280px;"></div>
+          ${hasBoq && isAdmin ? `<button class="nav-btn-styled" onclick="openProductRenameModal('${projectId}', ${li.lineId})" style="margin-top:4px; background:#7c3aed; padding:3px 8px; font-size:0.68rem;">Change Product</button>` : ''}
         </td>
         <td style="padding:8px; vertical-align:middle;">
           <textarea rows="1" id="mc-std-rating-${safeId}-${li.lineId}" readonly
@@ -593,6 +603,133 @@ async function submitMcClearance(projectId) {
 // work already in flight (an Authorized PO's GRN/QA receipt, an approved
 // ticket, an open Job Card) is untouched. See routes/projects.js's
 // holdProjectProduct/unholdProjectProduct and lib/productHold.js.
+// ═══════════════════════════════════════════════════════════════════════
+// Change Standard Product (admin-only) — the only supported way to fix a
+// wrong Standard Product Name once a BOQ already exists for the line.
+// Self-contained overlay (appended to document.body once, reused after)
+// rather than static index.html markup — same rationale as any
+// clipped-dropdown-style injected element elsewhere in this codebase.
+// Server re-checks perm_admin regardless of what this UI shows.
+// ═══════════════════════════════════════════════════════════════════════
+function ensureProductRenameModalEl() {
+  let el = document.getElementById("mc-product-rename-modal");
+  if (el) return el;
+  el = document.createElement("div");
+  el.id = "mc-product-rename-modal";
+  el.style.cssText = "display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:600; align-items:center; justify-content:center;";
+  el.innerHTML = `<div style="background:var(--card); border-radius:var(--radius); padding:22px; width:min(640px, 92vw); max-height:88vh; overflow-y:auto;">
+    <div id="mc-product-rename-modal-body"></div>
+  </div>`;
+  document.body.appendChild(el);
+  return el;
+}
+
+function openProductRenameModal(projectId, lineId) {
+  window._mcRenameTarget = { projectId, lineId };
+  window._mcRenamePreview = null;
+  const el = ensureProductRenameModalEl();
+  const body = document.getElementById("mc-product-rename-modal-body");
+  const state = mcLineItemState[projectId][lineId];
+  body.innerHTML = `
+    <h3 style="margin-top:0;">Change Standard Product</h3>
+    <p style="color:var(--muted); font-size:0.85rem;">Current: <strong>${escapeHtml(state.standardProductName || '')}${state.standardProductRating ? ' - ' + escapeHtml(state.standardProductRating) : ''}</strong></p>
+    <p style="color:#b45309; font-size:0.8rem; background:#fffbeb; padding:8px 10px; border-radius:4px;">
+      This BOQ already has downstream work. Renaming rewrites its BOQ ID, PRN ID, and every Job Card number,
+      and everywhere they're stored — only allowed until Production Planning is released for it.
+    </p>
+    <input type="text" id="mc-rename-search-input" placeholder="Search new Item Code / Product Name..." autocomplete="off"
+      oninput="handleProductRenameSearch(this.value)"
+      style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); margin-bottom:8px;" />
+    <div id="mc-rename-search-results" style="max-height:220px; overflow-y:auto; border:1px solid var(--border); border-radius:4px;"></div>
+    <div id="mc-rename-preview-zone" style="margin-top:14px;"></div>
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
+      <button class="nav-btn-styled" style="background:#718096;" onclick="closeProductRenameModal()">Cancel</button>
+    </div>
+  `;
+  el.style.display = "flex";
+}
+
+function closeProductRenameModal() {
+  const el = document.getElementById("mc-product-rename-modal");
+  if (el) el.style.display = "none";
+  window._mcRenameTarget = null;
+  window._mcRenamePreview = null;
+}
+
+function handleProductRenameSearch(query) {
+  const results = document.getElementById("mc-rename-search-results");
+  if (!results) return;
+  document.getElementById("mc-rename-preview-zone").innerHTML = "";
+  if (!query || query.trim().length < 1) { results.innerHTML = ""; return; }
+  const q = query.toLowerCase();
+  const catalog = window.itemCodeCatalogCache || [];
+  const matches = catalog.filter(item => {
+    const name = (item.productName || "").toLowerCase();
+    return name.includes(q) || `${name} ${(item.rating||"").toLowerCase()}`.includes(q);
+  }).slice(0, 10);
+  results.innerHTML = matches.map(item => `
+    <div onclick="selectProductRenameCandidate('${item.itemCode}')"
+      style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      ${escapeHtml(item.productName)}${item.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(item.rating)}</span>` : ""}
+    </div>`).join("") || `<div style="padding:8px 12px; font-size:0.8rem; color:var(--muted);">No matches.</div>`;
+}
+
+async function selectProductRenameCandidate(newItemCode) {
+  const target = window._mcRenameTarget;
+  if (!target) return;
+  const previewZone = document.getElementById("mc-rename-preview-zone");
+  previewZone.innerHTML = `<div style="color:var(--muted); font-size:0.85rem;">Checking what will change...</div>`;
+  try {
+    const data = await apFetch({ action: "previewStandardProductRename", projectId: target.projectId, lineId: target.lineId, newItemCode });
+    if (!data.success) { previewZone.innerHTML = `<div style="color:#b91c1c; font-size:0.85rem;">${escapeHtml(data.error)}</div>`; return; }
+    window._mcRenamePreview = { ...data, newItemCode };
+    const boqRows = (data.boqs || []).map(b => `
+      <div style="padding:8px; border:1px solid var(--border); border-radius:4px; margin-top:6px; font-size:0.78rem;">
+        <div><strong>BOQ:</strong> ${escapeHtml(b.oldBoqId)} → ${escapeHtml(b.newBoqId)}</div>
+        ${b.newPrnId ? `<div><strong>PRN:</strong> ${escapeHtml(b.newPrnId)}</div>` : ''}
+        ${b.jobCards.length ? `<div><strong>Job Cards:</strong> ${b.jobCards.map(jc => `${escapeHtml(jc.old)} → ${escapeHtml(jc.new)}`).join(', ')}</div>` : ''}
+        ${b.fgConsumerBoqIds.length ? `<div style="color:#b45309;"><strong>Also re-points:</strong> ${b.fgConsumerBoqIds.map(escapeHtml).join(', ')} (consumes this as a Finished Good material)</div>` : ''}
+      </div>`).join("") || `<div style="color:var(--muted); font-size:0.8rem; margin-top:6px;">No BOQ exists yet for this line — this will just update the product mapping.</div>`;
+
+    previewZone.innerHTML = `
+      <div style="font-weight:700; font-size:0.9rem; margin-bottom:4px;">${escapeHtml(data.oldProductName)} → ${escapeHtml(data.newProductName)}${data.newRating ? ' - ' + escapeHtml(data.newRating) : ''}</div>
+      ${boqRows}
+      <label class="field-label" style="margin-top:12px;">Type the Project ID (<strong>${escapeHtml(target.projectId)}</strong>) to confirm *</label>
+      <input type="text" id="mc-rename-confirm-input" oninput="document.getElementById('mc-rename-confirm-btn').disabled = (this.value.trim() !== '${target.projectId.replace(/'/g,"\\'")}');"
+        style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:6px;" />
+      <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+        <button class="nav-btn-styled" id="mc-rename-confirm-btn" disabled style="background:var(--danger); opacity:0.5; cursor:not-allowed;" onclick="commitProductRename()">Confirm Rename</button>
+      </div>`;
+  } catch (e) {
+    previewZone.innerHTML = `<div style="color:#b91c1c; font-size:0.85rem;">Network error: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function commitProductRename() {
+  const target = window._mcRenameTarget;
+  const preview = window._mcRenamePreview;
+  if (!target || !preview) return;
+  const btn = document.getElementById("mc-rename-confirm-btn");
+  if (btn) { btn.disabled = true; btn.textContent = "Renaming..."; }
+  try {
+    const data = await apFetch({
+      action: "renameStandardProduct", projectId: target.projectId, lineId: target.lineId,
+      newItemCode: preview.newItemCode, operatorName: appActiveOperatorIdentityString,
+    });
+    if (!data.success) {
+      alert(data.error || "Rename failed.");
+      if (btn) { btn.disabled = false; btn.textContent = "Confirm Rename"; }
+      return;
+    }
+    closeProductRenameModal();
+    await loadMcLineItems(target.projectId);
+  } catch (e) {
+    alert("Network error: " + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = "Confirm Rename"; }
+  }
+}
+
 async function holdMcProduct(projectId, lineId) {
   const reason = prompt("Reason for placing this product On Hold (required):");
   if (reason === null) return; // cancelled
