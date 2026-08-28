@@ -167,10 +167,11 @@ function ptlToday() {
 
 // Same convention as Manufacturing Clearance's wrapper header: Tentative
 // (projects.delivery_date, from the customer PO) until Internal MFC is
-// given, then Actual (projects.mfc_actual_delivery_date, a gating field
-// entered at clearance time — named "actual" in the schema, not a
-// post-dispatch figure).
-const ptlDeliveryLabel = p => p.mfcInt ? "Actual Delivery" : "Tentative Delivery";
+// given, then Expected (projects.mfc_actual_delivery_date, a gating field
+// entered at clearance time — column is named "actual" in the schema,
+// but it's never a record of an already-happened delivery, so the
+// screen calls it Expected everywhere, not Actual).
+const ptlDeliveryLabel = p => p.mfcInt ? "Expected Delivery" : "Tentative Delivery";
 const ptlDeliveryValue = p => p.mfcInt ? p.actualDelivery : p.tentativeDelivery;
 
 const ptlEff = n => n.actual || n.target || n.planned;
