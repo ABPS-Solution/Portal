@@ -383,8 +383,8 @@ async function ptlSetQaMilestoneDate(milestoneKey) {
    submitInitialProductPlan).
    ══════════════════════════════════════════════════════════════════ */
 const PTL_MODES = { week: 6, days15: 15, month: 26 };
-const PTL_FONT_SCALE = { week: 1.05, days15: 0.94, month: 0.86 };
-let ptlMode = "days15", ptlDayW = 30, ptlFS = 0.94;
+const PTL_FONT_SCALE = { week: 1.32, days15: 1.14, month: 1.05 };
+let ptlMode = "days15", ptlDayW = 30, ptlFS = 1.14;
 let ptlDays = [], ptlIndexMap = {};
 let ptlLastTodayX = 0;
 let ptlFsRailOpen = true;
@@ -432,17 +432,19 @@ function ptlWrapLbl(t, max) {
 const ptlWLbl = s => s.length * 5.8 * ptlFS;
 const ptlWMono = (s, px) => s.length * px * 0.6 * ptlFS;
 
+const PTL_MAX_SLOT = 6;
 function ptlPlacer() {
   const taken = [];
   const clear = b => !taken.some(p => b.x0 < p.x1 - 2 && p.x0 < b.x1 - 2 && b.y0 < p.y1 - 2 && p.y0 < b.y1 - 2);
   return {
     block: b => taken.push(b),
     place(mk) {
-      for (let k = 0; k < 5; k++) { const b = mk(k); if (clear(b)) { taken.push(b); return k; } }
-      taken.push(mk(4)); return 4;
+      for (let k = 0; k < PTL_MAX_SLOT; k++) { const b = mk(k); if (clear(b)) { taken.push(b); return k; } }
+      taken.push(mk(PTL_MAX_SLOT - 1)); return PTL_MAX_SLOT - 1;
     },
   };
 }
+const PTL_STAGE_NAMES = { 1: 'Order Intake', 2: 'Clearance', 3: 'Pre Production', 4: 'Production', 5: 'Inspection & Dispatch' };
 
 function ptlRenderCanvas(containerId) {
   const wrap = document.getElementById(containerId || ptlCanvasContainerId);
@@ -454,23 +456,30 @@ function ptlRenderCanvas(containerId) {
   ptlFS = PTL_FONT_SCALE[ptlMode];
   // Full-width, full-height surface — this is the primary view, not a
   // strip squeezed above a list, so it gets real screen real estate.
-  const availW = Math.max(900, (wrap.clientWidth || window.innerWidth) - 24);
+  const availW = Math.max(900, (wrap.clientWidth || window.innerWidth) - 4);
   const longestName = Math.max(16, ...lanes.map(l => (l.name || '').length));
+  const LEAD = Math.round(64 * ptlFS);
   const PAD_L = Math.round(70 + longestName * 6.6 * ptlFS);
-  const PAD_R = 70;
-  ptlDayW = Math.max(16, Math.min(320, (availW - PAD_L - PAD_R) / PTL_MODES[ptlMode]));
+  const PAD_R = 90;
+  ptlDayW = Math.max(16, Math.min(320, (availW - PAD_L - LEAD - PAD_R) / PTL_MODES[ptlMode]));
+  const DENSE = ptlDayW < 38;
 
-  const RULER_H = Math.round(52 * ptlFS);
-  const SLOT_UP = 27 * ptlFS, SLOT_DN = 32 * ptlFS, LINE_H = 13.5 * ptlFS;
-  const R = 9.5 * ptlFS;
-  const FAN = 46 * ptlFS; // vertical spread for nodes that land on the same date
+  const RULER_H = Math.round(56 * ptlFS);
+  const SLOT_UP = 26 * ptlFS, SLOT_DN = 30 * ptlFS, LINE_H = 12 * ptlFS;
+  const R = 7.5 * (1 + (ptlFS - 1) * 0.55);
 
+  // The spine sits at the vertical centre of the whole surface, always —
+  // Stage 1-3 have nothing to branch, so it's just a straight line down
+  // the middle. Lanes (once Production Planning is submitted) fan out
+  // symmetrically above and below that same centre, never displacing it.
+  const H = Math.max(480, wrap.clientHeight || 520);
+  const top = RULER_H + (DENSE ? 120 : 90) * ptlFS;
+  const bot = H - 46 * ptlFS;
+  const gap = Math.max(90 * ptlFS, Math.min(220 * ptlFS, (bot - top) / 2.4));
+  const FAN = Math.min(60 * ptlFS, gap * 0.4); // vertical spread for nodes that land on the same date
+  const spineY = (top + bot) / 2;
   const laneCount = lanes.length;
-  const topY = RULER_H + 100 * ptlFS;
-  const gap = Math.max(140 * ptlFS, 170);
-  const laneYs = lanes.map((_, i) => topY + i * gap);
-  const spineY = laneCount ? (laneYs[0] + laneYs[laneCount - 1]) / 2 : topY + 40;
-  const H = Math.max(420, (laneCount ? laneYs[laneCount - 1] : spineY) + 110 * ptlFS);
+  const laneYs = lanes.map((_, i) => spineY + (i - (laneCount - 1) / 2) * gap);
 
   // If the exact date isn't in the index (a Sunday slipped through — the
   // backend now refuses new ones, but old data or a holiday-adjacent edge
@@ -485,33 +494,49 @@ function ptlRenderCanvas(containerId) {
         i = ptlIndexMap[ptlIso(dt)];
       }
     }
-    return PAD_L + (i ?? 0) * ptlDayW;
+    return PAD_L + LEAD + (i ?? 0) * ptlDayW;
   };
-  const W = PAD_L + ptlDays.length * ptlDayW + PAD_R;
+  const W = PAD_L + LEAD + ptlDays.length * ptlDayW + PAD_R;
   const today = ptlToday();
   const todayX = xOf(today in ptlIndexMap ? today : ptlDays[ptlDays.length - 1]);
 
   const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const P = [];
+  const DOW = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
   // Ruler + week gridlines
   P.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="var(--bg,#f0f4f8)"/>`);
   ptlDays.forEach((d, i) => {
     if (ptlParse(d).getUTCDay() !== 1) return;
-    const x = PAD_L + i * ptlDayW;
-    P.push(`<line x1="${x}" y1="${RULER_H}" x2="${x}" y2="${H}" stroke="var(--border)" stroke-width="1" opacity=".5"/>`);
+    const x = PAD_L + LEAD + i * ptlDayW;
+    P.push(`<line x1="${x}" y1="${RULER_H}" x2="${x}" y2="${H}" stroke="var(--border)" stroke-width="1.5"/>`);
   });
   P.push(`<rect x="0" y="0" width="${W}" height="${RULER_H}" fill="var(--card)"/>`);
   P.push(`<line x1="0" y1="${RULER_H}" x2="${W}" y2="${RULER_H}" stroke="var(--border)" stroke-width="1.5"/>`);
   let lastM = -1;
   ptlDays.forEach((d, i) => {
-    const x = PAD_L + i * ptlDayW, dt = ptlParse(d), m = dt.getUTCMonth(), mon = dt.getUTCDay() === 1;
-    if (m !== lastM) { lastM = m; P.push(`<text x="${x}" y="${11 * ptlFS}" font-size="${9.5 * ptlFS}" font-weight="800" letter-spacing="1" fill="var(--muted)">${PTL_MON[m].toUpperCase()}</text>`); }
-    if (ptlDayW >= 20 || mon) P.push(`<text x="${x}" y="${RULER_H - 9 * ptlFS}" text-anchor="middle" font-size="${9 * ptlFS}" font-family="monospace" font-weight="${mon ? 700 : 400}" fill="${mon ? 'var(--text)' : 'var(--muted)'}">${dt.getUTCDate()}</text>`);
+    const x = PAD_L + LEAD + i * ptlDayW, dt = ptlParse(d), m = dt.getUTCMonth(), mon = dt.getUTCDay() === 1;
+    if (m !== lastM) { lastM = m; P.push(`<text x="${x}" y="${14 * ptlFS}" font-size="${11 * ptlFS}" font-weight="800" letter-spacing="1.5" fill="var(--muted)">${PTL_MON[m].toUpperCase()} ${dt.getUTCFullYear()}</text>`); }
+    if (!DENSE || mon) {
+      P.push(`<text x="${x}" y="${RULER_H - 15 * ptlFS}" text-anchor="middle" font-size="${11.5 * ptlFS}" font-family="monospace" font-weight="${mon ? 700 : 400}" fill="${mon ? 'var(--text)' : 'var(--muted)'}">${dt.getUTCDate()}</text>`);
+      P.push(`<text x="${x}" y="${RULER_H - 5 * ptlFS}" text-anchor="middle" font-size="${9 * ptlFS}" font-family="monospace" font-weight="600" fill="var(--muted)">${DOW[dt.getUTCDay()]}</text>`);
+    }
+  });
+
+  // Stage dividers — a real rule with the stage name against it, same as
+  // the design prototype, so the schematic reads as five stages rather
+  // than one unbroken run of dots.
+  const stageXs = {};
+  [...spine, ...tail].forEach(n => { if (n.stage) (stageXs[n.stage] = stageXs[n.stage] || []).push(xOf(ptlEff(n))); });
+  lanes.forEach(l => l.steps.forEach(s => (stageXs[4] = stageXs[4] || []).push(xOf(s.actual || s.target || s.planned))));
+  Object.keys(stageXs).sort((a, b) => a - b).forEach(st => {
+    const x0 = Math.min(...stageXs[st]) - ptlDayW * 0.75;
+    P.push(`<line x1="${x0}" y1="${RULER_H}" x2="${x0}" y2="${H}" stroke="var(--muted)" stroke-width="1.5" opacity=".45"/>`);
+    P.push(`<text x="${x0 + 9 * ptlFS}" y="${RULER_H + 17 * ptlFS}" font-size="${10.5 * ptlFS}" font-weight="800" letter-spacing="1.2" fill="var(--muted)">STAGE ${st} · ${esc((PTL_STAGE_NAMES[st] || '').toUpperCase())}</text>`);
   });
 
   // Today
-  P.push(`<line x1="${todayX}" y1="${RULER_H}" x2="${todayX}" y2="${H}" stroke="var(--brand)" stroke-width="2" opacity=".8"/>`);
+  P.push(`<line x1="${todayX}" y1="${RULER_H}" x2="${todayX}" y2="${H}" stroke="var(--brand)" stroke-width="2.5" opacity=".85"/>`);
 
   // Traces: spine (split at prodPlan into lanes, rejoin at tail[0]).
   // Nodes sharing the exact same date (e.g. BOQs/Costing/Working Designs,
@@ -567,50 +592,63 @@ function ptlRenderCanvas(containerId) {
   const laid = [];
   spine.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
   tail.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
-  lanes.forEach((l, i) => l.steps.forEach(s => laid.push({ n: { ...s, dept: l.ownerDept === 'Reactor' ? 'lane_r' : l.ownerDept === 'Capacitor' ? 'lane_c' : 'lane_p' }, x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id], laneColor: PTL_LANE_HEX[l.ownerDept], boqId: l.boqId })));
+  lanes.forEach((l, i) => l.steps.forEach(s => laid.push({ n: { ...s, dept: l.ownerDept === 'Reactor' ? 'lane_r' : l.ownerDept === 'Capacitor' ? 'lane_c' : 'lane_p' }, x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id], laneColor: PTL_LANE_HEX[l.ownerDept], boqId: l.boqId, ownerLabel: `${l.ownerDept} Production` })));
   laid.sort((a, b) => a.x - b.x);
 
   const PL = ptlPlacer();
   laid.forEach(({ x, y }) => PL.block({ x0: x - R * 1.4, x1: x + R * 1.4, y0: y - R * 1.4, y1: y + R * 1.4 }));
 
   const clickMap = [];
-  laid.forEach(({ n, x, y, laneColor, boqId }) => {
+  laid.forEach(({ n, x, y, laneColor, boqId, ownerLabel }) => {
     const c = laneColor || PTL_TRUNK_HEX[n.dept] || 'var(--muted)';
     const eff = n.actual || n.target || n.planned;
     const done = !!n.actual || n.done === true;
     const late = !done && eff && eff < today;
+    const bd = late ? Math.abs(ptlBdBetween(eff, today) || 0) : null;
     const ring = late ? '#e84545' : c;
-    P.push(`<circle cx="${x}" cy="${y}" r="${R}" fill="${done ? c : 'var(--card)'}" stroke="${ring}" stroke-width="${late ? 2.6 : 2}"/>`);
-    if (done) P.push(`<path d="M${x - R * 0.4} ${y} l${R * 0.3} ${R * 0.32} l${R * 0.55} -${R * 0.6}" fill="none" stroke="var(--card)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>`);
 
-    const lines = ptlWrapLbl(n.label, 15);
+    const lines = ptlWrapLbl(n.label, 16);
     const lw = Math.max(...lines.map(ptlWLbl));
-    const kU = PL.place(k => { const b = y - R - 10 * ptlFS - k * (SLOT_UP + LINE_H); return { x0: x - lw / 2, x1: x + lw / 2, y0: b - (lines.length - 1) * LINE_H - 8, y1: b + 3 }; });
-    const base = y - R - 10 * ptlFS - kU * (SLOT_UP + LINE_H);
-    lines.forEach((ln, i) => P.push(`<text x="${x}" y="${base - (lines.length - 1 - i) * LINE_H}" text-anchor="middle" font-size="${9.5 * ptlFS}" font-weight="600" fill="${late ? '#e84545' : 'var(--text)'}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3">${esc(ln)}</text>`));
+    const GAP = 12 * ptlFS, ASC = 9 * ptlFS;
+    const kU = PL.place(k => { const b = y - R - GAP - k * (SLOT_UP + LINE_H); return { x0: x - lw / 2, x1: x + lw / 2, y0: b - (lines.length - 1) * LINE_H - ASC, y1: b + 3 }; });
+    const base = y - R - GAP - kU * (SLOT_UP + LINE_H);
+    if (kU > 0) P.push(`<line x1="${x}" y1="${y - R}" x2="${x}" y2="${base + 4}" stroke="${ring}" stroke-width="1" opacity=".3"/>`);
+    lines.forEach((ln, i) => P.push(`<text x="${x}" y="${base - (lines.length - 1 - i) * LINE_H}" text-anchor="middle" font-size="${11 * ptlFS}" font-weight="600" fill="${late ? '#e84545' : 'var(--text)'}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(ln)}</text>`));
 
     const dtx = ptlFmt(eff);
-    const bw = ptlWMono(dtx, 9);
-    const kD = PL.place(k => { const d = y + R + 10 * ptlFS + k * SLOT_DN; return { x0: x - bw / 2, x1: x + bw / 2, y0: d - 8, y1: d + 3 }; });
-    const dy = y + R + 10 * ptlFS + kD * SLOT_DN;
-    P.push(`<text x="${x}" y="${dy}" text-anchor="middle" font-size="${8.5 * ptlFS}" font-family="monospace" fill="${late ? '#e84545' : 'var(--muted)'}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3">${esc(dtx)}</text>`);
+    const bw = ptlWMono(dtx, 10.5);
+    const kD = PL.place(k => { const d = y + R + GAP + k * SLOT_DN; return { x0: x - bw / 2, x1: x + bw / 2, y0: d - ASC, y1: d + 3 }; });
+    const dy = y + R + GAP + kD * SLOT_DN;
+    if (kD > 0) P.push(`<line x1="${x}" y1="${y + R}" x2="${x}" y2="${dy - ASC}" stroke="${ring}" stroke-width="1" opacity=".3"/>`);
+    P.push(`<text x="${x}" y="${dy}" text-anchor="middle" font-size="${10.5 * ptlFS}" font-weight="700" font-family="monospace" fill="${late ? '#e84545' : 'var(--muted)'}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(dtx)}</text>`);
+
+    P.push(`<circle cx="${x}" cy="${y}" r="${R}" fill="${done ? c : 'var(--card)'}" stroke="${ring}" stroke-width="${(late ? 2.6 : 2.2) * ptlFS}"/>`);
+    if (done) P.push(`<path d="M${x - R * 0.43} ${y} l${R * 0.31} ${R * 0.32} l${R * 0.55} -${R * 0.61}" fill="none" stroke="var(--card)" stroke-width="${1.8 * ptlFS}" stroke-linecap="round" stroke-linejoin="round"/>`);
 
     const anchorId = boqId ? `ptl-step-${boqId}-${n.id}` : `ptl-row-${n.id}`;
-    clickMap.push({ x, y, id: anchorId, label: n.label, dept: boqId ? null : (PTL_DEPT_NAME[n.dept] || n.dept), date: dtx });
-    P.push(`<circle cx="${x}" cy="${y}" r="${R * 2}" fill="transparent" class="ptl-hit" data-anchor="${anchorId}" data-tip="${esc(n.label)} — ${esc(dtx)}"/>`);
+    const idx = clickMap.length;
+    clickMap.push({
+      label: n.label, owner: ownerLabel || (PTL_DEPT_NAME[n.dept] || n.dept),
+      planned: n.planned, eff, actual: n.actual, late: bd,
+    });
+    P.push(`<circle cx="${x}" cy="${y}" r="${R * 2.2}" fill="transparent" class="ptl-hit" data-anchor="${anchorId}" data-idx="${idx}"/>`);
   });
 
   // Gutter (sticky lane labels)
   if (laneCount) {
-    const G = [`<g id="ptl-gutter">`, `<rect x="0" y="${RULER_H}" width="${PAD_L - 10}" height="${H - RULER_H}" fill="var(--bg,#f0f4f8)"/>`, `<line x1="${PAD_L - 10}" y1="${RULER_H}" x2="${PAD_L - 10}" y2="${H}" stroke="var(--border)" stroke-width="1"/>`];
+    const gutterW = PAD_L + LEAD - 10;
+    const G = [`<g id="ptl-gutter">`, `<rect x="0" y="${RULER_H}" width="${gutterW}" height="${H - RULER_H}" fill="var(--bg,#f0f4f8)"/>`, `<line x1="${gutterW}" y1="${RULER_H}" x2="${gutterW}" y2="${H}" stroke="var(--border)" stroke-width="1"/>`];
     lanes.forEach((l, i) => {
       const c = PTL_LANE_HEX[l.ownerDept] || 'var(--muted)', y = laneYs[i];
-      G.push(`<rect x="10" y="${y - 3}" width="4" height="${20 * ptlFS}" rx="2" fill="${c}"/>`);
-      G.push(`<text x="20" y="${y + 5}" font-size="${10.5 * ptlFS}" font-weight="800" fill="${c}">${esc(l.name)}</text>`);
+      G.push(`<rect x="16" y="${y - 12 * ptlFS}" width="4" height="${24 * ptlFS}" rx="2" fill="${c}"/>`);
+      G.push(`<text x="28" y="${y + 4.5 * ptlFS}" font-size="${13 * ptlFS}" font-weight="800" fill="${c}">${esc(l.name)}</text>`);
     });
     G.push(`</g>`);
     P.push(G.join(""));
   }
+
+  // Last of all, so nothing can cover it — same convention as the demo.
+  P.push(`<text x="${todayX}" y="${RULER_H + 15 * ptlFS}" text-anchor="middle" font-size="${10 * ptlFS}" font-weight="800" letter-spacing="1" fill="var(--brand)" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="5">TODAY · ${esc(ptlFmt(today))}</text>`);
 
   const svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;">${P.join("")}</svg>`;
   ptlLastTodayX = todayX;
@@ -791,12 +829,12 @@ function ptlRenderFullscreen() {
         </div>
       </div>
       <button type="button" onclick="ptlSetViewMode('steps')" style="padding:7px 14px; font-size:0.82rem; font-weight:700; border:1px solid var(--border); border-radius:var(--radius); background:#fff; color:var(--text); cursor:pointer;">Steps</button>
-      <button type="button" id="ptl-fs-flags-toggle" onclick="ptlToggleFsRail()" style="padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; color:#fff;"></button>
       <div style="flex:1 1 auto;"></div>
       <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
         ${Object.keys(PTL_MODES).map(m => `<button type="button" onclick="ptlSetMode('${m}')" style="padding:7px 14px; font-size:0.82rem; font-weight:600; border:0; border-right:1px solid var(--border); cursor:pointer; background:${m === ptlMode ? 'var(--brand)' : '#fff'}; color:${m === ptlMode ? '#fff' : 'var(--muted)'};">${m === 'week' ? 'This Week' : m === 'days15' ? '15 Days' : 'This Month'}</button>`).join("")}
       </div>
       <button type="button" onclick="ptlJumpToday()" style="padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; background:var(--brand); color:#fff;">Today</button>
+      <button type="button" id="ptl-fs-flags-toggle" onclick="ptlToggleFsRail()" style="padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; color:#fff;"></button>
     </div>
     <div style="flex:1 1 auto; display:flex; min-height:0;">
       <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column;">
@@ -822,21 +860,37 @@ function ptlRenderFullscreen() {
   ptlRenderCanvas("ptl-fs-scroller");
 }
 
+// Compact hover card — same shape as the design-exploration prototype's
+// #tip: title, then Owner/Planned/Target/Actual rows, plus a lateness
+// line when it applies.
+function ptlTipHtml(info) {
+  const row = (k, v) => `<div style="display:flex; justify-content:space-between; gap:14px; font-size:0.74rem; color:var(--muted); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"><span>${k}</span><span style="color:var(--text);">${escapeHtml(v)}</span></div>`;
+  let h = `<b style="display:block; font-size:0.82rem; font-weight:700; margin-bottom:6px;">${escapeHtml(info.label)}</b>`;
+  h += row("Owner", info.owner || "—");
+  h += row("Planned", info.planned ? ptlFmt(info.planned) : "—");
+  h += row("Target", info.eff ? ptlFmt(info.eff) : "—");
+  h += row("Actual", info.actual ? ptlFmt(info.actual) : "—");
+  if (info.late) h += `<div style="margin-top:5px; font-size:0.74rem; font-weight:700; color:#e84545;">${info.late} business day${info.late === 1 ? "" : "s"} late</div>`;
+  return h;
+}
+
 function ptlWireCanvasInteractions(sc, clickMap) {
   if (!sc) return;
   let tip = document.getElementById("ptl-tip");
   if (!tip) {
     tip = document.createElement("div");
     tip.id = "ptl-tip";
-    tip.style.cssText = "position:fixed; z-index:200; pointer-events:none; opacity:0; transition:opacity .1s; background:var(--card); border:1px solid var(--border); border-radius:6px; padding:6px 9px; font-size:0.76rem; box-shadow:0 6px 16px rgba(0,0,0,0.15);";
+    tip.style.cssText = "position:fixed; z-index:9500; pointer-events:none; opacity:0; transition:opacity .1s linear; background:var(--card); border:1px solid var(--border); border-radius:6px; padding:9px 11px; max-width:250px; box-shadow:0 6px 20px -6px rgba(0,0,0,.28);";
     document.body.appendChild(tip);
   }
   sc.querySelectorAll(".ptl-hit").forEach(el => {
     el.style.cursor = "pointer";
-    el.addEventListener("mouseenter", (e) => {
-      tip.textContent = el.dataset.tip; tip.style.opacity = "1";
+    el.addEventListener("mouseenter", () => {
+      const info = clickMap[+el.dataset.idx];
+      if (info) tip.innerHTML = ptlTipHtml(info);
+      tip.style.opacity = "1";
     });
-    el.addEventListener("mousemove", (e) => { tip.style.left = (e.clientX + 12) + "px"; tip.style.top = (e.clientY + 12) + "px"; });
+    el.addEventListener("mousemove", (e) => { tip.style.left = (e.clientX + 14) + "px"; tip.style.top = (e.clientY + 14) + "px"; });
     el.addEventListener("mouseleave", () => { tip.style.opacity = "0"; });
     el.addEventListener("click", () => ptlSetViewMode("steps", el.dataset.anchor));
   });
