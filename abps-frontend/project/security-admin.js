@@ -81,6 +81,27 @@ async function loadSecurityAdminUsers() {
   } catch (e) { console.error("loadSecurityAdminUsers failed:", e); }
 }
 
+// Reactor/Capacitor/Panel is Project Timeline Stage 4's own attribute
+// (migration 147, production_sub_dept) — only meaningful for someone in
+// the Production department, so it only renders here. Not a toggle:
+// clicking a pill that's already selected clears it (nobody set), any
+// other pill switches to it.
+const PROD_SUB_DEPTS = ['Reactor', 'Capacitor', 'Panel'];
+
+function laSubDeptPillsHtml(u) {
+  return `
+    <div style="display:flex; gap:4px; margin-top:6px; justify-content:center;">
+      ${PROD_SUB_DEPTS.map(sd => {
+        const active = u.productionSubDept === sd;
+        return `<button onclick="event.stopPropagation(); handleProductionSubDeptClick('${u.email}', '${sd}')"
+          title="${active ? `Click to clear ${sd}` : `Set Stage 4 role to ${sd}`}"
+          style="border:${active ? '2px solid #b45309' : '1px solid #dde3ea'}; background:${active ? '#b4530918' : '#fff'};
+                 color:${active ? '#b45309' : '#64748b'}; border-radius:8px; padding:3px 8px; cursor:pointer;
+                 font-size:0.68rem; font-weight:${active ? 800 : 600};">${sd}</button>`;
+      }).join('')}
+    </div>`;
+}
+
 function laPersonButtonHtml(u, color) {
   const granted = !!u.perm_login_anywhere;
   const border = granted ? `3px solid #0f172a` : `1.5px solid #dde3ea`;
@@ -97,7 +118,23 @@ function laPersonButtonHtml(u, color) {
         onmouseout="this.style.transform=''; this.style.boxShadow='0 1px 3px rgba(15,23,42,0.08)';">
         ${u.first_name || ''} ${u.last_name || ''}
       </button>
+      ${u.department === 'Production' ? laSubDeptPillsHtml(u) : ''}
     </div>`;
+}
+
+async function handleProductionSubDeptClick(email, subDept) {
+  const u = saAllUsers.find(x => x.email === email);
+  if (!u) return;
+  const newValue = u.productionSubDept === subDept ? null : subDept;
+  try {
+    const data = await apFetch({ action: "setProductionSubDepartment", email, subDept: newValue });
+    if (data.success) {
+      u.productionSubDept = newValue;
+      renderSecurityAdminUsers();
+    } else {
+      showBOQBanner("sa-feedback", data.error || "Failed to update.", "error");
+    }
+  } catch (e) { showBOQBanner("sa-feedback", "Network error: " + e.message, "error"); }
 }
 
 function renderSecurityAdminUsers() {
