@@ -933,11 +933,12 @@ function ptlToggleFsRail() {
 
 // Show Flags (rail hidden) is red — something is hidden that needs a
 // look. Hide Flags (rail open) is green — the state is fine to tuck away.
+let ptlLastFlagsCount = 0;
 function ptlUpdateFsFlagsToggleBtn() {
   const btn = document.getElementById("ptl-fs-flags-toggle");
   if (!btn) return;
-  if (ptlFsRailOpen) { btn.textContent = "Hide Flags"; btn.style.background = "#16a34a"; }
-  else { btn.textContent = "Show Flags"; btn.style.background = "#dc2626"; }
+  if (ptlFsRailOpen) { btn.textContent = `Hide Flags (${ptlLastFlagsCount})`; btn.style.background = "#16a34a"; }
+  else { btn.textContent = `Show Flags (${ptlLastFlagsCount})`; btn.style.background = "#dc2626"; }
 }
 
 function ptlJumpToday() {
@@ -952,6 +953,7 @@ function ptlRenderFullscreen() {
   const { project } = ptlData;
   const flags = ptlBuildFlags();
   const overdueCount = flags.filter(f => f.sev !== "due").length;
+  ptlLastFlagsCount = flags.length;
 
   ov.innerHTML = `
     <div style="flex:none; background:var(--card); border-bottom:1px solid var(--border); padding:12px 18px; display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px;">
