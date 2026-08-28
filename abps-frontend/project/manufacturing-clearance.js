@@ -135,9 +135,9 @@ function renderMcProjectCard(project) {
         <div class="meta-row-line-block" style="display:flex; align-items:center; flex-wrap:wrap; gap:10px;">
           <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:3px 8px; font-size:0.85rem; border-radius:3px;">${project.projectId}</span>
           <strong style="color:#111827; font-size:0.9rem;">${project.companyName}</strong>
-          <span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#fff; background:${status.color}; padding:3px 8px; border-radius:10px;">${status.text}</span>
           <span style="font-size:0.85rem;">${deliveryLabel}: <strong style="color:#111827;">${formatDateDMY(deliveryValue) || "—"}</strong></span>
-          <span id="mc-caret-${safeId}" style="margin-left:auto; font-weight:700; color:var(--muted);">▸</span>
+          <span style="margin-left:auto; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#fff; background:${status.color}; padding:3px 8px; border-radius:10px;">${status.text}</span>
+          <span id="mc-caret-${safeId}" style="font-weight:700; color:var(--muted);">▸</span>
         </div>
       </div>
     </div>
