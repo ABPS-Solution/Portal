@@ -165,6 +165,14 @@ function ptlToday() {
   return now.toISOString().slice(0, 10);
 }
 
+// Same convention as Manufacturing Clearance's wrapper header: Tentative
+// (projects.delivery_date, from the customer PO) until Internal MFC is
+// given, then Actual (projects.mfc_actual_delivery_date, a gating field
+// entered at clearance time — named "actual" in the schema, not a
+// post-dispatch figure).
+const ptlDeliveryLabel = p => p.mfcInt ? "Actual Delivery" : "Tentative Delivery";
+const ptlDeliveryValue = p => p.mfcInt ? p.actualDelivery : p.tentativeDelivery;
+
 const ptlEff = n => n.actual || n.target || n.planned;
 const ptlLate = n => !n.actual && !n.done && ptlEff(n) && ptlEff(n) < ptlToday();
 
@@ -177,7 +185,7 @@ function ptlRender() {
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border);">
       <div>
         <div style="font-weight:800; font-size:1.05rem; color:var(--text);">${escapeHtml(project.projectId)}</div>
-        <div style="font-size:0.82rem; color:var(--muted);">${escapeHtml(project.companyName || '—')} · <strong>${escapeHtml(project.status)}</strong>${project.mfcInt ? ` · Internal MFC <strong>${ptlFmtFull(project.mfcInt)}</strong>` : ''}</div>
+        <div style="font-size:0.82rem; color:var(--muted);">${escapeHtml(project.companyName || '—')} · <strong>${escapeHtml(project.status)}</strong>${project.mfcInt ? ` · Internal MFC <strong>${ptlFmtFull(project.mfcInt)}</strong>` : ''} · ${ptlDeliveryLabel(project)} <strong>${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
       </div>
     </div>`;
 
@@ -494,7 +502,7 @@ function ptlBuildDayRange() {
 
 function ptlCanvasNodes() {
   const spineIds = ['oa', 'po', 'activated', 'dwgSent', 'dwgAppr', 'mfcCust', 'mfcInt', 'boqs', 'costing', 'wdesign', 'prns', 'rmpos', 'pps', 'prodPlan'];
-  const tailIds = ['inspCall', 'customer_inspection', 'inspection_clearance_note', 'dispatch_clearance', 'dispatched'];
+  const tailIds = ['inspCall', 'customer_inspection', 'inspection_clearance_note', 'dispatch_clearance', 'dispatched', 'delivery'];
   const byId = id => (ptlData.trunk || []).find(n => n.id === id);
   const dated = id => { const n = byId(id); return n && ptlEff(n) ? n : null; };
   return {
@@ -952,7 +960,7 @@ function ptlRenderFullscreen() {
         <div style="width:5px; height:30px; border-radius:2px; background:var(--brand); flex:none;"></div>
         <div style="min-width:0;">
           <div style="font-weight:800; font-size:1.1rem; color:var(--brand); white-space:nowrap;">Project Timeline</div>
-          <div style="font-size:0.75rem; color:var(--muted); font-family:monospace; white-space:nowrap;">${escapeHtml(project.projectId)} — ${escapeHtml(project.companyName || '')} · <strong style="color:var(--text)">${escapeHtml(project.status)}</strong>${project.mfcInt ? ` · Internal MFC <strong style="color:var(--text)">${ptlFmtFull(project.mfcInt)}</strong>` : ''}</div>
+          <div style="font-size:0.75rem; color:var(--muted); font-family:monospace; white-space:nowrap;">${escapeHtml(project.projectId)} — ${escapeHtml(project.companyName || '')} · <strong style="color:var(--text)">${escapeHtml(project.status)}</strong>${project.mfcInt ? ` · Internal MFC <strong style="color:var(--text)">${ptlFmtFull(project.mfcInt)}</strong>` : ''} · ${ptlDeliveryLabel(project)} <strong style="color:var(--text)">${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
         </div>
       </div>
       <div style="flex:1 1 auto;"></div>
