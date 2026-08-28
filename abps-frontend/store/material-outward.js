@@ -64,7 +64,8 @@ function renderServiceTicketCard(ticket) {
         <div>
           <div style="font-weight:800; font-size:0.98rem;">${escapeHtml(ticket.ticket_id)}</div>
           <div style="color:var(--muted); font-size:0.85rem; margin-top:2px;">
-            ${escapeHtml(ticket.project_id || "")}${ticket.company_name ? " — " + escapeHtml(ticket.company_name) : ""}
+            ${escapeHtml(ticket.project_id || "Legacy")}${ticket.company_name ? " — " + escapeHtml(ticket.company_name) : ""}
+            ${ticket.boq_id ? " · BOQ " + escapeHtml(ticket.boq_id) : ""}
             ${ticket.job_card_number ? " · Job Card " + escapeHtml(ticket.job_card_number) : ""}
           </div>
           <div style="color:var(--muted); font-size:0.8rem; margin-top:2px;">${escapeHtml(ticket.type_of_store || "")} · Requested by ${escapeHtml(ticket.requested_returned_by || "")}</div>
@@ -84,7 +85,7 @@ function openMaterialOutwardUploadModal(ticketId) {
   const body = document.getElementById("mow-upload-modal-body");
   body.innerHTML = `
     <h3 style="margin-top:0;">Upload Delivery Challan — ${escapeHtml(ticketId)}</h3>
-    <p style="color:var(--muted); font-size:0.85rem;">Project ${escapeHtml(ticket.project_id || "")}${ticket.company_name ? " — " + escapeHtml(ticket.company_name) : ""}</p>
+    <p style="color:var(--muted); font-size:0.85rem;">${ticket.project_id ? "Project " + escapeHtml(ticket.project_id) : "Legacy project"}${ticket.company_name ? " — " + escapeHtml(ticket.company_name) : ""}</p>
     <input type="file" id="mow-challan-file-input" accept=".pdf,image/*" style="margin-bottom:14px;" />
     <div style="display:flex; justify-content:flex-end; gap:10px;">
       <button class="nav-btn-styled" style="background:#718096;" onclick="closeMaterialOutwardUploadModal()">Cancel</button>
@@ -197,7 +198,7 @@ async function commitMaterialOutwardChallan() {
   try {
     const data = await apFetch({
       action: "commitDeliveryChallan",
-      ticketId: ticket.ticket_id, projectId: ticket.project_id,
+      ticketId: ticket.ticket_id, projectId: ticket.project_id, legacyCompanyName: ticket.legacy_company_name,
       challanNumber, challanDate,
       consigneeName: document.getElementById("mow-review-consignee-name").value.trim(),
       consigneeAddress: document.getElementById("mow-review-consignee-address").value.trim(),
@@ -250,7 +251,7 @@ async function runMaterialOutwardSearch() {
             <tr>
               <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.challan_number || '')}</td>
               <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(formatDMYFromISO ? formatDMYFromISO(c.challan_date) : (c.challan_date || ''))}</td>
-              <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.project_id || '')}${c.company_name ? ' — ' + escapeHtml(c.company_name) : ''}</td>
+              <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.project_id || 'Legacy')}${c.company_name ? ' — ' + escapeHtml(c.company_name) : ''}</td>
               <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.ticket_id || '')}</td>
               <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.consignee_name || '')}</td>
               <td style="padding:8px; border:1px solid var(--border);">${c.document_url ? `<a href="${driveLink(c.document_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">View ↗</a>` : '—'}</td>

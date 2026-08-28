@@ -9,7 +9,7 @@ async function initializeMaterialRequestWorkspace() {
   const itemDropdown = document.getElementById("ticket-item-selection-dropdown");
   const deptDropdown = document.getElementById("ticket-department-outgoing-dropdown");
   const storeScopeDropdown = document.getElementById("ticket-selected-store-scope-toggle");
-  
+
   if (!projectDropdown || !itemDropdown || !deptDropdown) return;
 
   // Full session-state reset — without this, leaving and re-entering this section kept whatever
@@ -21,64 +21,61 @@ async function initializeMaterialRequestWorkspace() {
   window._ticketJobCardMaterialsCache = null;
   window._ticketBOQCache = null;
   window.cachedSpareStoreStock = [];
+  // Project-list caches are per-visit — a stale Active/Service list from
+  // an earlier visit this session is harmless to keep (still correct data),
+  // but re-fetch on the FIRST Outgoing Use pick of a fresh visit anyway
+  // for freshness, same as this screen already re-fetches inventory/staff
+  // below on every entry.
+  window._ticketActiveProjectsCache = null;
+  window._ticketServiceProjectsCache = null;
 
-  // Enforce pristine starting conditions across cascading lock states parameters
+  // Enforce pristine starting conditions across cascading lock states —
+  // Outgoing Use is now the FIRST field and stays enabled/empty; Project
+  // ID starts disabled until an Outgoing Use is picked.
   projectDropdown.value = "";
-  deptDropdown.value = ""; 
+  projectDropdown.disabled = true;
+  projectDropdown.style.opacity = "0.5";
+  projectDropdown.style.cursor = "not-allowed";
+  projectDropdown.style.background = "#f1f5f9";
+  deptDropdown.value = "";
+  const legacyToggleWrapper = document.getElementById("wrapper-ticket-legacy-toggle");
+  const legacyToggle = document.getElementById("ticket-legacy-project-toggle");
+  const legacyCompanyInput = document.getElementById("ticket-legacy-company-name");
+  if (legacyToggleWrapper) legacyToggleWrapper.style.display = "none";
+  if (legacyToggle) legacyToggle.checked = false;
+  if (legacyCompanyInput) { legacyCompanyInput.style.display = "none"; legacyCompanyInput.value = ""; }
+  const boqJobCardRow = document.getElementById("wrapper-ticket-boq-jobcard-row");
+  if (boqJobCardRow) { boqJobCardRow.style.display = "grid"; boqJobCardRow.style.gridTemplateColumns = "1fr 1fr"; }
+  const jobCardWrapper = document.getElementById("wrapper-ticket-job-card");
+  if (jobCardWrapper) jobCardWrapper.style.display = "";
   if (storeScopeDropdown) storeScopeDropdown.value = "";
-  ticketBOQDisplayReset("— Choose Project First —");
+  ticketBOQDisplayReset("— Choose Outgoing Use First —");
   ticketJobCardDisplayReset("— Choose BOQ First —");
   const customerNameField = document.getElementById("ticket-customer-name");
   if (customerNameField) customerNameField.value = "";
   window.ticketJobCardsCache = [];
   window._ticketProjectMetaCache = {};
   resetMaterialRequestCascadingLockState();
-  
+
   clearFullBasketDraftState();
   document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
 
-  projectDropdown.placeholder = "Loading Active Projects...";
   itemDropdown.innerHTML = '<option value="">— Select Material —</option>';
   try {
-    const [inventoryData, projectsData, serviceProjectsData, staffData] = await Promise.all([
+    const [inventoryData, staffData] = await Promise.all([
       apFetch({ action: "pullLiveInventoryCounts" }),
-      apFetch({ action: "pullLiveActiveProjectCodes" }),
-      apFetch({ action: "fetchInvoicedProjectsForService" }),
       apFetch({ action: "getStoreOperatorsList" })
     ]);
 
-    if (inventoryData.success && projectsData.success && staffData.success) {
+    if (inventoryData.success) {
       cachedInventoryStockCollection = inventoryData.inventory;
       window.cachedInventoryStockCollection = cachedInventoryStockCollection;
+    }
+    if (staffData.success) {
       globalOperatorsDatabasePayloadCache = staffData.fullPersonnelDataRecordsTree || [];
-      window._ticketProjectMetaCache = projectsData.projectMeta || {};
-
-      // Seed Active Project Codes — entry point of the cascade. The
-      // typeahead input filters/renders from these two globals itself
-      // (handleSharedProjectTypeaheadInput), not from populated <option>
-      // elements — there's no <select> here anymore to fill.
-      //
-      // Outgoing Use (Service vs Reactor/Capacitor/Panel/Processing) is
-      // chosen AFTER Project ID in this screen's cascade, so the project
-      // list can't swap in response to it — instead, invoiced/completed
-      // projects (eligible for a Service issue) are merged into the same
-      // typeahead source up front. fetchJobCardsForProject has no
-      // project_status filter, so BOQ/Job Card cascade already works for
-      // either kind of project once selected.
-      const activeProjects = projectsData.projects || [];
-      const activeIds = new Set(activeProjects);
-      const serviceProjects = (serviceProjectsData.success ? serviceProjectsData.projects : []) || [];
-      const mergedProjects = activeProjects.concat(serviceProjects.filter(id => !activeIds.has(id)));
-      const mergedMeta = { ...(projectsData.projectMeta || {}), ...(serviceProjectsData.projectMeta || {}) };
-
-      window.sharedActiveProjectCodes = mergedProjects;
-      window.sharedProjectMeta = mergedMeta;
-      window._ticketProjectMetaCache = mergedMeta;
-      projectDropdown.placeholder = "Type Project ID or Customer Name...";
     }
   } catch (error) {
     console.error("Critical Matrix Load Failure:", error);
-    projectDropdown.placeholder = "Error loading projects";
   }
 
   resetMaterialRequestCascadingLockState();
@@ -115,12 +112,16 @@ async function submitMaterialRequestTicketToBackend() {
     return;
   }
 
-  const projectId = projectIdField.value;
+  const isServiceSubmit = departmentVal === "Service";
+  const isLegacySubmit = isServiceSubmit && !!document.getElementById("ticket-legacy-project-toggle")?.checked;
+  const legacyCompanyNameVal = isLegacySubmit ? (document.getElementById("ticket-legacy-company-name")?.value || "").trim() : "";
+  const projectId = isLegacySubmit ? "" : projectIdField.value;
+  const boqIdVal = document.getElementById("ticket-boq-dropdown")?.value || "";
   const operatorSignatureName = appActiveOperatorIdentityString;
   const ticketTypeVal = typeDropdownField ? typeDropdownField.value : "Request Material";
 
   if (feedbackBanner) feedbackBanner.style.display = "none";
-  
+
   if (!operatorSignatureName) {
     if (feedbackBanner) {
       feedbackBanner.style.cssText = "display: block; background: #fff3c7; border-color: #b45309; color: #b45309; padding: 10px; margin-bottom: 12px; border-left: 4px solid #b45309; text-align: left;";
@@ -129,7 +130,15 @@ async function submitMaterialRequestTicketToBackend() {
     return;
   }
 
-  if (!projectId) {
+  if (isLegacySubmit) {
+    if (!legacyCompanyNameVal) {
+      if (feedbackBanner) {
+        feedbackBanner.style.cssText = "display: block; background: #fff3c7; border-color: #b45309; color: #b45309; padding: 10px; margin-bottom: 12px; border-left: 4px solid #b45309; text-align: left;";
+        feedbackBanner.innerHTML = `<strong>Compulsory Input Missing:</strong> Please type the legacy project's Company Name.`;
+      }
+      return;
+    }
+  } else if (!projectId) {
     if (feedbackBanner) {
       feedbackBanner.style.cssText = "display: block; background: #fff3c7; border-color: #b45309; color: #b45309; padding: 10px; margin-bottom: 12px; border-left: 4px solid #b45309; text-align: left;";
       feedbackBanner.innerHTML = `<strong>Compulsory Input Missing:</strong> Please select an active Project ID code to map this transaction.`;
@@ -137,14 +146,16 @@ async function submitMaterialRequestTicketToBackend() {
     return;
   }
 
-  if (!document.getElementById("ticket-job-card-dropdown")?.value) {
+  // Service is issued at the BOQ level (no Job Card); a legacy ticket has
+  // neither. Everything else still requires a Job Card Number.
+  if (!isServiceSubmit && !document.getElementById("ticket-job-card-dropdown")?.value) {
     if (feedbackBanner) {
       feedbackBanner.style.cssText = "display: block; background: #fff3c7; border-color: #b45309; color: #b45309; padding: 10px; margin-bottom: 12px; border-left: 4px solid #b45309; text-align: left;";
       feedbackBanner.innerHTML = `<strong>Compulsory Input Missing:</strong> Please select a Job Card Number.`;
     }
     return;
   }
-  
+
   if (dynamicTicketShoppingBasketArray.length === 0) {
     if (feedbackBanner) {
       feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 10px; margin-bottom: 12px; border-left: 4px solid #b91c1c; text-align: left;";
@@ -166,7 +177,7 @@ async function submitMaterialRequestTicketToBackend() {
   
   showBlockingOverlay("Submitting Material Issue Ticket...");
   try {
-    const jobCardNumberVal = document.getElementById("ticket-job-card-dropdown")?.value || "";
+    const jobCardNumberVal = isServiceSubmit ? "" : (document.getElementById("ticket-job-card-dropdown")?.value || "");
     const payload = {
       action: "submitEngineerMaterialTicket",
       activeEngineer: operatorSignatureName,
@@ -174,6 +185,8 @@ async function submitMaterialRequestTicketToBackend() {
       requestedBy: operatorSignatureName,
       projectId: projectId,
       jobCardNumber: jobCardNumberVal,
+      boqId: (isServiceSubmit && !isLegacySubmit) ? boqIdVal : "",
+      legacyCompanyName: legacyCompanyNameVal,
       department: departmentVal,
       departmentOutgoing: departmentVal,
       ticketTypeCommandString: ticketTypeVal,
@@ -478,23 +491,16 @@ async function addItemToShoppingBasketRow() {
   // --- FINISHED GOODS STORE: same JobCardMaterials allotment check as Raw Materials Store ---
   if (activeStoreScope === "Finished Goods Store") {
     const jobCardNumberValFGAdd = document.getElementById("ticket-job-card-dropdown")?.value || "";
-    const cacheKeyFGAdd = jobCardNumberValFGAdd + "|" + projectId;
-
-    if (!window._ticketJobCardMaterialsCache || window._ticketJobCardMaterialsCache.key !== cacheKeyFGAdd) {
-      try {
-        const jcmDataFGAdd = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValFGAdd, projectId: projectId });
-        window._ticketJobCardMaterialsCache = { key: cacheKeyFGAdd, records: jcmDataFGAdd.records || [] };
-      } catch(e) {
-        window._ticketJobCardMaterialsCache = { key: cacheKeyFGAdd, records: [] };
-      }
-    }
+    await ticketEnsureJcmCache_("Finished Goods Store", jobCardNumberValFGAdd, projectId);
 
     const jcmRecordsFGAdd = window._ticketJobCardMaterialsCache.records || [];
     const jcmMatchFGAdd = jcmRecordsFGAdd.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
 
     if (!jcmMatchFGAdd) {
       restoreAddBtn();
-      alert("This Finished Goods material has no allotment for " + jobCardNumberValFGAdd + ".");
+      alert(ticketIsServiceItemMode_()
+        ? "This Finished Goods material is not currently available in stock."
+        : "This Finished Goods material has no allotment for " + jobCardNumberValFGAdd + ".");
       return;
     }
 
@@ -514,7 +520,9 @@ async function addItemToShoppingBasketRow() {
     // approval flow on the other end to catch it.
     if (totalRequestedQuantity > Number(jcmMatchFGAdd.remainingQty)) {
       restoreAddBtn();
-      alert(`Finished Goods Store Lockout: Only ${fmtQty(jcmMatchFGAdd.remainingQty)} ${jcmMatchFGAdd.unitType || 'units'} of ${materialName} remain allotted to this Job Card. Reduce the quantity — Finished Goods Store requests cannot exceed the Job Card allotment.`);
+      alert(ticketIsServiceItemMode_()
+        ? `Only ${fmtQty(jcmMatchFGAdd.remainingQty)} ${jcmMatchFGAdd.unitType || 'units'} of ${materialName} are currently in stock. Reduce the quantity.`
+        : `Finished Goods Store Lockout: Only ${fmtQty(jcmMatchFGAdd.remainingQty)} ${jcmMatchFGAdd.unitType || 'units'} of ${materialName} remain allotted to this Job Card. Reduce the quantity — Finished Goods Store requests cannot exceed the Job Card allotment.`);
       return;
     }
 
@@ -555,16 +563,7 @@ async function addItemToShoppingBasketRow() {
   
   // Pull JobCardMaterials for this specific job card — source of truth for per-card allotment
   const jobCardNumberVal = document.getElementById("ticket-job-card-dropdown")?.value || "";
-  const cacheKey = jobCardNumberVal + "|" + projectId;
-
-  if (!window._ticketJobCardMaterialsCache || window._ticketJobCardMaterialsCache.key !== cacheKey) {
-    try {
-      const jcmData = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberVal, projectId: projectId });
-      window._ticketJobCardMaterialsCache = { key: cacheKey, records: jcmData.records || [] };
-    } catch(e) {
-      window._ticketJobCardMaterialsCache = { key: cacheKey, records: [] };
-    }
-  }
+  const cacheKey = await ticketEnsureJcmCache_("Raw Materials Store", jobCardNumberVal, projectId);
 
   function findJcmMatch_(recs) {
     return (recs || []).find(r => (r.itemCode || "").replace(/\s+/g, '').toLowerCase() === (itemData.itemCode || "").replace(/\s+/g, '').toLowerCase())
@@ -576,8 +575,9 @@ async function addItemToShoppingBasketRow() {
   // SELF-HEAL: same rationale as the BOQ cache above — a miss here could mean this cache
   // was populated before seedJobCardMaterials_ finished writing this row (e.g. right after
   // a BOQ authorize/update in another tab). Force one fresh, uncached re-fetch before
-  // blocking the user with a hard "no allotment" error.
-  if (!jcmMatch) {
+  // blocking the user with a hard "no allotment" error. Not applicable in Service mode —
+  // fetchServiceItemCatalog isn't Job-Card-scoped, so a miss there is a real "not in stock".
+  if (!jcmMatch && !ticketIsServiceItemMode_()) {
     try {
       const freshJcmData = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberVal, projectId: projectId });
       window._ticketJobCardMaterialsCache = { key: cacheKey, records: freshJcmData.records || [] };
@@ -591,7 +591,9 @@ async function addItemToShoppingBasketRow() {
 
   if (!jcmMatch) {
     restoreAddBtn();
-    alert("This material has no Job Card allotment for " + jobCardNumberVal + ". Ensure the BOQ is authorized and the Job Card is saved.");
+    alert(ticketIsServiceItemMode_()
+      ? "This material is not currently available in stock."
+      : "This material has no Job Card allotment for " + jobCardNumberVal + ". Ensure the BOQ is authorized and the Job Card is saved.");
     return;
   }
 
@@ -1268,23 +1270,19 @@ async function executeShortfallResolution(ticketId, projectId, resolutionType) {
  * Clears dependent child selectors footprint, re-disables subsequent input fields,
  * and standardizes font colors and opacities across cascading dropdown verification tiers.
  */
+// Outgoing Use is now the FIRST field (was the last) — it is never itself
+// locked/reset by this function anymore, only everything downstream of it
+// (Store/Items). Project/BOQ/Job Card locking is handled separately by
+// handleCreateTicketDepartmentChange (Project) and the BOQ/Job Card
+// handlers themselves, since which of those even apply depends on the
+// chosen Outgoing Use.
 function resetMaterialRequestCascadingLockState() {
   const itemDrop = document.getElementById("ticket-item-selection-dropdown");
   const qtyInp = document.getElementById("ticket-item-quantity-input");
   const addBtn = document.getElementById("ticket-add-item-action-btn");
 
-  const deptDrop = document.getElementById("ticket-department-outgoing-dropdown");
-  if (deptDrop) {
-    if (deptDrop.options[0]) deptDrop.options[0].text = "— Choose Job Card First —";
-    deptDrop.value = "";
-    deptDrop.disabled = true;
-    deptDrop.style.opacity = "0.5";
-    deptDrop.style.cursor = "not-allowed";
-  }
-  const deptLabelReset = document.getElementById("lbl-dept-outgoing-title");
-  if (deptLabelReset) deptLabelReset.style.color = "var(--muted)";
-  itemDrop.disabled = true; 
-  qtyInp.disabled = true; 
+  itemDrop.disabled = true;
+  qtyInp.disabled = true;
   addBtn.disabled = true;
 
   // Re-lock Choose Store on any cascade reset
@@ -1295,7 +1293,7 @@ function resetMaterialRequestCascadingLockState() {
     storeScopeDrop.style.opacity = "0.5";
     storeScopeDrop.style.cursor = "not-allowed";
     storeScopeDrop.value = "";
-    storeScopeDrop.options[0].text = "— Choose Department First —";
+    storeScopeDrop.options[0].text = "— Choose Outgoing Use First —";
   }
   if (storeScopeLabel) storeScopeLabel.style.color = "var(--muted)";
 
@@ -1303,32 +1301,148 @@ function resetMaterialRequestCascadingLockState() {
   addBtn.style.cursor = "not-allowed";
 }
 
-/**
- * STEP 1 CHANGE: Dynamic personnel filtration for any chosen outgoing use case.
- * Populates options with personnel belonging to Store, Production, or Admin.
- */
-function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
-  // Only reset below Department — not the full cascade
-  const storeScopeDrop2 = document.getElementById("ticket-selected-store-scope-toggle");
-  const storeScopeLabel2 = document.getElementById("lbl-store-scope-title");
-  const itemDrop2 = document.getElementById("ticket-item-selection-dropdown");
-  const qtyInp2 = document.getElementById("ticket-item-quantity-input");
-  const addBtn2 = document.getElementById("ticket-add-item-action-btn");
-  if (storeScopeDrop2) { storeScopeDrop2.disabled = true; storeScopeDrop2.style.opacity = "0.5"; storeScopeDrop2.style.cursor = "not-allowed"; storeScopeDrop2.value = ""; if (storeScopeDrop2.options[0]) storeScopeDrop2.options[0].text = "— Choose Department First —"; }
-  if (storeScopeLabel2) storeScopeLabel2.style.color = "var(--muted)";
-  if (itemDrop2) itemDrop2.disabled = true;
-  if (qtyInp2) qtyInp2.disabled = true;
-  if (addBtn2) { addBtn2.disabled = true; addBtn2.style.cursor = "not-allowed"; }
-  document.getElementById("wrapper-ticket-add-item-zone").style.opacity = "0.5";
-  if (!chosenDepartmentVal) return;
+// Cached once per screen visit — Active-only (Reactor/Capacitor/Panel) vs
+// Active+Complete (Service) are two different eligible-project lists, and
+// which one window.sharedActiveProjectCodes/sharedProjectMeta point at
+// swaps every time Outgoing Use changes, since Outgoing Use is now known
+// BEFORE Project ID is ever touched.
+window._ticketActiveProjectsCache = null;
+window._ticketServiceProjectsCache = null;
 
-  if (storeScopeDrop2) {
-    storeScopeDrop2.disabled = false;
-    storeScopeDrop2.style.opacity = "1";
-    storeScopeDrop2.style.cursor = "pointer";
-    storeScopeDrop2.innerHTML = buildStoreScopeOptionsHtml_("— Select Store —", chosenDepartmentVal === "Service");
+async function ticketLoadProjectListForDepartment_(isService) {
+  const projectDropdown = document.getElementById("ticket-project-id-dropdown-ta-input");
+  if (isService) {
+    if (!window._ticketServiceProjectsCache) {
+      const data = await apFetch({ action: "fetchServiceEligibleProjects" });
+      window._ticketServiceProjectsCache = { projects: data.success ? (data.projects || []) : [], projectMeta: data.success ? (data.projectMeta || {}) : {} };
+    }
+    window.sharedActiveProjectCodes = window._ticketServiceProjectsCache.projects;
+    window.sharedProjectMeta = window._ticketServiceProjectsCache.projectMeta;
+  } else {
+    if (!window._ticketActiveProjectsCache) {
+      const data = await apFetch({ action: "pullLiveActiveProjectCodes" });
+      window._ticketActiveProjectsCache = { projects: data.success ? (data.projects || []) : [], projectMeta: data.success ? (data.projectMeta || {}) : {} };
+    }
+    window.sharedActiveProjectCodes = window._ticketActiveProjectsCache.projects;
+    window.sharedProjectMeta = window._ticketActiveProjectsCache.projectMeta;
   }
-  if (storeScopeLabel2) storeScopeLabel2.style.color = "var(--brand)";
+  window._ticketProjectMetaCache = window.sharedProjectMeta;
+  if (projectDropdown) projectDropdown.placeholder = "Type Project ID or Customer Name...";
+}
+
+/**
+ * STEP 1 (now the FIRST field): Outgoing Use. Resets and re-locks
+ * everything below it — Project/Legacy toggle, BOQ, Job Card, Store,
+ * Items — then unlocks only the Project field (or the legacy Company
+ * Name input, if that toggle is already checked from a prior selection
+ * this visit) and loads whichever project list applies.
+ */
+async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
+  const isService = chosenDepartmentVal === "Service";
+
+  // Reset Project field + legacy state
+  const projectInput = document.getElementById("ticket-project-id-dropdown-ta-input");
+  const legacyToggleWrapper = document.getElementById("wrapper-ticket-legacy-toggle");
+  const legacyToggle = document.getElementById("ticket-legacy-project-toggle");
+  const legacyCompanyInput = document.getElementById("ticket-legacy-company-name");
+  const customerNameField = document.getElementById("ticket-customer-name");
+  if (projectInput) { projectInput.value = ""; }
+  if (legacyToggle) legacyToggle.checked = false;
+  if (legacyCompanyInput) { legacyCompanyInput.value = ""; legacyCompanyInput.style.display = "none"; }
+  if (customerNameField) customerNameField.value = "";
+  if (legacyToggleWrapper) legacyToggleWrapper.style.display = isService ? "block" : "none";
+  window.ticketJobCardsCache = [];
+
+  // Reset BOQ/Job Card
+  ticketBOQDisplayReset("— Choose Project First —");
+  ticketJobCardDisplayReset("— Choose BOQ First —");
+  const jobCardWrapper = document.getElementById("wrapper-ticket-job-card");
+  const boqJobCardRow = document.getElementById("wrapper-ticket-boq-jobcard-row");
+  if (jobCardWrapper) jobCardWrapper.style.display = isService ? "none" : "";
+  if (boqJobCardRow) boqJobCardRow.style.gridTemplateColumns = isService ? "1fr" : "1fr 1fr";
+  const boqWrapper = document.getElementById("wrapper-ticket-boq");
+  if (boqWrapper) boqWrapper.style.display = "";
+
+  resetMaterialRequestCascadingLockState();
+
+  if (!chosenDepartmentVal) {
+    if (projectInput) { projectInput.disabled = true; projectInput.style.opacity = "0.5"; projectInput.style.cursor = "not-allowed"; projectInput.style.background = "#f1f5f9"; }
+    return;
+  }
+
+  if (projectInput) {
+    projectInput.disabled = false;
+    projectInput.style.opacity = "1";
+    projectInput.style.cursor = "";
+    projectInput.style.background = "";
+    projectInput.placeholder = "Loading Projects...";
+  }
+  try {
+    await ticketLoadProjectListForDepartment_(isService);
+  } catch (e) {
+    console.error("Failed to load project list for Outgoing Use change:", e);
+    if (projectInput) projectInput.placeholder = "Error loading projects";
+  }
+}
+
+// Legacy/pre-system project toggle — only ever shown when Outgoing Use =
+// Service. A ticket is either against a real project+BOQ or a bare
+// company name, never both — checking this swaps the Project ID
+// typeahead for a free-text Company Name input and skips BOQ/Job Card
+// entirely (there is neither for a company this system never had a
+// project row for), unlocking Choose Store directly.
+function handleTicketLegacyToggleChange(checked) {
+  const projectInput = document.getElementById("ticket-project-id-dropdown-ta-input");
+  const legacyCompanyInput = document.getElementById("ticket-legacy-company-name");
+  const customerNameField = document.getElementById("ticket-customer-name");
+  const boqJobCardRow = document.getElementById("wrapper-ticket-boq-jobcard-row");
+
+  if (checked) {
+    if (projectInput) { projectInput.value = ""; projectInput.disabled = true; projectInput.style.opacity = "0.5"; projectInput.style.cursor = "not-allowed"; projectInput.style.background = "#f1f5f9"; }
+    if (legacyCompanyInput) { legacyCompanyInput.style.display = "block"; legacyCompanyInput.value = ""; legacyCompanyInput.focus(); }
+    if (customerNameField) customerNameField.value = "";
+    if (boqJobCardRow) boqJobCardRow.style.display = "none";
+    window.ticketJobCardsCache = [];
+    ticketBOQDisplayReset("— Not applicable (legacy project) —");
+    ticketJobCardDisplayReset("— Not applicable (legacy project) —");
+    resetMaterialRequestCascadingLockState();
+    handleTicketLegacyCompanyNameInput("");
+  } else {
+    if (projectInput) { projectInput.value = ""; projectInput.disabled = false; projectInput.style.opacity = "1"; projectInput.style.cursor = ""; projectInput.style.background = ""; }
+    if (legacyCompanyInput) { legacyCompanyInput.style.display = "none"; legacyCompanyInput.value = ""; }
+    if (customerNameField) customerNameField.value = "";
+    if (boqJobCardRow) boqJobCardRow.style.display = "grid";
+    ticketBOQDisplayReset("— Choose Project First —");
+    ticketJobCardDisplayReset("— Choose BOQ First —");
+    resetMaterialRequestCascadingLockState();
+  }
+}
+
+// Choose Store unlocks as soon as SOME company name is typed — full
+// validation (non-blank, trimmed) happens again at submit time, this is
+// just what gates the next step of the cascade.
+function handleTicketLegacyCompanyNameInput(value) {
+  const storeScopeDrop = document.getElementById("ticket-selected-store-scope-toggle");
+  const storeScopeLabel = document.getElementById("lbl-store-scope-title");
+  const hasValue = !!(value || "").trim();
+  // Mirrored (disabled, so never user-editable) into the same field every
+  // other cache-key/basket read site already reads by id — keeps this the
+  // ONE place that knows about the legacy/real-project split, instead of
+  // patching every downstream read site individually.
+  const projectInputMirror = document.getElementById("ticket-project-id-dropdown-ta-input");
+  if (projectInputMirror) projectInputMirror.value = (value || "").trim();
+  if (storeScopeDrop) {
+    storeScopeDrop.disabled = !hasValue;
+    storeScopeDrop.style.opacity = hasValue ? "1" : "0.5";
+    storeScopeDrop.style.cursor = hasValue ? "pointer" : "not-allowed";
+    if (hasValue) {
+      storeScopeDrop.innerHTML = buildStoreScopeOptionsHtml_("— Select Store —", true);
+    } else {
+      storeScopeDrop.value = "";
+      storeScopeDrop.innerHTML = buildStoreScopeOptionsHtml_("— Type Company Name First —");
+    }
+  }
+  if (storeScopeLabel) storeScopeLabel.style.color = hasValue ? "var(--brand)" : "var(--muted)";
 }
 
 /**
@@ -1366,6 +1480,7 @@ function handleCreateTicketOperatorChange(chosenOperatorVal) {
 
 function handleCreateTicketBOQChange(chosenBoqId) {
   const jobCardLabel = document.getElementById("lbl-job-card-title");
+  const isService = document.getElementById("ticket-department-outgoing-dropdown")?.value === "Service";
 
   // Clear BOQ cache — different BOQ means different material allocations
   window._ticketBOQCache = null;
@@ -1382,11 +1497,53 @@ function handleCreateTicketBOQChange(chosenBoqId) {
     return;
   }
 
+  // Service is issued at the BOQ level, not a specific Job Card — Job
+  // Card selection is skipped entirely (its wrapper is already hidden by
+  // handleCreateTicketDepartmentChange), unlock Choose Store directly.
+  if (isService) {
+    const storeScopeDrop = document.getElementById("ticket-selected-store-scope-toggle");
+    const storeScopeLabel = document.getElementById("lbl-store-scope-title");
+    if (storeScopeDrop) {
+      storeScopeDrop.disabled = false;
+      storeScopeDrop.style.opacity = "1";
+      storeScopeDrop.style.cursor = "pointer";
+      storeScopeDrop.innerHTML = buildStoreScopeOptionsHtml_("— Select Store —", true);
+    }
+    if (storeScopeLabel) storeScopeLabel.style.color = "var(--brand)";
+    return;
+  }
+
   const filtered = (window.ticketJobCardsCache || []).filter(jc => jc.boqId === chosenBoqId);
   ticketJobCardDisplayReset("— Select Job Card Number —");
   ticketJobCardPopulate(filtered.map(jc => ({ value: jc.jobCardNumber, label: `${jc.jobCardNumber} (Set ${jc.setNumber})` })));
   ticketJobCardDisplayEnable();
   if (jobCardLabel) jobCardLabel.style.color = "var(--brand)";
+}
+
+// Service (and legacy-company) tickets have no Job Card, so every place
+// that keys window._ticketJobCardMaterialsCache off "<jobCardNumber>|
+// <projectId>" and re-fetches via fetchJobCardMaterials on a miss needs a
+// Service-aware equivalent instead — shared here so
+// loadItemCatalogForSelectedProjectAndStore and addItemToShoppingBasketRow
+// can never disagree on the key or which fetch to use.
+function ticketIsServiceItemMode_() {
+  return document.getElementById("ticket-department-outgoing-dropdown")?.value === "Service";
+}
+function ticketJcmCacheKeyFor_(activeStoreScope, jobCardNumberVal, projectId) {
+  return ticketIsServiceItemMode_() ? ("SERVICE|" + activeStoreScope + "|" + projectId) : (jobCardNumberVal + "|" + projectId);
+}
+async function ticketEnsureJcmCache_(activeStoreScope, jobCardNumberVal, projectId) {
+  const cacheKey = ticketJcmCacheKeyFor_(activeStoreScope, jobCardNumberVal, projectId);
+  if (window._ticketJobCardMaterialsCache && window._ticketJobCardMaterialsCache.key === cacheKey) return cacheKey;
+  try {
+    const data = ticketIsServiceItemMode_()
+      ? await apFetch({ action: "fetchServiceItemCatalog", typeOfStore: activeStoreScope })
+      : await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberVal, projectId: projectId });
+    window._ticketJobCardMaterialsCache = { key: cacheKey, records: data.records || [] };
+  } catch (e) {
+    window._ticketJobCardMaterialsCache = { key: cacheKey, records: [] };
+  }
+  return cacheKey;
 }
 
 async function loadItemCatalogForSelectedProjectAndStore() {
@@ -1395,7 +1552,10 @@ async function loadItemCatalogForSelectedProjectAndStore() {
   const addBtn = document.getElementById("ticket-add-item-action-btn");
   const addZone = document.getElementById("wrapper-ticket-add-item-zone");
   const feedbackBanner = document.getElementById("store-ticket-runtime-inline-feedback-banner");
-  const chosenProjectVal = document.getElementById("ticket-project-id-dropdown-ta-input").value;
+  const isLegacyTicketMode = document.getElementById("ticket-legacy-project-toggle")?.checked;
+  const chosenProjectVal = isLegacyTicketMode
+    ? (document.getElementById("ticket-legacy-company-name")?.value || "").trim()
+    : document.getElementById("ticket-project-id-dropdown-ta-input").value;
 
   if (!chosenProjectVal) {
     itemDrop.disabled = true; qtyInp.disabled = true; addBtn.disabled = true;
@@ -1407,8 +1567,43 @@ async function loadItemCatalogForSelectedProjectAndStore() {
   if (feedbackBanner) feedbackBanner.style.display = "none";
 
   const activeStoreScope = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
+  // Service (and legacy-company) tickets have no Job Card to scope the
+  // item list against — Spare Store is already disallowed for Service at
+  // submit time, so only Raw/FG need this branch. fetchServiceItemCatalog
+  // returns the free-pool catalog in the exact same row shape
+  // fetchJobCardMaterials does, so everything below this block (basket
+  // add, submit) keeps reading window._ticketJobCardMaterialsCache
+  // unmodified regardless of which fetch populated it.
+  const isServiceItemMode = document.getElementById("ticket-department-outgoing-dropdown")?.value === "Service";
 
   try {
+    if (isServiceItemMode && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Finished Goods Store")) {
+      const jcmCacheKeyService = "SERVICE|" + activeStoreScope + "|" + chosenProjectVal;
+      let jcmFetchService;
+      try {
+        jcmFetchService = await apFetch({ action: "fetchServiceItemCatalog", typeOfStore: activeStoreScope });
+      } catch (e) {
+        jcmFetchService = { success: false, records: [], error: e.message };
+      }
+      window._ticketJobCardMaterialsCache = { key: jcmCacheKeyService, records: jcmFetchService.records || [] };
+
+      if (jcmFetchService.success && (jcmFetchService.records || []).length > 0) {
+        itemDrop.innerHTML = '<option value="" style="font-weight:700;">— Select Material —</option>';
+        jcmFetchService.records.forEach(r => {
+          const opt = document.createElement("option");
+          opt.value = r.materialName;
+          opt.textContent = r.materialName;
+          itemDrop.appendChild(opt);
+        });
+        addZone.style.opacity = "1";
+        itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
+        addBtn.style.cursor = "pointer";
+      } else {
+        itemDrop.innerHTML = `<option value="">⚠️ No ${activeStoreScope === 'Finished Goods Store' ? 'Finished Goods' : 'Raw Material'} stock currently available</option>`;
+        addZone.style.opacity = "0.5";
+      }
+      return;
+    }
     if (activeStoreScope === "Spare Store") {
       // Spare Store now shows exactly the same Job-Card-allotted material list as Raw Materials
       // Store — the two share one unified JobCardMaterials row per material (see architecture
@@ -1590,7 +1785,7 @@ function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
   // Panel rather than leaving an invalid combination selected.
   if (chosenStoreValue === "Finished Goods Store") {
     const deptDropForFG = document.getElementById("ticket-department-outgoing-dropdown");
-    const validFGDepts = ["Panel", "Processing", "Service"];
+    const validFGDepts = ["Panel", "Service"];
     if (deptDropForFG && !validFGDepts.includes(deptDropForFG.value)) {
       deptDropForFG.value = "Panel";
     }
@@ -1600,38 +1795,25 @@ function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
   loadItemCatalogForSelectedProjectAndStore();
 }
 
+// Outgoing Use is already known (chosen first) by the time a Job Card is
+// picked — this only ever unlocks Choose Store now, same as
+// handleCreateTicketBOQChange's Service branch does after a BOQ pick.
 function handleTicketJobCardChange(chosenJobCard) {
-  const deptDropdown   = document.getElementById("ticket-department-outgoing-dropdown");
-  const deptLabel      = document.getElementById("lbl-dept-outgoing-title");
   const storeScopeDrop = document.getElementById("ticket-selected-store-scope-toggle");
   const storeScopeLabel = document.getElementById("lbl-store-scope-title");
 
   resetMaterialRequestCascadingLockState();
 
-  // Always keep Choose Store locked at this stage
+  if (!chosenJobCard) return;
+
+  const chosenDepartmentVal = document.getElementById("ticket-department-outgoing-dropdown")?.value || "";
   if (storeScopeDrop) {
-    storeScopeDrop.disabled = true;
-    storeScopeDrop.style.opacity = "0.5";
-    storeScopeDrop.style.cursor = "not-allowed";
-    storeScopeDrop.value = "";
-    storeScopeDrop.innerHTML = buildStoreScopeOptionsHtml_("— Choose Department First —");
+    storeScopeDrop.disabled = false;
+    storeScopeDrop.style.opacity = "1";
+    storeScopeDrop.style.cursor = "pointer";
+    storeScopeDrop.innerHTML = buildStoreScopeOptionsHtml_("— Select Store —", chosenDepartmentVal === "Service");
   }
-  if (storeScopeLabel) storeScopeLabel.style.color = "var(--muted)";
-
-  if (!chosenJobCard) {
-    if (deptLabel) deptLabel.style.color = "var(--muted)";
-    return;
-  }
-
-  // Unlock Production Department only
-  if (deptDropdown) {
-    deptDropdown.disabled = false;
-    deptDropdown.style.opacity = "1";
-    deptDropdown.style.cursor = "pointer";
-    deptDropdown.value = "";
-    if (deptDropdown.options[0]) deptDropdown.options[0].text = "— Select Department —";
-  }
-  if (deptLabel) deptLabel.style.color = "var(--brand)";
+  if (storeScopeLabel) storeScopeLabel.style.color = "var(--brand)";
 }
 
 async function submitAssReservationChanges() {

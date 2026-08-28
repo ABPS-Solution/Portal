@@ -768,17 +768,39 @@
       <div id="store-ticket-runtime-inline-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid;"></div>    
       
       <div class="section" style="background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
-        
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div>
+            <label class="field-label" id="lbl-dept-outgoing-title" style="margin-top:0; font-weight: 700;">Production Department / Outgoing Use *</label>
+            <select id="ticket-department-outgoing-dropdown" onchange="handleCreateTicketDepartmentChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;">
+              <option value="">— Select Outgoing Use —</option>
+              <option value="Reactor">Reactor</option>
+              <option value="Capacitor">Capacitor</option>
+              <option value="Panel">Panel</option>
+              <option value="Service">Service</option>
+            </select>
+          </div>
+          <div id="wrapper-ticket-legacy-toggle" style="display:none;">
+            <label class="field-label" style="margin-top:0;">&nbsp;</label>
+            <label style="display:flex; align-items:center; gap:8px; padding:8px 0; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" id="ticket-legacy-project-toggle" onchange="handleTicketLegacyToggleChange(this.checked)" style="width:16px; height:16px;" />
+              This is a legacy/pre-system project (not in the system)
+            </label>
+          </div>
+        </div>
+
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
           <div id="wrapper-ticket-project-id">
             <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
             <div style="position:relative;">
-              <input type="text" id="ticket-project-id-dropdown-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              <input type="text" id="ticket-project-id-dropdown-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off" disabled
                 oninput="handleSharedProjectTypeaheadInput(this.value, 'ticket-project-id-dropdown-ta-input', 'ticket-project-id-dropdown-ta-dropdown')"
                 onchange="handleCreateTicketProjectChange(this.value)"
-                style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;" />
+                style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600; opacity:0.5; cursor:not-allowed; background:#f1f5f9;" />
               <div id="ticket-project-id-dropdown-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
             </div>
+            <input type="text" id="ticket-legacy-company-name" placeholder="Type Company Name..." autocomplete="off" style="display:none; width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600; margin-top:6px;"
+              oninput="handleTicketLegacyCompanyNameInput(this.value)" />
           </div>
           <div>
             <label class="field-label" style="margin-top:0;">Customer Name</label>
@@ -786,17 +808,17 @@
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-          <div style="position:relative;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;" id="wrapper-ticket-boq-jobcard-row">
+          <div style="position:relative;" id="wrapper-ticket-boq">
             <label class="field-label" id="lbl-ticket-boq-title" style="font-weight: 700; color: var(--muted);">Select BOQ ID *</label>
             <div id="ticket-boq-display" data-disabled="1" onclick="toggleTicketBOQDropdown()" style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; min-height:56px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
-              <span id="ticket-boq-display-text" style="white-space:normal; word-break:break-word;">— Choose Project First —</span>
+              <span id="ticket-boq-display-text" style="white-space:normal; word-break:break-word;">— Choose Outgoing Use First —</span>
               <span style="flex-shrink:0; margin-top:2px;">▾</span>
             </div>
             <div id="ticket-boq-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
             <input type="hidden" id="ticket-boq-dropdown" value="" />
           </div>
-          <div style="position:relative;">
+          <div style="position:relative;" id="wrapper-ticket-job-card">
             <label class="field-label" id="lbl-job-card-title" style="font-weight: 700; color: var(--muted);">Select Job Card Number *</label>
             <div id="ticket-job-card-display" data-disabled="1" onclick="toggleTicketJobCardDropdown()" style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; min-height:56px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
               <span id="ticket-job-card-display-text" style="white-space:normal; word-break:break-word;">— Choose BOQ First —</span>
@@ -807,22 +829,11 @@
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-          <div>
-            <label class="field-label" id="lbl-dept-outgoing-title" style="font-weight: 700; color: var(--muted);">Production Department / Outgoing Use *</label>
-            <select id="ticket-department-outgoing-dropdown" onchange="handleCreateTicketDepartmentChange(this.value)" disabled style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600; opacity: 0.5; cursor: not-allowed;">
-              <option value="">— Choose Job Card First —</option>
-              <option value="Reactor">Reactor</option>
-              <option value="Capacitor">Capacitor</option>
-              <option value="Panel">Panel</option>
-              <option value="Processing">Processing</option>
-              <option value="Service">Service</option>
-            </select>
-          </div>
+        <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px;">
           <div>
             <label class="field-label" id="lbl-store-scope-title" style="font-weight: 700; color: var(--muted);">Choose Store *</label>
             <select id="ticket-selected-store-scope-toggle" onchange="handleTicketStoreScopeSelectionChange(this.value)" disabled style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600; opacity: 0.5; cursor: not-allowed;">
-              <option value="">— Choose Department First —</option>
+              <option value="">— Choose Outgoing Use First —</option>
               <option value="Raw Materials Store">Raw Materials Store</option>
               <option value="Finished Goods Store">Finished Goods Store</option>
               <option value="Spare Store">Spare Store</option>

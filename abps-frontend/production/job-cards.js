@@ -26,21 +26,28 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
   // --- FINISHED GOODS STORE: show FG item details ---
   if (activeStoreScope === "Finished Goods Store") {
     const jobCardNumberValForPillFG = document.getElementById("ticket-job-card-dropdown")?.value || "";
-    const jcmCacheKeyForPillFG = jobCardNumberValForPillFG + "|" + projectId;
+    const isServicePillFG = typeof ticketIsServiceItemMode_ === "function" && ticketIsServiceItemMode_();
+    const jcmCacheKeyForPillFG = typeof ticketJcmCacheKeyFor_ === "function"
+      ? ticketJcmCacheKeyFor_("Finished Goods Store", jobCardNumberValForPillFG, projectId)
+      : (jobCardNumberValForPillFG + "|" + projectId);
 
     if (!window._ticketJobCardMaterialsCache || window._ticketJobCardMaterialsCache.key !== jcmCacheKeyForPillFG) {
-      counterZone.innerHTML = `<span style="font-size:0.75rem; color:var(--brand); font-weight:700;">🔄 Evaluating Real-Time Job Card Allocations...</span>`;
+      counterZone.innerHTML = `<span style="font-size:0.75rem; color:var(--brand); font-weight:700;">🔄 Evaluating Real-Time Stock...</span>`;
     }
 
     try {
-      if (!jobCardNumberValForPillFG) {
+      if (!jobCardNumberValForPillFG && !isServicePillFG) {
         counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Select a Job Card Number first.</span>`;
         return;
       }
 
       if (!window._ticketJobCardMaterialsCache || window._ticketJobCardMaterialsCache.key !== jcmCacheKeyForPillFG) {
-        const jcmFetchFGPill = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValForPillFG, projectId: projectId });
-        window._ticketJobCardMaterialsCache = { key: jcmCacheKeyForPillFG, records: jcmFetchFGPill.records || [] };
+        if (isServicePillFG) {
+          await ticketEnsureJcmCache_("Finished Goods Store", jobCardNumberValForPillFG, projectId);
+        } else {
+          const jcmFetchFGPill = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValForPillFG, projectId: projectId });
+          window._ticketJobCardMaterialsCache = { key: jcmCacheKeyForPillFG, records: jcmFetchFGPill.records || [] };
+        }
       }
       let jcmCacheDataFG = window._ticketJobCardMaterialsCache;
 
@@ -55,7 +62,10 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
 
       let jcmMatchFG = findJcmMatchForPillFG_(jcmCacheDataFG.records);
 
-      if (!jcmMatchFG) {
+      // Self-heal only applies to the Job-Card-scoped case — a miss against
+      // the Service free-pool catalog is a real "not in stock", not a
+      // caching race to retry.
+      if (!jcmMatchFG && !isServicePillFG) {
         try {
           const freshJcmDataFG = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValForPillFG, projectId: projectId });
           window._ticketJobCardMaterialsCache = { key: jcmCacheKeyForPillFG, records: freshJcmDataFG.records || [] };
@@ -213,22 +223,29 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
   // every Set). BillOfQuantity is background bookkeeping only; the ticket workflow never
   // reads it directly.
   const jobCardNumberValForPill = document.getElementById("ticket-job-card-dropdown")?.value || "";
-  const jcmCacheKeyForPill = jobCardNumberValForPill + "|" + projectId;
+  const isServicePillRaw = typeof ticketIsServiceItemMode_ === "function" && ticketIsServiceItemMode_();
+  const jcmCacheKeyForPill = typeof ticketJcmCacheKeyFor_ === "function"
+    ? ticketJcmCacheKeyFor_("Raw Materials Store", jobCardNumberValForPill, projectId)
+    : (jobCardNumberValForPill + "|" + projectId);
 
   // Only show loading text on first load, not on poll refreshes
   if (!window._ticketJobCardMaterialsCache || window._ticketJobCardMaterialsCache.key !== jcmCacheKeyForPill) {
-    counterZone.innerHTML = `<span style="font-size:0.75rem; color:var(--brand); font-weight:700;">🔄 Evaluating Real-Time Job Card Allocations...</span>`;
+    counterZone.innerHTML = `<span style="font-size:0.75rem; color:var(--brand); font-weight:700;">🔄 Evaluating Real-Time Stock...</span>`;
   }
 
   try {
-    if (!jobCardNumberValForPill) {
+    if (!jobCardNumberValForPill && !isServicePillRaw) {
       counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Select a Job Card Number first.</span>`;
       return;
     }
 
     if (!window._ticketJobCardMaterialsCache || window._ticketJobCardMaterialsCache.key !== jcmCacheKeyForPill) {
-      const jcmFetch = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValForPill, projectId: projectId });
-      window._ticketJobCardMaterialsCache = { key: jcmCacheKeyForPill, records: jcmFetch.records || [] };
+      if (isServicePillRaw) {
+        await ticketEnsureJcmCache_("Raw Materials Store", jobCardNumberValForPill, projectId);
+      } else {
+        const jcmFetch = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValForPill, projectId: projectId });
+        window._ticketJobCardMaterialsCache = { key: jcmCacheKeyForPill, records: jcmFetch.records || [] };
+      }
     }
     let jcmCacheData = window._ticketJobCardMaterialsCache;
 
@@ -259,7 +276,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
     // finished writing this row (e.g. right after a BOQ authorize/update in another tab).
     // Force ONE fresh, uncached re-fetch before concluding it's really missing, so a stale
     // snapshot can never masquerade as "no allotment" for the rest of the session.
-    if (!jcmMatch) {
+    if (!jcmMatch && !isServicePillRaw) {
       try {
         const freshJcmData = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValForPill, projectId: projectId });
         window._ticketJobCardMaterialsCache = { key: jcmCacheKeyForPill, records: freshJcmData.records || [] };
@@ -343,7 +360,7 @@ async function handleCreateTicketProjectChange(chosenProjectVal) {
   storeScopeDropdown.disabled = true;
   storeScopeDropdown.style.opacity = "0.5";
   storeScopeDropdown.style.cursor = "not-allowed";
-  storeScopeDropdown.innerHTML = buildStoreScopeOptionsHtml_("— Choose Department First —");
+  storeScopeDropdown.innerHTML = buildStoreScopeOptionsHtml_("— Choose BOQ First —");
   if (storeScopeLabel) storeScopeLabel.style.color = "var(--muted)";
 
   const meta = (window._ticketProjectMetaCache || {})[chosenProjectVal];
