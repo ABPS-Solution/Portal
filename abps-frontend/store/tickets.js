@@ -40,9 +40,10 @@ async function initializeMaterialRequestWorkspace() {
   projectDropdown.placeholder = "Loading Active Projects...";
   itemDropdown.innerHTML = '<option value="">— Select Material —</option>';
   try {
-    const [inventoryData, projectsData, staffData] = await Promise.all([
+    const [inventoryData, projectsData, serviceProjectsData, staffData] = await Promise.all([
       apFetch({ action: "pullLiveInventoryCounts" }),
       apFetch({ action: "pullLiveActiveProjectCodes" }),
+      apFetch({ action: "fetchInvoicedProjectsForService" }),
       apFetch({ action: "getStoreOperatorsList" })
     ]);
 
@@ -56,8 +57,23 @@ async function initializeMaterialRequestWorkspace() {
       // typeahead input filters/renders from these two globals itself
       // (handleSharedProjectTypeaheadInput), not from populated <option>
       // elements — there's no <select> here anymore to fill.
-      window.sharedActiveProjectCodes = projectsData.projects || [];
-      window.sharedProjectMeta = projectsData.projectMeta || {};
+      //
+      // Outgoing Use (Service vs Reactor/Capacitor/Panel/Processing) is
+      // chosen AFTER Project ID in this screen's cascade, so the project
+      // list can't swap in response to it — instead, invoiced/completed
+      // projects (eligible for a Service issue) are merged into the same
+      // typeahead source up front. fetchJobCardsForProject has no
+      // project_status filter, so BOQ/Job Card cascade already works for
+      // either kind of project once selected.
+      const activeProjects = projectsData.projects || [];
+      const activeIds = new Set(activeProjects);
+      const serviceProjects = (serviceProjectsData.success ? serviceProjectsData.projects : []) || [];
+      const mergedProjects = activeProjects.concat(serviceProjects.filter(id => !activeIds.has(id)));
+      const mergedMeta = { ...(projectsData.projectMeta || {}), ...(serviceProjectsData.projectMeta || {}) };
+
+      window.sharedActiveProjectCodes = mergedProjects;
+      window.sharedProjectMeta = mergedMeta;
+      window._ticketProjectMetaCache = mergedMeta;
       projectDropdown.placeholder = "Type Project ID or Customer Name...";
     }
   } catch (error) {
@@ -805,7 +821,16 @@ async function initializeStoreManagerApprovalsWorkspace() {
 // Return Material was removed — production returns now come in via Stock
 // Sweep. Spare → Raw Material stays: it's a bin-to-bin relocation, not a
 // production return, so it moved here rather than leaving with Return mode.
-function buildStoreScopeOptionsHtml_(placeholderText) {
+function buildStoreScopeOptionsHtml_(placeholderText, restrictToService) {
+  // Service issues (post-invoice replacement/shortage/spare sent for
+  // customer servicing) can only draw from Raw or Finished Goods — Spare
+  // Store is not a valid source (see submitEngineerMaterialTicket's
+  // isServiceIssue guard, routes/store.js).
+  if (restrictToService) {
+    return `<option value="">${placeholderText}</option>`
+      + `<option value="Raw Materials Store">Raw Materials Store</option>`
+      + `<option value="Finished Goods Store">Finished Goods Store</option>`;
+  }
   return `<option value="">${placeholderText}</option>`
     + `<option value="Raw Materials Store">Raw Materials Store</option>`
     + `<option value="Spare Store">Spare Store</option>`
@@ -1301,7 +1326,7 @@ function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
     storeScopeDrop2.disabled = false;
     storeScopeDrop2.style.opacity = "1";
     storeScopeDrop2.style.cursor = "pointer";
-    if (storeScopeDrop2.options[0]) storeScopeDrop2.options[0].text = "— Select Store —";
+    storeScopeDrop2.innerHTML = buildStoreScopeOptionsHtml_("— Select Store —", chosenDepartmentVal === "Service");
   }
   if (storeScopeLabel2) storeScopeLabel2.style.color = "var(--brand)";
 }

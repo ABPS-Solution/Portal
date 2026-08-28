@@ -34,6 +34,9 @@ credentials.json
 *.key
 service-account*.json
 
+# MCP server config (references internal DB infra env vars, not for public repo)
+.mcp.json
+
 # Local tooling / editor
 .claude/
 .vscode/

@@ -192,6 +192,7 @@ function returnToDashboard() {
   if(document.getElementById("canvas-module-fg-add")) document.getElementById("canvas-module-fg-add").style.display = "none";
   if(document.getElementById("canvas-module-fg-approval")) document.getElementById("canvas-module-fg-approval").style.display = "none";
   if(document.getElementById("canvas-module-project-invoice")) document.getElementById("canvas-module-project-invoice").style.display = "none";
+  if(document.getElementById("canvas-module-material-outward")) document.getElementById("canvas-module-material-outward").style.display = "none";
 
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("dashboard-view").style.display = "block"; 
@@ -372,6 +373,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-fg-approval")) document.getElementById("mod-fg-approval").style.display = canFgApproval ? "block" : "none";
   const canProjectInvoiceGeneration = userPermissionsObject.projectInvoiceGeneration === true;
   if (document.getElementById("mod-project-invoice")) document.getElementById("mod-project-invoice").style.display = canProjectInvoiceGeneration ? "block" : "none";
+  const canMaterialOutward = userPermissionsObject.materialOutward === true;
+  if (document.getElementById("mod-material-outward")) document.getElementById("mod-material-outward").style.display = canMaterialOutward ? "block" : "none";
   if (document.getElementById("mod-jc-letterhead")) document.getElementById("mod-jc-letterhead").style.display = userPermissionsObject.jobCardInProcessSheet === true ? "block" : "none";
 
   const canApproveBOQIncrease = userPermissionsObject.approveJCIncrease === true;
@@ -837,6 +840,14 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     if (centerTitle)  centerTitle.style.visibility  = "hidden";
     document.getElementById("canvas-module-project-invoice").style.display = "block";
     initializePinvWorkspace();
+  } else if (targetCanvasModuleId === 'material-outward') {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    const leftControlsMOW = document.getElementById("store-panel-left-controls");
+    const centerTitleMOW  = document.getElementById("store-panel-center-title");
+    if (leftControlsMOW) leftControlsMOW.style.visibility = "hidden";
+    if (centerTitleMOW)  centerTitleMOW.style.visibility  = "hidden";
+    document.getElementById("canvas-module-material-outward").style.display = "block";
+    initializeMaterialOutwardWorkspace();
   } else if (targetCanvasModuleId === 'tour-expense') {
     document.getElementById("dashboard-view").style.display = "none";
     const teCanvas = document.getElementById("canvas-module-tour-expense");
