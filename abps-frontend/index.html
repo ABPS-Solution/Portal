@@ -1787,20 +1787,23 @@
     </div>
   </div>
 
-  <div id="canvas-module-project-timeline" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+  <div id="canvas-module-project-timeline" class="workspace-panel" style="display:none;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
       <div></div>
       <button class="nav-btn-styled" onclick="exitProjectTimelineBackToMenu()">Return to Main Dashboard</button>
     </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
     <h2 class="panel-title">Project Timeline</h2>
     <div id="ptl-mount"></div>
+    </div>
   </div>
 
-  <div id="canvas-module-project-status" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+  <div id="canvas-module-project-status" class="workspace-panel" style="display:none;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
       <div></div>
       <button class="nav-btn-styled" onclick="exitProjectStatusBackToMenu()">Return to Main Dashboard</button>
     </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
     <h2 class="panel-title">Project Status</h2>
     <div style="display:flex; gap:10px; align-items:flex-end; margin-bottom:20px; position:relative;">
       <div style="flex:1; position:relative;">
@@ -1828,13 +1831,15 @@
       </div>
       <div class="pstat-lanes-container" id="pstat-lanes-container"></div>
     </div>
+    </div>
   </div>
 
-  <div id="canvas-module-customer-queries" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+  <div id="canvas-module-customer-queries" class="workspace-panel" style="display:none;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
       <div></div>
       <button class="nav-btn-styled" onclick="exitCustomerQueriesBackToMenu()">Return to Main Dashboard</button>
     </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
     <h2 class="panel-title">Customer Queries Received through Email</h2>
     <div id="cq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -1907,13 +1912,15 @@
       </div>
       <div id="cq-resolved-list"></div>
     </div>
+    </div>
   </div>
 
-  <div id="canvas-module-manufacturing-clearance" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+  <div id="canvas-module-manufacturing-clearance" class="workspace-panel" style="display:none;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
       <div></div>
       <button class="nav-btn-styled" onclick="exitManufacturingClearanceBackToMenu()">Return to Main Dashboard</button>
     </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
     <h2 class="panel-title">Manufacturing Clearance</h2>
     <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">
       New projects start Inactive and stay invisible to every other department until cleared here.
@@ -1931,13 +1938,15 @@
       <tbody id="mc-list-body"></tbody>
     </table>
     <div id="mc-active-cards-container" style="display:none;"></div>
+    </div>
   </div>
 
-  <div id="canvas-module-tour-expense" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+  <div id="canvas-module-tour-expense" class="workspace-panel" style="display:none;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
       <div></div>
       <button class="nav-btn-styled" onclick="exitTourExpenseBackToMenu()">Return to Main Dashboard</button>
     </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
     <h2 class="panel-title">Tour Expense Tracker</h2>
     <div id="te-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
     <div id="te-success" style="display:none; margin-bottom:12px;"></div>
@@ -1960,13 +1969,15 @@
 
     <!-- EMPLOYEE DETAILS -->
     <div id="te-panel-employees" style="display:none;"></div>
+    </div>
   </div>
 
-  <div id="canvas-module-cash-expenses" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+  <div id="canvas-module-cash-expenses" class="workspace-panel" style="display:none;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
       <div></div>
       <button class="nav-btn-styled" onclick="exitCashExpensesBackToMenu()">Return to Main Dashboard</button>
     </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
     <h2 class="panel-title">Daily Cash / UPI Expenses</h2>
     <div id="ce-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
     <div id="ce-success" style="display:none; margin-bottom:12px;"></div>
@@ -1994,13 +2005,15 @@
 
     <!-- EMPLOYEE DETAILS -->
     <div id="ce-panel-employees" style="display:none;"></div>
+    </div>
   </div>
 
-  <div id="canvas-module-security-admin" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+  <div id="canvas-module-security-admin" class="workspace-panel" style="display:none;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
       <div></div>
       <button class="nav-btn-styled" onclick="exitSecurityAdminBackToMenu()">Return to Main Dashboard</button>
     </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
     <h2 class="panel-title">Security &amp; Login Access</h2>
     <div id="sa-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
@@ -2140,6 +2153,7 @@
         </tr></thead>
         <tbody id="sa-registereddevice-list-body"></tbody>
       </table>
+    </div>
     </div>
   </div>
 
