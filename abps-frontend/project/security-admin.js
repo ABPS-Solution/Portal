@@ -615,17 +615,95 @@ async function loadRegisteredDevices() {
   } catch (e) { console.error("loadRegisteredDevices failed:", e); }
 }
 
+let saRegisteredDevicesCache = [];
+
 function renderRegisteredDevicesList(devices) {
+  saRegisteredDevicesCache = devices;
   const tbody = document.getElementById("sa-registereddevice-list-body");
-  tbody.innerHTML = devices.map(d => `
+  tbody.innerHTML = devices.map(d => {
+    const restricted = d.restricted_permissions || [];
+    const restrictedLabel = restricted.length > 0
+      ? `<span style="color:#b45309; font-weight:700;">Restricted: ${restricted.map(saPermLabel).join(', ')}</span>`
+      : `<span style="color:#15803d;">Full Access</span>`;
+    return `
     <tr style="border-top:1px solid var(--border);">
       <td style="padding:8px;">${d.device_label}</td>
       <td style="padding:8px; font-size:0.78rem;">${(d.allowed_users || []).join(', ') || '—'}</td>
       <td style="padding:8px;">${d.status}</td>
+      <td style="padding:8px; font-size:0.78rem;">${restrictedLabel}</td>
       <td style="padding:8px;">${formatDateDMY(d.created_at)}</td>
       <td style="padding:8px;">${d.last_used_at ? formatDateDMY(d.last_used_at) : '—'}</td>
-      <td style="padding:8px;"><button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitDeleteRegisteredDevice(${d.device_id})">Delete</button></td>
-    </tr>`).join('') || `<tr><td colspan="6" style="padding:14px; text-align:center; color:var(--muted);">No PCs registered yet.</td></tr>`;
+      <td style="padding:8px; white-space:nowrap;">
+        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="openDeviceRestrictionModal(${d.device_id})">Restrict Access</button>
+        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitDeleteRegisteredDevice(${d.device_id})">Delete</button>
+      </td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" style="padding:14px; text-align:center; color:var(--muted);">No PCs registered yet.</td></tr>`;
+}
+
+// Reuses pmCatalog (Permissions Matrix's own fetchPermissionCatalog load,
+// fired in parallel at panel init) purely for its dbColumn->label lookup
+// — no separate fetch needed for this small label lookup.
+function saPermLabel(dbColumn) {
+  const entry = (pmCatalog || []).find(p => p.dbColumn === dbColumn);
+  return entry ? entry.label : dbColumn;
+}
+
+// Restrict Access — locks a device (typically a marketing phone enrolled
+// via PIN login) down to only the checked section(s), regardless of what
+// the enrolled account can otherwise do on any other device (their
+// laptop keeps normal access). See auth.js's requirePermission for the
+// actual enforcement (migration 152) — this is just the admin control
+// for it. Checking nothing and saving clears the restriction.
+function openDeviceRestrictionModal(deviceId) {
+  const device = saRegisteredDevicesCache.find(d => d.device_id === deviceId);
+  if (!device) return;
+  const current = new Set(device.restricted_permissions || []);
+  const existing = document.getElementById("sa-device-restrict-modal");
+  if (existing) existing.remove();
+  const groups = {};
+  (pmCatalog || []).forEach(p => { (groups[p.department] = groups[p.department] || []).push(p); });
+  const bodyHtml = Object.keys(groups).sort().map(dept => `
+    <div style="margin-bottom:12px;">
+      <div style="font-weight:700; font-size:0.78rem; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">${dept}</div>
+      ${groups[dept].map(p => `
+        <label style="display:flex; align-items:center; gap:8px; padding:5px 4px; font-size:0.85rem; cursor:pointer;">
+          <input type="checkbox" class="sa-device-restrict-cb" value="${p.dbColumn}" ${current.has(p.dbColumn) ? 'checked' : ''} style="width:15px; height:15px;">
+          ${p.label}
+        </label>`).join('')}
+    </div>`).join('');
+  const modal = document.createElement("div");
+  modal.id = "sa-device-restrict-modal";
+  modal.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;";
+  modal.innerHTML = `<div style="background:#fff; border-radius:12px; width:100%; max-width:480px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
+      <div style="font-weight:800; font-size:1rem; color:var(--brand);">Restrict Access — ${device.device_label}</div>
+      <div style="font-size:0.78rem; color:var(--muted); margin-top:4px;">Check the section(s) this device may use. Leave everything unchecked for normal, full access based on the account's own permissions.</div>
+    </div>
+    <div style="overflow-y:auto; flex:1; padding:14px 20px;">${bodyHtml}</div>
+    <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid var(--border); background:#f8fafc;">
+      <button onclick="document.getElementById('sa-device-restrict-modal').remove()" style="padding:9px 18px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600;">Cancel</button>
+      <button onclick="saveDeviceRestriction(${deviceId})" style="padding:9px 22px; background:var(--brand); color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:700;">Save</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+async function saveDeviceRestriction(deviceId) {
+  const modal = document.getElementById("sa-device-restrict-modal");
+  const permissions = [...(modal?.querySelectorAll(".sa-device-restrict-cb:checked") || [])].map(cb => cb.value);
+  try {
+    const data = await apFetch({ action: "setDeviceRestrictedPermissions", deviceId, permissions });
+    if (data.success) {
+      modal.remove();
+      showBOQBanner("sa-feedback", permissions.length > 0 ? "Device restricted." : "Restriction cleared — device has full access again.", "success");
+      loadRegisteredDevices();
+    } else {
+      showBOQBanner("sa-feedback", data.error || "Failed to save restriction.", "error");
+    }
+  } catch (e) {
+    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+  }
 }
 
 async function submitDeleteRegisteredDevice(deviceId) {
