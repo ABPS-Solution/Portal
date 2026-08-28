@@ -161,11 +161,10 @@ function ptlRender() {
       <button type="button" id="ptl-tab-timeline" onclick="ptlSetViewMode('timeline')" style="padding:9px 18px; font-size:0.85rem; font-weight:700; border:0; border-right:1px solid var(--border); cursor:pointer;">Timeline</button>
       <button type="button" id="ptl-tab-steps" onclick="ptlSetViewMode('steps')" style="padding:9px 18px; font-size:0.85rem; font-weight:700; border:0; cursor:pointer;">Steps</button>
     </div>`;
-  const canvasSlot = `<div id="ptl-canvas-wrap"></div>`;
   const stepsOpen = `<div id="ptl-steps-wrap" style="display:none;">`;
 
   if (!mfcComplete) {
-    body.innerHTML = header + tabs + canvasSlot + stepsOpen + `
+    body.innerHTML = header + tabs + stepsOpen + `
       <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius); padding:14px; font-size:0.85rem; color:#92400e;">
         Stage 3 onward unlocks once Manufacturing Clearance sets this project's Internal MFC date — nothing has been cleared yet, so only Stages 1-2 are shown below.
       </div>
@@ -180,7 +179,7 @@ function ptlRender() {
   // they depend on the lanes' own terminal-step dates.
   const preLanes = trunk.filter(n => n.stage <= 3 || n.id === 'prodPlan');
   const postLanes = trunk.filter(n => n.id === 'inspCall' || n.stage === 5);
-  body.innerHTML = header + tabs + canvasSlot + stepsOpen + ptlRenderList(preLanes, today)
+  body.innerHTML = header + tabs + stepsOpen + ptlRenderList(preLanes, today)
     + ptlRenderLanes(ptlData.lanes || [])
     + `<div style="margin-top:20px; font-weight:800; font-size:0.95rem; color:var(--text); margin-bottom:4px;">Stage 5 — Inspection &amp; Dispatch</div>`
     + ptlRenderList(postLanes, today)
@@ -387,6 +386,8 @@ const PTL_MODES = { week: 6, days15: 15, month: 26 };
 const PTL_FONT_SCALE = { week: 1.05, days15: 0.94, month: 0.86 };
 let ptlMode = "days15", ptlDayW = 30, ptlFS = 0.94;
 let ptlDays = [], ptlIndexMap = {};
+let ptlLastTodayX = 0;
+let ptlFsRailOpen = true;
 const PTL_LANE_HEX = { Reactor: '#b45309', Capacitor: '#047857', Panel: '#c2410c' };
 const PTL_TRUNK_HEX = { marketing: '#be185d', project: '#0056b3', design: '#00a878', store: '#0369a1', purchase: '#7c3aed', qa: '#dc2626' };
 
@@ -443,8 +444,8 @@ function ptlPlacer() {
   };
 }
 
-function ptlRenderCanvas() {
-  const wrap = document.getElementById("ptl-canvas-wrap");
+function ptlRenderCanvas(containerId) {
+  const wrap = document.getElementById(containerId || ptlCanvasContainerId);
   if (!wrap) return;
   if (!ptlBuildDayRange()) { wrap.innerHTML = `<div style="padding:30px; text-align:center; color:var(--muted);">Nothing dated yet to draw a timeline from.</div>`; return; }
   const { spine, tail, lanes } = ptlCanvasNodes();
@@ -453,7 +454,7 @@ function ptlRenderCanvas() {
   ptlFS = PTL_FONT_SCALE[ptlMode];
   // Full-width, full-height surface — this is the primary view, not a
   // strip squeezed above a list, so it gets real screen real estate.
-  const availW = Math.max(900, window.innerWidth - 340);
+  const availW = Math.max(900, (wrap.clientWidth || window.innerWidth) - 24);
   const longestName = Math.max(16, ...lanes.map(l => (l.name || '').length));
   const PAD_L = Math.round(70 + longestName * 6.6 * ptlFS);
   const PAD_R = 70;
@@ -612,42 +613,42 @@ function ptlRenderCanvas() {
   }
 
   const svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;">${P.join("")}</svg>`;
-  wrap.innerHTML = `
-    <div style="display:flex; align-items:center; justify-content:flex-end; margin-bottom:10px;">
-      <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
-        ${Object.keys(PTL_MODES).map(m => `<button type="button" onclick="ptlSetMode('${m}')" style="padding:7px 14px; font-size:0.82rem; font-weight:600; border:0; border-right:1px solid var(--border); cursor:pointer; background:${m === ptlMode ? 'var(--brand)' : '#fff'}; color:${m === ptlMode ? '#fff' : 'var(--muted)'};">${m === 'week' ? 'This Week' : m === 'days15' ? '15 Days' : 'This Month'}</button>`).join("")}
-      </div>
-    </div>
-    <div id="ptl-scroller" style="overflow:auto; border:1px solid var(--border); border-radius:var(--radius); cursor:grab; max-height:calc(100vh - 320px); min-height:420px;">${svg}</div>
-    <div style="font-size:0.78rem; color:var(--muted); margin-top:8px;">Click a point to see it in the Steps view. Hover for its date.</div>`;
-
-  ptlWireCanvasInteractions(clickMap);
+  ptlLastTodayX = todayX;
+  wrap.innerHTML = svg;
+  ptlWireCanvasInteractions(wrap, clickMap);
 
   // Land the horizontal scroll on today.
-  const sc = document.getElementById("ptl-scroller");
-  if (sc) sc.scrollLeft = Math.max(0, todayX - sc.clientWidth / 2);
+  wrap.scrollLeft = Math.max(0, todayX - wrap.clientWidth / 2);
 }
 
-function ptlSetMode(m) { ptlMode = m; ptlRenderCanvas(); }
+let ptlCanvasContainerId = "ptl-fs-scroller";
+function ptlSetMode(m) { ptlMode = m; ptlRenderFullscreen(); }
 
 /* ── View toggle: Timeline (the canvas above) vs Steps (the existing
    lists/lane-cards with the actual Mark Done / Set Date / target-editing
    controls). Both are always rendered into the DOM — only visibility
    toggles — so a canvas click can switch to Steps and immediately
    scrollIntoView its target without waiting on a re-render. ─────────── */
-let ptlViewMode = "timeline";
+// Default is Steps: the actual read/write surface. Timeline is the
+// schematic overview — opened full-screen (see ptlOpenFullscreen below),
+// matching the ABPS-Project-Timeline-Demo prototype, rather than squeezed
+// inline above the list.
+let ptlViewMode = "steps";
 
 function ptlSetViewMode(mode, focusAnchorId) {
   ptlViewMode = mode;
-  const canvasWrap = document.getElementById("ptl-canvas-wrap");
   const stepsWrap = document.getElementById("ptl-steps-wrap");
   const tabTimeline = document.getElementById("ptl-tab-timeline");
   const tabSteps = document.getElementById("ptl-tab-steps");
-  if (canvasWrap) canvasWrap.style.display = mode === "timeline" ? "block" : "none";
   if (stepsWrap) stepsWrap.style.display = mode === "steps" ? "block" : "none";
   if (tabTimeline) { tabTimeline.style.background = mode === "timeline" ? "var(--brand)" : "#fff"; tabTimeline.style.color = mode === "timeline" ? "#fff" : "var(--text)"; }
   if (tabSteps) { tabSteps.style.background = mode === "steps" ? "var(--brand)" : "#fff"; tabSteps.style.color = mode === "steps" ? "#fff" : "var(--text)"; }
-  if (mode === "timeline") ptlRenderCanvas();
+
+  if (mode === "timeline") {
+    ptlOpenFullscreen();
+  } else {
+    ptlCloseFullscreen();
+  }
   if (focusAnchorId) {
     setTimeout(() => {
       const target = document.getElementById(focusAnchorId);
@@ -660,8 +661,168 @@ function ptlSetViewMode(mode, focusAnchorId) {
   }
 }
 
-function ptlWireCanvasInteractions(clickMap) {
-  const sc = document.getElementById("ptl-scroller");
+/* ── Full-screen Timeline overlay — the same layout as the
+   ABPS-Project-Timeline-Demo prototype (topbar with project info, zoom
+   segment, Today jump, flags rail toggle; a full-bleed scroller below;
+   a dismissible Flags rail on the right), fed by live ptlData instead of
+   the demo's sample data. Opened by the Timeline tab, closed by the
+   Steps button inside it (or the Steps tab underneath, same handler). ── */
+function ptlOpenFullscreen() {
+  let ov = document.getElementById("ptl-fs-overlay");
+  if (!ov) {
+    ov = document.createElement("div");
+    ov.id = "ptl-fs-overlay";
+    ov.style.cssText = "position:fixed; inset:0; z-index:9000; background:var(--bg,#f0f4f8); display:flex; flex-direction:column;";
+    document.body.appendChild(ov);
+  }
+  ov.style.display = "flex";
+  document.body.style.overflow = "hidden";
+  ptlRenderFullscreen();
+}
+
+function ptlCloseFullscreen() {
+  const ov = document.getElementById("ptl-fs-overlay");
+  if (ov) ov.style.display = "none";
+  document.body.style.overflow = "";
+}
+
+function ptlSeverity(n, today) {
+  if (!ptlLate(n)) return null;
+  if (n.sev) return n.sev;
+  const d = Math.abs(ptlBdBetween(ptlEff(n), today) || 0);
+  if (n.terminal) return "critical";
+  return d > 3 ? "high" : "normal";
+}
+
+// Every entry states something already true against live data — no
+// hardcoded scenario the way the design-exploration prototype had one.
+function ptlBuildFlags() {
+  if (!ptlData) return [];
+  const today = ptlToday();
+  const nodes = [];
+  (ptlData.trunk || []).forEach(n => nodes.push(n));
+  (ptlData.lanes || []).forEach(l => l.steps.forEach(s => nodes.push(Object.assign({}, s, { dept: l.ownerDept, laneBoqId: l.boqId }))));
+
+  const out = [];
+  const ownerOf = n => n.laneBoqId ? `${n.dept} Production` : (PTL_DEPT_NAME[n.dept] || n.dept);
+  ["critical", "high", "normal"].forEach(sev => {
+    nodes.filter(n => ptlSeverity(n, today) === sev).forEach(n => {
+      const d = Math.abs(ptlBdBetween(ptlEff(n), today) || 0);
+      out.push({
+        sev, nodeId: n.id, boqId: n.laneBoqId,
+        title: `${n.label} is ${d} working day${d === 1 ? "" : "s"} late`,
+        msg: `Due ${ptlFmtFull(ptlEff(n))}.${n.chip ? ` So far: ${n.chip}.` : ""}`,
+        owner: ownerOf(n),
+      });
+    });
+  });
+  nodes.filter(n => !n.actual && !n.done && ptlEff(n) === today).forEach(n => out.push({
+    sev: "due", nodeId: n.id, boqId: n.laneBoqId,
+    title: `${n.label} is due today`,
+    msg: `Due ${ptlFmtFull(ptlEff(n))}.`,
+    owner: ownerOf(n),
+  }));
+  const rank = { critical: 0, high: 1, normal: 2, due: 3 };
+  return out.sort((a, b) => rank[a.sev] - rank[b.sev]);
+}
+
+function ptlGotoFlag(nodeId, boqId) {
+  ptlSetViewMode("steps", boqId ? `ptl-step-${boqId}-${nodeId}` : `ptl-row-${nodeId}`);
+}
+
+function ptlRenderFsRailBody(flags) {
+  const body = document.getElementById("ptl-fs-rail-body");
+  if (!body) return;
+  const GRP = { critical: "Critical", high: "Needs attention", normal: "Watch", due: "Due today" };
+  const SEV_COLOR = { critical: "#e84545", high: "#d97706", normal: "#6b7a8d", due: "var(--brand)" };
+  let html = "";
+  ["critical", "high", "normal", "due"].forEach(sev => {
+    const items = flags.filter(f => f.sev === sev);
+    if (!items.length) return;
+    html += `<div style="font-size:0.68rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; margin:15px 0 7px; color:${SEV_COLOR[sev]};">${escapeHtml(GRP[sev])} · ${items.length}</div>`;
+    items.forEach(f => {
+      html += `<button type="button" onclick="ptlGotoFlag('${f.nodeId}','${f.boqId || ''}')"
+        style="display:block; width:100%; text-align:left; font:inherit; color:inherit; background:#f7fafd; border:1px solid var(--border); border-left:3px solid ${SEV_COLOR[sev]}; border-radius:var(--radius); padding:9px 11px; margin-bottom:7px; cursor:pointer;">
+        <b style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:3px; line-height:1.35;">${escapeHtml(f.title)}</b>
+        <span style="display:block; font-size:0.74rem; color:var(--muted); line-height:1.45;">${escapeHtml(f.msg)}</span>
+        <em style="display:block; font-style:normal; margin-top:5px; font-size:0.68rem; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:${SEV_COLOR[sev]};">${escapeHtml(f.owner)}</em>
+      </button>`;
+    });
+  });
+  body.innerHTML = html || `<div style="padding:20px; text-align:center; color:var(--muted); font-size:0.85rem;">Nothing flagged.</div>`;
+}
+
+function ptlToggleFsRail() {
+  ptlFsRailOpen = !ptlFsRailOpen;
+  const rail = document.getElementById("ptl-fs-rail");
+  if (rail) rail.style.display = ptlFsRailOpen ? "flex" : "none";
+  ptlUpdateFsFlagsToggleBtn();
+}
+
+// Show Flags (rail hidden) is red — something is hidden that needs a
+// look. Hide Flags (rail open) is green — the state is fine to tuck away.
+function ptlUpdateFsFlagsToggleBtn() {
+  const btn = document.getElementById("ptl-fs-flags-toggle");
+  if (!btn) return;
+  if (ptlFsRailOpen) { btn.textContent = "Hide Flags"; btn.style.background = "#16a34a"; }
+  else { btn.textContent = "Show Flags"; btn.style.background = "#dc2626"; }
+}
+
+function ptlJumpToday() {
+  const sc = document.getElementById(ptlCanvasContainerId);
+  if (!sc) return;
+  sc.scrollTo({ left: Math.max(0, ptlLastTodayX - sc.clientWidth / 2), behavior: "smooth" });
+}
+
+function ptlRenderFullscreen() {
+  const ov = document.getElementById("ptl-fs-overlay");
+  if (!ov || !ptlData) return;
+  const { project } = ptlData;
+  const flags = ptlBuildFlags();
+  const overdueCount = flags.filter(f => f.sev !== "due").length;
+
+  ov.innerHTML = `
+    <div style="flex:none; background:var(--card); border-bottom:1px solid var(--border); padding:12px 18px; display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px;">
+      <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+        <div style="width:5px; height:30px; border-radius:2px; background:var(--brand); flex:none;"></div>
+        <div style="min-width:0;">
+          <div style="font-weight:800; font-size:1.1rem; color:var(--brand); white-space:nowrap;">Project Timeline</div>
+          <div style="font-size:0.75rem; color:var(--muted); font-family:monospace; white-space:nowrap;">${escapeHtml(project.projectId)} — ${escapeHtml(project.companyName || '')} · <strong style="color:var(--text)">${escapeHtml(project.status)}</strong>${project.mfcInt ? ` · Internal MFC <strong style="color:var(--text)">${ptlFmtFull(project.mfcInt)}</strong>` : ''}</div>
+        </div>
+      </div>
+      <button type="button" onclick="ptlSetViewMode('steps')" style="padding:7px 14px; font-size:0.82rem; font-weight:700; border:1px solid var(--border); border-radius:var(--radius); background:#fff; color:var(--text); cursor:pointer;">Steps</button>
+      <button type="button" id="ptl-fs-flags-toggle" onclick="ptlToggleFsRail()" style="padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; color:#fff;"></button>
+      <div style="flex:1 1 auto;"></div>
+      <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
+        ${Object.keys(PTL_MODES).map(m => `<button type="button" onclick="ptlSetMode('${m}')" style="padding:7px 14px; font-size:0.82rem; font-weight:600; border:0; border-right:1px solid var(--border); cursor:pointer; background:${m === ptlMode ? 'var(--brand)' : '#fff'}; color:${m === ptlMode ? '#fff' : 'var(--muted)'};">${m === 'week' ? 'This Week' : m === 'days15' ? '15 Days' : 'This Month'}</button>`).join("")}
+      </div>
+      <button type="button" onclick="ptlJumpToday()" style="padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; background:var(--brand); color:#fff;">Today</button>
+    </div>
+    <div style="flex:1 1 auto; display:flex; min-height:0;">
+      <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column;">
+        <div id="ptl-fs-scroller" style="flex:1 1 auto; min-height:0; overflow:auto; cursor:grab; background:var(--bg,#f0f4f8);"></div>
+        <div style="flex:none; border-top:1px solid var(--border); background:var(--card); padding:8px 18px; display:flex; flex-wrap:wrap; align-items:center; gap:6px 20px; font-size:0.74rem; color:var(--muted);">
+          <span>● Complete</span><span>○ Scheduled</span><span style="color:#e84545;">○ Overdue</span><span>— Done so far</span><span style="opacity:.6;">┄ Still to come</span>
+          <span style="margin-left:auto;">Click a point to jump to it in Steps. Hover for its date.</span>
+        </div>
+      </div>
+      <aside id="ptl-fs-rail" style="width:320px; flex:none; background:var(--card); border-left:1px solid var(--border); display:flex; flex-direction:column; min-height:0;">
+        <div style="flex:none; padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:9px;">
+          <h2 style="font-size:0.95rem; font-weight:800; margin:0; flex:1 1 auto; color:var(--text);">Flags</h2>
+          <span style="font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:10px; background:#e84545; color:#fff;">${overdueCount}</span>
+        </div>
+        <div id="ptl-fs-rail-body" style="flex:1 1 auto; overflow-y:auto; padding:12px 14px 20px;"></div>
+      </aside>
+    </div>`;
+
+  ptlUpdateFsFlagsToggleBtn();
+  ptlRenderFsRailBody(flags);
+  document.getElementById("ptl-fs-rail").style.display = ptlFsRailOpen ? "flex" : "none";
+  ptlCanvasContainerId = "ptl-fs-scroller";
+  ptlRenderCanvas("ptl-fs-scroller");
+}
+
+function ptlWireCanvasInteractions(sc, clickMap) {
   if (!sc) return;
   let tip = document.getElementById("ptl-tip");
   if (!tip) {
