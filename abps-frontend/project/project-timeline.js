@@ -31,7 +31,10 @@ const PTL_COLORS = {
   store: '#0369a1', purchase: '#7c3aed', qa: '#dc2626',
 };
 const PTL_DEPT_NAME = { marketing: 'Marketing', project: 'Project', design: 'Design', store: 'Store', purchase: 'Purchase', qa: 'Quality Assurance' };
-const PTL_QA_CHAIN = new Set(['customer_inspection', 'inspection_clearance_note', 'dispatch_clearance', 'dispatched']);
+// Dispatch is no longer part of this chain — it's Store's, derived
+// automatically from when the Final Project Invoice was generated (see
+// routes/timeline.js), never a hand-entered date.
+const PTL_QA_CHAIN = new Set(['customer_inspection', 'inspection_clearance_note', 'dispatch_clearance']);
 
 let ptlProjects = [];
 let ptlData = null;
@@ -334,6 +337,7 @@ function ptlRenderList(nodes, today) {
             <span style="font-weight:700; font-size:0.92rem; color:${late ? 'var(--warn)' : 'var(--text)'};">${escapeHtml(n.label)}</span>
             <span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:${c};">${escapeHtml(PTL_DEPT_NAME[n.dept] || n.dept)}</span>
             ${n.kind === 'manual' ? '<span style="font-size:0.68rem; color:var(--muted);">· ticked by hand</span>' : ''}
+            ${n.kind === 'derived' ? '<span style="font-size:0.68rem; color:var(--muted);">· automatic</span>' : ''}
           </div>
           <div style="font-size:0.8rem; color:${late ? 'var(--warn)' : 'var(--muted)'}; margin-top:2px;">${escapeHtml(dateTxt)}${late ? ` · ${Math.abs(ptlBdBetween(eff, today))} business days late` : ''}</div>
           ${n.chip ? `<span style="display:inline-block; margin-top:5px; font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(n.chip)}</span>` : ''}
@@ -398,7 +402,10 @@ function ptlBuildDayRange() {
   dates.push(ptlToday());
   if (dates.length === 0) return false;
   dates.sort();
-  const from = new Date(ptlParse(dates[0]).getTime() - 5 * PTL_DAYMS);
+  // Starts right on the earliest dated point — no multi-day dead zone to
+  // scroll into before Stage 1's own first node (LEAD below still leaves
+  // a small margin so that node's label/circle isn't flush against the edge).
+  const from = ptlParse(dates[0]);
   const to = new Date(ptlParse(dates[dates.length - 1]).getTime() + 6 * PTL_DAYMS);
   ptlDays = []; ptlIndexMap = {};
   for (let t = from.getTime(); t <= to.getTime(); t += PTL_DAYMS) {
@@ -476,7 +483,11 @@ function ptlRenderCanvas(containerId) {
   const top = RULER_H + (DENSE ? 120 : 90) * ptlFS;
   const bot = H - 46 * ptlFS;
   const gap = Math.max(90 * ptlFS, Math.min(220 * ptlFS, (bot - top) / 2.4));
-  const FAN = Math.min(60 * ptlFS, gap * 0.4); // vertical spread for nodes that land on the same date
+  // Vertical spread for nodes that land on the same date — matches the
+  // design prototype's own ratio (a tighter one here left same-day
+  // clusters like "All BOQs Released / Final Costing / Working Designs"
+  // stacked close enough that their labels overlapped).
+  const FAN = Math.min(96 * ptlFS, gap * 0.86);
   const spineY = (top + bot) / 2;
   const laneCount = lanes.length;
   const laneYs = lanes.map((_, i) => spineY + (i - (laneCount - 1) / 2) * gap);
@@ -518,7 +529,7 @@ function ptlRenderCanvas(containerId) {
     const x = PAD_L + LEAD + i * ptlDayW, dt = ptlParse(d), m = dt.getUTCMonth(), mon = dt.getUTCDay() === 1;
     if (m !== lastM) { lastM = m; P.push(`<text x="${x}" y="${14 * ptlFS}" font-size="${11 * ptlFS}" font-weight="800" letter-spacing="1.5" fill="var(--muted)">${PTL_MON[m].toUpperCase()} ${dt.getUTCFullYear()}</text>`); }
     if (!DENSE || mon) {
-      P.push(`<text x="${x}" y="${RULER_H - 15 * ptlFS}" text-anchor="middle" font-size="${11.5 * ptlFS}" font-family="monospace" font-weight="${mon ? 700 : 400}" fill="${mon ? 'var(--text)' : 'var(--muted)'}">${dt.getUTCDate()}</text>`);
+      P.push(`<text x="${x}" y="${RULER_H - 15 * ptlFS}" text-anchor="middle" font-size="${11.5 * ptlFS}" font-family="monospace" font-weight="${mon ? 800 : 600}" fill="${mon ? 'var(--text)' : 'var(--muted)'}">${dt.getUTCDate()}</text>`);
       P.push(`<text x="${x}" y="${RULER_H - 5 * ptlFS}" text-anchor="middle" font-size="${9 * ptlFS}" font-family="monospace" font-weight="600" fill="var(--muted)">${DOW[dt.getUTCDay()]}</text>`);
     }
   });
@@ -531,8 +542,8 @@ function ptlRenderCanvas(containerId) {
   lanes.forEach(l => l.steps.forEach(s => (stageXs[4] = stageXs[4] || []).push(xOf(s.actual || s.target || s.planned))));
   Object.keys(stageXs).sort((a, b) => a - b).forEach(st => {
     const x0 = Math.min(...stageXs[st]) - ptlDayW * 0.75;
-    P.push(`<line x1="${x0}" y1="${RULER_H}" x2="${x0}" y2="${H}" stroke="var(--muted)" stroke-width="1.5" opacity=".45"/>`);
-    P.push(`<text x="${x0 + 9 * ptlFS}" y="${RULER_H + 17 * ptlFS}" font-size="${10.5 * ptlFS}" font-weight="800" letter-spacing="1.2" fill="var(--muted)">STAGE ${st} · ${esc((PTL_STAGE_NAMES[st] || '').toUpperCase())}</text>`);
+    P.push(`<line x1="${x0}" y1="${RULER_H}" x2="${x0}" y2="${H}" stroke="var(--text)" stroke-width="2.5" opacity=".55"/>`);
+    P.push(`<text x="${x0 + 9 * ptlFS}" y="${RULER_H + 17 * ptlFS}" font-size="${10.5 * ptlFS}" font-weight="800" letter-spacing="1.2" fill="var(--text)" opacity=".75">STAGE ${st} · ${esc((PTL_STAGE_NAMES[st] || '').toUpperCase())}</text>`);
   });
 
   // Today
