@@ -155,7 +155,8 @@ async function handlePinvProjectChange(projectId) {
 
 function initPinvInvoiceStateFromLines() {
   pinvInvoiceState = {
-    invoiceNo: pinvCache.invoiceNoPreview || "", insuranceNo: "", mdccNo: "", transportName: "", lrNoDate: "", vehicleNo: "", mobileNo: "", freight: "",
+    invoiceNo: pinvCache.invoiceNoPreview || "", insuranceNo: "", mdccNo: "", transportName: "", lrNoDate: "", lcNoDate: "", dcNoDate: "", vehicleNo: "", mobileNo: "", incoterms: PINV_INCOTERMS_OPTIONS[0],
+    tradeType: "Import", usdRate: "",
     poNumber: pinvCache.poNumber, poDate: pinvCache.poDate,
     billTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "" },
     shipTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "" },
@@ -167,7 +168,8 @@ function initPinvInvoiceStateFromLines() {
       };
     }),
     igstPercent: "18", cgstPercent: "", sgstPercent: "", roundOff: "0",
-    bankDetails: { ...PINV_STANDARD_BANK_DETAILS },
+    bankAccountKey: PINV_BANK_OPTIONS[0].key,
+    bankDetails: { beneficiary: "ABPS SOLUTION PRIVATE LIMITED", swift: "", ...PINV_STANDARD_BANK_DETAILS },
     declaration: PINV_STANDARD_DECLARATION,
   };
 }
@@ -246,11 +248,32 @@ function updatePinvGenerateButtonsState() {
 // persisted) — editing them only affects the invoice being generated
 // right now; the next invoice starts from the same standards again.
 // ═══════════════════════════════════════════════════════
-const PINV_STANDARD_BANK_DETAILS = {
-  bankName: "Bank Of India", ifsc: "BKID0000514", ac: "051430110000209",
-  address: "Fergusson College Road, 1201 C A Shivagi nagar, Pune-411004",
-  branch: "Fergusson Road Branch, Code:-00051",
-};
+// Three real ABPS accounts the invoice can be raised against -- picking one
+// overwrites the whole Bank Details block below with that account's values;
+// every field stays editable afterward same as before.
+const PINV_BANK_OPTIONS = [
+  { key: "boi1", label: "BOI: 051430110000209",
+    bankName: "Bank Of India", ifsc: "BKID0000514", ac: "051430110000209",
+    address: "Fergusson College Road, 1201 C A Shivagi nagar, Pune-411004",
+    branch: "Fergusson Road Branch, Code:-00051" },
+  { key: "boi2", label: "BOI: 051420110001177",
+    bankName: "Bank Of India", ifsc: "BKID0000514", ac: "051420110001177",
+    address: "Fergusson Road Branch, Pune, Maharashtra-411004",
+    branch: "Fergusson Road Branch, Code:-00051" },
+  { key: "icici1", label: "ICICI: 777705290523",
+    bankName: "ICICI Bank", ifsc: "ICIC0000321", ac: "777705290523",
+    address: "Shop No. 3 & 8, Ground Floor, F Wing, Premier Plaza, Old Mumbai Pune Highway, Chinchwad, Pune, Maharashtra-411019",
+    branch: "Pune - Chinchwad Branch, Code:-321" },
+];
+const PINV_STANDARD_BANK_DETAILS = { ...PINV_BANK_OPTIONS[0] };
+
+function applyPinvBankOption(key) {
+  return PINV_BANK_OPTIONS.find(o => o.key === key) || PINV_BANK_OPTIONS[0];
+}
+// Placeholder labels only -- real Incoterms values to replace these are
+// coming separately; keeping the dropdown shape (a fixed A-F set) means
+// swapping the label text later needs no structural change here.
+const PINV_INCOTERMS_OPTIONS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const PINV_STANDARD_DECLARATION = "I / We hereby certify that our registration certificate under the GST Act, 2017 is in force on the date on which the supply of goods specified in this Tax invoice is made by me / us & the transaction of supply covered by this Tax invoice had been effected by me / us & it shall be accounted for in the turnover of supplies while filing of return & due tax if any payable on the supplies has been paid or shall be paid. Further certified that the particulars given above are true and correct & the amount indicated represents the prices actually charged and that there is no flow of additional consideration directly or indirectly from the buyer. Interest @18% p.a. charged on all outstanding more than one month after invoice has been rendered.";
 
 // Client-side port of lib/poTemplate.js's numberToWordsINR — live preview
@@ -275,6 +298,29 @@ function numberToWordsINRClient(amount) {
   if (thousand) words += twoDigit(thousand) + ' Thousand ';
   if (hundred)  words += threeDigit(hundred);
   return words.trim() + ' Rupees Only';
+}
+
+// Same core as numberToWordsINRClient but Western thousand/million/billion
+// grouping and a "US Dollars Only" suffix -- client-side port of the
+// backend's numberToWordsUSD (lib/poTemplate.js), live preview only.
+function numberToWordsUSDClient(amount) {
+  amount = Math.round(parseFloat(amount) || 0);
+  if (amount === 0) return "Zero US Dollars Only";
+  const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  const twoDigit = (n) => n < 20 ? ones[n] : tens[Math.floor(n/10)] + (n%10 ? ' ' + ones[n%10] : '');
+  const threeDigit = (n) => (n >= 100 ? ones[Math.floor(n/100)] + ' Hundred' + (n%100 ? ' ' : '') : '') + (n%100 ? twoDigit(n%100) : '');
+  let words = '';
+  let a = amount;
+  const billion  = Math.floor(a / 1000000000); a %= 1000000000;
+  const million  = Math.floor(a / 1000000);    a %= 1000000;
+  const thousand = Math.floor(a / 1000);       a %= 1000;
+  const hundred = a;
+  if (billion)  words += threeDigit(billion) + ' Billion ';
+  if (million)  words += threeDigit(million) + ' Million ';
+  if (thousand) words += threeDigit(thousand) + ' Thousand ';
+  if (hundred)  words += threeDigit(hundred);
+  return words.trim() + ' US Dollars Only';
 }
 
 function pinvAutoGrowField(el) {
@@ -305,6 +351,22 @@ function renderPinvInvoiceForm() {
       <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:1rem;">Invoice Details</div>
       <div style="font-size:0.87rem; color:var(--muted); margin-bottom:14px;">Fill in what the invoice needs, edit any product row if needed, then Generate Invoice Doc.</div>
 
+      <div style="display:flex; gap:14px; align-items:flex-end; margin-bottom:14px; flex-wrap:wrap;">
+        <div class="grid-cell-item" style="max-width:200px; margin:0;">
+          <label>Import / Export</label>
+          <select onchange="updatePinvTradeType(this.value)" style="width:100%; padding:6px 4px;">
+            <option value="Import" ${s.tradeType !== 'Export' ? 'selected' : ''}>Import</option>
+            <option value="Export" ${s.tradeType === 'Export' ? 'selected' : ''}>Export</option>
+          </select>
+        </div>
+        ${s.tradeType === 'Export' ? `
+        <div class="grid-cell-item" style="max-width:220px; margin:0;">
+          <label>INR to USD Rate</label>
+          <input type="number" min="0" step="0.01" placeholder="e.g. 95.3" value="${esc(s.usdRate)}"
+            oninput="updatePinvField('usdRate', this.value); recalcPinvTotals();" style="width:100%; padding:6px 4px;" />
+        </div>` : ''}
+      </div>
+
       <div class="compact-fields-grid" style="margin-bottom:14px;">
         <div class="grid-cell-item" style="background:#f1f5f9;"><label>Invoice No.</label><div style="padding:6px 4px; font-weight:600; color:var(--brand);" title="Auto-generated -- assigned for real, atomically, when you generate the invoice">${s.invoiceNo || '—'}</div></div>
         <div class="grid-cell-item" style="background:#f1f5f9;"><label>Date</label><div style="padding:6px 4px; font-weight:600;">${todayDMY}</div></div>
@@ -314,9 +376,15 @@ function renderPinvInvoiceForm() {
         ${field('MDCC NO', 'mdccNo')}
         ${field('Transport Name', 'transportName')}
         ${field('LR No & Date', 'lrNoDate')}
+        ${field('LC No & Date', 'lcNoDate')}
+        ${field('DC No & Date', 'dcNoDate')}
         ${field('Vehicle No.', 'vehicleNo')}
         ${field('Mobile No', 'mobileNo')}
-        ${field('Freight', 'freight')}
+        <div class="grid-cell-item"><label>Incoterms</label>
+          <select onchange="updatePinvField('incoterms', this.value)" style="width:100%; padding:6px 4px;">
+            ${PINV_INCOTERMS_OPTIONS.map(o => `<option value="${o}" ${s.incoterms === o ? 'selected' : ''}>${o}</option>`).join('')}
+          </select>
+        </div>
       </div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
@@ -349,6 +417,9 @@ function renderPinvInvoiceForm() {
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Sub Total</span>
             <strong id="pinv-subtotal-display">₹0</strong>
           </div>
+          ${s.tradeType === 'Export' ? `
+          <div style="font-size:0.78rem; color:var(--muted); padding:2px 2px;">No GST for Export invoices.</div>
+          ` : `
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">CGST %</span>
             <input type="number" min="0" placeholder="0" value="${esc(s.cgstPercent)}" oninput="updatePinvField('cgstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
@@ -360,7 +431,7 @@ function renderPinvInvoiceForm() {
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">IGST %</span>
             <input type="number" min="0" value="${esc(s.igstPercent)}" oninput="updatePinvField('igstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
-          </div>
+          </div>`}
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Round Off</span>
             <input type="number" value="${esc(s.roundOff)}" oninput="updatePinvField('roundOff', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
@@ -373,9 +444,18 @@ function renderPinvInvoiceForm() {
       </div>
 
       <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.9rem;">Bank Details</div>
+      <div class="grid-cell-item" style="max-width:320px; margin-bottom:10px;">
+        <label>Bank Account</label>
+        <select onchange="selectPinvBankOption(this.value)" style="width:100%; padding:6px 4px;">
+          ${PINV_BANK_OPTIONS.map(o => `<option value="${o.key}" ${s.bankAccountKey === o.key ? 'selected' : ''}>${o.label}</option>`).join('')}
+        </select>
+      </div>
       <div class="compact-fields-grid">
+        ${field('Beneficiary', null, ['bankDetails','beneficiary'])}
         ${field('Bank Name', null, ['bankDetails','bankName'])}
-        ${field('IFSC Code For RTGS/NEFT', null, ['bankDetails','ifsc'])}
+        ${s.tradeType === 'Export'
+          ? field('Swift Code', null, ['bankDetails','swift'])
+          : field('IFSC Code For RTGS/NEFT', null, ['bankDetails','ifsc'])}
         ${field('A/C', null, ['bankDetails','ac'])}
         ${field('Address', null, ['bankDetails','address'])}
         ${field('Branch Name & Code', null, ['bankDetails','branch'])}
@@ -464,6 +544,31 @@ function pinvDeleteLineItem(idx) {
 
 function updatePinvField(key, value) { pinvInvoiceState[key] = value; }
 function updatePinvNested(parentKey, childKey, value) { pinvInvoiceState[parentKey][childKey] = value; }
+// Switching to Export clears GST% (no GST on an export invoice, enforced
+// again server-side in renderProjectInvoiceHTML) and clears the IFSC/Swift
+// field, since Swift Code is always typed manually, never carried over from
+// whatever IFSC an Import invoice had. Switching back to Import clears the
+// USD rate so a stale rate can't accidentally survive into an Import
+// invoice's state.
+function updatePinvTradeType(value) {
+  pinvInvoiceState.tradeType = value;
+  if (value === 'Export') {
+    pinvInvoiceState.cgstPercent = ""; pinvInvoiceState.sgstPercent = ""; pinvInvoiceState.igstPercent = "";
+    pinvInvoiceState.bankDetails.swift = "";
+  } else {
+    pinvInvoiceState.usdRate = "";
+  }
+  renderPinvInvoiceForm();
+}
+function selectPinvBankOption(key) {
+  pinvInvoiceState.bankAccountKey = key;
+  const o = applyPinvBankOption(key);
+  // Beneficiary and Swift Code are left untouched -- Beneficiary is a fixed
+  // constant, and Swift Code is always manually typed (never autofilled
+  // from a bank option), so switching accounts shouldn't wipe either.
+  pinvInvoiceState.bankDetails = { ...pinvInvoiceState.bankDetails, bankName: o.bankName, ifsc: o.ifsc, ac: o.ac, address: o.address, branch: o.branch };
+  renderPinvInvoiceForm();
+}
 function updatePinvLineItem(idx, key, value) {
   const item = pinvInvoiceState.lineItems[idx];
   if (!item) return;
@@ -477,23 +582,35 @@ function updatePinvLineItem(idx, key, value) {
   }
 }
 
+// Export: no GST (enforced regardless of whatever stale %s might be in
+// state), and every amount is converted INR-source -> USD by dividing by
+// the entered rate before display -- same conversion the backend applies
+// at PDF-render time (renderProjectInvoiceHTML), Round Off excluded from
+// the divide for the same reason noted there (it's a manual adjustment
+// typed directly against the already-converted totals).
 function recalcPinvTotals() {
   const items = pinvInvoiceState.lineItems || [];
-  const subTotal = items.reduce((sum, it) => sum + (parseFloat(it.totalBasicPrice) || 0), 0);
-  const igstPercent = parseFloat(pinvInvoiceState.igstPercent) || 0;
-  const cgstPercent = parseFloat(pinvInvoiceState.cgstPercent) || 0;
-  const sgstPercent = parseFloat(pinvInvoiceState.sgstPercent) || 0;
+  const rawSubTotal = items.reduce((sum, it) => sum + (parseFloat(it.totalBasicPrice) || 0), 0);
+  const isExport = pinvInvoiceState.tradeType === 'Export';
+  const usdRate = parseFloat(pinvInvoiceState.usdRate) || 0;
+  const subTotal = (isExport && usdRate > 0) ? rawSubTotal / usdRate : rawSubTotal;
   const roundOff = parseFloat(pinvInvoiceState.roundOff) || 0;
-  const igstAmount = subTotal * igstPercent / 100;
-  const cgstAmount = subTotal * cgstPercent / 100;
-  const sgstAmount = subTotal * sgstPercent / 100;
-  const grandTotal = subTotal + cgstAmount + sgstAmount + igstAmount + roundOff;
+  let grandTotal;
+  if (isExport) {
+    grandTotal = subTotal + roundOff;
+  } else {
+    const igstAmount = rawSubTotal * (parseFloat(pinvInvoiceState.igstPercent) || 0) / 100;
+    const cgstAmount = rawSubTotal * (parseFloat(pinvInvoiceState.cgstPercent) || 0) / 100;
+    const sgstAmount = rawSubTotal * (parseFloat(pinvInvoiceState.sgstPercent) || 0) / 100;
+    grandTotal = subTotal + cgstAmount + sgstAmount + igstAmount + roundOff;
+  }
   const st = document.getElementById("pinv-subtotal-display");
   const gt = document.getElementById("pinv-grandtotal-display");
   const w = document.getElementById("pinv-words-display");
-  if (st) st.textContent = "₹" + subTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 });
-  if (gt) gt.textContent = "₹" + grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 });
-  if (w) w.textContent = numberToWordsINRClient(grandTotal);
+  const symbol = isExport ? "$" : "₹";
+  if (st) st.textContent = symbol + subTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  if (gt) gt.textContent = symbol + grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  if (w) w.textContent = isExport ? numberToWordsUSDClient(grandTotal) : numberToWordsINRClient(grandTotal);
 }
 
 let pinvSubmitMode = 'partial'; // set by openPinvConfirmModal, read by submitPinvGeneration
@@ -501,6 +618,14 @@ let pinvSubmitMode = 'partial'; // set by openPinvConfirmModal, read by submitPi
 function openPinvConfirmModal(mode) {
   if (!pinvInvoiceState?.invoiceNo?.trim()) {
     showBOQBanner("pinv-feedback", "Invoice No. is required before generating.", "error");
+    return;
+  }
+  if ((pinvInvoiceState.lineItems || []).some(li => !(li.hsnNumber || '').toString().trim())) {
+    showBOQBanner("pinv-feedback", "HSN Code is required for every invoice line.", "error");
+    return;
+  }
+  if (pinvInvoiceState.tradeType === 'Export' && !(Number(pinvInvoiceState.usdRate) > 0)) {
+    showBOQBanner("pinv-feedback", "INR to USD Rate is required when Export is selected.", "error");
     return;
   }
   for (const docType of PINV_REQUIRED_DOC_TYPES) {
@@ -764,14 +889,20 @@ async function loadPinvReviseForm(invoiceId) {
     const last = data.lastInvoiceDetails || {};
     pinvReviseState = {
       invoiceNo: last.invoiceNo || "", insuranceNo: last.insuranceNo || "", mdccNo: last.mdccNo || "",
-      transportName: last.transportName || "", lrNoDate: last.lrNoDate || "", vehicleNo: last.vehicleNo || "",
-      mobileNo: last.mobileNo || "", freight: last.freight || "",
+      transportName: last.transportName || "", lrNoDate: last.lrNoDate || "", lcNoDate: last.lcNoDate || "", dcNoDate: last.dcNoDate || "", vehicleNo: last.vehicleNo || "",
+      mobileNo: last.mobileNo || "", incoterms: last.incoterms || PINV_INCOTERMS_OPTIONS[0],
+      tradeType: last.tradeType || "Import", usdRate: last.usdRate || "",
       poNumber: data.poNumber || "", poDate: data.poDate || "",
       billTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "", ...(last.billTo || {}) },
       shipTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "", ...(last.shipTo || {}) },
       lineItems: (data.lineItems || []).map(li => ({ ...li })),
       igstPercent: last.igstPercent || "18", cgstPercent: last.cgstPercent || "", sgstPercent: last.sgstPercent || "", roundOff: last.roundOff || "0",
-      bankDetails: { ...PINV_STANDARD_BANK_DETAILS, ...(last.bankDetails || {}) },
+      // Match the prior invoice's bank details back to one of the 3 known
+      // accounts by A/C number so the dropdown reflects what was actually
+      // used last time; falls back to the default if it doesn't match any
+      // (e.g. a hand-edited A/C on an old invoice).
+      bankAccountKey: (PINV_BANK_OPTIONS.find(o => o.ac === (last.bankDetails || {}).ac) || PINV_BANK_OPTIONS[0]).key,
+      bankDetails: { beneficiary: "ABPS SOLUTION PRIVATE LIMITED", swift: "", ...PINV_STANDARD_BANK_DETAILS, ...(last.bankDetails || {}) },
       declaration: last.declaration || PINV_STANDARD_DECLARATION,
     };
     renderPinvReviseInvoiceForm();
@@ -800,6 +931,22 @@ function renderPinvReviseInvoiceForm() {
       <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:1rem;">${pinvReviseCache.invoiceType} Invoice ${pinvReviseCache.invoiceId} — Revision V${(pinvReviseCache.invoiceRevision || 0) + 1}</div>
       <div style="font-size:0.87rem; color:var(--muted); margin-bottom:14px;">Prefilled from this specific invoice. Edit anything, then generate the revised doc — this only replaces THIS invoice; other invoices on the project, project status, PRNs, and stock are not touched.</div>
 
+      <div style="display:flex; gap:14px; align-items:flex-end; margin-bottom:14px; flex-wrap:wrap;">
+        <div class="grid-cell-item" style="max-width:200px; margin:0;">
+          <label>Import / Export</label>
+          <select onchange="updatePinvReviseTradeType(this.value)" style="width:100%; padding:6px 4px;">
+            <option value="Import" ${s.tradeType !== 'Export' ? 'selected' : ''}>Import</option>
+            <option value="Export" ${s.tradeType === 'Export' ? 'selected' : ''}>Export</option>
+          </select>
+        </div>
+        ${s.tradeType === 'Export' ? `
+        <div class="grid-cell-item" style="max-width:220px; margin:0;">
+          <label>INR to USD Rate</label>
+          <input type="number" min="0" step="0.01" placeholder="e.g. 95.3" value="${esc(s.usdRate)}"
+            oninput="updatePinvReviseField('usdRate', this.value); recalcPinvReviseTotals();" style="width:100%; padding:6px 4px;" />
+        </div>` : ''}
+      </div>
+
       <div class="compact-fields-grid" style="margin-bottom:14px;">
         <div class="grid-cell-item" style="background:#f1f5f9;"><label>Invoice No.</label><div style="padding:6px 4px; font-weight:600; color:var(--brand);" title="A revision keeps the invoice's original number — it's never re-minted or hand-edited here">${s.invoiceNo || '—'}</div></div>
         <div class="grid-cell-item" style="background:#f1f5f9;"><label>P.O. No.</label><div style="padding:6px 4px; font-weight:600;">${s.poNumber || '—'}</div></div>
@@ -808,9 +955,15 @@ function renderPinvReviseInvoiceForm() {
         ${field('MDCC NO', 'mdccNo')}
         ${field('Transport Name', 'transportName')}
         ${field('LR No & Date', 'lrNoDate')}
+        ${field('LC No & Date', 'lcNoDate')}
+        ${field('DC No & Date', 'dcNoDate')}
         ${field('Vehicle No.', 'vehicleNo')}
         ${field('Mobile No', 'mobileNo')}
-        ${field('Freight', 'freight')}
+        <div class="grid-cell-item"><label>Incoterms</label>
+          <select onchange="updatePinvReviseField('incoterms', this.value)" style="width:100%; padding:6px 4px;">
+            ${PINV_INCOTERMS_OPTIONS.map(o => `<option value="${o}" ${s.incoterms === o ? 'selected' : ''}>${o}</option>`).join('')}
+          </select>
+        </div>
       </div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
@@ -843,6 +996,9 @@ function renderPinvReviseInvoiceForm() {
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Sub Total</span>
             <strong id="pinv-revise-subtotal-display">₹0</strong>
           </div>
+          ${s.tradeType === 'Export' ? `
+          <div style="font-size:0.78rem; color:var(--muted); padding:2px 2px;">No GST for Export invoices.</div>
+          ` : `
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">CGST %</span>
             <input type="number" min="0" placeholder="0" value="${esc(s.cgstPercent)}" oninput="updatePinvReviseField('cgstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
@@ -854,7 +1010,7 @@ function renderPinvReviseInvoiceForm() {
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">IGST %</span>
             <input type="number" min="0" value="${esc(s.igstPercent)}" oninput="updatePinvReviseField('igstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
-          </div>
+          </div>`}
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Round Off</span>
             <input type="number" value="${esc(s.roundOff)}" oninput="updatePinvReviseField('roundOff', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
@@ -867,9 +1023,18 @@ function renderPinvReviseInvoiceForm() {
       </div>
 
       <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.9rem;">Bank Details</div>
+      <div class="grid-cell-item" style="max-width:320px; margin-bottom:10px;">
+        <label>Bank Account</label>
+        <select onchange="selectPinvReviseBankOption(this.value)" style="width:100%; padding:6px 4px;">
+          ${PINV_BANK_OPTIONS.map(o => `<option value="${o.key}" ${s.bankAccountKey === o.key ? 'selected' : ''}>${o.label}</option>`).join('')}
+        </select>
+      </div>
       <div class="compact-fields-grid">
+        ${field('Beneficiary', null, ['bankDetails','beneficiary'])}
         ${field('Bank Name', null, ['bankDetails','bankName'])}
-        ${field('IFSC Code For RTGS/NEFT', null, ['bankDetails','ifsc'])}
+        ${s.tradeType === 'Export'
+          ? field('Swift Code', null, ['bankDetails','swift'])
+          : field('IFSC Code For RTGS/NEFT', null, ['bankDetails','ifsc'])}
         ${field('A/C', null, ['bankDetails','ac'])}
         ${field('Address', null, ['bankDetails','address'])}
         ${field('Branch Name & Code', null, ['bankDetails','branch'])}
@@ -933,6 +1098,22 @@ function pinvReviseDeleteLineItem(idx) {
 
 function updatePinvReviseField(key, value) { pinvReviseState[key] = value; }
 function updatePinvReviseNested(parentKey, childKey, value) { pinvReviseState[parentKey][childKey] = value; }
+function updatePinvReviseTradeType(value) {
+  pinvReviseState.tradeType = value;
+  if (value === 'Export') {
+    pinvReviseState.cgstPercent = ""; pinvReviseState.sgstPercent = ""; pinvReviseState.igstPercent = "";
+    pinvReviseState.bankDetails.swift = "";
+  } else {
+    pinvReviseState.usdRate = "";
+  }
+  renderPinvReviseInvoiceForm();
+}
+function selectPinvReviseBankOption(key) {
+  pinvReviseState.bankAccountKey = key;
+  const o = applyPinvBankOption(key);
+  pinvReviseState.bankDetails = { ...pinvReviseState.bankDetails, bankName: o.bankName, ifsc: o.ifsc, ac: o.ac, address: o.address, branch: o.branch };
+  renderPinvReviseInvoiceForm();
+}
 function updatePinvReviseLineItem(idx, key, value) {
   const item = pinvReviseState.lineItems[idx];
   if (!item) return;
@@ -948,26 +1129,40 @@ function updatePinvReviseLineItem(idx, key, value) {
 
 function recalcPinvReviseTotals() {
   const items = pinvReviseState.lineItems || [];
-  const subTotal = items.reduce((sum, it) => sum + (parseFloat(it.totalBasicPrice) || 0), 0);
-  const igstPercent = parseFloat(pinvReviseState.igstPercent) || 0;
-  const cgstPercent = parseFloat(pinvReviseState.cgstPercent) || 0;
-  const sgstPercent = parseFloat(pinvReviseState.sgstPercent) || 0;
+  const rawSubTotal = items.reduce((sum, it) => sum + (parseFloat(it.totalBasicPrice) || 0), 0);
+  const isExport = pinvReviseState.tradeType === 'Export';
+  const usdRate = parseFloat(pinvReviseState.usdRate) || 0;
+  const subTotal = (isExport && usdRate > 0) ? rawSubTotal / usdRate : rawSubTotal;
   const roundOff = parseFloat(pinvReviseState.roundOff) || 0;
-  const igstAmount = subTotal * igstPercent / 100;
-  const cgstAmount = subTotal * cgstPercent / 100;
-  const sgstAmount = subTotal * sgstPercent / 100;
-  const grandTotal = subTotal + cgstAmount + sgstAmount + igstAmount + roundOff;
+  let grandTotal;
+  if (isExport) {
+    grandTotal = subTotal + roundOff;
+  } else {
+    const igstAmount = rawSubTotal * (parseFloat(pinvReviseState.igstPercent) || 0) / 100;
+    const cgstAmount = rawSubTotal * (parseFloat(pinvReviseState.cgstPercent) || 0) / 100;
+    const sgstAmount = rawSubTotal * (parseFloat(pinvReviseState.sgstPercent) || 0) / 100;
+    grandTotal = subTotal + cgstAmount + sgstAmount + igstAmount + roundOff;
+  }
   const st = document.getElementById("pinv-revise-subtotal-display");
   const gt = document.getElementById("pinv-revise-grandtotal-display");
   const w = document.getElementById("pinv-revise-words-display");
-  if (st) st.textContent = "₹" + subTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 });
-  if (gt) gt.textContent = "₹" + grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 });
-  if (w) w.textContent = numberToWordsINRClient(grandTotal);
+  const symbol = isExport ? "$" : "₹";
+  if (st) st.textContent = symbol + subTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  if (gt) gt.textContent = symbol + grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  if (w) w.textContent = isExport ? numberToWordsUSDClient(grandTotal) : numberToWordsINRClient(grandTotal);
 }
 
 function openPinvReviseConfirmModal() {
   if (!pinvReviseState?.invoiceNo?.trim()) {
     showBOQBanner("pinv-feedback", "Invoice No. is required before generating.", "error");
+    return;
+  }
+  if ((pinvReviseState.lineItems || []).some(li => !(li.hsnNumber || '').toString().trim())) {
+    showBOQBanner("pinv-feedback", "HSN Code is required for every invoice line.", "error");
+    return;
+  }
+  if (pinvReviseState.tradeType === 'Export' && !(Number(pinvReviseState.usdRate) > 0)) {
+    showBOQBanner("pinv-feedback", "INR to USD Rate is required when Export is selected.", "error");
     return;
   }
   document.getElementById("pinv-revise-confirm-target").textContent = pinvReviseCache.projectId;
