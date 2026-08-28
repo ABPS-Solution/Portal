@@ -109,11 +109,25 @@ async function loadManufacturingClearanceList() {
 }
 
 // ── Active-tab expandable wrapper cards ──────────────────────────────
+// Hold status takes priority over the Internal MFC given/pending pair —
+// a held product needs attention regardless of where MFC stands.
+function mcStatusPill(project) {
+  const total = Number(project.totalLines) || 0, held = Number(project.heldLines) || 0;
+  if (total > 0 && held === total) return { text: "Completely On Hold", color: "#b91c1c" };
+  if (held > 0) return { text: "Partially On Hold", color: "#d97706" };
+  if (project.mfcInt) return { text: "Internal MFC Given", color: "#2f9e58" };
+  return { text: "Internal MFC Pending", color: "var(--muted)" };
+}
+
 function renderMcProjectCard(project) {
   const safeId = project.projectId.replace(/[^a-zA-Z0-9]/g, "_");
   const card = document.createElement("div");
   card.className = "contact-summary-card-parent";
   card.id = `mc-card-${safeId}`;
+
+  const status = mcStatusPill(project);
+  const deliveryLabel = project.mfcInt ? "Actual Delivery Date" : "Tentative Delivery Date";
+  const deliveryValue = project.mfcInt ? project.actualDeliveryDate : project.deliveryDate;
 
   card.innerHTML = `
     <div class="contact-summary-header-row" onclick="toggleMcCardBody('${project.projectId}')" style="margin-bottom:0; padding-bottom:8px; cursor:pointer;">
@@ -121,7 +135,8 @@ function renderMcProjectCard(project) {
         <div class="meta-row-line-block" style="display:flex; align-items:center; flex-wrap:wrap; gap:10px;">
           <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:3px 8px; font-size:0.85rem; border-radius:3px;">${project.projectId}</span>
           <strong style="color:#111827; font-size:0.9rem;">${project.companyName}</strong>
-          <span style="font-size:0.85rem;">Tentative Delivery Date: <strong style="color:#111827;">${formatDateDMY(project.deliveryDate) || "—"}</strong></span>
+          <span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#fff; background:${status.color}; padding:3px 8px; border-radius:10px;">${status.text}</span>
+          <span style="font-size:0.85rem;">${deliveryLabel}: <strong style="color:#111827;">${formatDateDMY(deliveryValue) || "—"}</strong></span>
           <span id="mc-caret-${safeId}" style="margin-left:auto; font-weight:700; color:var(--muted);">▸</span>
         </div>
       </div>

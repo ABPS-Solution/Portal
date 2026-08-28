@@ -975,7 +975,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         let subCellBv = document.createElement("div"); subCellBv.className = "grid-cell-item";
         subCellBv.innerHTML = `<label class="field-label" style="margin-top:0;">ABPS Business Vertical *</label>`;
         let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
-        const opts = ["Industrial", "Power", "Renewable", "Other"];
+        const opts = ["Industrial", "Power", "Renewable", "Data Center", "Oil & Gas", "Other"];
         let isOther = leadMap[key] && opts.indexOf(leadMap[key].toString().trim()) === -1 && leadMap[key].toString().trim() !== "";
         opts.forEach(o => {
           let op = document.createElement("option"); op.textContent = o; 

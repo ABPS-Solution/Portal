@@ -45,10 +45,27 @@ let ptlSelected = null;
 // to show the control at all. A blank value means "today", same as
 // every non-admin's Mark Done always meant.
 const ptlIsAdmin = () => localStorage.getItem("isUserAdminGlobal") === "true";
-const ptlAsOfInputHtml = (id) => ptlIsAdmin()
-  ? `<input type="date" id="ptl-asof-${id}" title="Admin only — backdate this completion for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.74rem;" />`
+const ptlAsOfInputHtml = (id, value) => ptlIsAdmin()
+  ? `<input type="date" id="ptl-asof-${id}" value="${value || ''}" title="Admin only — set/backdate this completion for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.74rem;" />`
   : "";
 const ptlReadAsOf = (id) => { const el = document.getElementById(`ptl-asof-${id}`); return el && el.value ? el.value : undefined; };
+
+// Persistent green highlight on whatever row a Timeline-canvas click just
+// jumped to — cleared on the next jump (or lost on the row's own next
+// re-render, which is fine: it's a "you clicked this" affordance, not
+// stored state).
+let ptlLastHighlightEl = null;
+function ptlHighlightRow(el) {
+  if (ptlLastHighlightEl && ptlLastHighlightEl !== el) {
+    ptlLastHighlightEl.style.border = "";
+    ptlLastHighlightEl.style.borderRadius = "";
+  }
+  if (el) {
+    el.style.border = "2px solid #16a34a";
+    el.style.borderRadius = "8px";
+  }
+  ptlLastHighlightEl = el;
+}
 
 async function initializeProjectTimelinePanel() {
   const mount = document.getElementById("ptl-mount");
@@ -200,8 +217,14 @@ function ptlRender() {
   ptlSetViewMode(ptlViewMode);
 }
 
-/* ── Stage 4 — one card per in-scope BOQ. ─────────────────────────── */
+/* ── Stage 4 — one card per in-scope BOQ, collapsed to its header
+   (product + current stage) until clicked. Expansion state is kept in a
+   module-level Set (not per-render local state) so it survives the
+   re-renders every Mark Done / Submit Plan action triggers, and so a
+   Timeline-canvas click can force a lane open before scrolling to it
+   (see ptlSetViewMode's focusAnchorId handling). ─────────────────────── */
 const PTL_LANE_COLOR = { Reactor: '#b45309', Capacitor: '#047857', Panel: '#c2410c' };
+let ptlExpandedLanes = new Set();
 
 function ptlRenderLanes(lanes) {
   if (lanes.length === 0) {
@@ -215,22 +238,37 @@ function ptlRenderLanes(lanes) {
   </div>`;
 }
 
+function ptlLaneStageLabel(lane) {
+  if (!lane.planInitialized) return "Not planned yet";
+  const doneCount = lane.steps.filter(s => !!s.actual).length;
+  if (doneCount === lane.steps.length) return "Complete";
+  return `In progress — ${doneCount}/${lane.steps.length} steps done`;
+}
+
+function ptlToggleLane(boqId) {
+  if (ptlExpandedLanes.has(boqId)) ptlExpandedLanes.delete(boqId);
+  else ptlExpandedLanes.add(boqId);
+  ptlRender();
+}
+
 function ptlRenderLane(lane) {
   const c = PTL_LANE_COLOR[lane.ownerDept] || 'var(--muted)';
-  const doneCount = lane.steps.filter(s => !!s.actual).length;
+  const expanded = ptlExpandedLanes.has(lane.boqId);
+  const title = [lane.productName, lane.productRating, lane.descriptionOfMaterial].filter(Boolean).join(" — ");
   return `
-    <div style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:14px; overflow:hidden;">
-      <div style="padding:10px 14px; background:${c}14; border-left:4px solid ${c}; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+    <div id="ptl-lane-${lane.boqId}" style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:14px; overflow:hidden;">
+      <div onclick="ptlToggleLane('${lane.boqId}')" style="padding:10px 14px; background:${c}14; border-left:4px solid ${c}; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; cursor:pointer;">
         <div>
+          <span style="display:inline-block; width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:6px solid ${c}; margin-right:8px; transform:rotate(${expanded ? 90 : 0}deg); transition:transform .15s;"></span>
           <span style="font-weight:800; color:${c};">${escapeHtml(lane.name)}</span>
-          <span style="color:var(--muted); font-size:0.82rem;"> — ${escapeHtml(lane.productName || '')} ${escapeHtml(lane.productRating || '')}</span>
+          <span style="color:var(--muted); font-size:0.82rem;"> — ${escapeHtml(title)}</span>
           <span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:${c}; margin-left:6px;">${escapeHtml(lane.ownerDept)} Production</span>
         </div>
-        <span style="font-size:0.72rem; font-weight:700; font-family:monospace; color:${c};">${doneCount}/${lane.steps.length} steps done</span>
+        <span style="font-size:0.72rem; font-weight:700; font-family:monospace; color:${c};">${escapeHtml(ptlLaneStageLabel(lane))}</span>
       </div>
-      <div style="padding:12px 14px;">
+      ${expanded ? `<div style="padding:12px 14px;">
         ${lane.planInitialized ? ptlRenderLaneSteps(lane, c) : ptlRenderLaneInitialPlanForm(lane)}
-      </div>
+      </div>` : ''}
     </div>`;
 }
 
@@ -268,7 +306,8 @@ function ptlRenderLaneSteps(lane, c) {
               style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;" />` : ''}
         <span style="font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(s.chip || '')}</span>`;
     } else if (done) {
-      rightCell = `<span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${ptlFmt(s.actual)}</span>`;
+      rightCell = `<span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${ptlFmt(s.actual)}</span>` +
+        (ptlIsAdmin() ? `<span style="display:inline-flex; align-items:center; gap:6px; margin-left:4px;">${ptlAsOfInputHtml(`${lane.boqId}-${s.id}`, s.actual)}<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem;" onclick="ptlMarkStepDone('${lane.boqId}','${s.id}')">Update (admin)</button></span>` : '');
     } else {
       rightCell = `
         <input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
@@ -326,6 +365,16 @@ async function ptlMarkStepDone(boqId, stepKey) {
   } catch (e) { alert("Network error: " + e.message); }
 }
 
+// Which system nodes carry a "what's left" drill-down — the backend
+// attaches n.detail (a plain array of strings, empty = nothing
+// outstanding) to boqs/prns/rmpos/pps/prodPlan only, see routes/timeline.js.
+let ptlExpandedNodes = new Set();
+function ptlToggleNodeDetail(nodeId) {
+  if (ptlExpandedNodes.has(nodeId)) ptlExpandedNodes.delete(nodeId);
+  else ptlExpandedNodes.add(nodeId);
+  ptlRender();
+}
+
 // A plain, honest list — the branching SVG schematic from the design
 // exploration is Stage 4's job (it needs the product lanes to be worth
 // drawing); Stages 1-3 are a single line, so a list reads better than a
@@ -338,8 +387,12 @@ function ptlRenderList(nodes, today) {
     const eff = ptlEff(n);
     const dateTxt = n.actual ? ptlFmtFull(n.actual) : (n.done ? `On or before ${ptlFmtFull(eff)} (exact date not tracked)` : eff ? `Due ${ptlFmtFull(eff)}` : 'Not yet scheduled');
     const dotColor = late ? 'var(--warn)' : c;
+    const hasDetail = Array.isArray(n.detail);
+    const expanded = hasDetail && ptlExpandedNodes.has(n.id);
+    const manualCanEdit = n.kind === 'manual' && !PTL_QA_CHAIN.has(n.id) && (!n.actual || ptlIsAdmin());
+    const qaCanEdit = PTL_QA_CHAIN.has(n.id) && (!n.actual || ptlIsAdmin());
     return `
-      <div id="ptl-row-${n.id}" style="display:flex; align-items:flex-start; gap:12px; padding:10px 4px; border-bottom:1px solid var(--border); border-radius:4px;">
+      <div id="ptl-row-${n.id}" ${hasDetail ? `onclick="ptlToggleNodeDetail('${n.id}')"` : ''} style="display:flex; align-items:flex-start; gap:12px; padding:10px 4px; border-bottom:1px solid var(--border); border-radius:4px;${hasDetail ? ' cursor:pointer;' : ''}">
         <div style="flex:none; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
           background:${done ? dotColor : '#fff'}; border:2.5px solid ${dotColor}; margin-top:2px;">
           ${done ? '<span style="color:#fff; font-weight:900; font-size:0.85rem;">✓</span>' : ''}
@@ -353,14 +406,18 @@ function ptlRenderList(nodes, today) {
           </div>
           <div style="font-size:0.8rem; color:${late ? 'var(--warn)' : 'var(--muted)'}; margin-top:2px;">${escapeHtml(dateTxt)}${late ? ` · ${Math.abs(ptlBdBetween(eff, today))} business days late` : ''}</div>
           ${n.chip ? `<span style="display:inline-block; margin-top:5px; font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(n.chip)}</span>` : ''}
-          ${n.kind === 'manual' && !n.actual && !PTL_QA_CHAIN.has(n.id) ? `<div style="margin-top:7px; display:flex; align-items:center; gap:8px;">${ptlAsOfInputHtml(n.id)}<button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlMarkMilestoneDone('${n.id}')">Mark Done</button></div>` : ''}
-          ${PTL_QA_CHAIN.has(n.id) && !n.actual ? `
-            <div style="margin-top:7px; display:flex; align-items:center; gap:8px;">
-              <input type="date" id="ptl-qa-date-${n.id}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;" />
-              <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlSetQaMilestoneDate('${n.id}')">Set Date</button>
+          ${hasDetail ? `<div style="font-size:0.72rem; color:var(--brand); margin-top:5px; font-weight:600;">${expanded ? '▾ Hide' : '▸ Show'} what's left</div>` : ''}
+          ${manualCanEdit ? `<div onclick="event.stopPropagation()" style="margin-top:7px; display:flex; align-items:center; gap:8px;">${ptlAsOfInputHtml(n.id, n.actual)}<button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlMarkMilestoneDone('${n.id}')">${n.actual ? 'Update (admin)' : 'Mark Done'}</button></div>` : ''}
+          ${qaCanEdit ? `
+            <div onclick="event.stopPropagation()" style="margin-top:7px; display:flex; align-items:center; gap:8px;">
+              <input type="date" id="ptl-qa-date-${n.id}" value="${n.actual || ''}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;" />
+              <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlSetQaMilestoneDate('${n.id}')">${n.actual ? 'Update (admin)' : 'Set Date'}</button>
             </div>` : ''}
         </div>
-      </div>`;
+      </div>
+      ${hasDetail && expanded ? `<div style="margin:0 0 10px 40px; padding:10px 12px; background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); font-size:0.8rem; color:var(--text);">
+        ${n.detail.length ? `<ul style="margin:0; padding-left:18px;">${n.detail.map(d => `<li>${escapeHtml(d)}</li>`).join("")}</ul>` : '<span style="color:var(--muted);">Nothing left — this row is fully covered.</span>'}
+      </div>` : ''}`;
   }).join("") + `</div>`;
 }
 
@@ -552,10 +609,20 @@ function ptlRenderCanvas(containerId) {
   const stageXs = {};
   [...spine, ...tail].forEach(n => { if (n.stage) (stageXs[n.stage] = stageXs[n.stage] || []).push(xOf(ptlEff(n))); });
   lanes.forEach(l => l.steps.forEach(s => (stageXs[4] = stageXs[4] || []).push(xOf(s.actual || s.target || s.planned))));
-  Object.keys(stageXs).sort((a, b) => a - b).forEach(st => {
-    const x0 = Math.min(...stageXs[st]) - ptlDayW * 0.75;
+  // Skip a stage's label (never the divider line itself) when the next
+  // stage starts too close after it for the text to fit — a small Stage
+  // 4 window otherwise collided with Stage 5's label right after it.
+  const stageKeys = Object.keys(stageXs).sort((a, b) => a - b);
+  const stageX0s = stageKeys.map(st => Math.min(...stageXs[st]) - ptlDayW * 0.75);
+  stageKeys.forEach((st, i) => {
+    const x0 = stageX0s[i];
     P.push(`<line x1="${x0}" y1="${RULER_H}" x2="${x0}" y2="${H}" stroke="var(--text)" stroke-width="2.5" opacity=".55"/>`);
-    P.push(`<text x="${x0 + 9 * ptlFS}" y="${RULER_H + 17 * ptlFS}" font-size="${10.5 * ptlFS}" font-weight="800" letter-spacing="1.2" fill="var(--text)" opacity=".75">STAGE ${st} · ${esc((PTL_STAGE_NAMES[st] || '').toUpperCase())}</text>`);
+    const label = `STAGE ${st} · ${(PTL_STAGE_NAMES[st] || '').toUpperCase()}`;
+    const estWidth = label.length * 6.4 * ptlFS;
+    const nextX0 = i + 1 < stageX0s.length ? stageX0s[i + 1] : Infinity;
+    if (nextX0 - (x0 + 9 * ptlFS) > estWidth) {
+      P.push(`<text x="${x0 + 9 * ptlFS}" y="${RULER_H + 17 * ptlFS}" font-size="${10.5 * ptlFS}" font-weight="800" letter-spacing="1.2" fill="var(--text)" opacity=".75">${esc(label)}</text>`);
+    }
   });
 
   // Today
@@ -670,8 +737,10 @@ function ptlRenderCanvas(containerId) {
     P.push(G.join(""));
   }
 
-  // Last of all, so nothing can cover it — same convention as the demo.
-  P.push(`<text x="${todayX}" y="${RULER_H + 15 * ptlFS}" text-anchor="middle" font-size="${10 * ptlFS}" font-weight="800" letter-spacing="1" fill="var(--brand)" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="5">TODAY · ${esc(ptlFmt(today))}</text>`);
+  // Last of all, so nothing can cover it. Sits at the BOTTOM of the line,
+  // not the top — the top is where stage-divider labels live, and the two
+  // used to collide right where Today happened to fall inside a stage.
+  P.push(`<text x="${todayX}" y="${H - 10 * ptlFS}" text-anchor="middle" font-size="${10 * ptlFS}" font-weight="800" letter-spacing="1" fill="var(--brand)" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="5">TODAY · ${esc(ptlFmt(today))}</text>`);
 
   const svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;">${P.join("")}</svg>`;
   ptlLastTodayX = todayX;
@@ -711,13 +780,19 @@ function ptlSetViewMode(mode, focusAnchorId) {
     ptlCloseFullscreen();
   }
   if (focusAnchorId) {
+    // A lane step's anchor is "ptl-step-<boqId>-<stepId>" — expand that
+    // product's card first (it renders collapsed by default) or the
+    // target element won't exist yet to scroll to.
+    const laneMatch = /^ptl-step-(.+)-([a-z0-9_]+)$/.exec(focusAnchorId);
+    if (laneMatch && !ptlExpandedLanes.has(laneMatch[1])) {
+      ptlExpandedLanes.add(laneMatch[1]);
+      ptlRender();
+    }
     setTimeout(() => {
       const target = document.getElementById(focusAnchorId);
       if (!target) return;
       target.scrollIntoView({ behavior: "smooth", block: "center" });
-      target.style.transition = "background .2s";
-      target.style.background = "var(--highlight-bg)";
-      setTimeout(() => { target.style.background = ""; }, 1200);
+      ptlHighlightRow(target);
     }, 30);
   }
 }
@@ -844,6 +919,8 @@ function ptlRenderFullscreen() {
 
   ov.innerHTML = `
     <div style="flex:none; background:var(--card); border-bottom:1px solid var(--border); padding:12px 18px; display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px;">
+      <button type="button" onclick="ptlSetViewMode('steps')" title="Back to Steps" style="flex:none; display:flex; align-items:center; gap:5px; padding:7px 12px; font-size:0.82rem; font-weight:700; border:1px solid var(--border); border-radius:var(--radius); background:#fff; color:var(--muted); cursor:pointer;">&lsaquo; Steps</button>
+      <div style="width:1px; align-self:stretch; background:var(--border); flex:none;"></div>
       <div style="display:flex; align-items:center; gap:12px; min-width:0;">
         <div style="width:5px; height:30px; border-radius:2px; background:var(--brand); flex:none;"></div>
         <div style="min-width:0;">
@@ -851,7 +928,6 @@ function ptlRenderFullscreen() {
           <div style="font-size:0.75rem; color:var(--muted); font-family:monospace; white-space:nowrap;">${escapeHtml(project.projectId)} — ${escapeHtml(project.companyName || '')} · <strong style="color:var(--text)">${escapeHtml(project.status)}</strong>${project.mfcInt ? ` · Internal MFC <strong style="color:var(--text)">${ptlFmtFull(project.mfcInt)}</strong>` : ''}</div>
         </div>
       </div>
-      <button type="button" onclick="ptlSetViewMode('steps')" style="padding:7px 14px; font-size:0.82rem; font-weight:700; border:1px solid var(--border); border-radius:var(--radius); background:#fff; color:var(--text); cursor:pointer;">Steps</button>
       <div style="flex:1 1 auto;"></div>
       <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
         ${Object.keys(PTL_MODES).map(m => `<button type="button" onclick="ptlSetMode('${m}')" style="padding:7px 14px; font-size:0.82rem; font-weight:600; border:0; border-right:1px solid var(--border); cursor:pointer; background:${m === ptlMode ? 'var(--brand)' : '#fff'}; color:${m === ptlMode ? '#fff' : 'var(--muted)'};">${m === 'week' ? 'This Week' : m === 'days15' ? '15 Days' : 'This Month'}</button>`).join("")}
