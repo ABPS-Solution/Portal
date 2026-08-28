@@ -155,7 +155,7 @@ async function handlePinvProjectChange(projectId) {
 
 function initPinvInvoiceStateFromLines() {
   pinvInvoiceState = {
-    invoiceNo: pinvCache.invoiceNoPreview || "", insuranceNo: "", mdccNo: "", transportName: "", lrNoDate: "", lcNoDate: "", dcNoDate: "", vehicleNo: "", mobileNo: "", incoterms: PINV_INCOTERMS_OPTIONS[0],
+    invoiceNo: pinvCache.invoiceNoPreview || "", insuranceNo: "", mdccNo: "", transportName: "", lrNoDate: "", lcNoDate: "", dcNoDate: "", vehicleNo: "", mobileNo: "", incoterms: PINV_INCOTERMS_OPTIONS[0].code,
     tradeType: "Import", usdRate: "",
     poNumber: pinvCache.poNumber, poDate: pinvCache.poDate,
     billTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "" },
@@ -270,10 +270,16 @@ const PINV_STANDARD_BANK_DETAILS = { ...PINV_BANK_OPTIONS[0] };
 function applyPinvBankOption(key) {
   return PINV_BANK_OPTIONS.find(o => o.key === key) || PINV_BANK_OPTIONS[0];
 }
-// Placeholder labels only -- real Incoterms values to replace these are
-// coming separately; keeping the dropdown shape (a fixed A-F set) means
-// swapping the label text later needs no structural change here.
-const PINV_INCOTERMS_OPTIONS = ['A', 'B', 'C', 'D', 'E', 'F'];
+const PINV_INCOTERMS_OPTIONS = [
+  { code: 'EXW', label: 'EXW — Ex Works' },
+  { code: 'FCA', label: 'FCA — Free Carrier' },
+  { code: 'CPT', label: 'CPT — Carriage Paid To' },
+  { code: 'CIP', label: 'CIP — Carriage And Insurance Paid To' },
+  { code: 'DPU', label: 'DPU — Delivered At Place Unloaded' },
+  { code: 'FOB', label: 'FOB — Free On Board' },
+  { code: 'CFR', label: 'CFR — Cost And Freight' },
+  { code: 'CIF', label: 'CIF — Cost, Insurance And Freight' },
+];
 const PINV_STANDARD_DECLARATION = "I / We hereby certify that our registration certificate under the GST Act, 2017 is in force on the date on which the supply of goods specified in this Tax invoice is made by me / us & the transaction of supply covered by this Tax invoice had been effected by me / us & it shall be accounted for in the turnover of supplies while filing of return & due tax if any payable on the supplies has been paid or shall be paid. Further certified that the particulars given above are true and correct & the amount indicated represents the prices actually charged and that there is no flow of additional consideration directly or indirectly from the buyer. Interest @18% p.a. charged on all outstanding more than one month after invoice has been rendered.";
 
 // Client-side port of lib/poTemplate.js's numberToWordsINR — live preview
@@ -382,7 +388,7 @@ function renderPinvInvoiceForm() {
         ${field('Mobile No', 'mobileNo')}
         <div class="grid-cell-item"><label>Incoterms</label>
           <select onchange="updatePinvField('incoterms', this.value)" style="width:100%; padding:6px 4px;">
-            ${PINV_INCOTERMS_OPTIONS.map(o => `<option value="${o}" ${s.incoterms === o ? 'selected' : ''}>${o}</option>`).join('')}
+            ${PINV_INCOTERMS_OPTIONS.map(o => `<option value="${o.code}" ${s.incoterms === o.code ? 'selected' : ''}>${o.label}</option>`).join('')}
           </select>
         </div>
       </div>
@@ -961,7 +967,7 @@ function renderPinvReviseInvoiceForm() {
         ${field('Mobile No', 'mobileNo')}
         <div class="grid-cell-item"><label>Incoterms</label>
           <select onchange="updatePinvReviseField('incoterms', this.value)" style="width:100%; padding:6px 4px;">
-            ${PINV_INCOTERMS_OPTIONS.map(o => `<option value="${o}" ${s.incoterms === o ? 'selected' : ''}>${o}</option>`).join('')}
+            ${PINV_INCOTERMS_OPTIONS.map(o => `<option value="${o.code}" ${s.incoterms === o.code ? 'selected' : ''}>${o.label}</option>`).join('')}
           </select>
         </div>
       </div>
