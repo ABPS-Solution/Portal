@@ -155,7 +155,7 @@ async function handlePinvProjectChange(projectId) {
 
 function initPinvInvoiceStateFromLines() {
   pinvInvoiceState = {
-    invoiceNo: pinvCache.invoiceNoPreview || "", insuranceNo: "", mdccNo: "", transportName: "", lrNoDate: "", lcNoDate: "", dcNoDate: "", vehicleNo: "", mobileNo: "", incoterms: PINV_INCOTERMS_OPTIONS[0].code,
+    invoiceNo: pinvCache.invoiceNoPreview || "", insuranceNo: "", mdccNo: "", transportName: "", lrNoDate: "", lcNoDate: "", dcNoDate: "", vehicleNo: "", mobileNo: "", incoterms: PINV_INCOTERMS_OPTIONS[0].code, incotermsPlace: "",
     tradeType: "Import", usdRate: "",
     poNumber: pinvCache.poNumber, poDate: pinvCache.poDate,
     billTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "" },
@@ -390,6 +390,9 @@ function renderPinvInvoiceForm() {
           <select onchange="updatePinvField('incoterms', this.value)" style="width:100%; padding:6px 4px;">
             ${PINV_INCOTERMS_OPTIONS.map(o => `<option value="${o.code}" ${s.incoterms === o.code ? 'selected' : ''}>${o.label}</option>`).join('')}
           </select>
+        </div>
+        <div class="grid-cell-item"><label>Named Place</label>
+          <input type="text" placeholder="e.g. Mumbai Port" value="${esc(s.incotermsPlace)}" oninput="updatePinvField('incotermsPlace', this.value)" style="width:100%; padding:6px 4px;" />
         </div>
       </div>
 
@@ -896,7 +899,7 @@ async function loadPinvReviseForm(invoiceId) {
     pinvReviseState = {
       invoiceNo: last.invoiceNo || "", insuranceNo: last.insuranceNo || "", mdccNo: last.mdccNo || "",
       transportName: last.transportName || "", lrNoDate: last.lrNoDate || "", lcNoDate: last.lcNoDate || "", dcNoDate: last.dcNoDate || "", vehicleNo: last.vehicleNo || "",
-      mobileNo: last.mobileNo || "", incoterms: last.incoterms || PINV_INCOTERMS_OPTIONS[0],
+      mobileNo: last.mobileNo || "", incoterms: last.incoterms || PINV_INCOTERMS_OPTIONS[0].code, incotermsPlace: last.incotermsPlace || "",
       tradeType: last.tradeType || "Import", usdRate: last.usdRate || "",
       poNumber: data.poNumber || "", poDate: data.poDate || "",
       billTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "", ...(last.billTo || {}) },
@@ -969,6 +972,9 @@ function renderPinvReviseInvoiceForm() {
           <select onchange="updatePinvReviseField('incoterms', this.value)" style="width:100%; padding:6px 4px;">
             ${PINV_INCOTERMS_OPTIONS.map(o => `<option value="${o.code}" ${s.incoterms === o.code ? 'selected' : ''}>${o.label}</option>`).join('')}
           </select>
+        </div>
+        <div class="grid-cell-item"><label>Named Place</label>
+          <input type="text" placeholder="e.g. Mumbai Port" value="${esc(s.incotermsPlace)}" oninput="updatePinvReviseField('incotermsPlace', this.value)" style="width:100%; padding:6px 4px;" />
         </div>
       </div>
 
