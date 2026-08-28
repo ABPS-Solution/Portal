@@ -151,15 +151,27 @@ function ptlRender() {
       </div>
     </div>`;
 
-  const canvasSlot = `<div id="ptl-canvas-wrap" style="display:none; margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--border);"></div>`;
+  // Two full views, not a canvas strip glued above a list: Timeline is
+  // the schematic overview (big — real screen space, not a sidebar
+  // widget); Steps is where the actual Mark Done / Set Date / target
+  // editing happens. Both render into the DOM always; only visibility
+  // toggles, so a canvas click can jump straight into Steps.
+  const tabs = `
+    <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:16px;">
+      <button type="button" id="ptl-tab-timeline" onclick="ptlSetViewMode('timeline')" style="padding:9px 18px; font-size:0.85rem; font-weight:700; border:0; border-right:1px solid var(--border); cursor:pointer;">Timeline</button>
+      <button type="button" id="ptl-tab-steps" onclick="ptlSetViewMode('steps')" style="padding:9px 18px; font-size:0.85rem; font-weight:700; border:0; cursor:pointer;">Steps</button>
+    </div>`;
+  const canvasSlot = `<div id="ptl-canvas-wrap"></div>`;
+  const stepsOpen = `<div id="ptl-steps-wrap" style="display:none;">`;
 
   if (!mfcComplete) {
-    body.innerHTML = header + canvasSlot + `
+    body.innerHTML = header + tabs + canvasSlot + stepsOpen + `
       <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius); padding:14px; font-size:0.85rem; color:#92400e;">
         Stage 3 onward unlocks once Manufacturing Clearance sets this project's Internal MFC date — nothing has been cleared yet, so only Stages 1-2 are shown below.
       </div>
-      <div style="margin-top:16px;">${ptlRenderList(trunk.filter(n => n.stage <= 2), today)}</div>`;
-    ptlRenderCanvas();
+      <div style="margin-top:16px;">${ptlRenderList(trunk.filter(n => n.stage <= 2), today)}</div>
+      </div>`;
+    ptlSetViewMode(ptlViewMode);
     return;
   }
 
@@ -168,11 +180,12 @@ function ptlRender() {
   // they depend on the lanes' own terminal-step dates.
   const preLanes = trunk.filter(n => n.stage <= 3 || n.id === 'prodPlan');
   const postLanes = trunk.filter(n => n.id === 'inspCall' || n.stage === 5);
-  body.innerHTML = header + canvasSlot + ptlRenderList(preLanes, today)
+  body.innerHTML = header + tabs + canvasSlot + stepsOpen + ptlRenderList(preLanes, today)
     + ptlRenderLanes(ptlData.lanes || [])
     + `<div style="margin-top:20px; font-weight:800; font-size:0.95rem; color:var(--text); margin-bottom:4px;">Stage 5 — Inspection &amp; Dispatch</div>`
-    + ptlRenderList(postLanes, today);
-  ptlRenderCanvas();
+    + ptlRenderList(postLanes, today)
+    + `</div>`;
+  ptlSetViewMode(ptlViewMode);
 }
 
 /* ── Stage 4 — one card per in-scope BOQ. ─────────────────────────── */
@@ -433,29 +446,30 @@ function ptlPlacer() {
 function ptlRenderCanvas() {
   const wrap = document.getElementById("ptl-canvas-wrap");
   if (!wrap) return;
-  if (!ptlBuildDayRange()) { wrap.style.display = "none"; return; }
+  if (!ptlBuildDayRange()) { wrap.innerHTML = `<div style="padding:30px; text-align:center; color:var(--muted);">Nothing dated yet to draw a timeline from.</div>`; return; }
   const { spine, tail, lanes } = ptlCanvasNodes();
-  if (spine.length < 2) { wrap.style.display = "none"; return; }
-  wrap.style.display = "block";
+  if (spine.length < 2) { wrap.innerHTML = `<div style="padding:30px; text-align:center; color:var(--muted);">Nothing dated yet to draw a timeline from.</div>`; return; }
 
   ptlFS = PTL_FONT_SCALE[ptlMode];
-  const scroller = document.getElementById("ptl-scroller");
-  const availW = Math.max(600, scroller ? scroller.clientWidth : 900);
+  // Full-width, full-height surface — this is the primary view, not a
+  // strip squeezed above a list, so it gets real screen real estate.
+  const availW = Math.max(900, window.innerWidth - 340);
   const longestName = Math.max(16, ...lanes.map(l => (l.name || '').length));
-  const PAD_L = Math.round(56 + longestName * 5.3 * ptlFS);
-  const PAD_R = 60;
-  ptlDayW = Math.max(12, Math.min(280, (availW - PAD_L - PAD_R) / PTL_MODES[ptlMode]));
+  const PAD_L = Math.round(70 + longestName * 6.6 * ptlFS);
+  const PAD_R = 70;
+  ptlDayW = Math.max(16, Math.min(320, (availW - PAD_L - PAD_R) / PTL_MODES[ptlMode]));
 
-  const RULER_H = Math.round(36 * ptlFS);
-  const SLOT_UP = 20 * ptlFS, SLOT_DN = 24 * ptlFS, LINE_H = 10.5 * ptlFS;
-  const R = 6.5 * ptlFS;
+  const RULER_H = Math.round(52 * ptlFS);
+  const SLOT_UP = 27 * ptlFS, SLOT_DN = 32 * ptlFS, LINE_H = 13.5 * ptlFS;
+  const R = 9.5 * ptlFS;
+  const FAN = 46 * ptlFS; // vertical spread for nodes that land on the same date
 
   const laneCount = lanes.length;
-  const topY = RULER_H + 56 * ptlFS;
-  const gap = 82 * ptlFS;
+  const topY = RULER_H + 100 * ptlFS;
+  const gap = Math.max(140 * ptlFS, 170);
   const laneYs = lanes.map((_, i) => topY + i * gap);
-  const spineY = laneCount ? (laneYs[0] + laneYs[laneCount - 1]) / 2 : topY;
-  const H = Math.max(200, (laneCount ? laneYs[laneCount - 1] : spineY) + 60 * ptlFS);
+  const spineY = laneCount ? (laneYs[0] + laneYs[laneCount - 1]) / 2 : topY + 40;
+  const H = Math.max(420, (laneCount ? laneYs[laneCount - 1] : spineY) + 110 * ptlFS);
 
   // If the exact date isn't in the index (a Sunday slipped through — the
   // backend now refuses new ones, but old data or a holiday-adjacent edge
@@ -498,10 +512,30 @@ function ptlRenderCanvas() {
   // Today
   P.push(`<line x1="${todayX}" y1="${RULER_H}" x2="${todayX}" y2="${H}" stroke="var(--brand)" stroke-width="2" opacity=".8"/>`);
 
-  // Traces: spine (split at prodPlan into lanes, rejoin at tail[0])
+  // Traces: spine (split at prodPlan into lanes, rejoin at tail[0]).
+  // Nodes sharing the exact same date (e.g. BOQs/Costing/Working Designs,
+  // all frozen +3 business days from Internal MFC) would otherwise land
+  // on the identical (x, spineY) point and render as one merged dot —
+  // fan them vertically around the spine instead, same as the design
+  // prototype did.
   const pos = {};
-  spine.forEach(n => { pos[n.id] = { x: xOf(ptlEff(n)), y: spineY }; });
-  tail.forEach(n => { pos[n.id] = { x: xOf(ptlEff(n)), y: spineY }; });
+  const byDate = {};
+  [...spine, ...tail].forEach(n => { (byDate[ptlEff(n)] = byDate[ptlEff(n)] || []).push(n); });
+  Object.values(byDate).forEach(group => {
+    const x = xOf(ptlEff(group[0]));
+    group.forEach((n, i) => { pos[n.id] = { x, y: spineY + (i - (group.length - 1) / 2) * FAN }; });
+  });
+  // Two steps in the same lane sharing a date (an operator entered the
+  // same day for both) get a small vertical fan around that lane's own
+  // row, same idea as the spine fan above, so they never merge into one
+  // dot. Computed once, reused for both the trace path and the nodes.
+  const laneStepY = lanes.map((l, i) => {
+    const y = laneYs[i], byX = {}, out = {};
+    l.steps.forEach(s => { const x = xOf(s.actual || s.target || s.planned); (byX[x] = byX[x] || []).push(s); });
+    Object.values(byX).forEach(group => group.forEach((s, gi) => { out[s.id] = y + (gi - (group.length - 1) / 2) * (FAN * 0.7); }));
+    return out;
+  });
+
   const poly = pts => pts.map((p, i) => (i ? "L" : "M") + p.x + " " + p.y).join(" ");
   const traces = [];
   if (laneCount === 0) {
@@ -513,7 +547,7 @@ function ptlRenderCanvas() {
     lanes.forEach((l, i) => {
       const c = PTL_LANE_HEX[l.ownerDept] || 'var(--muted)';
       const y = laneYs[i];
-      const stepPts = l.steps.map(s => ({ x: xOf(s.actual || s.target || s.planned), y }));
+      const stepPts = l.steps.map(s => ({ x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id] }));
       const fx = stepPts[0].x, lx = stepPts[stepPts.length - 1].x;
       traces.push({ d: `M${split.x} ${split.y} C${(split.x + fx) / 2} ${split.y}, ${(split.x + fx) / 2} ${y}, ${fx} ${y}`, c });
       traces.push({ d: poly(stepPts), c });
@@ -532,7 +566,7 @@ function ptlRenderCanvas() {
   const laid = [];
   spine.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
   tail.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
-  lanes.forEach((l, i) => l.steps.forEach(s => laid.push({ n: { ...s, dept: l.ownerDept === 'Reactor' ? 'lane_r' : l.ownerDept === 'Capacitor' ? 'lane_c' : 'lane_p' }, x: xOf(s.actual || s.target || s.planned), y: laneYs[i], laneColor: PTL_LANE_HEX[l.ownerDept], boqId: l.boqId })));
+  lanes.forEach((l, i) => l.steps.forEach(s => laid.push({ n: { ...s, dept: l.ownerDept === 'Reactor' ? 'lane_r' : l.ownerDept === 'Capacitor' ? 'lane_c' : 'lane_p' }, x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id], laneColor: PTL_LANE_HEX[l.ownerDept], boqId: l.boqId })));
   laid.sort((a, b) => a.x - b.x);
 
   const PL = ptlPlacer();
@@ -579,14 +613,13 @@ function ptlRenderCanvas() {
 
   const svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;">${P.join("")}</svg>`;
   wrap.innerHTML = `
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
-      <div style="font-weight:800; font-size:0.85rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em;">Timeline Overview</div>
+    <div style="display:flex; align-items:center; justify-content:flex-end; margin-bottom:10px;">
       <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
-        ${Object.keys(PTL_MODES).map(m => `<button type="button" onclick="ptlSetMode('${m}')" style="padding:5px 10px; font-size:0.76rem; border:0; border-right:1px solid var(--border); cursor:pointer; background:${m === ptlMode ? 'var(--brand)' : '#fff'}; color:${m === ptlMode ? '#fff' : 'var(--muted)'};">${m === 'week' ? 'This Week' : m === 'days15' ? '15 Days' : 'This Month'}</button>`).join("")}
+        ${Object.keys(PTL_MODES).map(m => `<button type="button" onclick="ptlSetMode('${m}')" style="padding:7px 14px; font-size:0.82rem; font-weight:600; border:0; border-right:1px solid var(--border); cursor:pointer; background:${m === ptlMode ? 'var(--brand)' : '#fff'}; color:${m === ptlMode ? '#fff' : 'var(--muted)'};">${m === 'week' ? 'This Week' : m === 'days15' ? '15 Days' : 'This Month'}</button>`).join("")}
       </div>
     </div>
-    <div id="ptl-scroller" style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); cursor:grab;">${svg}</div>
-    <div style="font-size:0.72rem; color:var(--muted); margin-top:5px;">Click a point to jump to it below. Hover for its date.</div>`;
+    <div id="ptl-scroller" style="overflow:auto; border:1px solid var(--border); border-radius:var(--radius); cursor:grab; max-height:calc(100vh - 320px); min-height:420px;">${svg}</div>
+    <div style="font-size:0.78rem; color:var(--muted); margin-top:8px;">Click a point to see it in the Steps view. Hover for its date.</div>`;
 
   ptlWireCanvasInteractions(clickMap);
 
@@ -596,6 +629,36 @@ function ptlRenderCanvas() {
 }
 
 function ptlSetMode(m) { ptlMode = m; ptlRenderCanvas(); }
+
+/* ── View toggle: Timeline (the canvas above) vs Steps (the existing
+   lists/lane-cards with the actual Mark Done / Set Date / target-editing
+   controls). Both are always rendered into the DOM — only visibility
+   toggles — so a canvas click can switch to Steps and immediately
+   scrollIntoView its target without waiting on a re-render. ─────────── */
+let ptlViewMode = "timeline";
+
+function ptlSetViewMode(mode, focusAnchorId) {
+  ptlViewMode = mode;
+  const canvasWrap = document.getElementById("ptl-canvas-wrap");
+  const stepsWrap = document.getElementById("ptl-steps-wrap");
+  const tabTimeline = document.getElementById("ptl-tab-timeline");
+  const tabSteps = document.getElementById("ptl-tab-steps");
+  if (canvasWrap) canvasWrap.style.display = mode === "timeline" ? "block" : "none";
+  if (stepsWrap) stepsWrap.style.display = mode === "steps" ? "block" : "none";
+  if (tabTimeline) { tabTimeline.style.background = mode === "timeline" ? "var(--brand)" : "#fff"; tabTimeline.style.color = mode === "timeline" ? "#fff" : "var(--text)"; }
+  if (tabSteps) { tabSteps.style.background = mode === "steps" ? "var(--brand)" : "#fff"; tabSteps.style.color = mode === "steps" ? "#fff" : "var(--text)"; }
+  if (mode === "timeline") ptlRenderCanvas();
+  if (focusAnchorId) {
+    setTimeout(() => {
+      const target = document.getElementById(focusAnchorId);
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.style.transition = "background .2s";
+      target.style.background = "var(--highlight-bg)";
+      setTimeout(() => { target.style.background = ""; }, 1200);
+    }, 30);
+  }
+}
 
 function ptlWireCanvasInteractions(clickMap) {
   const sc = document.getElementById("ptl-scroller");
@@ -614,15 +677,7 @@ function ptlWireCanvasInteractions(clickMap) {
     });
     el.addEventListener("mousemove", (e) => { tip.style.left = (e.clientX + 12) + "px"; tip.style.top = (e.clientY + 12) + "px"; });
     el.addEventListener("mouseleave", () => { tip.style.opacity = "0"; });
-    el.addEventListener("click", () => {
-      const target = document.getElementById(el.dataset.anchor);
-      if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "center" });
-        target.style.transition = "background .2s";
-        target.style.background = "var(--highlight-bg)";
-        setTimeout(() => { target.style.background = ""; }, 1200);
-      }
-    });
+    el.addEventListener("click", () => ptlSetViewMode("steps", el.dataset.anchor));
   });
   let down = false, sx = 0, sl = 0;
   sc.addEventListener("mousedown", e => { if (e.target.closest(".ptl-hit")) return; down = true; sx = e.pageX; sl = sc.scrollLeft; sc.style.cursor = "grabbing"; });
