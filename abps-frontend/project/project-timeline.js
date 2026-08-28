@@ -829,6 +829,15 @@ function ptlOpenFullscreen() {
     ov.style.cssText = "position:fixed; inset:0; z-index:9000; background:var(--bg,#f0f4f8); display:flex; flex-direction:column;";
     document.body.appendChild(ov);
   }
+  if (!document.getElementById("ptl-fs-style")) {
+    // The scroller still scrolls left/right (drag, wheel, trackpad) —
+    // this only hides the native scrollbar track, which sat as a bare
+    // grey bar under the legend and read as leftover chrome.
+    const style = document.createElement("style");
+    style.id = "ptl-fs-style";
+    style.textContent = `#ptl-fs-scroller{scrollbar-width:none;}#ptl-fs-scroller::-webkit-scrollbar{display:none;}`;
+    document.head.appendChild(style);
+  }
   ov.style.display = "flex";
   document.body.style.overflow = "hidden";
   ptlRenderFullscreen();
