@@ -280,6 +280,21 @@ function ptlRender() {
    re-renders every Mark Done / Submit Plan action triggers, and so a
    Timeline-canvas click can force a lane open before scrolling to it
    (see ptlSetViewMode's focusAnchorId handling). ─────────────────────── */
+// Stage 4 doesn't take values until Stage 3 (Pre Production) is done —
+// same reasoning Stage 5 already applies against Stage 4. The server is
+// the real gate (submitInitialProductPlan refuses non-admins outright);
+// this only decides whether to show the form as usable or locked, so a
+// non-admin doesn't fill it out only to get refused on Submit. Derived
+// from the trunk's own 6 Stage 3 nodes rather than a separate flag from
+// the server, so it can never disagree with what's actually displayed.
+function ptlIsStage3Done() {
+  if (!ptlData || !ptlData.trunk) return false;
+  const keys = ['boqs', 'costing', 'wdesign', 'prns', 'rmpos', 'pps'];
+  return keys.every(id => {
+    const n = ptlData.trunk.find(t => t.id === id);
+    return n && (!!n.actual || n.done === true);
+  });
+}
 const PTL_LANE_COLOR = { Reactor: '#b45309', Capacitor: '#047857', Panel: '#c2410c' };
 let ptlExpandedLanes = new Set();
 
@@ -330,19 +345,27 @@ function ptlRenderLane(lane) {
 }
 
 function ptlRenderLaneInitialPlanForm(lane) {
+  // Locked for anyone but an admin until Stage 3 — Pre Production is
+  // fully done — the form still shows (so Production can see what's
+  // coming), it just can't take values yet. Server-side
+  // submitInitialProductPlan is the real gate; this only avoids letting a
+  // non-admin fill the whole thing out only to get refused on Submit.
+  const locked = !ptlIsAdmin() && !ptlIsStage3Done();
+  const dis = locked ? 'disabled' : '';
   return `
     <div style="font-size:0.82rem; color:var(--muted); margin-bottom:10px;">
       No plan submitted yet. ${escapeHtml(lane.ownerDept)} Production enters a planned date for every step below, including Packing and Adding to FG — Material Issue Tickets for this product's Job Cards stay blocked until then. Only its completion is automatic; the planned/target date is entered like any other step.
     </div>
+    ${locked ? `<div style="font-size:0.8rem; color:#92400e; background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius); padding:8px 12px; margin-bottom:10px;">Locked until Stage 3 — Pre Production is fully done.</div>` : ''}
     <div style="display:grid; grid-template-columns:minmax(160px,260px) minmax(180px,220px); gap:4px 16px; align-items:center;">
       <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); padding-bottom:4px; border-bottom:1px solid var(--border);">Production Stage</div>
       <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); padding-bottom:4px; border-bottom:1px solid var(--border);">Production Planning Date</div>
       ${lane.steps.map(s => `
         <label style="font-size:0.85rem; padding:5px 0;">${escapeHtml(s.label)}</label>
-        <input type="date" id="ptl-plan-${lane.boqId}-${s.id}" style="padding:6px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;" />`).join("")}
+        <input type="date" ${dis} id="ptl-plan-${lane.boqId}-${s.id}" style="padding:6px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;${locked ? ' background:#f1f5f9; cursor:not-allowed;' : ''}" />`).join("")}
     </div>
     <div style="margin-top:12px;">
-      <button class="nav-btn-styled" onclick="ptlSubmitInitialPlan('${lane.boqId}')">Submit Initial Plan</button>
+      <button class="nav-btn-styled" ${dis} style="${locked ? 'opacity:0.5; cursor:not-allowed;' : ''}" onclick="ptlSubmitInitialPlan('${lane.boqId}')">Submit Initial Plan</button>
     </div>`;
 }
 
@@ -625,7 +648,8 @@ function ptlBuildDayRange() {
 
 function ptlCanvasNodes() {
   const spineIds = ['oa', 'po', 'activated', 'dwgSent', 'dwgAppr', 'mfcCust', 'mfcInt', 'boqs', 'costing', 'wdesign', 'prns', 'rmpos', 'pps', 'prodPlan'];
-  const tailIds = ['inspCall', 'customer_inspection', 'inspection_clearance_note', 'dispatch_clearance', 'dispatched', 'delivery'];
+  // 'dispatched' merged into 'delivery' 29 Aug 2026 — see routes/timeline.js.
+  const tailIds = ['inspCall', 'customer_inspection', 'inspection_clearance_note', 'dispatch_clearance', 'delivery'];
   const byId = id => (ptlData.trunk || []).find(n => n.id === id);
   const dated = id => { const n = byId(id); return n && ptlEff(n) ? n : null; };
   return {
