@@ -1037,23 +1037,23 @@ function ptlRenderFullscreen() {
   ptlLastFlagsCount = flags.length;
 
   ov.innerHTML = `
-    <div style="flex:none; background:var(--card); border-bottom:1px solid var(--border); padding:12px 18px; display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px;">
-      <button type="button" onclick="ptlSetViewMode('steps')" title="Back to Steps" style="flex:none; display:flex; align-items:center; gap:5px; padding:7px 12px; font-size:0.82rem; font-weight:700; border:1px solid var(--border); border-radius:var(--radius); background:#fff; color:var(--muted); cursor:pointer;">&lsaquo; Steps</button>
-      <div style="width:1px; align-self:stretch; background:var(--border); flex:none;"></div>
-      <div style="display:flex; align-items:center; gap:12px; min-width:0;">
-        <div style="width:5px; height:30px; border-radius:2px; background:var(--brand); flex:none;"></div>
-        <div style="min-width:0;">
+    <div style="flex:none; background:var(--card); border-bottom:1px solid var(--border); padding:12px 18px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; align-items:center; gap:16px;">
+        <button type="button" onclick="ptlSetViewMode('steps')" title="Back to Steps" style="flex:none; display:flex; align-items:center; gap:5px; padding:7px 12px; font-size:0.82rem; font-weight:700; border:1px solid var(--border); border-radius:var(--radius); background:#fff; color:var(--muted); cursor:pointer;">&lsaquo; Steps</button>
+        <div style="width:1px; align-self:stretch; background:var(--border); flex:none;"></div>
+        <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+          <div style="width:5px; height:30px; border-radius:2px; background:var(--brand); flex:none;"></div>
           <div style="font-weight:800; font-size:1.1rem; color:var(--brand); white-space:nowrap;">Project Timeline</div>
-          <div style="font-size:0.75rem; color:var(--muted); font-family:monospace; white-space:nowrap;">${escapeHtml(project.projectId)} — ${escapeHtml(project.companyName || '')} · <strong style="color:var(--text)">${escapeHtml(project.status)}</strong>${project.mfcInt ? ` · Internal MFC <strong style="color:var(--text)">${ptlFmtFull(project.mfcInt)}</strong>` : ''} · ${ptlDeliveryLabel(project)} <strong style="color:var(--text)">${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
         </div>
+        ${ptlLdChipHtml()}
+        <div style="flex:1 1 auto;"></div>
+        <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; flex:none;">
+          ${Object.keys(PTL_MODES).map(m => `<button type="button" onclick="ptlSetMode('${m}')" style="padding:7px 14px; font-size:0.82rem; font-weight:600; border:0; border-right:1px solid var(--border); cursor:pointer; background:${m === ptlMode ? 'var(--brand)' : '#fff'}; color:${m === ptlMode ? '#fff' : 'var(--muted)'};">${m === 'week' ? 'This Week' : m === 'days15' ? '15 Days' : 'This Month'}</button>`).join("")}
+        </div>
+        <button type="button" onclick="ptlJumpToday()" style="flex:none; padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; background:var(--brand); color:#fff;">Today</button>
+        <button type="button" id="ptl-fs-flags-toggle" onclick="ptlToggleFsRail()" style="flex:none; padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; color:#fff;"></button>
       </div>
-      ${ptlLdChipHtml()}
-      <div style="flex:1 1 auto;"></div>
-      <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
-        ${Object.keys(PTL_MODES).map(m => `<button type="button" onclick="ptlSetMode('${m}')" style="padding:7px 14px; font-size:0.82rem; font-weight:600; border:0; border-right:1px solid var(--border); cursor:pointer; background:${m === ptlMode ? 'var(--brand)' : '#fff'}; color:${m === ptlMode ? '#fff' : 'var(--muted)'};">${m === 'week' ? 'This Week' : m === 'days15' ? '15 Days' : 'This Month'}</button>`).join("")}
-      </div>
-      <button type="button" onclick="ptlJumpToday()" style="padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; background:var(--brand); color:#fff;">Today</button>
-      <button type="button" id="ptl-fs-flags-toggle" onclick="ptlToggleFsRail()" style="padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; color:#fff;"></button>
+      <div style="font-size:0.75rem; color:var(--muted); font-family:monospace; padding-left:38px;">${escapeHtml(project.projectId)} · <strong style="color:var(--text)">${escapeHtml(project.status)}</strong>${project.mfcInt ? ` · Internal MFC <strong style="color:var(--text)">${ptlFmtFull(project.mfcInt)}</strong>` : ''} · ${ptlDeliveryLabel(project)} <strong style="color:var(--text)">${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
     </div>
     <div style="flex:1 1 auto; display:flex; min-height:0;">
       <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column;">
