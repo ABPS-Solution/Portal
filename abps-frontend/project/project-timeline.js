@@ -71,12 +71,15 @@ async function initializeProjectTimelinePanel() {
   const mount = document.getElementById("ptl-mount");
   if (!mount) return;
   mount.innerHTML = `
-    <div style="margin-bottom:14px; position:relative; max-width:420px;">
-      <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
-      <input type="text" id="ptl-project-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
-        oninput="handlePtlProjectInput(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();}"
-        style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
-      <div id="ptl-project-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+    <div style="display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap; margin-bottom:14px;">
+      <div style="position:relative; max-width:420px; flex:1 1 320px;">
+        <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
+        <input type="text" id="ptl-project-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+          oninput="handlePtlProjectInput(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();}"
+          style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        <div id="ptl-project-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+      </div>
+      <button type="button" onclick="ptlOpenLdBoard()" style="padding:9px 16px; font-size:0.85rem; font-weight:700; border:1.5px solid #b45309; border-radius:var(--radius); background:#fffbeb; color:#92400e; cursor:pointer;">₹ LD Exposure Board</button>
     </div>
     <div id="ptl-feedback" style="display:none; padding:12px; border-radius:var(--radius); margin-bottom:14px; border-left:4px solid;"></div>
     <div id="ptl-body"></div>
@@ -187,6 +190,7 @@ function ptlRender() {
       <div>
         <div style="font-weight:800; font-size:1.05rem; color:var(--text);">${escapeHtml(project.projectId)}</div>
         <div style="font-size:0.82rem; color:var(--muted);">${escapeHtml(project.companyName || '—')} · <strong>${escapeHtml(project.status)}</strong>${project.mfcInt ? ` · Internal MFC <strong>${ptlFmtFull(project.mfcInt)}</strong>` : ''} · ${ptlDeliveryLabel(project)} <strong>${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
+        ${ptlLdSummaryHtml()}
       </div>
     </div>`;
 
@@ -894,11 +898,40 @@ function ptlBuildFlags() {
     msg: `Due ${ptlFmtFull(ptlEff(n))}.`,
     owner: ownerOf(n),
   }));
+
+  // LD (Liquidated Damages) — nodeId '__ld__' is a special case ptlGotoFlag
+  // routes to the LD panel instead of a Steps-view jump. Severity here is
+  // urgency-of-action (how soon exposure gets worse), not size of the
+  // rupee figure — an uncapped clause is flagged "high" even at ₹0 today,
+  // since the absence of a cap is itself the risk.
+  const ld = ptlData.ld;
+  if (ld) {
+    if (ld.status === 'uncapped') {
+      out.push({ sev: 'high', nodeId: '__ld__', title: `${ptlData.project.projectId} has an uncapped LD clause`,
+        msg: `${ptlFmtINR(ld.ld)} accruing, no cap stated — every week of delay adds more.`, owner: 'Project' });
+    } else if (ld.status === 'accruing_projected' || ld.status === 'accrued_final') {
+      const soon = ld.daysToNextStep != null && ld.daysToNextStep <= 3;
+      out.push({ sev: soon ? 'high' : 'normal', nodeId: '__ld__',
+        title: `${ptlData.project.projectId} is accruing LD — ${ptlFmtINR(ld.ld)}${ld.dispatchMode === 'actual' ? ' (final)' : ' (projected)'}`,
+        msg: ld.daysToNextStep != null
+          ? `Next LD step in ${ld.daysToNextStep} day${ld.daysToNextStep === 1 ? '' : 's'} — beating it saves ${ptlFmtINR(ld.marginal)}.`
+          : `Contractual delivery was ${ptlFmtFull(ld.graceEnd)}.`,
+        owner: 'Project' });
+    } else if (ld.status === 'at_cap') {
+      out.push({ sev: 'normal', nodeId: '__ld__', title: `${ptlData.project.projectId} is at its LD cap — ${ptlFmtINR(ld.ld)}`,
+        msg: `Expediting this project recovers nothing further under this clause.`, owner: 'Project' });
+    } else if (ld.status === 'pending_review') {
+      out.push({ sev: 'normal', nodeId: '__ld__', title: `${ptlData.project.projectId}'s LD clause hasn't been reviewed`,
+        msg: `A parsed candidate is waiting for confirmation.`, owner: 'Project' });
+    }
+  }
+
   const rank = { critical: 0, high: 1, normal: 2, due: 3 };
   return out.sort((a, b) => rank[a.sev] - rank[b.sev]);
 }
 
 function ptlGotoFlag(nodeId, boqId) {
+  if (nodeId === '__ld__') { ptlOpenLdPanel(); return; }
   ptlSetViewMode("steps", boqId ? `ptl-step-${boqId}-${nodeId}` : `ptl-row-${nodeId}`);
 }
 
@@ -966,6 +999,7 @@ function ptlRenderFullscreen() {
           <div style="font-size:0.75rem; color:var(--muted); font-family:monospace; white-space:nowrap;">${escapeHtml(project.projectId)} — ${escapeHtml(project.companyName || '')} · <strong style="color:var(--text)">${escapeHtml(project.status)}</strong>${project.mfcInt ? ` · Internal MFC <strong style="color:var(--text)">${ptlFmtFull(project.mfcInt)}</strong>` : ''} · ${ptlDeliveryLabel(project)} <strong style="color:var(--text)">${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
         </div>
       </div>
+      ${ptlLdChipHtml()}
       <div style="flex:1 1 auto;"></div>
       <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
         ${Object.keys(PTL_MODES).map(m => `<button type="button" onclick="ptlSetMode('${m}')" style="padding:7px 14px; font-size:0.82rem; font-weight:600; border:0; border-right:1px solid var(--border); cursor:pointer; background:${m === ptlMode ? 'var(--brand)' : '#fff'}; color:${m === ptlMode ? '#fff' : 'var(--muted)'};">${m === 'week' ? 'This Week' : m === 'days15' ? '15 Days' : 'This Month'}</button>`).join("")}
@@ -1051,4 +1085,379 @@ async function ptlMarkMilestoneDone(nodeId) {
   } catch (e) {
     alert("Network error: " + e.message);
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LD (Liquidated Damages) — per-project panel + cross-project board.
+   Money is only ever computed server-side (lib/ld.js) from a CONFIRMED
+   project.ld_terms row — this file only displays what the server sends
+   and collects a human's review before calling saveLdTerms. No shared
+   INR formatter exists in this codebase (see shared/format.js) — house
+   pattern is inline toLocaleString('en-IN'), same as everywhere else.
+   ═══════════════════════════════════════════════════════════════════════ */
+const ptlFmtINR = (n) => (n == null ? "—" : "₹" + Math.round(Number(n)).toLocaleString("en-IN"));
+
+const PTL_LD_STATUS_META = {
+  unknown:             { label: "LD terms not reviewed",                    color: "#92400e", bg: "#fffbeb" },
+  pending_review:      { label: "LD candidate awaiting confirmation",       color: "#92400e", bg: "#fffbeb" },
+  not_applicable:      { label: "No LD clause on this PO",                  color: "#6b7a8d", bg: "#f1f5f9" },
+  no_basis:            { label: "LD terms confirmed — PO value unresolved", color: "#92400e", bg: "#fffbeb" },
+  on_time:             { label: "No LD exposure at current projection",     color: "#15803d", bg: "#f0fdf4" },
+  accruing_projected:  { label: "LD accruing (projected)",                  color: "#b45309", bg: "#fff7ed" },
+  accrued_final:       { label: "LD accrued (final)",                      color: "#b91c1c", bg: "#fef2f2" },
+  at_cap:              { label: "LD at cap",                               color: "#b91c1c", bg: "#fef2f2" },
+  uncapped:            { label: "LD accruing — uncapped clause",           color: "#b91c1c", bg: "#fef2f2" },
+};
+const PTL_LD_MONEY_STATUSES = new Set(["accruing_projected", "accrued_final", "at_cap", "uncapped"]);
+
+function ptlLdSummaryHtml() {
+  if (!ptlData || !ptlData.ld) return "";
+  const meta = PTL_LD_STATUS_META[ptlData.ld.status] || PTL_LD_STATUS_META.unknown;
+  const amount = PTL_LD_MONEY_STATUSES.has(ptlData.ld.status) ? ptlFmtINR(ptlData.ld.ld) + " — " : "";
+  return `<div style="margin-top:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <span style="font-size:0.74rem; font-weight:700; padding:3px 10px; border-radius:12px; background:${meta.bg}; color:${meta.color};">${amount}${escapeHtml(meta.label)}</span>
+    <button type="button" onclick="ptlOpenLdPanel()" style="font-size:0.72rem; font-weight:700; padding:3px 10px; border:1px solid ${meta.color}; border-radius:12px; background:#fff; color:${meta.color}; cursor:pointer;">LD Terms</button>
+  </div>`;
+}
+
+function ptlLdChipHtml() {
+  if (!ptlData || !ptlData.ld || !PTL_LD_MONEY_STATUSES.has(ptlData.ld.status)) return "";
+  const meta = PTL_LD_STATUS_META[ptlData.ld.status];
+  return `<button type="button" onclick="ptlOpenLdPanel()" title="${escapeHtml(meta.label)}" style="flex:none; font-size:0.78rem; font-weight:700; padding:6px 12px; border-radius:var(--radius); border:1px solid ${meta.color}; background:${meta.bg}; color:${meta.color}; cursor:pointer;">LD ${ptlFmtINR(ptlData.ld.ld)}</button>`;
+}
+
+/* ── LD Terms review/confirm panel ────────────────────────────────────── */
+let ptlLdPanelState = null;
+
+async function ptlOpenLdPanel() {
+  if (!ptlData) return;
+  let ov = document.getElementById("ptl-ld-overlay");
+  if (!ov) {
+    ov = document.createElement("div");
+    ov.id = "ptl-ld-overlay";
+    ov.style.cssText = "position:fixed; inset:0; z-index:9600; background:rgba(15,23,42,0.5); display:flex; align-items:center; justify-content:center; padding:20px;";
+    ov.addEventListener("click", (e) => { if (e.target === ov) ptlCloseLdPanel(); });
+    document.body.appendChild(ov);
+  }
+  ov.style.display = "flex";
+  ov.innerHTML = `<div style="background:var(--card); border-radius:var(--radius); max-width:660px; width:100%; max-height:88vh; overflow-y:auto; box-shadow:0 20px 60px -12px rgba(0,0,0,.4);"><div id="ptl-ld-panel-body" style="padding:22px;"></div></div>`;
+
+  const t = ptlData.ldTerms;
+  ptlLdPanelState = {
+    projectId: ptlData.project.projectId,
+    form: t ? {
+      ldApplicable: t.ldApplicable, ratePercent: t.ratePercent, periodUnit: t.periodUnit || "week",
+      periodBasis: t.periodBasis || "calendar", partPeriodRule: t.partPeriodRule || "part_thereof",
+      capPercent: t.capPercent, basisKind: t.basisKind || "whole_po_basic", graceDays: t.graceDays || 0,
+      currency: t.currency || "INR", usdRate: t.usdRate,
+      contractualDateManual: t.contractualDateSource === "manual" ? t.contractualDate : "",
+      basisAmountInr: t.basisAmountInr, basisAmountSource: t.basisAmountSource, sourceText: t.sourceText || "",
+      parseProvenance: t.parseProvenance, parseModel: t.parseModel, notes: t.notes || "",
+    } : {
+      ldApplicable: true, periodUnit: "week", periodBasis: "calendar", partPeriodRule: "part_thereof",
+      capPercent: null, basisKind: "whole_po_basic", graceDays: 0, currency: "INR", usdRate: null,
+      contractualDateManual: "", basisAmountInr: null, basisAmountSource: null, sourceText: "",
+      parseProvenance: "manual", parseModel: null, notes: "",
+    },
+    candidateQuotes: [], candidateUnresolved: [], candidateConfidence: null,
+    basisCandidates: null, loadingBasis: true, loadingParse: false,
+  };
+  ptlRenderLdPanel();
+
+  try {
+    const bd = await apFetch({ action: "resolveLdBasisAmount", projectId: ptlLdPanelState.projectId });
+    if (bd.success) ptlLdPanelState.basisCandidates = bd;
+  } catch (e) { /* non-fatal — panel still works with manual entry */ }
+  ptlLdPanelState.loadingBasis = false;
+  ptlRenderLdPanel();
+}
+
+function ptlCloseLdPanel() {
+  const ov = document.getElementById("ptl-ld-overlay");
+  if (ov) ov.style.display = "none";
+  ptlLdPanelState = null;
+}
+
+function ptlLdFormSet(key, value) {
+  if (!ptlLdPanelState) return;
+  ptlLdPanelState.form[key] = value;
+}
+
+async function ptlParseLdClauseNow() {
+  if (!ptlLdPanelState) return;
+  ptlLdPanelState.loadingParse = true;
+  ptlRenderLdPanel();
+  try {
+    const clauseText = ptlLdPanelState.form.sourceText && ptlLdPanelState.form.sourceText.trim()
+      ? ptlLdPanelState.form.sourceText : undefined;
+    const data = await apFetch({ action: "extractLdTermsPreview", projectId: ptlLdPanelState.projectId, clauseText });
+    if (!data.success) { alert(data.error || "Could not parse this clause."); ptlLdPanelState.loadingParse = false; ptlRenderLdPanel(); return; }
+    const c = data.candidate;
+    Object.assign(ptlLdPanelState.form, {
+      ldApplicable: c.ldApplicable, ratePercent: c.ratePercent, periodUnit: c.periodUnit,
+      periodBasis: c.periodBasis, partPeriodRule: c.partPeriodRule, capPercent: c.capPercent,
+      basisKind: c.basisKind, graceDays: c.graceDays, currency: c.currency, sourceText: data.sourceText,
+      parseProvenance: "gemini", parseModel: data.parseModel,
+    });
+    ptlLdPanelState.candidateQuotes = c.quotes || [];
+    ptlLdPanelState.candidateUnresolved = c.unresolved || [];
+    ptlLdPanelState.candidateConfidence = c.confidence;
+    ptlLdPanelState.parseRaw = c;
+  } catch (e) {
+    alert("Network error: " + e.message);
+  }
+  ptlLdPanelState.loadingParse = false;
+  ptlRenderLdPanel();
+}
+
+async function ptlSaveLdTerms() {
+  if (!ptlLdPanelState) return;
+  const f = ptlLdPanelState.form;
+  if (f.ldApplicable && !(Number(f.ratePercent) > 0)) { alert("Rate percent is required."); return; }
+  try {
+    const data = await apFetch({
+      action: "saveLdTerms", operatorName: appActiveOperatorIdentityString, projectId: ptlLdPanelState.projectId,
+      ldApplicable: f.ldApplicable, ratePercent: f.ratePercent, periodUnit: f.periodUnit, periodBasis: f.periodBasis,
+      partPeriodRule: f.partPeriodRule, capPercent: f.capPercent || null, basisKind: f.basisKind, graceDays: f.graceDays,
+      currency: f.currency, usdRate: f.usdRate || null, contractualDateManual: f.contractualDateManual || null,
+      basisAmountInr: f.basisAmountInr || null, basisAmountSource: f.basisAmountSource,
+      sourceText: f.sourceText, parseProvenance: f.parseProvenance, parseModel: f.parseModel,
+      parseRaw: ptlLdPanelState.parseRaw || null, notes: f.notes,
+    });
+    if (!data.success) { alert(data.error || "Could not save LD terms."); return; }
+    ptlCloseLdPanel();
+    await selectPtlProject(ptlData.project.projectId);
+  } catch (e) {
+    alert("Network error: " + e.message);
+  }
+}
+
+async function ptlExtendLdDate() {
+  const newDate = document.getElementById("ptl-ld-extend-date")?.value;
+  const reason = document.getElementById("ptl-ld-extend-reason")?.value;
+  const documentRef = document.getElementById("ptl-ld-extend-docref")?.value;
+  if (!newDate || !reason || !reason.trim()) { alert("A new date and a reason are both required."); return; }
+  try {
+    const data = await apFetch({
+      action: "extendLdContractualDate", operatorName: appActiveOperatorIdentityString,
+      projectId: ptlLdPanelState.projectId, newDate, reason: reason.trim(), documentRef,
+    });
+    if (!data.success) { alert(data.error || "Could not extend this date."); return; }
+    ptlCloseLdPanel();
+    await selectPtlProject(ptlData.project.projectId);
+  } catch (e) {
+    alert("Network error: " + e.message);
+  }
+}
+
+function ptlRenderLdPanel() {
+  const body = document.getElementById("ptl-ld-panel-body");
+  if (!body || !ptlLdPanelState) return;
+  const f = ptlLdPanelState.form;
+  const canWrite = !!ptlData.canWriteLd;
+  const t = ptlData.ldTerms;
+  const isConfirmed = !!(t && t.confirmedAt);
+
+  const field = (label, inputHtml) => `<div style="margin-bottom:10px;"><label style="display:block; font-size:0.72rem; font-weight:700; color:var(--muted); margin-bottom:3px;">${label}</label>${inputHtml}</div>`;
+  const inputStyle = "width:100%; padding:7px 9px; border:1.5px solid var(--border); border-radius:6px; font-size:0.82rem; box-sizing:border-box;";
+  const dis = canWrite ? "" : "disabled";
+
+  let html = `<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+    <h2 style="margin:0; font-size:1rem; font-weight:800; color:var(--text);">LD Terms — ${escapeHtml(ptlLdPanelState.projectId)}</h2>
+    <button type="button" onclick="ptlCloseLdPanel()" style="border:0; background:none; font-size:1.3rem; line-height:1; cursor:pointer; color:var(--muted);">&times;</button>
+  </div>`;
+
+  if (!canWrite) {
+    html += `<div style="background:#f1f5f9; border-radius:6px; padding:8px 12px; font-size:0.78rem; color:var(--muted); margin-bottom:14px;">View only — only Marketing, Project, or an admin can confirm LD terms.</div>`;
+  }
+
+  html += field("This PO has an LD clause",
+    `<label style="display:flex; align-items:center; gap:8px; font-size:0.82rem;">
+      <input type="checkbox" ${f.ldApplicable ? "checked" : ""} ${dis} onchange="ptlLdFormSet('ldApplicable', this.checked); ptlRenderLdPanel();" /> Applicable
+    </label>`);
+
+  if (f.ldApplicable) {
+    html += field("Clause text (source, or paste terms captured outside the PO)",
+      `<textarea ${dis} rows="3" style="${inputStyle} resize:vertical;" oninput="ptlLdFormSet('sourceText', this.value)">${escapeHtml(f.sourceText || "")}</textarea>`);
+    if (canWrite) {
+      html += `<button type="button" onclick="ptlParseLdClauseNow()" ${ptlLdPanelState.loadingParse ? "disabled" : ""} style="margin-bottom:12px; padding:6px 12px; font-size:0.78rem; font-weight:700; border:1.5px solid var(--brand); border-radius:6px; background:#fff; color:var(--brand); cursor:pointer;">${ptlLdPanelState.loadingParse ? "Parsing..." : "Parse with AI"}</button>`;
+    }
+    if (ptlLdPanelState.candidateQuotes.length || ptlLdPanelState.candidateUnresolved.length) {
+      html += `<div style="background:#f7fafd; border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-bottom:12px; font-size:0.76rem;">
+        <div style="font-weight:700; margin-bottom:4px;">AI read (confidence: ${escapeHtml(ptlLdPanelState.candidateConfidence || "—")})</div>
+        ${ptlLdPanelState.candidateQuotes.map(q => `<div style="color:var(--muted); font-style:italic; margin-bottom:2px;">"${escapeHtml(q)}"</div>`).join("")}
+        ${ptlLdPanelState.candidateUnresolved.map(u => `<div style="color:#b45309; margin-top:4px;">⚠ ${escapeHtml(u)}</div>`).join("")}
+      </div>`;
+    }
+
+    html += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:0 12px;">`
+      + field("Rate %", `<input type="number" step="0.001" ${dis} value="${f.ratePercent ?? ""}" style="${inputStyle}" oninput="ptlLdFormSet('ratePercent', this.value)" />`)
+      + field("Per", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('periodUnit', this.value)">
+          ${["week","day","month"].map(u => `<option value="${u}" ${f.periodUnit === u ? "selected" : ""}>${u}</option>`).join("")}
+        </select>`)
+      + field("Counted in", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('periodBasis', this.value)">
+          <option value="calendar" ${f.periodBasis === "calendar" ? "selected" : ""}>Calendar days/weeks</option>
+          <option value="business" ${f.periodBasis === "business" ? "selected" : ""}>Business days/weeks</option>
+        </select>`)
+      + field("Part period", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('partPeriodRule', this.value)">
+          <option value="part_thereof" ${f.partPeriodRule === "part_thereof" ? "selected" : ""}>Or part thereof</option>
+          <option value="completed_only" ${f.partPeriodRule === "completed_only" ? "selected" : ""}>Completed periods only</option>
+          <option value="pro_rata" ${f.partPeriodRule === "pro_rata" ? "selected" : ""}>Pro-rata</option>
+        </select>`)
+      + field("Cap % (blank = uncapped)", `<input type="number" step="0.001" ${dis} value="${f.capPercent ?? ""}" style="${inputStyle}" oninput="ptlLdFormSet('capPercent', this.value)" placeholder="Uncapped" />`)
+      + field("Grace days", `<input type="number" ${dis} value="${f.graceDays ?? 0}" style="${inputStyle}" oninput="ptlLdFormSet('graceDays', this.value)" />`)
+      + field("Basis", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('basisKind', this.value)">
+          <option value="whole_po_basic" ${f.basisKind === "whole_po_basic" ? "selected" : ""}>Whole PO value</option>
+          <option value="delayed_goods_basic" ${f.basisKind === "delayed_goods_basic" ? "selected" : ""}>Delayed goods only (not yet supported — falls back to whole PO)</option>
+        </select>`)
+      + field("Currency", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('currency', this.value); ptlRenderLdPanel();">
+          <option value="INR" ${f.currency === "INR" ? "selected" : ""}>INR</option>
+          <option value="USD" ${f.currency === "USD" ? "selected" : ""}>USD</option>
+        </select>`)
+      + (f.currency !== "INR" ? field("INR per unit", `<input type="number" step="0.0001" ${dis} value="${f.usdRate ?? ""}" style="${inputStyle}" oninput="ptlLdFormSet('usdRate', this.value)" />`) : "")
+      + `</div>`;
+
+    const currentContractual = t?.contractualDate || ptlData.project.tentativeDelivery;
+    html += field(`Contractual delivery date${t?.contractualDateSource === "po_delivery_date" ? " (from PO Tentative Delivery Date)" : ""}`,
+      isConfirmed
+        ? `<div style="padding:7px 0; font-size:0.85rem; font-weight:700;">${ptlFmtFull(currentContractual)} — frozen once confirmed; use "Extend Date" below to change it.</div>`
+        : `<input type="date" ${dis} value="${f.contractualDateManual || currentContractual || ""}" style="${inputStyle}" oninput="ptlLdFormSet('contractualDateManual', this.value)" />`);
+
+    // Basis amount — two independently-typed candidates that are NOT
+    // guaranteed to agree (see routes/timeline.js's resolveLdBasisAmount) —
+    // never auto-pick one.
+    const bc = ptlLdPanelState.basisCandidates;
+    html += `<div style="margin:12px 0;"><label style="display:block; font-size:0.72rem; font-weight:700; color:var(--muted); margin-bottom:5px;">PO basis value</label>`;
+    if (ptlLdPanelState.loadingBasis) {
+      html += `<div style="font-size:0.8rem; color:var(--muted);">Resolving PO value…</div>`;
+    } else if (bc) {
+      const opt = (source, amount, label) => amount == null ? "" : `<label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; margin-bottom:4px;">
+        <input type="radio" name="ptl-ld-basis" ${dis} ${f.basisAmountSource === source ? "checked" : ""}
+          onchange="ptlLdFormSet('basisAmountSource','${source}'); ptlLdFormSet('basisAmountInr', ${amount}); ptlRenderLdPanel();" />
+        ${label}: <strong>${ptlFmtINR(amount)}</strong>
+      </label>`;
+      html += opt("po_line_items_sum", bc.candidates.poLineItemsSum, "Sum of PO line items");
+      html += opt("basic_po_amount", bc.candidates.basicPoAmount, "Basic PO Amount (as typed on PO upload)");
+      if (bc.delta != null && bc.delta > 0) {
+        html += `<div style="font-size:0.76rem; color:#b45309; margin:4px 0 8px;">⚠ These two figures differ by ${ptlFmtINR(bc.delta)} — pick the correct one.</div>`;
+      }
+      html += `<label style="display:flex; align-items:center; gap:8px; font-size:0.82rem;">
+        <input type="radio" name="ptl-ld-basis" ${dis} ${f.basisAmountSource === "manual" ? "checked" : ""}
+          onchange="ptlLdFormSet('basisAmountSource','manual'); ptlRenderLdPanel();" /> Manual:
+        <input type="number" ${dis} value="${f.basisAmountSource === "manual" ? (f.basisAmountInr ?? "") : ""}" style="width:160px; padding:5px 8px; border:1.5px solid var(--border); border-radius:6px; font-size:0.8rem;"
+          oninput="ptlLdFormSet('basisAmountSource','manual'); ptlLdFormSet('basisAmountInr', this.value)" />
+      </label>`;
+    }
+    html += `</div>`;
+
+    html += field("Notes", `<textarea ${dis} rows="2" style="${inputStyle} resize:vertical;" oninput="ptlLdFormSet('notes', this.value)">${escapeHtml(f.notes || "")}</textarea>`);
+  }
+
+  if (canWrite) {
+    html += `<button type="button" onclick="ptlSaveLdTerms()" style="margin-top:8px; padding:9px 18px; font-size:0.85rem; font-weight:700; border:0; border-radius:var(--radius); background:var(--brand); color:#fff; cursor:pointer;">${isConfirmed ? "Save changes" : "Confirm LD Terms"}</button>`;
+  }
+
+  if (isConfirmed && f.ldApplicable && canWrite) {
+    html += `<div style="margin-top:22px; padding-top:16px; border-top:1px solid var(--border);">
+      <h3 style="margin:0 0 8px; font-size:0.85rem; font-weight:800; color:var(--text);">Extend contractual date</h3>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 12px;">
+        ${field("New date", `<input type="date" id="ptl-ld-extend-date" style="${inputStyle}" />`)}
+        ${field("Reference (amendment/LOI, optional)", `<input type="text" id="ptl-ld-extend-docref" style="${inputStyle}" />`)}
+      </div>
+      ${field("Reason (required)", `<textarea id="ptl-ld-extend-reason" rows="2" style="${inputStyle} resize:vertical;"></textarea>`)}
+      <button type="button" onclick="ptlExtendLdDate()" style="padding:8px 16px; font-size:0.82rem; font-weight:700; border:1.5px solid var(--brand); border-radius:var(--radius); background:#fff; color:var(--brand); cursor:pointer;">Extend Date</button>
+    </div>`;
+  }
+
+  if ((ptlData.ldHistory || []).length) {
+    html += `<div style="margin-top:18px; padding-top:12px; border-top:1px solid var(--border);">
+      <h3 style="margin:0 0 8px; font-size:0.82rem; font-weight:800; color:var(--text);">Date extension history</h3>
+      ${ptlData.ldHistory.map(h => `<div style="font-size:0.76rem; color:var(--muted); margin-bottom:6px;">
+        ${ptlFmt(h.oldDate)} → <strong style="color:var(--text)">${ptlFmt(h.newDate)}</strong> — ${escapeHtml(h.reason)}
+        <span style="opacity:0.7;"> (${escapeHtml(h.changedBy || "")}, ${ptlFmt(h.changedAt)})</span>
+      </div>`).join("")}
+    </div>`;
+  }
+
+  body.innerHTML = html;
+}
+
+/* ── LD Exposure Board — cross-project, ranked by MARGINAL value (what
+   expediting is actually worth), not total exposure. A project sitting
+   at its LD cap is worth ₹0 to expedite even if its total figure is the
+   largest on the board — see lib/ld.js's header for why. ─────────────── */
+async function ptlOpenLdBoard() {
+  let ov = document.getElementById("ptl-ldboard-overlay");
+  if (!ov) {
+    ov = document.createElement("div");
+    ov.id = "ptl-ldboard-overlay";
+    ov.style.cssText = "position:fixed; inset:0; z-index:9600; background:rgba(15,23,42,0.5); display:flex; align-items:center; justify-content:center; padding:20px;";
+    ov.addEventListener("click", (e) => { if (e.target === ov) ptlCloseLdBoard(); });
+    document.body.appendChild(ov);
+  }
+  ov.style.display = "flex";
+  ov.innerHTML = `<div style="background:var(--card); border-radius:var(--radius); max-width:960px; width:100%; max-height:88vh; overflow-y:auto; box-shadow:0 20px 60px -12px rgba(0,0,0,.4);"><div id="ptl-ldboard-body" style="padding:22px;">Loading…</div></div>`;
+
+  try {
+    const data = await apFetch({ action: "fetchLdExposureBoard" });
+    if (!data.success) { document.getElementById("ptl-ldboard-body").innerHTML = `<div style="color:#b91c1c;">${escapeHtml(data.error || "Could not load the LD board.")}</div>`; return; }
+    ptlRenderLdBoard(data.board || [], data.realised || []);
+  } catch (e) {
+    document.getElementById("ptl-ldboard-body").innerHTML = `<div style="color:#b91c1c;">Network error: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function ptlCloseLdBoard() {
+  const ov = document.getElementById("ptl-ldboard-overlay");
+  if (ov) ov.style.display = "none";
+}
+
+function ptlRenderLdBoard(board, realised) {
+  const body = document.getElementById("ptl-ldboard-body");
+  if (!body) return;
+
+  const expeditable = board.filter(r => r.ld.marginal > 0);
+  const atCap = board.filter(r => !(r.ld.marginal > 0));
+
+  const row = (r, showMarginal) => `<tr style="border-bottom:1px solid var(--border);">
+    <td style="padding:8px 10px; font-weight:700; cursor:pointer; color:var(--brand);" onclick="ptlCloseLdBoard(); selectPtlProject('${r.projectId.replace(/'/g, "\\'")}');">${escapeHtml(r.projectId)}</td>
+    <td style="padding:8px 10px; font-size:0.82rem; color:var(--muted);">${escapeHtml(r.companyName || "—")}</td>
+    <td style="padding:8px 10px; text-align:right;">${ptlFmtINR(r.ld.ld)}</td>
+    ${showMarginal ? `<td style="padding:8px 10px; text-align:right; font-weight:700; color:#15803d;">${ptlFmtINR(r.ld.marginal)}</td>
+    <td style="padding:8px 10px; text-align:right;">${r.ld.daysToNextStep != null ? r.ld.daysToNextStep + "d" : "—"}</td>
+    <td style="padding:8px 10px; text-align:right; font-size:0.82rem; color:var(--muted);">${r.ld.rupeesPerDaySaved ? ptlFmtINR(r.ld.rupeesPerDaySaved) + "/day" : "—"}</td>` : `<td style="padding:8px 10px; text-align:right; color:var(--muted);">—</td><td></td><td></td>`}
+  </tr>`;
+
+  let html = `<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+    <h2 style="margin:0; font-size:1.05rem; font-weight:800; color:var(--text);">LD Exposure Board</h2>
+    <button type="button" onclick="ptlCloseLdBoard()" style="border:0; background:none; font-size:1.3rem; line-height:1; cursor:pointer; color:var(--muted);">&times;</button>
+  </div>
+  <p style="font-size:0.8rem; color:var(--muted); margin:0 0 14px;">Ranked by what expediting each project is actually worth — the rupees recoverable by beating the next LD step — not by total exposure. A project already at its LD cap recovers nothing further and is listed separately.</p>`;
+
+  if (!expeditable.length && !atCap.length) {
+    html += `<div style="padding:24px; text-align:center; color:var(--muted); font-size:0.85rem;">No active project has confirmed, applicable LD terms yet.</div>`;
+  } else {
+    html += `<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+      <thead><tr style="border-bottom:2px solid var(--border); text-align:left;">
+        <th style="padding:8px 10px;">Project</th><th style="padding:8px 10px;">Company</th>
+        <th style="padding:8px 10px; text-align:right;">Current exposure</th>
+        <th style="padding:8px 10px; text-align:right;">Value of expediting</th>
+        <th style="padding:8px 10px; text-align:right;">Next step in</th>
+        <th style="padding:8px 10px; text-align:right;">₹/day</th>
+      </tr></thead><tbody>${expeditable.map(r => row(r, true)).join("")}</tbody></table>`;
+  }
+
+  if (atCap.length) {
+    html += `<h3 style="margin:20px 0 8px; font-size:0.85rem; font-weight:800; color:var(--muted);">At LD cap — nothing further recoverable</h3>
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <tbody>${atCap.map(r => row(r, false)).join("")}</tbody></table>`;
+  }
+
+  if (realised.length) {
+    html += `<h3 style="margin:20px 0 8px; font-size:0.85rem; font-weight:800; color:var(--muted);">Already dispatched — realised LD</h3>
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <tbody>${realised.map(r => row(r, false)).join("")}</tbody></table>`;
+  }
+
+  body.innerHTML = html;
 }
