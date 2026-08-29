@@ -661,17 +661,27 @@ function openDeviceRestrictionModal(deviceId) {
   const current = new Set(device.restricted_permissions || []);
   const existing = document.getElementById("sa-device-restrict-modal");
   if (existing) existing.remove();
-  const groups = {};
-  (pmCatalog || []).forEach(p => { (groups[p.department] = groups[p.department] || []).push(p); });
-  const bodyHtml = Object.keys(groups).sort().map(dept => `
+  // Grouped and ordered the same way the Permissions Matrix does
+  // (renderPermissionMatrix, PM_CARD_ORDER) — dashboard-xxx permissions
+  // are a synthetic department on the backend (lib/permissionCatalog.js)
+  // purely so they can render as their own row; here they fold into
+  // their real department's card, marked with 📊, instead of getting a
+  // separate top-level header. Department order matches PM_CARD_ORDER
+  // (Marketing/Project/Design/Purchase/Store/Production/Accounts), not
+  // alphabetical.
+  const bodyHtml = PM_CARD_ORDER.map(card => {
+    const perms = (pmCatalog || []).filter(p => p.department === card.key || p.department === `dashboard-${card.key}`);
+    if (perms.length === 0) return '';
+    return `
     <div style="margin-bottom:12px;">
-      <div style="font-weight:700; font-size:0.78rem; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">${dept}</div>
-      ${groups[dept].map(p => `
+      <div style="font-weight:700; font-size:0.78rem; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">${card.label}</div>
+      ${perms.map(p => `
         <label style="display:flex; align-items:center; gap:8px; padding:5px 4px; font-size:0.85rem; cursor:pointer;">
           <input type="checkbox" class="sa-device-restrict-cb" value="${p.dbColumn}" ${current.has(p.dbColumn) ? 'checked' : ''} style="width:15px; height:15px;">
-          ${p.label}
+          ${(p.department || '').startsWith('dashboard-') ? `📊 ${p.label}` : p.label}
         </label>`).join('')}
-    </div>`).join('');
+    </div>`;
+  }).join('');
   const modal = document.createElement("div");
   modal.id = "sa-device-restrict-modal";
   modal.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;";
