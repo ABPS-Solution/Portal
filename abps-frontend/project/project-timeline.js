@@ -171,12 +171,29 @@ const PTL_MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","No
 const ptlFmt = s => { if (!s) return "—"; const d = ptlParse(s); return d.getUTCDate() + " " + PTL_MON[d.getUTCMonth()]; };
 const ptlFmtFull = s => { if (!s) return "—"; const d = ptlParse(s); return d.getUTCDate() + " " + PTL_MON[d.getUTCMonth()] + " " + d.getUTCFullYear(); };
 
+// Admin-only test override for "today" — every late/overdue flag, the
+// canvas's TODAY marker, and the flags rail all key off ptlToday(), so
+// overriding it here is enough to test a whole multi-week scenario
+// (backdated milestones + a moved "today") without waiting out real
+// calendar days. Client-side only (localStorage), never sent to the
+// server — every real write still stamps the server's own CURRENT_DATE
+// unless explicitly backdated via resolveAdminBackdate. Non-admins never
+// see the control and always get the real date.
+const PTL_TODAY_OVERRIDE_KEY = "ptlTodayOverride";
 function ptlToday() {
+  const override = ptlIsAdmin() ? localStorage.getItem(PTL_TODAY_OVERRIDE_KEY) : null;
+  if (override && /^\d{4}-\d{2}-\d{2}$/.test(override)) return override;
   // Server timezone is Asia/Kolkata (db.js) — match it here so "today"
   // agrees with what the backend just froze/derived, rather than the
   // viewer's own local clock.
   const now = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
   return now.toISOString().slice(0, 10);
+}
+function ptlSetTodayOverride(value) {
+  if (value) localStorage.setItem(PTL_TODAY_OVERRIDE_KEY, value);
+  else localStorage.removeItem(PTL_TODAY_OVERRIDE_KEY);
+  ptlRender();
+  if (document.getElementById("ptl-fs-overlay")?.style.display !== "none") ptlRenderFullscreen();
 }
 
 // Same convention as Manufacturing Clearance's wrapper header: Tentative
@@ -207,6 +224,11 @@ function ptlRender() {
         <div style="font-size:0.82rem; color:var(--muted);">${escapeHtml(project.companyName || '—')} · <strong>${escapeHtml(project.status)}</strong>${project.mfcInt ? ` · Internal MFC <strong>${ptlFmtFull(project.mfcInt)}</strong>` : ''} · ${ptlDeliveryLabel(project)} <strong>${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
         ${ptlLdSummaryHtml()}
       </div>
+      ${ptlIsAdmin() ? `<div style="display:flex; align-items:center; gap:6px;" title="Admin only — overrides 'today' everywhere on this screen for testing">
+        <span style="font-size:0.72rem; font-weight:700; color:#b45309;">Today override:</span>
+        <input type="date" value="${localStorage.getItem(PTL_TODAY_OVERRIDE_KEY) || ''}" onchange="ptlSetTodayOverride(this.value)" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.78rem;" />
+        ${localStorage.getItem(PTL_TODAY_OVERRIDE_KEY) ? `<button type="button" onclick="ptlSetTodayOverride('')" style="padding:5px 10px; font-size:0.72rem; font-weight:700; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--muted); cursor:pointer;">Reset</button>` : ''}
+      </div>` : ''}
     </div>`;
 
   // Two full views, not a canvas strip glued above a list: Timeline is
