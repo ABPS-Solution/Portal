@@ -2541,9 +2541,9 @@ function removePoReviewLineItem(idx) {
 // else is short codes/numbers. Widths are % of table width.
 const PO_REVIEW_LI_COLS = [
   ['itemCode', 'Customer Item Code', 'text', 8.6],
-  ['hsnNumber', 'HSN Number', 'text', 7.6],
+  ['hsnNumber', 'HSN Number', 'text', 8.1],
   ['description', 'Order Product Description *', 'text', 30.3],
-  ['quantity', 'Order Quantity *', 'number', 6.6],
+  ['quantity', 'Order Quantity *', 'number', 6.1],
   ['unit', 'UOM *', 'text', 5.6],
   ['ratePerQuantity', 'Rate / Quantity *', 'number', 9.6],
   ['totalBasicPrice', 'Total Basic Price', 'number', 9.6],
