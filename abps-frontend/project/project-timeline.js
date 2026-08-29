@@ -35,6 +35,17 @@ const PTL_DEPT_NAME = { marketing: 'Marketing', project: 'Project', design: 'Des
 // automatically from when the Final Project Invoice was generated (see
 // routes/timeline.js), never a hand-entered date.
 const PTL_QA_CHAIN = new Set(['customer_inspection', 'inspection_clearance_note', 'dispatch_clearance']);
+// Stage 2's two "system" trunk nodes have no dedicated owning department
+// (activated_at flips when a project leaves Inactive; date_of_internal_mfc
+// is set once by Manufacturing Clearance) — admin-only test backdate via
+// adminBackdateSystemDate, same resolveAdminBackdate gate as everything
+// else on this screen.
+const PTL_ADMIN_SYSTEM_DATE_IDS = new Set(['activated', 'mfcInt']);
+// Stage headers — ptlRenderList inserts one automatically whenever a
+// node's stage differs from the previous one, so Stage 1/2/3 get the same
+// section labeling Stage 4/5 already had (those two used to be hardcoded
+// separately by the caller; now folded into the same mechanism).
+const PTL_STAGE_LABEL = { 1: 'Order Intake', 2: 'Clearance', 3: 'Pre Production', 4: 'Production', 5: 'Inspection & Dispatch' };
 
 let ptlProjects = [];
 let ptlData = null;
@@ -72,7 +83,7 @@ async function initializeProjectTimelinePanel() {
   if (!mount) return;
   mount.innerHTML = `
     <div style="display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap; margin-bottom:14px;">
-      <div style="position:relative; max-width:420px; flex:1 1 320px;">
+      <div style="position:relative; flex:1 1 320px;">
         <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
         <input type="text" id="ptl-project-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
           oninput="handlePtlProjectInput(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();}"
@@ -224,7 +235,6 @@ function ptlRender() {
   const postLanes = trunk.filter(n => n.id === 'inspCall' || n.stage === 5);
   body.innerHTML = header + tabs + stepsOpen + ptlRenderList(preLanes, today)
     + ptlRenderLanes(ptlData.lanes || [])
-    + `<div style="margin-top:20px; font-weight:800; font-size:0.95rem; color:var(--text); margin-bottom:4px;">Stage 5 — Inspection &amp; Dispatch</div>`
     + ptlRenderList(postLanes, today)
     + `</div>`;
   ptlSetViewMode(ptlViewMode);
@@ -399,7 +409,12 @@ function ptlRenderList(nodes, today) {
   // that only surfaces as an alert() after Set Date is clicked.
   const prodPlanNode = ptlData && ptlData.trunk && ptlData.trunk.find(n => n.id === 'prodPlan');
   const prodPlanDone = !!(prodPlanNode && prodPlanNode.done);
+  let lastStage = null;
   return `<div style="display:flex; flex-direction:column; gap:0;">` + nodes.map(n => {
+    const stageHeader = n.stage !== lastStage
+      ? `<div style="margin-top:${lastStage === null ? '0' : '20px'}; font-weight:800; font-size:0.95rem; color:var(--text); margin-bottom:4px;">Stage ${n.stage} — ${PTL_STAGE_LABEL[n.stage] || ''}</div>`
+      : '';
+    lastStage = n.stage;
     const c = PTL_COLORS[n.dept] || 'var(--muted)';
     const done = !!n.actual || n.done === true;
     const late = ptlLate(n);
@@ -411,7 +426,8 @@ function ptlRenderList(nodes, today) {
     const manualCanEdit = n.kind === 'manual' && !PTL_QA_CHAIN.has(n.id) && (!n.actual || ptlIsAdmin());
     const qaCanEdit = PTL_QA_CHAIN.has(n.id) && prodPlanDone && (!n.actual || ptlIsAdmin());
     const qaBlockedByPlan = PTL_QA_CHAIN.has(n.id) && !n.actual && !prodPlanDone;
-    return `
+    const systemDateCanEdit = PTL_ADMIN_SYSTEM_DATE_IDS.has(n.id) && ptlIsAdmin();
+    return stageHeader + `
       <div id="ptl-row-${n.id}" ${hasDetail ? `onclick="ptlToggleNodeDetail('${n.id}')"` : ''} style="display:flex; align-items:flex-start; gap:12px; padding:10px 4px; border-bottom:1px solid var(--border); border-radius:4px;${hasDetail ? ' cursor:pointer;' : ''}">
         <div style="flex:none; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
           background:${done ? dotColor : '#fff'}; border:2.5px solid ${dotColor}; margin-top:2px;">
@@ -434,12 +450,34 @@ function ptlRenderList(nodes, today) {
               <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlSetQaMilestoneDate('${n.id}')">${n.actual ? 'Update (admin)' : 'Set Date'}</button>
             </div>` : ''}
           ${qaBlockedByPlan ? `<div style="margin-top:7px; font-size:0.76rem; color:var(--muted); font-style:italic;">Stage 4 Production Planning has to be submitted for every in-scope product before this can be entered.</div>` : ''}
+          ${systemDateCanEdit ? `
+            <div onclick="event.stopPropagation()" style="margin-top:7px; display:flex; align-items:center; gap:8px;">
+              <input type="date" id="ptl-sysdate-${n.id}" value="${n.actual || ''}" title="Admin only — set/backdate this for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.78rem;" />
+              <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlSetSystemDate('${n.id}')">${n.actual ? 'Update (admin)' : 'Set (admin)'}</button>
+            </div>` : ''}
         </div>
       </div>
       ${hasDetail && expanded ? `<div style="margin:0 0 10px 40px; padding:10px 12px; background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); font-size:0.8rem; color:var(--text);">
         ${n.detail.length ? `<ul style="margin:0; padding-left:18px;">${n.detail.map(d => `<li>${escapeHtml(d)}</li>`).join("")}</ul>` : `<span style="color:var(--muted);">${escapeHtml(n.blocked || 'Nothing left — this row is fully covered.')}</span>`}
       </div>` : ''}`;
   }).join("") + `</div>`;
+}
+
+async function ptlSetSystemDate(fieldId) {
+  if (!ptlData) return;
+  const el = document.getElementById(`ptl-sysdate-${fieldId}`);
+  const date = el ? el.value : "";
+  if (!date) { alert("Pick a date first."); return; }
+  const projectId = ptlData.project.projectId;
+  try {
+    const data = await apFetch({ action: "adminBackdateSystemDate", operatorName: appActiveOperatorIdentityString, projectId, fieldId, date });
+    if (!data.success) { alert(data.error || "Could not set this date."); return; }
+    const node = ptlData.trunk.find(n => n.id === fieldId);
+    if (node) node.actual = data.actualDate;
+    ptlRender();
+  } catch (e) {
+    alert("Network error: " + e.message);
+  }
 }
 
 const PTL_MILESTONE_KEY = { costing: 'costing_released', wdesign: 'working_designs_released' };
@@ -1156,7 +1194,12 @@ async function ptlOpenLdPanel() {
     } : {
       ldApplicable: true, periodUnit: "week", periodBasis: "calendar", partPeriodRule: "part_thereof",
       capPercent: null, basisKind: "whole_po_basic", graceDays: 0, currency: "INR", usdRate: null,
-      contractualDateManual: "", basisAmountInr: null, basisAmountSource: null, sourceText: "",
+      // Defaults to the LD clause text already extracted off this PO at
+      // upload time (project.projects.ld_clause) — shown up front so the
+      // reviewer can see/edit it before ever clicking Process, rather than
+      // it only being used invisibly server-side as extractLdTermsPreview's
+      // own fallback when no clauseText is sent.
+      contractualDateManual: "", basisAmountInr: null, basisAmountSource: null, sourceText: ptlData.project.ldClause || "",
       parseProvenance: "manual", parseModel: null, notes: "",
     },
     candidateQuotes: [], candidateUnresolved: [], candidateConfidence: null,
@@ -1273,14 +1316,14 @@ function ptlRenderLdPanel() {
 
   html += field("This PO has an LD clause",
     `<label style="display:flex; align-items:center; gap:8px; font-size:0.82rem;">
-      <input type="checkbox" ${f.ldApplicable ? "checked" : ""} ${dis} onchange="ptlLdFormSet('ldApplicable', this.checked); ptlRenderLdPanel();" /> Applicable
+      <input type="checkbox" style="width:auto;" ${f.ldApplicable ? "checked" : ""} ${dis} onchange="ptlLdFormSet('ldApplicable', this.checked); ptlRenderLdPanel();" /> Applicable
     </label>`);
 
   if (f.ldApplicable) {
     html += field("Clause text (source, or paste terms captured outside the PO)",
       `<textarea ${dis} rows="3" style="${inputStyle} resize:vertical;" oninput="ptlLdFormSet('sourceText', this.value)">${escapeHtml(f.sourceText || "")}</textarea>`);
     if (canWrite) {
-      html += `<button type="button" onclick="ptlParseLdClauseNow()" ${ptlLdPanelState.loadingParse ? "disabled" : ""} style="margin-bottom:12px; padding:6px 12px; font-size:0.78rem; font-weight:700; border:1.5px solid var(--brand); border-radius:6px; background:#fff; color:var(--brand); cursor:pointer;">${ptlLdPanelState.loadingParse ? "Parsing..." : "Parse with AI"}</button>`;
+      html += `<button type="button" onclick="ptlParseLdClauseNow()" ${ptlLdPanelState.loadingParse ? "disabled" : ""} style="margin-bottom:12px; padding:6px 12px; font-size:0.78rem; font-weight:700; border:1.5px solid var(--brand); border-radius:6px; background:#fff; color:var(--brand); cursor:pointer;">${ptlLdPanelState.loadingParse ? "Processing..." : "Process with AI"}</button>`;
     }
     if (ptlLdPanelState.candidateQuotes.length || ptlLdPanelState.candidateUnresolved.length) {
       html += `<div style="background:#f7fafd; border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-bottom:12px; font-size:0.76rem;">
@@ -1331,20 +1374,20 @@ function ptlRenderLdPanel() {
     if (ptlLdPanelState.loadingBasis) {
       html += `<div style="font-size:0.8rem; color:var(--muted);">Resolving PO value…</div>`;
     } else if (bc) {
-      const opt = (source, amount, label) => amount == null ? "" : `<label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; margin-bottom:4px;">
-        <input type="radio" name="ptl-ld-basis" ${dis} ${f.basisAmountSource === source ? "checked" : ""}
+      const opt = (source, amount, label) => amount == null ? "" : `<label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; margin-bottom:6px; cursor:pointer;">
+        <input type="radio" name="ptl-ld-basis" style="width:auto; flex:none;" ${dis} ${f.basisAmountSource === source ? "checked" : ""}
           onchange="ptlLdFormSet('basisAmountSource','${source}'); ptlLdFormSet('basisAmountInr', ${amount}); ptlRenderLdPanel();" />
-        ${label}: <strong>${ptlFmtINR(amount)}</strong>
+        <span>${label}: <strong>${ptlFmtINR(amount)}</strong></span>
       </label>`;
       html += opt("po_line_items_sum", bc.candidates.poLineItemsSum, "Sum of PO line items");
       html += opt("basic_po_amount", bc.candidates.basicPoAmount, "Basic PO Amount (as typed on PO upload)");
       if (bc.delta != null && bc.delta > 0) {
         html += `<div style="font-size:0.76rem; color:#b45309; margin:4px 0 8px;">⚠ These two figures differ by ${ptlFmtINR(bc.delta)} — pick the correct one.</div>`;
       }
-      html += `<label style="display:flex; align-items:center; gap:8px; font-size:0.82rem;">
-        <input type="radio" name="ptl-ld-basis" ${dis} ${f.basisAmountSource === "manual" ? "checked" : ""}
+      html += `<label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; cursor:pointer;">
+        <input type="radio" name="ptl-ld-basis" style="width:auto; flex:none;" ${dis} ${f.basisAmountSource === "manual" ? "checked" : ""}
           onchange="ptlLdFormSet('basisAmountSource','manual'); ptlRenderLdPanel();" /> Manual:
-        <input type="number" ${dis} value="${f.basisAmountSource === "manual" ? (f.basisAmountInr ?? "") : ""}" style="width:160px; padding:5px 8px; border:1.5px solid var(--border); border-radius:6px; font-size:0.8rem;"
+        <input type="number" ${dis} value="${f.basisAmountSource === "manual" ? (f.basisAmountInr ?? "") : ""}" style="width:160px; flex:none; padding:5px 8px; border:1.5px solid var(--border); border-radius:6px; font-size:0.8rem;"
           oninput="ptlLdFormSet('basisAmountSource','manual'); ptlLdFormSet('basisAmountInr', this.value)" />
       </label>`;
     }
