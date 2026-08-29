@@ -337,9 +337,16 @@ function executeLogout() {
   appActiveOperatorIdentityString = "";
   
   // 3. Reset the dashboard workspace visibilities
-  document.getElementById("app-container").style.display = "none"; 
-  
+  document.getElementById("app-container").style.display = "none";
+
   // 4. Force a clean rendering re-initialization
+  // If this tab loaded straight into an already-valid session (the
+  // window.onload branch that skips straight to showAppView()), the
+  // department dropdown was never populated in the first place —
+  // syncPlatformPersonnelDropdownOptionsList only runs on the "no valid
+  // session" paths. Without this call, logging out then left "1. Select
+  // Your Department" stuck on just the placeholder option.
+  syncPlatformPersonnelDropdownOptionsList();
   initializeGoogleAuthPlatformEngine();
 }
 
