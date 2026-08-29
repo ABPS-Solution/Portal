@@ -334,12 +334,12 @@ function ptlRenderLaneInitialPlanForm(lane) {
     <div style="font-size:0.82rem; color:var(--muted); margin-bottom:10px;">
       No plan submitted yet. ${escapeHtml(lane.ownerDept)} Production enters a planned date for every step below, including Packing and Adding to FG — Material Issue Tickets for this product's Job Cards stay blocked until then. Only its completion is automatic; the planned/target date is entered like any other step.
     </div>
-    <div style="display:flex; flex-direction:column; gap:7px;">
+    <div style="display:grid; grid-template-columns:minmax(160px,260px) minmax(180px,220px); gap:4px 16px; align-items:center;">
+      <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); padding-bottom:4px; border-bottom:1px solid var(--border);">Production Stage</div>
+      <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); padding-bottom:4px; border-bottom:1px solid var(--border);">Production Planning Date</div>
       ${lane.steps.map(s => `
-        <div style="display:flex; align-items:center; gap:10px;">
-          <label style="flex:1; font-size:0.85rem;">${escapeHtml(s.label)}</label>
-          <input type="date" id="ptl-plan-${lane.boqId}-${s.id}" style="padding:6px; border:1.5px solid var(--border); border-radius:var(--radius);" />
-        </div>`).join("")}
+        <label style="font-size:0.85rem; padding:5px 0;">${escapeHtml(s.label)}</label>
+        <input type="date" id="ptl-plan-${lane.boqId}-${s.id}" style="padding:6px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;" />`).join("")}
     </div>
     <div style="margin-top:12px;">
       <button class="nav-btn-styled" onclick="ptlSubmitInitialPlan('${lane.boqId}')">Submit Initial Plan</button>
@@ -902,8 +902,18 @@ function ptlRenderCanvas(containerId) {
   wrap.innerHTML = svg;
   ptlWireCanvasInteractions(wrap, clickMap);
 
-  // Land the horizontal scroll on today.
-  wrap.scrollLeft = Math.max(0, todayX - wrap.clientWidth / 2);
+  // Land the horizontal scroll on today — except in "This Week" mode,
+  // where centering today gave a floating 6-day window (e.g. Wed-Mon)
+  // instead of the actual calendar week. There, anchor on that week's
+  // Monday instead, so the 6-wide view always reads as Monday-Saturday.
+  if (ptlMode === 'week') {
+    const todayDow = ptlParse(today).getUTCDay(); // 0=Sun..6=Sat
+    const mondayOffset = todayDow === 0 ? 6 : todayDow - 1;
+    const mondayIso = ptlIso(new Date(ptlParse(today).getTime() - mondayOffset * PTL_DAYMS));
+    wrap.scrollLeft = Math.max(0, xOf(mondayIso) - PAD_L);
+  } else {
+    wrap.scrollLeft = Math.max(0, todayX - wrap.clientWidth / 2);
+  }
 }
 
 let ptlCanvasContainerId = "ptl-fs-scroller";
@@ -1101,6 +1111,11 @@ function ptlUpdateFsFlagsToggleBtn() {
 function ptlJumpToday() {
   const sc = document.getElementById(ptlCanvasContainerId);
   if (!sc) return;
+  // In "This Week" mode, re-render rather than smooth-scroll to
+  // ptlLastTodayX (centered) — that would undo ptlRenderCanvas's own
+  // Monday-anchored positioning for this mode and go back to a floating
+  // 6-day window instead of the actual calendar week.
+  if (ptlMode === 'week') { ptlRenderCanvas(ptlCanvasContainerId); return; }
   sc.scrollTo({ left: Math.max(0, ptlLastTodayX - sc.clientWidth / 2), behavior: "smooth" });
 }
 
