@@ -48,7 +48,7 @@ const PTL_ADMIN_SYSTEM_DATE_IDS = new Set(['activated', 'mfcInt']);
 // planned dates already live in; fetchProjectTimeline prefers it over the
 // live computation. adminClearSystemMilestoneOverride removes it again
 // once real data should take back over.
-const PTL_ADMIN_MILESTONE_OVERRIDE_KEY = { boqs: 'boqs_released', prns: 'prns_released', rmpos: 'rmpos_released', pps: 'pps_released' };
+const PTL_ADMIN_MILESTONE_OVERRIDE_KEY = { boqs: 'boqs_released', prns: 'prns_released', rmpos: 'rmpos_released', pps: 'pps_released', wdesign: 'working_designs_released' };
 // Stage headers — ptlRenderList inserts one automatically whenever a
 // node's stage differs from the previous one, so Stage 1/2/3 get the same
 // section labeling Stage 4/5 already had (those two used to be hardcoded
@@ -550,7 +550,10 @@ async function ptlSetSystemDate(fieldId) {
   }
 }
 
-const PTL_MILESTONE_KEY = { costing: 'costing_released', wdesign: 'working_designs_released' };
+// wdesign dropped 29 Aug 2026 — Working Designs & Drawings is now
+// kind:'derived' (first drawing upload), no longer a manual tick, so
+// ptlMarkMilestoneDone's button for it no longer renders.
+const PTL_MILESTONE_KEY = { costing: 'costing_released' };
 
 async function ptlSetQaMilestoneDate(milestoneKey) {
   if (!ptlData) return;
