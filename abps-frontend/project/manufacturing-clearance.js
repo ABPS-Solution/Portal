@@ -289,7 +289,7 @@ function renderMcLineItemsTable(projectId, lineItems) {
       <div style="overflow-x:auto; margin-bottom:14px;">
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
           <colgroup>
-            <col style="width:16%;" /><col style="width:16%;" /><col style="width:10%;" /><col style="width:10%;" />
+            <col style="width:16%;" /><col style="width:14%;" /><col style="width:14%;" /><col style="width:8%;" />
             <col style="width:6%;" /><col style="width:7%;" /><col style="width:7%;" />
             <col style="width:8%;" /><col style="width:8%;" /><col style="width:8%;" />
           </colgroup>
