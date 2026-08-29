@@ -499,7 +499,14 @@ function ptlRenderList(nodes, today) {
         </div>
       </div>
       ${hasDetail && expanded ? `<div style="margin:0 0 10px 40px; padding:10px 12px; background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); font-size:0.8rem; color:var(--text);">
-        ${n.detail.length ? `<ul style="margin:0; padding-left:18px;">${n.detail.map(d => `<li>${escapeHtml(d)}</li>`).join("")}</ul>` : `<span style="color:var(--muted);">${escapeHtml(n.blocked || 'Nothing left — this row is fully covered.')}</span>`}
+        ${n.detail.length ? `<ul style="margin:0; padding-left:18px;">${n.detail.map(d => {
+          // Backend joins the item's identity and the trailing "still
+          // has no..." sentence with \n — split them onto their own
+          // lines within the SAME bullet, rather than reading as if the
+          // sentence were its own separate list item.
+          const parts = d.split("\n");
+          return `<li style="margin-bottom:4px;">${escapeHtml(parts[0])}${parts[1] ? `<div style="color:var(--muted);">${escapeHtml(parts[1])}</div>` : ''}</li>`;
+        }).join("")}</ul>` : `<span style="color:var(--muted);">${escapeHtml(n.blocked || 'Nothing left — this row is fully covered.')}</span>`}
       </div>` : ''}`;
   }).join("") + `</div>`;
 }
