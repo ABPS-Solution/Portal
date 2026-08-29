@@ -2867,7 +2867,7 @@ function renderPurchaseOrderCommitSuccess(data) {
           <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Date</span><br/><strong style="color:#111827;">${formatDateDMY(data.extractedPODate) || '—'}</strong></div>
           <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Basic Amount (excl. GST)</span><br/><strong style="color:#111827;">${data.extractedBasicAmount ? '₹' + Number(data.extractedBasicAmount).toLocaleString('en-IN') : '—'}</strong></div>
           <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Total Amount (incl. GST)</span><br/><strong style="color:#111827;">${data.extractedTotalAmount ? '₹' + Number(data.extractedTotalAmount).toLocaleString('en-IN') : '—'}</strong></div>
-          <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Line Items Saved</span><br/><strong style="color:#111827;">${data.extractedLineItemCount || 0} items</strong></div>
+          <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Products</span><br/><strong style="color:#111827;">${data.extractedLineItemCount || 0} Product${data.extractedLineItemCount === 1 ? '' : 's'}</strong></div>
           <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Project ID Assigned</span><br/><strong style="font-family:monospace; color:#111827;">${data.generatedProjectId || '—'}</strong></div>
         </div>
       </div>
