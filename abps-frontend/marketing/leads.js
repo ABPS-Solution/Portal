@@ -2947,8 +2947,9 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
     const row = data.row;
 
     const poFields = [
-      "Project ID", "Purchase Order Number", "Purchase Order Date", "Committed Delivery Date",
-      "Order Product Description", "Name of ABPS Owner of Order",
+      "Project ID", "Purchase Order Number", "Purchase Order Date",
+      "Tentative Delivery Date", "Expected Delivery Date",
+      "Order Product Description", "PO Summary", "Name of ABPS Owner of Order",
       "Basic Purchase Order Amount (in Rs)", "Purchase Order GST Amount", "Purchase Order Total Amount",
       "Freight Scope", "Insurance Scope", "Packaging and Forwarding Scope", "Delivery Schedule as per PO",
       "Warranty Terms", "Payment Terms", "LD Clause", "Inspection Terms", "Special Requirement",
@@ -2968,7 +2969,7 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
     // currency amounts trimmed of trailing decimal zeros (CLAUDE.md rule —
     // trimNum/formatQtyTrimmed).
     const dateFieldLabels = new Set([
-      "Purchase Order Date", "Committed Delivery Date", "Date of Product Commissioning"
+      "Purchase Order Date", "Tentative Delivery Date", "Expected Delivery Date", "Date of Product Commissioning"
     ]);
     const amountFieldLabels = new Set([
       "Basic Purchase Order Amount (in Rs)", "Purchase Order GST Amount", "Purchase Order Total Amount"
@@ -3026,6 +3027,7 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
       const fields = [
         ["Invoice Number", inv.invoiceNo],
         ["Invoice Type", inv.invoiceType + (inv.revision > 1 ? ` (Revision ${inv.revision})` : "")],
+        ["Trade Type", inv.tradeType],
         ["Invoice Date", inv.createdAt ? formatDateTimeDMY(inv.createdAt) : ""],
         ["Basic Invoice Amount (in Rs)", formatQtyTrimmed(inv.basicAmount)],
         ["Invoice GST Amount", formatQtyTrimmed(inv.gstAmount)],
@@ -3060,16 +3062,27 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
       }).join("");
     }
 
+    // Document-open links — same "Open Invoice ↗" pattern the Project
+    // Invoice card already used; PO/Commissioning had the URLs in the
+    // fetched row all along (poDocumentUrl/commissionDocumentUrl) but
+    // never rendered them.
+    const poDocLink = row.poDocumentUrl
+      ? `<a href="${driveLink(row.poDocumentUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; font-size:0.8rem; display:inline-block; margin-top:6px;">View PO Document ↗</a>`
+      : "";
+    const commissionDocLink = row.commissionDocumentUrl
+      ? `<a href="${driveLink(row.commissionDocumentUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; font-size:0.8rem; display:inline-block; margin-top:6px;">View Commissioning Report ↗</a>`
+      : "";
+
     mount.innerHTML = `
       <div style="border-top:2px solid var(--border); padding-top:12px; margin-top:4px;">
         <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--text); margin-bottom:10px; letter-spacing:0.5px;">📄 Documents</div>
-        ${hasPO ? renderSection("Purchase Order", "#0056b3", poFields) : renderEmptySection("Purchase Order", "#0056b3")}
+        ${hasPO ? renderSection("Purchase Order", "#0056b3", poFields, poDocLink) : renderEmptySection("Purchase Order", "#0056b3")}
         ${hasInvoice ? `
           <div style="margin-bottom:12px;">
             <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#059669; background:#05966918; padding:4px 10px; border-radius:4px; margin-bottom:8px; letter-spacing:0.5px;">Project Invoice</div>
             ${invoiceSectionInnerHtml}
           </div>` : renderEmptySection("Project Invoice", "#059669")}
-        ${hasCommission ? renderSection("Commissioning Report", "#7c3aed", commissionFields) : renderEmptySection("Commissioning Report", "#7c3aed")}
+        ${hasCommission ? renderSection("Commissioning Report", "#7c3aed", commissionFields, commissionDocLink) : renderEmptySection("Commissioning Report", "#7c3aed")}
       </div>`;
 
   } catch(e) {
