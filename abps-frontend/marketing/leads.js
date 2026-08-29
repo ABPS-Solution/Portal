@@ -2541,9 +2541,9 @@ function removePoReviewLineItem(idx) {
 // else is short codes/numbers. Widths are % of table width.
 const PO_REVIEW_LI_COLS = [
   ['itemCode', 'Customer Item Code', 'text', 8.6],
-  ['hsnNumber', 'HSN Number', 'text', 8.6],
+  ['hsnNumber', 'HSN Number', 'text', 7.6],
   ['description', 'Order Product Description *', 'text', 30.3],
-  ['quantity', 'Order Quantity *', 'number', 5.6],
+  ['quantity', 'Order Quantity *', 'number', 6.6],
   ['unit', 'UOM *', 'text', 5.6],
   ['ratePerQuantity', 'Rate / Quantity *', 'number', 9.6],
   ['totalBasicPrice', 'Total Basic Price', 'number', 9.6],
@@ -2742,14 +2742,14 @@ function renderPurchaseOrderReview() {
         ${editField('Documents Requirement', 'documentsRequirement', 'text', 'grid-column: span 8;')}
         ${poReviewRowBreak}
 
-        ${editField('Basic PO Amount', 'poBasicAmount', 'number', 'grid-column: span 3;', true)}
-        ${editField('PO GST Amount', 'poGstAmount', 'number', 'grid-column: span 3;', true)}
-        ${editField('PO Total Amount', 'poTotalAmount', 'number', 'grid-column: span 3;', true)}
-        ${lockedRow('Order Acceptance Link', orderAcceptanceLinkHtml, 'grid-column: span 4;')}
-        ${lockedRow('Contract Review Link', contractReviewLinkHtml, 'grid-column: span 4;')}
-        ${editField('Order Acceptance Sent Date', '_orderAcceptanceSentDate', 'date', 'grid-column: span 4;', true)}
-        ${editField('Advance Amount', 'advanceAmount', 'number', 'grid-column: span 3;')}
-        ${editField('Advance Received Date', 'advanceReceivedDate', 'date', 'grid-column: span 4;')}
+        ${editField('Basic PO Amount', 'poBasicAmount', 'number', 'grid-column: span 2;', true)}
+        ${editField('PO GST Amount', 'poGstAmount', 'number', 'grid-column: span 2;', true)}
+        ${editField('PO Total Amount', 'poTotalAmount', 'number', 'grid-column: span 2;', true)}
+        ${lockedRow('Order Acceptance Link', orderAcceptanceLinkHtml, 'grid-column: span 2;')}
+        ${lockedRow('Contract Review Link', contractReviewLinkHtml, 'grid-column: span 2;')}
+        ${editField('Advance Amount', 'advanceAmount', 'number', 'grid-column: span 2;')}
+        ${editField('Order Acceptance Sent Date', '_orderAcceptanceSentDate', 'date', 'grid-column: span 6;', true)}
+        ${editField('Advance Received Date', 'advanceReceivedDate', 'date', 'grid-column: span 6;')}
       </div>
 
       <div id="purchase-order-review-feedback" style="display:none; margin-top:14px; padding:12px; border-radius:var(--radius); border-left:4px solid;"></div>
