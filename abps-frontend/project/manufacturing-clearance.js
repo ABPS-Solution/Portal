@@ -54,7 +54,7 @@ async function loadManufacturingClearanceList() {
   } else {
     table.style.display = "";
     cardsContainer.style.display = "none";
-    body.innerHTML = '<tr><td colspan="4" style="padding:14px; text-align:center;">Loading...</td></tr>';
+    body.innerHTML = '<tr><td colspan="5" style="padding:14px; text-align:center;">Loading...</td></tr>';
   }
 
   try {
@@ -62,13 +62,13 @@ async function loadManufacturingClearanceList() {
     if (!data.success) {
       const msg = `<div style="padding:14px; text-align:center; color:#b91c1c;">${data.error}</div>`;
       if (mcCurrentStatus === "Active") cardsContainer.innerHTML = msg;
-      else body.innerHTML = `<tr><td colspan="4" style="padding:14px; text-align:center; color:#b91c1c;">${data.error}</td></tr>`;
+      else body.innerHTML = `<tr><td colspan="5" style="padding:14px; text-align:center; color:#b91c1c;">${data.error}</td></tr>`;
       return;
     }
     if (data.projects.length === 0) {
       const msg = '<div style="padding:14px; text-align:center; color:var(--muted);">No projects with this status.</div>';
       if (mcCurrentStatus === "Active") cardsContainer.innerHTML = msg;
-      else body.innerHTML = '<tr><td colspan="4" style="padding:14px; text-align:center; color:var(--muted);">No projects with this status.</td></tr>';
+      else body.innerHTML = '<tr><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No projects with this status.</td></tr>';
       return;
     }
 
@@ -90,8 +90,9 @@ async function loadManufacturingClearanceList() {
 
     body.innerHTML = data.projects.map(p => `
       <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px; font-family:monospace;">${p.projectId}</td>
-        <td style="padding:8px;">${p.companyName}</td>
+        <td style="padding:8px; font-family:monospace; word-break:break-word;">${p.projectId}</td>
+        <td style="padding:8px; word-break:break-word;">${p.companyName}</td>
+        <td style="padding:8px; white-space:pre-line; word-break:break-word;">${escapeHtml(p.orderProductDescription) || "—"}</td>
         <td style="padding:8px;">${formatDateDMY(p.deliveryDate) || "—"}</td>
         <td style="padding:8px;">
           ${mcCurrentStatus === "Inactive"
@@ -104,7 +105,7 @@ async function loadManufacturingClearanceList() {
   } catch(e) {
     const msg = `Network error: ${e.message}`;
     if (mcCurrentStatus === "Active") cardsContainer.innerHTML = `<div style="padding:14px; text-align:center; color:#b91c1c;">${msg}</div>`;
-    else body.innerHTML = `<tr><td colspan="4" style="padding:14px; text-align:center; color:#b91c1c;">${msg}</td></tr>`;
+    else body.innerHTML = `<tr><td colspan="5" style="padding:14px; text-align:center; color:#b91c1c;">${msg}</td></tr>`;
   }
 }
 

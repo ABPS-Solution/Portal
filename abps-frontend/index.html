@@ -1946,9 +1946,13 @@
       <button id="mc-pill-inactive" class="nav-btn-styled" onclick="switchMcStatus('Inactive')" style="flex:1; padding:11px 16px;">Inactive Projects</button>
       <button id="mc-pill-completed" class="nav-btn-styled" onclick="switchMcStatus('Completed')" style="flex:1; padding:11px 16px;">Completed Projects</button>
     </div>
-    <table id="mc-list-table" style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+    <table id="mc-list-table" style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:0.85rem;">
+      <colgroup>
+        <col style="width:11%;" /><col style="width:13%;" /><col style="width:44%;" /><col style="width:16%;" /><col style="width:16%;" />
+      </colgroup>
       <thead><tr style="background:var(--highlight-bg); text-align:left;">
         <th style="padding:8px;">Project ID</th><th style="padding:8px;">Company Name</th>
+        <th style="padding:8px;">Order Product Description</th>
         <th style="padding:8px;">Tentative Delivery Date</th><th style="padding:8px;">Action</th>
       </tr></thead>
       <tbody id="mc-list-body"></tbody>
