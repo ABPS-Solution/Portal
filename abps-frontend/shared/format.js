@@ -22,6 +22,20 @@ function buildMaterialDisplayLabel(materialName, rating, descriptionOfMaterial, 
   return parts.join(" - ");
 }
 
+// BOQ material row box display — the row's materialName field itself
+// stays bare "Name - Rating" (Make deliberately excluded, see
+// create-boq.js's handleBOQRowMaterialSearch header comment: Make is
+// locked to the Item Code and stored in its own row.make field so the
+// backend/PDF can compose "Name - Rating - Description - Make: X" in
+// order). This only controls what the row's Material Name textarea shows
+// on screen after a selection, so an operator can see the Make they just
+// picked without it being baked into the saved materialName string.
+function boqRowMaterialDisplayText(row) {
+  const name = (row && row.materialName || "").toString();
+  const make = (row && row.make || "").toString().trim();
+  return make ? `${name} - Make: ${make}` : name;
+}
+
 // Escapes a value before it's interpolated into an innerHTML template string.
 // Use for any field whose content isn't fully controlled by internal staff —
 // most importantly AI-extracted / inbound-email-derived text (Email Leads),
