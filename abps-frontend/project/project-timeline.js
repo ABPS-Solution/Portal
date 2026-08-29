@@ -41,6 +41,14 @@ const PTL_QA_CHAIN = new Set(['customer_inspection', 'inspection_clearance_note'
 // adminBackdateSystemDate, same resolveAdminBackdate gate as everything
 // else on this screen.
 const PTL_ADMIN_SYSTEM_DATE_IDS = new Set(['activated', 'mfcInt']);
+// Stage 3's four "system" trunk nodes are normally computed live off real
+// BOQ/PRN/PO/PPS rows, so — unlike Stage 2's two above — there's no
+// column to backdate. adminOverrideSystemMilestone writes a testing-only
+// actual_date into the same project.timeline_milestones row Stage 3's
+// planned dates already live in; fetchProjectTimeline prefers it over the
+// live computation. adminClearSystemMilestoneOverride removes it again
+// once real data should take back over.
+const PTL_ADMIN_MILESTONE_OVERRIDE_KEY = { boqs: 'boqs_released', prns: 'prns_released', rmpos: 'rmpos_released', pps: 'pps_released' };
 // Stage headers — ptlRenderList inserts one automatically whenever a
 // node's stage differs from the previous one, so Stage 1/2/3 get the same
 // section labeling Stage 4/5 already had (those two used to be hardcoded
@@ -453,6 +461,7 @@ function ptlRenderList(nodes, today) {
     const qaCanEdit = PTL_QA_CHAIN.has(n.id) && prodPlanDone && (!n.actual || ptlIsAdmin());
     const qaBlockedByPlan = PTL_QA_CHAIN.has(n.id) && !n.actual && !prodPlanDone;
     const systemDateCanEdit = PTL_ADMIN_SYSTEM_DATE_IDS.has(n.id) && ptlIsAdmin();
+    const milestoneOverrideCanEdit = !!PTL_ADMIN_MILESTONE_OVERRIDE_KEY[n.id] && ptlIsAdmin();
     return stageHeader + `
       <div id="ptl-row-${n.id}" ${hasDetail ? `onclick="ptlToggleNodeDetail('${n.id}')"` : ''} style="display:flex; align-items:flex-start; gap:12px; padding:10px 4px; border-bottom:1px solid var(--border); border-radius:4px;${hasDetail ? ' cursor:pointer;' : ''}">
         <div style="flex:none; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
@@ -481,12 +490,47 @@ function ptlRenderList(nodes, today) {
               <input type="date" id="ptl-sysdate-${n.id}" value="${n.actual || ''}" title="Admin only — set/backdate this for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.78rem;" />
               <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlSetSystemDate('${n.id}')">${n.actual ? 'Update (admin)' : 'Set (admin)'}</button>
             </div>` : ''}
+          ${milestoneOverrideCanEdit ? `
+            <div onclick="event.stopPropagation()" style="margin-top:7px; display:flex; align-items:center; gap:8px;">
+              <input type="date" id="ptl-msoverride-${n.id}" value="${n.actual || ''}" title="Admin only — override this milestone's date for testing (normally computed live)" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.78rem;" />
+              <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlSetMilestoneOverride('${n.id}')">${n.actual ? 'Update (admin)' : 'Set (admin)'}</button>
+              ${n.actual ? `<button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem; background:#fff; color:var(--muted); border:1px solid var(--border);" onclick="ptlClearMilestoneOverride('${n.id}')">Clear override</button>` : ''}
+            </div>` : ''}
         </div>
       </div>
       ${hasDetail && expanded ? `<div style="margin:0 0 10px 40px; padding:10px 12px; background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); font-size:0.8rem; color:var(--text);">
         ${n.detail.length ? `<ul style="margin:0; padding-left:18px;">${n.detail.map(d => `<li>${escapeHtml(d)}</li>`).join("")}</ul>` : `<span style="color:var(--muted);">${escapeHtml(n.blocked || 'Nothing left — this row is fully covered.')}</span>`}
       </div>` : ''}`;
   }).join("") + `</div>`;
+}
+
+async function ptlSetMilestoneOverride(nodeId) {
+  if (!ptlData) return;
+  const el = document.getElementById(`ptl-msoverride-${nodeId}`);
+  const date = el ? el.value : "";
+  if (!date) { alert("Pick a date first."); return; }
+  const projectId = ptlData.project.projectId;
+  const milestoneKey = PTL_ADMIN_MILESTONE_OVERRIDE_KEY[nodeId];
+  try {
+    const data = await apFetch({ action: "adminOverrideSystemMilestone", operatorName: appActiveOperatorIdentityString, projectId, milestoneKey, date });
+    if (!data.success) { alert(data.error || "Could not set this date."); return; }
+    await selectPtlProject(projectId);
+  } catch (e) {
+    alert("Network error: " + e.message);
+  }
+}
+
+async function ptlClearMilestoneOverride(nodeId) {
+  if (!ptlData) return;
+  const projectId = ptlData.project.projectId;
+  const milestoneKey = PTL_ADMIN_MILESTONE_OVERRIDE_KEY[nodeId];
+  try {
+    const data = await apFetch({ action: "adminClearSystemMilestoneOverride", operatorName: appActiveOperatorIdentityString, projectId, milestoneKey });
+    if (!data.success) { alert(data.error || "Could not clear this override."); return; }
+    await selectPtlProject(projectId);
+  } catch (e) {
+    alert("Network error: " + e.message);
+  }
 }
 
 async function ptlSetSystemDate(fieldId) {
