@@ -2541,9 +2541,9 @@ function removePoReviewLineItem(idx) {
 // else is short codes/numbers. Widths are % of table width.
 const PO_REVIEW_LI_COLS = [
   ['itemCode', 'Customer Item Code', 'text', 8.6],
-  ['hsnNumber', 'HSN Number', 'text', 8.1],
+  ['hsnNumber', 'HSN Number', 'text', 7.1],
   ['description', 'Order Product Description *', 'text', 30.3],
-  ['quantity', 'Order Quantity *', 'number', 6.1],
+  ['quantity', 'Order Quantity *', 'number', 7.1],
   ['unit', 'UOM *', 'text', 5.6],
   ['ratePerQuantity', 'Rate / Quantity *', 'number', 9.6],
   ['totalBasicPrice', 'Total Basic Price', 'number', 9.6],
@@ -2585,7 +2585,7 @@ function renderPoReviewLineItemsTable() {
   wrap.innerHTML = `
     <table class="store-basket-data-table" style="width:100%; table-layout:fixed;">
       <colgroup>${cols.map(c => `<col style="width:${c[3]}%;" />`).join('')}<col style="width:3%;" /></colgroup>
-      <thead><tr>${cols.map(c => `<th>${c[1]}</th>`).join('')}<th></th></tr></thead>
+      <thead><tr>${cols.map(c => `<th${c[0] === 'gstAmount' ? ' style="text-align:center;"' : ''}>${c[1]}</th>`).join('')}<th></th></tr></thead>
       <tbody>
         ${items.length === 0 ? `<tr><td colspan="${cols.length + 1}" style="text-align:center; color:var(--muted);">No product rows extracted from the PO — click + Add Row to add one manually</td></tr>` : items.map((it, idx) => `
           <tr>
@@ -2631,7 +2631,7 @@ function renderPurchaseOrderReview() {
   // Forces a hard row break in the auto-flowing grid so each labeled group
   // of fields below the Product List starts on its own row regardless of
   // how many columns the current viewport width gives the grid.
-  const poReviewRowBreak = `<div style="grid-column: 1 / -1; height: 0;"></div>`;
+  const poReviewRowBreak = `<div style="grid-column: 1 / -1; height: 6px;"></div>`;
 
   const lockedRow = (label, value, spanStyle) => `
     <div class="grid-cell-item" style="background:#f1f5f9;${spanStyle || ''}">
@@ -2699,11 +2699,11 @@ function renderPurchaseOrderReview() {
       ${s.duplicateWarning ? `<div style="background:#fef3c7; border-left:4px solid #b45309; color:#92400e; padding:10px 12px; border-radius:4px; margin-bottom:14px; font-size:0.92rem;">⚠ ${s.duplicateWarning}</div>` : ''}
 
       <div class="po-review-fields-grid" style="margin-bottom:14px;">
-        <div class="grid-cell-item" style="background:#f1f5f9; grid-column: span 4;">
+        <div class="grid-cell-item" style="background:#f1f5f9; grid-column: span 6;">
           <label style="font-size:0.72rem;">Project ID</label>
-          <div id="po-review-project-id-preview" style="padding:6px 4px; font-weight:700; color:var(--brand); font-family:monospace; font-size:0.82rem; word-break:break-all;">${computePoReviewProjectIdPreview()}</div>
+          <div id="po-review-project-id-preview" style="padding:6px 4px; font-weight:700; color:var(--brand); font-family:monospace; font-size:1.05rem; word-break:break-all;">${computePoReviewProjectIdPreview()}</div>
         </div>
-        ${lockedRow('Status', 'Inactive', 'grid-column: span 4;')}
+        ${lockedRow('Status', 'Inactive', 'grid-column: span 2;')}
         ${editField('PO Number', 'poNumber', 'text', 'grid-column: span 4;', true)}
         ${editField('PO Date', 'poDate', 'date', 'grid-column: span 4;', true)}
         ${companyNameFieldHtml}
@@ -2742,14 +2742,14 @@ function renderPurchaseOrderReview() {
         ${editField('Documents Requirement', 'documentsRequirement', 'text', 'grid-column: span 8;')}
         ${poReviewRowBreak}
 
-        ${editField('Basic PO Amount', 'poBasicAmount', 'number', 'grid-column: span 2;', true)}
-        ${editField('PO GST Amount', 'poGstAmount', 'number', 'grid-column: span 2;', true)}
-        ${editField('PO Total Amount', 'poTotalAmount', 'number', 'grid-column: span 2;', true)}
-        ${lockedRow('Order Acceptance Link', orderAcceptanceLinkHtml, 'grid-column: span 2;')}
-        ${lockedRow('Contract Review Link', contractReviewLinkHtml, 'grid-column: span 2;')}
-        ${editField('Advance Amount', 'advanceAmount', 'number', 'grid-column: span 2;')}
-        ${editField('Order Acceptance Sent Date', '_orderAcceptanceSentDate', 'date', 'grid-column: span 6;', true)}
-        ${editField('Advance Received Date', 'advanceReceivedDate', 'date', 'grid-column: span 6;')}
+        ${editField('Basic PO Amount', 'poBasicAmount', 'number', 'grid-column: span 3;', true)}
+        ${editField('PO GST Amount', 'poGstAmount', 'number', 'grid-column: span 3;', true)}
+        ${editField('PO Total Amount', 'poTotalAmount', 'number', 'grid-column: span 3;', true)}
+        ${lockedRow('Order Acceptance Link', orderAcceptanceLinkHtml, 'grid-column: span 3;')}
+        ${lockedRow('Contract Review Link', contractReviewLinkHtml, 'grid-column: span 3;')}
+        ${editField('Advance Amount', 'advanceAmount', 'number', 'grid-column: span 3;')}
+        ${editField('Order Acceptance Sent Date', '_orderAcceptanceSentDate', 'date', 'grid-column: span 3;', true)}
+        ${editField('Advance Received Date', 'advanceReceivedDate', 'date', 'grid-column: span 3;')}
       </div>
 
       <div id="purchase-order-review-feedback" style="display:none; margin-top:14px; padding:12px; border-radius:var(--radius); border-left:4px solid;"></div>

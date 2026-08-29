@@ -163,9 +163,14 @@
      desktop width instead of 6) so fields can be sized to fractional
      multiples of a base "x" unit (span 4 = 1x, span 3 = 0.75x, span 6 = 1.5x,
      span 8 = 2x, etc.) — used by the Upload Purchase Order review screen. */
-  .po-review-fields-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; text-align: left; }
+  .po-review-fields-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; text-align: left; }
   @media(min-width: 600px) { .po-review-fields-grid { grid-template-columns: repeat(16, 1fr); } }
   @media(min-width: 950px) { .po-review-fields-grid { grid-template-columns: repeat(24, 1fr); } }
+  /* Scoped to this screen only — .grid-cell-item itself is shared by
+     several other screens (Project Invoice, lead View Details), so a
+     spacing tweak here must not leak into those. */
+  .po-review-fields-grid .grid-cell-item { padding: 6px 8px; }
+  .po-review-fields-grid .grid-cell-item label { margin-bottom: 4px; }
 
   .grid-cell-item { display: flex; flex-direction: column; background: #f8fafc; padding: 2px 4px; border: 1px solid #e2e8f0; border-radius: 4px; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
   .grid-cell-item label { font-size: 0.58rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 1px; }
