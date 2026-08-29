@@ -561,6 +561,11 @@ async function submitMcClearance(projectId) {
     return;
   }
 
+  if (!rows.some(r => Number(r.newMfcQuantity) > 0)) {
+    alert("At least one product row needs a New MFC Quantity greater than 0.");
+    return;
+  }
+
   const anyDecrease = rows.some(r => {
     const original = document.getElementById(`mc-new-mfc-${projectId.replace(/[^a-zA-Z0-9]/g, "_")}-${r.lineId}`);
     return original && Number(original.defaultValue) > r.newMfcQuantity;
