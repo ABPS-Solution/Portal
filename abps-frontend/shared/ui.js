@@ -60,6 +60,11 @@ function showBOQBanner(elementId, message, type, persist) {
   el.innerHTML  = message;
   el.style.display = "block";
   if (isSuccess && !persist) setTimeout(() => { el.style.display = "none"; }, 6000);
+  // An error shown after Submit needs to actually be seen — if the
+  // operator scrolled deep into a long material-rows table before
+  // clicking Submit, a banner sitting above the fold at the top of the
+  // section was invisible until they scrolled back up themselves.
+  if (!isSuccess) el.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -73,6 +78,9 @@ function showPurchaseFeedback(elementId, message, type, persist) {
   el.style.cssText = `display:block; background:${ok ? '#dcfce7' : '#fee2e2'}; border-left:4px solid ${ok ? '#15803d' : '#b91c1c'}; color:${ok ? '#15803d' : '#b91c1c'}; padding:12px; margin-bottom:12px; border-radius:var(--radius);`;
   el.innerHTML = message;
   if (ok && !persist) setTimeout(() => { el.style.display = "none"; }, 6000);
+  // Same reasoning as showBOQBanner — an error banner scrolled out of
+  // view above a long form is as good as invisible.
+  if (!ok) el.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 // ═══════════════════════════════════════════════════════

@@ -91,13 +91,23 @@ function selectMaterialDescriptionOption(descriptionId, descriptionText, inputId
   if (onSelectFn && window[onSelectFn]) window[onSelectFn](descriptionId, descriptionText, extraArg);
 }
 
-async function createMaterialDescriptionInline(text, inputId, dropdownId, hiddenIdFieldId, onSelectFn, extraArg) {
+async function createMaterialDescriptionInline(text, inputId, dropdownId, hiddenIdFieldId, onSelectFn, extraArg, forceCreate) {
   const dropdown = document.getElementById(dropdownId);
   if (dropdown) dropdown.innerHTML = `<div style="padding:8px 12px; font-size:0.8rem; color:var(--muted);">Creating...</div>`;
   try {
-    const data = await apFetch({ action: "createMaterialDescription", descriptionText: text, operatorName: appActiveOperatorIdentityString });
+    const data = await apFetch({ action: "createMaterialDescription", descriptionText: text, operatorName: appActiveOperatorIdentityString, forceCreate: !!forceCreate });
     if (!data.success) {
-      alert(data.error || "Could not create this description.");
+      // The duplicate-match checks are advisory, not a hard lock — a
+      // flagged match can be a false positive (e.g. "Pink Color" vs
+      // "Pink Color, ABCD Description"), so give the operator a way to
+      // proceed anyway instead of just refusing. `existing` is only set
+      // for the two duplicate-flag responses, never for a real validation
+      // error, so it's what distinguishes "advisory, can override" from
+      // "actually invalid, nothing to override."
+      if (data.existing && confirm(`${data.error}\n\nClick OK to create it anyway as a new, separate description.`)) {
+        return createMaterialDescriptionInline(text, inputId, dropdownId, hiddenIdFieldId, onSelectFn, extraArg, true);
+      }
+      if (!data.existing) alert(data.error || "Could not create this description.");
       if (dropdown) dropdown.style.display = "none";
       return;
     }
