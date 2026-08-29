@@ -252,7 +252,7 @@ function renderEBOQForm(containerId) {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Customer Name (locked)</label>
-          <textarea readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(draft.customerName || '').toString().replace(/</g, '&lt;')}</textarea>
+          <textarea readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:1rem;">${(draft.customerName || '').toString().replace(/</g, '&lt;')}</textarea>
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">

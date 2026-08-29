@@ -10,7 +10,10 @@ let uboqCurrentDraft = null;
 // their only inputs are hardcoded literals at each call site, never
 // external/user data, so no escaping risk there.
 function uboqLockedWrapField(value, extraStyle) {
-  return `<textarea readonly rows="1" style="padding:8px; ${extraStyle || ''} cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(value ?? '').toString().replace(/</g, '&lt;')}</textarea>`;
+  // extraStyle goes LAST so a caller can override the color:.../font-size:...
+  // defaults below (e.g. Customer Name wants normal text + a larger size,
+  // not the same muted/inherit look every other locked field here uses).
+  return `<textarea readonly rows="1" style="padding:8px; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit; ${extraStyle || ''}">${(value ?? '').toString().replace(/</g, '&lt;')}</textarea>`;
 }
 
 async function toggleBOQRevisionExpansion(updateId) {
@@ -53,7 +56,7 @@ async function toggleBOQRevisionExpansion(updateId) {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Customer Name (locked)</label>
-          ${uboqLockedWrapField(reqItem.customerName, 'background:#f1f5f9; color:var(--muted);')}
+          ${uboqLockedWrapField(reqItem.customerName, 'background:#f1f5f9; color:var(--text); font-weight:600; font-size:1rem;')}
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
@@ -446,7 +449,7 @@ function renderUBOQForm() {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Customer Name (locked)</label>
-          ${uboqLockedWrapField(draft.customerName, 'background:#f1f5f9; color:var(--muted);')}
+          ${uboqLockedWrapField(draft.customerName, 'background:#f1f5f9; color:var(--text); font-weight:600; font-size:1rem;')}
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
