@@ -185,8 +185,12 @@ function ptlToday() {
 // entered at clearance time — column is named "actual" in the schema,
 // but it's never a record of an already-happened delivery, so the
 // screen calls it Expected everywhere, not Actual).
-const ptlDeliveryLabel = p => p.mfcInt ? "Expected Delivery" : "Tentative Delivery";
-const ptlDeliveryValue = p => p.mfcInt ? p.actualDelivery : p.tentativeDelivery;
+// mfc_actual_delivery_date (Expected Delivery Date) is one of the
+// Manufacturing Clearance gating fields — it's entered before Internal MFC
+// itself is ever given, so this switches the moment THAT value exists,
+// not on mfcInt (which can lag it by however long clearance takes).
+const ptlDeliveryLabel = p => p.actualDelivery ? "Expected Delivery" : "Tentative Delivery";
+const ptlDeliveryValue = p => p.actualDelivery || p.tentativeDelivery;
 
 const ptlEff = n => n.actual || n.target || n.planned;
 const ptlLate = n => !n.actual && !n.done && ptlEff(n) && ptlEff(n) < ptlToday();
@@ -564,7 +568,13 @@ function ptlWrapLbl(t, max) {
   if (cur) out.push(cur);
   return out.slice(0, 2);
 }
-const ptlWLbl = s => s.length * 5.8 * ptlFS;
+// 5.8px/char under-measured real (bold, mixed-case) rendered text widths
+// enough that adjacent close-dated nodes' labels ("Drawing Approved" /
+// "MFC from Customer") were passing the collision check and overlapping
+// on screen instead of stacking — bumped, plus PTL_LBL_PAD below adds a
+// visible gap rather than letting blocks just touch.
+const ptlWLbl = s => s.length * 7.2 * ptlFS;
+const PTL_LBL_PAD = 6;
 const ptlWMono = (s, px) => s.length * px * 0.6 * ptlFS;
 
 const PTL_MAX_SLOT = 6;
@@ -769,14 +779,14 @@ function ptlRenderCanvas(containerId) {
     const lines = ptlWrapLbl(n.label, 16);
     const lw = Math.max(...lines.map(ptlWLbl));
     const GAP = 12 * ptlFS, ASC = 9 * ptlFS;
-    const kU = PL.place(k => { const b = y - R - GAP - k * (SLOT_UP + LINE_H); return { x0: x - lw / 2, x1: x + lw / 2, y0: b - (lines.length - 1) * LINE_H - ASC, y1: b + 3 }; });
+    const kU = PL.place(k => { const b = y - R - GAP - k * (SLOT_UP + LINE_H); return { x0: x - lw / 2 - PTL_LBL_PAD, x1: x + lw / 2 + PTL_LBL_PAD, y0: b - (lines.length - 1) * LINE_H - ASC, y1: b + 3 }; });
     const base = y - R - GAP - kU * (SLOT_UP + LINE_H);
     if (kU > 0) P.push(`<line x1="${x}" y1="${y - R}" x2="${x}" y2="${base + 4}" stroke="${ring}" stroke-width="1" opacity=".3"/>`);
     lines.forEach((ln, i) => P.push(`<text x="${x}" y="${base - (lines.length - 1 - i) * LINE_H}" text-anchor="middle" font-size="${11 * ptlFS}" font-weight="600" fill="${late ? '#e84545' : 'var(--text)'}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(ln)}</text>`));
 
     const dtx = ptlFmt(eff);
     const bw = ptlWMono(dtx, 10.5);
-    const kD = PL.place(k => { const d = y + R + GAP + k * SLOT_DN; return { x0: x - bw / 2, x1: x + bw / 2, y0: d - ASC, y1: d + 3 }; });
+    const kD = PL.place(k => { const d = y + R + GAP + k * SLOT_DN; return { x0: x - bw / 2 - PTL_LBL_PAD, x1: x + bw / 2 + PTL_LBL_PAD, y0: d - ASC, y1: d + 3 }; });
     const dy = y + R + GAP + kD * SLOT_DN;
     if (kD > 0) P.push(`<line x1="${x}" y1="${y + R}" x2="${x}" y2="${dy - ASC}" stroke="${ring}" stroke-width="1" opacity=".3"/>`);
     P.push(`<text x="${x}" y="${dy}" text-anchor="middle" font-size="${10.5 * ptlFS}" font-weight="700" font-family="monospace" fill="${late ? '#e84545' : 'var(--muted)'}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(dtx)}</text>`);
