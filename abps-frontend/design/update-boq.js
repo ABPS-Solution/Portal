@@ -212,15 +212,8 @@ function renderBOQRevisionRows(updateId) {
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center;">
-        <select disabled onchange="uboqRevRows[${idx}].unit=this.value" style="padding:4px; font-size:0.8rem; width:100%; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed;">
-          <option value="" ${!row.unit?"selected":""} disabled>— Unit —</option>
-          <option value="NOS" ${row.unit==="NOS"?"selected":""}>NOS</option>
-          <option value="KG"  ${row.unit==="KG"?"selected":""}>KG</option>
-          <option value="MTR" ${row.unit==="MTR"?"selected":""}>MTR</option>
-          <option value="SET" ${row.unit==="SET"?"selected":""}>SET</option>
-          <option value="LTR" ${row.unit==="LTR"?"selected":""}>LTR</option>
-          <option value="ROL" ${row.unit==="ROL"?"selected":""}>ROL</option>
-        </select>
+        <input type="text" value="${row.unit || "—"}" readonly
+          style="padding:4px; font-size:0.8rem; width:100%; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; text-align:center; border-radius:3px; border:1px solid var(--border);" />
       </td>
       <td style="padding:4px;">
         <input type="number" class="boq-center-num" value="${row.designRatePerQuantity || ""}" min="0" placeholder="0.00"
@@ -590,15 +583,8 @@ function renderUBOQMaterialRows() {
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center;">
-        <select disabled onchange="uboqMaterialRows[${idx}].unit=this.value" style="padding:4px; font-size:0.8rem; width:100%; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed;">
-          <option value="" ${!row.unit?"selected":""} disabled>— Unit —</option>
-          <option value="NOS" ${row.unit==="NOS"?"selected":""}>NOS</option>
-          <option value="KG"  ${row.unit==="KG" ?"selected":""}>KG</option>
-          <option value="MTR" ${row.unit==="MTR"?"selected":""}>MTR</option>
-          <option value="SET" ${row.unit==="SET"?"selected":""}>SET</option>
-          <option value="LTR" ${row.unit==="LTR"?"selected":""}>LTR</option>
-          <option value="ROL" ${row.unit==="ROL"?"selected":""}>ROL</option>
-        </select>
+        <input type="text" value="${row.unit || "—"}" readonly
+          style="padding:4px; font-size:0.8rem; width:100%; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; text-align:center; border-radius:3px; border:1px solid var(--border);" />
       </td>
       <td style="padding:4px; text-align:center;">
         ${isRawMaterial ? `
