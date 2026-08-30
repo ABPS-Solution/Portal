@@ -268,15 +268,20 @@ function ptlComputeStageProgress() {
   return { stages, overallPct };
 }
 
-function ptlStageProgressHtml(size) {
-  const p = ptlComputeStageProgress();
-  if (!p) return '';
+function ptlProgressStageInfo(p) {
   const currentStage = p.stages.find(s => s.frac > 0 && s.frac < 1) || p.stages.find(s => s.frac === 0) || p.stages[p.stages.length - 1];
   const stageIdx = p.stages.filter(s => s.frac >= 1).length + (p.stages.some(s => s.frac > 0 && s.frac < 1) ? 1 : 0);
-  const late = currentStage && currentStage.late;
-  const color = late ? '#e84545' : 'var(--brand)';
+  const late = !!(currentStage && currentStage.late);
+  return { stageIdx, late, color: late ? '#e84545' : 'var(--brand)' };
+}
 
-  const d = size === 'sm' ? 32 : 44, sw = size === 'sm' ? 3 : 4;
+// Fullscreen Timeline header — the ring. A single continuous shape reads
+// well at the larger size this header has room for.
+function ptlStageProgressHtml() {
+  const p = ptlComputeStageProgress();
+  if (!p) return '';
+  const { stageIdx, color } = ptlProgressStageInfo(p);
+  const d = 44, sw = 4;
   const r = (d - sw) / 2, cx = d / 2, cy = d / 2, circ = 2 * Math.PI * r;
   const offset = circ * (1 - p.overallPct / 100);
   const title = `Stage ${stageIdx} of 5 · ${p.overallPct}% milestones done`;
@@ -284,10 +289,35 @@ function ptlStageProgressHtml(size) {
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${sw}"/>
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/>
   </svg>`;
-  const labelSize = size === 'sm' ? '0.56rem' : '0.68rem';
   return `<div style="position:relative; width:${d}px; height:${d}px; flex:none;" title="${title}">
     ${ring}
-    <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:${labelSize}; font-weight:800; color:var(--text); line-height:1;">${p.overallPct}%</span>
+    <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:0.68rem; font-weight:800; color:var(--text); line-height:1;">${p.overallPct}%</span>
+  </div>`;
+}
+
+// Steps header (compact, inline next to Today override) — a 5-segment
+// strip instead of the ring, one block per Stage 1-5, so it stays legible
+// at a small inline size and doubles as a "which stage am I in" glance
+// rather than needing the ring's more precise arc-reading.
+function ptlStageProgressStripHtml() {
+  const p = ptlComputeStageProgress();
+  if (!p) return '';
+  const { stageIdx, color } = ptlProgressStageInfo(p);
+  const w = 14, h = 9, gap = 3;
+  const blocks = p.stages.map(s => {
+    const complete = s.total > 0 && s.frac >= 1;
+    const started = s.frac > 0 && !complete;
+    const c = s.late ? '#e84545' : 'var(--brand)';
+    let inner;
+    if (complete) inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="2" fill="${c}"/>`;
+    else if (started) inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="2" fill="none" stroke="${c}" stroke-width="1.2" opacity=".5"/><rect x="0" y="0" width="${Math.max(2, w * s.frac)}" height="${h}" rx="2" fill="${c}"/>`;
+    else inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="2" fill="none" stroke="var(--border)" stroke-width="1.2"/>`;
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block; flex:none;">${inner}</svg>`;
+  }).join(`<div style="width:${gap}px;"></div>`);
+  const title = `Stage ${stageIdx} of 5 · ${p.overallPct}% milestones done`;
+  return `<div style="display:flex; align-items:center; gap:7px;" title="${title}">
+    <div style="display:flex; align-items:center;">${blocks}</div>
+    <span style="font-size:0.7rem; font-weight:800; color:${color};">${p.overallPct}%</span>
   </div>`;
 }
 
@@ -309,7 +339,7 @@ function ptlRender() {
           <input type="date" value="${localStorage.getItem(PTL_TODAY_OVERRIDE_KEY) || ''}" onchange="ptlSetTodayOverride(this.value)" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.78rem;" />
           ${localStorage.getItem(PTL_TODAY_OVERRIDE_KEY) ? `<button type="button" onclick="ptlSetTodayOverride('')" style="padding:5px 10px; font-size:0.72rem; font-weight:700; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--muted); cursor:pointer;">Reset</button>` : ''}
         </div>` : ''}
-        ${ptlStageProgressHtml('sm')}
+        ${ptlStageProgressStripHtml()}
       </div>
     </div>`;
 
@@ -1239,7 +1269,7 @@ function ptlRenderFullscreen() {
         </div>
         ${ptlLdChipHtml()}
         <div style="flex:1 1 auto;"></div>
-        ${ptlStageProgressHtml('lg')}
+        ${ptlStageProgressHtml()}
         <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; flex:none;">
           ${Object.keys(PTL_MODES).map(m => `<button type="button" onclick="ptlSetMode('${m}')" style="padding:7px 14px; font-size:0.82rem; font-weight:600; border:0; border-right:1px solid var(--border); cursor:pointer; background:${m === ptlMode ? 'var(--brand)' : '#fff'}; color:${m === ptlMode ? '#fff' : 'var(--muted)'};">${m === 'week' ? 'This Week' : m === 'days15' ? '15 Days' : 'This Month'}</button>`).join("")}
         </div>
