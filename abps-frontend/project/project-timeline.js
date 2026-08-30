@@ -222,31 +222,15 @@ const ptlDeliveryValue = p => p.actualDelivery || p.tentativeDelivery;
 const ptlEff = n => n.actual || n.target || n.planned;
 const ptlLate = n => !n.actual && !n.done && ptlEff(n) && ptlEff(n) < ptlToday();
 
-// Overall progress ring — a milestone-completion measure, not a
-// calendar-days one, so a project that's behind schedule doesn't falsely
-// read as "progressing" just because time passed. Two deliberate
-// weighting choices keep it from being distorted by how many trackable
-// items happen to exist in any one place:
-//  1. Each of the 5 STAGES is worth an equal 1/5 of the overall %,
-//     computed as a plain average of the 5 stage fractions — otherwise
-//     Stage 4's per-BOQ production steps (can run into dozens across
-//     several lanes) would swamp Stages 1/2/5's handful of trunk
-//     milestones in a flat pooled count, so a project with Stages 1-3
-//     fully done but Stage 4 just starting would misleadingly read as
-//     barely-started overall.
-//  2. Within Stage 4, each BOQ LANE is itself averaged rather than
-//     pooling every lane's steps together — a Reactor flow and a Panel
-//     flow don't have the same step count (lib/productionFlows.js), so
-//     pooling would let whichever flow type has more BOQs/steps this
-//     project dominate Stage 4's own %.
-// The current (first not-fully-done) stage's ring color turns red
-// instead of brand-blue if anything still open in it is already late
-// (ptlLate), folding schedule risk in as a color signal rather than a
-// second competing number.
-function ptlComputeStageProgress() {
-  if (!ptlData) return null;
+// Per-stage fractions — used for the "Stage N of 5" label, the segmented
+// strip's per-block fill, and the late/on-time color. Stage 4 averages
+// each BOQ LANE rather than pooling every lane's steps together, since a
+// Reactor flow and a Panel flow don't have the same step count
+// (lib/productionFlows.js) — pooling would let whichever flow type has
+// more BOQs/steps on this project dominate Stage 4's own fraction.
+function ptlComputeStageFractions() {
   const { trunk, lanes } = ptlData;
-  const stages = [1, 2, 3, 4, 5].map(k => {
+  return [1, 2, 3, 4, 5].map(k => {
     if (k === 4) {
       const laneFracs = (lanes || []).map(l => {
         const total = l.steps.length;
@@ -264,7 +248,61 @@ function ptlComputeStageProgress() {
     const late = nodes.some(n => ptlLate(n));
     return { stage: k, total, done, frac: total ? done / total : 0, late };
   });
-  const overallPct = Math.round((stages.reduce((a, s) => a + s.frac, 0) / stages.length) * 100);
+}
+
+// Overall progress % — schedule-weighted, not a flat stage/milestone
+// count. Equal-weighting the 5 stages (the earlier version of this)
+// looked wrong in practice: 2 of 5 stages fully done read as "40%" even
+// though Stages 1-2 (a couple of weeks) are nowhere near as much real
+// project time as Stages 3-5 (which run for months). Instead, every
+// trunk/lane node's own EFFECTIVE date (ptlEff — actual once done, else
+// its current target/planned estimate) is plotted on one timeline, and
+// each node is credited with the business-day GAP since the previous
+// dated node — so a milestone representing 6 weeks of work counts for
+// far more than one immediately next to another. Nodes with no date yet
+// (e.g. Stage 5's QA milestones before anything's scheduled, or Stage 4
+// steps before a plan is submitted) simply don't exist as separate
+// points yet; that time is not lost, it's absorbed into the gap leading
+// up to the next node that DOES have a date — which, worst case, is
+// trunk's 'delivery' node (always known — the PO's own delivery date,
+// or the MFC-set one once that happens), so an early-stage project
+// correctly shows only a small sliver of a still-mostly-open timeline
+// rather than jumping ahead just because a couple of quick early stages
+// are checked off. Nodes sharing the exact same date (several Stage 3
+// milestones often land on the same planned day) split that shared
+// gap's credit by how many of that same-day cluster are actually done.
+function ptlComputeScheduleWeightedPct() {
+  const { trunk, lanes } = ptlData;
+  const dated = [];
+  (trunk || []).forEach(n => { const d = ptlEff(n); if (d) dated.push({ date: d, done: !!n.actual || n.done === true }); });
+  (lanes || []).forEach(l => l.steps.forEach(s => { const d = ptlEff(s); if (d) dated.push({ date: d, done: !!s.actual || s.done === true }); }));
+  if (dated.length < 2) return 0;
+  dated.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+
+  // Group same-date entries into clusters so a tied gap's weight splits
+  // by the cluster's own done-fraction instead of being all-or-nothing
+  // on whichever tied node happened to sort first/last.
+  const clusters = [];
+  dated.forEach(n => {
+    const last = clusters[clusters.length - 1];
+    if (last && last.date === n.date) last.nodes.push(n); else clusters.push({ date: n.date, nodes: [n] });
+  });
+
+  let totalW = 0, doneW = 0;
+  for (let i = 1; i < clusters.length; i++) {
+    const w = Math.max(0, ptlBdBetween(clusters[i - 1].date, clusters[i].date) || 0);
+    const cluster = clusters[i].nodes;
+    const doneFrac = cluster.filter(n => n.done).length / cluster.length;
+    totalW += w;
+    doneW += w * doneFrac;
+  }
+  return totalW ? Math.round((doneW / totalW) * 100) : (clusters[0].nodes.every(n => n.done) ? 100 : 0);
+}
+
+function ptlComputeStageProgress() {
+  if (!ptlData) return null;
+  const stages = ptlComputeStageFractions();
+  const overallPct = ptlComputeScheduleWeightedPct();
   return { stages, overallPct };
 }
 
