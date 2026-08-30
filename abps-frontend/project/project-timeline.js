@@ -795,12 +795,15 @@ function ptlRenderCanvas(containerId) {
   const stageX0s = stageKeys.map(st => Math.min(...stageXs[st]) - ptlDayW * 0.75);
   stageKeys.forEach((st, i) => {
     const x0 = stageX0s[i];
+    const x1 = i + 1 < stageX0s.length ? stageX0s[i + 1] : W;
+    if (i % 2 === 0) P.push(`<rect x="${x0}" y="${RULER_H}" width="${x1 - x0}" height="${H - RULER_H}" fill="color-mix(in srgb, var(--text) 3%, transparent)"/>`);
     P.push(`<line x1="${x0}" y1="${RULER_H}" x2="${x0}" y2="${H}" stroke="var(--text)" stroke-width="2.5" opacity=".55"/>`);
     const label = `STAGE ${st} · ${(PTL_STAGE_NAMES[st] || '').toUpperCase()}`;
     const estWidth = label.length * 6.4 * ptlFS;
     const nextX0 = i + 1 < stageX0s.length ? stageX0s[i + 1] : Infinity;
     if (nextX0 - (x0 + 9 * ptlFS) > estWidth) {
-      P.push(`<text x="${x0 + 9 * ptlFS}" y="${RULER_H + 17 * ptlFS}" font-size="${10.5 * ptlFS}" font-weight="800" letter-spacing="1.2" fill="var(--text)" opacity=".75">${esc(label)}</text>`);
+      P.push(`<rect x="${x0 + 4 * ptlFS}" y="${RULER_H + 5 * ptlFS}" width="${estWidth + 10 * ptlFS}" height="${16 * ptlFS}" rx="4" fill="var(--card)" opacity=".8"/>`);
+      P.push(`<text x="${x0 + 9 * ptlFS}" y="${RULER_H + 17 * ptlFS}" font-size="${10.5 * ptlFS}" font-weight="800" letter-spacing="1.2" fill="var(--text)" opacity=".8">${esc(label)}</text>`);
     }
   });
 
@@ -1168,7 +1171,7 @@ function ptlRenderFullscreen() {
         <button type="button" onclick="ptlJumpToday()" style="flex:none; padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; background:var(--brand); color:#fff;">Today</button>
         <button type="button" id="ptl-fs-flags-toggle" onclick="ptlToggleFsRail()" style="flex:none; padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; color:#fff;"></button>
       </div>
-      <div style="font-size:0.75rem; color:var(--muted); font-family:monospace; padding-left:38px;">${escapeHtml(project.projectId)} · <strong style="color:var(--text)">${escapeHtml(project.status)}</strong>${project.mfcInt ? ` · Internal MFC <strong style="color:var(--text)">${ptlFmtFull(project.mfcInt)}</strong>` : ''} · ${ptlDeliveryLabel(project)} <strong style="color:var(--text)">${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
+      <div style="font-size:0.92rem; color:var(--muted); font-family:monospace; padding-left:38px;">${escapeHtml(project.projectId)} · <strong style="color:var(--text)">${escapeHtml(project.status)}</strong>${project.mfcInt ? ` · Internal MFC <strong style="color:var(--text)">${ptlFmtFull(project.mfcInt)}</strong>` : ''} · ${ptlDeliveryLabel(project)} <strong style="color:var(--text)">${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
     </div>
     <div style="flex:1 1 auto; display:flex; min-height:0;">
       <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column;">
@@ -1202,7 +1205,7 @@ function ptlTipHtml(info) {
   let h = `<b style="display:block; font-size:0.82rem; font-weight:700; margin-bottom:6px;">${escapeHtml(info.label)}</b>`;
   h += row("Department", info.owner || "—");
   h += row("Planned", info.planned ? ptlFmt(info.planned) : "—");
-  h += row("New Target", info.eff ? ptlFmt(info.eff) : "—");
+  if (info.eff && info.eff !== info.planned) h += row("New Target", ptlFmt(info.eff));
   h += row("Actual", info.actual ? ptlFmt(info.actual) : "—");
   if (info.late) h += `<div style="margin-top:5px; font-size:0.74rem; font-weight:700; color:#e84545;">${info.late} business day${info.late === 1 ? "" : "s"} late</div>`;
   return h;
