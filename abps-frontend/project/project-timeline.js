@@ -246,21 +246,23 @@ function ptlComputeStageProgress() {
 function ptlStageProgressHtml(size) {
   const p = ptlComputeStageProgress();
   if (!p) return '';
-  const w = size === 'sm' ? 16 : 20, h = size === 'sm' ? 10 : 12, gap = 3;
-  const bars = p.stages.map(s => {
-    const complete = s.total > 0 && s.frac >= 1;
-    const started = s.frac > 0 && !complete;
-    const color = s.late ? '#e84545' : 'var(--brand)';
-    let inner = '';
-    if (complete) inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="2" fill="${color}"/>`;
-    else if (started) inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="2" fill="none" stroke="${color}" stroke-width="1.2" opacity=".55"/><rect x="0" y="0" width="${Math.max(2, w * s.frac)}" height="${h}" rx="2" fill="${color}"/>`;
-    else inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="2" fill="none" stroke="var(--border)" stroke-width="1.2"/>`;
-    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block; flex:none;">${inner}</svg>`;
-  }).join(`<div style="width:${gap}px;"></div>`);
-  const title = `Stage ${p.stages.filter(s => s.frac >= 1).length + (p.stages.some(s => s.frac > 0 && s.frac < 1) ? 1 : 0)} of 5 · ${p.overallPct}% milestones done`;
-  return `<div style="display:flex; align-items:center; gap:8px;" title="${title}">
-    <div style="display:flex; align-items:center;">${bars}</div>
-    <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${p.overallPct}%</span>
+  const currentStage = p.stages.find(s => s.frac > 0 && s.frac < 1) || p.stages.find(s => s.frac === 0) || p.stages[p.stages.length - 1];
+  const stageIdx = p.stages.filter(s => s.frac >= 1).length + (p.stages.some(s => s.frac > 0 && s.frac < 1) ? 1 : 0);
+  const late = currentStage && currentStage.late;
+  const color = late ? '#e84545' : 'var(--brand)';
+
+  const d = size === 'sm' ? 24 : 40, sw = size === 'sm' ? 3 : 4;
+  const r = (d - sw) / 2, cx = d / 2, cy = d / 2, circ = 2 * Math.PI * r;
+  const offset = circ * (1 - p.overallPct / 100);
+  const title = `Stage ${stageIdx} of 5 · ${p.overallPct}% milestones done`;
+  const ring = `<svg width="${d}" height="${d}" viewBox="0 0 ${d} ${d}" style="display:block; flex:none; transform:rotate(-90deg);">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${sw}"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/>
+  </svg>`;
+  const centerLabel = size === 'sm' ? '' : `<span style="font-size:0.72rem; font-weight:800; color:var(--text);">${p.overallPct}%</span>`;
+  return `<div style="display:flex; align-items:center; gap:7px;" title="${title}">
+    <div style="position:relative; width:${d}px; height:${d}px;">${ring}</div>
+    ${centerLabel}
   </div>`;
 }
 
