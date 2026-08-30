@@ -229,7 +229,7 @@ function ptlRender() {
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border);">
       <div>
         <div style="font-weight:800; font-size:1.05rem; color:var(--text);">${escapeHtml(project.projectId)}</div>
-        <div style="font-size:0.82rem; color:var(--muted);">${escapeHtml(project.companyName || '—')} · <strong>${escapeHtml(project.status)}</strong>${project.mfcInt ? ` · Internal MFC <strong>${ptlFmtFull(project.mfcInt)}</strong>` : ''} · ${ptlDeliveryLabel(project)} <strong>${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
+        <div style="font-size:0.82rem; color:var(--muted);">${escapeHtml(project.companyName || '—')} · <strong>${escapeHtml(project.status)}</strong> · ${ptlDeliveryLabel(project)} <strong>${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
         ${ptlLdSummaryHtml()}
       </div>
       ${ptlIsAdmin() ? `<div style="display:flex; align-items:center; gap:6px;" title="Admin only — overrides 'today' everywhere on this screen for testing">
@@ -1171,7 +1171,7 @@ function ptlRenderFullscreen() {
         <button type="button" onclick="ptlJumpToday()" style="flex:none; padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; background:var(--brand); color:#fff;">Today</button>
         <button type="button" id="ptl-fs-flags-toggle" onclick="ptlToggleFsRail()" style="flex:none; padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; color:#fff;"></button>
       </div>
-      <div style="font-size:0.92rem; color:var(--muted); font-family:monospace; padding-left:38px;">${escapeHtml(project.projectId)} · <strong style="color:var(--text)">${escapeHtml(project.status)}</strong>${project.mfcInt ? ` · Internal MFC <strong style="color:var(--text)">${ptlFmtFull(project.mfcInt)}</strong>` : ''} · ${ptlDeliveryLabel(project)} <strong style="color:var(--text)">${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
+      <div style="font-size:0.92rem; color:var(--muted); font-family:monospace; padding-left:38px;">${escapeHtml(project.projectId)} · <strong style="color:var(--text)">${escapeHtml(project.status)}</strong> · ${ptlDeliveryLabel(project)} <strong style="color:var(--text)">${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
     </div>
     <div style="flex:1 1 auto; display:flex; min-height:0;">
       <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column;">
