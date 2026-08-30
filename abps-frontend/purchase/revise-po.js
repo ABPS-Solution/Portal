@@ -11,14 +11,19 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
   // The "A PRN has been revised — check Revise PO" banner is Purchase-
   // department work only, but purchase-prn/purchase-revise-prn/
   // purchase-authorize-prn (Create/Revise/Authorize PRN) are Store-
-  // department screens that happen to share this same enclosure/banner
-  // element — showing it there was misleading Store staff into thinking
-  // a Purchase Order needed attention from them.
+  // department screens that happen to share this same enclosure — showing
+  // it there was misleading Store staff into thinking a Purchase Order
+  // needed attention from them. They get the Store "BOQ revised, check
+  // Revise PRN" reminder instead (purchase-enclosure-prn-revision-reminder-banner,
+  // toggled together with Store's own copy via checkStorePRNRevisionReminder).
   if (["purchase-prn", "purchase-revise-prn", "purchase-authorize-prn"].includes(targetModuleId)) {
     const banner = document.getElementById("purchase-po-revision-reminder-banner");
     if (banner) banner.style.display = "none";
+    checkStorePRNRevisionReminder();
   } else {
     checkPurchasePORevisionReminder();
+    const storeBannerHere = document.getElementById("purchase-enclosure-prn-revision-reminder-banner");
+    if (storeBannerHere) storeBannerHere.style.display = "none";
   }
   window.scrollTo(0, 0);
   setTimeout(() => window.scrollTo(0, 0), 50);

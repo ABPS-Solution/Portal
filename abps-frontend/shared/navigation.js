@@ -5,11 +5,12 @@ let canvasLastParentWorkspaceId = "workspace-searchCompany";
 // enclosures — re-checked on every navigation into either enclosure so
 // they disappear on their own once the underlying revision is authorized.
 async function checkStorePRNRevisionReminder() {
-  const banner = document.getElementById("store-prn-revision-reminder-banner");
-  if (!banner) return;
+  const banners = document.querySelectorAll(".store-prn-revision-reminder-banner-el");
+  if (!banners.length) return;
   try {
     const data = await apFetch({ action: "checkBOQsNeedingPRNRevisionCount" });
-    banner.style.display = (data.success && data.count > 0) ? "block" : "none";
+    const show = data.success && data.count > 0;
+    banners.forEach(b => { b.style.display = show ? "block" : "none"; });
   } catch (e) { /* non-critical — leave banner state as-is on network error */ }
 }
 

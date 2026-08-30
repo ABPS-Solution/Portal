@@ -712,7 +712,7 @@
       <button class="nav-btn-styled" onclick="exitStoreWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
     </div>
 
-    <div id="store-prn-revision-reminder-banner" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ A BOQ has been revised — check the <strong>Revise PRN</strong> section to see if a PRN needs revising.</div>
+    <div id="store-prn-revision-reminder-banner" class="store-prn-revision-reminder-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ A BOQ has been revised — check the <strong>Revise PRN</strong> section to see if a PRN needs revising.</div>
 
     <div id="canvas-module-store-gate-entry" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
       <h2 class="panel-title">Store Gate Entry</h2>
@@ -2689,6 +2689,13 @@
     </div>
 
     <div id="purchase-po-revision-reminder-banner" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ A PRN has been revised — check the <strong>Revise PO</strong> section to see if a Purchase Order needs revising.</div>
+
+    <!-- Create/Revise/Authorize PRN are Store-department screens hosted in this
+         Purchase enclosure for historical UI-grouping reasons — they need the
+         same "BOQ revised, check Revise PRN" reminder Store's own screens show,
+         not the Purchase-only "check Revise PO" banner above. Toggled together
+         with store-prn-revision-reminder-banner via the shared class. -->
+    <div id="purchase-enclosure-prn-revision-reminder-banner" class="store-prn-revision-reminder-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ A BOQ has been revised — check the <strong>Revise PRN</strong> section to see if a PRN needs revising.</div>
 
     <!-- PRN CANVAS -->
     <div id="canvas-module-purchase-prn" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
