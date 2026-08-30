@@ -220,27 +220,50 @@ const ptlDeliveryValue = p => p.actualDelivery || p.tentativeDelivery;
 const ptlEff = n => n.actual || n.target || n.planned;
 const ptlLate = n => !n.actual && !n.done && ptlEff(n) && ptlEff(n) < ptlToday();
 
-// Small 5-segment progress strip (one block per Stage 1-5). Each block's
-// fill fraction = done nodes / total nodes for that stage (trunk nodes for
-// 1/2/3/5, lane steps for 4) — a milestone-completion measure, not a
+// Overall progress ring — a milestone-completion measure, not a
 // calendar-days one, so a project that's behind schedule doesn't falsely
-// read as "progressing" just because time passed. The current stage's
-// block turns red instead of brand-blue if anything still open in it is
-// already late (ptlLate), folding schedule risk in as a color signal
-// rather than a second competing number.
+// read as "progressing" just because time passed. Two deliberate
+// weighting choices keep it from being distorted by how many trackable
+// items happen to exist in any one place:
+//  1. Each of the 5 STAGES is worth an equal 1/5 of the overall %,
+//     computed as a plain average of the 5 stage fractions — otherwise
+//     Stage 4's per-BOQ production steps (can run into dozens across
+//     several lanes) would swamp Stages 1/2/5's handful of trunk
+//     milestones in a flat pooled count, so a project with Stages 1-3
+//     fully done but Stage 4 just starting would misleadingly read as
+//     barely-started overall.
+//  2. Within Stage 4, each BOQ LANE is itself averaged rather than
+//     pooling every lane's steps together — a Reactor flow and a Panel
+//     flow don't have the same step count (lib/productionFlows.js), so
+//     pooling would let whichever flow type has more BOQs/steps this
+//     project dominate Stage 4's own %.
+// The current (first not-fully-done) stage's ring color turns red
+// instead of brand-blue if anything still open in it is already late
+// (ptlLate), folding schedule risk in as a color signal rather than a
+// second competing number.
 function ptlComputeStageProgress() {
   if (!ptlData) return null;
   const { trunk, lanes } = ptlData;
   const stages = [1, 2, 3, 4, 5].map(k => {
-    const nodes = k === 4 ? (lanes || []).flatMap(l => l.steps) : (trunk || []).filter(n => n.stage === k);
+    if (k === 4) {
+      const laneFracs = (lanes || []).map(l => {
+        const total = l.steps.length;
+        const done = l.steps.filter(n => !!n.actual || n.done === true).length;
+        return { total, done, frac: total ? done / total : 0, late: l.steps.some(n => ptlLate(n)) };
+      });
+      const total = laneFracs.reduce((a, l) => a + l.total, 0);
+      const done = laneFracs.reduce((a, l) => a + l.done, 0);
+      const frac = laneFracs.length ? laneFracs.reduce((a, l) => a + l.frac, 0) / laneFracs.length : 0;
+      return { stage: k, total, done, frac, late: laneFracs.some(l => l.late) };
+    }
+    const nodes = (trunk || []).filter(n => n.stage === k);
     const total = nodes.length;
     const done = nodes.filter(n => !!n.actual || n.done === true).length;
     const late = nodes.some(n => ptlLate(n));
     return { stage: k, total, done, frac: total ? done / total : 0, late };
   });
-  const sumTotal = stages.reduce((a, s) => a + s.total, 0);
-  const sumDone = stages.reduce((a, s) => a + s.done, 0);
-  return { stages, overallPct: sumTotal ? Math.round((sumDone / sumTotal) * 100) : 0 };
+  const overallPct = Math.round((stages.reduce((a, s) => a + s.frac, 0) / stages.length) * 100);
+  return { stages, overallPct };
 }
 
 function ptlStageProgressHtml(size) {
