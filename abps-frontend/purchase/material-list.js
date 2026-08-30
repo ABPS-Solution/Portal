@@ -85,6 +85,29 @@ async function loadMaterialListForPurchase() {
   } finally {
     if (syncBtn) { syncBtn.disabled = false; syncBtn.innerHTML = "🔄 Refresh"; }
   }
+  refreshMaterialListHiddenNote();
+}
+
+// A PRN's materials don't appear above at all until Production has
+// submitted (non-stale) requirement dates for them — see
+// fetchMaterialListForPurchase's hard gate. Without this note a
+// purchaser has no way to tell "nothing to buy" apart from "something's
+// hidden, waiting on Production" — same complaint that Hold Product's
+// visible badge exists to avoid, just here as a count rather than a
+// per-row flag since the hidden rows never render at all.
+async function refreshMaterialListHiddenNote() {
+  const el = document.getElementById("material-list-hidden-note");
+  if (!el) return;
+  try {
+    const data = await apFetch({ action: "checkPRNsNeedingRequirementDatesCount" });
+    const count = data.success ? (data.count || 0) : 0;
+    if (count > 0) {
+      el.style.display = "block";
+      el.textContent = `${count} PRN${count === 1 ? "" : "s"} ${count === 1 ? "is" : "are"} awaiting Production requirement dates and ${count === 1 ? "is" : "are"} not shown.`;
+    } else {
+      el.style.display = "none";
+    }
+  } catch (e) { el.style.display = "none"; }
 }
 
 function renderMaterialListByType(materials) {
@@ -203,24 +226,34 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
     : rows;
 
   const byPrn = {};
+  const reqDatesByPrn = {};
   filteredRows.forEach(r => {
     const pid = r.prnId || "Unassigned";
     const qty = Math.max(0, Number(r.stillToOrderQty) || 0);
     if (qty <= 0) return;
     if (!byPrn[pid]) byPrn[pid] = 0;
     byPrn[pid] += qty;
+    reqDatesByPrn[pid] = r.requirementDates || [];
   });
 
   const prnIds = Object.keys(byPrn).sort();
   const unitLabel = (unit || "NOS").toUpperCase();
+  const fmtQtyN = (n) => (Math.round((Number(n) || 0) * 100) / 100).toString();
 
   const rowsHtml = prnIds.length === 0
-    ? `<tr><td colspan="2" style="padding:14px; text-align:center; color:var(--muted); font-size:0.85rem;">No PRN-level breakdown available.</td></tr>`
-    : prnIds.map(pid => `
+    ? `<tr><td colspan="3" style="padding:14px; text-align:center; color:var(--muted); font-size:0.85rem;">No PRN-level breakdown available.</td></tr>`
+    : prnIds.map(pid => {
+        const reqDates = reqDatesByPrn[pid] || [];
+        const reqDateCell = reqDates.length === 0
+          ? `<span style="color:var(--muted); font-size:0.8rem;">—</span>`
+          : reqDates.map(d => `<div style="font-size:0.78rem;">${fmtQtyN(d.qty)} on ${formatDateDMY(d.date)}</div>`).join("");
+        return `
         <tr style="border-bottom:1px solid var(--border);">
           <td style="padding:8px 6px; font-size:0.85rem; font-weight:600; color:#334155;">${pid}</td>
-          <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:#b91c1c;">${(Math.round(byPrn[pid] * 100) / 100).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
-        </tr>`).join("");
+          <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:#b91c1c;">${fmtQtyN(byPrn[pid])} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
+          <td style="padding:8px 6px;">${reqDateCell}</td>
+        </tr>`;
+      }).join("");
 
   const existing = document.getElementById("material-project-breakdown-modal-overlay");
   if (existing) existing.remove();
@@ -230,7 +263,7 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
   modal.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;";
   modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
   modal.innerHTML = `
-    <div style="background:#fff;border-radius:var(--radius);padding:24px;max-width:920px;width:94%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="background:#fff;border-radius:var(--radius);padding:24px;max-width:1080px;width:94%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;border-bottom:2px solid var(--border);padding-bottom:12px;">
         <div>
           <div style="font-size:1rem;font-weight:800;color:var(--brand);">${materialName}</div>
@@ -239,11 +272,12 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
         <button onclick="document.getElementById('material-project-breakdown-modal-overlay').remove()" style="background:transparent;border:none;font-size:1.3rem;line-height:1;color:var(--muted);cursor:pointer;padding:0 0 0 10px;">&times;</button>
       </div>
       <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
-        <colgroup><col style="width:auto;"><col style="width:140px;"></colgroup>
+        <colgroup><col style="width:auto;"><col style="width:140px;"><col style="width:200px;"></colgroup>
         <thead>
           <tr style="text-align:left; border-bottom:2px solid var(--border);">
             <th style="padding:6px; font-size:0.72rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">PRN ID</th>
             <th style="padding:6px; text-align:right; font-size:0.72rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">PRN Quantity</th>
+            <th style="padding:6px; font-size:0.72rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">Production Requirement Date</th>
           </tr>
         </thead>
         <tbody>${rowsHtml}</tbody>
@@ -251,6 +285,7 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
           <tr style="border-top:2px solid var(--border);">
             <td style="padding:8px 6px; font-size:0.82rem; font-weight:800; color:#334155;">Total</td>
             <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:var(--brand);">${(Math.round((totalQty || 0) * 100) / 100).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
+            <td></td>
           </tr>
         </tfoot>
       </table>

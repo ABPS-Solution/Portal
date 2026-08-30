@@ -213,16 +213,25 @@ async function loadPPSForPRN() {
       const flag = m.awaitingPoRevision
         ? `<div style="font-size:0.6rem; font-weight:800; color:#b45309; margin-top:3px;">⏳ AWAITING PO REVISION</div>` : "";
 
+      // Production's own requirement-date splits for this line — read-only
+      // here (Production sets these on Assign/Revise Material Requirement
+      // Date), shown so Purchase can see what drove the PO delivery
+      // schedule below. '[]' (no rows) means a legacy/backfilled line.
+      const reqDates = m.requirementDates || [];
+      const reqDateCell = reqDates.length === 0
+        ? `<span style="color:var(--muted); font-size:0.75rem;">—</span>`
+        : reqDates.map(r => `<div style="font-size:0.76rem; font-weight:600;">${fmt(r.qty)} on ${formatDateDMY(r.date)}</div>`).join("");
+
       return `
         <tr style="border-bottom:1px solid #e2e8f0;">
-          <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${esc(m.itemCode)}${flag}</td>
-          <td style="padding:8px; font-size:0.92rem; font-weight:600;">${esc(m.materialName)}</td>
+          <td style="padding:8px; font-size:0.92rem; font-weight:600;">${esc(m.materialName)}${flag}</td>
           <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.98rem;">${fmt(m.boqRequiredQty)}</td>
           <td style="padding:8px; text-align:center; color:#b45309; font-weight:700;">${fmt(m.bufferPct)}%</td>
           <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand); font-size:0.98rem;">${fmt(m.bufferedPurchaseQty)}</td>
           <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.98rem;">${fmt(m.storeQty)}</td>
           <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:0.98rem;">${fmt(m.purchaseQty)}</td>
           <td style="padding:8px; text-align:center;">${poCell}</td>
+          <td style="padding:8px; text-align:center;">${reqDateCell}</td>
           <td style="padding:8px; text-align:center;">${dateCell}</td>
           <td style="padding:8px; text-align:center; min-width:110px;">${statusCell}</td>
         </tr>`;
@@ -230,9 +239,8 @@ async function loadPPSForPRN() {
 
     body.innerHTML = `
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-        <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1150px;">
+        <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1200px;">
           <thead><tr style="background:#f8fafc;">
-            <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
             <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:200px;">Material Name</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
@@ -240,6 +248,7 @@ async function loadPPSForPRN() {
             <th style="padding:8px; font-size:0.7rem; text-align:center;">Store Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center;">Purchase Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:120px;">Purchase Order(s)</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:130px;">Production Requirement Date</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:120px;">Expected Delivery</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center;">Received / PO Qty</th>
           </tr></thead>
@@ -387,13 +396,18 @@ async function savePPSDeliverySchedule(prnId, btn) {
   try {
     const data = await apFetch({ action: "savePODeliverySchedule", updates, operatorName: appActiveOperatorIdentityString });
     if (data.success) {
-      // loadPPSForPRN unconditionally hides #pps-feedback the instant it
-      // runs (a fresh-load reset, same as every other screen) — showing
-      // the success banner BEFORE that reload meant it got wiped out
-      // again within the same tick, before anyone could ever see it.
-      // Await the reload first, then show the banner after.
-      await loadPPSForPRN();
-      showBOQBanner("pps-feedback", "✅ Delivery schedule saved.", "success");
+      // Persistent success banner + "+ View Another PPS" reset, matching
+      // Create BOQ's convention — was a plain auto-hiding banner behind an
+      // await'd reload (which existed only to satisfy this same banner's
+      // ordering against loadPPSForPRN's own hide-on-load reset). The
+      // reload is now redundant AND harmful: it would repaint the table
+      // under a banner whose own button resets the whole panel anyway.
+      window.ppsScheduleState = {};
+      window.ppsScheduleMeta = {};
+      document.getElementById("pps-results-body").innerHTML = "";
+      const header = document.getElementById("pps-prn-header");
+      if (header) header.style.display = "none";
+      showSuccessWithReset("pps-feedback", "✅ Delivery schedule saved.", "View Another PPS", "initializePPSTrackingPanel()");
     } else {
       showBOQBanner("pps-feedback", data.error || "Failed to save delivery schedule.", "error");
     }

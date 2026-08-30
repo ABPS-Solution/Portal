@@ -28,9 +28,9 @@
 // inventing new tokens.
 const PTL_COLORS = {
   marketing: '#be185d', project: '#0056b3', design: '#00a878',
-  store: '#0369a1', purchase: '#7c3aed', qa: '#dc2626',
+  store: '#0369a1', purchase: '#7c3aed', qa: '#dc2626', production: '#b45309',
 };
-const PTL_DEPT_NAME = { marketing: 'Marketing', project: 'Project', design: 'Design', store: 'Store', purchase: 'Purchase', qa: 'Quality Assurance' };
+const PTL_DEPT_NAME = { marketing: 'Marketing', project: 'Project', design: 'Design', store: 'Store', purchase: 'Purchase', qa: 'Quality Assurance', production: 'Production' };
 // Shared completion-status circle color, used identically by the canvas
 // map and the Steps list (30 Aug 2026) — department no longer drives
 // circle color anywhere; grey = scheduled/on-track, green = done, red =
@@ -53,7 +53,7 @@ const PTL_ADMIN_SYSTEM_DATE_IDS = new Set(['activated', 'mfcInt']);
 // planned dates already live in; fetchProjectTimeline prefers it over the
 // live computation. adminClearSystemMilestoneOverride removes it again
 // once real data should take back over.
-const PTL_ADMIN_MILESTONE_OVERRIDE_KEY = { boqs: 'boqs_released', prns: 'prns_released', rmpos: 'rmpos_released', pps: 'pps_released', wdesign: 'working_designs_released' };
+const PTL_ADMIN_MILESTONE_OVERRIDE_KEY = { boqs: 'boqs_released', prns: 'prns_released', mrdates: 'production_requirement_dates_released', rmpos: 'rmpos_released', pps: 'pps_released', wdesign: 'working_designs_released' };
 // Stage headers — ptlRenderList inserts one automatically whenever a
 // node's stage differs from the previous one, so Stage 1/2/3 get the same
 // section labeling Stage 4/5 already had (those two used to be hardcoded
@@ -436,7 +436,7 @@ function ptlRender() {
 // the server, so it can never disagree with what's actually displayed.
 function ptlIsStage3Done() {
   if (!ptlData || !ptlData.trunk) return false;
-  const keys = ['boqs', 'wdesign', 'prns', 'rmpos', 'pps'];
+  const keys = ['boqs', 'wdesign', 'prns', 'mrdates', 'rmpos', 'pps'];
   return keys.every(id => {
     const n = ptlData.trunk.find(t => t.id === id);
     return n && (!!n.actual || n.done === true);
@@ -802,7 +802,7 @@ function ptlBuildDayRange() {
 }
 
 function ptlCanvasNodes() {
-  const spineIds = ['oa', 'po', 'activated', 'dwgSent', 'dwgAppr', 'mfcCust', 'mfcInt', 'boqs', 'wdesign', 'prns', 'rmpos', 'pps', 'prodPlan'];
+  const spineIds = ['oa', 'po', 'activated', 'dwgSent', 'dwgAppr', 'mfcCust', 'mfcInt', 'boqs', 'wdesign', 'prns', 'mrdates', 'rmpos', 'pps', 'prodPlan'];
   // 'dispatched' merged into 'delivery' 29 Aug 2026 — see routes/timeline.js.
   // The connecting trunk line now ends at 'predictedDelivery' (the QA
   // chain's own realistic projection), not 'delivery' (the PO's

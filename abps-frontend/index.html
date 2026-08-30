@@ -673,6 +673,11 @@
           <button class="dept-dash-pill" id="mod-production-dashboard" onclick="navigateToProductionDashboard()" style="background:#fffbeb; color:#b45309;">📊 Dashboard</button>
         </div>
       </div>
+      <div class="sec-label">Material Requirement Dates</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-assign-material-requirement-date" onclick="switchActiveDashboardModule('assign-material-requirement-date')"><span class="mc-label">Assign Material Requirement Date</span></div>
+        <div class="menu-card" id="mod-revise-material-requirement-date" onclick="switchActiveDashboardModule('revise-material-requirement-date')"><span class="mc-label">Revise Material Requirement Date</span></div>
+      </div>
       <div class="sec-label">Material Issue & Job Cards</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-store-ticket"            onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Material Issue Ticket</span></div>
@@ -777,8 +782,9 @@
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:2px solid var(--bg); padding-bottom:10px;">
         <h2 class="panel-title" style="margin:0;">Create Material Issue Ticket</h2>
       </div>
-      <div id="store-ticket-runtime-inline-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid;"></div>    
-      
+      <div id="mrd-reminder-banner-cmit" class="material-requirement-date-revision-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ Purchase Quantities have changed on one or more PRNs — their <strong>Production Requirement Dates</strong> need revising.</div>
+      <div id="store-ticket-runtime-inline-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid;"></div>
+
       <div class="section" style="background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
@@ -1151,6 +1157,7 @@
 
     <div id="canvas-module-jc-letterhead" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Job Card & In Process Sheet</h2>
+      <div id="mrd-reminder-banner-jclh" class="material-requirement-date-revision-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ Purchase Quantities have changed on one or more PRNs — their <strong>Production Requirement Dates</strong> need revising.</div>
       <div id="jclh-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
         <div>
@@ -1230,6 +1237,67 @@
       </div>
       <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
         <button class="nav-btn-styled" id="jclh-download-btn" disabled onclick="submitJCLHDownload()" style="background:var(--accent); padding:8px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;">Download</button>
+      </div>
+    </div>
+
+    <div id="canvas-module-assign-material-requirement-date" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Assign Material Requirement Date</h2>
+      <div id="mrd-reminder-banner-assign" class="material-requirement-date-revision-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ Purchase Quantities have changed on one or more PRNs — their <strong>Production Requirement Dates</strong> need revising.</div>
+      <div id="mrd-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="mrd-needqueue-zone" style="margin-bottom:16px;"></div>
+      <div style="display:grid; grid-template-columns:1fr 2fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
+          <div style="position:relative;">
+            <input type="text" id="mrd-project-select-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'mrd-project-select-ta-input', 'mrd-project-select-ta-dropdown')"
+              onchange="loadMRDPRNList()"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+            <div id="mrd-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
+          <select id="mrd-prn-select" onchange="loadMRDForPRN()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
+        </div>
+      </div>
+      <div id="mrd-prn-header" style="display:none; margin-bottom:10px; font-size:0.85rem;"></div>
+      <div id="mrd-body"></div>
+    </div>
+
+    <div id="canvas-module-revise-material-requirement-date" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Revise Material Requirement Date</h2>
+      <div id="rmrd-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div id="rmrd-tabs-bar" style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--border);">
+        <button id="rmrd-tab-queue" onclick="switchReviseMRDTab('queue')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:800; font-size:0.85rem; color:var(--brand); border-bottom:3px solid var(--brand); margin-bottom:-2px;">PRN Revisions Needing Requirement Dates Revision</button>
+        <button id="rmrd-tab-other" onclick="switchReviseMRDTab('other')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:700; font-size:0.85rem; color:var(--muted); border-bottom:3px solid transparent; margin-bottom:-2px;">Other Requirement Dates Revisions</button>
+      </div>
+
+      <div id="rmrd-queue-section">
+        <div id="rmrd-delta-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+        <div id="rmrd-queue-feed" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;"></div>
+        <div id="rmrd-delta-zone"></div>
+      </div>
+
+      <div id="rmrd-other-section" style="display:none;">
+        <div id="rmrd-selector-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+          <div>
+            <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
+            <div style="position:relative;">
+              <input type="text" id="rmrd-project-select-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+                oninput="handleSharedProjectTypeaheadInput(this.value, 'rmrd-project-select-ta-input', 'rmrd-project-select-ta-dropdown')"
+                onchange="loadReviseMRDList()"
+                style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+              <div id="rmrd-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+            </div>
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
+            <select id="rmrd-prn-select" onchange="loadReviseMRDForPRN()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
+          </div>
+        </div>
+        <div id="rmrd-body"></div>
       </div>
     </div>
 
@@ -2954,6 +3022,7 @@
           <button class="nav-btn-styled" onclick="searchMaterialListByProject()" style="background:var(--brand); padding:9px 18px;">Search</button>
         </div>
         <div id="material-list-scope-label" style="margin-top:12px; font-size:0.85rem; color:var(--text);"></div>
+        <div id="material-list-hidden-note" style="display:none; margin-top:8px; font-size:0.8rem; color:var(--muted); font-style:italic;"></div>
       </div>
 
       <div id="material-list-results-zone" style="display:flex; flex-direction:column; gap:12px;"></div>
@@ -4341,6 +4410,7 @@
 <script src="production/fg-approval.js"></script>
 <script src="production/project-invoice.js"></script>
 <script src="production/production-dashboard.js"></script>
+<script src="production/material-requirement-dates.js"></script>
 <script src="accounts/tour-shell.js"></script>
 <script src="accounts/advance-vouchers.js"></script>
 <script src="accounts/voucher-check.js"></script>
