@@ -257,8 +257,8 @@ function renderPORevisionCard() {
           <div style="min-height:36px; box-sizing:border-box; display:flex; align-items:center; font-size:0.82rem; font-weight:600; padding:6px 4px; word-break:break-word; white-space:normal;">${li.description || ""}</div>
         </div>
         <div style="width:100%; order:99;">
-          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Description of Material</label>
-          <textarea rows="1" placeholder="Optional free-text note about this line (e.g. color, variant, spec detail)..."
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Description of Material *</label>
+          <textarea rows="1" placeholder="Required — e.g. color, variant, spec detail..."
             oninput="updateRPORowField(${idx},'additionalDescription',this.value)"
             style="width:100%; box-sizing:border-box; padding:7px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem; font-family:inherit; resize:vertical;">${(li.additionalDescription||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
         </div>
@@ -682,6 +682,9 @@ async function submitPORevisionUI() {
   const lines = collectRPOLines();
 
   for (const l of lines) {
+    if (!(l.additionalDescription || "").trim()) {
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: Description of Material is required.`, "error");
+    }
     if (l.vendorDiscussedQty === undefined || l.vendorDiscussedQty === null || isNaN(l.vendorDiscussedQty)) {
       return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: Vendor Discussed Purchase Quantity is required.`, "error");
     }
@@ -996,8 +999,8 @@ function renderAPORCard(r) {
           <div style="min-height:36px; box-sizing:border-box; display:flex; align-items:center; font-size:0.82rem; font-weight:600; padding:6px 4px; word-break:break-word; white-space:normal;">${line.description || ""}</div>
         </div>
         <div style="width:100%; order:99;">
-          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Description of Material</label>
-          <textarea rows="1" placeholder="Optional free-text note about this line (e.g. color, variant, spec detail)..."
+          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Description of Material *</label>
+          <textarea rows="1" placeholder="Required — e.g. color, variant, spec detail..."
             oninput="updateAPORRowField(${rid},${idx},'additionalDescription',this.value)"
             style="width:100%; box-sizing:border-box; padding:7px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem; font-family:inherit; resize:vertical;">${(line.additionalDescription||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
         </div>
@@ -1416,6 +1419,13 @@ async function authorizePORevisionUI(requestId, confirmStale) {
   // authorized, so a revision doesn't re-litigate it (Costing Diff on the
   // row stays informational only). Matches the backend, which no longer
   // enforces this on authorizePORevision either.
+
+  const missingDesc = editedLineItems.find(li => !(li.additionalDescription || "").trim());
+  if (missingDesc) {
+    if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize"; }
+    if (rejBtn) rejBtn.disabled = false;
+    return showPurchaseFeedback("apor-feedback", `⚠️ ${missingDesc.itemCode}: Description of Material is required.`, "error");
+  }
 
   showBlockingOverlay("Authorizing PO revision…");
 

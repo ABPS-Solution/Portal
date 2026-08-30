@@ -779,8 +779,8 @@ function renderCPOMaterialRows() {
       </div>
 
       <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">
-        <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Description of Material</label>
-        <textarea rows="1" data-rowid="${row.id}" placeholder="Optional free-text note about this line (e.g. color, variant, spec detail)..."
+        <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Description of Material *</label>
+        <textarea rows="1" data-rowid="${row.id}" placeholder="Required — e.g. color, variant, spec detail..."
           oninput="updateCPORowField(${row.id},'additionalDescription',this.value)"
           style="width:100%; box-sizing:border-box; padding:7px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem; font-family:inherit; resize:vertical;">${(row.additionalDescription||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
       </div>
@@ -1061,6 +1061,7 @@ async function submitCreatePO() {
     if (!row.itemCode) return showErr(`Row ${n}: select a material from the search (item code required).`);
     if (!(parseFloat(row.quantity) > 0)) return showErr(`Row ${n}: Quantity must be greater than 0.`);
     if (!(parseFloat(row.rate) > 0)) return showErr(`Row ${n}: Rate must be greater than 0.`);
+    if (!(row.additionalDescription || "").trim()) return showErr(`Row ${n}: Description of Material is required.`);
     // Every row must have been through "Allocate to PRNs" at least once
     // — ending up with zero real PRN allocations is fine (a deliberate
     // stock-building purchase), but it must be an explicit confirmation
@@ -1165,6 +1166,7 @@ async function authorizePOFromForm() {
     if (!row.itemCode) return showErr(`Row ${n}: select a material from the search (item code required).`);
     if (!(parseFloat(row.quantity) > 0)) return showErr(`Row ${n}: Quantity must be greater than 0.`);
     if (!(parseFloat(row.rate) > 0)) return showErr(`Row ${n}: Rate must be greater than 0.`);
+    if (!(row.additionalDescription || "").trim()) return showErr(`Row ${n}: Description of Material is required.`);
     if (!row._allocationTouched) {
       return showErr(`Row ${n}: click "Allocate to PRNs" and confirm the split (or Extra) before authorizing.`);
     }
