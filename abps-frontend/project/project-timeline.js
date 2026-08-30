@@ -53,7 +53,7 @@ const PTL_ADMIN_MILESTONE_OVERRIDE_KEY = { boqs: 'boqs_released', prns: 'prns_re
 // node's stage differs from the previous one, so Stage 1/2/3 get the same
 // section labeling Stage 4/5 already had (those two used to be hardcoded
 // separately by the caller; now folded into the same mechanism).
-const PTL_STAGE_LABEL = { 1: 'Order Intake', 2: 'Clearance', 3: 'Pre Production', 4: 'Production', 5: 'Inspection & Dispatch' };
+const PTL_STAGE_LABEL = { 1: 'Order Acceptance', 2: 'Approvals', 3: 'Pre Production', 4: 'Production', 5: 'Inspection & Dispatch' };
 
 let ptlProjects = [];
 let ptlData = null;
@@ -431,7 +431,7 @@ function ptlRender() {
 // the server, so it can never disagree with what's actually displayed.
 function ptlIsStage3Done() {
   if (!ptlData || !ptlData.trunk) return false;
-  const keys = ['boqs', 'costing', 'wdesign', 'prns', 'rmpos', 'pps'];
+  const keys = ['boqs', 'wdesign', 'prns', 'rmpos', 'pps'];
   return keys.every(id => {
     const n = ptlData.trunk.find(t => t.id === id);
     return n && (!!n.actual || n.done === true);
@@ -724,8 +724,10 @@ async function ptlSetSystemDate(fieldId) {
 
 // wdesign dropped 29 Aug 2026 — Working Designs & Drawings is now
 // kind:'derived' (first drawing upload), no longer a manual tick, so
-// ptlMarkMilestoneDone's button for it no longer renders.
-const PTL_MILESTONE_KEY = { costing: 'costing_released' };
+// ptlMarkMilestoneDone's button for it no longer renders. costing dropped
+// 30 Aug 2026 — folded into 'boqs' (All BOQs and Final Costing Released),
+// no manual-tick Stage 3 milestone is left.
+const PTL_MILESTONE_KEY = {};
 
 async function ptlSetQaMilestoneDate(milestoneKey) {
   if (!ptlData) return;
@@ -765,6 +767,9 @@ let ptlMode = "days15", ptlDayW = 30, ptlFS = 1.14;
 let ptlDays = [], ptlIndexMap = {};
 let ptlLastTodayX = 0;
 let ptlFsRailOpen = true;
+// DEAD as of 30 Aug 2026 — canvas node/trace coloring dropped department
+// hues entirely (green on-track / red late only, see ptlCanvasNodes).
+// Flagged, not deleted, per repo convention.
 const PTL_LANE_HEX = { Reactor: '#b45309', Capacitor: '#047857', Panel: '#c2410c' };
 const PTL_TRUNK_HEX = { marketing: '#be185d', project: '#0056b3', design: '#00a878', store: '#0369a1', purchase: '#7c3aed', qa: '#dc2626' };
 
@@ -789,7 +794,7 @@ function ptlBuildDayRange() {
 }
 
 function ptlCanvasNodes() {
-  const spineIds = ['oa', 'po', 'activated', 'dwgSent', 'dwgAppr', 'mfcCust', 'mfcInt', 'boqs', 'costing', 'wdesign', 'prns', 'rmpos', 'pps', 'prodPlan'];
+  const spineIds = ['oa', 'po', 'activated', 'dwgSent', 'dwgAppr', 'mfcCust', 'mfcInt', 'boqs', 'wdesign', 'prns', 'rmpos', 'pps', 'prodPlan'];
   // 'dispatched' merged into 'delivery' 29 Aug 2026 — see routes/timeline.js.
   const tailIds = ['inspCall', 'customer_inspection', 'inspection_clearance_note', 'dispatch_clearance', 'delivery'];
   const byId = id => (ptlData.trunk || []).find(n => n.id === id);
@@ -831,7 +836,7 @@ function ptlPlacer() {
     },
   };
 }
-const PTL_STAGE_NAMES = { 1: 'Order Intake', 2: 'Clearance', 3: 'Pre Production', 4: 'Production', 5: 'Inspection & Dispatch' };
+const PTL_STAGE_NAMES = { 1: 'Order Acceptance', 2: 'Approvals', 3: 'Pre Production', 4: 'Production', 5: 'Inspection & Dispatch' };
 
 function ptlRenderCanvas(containerId) {
   const wrap = document.getElementById(containerId || ptlCanvasContainerId);
@@ -985,7 +990,7 @@ function ptlRenderCanvas(containerId) {
     const split = pos[spine[spine.length - 1].id];
     const merge = tail.length ? pos[tail[0].id] : split;
     lanes.forEach((l, i) => {
-      const c = PTL_LANE_HEX[l.ownerDept] || 'var(--muted)';
+      const c = 'var(--brand)';
       const y = laneYs[i];
       const stepPts = l.steps.map(s => ({ x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id] }));
       const fx = stepPts[0].x, lx = stepPts[stepPts.length - 1].x;
@@ -993,7 +998,7 @@ function ptlRenderCanvas(containerId) {
       traces.push({ d: poly(stepPts), c });
       traces.push({ d: `M${lx} ${y} C${(lx + merge.x) / 2} ${y}, ${(lx + merge.x) / 2} ${merge.y}, ${merge.x} ${merge.y}`, c });
     });
-    if (tail.length) traces.push({ d: poly(tail.map(n => pos[n.id])), c: PTL_TRUNK_HEX.qa });
+    if (tail.length) traces.push({ d: poly(tail.map(n => pos[n.id])), c: 'var(--brand)' });
   }
   const clipId = "ptlclip" + Math.random().toString(36).slice(2, 8);
   P.push(`<defs><clipPath id="${clipId}"><rect x="0" y="0" width="${todayX}" height="${H}"/></clipPath></defs>`);
@@ -1006,15 +1011,20 @@ function ptlRenderCanvas(containerId) {
   const laid = [];
   spine.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
   tail.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
-  lanes.forEach((l, i) => l.steps.forEach(s => laid.push({ n: { ...s, dept: l.ownerDept === 'Reactor' ? 'lane_r' : l.ownerDept === 'Capacitor' ? 'lane_c' : 'lane_p' }, x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id], laneColor: PTL_LANE_HEX[l.ownerDept], boqId: l.boqId, ownerLabel: `${l.ownerDept} Production` })));
+  lanes.forEach((l, i) => l.steps.forEach(s => laid.push({ n: { ...s, dept: l.ownerDept === 'Reactor' ? 'lane_r' : l.ownerDept === 'Capacitor' ? 'lane_c' : 'lane_p' }, x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id], boqId: l.boqId, ownerLabel: `${l.ownerDept} Production` })));
   laid.sort((a, b) => a.x - b.x);
 
   const PL = ptlPlacer();
   laid.forEach(({ x, y }) => PL.block({ x0: x - R * 1.4, x1: x + R * 1.4, y0: y - R * 1.4, y1: y + R * 1.4 }));
 
+  // Color is now purely a completion/lateness signal, not a department
+  // one (dropped 30 Aug 2026) — green for anything on-track (filled +
+  // checked once done, hollow while still ahead), red reserved
+  // exclusively for something open past its own due date. Department is
+  // still readable from the label text / lane gutter, just not color.
   const clickMap = [];
-  laid.forEach(({ n, x, y, laneColor, boqId, ownerLabel }) => {
-    const c = laneColor || PTL_TRUNK_HEX[n.dept] || 'var(--muted)';
+  laid.forEach(({ n, x, y, boqId, ownerLabel }) => {
+    const c = 'var(--accent)';
     const eff = n.actual || n.target || n.planned;
     const done = !!n.actual || n.done === true;
     const late = !done && eff && eff < today;
@@ -1053,9 +1063,9 @@ function ptlRenderCanvas(containerId) {
     const gutterW = PAD_L + LEAD - 10;
     const G = [`<g id="ptl-gutter">`, `<rect x="0" y="${RULER_H}" width="${gutterW}" height="${H - RULER_H}" fill="var(--bg,#f0f4f8)"/>`, `<line x1="${gutterW}" y1="${RULER_H}" x2="${gutterW}" y2="${H}" stroke="var(--border)" stroke-width="1"/>`];
     lanes.forEach((l, i) => {
-      const c = PTL_LANE_HEX[l.ownerDept] || 'var(--muted)', y = laneYs[i];
-      G.push(`<rect x="16" y="${y - 12 * ptlFS}" width="4" height="${24 * ptlFS}" rx="2" fill="${c}"/>`);
-      G.push(`<text x="28" y="${y + 4.5 * ptlFS}" font-size="${13 * ptlFS}" font-weight="800" fill="${c}">${esc(l.name)}</text>`);
+      const y = laneYs[i];
+      G.push(`<rect x="16" y="${y - 12 * ptlFS}" width="4" height="${24 * ptlFS}" rx="2" fill="var(--brand)"/>`);
+      G.push(`<text x="28" y="${y + 4.5 * ptlFS}" font-size="${13 * ptlFS}" font-weight="800" fill="var(--text)">${esc(l.name)}</text>`);
     });
     G.push(`</g>`);
     P.push(G.join(""));
@@ -1320,7 +1330,7 @@ function ptlRenderFullscreen() {
       <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column;">
         <div id="ptl-fs-scroller" style="flex:1 1 auto; min-height:0; overflow-x:auto; overflow-y:hidden; cursor:grab; background:var(--bg,#f0f4f8);"></div>
         <div style="flex:none; border-top:1px solid var(--border); background:var(--card); padding:8px 18px; display:flex; flex-wrap:wrap; align-items:center; gap:6px 20px; font-size:0.74rem; color:var(--muted);">
-          <span>● Complete</span><span>○ Scheduled</span><span style="color:#e84545;">○ Overdue</span><span>— Done so far</span><span style="opacity:.6;">┄ Still to come</span>
+          <span style="color:var(--accent);">● Complete</span><span style="color:var(--accent);">○ Scheduled</span><span style="color:#e84545;">○ Overdue</span><span>— Done so far</span><span style="opacity:.6;">┄ Still to come</span>
           <span style="margin-left:auto;">Click a point to jump to it in Steps. Hover for its date.</span>
         </div>
       </div>
