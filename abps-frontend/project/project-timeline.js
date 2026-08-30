@@ -274,7 +274,7 @@ function ptlStageProgressHtml(size) {
   const late = currentStage && currentStage.late;
   const color = late ? '#e84545' : 'var(--brand)';
 
-  const d = size === 'sm' ? 24 : 40, sw = size === 'sm' ? 3 : 4;
+  const d = size === 'sm' ? 32 : 44, sw = size === 'sm' ? 3 : 4;
   const r = (d - sw) / 2, cx = d / 2, cy = d / 2, circ = 2 * Math.PI * r;
   const offset = circ * (1 - p.overallPct / 100);
   const title = `Stage ${stageIdx} of 5 · ${p.overallPct}% milestones done`;
@@ -282,10 +282,10 @@ function ptlStageProgressHtml(size) {
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${sw}"/>
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/>
   </svg>`;
-  const centerLabel = size === 'sm' ? '' : `<span style="font-size:0.72rem; font-weight:800; color:var(--text);">${p.overallPct}%</span>`;
-  return `<div style="display:flex; align-items:center; gap:7px;" title="${title}">
-    <div style="position:relative; width:${d}px; height:${d}px;">${ring}</div>
-    ${centerLabel}
+  const labelSize = size === 'sm' ? '0.56rem' : '0.68rem';
+  return `<div style="position:relative; width:${d}px; height:${d}px; flex:none;" title="${title}">
+    ${ring}
+    <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:${labelSize}; font-weight:800; color:var(--text); line-height:1;">${p.overallPct}%</span>
   </div>`;
 }
 
