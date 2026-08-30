@@ -298,6 +298,9 @@ async function initializeRevisePRNOtherTab() {
   document.getElementById("rprn-body").innerHTML = "";
   document.getElementById("rprn-prn-select").innerHTML = `<option value="">— Select a project first —</option>`;
   const sel = document.getElementById("rprn-project-select-ta-input");
+  sel.value = "";
+  const selDropList = document.getElementById("rprn-project-select-ta-dropdown");
+  if (selDropList) selDropList.style.display = "none";
   try {
     const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
     window.sharedActiveProjectCodes = data.success ? (data.projects || []) : [];
@@ -384,6 +387,7 @@ function renderRevisePRNTable() {
   }).join("");
 
   document.getElementById("rprn-body").innerHTML = `
+    <div style="font-size:0.85rem; font-weight:700; color:var(--muted); margin-bottom:10px;">PRN ID: <span style="font-family:monospace; color:var(--brand);">${st.prn.prnId}</span>${st.prn.version > 1 ? ` (v${st.prn.version})` : ""}</div>
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:14px;">
       <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
         <thead><tr style="background:#f8fafc;">

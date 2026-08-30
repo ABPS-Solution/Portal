@@ -149,6 +149,9 @@ async function initializePRNPanel() {
   if (window._prnCreateStockInterval)  { clearInterval(window._prnCreateStockInterval);  window._prnCreateStockInterval  = null; }
   const projDrop = document.getElementById("prn-project-select-ta-input");
   const boqDrop  = document.getElementById("prn-boq-select");
+  projDrop.value = "";
+  const projDropList = document.getElementById("prn-project-select-ta-dropdown");
+  if (projDropList) projDropList.style.display = "none";
   projDrop.placeholder = "Loading...";
   boqDrop.innerHTML  = '<option value="">— Select Project First —</option>';
   boqDrop.disabled   = true;
