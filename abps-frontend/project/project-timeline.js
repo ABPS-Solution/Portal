@@ -220,6 +220,50 @@ const ptlDeliveryValue = p => p.actualDelivery || p.tentativeDelivery;
 const ptlEff = n => n.actual || n.target || n.planned;
 const ptlLate = n => !n.actual && !n.done && ptlEff(n) && ptlEff(n) < ptlToday();
 
+// Small 5-segment progress strip (one block per Stage 1-5). Each block's
+// fill fraction = done nodes / total nodes for that stage (trunk nodes for
+// 1/2/3/5, lane steps for 4) — a milestone-completion measure, not a
+// calendar-days one, so a project that's behind schedule doesn't falsely
+// read as "progressing" just because time passed. The current stage's
+// block turns red instead of brand-blue if anything still open in it is
+// already late (ptlLate), folding schedule risk in as a color signal
+// rather than a second competing number.
+function ptlComputeStageProgress() {
+  if (!ptlData) return null;
+  const { trunk, lanes } = ptlData;
+  const stages = [1, 2, 3, 4, 5].map(k => {
+    const nodes = k === 4 ? (lanes || []).flatMap(l => l.steps) : (trunk || []).filter(n => n.stage === k);
+    const total = nodes.length;
+    const done = nodes.filter(n => !!n.actual || n.done === true).length;
+    const late = nodes.some(n => ptlLate(n));
+    return { stage: k, total, done, frac: total ? done / total : 0, late };
+  });
+  const sumTotal = stages.reduce((a, s) => a + s.total, 0);
+  const sumDone = stages.reduce((a, s) => a + s.done, 0);
+  return { stages, overallPct: sumTotal ? Math.round((sumDone / sumTotal) * 100) : 0 };
+}
+
+function ptlStageProgressHtml(size) {
+  const p = ptlComputeStageProgress();
+  if (!p) return '';
+  const w = size === 'sm' ? 16 : 20, h = size === 'sm' ? 10 : 12, gap = 3;
+  const bars = p.stages.map(s => {
+    const complete = s.total > 0 && s.frac >= 1;
+    const started = s.frac > 0 && !complete;
+    const color = s.late ? '#e84545' : 'var(--brand)';
+    let inner = '';
+    if (complete) inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="2" fill="${color}"/>`;
+    else if (started) inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="2" fill="none" stroke="${color}" stroke-width="1.2" opacity=".55"/><rect x="0" y="0" width="${Math.max(2, w * s.frac)}" height="${h}" rx="2" fill="${color}"/>`;
+    else inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="2" fill="none" stroke="var(--border)" stroke-width="1.2"/>`;
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block; flex:none;">${inner}</svg>`;
+  }).join(`<div style="width:${gap}px;"></div>`);
+  const title = `Stage ${p.stages.filter(s => s.frac >= 1).length + (p.stages.some(s => s.frac > 0 && s.frac < 1) ? 1 : 0)} of 5 · ${p.overallPct}% milestones done`;
+  return `<div style="display:flex; align-items:center; gap:8px;" title="${title}">
+    <div style="display:flex; align-items:center;">${bars}</div>
+    <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${p.overallPct}%</span>
+  </div>`;
+}
+
 function ptlRender() {
   const body = document.getElementById("ptl-body");
   const { project, mfcComplete, trunk } = ptlData;
@@ -232,11 +276,14 @@ function ptlRender() {
         <div style="font-size:0.82rem; color:var(--muted);">${escapeHtml(project.companyName || '—')} · <strong>${escapeHtml(project.status)}</strong> · ${ptlDeliveryLabel(project)} <strong>${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
         ${ptlLdSummaryHtml()}
       </div>
-      ${ptlIsAdmin() ? `<div style="display:flex; align-items:center; gap:6px;" title="Admin only — overrides 'today' everywhere on this screen for testing">
-        <span style="font-size:0.72rem; font-weight:700; color:#b45309;">Today override:</span>
-        <input type="date" value="${localStorage.getItem(PTL_TODAY_OVERRIDE_KEY) || ''}" onchange="ptlSetTodayOverride(this.value)" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.78rem;" />
-        ${localStorage.getItem(PTL_TODAY_OVERRIDE_KEY) ? `<button type="button" onclick="ptlSetTodayOverride('')" style="padding:5px 10px; font-size:0.72rem; font-weight:700; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--muted); cursor:pointer;">Reset</button>` : ''}
-      </div>` : ''}
+      <div style="display:flex; align-items:center; gap:14px;">
+        ${ptlIsAdmin() ? `<div style="display:flex; align-items:center; gap:6px;" title="Admin only — overrides 'today' everywhere on this screen for testing">
+          <span style="font-size:0.72rem; font-weight:700; color:#b45309;">Today override:</span>
+          <input type="date" value="${localStorage.getItem(PTL_TODAY_OVERRIDE_KEY) || ''}" onchange="ptlSetTodayOverride(this.value)" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.78rem;" />
+          ${localStorage.getItem(PTL_TODAY_OVERRIDE_KEY) ? `<button type="button" onclick="ptlSetTodayOverride('')" style="padding:5px 10px; font-size:0.72rem; font-weight:700; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--muted); cursor:pointer;">Reset</button>` : ''}
+        </div>` : ''}
+        ${ptlStageProgressHtml('sm')}
+      </div>
     </div>`;
 
   // Two full views, not a canvas strip glued above a list: Timeline is
@@ -1165,6 +1212,7 @@ function ptlRenderFullscreen() {
         </div>
         ${ptlLdChipHtml()}
         <div style="flex:1 1 auto;"></div>
+        ${ptlStageProgressHtml('lg')}
         <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; flex:none;">
           ${Object.keys(PTL_MODES).map(m => `<button type="button" onclick="ptlSetMode('${m}')" style="padding:7px 14px; font-size:0.82rem; font-weight:600; border:0; border-right:1px solid var(--border); cursor:pointer; background:${m === ptlMode ? 'var(--brand)' : '#fff'}; color:${m === ptlMode ? '#fff' : 'var(--muted)'};">${m === 'week' ? 'This Week' : m === 'days15' ? '15 Days' : 'This Month'}</button>`).join("")}
         </div>
