@@ -796,12 +796,20 @@ function ptlBuildDayRange() {
 function ptlCanvasNodes() {
   const spineIds = ['oa', 'po', 'activated', 'dwgSent', 'dwgAppr', 'mfcCust', 'mfcInt', 'boqs', 'wdesign', 'prns', 'rmpos', 'pps', 'prodPlan'];
   // 'dispatched' merged into 'delivery' 29 Aug 2026 — see routes/timeline.js.
-  const tailIds = ['inspCall', 'customer_inspection', 'inspection_clearance_note', 'dispatch_clearance', 'delivery'];
+  // The connecting trunk line now ends at 'predictedDelivery' (the QA
+  // chain's own realistic projection), not 'delivery' (the PO's
+  // contractual/promised date) — 'delivery' moved to `standalone` (30 Aug
+  // 2026) so it renders as its own point without implying it's just
+  // another step in the same sequence; the two dates can legitimately
+  // diverge and that divergence is the point of showing both.
+  const tailIds = ['inspCall', 'customer_inspection', 'inspection_clearance_note', 'dispatch_clearance', 'predictedDelivery'];
+  const standaloneIds = ['delivery'];
   const byId = id => (ptlData.trunk || []).find(n => n.id === id);
   const dated = id => { const n = byId(id); return n && ptlEff(n) ? n : null; };
   return {
     spine: spineIds.map(dated).filter(Boolean),
     tail: tailIds.map(dated).filter(Boolean),
+    standalone: standaloneIds.map(dated).filter(Boolean),
     lanes: (ptlData.lanes || []).filter(l => l.planInitialized),
   };
 }
@@ -842,7 +850,7 @@ function ptlRenderCanvas(containerId) {
   const wrap = document.getElementById(containerId || ptlCanvasContainerId);
   if (!wrap) return;
   if (!ptlBuildDayRange()) { wrap.innerHTML = `<div style="padding:30px; text-align:center; color:var(--muted);">Nothing dated yet to draw a timeline from.</div>`; return; }
-  const { spine, tail, lanes } = ptlCanvasNodes();
+  const { spine, tail, standalone, lanes } = ptlCanvasNodes();
   if (spine.length < 2) { wrap.innerHTML = `<div style="padding:30px; text-align:center; color:var(--muted);">Nothing dated yet to draw a timeline from.</div>`; return; }
 
   ptlFS = PTL_FONT_SCALE[ptlMode];
@@ -875,7 +883,7 @@ function ptlRenderCanvas(containerId) {
   const bot = H - 46 * ptlFS;
   const gap = Math.max(90 * ptlFS, Math.min(220 * ptlFS, (bot - top) / 2.4));
   const dateGroupSizes = {};
-  [...spine, ...tail].forEach(n => { const d = ptlEff(n); if (d) dateGroupSizes[d] = (dateGroupSizes[d] || 0) + 1; });
+  [...spine, ...tail, ...standalone].forEach(n => { const d = ptlEff(n); if (d) dateGroupSizes[d] = (dateGroupSizes[d] || 0) + 1; });
   const maxGroupSize = Math.max(1, ...Object.values(dateGroupSizes));
   // Leave room above/below the fanned group for its own label + date
   // stacks, then fit within whatever's left.
@@ -933,7 +941,7 @@ function ptlRenderCanvas(containerId) {
   // the design prototype, so the schematic reads as five stages rather
   // than one unbroken run of dots.
   const stageXs = {};
-  [...spine, ...tail].forEach(n => { if (n.stage) (stageXs[n.stage] = stageXs[n.stage] || []).push(xOf(ptlEff(n))); });
+  [...spine, ...tail, ...standalone].forEach(n => { if (n.stage) (stageXs[n.stage] = stageXs[n.stage] || []).push(xOf(ptlEff(n))); });
   lanes.forEach(l => l.steps.forEach(s => (stageXs[4] = stageXs[4] || []).push(xOf(s.actual || s.target || s.planned))));
   // Skip a stage's label (never the divider line itself) when the next
   // stage starts too close after it for the text to fit — a small Stage
@@ -965,7 +973,7 @@ function ptlRenderCanvas(containerId) {
   // prototype did.
   const pos = {};
   const byDate = {};
-  [...spine, ...tail].forEach(n => { (byDate[ptlEff(n)] = byDate[ptlEff(n)] || []).push(n); });
+  [...spine, ...tail, ...standalone].forEach(n => { (byDate[ptlEff(n)] = byDate[ptlEff(n)] || []).push(n); });
   Object.values(byDate).forEach(group => {
     const x = xOf(ptlEff(group[0]));
     group.forEach((n, i) => { pos[n.id] = { x, y: spineY + (i - (group.length - 1) / 2) * FAN }; });
@@ -1011,6 +1019,7 @@ function ptlRenderCanvas(containerId) {
   const laid = [];
   spine.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
   tail.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
+  standalone.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
   lanes.forEach((l, i) => l.steps.forEach(s => laid.push({ n: { ...s, dept: l.ownerDept === 'Reactor' ? 'lane_r' : l.ownerDept === 'Capacitor' ? 'lane_c' : 'lane_p' }, x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id], boqId: l.boqId, ownerLabel: `${l.ownerDept} Production` })));
   laid.sort((a, b) => a.x - b.x);
 
