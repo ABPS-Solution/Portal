@@ -105,6 +105,8 @@ async function initializeProjectTimelinePanel() {
   `;
   document.getElementById("ptl-project-input").value = "";
   document.getElementById("ptl-body").innerHTML = "";
+  const elHeaderLeft0 = document.getElementById("ptl-header-left");
+  if (elHeaderLeft0) elHeaderLeft0.innerHTML = "";
   ptlData = null; ptlSelected = null;
 
   try {
@@ -312,19 +314,19 @@ function ptlRender() {
     </div>`;
 
   // Two full views, not a canvas strip glued above a list: Timeline is
-  // the schematic overview (big — real screen space, not a sidebar
-  // widget); Steps is where the actual Mark Done / Set Date / target
-  // editing happens. Both render into the DOM always; only visibility
-  // toggles, so a canvas click can jump straight into Steps.
-  const tabs = `
-    <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:16px;">
-      <button type="button" id="ptl-tab-timeline" onclick="ptlSetViewMode('timeline')" style="padding:9px 18px; font-size:0.85rem; font-weight:700; border:0; border-right:1px solid var(--border); cursor:pointer;">Timeline</button>
-      <button type="button" id="ptl-tab-steps" onclick="ptlSetViewMode('steps')" style="padding:9px 18px; font-size:0.85rem; font-weight:700; border:0; cursor:pointer;">Steps</button>
-    </div>`;
+  // the schematic overview (big — real screen space, its own fullscreen
+  // overlay); Steps is where the actual Mark Done / Set Date / target
+  // editing happens, and is the default landing view. Rather than a
+  // two-tab toggle inline in the body (redundant once you're already
+  // looking at Steps), a single "Timeline" entry button lives in the
+  // panel's top-left, next to Return to Main Dashboard — the fullscreen
+  // overlay's own "‹ Steps" button is the way back.
+  const elHeaderLeft = document.getElementById("ptl-header-left");
+  if (elHeaderLeft) elHeaderLeft.innerHTML = `<button type="button" onclick="ptlSetViewMode('timeline')" style="padding:8px 16px; font-size:0.82rem; font-weight:700; border:1px solid var(--border); border-radius:var(--radius); background:#fff; color:var(--text); cursor:pointer;">Timeline</button>`;
   const stepsOpen = `<div id="ptl-steps-wrap" style="display:none;">`;
 
   if (!mfcComplete) {
-    body.innerHTML = header + tabs + stepsOpen + `
+    body.innerHTML = header + stepsOpen + `
       <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius); padding:14px; font-size:0.85rem; color:#92400e;">
         Stage 3 onward unlocks once Manufacturing Clearance sets this project's Internal MFC date — nothing has been cleared yet, so only Stages 1-2 are shown below.
       </div>
@@ -339,7 +341,7 @@ function ptlRender() {
   // they depend on the lanes' own terminal-step dates.
   const preLanes = trunk.filter(n => n.stage <= 3 || n.id === 'prodPlan');
   const postLanes = trunk.filter(n => n.id === 'inspCall' || n.stage === 5);
-  body.innerHTML = header + tabs + stepsOpen + ptlRenderList(preLanes, today)
+  body.innerHTML = header + stepsOpen + ptlRenderList(preLanes, today)
     + ptlRenderLanes(ptlData.lanes || [])
     + ptlRenderList(postLanes, today)
     + `</div>`;
