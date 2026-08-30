@@ -292,13 +292,26 @@ function ptlComputeScheduleWeightedPct() {
   (trunk || []).forEach(n => { const d = ptlEff(n); if (d) dated.push({ date: d, done: !!n.actual || n.done === true }); });
   (lanes || []).forEach(l => l.steps.forEach(s => { const d = ptlEff(s); if (d) dated.push({ date: d, done: !!s.actual || s.done === true }); }));
   if (dated.length < 2) return 0;
-  dated.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+
+  // Floor at the earliest node that's actually DONE — a planned/target/
+  // tentative estimate dated earlier than the project's own first real
+  // milestone is bad data (e.g. a delivery date typo'd a year early), and
+  // without this guard it sorts to the very front of the timeline; the
+  // whole gap up to the next done milestone then gets credited as "done"
+  // purely because it's chronologically ahead of that (wrong) date —
+  // this is what produced 96% on a brand-new project with nothing past
+  // Order Acceptance/PO Upload done. Any node dated before that floor is
+  // dropped from the weighting entirely rather than trusted.
+  const earliestDoneDate = dated.filter(d => d.done).map(d => d.date).sort()[0];
+  const scoped = earliestDoneDate ? dated.filter(d => d.date >= earliestDoneDate) : dated;
+  if (scoped.length < 2) return 0;
+  scoped.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
 
   // Group same-date entries into clusters so a tied gap's weight splits
   // by the cluster's own done-fraction instead of being all-or-nothing
   // on whichever tied node happened to sort first/last.
   const clusters = [];
-  dated.forEach(n => {
+  scoped.forEach(n => {
     const last = clusters[clusters.length - 1];
     if (last && last.date === n.date) last.nodes.push(n); else clusters.push({ date: n.date, nodes: [n] });
   });

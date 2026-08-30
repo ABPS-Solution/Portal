@@ -116,7 +116,7 @@ async function loadMRDPRNList() {
   if (!projectId) { prnSel.innerHTML = `<option value="">— Select a project first —</option>`; return; }
   prnSel.innerHTML = `<option value="">Loading…</option>`;
   try {
-    const data = await apFetch({ action: "fetchPRNsByProjectAndStatus", projectId });
+    const data = await apFetch({ action: "fetchPRNsByProjectAndStatus", projectId, scopeToProductionDept: true });
     const prns = (data.success ? (data.prns || []) : []);
     window.mrdPrnListCache = Object.fromEntries(prns.map(p => [p.prnId, p]));
     prnSel.innerHTML = prns.length === 0
@@ -467,7 +467,7 @@ async function loadReviseMRDList() {
   if (!projectId) { prnSel.innerHTML = `<option value="">— Select a project first —</option>`; return; }
   prnSel.innerHTML = `<option value="">Loading…</option>`;
   try {
-    const data = await apFetch({ action: "fetchPRNsByProjectAndStatus", projectId, prnStatus: "Pending" });
+    const data = await apFetch({ action: "fetchPRNsByProjectAndStatus", projectId, prnStatus: "Pending", scopeToProductionDept: true });
     const prns = (data.success ? (data.prns || []) : []);
     window.rmrdOtherListMeta = Object.fromEntries(prns.map(p => [p.prnId, p]));
     prnSel.innerHTML = prns.length === 0

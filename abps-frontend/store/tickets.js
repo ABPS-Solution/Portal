@@ -62,9 +62,10 @@ async function initializeMaterialRequestWorkspace() {
 
   itemDropdown.innerHTML = '<option value="">— Select Material —</option>';
   try {
-    const [inventoryData, staffData] = await Promise.all([
+    const [inventoryData, staffData, sessionData] = await Promise.all([
       apFetch({ action: "pullLiveInventoryCounts" }),
-      apFetch({ action: "getStoreOperatorsList" })
+      apFetch({ action: "getStoreOperatorsList" }),
+      apFetch({ action: "getSessionPermissions" }),
     ]);
 
     if (inventoryData.success) {
@@ -74,8 +75,10 @@ async function initializeMaterialRequestWorkspace() {
     if (staffData.success) {
       globalOperatorsDatabasePayloadCache = staffData.fullPersonnelDataRecordsTree || [];
     }
+    applyCmitDepartmentLock(sessionData.success ? sessionData.ticketOutgoingUseLock : null);
   } catch (error) {
     console.error("Critical Matrix Load Failure:", error);
+    applyCmitDepartmentLock(null);
   }
 
   resetMaterialRequestCascadingLockState();
@@ -1337,6 +1340,48 @@ async function ticketLoadProjectListForDepartment_(isService) {
  * Name input, if that toggle is already checked from a prior selection
  * this visit) and loads whichever project list applies.
  */
+// applyCmitDepartmentLock — Outgoing Use is now locked to the
+// requester's own department/production sub-department wherever that's
+// resolvable (31 Aug 2026, see lib/productionScope.js server-side).
+// `lock` is getSessionPermissions' ticketOutgoingUseLock:
+//   { locked, value, blocked }
+// - blocked: nothing to lock to (Production, no sub-dept set) — hide the
+//   whole form behind an explanatory banner rather than guessing.
+// - locked: hide the dropdown, show a read-only badge in the header, and
+//   drive the existing dropdown-change cascade programmatically so every
+//   downstream field (project list, BOQ/Job Card visibility) behaves
+//   exactly as if the user had picked it themselves.
+// - neither: Admin, Store, or anyone else with access to this screen —
+//   dropdown stays exactly as it always was.
+function applyCmitDepartmentLock(lock) {
+  const badge = document.getElementById("cmit-locked-department-badge");
+  const blockedBanner = document.getElementById("cmit-blocked-banner");
+  const mainSection = document.getElementById("cmit-main-section");
+  const fieldWrapper = document.getElementById("wrapper-ticket-department-outgoing-field");
+  const dropdown = document.getElementById("ticket-department-outgoing-dropdown");
+
+  if (lock && lock.blocked) {
+    if (blockedBanner) blockedBanner.style.display = "block";
+    if (mainSection) mainSection.style.display = "none";
+    if (badge) badge.style.display = "none";
+    return;
+  }
+  if (blockedBanner) blockedBanner.style.display = "none";
+  if (mainSection) mainSection.style.display = "";
+
+  if (lock && lock.locked && lock.value) {
+    if (fieldWrapper) fieldWrapper.style.display = "none";
+    if (badge) { badge.style.display = "inline-block"; badge.textContent = lock.value; }
+    if (dropdown) {
+      dropdown.value = lock.value;
+      handleCreateTicketDepartmentChange(lock.value);
+    }
+  } else {
+    if (fieldWrapper) fieldWrapper.style.display = "";
+    if (badge) badge.style.display = "none";
+  }
+}
+
 async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
   const isService = chosenDepartmentVal === "Service";
 

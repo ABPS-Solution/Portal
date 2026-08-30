@@ -69,6 +69,7 @@ const LA_DEPARTMENTS = [
   { name: 'Production', color: '#b45309' },
   { name: 'Quality Assurance', color: '#dc2626' },
   { name: 'Accounts', color: '#0f766e' },
+  { name: 'Service', color: '#16a34a' },
 ];
 
 async function loadSecurityAdminUsers() {

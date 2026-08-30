@@ -781,14 +781,16 @@
     <div id="canvas-module-store-material-request" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:2px solid var(--bg); padding-bottom:10px;">
         <h2 class="panel-title" style="margin:0;">Create Material Issue Ticket</h2>
+        <span id="cmit-locked-department-badge" style="display:none; font-weight:700; font-size:0.85rem; padding:6px 14px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); color:var(--brand);"></span>
       </div>
       <div id="mrd-reminder-banner-cmit" class="material-requirement-date-revision-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ Purchase Quantities have changed on one or more PRNs — their <strong>Production Requirement Dates</strong> need revising.</div>
+      <div id="cmit-blocked-banner" style="display:none; margin-bottom:14px; padding:14px; background:#fee2e2; border-left:4px solid #b91c1c; color:#991b1b; border-radius:var(--radius); font-size:0.88rem; font-weight:700;">You don't have a Production sub-department (Reactor/Capacitor/Panel) assigned to your account, so a Material Issue Ticket can't be attributed correctly. Contact an admin to have your sub-department set.</div>
       <div id="store-ticket-runtime-inline-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid;"></div>
 
-      <div class="section" style="background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
+      <div class="section" id="cmit-main-section" style="background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-          <div>
+          <div id="wrapper-ticket-department-outgoing-field">
             <label class="field-label" id="lbl-dept-outgoing-title" style="margin-top:0; font-weight: 700;">Production Department / Outgoing Use *</label>
             <select id="ticket-department-outgoing-dropdown" onchange="handleCreateTicketDepartmentChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;">
               <option value="">— Select Outgoing Use —</option>
