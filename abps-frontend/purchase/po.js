@@ -461,14 +461,14 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Taxes & Charges</div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-          <div><label class="field-label" style="margin-top:0;">Import / Export</label>
+          <div><label class="field-label" style="margin-top:0;">Local / Import</label>
             <select id="cpo-trade-type" onchange="onCPOTradeTypeChange()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;">
-              <option value="Import">Import</option><option value="Export">Export</option>
+              <option value="Local">Local</option><option value="Import">Import</option>
             </select>
           </div>
           <div id="cpo-usd-rate-wrap" style="display:none;"><label class="field-label" style="margin-top:0;">INR to USD Rate</label><input type="number" min="0" step="0.01" id="cpo-usd-rate" placeholder="e.g. 95.3" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         </div>
-        <div id="cpo-gst-note" style="display:none; font-size:0.78rem; color:var(--muted); margin-bottom:8px;">No GST for Export POs.</div>
+        <div id="cpo-gst-note" style="display:none; font-size:0.78rem; color:var(--muted); margin-bottom:8px;">No GST for Import POs.</div>
         <div id="cpo-gst-fields" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
           <div><label class="field-label" style="margin-top:0;">CGST %</label><input type="number" min="0" id="cpo-cgst" placeholder="9" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           <div><label class="field-label" style="margin-top:0;">SGST %</label><input type="number" min="0" id="cpo-sgst" placeholder="9" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
@@ -529,8 +529,8 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
         if (po.freight != null) document.getElementById("cpo-freight").value = Number(po.freight) || 0;
         if (po.other != null) document.getElementById("cpo-other").value = Number(po.other) || 0;
         if (po.roundOff != null) document.getElementById("cpo-roundoff").value = Number(po.roundOff) || 0;
-        if (po.tradeType === "Export") {
-          document.getElementById("cpo-trade-type").value = "Export";
+        if (po.tradeType === "Import") {
+          document.getElementById("cpo-trade-type").value = "Import";
           if (po.usdRate != null) document.getElementById("cpo-usd-rate").value = Number(po.usdRate) || "";
           onCPOTradeTypeChange();
         }
@@ -577,8 +577,8 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
     if (draft.freight) document.getElementById("cpo-freight").value = draft.freight;
     if (draft.other) document.getElementById("cpo-other").value = draft.other;
     if (draft.roundoff) document.getElementById("cpo-roundoff").value = draft.roundoff;
-    if (draft.tradeType === "Export") {
-      document.getElementById("cpo-trade-type").value = "Export";
+    if (draft.tradeType === "Import") {
+      document.getElementById("cpo-trade-type").value = "Import";
       if (draft.usdRate) document.getElementById("cpo-usd-rate").value = draft.usdRate;
       onCPOTradeTypeChange();
     }
@@ -615,7 +615,7 @@ function persistCPODraft() {
       freight: document.getElementById("cpo-freight").value,
       other: document.getElementById("cpo-other").value,
       roundoff: document.getElementById("cpo-roundoff").value,
-      tradeType: document.getElementById("cpo-trade-type")?.value || "Import",
+      tradeType: document.getElementById("cpo-trade-type")?.value || "Local",
       usdRate: document.getElementById("cpo-usd-rate")?.value || "",
       warranty: document.getElementById("cpo-warranty").value,
       insurance: document.getElementById("cpo-insurance").value,
@@ -912,15 +912,15 @@ function updateCPORowAmount(rowId) {
 }
 
 function onCPOTradeTypeChange() {
-  const isExport = document.getElementById("cpo-trade-type").value === "Export";
-  document.getElementById("cpo-usd-rate-wrap").style.display = isExport ? "block" : "none";
-  document.getElementById("cpo-gst-fields").style.display = isExport ? "none" : "grid";
-  document.getElementById("cpo-gst-note").style.display = isExport ? "block" : "none";
-  // Export POs carry no GST at all, so "(including GST)" is meaningless
+  const isImport = document.getElementById("cpo-trade-type").value === "Import";
+  document.getElementById("cpo-usd-rate-wrap").style.display = isImport ? "block" : "none";
+  document.getElementById("cpo-gst-fields").style.display = isImport ? "none" : "grid";
+  document.getElementById("cpo-gst-note").style.display = isImport ? "block" : "none";
+  // Import POs carry no GST at all, so "(including GST)" is meaningless
   // on them -- Packing/Freight/Other are just plain amounts there.
   ["cpo-pkg-gst-note", "cpo-frt-gst-note", "cpo-oth-gst-note"].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.style.display = isExport ? "none" : "inline";
+    if (el) el.style.display = isImport ? "none" : "inline";
   });
   recalcCPOTotals();
   persistCPODraft();
@@ -947,16 +947,16 @@ function recalcCPOTotals() {
   // never part of the GST-taxable base -- that's the material sub-total
   // alone. Matches routes/purchase.js's commitPurchaseOrderDraft/
   // authorizePurchaseOrder formula.
-  const isExport = document.getElementById("cpo-trade-type")?.value === "Export";
+  const isImport = document.getElementById("cpo-trade-type")?.value === "Import";
   const usdRate = parseFloat(document.getElementById("cpo-usd-rate")?.value) || 0;
-  const conv = (n) => (isExport && usdRate > 0) ? n / usdRate : n;
+  const conv = (n) => (isImport && usdRate > 0) ? n / usdRate : n;
   const taxableBase = conv(subTotal);
-  const cgst = isExport ? 0 : taxableBase * cgstPct / 100;
-  const sgst = isExport ? 0 : taxableBase * sgstPct / 100;
-  const igst = isExport ? 0 : taxableBase * igstPct / 100;
+  const cgst = isImport ? 0 : taxableBase * cgstPct / 100;
+  const sgst = isImport ? 0 : taxableBase * sgstPct / 100;
+  const igst = isImport ? 0 : taxableBase * igstPct / 100;
   const grandTotal = taxableBase + cgst + sgst + igst + conv(packing) + conv(freight) + conv(other) + roundOff;
   const fmt = (n) => n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
-  const symbol = isExport ? "$" : "";
+  const symbol = isImport ? "$" : "";
   document.getElementById("cpo-subtotal-disp").textContent = symbol + fmt(taxableBase);
   document.getElementById("cpo-grandtotal-disp").textContent = symbol + fmt(grandTotal);
   persistCPODraft();
@@ -1094,7 +1094,7 @@ async function submitCreatePO() {
     freight: parseFloat(document.getElementById("cpo-freight").value) || 0,
     other: parseFloat(document.getElementById("cpo-other").value) || 0,
     roundOff: parseFloat(document.getElementById("cpo-roundoff").value) || 0,
-    tradeType: document.getElementById("cpo-trade-type")?.value || "Import",
+    tradeType: document.getElementById("cpo-trade-type")?.value || "Local",
     usdRate: parseFloat(document.getElementById("cpo-usd-rate")?.value) || null,
     warranty: document.getElementById("cpo-warranty").value.trim(),
     insurance: document.getElementById("cpo-insurance").value.trim(),
@@ -1201,7 +1201,7 @@ async function authorizePOFromForm() {
     freight: parseFloat(document.getElementById("cpo-freight").value) || 0,
     other: parseFloat(document.getElementById("cpo-other").value) || 0,
     roundOff: parseFloat(document.getElementById("cpo-roundoff").value) || 0,
-    tradeType: document.getElementById("cpo-trade-type")?.value || "Import",
+    tradeType: document.getElementById("cpo-trade-type")?.value || "Local",
     usdRate: parseFloat(document.getElementById("cpo-usd-rate")?.value) || null,
     warranty: document.getElementById("cpo-warranty").value.trim(),
     insurance: document.getElementById("cpo-insurance").value.trim(),

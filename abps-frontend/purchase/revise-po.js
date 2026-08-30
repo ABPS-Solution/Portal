@@ -376,24 +376,24 @@ function renderPORevisionCard() {
         <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
           <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Taxes & Charges</div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-            <div><label class="field-label" style="margin-top:0;">Import / Export</label>
+            <div><label class="field-label" style="margin-top:0;">Local / Import</label>
               <select id="rpo-trade-type" onchange="onRPOTradeTypeChange()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;">
-                <option value="Import" ${po.tradeType !== 'Export' ? 'selected' : ''}>Import</option>
-                <option value="Export" ${po.tradeType === 'Export' ? 'selected' : ''}>Export</option>
+                <option value="Local" ${po.tradeType !== 'Import' ? 'selected' : ''}>Local</option>
+                <option value="Import" ${po.tradeType === 'Import' ? 'selected' : ''}>Import</option>
               </select>
             </div>
-            <div id="rpo-usd-rate-wrap" style="display:${po.tradeType === 'Export' ? 'block' : 'none'};"><label class="field-label" style="margin-top:0;">INR to USD Rate</label><input type="number" min="0" step="0.01" id="rpo-usd-rate" value="${po.usdRate != null ? Number(po.usdRate) : ''}" placeholder="e.g. 95.3" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div id="rpo-usd-rate-wrap" style="display:${po.tradeType === 'Import' ? 'block' : 'none'};"><label class="field-label" style="margin-top:0;">INR to USD Rate</label><input type="number" min="0" step="0.01" id="rpo-usd-rate" value="${po.usdRate != null ? Number(po.usdRate) : ''}" placeholder="e.g. 95.3" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           </div>
-          <div id="rpo-gst-note" style="display:${po.tradeType === 'Export' ? 'block' : 'none'}; font-size:0.78rem; color:var(--muted); margin-bottom:8px;">No GST for Export POs.</div>
-          <div id="rpo-gst-fields" style="display:${po.tradeType === 'Export' ? 'none' : 'grid'}; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+          <div id="rpo-gst-note" style="display:${po.tradeType === 'Import' ? 'block' : 'none'}; font-size:0.78rem; color:var(--muted); margin-bottom:8px;">No GST for Import POs.</div>
+          <div id="rpo-gst-fields" style="display:${po.tradeType === 'Import' ? 'none' : 'grid'}; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
             <div><label class="field-label" style="margin-top:0;">CGST %</label><input type="number" min="0" id="rpo-cgst" value="${Number(po.cgstPercent)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
             <div><label class="field-label" style="margin-top:0;">SGST %</label><input type="number" min="0" id="rpo-sgst" value="${Number(po.sgstPercent)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
             <div><label class="field-label" style="margin-top:0;">IGST %</label><input type="number" min="0" id="rpo-igst" value="${Number(po.igstPercent)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
-            <div><label class="field-label" style="margin-top:0;">Packing<span id="rpo-pkg-gst-note" style="display:${po.tradeType === 'Export' ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="rpo-packing" value="${Number(po.packing)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-            <div><label class="field-label" style="margin-top:0;">Freight<span id="rpo-frt-gst-note" style="display:${po.tradeType === 'Export' ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="rpo-freight" value="${Number(po.freight)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-            <div><label class="field-label" style="margin-top:0;">Other<span id="rpo-oth-gst-note" style="display:${po.tradeType === 'Export' ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="rpo-other" value="${Number(po.other)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">Packing<span id="rpo-pkg-gst-note" style="display:${po.tradeType === 'Import' ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="rpo-packing" value="${Number(po.packing)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">Freight<span id="rpo-frt-gst-note" style="display:${po.tradeType === 'Import' ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="rpo-freight" value="${Number(po.freight)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">Other<span id="rpo-oth-gst-note" style="display:${po.tradeType === 'Import' ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="rpo-other" value="${Number(po.other)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
             <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="rpo-roundoff" value="${Number(po.roundOff)||0}" step="any" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           </div>
         </div>
@@ -489,13 +489,13 @@ function updateRPORowAmount(idx) {
 }
 
 function onRPOTradeTypeChange() {
-  const isExport = document.getElementById("rpo-trade-type").value === "Export";
-  document.getElementById("rpo-usd-rate-wrap").style.display = isExport ? "block" : "none";
-  document.getElementById("rpo-gst-fields").style.display = isExport ? "none" : "grid";
-  document.getElementById("rpo-gst-note").style.display = isExport ? "block" : "none";
+  const isImport = document.getElementById("rpo-trade-type").value === "Import";
+  document.getElementById("rpo-usd-rate-wrap").style.display = isImport ? "block" : "none";
+  document.getElementById("rpo-gst-fields").style.display = isImport ? "none" : "grid";
+  document.getElementById("rpo-gst-note").style.display = isImport ? "block" : "none";
   ["rpo-pkg-gst-note", "rpo-frt-gst-note", "rpo-oth-gst-note"].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.style.display = isExport ? "none" : "inline";
+    if (el) el.style.display = isImport ? "none" : "inline";
   });
   updateRPOGrandTotal();
 }
@@ -514,12 +514,12 @@ function updateRPOGrandTotal() {
       subTotal += Number(li.amount) || ((Number(li.orderedQty)||0) * (Number(li.rate)||0) * (100 - (Number(li.discountPercent)||0)) / 100);
     }
   });
-  const isExport = document.getElementById("rpo-trade-type")?.value === "Export";
+  const isImport = document.getElementById("rpo-trade-type")?.value === "Import";
   const usdRate = parseFloat(document.getElementById("rpo-usd-rate")?.value) || 0;
-  const conv = (n) => (isExport && usdRate > 0) ? n / usdRate : n;
-  const cgstP = isExport ? 0 : (parseFloat(document.getElementById("rpo-cgst")?.value) || 0);
-  const sgstP = isExport ? 0 : (parseFloat(document.getElementById("rpo-sgst")?.value) || 0);
-  const igstP = isExport ? 0 : (parseFloat(document.getElementById("rpo-igst")?.value) || 0);
+  const conv = (n) => (isImport && usdRate > 0) ? n / usdRate : n;
+  const cgstP = isImport ? 0 : (parseFloat(document.getElementById("rpo-cgst")?.value) || 0);
+  const sgstP = isImport ? 0 : (parseFloat(document.getElementById("rpo-sgst")?.value) || 0);
+  const igstP = isImport ? 0 : (parseFloat(document.getElementById("rpo-igst")?.value) || 0);
   const packing = parseFloat(document.getElementById("rpo-packing")?.value) || 0;
   const freight = parseFloat(document.getElementById("rpo-freight")?.value) || 0;
   const other = parseFloat(document.getElementById("rpo-other")?.value) || 0;
@@ -530,7 +530,7 @@ function updateRPOGrandTotal() {
   const taxableBase = conv(subTotal);
   const grandTotal = taxableBase + taxableBase*cgstP/100 + taxableBase*sgstP/100 + taxableBase*igstP/100 + conv(packing) + conv(freight) + conv(other) + roundOff;
   const fmt = (n) => n.toLocaleString("en-IN",{maximumFractionDigits:2});
-  const symbol = isExport ? "$" : "";
+  const symbol = isImport ? "$" : "";
   const stEl = document.getElementById("rpo-subtotal-disp");
   const gtEl = document.getElementById("rpo-grandtotal-disp");
   if (stEl) stEl.textContent = symbol + fmt(taxableBase);
@@ -733,7 +733,7 @@ async function submitPORevisionUI() {
       freight: parseFloat(document.getElementById("rpo-freight")?.value) || 0,
       other: parseFloat(document.getElementById("rpo-other")?.value) || 0,
       roundOff: parseFloat(document.getElementById("rpo-roundoff")?.value) || 0,
-      tradeType: document.getElementById("rpo-trade-type")?.value || "Import",
+      tradeType: document.getElementById("rpo-trade-type")?.value || "Local",
       usdRate: parseFloat(document.getElementById("rpo-usd-rate")?.value) || null,
       warranty: document.getElementById("rpo-warranty")?.value.trim() || null,
       insurance: document.getElementById("rpo-insurance")?.value.trim() || null,
@@ -1100,27 +1100,27 @@ function renderAPORCard(r) {
         <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
           <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Taxes & Charges</div>
           ${(() => {
-            const effTradeType = hc.tradeType != null ? hc.tradeType : (r.tradeType || 'Import');
+            const effTradeType = hc.tradeType != null ? hc.tradeType : (r.tradeType || 'Local');
             const effUsdRate = hc.usdRate != null ? hc.usdRate : (r.usdRate != null ? Number(r.usdRate) : '');
-            const isExp = effTradeType === 'Export';
+            const isExp = effTradeType === 'Import';
             return `
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-            <div><label class="field-label" style="margin-top:0;">Import / Export</label>
+            <div><label class="field-label" style="margin-top:0;">Local / Import</label>
               <select id="apor-trade-type-${rid}" onchange="onAPORTradeTypeChange(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;">
-                <option value="Import" ${!isExp ? 'selected' : ''}>Import</option>
-                <option value="Export" ${isExp ? 'selected' : ''}>Export</option>
+                <option value="Local" ${!isExp ? 'selected' : ''}>Local</option>
+                <option value="Import" ${isExp ? 'selected' : ''}>Import</option>
               </select>
             </div>
             <div id="apor-usd-rate-wrap-${rid}" style="display:${isExp ? 'block' : 'none'};"><label class="field-label" style="margin-top:0;">INR to USD Rate</label><input type="number" min="0" step="0.01" id="apor-usd-rate-${rid}" value="${effUsdRate}" placeholder="e.g. 95.3" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           </div>
-          <div id="apor-gst-note-${rid}" style="display:${isExp ? 'block' : 'none'}; font-size:0.78rem; color:var(--muted); margin-bottom:8px;">No GST for Export POs.</div>
+          <div id="apor-gst-note-${rid}" style="display:${isExp ? 'block' : 'none'}; font-size:0.78rem; color:var(--muted); margin-bottom:8px;">No GST for Import POs.</div>
           <div id="apor-gst-fields-${rid}" style="display:${isExp ? 'none' : 'grid'}; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
             <div><label class="field-label" style="margin-top:0;">CGST %</label><input type="number" min="0" id="apor-cgst-${rid}" value="${hc.cgstPercent != null ? hc.cgstPercent : (Number(r.cgstPercent)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
             <div><label class="field-label" style="margin-top:0;">SGST %</label><input type="number" min="0" id="apor-sgst-${rid}" value="${hc.sgstPercent != null ? hc.sgstPercent : (Number(r.sgstPercent)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
             <div><label class="field-label" style="margin-top:0;">IGST %</label><input type="number" min="0" id="apor-igst-${rid}" value="${hc.igstPercent != null ? hc.igstPercent : (Number(r.igstPercent)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           </div>`; })()}
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
-            ${(() => { const isExp2 = (hc.tradeType != null ? hc.tradeType : (r.tradeType || 'Import')) === 'Export'; return `
+            ${(() => { const isExp2 = (hc.tradeType != null ? hc.tradeType : (r.tradeType || 'Local')) === 'Import'; return `
             <div><label class="field-label" style="margin-top:0;">Packing<span id="apor-pkg-gst-note-${rid}" style="display:${isExp2 ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="apor-packing-${rid}" value="${hc.packing != null ? hc.packing : (Number(r.packing)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
             <div><label class="field-label" style="margin-top:0;">Freight<span id="apor-frt-gst-note-${rid}" style="display:${isExp2 ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="apor-freight-${rid}" value="${hc.freight != null ? hc.freight : (Number(r.freight)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
             <div><label class="field-label" style="margin-top:0;">Other<span id="apor-oth-gst-note-${rid}" style="display:${isExp2 ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="apor-other-${rid}" value="${hc.other != null ? hc.other : (Number(r.other)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>`; })()}
@@ -1216,13 +1216,13 @@ function updateAPORLineTotals(idx, requestId) {
 }
 
 function onAPORTradeTypeChange(requestId) {
-  const isExport = document.getElementById(`apor-trade-type-${requestId}`).value === "Export";
-  document.getElementById(`apor-usd-rate-wrap-${requestId}`).style.display = isExport ? "block" : "none";
-  document.getElementById(`apor-gst-fields-${requestId}`).style.display = isExport ? "none" : "grid";
-  document.getElementById(`apor-gst-note-${requestId}`).style.display = isExport ? "block" : "none";
+  const isImport = document.getElementById(`apor-trade-type-${requestId}`).value === "Import";
+  document.getElementById(`apor-usd-rate-wrap-${requestId}`).style.display = isImport ? "block" : "none";
+  document.getElementById(`apor-gst-fields-${requestId}`).style.display = isImport ? "none" : "grid";
+  document.getElementById(`apor-gst-note-${requestId}`).style.display = isImport ? "block" : "none";
   ["apor-pkg-gst-note-", "apor-frt-gst-note-", "apor-oth-gst-note-"].forEach(prefix => {
     const el = document.getElementById(`${prefix}${requestId}`);
-    if (el) el.style.display = isExport ? "none" : "inline";
+    if (el) el.style.display = isImport ? "none" : "inline";
   });
   updateAPORGrandTotal(requestId);
 }
@@ -1233,12 +1233,12 @@ function updateAPORGrandTotal(requestId) {
   scope.querySelectorAll(`[id^="apor-amount-${requestId}-"]`).forEach(el => {
     subTotal += parseFloat(el.textContent.replace(/,/g, "")) || 0;
   });
-  const isExport = document.getElementById(`apor-trade-type-${requestId}`)?.value === "Export";
+  const isImport = document.getElementById(`apor-trade-type-${requestId}`)?.value === "Import";
   const usdRate = parseFloat(document.getElementById(`apor-usd-rate-${requestId}`)?.value) || 0;
-  const conv = (n) => (isExport && usdRate > 0) ? n / usdRate : n;
-  const cgst = isExport ? 0 : (parseFloat(document.getElementById(`apor-cgst-${requestId}`)?.value) || 0);
-  const sgst = isExport ? 0 : (parseFloat(document.getElementById(`apor-sgst-${requestId}`)?.value) || 0);
-  const igst = isExport ? 0 : (parseFloat(document.getElementById(`apor-igst-${requestId}`)?.value) || 0);
+  const conv = (n) => (isImport && usdRate > 0) ? n / usdRate : n;
+  const cgst = isImport ? 0 : (parseFloat(document.getElementById(`apor-cgst-${requestId}`)?.value) || 0);
+  const sgst = isImport ? 0 : (parseFloat(document.getElementById(`apor-sgst-${requestId}`)?.value) || 0);
+  const igst = isImport ? 0 : (parseFloat(document.getElementById(`apor-igst-${requestId}`)?.value) || 0);
   const packing = parseFloat(document.getElementById(`apor-packing-${requestId}`)?.value) || 0;
   const freight = parseFloat(document.getElementById(`apor-freight-${requestId}`)?.value) || 0;
   const other = parseFloat(document.getElementById(`apor-other-${requestId}`)?.value) || 0;
@@ -1248,7 +1248,7 @@ function updateAPORGrandTotal(requestId) {
   // computed -- matches routes/purchase.js's authorizePORevision formula.
   const taxableBase = conv(subTotal);
   const grandTotal = taxableBase + taxableBase*cgst/100 + taxableBase*sgst/100 + taxableBase*igst/100 + conv(packing) + conv(freight) + conv(other) + roundOff;
-  const symbol = isExport ? "$" : "";
+  const symbol = isImport ? "$" : "";
   const subEl = document.getElementById(`apor-subtotal-disp-${requestId}`);
   const gtEl = document.getElementById(`apor-grandtotal-disp-${requestId}`);
   if (subEl) subEl.textContent = symbol + taxableBase.toLocaleString("en-IN",{maximumFractionDigits:2});
@@ -1402,7 +1402,7 @@ async function authorizePORevisionUI(requestId, confirmStale) {
     freight: parseFloat(document.getElementById(`apor-freight-${requestId}`)?.value) || 0,
     other: parseFloat(document.getElementById(`apor-other-${requestId}`)?.value) || 0,
     roundOff: parseFloat(document.getElementById(`apor-roundoff-${requestId}`)?.value) || 0,
-    tradeType: document.getElementById(`apor-trade-type-${requestId}`)?.value || "Import",
+    tradeType: document.getElementById(`apor-trade-type-${requestId}`)?.value || "Local",
     usdRate: parseFloat(document.getElementById(`apor-usd-rate-${requestId}`)?.value) || null,
     warranty: document.getElementById(`apor-warranty-${requestId}`)?.value || null,
     insurance: document.getElementById(`apor-insurance-${requestId}`)?.value || null,
