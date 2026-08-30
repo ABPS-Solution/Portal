@@ -31,8 +31,8 @@ function mdLoadCustom() {
 async function mdLoadDashboard(customVal) {
   const body = document.getElementById("md-body");
   if (!body) return;
-  ["md-s-newleads","md-s-inprogress","md-s-ordersreceived","md-s-winrate","md-s-avgdays",
-   "md-s-emailleads","md-s-opentasks","md-s-zerofollowup","md-s-pouploads","md-s-offerssent"].forEach(id => {
+  ["md-s-newleads","md-s-inprogress","md-s-winrate","md-s-avgdays",
+   "md-s-emailleads","md-s-opentasks","md-s-zerofollowup","md-s-pouploads","md-s-offerssent","md-s-coldemails"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
 
@@ -54,7 +54,6 @@ function mdRenderDashboard(data) {
 
   document.getElementById("md-s-newleads").textContent       = stats.newLeads;
   document.getElementById("md-s-inprogress").textContent     = stats.inProgress;
-  document.getElementById("md-s-ordersreceived").textContent = stats.ordersReceived;
   document.getElementById("md-s-winrate").textContent        = stats.winRatePct !== null ? stats.winRatePct + "%" : "—";
   document.getElementById("md-s-avgdays").textContent        = stats.avgConversionDays !== null ? stats.avgConversionDays : "—";
   document.getElementById("md-s-emailleads").textContent     = stats.emailLeadsAwaitingAction;
@@ -62,8 +61,9 @@ function mdRenderDashboard(data) {
   document.getElementById("md-s-zerofollowup").textContent   = stats.zeroFollowUpLeads;
   document.getElementById("md-s-pouploads").textContent      = stats.poUploads;
   document.getElementById("md-s-offerssent").textContent     = stats.distinctOffersSent;
+  document.getElementById("md-s-coldemails").textContent     = stats.coldEmailsSent;
 
-  // Chart 1 — Lead Status Funnel (vertical bar). Live pipeline snapshot
+  // Chart 1 — Lead Status Funnel (horizontal bar). Live pipeline snapshot
   // (period-independent — see routes/dashboards.js), always all 9
   // statuses in pipeline order, zero-filled — never GROUP BY's "whatever
   // happened to have a row" order/set.
@@ -77,8 +77,8 @@ function mdRenderDashboard(data) {
       datasets: [{ label:"Leads", data: funnelLabels.map(k => statusCounts[k]),
         backgroundColor: "rgba(37,99,235,0.7)", borderRadius: 4 }]
     },
-    options: { responsive:true, plugins:{ legend:{ display:false } },
-      scales:{ y:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, x:{ grid:{ display:false }, ticks:{ font:{ size:8 } } } } }
+    options: { indexAxis:"y", responsive:true, plugins:{ legend:{ display:false } },
+      scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
   });
 
   // Chart 2 — Approx Business Potential (vertical bar). Live snapshot
