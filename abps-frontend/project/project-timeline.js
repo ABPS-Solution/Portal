@@ -31,6 +31,11 @@ const PTL_COLORS = {
   store: '#0369a1', purchase: '#7c3aed', qa: '#dc2626',
 };
 const PTL_DEPT_NAME = { marketing: 'Marketing', project: 'Project', design: 'Design', store: 'Store', purchase: 'Purchase', qa: 'Quality Assurance' };
+// Shared completion-status circle color, used identically by the canvas
+// map and the Steps list (30 Aug 2026) — department no longer drives
+// circle color anywhere; grey = scheduled/on-track, green = done, red =
+// late is the only meaning a circle's color carries now.
+const PTL_SCHEDULED_GREY = '#94a3b8';
 // Dispatch is no longer part of this chain — it's Store's, derived
 // automatically from when the Final Project Invoice was generated (see
 // routes/timeline.js), never a hand-entered date.
@@ -319,7 +324,7 @@ function ptlStageProgressHtml() {
   const p = ptlComputeStageProgress();
   if (!p) return '';
   const { stageIdx, color } = ptlProgressStageInfo(p);
-  const d = 44, sw = 4;
+  const d = 58, sw = 5;
   const r = (d - sw) / 2, cx = d / 2, cy = d / 2, circ = 2 * Math.PI * r;
   const offset = circ * (1 - p.overallPct / 100);
   const title = `Stage ${stageIdx} of 5 · ${p.overallPct}% milestones done`;
@@ -329,7 +334,7 @@ function ptlStageProgressHtml() {
   </svg>`;
   return `<div style="position:relative; width:${d}px; height:${d}px; flex:none;" title="${title}">
     ${ring}
-    <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:0.68rem; font-weight:800; color:var(--text); line-height:1;">${p.overallPct}%</span>
+    <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:800; color:var(--text); line-height:1;">${p.overallPct}%</span>
   </div>`;
 }
 
@@ -619,7 +624,10 @@ function ptlRenderList(nodes, today) {
     const late = ptlLate(n);
     const eff = ptlEff(n);
     const dateTxt = n.actual ? ptlFmtFull(n.actual) : (n.done ? `On or before ${ptlFmtFull(eff)} (exact date not tracked)` : eff ? `Due ${ptlFmtFull(eff)}` : 'Not yet scheduled');
-    const dotColor = late ? 'var(--warn)' : c;
+    // Same completion-status coloring as the canvas map (30 Aug 2026) —
+    // grey scheduled / green done / red late, not department. `c` is
+    // kept only for the department name badge text just below.
+    const dotColor = late ? 'var(--warn)' : (done ? 'var(--accent)' : PTL_SCHEDULED_GREY);
     const hasDetail = Array.isArray(n.detail);
     const expanded = hasDetail && ptlExpandedNodes.has(n.id);
     const manualCanEdit = n.kind === 'manual' && !PTL_QA_CHAIN.has(n.id) && (!n.actual || ptlIsAdmin());
@@ -641,7 +649,7 @@ function ptlRenderList(nodes, today) {
             ${n.kind === 'derived' ? '<span style="font-size:0.68rem; color:var(--muted);">· automatic</span>' : ''}
           </div>
           <div style="font-size:0.8rem; color:${late ? 'var(--warn)' : 'var(--muted)'}; margin-top:2px;">${escapeHtml(dateTxt)}${late ? ` · ${Math.abs(ptlBdBetween(eff, today))} business days late` : ''}</div>
-          ${n.chip ? `<span style="display:inline-block; margin-top:5px; font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(n.chip)}</span>` : ''}
+          ${n.chip ? `<span style="display:inline-block; margin-top:5px; font-size:0.72rem; font-family:monospace; font-weight:700; color:var(--text); background:var(--highlight-bg); padding:2px 8px; border-radius:10px;">${escapeHtml(n.chip)}</span>` : ''}
           ${hasDetail ? `<div style="font-size:0.72rem; color:var(--brand); margin-top:5px; font-weight:600;">${expanded ? '▾ Hide' : '▸ Show'} what's left</div>` : ''}
           ${manualCanEdit ? `<div onclick="event.stopPropagation()" style="margin-top:7px; display:flex; align-items:center; gap:8px;">${ptlAsOfInputHtml(n.id, n.actual)}<button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlMarkMilestoneDone('${n.id}')">${n.actual ? 'Update (admin)' : 'Mark Done'}</button></div>` : ''}
           ${qaCanEdit ? `
@@ -1027,8 +1035,8 @@ function ptlRenderCanvas(containerId) {
   laid.forEach(({ x, y }) => PL.block({ x0: x - R * 1.4, x1: x + R * 1.4, y0: y - R * 1.4, y1: y + R * 1.4 }));
 
   // Color is now purely a completion/lateness signal, not a department
-  // one (dropped 30 Aug 2026) — green for anything on-track (filled +
-  // checked once done, hollow while still ahead), red reserved
+  // one (dropped 30 Aug 2026) — green filled+checked once done, grey
+  // hollow while still scheduled/on-track, red hollow reserved
   // exclusively for something open past its own due date. Department is
   // still readable from the label text / lane gutter, just not color.
   const clickMap = [];
@@ -1038,7 +1046,7 @@ function ptlRenderCanvas(containerId) {
     const done = !!n.actual || n.done === true;
     const late = !done && eff && eff < today;
     const bd = late ? Math.abs(ptlBdBetween(eff, today) || 0) : null;
-    const ring = late ? '#e84545' : c;
+    const ring = late ? '#e84545' : (done ? c : PTL_SCHEDULED_GREY);
 
     const lines = ptlWrapLbl(n.label, 16);
     const lw = Math.max(...lines.map(ptlWLbl));
@@ -1061,7 +1069,7 @@ function ptlRenderCanvas(containerId) {
     const dy = y + R + GAP + kD * SLOT_DN;
     if (kD > 0) P.push(`<line x1="${x}" y1="${y + R}" x2="${x}" y2="${dy - ASC}" stroke="${ring}" stroke-width="1" opacity=".3"/>`);
     P.push(`<text x="${x}" y="${dy}" text-anchor="middle" font-size="${10.5 * ptlFS}" font-weight="700" font-family="monospace" fill="${late ? '#e84545' : 'var(--muted)'}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(dtx)}</text>`);
-    if (chipTxt) P.push(`<text x="${x}" y="${dy + LINE_H}" text-anchor="middle" font-size="${9.5 * ptlFS}" font-weight="700" font-family="monospace" fill="${c}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(chipTxt)}</text>`);
+    if (chipTxt) P.push(`<text x="${x}" y="${dy + LINE_H}" text-anchor="middle" font-size="${9.5 * ptlFS}" font-weight="700" font-family="monospace" fill="var(--text)" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(chipTxt)}</text>`);
 
     P.push(`<circle cx="${x}" cy="${y}" r="${R}" fill="${done ? c : 'var(--card)'}" stroke="${ring}" stroke-width="${(late ? 2.6 : 2.2) * ptlFS}"/>`);
     if (done) P.push(`<path d="M${x - R * 0.43} ${y} l${R * 0.31} ${R * 0.32} l${R * 0.55} -${R * 0.61}" fill="none" stroke="var(--card)" stroke-width="${1.8 * ptlFS}" stroke-linecap="round" stroke-linejoin="round"/>`);
