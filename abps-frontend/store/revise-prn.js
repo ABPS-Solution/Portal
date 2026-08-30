@@ -13,6 +13,8 @@ function switchRevisePRNTab(tab) {
 async function initializeRevisePRNPanel() {
   const fb = document.getElementById("rprn-feedback");
   if (fb) { fb.style.display = "none"; fb.innerHTML = ""; }
+  const tabsBar = document.getElementById("rprn-tabs-bar");
+  if (tabsBar) tabsBar.style.display = "flex";
   switchRevisePRNTab('queue');
 }
 
@@ -297,6 +299,7 @@ async function submitRPRNDelta() {
 async function initializeRevisePRNOtherTab() {
   document.getElementById("rprn-body").innerHTML = "";
   document.getElementById("rprn-prn-select").innerHTML = `<option value="">— Select a project first —</option>`;
+  document.getElementById("rprn-selector-row").style.display = "grid";
   const sel = document.getElementById("rprn-project-select-ta-input");
   sel.value = "";
   const selDropList = document.getElementById("rprn-project-select-ta-dropdown");
@@ -440,6 +443,8 @@ async function submitRevisePRN() {
     if (data.success) {
       document.getElementById("rprn-body").innerHTML = "";
       document.getElementById("rprn-selector-row").style.display = "none";
+      document.getElementById("rprn-tabs-bar").style.display = "none";
+      document.getElementById("rprn-queue-section").style.display = "none";
       window.rprnState = null;
       const fb = document.getElementById("rprn-feedback");
       if (fb) {
