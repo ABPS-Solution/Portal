@@ -48,7 +48,7 @@ function renderPstatOnePps(elId, prn, ppsData) {
     return `
       <tr style="border-bottom:1px solid var(--border); vertical-align:top;">
         <td style="padding:8px; font-family:monospace;">${m.itemCode}</td>
-        <td style="padding:8px;">${m.materialName}</td>
+        <td style="padding:8px; font-size:0.92rem; font-weight:600;">${m.materialName}</td>
         <td style="padding:8px; text-align:center;">${fmtQty(m.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center;">${fmtQty(m.bufferedPurchaseQty)}</td>
         <td style="padding:8px; text-align:center;">${fmtQty(m.stillToOrder)}</td>
@@ -216,7 +216,7 @@ async function loadPPSForPRN() {
       return `
         <tr style="border-bottom:1px solid #e2e8f0;">
           <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${esc(m.itemCode)}${flag}</td>
-          <td style="padding:8px; font-size:0.82rem; font-weight:600;">${esc(m.materialName)}</td>
+          <td style="padding:8px; font-size:0.92rem; font-weight:600;">${esc(m.materialName)}</td>
           <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.98rem;">${fmt(m.boqRequiredQty)}</td>
           <td style="padding:8px; text-align:center; color:#b45309; font-weight:700;">${fmt(m.bufferPct)}%</td>
           <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand); font-size:0.98rem;">${fmt(m.bufferedPurchaseQty)}</td>
