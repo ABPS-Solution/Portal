@@ -31,8 +31,8 @@ function mdLoadCustom() {
 async function mdLoadDashboard(customVal) {
   const body = document.getElementById("md-body");
   if (!body) return;
-  ["md-s-newleads","md-s-inprogress","md-s-ordersreceived","md-s-failed","md-s-avgdays",
-   "md-s-followupsdue","md-s-opentasks","md-s-zerofollowup","md-s-pouploads","md-s-offerssent"].forEach(id => {
+  ["md-s-newleads","md-s-inprogress","md-s-ordersreceived","md-s-winrate","md-s-avgdays",
+   "md-s-emailleads","md-s-opentasks","md-s-zerofollowup","md-s-pouploads","md-s-offerssent"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
 
@@ -50,20 +50,23 @@ async function mdLoadDashboard(customVal) {
 }
 
 function mdRenderDashboard(data) {
-  const { stats, statusCounts, trendData, staleLeads, recentWins } = data;
+  const { stats, statusCounts, verticalCounts, potentialCounts, staleLeads, recentWins } = data;
 
   document.getElementById("md-s-newleads").textContent       = stats.newLeads;
   document.getElementById("md-s-inprogress").textContent     = stats.inProgress;
   document.getElementById("md-s-ordersreceived").textContent = stats.ordersReceived;
-  document.getElementById("md-s-failed").textContent         = stats.leadsFailed;
+  document.getElementById("md-s-winrate").textContent        = stats.winRatePct !== null ? stats.winRatePct + "%" : "—";
   document.getElementById("md-s-avgdays").textContent        = stats.avgConversionDays !== null ? stats.avgConversionDays : "—";
-  document.getElementById("md-s-followupsdue").textContent   = stats.followUpsDueOverdue;
+  document.getElementById("md-s-emailleads").textContent     = stats.emailLeadsAwaitingAction;
   document.getElementById("md-s-opentasks").textContent      = stats.openTasks;
   document.getElementById("md-s-zerofollowup").textContent   = stats.zeroFollowUpLeads;
   document.getElementById("md-s-pouploads").textContent      = stats.poUploads;
   document.getElementById("md-s-offerssent").textContent     = stats.distinctOffersSent;
 
-  // Chart 1 — Lead Status Funnel (bar)
+  // Chart 1 — Lead Status Funnel (horizontal bar). Live pipeline snapshot
+  // (period-independent — see routes/dashboards.js), always all 9
+  // statuses in pipeline order, zero-filled — never GROUP BY's "whatever
+  // happened to have a row" order/set.
   if (mdChartFunnel) mdChartFunnel.destroy();
   const funnelLabels = Object.keys(statusCounts);
   const ctxFunnel = document.getElementById("md-chart-funnel").getContext("2d");
@@ -75,37 +78,42 @@ function mdRenderDashboard(data) {
         backgroundColor: "rgba(37,99,235,0.7)", borderRadius: 4 }]
     },
     options: { indexAxis:"y", responsive:true, plugins:{ legend:{ display:false } },
-      scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false } } } }
+      scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
   });
 
-  // Chart 2 — New Leads vs Orders Received (dual line)
-  if (mdChartTrend) mdChartTrend.destroy();
-  const ctxTrend = document.getElementById("md-chart-trend").getContext("2d");
-  mdChartTrend = new Chart(ctxTrend, {
-    type: "line",
+  // Chart 2 — Approx Business Potential (horizontal bar). Live snapshot
+  // of the currently OPEN pipeline only (terminal-status leads are
+  // already covered by the funnel above and Recent Wins/Stale Leads).
+  if (mdChartPotential) mdChartPotential.destroy();
+  const potentialLabels = Object.keys(potentialCounts);
+  const ctxPotential = document.getElementById("md-chart-potential").getContext("2d");
+  mdChartPotential = new Chart(ctxPotential, {
+    type: "bar",
     data: {
-      labels: trendData.map(t => t.label),
-      datasets: [
-        { label:"New Leads",       data: trendData.map(t => t.newLeads),       borderColor:"rgba(37,99,235,0.9)",  backgroundColor:"rgba(37,99,235,0.15)", tension:0.3, fill:true },
-        { label:"Orders Received", data: trendData.map(t => t.ordersReceived), borderColor:"rgba(21,128,61,0.9)",  backgroundColor:"rgba(21,128,61,0.15)", tension:0.3, fill:true }
-      ]
+      labels: potentialLabels,
+      datasets: [{ label:"Open Leads", data: potentialLabels.map(k => potentialCounts[k]),
+        backgroundColor: "rgba(124,58,237,0.7)", borderRadius: 4 }]
     },
-    options: { responsive:true, plugins:{ legend:{ display:true, labels:{ font:{ size:9 } } } },
-      scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
+    options: { indexAxis:"y", responsive:true, plugins:{ legend:{ display:false } },
+      scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
   });
 
-  // Chart 3 — Lead Status Distribution (donut)
-  if (mdChartDonut) mdChartDonut.destroy();
-  const donutLabels = Object.keys(statusCounts);
-  const donutColors = ["#2563eb","#15803d","#b45309","#b91c1c","#7c3aed","#0891b2","#c026d3","#65a30d","#dc2626"];
-  const ctxDonut = document.getElementById("md-chart-donut").getContext("2d");
-  mdChartDonut = new Chart(ctxDonut, {
-    type: "doughnut",
+  // Chart 3 — Business Vertical (horizontal bar, not a donut — angle/area
+  // comparisons in a 6-category donut are hard to read at this tile size;
+  // a bar keeps the same legible shape as the other two charts here).
+  // Same OPEN-pipeline scope as the potential chart above.
+  if (mdChartVertical) mdChartVertical.destroy();
+  const verticalLabels = Object.keys(verticalCounts);
+  const ctxVertical = document.getElementById("md-chart-vertical").getContext("2d");
+  mdChartVertical = new Chart(ctxVertical, {
+    type: "bar",
     data: {
-      labels: donutLabels,
-      datasets: [{ data: donutLabels.map(k => statusCounts[k]), backgroundColor: donutLabels.map((_,i) => donutColors[i % donutColors.length]) }]
+      labels: verticalLabels,
+      datasets: [{ label:"Open Leads", data: verticalLabels.map(k => verticalCounts[k]),
+        backgroundColor: "rgba(21,128,61,0.7)", borderRadius: 4 }]
     },
-    options: { responsive:true, plugins:{ legend:{ display:true, position:"bottom", labels:{ font:{ size:8 }, boxWidth:8 } } } }
+    options: { indexAxis:"y", responsive:true, plugins:{ legend:{ display:false } },
+      scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
   });
 
   // Stale Leads table
