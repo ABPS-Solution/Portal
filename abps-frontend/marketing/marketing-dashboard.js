@@ -63,7 +63,7 @@ function mdRenderDashboard(data) {
   document.getElementById("md-s-pouploads").textContent      = stats.poUploads;
   document.getElementById("md-s-offerssent").textContent     = stats.distinctOffersSent;
 
-  // Chart 1 — Lead Status Funnel (horizontal bar). Live pipeline snapshot
+  // Chart 1 — Lead Status Funnel (vertical bar). Live pipeline snapshot
   // (period-independent — see routes/dashboards.js), always all 9
   // statuses in pipeline order, zero-filled — never GROUP BY's "whatever
   // happened to have a row" order/set.
@@ -77,11 +77,11 @@ function mdRenderDashboard(data) {
       datasets: [{ label:"Leads", data: funnelLabels.map(k => statusCounts[k]),
         backgroundColor: "rgba(37,99,235,0.7)", borderRadius: 4 }]
     },
-    options: { indexAxis:"y", responsive:true, plugins:{ legend:{ display:false } },
-      scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
+    options: { responsive:true, plugins:{ legend:{ display:false } },
+      scales:{ y:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, x:{ grid:{ display:false }, ticks:{ font:{ size:8 } } } } }
   });
 
-  // Chart 2 — Approx Business Potential (horizontal bar). Live snapshot
+  // Chart 2 — Approx Business Potential (vertical bar). Live snapshot
   // of the currently OPEN pipeline only (terminal-status leads are
   // already covered by the funnel above and Recent Wins/Stale Leads).
   if (mdChartPotential) mdChartPotential.destroy();
@@ -94,8 +94,8 @@ function mdRenderDashboard(data) {
       datasets: [{ label:"Open Leads", data: potentialLabels.map(k => potentialCounts[k]),
         backgroundColor: "rgba(124,58,237,0.7)", borderRadius: 4 }]
     },
-    options: { indexAxis:"y", responsive:true, plugins:{ legend:{ display:false } },
-      scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
+    options: { responsive:true, plugins:{ legend:{ display:false } },
+      scales:{ y:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, x:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
   });
 
   // Chart 3 — Business Vertical (horizontal bar, not a donut — angle/area

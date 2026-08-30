@@ -122,8 +122,11 @@
      "Average Days ... / days") renders taller than a sibling row that
      has none, because flex-shrink:0 on the row container (below) refuses
      to compress it back down to match (31 Aug 2026 dashboard layout fix,
-     applies to all 5 department dashboards since they share this class). */
-  .dd-stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; display:flex; flex-direction:column; gap:4px; justify-content:center; min-height:74px; box-sizing:border-box; }
+     applies to all 5 department dashboards since they share this class).
+     100px = label line (~14px) + value line (~33px) + sub line (~14px)
+     + 2x4px gap + 28px vertical padding, rounded up for rendering slop —
+     the first attempt at 74px undershot this and the mismatch persisted. */
+  .dd-stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; display:flex; flex-direction:column; gap:4px; justify-content:center; min-height:100px; box-sizing:border-box; }
   .dd-stat-label { font-size:0.7rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
   .dd-stat-val { font-size:1.7rem; font-weight:800; color:var(--text); line-height:1.2; }
   .dd-stat-sub { font-size:0.7rem; color:var(--muted); }
