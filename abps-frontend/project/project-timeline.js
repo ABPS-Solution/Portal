@@ -341,21 +341,21 @@ function ptlStageProgressStripHtml() {
   const p = ptlComputeStageProgress();
   if (!p) return '';
   const { stageIdx, color } = ptlProgressStageInfo(p);
-  const w = 14, h = 9, gap = 3;
+  const w = 22, h = 14, gap = 4;
   const blocks = p.stages.map(s => {
     const complete = s.total > 0 && s.frac >= 1;
     const started = s.frac > 0 && !complete;
     const c = s.late ? '#e84545' : 'var(--brand)';
     let inner;
-    if (complete) inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="2" fill="${c}"/>`;
-    else if (started) inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="2" fill="none" stroke="${c}" stroke-width="1.2" opacity=".5"/><rect x="0" y="0" width="${Math.max(2, w * s.frac)}" height="${h}" rx="2" fill="${c}"/>`;
-    else inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="2" fill="none" stroke="var(--border)" stroke-width="1.2"/>`;
+    if (complete) inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="3" fill="${c}"/>`;
+    else if (started) inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="3" fill="none" stroke="${c}" stroke-width="1.6" opacity=".5"/><rect x="0" y="0" width="${Math.max(3, w * s.frac)}" height="${h}" rx="3" fill="${c}"/>`;
+    else inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="3" fill="none" stroke="var(--border)" stroke-width="1.6"/>`;
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block; flex:none;">${inner}</svg>`;
   }).join(`<div style="width:${gap}px;"></div>`);
   const title = `Stage ${stageIdx} of 5 · ${p.overallPct}% milestones done`;
-  return `<div style="display:flex; align-items:center; gap:7px;" title="${title}">
+  return `<div style="display:flex; align-items:center; gap:10px;" title="${title}">
     <div style="display:flex; align-items:center;">${blocks}</div>
-    <span style="font-size:0.7rem; font-weight:800; color:${color};">${p.overallPct}%</span>
+    <span style="font-size:0.88rem; font-weight:800; color:${color};">${p.overallPct}%</span>
   </div>`;
 }
 
@@ -390,7 +390,7 @@ function ptlRender() {
   // panel's top-left, next to Return to Main Dashboard — the fullscreen
   // overlay's own "‹ Steps" button is the way back.
   const elHeaderLeft = document.getElementById("ptl-header-left");
-  if (elHeaderLeft) elHeaderLeft.innerHTML = `<button type="button" onclick="ptlSetViewMode('timeline')" style="padding:8px 16px; font-size:0.82rem; font-weight:700; border:1px solid var(--border); border-radius:var(--radius); background:#fff; color:var(--text); cursor:pointer;">Timeline</button>`;
+  if (elHeaderLeft) elHeaderLeft.innerHTML = `<button type="button" onclick="ptlSetViewMode('timeline')" title="Open Timeline" style="display:inline-flex; align-items:center; gap:5px; padding:7px 12px; font-size:0.82rem; font-weight:700; border:1px solid var(--border); border-radius:var(--radius); background:#fff; color:var(--muted); cursor:pointer;">Timeline &rsaquo;</button>`;
   const stepsOpen = `<div id="ptl-steps-wrap" style="display:none;">`;
 
   if (!mfcComplete) {
@@ -1299,7 +1299,7 @@ function ptlRenderFullscreen() {
   ov.innerHTML = `
     <div style="flex:none; background:var(--card); border-bottom:1px solid var(--border); padding:12px 18px; display:flex; flex-direction:column; gap:8px;">
       <div style="display:flex; align-items:center; gap:16px;">
-        <button type="button" onclick="ptlSetViewMode('steps')" title="Back to Steps" style="flex:none; display:flex; align-items:center; gap:5px; padding:7px 12px; font-size:0.82rem; font-weight:700; border:1px solid var(--border); border-radius:var(--radius); background:#fff; color:var(--muted); cursor:pointer;">&lsaquo; Steps</button>
+        <button type="button" onclick="ptlSetViewMode('steps')" title="Back to Steps" style="flex:none; display:inline-flex; align-items:center; gap:5px; padding:7px 12px; font-size:0.82rem; font-weight:700; border:1px solid var(--border); border-radius:var(--radius); background:#fff; color:var(--muted); cursor:pointer;">&lsaquo; Steps</button>
         <div style="width:1px; align-self:stretch; background:var(--border); flex:none;"></div>
         <div style="display:flex; align-items:center; gap:12px; min-width:0;">
           <div style="width:5px; height:30px; border-radius:2px; background:var(--brand); flex:none;"></div>
