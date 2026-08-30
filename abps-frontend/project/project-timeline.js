@@ -563,17 +563,18 @@ function ptlRenderLaneSteps(lane, c) {
           <span style="display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; background:${done ? c : '#fff'}; border:2px solid ${late ? 'var(--warn)' : c};"></span>
           ${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.72rem;">(automatic)</span>' : ''}
         </td>
-        <td style="padding:7px 8px; font-size:0.78rem; color:var(--muted); font-family:monospace; text-align:center;">${ptlFmt(s.planned)}</td>
-        <td style="padding:7px 8px; font-size:0.78rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center;">${ptlFmt(currentTarget)}</td>
+        <td style="padding:7px 8px; font-size:0.68rem; color:var(--muted); font-family:monospace; text-align:center;">${ptlFmt(s.planned)}</td>
+        <td style="padding:7px 8px; font-size:0.68rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center;">${ptlFmt(currentTarget)}</td>
         <td style="padding:7px 8px; text-align:center;">${s.terminal || !done ? `<input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
-              style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;" />` : `<span style="color:var(--muted); font-size:0.78rem;">—</span>`}</td>
+              style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:118px; box-sizing:border-box;" />` : `<span style="color:var(--muted); font-size:0.78rem;">—</span>`}</td>
         <td style="padding:7px 8px; text-align:right; white-space:nowrap;">${actionCell}</td>
       </tr>`;
   }).join("");
 
   return `
     <div style="overflow-x:auto;">
-      <table style="width:100%; border-collapse:collapse; min-width:640px;">
+      <table style="width:100%; border-collapse:collapse; min-width:600px; table-layout:fixed;">
+        <colgroup><col style="width:auto;"><col style="width:110px;"><col style="width:110px;"><col style="width:130px;"><col style="width:auto;"></colgroup>
         <thead><tr style="border-bottom:2px solid var(--border);">
           <th style="padding:6px 8px; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:left;">Process Name</th>
           <th style="padding:6px 8px; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Initial Planning Date</th>
@@ -793,9 +794,13 @@ async function ptlSetQaMilestoneDate(milestoneKey) {
   try {
     const data = await apFetch({ action: "saveTimelineMilestoneDate", operatorName: appActiveOperatorIdentityString, projectId, milestoneKey, date });
     if (!data.success) { alert(data.error || "Could not set this date."); return; }
-    const node = ptlData.trunk.find(n => n.id === milestoneKey);
-    if (node) node.actual = data.actualDate;
-    ptlRender();
+    // A full reload, not a local patch — the rest of the QA chain
+    // (Inspection Clearance Note -> Dispatch Clearance -> Predicted
+    // Delivery) is a live server-side projection off whichever of these
+    // dates are now real (computeQaChainProjection), so setting just
+    // THIS node's actual locally left every downstream estimate frozen
+    // on its old value instead of cascading forward.
+    await selectPtlProject(projectId);
   } catch (e) {
     alert("Network error: " + e.message);
   }
@@ -1030,7 +1035,7 @@ function ptlRenderCanvas(containerId) {
   });
 
   // Today
-  P.push(`<line x1="${todayX}" y1="${RULER_H}" x2="${todayX}" y2="${H}" stroke="var(--accent)" stroke-width="2.5" opacity=".85"/>`);
+  P.push(`<line x1="${todayX}" y1="${RULER_H}" x2="${todayX}" y2="${H}" stroke="var(--text)" stroke-width="2.5" opacity=".85"/>`);
 
   // Traces: spine (split at prodPlan into lanes, rejoin at tail[0]).
   // Nodes sharing the exact same date (e.g. BOQs/Costing/Working Designs,
@@ -1173,7 +1178,7 @@ function ptlRenderCanvas(containerId) {
   // Last of all, so nothing can cover it. Sits at the BOTTOM of the line,
   // not the top — the top is where stage-divider labels live, and the two
   // used to collide right where Today happened to fall inside a stage.
-  P.push(`<text x="${todayX}" y="${H - 10 * ptlFS}" text-anchor="middle" font-size="${10 * ptlFS}" font-weight="800" letter-spacing="1" fill="var(--accent)" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="5">TODAY · ${esc(ptlFmt(today))}</text>`);
+  P.push(`<text x="${todayX}" y="${H - 10 * ptlFS}" text-anchor="middle" font-size="${10 * ptlFS}" font-weight="800" letter-spacing="1" fill="var(--text)" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="5">TODAY · ${esc(ptlFmt(today))}</text>`);
 
   const svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;">${P.join("")}</svg>`;
   ptlLastTodayX = todayX;
