@@ -499,7 +499,7 @@ function prnStatusChip(status, stillToOrder) {
 let ddCurrentPeriod = "today";
 let ddCurrentCustomType = "customday";
 let ddChartDept = null, ddChartVersion = null, ddChartTrend = null;
-let mdChartFunnel = null, mdChartTrend = null, mdChartDonut = null;
+let mdChartFunnel = null, mdChartPotential = null, mdChartVertical = null;
 let mdCurrentPeriod = "today", mdCurrentCustomType = "customday";
 let ddHealthData = [];
 let ddHealthFiltered = [];
