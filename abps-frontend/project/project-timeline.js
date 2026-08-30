@@ -36,6 +36,16 @@ const PTL_DEPT_NAME = { marketing: 'Marketing', project: 'Project', design: 'Des
 // circle color anywhere; grey = scheduled/on-track, green = done, red =
 // late is the only meaning a circle's color carries now.
 const PTL_SCHEDULED_GREY = '#94a3b8';
+// Per-lane (per-PRODUCT, not per-department — two products under the same
+// Reactor/Capacitor/Panel department get different colors here) trace
+// line color, so multiple products running in parallel through Stage 4
+// are visually distinguishable. Deliberately excludes red/orange/blue/
+// black (reserved: red=late, blue=brand/spine, black=text) — cycles if
+// there are ever more lanes than colors. Node circles stay the shared
+// green/grey/red completion scheme regardless of lane; only the
+// connecting line (and its gutter label) carries this color.
+const PTL_LANE_TRACE_PALETTE = ['#7c3aed', '#0d9488', '#be185d', '#92400e', '#c026d3', '#4d7c0f'];
+const ptlLaneTraceColor = (i) => PTL_LANE_TRACE_PALETTE[i % PTL_LANE_TRACE_PALETTE.length];
 // Dispatch is no longer part of this chain — it's Store's, derived
 // automatically from when the Final Project Invoice was generated (see
 // routes/timeline.js), never a hand-entered date.
@@ -516,40 +526,64 @@ function ptlRenderLaneInitialPlanForm(lane) {
     </div>`;
 }
 
+// Table form (30 Aug 2026) — Process Name / Initial Planning Date (frozen,
+// = s.planned) / Current Target Date (the currently-committed date: the
+// most recent New Target Date if one was ever set, else the initial
+// planning date itself — a plain display of s.target || s.planned, never
+// edited directly) / New Target Date (the only editable date column,
+// same updateProductPlanStepTarget call as before) / Mark Done or Mark
+// Undone. Mark Undone is NOT admin-only — it's everyday mistake
+// correction (see unmarkProductPlanStepDone's own header comment), not a
+// testing override.
 function ptlRenderLaneSteps(lane, c) {
   const today = ptlToday();
-  return lane.steps.map(s => {
+  const rows = lane.steps.map(s => {
     const done = !!s.actual;
     const eff = s.actual || s.target || s.planned;
     const late = !done && eff && eff < today;
-    const dotBorder = late ? 'var(--warn)' : c;
-    let rightCell;
+    const currentTarget = s.target || s.planned;
+
+    let actionCell;
     if (s.terminal) {
-      // Target stays revisable (same input as any step) — only "Mark
-      // Done" is withheld, since completion here is always derived from
-      // Finished Goods Store, never a manual click.
-      rightCell = `
-        ${!done ? `<input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
-              style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;" />` : ''}
-        <span style="font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(s.chip || '')}</span>`;
+      actionCell = `<span style="font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(s.chip || '')}</span>`;
     } else if (done) {
-      rightCell = `<span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${ptlFmt(s.actual)}</span>` +
-        (ptlIsAdmin() ? `<span style="display:inline-flex; align-items:center; gap:6px; margin-left:4px;">${ptlAsOfInputHtml(`${lane.boqId}-${s.id}`, s.actual)}<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem;" onclick="ptlMarkStepDone('${lane.boqId}','${s.id}')">Update (admin)</button></span>` : '');
+      actionCell = `
+        <span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${ptlFmt(s.actual)}</span>
+        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem; background:#fff; color:var(--muted); border:1px solid var(--border);" onclick="ptlUnmarkStepDone('${lane.boqId}','${s.id}')">Mark Undone</button>
+        ${ptlIsAdmin() ? `<span style="display:inline-flex; align-items:center; gap:6px; margin-left:4px;">${ptlAsOfInputHtml(`${lane.boqId}-${s.id}`, s.actual)}<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem;" onclick="ptlMarkStepDone('${lane.boqId}','${s.id}')">Update (admin)</button></span>` : ''}`;
     } else {
-      rightCell = `
-        <input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
-          style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;" />
+      actionCell = `
         ${ptlAsOfInputHtml(`${lane.boqId}-${s.id}`)}
         <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.74rem;" onclick="ptlMarkStepDone('${lane.boqId}','${s.id}')">Mark Done</button>`;
     }
+
     return `
-      <div id="ptl-step-${lane.boqId}-${s.id}" style="display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid #f1f5f9; flex-wrap:wrap; border-radius:4px;">
-        <div style="width:14px; height:14px; border-radius:50%; flex:none; background:${done ? c : '#fff'}; border:2px solid ${dotBorder};"></div>
-        <div style="flex:1; min-width:170px; font-size:0.85rem; font-weight:600; color:${late ? 'var(--warn)' : 'var(--text)'};">${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.72rem;">(automatic)</span>' : ''}</div>
-        <div style="font-size:0.72rem; color:var(--muted); font-family:monospace;">Planned ${ptlFmt(s.planned)}</div>
-        ${rightCell}
-      </div>`;
+      <tr id="ptl-step-${lane.boqId}-${s.id}" style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:7px 8px; font-size:0.85rem; font-weight:600; color:${late ? 'var(--warn)' : 'var(--text)'};">
+          <span style="display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; background:${done ? c : '#fff'}; border:2px solid ${late ? 'var(--warn)' : c};"></span>
+          ${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.72rem;">(automatic)</span>' : ''}
+        </td>
+        <td style="padding:7px 8px; font-size:0.78rem; color:var(--muted); font-family:monospace; text-align:center;">${ptlFmt(s.planned)}</td>
+        <td style="padding:7px 8px; font-size:0.78rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center;">${ptlFmt(currentTarget)}</td>
+        <td style="padding:7px 8px; text-align:center;">${s.terminal || !done ? `<input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
+              style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;" />` : `<span style="color:var(--muted); font-size:0.78rem;">—</span>`}</td>
+        <td style="padding:7px 8px; text-align:right; white-space:nowrap;">${actionCell}</td>
+      </tr>`;
   }).join("");
+
+  return `
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; min-width:640px;">
+        <thead><tr style="border-bottom:2px solid var(--border);">
+          <th style="padding:6px 8px; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:left;">Process Name</th>
+          <th style="padding:6px 8px; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Initial Planning Date</th>
+          <th style="padding:6px 8px; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Current Target Date</th>
+          <th style="padding:6px 8px; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">New Target Date</th>
+          <th style="padding:6px 8px; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:right;"></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
 }
 
 async function ptlSubmitInitialPlan(boqId) {
@@ -588,6 +622,19 @@ async function ptlMarkStepDone(boqId, stepKey) {
     const lane = ptlData.lanes.find(l => l.boqId === boqId);
     const step = lane && lane.steps.find(s => s.id === stepKey);
     if (step) step.actual = data.actualDate;
+    ptlRender();
+  } catch (e) { alert("Network error: " + e.message); }
+}
+
+// Undoes an accidental/wrong Mark Done — everyday mistake correction,
+// not admin-only (see unmarkProductPlanStepDone's own header comment).
+async function ptlUnmarkStepDone(boqId, stepKey) {
+  try {
+    const data = await apFetch({ action: "unmarkProductPlanStepDone", operatorName: appActiveOperatorIdentityString, boqId, stepKey });
+    if (!data.success) { alert(data.error || "Could not mark this step undone."); return; }
+    const lane = ptlData.lanes.find(l => l.boqId === boqId);
+    const step = lane && lane.steps.find(s => s.id === stepKey);
+    if (step) step.actual = null;
     ptlRender();
   } catch (e) { alert("Network error: " + e.message); }
 }
@@ -865,8 +912,20 @@ function ptlRenderCanvas(containerId) {
   // Full-width, full-height surface — this is the primary view, not a
   // strip squeezed above a list, so it gets real screen real estate.
   const availW = Math.max(900, (wrap.clientWidth || window.innerWidth) - 4);
-  const longestName = Math.max(16, ...lanes.map(l => (l.name || '').length));
-  const LEAD = Math.round(64 * ptlFS);
+  // Gutter now shows each lane's full "Product Name - Rating -
+  // Description" (not just the flow name like "Reactor"), so its width is
+  // a fixed, generous wrap column rather than scaling with content —
+  // scaling to the full label's raw length would make the gutter
+  // enormous for a long description. See the gutter block below for the
+  // actual line-wrapping (reuses ptlWrapLbl, same as node labels).
+  const longestName = 24;
+  // LEAD is pure breathing room between the gutter's right edge and the
+  // first plotted day — kept separate from the gutter's own width (see
+  // gutterW below, which is PAD_L-based only) so widening this doesn't
+  // widen the side panel, just gives the earliest nodes (Order Acceptance
+  // Sent etc.) room to not sit flush against the gutter when scrolled all
+  // the way left.
+  const LEAD = Math.round(110 * ptlFS);
   const PAD_L = Math.round(70 + longestName * 6.6 * ptlFS);
   const PAD_R = 90;
   ptlDayW = Math.max(16, Math.min(320, (availW - PAD_L - LEAD - PAD_R) / PTL_MODES[ptlMode]));
@@ -971,7 +1030,7 @@ function ptlRenderCanvas(containerId) {
   });
 
   // Today
-  P.push(`<line x1="${todayX}" y1="${RULER_H}" x2="${todayX}" y2="${H}" stroke="var(--brand)" stroke-width="2.5" opacity=".85"/>`);
+  P.push(`<line x1="${todayX}" y1="${RULER_H}" x2="${todayX}" y2="${H}" stroke="var(--accent)" stroke-width="2.5" opacity=".85"/>`);
 
   // Traces: spine (split at prodPlan into lanes, rejoin at tail[0]).
   // Nodes sharing the exact same date (e.g. BOQs/Costing/Working Designs,
@@ -1006,7 +1065,7 @@ function ptlRenderCanvas(containerId) {
     const split = pos[spine[spine.length - 1].id];
     const merge = tail.length ? pos[tail[0].id] : split;
     lanes.forEach((l, i) => {
-      const c = 'var(--brand)';
+      const c = ptlLaneTraceColor(i);
       const y = laneYs[i];
       const stepPts = l.steps.map(s => ({ x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id] }));
       const fx = stepPts[0].x, lx = stepPts[stepPts.length - 1].x;
@@ -1083,14 +1142,29 @@ function ptlRenderCanvas(containerId) {
     P.push(`<circle cx="${x}" cy="${y}" r="${R * 2.2}" fill="transparent" class="ptl-hit" data-anchor="${anchorId}" data-idx="${idx}"/>`);
   });
 
-  // Gutter (sticky lane labels)
+  // Gutter — shows each lane's full "Product Name - Rating - Description"
+  // (not just the bare flow name), colored to match that lane's own
+  // trace line (ptlLaneTraceColor). Pinned to the left edge of the
+  // viewport via a scroll-compensating transform (see the scroll
+  // listener wired below), same technique as the design prototype's own
+  // pinGutter() — drawing it as ordinary SVG content with no pinning at
+  // all let it scroll away with everything else instead of staying put.
   if (laneCount) {
-    const gutterW = PAD_L + LEAD - 10;
+    // Frozen at the ORIGINAL lead value (64), not the new wider LEAD above
+    // — the visible panel itself must stay exactly the width it was;
+    // LEAD growing is what creates the extra gap between this edge and
+    // the first plotted day, not a wider gutter.
+    const gutterW = PAD_L + (64 * ptlFS) - 10;
     const G = [`<g id="ptl-gutter">`, `<rect x="0" y="${RULER_H}" width="${gutterW}" height="${H - RULER_H}" fill="var(--bg,#f0f4f8)"/>`, `<line x1="${gutterW}" y1="${RULER_H}" x2="${gutterW}" y2="${H}" stroke="var(--border)" stroke-width="1"/>`];
     lanes.forEach((l, i) => {
       const y = laneYs[i];
-      G.push(`<rect x="16" y="${y - 12 * ptlFS}" width="4" height="${24 * ptlFS}" rx="2" fill="var(--brand)"/>`);
-      G.push(`<text x="28" y="${y + 4.5 * ptlFS}" font-size="${13 * ptlFS}" font-weight="800" fill="var(--text)">${esc(l.name)}</text>`);
+      const lc = ptlLaneTraceColor(i);
+      const fullLabel = [l.productName, l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.name;
+      const labelLines = ptlWrapLbl(fullLabel, longestName);
+      G.push(`<rect x="16" y="${y - 12 * ptlFS}" width="4" height="${24 * ptlFS}" rx="2" fill="${lc}"/>`);
+      labelLines.forEach((ln, li) => {
+        G.push(`<text x="28" y="${y + 4.5 * ptlFS + (li - (labelLines.length - 1) / 2) * 13 * ptlFS}" font-size="${11.5 * ptlFS}" font-weight="800" fill="${lc}">${esc(ln)}</text>`);
+      });
     });
     G.push(`</g>`);
     P.push(G.join(""));
@@ -1099,12 +1173,23 @@ function ptlRenderCanvas(containerId) {
   // Last of all, so nothing can cover it. Sits at the BOTTOM of the line,
   // not the top — the top is where stage-divider labels live, and the two
   // used to collide right where Today happened to fall inside a stage.
-  P.push(`<text x="${todayX}" y="${H - 10 * ptlFS}" text-anchor="middle" font-size="${10 * ptlFS}" font-weight="800" letter-spacing="1" fill="var(--brand)" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="5">TODAY · ${esc(ptlFmt(today))}</text>`);
+  P.push(`<text x="${todayX}" y="${H - 10 * ptlFS}" text-anchor="middle" font-size="${10 * ptlFS}" font-weight="800" letter-spacing="1" fill="var(--accent)" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="5">TODAY · ${esc(ptlFmt(today))}</text>`);
 
   const svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;">${P.join("")}</svg>`;
   ptlLastTodayX = todayX;
   wrap.innerHTML = svg;
   ptlWireCanvasInteractions(wrap, clickMap);
+
+  // Pin the gutter to the viewport's left edge — it's ordinary content
+  // inside the same horizontally-scrolling SVG, so without this it would
+  // just scroll away like everything else. `.onscroll` (not
+  // addEventListener) deliberately overwrites any previous handler
+  // rather than stacking one per re-render.
+  const pinGutter = () => {
+    const g = wrap.querySelector('#ptl-gutter');
+    if (g) g.setAttribute('transform', `translate(${wrap.scrollLeft},0)`);
+  };
+  wrap.onscroll = pinGutter;
 
   // Land the horizontal scroll on today — except in "This Week" mode,
   // where centering today gave a floating 6-day window (e.g. Wed-Mon)
@@ -1118,6 +1203,7 @@ function ptlRenderCanvas(containerId) {
   } else {
     wrap.scrollLeft = Math.max(0, todayX - wrap.clientWidth / 2);
   }
+  pinGutter();
 }
 
 let ptlCanvasContainerId = "ptl-fs-scroller";
