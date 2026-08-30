@@ -39,12 +39,13 @@ const PTL_SCHEDULED_GREY = '#94a3b8';
 // Per-lane (per-PRODUCT, not per-department — two products under the same
 // Reactor/Capacitor/Panel department get different colors here) trace
 // line color, so multiple products running in parallel through Stage 4
-// are visually distinguishable. Deliberately excludes red/orange/blue/
-// black (reserved: red=late, blue=brand/spine, black=text) — cycles if
-// there are ever more lanes than colors. Node circles stay the shared
-// green/grey/red completion scheme regardless of lane; only the
-// connecting line (and its gutter label) carries this color.
-const PTL_LANE_TRACE_PALETTE = ['#7c3aed', '#0d9488', '#be185d', '#92400e', '#c026d3', '#4d7c0f'];
+// are visually distinguishable. Deliberately excludes red/reddish/green/
+// blue/black (reserved: red=late, green=TODAY line/done-state, blue=
+// brand/spine, black=text) — cycles if there are ever more lanes than
+// colors. Node circles stay the shared green/grey/red completion scheme
+// regardless of lane; only the connecting line (and its gutter label)
+// carries this color.
+const PTL_LANE_TRACE_PALETTE = ['#7c3aed', '#0d9488', '#be185d', '#92400e', '#c026d3', '#c2410c'];
 const ptlLaneTraceColor = (i) => PTL_LANE_TRACE_PALETTE[i % PTL_LANE_TRACE_PALETTE.length];
 // Dispatch is no longer part of this chain — it's Store's, derived
 // automatically from when the Final Project Invoice was generated (see
@@ -1048,7 +1049,7 @@ function ptlRenderCanvas(containerId) {
   });
 
   // Today
-  P.push(`<line x1="${todayX}" y1="${RULER_H}" x2="${todayX}" y2="${H}" stroke="var(--text)" stroke-width="2.5" opacity=".85"/>`);
+  P.push(`<line x1="${todayX}" y1="${RULER_H}" x2="${todayX}" y2="${H}" stroke="#15803d" stroke-width="2.5" opacity=".85"/>`);
 
   // Traces: spine (split at prodPlan into lanes, rejoin at tail[0]).
   // Nodes sharing the exact same date (e.g. BOQs/Costing/Working Designs,
@@ -1191,7 +1192,7 @@ function ptlRenderCanvas(containerId) {
   // Last of all, so nothing can cover it. Sits at the BOTTOM of the line,
   // not the top — the top is where stage-divider labels live, and the two
   // used to collide right where Today happened to fall inside a stage.
-  P.push(`<text x="${todayX}" y="${H - 10 * ptlFS}" text-anchor="middle" font-size="${10 * ptlFS}" font-weight="800" letter-spacing="1" fill="var(--text)" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="5">TODAY · ${esc(ptlFmt(today))}</text>`);
+  P.push(`<text x="${todayX}" y="${H - 10 * ptlFS}" text-anchor="middle" font-size="${10 * ptlFS}" font-weight="800" letter-spacing="1" fill="#15803d" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="5">TODAY · ${esc(ptlFmt(today))}</text>`);
 
   const svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;">${P.join("")}</svg>`;
   ptlLastTodayX = todayX;
