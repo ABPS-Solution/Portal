@@ -1040,11 +1040,19 @@ function ptlRenderCanvas(containerId) {
     lines.forEach((ln, i) => P.push(`<text x="${x}" y="${base - (lines.length - 1 - i) * LINE_H}" text-anchor="middle" font-size="${11 * ptlFS}" font-weight="600" fill="${late ? '#e84545' : 'var(--text)'}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(ln)}</text>`));
 
     const dtx = ptlFmt(eff);
-    const bw = ptlWMono(dtx, 10.5);
-    const kD = PL.place(k => { const d = y + R + GAP + k * SLOT_DN; return { x0: x - bw / 2 - PTL_LBL_PAD, x1: x + bw / 2 + PTL_LBL_PAD, y0: d - ASC, y1: d + 3 }; });
+    // Stage 3's progress chip (e.g. "3/4 PRNs") — was only ever rendered in
+    // the Steps list, never on the canvas map, despite being exactly the
+    // kind of at-a-glance progress the map is for. Rendered as a second
+    // line under the date, reserved as part of the same placer slot so it
+    // can't collide with a neighboring node's stacked label/date.
+    const chipTxt = n.chip || '';
+    const bw = Math.max(ptlWMono(dtx, 10.5), chipTxt ? ptlWMono(chipTxt, 9.5) : 0);
+    const chipExtra = chipTxt ? LINE_H : 0;
+    const kD = PL.place(k => { const d = y + R + GAP + k * SLOT_DN; return { x0: x - bw / 2 - PTL_LBL_PAD, x1: x + bw / 2 + PTL_LBL_PAD, y0: d - ASC, y1: d + 3 + chipExtra }; });
     const dy = y + R + GAP + kD * SLOT_DN;
     if (kD > 0) P.push(`<line x1="${x}" y1="${y + R}" x2="${x}" y2="${dy - ASC}" stroke="${ring}" stroke-width="1" opacity=".3"/>`);
     P.push(`<text x="${x}" y="${dy}" text-anchor="middle" font-size="${10.5 * ptlFS}" font-weight="700" font-family="monospace" fill="${late ? '#e84545' : 'var(--muted)'}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(dtx)}</text>`);
+    if (chipTxt) P.push(`<text x="${x}" y="${dy + LINE_H}" text-anchor="middle" font-size="${9.5 * ptlFS}" font-weight="700" font-family="monospace" fill="${c}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(chipTxt)}</text>`);
 
     P.push(`<circle cx="${x}" cy="${y}" r="${R}" fill="${done ? c : 'var(--card)'}" stroke="${ring}" stroke-width="${(late ? 2.6 : 2.2) * ptlFS}"/>`);
     if (done) P.push(`<path d="M${x - R * 0.43} ${y} l${R * 0.31} ${R * 0.32} l${R * 0.55} -${R * 0.61}" fill="none" stroke="var(--card)" stroke-width="${1.8 * ptlFS}" stroke-linecap="round" stroke-linejoin="round"/>`);
@@ -1053,7 +1061,7 @@ function ptlRenderCanvas(containerId) {
     const idx = clickMap.length;
     clickMap.push({
       label: n.label, owner: ownerLabel || (PTL_DEPT_NAME[n.dept] || n.dept),
-      planned: n.planned, eff, actual: n.actual, late: bd,
+      planned: n.planned, eff, actual: n.actual, late: bd, stage: boqId ? 4 : n.stage,
     });
     P.push(`<circle cx="${x}" cy="${y}" r="${R * 2.2}" fill="transparent" class="ptl-hit" data-anchor="${anchorId}" data-idx="${idx}"/>`);
   });
@@ -1357,8 +1365,16 @@ function ptlTipHtml(info) {
   const row = (k, v) => `<div style="display:flex; justify-content:space-between; gap:14px; font-size:0.74rem; color:var(--muted); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"><span>${k}</span><span style="color:var(--text);">${escapeHtml(v)}</span></div>`;
   let h = `<b style="display:block; font-size:0.82rem; font-weight:700; margin-bottom:6px;">${escapeHtml(info.label)}</b>`;
   h += row("Department", info.owner || "—");
-  h += row("Planned", info.planned ? ptlFmt(info.planned) : "—");
-  if (info.eff && info.eff !== info.planned) h += row("New Target", ptlFmt(info.eff));
+  // Planned is omitted entirely for the handful of Stage 1/2 nodes that
+  // have no planned/estimate concept at all (Order Acceptance Sent, PO
+  // Uploaded, Project Activated, MFC from Customer, Internal MFC) —
+  // showing "Planned: —" there implied a value that was never coming.
+  // New Target only ever applies to Stage 4 (Production's own steps),
+  // and even there only when it's actually been revised off Planned —
+  // every other stage (Drawing Sent/Approved, all of Stage 3, all of
+  // Stage 5) has no separate "target" concept, just Planned vs Actual.
+  if (info.planned) h += row("Planned", ptlFmt(info.planned));
+  if (info.stage === 4 && info.eff && info.eff !== info.planned) h += row("New Target", ptlFmt(info.eff));
   h += row("Actual", info.actual ? ptlFmt(info.actual) : "—");
   if (info.late) h += `<div style="margin-top:5px; font-size:0.74rem; font-weight:700; color:#e84545;">${info.late} business day${info.late === 1 ? "" : "s"} late</div>`;
   return h;
