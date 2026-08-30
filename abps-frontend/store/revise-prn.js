@@ -501,8 +501,4 @@ let ddCurrentCustomType = "customday";
 let ddChartDept = null, ddChartVersion = null, ddChartTrend = null;
 let mdChartFunnel = null, mdChartPotential = null, mdChartVertical = null;
 let mdCurrentPeriod = "today", mdCurrentCustomType = "customday";
-let ddHealthData = [];
-let ddHealthFiltered = [];
-let ddHealthCurrentPage = 1;
-const DD_HEALTH_PAGE_SIZE = 5;
 

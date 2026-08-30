@@ -1,58 +1,3 @@
-function ddFilterHealth() {
-  const q = (document.getElementById("dd-health-search")?.value || "").toLowerCase();
-  ddHealthFiltered = q
-    ? ddHealthData.filter(p => p.projId.toLowerCase().includes(q) || p.customer.toLowerCase().includes(q))
-    : [...ddHealthData];
-  ddHealthCurrentPage = 1;
-  ddRenderHealthTable();
-}
-
-function ddHealthPage(dir) {
-  const totalPages = Math.ceil(ddHealthFiltered.length / DD_HEALTH_PAGE_SIZE);
-  ddHealthCurrentPage = Math.max(1, Math.min(totalPages, ddHealthCurrentPage + dir));
-  ddRenderHealthTable();
-}
-
-function ddRenderHealthTable() {
-  const fmt = n => "₹" + Number(n).toLocaleString("en-IN", { maximumFractionDigits:0 });
-  const tbody = document.getElementById("dd-health-tbody");
-  const total = ddHealthFiltered.length;
-  const totalPages = Math.max(1, Math.ceil(total / DD_HEALTH_PAGE_SIZE));
-  const start = (ddHealthCurrentPage - 1) * DD_HEALTH_PAGE_SIZE;
-  const page  = ddHealthFiltered.slice(start, start + DD_HEALTH_PAGE_SIZE);
-
-  const pageInfo = document.getElementById("dd-health-page-info");
-  if (pageInfo) pageInfo.textContent = total > DD_HEALTH_PAGE_SIZE
-    ? `${start+1}–${Math.min(start+DD_HEALTH_PAGE_SIZE, total)} of ${total}`
-    : `${total} project${total !== 1 ? "s" : ""}`;
-
-  // Toggle prev/next buttons
-  const prevBtn = document.querySelector("[onclick=\"ddHealthPage(-1)\"]");
-  const nextBtn = document.querySelector("[onclick=\"ddHealthPage(1)\"]");
-  if (prevBtn) prevBtn.disabled = ddHealthCurrentPage <= 1;
-  if (nextBtn) nextBtn.disabled = ddHealthCurrentPage >= totalPages;
-
-  if (!tbody) return;
-  if (page.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--muted); font-size:0.72rem; padding:6px;">No projects found</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = page.map((p, i) => {
-    const prnBg    = p.prnRaised ? "#dcfce7" : "#fee2e2";
-    const prnColor = p.prnRaised ? "#15803d" : "#b91c1c";
-    const rowBg    = i % 2 === 0 ? "var(--card)" : "#f8fafc";
-    return `<tr style="background:${rowBg}; border-bottom:1px solid #f1f5f9;">
-      <td style="padding:10px 8px; font-weight:700; font-family:monospace; font-size:0.78rem;">${p.projId}</td>
-      <td style="padding:10px 8px; font-size:0.78rem;">${p.customer}</td>
-      <td style="padding:10px 8px; text-align:center; font-size:0.78rem;">${p.total}</td>
-      <td style="padding:10px 8px; text-align:center; color:#15803d; font-weight:700; font-size:0.78rem;">${p.authorized}</td>
-      <td style="padding:10px 8px; text-align:center; color:${p.pending > 0 ? "#b45309" : "var(--muted)"}; font-weight:${p.pending > 0 ? "700" : "400"}; font-size:0.78rem;">${p.pending}</td>
-      <td style="padding:10px 8px; text-align:right; font-family:monospace; font-size:0.78rem;">${fmt(p.value)}</td>
-      <td style="padding:10px 8px; text-align:center;"><span style="font-size:0.72rem; font-weight:700; padding:2px 10px; border-radius:8px; background:${prnBg}; color:${prnColor};">${p.prnRaised ? "Yes" : "No"}</span></td>
-    </tr>`;
-  }).join("");
-}
-
 function ddSetPeriod(btn) {
   document.querySelectorAll(".dd-period-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
@@ -83,11 +28,19 @@ function ddLoadCustom() {
   ddLoadDashboard(val);
 }
 
+// PTL_TODAY_OVERRIDE_KEY ("ptlTodayOverride") is Project Timeline's own
+// admin-only, client-side-only "today" override (project-timeline.js) —
+// this dashboard's Due Today/Overdue panels read the SAME key so an
+// admin building a test scenario on the Timeline screen sees a
+// consistent picture here too, without that override ever needing to
+// exist as a real server-side setting. A non-admin's request is ignored
+// server-side regardless of what's in their own localStorage.
 async function ddLoadDashboard(customVal) {
   const body = document.getElementById("dd-body");
   if (!body) return;
   // Show loading state on stat cards
-  ["dd-s-created","dd-s-authorized","dd-s-pending","dd-s-authtime","dd-s-itemcodes"].forEach(id => {
+  ["dd-s-overdue","dd-s-pending","dd-s-pendingrevisions","dd-s-itemcodes","dd-s-drawingsuploaded",
+   "dd-s-authorized","dd-s-revised","dd-s-drawingturnaround","dd-s-avgboqs","dd-s-authtime"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
 
@@ -95,7 +48,8 @@ async function ddLoadDashboard(customVal) {
     const data = await apFetch({
       action:      "fetchDesignDashboardData",
       periodType:  ddCurrentPeriod,
-      periodValue: customVal || ""
+      periodValue: customVal || "",
+      todayOverride: localStorage.getItem("ptlTodayOverride") || "",
     });
     if (!data.success) { alert("Dashboard load failed: " + data.error); return; }
     ddRenderDashboard(data);
@@ -104,32 +58,35 @@ async function ddLoadDashboard(customVal) {
   }
 }
 
+// Shared minutes -> "N minutes/hrs/days" formatter for the two
+// turnaround-time tiles below — same smart-unit idea the old Average
+// Authorization Time tile already had, just inlined into one string
+// since this dashboard's tiles are single-line, no separate unit div.
+function ddFormatMinutes(mins) {
+  if (mins === null || mins === undefined) return "—";
+  if (mins < 60) return Math.round(mins) + " min";
+  if (mins < 1440) return (mins / 60).toFixed(1) + " hrs";
+  return (mins / 1440).toFixed(1) + " days";
+}
+
 function ddRenderDashboard(data) {
-  const { stats, byDept, versionDist, trendData, pendingList, updatePendingList, projectHealth, showTrend } = data;
+  const { stats, byDept, versionDist, dueToday, overdue } = data;
   const fmt = n => "₹" + Number(n).toLocaleString("en-IN", { maximumFractionDigits:0 });
 
-  // Stat cards
-  document.getElementById("dd-s-created").textContent    = stats.totalCreated;
+  // Row 1
+  document.getElementById("dd-s-overdue").textContent          = stats.designWorkOverdue;
+  document.getElementById("dd-s-pending").textContent           = stats.totalPending;
+  document.getElementById("dd-s-pendingrevisions").textContent = stats.pendingBoqRevisions;
+  document.getElementById("dd-s-itemcodes").textContent         = stats.newItemCodes;
+  document.getElementById("dd-s-drawingsuploaded").textContent = stats.drawingsUploaded;
+
+  // Row 2
   document.getElementById("dd-s-authorized").textContent = stats.totalAuthorized;
-  document.getElementById("dd-s-pending").textContent    = stats.totalPending;
-  // Smart auth time formatting
-  if (stats.avgAuthTime !== null) {
-    const mins = stats.avgAuthTime;
-    if (mins < 60) {
-      document.getElementById("dd-s-authtime").textContent      = mins;
-      document.getElementById("dd-s-authtime-unit").textContent = "minutes";
-    } else if (mins < 1440) {
-      document.getElementById("dd-s-authtime").textContent      = (mins / 60).toFixed(1);
-      document.getElementById("dd-s-authtime-unit").textContent = "hours";
-    } else {
-      document.getElementById("dd-s-authtime").textContent      = (mins / 1440).toFixed(1);
-      document.getElementById("dd-s-authtime-unit").textContent = "days";
-    }
-  } else {
-    document.getElementById("dd-s-authtime").textContent      = "—";
-    document.getElementById("dd-s-authtime-unit").textContent = "";
-  }
-  document.getElementById("dd-s-itemcodes").textContent  = stats.newItemCodes;
+  document.getElementById("dd-s-revised").textContent    = stats.totalRevised;
+  document.getElementById("dd-s-drawingturnaround").textContent =
+    stats.avgDrawingTurnaroundDays !== null ? stats.avgDrawingTurnaroundDays + " days" : "—";
+  document.getElementById("dd-s-avgboqs").textContent = stats.avgBoqsPerActiveProject !== null ? stats.avgBoqsPerActiveProject : "—";
+  document.getElementById("dd-s-authtime").textContent = ddFormatMinutes(stats.avgAuthTime);
 
   // By dept table
   const tbody = document.getElementById("dd-dept-tbody");
@@ -146,9 +103,6 @@ function ddRenderDashboard(data) {
       </tr>`;
     });
   }
-
-  // Trend chart removed from layout
-  if (ddChartTrend) { ddChartTrend.destroy(); ddChartTrend = null; }
 
   // Chart 2 — BOQs by dept
   if (ddChartDept) ddChartDept.destroy();
@@ -181,14 +135,25 @@ function ddRenderDashboard(data) {
       scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false } } } }
   });
 
-  // Pending list removed from this dashboard
+  // Due Today / Overdue — Design's 4 Project Timeline trunk items across
+  // every Active project (routes/dashboards.js's fetchDesignTimelineDueOverdue),
+  // already sorted server-side (priority order / days-overdue desc then priority).
+  const dueTbody = document.getElementById("dd-duetoday-tbody");
+  dueTbody.innerHTML = dueToday.length === 0
+    ? `<tr><td colspan="2" style="color:var(--muted); padding:6px;">Nothing due today.</td></tr>`
+    : dueToday.map(r => `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${r.companyName}</span></td>
+          <td style="padding:4px;">${r.label}</td>
+        </tr>`).join("");
 
-  // Project health — load into pagination engine
-  ddHealthData     = projectHealth;
-  ddHealthFiltered = [...projectHealth];
-  ddHealthCurrentPage = 1;
-  const searchEl = document.getElementById("dd-health-search");
-  if (searchEl) searchEl.value = "";
-  ddRenderHealthTable();
+  const overdueTbody = document.getElementById("dd-overdue-tbody");
+  overdueTbody.innerHTML = overdue.length === 0
+    ? `<tr><td colspan="3" style="color:var(--muted); padding:6px;">Nothing overdue — nice work.</td></tr>`
+    : overdue.map(r => `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${r.companyName}</span></td>
+          <td style="padding:4px;">${r.label}</td>
+          <td style="padding:4px; text-align:right; color:#b91c1c; font-weight:700;">${r.daysOverdue}d</td>
+        </tr>`).join("");
 }
-

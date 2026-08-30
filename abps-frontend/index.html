@@ -3049,51 +3049,48 @@
         <!-- ROW 1: 5 Stat Cards -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
           <div class="dd-stat-card">
-            <div class="dd-stat-label">BOQs Created</div>
-            <div class="dd-stat-val" id="dd-s-created">—</div>
+            <div class="dd-stat-label">Design Work Overdue in Project Timeline</div>
+            <div class="dd-stat-val" id="dd-s-overdue" style="color:#b91c1c;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">BOQs Authorized</div>
-            <div class="dd-stat-val" id="dd-s-authorized" style="color:#15803d;">—</div>
-          </div>
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Pending Authorizations</div>
+            <div class="dd-stat-label">Pending BOQ Authorizations</div>
             <div class="dd-stat-val" id="dd-s-pending" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Average Authorization Time</div>
-            <div class="dd-stat-val" id="dd-s-authtime">—</div>
-            <div class="dd-stat-sub" id="dd-s-authtime-unit">—</div>
+            <div class="dd-stat-label">Pending BOQ Revision Authorizations</div>
+            <div class="dd-stat-val" id="dd-s-pendingrevisions" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card">
             <div class="dd-stat-label">New Item Codes Added</div>
             <div class="dd-stat-val" id="dd-s-itemcodes">—</div>
           </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Drawings Uploaded</div>
+            <div class="dd-stat-val" id="dd-s-drawingsuploaded">—</div>
+          </div>
         </div>
 
-        <!-- ROW 2: PRN Assignment Health -->
+        <!-- ROW 2: Throughput/Averages -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
           <div class="dd-stat-card">
-            <div class="dd-stat-label">PRNs Pending Assignment</div>
-            <div class="dd-stat-val" id="pd-s-prn-pending" style="color:#b45309;">—</div>
-            <div class="dd-stat-sub">line items under-assigned</div>
+            <div class="dd-stat-label">BOQs Authorized</div>
+            <div class="dd-stat-val" id="dd-s-authorized" style="color:#15803d;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Fully Covered PRNs</div>
-            <div class="dd-stat-val" id="pd-s-prn-covered" style="color:#15803d;">—</div>
-            <div class="dd-stat-sub">all line items assigned</div>
+            <div class="dd-stat-label">BOQs Revised</div>
+            <div class="dd-stat-val" id="dd-s-revised">—</div>
           </div>
-          <div class="dd-stat-card" id="dd-r2-card-3" style="opacity:0.45; pointer-events:none;">
-            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Average Drawing Turnaround (Sent → Approved)</div>
+            <div class="dd-stat-val" id="dd-s-drawingturnaround">—</div>
           </div>
-          <div class="dd-stat-card" id="dd-r2-card-4" style="opacity:0.45; pointer-events:none;">
-            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Average BOQs per Active Project</div>
+            <div class="dd-stat-val" id="dd-s-avgboqs">—</div>
           </div>
-          <div class="dd-stat-card" id="dd-r2-card-5" style="opacity:0.45; pointer-events:none;">
-            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Average BOQ Authorization Time</div>
+            <div class="dd-stat-val" id="dd-s-authtime">—</div>
           </div>
         </div>
 
@@ -3120,31 +3117,36 @@
           </div>
         </div>
 
-        <!-- ROW 4: Project Health — full width, paginated -->
-        <div class="dd-card" style="padding:12px 16px; flex:1; min-height:0; display:flex; flex-direction:column;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-            <div class="dd-card-title" style="margin-bottom:0;">Project Health Summary</div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <input id="dd-health-search" type="text" placeholder="Search project..." oninput="ddFilterHealth()"
-                style="font-size:0.72rem; padding:3px 8px; border:1px solid var(--border); border-radius:4px; width:140px;" />
-              <span id="dd-health-page-info" style="font-size:0.68rem; color:var(--muted); white-space:nowrap;"></span>
-              <button onclick="ddHealthPage(-1)" class="dd-period-btn" style="padding:2px 7px;">‹</button>
-              <button onclick="ddHealthPage(1)"  class="dd-period-btn" style="padding:2px 7px;">›</button>
+        <!-- ROW 4: Design work Due Today / Overdue, from Project Timeline -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1; min-height:0;">
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-stat-label" style="margin-bottom:8px;">Due Today (Active projects, Project Timeline)</div>
+            <div style="flex:1; min-height:0; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead>
+                  <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
+                    <th style="padding:4px;">Project</th>
+                    <th style="padding:4px;">Item</th>
+                  </tr>
+                </thead>
+                <tbody id="dd-duetoday-tbody"></tbody>
+              </table>
             </div>
           </div>
-          <div style="overflow-y:auto; flex:1; min-height:0;">
-            <table style="width:100%; border-collapse:collapse; font-size:0.78rem;">
-              <thead><tr style="color:var(--muted); font-size:0.72rem; border-bottom:1.5px solid var(--border); position:sticky; top:0; background:var(--card);">
-                <th style="text-align:left; padding:3px 6px; font-weight:700;">Project ID</th>
-                <th style="text-align:left; padding:3px 6px; font-weight:700;">Customer</th>
-                <th style="text-align:center; padding:3px 6px; font-weight:700;">Total BOQs</th>
-                <th style="text-align:center; padding:3px 6px; font-weight:700;">Authorized</th>
-                <th style="text-align:center; padding:3px 6px; font-weight:700;">Pending</th>
-                <th style="text-align:right; padding:3px 6px; font-weight:700;">Authorized Value (₹)</th>
-                <th style="text-align:center; padding:3px 6px; font-weight:700;">PRN Raised</th>
-              </tr></thead>
-              <tbody id="dd-health-tbody"></tbody>
-            </table>
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-stat-label" style="margin-bottom:8px;">Overdue (Active projects, Project Timeline)</div>
+            <div style="flex:1; min-height:0; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead>
+                  <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
+                    <th style="padding:4px;">Project</th>
+                    <th style="padding:4px;">Item</th>
+                    <th style="padding:4px; text-align:right;">Days Late</th>
+                  </tr>
+                </thead>
+                <tbody id="dd-overdue-tbody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
 
