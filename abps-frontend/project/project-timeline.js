@@ -153,6 +153,35 @@ document.addEventListener("click", (e) => {
   if (dd && !e.target.closest("#ptl-project-input") && !e.target.closest("#ptl-project-dropdown")) dd.style.display = "none";
 });
 
+// Holidays (31 Aug 2026) — fetched once per page load and cached module-wide
+// (admin_db.holidays has no admin UI, changes are rare direct-SQL edits, so
+// there's no need to re-fetch per project the way ptlData itself is).
+// Display-only: marks a Sunday/holiday's date in green on the canvas axis
+// and improves ptlBdBetween's own estimate — every REAL business-day
+// freeze/calculation still happens server-side via lib/businessDays.js,
+// unchanged either way.
+let ptlHolidaySet = new Set();
+let ptlHolidaysLoaded = false;
+async function ptlEnsureHolidaysLoaded() {
+  if (ptlHolidaysLoaded) return;
+  ptlHolidaysLoaded = true; // set first — a failed fetch shouldn't retry on every render
+  try {
+    const data = await apFetch({ action: "fetchTimelineHolidays" });
+    if (data.success) {
+      ptlHolidaySet = new Set(data.holidays || []);
+      // The canvas's first paint likely already happened before this
+      // resolved (fired in parallel with the timeline fetch, not awaited)
+      // — re-render once so holiday shading isn't missing until the next
+      // unrelated interaction. Cheap: ptlRender() is already the standard
+      // re-render call used throughout this file.
+      if (ptlData && typeof ptlRender === 'function') ptlRender();
+    }
+  } catch (e) { /* non-critical — canvas still works, just without holiday shading */ }
+}
+function ptlDayIsRest(dateStr) {
+  return ptlParse(dateStr).getUTCDay() === 0 || ptlHolidaySet.has(dateStr);
+}
+
 async function selectPtlProject(projectId) {
   document.getElementById("ptl-project-input").value = projectId;
   document.getElementById("ptl-project-dropdown").style.display = "none";
@@ -160,6 +189,7 @@ async function selectPtlProject(projectId) {
   body.innerHTML = `<div style="padding:30px; text-align:center; color:var(--muted);">Loading timeline...</div>`;
   const fb = document.getElementById("ptl-feedback");
   fb.style.display = "none";
+  ptlEnsureHolidaysLoaded(); // fire-and-forget, in parallel with the timeline fetch below
   try {
     const data = await apFetch({ action: "fetchProjectTimeline", projectId });
     if (!data.success) {
@@ -189,7 +219,11 @@ function ptlBdBetween(a, b) {
   let d = ptlParse(a), count = 0;
   while (ptlIso(d) !== b) {
     d = new Date(d.getTime() + dir * PTL_DAYMS);
-    if (d.getUTCDay() !== 0) count += dir; // holidays not fetched client-side yet — Sunday-only here, server is authoritative for freezing
+    // Holidays are now fetched client-side (ptlHolidaySet, 31 Aug 2026) so
+    // this can skip them too, not just Sundays — still just a DISPLAY
+    // estimate, the server (lib/businessDays.js) is authoritative for any
+    // real freezing/calculation.
+    if (!ptlDayIsRest(ptlIso(d))) count += dir;
   }
   return count;
 }
@@ -878,10 +912,17 @@ function ptlBuildDayRange() {
   // a small margin so that node's label/circle isn't flush against the edge).
   const from = ptlParse(dates[0]);
   const to = new Date(ptlParse(dates[dates.length - 1]).getTime() + 6 * PTL_DAYMS);
+  // Every calendar day is plotted now (31 Aug 2026, was Sunday-skipped) —
+  // for date-continuity: something can genuinely happen on a Sunday or
+  // holiday (this business does sometimes work them), and omitting that
+  // day from the axis entirely would make such an action look like it
+  // happened on the wrong date, or vanish. Sunday/holiday columns are
+  // still excluded from all BUSINESS-DAY math (ptlBdBetween above,
+  // lib/businessDays.js server-side) — this only widens what's DRAWN.
   ptlDays = []; ptlIndexMap = {};
   for (let t = from.getTime(); t <= to.getTime(); t += PTL_DAYMS) {
     const d = new Date(t);
-    if (d.getUTCDay() !== 0) { ptlIndexMap[ptlIso(d)] = ptlDays.length; ptlDays.push(ptlIso(d)); }
+    ptlIndexMap[ptlIso(d)] = ptlDays.length; ptlDays.push(ptlIso(d));
   }
   return true;
 }
@@ -1000,10 +1041,11 @@ function ptlRenderCanvas(containerId) {
   const laneCount = lanes.length;
   const laneYs = lanes.map((_, i) => spineY + (i - (laneCount - 1) / 2) * gap);
 
-  // If the exact date isn't in the index (a Sunday slipped through — the
-  // backend now refuses new ones, but old data or a holiday-adjacent edge
-  // could still land here), snap forward to the next day that IS, rather
-  // than silently plotting at day zero.
+  // Every date within ptlBuildDayRange's from/to span is now in the index
+  // (Sundays/holidays included, 31 Aug 2026) — this fallback is purely
+  // defensive for a date outside that span, which shouldn't happen given
+  // how `to`/`from` are derived from the same dated points this draws,
+  // but snapping forward beats silently plotting at day zero.
   const xOf = (d) => {
     let i = ptlIndexMap[d];
     if (i === undefined) {
@@ -1033,12 +1075,22 @@ function ptlRenderCanvas(containerId) {
   P.push(`<rect x="0" y="0" width="${W}" height="${RULER_H}" fill="var(--card)"/>`);
   P.push(`<line x1="0" y1="${RULER_H}" x2="${W}" y2="${RULER_H}" stroke="var(--border)" stroke-width="1.5"/>`);
   let lastM = -1;
+  // Sunday/holiday columns (31 Aug 2026) render their date+day-name in the
+  // same green as the TODAY line (#15803d) so they read as "day off" at a
+  // glance, distinct from the normal text/muted greys AND from Monday's
+  // own bold-black emphasis — a rest day still shows even when DENSE mode
+  // would otherwise only label Mondays, since it's the whole point of
+  // marking it.
+  const PTL_REST_GREEN = '#15803d';
   ptlDays.forEach((d, i) => {
     const x = PAD_L + LEAD + i * ptlDayW, dt = ptlParse(d), m = dt.getUTCMonth(), mon = dt.getUTCDay() === 1;
+    const isRest = ptlDayIsRest(d);
     if (m !== lastM) { lastM = m; P.push(`<text x="${x}" y="${14 * ptlFS}" font-size="${11 * ptlFS}" font-weight="800" letter-spacing="1.5" fill="var(--muted)">${PTL_MON[m].toUpperCase()} ${dt.getUTCFullYear()}</text>`); }
-    if (!DENSE || mon) {
-      P.push(`<text x="${x}" y="${RULER_H - 15 * ptlFS}" text-anchor="middle" font-size="${11.5 * ptlFS}" font-family="monospace" font-weight="${mon ? 800 : 600}" fill="${mon ? 'var(--text)' : 'var(--muted)'}">${dt.getUTCDate()}</text>`);
-      P.push(`<text x="${x}" y="${RULER_H - 5 * ptlFS}" text-anchor="middle" font-size="${9 * ptlFS}" font-family="monospace" font-weight="600" fill="var(--muted)">${DOW[dt.getUTCDay()]}</text>`);
+    if (!DENSE || mon || isRest) {
+      const dateColor = isRest ? PTL_REST_GREEN : (mon ? 'var(--text)' : 'var(--muted)');
+      const dowColor = isRest ? PTL_REST_GREEN : 'var(--muted)';
+      P.push(`<text x="${x}" y="${RULER_H - 15 * ptlFS}" text-anchor="middle" font-size="${11.5 * ptlFS}" font-family="monospace" font-weight="${mon || isRest ? 800 : 600}" fill="${dateColor}">${dt.getUTCDate()}</text>`);
+      P.push(`<text x="${x}" y="${RULER_H - 5 * ptlFS}" text-anchor="middle" font-size="${9 * ptlFS}" font-family="monospace" font-weight="600" fill="${dowColor}">${DOW[dt.getUTCDay()]}</text>`);
     }
   });
 
