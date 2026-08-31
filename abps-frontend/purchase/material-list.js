@@ -255,14 +255,18 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
         </tr>`;
       }).join("");
 
-  // Combined-quantity-by-date number line (31 Aug 2026) — aggregates every
-  // PRN's own requirement dates into one timeline showing the TOTAL of
-  // this material needed on each date across every PRN (e.g. 5 on the 10th
-  // for one PRN + 15 on the 10th for another = 20 shown at the 10th),
-  // positioned proportionally to real elapsed time between dates, not
-  // evenly spaced by index — a gap of 20 days should look wider than a
-  // gap of 2. Sits between the header and the table, only rendered when
-  // there's at least one dated point to show.
+  // Combined-quantity-by-date timeline (revised 31 Aug 2026 — one line PER
+  // CALENDAR MONTH, not one line spanning min-to-max date) — aggregates
+  // every PRN's own requirement dates into the TOTAL of this material
+  // needed on each date across every PRN (e.g. 5 on the 10th for one PRN
+  // + 15 on the 10th for another = 20 shown at the 10th). Each line always
+  // represents a fixed "1st to last day of THIS month" span, positioned by
+  // day-of-month — not by elapsed real time between actual data points —
+  // so two different materials' lines are visually comparable (a given
+  // day-of-month always lands at the same x position), unlike the earlier
+  // version where a line's meaning shifted per material depending on
+  // which dates happened to have data. If requirement dates span 2+
+  // months, one line per month renders, stacked, earliest month on top.
   const qtyByDate = {};
   prnIds.forEach(pid => {
     (reqDatesByPrn[pid] || []).forEach(d => {
@@ -274,25 +278,47 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
   let timelineHtml = "";
   if (sortedDates.length > 0) {
     const INSET = 8; // % from each edge — "slightly inside", not flush to the ends
-    const parseD = (s) => new Date(s + "T00:00:00Z").getTime();
-    const minT = parseD(sortedDates[0]);
-    const maxT = parseD(sortedDates[sortedDates.length - 1]);
-    const span = maxT - minT;
-    const points = sortedDates.map(dateStr => {
-      const pct = span === 0 ? 50 : INSET + ((parseD(dateStr) - minT) / span) * (100 - 2 * INSET);
-      return { dateStr, pct, qty: qtyByDate[dateStr] };
+    const PTL_MON_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const ordinal = (n) => {
+      const s = ["th","st","nd","rd"], v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    };
+    // Group into calendar months (YYYY-MM), each holding its own points.
+    const byMonth = {};
+    sortedDates.forEach(dateStr => {
+      const [y, m, d] = dateStr.split("-").map(Number);
+      const monthKey = `${y}-${String(m).padStart(2, "0")}`;
+      if (!byMonth[monthKey]) byMonth[monthKey] = { year: y, month: m, days: [] };
+      byMonth[monthKey].days.push({ day: d, qty: qtyByDate[dateStr] });
     });
-    const markersHtml = points.map(p => `
-      <div style="position:absolute; left:${p.pct}%; top:0; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; white-space:nowrap;">
-        <div style="font-size:0.85rem; font-weight:800; color:#b91c1c; margin-bottom:4px;">${fmtQtyN(p.qty)} <span style="font-size:0.65rem; font-weight:700; color:var(--muted);">${unitLabel}</span></div>
-        <div style="width:9px; height:9px; border-radius:50%; background:var(--brand); border:2px solid #fff; box-shadow:0 0 0 1px var(--brand);"></div>
-        <div style="font-size:0.72rem; font-weight:600; color:#334155; margin-top:4px;">${formatDateDMY(p.dateStr)}</div>
-      </div>`).join("");
-    timelineHtml = `
-      <div style="position:relative; height:62px; margin:6px 4px 22px;">
-        <div style="position:absolute; left:0; right:0; top:29px; height:2px; background:var(--border);"></div>
-        ${markersHtml}
+    const monthKeys = Object.keys(byMonth).sort();
+    const linesHtml = monthKeys.map(mk => {
+      const { year, month, days } = byMonth[mk];
+      // Fixed 31-day denominator (not this month's own day count) — day 10
+      // lands at the SAME x position whether it's a 28-day February or a
+      // 31-day October, so a viewer scanning multiple materials'/months'
+      // lines can compare day-of-month at a glance. The tradeoff: a
+      // shorter month's line simply doesn't reach as close to the right
+      // edge as a 31-day month's does — expected and informative, not a bug.
+      const markersHtml = days.map(({ day, qty }) => {
+        const pct = INSET + ((day - 1) / 30) * (100 - 2 * INSET);
+        return `
+        <div style="position:absolute; left:${pct}%; top:0; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; white-space:nowrap;">
+          <div style="font-size:0.85rem; font-weight:800; color:#b91c1c; margin-bottom:4px;">${fmtQtyN(qty)} <span style="font-size:0.65rem; font-weight:700; color:var(--muted);">${unitLabel}</span></div>
+          <div style="width:9px; height:9px; border-radius:50%; background:var(--brand); border:2px solid #fff; box-shadow:0 0 0 1px var(--brand);"></div>
+          <div style="font-size:0.72rem; font-weight:600; color:#334155; margin-top:4px;">${ordinal(day)}</div>
+        </div>`;
+      }).join("");
+      return `
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+        <div style="flex-shrink:0; width:88px; font-size:0.78rem; font-weight:700; color:var(--brand); text-align:right;">${PTL_MON_NAMES[month - 1]} ${year}</div>
+        <div style="position:relative; flex:1; height:62px;">
+          <div style="position:absolute; left:0; right:0; top:29px; height:2px; background:var(--border);"></div>
+          ${markersHtml}
+        </div>
       </div>`;
+    }).join("");
+    timelineHtml = `<div style="margin:6px 4px 22px;">${linesHtml}</div>`;
   }
 
   const existing = document.getElementById("material-project-breakdown-modal-overlay");
