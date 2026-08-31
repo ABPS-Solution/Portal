@@ -303,17 +303,26 @@ function tvsRenderAdvanceCard(a) {
 
 function tvsRenderCard(v) {
   const lines = v.lines || [];
+  // Actual is editable per line, only once the voucher is Checked (that's
+  // when actual_amount first exists) — reviseTourVoucherActualAmount only
+  // accepts a Checked voucher, same guard as the backend. The voucher's
+  // claimed total_amount is never editable here, only each line's Actual.
+  const canEditActual = v.status === 'Checked';
   const rows = lines.map(l => {
     const bills = (l.bills && l.bills.length > 0) ? l.bills : (l.billUrl ? [{ fileName: l.billFileName, url: l.billUrl }] : []);
     const billCell = bills.length > 0
       ? bills.map(b => `<a href="${driveLink(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.fileName || 'View')}</a>`).join("<br>")
       : l.noBillReason ? `<span style="font-style:italic;">Reason: ${escapeHtml(l.noBillReason)}</span>` : "—";
+    const actualCell = l.actualAmount !== null && l.actualAmount !== undefined ? formatINRComma(l.actualAmount) : '—';
+    const editBtn = canEditActual
+      ? `<button class="nav-btn-styled" style="padding:1px 6px; font-size:0.68rem; margin-left:6px;" onclick="event.stopPropagation(); tvsEditLineActual(${v.voucherId}, ${l.lineId}, ${Number(l.actualAmount) || 0})">Edit</button>`
+      : '';
     return `<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:6px;">${l.srNo}</td><td style="padding:6px;">${formatDateDMY(l.expenseDate)}</td>
       <td style="padding:6px;">${escapeHtml(l.expenseType)}${l.conveyanceMode ? ' (' + escapeHtml(l.conveyanceMode) + ')' : ''}</td>
       <td style="padding:6px; text-align:right;">${formatINRComma(l.amount)}</td>
       <td style="padding:6px; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
-      <td style="padding:6px; text-align:right;">${l.actualAmount !== null && l.actualAmount !== undefined ? formatINRComma(l.actualAmount) : '—'}</td>
+      <td style="padding:6px; text-align:right;">${actualCell}${editBtn}</td>
       <td style="padding:6px;">${billCell}</td>
     </tr>`;
   }).join("");
@@ -327,13 +336,6 @@ function tvsRenderCard(v) {
   const cardClaimed = lines.reduce((s, l) => s + (Number(l.amount) || 0), 0);
   const anyActualSet = lines.some(l => l.actualAmount !== null && l.actualAmount !== undefined);
   const cardActual = lines.reduce((s, l) => s + (Number(l.actualAmount) || 0), 0);
-  // Actual Amount is editable only once a voucher is Checked (total_actual_amount
-  // exists) — Search's reviseTourVoucherActualAmount route only accepts a
-  // Checked voucher, same guard as the backend. Simple prompt()-based edit,
-  // consistent with this codebase's existing lightweight inline-edit style.
-  const editActualBtn = v.status === 'Checked'
-    ? `<button class="nav-btn-styled" style="padding:2px 8px; font-size:0.72rem; margin-left:8px;" onclick="event.stopPropagation(); tvsEditActual(${v.voucherId}, ${Number(v.totalActualAmount) || 0})">Edit Actual</button>`
-    : '';
   const pdfLine = v.pdfUrl
     ? `<div style="font-size:0.78rem; margin-top:4px;">Voucher PDF (v${v.pdfVersion || 1}): <a href="${driveLink(v.pdfUrl)}" target="_blank" rel="noopener">Download</a></div>` : '';
   return `
@@ -350,7 +352,7 @@ function tvsRenderCard(v) {
           <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
             ${escapeHtml(v.departmentName || '—')} · ${escapeHtml(v.purposeOfVisit)} · ${escapeHtml(v.placeOfVisit)} ·
             ${formatDateDMY(v.visitStartDate)}–${formatDateDMY(v.visitEndDate)} ·
-            Claimed ${formatINRComma(cardClaimed)}${anyActualSet ? ' · Actual ' + formatINRComma(cardActual) : ''}${editActualBtn}
+            Claimed ${formatINRComma(cardClaimed)}${anyActualSet ? ' · Actual ' + formatINRComma(cardActual) : ''}
           </div>
           ${pdfLine}
         </div>
@@ -367,20 +369,23 @@ function tvsRenderCard(v) {
     </div>`;
 }
 
-// Voucher-level Actual Amount correction (Search Vouchers, 30 Aug 2026) —
-// prompt()-based, matches this codebase's "simple modal/prompt is fine
-// for inline-editable table cells" convention. Calls
-// reviseTourVoucherActualAmount, which re-applies the balance delta and
-// regenerates the voucher PDF at the next version.
-async function tvsEditActual(voucherId, currentActual) {
-  const input = prompt("New Actual Amount for this voucher:", trimNum(currentActual));
+// Per-line Actual Amount correction (Search Vouchers, revised 31 Aug 2026
+// from an earlier voucher-total-level design) — prompt()-based, matches
+// this codebase's "simple modal/prompt is fine for inline-editable table
+// cells" convention. The voucher's claimed total_amount is never edited
+// here; only this one line's Actual changes, and reviseTourVoucherActualAmount
+// re-derives the voucher's total_actual_amount as the sum of every line,
+// re-applies the balance delta, and regenerates the voucher PDF at the
+// next version.
+async function tvsEditLineActual(voucherId, lineId, currentActual) {
+  const input = prompt("New Actual Amount for this line:", trimNum(currentActual));
   if (input === null) return;
   const newActualAmount = Number(input);
   if (isNaN(newActualAmount) || newActualAmount < 0) return alert("Enter a valid non-negative amount.");
 
   showBlockingOverlay("Revising Actual Amount...");
   try {
-    const data = await acFetch("reviseTourVoucherActualAmount", { voucherId, newActualAmount });
+    const data = await acFetch("reviseTourVoucherActualAmount", { voucherId, lineId, newActualAmount });
     hideBlockingOverlay();
     if (!data.success) return alert(data.error);
     alert(`Revised. ${data.employeeName ? data.employeeName + "'s n" : "N"}ew balance: ${formatINRComma(data.newBalance)}.` +
