@@ -229,6 +229,31 @@ async function rejectBOQRevision(updateId) {
   }
 }
 
+async function rejectBOQDraft(boqId) {
+  if (!confirm(`Reject BOQ ${boqId}? This fully undoes it -- as if it was never made. The product/material will become selectable again on Create BOQ.`)) return;
+
+  const rejBtn    = document.getElementById("eboq-reject-btn");
+  const submitBtn = document.getElementById("eboq-submit-btn");
+  if (rejBtn) { rejBtn.disabled = true; rejBtn.textContent = "Rejecting..."; }
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    const data = await apFetch({ action: "submitBOQReject", boqId, rejectedBy: appActiveOperatorIdentityString || "" });
+    if (data.success) {
+      showBOQBanner("auth-boq-feedback", `BOQ ${boqId} was rejected.`, "success");
+      await initializeAuthorizeBOQPanel("authorize");
+    } else {
+      if (rejBtn) { rejBtn.disabled = false; rejBtn.textContent = "Reject BOQ"; }
+      if (submitBtn) submitBtn.disabled = false;
+      showBOQBanner("auth-boq-feedback", data.error || "Rejection failed.", "error");
+    }
+  } catch (e) {
+    if (rejBtn) { rejBtn.disabled = false; rejBtn.textContent = "Reject BOQ"; }
+    if (submitBtn) submitBtn.disabled = false;
+    showBOQBanner("auth-boq-feedback", "Network error: " + e.message, "error");
+  }
+}
+
 function renderEBOQForm(containerId) {
   const draft = eboqCurrentDraft;
   const container = document.getElementById(containerId);
@@ -354,6 +379,11 @@ function renderEBOQForm(containerId) {
     </div>
 
     <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
+      ${eboqMode === "authorize" ? `
+      <button class="nav-btn-styled" onclick="rejectBOQDraft('${draft.boqId}')" style="background:#dc2626; padding:8px 24px; font-weight:700;" id="eboq-reject-btn">
+        Reject BOQ
+      </button>
+      ` : ``}
       <button class="nav-btn-styled" onclick="submitEBOQAuthorize()" style="background:var(--accent); padding:8px 24px; font-weight:700;" id="eboq-submit-btn">
         ${eboqMode === "authorize" ? "Authorize BOQ" : "Authorize BOQ Revision"}
       </button>

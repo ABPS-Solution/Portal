@@ -17,11 +17,16 @@ async function checkStorePRNRevisionReminder() {
 // Same shape as checkStorePRNRevisionReminder — a PRN revision that
 // changes a Purchase Qty invalidates its Production Requirement Dates
 // (see lib/materialRequirementDates.js's shared staleness predicate).
+// checkPRNsNeedingRequirementDateRevisionCount (not ...DatesCount, note
+// the extra "Revision" — 31 Aug 2026) deliberately excludes a brand-new
+// PRN that's never had dates submitted yet, since this banner's wording
+// ("...have changed... need revising") only makes sense for an actual
+// revision, not a first-time ask.
 async function checkMaterialRequirementDateReminder() {
   const banners = document.querySelectorAll(".material-requirement-date-revision-banner-el");
   if (!banners.length) return;
   try {
-    const data = await apFetch({ action: "checkPRNsNeedingRequirementDatesCount" });
+    const data = await apFetch({ action: "checkPRNsNeedingRequirementDateRevisionCount" });
     const show = data.success && data.count > 0;
     banners.forEach(b => { b.style.display = show ? "block" : "none"; });
   } catch (e) { /* non-critical — leave banner state as-is on network error */ }

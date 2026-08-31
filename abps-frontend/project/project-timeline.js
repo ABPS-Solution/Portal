@@ -654,6 +654,25 @@ async function ptlUnmarkStepDone(boqId, stepKey) {
   } catch (e) { alert("Network error: " + e.message); }
 }
 
+// A detail line is untrusted text (material names, etc.) so it must
+// always go through escapeHtml — but some backend-built lines (see
+// routes/timeline.js's "All RM POs Released" detail, 31 Aug 2026) want
+// one span bold (the qty+unit). Sending real <strong> tags isn't safe
+// here since the whole line still needs escaping; instead the backend
+// wraps that span in \x02...\x03 control-character markers (can't occur
+// in normal text), and this splits on them, escaping each piece
+// independently before wrapping the marked one in a real <strong>. A
+// line with no markers just falls through to plain escapeHtml.
+function ptlEscapeWithOptionalBold(text) {
+  const start = text.indexOf('\x02');
+  const end = text.indexOf('\x03');
+  if (start === -1 || end === -1 || end <= start) return escapeHtml(text);
+  const before = text.slice(0, start);
+  const bold = text.slice(start + 1, end);
+  const after = text.slice(end + 1);
+  return `${escapeHtml(before)}<strong>${escapeHtml(bold)}</strong>${escapeHtml(after)}`;
+}
+
 // Which system nodes carry a "what's left" drill-down — the backend
 // attaches n.detail (a plain array of strings, empty = nothing
 // outstanding) to boqs/prns/rmpos/pps/prodPlan only, see routes/timeline.js.
@@ -740,7 +759,7 @@ function ptlRenderList(nodes, today) {
           // lines within the SAME bullet, rather than reading as if the
           // sentence were its own separate list item.
           const parts = d.split("\n");
-          return `<li style="margin-bottom:4px;">${escapeHtml(parts[0])}${parts[1] ? `<div style="color:var(--muted);">${escapeHtml(parts[1])}</div>` : ''}</li>`;
+          return `<li style="margin-bottom:4px;">${ptlEscapeWithOptionalBold(parts[0])}${parts[1] ? `<div style="color:var(--muted);">${ptlEscapeWithOptionalBold(parts[1])}</div>` : ''}</li>`;
         }).join("")}</ul>` : `<span style="color:var(--muted);">${escapeHtml(n.blocked || 'Nothing left — this row is fully covered.')}</span>`}
       </div>` : ''}`;
   }).join("") + `</div>`;

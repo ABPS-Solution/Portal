@@ -263,7 +263,7 @@ const PINV_BANK_OPTIONS = [
   { key: "icici1", label: "ICICI: 777705290523",
     bankName: "ICICI Bank", ifsc: "ICIC0000321", ac: "777705290523",
     address: "Shop No. 3 & 8, Ground Floor, F Wing, Premier Plaza, Old Mumbai Pune Highway, Chinchwad, Pune, Maharashtra-411019",
-    branch: "Pune - Chinchwad Branch, Code:-321" },
+    branch: "Pune - Chinchwad Branch, Code:-0321" },
 ];
 const PINV_STANDARD_BANK_DETAILS = { ...PINV_BANK_OPTIONS[0] };
 

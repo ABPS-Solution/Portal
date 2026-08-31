@@ -470,6 +470,12 @@ async function initializeAuthorizePRNPanel() {
   const fb = document.getElementById("aprn-feedback");
   if (fb) { fb.style.display = "none"; fb.innerHTML = ""; }
   if (!feed) return;
+  // authorizePRN's success handler hides this feed (display:none) while
+  // showing the success banner in its place — restore it here so re-entering
+  // this panel via any path other than the banner's own "+ Authorize Another
+  // PRN" button (e.g. Return to Main Dashboard, then back in) doesn't leave
+  // the freshly-fetched cards populated but invisible.
+  feed.style.display = "flex";
 
   const isRevision = window.aprnKindFilter === 'Revision';
   const titleEl = document.getElementById("aprn-panel-title");
@@ -510,9 +516,9 @@ async function initializeAuthorizePRNPanel() {
               <span style="background:#edf2f7;">Created By:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${p.storePerson || ""}</span>
             </div>
             <div class="meta-row-line-block" style="margin-bottom:6px;">
-              <span style="background:#e2e8f0;">Product:</span><strong style="margin-right:15px;">${p.productName || ""} ${p.productRating || ""}</strong>
-              <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${formatDateDMY(p.createdDate)}</span>
-              <span style="background:#edf2f7;">Version:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">v${p.version}</span>
+              <span style="background:#e2e8f0;">Product:</span><span style="margin-right:15px;">${p.productName || ""} ${p.productRating || ""}</span>
+              <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;${isRevision ? " margin-right:15px;" : ""}">${formatDateDMY(p.createdDate)}</span>
+              ${isRevision ? `<span style="background:#edf2f7;">Version:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">v${p.version}</span>` : ""}
             </div>
             </div>
         </div>
@@ -1032,8 +1038,9 @@ async function submitNewPRNCreation() {
       const needQueueZone = document.getElementById("prn-needqueue-zone");
       if (needQueueZone) { needQueueZone.style.display = "none"; needQueueZone.innerHTML = ""; }
       showPurchaseFeedback("prn-feedback",
-        `✅ PRN <strong>${data.prnId}</strong> created and sent for authorization. Store quantities are reserved.` +
-        `<br><button onclick="document.getElementById('prn-feedback').style.display='none'; window.prnPendingCreate=null; initializePRNPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Create Another PRN</button>`,
+        `<div style="font-weight:800; margin-bottom:8px;">✅ PRN created and sent for authorization. Store quantities are reserved.</div>` +
+        `<div style="font-size:0.82rem;"><span style="font-weight:700;">PRN ID:</span> <span style="font-family:monospace; font-weight:700;">${data.prnId}</span></div>` +
+        `<button onclick="document.getElementById('prn-feedback').style.display='none'; window.prnPendingCreate=null; initializePRNPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Create Another PRN</button>`,
         "success", true);
       return;
     }
@@ -1061,11 +1068,11 @@ async function submitNewPRNCreation() {
       successZone.style.display = "block";
       successZone.innerHTML = `
         <div style="background:#f0fff4; border-left:4px solid var(--accent); border-radius:var(--radius); padding:14px 16px; margin-bottom:16px;">
-          <div style="font-size:0.85rem; font-weight:800; color:#276749; margin-bottom:8px;">✅ PRN Created Successfully for ${boqMeta.customerName || "this customer"}!</div>
-          <div style="font-size:0.82rem; color:#276749; font-family:monospace; font-weight:700;">${data.prnId}</div>
+          <div style="font-size:0.85rem; font-weight:800; color:#276749; margin-bottom:10px;">✅ PRN Created Successfully for ${boqMeta.customerName || "this customer"}!</div>
+          <div style="font-size:0.82rem; color:#276749; line-height:1.6;"><span style="font-weight:700;">PRN ID:</span> <span style="font-family:monospace; font-weight:700;">${data.prnId}</span></div>
           ${pdfNote}
-          <button onclick="resetPRNPanelForNewEntry();" 
-            style="margin-top:12px; background:var(--brand); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
+          <button onclick="resetPRNPanelForNewEntry();"
+            style="margin-top:14px; background:var(--brand); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
             + Create New PRN for this BOQ
           </button>
         </div>`;

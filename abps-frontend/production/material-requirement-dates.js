@@ -44,6 +44,8 @@ async function initializeAssignMaterialRequirementDatePanel() {
   if (sel) sel.value = "";
   const dd = document.getElementById("mrd-project-select-ta-dropdown");
   if (dd) dd.style.display = "none";
+  const selRow = document.getElementById("mrd-selector-row");
+  if (selRow) selRow.style.display = "grid";
   window.mrdState.mrd = { lines: {}, meta: {}, prnId: null, itemCodeByKey: {} };
   window.mrdPrnListCache = {};
   try {
@@ -162,7 +164,11 @@ async function submitMaterialRequirementDates(ns, prnId, btn) {
       document.getElementById("mrd-body").innerHTML = "";
       const header = document.getElementById("mrd-prn-header");
       if (header) header.style.display = "none";
-      showSuccessWithReset("mrd-feedback", "✅ Production requirement dates submitted.", "Assign Another PRN", "initializeAssignMaterialRequirementDatePanel()");
+      const zone = document.getElementById("mrd-needqueue-zone");
+      if (zone) zone.style.display = "none";
+      const selRow = document.getElementById("mrd-selector-row");
+      if (selRow) selRow.style.display = "none";
+      showSuccessWithReset("mrd-feedback", `✅ Production requirement dates submitted for PRN ${prnId}.`, "Assign Another PRN", "initializeAssignMaterialRequirementDatePanel()");
     } else {
       btn.disabled = false; btn.textContent = originalText;
       showPurchaseFeedback("mrd-feedback", data.error || "Failed to save.", "error");
@@ -202,8 +208,8 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
       <tr style="border-bottom:1px solid #e2e8f0;">
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${esc(line.itemCode)}</td>
         <td style="padding:8px; font-size:0.9rem; font-weight:600;">${esc(line.materialName)}</td>
-        <td style="padding:8px; text-align:center; font-family:monospace;">${fmt(line.storeQty)}</td>
-        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${fmt(line.purchaseQty)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.9rem;">${fmt(line.storeQty)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:0.9rem;">${fmt(line.purchaseQty)}</td>
         <td style="padding:8px;">${editorCell}</td>
       </tr>`;
   }).join("");
