@@ -292,28 +292,43 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
       byMonth[monthKey].days.push({ day: d, qty: qtyByDate[dateStr] });
     });
     const monthKeys = Object.keys(byMonth).sort();
+    // Points close together on the line (a few days apart, on a 31-day-wide
+    // axis) had their qty labels running into each other — unit text
+    // ("METER") dropped from this label entirely (still shown in the table/
+    // Total below, no need to repeat it here), and a 2-lane zigzag added:
+    // whenever a point sits within COLLISION_GAP% of the previous one, its
+    // qty label is pushed to a second, higher row instead of overlapping
+    // the first — this still isn't infinitely collision-proof (3+ points
+    // within a couple of days of each other could still be tight even
+    // staggered two ways) but resolves the common 2-adjacent-dates case a
+    // 3-4 digit quantity can hit.
+    const LINE_Y = 45, LANE0_Y = 31, LANE1_Y = 13, DAY_LABEL_Y = 56;
+    const COLLISION_GAP = 6; // % — below this, stagger to avoid overlap
     const linesHtml = monthKeys.map(mk => {
       const { year, month, days } = byMonth[mk];
+      const sortedDays = days.slice().sort((a, b) => a.day - b.day);
       // Fixed 31-day denominator (not this month's own day count) — day 10
       // lands at the SAME x position whether it's a 28-day February or a
       // 31-day October, so a viewer scanning multiple materials'/months'
       // lines can compare day-of-month at a glance. The tradeoff: a
       // shorter month's line simply doesn't reach as close to the right
       // edge as a 31-day month's does — expected and informative, not a bug.
-      const markersHtml = days.map(({ day, qty }) => {
+      let lastPct = null, lane = 0;
+      const markersHtml = sortedDays.map(({ day, qty }) => {
         const pct = INSET + ((day - 1) / 30) * (100 - 2 * INSET);
+        lane = (lastPct !== null && (pct - lastPct) < COLLISION_GAP) ? (lane === 0 ? 1 : 0) : 0;
+        lastPct = pct;
+        const qtyY = lane === 0 ? LANE0_Y : LANE1_Y;
         return `
-        <div style="position:absolute; left:${pct}%; top:0; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; white-space:nowrap;">
-          <div style="font-size:0.85rem; font-weight:800; color:#b91c1c; margin-bottom:4px;">${fmtQtyN(qty)} <span style="font-size:0.65rem; font-weight:700; color:var(--muted);">${unitLabel}</span></div>
-          <div style="width:9px; height:9px; border-radius:50%; background:var(--brand); border:2px solid #fff; box-shadow:0 0 0 1px var(--brand);"></div>
-          <div style="font-size:0.72rem; font-weight:600; color:#334155; margin-top:4px;">${ordinal(day)}</div>
-        </div>`;
+        <div style="position:absolute; left:${pct}%; top:${qtyY}px; transform:translate(-50%,-100%); font-size:0.85rem; font-weight:800; color:#b91c1c; white-space:nowrap;">${fmtQtyN(qty)}</div>
+        <div style="position:absolute; left:${pct}%; top:${LINE_Y}px; width:9px; height:9px; border-radius:50%; background:var(--brand); border:2px solid #fff; box-shadow:0 0 0 1px var(--brand); transform:translate(-50%,-50%);"></div>
+        <div style="position:absolute; left:${pct}%; top:${DAY_LABEL_Y}px; transform:translateX(-50%); font-size:0.72rem; font-weight:600; color:#334155; white-space:nowrap;">${ordinal(day)}</div>`;
       }).join("");
       return `
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
         <div style="flex-shrink:0; width:88px; font-size:0.78rem; font-weight:700; color:var(--brand); text-align:right;">${PTL_MON_NAMES[month - 1]} ${year}</div>
-        <div style="position:relative; flex:1; height:62px;">
-          <div style="position:absolute; left:0; right:0; top:29px; height:2px; background:var(--border);"></div>
+        <div style="position:relative; flex:1; height:78px;">
+          <div style="position:absolute; left:0; right:0; top:${LINE_Y}px; height:2px; background:var(--border);"></div>
           ${markersHtml}
         </div>
       </div>`;

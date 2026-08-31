@@ -242,7 +242,16 @@
   .nav-btn-styled { background: var(--brand); color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: background 0.15s; outline: none; }
   .nav-btn-styled:hover { background: var(--brand-dk); }
   .nav-btn-styled:active, .btn-sub:active {transform: scale(0.97); opacity: 0.85; transition: all 0.1s ease;}
-  
+
+  /* --- LOGIN DEPARTMENT PICKER (pyramid button rows, replacing the plain
+     <select>) --- */
+  .login-dept-btn { background: #fff; color: var(--text); border: 1.5px solid var(--border); padding: 7px 14px; border-radius: 18px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+  .login-dept-btn:hover { background: var(--highlight-bg); border-color: var(--brand); }
+  .login-dept-btn.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+  @media(max-width:420px) {
+    .login-dept-btn { padding: 6px 10px; font-size: 0.76rem; }
+  }
+
   .btn { width: 100%; padding: 6px 10px; border: none; border-radius: 4px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.82rem; }
   .btn-sub { background: var(--brand); color: #fff; }
   .btn-ai { background: var(--accent); color: #fff; margin-bottom: 4px; padding: 4px; }
@@ -436,10 +445,40 @@
     </div>
 
     <div style="text-align: left; background: #f8fafc; padding: 15px; border: 1px dashed var(--border); border-radius: 8px; margin-bottom: 20px;">
-      <label class="field-label" style="margin-top: 0; margin-bottom: 4px; color: var(--brand);">1. Select Your Department *</label>
-      <select id="app-auth-active-department-identity" onchange="handleLoginDepartmentSelectionChange(this.value)" style="padding: 10px; font-weight: 600; font-size: 0.9rem; margin-bottom: 12px;">
+      <label class="field-label" style="margin-top: 0; margin-bottom: 8px; color: var(--brand);">1. Select Your Department *</label>
+      <!-- Department buttons (31 Aug 2026, replacing the plain <select>) —
+           4 rows, centered, matching the user's exact grouping so each
+           shorter row visually centers above the wider ones below it
+           (2 / 3 / 3 / 3 reads as a pyramid). The real <select> stays in
+           the DOM, just visually hidden (display:none) — every other
+           read site (shared/apFetch.js, shared/pinLogin.js) still reads
+           its .value, so this is purely a presentation change; clicking a
+           button sets the hidden select's value and fires its existing
+           onchange handler rather than duplicating that logic. -->
+      <select id="app-auth-active-department-identity" onchange="handleLoginDepartmentSelectionChange(this.value)" style="display:none;">
         <option value="">— Select Department —</option>
       </select>
+      <div id="login-dept-button-rows" style="margin-bottom: 12px;">
+        <div style="display:flex; justify-content:center; gap:8px; margin-bottom:8px;">
+          <button type="button" class="login-dept-btn" data-dept="Admin" onclick="selectLoginDeptButton('Admin')">Admin</button>
+          <button type="button" class="login-dept-btn" data-dept="HR" onclick="selectLoginDeptButton('HR')">HR</button>
+        </div>
+        <div style="display:flex; justify-content:center; gap:8px; margin-bottom:8px;">
+          <button type="button" class="login-dept-btn" data-dept="Marketing" onclick="selectLoginDeptButton('Marketing')">Marketing</button>
+          <button type="button" class="login-dept-btn" data-dept="Project" onclick="selectLoginDeptButton('Project')">Project</button>
+          <button type="button" class="login-dept-btn" data-dept="Design" onclick="selectLoginDeptButton('Design')">Design</button>
+        </div>
+        <div style="display:flex; justify-content:center; gap:8px; margin-bottom:8px;">
+          <button type="button" class="login-dept-btn" data-dept="Purchase" onclick="selectLoginDeptButton('Purchase')">Purchase</button>
+          <button type="button" class="login-dept-btn" data-dept="Store" onclick="selectLoginDeptButton('Store')">Store</button>
+          <button type="button" class="login-dept-btn" data-dept="Quality Assurance" onclick="selectLoginDeptButton('Quality Assurance')">QA</button>
+        </div>
+        <div style="display:flex; justify-content:center; gap:8px;">
+          <button type="button" class="login-dept-btn" data-dept="Production" onclick="selectLoginDeptButton('Production')">Production</button>
+          <button type="button" class="login-dept-btn" data-dept="Service" onclick="selectLoginDeptButton('Service')">Service</button>
+          <button type="button" class="login-dept-btn" data-dept="Accounts" onclick="selectLoginDeptButton('Accounts')">Accounts</button>
+        </div>
+      </div>
 
       <label class="field-label" style="margin-top: 0; margin-bottom: 4px; color: var(--brand);">2. Select Your Name *</label>
       <select id="app-auth-active-engineer-identity" style="padding: 10px; font-weight: 600; font-size: 0.9rem; margin-bottom: 5px;" disabled>

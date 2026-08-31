@@ -61,6 +61,26 @@ function selectLoginMode(mode) {
   }
 }
 
+// selectLoginDeptButton — the pyramid department buttons in index.html
+// (31 Aug 2026, replacing the plain <select>) call this instead of
+// relying on a native <select> onchange. The hidden <select> itself
+// stays the actual source of truth every other read site
+// (shared/apFetch.js, shared/pinLogin.js's own submit functions) already
+// reads .value from — setting it here and firing its existing onchange
+// handler (handleLoginDepartmentSelectionChange, marketing/leads.js)
+// keeps every one of those call sites correct with zero changes needed
+// there, this is purely a presentation layer on top of the same state.
+function selectLoginDeptButton(deptName) {
+  const select = document.getElementById("app-auth-active-department-identity");
+  if (select) {
+    select.value = deptName;
+    handleLoginDepartmentSelectionChange(deptName);
+  }
+  document.querySelectorAll(".login-dept-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.dept === deptName);
+  });
+}
+
 // Auto-submits the instant a valid 4-digit PIN has been typed — no
 // separate "Log In" button in PIN mode.
 function handlePinDigitInput() {
