@@ -151,10 +151,13 @@ async function submitTourVoucherCheck(voucherId) {
     const data = await acFetch("checkTourVoucher", { voucherId, lines });
     hideBlockingOverlay();
     if (data.success) {
+      const pdfLine = data.pdfUrl
+        ? `<div style="margin-top:8px;"><a href="${driveLink(data.pdfUrl)}" target="_blank" rel="noopener" style="color:#15803d; font-weight:700;">Download Voucher PDF</a></div>` : '';
       document.getElementById("tvc-feed").innerHTML = `
         <div style="background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:20px; border-radius:var(--radius);">
-          <strong>Voucher checked successfully.</strong><br/>
-          Employee's new balance: <strong style="font-size:1.05rem;">${formatINRComma(data.newBalance)}</strong>
+          <strong>Voucher checked successfully${data.employeeName ? ' for ' + escapeHtml(data.employeeName) : ''}.</strong><br/>
+          ${escapeHtml(data.employeeName || 'Employee')}'s new balance: <strong style="font-size:1.05rem;">${formatINRComma(data.newBalance)}</strong>
+          ${pdfLine}
           <div style="margin-top:12px;">
             <button class="nav-btn-styled" onclick="loadVoucherCheckQueue()">+ Check New Tour Expense Vouchers</button>
           </div>

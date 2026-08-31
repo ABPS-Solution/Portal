@@ -8,6 +8,48 @@
 
 let tvsSearchMode = "expense"; // "expense" | "advance"
 let tvsCachedCompanies = [];
+let tvsCachedEmployees = [];
+let tvsSelectedEmployeeId = null;
+let tvsSelectedEmployeeName = "";
+
+// Employee Name filter — same clipped-dropdown-safe typeahead pattern as
+// advance-vouchers.js's Employee Name field (CLAUDE.md's "Clipped-dropdown
+// fix pattern"), replacing the old plain <select> (30 Aug 2026).
+function tvsHandleEmployeeSearch(query) {
+  const dd = document.getElementById("tvs-emp-dropdown");
+  tvsSelectedEmployeeId = null;
+  tvsSelectedEmployeeName = query;
+  const q = (query || "").trim().toLowerCase();
+  if (!q) { dd.style.display = "none"; return; }
+  const matches = tvsCachedEmployees.filter(e => e.employeeName.toLowerCase().includes(q)).slice(0, 15);
+  if (matches.length === 0) { dd.style.display = "none"; return; }
+  dd.innerHTML = matches.map(e => `
+    <div onmousedown="event.preventDefault(); tvsSelectEmployee(${e.employeeId})"
+      style="padding:8px 10px; cursor:pointer; font-size:0.85rem; border-bottom:1px solid #f1f5f9;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      ${escapeHtml(e.employeeName)} <span style="color:var(--muted); font-size:0.75rem;">${e.empCode ? '· ' + escapeHtml(e.empCode) : ''}</span>
+    </div>`).join("");
+  const input = document.getElementById("tvs-f-employee");
+  const rect = input.getBoundingClientRect();
+  dd.style.top = rect.bottom + "px"; dd.style.left = rect.left + "px"; dd.style.width = rect.width + "px";
+  dd.style.display = "block";
+}
+
+function tvsSelectEmployee(employeeId) {
+  const emp = tvsCachedEmployees.find(e => e.employeeId === employeeId);
+  if (!emp) return;
+  tvsSelectedEmployeeId = employeeId;
+  tvsSelectedEmployeeName = emp.employeeName;
+  document.getElementById("tvs-f-employee").value = emp.employeeName;
+  document.getElementById("tvs-emp-dropdown").style.display = "none";
+}
+
+function tvsClearEmployeeFilter() {
+  tvsSelectedEmployeeId = null;
+  tvsSelectedEmployeeName = "";
+  const input = document.getElementById("tvs-f-employee");
+  if (input) input.value = "";
+}
 
 // Same typeahead pattern as advance-vouchers.js's Company of Visit field,
 // minus the "add new" branch — this is a search filter, not data entry,
@@ -36,10 +78,14 @@ function tvsSelectPlace(companyName) {
 document.addEventListener("click", (e) => {
   const dd = document.getElementById("tvs-place-dropdown");
   if (dd && !e.target.closest("#tvs-place-dropdown") && e.target.id !== "tvs-f-place") dd.style.display = "none";
+  const empDd = document.getElementById("tvs-emp-dropdown");
+  if (empDd && !e.target.closest("#tvs-emp-dropdown") && e.target.id !== "tvs-f-employee") empDd.style.display = "none";
 });
 
 async function initializeVoucherSearchPanel() {
   tvsSearchMode = "expense";
+  tvsSelectedEmployeeId = null;
+  tvsSelectedEmployeeName = "";
   const panel = document.getElementById("te-panel-search");
   panel.innerHTML = `
     <div id="tvs-balance-buckets" style="display:flex; gap:16px; margin-bottom:20px; flex-wrap:wrap;"></div>
@@ -51,8 +97,11 @@ async function initializeVoucherSearchPanel() {
 
     <div style="background:var(--highlight-bg); padding:16px; border-radius:var(--radius); margin-bottom:16px;">
       <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:end;">
-        <div><label class="field-label">Employee</label>
-          <select id="tvs-f-employee" style="padding:8px; border:1px solid var(--border); border-radius:6px; min-width:160px;"><option value="">All</option></select></div>
+        <div style="position:relative;"><label class="field-label">Employee</label>
+          <input type="text" id="tvs-f-employee" placeholder="All (type to search)" autocomplete="off"
+            style="padding:8px; border:1px solid var(--border); border-radius:6px; min-width:160px;"
+            oninput="tvsHandleEmployeeSearch(this.value)">
+          <div id="tvs-emp-dropdown" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:4px; z-index:9999; max-height:220px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>
         <div><label class="field-label">Department</label>
           <select id="tvs-f-dept" style="padding:8px; border:1px solid var(--border); border-radius:6px; min-width:140px;"><option value="">All</option></select></div>
         <div id="tvs-expense-only-filters" style="display:contents;">
@@ -92,9 +141,7 @@ async function initializeVoucherSearchPanel() {
     const [empData, deptData, companyData] = await Promise.all([
       acFetch("searchTourEmployees", {}), acFetch("listTourDepartments", {}), acFetch("listTourCompanies", {}),
     ]);
-    if (empData.success) {
-      document.getElementById("tvs-f-employee").innerHTML += empData.employees.map(e => `<option value="${e.employeeId}">${escapeHtml(e.employeeName)}</option>`).join("");
-    }
+    tvsCachedEmployees = empData.success ? empData.employees : [];
     if (deptData.success) {
       document.getElementById("tvs-f-dept").innerHTML += deptData.departments.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join("");
     }
@@ -119,8 +166,7 @@ function tvsSetSearchMode(mode) {
 function tvsBuildSearchLabel() {
   const esc = (s) => (s || "").toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const val = (s) => `<span style="color:var(--brand);">${esc(s || 'All')}</span>`;
-  const empSel = document.getElementById("tvs-f-employee");
-  const employeeLabel = empSel.value ? empSel.options[empSel.selectedIndex].textContent : "All";
+  const employeeLabel = tvsSelectedEmployeeId ? tvsSelectedEmployeeName : "All";
   const deptLabel = document.getElementById("tvs-f-dept").value || "All";
   const from = document.getElementById("tvs-f-from").value;
   const to = document.getElementById("tvs-f-to").value;
@@ -164,7 +210,7 @@ async function runTourVoucherSearch() {
   // every search regardless of mode, same as before.
   try {
     const filters = {
-      employeeId: document.getElementById("tvs-f-employee").value || null,
+      employeeId: tvsSelectedEmployeeId || null,
       departmentName: document.getElementById("tvs-f-dept").value || null,
       placeOfVisit: document.getElementById("tvs-f-place").value || null,
       dateFrom: document.getElementById("tvs-f-from").value || null,
@@ -281,6 +327,15 @@ function tvsRenderCard(v) {
   const cardClaimed = lines.reduce((s, l) => s + (Number(l.amount) || 0), 0);
   const anyActualSet = lines.some(l => l.actualAmount !== null && l.actualAmount !== undefined);
   const cardActual = lines.reduce((s, l) => s + (Number(l.actualAmount) || 0), 0);
+  // Actual Amount is editable only once a voucher is Checked (total_actual_amount
+  // exists) — Search's reviseTourVoucherActualAmount route only accepts a
+  // Checked voucher, same guard as the backend. Simple prompt()-based edit,
+  // consistent with this codebase's existing lightweight inline-edit style.
+  const editActualBtn = v.status === 'Checked'
+    ? `<button class="nav-btn-styled" style="padding:2px 8px; font-size:0.72rem; margin-left:8px;" onclick="event.stopPropagation(); tvsEditActual(${v.voucherId}, ${Number(v.totalActualAmount) || 0})">Edit Actual</button>`
+    : '';
+  const pdfLine = v.pdfUrl
+    ? `<div style="font-size:0.78rem; margin-top:4px;">Voucher PDF (v${v.pdfVersion || 1}): <a href="${driveLink(v.pdfUrl)}" target="_blank" rel="noopener">Download</a></div>` : '';
   return `
     <div class="contact-summary-card-parent">
       <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
@@ -295,8 +350,9 @@ function tvsRenderCard(v) {
           <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
             ${escapeHtml(v.departmentName || '—')} · ${escapeHtml(v.purposeOfVisit)} · ${escapeHtml(v.placeOfVisit)} ·
             ${formatDateDMY(v.visitStartDate)}–${formatDateDMY(v.visitEndDate)} ·
-            Claimed ${formatINRComma(cardClaimed)}${anyActualSet ? ' · Actual ' + formatINRComma(cardActual) : ''}
+            Claimed ${formatINRComma(cardClaimed)}${anyActualSet ? ' · Actual ' + formatINRComma(cardActual) : ''}${editActualBtn}
           </div>
+          ${pdfLine}
         </div>
       </div>
       <div style="display:none; padding-top:12px; border-top:1px dashed var(--border); margin-top:10px; overflow-x:auto;">
@@ -309,4 +365,26 @@ function tvsRenderCard(v) {
         </table>
       </div>
     </div>`;
+}
+
+// Voucher-level Actual Amount correction (Search Vouchers, 30 Aug 2026) —
+// prompt()-based, matches this codebase's "simple modal/prompt is fine
+// for inline-editable table cells" convention. Calls
+// reviseTourVoucherActualAmount, which re-applies the balance delta and
+// regenerates the voucher PDF at the next version.
+async function tvsEditActual(voucherId, currentActual) {
+  const input = prompt("New Actual Amount for this voucher:", trimNum(currentActual));
+  if (input === null) return;
+  const newActualAmount = Number(input);
+  if (isNaN(newActualAmount) || newActualAmount < 0) return alert("Enter a valid non-negative amount.");
+
+  showBlockingOverlay("Revising Actual Amount...");
+  try {
+    const data = await acFetch("reviseTourVoucherActualAmount", { voucherId, newActualAmount });
+    hideBlockingOverlay();
+    if (!data.success) return alert(data.error);
+    alert(`Revised. ${data.employeeName ? data.employeeName + "'s n" : "N"}ew balance: ${formatINRComma(data.newBalance)}.` +
+      (data.pdfUrl ? ` Updated voucher PDF (v${data.pdfVersion}) is ready.` : ''));
+    runTourVoucherSearch();
+  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
 }

@@ -52,6 +52,7 @@ async function initializeCashExpenseEntryPanel() {
         <div style="display:flex; gap:16px; margin-top:4px;">
           <label style="display:flex; align-items:center; gap:6px; font-weight:600; cursor:pointer;"><input type="radio" name="ce-mode" value="Cash"> Cash</label>
           <label style="display:flex; align-items:center; gap:6px; font-weight:600; cursor:pointer;"><input type="radio" name="ce-mode" value="UPI"> UPI</label>
+          <label style="display:flex; align-items:center; gap:6px; font-weight:600; cursor:pointer;"><input type="radio" name="ce-mode" value="Online"> Online</label>
         </div>
       </div>
       <button class="nav-btn-styled" id="ce-submit-btn" onclick="submitCashExpense()">Submit</button>
@@ -118,7 +119,7 @@ async function submitCashExpense() {
   if (expenseType === "Others" && !otherText) return showCashExpenseFeedback('Type "Others" requires the free-text description.', "error");
   if (!ceSelectedEmployeeId) return showCashExpenseFeedback("Select an employee from the dropdown.", "error");
   if (!amount || amount <= 0) return showCashExpenseFeedback("A positive Advance Amount is required.", "error");
-  if (!paymentMode) return showCashExpenseFeedback("Select Cash or UPI.", "error");
+  if (!paymentMode) return showCashExpenseFeedback("Select Cash, UPI or Online.", "error");
 
   showBlockingOverlay("Recording expense...");
   try {
@@ -127,10 +128,13 @@ async function submitCashExpense() {
     });
     hideBlockingOverlay();
     if (data.success) {
+      const balanceLine = data.paymentMode === "Online"
+        ? "Online — created already closed, no pool balance affected."
+        : `New ${data.paymentMode} balance: <strong style="font-size:1.05rem;">${formatINRComma(data.newBalance)}</strong>`;
       document.getElementById("ce-panel-expenses").innerHTML = `
         <div style="background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:20px; border-radius:var(--radius); max-width:520px;">
-          <strong>Advance recorded.</strong> Close it out later in Daily Expense Vouchers once the actual spend is known.<br/>
-          New ${data.paymentMode} balance: <strong style="font-size:1.05rem;">${formatINRComma(data.newBalance)}</strong>
+          <strong>Advance recorded${data.employeeName ? ' for ' + escapeHtml(data.employeeName) : ''}.</strong> ${data.paymentMode === "Online" ? "" : "Close it out later in Daily Expense Vouchers once the actual spend is known."}<br/>
+          ${balanceLine}
           <div style="margin-top:12px;">
             <button class="nav-btn-styled" onclick="initializeCashExpenseEntryPanel()">+ Give New Advance</button>
           </div>
