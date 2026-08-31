@@ -11,6 +11,10 @@ let tvsCachedCompanies = [];
 let tvsCachedEmployees = [];
 let tvsSelectedEmployeeId = null;
 let tvsSelectedEmployeeName = "";
+// Per-lineId display-HTML/raw-value caches for inline Actual editing —
+// see tvsRenderCard's comment on why this isn't a data-* attribute.
+let tvsLineActualDisplayHtml = {};
+let tvsLineActualRaw = {};
 
 // Employee Name filter — same clipped-dropdown-safe typeahead pattern as
 // advance-vouchers.js's Employee Name field (CLAUDE.md's "Clipped-dropdown
@@ -315,14 +319,19 @@ function tvsRenderCard(v) {
       : l.noBillReason ? `<span style="font-style:italic;">Reason: ${escapeHtml(l.noBillReason)}</span>` : "—";
     const actualCell = l.actualAmount !== null && l.actualAmount !== undefined ? formatINRComma(l.actualAmount) : '—';
     const editBtn = canEditActual
-      ? `<button class="nav-btn-styled" style="padding:1px 6px; font-size:0.68rem; margin-left:6px;" onclick="event.stopPropagation(); tvsEditLineActual(${v.voucherId}, ${l.lineId}, ${Number(l.actualAmount) || 0})">Edit</button>`
+      ? `<button class="nav-btn-styled" style="padding:1px 6px; font-size:0.68rem; margin-left:6px;" onclick="event.stopPropagation(); tvsStartEditLineActual(${v.voucherId}, ${l.lineId})">Edit</button>`
       : '';
+    // Raw display HTML is kept in tvsLineActualDisplayHtml (not a data-*
+    // attribute) so Cancel can restore it exactly without re-escaping —
+    // an escapeHtml()'d attribute would double-escape the nested <button>.
+    tvsLineActualDisplayHtml[l.lineId] = actualCell + editBtn;
+    tvsLineActualRaw[l.lineId] = Number(l.actualAmount) || 0;
     return `<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:6px;">${l.srNo}</td><td style="padding:6px;">${formatDateDMY(l.expenseDate)}</td>
       <td style="padding:6px;">${escapeHtml(l.expenseType)}${l.conveyanceMode ? ' (' + escapeHtml(l.conveyanceMode) + ')' : ''}</td>
       <td style="padding:6px; text-align:right;">${formatINRComma(l.amount)}</td>
       <td style="padding:6px; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
-      <td style="padding:6px; text-align:right;">${actualCell}${editBtn}</td>
+      <td id="tvs-actual-td-${l.lineId}" style="padding:6px; text-align:right;">${actualCell}${editBtn}</td>
       <td style="padding:6px;">${billCell}</td>
     </tr>`;
   }).join("");
@@ -370,26 +379,55 @@ function tvsRenderCard(v) {
 }
 
 // Per-line Actual Amount correction (Search Vouchers, revised 31 Aug 2026
-// from an earlier voucher-total-level design) — prompt()-based, matches
-// this codebase's "simple modal/prompt is fine for inline-editable table
-// cells" convention. The voucher's claimed total_amount is never edited
-// here; only this one line's Actual changes, and reviseTourVoucherActualAmount
-// re-derives the voucher's total_actual_amount as the sum of every line,
-// re-applies the balance delta, and regenerates the voucher PDF at the
-// next version.
-async function tvsEditLineActual(voucherId, lineId, currentActual) {
-  const input = prompt("New Actual Amount for this line:", trimNum(currentActual));
-  if (input === null) return;
-  const newActualAmount = Number(input);
-  if (isNaN(newActualAmount) || newActualAmount < 0) return alert("Enter a valid non-negative amount.");
+// from an earlier voucher-total-level design, then again same day to
+// replace a prompt()-alert edit flow with a real inline row edit — a
+// popup for a single-cell correction is poor UX for something an
+// operator may do repeatedly). The voucher's claimed total_amount is
+// never edited here; only this one line's Actual changes, and
+// reviseTourVoucherActualAmount re-derives the voucher's total_actual_amount
+// as the sum of every line, re-applies the balance delta, and regenerates
+// the voucher PDF at the next version.
+function tvsStartEditLineActual(voucherId, lineId) {
+  const td = document.getElementById(`tvs-actual-td-${lineId}`);
+  if (!td) return;
+  const current = tvsLineActualRaw[lineId] || 0;
+  td.innerHTML = `
+    <input type="number" id="tvs-actual-input-${lineId}" value="${current}" min="0" step="0.01"
+      style="width:80px; padding:2px 4px; font-size:0.78rem;" onclick="event.stopPropagation();"
+      onkeydown="if(event.key==='Enter'){event.preventDefault(); tvsSaveLineActual(${voucherId}, ${lineId});} if(event.key==='Escape'){tvsCancelEditLineActual(${lineId});}">
+    <button class="nav-btn-styled" style="padding:1px 6px; font-size:0.68rem;" onclick="event.stopPropagation(); tvsSaveLineActual(${voucherId}, ${lineId})">Save</button>
+    <button class="nav-btn-styled" style="padding:1px 6px; font-size:0.68rem;" onclick="event.stopPropagation(); tvsCancelEditLineActual(${lineId})">Cancel</button>
+    <div id="tvs-actual-err-${lineId}" style="color:#b91c1c; font-size:0.68rem; margin-top:2px;"></div>`;
+  document.getElementById(`tvs-actual-input-${lineId}`).focus();
+}
 
-  showBlockingOverlay("Revising Actual Amount...");
+function tvsCancelEditLineActual(lineId) {
+  const td = document.getElementById(`tvs-actual-td-${lineId}`);
+  if (td) td.innerHTML = tvsLineActualDisplayHtml[lineId] || '—';
+}
+
+async function tvsSaveLineActual(voucherId, lineId) {
+  const input = document.getElementById(`tvs-actual-input-${lineId}`);
+  const errEl = document.getElementById(`tvs-actual-err-${lineId}`);
+  const newActualAmount = Number(input.value);
+  if (isNaN(newActualAmount) || newActualAmount < 0) {
+    if (errEl) errEl.textContent = "Enter a valid non-negative amount.";
+    return;
+  }
+  input.disabled = true;
   try {
     const data = await acFetch("reviseTourVoucherActualAmount", { voucherId, lineId, newActualAmount });
-    hideBlockingOverlay();
-    if (!data.success) return alert(data.error);
-    alert(`Revised. ${data.employeeName ? data.employeeName + "'s n" : "N"}ew balance: ${formatINRComma(data.newBalance)}.` +
-      (data.pdfUrl ? ` Updated voucher PDF (v${data.pdfVersion}) is ready.` : ''));
+    if (!data.success) {
+      input.disabled = false;
+      if (errEl) errEl.textContent = data.error;
+      return;
+    }
+    // Refresh from the server rather than patch the DOM in place — the
+    // voucher's card-header Claimed/Actual summary and PDF link also
+    // need to reflect the new total, simplest to just re-fetch.
     runTourVoucherSearch();
-  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
+  } catch (e) {
+    input.disabled = false;
+    if (errEl) errEl.textContent = "Network error: " + e.message;
+  }
 }
