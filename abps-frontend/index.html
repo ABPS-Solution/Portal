@@ -48,7 +48,7 @@
   /* --- SECURE AUTHENTICATION CONTAINER WINDOW --- */
   #auth-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; height: 100vh; overflow: hidden; background: linear-gradient(135deg, var(--brand-dk), var(--brand)); }
   html, body { height: 100%; overflow-x: hidden; scroll-behavior: auto; }
-  .auth-card { background: var(--card); width: 100%; max-width: 400px; padding: 25px; border-radius: var(--radius); box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
+  .auth-card { background: var(--card); width: 100%; max-width: 480px; padding: 25px; border-radius: var(--radius); box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
   .auth-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 25px; }
   
   /* --- PORTAL STICKY APP HEADER --- */
@@ -245,7 +245,7 @@
 
   /* --- LOGIN DEPARTMENT PICKER (pyramid button rows, replacing the plain
      <select>) --- */
-  .login-dept-btn { background: #fff; color: var(--text); border: 1.5px solid var(--border); padding: 7px 14px; border-radius: 18px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+  .login-dept-btn { background: #fff; color: var(--text); border: 1.5px solid var(--border); padding: 7px 12px; border-radius: 18px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; }
   .login-dept-btn:hover { background: var(--highlight-bg); border-color: var(--brand); }
   .login-dept-btn.active { background: var(--brand); border-color: var(--brand); color: #fff; }
   @media(max-width:420px) {
@@ -459,18 +459,18 @@
         <option value="">— Select Department —</option>
       </select>
       <div id="login-dept-button-rows" style="margin-bottom: 14px;">
-        <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+        <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
           <button type="button" class="login-dept-btn" data-dept="Admin" onclick="selectLoginDeptButton('Admin')">Admin</button>
           <button type="button" class="login-dept-btn" data-dept="HR" onclick="selectLoginDeptButton('HR')">HR</button>
           <button type="button" class="login-dept-btn" data-dept="Accounts" onclick="selectLoginDeptButton('Accounts')">Accounts</button>
         </div>
-        <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+        <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
           <button type="button" class="login-dept-btn" data-dept="Marketing" onclick="selectLoginDeptButton('Marketing')">Marketing</button>
           <button type="button" class="login-dept-btn" data-dept="Project" onclick="selectLoginDeptButton('Project')">Project</button>
           <button type="button" class="login-dept-btn" data-dept="Design" onclick="selectLoginDeptButton('Design')">Design</button>
           <button type="button" class="login-dept-btn" data-dept="Purchase" onclick="selectLoginDeptButton('Purchase')">Purchase</button>
         </div>
-        <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:10px;">
+        <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px;">
           <button type="button" class="login-dept-btn" data-dept="Store" onclick="selectLoginDeptButton('Store')">Store</button>
           <button type="button" class="login-dept-btn" data-dept="Quality Assurance" onclick="selectLoginDeptButton('Quality Assurance')">QA</button>
           <button type="button" class="login-dept-btn" data-dept="Production" onclick="selectLoginDeptButton('Production')">Production</button>
