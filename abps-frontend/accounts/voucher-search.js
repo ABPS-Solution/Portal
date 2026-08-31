@@ -11,10 +11,6 @@ let tvsCachedCompanies = [];
 let tvsCachedEmployees = [];
 let tvsSelectedEmployeeId = null;
 let tvsSelectedEmployeeName = "";
-// Per-lineId display-HTML/raw-value caches for inline Actual editing —
-// see tvsRenderCard's comment on why this isn't a data-* attribute.
-let tvsLineActualDisplayHtml = {};
-let tvsLineActualRaw = {};
 
 // Employee Name filter — same clipped-dropdown-safe typeahead pattern as
 // advance-vouchers.js's Employee Name field (CLAUDE.md's "Clipped-dropdown
@@ -311,27 +307,28 @@ function tvsRenderCard(v) {
   // when actual_amount first exists) — reviseTourVoucherActualAmount only
   // accepts a Checked voucher, same guard as the backend. The voucher's
   // claimed total_amount is never editable here, only each line's Actual.
+  // A plain number input, no Edit/Save buttons — saves automatically on
+  // blur (onchange) if the value actually changed (31 Aug 2026, replacing
+  // an earlier click-to-edit/Save-Cancel affordance).
   const canEditActual = v.status === 'Checked';
   const rows = lines.map(l => {
     const bills = (l.bills && l.bills.length > 0) ? l.bills : (l.billUrl ? [{ fileName: l.billFileName, url: l.billUrl }] : []);
     const billCell = bills.length > 0
       ? bills.map(b => `<a href="${driveLink(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.fileName || 'View')}</a>`).join("<br>")
       : l.noBillReason ? `<span style="font-style:italic;">Reason: ${escapeHtml(l.noBillReason)}</span>` : "—";
-    const actualCell = l.actualAmount !== null && l.actualAmount !== undefined ? formatINRComma(l.actualAmount) : '—';
-    const editBtn = canEditActual
-      ? `<button class="nav-btn-styled" style="padding:1px 6px; font-size:0.68rem; margin-left:6px;" onclick="event.stopPropagation(); tvsStartEditLineActual(${v.voucherId}, ${l.lineId})">Edit</button>`
-      : '';
-    // Raw display HTML is kept in tvsLineActualDisplayHtml (not a data-*
-    // attribute) so Cancel can restore it exactly without re-escaping —
-    // an escapeHtml()'d attribute would double-escape the nested <button>.
-    tvsLineActualDisplayHtml[l.lineId] = actualCell + editBtn;
-    tvsLineActualRaw[l.lineId] = Number(l.actualAmount) || 0;
+    const rawActual = Number(l.actualAmount) || 0;
+    const actualCell = canEditActual
+      ? `<input type="number" id="tvs-actual-input-${l.lineId}" value="${rawActual}" min="0" step="0.01"
+           style="width:80px; padding:2px 4px; font-size:0.78rem; text-align:right;" onclick="event.stopPropagation();"
+           onchange="event.stopPropagation(); tvsSaveLineActual(${v.voucherId}, ${l.lineId}, ${rawActual})">
+         <span id="tvs-actual-err-${l.lineId}" style="color:#b91c1c; font-size:0.62rem; display:block;"></span>`
+      : (l.actualAmount !== null && l.actualAmount !== undefined ? formatINRComma(l.actualAmount) : '—');
     return `<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:6px;">${l.srNo}</td><td style="padding:6px;">${formatDateDMY(l.expenseDate)}</td>
       <td style="padding:6px;">${escapeHtml(l.expenseType)}${l.conveyanceMode ? ' (' + escapeHtml(l.conveyanceMode) + ')' : ''}</td>
       <td style="padding:6px; text-align:right;">${formatINRComma(l.amount)}</td>
       <td style="padding:6px; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
-      <td id="tvs-actual-td-${l.lineId}" style="padding:6px; text-align:right;">${actualCell}${editBtn}</td>
+      <td style="padding:6px; text-align:right;">${actualCell}</td>
       <td style="padding:6px;">${billCell}</td>
     </tr>`;
   }).join("");
@@ -379,46 +376,31 @@ function tvsRenderCard(v) {
 }
 
 // Per-line Actual Amount correction (Search Vouchers, revised 31 Aug 2026
-// from an earlier voucher-total-level design, then again same day to
-// replace a prompt()-alert edit flow with a real inline row edit — a
-// popup for a single-cell correction is poor UX for something an
-// operator may do repeatedly). The voucher's claimed total_amount is
-// never edited here; only this one line's Actual changes, and
+// three times over the course of the day — voucher-total-level -> per-line
+// with Edit/Save/Cancel buttons -> this final form, a plain number input
+// that saves automatically on blur if the value actually changed, no
+// buttons at all). The voucher's claimed total_amount is never edited
+// here; only this one line's Actual changes, and
 // reviseTourVoucherActualAmount re-derives the voucher's total_actual_amount
 // as the sum of every line, re-applies the balance delta, and regenerates
 // the voucher PDF at the next version.
-function tvsStartEditLineActual(voucherId, lineId) {
-  const td = document.getElementById(`tvs-actual-td-${lineId}`);
-  if (!td) return;
-  const current = tvsLineActualRaw[lineId] || 0;
-  td.innerHTML = `
-    <input type="number" id="tvs-actual-input-${lineId}" value="${current}" min="0" step="0.01"
-      style="width:80px; padding:2px 4px; font-size:0.78rem;" onclick="event.stopPropagation();"
-      onkeydown="if(event.key==='Enter'){event.preventDefault(); tvsSaveLineActual(${voucherId}, ${lineId});} if(event.key==='Escape'){tvsCancelEditLineActual(${lineId});}">
-    <button class="nav-btn-styled" style="padding:1px 6px; font-size:0.68rem;" onclick="event.stopPropagation(); tvsSaveLineActual(${voucherId}, ${lineId})">Save</button>
-    <button class="nav-btn-styled" style="padding:1px 6px; font-size:0.68rem;" onclick="event.stopPropagation(); tvsCancelEditLineActual(${lineId})">Cancel</button>
-    <div id="tvs-actual-err-${lineId}" style="color:#b91c1c; font-size:0.68rem; margin-top:2px;"></div>`;
-  document.getElementById(`tvs-actual-input-${lineId}`).focus();
-}
-
-function tvsCancelEditLineActual(lineId) {
-  const td = document.getElementById(`tvs-actual-td-${lineId}`);
-  if (td) td.innerHTML = tvsLineActualDisplayHtml[lineId] || '—';
-}
-
-async function tvsSaveLineActual(voucherId, lineId) {
+async function tvsSaveLineActual(voucherId, lineId, previousValue) {
   const input = document.getElementById(`tvs-actual-input-${lineId}`);
   const errEl = document.getElementById(`tvs-actual-err-${lineId}`);
   const newActualAmount = Number(input.value);
   if (isNaN(newActualAmount) || newActualAmount < 0) {
     if (errEl) errEl.textContent = "Enter a valid non-negative amount.";
+    input.value = previousValue;
     return;
   }
+  if (newActualAmount === previousValue) return; // unchanged on blur — nothing to save
+  if (errEl) errEl.textContent = "";
   input.disabled = true;
   try {
     const data = await acFetch("reviseTourVoucherActualAmount", { voucherId, lineId, newActualAmount });
     if (!data.success) {
       input.disabled = false;
+      input.value = previousValue;
       if (errEl) errEl.textContent = data.error;
       return;
     }
@@ -428,6 +410,7 @@ async function tvsSaveLineActual(voucherId, lineId) {
     runTourVoucherSearch();
   } catch (e) {
     input.disabled = false;
+    input.value = previousValue;
     if (errEl) errEl.textContent = "Network error: " + e.message;
   }
 }

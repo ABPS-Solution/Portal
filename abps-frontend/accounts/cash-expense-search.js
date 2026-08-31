@@ -144,16 +144,23 @@ async function runCashExpenseSearch() {
       // Actual Amount is editable only once closed (isOpen === false) —
       // reviseCashExpenseActualAmount requires actual_amount IS NOT NULL,
       // same guard as the backend. A still-open advance is closed via
-      // Daily Expense Vouchers instead, not from here.
-      const editBtn = !x.isOpen
-        ? `<button class="nav-btn-styled" style="padding:2px 8px; font-size:0.72rem; margin-left:8px;" onclick="cesEditActual(${x.expenseId}, ${Number(x.amount) || 0})">Edit</button>` : '';
+      // Daily Expense Vouchers instead, not from here. Plain number input,
+      // no Edit/Save buttons — saves automatically on blur (onchange) if
+      // the value actually changed, same pattern as voucher-search.js.
+      const rawActual = Number(x.amount) || 0;
+      const actualCell = x.isOpen
+        ? `${formatINRComma(x.amount)} <span style="font-weight:400; color:var(--muted); font-size:0.75rem;">(open)</span>`
+        : `<input type="number" id="ces-actual-input-${x.expenseId}" value="${rawActual}" min="0" step="0.01"
+             style="width:90px; padding:2px 4px; font-size:0.8rem; text-align:right; font-weight:700;"
+             onchange="cesSaveActual(${x.expenseId}, ${rawActual})">
+           <span id="ces-actual-err-${x.expenseId}" style="color:#b91c1c; font-size:0.62rem; display:block;"></span>`;
       return `<tr style="border-bottom:1px solid var(--border);">
         <td style="padding:7px;">${formatDateDMY(x.createdDate)}</td>
         <td style="padding:7px;">${escapeHtml(x.employeeName)}</td>
         <td style="padding:7px;">${escapeHtml(x.departmentName || '—')}</td>
         <td style="padding:7px;">${typeLabel}</td>
         <td style="padding:7px;"><span style="background:${modeColor}; color:#fff; font-weight:700; font-size:0.75rem; padding:3px 8px; border-radius:3px;">${x.paymentMode}</span></td>
-        <td style="padding:7px; text-align:right; font-weight:700;">${formatINRComma(x.amount)}${x.isOpen ? ' <span style="font-weight:400; color:var(--muted); font-size:0.75rem;">(open)</span>' : editBtn}</td>
+        <td style="padding:7px; text-align:right;">${actualCell}</td>
       </tr>`;
     }).join("");
     resultsEl.innerHTML = `
@@ -169,22 +176,35 @@ async function runCashExpenseSearch() {
   } catch (e) { resultsEl.innerHTML = `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`; }
 }
 
-// Actual Amount correction for an already-closed voucher (30 Aug 2026) —
-// prompt()-based, same lightweight-inline-edit convention as
-// voucher-search.js's tvsEditActual. Calls reviseCashExpenseActualAmount,
-// which re-applies the pool-balance delta (skipped for Online).
-async function cesEditActual(expenseId, currentActual) {
-  const input = prompt("New Actual Amount for this voucher:", trimNum(currentActual));
-  if (input === null) return;
-  const newActualAmount = Number(input);
-  if (isNaN(newActualAmount) || newActualAmount < 0) return alert("Enter a valid non-negative amount.");
-
-  showBlockingOverlay("Revising Actual Amount...");
+// Actual Amount correction for an already-closed voucher (revised 31 Aug
+// 2026 from a prompt()-based edit to a plain input that auto-saves on
+// blur, same pattern as voucher-search.js's tvsSaveLineActual). Calls
+// reviseCashExpenseActualAmount, which re-applies the pool-balance delta
+// (skipped for Online).
+async function cesSaveActual(expenseId, previousValue) {
+  const input = document.getElementById(`ces-actual-input-${expenseId}`);
+  const errEl = document.getElementById(`ces-actual-err-${expenseId}`);
+  const newActualAmount = Number(input.value);
+  if (isNaN(newActualAmount) || newActualAmount < 0) {
+    if (errEl) errEl.textContent = "Enter a valid non-negative amount.";
+    input.value = previousValue;
+    return;
+  }
+  if (newActualAmount === previousValue) return; // unchanged on blur — nothing to save
+  if (errEl) errEl.textContent = "";
+  input.disabled = true;
   try {
     const data = await acFetch("reviseCashExpenseActualAmount", { expenseId, newActualAmount });
-    hideBlockingOverlay();
-    if (!data.success) return alert(data.error);
-    alert(data.newBalance !== null ? `Revised. New ${data.paymentMode} balance: ${formatINRComma(data.newBalance)}.` : "Revised (Online — no pool balance affected).");
+    if (!data.success) {
+      input.disabled = false;
+      input.value = previousValue;
+      if (errEl) errEl.textContent = data.error;
+      return;
+    }
     runCashExpenseSearch();
-  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
+  } catch (e) {
+    input.disabled = false;
+    input.value = previousValue;
+    if (errEl) errEl.textContent = "Network error: " + e.message;
+  }
 }
