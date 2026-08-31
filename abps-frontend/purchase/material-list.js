@@ -246,14 +246,54 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
         const reqDates = reqDatesByPrn[pid] || [];
         const reqDateCell = reqDates.length === 0
           ? `<span style="color:var(--muted); font-size:0.8rem;">—</span>`
-          : reqDates.map(d => `<div style="font-size:0.78rem;">${fmtQtyN(d.qty)} on ${formatDateDMY(d.date)}</div>`).join("");
+          : reqDates.map(d => `<div style="font-size:0.92rem;">${fmtQtyN(d.qty)} on ${formatDateDMY(d.date)}</div>`).join("");
         return `
         <tr style="border-bottom:1px solid var(--border);">
           <td style="padding:8px 6px; font-size:0.85rem; font-weight:600; color:#334155;">${pid}</td>
-          <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:#b91c1c;">${fmtQtyN(byPrn[pid])} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
-          <td style="padding:8px 6px;">${reqDateCell}</td>
+          <td style="padding:8px 6px; text-align:center; font-family:monospace; font-size:1.1rem; font-weight:800; color:#b91c1c;">${fmtQtyN(byPrn[pid])} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
+          <td style="padding:8px 6px; text-align:center;">${reqDateCell}</td>
         </tr>`;
       }).join("");
+
+  // Combined-quantity-by-date number line (31 Aug 2026) — aggregates every
+  // PRN's own requirement dates into one timeline showing the TOTAL of
+  // this material needed on each date across every PRN (e.g. 5 on the 10th
+  // for one PRN + 15 on the 10th for another = 20 shown at the 10th),
+  // positioned proportionally to real elapsed time between dates, not
+  // evenly spaced by index — a gap of 20 days should look wider than a
+  // gap of 2. Sits between the header and the table, only rendered when
+  // there's at least one dated point to show.
+  const qtyByDate = {};
+  prnIds.forEach(pid => {
+    (reqDatesByPrn[pid] || []).forEach(d => {
+      if (!d.date) return;
+      qtyByDate[d.date] = (qtyByDate[d.date] || 0) + (Number(d.qty) || 0);
+    });
+  });
+  const sortedDates = Object.keys(qtyByDate).sort();
+  let timelineHtml = "";
+  if (sortedDates.length > 0) {
+    const INSET = 8; // % from each edge — "slightly inside", not flush to the ends
+    const parseD = (s) => new Date(s + "T00:00:00Z").getTime();
+    const minT = parseD(sortedDates[0]);
+    const maxT = parseD(sortedDates[sortedDates.length - 1]);
+    const span = maxT - minT;
+    const points = sortedDates.map(dateStr => {
+      const pct = span === 0 ? 50 : INSET + ((parseD(dateStr) - minT) / span) * (100 - 2 * INSET);
+      return { dateStr, pct, qty: qtyByDate[dateStr] };
+    });
+    const markersHtml = points.map(p => `
+      <div style="position:absolute; left:${p.pct}%; top:0; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; white-space:nowrap;">
+        <div style="font-size:0.85rem; font-weight:800; color:#b91c1c; margin-bottom:4px;">${fmtQtyN(p.qty)} <span style="font-size:0.65rem; font-weight:700; color:var(--muted);">${unitLabel}</span></div>
+        <div style="width:9px; height:9px; border-radius:50%; background:var(--brand); border:2px solid #fff; box-shadow:0 0 0 1px var(--brand);"></div>
+        <div style="font-size:0.72rem; font-weight:600; color:#334155; margin-top:4px;">${formatDateDMY(p.dateStr)}</div>
+      </div>`).join("");
+    timelineHtml = `
+      <div style="position:relative; height:62px; margin:6px 4px 22px;">
+        <div style="position:absolute; left:0; right:0; top:29px; height:2px; background:var(--border);"></div>
+        ${markersHtml}
+      </div>`;
+  }
 
   const existing = document.getElementById("material-project-breakdown-modal-overlay");
   if (existing) existing.remove();
@@ -271,20 +311,21 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
         </div>
         <button onclick="document.getElementById('material-project-breakdown-modal-overlay').remove()" style="background:transparent;border:none;font-size:1.3rem;line-height:1;color:var(--muted);cursor:pointer;padding:0 0 0 10px;">&times;</button>
       </div>
+      ${timelineHtml}
       <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <colgroup><col style="width:auto;"><col style="width:140px;"><col style="width:200px;"></colgroup>
         <thead>
           <tr style="text-align:left; border-bottom:2px solid var(--border);">
             <th style="padding:6px; font-size:0.72rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">PRN ID</th>
-            <th style="padding:6px; text-align:right; font-size:0.72rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">PRN Quantity</th>
-            <th style="padding:6px; font-size:0.72rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">Production Requirement Date</th>
+            <th style="padding:6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">PRN Quantity</th>
+            <th style="padding:6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">Production Requirement Date</th>
           </tr>
         </thead>
         <tbody>${rowsHtml}</tbody>
         <tfoot>
           <tr style="border-top:2px solid var(--border);">
             <td style="padding:8px 6px; font-size:0.82rem; font-weight:800; color:#334155;">Total</td>
-            <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:var(--brand);">${(Math.round((totalQty || 0) * 100) / 100).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
+            <td style="padding:8px 6px; text-align:center; font-family:monospace; font-size:1.15rem; font-weight:800; color:var(--brand);">${(Math.round((totalQty || 0) * 100) / 100).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
             <td></td>
           </tr>
         </tfoot>
