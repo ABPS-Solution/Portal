@@ -754,7 +754,17 @@ function ptlRenderList(nodes, today) {
     // grey scheduled / green done / red late, not department. `c` is
     // kept only for the department name badge text just below.
     const dotColor = late ? 'var(--warn)' : (done ? 'var(--accent)' : PTL_SCHEDULED_GREY);
-    const hasDetail = Array.isArray(n.detail);
+    // "Show what's left" should only ever be a clickable toggle when
+    // there's genuinely something outstanding to drill into. An empty
+    // n.detail means one of two very different things — either this
+    // node is fully covered (show a plain "Completed" line) or it hasn't
+    // been reached yet because an earlier stage hasn't produced anything
+    // for it to act on (n.blocked, e.g. "Waiting on BOQs." — show that
+    // message directly, not behind a click that would only ever expand
+    // to nothing). Only a non-empty n.detail gets the expand/collapse
+    // affordance at all.
+    const hasDetail = Array.isArray(n.detail) && n.detail.length > 0;
+    const isEmptyDetailArray = Array.isArray(n.detail) && n.detail.length === 0;
     const expanded = hasDetail && ptlExpandedNodes.has(n.id);
     const manualCanEdit = n.kind === 'manual' && !PTL_QA_CHAIN.has(n.id) && (!n.actual || ptlIsAdmin());
     const qaCanEdit = PTL_QA_CHAIN.has(n.id) && prodPlanDone && (!n.actual || ptlIsAdmin());
@@ -778,6 +788,9 @@ function ptlRenderList(nodes, today) {
           <div style="font-size:0.8rem; color:${late ? 'var(--warn)' : 'var(--muted)'}; margin-top:2px;">${escapeHtml(dateTxt)}${late ? ` · ${Math.abs(ptlBdBetween(eff, today))} business days late` : ''}</div>
           ${n.chip ? `<span style="display:inline-block; margin-top:5px; font-size:0.72rem; font-family:monospace; font-weight:700; color:var(--text); background:var(--highlight-bg); padding:2px 8px; border-radius:10px;">${escapeHtml(n.chip)}</span>` : ''}
           ${hasDetail ? `<div style="font-size:0.72rem; color:var(--brand); margin-top:5px; font-weight:600;">${expanded ? '▾ Hide' : '▸ Show'} what's left</div>` : ''}
+          ${isEmptyDetailArray ? (n.blocked
+            ? `<div style="font-size:0.76rem; color:var(--muted); font-style:italic; margin-top:5px;">${escapeHtml(n.blocked)}</div>`
+            : `<div style="font-size:0.72rem; color:var(--accent); margin-top:5px; font-weight:600;">✓ Completed</div>`) : ''}
           ${manualCanEdit ? `<div onclick="event.stopPropagation()" style="margin-top:7px; display:flex; align-items:center; gap:8px;">${ptlAsOfInputHtml(n.id, n.actual)}<button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlMarkMilestoneDone('${n.id}')">${n.actual ? 'Update (admin)' : 'Mark Done'}</button></div>` : ''}
           ${qaCanEdit ? `
             <div onclick="event.stopPropagation()" style="margin-top:7px; display:flex; align-items:center; gap:8px;">
@@ -803,14 +816,14 @@ function ptlRenderList(nodes, today) {
         </div>
       </div>
       ${hasDetail && expanded ? `<div style="margin:0 0 10px 40px; padding:10px 12px; background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); font-size:0.8rem; color:var(--text);">
-        ${n.detail.length ? `<ul style="margin:0; padding-left:18px;">${n.detail.map(d => {
+        <ul style="margin:0; padding-left:18px;">${n.detail.map(d => {
           // Backend joins the item's identity and the trailing "still
           // has no..." sentence with \n — split them onto their own
           // lines within the SAME bullet, rather than reading as if the
           // sentence were its own separate list item.
           const parts = d.split("\n");
           return `<li style="margin-bottom:4px;">${ptlEscapeWithOptionalBold(parts[0])}${parts[1] ? `<div style="color:var(--muted);">${ptlEscapeWithOptionalBold(parts[1])}</div>` : ''}</li>`;
-        }).join("")}</ul>` : `<span style="color:var(--muted);">${escapeHtml(n.blocked || 'Nothing left — this row is fully covered.')}</span>`}
+        }).join("")}</ul>
       </div>` : ''}`;
   }).join("") + `</div>`;
 }
