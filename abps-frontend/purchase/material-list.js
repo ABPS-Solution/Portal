@@ -333,16 +333,25 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
         else lane = gap0 >= gap1 ? 0 : 1; // both tight — pick whichever has more room
         if (lane === 0) lane0LastPct = pct; else lane1LastPct = pct;
         const qtyY = lane === 0 ? LANE0_Y : LANE1_Y;
+        // Thin connector from the qty label down to its dot — most useful
+        // for lane 1 (pushed higher to dodge a neighbor), where the label
+        // otherwise reads as floating, disconnected from its own point.
+        const connectorTop = qtyY + 3; // just below the label's baseline
+        const connectorHeight = LINE_Y - connectorTop;
         return `
         <div style="position:absolute; left:${pct}%; top:${qtyY}px; transform:translate(-50%,-100%); font-size:0.85rem; font-weight:800; color:#b91c1c; white-space:nowrap;">${fmtQtyN(qty)}</div>
+        <div style="position:absolute; left:${pct}%; top:${connectorTop}px; width:1.5px; height:${connectorHeight}px; background:#93c5fd; transform:translateX(-50%);"></div>
         <div style="position:absolute; left:${pct}%; top:${LINE_Y}px; width:9px; height:9px; border-radius:50%; background:var(--brand); border:2px solid #fff; box-shadow:0 0 0 1px var(--brand); transform:translate(-50%,-50%);"></div>
         <div style="position:absolute; left:${pct}%; top:${DAY_LABEL_Y}px; transform:translateX(-50%); font-size:0.72rem; font-weight:600; color:#334155; white-space:nowrap;">${ordinal(day)}</div>`;
       }).join("");
       return `
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-        <div style="flex-shrink:0; width:108px; font-size:0.78rem; font-weight:700; color:#111827; text-align:right; white-space:nowrap;">${PTL_MON_NAMES[month - 1]} ${year}</div>
+      <div style="display:flex; align-items:stretch; gap:10px; margin-bottom:8px;">
+        <div style="flex-shrink:0; width:108px; height:78px; display:flex; flex-direction:column; justify-content:center; align-items:flex-end; position:relative; top:6px;">
+          <div style="font-size:0.78rem; font-weight:700; color:#111827; line-height:1.3; white-space:nowrap;">${PTL_MON_NAMES[month - 1]}</div>
+          <div style="font-size:0.78rem; font-weight:700; color:#111827; line-height:1.3; white-space:nowrap;">${year}</div>
+        </div>
         <div style="position:relative; flex:1; height:78px;">
-          <div style="position:absolute; left:0; right:0; top:${LINE_Y}px; height:2px; background:var(--border);"></div>
+          <div style="position:absolute; left:0; right:0; top:${LINE_Y}px; height:2px; background:#111827;"></div>
           ${markersHtml}
         </div>
       </div>`;
