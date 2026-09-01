@@ -140,7 +140,7 @@ function ppsRenderNeedQueueList(title, items, emptyMessage) {
   }
   const rows = items.map(item => {
     const hint = (item.totalItems > 0)
-      ? `<div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">${item.scheduledItems} of ${item.totalItems} items scheduled</div>`
+      ? `<div style="font-size:0.85rem; font-weight:600; color:var(--muted); margin-top:2px;">${item.scheduledItems} of ${item.totalItems} items scheduled</div>`
       : "";
     return `
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #f1f5f9;">
