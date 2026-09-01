@@ -1021,9 +1021,15 @@ function renderAPORCard(r) {
   const draftSubTotal = revised.reduce((sum, line) => sum + (Number(line.quantity)||0) * (Number(line.rate)||0) * (100 - (Number(line.discountPercent)||0)) / 100, 0)
     + (r.currentLines || []).filter(cur => !revised.some(l => l.itemCode === cur.itemCode))
         .reduce((sum, cur) => sum + (Number(cur.amount) || 0), 0);
-  const draftTaxableBase = draftSubTotal + effForSummary.packing + effForSummary.freight + effForSummary.other;
+  // Packing/Freight/Other are entered GST-inclusive -- never part of the
+  // GST-taxable base (the material sub-total alone), added to Grand
+  // Total AFTER GST is computed, same convention as updateRPOGrandTotal/
+  // poTemplate.js. This previously taxed them too, inflating the
+  // "General Change Summary"'s Grand Total above what actually gets
+  // authorized (298,540 shown vs the real 297,460).
+  const draftTaxableBase = draftSubTotal;
   const draftGrandTotal = draftTaxableBase + draftTaxableBase*effForSummary.cgstPercent/100 + draftTaxableBase*effForSummary.sgstPercent/100
-    + draftTaxableBase*effForSummary.igstPercent/100 + effForSummary.roundOff;
+    + draftTaxableBase*effForSummary.igstPercent/100 + effForSummary.packing + effForSummary.freight + effForSummary.other + effForSummary.roundOff;
   const oldSubTotal = Number(r.subTotal) || 0, oldGrandTotal = Number(r.grandTotal) || 0;
   if (Math.abs(draftSubTotal - oldSubTotal) > 1e-9) generalBullets.push(`<li><strong>Sub Total</strong>: ${fmt(oldSubTotal)} → <span style="font-weight:700; color:${draftSubTotal > oldSubTotal ? "#15803d" : "#b91c1c"};">${fmt(draftSubTotal)}</span></li>`);
   if (Math.abs(draftGrandTotal - oldGrandTotal) > 1e-9) generalBullets.push(`<li><strong>Grand Total</strong>: ${fmt(oldGrandTotal)} → <span style="font-weight:700; color:${draftGrandTotal > oldGrandTotal ? "#15803d" : "#b91c1c"};">${fmt(draftGrandTotal)}</span></li>`);
