@@ -65,17 +65,6 @@ const PTL_ADMIN_SYSTEM_DATE_IDS = new Set(['activated', 'mfcInt']);
 // live computation. adminClearSystemMilestoneOverride removes it again
 // once real data should take back over.
 const PTL_ADMIN_MILESTONE_OVERRIDE_KEY = { boqs: 'boqs_released', prns: 'prns_released', mrdates: 'production_requirement_dates_released', rmpos: 'rmpos_released', pps: 'pps_released', wdesign: 'working_designs_released' };
-// Stage 3 re-baseline (1 Sep 2026, migration 161) — planned_date freezes
-// forever at first Internal MFC (that's the whole point — slippage stays
-// measurable against the ORIGINAL commitment), but when the original plan
-// itself turns out wrong there was no way to correct it. This writes
-// timeline_milestones.target_date via reviseTimelineMilestoneTarget
-// (routes/timeline.js), audited into timeline_milestone_target_history.
-// Gated server-side to Project department or admin — shown to everyone
-// with perm_project_timeline here, same as saveTimelineManualMilestone's
-// own department check, so a non-Project user just sees the server's
-// rejection message rather than the button being hidden client-side.
-const PTL_STAGE3_MILESTONE_KEY = { ...PTL_ADMIN_MILESTONE_OVERRIDE_KEY, prodPlan: 'production_planning_released' };
 // Stage headers — ptlRenderList inserts one automatically whenever a
 // node's stage differs from the previous one, so Stage 1/2/3 get the same
 // section labeling Stage 4/5 already had (those two used to be hardcoded
@@ -771,7 +760,6 @@ function ptlRenderList(nodes, today) {
     const qaBlockedByPlan = PTL_QA_CHAIN.has(n.id) && !n.actual && !prodPlanDone;
     const systemDateCanEdit = PTL_ADMIN_SYSTEM_DATE_IDS.has(n.id) && ptlIsAdmin();
     const milestoneOverrideCanEdit = !!PTL_ADMIN_MILESTONE_OVERRIDE_KEY[n.id] && ptlIsAdmin();
-    const stage3RebaselineKey = PTL_STAGE3_MILESTONE_KEY[n.id];
     return stageHeader + `
       <div id="ptl-row-${n.id}" ${hasDetail ? `onclick="ptlToggleNodeDetail('${n.id}')"` : ''} style="display:flex; align-items:flex-start; gap:12px; padding:10px 4px; border-bottom:1px solid var(--border); border-radius:4px;${hasDetail ? ' cursor:pointer;' : ''}">
         <div style="flex:none; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
@@ -809,10 +797,6 @@ function ptlRenderList(nodes, today) {
               <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlSetMilestoneOverride('${n.id}')">${n.actual ? 'Update (admin)' : 'Set (admin)'}</button>
               ${n.actual ? `<button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem; background:#fff; color:var(--muted); border:1px solid var(--border);" onclick="ptlClearMilestoneOverride('${n.id}')">Clear override</button>` : ''}
             </div>` : ''}
-          ${stage3RebaselineKey && !done ? `
-            <div onclick="event.stopPropagation()" style="margin-top:5px;">
-              <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem; background:#fff; color:var(--brand); border:1px solid var(--border);" onclick="ptlRevisePlannedTarget('${n.id}', '${stage3RebaselineKey}')">Revise Target Date</button>
-            </div>` : ''}
         </div>
       </div>
       ${hasDetail && expanded ? `<div style="margin:0 0 10px 40px; padding:10px 12px; background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); font-size:0.8rem; color:var(--text);">
@@ -826,27 +810,6 @@ function ptlRenderList(nodes, today) {
         }).join("")}</ul>
       </div>` : ''}`;
   }).join("") + `</div>`;
-}
-
-// ptlRevisePlannedTarget — Stage 3 re-baseline (routes/timeline.js's
-// reviseTimelineMilestoneTarget). Kept to plain prompt() dialogs
-// deliberately, same trade-off Stage 3's Mark Done button already made —
-// this is a rare, deliberate correction, not a routine data-entry flow
-// that needs its own form.
-async function ptlRevisePlannedTarget(nodeId, milestoneKey) {
-  if (!ptlData) return;
-  const newTargetDate = prompt("New target date for this milestone (YYYY-MM-DD):");
-  if (!newTargetDate) return;
-  const reason = prompt("Reason for re-baselining this date (required, shown in the audit history):");
-  if (!reason || !reason.trim()) { alert("A reason is required."); return; }
-  const projectId = ptlData.project.projectId;
-  try {
-    const data = await apFetch({ action: "reviseTimelineMilestoneTarget", operatorName: appActiveOperatorIdentityString, projectId, milestoneKey, newTargetDate, reason });
-    if (!data.success) { alert(data.error || "Could not revise this target date."); return; }
-    await selectPtlProject(projectId);
-  } catch (e) {
-    alert("Network error: " + e.message);
-  }
 }
 
 async function ptlSetMilestoneOverride(nodeId) {
