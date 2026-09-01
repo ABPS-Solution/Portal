@@ -240,13 +240,26 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
   const unitLabel = (unit || "NOS").toUpperCase();
   const fmtQtyN = (n) => (Math.round((Number(n) || 0) * 100) / 100).toString();
 
+  // "3rd Sept 2026" style — ordinal day + short month name, used both in the
+  // PRN table's Production Requirement Date column and the timeline below.
+  const PTL_MON_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"];
+  const ordinal = (n) => {
+    const s = ["th","st","nd","rd"], v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  };
+  const formatOrdinalDate = (dateStr) => {
+    if (!dateStr) return "";
+    const [y, m, d] = dateStr.split("-").map(Number);
+    return `${ordinal(d)} ${PTL_MON_SHORT[m - 1]} ${y}`;
+  };
+
   const rowsHtml = prnIds.length === 0
     ? `<tr><td colspan="3" style="padding:14px; text-align:center; color:var(--muted); font-size:0.85rem;">No PRN-level breakdown available.</td></tr>`
     : prnIds.map(pid => {
         const reqDates = reqDatesByPrn[pid] || [];
         const reqDateCell = reqDates.length === 0
           ? `<span style="color:var(--muted); font-size:0.8rem;">—</span>`
-          : reqDates.map(d => `<div style="font-size:0.92rem;">${fmtQtyN(d.qty)} on ${formatDateDMY(d.date)}</div>`).join("");
+          : reqDates.map(d => `<div style="font-size:0.92rem;">${fmtQtyN(d.qty)} on ${formatOrdinalDate(d.date)}</div>`).join("");
         return `
         <tr style="border-bottom:1px solid var(--border);">
           <td style="padding:8px 6px; font-size:0.85rem; font-weight:600; color:#334155;">${pid}</td>
@@ -279,10 +292,7 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
   if (sortedDates.length > 0) {
     const INSET = 8; // % from each edge — "slightly inside", not flush to the ends
     const PTL_MON_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-    const ordinal = (n) => {
-      const s = ["th","st","nd","rd"], v = n % 100;
-      return n + (s[(v - 20) % 10] || s[v] || s[0]);
-    };
+    // ordinal() is shared with the PRN table's date column, defined above.
     // Group into calendar months (YYYY-MM), each holding its own points.
     const byMonth = {};
     sortedDates.forEach(dateStr => {
@@ -295,15 +305,14 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
     // Points close together on the line (a few days apart, on a 31-day-wide
     // axis) had their qty labels running into each other — unit text
     // ("METER") dropped from this label entirely (still shown in the table/
-    // Total below, no need to repeat it here), and a 2-lane zigzag added:
-    // whenever a point sits within COLLISION_GAP% of the previous one, its
-    // qty label is pushed to a second, higher row instead of overlapping
-    // the first — this still isn't infinitely collision-proof (3+ points
-    // within a couple of days of each other could still be tight even
-    // staggered two ways) but resolves the common 2-adjacent-dates case a
-    // 3-4 digit quantity can hit.
+    // Total below, no need to repeat it here). Lane assignment now checks
+    // each lane's OWN last-placed point (not just whichever point came
+    // immediately before it overall), so 3+ points within a couple of days
+    // of each other still land in whichever of the two lanes has more room,
+    // instead of blindly alternating and re-colliding on the 3rd point.
+    // COLLISION_GAP is wide enough to clear a 4-digit quantity's label width.
     const LINE_Y = 45, LANE0_Y = 31, LANE1_Y = 13, DAY_LABEL_Y = 56;
-    const COLLISION_GAP = 6; // % — below this, stagger to avoid overlap
+    const COLLISION_GAP = 9; // % — below this, stagger to avoid overlap
     const linesHtml = monthKeys.map(mk => {
       const { year, month, days } = byMonth[mk];
       const sortedDays = days.slice().sort((a, b) => a.day - b.day);
@@ -313,11 +322,16 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
       // lines can compare day-of-month at a glance. The tradeoff: a
       // shorter month's line simply doesn't reach as close to the right
       // edge as a 31-day month's does — expected and informative, not a bug.
-      let lastPct = null, lane = 0;
+      let lane0LastPct = null, lane1LastPct = null;
       const markersHtml = sortedDays.map(({ day, qty }) => {
         const pct = INSET + ((day - 1) / 30) * (100 - 2 * INSET);
-        lane = (lastPct !== null && (pct - lastPct) < COLLISION_GAP) ? (lane === 0 ? 1 : 0) : 0;
-        lastPct = pct;
+        const gap0 = lane0LastPct === null ? Infinity : pct - lane0LastPct;
+        const gap1 = lane1LastPct === null ? Infinity : pct - lane1LastPct;
+        let lane;
+        if (gap0 >= COLLISION_GAP) lane = 0;
+        else if (gap1 >= COLLISION_GAP) lane = 1;
+        else lane = gap0 >= gap1 ? 0 : 1; // both tight — pick whichever has more room
+        if (lane === 0) lane0LastPct = pct; else lane1LastPct = pct;
         const qtyY = lane === 0 ? LANE0_Y : LANE1_Y;
         return `
         <div style="position:absolute; left:${pct}%; top:${qtyY}px; transform:translate(-50%,-100%); font-size:0.85rem; font-weight:800; color:#b91c1c; white-space:nowrap;">${fmtQtyN(qty)}</div>
@@ -326,7 +340,7 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
       }).join("");
       return `
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-        <div style="flex-shrink:0; width:88px; font-size:0.78rem; font-weight:700; color:var(--brand); text-align:right;">${PTL_MON_NAMES[month - 1]} ${year}</div>
+        <div style="flex-shrink:0; width:108px; font-size:0.78rem; font-weight:700; color:#111827; text-align:right; white-space:nowrap;">${PTL_MON_NAMES[month - 1]} ${year}</div>
         <div style="position:relative; flex:1; height:78px;">
           <div style="position:absolute; left:0; right:0; top:${LINE_Y}px; height:2px; background:var(--border);"></div>
           ${markersHtml}
@@ -344,7 +358,7 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
   modal.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;";
   modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
   modal.innerHTML = `
-    <div style="background:#fff;border-radius:var(--radius);padding:24px;max-width:1080px;width:94%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="background:#fff;border-radius:var(--radius);padding:24px;max-width:1140px;width:94%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;border-bottom:2px solid var(--border);padding-bottom:12px;">
         <div>
           <div style="font-size:1rem;font-weight:800;color:var(--brand);">${materialName}</div>
