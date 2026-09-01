@@ -60,16 +60,22 @@ function switchSecurityAdminTab(tab) {
 // Permissions Matrix, which reuses Project's blue for Design, ALL NINE of
 // these render side-by-side at once here so every color must be tellable
 // apart from its neighbors).
+// Canonical department order (2 Sep 2026, matches admin_db.departments
+// .department_id 1-11 after migration 165, and ERP's own LA_DEPARTMENTS)
+// -- HR was previously missing from this list entirely (fell through to
+// no card at all, not even an "unknown department" bucket), a real gap
+// since the HR department was added 31 Aug 2026 and never backfilled here.
 const LA_DEPARTMENTS = [
   { name: 'Admin', color: '#1e293b' },
+  { name: 'HR', color: '#78350f' },
+  { name: 'Accounts', color: '#0f766e' },
   { name: 'Marketing', color: '#be185d' },
   { name: 'Project', color: '#2563eb' },
   { name: 'Design', color: '#4338ca' },
   { name: 'Purchase', color: '#7c3aed' },
   { name: 'Store', color: '#0369a1' },
-  { name: 'Production', color: '#b45309' },
   { name: 'Quality Assurance', color: '#dc2626' },
-  { name: 'Accounts', color: '#0f766e' },
+  { name: 'Production', color: '#b45309' },
   { name: 'Service', color: '#16a34a' },
 ];
 
