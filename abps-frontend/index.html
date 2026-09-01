@@ -3245,111 +3245,104 @@
       <!-- BODY -->
       <div id="pd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
-        <!-- ROW 1: 7 stat cards -->
-        <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:8px; flex:0 0 11%;">
+        <!-- ROW 1: PRN coverage / scheduling / rejection health -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
           <div class="dd-stat-card">
-            <div class="dd-stat-label">PRNs Created</div>
-            <div class="dd-stat-val" id="pd-s-prns">—</div>
+            <div class="dd-stat-label">PRNs With No Materials Assigned in a PO</div>
+            <div class="dd-stat-val" id="pd-s-noassign" style="color:#b91c1c;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Active PRNs</div>
-            <div class="dd-stat-val" id="pd-s-active" style="color:#b45309;">—</div>
+            <div class="dd-stat-label">PRNs With Partial Materials Assigned in a PO</div>
+            <div class="dd-stat-val" id="pd-s-partassign" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Closed PRNs</div>
-            <div class="dd-stat-val" id="pd-s-closed" style="color:#15803d;">—</div>
+            <div class="dd-stat-label">Unscheduled PRNs</div>
+            <div class="dd-stat-val" id="pd-s-unsched" style="color:#b91c1c;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Average PRN Age</div>
-            <div class="dd-stat-val" id="pd-s-age">—</div>
-            <div class="dd-stat-sub">days (active)</div>
+            <div class="dd-stat-label">Partially Scheduled PRNs</div>
+            <div class="dd-stat-val" id="pd-s-partsched" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">PO Uploaded</div>
+            <div class="dd-stat-label">Unactioned GRNs with Missing/Rejected Material</div>
+            <div class="dd-stat-val" id="pd-s-grns" style="color:#b91c1c;">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 2: PO lifecycle throughput -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Pending PO Authorizations</div>
+            <div class="dd-stat-val" id="pd-s-pendingpo" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Pending PO Revision Authorizations</div>
+            <div class="dd-stat-val" id="pd-s-pendingporev" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">RM POs Created</div>
             <div class="dd-stat-val" id="pd-s-pos">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Total PO Value</div>
-            <div class="dd-stat-val" id="pd-s-poval" style="font-size:1rem; color:var(--brand);">—</div>
-          </div>
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Materials Ordered</div>
+            <div class="dd-stat-label">Item Codes Currently On Order</div>
             <div style="display:flex; align-items:baseline; gap:4px;">
               <div class="dd-stat-val" id="pd-s-matcov" style="color:var(--brand);">—</div>
               <div class="dd-stat-sub" id="pd-s-matcov-total" style="font-size:0.75rem;"></div>
             </div>
           </div>
-        </div>
-
-        <!-- ROW 2: PRN Assignment Health -->
-        <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:8px; flex:0 0 11%;">
           <div class="dd-stat-card">
-            <div class="dd-stat-label">PRNs Pending Assignment</div>
-            <div class="dd-stat-val" id="pd-s-prn-pending" style="color:#b45309;">—</div>
-            <div class="dd-stat-sub">line items under-assigned</div>
-          </div>
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Fully Covered PRNs</div>
-            <div class="dd-stat-val" id="pd-s-prn-covered" style="color:#15803d;">—</div>
-            <div class="dd-stat-sub">all line items assigned</div>
-          </div>
-          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
-            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
-          </div>
-          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
-            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
-          </div>
-          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
-            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
-          </div>
-          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
-            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
-          </div>
-          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
-            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+            <div class="dd-stat-label">On-Time Delivery Rate</div>
+            <div class="dd-stat-val" id="pd-s-ontime" style="color:#15803d;">—</div>
           </div>
         </div>
 
         <!-- ROW 3: Charts -->
         <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 26%;">
           <div class="dd-card" style="padding:8px 10px;">
-            <div class="dd-card-title" id="pd-chart2-title">PRN Status Over Time</div>
-            <canvas id="pd-chart-prn-trend" style="max-height:130px;"></canvas>
-          </div>
-          <div class="dd-card" style="padding:8px 10px;">
-            <div class="dd-card-title">Still To Order vs On Order (by Type of Material)</div>
-            <canvas id="pd-chart-coverage" style="max-height:130px;"></canvas>
+            <div class="dd-card-title">RM POs Created Over Time</div>
+            <canvas id="pd-chart-po-trend" style="max-height:130px;"></canvas>
           </div>
           <div class="dd-card" style="padding:8px 10px;">
             <div class="dd-card-title">Purchase Order Delivery Timeline</div>
             <canvas id="pd-chart-delivery" style="max-height:130px;"></canvas>
           </div>
+          <div class="dd-card" style="padding:8px 10px;">
+            <div class="dd-card-title">Average Delivery Delay by Vendor</div>
+            <canvas id="pd-chart-vendor-delay" style="max-height:130px;"></canvas>
+          </div>
         </div>
 
-        <!-- ROW 4: Pending actions — 2 columns -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr; align-items:stretch; gap:10px; flex:1; min-height:0;">
+        <!-- ROW 4: Due Today / Overdue (Purchase's own Project Timeline
+             trunk nodes) + Overdue Purchase Orders -- 3 equal columns -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
 
-          <!-- Materials with no PO yet -->
-          <div class="dd-card" style="padding:10px 12px; display:flex; flex-direction:column; min-height:0; height:100%;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-shrink:0;">
-              <div class="dd-card-title" style="margin:0;">Materials Needed (No Purchase Order Yet)</div>
-              <span id="pd-nopo-count" style="font-size:0.68rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:1px 7px; border-radius:8px;"></span>
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-stat-label" style="margin-bottom:8px;">Due Today (Active projects, Project Timeline)</div>
+            <div style="flex:1; min-height:0; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead>
+                  <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
+                    <th style="padding:4px;">Project</th>
+                    <th style="padding:4px;">Item</th>
+                  </tr>
+                </thead>
+                <tbody id="pd-duetoday-tbody"></tbody>
+              </table>
             </div>
-            <div style="overflow-y:auto; flex:1;">
-              <table style="width:100%; border-collapse:collapse; font-size:0.72rem;">
-                <thead><tr style="color:var(--muted); font-size:0.67rem; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
-                  <th style="text-align:left; padding:3px 5px;">Material</th>
-                  <th style="text-align:left; padding:3px 5px;">Item Code</th>
-                  <th style="text-align:center; padding:3px 5px;">PRNs</th>
-                  <th style="text-align:right; padding:3px 5px;">Still To Order</th>
-                  <th style="text-align:center; padding:3px 5px;">Oldest Age</th>
-                </tr></thead>
-                <tbody id="pd-nopo-tbody"></tbody>
+          </div>
+
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-stat-label" style="margin-bottom:8px;">Overdue (Active projects, Project Timeline)</div>
+            <div style="flex:1; min-height:0; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead>
+                  <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
+                    <th style="padding:4px;">Project</th>
+                    <th style="padding:4px;">Item</th>
+                    <th style="padding:4px; text-align:right;">Days Late</th>
+                  </tr>
+                </thead>
+                <tbody id="pd-timeline-overdue-tbody"></tbody>
               </table>
             </div>
           </div>

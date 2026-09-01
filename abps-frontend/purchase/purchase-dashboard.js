@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════
 let pdCurrentPeriod = "today";
 let pdCurrentCustomType = "customday";
-let pdChartPrnTrend = null, pdChartCoverage = null, pdChartAge = null;
+let pdChartPoTrend = null, pdChartDelivery = null, pdChartVendorDelay = null;
 
 function pdReturnToMain() {
   const c = document.getElementById("canvas-module-purchase-dashboard");
@@ -39,15 +39,22 @@ function pdLoadCustom() {
   pdLoadDashboard(val);
 }
 
+// ptlTodayOverride — same admin-only, client-side-only "today" override
+// Project Timeline itself uses (project-timeline.js), read here too so
+// this dashboard's Due/Overdue panels agree with a test scenario an
+// admin has set up on the Timeline screen. See ddLoadDashboard's own
+// identical comment (design-dashboard.js) for the full rationale.
 async function pdLoadDashboard(customVal) {
-  ["pd-s-prns","pd-s-active","pd-s-closed","pd-s-age","pd-s-pos","pd-s-poval","pd-s-matcov"].forEach(id => {  
+  ["pd-s-noassign","pd-s-partassign","pd-s-unsched","pd-s-partsched","pd-s-grns",
+   "pd-s-pendingpo","pd-s-pendingporev","pd-s-pos","pd-s-matcov","pd-s-ontime"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
   try {
     const data = await apFetch({
       action:      "fetchPurchaseDashboardData",
       periodType:  pdCurrentPeriod,
-      periodValue: customVal || ""
+      periodValue: customVal || "",
+      todayOverride: localStorage.getItem("ptlTodayOverride") || "",
     });
     if (!data.success) { alert("Dashboard load failed: " + data.error); return; }
     pdRenderDashboard(data);
@@ -56,80 +63,58 @@ async function pdLoadDashboard(customVal) {
   }
 }
 
+function pdFormatPct(n) {
+  return n === null || n === undefined ? "—" : n + "%";
+}
+
 function pdRenderDashboard(data) {
-  const { stats, prnTrend, ageBuckets, byType, deliveryTimeline, poValueTrend, projectCoverageList, noPoItems, overdueList, showTrend } = data;
+  const { stats, poTrend, deliveryTimeline, vendorDelay, overdueList, dueToday, overdue } = data;
   const fmtNum = n => "₹" + Number(n).toLocaleString("en-IN", { maximumFractionDigits:0 });
 
-  // Stat cards
-  document.getElementById("pd-s-prns").textContent   = stats.totalPRNs;
-  document.getElementById("pd-s-active").textContent = stats.activePRNs;
-  document.getElementById("pd-s-closed").textContent = stats.closedPRNs;
-  document.getElementById("pd-s-age").textContent    = stats.avgPRNAgeDays !== null ? stats.avgPRNAgeDays : "—";
-  document.getElementById("pd-s-pos").textContent    = stats.totalPOs;
-  document.getElementById("pd-s-poval").textContent  = fmtNum(stats.totalPOValue);
+  // Row 1
+  document.getElementById("pd-s-noassign").textContent   = stats.noMaterialsAssigned;
+  document.getElementById("pd-s-partassign").textContent = stats.partialMaterialsAssigned;
+  document.getElementById("pd-s-unsched").textContent    = stats.unscheduledPRNs;
+  document.getElementById("pd-s-partsched").textContent  = stats.partiallyScheduledPRNs;
+  document.getElementById("pd-s-grns").textContent       = stats.unactionedGRNs;
+
+  // Row 2
+  document.getElementById("pd-s-pendingpo").textContent    = stats.pendingPOAuthorizations;
+  document.getElementById("pd-s-pendingporev").textContent = stats.pendingPORevisionAuthorizations;
+  document.getElementById("pd-s-pos").textContent          = stats.totalPOs;
   document.getElementById("pd-s-matcov").textContent       = stats.materialsCovered;
-  document.getElementById("pd-s-matcov-total").textContent = "/ " + stats.materialsTotal + " total";
-  const ppEl = document.getElementById("pd-s-prn-pending");
-  const pcEl = document.getElementById("pd-s-prn-covered");
-  if (ppEl) ppEl.textContent = stats.prnPendingAssignment ?? "—";
-  if (pcEl) pcEl.textContent = stats.prnFullyCovered      ?? "—";
+  document.getElementById("pd-s-matcov-total").textContent = "/ " + stats.materialsTotal + " needing purchase";
+  document.getElementById("pd-s-ontime").textContent       = pdFormatPct(stats.onTimeDeliveryRate);
 
-  // Chart 1 — PRN trend (stacked bar)
-  if (pdChartPrnTrend) pdChartPrnTrend.destroy();
-  const titleEl = document.getElementById("pd-chart2-title");
-  if (titleEl) titleEl.textContent = showTrend ? "PRN Status Over Time" : "PRN Status";
-  const ctx1 = document.getElementById("pd-chart-prn-trend").getContext("2d");
-  if (prnTrend.length === 0) {
-    pdChartPrnTrend = new Chart(ctx1, { type:"bar", data:{ labels:["No data"], datasets:[{ data:[0], backgroundColor:"#f1f5f9" }] }, options:{ plugins:{ legend:{ display:false } } } });
+  // Chart 1 — RM POs Created Over Time (line)
+  if (pdChartPoTrend) pdChartPoTrend.destroy();
+  const ctx1 = document.getElementById("pd-chart-po-trend").getContext("2d");
+  if (poTrend.length === 0) {
+    pdChartPoTrend = new Chart(ctx1, { type:"line", data:{ labels:["No data"], datasets:[{ data:[0], borderColor:"#f1f5f9" }] }, options:{ plugins:{ legend:{ display:false } } } });
   } else {
-    pdChartPrnTrend = new Chart(ctx1, {
-      type:"bar",
-      data:{
-        labels: prnTrend.map(t=>t.label),
-        datasets:[
-          { label:"Active",  data:prnTrend.map(t=>t.active),  backgroundColor:"rgba(245,158,11,0.75)", borderRadius:3 },
-          { label:"Closed",  data:prnTrend.map(t=>t.closed),  backgroundColor:"rgba(16,185,129,0.75)", borderRadius:3 }
-        ]
+    pdChartPoTrend = new Chart(ctx1, {
+      type: "line",
+      data: {
+        labels: poTrend.map(t => t.label),
+        datasets: [{
+          label: "RM POs Created", data: poTrend.map(t => t.count),
+          borderColor: "rgba(37,99,235,0.9)", backgroundColor: "rgba(37,99,235,0.12)",
+          tension: 0.25, fill: true, pointRadius: 3, pointBackgroundColor: "rgba(37,99,235,0.9)",
+        }]
       },
-      options:{ responsive:true, plugins:{ legend:{ position:"bottom", labels:{ boxWidth:10, font:{ size:9 } } } },
-        scales:{ x:{ stacked:true, grid:{ display:false } }, y:{ stacked:true, ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } } } }
-    });
-  }
-
-  // Chart 2 — Still To Order vs On Order by material type
-  if (pdChartCoverage) pdChartCoverage.destroy();
-  const types = Object.keys(byType).sort();
-  const ctx2  = document.getElementById("pd-chart-coverage").getContext("2d");
-  if (types.length === 0) {
-    pdChartCoverage = new Chart(ctx2, { type:"bar", data:{ labels:["No data"], datasets:[{ data:[0], backgroundColor:"#f1f5f9" }] }, options:{ plugins:{ legend:{ display:false } } } });
-  } else {
-    pdChartCoverage = new Chart(ctx2, {
-      type:"bar",
-      data:{
-        labels: types,
-        datasets:[
-          { label:"On Order",       data:types.map(t=>byType[t].onOrder),      backgroundColor:"rgba(37,99,235,0.75)",  borderRadius:3, barPercentage:0.4, categoryPercentage:0.8 },
-          { label:"Still To Order", data:types.map(t=>byType[t].stillToOrder), backgroundColor:"rgba(239,68,68,0.7)",   borderRadius:3, barPercentage:0.4, categoryPercentage:0.8 }
-        ]
-      },
-      options:{
-        indexAxis:"y",
-        responsive:true,
-        grouped:true,
-        plugins:{ legend:{ position:"bottom", labels:{ boxWidth:10, font:{ size:9 } } } },
-        scales:{
-          x:{ grid:{ color:"#f1f5f9" } },
-          y:{ grid:{ display:false }, ticks:{ font:{ size:9 } } }
-        }
+      options: {
+        responsive: true, plugins: { legend: { display:false } },
+        scales: { x: { grid: { display:false }, ticks: { font: { size:9 } } },
+                  y: { ticks: { stepSize:1 }, grid: { color:"#f1f5f9" } } }
       }
     });
   }
 
-  // Chart 3 — PO Delivery Timeline (live)
-  if (pdChartAge) pdChartAge.destroy();
-  const ctx3 = document.getElementById("pd-chart-delivery").getContext("2d");
+  // Chart 2 — Purchase Order Delivery Timeline
+  if (pdChartDelivery) pdChartDelivery.destroy();
+  const ctx2 = document.getElementById("pd-chart-delivery").getContext("2d");
   const dl = deliveryTimeline;
-  pdChartAge = new Chart(ctx3, {
+  pdChartDelivery = new Chart(ctx2, {
     type: "bar",
     data: {
       labels: ["Overdue", "Due This Week", "Due This Month", "Due Later"],
@@ -155,23 +140,45 @@ function pdRenderDashboard(data) {
     }
   });
 
-  // No PO items table
-  const noPoTbody = document.getElementById("pd-nopo-tbody");
-  document.getElementById("pd-nopo-count").textContent = noPoItems.length;
-  noPoTbody.innerHTML = noPoItems.length === 0
-    ? `<tr><td colspan="5" style="padding:8px; color:var(--muted); font-size:0.72rem;">✅ All materials have POs</td></tr>`
-    : noPoItems.map((item, i) => {
-        const rowBg = i%2===0?"var(--card)":"#f8fafc";
-        const ageBg = item.maxAge<=7?"#dcfce7":item.maxAge<=14?"#fef3c7":"#fee2e2";
-        const ageColor = item.maxAge<=7?"#15803d":item.maxAge<=14?"#b45309":"#b91c1c";
-        return `<tr style="border-bottom:1px solid #f1f5f9; background:${rowBg};">
-          <td style="padding:4px 5px; font-weight:600;">${item.matName}</td>
-          <td style="padding:4px 5px; font-family:monospace; font-size:0.68rem;">${item.itemCode}</td>
-          <td style="padding:4px 5px; text-align:center; font-size:0.68rem;">${item.prnCount} PRN${item.prnCount>1?"s":""}</td>
-          <td style="padding:4px 5px; text-align:right; font-weight:700;">${(() => { const v = Math.round((item.stillToOrder || 0) * 100) / 100; return Number.isInteger(v) ? String(v) : v.toFixed(2); })()}</td>
-          <td style="padding:4px 5px; text-align:center;"><span style="font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:8px; background:${ageBg}; color:${ageColor};">${item.maxAge}d</span></td>
-        </tr>`;
-      }).join("");
+  // Chart 3 — Average Delivery Delay by Vendor (top 8)
+  if (pdChartVendorDelay) pdChartVendorDelay.destroy();
+  const ctx3 = document.getElementById("pd-chart-vendor-delay").getContext("2d");
+  if (vendorDelay.length === 0) {
+    pdChartVendorDelay = new Chart(ctx3, { type:"bar", data:{ labels:["No late deliveries"], datasets:[{ data:[0], backgroundColor:"#f1f5f9" }] }, options:{ plugins:{ legend:{ display:false } } } });
+  } else {
+    pdChartVendorDelay = new Chart(ctx3, {
+      type: "bar",
+      data: {
+        labels: vendorDelay.map(v => v.vendor),
+        datasets: [{ label:"Avg Days Late", data: vendorDelay.map(v => v.avgDaysLate), backgroundColor:"rgba(239,68,68,0.7)", borderRadius:3 }]
+      },
+      options: {
+        indexAxis: "y", responsive: true,
+        plugins: { legend: { display:false } },
+        scales: { x: { grid: { color:"#f1f5f9" } }, y: { grid: { display:false }, ticks: { font: { size:9 } } } }
+      }
+    });
+  }
+
+  // Row 4 — Due Today / Overdue (Purchase's Project Timeline trunk nodes)
+  const dueTbody = document.getElementById("pd-duetoday-tbody");
+  dueTbody.innerHTML = dueToday.length === 0
+    ? `<tr><td colspan="2" style="color:var(--muted); padding:6px;">Nothing due today.</td></tr>`
+    : dueToday.map(r => `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${r.companyName}</span></td>
+          <td style="padding:4px;">${r.label}</td>
+        </tr>`).join("");
+
+  const timelineOverdueTbody = document.getElementById("pd-timeline-overdue-tbody");
+  timelineOverdueTbody.innerHTML = overdue.length === 0
+    ? `<tr><td colspan="3" style="color:var(--muted); padding:6px;">Nothing overdue — nice work.</td></tr>`
+    : overdue.map(r => `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${r.companyName}</span></td>
+          <td style="padding:4px;">${r.label}</td>
+          <td style="padding:4px; text-align:right; color:#b91c1c; font-weight:700;">${r.daysOverdue}d</td>
+        </tr>`).join("");
 
   // Overdue POs table
   const overdueTbody = document.getElementById("pd-overdue-tbody");
