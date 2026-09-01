@@ -311,7 +311,7 @@ async function loadPPSForPRN() {
       const reqDates = m.requirementDates || [];
       const reqDateCell = reqDates.length === 0
         ? `<span style="color:var(--muted); font-size:0.75rem;">—</span>`
-        : reqDates.map(r => `<div style="font-size:0.76rem; font-weight:600;">${fmt(r.qty)} on ${formatDateDMY(r.date)}</div>`).join("");
+        : reqDates.map(r => `<div style="font-size:0.92rem; font-weight:700;">${fmt(r.qty)} on ${formatDateDMY(r.date)}</div>`).join("");
 
       return `
         <tr style="border-bottom:1px solid #e2e8f0;">
@@ -393,7 +393,7 @@ function ppsRenderScheduleEditor(key) {
         <div style="display:flex; align-items:center; gap:5px;">
           <input type="number" min="0" step="any" max="${orderedQty}" value="${t.plannedQty ?? ''}" ${isReceived ? "disabled" : ""}
             oninput="ppsClampDeliveryQty('${key}', ${i}, this)"
-            style="width:58px; padding:4px 5px; font-size:0.72rem; border:1px solid var(--border); border-radius:3px; text-align:center; background:#fff; box-sizing:border-box;" placeholder="Qty" />
+            style="width:64px; padding:4px 5px; font-size:0.95rem; font-weight:700; border:1px solid var(--border); border-radius:3px; text-align:center; background:#fff; box-sizing:border-box;" placeholder="Qty" />
           <input type="date" value="${t.plannedDate || ''}" ${isReceived ? "disabled" : ""}
             onchange="ppsUpdateDeliveryField('${key}', ${i}, 'plannedDate', this.value)"
             style="flex:1; min-width:0; padding:4px 5px; font-size:0.7rem; border:1px solid var(--border); border-radius:3px; background:#fff; box-sizing:border-box;" />
@@ -508,7 +508,7 @@ async function savePPSDeliverySchedule(prnId, btn) {
       if (selectorRow) selectorRow.style.display = "none";
       const queueZone = document.getElementById("pps-needqueue-zone");
       if (queueZone) queueZone.style.display = "none";
-      showSuccessWithReset("pps-feedback", "✅ Delivery schedule saved.", "Action Another PPS", "initializePPSTrackingPanel()");
+      showSuccessWithReset("pps-feedback", `✅ Delivery schedule saved for PRN ${prnId}.`, "Action Another PPS", "initializePPSTrackingPanel()");
     } else {
       showBOQBanner("pps-feedback", data.error || "Failed to save delivery schedule.", "error");
     }
