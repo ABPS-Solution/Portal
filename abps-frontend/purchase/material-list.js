@@ -312,7 +312,7 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
     // instead of blindly alternating and re-colliding on the 3rd point.
     // COLLISION_GAP is wide enough to clear a 4-digit quantity's label width.
     const LINE_Y = 45, LANE0_Y = 31, LANE1_Y = 13, DAY_LABEL_Y = 56;
-    const COLLISION_GAP = 9; // % — below this, stagger to avoid overlap
+    const COLLISION_GAP = 5; // % — below this, stagger to avoid overlap (~ a 4-digit label's width at this font-size)
     const linesHtml = monthKeys.map(mk => {
       const { year, month, days } = byMonth[mk];
       const sortedDays = days.slice().sort((a, b) => a.day - b.day);
