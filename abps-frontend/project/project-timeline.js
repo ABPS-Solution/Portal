@@ -453,7 +453,7 @@ function ptlRender() {
   // panel's top-left, next to Return to Main Dashboard — the fullscreen
   // overlay's own "‹ Steps" button is the way back.
   const elHeaderLeft = document.getElementById("ptl-header-left");
-  if (elHeaderLeft) elHeaderLeft.innerHTML = `<button type="button" onclick="ptlSetViewMode('timeline')" title="Open Timeline" style="display:inline-flex; align-items:center; gap:5px; padding:7px 12px; font-size:0.82rem; font-weight:700; border:1px solid var(--border); border-radius:var(--radius); background:#fff; color:var(--muted); cursor:pointer;">Timeline &rsaquo;</button>`;
+  if (elHeaderLeft) elHeaderLeft.innerHTML = `<button type="button" onclick="ptlSetViewMode('timeline')" title="Open Timeline" style="display:inline-flex; align-items:center; gap:5px; padding:7px 12px; font-size:0.82rem; font-weight:800; border:0; border-radius:var(--radius); background:var(--brand); color:#fff; cursor:pointer;">Timeline &rsaquo;</button>`;
   const stepsOpen = `<div id="ptl-steps-wrap" style="display:none;">`;
 
   if (!mfcComplete) {
@@ -1521,13 +1521,12 @@ function ptlRenderFullscreen() {
   ptlLastFlagsCount = flags.length;
 
   ov.innerHTML = `
-    <div style="flex:none; background:var(--card); border-bottom:1px solid var(--border); padding:12px 18px; display:flex; flex-direction:column; gap:8px;">
-      <div style="display:flex; align-items:center; gap:16px;">
-        <button type="button" onclick="ptlSetViewMode('steps')" title="Back to Steps" style="flex:none; display:inline-flex; align-items:center; gap:5px; padding:7px 12px; font-size:0.82rem; font-weight:700; border:1px solid var(--border); border-radius:var(--radius); background:#fff; color:var(--muted); cursor:pointer;">&lsaquo; Steps</button>
+    <div style="flex:none; background:var(--card); border-bottom:1px solid var(--border); padding:8px 18px; display:flex; align-items:center; gap:14px;">
+        <button type="button" onclick="ptlSetViewMode('steps')" title="Back to Steps" style="flex:none; display:inline-flex; align-items:center; gap:5px; padding:7px 12px; font-size:0.82rem; font-weight:800; border:0; border-radius:var(--radius); background:var(--brand); color:#fff; cursor:pointer;">&lsaquo; Steps</button>
         <div style="width:1px; align-self:stretch; background:var(--border); flex:none;"></div>
-        <div style="display:flex; align-items:center; gap:12px; min-width:0;">
-          <div style="width:5px; height:30px; border-radius:2px; background:var(--brand); flex:none;"></div>
-          <div style="font-weight:800; font-size:1.1rem; color:var(--brand); white-space:nowrap;">Project Timeline</div>
+        <div style="font-size:0.86rem; color:var(--muted); font-family:monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;" title="${escapeHtml(project.projectId)}">
+          <strong style="color:var(--text); font-weight:800;">${escapeHtml(project.projectId)}</strong>
+          · <strong style="color:var(--text)">${escapeHtml(project.status)}</strong> · ${ptlDeliveryLabel(project)} <strong style="color:var(--text)">${ptlFmtFull(ptlDeliveryValue(project))}</strong>
         </div>
         ${ptlLdChipHtml()}
         <div style="flex:1 1 auto;"></div>
@@ -1537,8 +1536,6 @@ function ptlRenderFullscreen() {
         </div>
         <button type="button" onclick="ptlJumpToday()" style="flex:none; padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; background:var(--brand); color:#fff;">Today</button>
         <button type="button" id="ptl-fs-flags-toggle" onclick="ptlToggleFsRail()" style="flex:none; padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; color:#fff;"></button>
-      </div>
-      <div style="font-size:0.92rem; color:var(--muted); font-family:monospace; padding-left:38px;">${escapeHtml(project.projectId)} · <strong style="color:var(--text)">${escapeHtml(project.status)}</strong> · ${ptlDeliveryLabel(project)} <strong style="color:var(--text)">${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
     </div>
     <div style="flex:1 1 auto; display:flex; min-height:0;">
       <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column;">
