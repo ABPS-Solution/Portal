@@ -508,7 +508,18 @@ async function savePPSDeliverySchedule(prnId, btn) {
       if (selectorRow) selectorRow.style.display = "none";
       const queueZone = document.getElementById("pps-needqueue-zone");
       if (queueZone) queueZone.style.display = "none";
-      showSuccessWithReset("pps-feedback", `✅ Delivery schedule saved for PRN ${prnId}.`, "Action Another PPS", "initializePPSTrackingPanel()");
+      // PRN IDs bake the full product description into the id string
+      // itself (e.g. "PRN_26-27_AUG_<customer>_<code> / <product
+      // description>"), which reads as an unbroken run-on sentence when
+      // dropped inline into prose — same reasoning pps-prn-header already
+      // renders it as its own separate, monospace, word-wrapped block
+      // rather than plain text; this success message follows that
+      // convention instead of "for PRN <id>." in one line.
+      showSuccessWithReset(
+        "pps-feedback",
+        `✅ Delivery schedule saved.<div style="margin-top:8px; padding:8px 10px; background:#fff; border:1px solid #86efac; border-radius:6px; font-family:monospace; font-weight:800; font-size:0.8rem; color:var(--brand); line-height:1.4; word-break:break-word;">${prnId}</div>`,
+        "Action Another PPS", "initializePPSTrackingPanel()"
+      );
     } else {
       showBOQBanner("pps-feedback", data.error || "Failed to save delivery schedule.", "error");
     }
