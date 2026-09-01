@@ -384,14 +384,27 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
   window.cpoMode = authorizePoNo ? 'authorize' : 'create';
   window.cpoEditingPoNo = authorizePoNo || null;
 
-  // Guards against two overlapping calls for the same container (e.g. a
+  // Guards against two overlapping calls for the SAME container (e.g. a
   // fast double-click on the same PO card) — without this, a slower call
   // that started first can resolve LAST and reset the form's HTML right
   // after a faster call already populated it, wiping fields like Delivery
   // Date even though the data was fetched correctly.
-  window._cpoPanelGeneration = (window._cpoPanelGeneration || 0) + 1;
-  const myGeneration = window._cpoPanelGeneration;
-  const isStale = () => myGeneration !== window._cpoPanelGeneration;
+  //
+  // Keyed by containerId, not a single global counter — this function is
+  // called for Create PO's own tab (create-po-body) AND for every
+  // Authorize PO card (po-auth-expand-<poNo>), each a totally separate
+  // DOM target. A single shared counter meant an unrelated call for a
+  // DIFFERENT container (e.g. Create PO's panel warming up, or opening a
+  // second PO card) could bump the counter and trip isStale() on THIS
+  // container's fetchPODraftById — the blank default form (already
+  // rendered below) then silently never got populated, with no error
+  // shown, and the container stayed stuck that way until a full page
+  // refresh. Scoping the guard per-container fixes that while still
+  // protecting against the real same-container double-click race.
+  window._cpoPanelGenerationByContainer = window._cpoPanelGenerationByContainer || {};
+  const myGeneration = (window._cpoPanelGenerationByContainer[containerId] || 0) + 1;
+  window._cpoPanelGenerationByContainer[containerId] = myGeneration;
+  const isStale = () => myGeneration !== window._cpoPanelGenerationByContainer[containerId];
 
   const body = document.getElementById(containerId);
   if (!body) return;
