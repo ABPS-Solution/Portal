@@ -71,7 +71,7 @@ async function openCPOAllocationPicker(rowId) {
     </div>`;
 
   modal.innerHTML = `
-    <div style="background:#fff; border-radius:12px; width:100%; max-width:600px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
+    <div style="background:#fff; border-radius:12px; width:100%; max-width:1140px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
       <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
         <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmtQty(lineQty)} ${row.unit || ""} of ${row.itemCode} to PRNs</div>
       </div>

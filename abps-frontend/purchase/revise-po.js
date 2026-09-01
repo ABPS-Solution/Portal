@@ -589,7 +589,7 @@ function openRPOAllocationModal(idx) {
     </div>`;
 
   modal.innerHTML = `
-    <div style="background:#fff; border-radius:12px; width:100%; max-width:600px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
+    <div style="background:#fff; border-radius:12px; width:100%; max-width:1140px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
       <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
         <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmt(vdq)} ${li.unit || ""} of ${li.itemCode || li.description || ""} to PRNs</div>
       </div>
@@ -1302,7 +1302,7 @@ function openAPORAllocationModal(requestId, idx) {
     </div>`;
 
   modal.innerHTML = `
-    <div style="background:#fff; border-radius:12px; width:100%; max-width:600px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
+    <div style="background:#fff; border-radius:12px; width:100%; max-width:1140px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
       <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
         <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmt(vdq)} ${line.unit || ""} of ${line.itemCode || line.description || ""} to PRNs</div>
       </div>
