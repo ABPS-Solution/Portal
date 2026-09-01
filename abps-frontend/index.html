@@ -3177,23 +3177,29 @@
             <div class="dd-stat-val" id="dd-s-avgboqs">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Average BOQ Authorization Time</div>
-            <div class="dd-stat-val" id="dd-s-authtime">—</div>
+            <div class="dd-stat-label">BOQ Revision Rate</div>
+            <div class="dd-stat-val" id="dd-s-revrate">—</div>
+            <div class="dd-stat-sub">via Revise BOQ, not auto-cascades</div>
           </div>
         </div>
 
-        <!-- ROW 3: By Dept table + Charts -->
+        <!-- ROW 3: MFC-cleared-awaiting-BOQ table + Charts -->
         <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 26%;">
-          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
-            <div class="dd-card-title">BOQ Value by Department</div>
-            <table style="width:100%; border-collapse:collapse; font-size:0.74rem;">
-              <thead><tr style="color:var(--muted); font-size:0.67rem;">
-                <th style="text-align:left; padding:2px 4px; font-weight:700;">Department</th>
-                <th style="text-align:center; padding:2px 4px; font-weight:700;">BOQs</th>
-                <th style="text-align:right; padding:2px 4px; font-weight:700;">Value (₹)</th>
-              </tr></thead>
-              <tbody id="dd-dept-tbody"></tbody>
-            </table>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; min-height:0; height:100%;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; flex-shrink:0;">
+              <div class="dd-card-title" style="margin:0;">Products Cleared at MFC, Still Awaiting a BOQ</div>
+              <span id="dd-mfcawaiting-count" style="font-size:0.62rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:1px 6px; border-radius:8px;"></span>
+            </div>
+            <div style="overflow-y:auto; flex:1;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.72rem;">
+                <thead><tr style="color:var(--muted); font-size:0.65rem; position:sticky; top:0; background:var(--card);">
+                  <th style="text-align:left; padding:2px 4px; font-weight:700;">Project</th>
+                  <th style="text-align:left; padding:2px 4px; font-weight:700;">Product</th>
+                  <th style="text-align:center; padding:2px 4px; font-weight:700;">MFC Date</th>
+                </tr></thead>
+                <tbody id="dd-mfcawaiting-tbody"></tbody>
+              </table>
+            </div>
           </div>
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
             <div class="dd-card-title">BOQs by Department</div>
@@ -3208,7 +3214,7 @@
         <!-- ROW 4: Design work Due Today / Overdue, from Project Timeline -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1; min-height:0;">
           <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
-            <div class="dd-stat-label" style="margin-bottom:8px;">Due Today (Active projects, Project Timeline)</div>
+            <div class="dd-card-title" style="margin-bottom:8px;">Due Today (Active projects, Project Timeline)</div>
             <div style="flex:1; min-height:0; overflow-y:auto;">
               <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
                 <thead>
@@ -3222,7 +3228,7 @@
             </div>
           </div>
           <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
-            <div class="dd-stat-label" style="margin-bottom:8px;">Overdue (Active projects, Project Timeline)</div>
+            <div class="dd-card-title" style="margin-bottom:8px;">Overdue (Active projects, Project Timeline)</div>
             <div style="flex:1; min-height:0; overflow-y:auto;">
               <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
                 <thead>

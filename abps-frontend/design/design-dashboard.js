@@ -40,7 +40,7 @@ async function ddLoadDashboard(customVal) {
   if (!body) return;
   // Show loading state on stat cards
   ["dd-s-overdue","dd-s-pending","dd-s-pendingrevisions","dd-s-itemcodes","dd-s-drawingsuploaded",
-   "dd-s-authorized","dd-s-revised","dd-s-drawingturnaround","dd-s-avgboqs","dd-s-authtime"].forEach(id => {
+   "dd-s-authorized","dd-s-revised","dd-s-drawingturnaround","dd-s-avgboqs","dd-s-revrate"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
 
@@ -58,19 +58,8 @@ async function ddLoadDashboard(customVal) {
   }
 }
 
-// Shared minutes -> "N minutes/hrs/days" formatter for the two
-// turnaround-time tiles below — same smart-unit idea the old Average
-// Authorization Time tile already had, just inlined into one string
-// since this dashboard's tiles are single-line, no separate unit div.
-function ddFormatMinutes(mins) {
-  if (mins === null || mins === undefined) return "—";
-  if (mins < 60) return Math.round(mins) + " min";
-  if (mins < 1440) return (mins / 60).toFixed(1) + " hrs";
-  return (mins / 1440).toFixed(1) + " days";
-}
-
 function ddRenderDashboard(data) {
-  const { stats, byDept, versionDist, dueToday, overdue } = data;
+  const { stats, byDept, versionDist, dueToday, overdue, mfcAwaitingBoq } = data;
   const fmt = n => "₹" + Number(n).toLocaleString("en-IN", { maximumFractionDigits:0 });
 
   // Row 1
@@ -86,23 +75,25 @@ function ddRenderDashboard(data) {
   document.getElementById("dd-s-drawingturnaround").textContent =
     stats.avgDrawingTurnaroundDays !== null ? stats.avgDrawingTurnaroundDays + " days" : "—";
   document.getElementById("dd-s-avgboqs").textContent = stats.avgBoqsPerActiveProject !== null ? stats.avgBoqsPerActiveProject : "—";
-  document.getElementById("dd-s-authtime").textContent = ddFormatMinutes(stats.avgAuthTime);
+  document.getElementById("dd-s-revrate").textContent = stats.boqRevisionRate !== null ? stats.boqRevisionRate + "%" : "—";
 
-  // By dept table
-  const tbody = document.getElementById("dd-dept-tbody");
-  tbody.innerHTML = "";
-  const depts = Object.keys(byDept).sort();
-  if (depts.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="3" style="color:var(--muted); font-size:0.72rem; padding:4px;">No data for period</td></tr>`;
-  } else {
-    depts.forEach(d => {
-      tbody.innerHTML += `<tr style="border-top:1px solid #f1f5f9;">
-        <td style="padding:2px 4px; font-weight:600;">${d}</td>
-        <td style="padding:2px 4px; text-align:center;">${byDept[d].count}</td>
-        <td style="padding:2px 4px; text-align:right;">${fmt(byDept[d].value)}</td>
-      </tr>`;
-    });
-  }
+  // Products Cleared at MFC, Still Awaiting a BOQ — Tier-1 only (the
+  // product's own first BOQ), not the Tier-2/Finished Goods material
+  // requirement computeDesignMilestonesForProjects also tracks — this
+  // table is specifically "what hasn't been started yet", not the fuller
+  // "All BOQs Released" picture Project Timeline shows.
+  const mfcTbody = document.getElementById("dd-mfcawaiting-tbody");
+  const mfcCountEl = document.getElementById("dd-mfcawaiting-count");
+  const mfcList = mfcAwaitingBoq || [];
+  if (mfcCountEl) mfcCountEl.textContent = mfcList.length;
+  mfcTbody.innerHTML = mfcList.length === 0
+    ? `<tr><td colspan="3" style="padding:8px 4px; color:var(--muted); font-size:0.72rem;">✅ Nothing waiting on a first BOQ.</td></tr>`
+    : mfcList.map(r => `
+        <tr style="border-top:1px solid #f1f5f9;">
+          <td style="padding:2px 4px;"><span style="font-family:monospace; font-weight:700; font-size:0.7rem; color:var(--brand);">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.68rem;">${r.companyName || ""}</span></td>
+          <td style="padding:2px 4px;">${r.productName || ""}${r.productRating ? " " + r.productRating : ""}</td>
+          <td style="padding:2px 4px; text-align:center; font-size:0.68rem;">${r.mfcDate ? formatDMYFromISO(r.mfcDate) : "—"}</td>
+        </tr>`).join("");
 
   // Chart 2 — BOQs by dept
   if (ddChartDept) ddChartDept.destroy();
