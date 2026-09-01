@@ -70,17 +70,24 @@ function toggleAuthorizePOCard(poNo) {
 async function initializeSearchRMPOPanel() {
   window.srchpoSelectedItemCode = null;
   window.srchpoSelectedProjectId = null;
+  window.srchpoSelectedVendorName = null;
   window.srchpoExpandedPoNo = null;
   const poInput = document.getElementById("srchpo-po-input");
+  const vendInput = document.getElementById("srchpo-vendor-input");
   const matInput = document.getElementById("srchpo-material-input");
   const projInput = document.getElementById("srchpo-project-input");
   const fromInput = document.getElementById("srchpo-date-from");
   const toInput = document.getElementById("srchpo-date-to");
   if (poInput) poInput.value = "";
+  if (vendInput) vendInput.value = "";
   if (matInput) matInput.value = "";
   if (projInput) projInput.value = "";
   if (fromInput) fromInput.value = "";
   if (toInput) toInput.value = "";
+  // Un-lock all four typeahead fields back to plain editable inputs.
+  ["srchpo-po", "srchpo-vendor", "srchpo-material", "srchpo-project"].forEach(prefix => {
+    srchpoLockField(`${prefix}-input`, `${prefix}-locked`, "");
+  });
   document.getElementById("srchpo-results").innerHTML = "";
   const fb = document.getElementById("srchpo-feedback");
   if (fb) { fb.style.display = "none"; fb.innerHTML = ""; }
@@ -133,8 +140,58 @@ function handleSrchPOMaterialInput(query) {
 
 function selectSrchPOMaterial(itemCode, productName, rating) {
   window.srchpoSelectedItemCode = itemCode;
-  document.getElementById("srchpo-material-input").value = rating ? `${productName} - ${rating}` : productName;
+  const label = rating ? `${productName} - ${rating}` : productName;
+  document.getElementById("srchpo-material-input").value = label;
   document.getElementById("srchpo-material-dd").style.display = "none";
+  srchpoLockField("srchpo-material-input", "srchpo-material-locked", label);
+}
+
+// handleSrchPOVendorInput / selectSrchPOVendor — Vendor Name field (client-
+// side filtered against the cached vendor list, same pattern as
+// handleSrchPOProjectInput's client-side project filter).
+function handleSrchPOVendorInput(query) {
+  window.srchpoSelectedVendorName = null;
+  const dd = document.getElementById("srchpo-vendor-dd");
+  if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
+  ensureRMPOVendorListCache().then(vendors => {
+    const q = query.toLowerCase();
+    const matches = vendors.filter(v => (v.vendorName||"").toLowerCase().includes(q)).slice(0, 10);
+    if (!dd) return;
+    if (matches.length === 0) { dd.style.display = "none"; return; }
+    dd.innerHTML = matches.map(v => `
+      <div onclick="selectSrchPOVendor('${v.vendorName.replace(/'/g,"\\'")}')"
+        style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
+        onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${v.vendorName}</div>`).join("");
+    dd.style.display = "block";
+  });
+}
+
+function selectSrchPOVendor(vendorName) {
+  window.srchpoSelectedVendorName = vendorName;
+  document.getElementById("srchpo-vendor-input").value = vendorName;
+  document.getElementById("srchpo-vendor-dd").style.display = "none";
+  srchpoLockField("srchpo-vendor-input", "srchpo-vendor-locked", vendorName);
+}
+
+// ── "locked box" reveal/reopen — same click-to-retype convention already
+// established for RM PO Upload's material-name match (rm-po-mat-name-locked,
+// see reopenRMPONameSearch above): once a value is selected/typed, swap the
+// plain single-line input for a wrapping, auto-growing display box so a
+// long selected value is fully visible instead of truncating.
+function srchpoLockField(inputId, lockedId, displayText) {
+  const input = document.getElementById(inputId);
+  const locked = document.getElementById(lockedId);
+  if (!input || !locked) return;
+  if (!displayText) { locked.style.display = "none"; input.style.display = "block"; return; }
+  locked.querySelector(".srchpo-locked-text").textContent = displayText;
+  locked.style.display = "flex";
+  input.style.display = "none";
+}
+function srchpoReopenField(inputId, lockedId) {
+  const locked = document.getElementById(lockedId);
+  const input = document.getElementById(inputId);
+  if (locked) locked.style.display = "none";
+  if (input) { input.style.display = "block"; input.focus(); }
 }
 
 function handleSrchPOProjectInput(query) {
@@ -156,6 +213,19 @@ function selectSrchPOProject(projectId) {
   window.srchpoSelectedProjectId = projectId;
   document.getElementById("srchpo-project-input").value = projectId;
   document.getElementById("srchpo-project-dd").style.display = "none";
+  srchpoLockField("srchpo-project-input", "srchpo-project-locked", projectId);
+}
+
+// ensureRMPOVendorListCache — shared with Revise PO's "Search by Vendor
+// Name" mode (purchase/revise-po.js) via the same window._rmPoVendorListCache
+// key, so visiting both screens in one session fetches the vendor list once.
+async function ensureRMPOVendorListCache() {
+  if (window._rmPoVendorListCache) return window._rmPoVendorListCache;
+  try {
+    const data = await apFetch({ action: "fetchVendorList" });
+    window._rmPoVendorListCache = (data.success ? (data.vendors || []) : []);
+  } catch (e) { window._rmPoVendorListCache = []; }
+  return window._rmPoVendorListCache;
 }
 
 function srchpoShowFeedback(msg, isError) {
@@ -184,6 +254,7 @@ async function searchRMPOMatrixUI() {
   document.getElementById("srchpo-feedback").style.display = "none";
 
   const poNumberQuery = document.getElementById("srchpo-po-input").value.trim();
+  const vendorName = window.srchpoSelectedVendorName || document.getElementById("srchpo-vendor-input").value.trim();
   const materialLabel = document.getElementById("srchpo-material-input").value.trim();
   const projectId = window.srchpoSelectedProjectId || document.getElementById("srchpo-project-input").value.trim();
   let dateFrom = document.getElementById("srchpo-date-from").value;
@@ -213,6 +284,7 @@ async function searchRMPOMatrixUI() {
   const dateRangeDisplay = dateFrom ? `${srchpoFmtDisplayDate(dateFrom)} to ${srchpoFmtDisplayDate(dateTo)}` : "All Dates";
   lbl.innerHTML = `${black("Searching for")}<br>`
     + `${black("PO Number :")} ${val(poNumberQuery || "All POs")}<br>`
+    + `${black("Vendor Name:")} ${val(vendorName || "All Vendors")}<br>`
     + `${black("Material Name:")} ${val(materialLabel || "All Materials")}<br>`
     + `${black("Project ID:")} ${val(projectId || "All Project IDs")}<br>`
     + `${black("Date Range:")} ${val(dateRangeDisplay)}`;
@@ -221,6 +293,7 @@ async function searchRMPOMatrixUI() {
     const data = await apFetch({
       action: "searchRMPOsMatrix",
       poNumberQuery: poNumberQuery || null,
+      vendorName: vendorName || null,
       itemCode: window.srchpoSelectedItemCode || null,
       projectId: projectId || null,
       dateFrom: dateFrom || null,

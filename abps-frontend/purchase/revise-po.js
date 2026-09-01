@@ -80,8 +80,15 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
     // state instead of a fresh screen.
     const otherSearchInput = document.getElementById("rpo-other-search-input");
     if (otherSearchInput) otherSearchInput.value = "";
-    const otherResults = document.getElementById("rpo-other-results");
+    const otherResults = document.getElementById("rpo-search-feed");
     if (otherResults) otherResults.innerHTML = "";
+    const otherLabel = document.getElementById("rpo-other-search-label");
+    if (otherLabel) { otherLabel.style.display = "none"; otherLabel.innerHTML = ""; }
+    const otherDd = document.getElementById("rpo-other-search-dd");
+    if (otherDd) otherDd.style.display = "none";
+    const poModeRadio = document.querySelector('input[name="rpo-other-search-mode"][value="po"]');
+    if (poModeRadio) poModeRadio.checked = true;
+    switchRPOOtherSearchMode('po');
     const rpoFb = document.getElementById("rpo-feedback");
     if (rpoFb) { rpoFb.style.display = "none"; rpoFb.innerHTML = ""; }
     switchRevisePOTab('queue');
@@ -159,13 +166,91 @@ async function initializeRevisePOPanel() {
   }
 }
 
+// ── "Other PO Revisions" search — two mutually-exclusive modes (PO Number /
+// Vendor Name), one shared text input + Search button. window.rpoOtherSearchMode
+// tracks which mode is active; only that mode's value is ever actually sent.
+window.rpoOtherSearchMode = "po";
+let rpoOtherSearchDebounce = null;
+
+function switchRPOOtherSearchMode(mode) {
+  window.rpoOtherSearchMode = mode;
+  const input = document.getElementById("rpo-other-search-input");
+  const labelField = document.getElementById("rpo-other-search-label-field");
+  const dd = document.getElementById("rpo-other-search-dd");
+  if (input) { input.value = ""; input.placeholder = mode === "po" ? "e.g. PO_26-27_00001" : "e.g. Acme Steel"; }
+  if (labelField) labelField.textContent = mode === "po" ? "PO Number" : "Vendor Name";
+  if (dd) dd.style.display = "none";
+}
+
+// handleRPOOtherSearchInput — live suggestions as the user types, debounced,
+// same pattern as purchase/po.js's handleSrchPOPoInput. PO Number mode reuses
+// searchRMPOsByPONumber (already scoped to status='Authorized', which matches
+// here — only an Authorized PO can be revised). Vendor Name mode filters the
+// shared cached vendor list client-side, same as handleSrchPOVendorInput.
+function handleRPOOtherSearchInput(query) {
+  clearTimeout(rpoOtherSearchDebounce);
+  const dd = document.getElementById("rpo-other-search-dd");
+  if (!dd) return;
+  if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
+  if (window.rpoOtherSearchMode === "po") {
+    rpoOtherSearchDebounce = setTimeout(async () => {
+      try {
+        const data = await apFetch({ action: "searchRMPOsByPONumber", query });
+        if (!data.success || !data.results.length) { dd.style.display = "none"; return; }
+        dd.innerHTML = data.results.map(r => `
+          <div onclick="selectRPOOtherSearchSuggestion('${r.poNo.replace(/'/g,"\\'")}')"
+            style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
+            onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+            <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${r.poNo}</span>${r.vendorName || ''}
+          </div>`).join("");
+        dd.style.display = "block";
+      } catch (e) { dd.style.display = "none"; }
+    }, 250);
+  } else {
+    rpoOtherSearchDebounce = setTimeout(async () => {
+      try {
+        const vendors = await ensureRMPOVendorListCache();
+        const q = query.toLowerCase();
+        const matches = vendors.filter(v => (v.vendorName || "").toLowerCase().includes(q)).slice(0, 10);
+        if (matches.length === 0) { dd.style.display = "none"; return; }
+        dd.innerHTML = matches.map(v => `
+          <div onclick="selectRPOOtherSearchSuggestion('${v.vendorName.replace(/'/g,"\\'")}')"
+            style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
+            onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${v.vendorName}</div>`).join("");
+        dd.style.display = "block";
+      } catch (e) { dd.style.display = "none"; }
+    }, 250);
+  }
+}
+
+function selectRPOOtherSearchSuggestion(value) {
+  const input = document.getElementById("rpo-other-search-input");
+  if (input) input.value = value;
+  const dd = document.getElementById("rpo-other-search-dd");
+  if (dd) dd.style.display = "none";
+}
+
 async function searchPOsForRevisionUI() {
-  const query = document.getElementById("rpo-search-input").value.trim();
+  const query = document.getElementById("rpo-other-search-input").value.trim();
   const feed = document.getElementById("rpo-search-feed");
   document.getElementById("rpo-detail-zone").innerHTML = "";
   if (query.length < 2) { feed.innerHTML = `<div style="color:#b91c1c; font-size:0.8rem;">Enter at least 2 characters.</div>`; return; }
+
+  // "Searching for <mode label> :" — same black()/val() convention as
+  // Search RM PO's searchRMPOMatrixUI (purchase/po.js).
+  const modeLabel = window.rpoOtherSearchMode === "po" ? "PO Number" : "Vendor Name";
+  const esc = (s) => (s || "").toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const lbl = document.getElementById("rpo-other-search-label");
+  if (lbl) {
+    lbl.style.display = "block";
+    lbl.innerHTML = `<span style="color:#000;">Searching for ${modeLabel} :</span> <span style="color:var(--brand);">${esc(query)}</span>`;
+  }
+
   feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching…</div>`;
   try {
+    // The backend already matches query against either po_no OR vendor_name
+    // in one ILIKE pass — no mode param needed, since a PO-number-shaped or
+    // vendor-name-shaped value only ever matches its own kind of field.
     const data = await apFetch({ action: "searchPOsForRevision", query });
     const results = (data.success ? (data.results || []) : []);
     if (results.length === 0) { feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">No authorized PO matched.</div>`; return; }
@@ -174,7 +259,7 @@ async function searchPOsForRevisionUI() {
         <div>
           <div style="font-family:monospace; font-weight:800; color:var(--brand);">${po.poNo}${po.revisionNumber > 1 ? ` <span style="font-size:0.7rem; color:var(--muted);">(V${po.revisionNumber})</span>` : ""}</div>
           <div style="font-size:0.8rem; font-weight:600;">${po.vendorName || ""}</div>
-          <div style="font-size:0.72rem; color:var(--muted);">Delivery ${po.deliveryDate ? formatDateDMY(po.deliveryDate) : "—"}</div>
+          <div style="font-size:0.72rem; color:var(--muted);">Ordered ${po.orderDate ? formatDateDMY(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatDateDMY(po.deliveryDate) : "—"}</div>
         </div>
         ${po.revisionPending
           ? `<span style="font-size:0.72rem; font-weight:700; color:#b45309; background:#fef3c7; padding:4px 10px; border-radius:4px;">Revision already pending</span>`
@@ -343,12 +428,7 @@ function renderPORevisionCard() {
 
   document.getElementById("rpo-detail-zone").innerHTML = `
     <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px; padding-bottom:12px; border-bottom:1px dashed var(--border);">
-        <div>
-          <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:1rem;">${po.poNo}</div>
-          <div style="font-size:0.85rem; font-weight:700;">${po.vendorName || ""}</div>
-          <div style="font-size:0.74rem; color:var(--muted);">Ordered ${po.orderDate ? formatDateDMY(po.orderDate) : "—"} · Currently V${po.revisionNumber || 1}</div>
-        </div>
+      <div style="display:flex; justify-content:flex-end; align-items:flex-start; margin-bottom:14px; padding-bottom:12px; border-bottom:1px dashed var(--border);">
         <span style="font-size:0.7rem; font-weight:800; padding:4px 10px; border-radius:4px; background:${kind === "PRN Driven" ? "#fef3c7" : "#e0f2fe"}; color:${kind === "PRN Driven" ? "#78350f" : "#075985"};">${kind === "PRN Driven" ? "PRN-DRIVEN REVISION" : "STANDALONE REVISION"}</span>
       </div>
 

@@ -2962,13 +2962,26 @@
       </div>
 
       <div id="rpo-other-section" style="display:none;">
-        <div style="display:flex; gap:10px; align-items:end; margin-bottom:16px;">
-          <div style="flex:1;">
-            <label class="field-label" style="margin-top:0; color:var(--brand);">Search by PO Number or Vendor Name</label>
-            <input type="text" id="rpo-search-input" placeholder="e.g. PO_26-27_00001 or Acme Steel" onkeydown="if(event.key==='Enter')searchPOsForRevisionUI()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+        <div style="display:flex; gap:16px; margin-bottom:10px;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:700; cursor:pointer;">
+            <input type="radio" name="rpo-other-search-mode" value="po" checked onchange="switchRPOOtherSearchMode('po')"> Search by PO Number
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:700; cursor:pointer;">
+            <input type="radio" name="rpo-other-search-mode" value="vendor" onchange="switchRPOOtherSearchMode('vendor')"> Search by Vendor Name
+          </label>
+        </div>
+        <div style="display:flex; gap:10px; align-items:end; margin-bottom:12px;">
+          <div style="flex:1; position:relative;">
+            <label class="field-label" id="rpo-other-search-label-field" style="margin-top:0; color:var(--brand);">PO Number</label>
+            <input type="text" id="rpo-other-search-input" placeholder="e.g. PO_26-27_00001" autocomplete="off"
+              oninput="handleRPOOtherSearchInput(this.value)"
+              onkeydown="if(event.key==='Enter')searchPOsForRevisionUI()"
+              style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+            <div id="rpo-other-search-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
           <button class="nav-btn-styled" onclick="searchPOsForRevisionUI()" style="background:var(--accent); color:#fff; font-weight:700; padding:9px 20px;">Search</button>
         </div>
+        <div id="rpo-other-search-label" style="display:none; font-weight:700; margin-bottom:12px; font-size:0.85rem; line-height:1.7;"></div>
         <div id="rpo-search-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
       </div>
       </div>
@@ -3008,17 +3021,26 @@
       <div style="display:flex; gap:14px; margin-bottom:18px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; align-items:start;">
         <div id="srchpo-po-field" style="position:relative; width:10%;">
           <label class="field-label" style="margin-top:0; color:var(--brand);">PO Number</label>
-          <input type="text" id="srchpo-po-input" placeholder="e.g. PO_26-27_00001" autocomplete="off" oninput="handleSrchPOPoInput(this.value)" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+          <div id="srchpo-po-locked" class="srchpo-locked-box" onclick="srchpoReopenField('srchpo-po-input','srchpo-po-locked')" style="display:none; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; font-size:0.85rem; font-weight:600; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f8fafc; min-height:38px; box-sizing:border-box; word-break:break-word; white-space:normal;"><span class="srchpo-locked-text"></span><span style="font-size:0.62rem; font-weight:700; color:var(--muted); white-space:nowrap; flex-shrink:0;">✎</span></div>
+          <input type="text" id="srchpo-po-input" placeholder="e.g. PO_26-27_00001" autocomplete="off" oninput="handleSrchPOPoInput(this.value)" onblur="srchpoLockField('srchpo-po-input','srchpo-po-locked', this.value.trim())" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
           <div id="srchpo-po-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
         </div>
-        <div style="position:relative; width:40%;">
-          <label class="field-label" style="margin-top:0; color:var(--brand);">Material Name</label>
-          <input type="text" id="srchpo-material-input" placeholder="Start typing material name..." autocomplete="off" oninput="handleSrchPOMaterialInput(this.value)" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
-          <div id="srchpo-material-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        <div style="position:relative; width:16%;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Vendor Name</label>
+          <div id="srchpo-vendor-locked" class="srchpo-locked-box" onclick="srchpoReopenField('srchpo-vendor-input','srchpo-vendor-locked')" style="display:none; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; font-size:0.85rem; font-weight:600; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f8fafc; min-height:38px; box-sizing:border-box; word-break:break-word; white-space:normal;"><span class="srchpo-locked-text"></span><span style="font-size:0.62rem; font-weight:700; color:var(--muted); white-space:nowrap; flex-shrink:0;">✎</span></div>
+          <input type="text" id="srchpo-vendor-input" placeholder="Start typing vendor name..." autocomplete="off" oninput="handleSrchPOVendorInput(this.value)" onblur="srchpoLockField('srchpo-vendor-input','srchpo-vendor-locked', window.srchpoSelectedVendorName || this.value.trim())" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+          <div id="srchpo-vendor-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
         </div>
         <div style="position:relative; width:30%;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Material Name</label>
+          <div id="srchpo-material-locked" class="srchpo-locked-box" onclick="srchpoReopenField('srchpo-material-input','srchpo-material-locked')" style="display:none; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; font-size:0.85rem; font-weight:600; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f8fafc; min-height:38px; box-sizing:border-box; word-break:break-word; white-space:normal;"><span class="srchpo-locked-text"></span><span style="font-size:0.62rem; font-weight:700; color:var(--muted); white-space:nowrap; flex-shrink:0;">✎</span></div>
+          <input type="text" id="srchpo-material-input" placeholder="Start typing material name..." autocomplete="off" oninput="handleSrchPOMaterialInput(this.value)" onblur="srchpoLockField('srchpo-material-input','srchpo-material-locked', window.srchpoSelectedItemCode ? this.value.trim() : '')" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+          <div id="srchpo-material-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        </div>
+        <div style="position:relative; width:24%;">
           <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID</label>
-          <input type="text" id="srchpo-project-input" placeholder="Start typing Project ID..." autocomplete="off" oninput="handleSrchPOProjectInput(this.value)" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+          <div id="srchpo-project-locked" class="srchpo-locked-box" onclick="srchpoReopenField('srchpo-project-input','srchpo-project-locked')" style="display:none; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; font-size:0.85rem; font-weight:600; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f8fafc; min-height:38px; box-sizing:border-box; word-break:break-word; white-space:normal;"><span class="srchpo-locked-text"></span><span style="font-size:0.62rem; font-weight:700; color:var(--muted); white-space:nowrap; flex-shrink:0;">✎</span></div>
+          <input type="text" id="srchpo-project-input" placeholder="Start typing Project ID..." autocomplete="off" oninput="handleSrchPOProjectInput(this.value)" onblur="srchpoLockField('srchpo-project-input','srchpo-project-locked', this.value.trim())" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
           <div id="srchpo-project-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
         </div>
         <div style="width:10%;">
