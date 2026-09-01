@@ -86,11 +86,28 @@ function pdRenderDashboard(data) {
   document.getElementById("pd-s-matcov-total").textContent = "/ " + stats.materialsTotal + " needing purchase";
   document.getElementById("pd-s-ontime").textContent       = pdFormatPct(stats.onTimeDeliveryRate);
 
-  // Chart 1 — RM POs Created Over Time (line)
+  // Chart 1 — RM POs Created Over Time. A single-day period (Today,
+  // Yesterday, or a 1-day custom range) buckets to exactly one point —
+  // a line chart with one point renders as an invisible dot, so that
+  // case renders as a single bar instead. Anything with 2+ points
+  // (This Week, a multi-day custom range, etc.) stays a connected line.
   if (pdChartPoTrend) pdChartPoTrend.destroy();
   const ctx1 = document.getElementById("pd-chart-po-trend").getContext("2d");
   if (poTrend.length === 0) {
     pdChartPoTrend = new Chart(ctx1, { type:"line", data:{ labels:["No data"], datasets:[{ data:[0], borderColor:"#f1f5f9" }] }, options:{ plugins:{ legend:{ display:false } } } });
+  } else if (poTrend.length === 1) {
+    pdChartPoTrend = new Chart(ctx1, {
+      type: "bar",
+      data: {
+        labels: poTrend.map(t => t.label),
+        datasets: [{ label: "RM POs Created", data: poTrend.map(t => t.count), backgroundColor: "rgba(37,99,235,0.75)", borderRadius: 4, barThickness: 40 }]
+      },
+      options: {
+        responsive: true, plugins: { legend: { display:false } },
+        scales: { x: { grid: { display:false }, ticks: { font: { size:9 } } },
+                  y: { ticks: { stepSize:1 }, grid: { color:"#f1f5f9" } } }
+      }
+    });
   } else {
     pdChartPoTrend = new Chart(ctx1, {
       type: "line",

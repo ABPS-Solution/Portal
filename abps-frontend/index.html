@@ -3258,11 +3258,11 @@
             <div class="dd-stat-val" id="pd-s-partassign" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Unscheduled PRNs</div>
+            <div class="dd-stat-label">PRNs with Unscheduled Delivery Date</div>
             <div class="dd-stat-val" id="pd-s-unsched" style="color:#b91c1c;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Partially Scheduled PRNs</div>
+            <div class="dd-stat-label">PRNs with Partially Scheduled Delivery Date</div>
             <div class="dd-stat-val" id="pd-s-partsched" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card">
@@ -3319,13 +3319,13 @@
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
 
           <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
-            <div class="dd-stat-label" style="margin-bottom:8px;">Due Today (Active projects, Project Timeline)</div>
+            <div class="dd-card-title" style="margin-bottom:8px;">Due Today (Active projects, Project Timeline)</div>
             <div style="flex:1; min-height:0; overflow-y:auto;">
               <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
                 <thead>
                   <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
                     <th style="padding:4px;">Project</th>
-                    <th style="padding:4px;">Item</th>
+                    <th style="padding:4px;">Step</th>
                   </tr>
                 </thead>
                 <tbody id="pd-duetoday-tbody"></tbody>
@@ -3334,13 +3334,13 @@
           </div>
 
           <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
-            <div class="dd-stat-label" style="margin-bottom:8px;">Overdue (Active projects, Project Timeline)</div>
+            <div class="dd-card-title" style="margin-bottom:8px;">Overdue (Active projects, Project Timeline)</div>
             <div style="flex:1; min-height:0; overflow-y:auto;">
               <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
                 <thead>
                   <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
                     <th style="padding:4px;">Project</th>
-                    <th style="padding:4px;">Item</th>
+                    <th style="padding:4px;">Step</th>
                     <th style="padding:4px; text-align:right;">Days Late</th>
                   </tr>
                 </thead>
