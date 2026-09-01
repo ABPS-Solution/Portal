@@ -360,7 +360,7 @@ function handleQARevNameSearch(inputEl, grnNum, idx) {
   dropdown.style.left = rect.left + "px";
   dropdown.style.width = rect.width + "px";
   if (query.length < 2) { dropdown.style.display = "none"; return; }
-  const matches = catalog.filter(c => (c.productName || "").toLowerCase().includes(query)).slice(0, 10);
+  const matches = catalog.filter(c => (c.combinedName || c.productName || "").toLowerCase().includes(query)).slice(0, 10);
   if (!matches.length) { dropdown.innerHTML = `<div style="padding:8px 10px; font-size:0.78rem; color:var(--muted);">No match found</div>`; dropdown.style.display = "block"; return; }
   dropdown.innerHTML = matches.map(c => `
     <div onclick="selectQARevNameMatch('${grnNum}', ${idx}, '${c.itemCode}', '${(c.combinedName || c.productName).replace(/'/g,"\\'")}', '${(c.unit || 'NOS').replace(/'/g,"\\'")}')"
@@ -643,7 +643,7 @@ function handleQANameSearch(inputEl, grnNum, idx) {
   dropdown.style.width = rect.width + "px";
 
   if (query.length < 2) { dropdown.style.display = "none"; return; }
-  const matches = catalog.filter(c => (c.productName || "").toLowerCase().includes(query)).slice(0, 10);
+  const matches = catalog.filter(c => (c.combinedName || c.productName || "").toLowerCase().includes(query)).slice(0, 10);
   if (matches.length === 0) {
     dropdown.innerHTML = `<div style="padding:8px 10px; font-size:0.78rem; color:var(--muted);">No match found</div>`;
     dropdown.style.display = "block"; return;

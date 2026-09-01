@@ -49,7 +49,7 @@ function handleStoreLedgerMaterialSearch(prefix, query) {
   const matches = catalog.filter(c => {
     if (already.has(c.itemCode)) return false;
     const name = (c.productName || '').toLowerCase();
-    const combined = `${name} ${(c.rating || '').toLowerCase()}`.trim();
+    const combined = (c.combinedName || `${name} ${(c.rating || '').toLowerCase()} ${(c.make || '').toLowerCase()}`).toLowerCase().trim();
     return name.includes(q) || combined.includes(q) || (c.itemCode || '').toLowerCase().includes(q);
   }).slice(0, 12);
 

@@ -1995,7 +1995,7 @@ function handleMatrixMaterialSearchInputSuggestions(query) {
   const catalog = window.itemCodeCatalogCache || [];
   if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
   const q = query.trim().toLowerCase();
-  const matches = catalog.filter(it => (it.productName||"").toLowerCase().includes(q) || (it.itemCode||"").toLowerCase().includes(q)).slice(0, 10);
+  const matches = catalog.filter(it => (it.combinedName||it.productName||"").toLowerCase().includes(q) || (it.itemCode||"").toLowerCase().includes(q)).slice(0, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(it => `
     <div onclick="selectMatrixMaterialSuggestion(\`${(it.productName||'').replace(/\`/g,"'")}\`)"

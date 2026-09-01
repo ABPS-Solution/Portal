@@ -143,7 +143,7 @@ function filterItemCodeCatalogStrict(query, catalog, topN) {
   const codeQuery = query.toLowerCase().replace(/\s+/g, '');
 
   const scored = catalog.map(item => {
-    const nameNorm = (item.productName || "").toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
+    const nameNorm = (item.combinedName || item.productName || "").toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
     const nameWords = nameNorm.split(/\s+/).filter(Boolean);
     const codeNorm = (item.itemCode || "").toLowerCase();
     const codeMatch = codeQuery.length >= 3 && codeNorm.includes(codeQuery);
@@ -212,7 +212,7 @@ async function executeItemCodeSearch() {
 
     // Direct exact match check first — whole typed phrase as one substring.
     const exactMatch = catalogToSearch.filter(item =>
-      (item.productName || "").toLowerCase().includes(query.toLowerCase())
+      (item.combinedName || item.productName || "").toLowerCase().includes(query.toLowerCase())
     );
     console.log("Direct includes match:", exactMatch.length, "items");
 
@@ -888,7 +888,7 @@ function handleSENameSearch(inputEl, gateNum, idx) {
   if (query.length < 2) { dropdown.style.display = "none"; return; }
   // Search matches the raw name (findable without knowing the rating), display/select the
   // combined name — same convention as BOQ search and every other catalog consumer.
-  const matches = catalog.filter(c => (c.productName || "").toLowerCase().includes(query)).slice(0, 10);
+  const matches = catalog.filter(c => (c.combinedName || c.productName || "").toLowerCase().includes(query)).slice(0, 10);
   if (matches.length === 0) {
     const createUrl = window.location.pathname + "?module=design-itemcode";
     dropdown.innerHTML = `<div style="padding:8px 10px; font-size:0.78rem; color:var(--muted); display:flex; justify-content:space-between; align-items:center;">

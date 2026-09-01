@@ -57,8 +57,9 @@ function handleSweepSearch(query) {
   const matches = catalog.filter(item => {
     const name = (item.productName || "").toLowerCase();
     const rating = (item.rating || "").toLowerCase();
-    const combined = `${name} ${rating}`.trim();
-    return name.includes(q) || rating.includes(q) || combined.includes(q);
+    const make = (item.make || "").toLowerCase();
+    const combined = (item.combinedName || `${name} ${rating} ${make}`).toLowerCase().trim();
+    return name.includes(q) || rating.includes(q) || make.includes(q) || combined.includes(q);
   }).slice(0, 10);
   if (matches.length === 0) { dropdown.style.display = "none"; return; }
   dropdown.innerHTML = matches.map(item => `

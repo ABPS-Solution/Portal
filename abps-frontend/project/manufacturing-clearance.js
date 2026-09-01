@@ -481,7 +481,7 @@ function handleMcProductSearch(query, projectId, lineId) {
   const q = query.toLowerCase();
   const matches = catalog.filter(item => {
     const name = (item.productName || "").toLowerCase();
-    const combined = `${name} ${(item.rating || "").toLowerCase()}`.trim();
+    const combined = (item.combinedName || `${name} ${(item.rating || "").toLowerCase()} ${(item.make || "").toLowerCase()}`).toLowerCase().trim();
     return name.includes(q) || combined.includes(q);
   }).slice(0, 10);
 

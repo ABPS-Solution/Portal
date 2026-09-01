@@ -28,7 +28,7 @@ function fuzzyPreFilterCatalog(query, catalog, topN) {
   if (queryWords.length === 0) return catalog.slice(0, topN);
   
   const scored = catalog.map(item => {
-    const nameNorm = (item.productName || "").toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
+    const nameNorm = (item.combinedName || item.productName || "").toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
     const nameWords = nameNorm.split(/\s+/).filter(w => w.length > 1);
     
     let score = 0;
