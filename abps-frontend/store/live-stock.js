@@ -375,7 +375,7 @@ function renderRawMaterialsStockGrid() {
   const q = window.rawStockSearchQuery || "";
   const filteredCollection = !q ? (cachedInventoryStockCollection || []) :
     (cachedInventoryStockCollection || []).filter(item =>
-      `${item.materialName || ""} ${item.itemCode || ""}`.toLowerCase().includes(q));
+      `${item.materialName || ""} ${item.itemCode || ""} ${item.make || ""}`.toLowerCase().includes(q));
 
   if (!cachedInventoryStockCollection || cachedInventoryStockCollection.length === 0) {
     mountZone.innerHTML = `
@@ -548,7 +548,7 @@ function renderSpareStoreStockGrid() {
 
   const q = window.spareStockSearchQuery || "";
   const filteredStock = !q ? fullStock : fullStock.filter(item =>
-    `${item.materialName || ""} ${item.itemCode || ""}`.toLowerCase().includes(q));
+    `${item.materialName || ""} ${item.itemCode || ""} ${item.make || ""}`.toLowerCase().includes(q));
 
   if (filteredStock.length === 0) {
     mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:30px 20px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);"><div style="font-size:0.9rem; font-weight:700; color:var(--muted);">No materials matched "${q}".</div></div>`;
