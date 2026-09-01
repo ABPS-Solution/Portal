@@ -97,7 +97,7 @@ function laSubDeptPillsHtml(u) {
     <div style="display:flex; gap:4px; margin-top:6px; justify-content:center;">
       ${PROD_SUB_DEPTS.map(sd => {
         const active = u.productionSubDept === sd;
-        return `<button onclick="event.stopPropagation(); handleProductionSubDeptClick('${u.email}', '${sd}')"
+        return `<button onclick="event.stopPropagation(); handleProductionSubDeptClick('${u.personKey}', '${sd}')"
           title="${active ? `Click to clear ${sd}` : `Set Stage 4 role to ${sd}`}"
           style="border:${active ? '2px solid #b45309' : '1px solid #dde3ea'}; background:${active ? '#b4530918' : '#fff'};
                  color:${active ? '#b45309' : '#64748b'}; border-radius:8px; padding:3px 8px; cursor:pointer;
@@ -113,7 +113,7 @@ function laPersonButtonHtml(u, color) {
     <div style="display:flex; flex-direction:column; align-items:center;">
       <div style="width:2px; height:20px; background:${color};"></div>
       <div style="width:7px; height:7px; border-radius:50%; background:${color}; margin-bottom:-1px;"></div>
-      <button onclick="handleLoginAnywhereButtonClick('${u.email}')"
+      <button onclick="handleLoginAnywhereButtonClick('${u.personKey}')"
         title="${granted ? 'Click to revoke' : 'Click to grant'} Login Anywhere access"
         style="border:${border}; background:#fff; border-radius:12px; padding:13px 22px; cursor:pointer;
                font-weight:${granted ? 800 : 650}; font-size:0.92rem; color:#1e293b; white-space:nowrap;
@@ -125,12 +125,12 @@ function laPersonButtonHtml(u, color) {
     </div>`;
 }
 
-async function handleProductionSubDeptClick(email, subDept) {
-  const u = saAllPinUsers.find(x => x.email === email);
+async function handleProductionSubDeptClick(personKey, subDept) {
+  const u = saAllPinUsers.find(x => x.personKey === personKey);
   if (!u) return;
   const newValue = u.productionSubDept === subDept ? null : subDept;
   try {
-    const data = await apFetch({ action: "setProductionSubDepartment", email, subDept: newValue });
+    const data = await apFetch({ action: "setProductionSubDepartment", personKey, subDept: newValue });
     if (data.success) {
       u.productionSubDept = newValue;
       renderSecurityAdminPinUsers();
@@ -170,20 +170,20 @@ function renderSecurityAdminUsers() {
     </div>`;
 }
 
-async function handleLoginAnywhereButtonClick(email) {
-  const u = saAllUsers.find(x => x.email === email);
+async function handleLoginAnywhereButtonClick(personKey) {
+  const u = saAllUsers.find(x => x.personKey === personKey);
   if (!u) return;
-  await toggleUserLoginAnywhere(email, !u.perm_login_anywhere);
+  await toggleUserLoginAnywhere(personKey, !u.perm_login_anywhere);
 }
 
-async function toggleUserLoginAnywhere(email, enabled) {
+async function toggleUserLoginAnywhere(personKey, enabled) {
   try {
-    const data = await apFetch({ action: "setUserLoginAnywhere", email, enabled });
+    const data = await apFetch({ action: "setUserLoginAnywhere", personKey, enabled });
     if (data.success) {
-      const named = saAllUsers.find(x => x.email === email);
-      const displayLabel = named ? `${named.first_name || ''} ${named.last_name || ''}`.trim() : email;
+      const named = saAllUsers.find(x => x.personKey === personKey);
+      const displayLabel = named ? `${named.first_name || ''} ${named.last_name || ''}`.trim() : personKey;
       showBOQBanner("sa-feedback", `${enabled ? 'Enabled' : 'Disabled'} Login Anywhere for ${displayLabel}.`, "success");
-      const u = saAllUsers.find(x => x.email === email);
+      const u = saAllUsers.find(x => x.personKey === personKey);
       if (u) u.perm_login_anywhere = enabled;
       renderSecurityAdminUsers();
     } else {
@@ -442,9 +442,9 @@ async function loadSecurityAdminPinUsers() {
 // call per flip — no cooldown server-side, so generating for several
 // people back-to-back is fine). Clicking again flips back to the name.
 let pinTreeMode = 'pin';
-let pinFlippedState = {}; // email -> true while showing the back face
-let pinEnrollCodeCache = {}; // email -> last-generated {code, expiresAt} for redisplay without re-hitting the API mid-flip-animation
-let pinChangeEditingState = {}; // email -> true while its Change PIN card has an open edit input (suppresses hover-driven flip-back)
+let pinFlippedState = {}; // personKey -> true while showing the back face
+let pinEnrollCodeCache = {}; // personKey -> last-generated {code, expiresAt} for redisplay without re-hitting the API mid-flip-animation
+let pinChangeEditingState = {}; // personKey -> true while its Change PIN card has an open edit input (suppresses hover-driven flip-back)
 
 function showPinChangeBanner(msg, isError) {
   const box = document.getElementById("sa-pin-change-banner");
@@ -478,29 +478,29 @@ async function loadSecurityAdminPinUsers() {
 
 function pinLockBadgeHtml(u) {
   if (u.pin_disabled) {
-    return `<div style="font-size:0.68rem; color:#dc2626; font-weight:700; margin-top:4px;">Disabled (too many fails) — <a href="#" onclick="submitClearUserPinLockout('${u.email}'); return false;" style="color:#dc2626;">Unlock</a></div>`;
+    return `<div style="font-size:0.68rem; color:#dc2626; font-weight:700; margin-top:4px;">Disabled (too many fails) — <a href="#" onclick="submitClearUserPinLockout('${u.personKey}'); return false;" style="color:#dc2626;">Unlock</a></div>`;
   }
   if (u.pin_locked_until && new Date(u.pin_locked_until) > new Date()) {
     const until = new Date(u.pin_locked_until).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    return `<div style="font-size:0.68rem; color:#d97706; font-weight:700; margin-top:4px;">Locked until ${until} — <a href="#" onclick="submitClearUserPinLockout('${u.email}'); return false;" style="color:#d97706;">Unlock</a></div>`;
+    return `<div style="font-size:0.68rem; color:#d97706; font-weight:700; margin-top:4px;">Locked until ${until} — <a href="#" onclick="submitClearUserPinLockout('${u.personKey}'); return false;" style="color:#d97706;">Unlock</a></div>`;
   }
   return '';
 }
 
 function pinFlipCardHtml(u, color) {
   const name = `${u.first_name || ''} ${u.last_name || ''}`.trim();
-  const safeId = u.email.replace(/[^a-zA-Z0-9]/g, '_');
-  const flipped = !!pinFlippedState[u.email];
-  const cached = pinEnrollCodeCache[u.email];
+  const safeId = u.personKey.replace(/[^a-zA-Z0-9]/g, '_');
+  const flipped = !!pinFlippedState[u.personKey];
+  const cached = pinEnrollCodeCache[u.personKey];
   const isChangeMode = pinTreeMode === 'changepin';
   const backText = pinTreeMode === 'enroll'
     ? (cached ? cached.code : '…')
     : (u.pin_value || 'None');
   const backIsCode = pinTreeMode === 'enroll';
   const outerHandlers = isChangeMode
-    ? `onmouseenter="handleChangePinHover('${u.email}', true)" onmouseleave="handleChangePinHover('${u.email}', false)"`
-    : `onclick="handlePinFlipClick('${u.email}')"`;
-  const backOnClick = isChangeMode ? ` onclick="handleChangePinBackClick('${u.email}'); event.stopPropagation();"` : '';
+    ? `onmouseenter="handleChangePinHover('${u.personKey}', true)" onmouseleave="handleChangePinHover('${u.personKey}', false)"`
+    : `onclick="handlePinFlipClick('${u.personKey}')"`;
+  const backOnClick = isChangeMode ? ` onclick="handleChangePinBackClick('${u.personKey}'); event.stopPropagation();"` : '';
   return `
     <div style="display:flex; flex-direction:column; align-items:center;">
       <div style="width:2px; height:20px; background:${color};"></div>
@@ -523,19 +523,19 @@ function pinFlipCardHtml(u, color) {
     </div>`;
 }
 
-async function handlePinFlipClick(email) {
-  const u = saAllPinUsers.find(x => x.email === email);
+async function handlePinFlipClick(personKey) {
+  const u = saAllPinUsers.find(x => x.personKey === personKey);
   if (!u) return;
-  const safeId = email.replace(/[^a-zA-Z0-9]/g, '_');
-  const nowFlipped = !pinFlippedState[email];
+  const safeId = personKey.replace(/[^a-zA-Z0-9]/g, '_');
+  const nowFlipped = !pinFlippedState[personKey];
 
   // Flipping TO the back face in enroll mode: fetch a fresh code first so
   // the reveal shows a real value instead of a placeholder mid-animation.
   if (nowFlipped && pinTreeMode === 'enroll') {
     try {
-      const data = await apFetch({ action: "createDeviceEnrollmentCode", targetEmail: email });
+      const data = await apFetch({ action: "createDeviceEnrollmentCode", targetPersonKey: personKey });
       if (!data.success) { showBOQBanner("sa-feedback", data.error || "Failed to generate code.", "error"); return; }
-      pinEnrollCodeCache[email] = { code: data.code, expiresAt: data.expiresAt };
+      pinEnrollCodeCache[personKey] = { code: data.code, expiresAt: data.expiresAt };
       const backEl = document.getElementById(`pinflip-back-${safeId}`);
       if (backEl) backEl.textContent = data.code;
     } catch (e) {
@@ -544,7 +544,7 @@ async function handlePinFlipClick(email) {
     }
   }
 
-  pinFlippedState[email] = nowFlipped;
+  pinFlippedState[personKey] = nowFlipped;
   const inner = document.getElementById(`pinflip-inner-${safeId}`);
   if (inner) inner.style.transform = nowFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
 }
@@ -555,48 +555,48 @@ async function handlePinFlipClick(email) {
 // 4-digit PIN auto-submits (same convention as the login screen's PIN
 // field) straight to adminResetUserPin, which invalidates every session
 // for that person server-side — this IS the "reset someone's PIN" flow.
-function handleChangePinHover(email, entering) {
-  if (pinChangeEditingState[email]) return; // an edit is in progress — hover must not interrupt it
-  const safeId = email.replace(/[^a-zA-Z0-9]/g, '_');
+function handleChangePinHover(personKey, entering) {
+  if (pinChangeEditingState[personKey]) return; // an edit is in progress — hover must not interrupt it
+  const safeId = personKey.replace(/[^a-zA-Z0-9]/g, '_');
   const inner = document.getElementById(`pinflip-inner-${safeId}`);
   if (inner) inner.style.transform = entering ? 'rotateY(180deg)' : 'rotateY(0deg)';
 }
 
-function handleChangePinBackClick(email) {
-  if (pinChangeEditingState[email]) return; // already editing
-  pinChangeEditingState[email] = true;
-  const safeId = email.replace(/[^a-zA-Z0-9]/g, '_');
+function handleChangePinBackClick(personKey) {
+  if (pinChangeEditingState[personKey]) return; // already editing
+  pinChangeEditingState[personKey] = true;
+  const safeId = personKey.replace(/[^a-zA-Z0-9]/g, '_');
   const backEl = document.getElementById(`pinflip-back-${safeId}`);
   if (!backEl) return;
   backEl.innerHTML = `<input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4"
     id="pinchange-input-${safeId}" style="width:80px; text-align:center; font-weight:800; font-size:1.05rem; letter-spacing:4px; font-family:monospace; border:1.5px solid #cbd5e1; border-radius:6px; padding:4px;"
-    oninput="handleChangePinInputTyping('${email}', this)" onclick="event.stopPropagation();">`;
+    oninput="handleChangePinInputTyping('${personKey}', this)" onclick="event.stopPropagation();">`;
   const input = document.getElementById(`pinchange-input-${safeId}`);
   if (input) input.focus();
 }
 
-function handleChangePinInputTyping(email, inputEl) {
+function handleChangePinInputTyping(personKey, inputEl) {
   const digitsOnly = inputEl.value.replace(/\D/g, '').slice(0, 4);
   if (inputEl.value !== digitsOnly) inputEl.value = digitsOnly;
-  if (digitsOnly.length === 4) submitAdminResetPin(email, digitsOnly);
+  if (digitsOnly.length === 4) submitAdminResetPin(personKey, digitsOnly);
 }
 
-async function submitAdminResetPin(email, newPin) {
-  const safeId = email.replace(/[^a-zA-Z0-9]/g, '_');
+async function submitAdminResetPin(personKey, newPin) {
+  const safeId = personKey.replace(/[^a-zA-Z0-9]/g, '_');
   const input = document.getElementById(`pinchange-input-${safeId}`);
   if (input) input.disabled = true;
   try {
-    const data = await apFetch({ action: "adminResetUserPin", email, newPin });
-    const u = saAllPinUsers.find(x => x.email === email);
+    const data = await apFetch({ action: "adminResetUserPin", personKey, newPin });
+    const u = saAllPinUsers.find(x => x.personKey === personKey);
     if (data.success) {
       if (u) u.pin_value = newPin;
-      const displayName = u ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : email;
+      const displayName = u ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : personKey;
       showPinChangeBanner(`PIN updated for ${displayName}. They're signed out everywhere and must use the new PIN.`, false);
       const backEl = document.getElementById(`pinflip-back-${safeId}`);
       if (backEl) {
         backEl.innerHTML = newPin;
       }
-      pinChangeEditingState[email] = false;
+      pinChangeEditingState[personKey] = false;
       const inner = document.getElementById(`pinflip-inner-${safeId}`);
       if (inner) inner.style.transform = 'rotateY(0deg)';
     } else {
@@ -639,10 +639,10 @@ function renderSecurityAdminPinUsers() {
     </div>`;
 }
 
-async function submitClearUserPinLockout(email) {
-  if (!confirm(`Clear the PIN lockout for ${email}? Their existing PIN stays the same.`)) return;
+async function submitClearUserPinLockout(personKey) {
+  if (!confirm(`Clear the PIN lockout for ${personKey}? Their existing PIN stays the same.`)) return;
   try {
-    const data = await apFetch({ action: "clearUserPinLockout", email });
+    const data = await apFetch({ action: "clearUserPinLockout", personKey });
     if (data.success) { showBOQBanner("sa-feedback", "Lockout cleared.", "success"); loadSecurityAdminPinUsers(); }
     else showBOQBanner("sa-feedback", data.error || "Failed to clear lockout.", "error");
   } catch (e) {
@@ -819,21 +819,21 @@ function handlePermissionMatrixSearchInput(rawQuery) {
   }
   box.style.display = "block";
   box.innerHTML = matches.map(u => `
-    <div onclick="selectPermissionMatrixUser('${u.email}')" style="padding:9px 12px; cursor:pointer; border-top:1px solid var(--border); font-size:0.85rem;"
+    <div onclick="selectPermissionMatrixUser('${u.personKey}')" style="padding:9px 12px; cursor:pointer; border-top:1px solid var(--border); font-size:0.85rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">
       <strong>${u.first_name || ''} ${u.last_name || ''}</strong>
       <span style="color:var(--muted); font-size:0.78rem;"> — ${u.department || 'No department'}</span>
     </div>`).join('');
 }
 
-async function selectPermissionMatrixUser(email) {
-  const user = saAllUsers.find(u => u.email === email);
+async function selectPermissionMatrixUser(personKey) {
+  const user = saAllUsers.find(u => u.personKey === personKey);
   if (!user) return;
   document.getElementById("pm-user-search").value = `${user.first_name || ''} ${user.last_name || ''}`;
   document.getElementById("pm-user-search-results").style.display = "none";
   document.getElementById("pm-matrix-root").innerHTML = `<div style="padding:20px; color:var(--muted); font-size:0.85rem;">Loading…</div>`;
   try {
-    const data = await apFetch({ action: "fetchUserPermissionValues", email });
+    const data = await apFetch({ action: "fetchUserPermissionValues", personKey });
     if (!data.success) {
       document.getElementById("pm-matrix-root").innerHTML = `<div style="padding:14px; color:var(--warn);">${data.error || 'Failed to load permissions.'}</div>`;
       return;
@@ -911,7 +911,7 @@ async function togglePermissionMatrixPill(dbColumn) {
   pmUserValues[dbColumn] = enabled;
   renderPermissionMatrix();
   try {
-    const data = await apFetch({ action: "toggleUserPermission", email: pmSelectedUser.email, dbColumn, enabled });
+    const data = await apFetch({ action: "toggleUserPermission", personKey: pmSelectedUser.personKey, dbColumn, enabled });
     if (!data.success) {
       pmUserValues[dbColumn] = wasEnabled;
       renderPermissionMatrix();

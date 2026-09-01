@@ -181,9 +181,9 @@ function editIsolatedTaskItem(leadRef, scopeNode, t) {
   taskForm.querySelector(".task-edit-id").value = t.id;
   taskForm.querySelector(".task-status-select").value = normalizeTaskStatusForEdit(t.status);
   // t.eng is a resolved display NAME (server-side COALESCE), but the
-  // select's <option> values are emails — match by name, submit the email.
+  // select's <option> values are person keys — match by name, submit the key.
   const engMatch = cachedEngineers.find(eng => eng.name === t.eng);
-  taskForm.querySelector(".task-eng-select").value = engMatch ? engMatch.email : "";
+  taskForm.querySelector(".task-eng-select").value = engMatch ? engMatch.personKey : "";
   taskForm.querySelector(".task-type-select").value = t.type;
   taskForm.querySelector(".task-desc-input").value = t.desc;
   taskForm.querySelector(".task-shift-select").value = t.shift;
@@ -389,9 +389,9 @@ function injectMatrixInlineTaskForm(taskItem, parentCardNode) {
 
   taskEngSelect.innerHTML = "";
   // taskItem.eng is a resolved display name now (from
-  // fetchFollowupsAndTasksMaps' COALESCE) — match on .name, submit .email.
+  // fetchFollowupsAndTasksMaps' COALESCE) — match on .name, submit .personKey.
   cachedEngineers.forEach(eng => {
-    let o1 = document.createElement("option"); o1.value = eng.email; o1.textContent = eng.name; if(taskItem.eng === eng.name) o1.selected = true; taskEngSelect.appendChild(o1);
+    let o1 = document.createElement("option"); o1.value = eng.personKey; o1.textContent = eng.name; if(taskItem.eng === eng.name) o1.selected = true; taskEngSelect.appendChild(o1);
   });
 
   coreTaskForm.querySelector(".task-edit-id").value = taskItem.id;

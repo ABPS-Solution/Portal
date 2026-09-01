@@ -125,11 +125,12 @@ window.addEventListener("unhandledrejection", function(event) {
   
 
 let globalPersonnelAuthDirectoryTreePayloadCache = {};
-// Flat {department, name, email} list from the same directory call — PIN
-// login / device enrollment (migration 140) need to resolve the selected
-// department+name back to an email, which personnelTree above doesn't
-// carry. Populated alongside it in syncPlatformPersonnelDropdownOptionsList.
-let globalPersonnelEmailLookupCache = [];
+// Flat {department, name, personKey} list from the same directory call —
+// PIN login / device enrollment (migration 140) need to resolve the
+// selected department+name back to a person key, which personnelTree
+// above doesn't carry. Populated alongside it in
+// syncPlatformPersonnelDropdownOptionsList.
+let globalPersonnelKeyLookupCache = [];
 let globalOperatorsDatabasePayloadCache = []
 let appActiveOperatorIdentityString = "";
 let userPermissions = { cardDetails: false, searchCompany: false, searchStatus: false, searchEngineer: false, searchTasks: false, emailWhatsapp: false, dispatchCommissioning: true }; 
@@ -199,7 +200,7 @@ async function syncPlatformPersonnelDropdownOptionsList() {
     if (data.success && data.departmentsList && data.personnelTree) {
       // Cache the full interactive dictionary response locally
       globalPersonnelAuthDirectoryTreePayloadCache = data.personnelTree;
-      globalPersonnelEmailLookupCache = data.people || [];
+      globalPersonnelKeyLookupCache = data.people || [];
 
       // Populate Department choices option array lines
       deptSelect.innerHTML = '<option value="">— Select Department —</option>';
@@ -234,7 +235,7 @@ async function syncPlatformPersonnelDropdownOptionsList() {
 function completeSuccessfulLogin(data, activeOperatorDisplayName, isUserAdminGlobal) {
   localStorage.setItem("sessionToken",    data.sessionToken);
   localStorage.setItem("sessionExpiry",   data.expires);
-  localStorage.setItem("sessionUser",     data.email);
+  localStorage.setItem("sessionUser",     data.personKey);
   localStorage.setItem("userFirstName",   data.firstName);
   localStorage.setItem("userLastName",    data.lastName);
   localStorage.setItem("activeOperatorSignature", activeOperatorDisplayName);
@@ -428,17 +429,17 @@ async function showAppView() {
         targetFormEngSelector.innerHTML = '<option value="">— Select Engineer Name —</option>';
         cachedEngineers.forEach(eng => {
           let opt = document.createElement("option");
-          opt.value = eng.email; opt.textContent = eng.name;
+          opt.value = eng.personKey; opt.textContent = eng.name;
           targetFormEngSelector.appendChild(opt);
         });
         // Only auto-select the current operator if their name is an exact match in the list —
         // otherwise leave the placeholder showing instead of a blank selection.
         // appActiveOperatorIdentityString is a display name (from the login
         // dropdown), so it has to be matched against eng.name here, but the
-        // value actually set on the select must still be the email.
+        // value actually set on the select must still be the person key.
         const matchedSelfEngineer = cachedEngineers.find(eng => eng.name === appActiveOperatorIdentityString);
         if (matchedSelfEngineer) {
-          targetFormEngSelector.value = matchedSelfEngineer.email;
+          targetFormEngSelector.value = matchedSelfEngineer.personKey;
         }
       }
       
@@ -447,7 +448,7 @@ async function showAppView() {
       if (engDrop) {
         engDrop.innerHTML = '<option value="">— Select Engineer —</option>';
         cachedEngineers.forEach(eng => {
-          let opt = document.createElement("option"); opt.value = eng.email; opt.textContent = eng.name; engDrop.appendChild(opt);
+          let opt = document.createElement("option"); opt.value = eng.personKey; opt.textContent = eng.name; engDrop.appendChild(opt);
         });
       }
 
@@ -458,9 +459,9 @@ async function showAppView() {
         setTimeout(() => {
           matrixEngBoxEnclosure.innerHTML = "";
           cachedEngineers.forEach(eng => {
-            const safeId = `chk_tm_eng_${eng.email.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            const safeId = `chk_tm_eng_${eng.personKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
             matrixEngBoxEnclosure.innerHTML += `
-              <input type="checkbox" name="taskMatrixEngineer" value="${eng.email}" id="${safeId}">
+              <input type="checkbox" name="taskMatrixEngineer" value="${eng.personKey}" id="${safeId}">
               <label for="${safeId}">${eng.name}</label>
             `;
           });

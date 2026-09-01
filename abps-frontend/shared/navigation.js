@@ -83,7 +83,7 @@ async function navigateToModule(key) {
             poOwnerDrop.innerHTML = '<option value="">— Select Engineer —</option>';
             cachedEngineers.forEach(eng => {
               const opt = document.createElement("option");
-              opt.value = eng.email; opt.textContent = eng.name;
+              opt.value = eng.personKey; opt.textContent = eng.name;
               poOwnerDrop.appendChild(opt);
             });
             if (appActiveOperatorIdentityString && cachedEngineers.indexOf(appActiveOperatorIdentityString) !== -1) {

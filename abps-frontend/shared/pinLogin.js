@@ -105,13 +105,13 @@ async function submitPinLoginAttempt() {
 
   // The engineer dropdown is shared across all 3 modes (per the redesign)
   // and is populated with display-name values by handleLoginDepartmentSelectionChange
-  // elsewhere — pinLogin needs the underlying EMAIL, so look it up from
-  // the same personnel directory cache the Google flow already relies on.
+  // elsewhere — pinLogin needs the underlying PERSON KEY, so look it up
+  // from the same personnel directory cache the Google flow already relies on.
   const selectedName = engineerSelect ? engineerSelect.value : '';
-  const email = resolveEmailForSelectedEngineerName(selectedName);
+  const personKey = resolvePersonKeyForSelectedEngineerName(selectedName);
 
   if (!selectedName) return showFeedback("Select your name first.", true);
-  if (!email) return showFeedback("Could not resolve an account for that name. Contact your administrator.", true);
+  if (!personKey) return showFeedback("Could not resolve an account for that name. Contact your administrator.", true);
   const pin = pinInput.value.trim();
   if (!/^\d{4}$/.test(pin)) return showFeedback("Enter your 4-digit PIN.", true);
   if (!deviceSecret) return showFeedback("This PC is not set up for PIN login.", true);
@@ -120,7 +120,7 @@ async function submitPinLoginAttempt() {
   try {
     const res = await fetch(GAS_URL, {
       method: "POST",
-      body: JSON.stringify({ action: "pinLogin", deviceSecret, email, pin }),
+      body: JSON.stringify({ action: "pinLogin", deviceSecret, personKey, pin }),
     });
     const data = await res.json();
 
@@ -143,18 +143,18 @@ async function submitPinLoginAttempt() {
 
 // The login screen's Name dropdown is populated with DISPLAY NAMES only
 // (see handleLoginDepartmentSelectionChange, marketing/leads.js) — PIN
-// login and enrollment both need the actual EMAIL, which the Google flow
-// never needed (it gets the email from the verified Google ID token
-// instead). globalPersonnelEmailLookupCache (shared/apFetch.js) is the
-// same directory response's flat {department, name, email} list, already
-// populated by the time this screen is usable. Matched on department AND
-// name together, not name alone, since two people in different
-// departments could share a display name.
-function resolveEmailForSelectedEngineerName(name) {
+// login and enrollment both need the actual PERSON KEY, which the Google
+// flow never needed (it gets an email from the verified Google ID token
+// instead, matched against person_key server-side). globalPersonnelKeyLookupCache
+// (shared/apFetch.js) is the same directory response's flat {department,
+// name, personKey} list, already populated by the time this screen is
+// usable. Matched on department AND name together, not name alone, since
+// two people in different departments could share a display name.
+function resolvePersonKeyForSelectedEngineerName(name) {
   if (!name) return null;
   const dept = document.getElementById("app-auth-active-department-identity")?.value || '';
-  const hit = globalPersonnelEmailLookupCache.find(p => p.name === name && p.department === dept);
-  return hit ? hit.email : null;
+  const hit = globalPersonnelKeyLookupCache.find(p => p.name === name && p.department === dept);
+  return hit ? hit.personKey : null;
 }
 
 async function submitDeviceEnrollmentCode() {
@@ -174,8 +174,8 @@ async function submitDeviceEnrollmentCode() {
 
   const selectedName = engineerSelect ? engineerSelect.value : '';
   if (!selectedName) return showFeedback("Select your name first.", true);
-  const email = resolveEmailForSelectedEngineerName(selectedName);
-  if (!email) return showFeedback("Could not resolve an account for that name. Contact your administrator.", true);
+  const personKey = resolvePersonKeyForSelectedEngineerName(selectedName);
+  if (!personKey) return showFeedback("Could not resolve an account for that name. Contact your administrator.", true);
   const code = (codeInput.value || "").trim().toUpperCase();
   const deviceLabel = (labelInput.value || "").trim();
   const pin = pinInput.value.trim();
@@ -189,7 +189,7 @@ async function submitDeviceEnrollmentCode() {
   try {
     const res = await fetch(GAS_URL, {
       method: "POST",
-      body: JSON.stringify({ action: "redeemDeviceEnrollmentCode", code, email, deviceLabel, pin }),
+      body: JSON.stringify({ action: "redeemDeviceEnrollmentCode", code, personKey, deviceLabel, pin }),
     });
     const data = await res.json();
 

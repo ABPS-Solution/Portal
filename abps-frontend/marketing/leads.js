@@ -5,12 +5,13 @@ let targetCommissioningReportFileObj = null;
 let targetPurchaseOrderFileObj = null;
 
 let globalLocationDatabaseCacheMap = {};
-// cachedEngineers holds {email, name} objects. Checkbox/filter values are
-// emails (needed for DB filtering), but anything shown to the user must be
-// the display name — never the email. This maps a list of emails to names.
+// cachedEngineers holds {personKey, name} objects. Checkbox/filter values
+// are person keys (needed for DB filtering), but anything shown to the
+// user must be the display name — never the person key. This maps a list
+// of person keys to names.
 function engineerEmailsToNames(emails) {
   return emails.map(em => {
-    const match = cachedEngineers.find(e => e.email === em);
+    const match = cachedEngineers.find(e => e.personKey === em);
     return match ? match.name : em;
   });
 }
@@ -411,7 +412,7 @@ function populateEngineerDropdowns() {
   const el = document.getElementById("engName"); if (!el) return;
   el.innerHTML = '<option value="">— Select —</option>';
   cachedEngineers.forEach(eng => {
-    let opt = document.createElement("option"); opt.value = eng.email; opt.textContent = eng.name; el.appendChild(opt);
+    let opt = document.createElement("option"); opt.value = eng.personKey; opt.textContent = eng.name; el.appendChild(opt);
   });
 }
 
@@ -434,7 +435,7 @@ function applyEngineerFieldLockState() {
   }
   const self = cachedEngineers.find(eng => eng.name === appActiveOperatorIdentityString);
   if (self) {
-    el.value = self.email;
+    el.value = self.personKey;
     el.disabled = true;
     el.title = "Set automatically from your logged-in account.";
   } else {
@@ -807,10 +808,10 @@ function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
 
   taskEngSelect.innerHTML = '<option value="">— Select Engineer —</option>';
   cachedEngineers.forEach(eng => {
-    let o2 = document.createElement("option"); o2.value = eng.email; o2.textContent = eng.name; taskEngSelect.appendChild(o2);
+    let o2 = document.createElement("option"); o2.value = eng.personKey; o2.textContent = eng.name; taskEngSelect.appendChild(o2);
   });
   const taskSelfEngineer = cachedEngineers.find(eng => eng.name === appActiveOperatorIdentityString);
-  if (taskSelfEngineer) taskEngSelect.value = taskSelfEngineer.email;
+  if (taskSelfEngineer) taskEngSelect.value = taskSelfEngineer.personKey;
 
   taskOpen.onclick = function() {
     taskForm.querySelector(".task-edit-id").value = ""; taskForm.querySelector(".task-desc-input").value = "";
@@ -940,10 +941,10 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
         // leadMap["Engineer Name"] is now a resolved display name (from the
         // COALESCE in LEAD_CARD_SELECT), so match against eng.name here —
-        // but the option's actual value must still be the email, since
+        // but the option's actual value must still be the person key, since
         // that's what gets sent back on save.
         cachedEngineers.forEach(eng => {
-          let op = document.createElement("option"); op.value = eng.email; op.textContent = eng.name;
+          let op = document.createElement("option"); op.value = eng.personKey; op.textContent = eng.name;
           if (leadMap[key] === eng.name) op.selected = true;
           sel.appendChild(op);
         });
@@ -1751,9 +1752,9 @@ function renderLeadMatrixEngineerCheckboxes() {
   setTimeout(() => {
     mountPoint.innerHTML = "";
     cachedEngineers.forEach(eng => {
-      const cleanId = `chk_lm_eng_${eng.email.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const cleanId = `chk_lm_eng_${eng.personKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
       mountPoint.innerHTML += `
-        <input type="checkbox" name="leadMatrixEngineerFilter" value="${eng.email}" id="${cleanId}">
+        <input type="checkbox" name="leadMatrixEngineerFilter" value="${eng.personKey}" id="${cleanId}">
         <label for="${cleanId}">${eng.name}</label>
       `;
     });
