@@ -45,12 +45,12 @@ async function openCPOAllocationPicker(rowId) {
         <div style="font-weight:700; font-size:0.78rem; color:var(--brand); white-space:normal; line-height:1.4;">${p.productName || ""}${p.productRating ? " " + p.productRating : ""}</div>
         <div style="font-size:0.72rem; color:var(--muted);">${p.projectId || ""}</div>
       </div>
-      <span style="font-size:0.7rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px; white-space:nowrap;">Needs ${fmtQty(p.stillToOrder)}</span>
+      <span style="font-size:0.9rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px; white-space:nowrap;">Needs ${fmtQty(p.stillToOrder)}</span>
       <input type="number" min="0" max="${Number(p.stillToOrder) || 0}" step="any"
         class="cpo-alloc-input" data-prnid="${p.prnId}" data-max="${Number(p.stillToOrder) || 0}"
         value="${p.suggested > 0 ? p.suggested : ""}" placeholder="0"
         oninput="handleCPOAllocInput(this, ${lineQty})"
-        style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--brand); border-radius:4px; font-size:0.85rem;">
+        style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--brand); border-radius:4px; font-size:1.05rem;">
     </div>`).join("");
 
   const noPrnNotice = prns.length === 0
@@ -67,7 +67,7 @@ async function openCPOAllocationPicker(rowId) {
       <div style="flex:1; min-width:0;">
         <div style="font-weight:700; font-size:0.78rem; color:#78350f;">Extra</div>
       </div>
-      <div id="cpo-alloc-extra-value" style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid #f59e0b; border-radius:4px; font-size:0.85rem; background:#fff; color:#78350f;">0</div>
+      <div id="cpo-alloc-extra-value" style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid #f59e0b; border-radius:4px; font-size:1.05rem; background:#fff; color:#78350f;">0</div>
     </div>`;
 
   modal.innerHTML = `

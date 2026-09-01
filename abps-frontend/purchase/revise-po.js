@@ -566,12 +566,12 @@ function openRPOAllocationModal(idx) {
       <div style="flex:1; min-width:0;">
         <div style="font-weight:700; font-size:0.78rem; color:${p.stale ? "#b45309" : "var(--brand)"}; white-space:normal; line-height:1.4;">${p.prnId.replace(/^PRN_/,"")}${p.stale ? " ●" : ""}</div>
       </div>
-      <span style="font-size:0.7rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px; white-space:nowrap;">Needs ${fmt(p.need)}</span>
+      <span style="font-size:0.9rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px; white-space:nowrap;">Needs ${fmt(p.need)}</span>
       <input type="number" min="0" max="${p.need}" step="any"
         class="rpo-alloc-modal-input" data-prnid="${p.prnId}" data-need="${p.need}"
         value="${workingByPrn[p.prnId] !== undefined ? Math.min(workingByPrn[p.prnId], p.need) : (p.need > 0 ? p.need : "")}" placeholder="0"
         oninput="updateRPOAllocModalSummary(${idx})"
-        style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--brand); border-radius:4px; font-size:0.85rem;">
+        style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--brand); border-radius:4px; font-size:1.05rem;">
     </div>`).join("");
 
   const noPrnNotice = prns.length === 0
@@ -585,7 +585,7 @@ function openRPOAllocationModal(idx) {
       <div style="flex:1; min-width:0;">
         <div style="font-weight:700; font-size:0.78rem; color:#78350f;">Extra</div>
       </div>
-      <div id="rpo-alloc-extra-value" style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid #f59e0b; border-radius:4px; font-size:0.85rem; background:#fff; color:#78350f;">0</div>
+      <div id="rpo-alloc-extra-value" style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid #f59e0b; border-radius:4px; font-size:1.05rem; background:#fff; color:#78350f;">0</div>
     </div>`;
 
   modal.innerHTML = `
@@ -1286,7 +1286,7 @@ function openAPORAllocationModal(requestId, idx) {
         class="apor-alloc-modal-input" data-prnid="${a.prnId}"
         value="${a.quantity || ""}" placeholder="0"
         oninput="updateAPORAllocModalSummary(${requestId},${idx})"
-        style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--brand); border-radius:4px; font-size:0.85rem;">
+        style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--brand); border-radius:4px; font-size:1.05rem;">
     </div>`).join("");
 
   const noPrnNotice = (line._workingAllocations || []).length === 0
@@ -1298,7 +1298,7 @@ function openAPORAllocationModal(requestId, idx) {
       <div style="flex:1; min-width:0;">
         <div style="font-weight:700; font-size:0.78rem; color:#78350f;">Extra</div>
       </div>
-      <div id="apor-alloc-extra-value" style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid #f59e0b; border-radius:4px; font-size:0.85rem; background:#fff; color:#78350f;">0</div>
+      <div id="apor-alloc-extra-value" style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid #f59e0b; border-radius:4px; font-size:1.05rem; background:#fff; color:#78350f;">0</div>
     </div>`;
 
   modal.innerHTML = `
