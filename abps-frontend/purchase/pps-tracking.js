@@ -86,6 +86,14 @@ async function initializePPSTrackingPanel() {
   const sel = document.getElementById("pps-project-select-ta-input");
   sel.value = "";
   sel.placeholder = "Loading projects...";
+  // Un-hide from a prior Save's "collapse to just the success banner"
+  // state (see savePPSDeliverySchedule) — re-entering this panel (either
+  // via its own menu card or the "+ Action Another PPS" reset) must
+  // always land back on the queues + selector, never a stale hidden state.
+  const selectorRow = document.getElementById("pps-selector-row");
+  if (selectorRow) selectorRow.style.display = "grid";
+  const queueZone = document.getElementById("pps-needqueue-zone");
+  if (queueZone) queueZone.style.display = "block";
   try {
     const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
     // The typeahead input filters/renders from these two globals itself
@@ -96,6 +104,89 @@ async function initializePPSTrackingPanel() {
       ? "No active projects" : "Type Project ID or Customer Name...";
   } catch(e) {
     sel.placeholder = "Failed to load projects";
+  }
+
+  loadPPSNeedQueues();
+}
+
+// loadPPSNeedQueues — PPS Tracking's own work queue, same shape as Create
+// PRN's loadPRNNeedQueue: two stacked lists (Unscheduled, then Partially
+// Scheduled) built from fetchPRNsNeedingDeliverySchedule, which already
+// classifies server-side using the exact same rule the Purchase
+// Dashboard's stat tiles count by (lib/ppsScheduleStatus.js) — this
+// function does no classification of its own, only rendering.
+async function loadPPSNeedQueues() {
+  const zone = document.getElementById("pps-needqueue-zone");
+  if (!zone) return;
+  zone.style.display = "block";
+  zone.innerHTML = `<div style="text-align:center; padding:12px; color:var(--muted); font-size:0.8rem;">
+    <div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>
+    Checking which PRNs need a delivery schedule...
+  </div>`;
+  try {
+    const data = await apFetch({ action: "fetchPRNsNeedingDeliverySchedule" });
+    if (!data.success) { zone.innerHTML = ""; return; }
+    zone.innerHTML =
+      ppsRenderNeedQueueList("Unscheduled PRNs — Need a Delivery Schedule", data.unscheduled || [], "✅ No PRNs are unscheduled.") +
+      ppsRenderNeedQueueList("Partially Scheduled PRNs — Need a Delivery Schedule", data.partial || [], "✅ No PRNs are partially scheduled.");
+  } catch(e) {
+    zone.innerHTML = "";
+  }
+}
+
+function ppsRenderNeedQueueList(title, items, emptyMessage) {
+  if (items.length === 0) {
+    return `<div style="padding:10px 14px; margin-bottom:10px; background:#f0fff4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-size:0.8rem; font-weight:600;">${emptyMessage}</div>`;
+  }
+  const rows = items.map(item => {
+    const hint = (item.totalItems > 0)
+      ? `<div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">${item.scheduledItems} of ${item.totalItems} items scheduled</div>`
+      : "";
+    return `
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #f1f5f9;">
+        <div style="min-width:0;">
+          <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${item.prnId}</span>
+          <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} <strong> | </strong>  ${item.productName || ""}${item.productRating ? " " + item.productRating : ""}</div>
+          ${hint}
+        </div>
+        <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
+          onclick="jumpToPPSFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.prnId.replace(/'/g, "\\'")}', this)">
+          Action →
+        </button>
+      </div>`;
+  }).join("");
+
+  return `
+    <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); overflow:hidden; margin-bottom:12px;">
+      <div style="padding:10px 14px; font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; letter-spacing:0.5px; background:#fef3c7;">
+        ${title} (${items.length})
+      </div>
+      ${rows}
+    </div>`;
+}
+
+async function jumpToPPSFromQueue(projectId, prnId, btn) {
+  const projDrop = document.getElementById("pps-project-select-ta-input");
+  const prnSel = document.getElementById("pps-prn-select");
+  if (!projDrop) return;
+
+  const originalHtml = btn ? btn.innerHTML : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="display:inline-block;width:10px;height:10px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Loading...';
+  }
+
+  try {
+    projDrop.value = projectId;
+    await loadPPSPRNList();
+    if (prnSel) {
+      prnSel.value = prnId;
+      await loadPPSForPRN();
+    }
+    const selectorRow = document.getElementById("pps-selector-row");
+    if (selectorRow) selectorRow.scrollIntoView({ behavior: "smooth", block: "start" });
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
   }
 }
 
@@ -407,7 +498,17 @@ async function savePPSDeliverySchedule(prnId, btn) {
       document.getElementById("pps-results-body").innerHTML = "";
       const header = document.getElementById("pps-prn-header");
       if (header) header.style.display = "none";
-      showSuccessWithReset("pps-feedback", "✅ Delivery schedule saved.", "View Another PPS", "initializePPSTrackingPanel()");
+      // Collapse to just the header + success banner, same as Create
+      // PRN/Assign Material Requirement Date's own success state —
+      // initializePPSTrackingPanel() (called by the reset button) un-hides
+      // both zones again and rebuilds the queues, so the just-saved PRN
+      // naturally moves between/out of the Unscheduled/Partial lists with
+      // no special-case logic here.
+      const selectorRow = document.getElementById("pps-selector-row");
+      if (selectorRow) selectorRow.style.display = "none";
+      const queueZone = document.getElementById("pps-needqueue-zone");
+      if (queueZone) queueZone.style.display = "none";
+      showSuccessWithReset("pps-feedback", "✅ Delivery schedule saved.", "Action Another PPS", "initializePPSTrackingPanel()");
     } else {
       showBOQBanner("pps-feedback", data.error || "Failed to save delivery schedule.", "error");
     }

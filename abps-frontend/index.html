@@ -2991,9 +2991,11 @@
 
     <div id="canvas-module-purchase-pps-tracking" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">PPS Tracking</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Search a Project to see its PRNs and the Purchase Orders linked to each — with expected vs. actual delivery tracking.</p>
       <div id="pps-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
-      <div style="display:grid; grid-template-columns:1fr 2fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+
+      <div id="pps-needqueue-zone" style="margin-bottom:16px;"></div>
+
+      <div id="pps-selector-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
         <div>
           <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
           <div style="position:relative;">
