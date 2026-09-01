@@ -20,6 +20,7 @@ async function initializeSecurityAdminPanel() {
   await Promise.all([
     loadSecurityAdminUsers(),
     loadAllowedNetworks(),
+    loadHolidays(),
     loadTrustedDevices(),
     loadLoginLog(),
     loadSecuritySettings(),
@@ -37,7 +38,7 @@ function exitSecurityAdminBackToMenu() {
 }
 
 function switchSecurityAdminTab(tab) {
-  ['permissions', 'users', 'networks', 'devices', 'log', 'settings', 'pins', 'registeredpcs'].forEach(t => {
+  ['permissions', 'users', 'networks', 'holidays', 'devices', 'log', 'settings', 'pins', 'registeredpcs'].forEach(t => {
     document.getElementById(`sa-panel-${t}`).style.display = (t === tab) ? 'block' : 'none';
     document.getElementById(`sa-tab-${t}`).style.background = (t === tab) ? 'var(--brand)' : '#e2e8f0';
     document.getElementById(`sa-tab-${t}`).style.color = (t === tab) ? '#fff' : '#334155';
@@ -237,6 +238,52 @@ async function deactivateNetwork(networkId) {
     const data = await apFetch({ action: "deactivateAllowedNetwork", networkId });
     if (data.success) { showBOQBanner("sa-feedback", "Network deactivated.", "success"); loadAllowedNetworks(); }
     else showBOQBanner("sa-feedback", data.error || "Failed to deactivate.", "error");
+  } catch (e) {
+    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+  }
+}
+
+// ── Holidays (1 Sep 2026) ────────────────────────────────────────────────
+async function loadHolidays() {
+  try {
+    const data = await apFetch({ action: "fetchHolidays" });
+    if (!data.success) return;
+    const tbody = document.getElementById("sa-holiday-list-body");
+    tbody.innerHTML = data.holidays.map(h => `
+      <tr style="border-top:1px solid var(--border);">
+        <td style="padding:8px;">${formatDMYFromISO ? formatDMYFromISO(h.date) : h.date}</td>
+        <td style="padding:8px;">${h.label}</td>
+        <td style="padding:8px; font-size:0.78rem; color:var(--muted);">${h.createdBy || '—'}</td>
+        <td style="padding:8px;"><button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitDeleteHoliday('${h.date}')">Delete</button></td>
+      </tr>`).join('') || `<tr><td colspan="4" style="padding:14px; text-align:center; color:var(--muted);">No holidays configured.</td></tr>`;
+  } catch (e) { console.error("loadHolidays failed:", e); }
+}
+
+async function submitAddHoliday() {
+  const date = document.getElementById("sa-holiday-date").value;
+  const label = document.getElementById("sa-holiday-label").value.trim();
+  if (!date || !label) return showBOQBanner("sa-feedback", "Date and Label are both required.", "error");
+  try {
+    const data = await apFetch({ action: "addHoliday", date, label });
+    if (data.success) {
+      document.getElementById("sa-holiday-date").value = "";
+      document.getElementById("sa-holiday-label").value = "";
+      showBOQBanner("sa-feedback", "Holiday added.", "success");
+      loadHolidays();
+    } else {
+      showBOQBanner("sa-feedback", data.error || "Failed to add holiday.", "error");
+    }
+  } catch (e) {
+    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+  }
+}
+
+async function submitDeleteHoliday(date) {
+  if (!confirm("Delete this holiday? Business-day math will treat this date as a normal working day again.")) return;
+  try {
+    const data = await apFetch({ action: "deleteHoliday", date });
+    if (data.success) { showBOQBanner("sa-feedback", "Holiday deleted.", "success"); loadHolidays(); }
+    else showBOQBanner("sa-feedback", data.error || "Failed to delete.", "error");
   } catch (e) {
     showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
   }

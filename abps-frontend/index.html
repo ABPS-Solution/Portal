@@ -2169,6 +2169,7 @@
       <button id="sa-tab-log" class="nav-btn-styled" onclick="switchSecurityAdminTab('log')" style="flex:1; padding:11px 16px;">Login Log</button>
       <button id="sa-tab-devices" class="nav-btn-styled" onclick="switchSecurityAdminTab('devices')" style="flex:1; padding:11px 16px;">Trusted Devices</button>
       <button id="sa-tab-networks" class="nav-btn-styled" onclick="switchSecurityAdminTab('networks')" style="flex:1; padding:11px 16px;">Office Networks</button>
+      <button id="sa-tab-holidays" class="nav-btn-styled" onclick="switchSecurityAdminTab('holidays')" style="flex:1; padding:11px 16px;">Holidays</button>
       <button id="sa-tab-settings" class="nav-btn-styled" onclick="switchSecurityAdminTab('settings')" style="flex:1; padding:11px 16px;">Settings</button>
     </div>
 
@@ -2222,6 +2223,32 @@
           <th style="padding:8px;">Added</th><th style="padding:8px;">Action</th>
         </tr></thead>
         <tbody id="sa-network-list-body"></tbody>
+      </table>
+    </div>
+
+    <!-- HOLIDAYS (1 Sep 2026) — admin_db.holidays, read by
+         lib/businessDays.js's isBusinessDay/addBusinessDays for
+         Project Timeline's business-day math and by
+         fetchTimelineHolidays for the canvas's day-axis coloring.
+         Previously direct-SQL-only. -->
+    <div id="sa-panel-holidays" style="display:none;">
+      <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:flex-end;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Date</label>
+          <input type="date" id="sa-holiday-date" style="min-width:170px;">
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Label</label>
+          <input type="text" id="sa-holiday-label" placeholder="e.g. Diwali" style="min-width:260px;">
+        </div>
+        <button class="nav-btn-styled" onclick="submitAddHoliday()">+ Add Holiday</button>
+      </div>
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:8px;">Date</th><th style="padding:8px;">Label</th>
+          <th style="padding:8px;">Added By</th><th style="padding:8px;">Action</th>
+        </tr></thead>
+        <tbody id="sa-holiday-list-body"></tbody>
       </table>
     </div>
 
