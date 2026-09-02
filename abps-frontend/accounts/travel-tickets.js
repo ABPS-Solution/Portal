@@ -14,7 +14,7 @@ let ttkCachedEmployees = [];
 let ttkCachedCompanies = [];
 let ttkTravellerRows = [];      // [{employeeId, employeeName, empCode, price}]
 let ttkSelectedCompanies = [];  // [companyName]
-let ttkInvoiceFile = null;      // {base64Data, fileName, mimeType}
+let ttkInvoiceFiles = [];       // [{base64Data, fileName, mimeType}] — Invoice Upload is compulsory, multiple allowed
 let ttkEditingTicketId = null;
 
 function initializeTravelTicketsPanel() {
@@ -93,8 +93,6 @@ async function ttkRenderBookForm() {
       <div style="display:flex; gap:10px; margin-bottom:12px;">
         <div style="flex:1;"><label class="field-label">PNR / Ticket No</label>
           <input type="text" id="ttk-pnr" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;"></div>
-        <div style="flex:1;"><label class="field-label">Vendor / Agent</label>
-          <input type="text" id="ttk-vendor" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;"></div>
       </div>
       <div style="margin-bottom:12px; position:relative;">
         <label class="field-label">Company(ies) of Visit</label>
@@ -110,13 +108,14 @@ async function ttkRenderBookForm() {
       <button type="button" class="nav-btn-styled" onclick="ttkAddTravellerRow()" style="margin-bottom:16px; padding:7px 14px; font-size:0.85rem;">+ Add Traveller</button>
 
       <div style="display:flex; justify-content:flex-end; margin-bottom:16px; font-weight:700;">
-        Booking Total (derived — sum of each traveller's fare): <span id="ttk-total" style="margin-left:8px;">₹0</span>
+        Booking Total: <span id="ttk-total" style="margin-left:8px;">₹0</span>
       </div>
 
       <div style="display:flex; gap:10px; margin-bottom:16px;">
-        <div style="flex:1;"><label class="field-label">Invoice Upload</label>
-          <input type="file" id="ttk-invoice-file" accept="image/*,application/pdf" onchange="ttkHandleInvoiceFile(this)"
-            style="width:100%; padding:7px 0;"></div>
+        <div style="flex:1;"><label class="field-label">Invoice Upload *</label>
+          <input type="file" id="ttk-invoice-file" accept="image/*,application/pdf" multiple onchange="ttkHandleInvoiceFile(this)"
+            style="width:100%; padding:7px 0;">
+          <div id="ttk-invoice-file-list" style="font-size:0.75rem; color:var(--muted); margin-top:4px;"></div></div>
         <div style="flex:1;"><label class="field-label">Remarks</label>
           <textarea id="ttk-remarks" rows="1" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; resize:vertical;"></textarea></div>
       </div>
@@ -127,7 +126,7 @@ async function ttkRenderBookForm() {
   if (!editing) {
     ttkTravellerRows = [];
     ttkSelectedCompanies = [];
-    ttkInvoiceFile = null;
+    ttkInvoiceFiles = [];
   }
   try {
     const [empData, companyData] = await Promise.all([
@@ -286,14 +285,28 @@ function ttkRenderCompanyChips() {
 }
 
 function ttkHandleInvoiceFile(input) {
-  const file = input.files[0];
-  if (!file) { ttkInvoiceFile = null; return; }
-  const reader = new FileReader();
-  reader.onload = () => {
-    const base64Data = reader.result.split(",")[1];
-    ttkInvoiceFile = { base64Data, fileName: file.name, mimeType: file.type };
-  };
-  reader.readAsDataURL(file);
+  const files = [...input.files];
+  if (files.length === 0) { ttkInvoiceFiles = []; ttkRenderInvoiceFileList(); return; }
+  ttkInvoiceFiles = new Array(files.length);
+  let loaded = 0;
+  files.forEach((file, idx) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64Data = reader.result.split(",")[1];
+      ttkInvoiceFiles[idx] = { base64Data, fileName: file.name, mimeType: file.type };
+      loaded++;
+      if (loaded === files.length) ttkRenderInvoiceFileList();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function ttkRenderInvoiceFileList() {
+  const el = document.getElementById("ttk-invoice-file-list");
+  if (!el) return;
+  el.textContent = ttkInvoiceFiles.length
+    ? `${ttkInvoiceFiles.length} file(s) selected: ${ttkInvoiceFiles.map(f => f.fileName).join(", ")}`
+    : "";
 }
 
 document.addEventListener("click", (e) => {
@@ -317,7 +330,6 @@ async function submitTravelTicket() {
   const departDate = document.getElementById("ttk-depart-date").value;
   const returnDate = document.getElementById("ttk-return-date").value;
   const pnrNumber = document.getElementById("ttk-pnr").value.trim();
-  const vendorName = document.getElementById("ttk-vendor").value.trim();
   const remarks = document.getElementById("ttk-remarks").value.trim();
 
   if (!modeOfTravel) return showTicketFeedback("Mode of Travel is required.", "error");
@@ -329,13 +341,19 @@ async function submitTravelTicket() {
   if (ttkTravellerRows.some(r => r.price === "" || isNaN(Number(r.price)) || Number(r.price) < 0)) {
     return showTicketFeedback("Every traveller needs a valid, non-negative price.", "error");
   }
+  // Invoice Upload is compulsory on create; on Edit, an existing ticket
+  // already has at least one (enforced at create time), so a new upload
+  // there is optional — it appends, never replaces.
+  if (!ttkEditingTicketId && ttkInvoiceFiles.length === 0) {
+    return showTicketFeedback("Invoice Upload is required — select at least one file.", "error");
+  }
 
   const payload = {
     modeOfTravel, tripType, fromCity, toCity, departDate, returnDate: tripType === "Round Trip" ? returnDate : null,
-    pnrNumber: pnrNumber || null, vendorName: vendorName || null, remarks: remarks || null,
+    pnrNumber: pnrNumber || null, remarks: remarks || null,
     companies: ttkSelectedCompanies,
     travellers: ttkTravellerRows.map(r => ({ employeeId: r.employeeId, price: Number(r.price) })),
-    invoice: ttkInvoiceFile,
+    invoices: ttkInvoiceFiles,
   };
 
   showBlockingOverlay(ttkEditingTicketId ? "Saving changes..." : "Booking ticket...");
@@ -371,23 +389,50 @@ function ttkInitializeManagePanel() {
         <select id="ttk-filter-mode" style="padding:8px 10px; border:1px solid var(--border); border-radius:6px;">
           <option value="">All</option>${TTK_MODES.map(m => `<option value="${m}">${m}</option>`).join("")}
         </select></div>
-      <div><label class="field-label">Search (PNR / Vendor / City)</label>
-        <input type="text" id="ttk-filter-search" style="padding:8px 10px; border:1px solid var(--border); border-radius:6px;"></div>
+      <div><label class="field-label">From City</label>
+        <input type="text" id="ttk-filter-from-city" style="padding:8px 10px; border:1px solid var(--border); border-radius:6px;"></div>
+      <div><label class="field-label">To City</label>
+        <input type="text" id="ttk-filter-to-city" style="padding:8px 10px; border:1px solid var(--border); border-radius:6px;"></div>
+      <div><label class="field-label">Departure Date</label>
+        <input type="date" id="ttk-filter-depart-date" style="padding:8px 10px; border:1px solid var(--border); border-radius:6px;"></div>
       <button class="nav-btn-styled" onclick="ttkRunSearch()">Search</button>
     </div>
+    <div id="ttk-search-label" style="display:none; font-weight:700; color:var(--brand); margin-bottom:10px; font-size:0.9rem; line-height:1.7;"></div>
     <div id="ttk-search-totals" style="margin-bottom:12px; font-weight:700;"></div>
     <div id="ttk-search-results"></div>`;
+  enhanceAllDateInputsForDMY();
   ttkRunSearch();
 }
 
+function ttkBuildSearchLabel() {
+  const esc = (s) => (s || "").toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const val = (s) => `<span style="color:var(--brand);">${esc(s || 'All')}</span>`;
+  const statusLabel = document.getElementById("ttk-filter-status").value || "All";
+  const modeLabel = document.getElementById("ttk-filter-mode").value || "All";
+  const fromCityLabel = document.getElementById("ttk-filter-from-city").value || "All";
+  const toCityLabel = document.getElementById("ttk-filter-to-city").value || "All";
+  const departDateVal = document.getElementById("ttk-filter-depart-date").value;
+  const departDateLabel = departDateVal ? formatDateDMY(departDateVal) : "All";
+  return `<span style="color:#000;">Searching for</span>` +
+    `<br><span style="color:#000;">Status:</span> ${val(statusLabel)} &nbsp; <span style="color:#000;">Mode:</span> ${val(modeLabel)}` +
+    `<br><span style="color:#000;">From City:</span> ${val(fromCityLabel)} &nbsp; <span style="color:#000;">To City:</span> ${val(toCityLabel)}` +
+    `<br><span style="color:#000;">Departure Date:</span> ${val(departDateLabel)}`;
+}
+
 async function ttkRunSearch() {
+  const lbl = document.getElementById("ttk-search-label");
+  lbl.style.display = "block";
+  lbl.innerHTML = ttkBuildSearchLabel();
+
   const results = document.getElementById("ttk-search-results");
   results.innerHTML = `<div style="padding:20px; text-align:center; color:var(--muted);">Loading...</div>`;
   try {
     const data = await acFetch("searchTravelTickets", {
       status: document.getElementById("ttk-filter-status").value || null,
       modeOfTravel: document.getElementById("ttk-filter-mode").value || null,
-      searchTerm: document.getElementById("ttk-filter-search").value.trim() || null,
+      fromCity: document.getElementById("ttk-filter-from-city").value.trim() || null,
+      toCity: document.getElementById("ttk-filter-to-city").value.trim() || null,
+      departDate: document.getElementById("ttk-filter-depart-date").value || null,
     });
     if (!data.success) { results.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
     document.getElementById("ttk-search-totals").textContent =
@@ -411,7 +456,10 @@ function ttkRenderTicketCard(t) {
         ${tv.status}${tv.linkedVoucherNumber ? ' · ' + escapeHtml(tv.linkedVoucherNumber) : ''}</span></td>
     </tr>`).join("");
   const companiesLine = (t.companiesOfVisit || []).length ? `<div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">Companies: ${(t.companiesOfVisit || []).map(escapeHtml).join(", ")}</div>` : "";
-  const invoiceLine = t.invoiceUrl ? `<a href="${driveLink(t.invoiceUrl)}" target="_blank" rel="noopener" style="font-size:0.8rem;">View Invoice ↗</a>` : `<span style="font-size:0.8rem; color:var(--muted);">No invoice uploaded</span>`;
+  const invoices = t.invoices || [];
+  const invoiceLine = invoices.length
+    ? invoices.map((inv, idx) => `<a href="${driveLink(inv.url)}" target="_blank" rel="noopener" style="font-size:0.8rem; margin-right:10px;">${escapeHtml(inv.fileName || `Invoice ${idx + 1}`)} ↗</a>`).join("")
+    : `<span style="font-size:0.8rem; color:var(--muted);">No invoice uploaded</span>`;
   const statusBadge = t.status === 'Cancelled'
     ? `<span style="background:#fee2e2; color:#b91c1c; padding:3px 8px; font-weight:700; font-size:0.8rem;">Cancelled</span>`
     : `<span style="background:#dcfce7; color:#15803d; padding:3px 8px; font-weight:700; font-size:0.8rem;">Booked</span>`;
@@ -431,7 +479,7 @@ function ttkRenderTicketCard(t) {
             <span style="font-weight:700;">${formatINRComma(t.livePrice)}</span>
           </div>
           <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
-            ${t.pnrNumber ? 'PNR: ' + escapeHtml(t.pnrNumber) + ' · ' : ''}${t.vendorName ? escapeHtml(t.vendorName) + ' · ' : ''}Booked by ${escapeHtml(t.bookedBy)} on ${formatDateDMY(t.bookingDate)}
+            ${t.pnrNumber ? 'PNR: ' + escapeHtml(t.pnrNumber) + ' · ' : ''}Booked by ${escapeHtml(t.bookedBy)} on ${formatDateDMY(t.bookingDate)}
           </div>
           ${companiesLine}
         </div>
@@ -461,7 +509,7 @@ async function ttkStartEdit(ticketId) {
     ttkEditingTicketId = ticketId;
     ttkTravellerRows = (t.travellers || []).map(tv => ({ employeeId: tv.employeeId, employeeName: tv.employeeName, empCode: tv.empCode || "", price: tv.price }));
     ttkSelectedCompanies = t.companiesOfVisit || [];
-    ttkInvoiceFile = null;
+    ttkInvoiceFiles = [];
     switchTravelTicketToggle("book");
     await ttkRenderBookForm();
     document.getElementById("ttk-mode").value = t.modeOfTravel;
@@ -472,7 +520,6 @@ async function ttkStartEdit(ticketId) {
     document.getElementById("ttk-depart-date").value = t.departDate ? t.departDate.slice(0, 10) : "";
     if (t.returnDate) document.getElementById("ttk-return-date").value = t.returnDate.slice(0, 10);
     document.getElementById("ttk-pnr").value = t.pnrNumber || "";
-    document.getElementById("ttk-vendor").value = t.vendorName || "";
     document.getElementById("ttk-remarks").value = t.remarks || "";
     ttkRenderCompanyChips();
     ttkRenderTravellerRows();
