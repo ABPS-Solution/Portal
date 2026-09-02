@@ -341,6 +341,9 @@ function tvsRenderCard(v) {
   // blur (onchange) if the value actually changed (31 Aug 2026, replacing
   // an earlier click-to-edit/Save-Cancel affordance).
   const canEditActual = v.status === 'Checked';
+  const colBorder = "border-left:2px solid var(--border);";
+  const cell = "padding:4px 6px; line-height:1.25; font-size:0.82rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word;";
+  const amtCell = "padding:4px 6px; line-height:1.25; font-size:0.95rem; font-weight:700; color:#000; text-align:center; vertical-align:middle;";
   const rows = lines.map(l => {
     const bills = (l.bills && l.bills.length > 0) ? l.bills : (l.billUrl ? [{ fileName: l.billFileName, url: l.billUrl }] : []);
     const billCell = bills.length > 0
@@ -349,7 +352,7 @@ function tvsRenderCard(v) {
     const rawActual = Number(l.actualAmount) || 0;
     const actualCell = canEditActual
       ? `<input type="number" id="tvs-actual-input-${l.lineId}" data-cap="${l.capAmount != null ? l.capAmount : ''}" value="${rawActual}" min="0" step="0.01"
-           style="width:80px; padding:2px 4px; font-size:0.78rem; text-align:right;" onclick="event.stopPropagation();"
+           style="width:80px; padding:3px 5px; border:1px solid var(--border); border-radius:4px; text-align:right; font-size:0.9rem; font-weight:700;" onclick="event.stopPropagation();"
            onchange="event.stopPropagation(); tvsSaveLineActual(${v.voucherId}, ${l.lineId}, ${rawActual})">
          <span id="tvs-actual-err-${l.lineId}" style="color:#b91c1c; font-size:0.62rem; display:block;"></span>`
       : (l.actualAmount !== null && l.actualAmount !== undefined ? formatINRComma(l.actualAmount) : '—');
@@ -357,15 +360,15 @@ function tvsRenderCard(v) {
     // reflects whether the ORIGINAL CLAIM triggered a cap; over_limit_amount
     // is the realized excess actually paid, which can be 0 even when flagged.
     const overLimitBadge = l.overLimitFlag
-      ? `<span style="color:#b91c1c; font-weight:700; font-size:0.7rem; display:block;">${Number(l.overLimitAmount) > 0 ? `Over by ${formatINRComma(l.overLimitAmount)}` : 'Was capped'}${l.overLimitReason ? ' — ' + escapeHtml(l.overLimitReason) : ''}</span>`
+      ? `<span style="color:#b91c1c; font-weight:700; font-size:0.68rem; display:block;">${Number(l.overLimitAmount) > 0 ? `Over by ${formatINRComma(l.overLimitAmount)}` : 'Was capped'}${l.overLimitReason ? ' — ' + escapeHtml(l.overLimitReason) : ''}</span>`
       : '';
-    return `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:6px;">${l.srNo}</td><td style="padding:6px;">${formatDateDMY(l.expenseDate)}</td>
-      <td style="padding:6px;">${escapeHtml(l.expenseType)}${l.conveyanceMode ? ' (' + escapeHtml(l.conveyanceMode) + ')' : ''}</td>
-      <td style="padding:6px; text-align:right;">${formatINRComma(l.amount)}</td>
-      <td style="padding:6px; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
-      <td style="padding:6px; text-align:right;">${actualCell}${overLimitBadge}</td>
-      <td style="padding:6px;">${billCell}</td>
+    return `<tr style="border-bottom:2px solid var(--border);">
+      <td style="${cell}">${l.srNo}</td><td style="${cell} ${colBorder}">${formatOrdinalDate(l.expenseDate)}</td>
+      <td style="${cell} ${colBorder}">${escapeHtml(l.expenseType)}${l.conveyanceMode ? ' (' + escapeHtml(l.conveyanceMode) + ')' : ''}</td>
+      <td style="${amtCell} ${colBorder}">${formatINRComma(l.amount)}</td>
+      <td style="${cell} ${colBorder}; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
+      <td style="${cell} ${colBorder}">${actualCell}${overLimitBadge}</td>
+      <td style="${cell} ${colBorder}; white-space:nowrap;">${billCell}</td>
     </tr>`;
   }).join("");
   const statusColor = v.status === 'Checked' ? '#15803d' : '#b45309';
@@ -394,7 +397,7 @@ function tvsRenderCard(v) {
       <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px;">Company-Paid Travel</div>
       ${linkedTickets.map(t => {
         const dateCell = t.tripType === 'Round Trip' && t.returnDate
-          ? `${formatDateDMY(t.departDate)} → ${formatDateDMY(t.returnDate)}` : formatDateDMY(t.departDate);
+          ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}` : formatOrdinalDate(t.departDate);
         const cancelledTag = t.ticketStatus === 'Cancelled' ? `<span style="color:#b91c1c; font-weight:700; margin-left:6px;">Cancelled</span>` : '';
         const invoiceLink = t.invoiceUrl ? ` · <a href="${driveLink(t.invoiceUrl)}" target="_blank" rel="noopener">Invoice</a>` : '';
         const unlinkBtn = isAdminUser
@@ -425,14 +428,25 @@ function tvsRenderCard(v) {
           ${pdfLine}
         </div>
       </div>
-      <div style="display:none; padding-top:12px; border-top:1px dashed var(--border); margin-top:10px; overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
-          <thead><tr style="background:var(--highlight-bg); text-align:left;">
-            <th style="padding:6px;">Sr No</th><th style="padding:6px;">Date</th><th style="padding:6px;">Type</th>
-            <th style="padding:6px; text-align:right;">Amount</th><th style="padding:6px;">Description</th><th style="padding:6px; text-align:right;">Actual</th><th style="padding:6px;">Bill</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
+      <div style="display:none; padding-top:12px; border-top:1px dashed var(--border); margin-top:10px;">
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+            <colgroup>
+              <col style="width:6%;"><col style="width:10%;"><col style="width:14%;">
+              <col style="width:12%;"><col style="width:22%;"><col style="width:14%;"><col style="width:22%;">
+            </colgroup>
+            <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted);">Sr No</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Date</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Type</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Voucher Amount</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Description</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Actual Amount</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Bill</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
         ${ticketsBlock}
       </div>
     </div>`;
