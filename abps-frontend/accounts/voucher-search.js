@@ -262,8 +262,8 @@ async function runTourVoucherSearch() {
 
     document.getElementById("tvs-total").innerHTML =
       `Total Voucher Amount (Checked, Actual): ${formatINRComma(data.totalCheckedActual)}` +
-      `&nbsp;&nbsp;·&nbsp;&nbsp;Company-Paid (Checked): ${formatINRComma(data.totalCompanyPaid || 0)}` +
-      `&nbsp;&nbsp;·&nbsp;&nbsp;Over Limit Amount: ${formatINRComma(data.overLimitAmount || 0)}`;
+      `&nbsp;&nbsp;|&nbsp;&nbsp;Company-Paid (Checked): ${formatINRComma(data.totalCompanyPaid || 0)}` +
+      `&nbsp;&nbsp;|&nbsp;&nbsp;Over Limit Amount: ${formatINRComma(data.overLimitAmount || 0)}`;
 
     if (data.vouchers.length === 0) {
       resultsEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No vouchers match this filter.</div>`;
@@ -394,7 +394,7 @@ function tvsRenderCard(v) {
   const linkedBookings = v.linkedCompanyPaidBookings || [];
   const ticketsBlock = linkedBookings.length ? `
     <div style="margin-top:12px; padding:10px; background:var(--highlight-bg); border-radius:var(--radius);">
-      <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px;">Company-Paid</div>
+      <div style="font-weight:700; font-size:0.92rem; margin-bottom:6px;">Company-Paid</div>
       ${linkedBookings.map(t => {
         const isHotel = t.bookingType === 'Hotel';
         const dateCell = isHotel
@@ -406,11 +406,11 @@ function tvsRenderCard(v) {
         const unlinkBtn = isAdminUser
           ? `<button class="nav-btn-styled" onclick="event.stopPropagation(); tvsUnlinkTicket(${v.voucherId}, ${t.travellerId})" style="padding:3px 10px; font-size:0.72rem; margin-left:8px; background:#fee2e2; color:#b91c1c;">Unlink</button>` : '';
         const label = isHotel
-          ? `Hotel: ${escapeHtml(t.hotelName || t.hotelCity)}, ${escapeHtml(t.hotelCity)} · ${dateCell}${t.pnrNumber ? ' · Ref ' + escapeHtml(t.pnrNumber) : ''}`
-          : `${escapeHtml(t.modeOfTravel)}: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)} · ${dateCell}${t.pnrNumber ? ' · PNR ' + escapeHtml(t.pnrNumber) : ''}`;
-        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:0.82rem;">
+          ? `<b>Hotel</b>: ${escapeHtml(t.hotelName || t.hotelCity)}, ${escapeHtml(t.hotelCity)} · ${dateCell}`
+          : `<b>${escapeHtml(t.modeOfTravel)}</b>: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)} · ${dateCell}`;
+        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:0.9rem;">
           <span>${label}${invoiceLink}${cancelledTag}</span>
-          <span>${formatINRComma(t.price)}${unlinkBtn}</span>
+          <span style="font-weight:700;">${formatINRComma(t.price)}${unlinkBtn}</span>
         </div>`;
       }).join("")}
     </div>` : '';
