@@ -96,11 +96,11 @@ function tvcRenderCard(v) {
               <span style="margin-left:8px; font-weight:700;">${escapeHtml(v.employeeName)}</span>
               <span style="color:var(--muted); font-size:0.8rem; margin-left:6px;">${escapeHtml(v.departmentName || '—')}</span>
             </div>
-            <span style="background:#cbd5e1; color:#1e293b; font-weight:700; font-size:0.8rem; padding:3px 8px;">Submitted: ${formatDateDMY(v.submittedDate)}</span>
+            <span style="background:#cbd5e1; color:#1e293b; font-weight:700; font-size:0.8rem; padding:3px 8px;">Submitted: ${formatOrdinalDate(v.submittedDate)}</span>
           </div>
           <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
             ${escapeHtml(v.purposeOfVisit === 'Others' ? v.purposeOtherText : v.purposeOfVisit)} · ${escapeHtml(v.placeOfVisit)} ·
-            ${formatDateDMY(v.visitStartDate)} to ${formatDateDMY(v.visitEndDate)} · Total Claimed: ${formatINRComma(v.totalAmount)}
+            ${formatOrdinalDate(v.visitStartDate)} to ${formatOrdinalDate(v.visitEndDate)} · Total Claimed: ${formatINRComma(v.totalAmount)}
           </div>
           ${peopleLine}${serviceReportLine}
         </div>
@@ -160,7 +160,12 @@ function tvcRenderTicketPicker(v) {
     const titleLine = isHotel
       ? `Hotel: ${escapeHtml(t.hotelName || t.hotelCity)}, ${escapeHtml(t.hotelCity)}${t.nights ? ` · ${t.nights} night${t.nights === 1 ? '' : 's'}` : ''}`
       : `${escapeHtml(t.modeOfTravel)}: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)}`;
-    const metaBits = [dateCell, t.pnrNumber ? `${isHotel ? 'Ref' : 'PNR'}: ${escapeHtml(t.pnrNumber)}` : null].filter(Boolean).join(' · ');
+    // Booked for the primary employee by default; if it was booked for
+    // one of this voucher's Additional People instead, say so — a
+    // co-traveller's booking can now be claimed here too.
+    const forBadge = t.employeeName && t.employeeName !== v.employeeName
+      ? `<span style="color:var(--brand); font-weight:700;">For ${escapeHtml(t.employeeName)}</span>` : null;
+    const metaBits = [dateCell, t.pnrNumber ? `${isHotel ? 'Ref' : 'PNR'}: ${escapeHtml(t.pnrNumber)}` : null, forBadge].filter(Boolean).join(' · ');
     return `<div class="tvc-ticket-row" onclick="tvcToggleTicketRow(event, ${t.travellerId})"
         style="display:grid; grid-template-columns:24px minmax(0,1fr) auto; align-items:center; column-gap:12px;
                padding:10px 12px; border:1px solid ${t.overlapsVisit ? '#86efac' : 'var(--border)'}; border-radius:6px;

@@ -181,7 +181,7 @@ function tvsBuildSearchLabel() {
   const deptLabel = document.getElementById("tvs-f-dept").value || "All";
   const from = document.getElementById("tvs-f-from").value;
   const to = document.getElementById("tvs-f-to").value;
-  const dateRangeLabel = (from || to) ? `${from ? formatDateDMY(from) : '…'} to ${to ? formatDateDMY(to) : '…'}` : "All";
+  const dateRangeLabel = (from || to) ? `${from ? formatOrdinalDate(from) : '…'} to ${to ? formatOrdinalDate(to) : '…'}` : "All";
   let html = `<span style="color:#000;">Searching for</span>` +
     `<br><span style="color:#000;">Mode:</span> ${val(tvsSearchMode === "expense" ? "Expense Vouchers" : "Advance Vouchers")}`;
   if (tvsSearchMode === "expense") {
@@ -405,9 +405,14 @@ function tvsRenderCard(v) {
         const invoiceLink = t.invoiceUrl ? ` · <a href="${driveLink(t.invoiceUrl)}" target="_blank" rel="noopener">Invoice</a>` : '';
         const unlinkBtn = isAdminUser
           ? `<button class="nav-btn-styled" onclick="event.stopPropagation(); tvsUnlinkTicket(${v.voucherId}, ${t.travellerId})" style="padding:3px 10px; font-size:0.72rem; margin-left:8px; background:#fee2e2; color:#b91c1c;">Unlink</button>` : '';
+        // Now claimable from an Additional Person's own booking too — tag
+        // whose booking it is whenever that's not the voucher's own
+        // primary employee.
+        const forTag = t.travellerEmployeeName && t.travellerEmployeeName !== v.employeeName
+          ? ` · <span style="color:var(--brand);">for ${escapeHtml(t.travellerEmployeeName)}</span>` : '';
         const label = isHotel
-          ? `<b>Hotel</b>: ${escapeHtml(t.hotelName || t.hotelCity)}, ${escapeHtml(t.hotelCity)} · ${dateCell}`
-          : `<b>${escapeHtml(t.modeOfTravel)}</b>: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)} · ${dateCell}`;
+          ? `<b>Hotel</b>: ${escapeHtml(t.hotelName || t.hotelCity)}, ${escapeHtml(t.hotelCity)} · ${dateCell}${forTag}`
+          : `<b>${escapeHtml(t.modeOfTravel)}</b>: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)} · ${dateCell}${forTag}`;
         return `<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:0.9rem;">
           <span>${label}${invoiceLink}${cancelledTag}</span>
           <span style="font-weight:700;">${formatINRComma(t.price)}${unlinkBtn}</span>
@@ -428,7 +433,7 @@ function tvsRenderCard(v) {
           </div>
           <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
             ${escapeHtml(v.departmentName || '—')} · ${escapeHtml(v.purposeOfVisit)} · ${escapeHtml(v.placeOfVisit)} ·
-            ${formatDateDMY(v.visitStartDate)}–${formatDateDMY(v.visitEndDate)} ·
+            ${formatOrdinalDate(v.visitStartDate)}–${formatOrdinalDate(v.visitEndDate)} ·
             Claimed ${formatINRComma(cardClaimed)}${anyActualSet ? ' · Actual ' + formatINRComma(cardActual) : ''}
           </div>
           ${pdfLine}
