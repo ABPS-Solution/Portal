@@ -341,6 +341,7 @@ function tvsRenderCard(v) {
   // blur (onchange) if the value actually changed (31 Aug 2026, replacing
   // an earlier click-to-edit/Save-Cancel affordance).
   const canEditActual = v.status === 'Checked';
+  const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true"; // gates Delete Voucher only — Link/Unlink are not admin-gated
   const colBorder = "border-left:2px solid var(--border);";
   const cell = "padding:4px 6px; line-height:1.25; font-size:0.82rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word;";
   const amtCell = "padding:4px 6px; line-height:1.25; font-size:0.95rem; font-weight:700; color:#000; text-align:center; vertical-align:middle;";
