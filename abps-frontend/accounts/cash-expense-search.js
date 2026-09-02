@@ -137,6 +137,12 @@ async function runCashExpenseSearch() {
       resultsEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No expenses match this filter.</div>`;
       return;
     }
+    // Same bordered/wrapping table shape as voucher-search.js's
+    // tvsRenderAdvanceTable (Search Advance Vouchers, Tour Expense) —
+    // left border between columns, every header/value centered both ways.
+    const colBorder = "border-left:2px solid var(--border);";
+    const cell = "padding:8px 6px; font-size:0.85rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;";
+    const th = "padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); vertical-align:middle;";
     const rows = data.expenses.map(x => {
       const typeLabel = x.expenseType === 'Food & Snacks' && x.subType ? `Food & Snacks (${escapeHtml(x.subType)})`
         : x.expenseType === 'Others' && x.otherText ? `Others (${escapeHtml(x.otherText)})` : escapeHtml(x.expenseType);
@@ -154,21 +160,21 @@ async function runCashExpenseSearch() {
              style="width:90px; padding:2px 4px; font-size:0.8rem; text-align:right; font-weight:700;"
              onchange="cesSaveActual(${x.expenseId}, ${rawActual})">
            <span id="ces-actual-err-${x.expenseId}" style="color:#b91c1c; font-size:0.62rem; display:block;"></span>`;
-      return `<tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:7px;">${formatDateDMY(x.createdDate)}</td>
-        <td style="padding:7px;">${escapeHtml(x.employeeName)}</td>
-        <td style="padding:7px;">${escapeHtml(x.departmentName || '—')}</td>
-        <td style="padding:7px;">${typeLabel}</td>
-        <td style="padding:7px;"><span style="background:${modeColor}; color:#fff; font-weight:700; font-size:0.75rem; padding:3px 8px; border-radius:3px;">${x.paymentMode}</span></td>
-        <td style="padding:7px; text-align:right;">${actualCell}</td>
+      return `<tr style="border-bottom:2px solid var(--border);">
+        <td style="${cell}">${formatOrdinalDate(x.createdDate)}</td>
+        <td style="${cell} ${colBorder}">${escapeHtml(x.employeeName)}</td>
+        <td style="${cell} ${colBorder}">${escapeHtml(x.departmentName || '—')}</td>
+        <td style="${cell} ${colBorder}">${typeLabel}</td>
+        <td style="${cell} ${colBorder}"><span style="background:${modeColor}; color:#fff; font-weight:700; font-size:0.75rem; padding:3px 8px; border-radius:3px;">${x.paymentMode}</span></td>
+        <td style="${cell} ${colBorder}">${actualCell}</td>
       </tr>`;
     }).join("");
     resultsEl.innerHTML = `
       <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
-          <thead><tr style="background:var(--highlight-bg); text-align:left;">
-            <th style="padding:8px;">Date</th><th style="padding:8px;">Employee</th><th style="padding:8px;">Department</th>
-            <th style="padding:8px;">Type</th><th style="padding:8px;">Payment Mode</th><th style="padding:8px; text-align:right;">Actual Amount</th>
+        <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+          <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">
+            <th style="${th}">Date</th><th style="${th} ${colBorder}">Employee</th><th style="${th} ${colBorder}">Department</th>
+            <th style="${th} ${colBorder}">Type</th><th style="${th} ${colBorder}">Payment Mode</th><th style="${th} ${colBorder}">Actual Amount</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>

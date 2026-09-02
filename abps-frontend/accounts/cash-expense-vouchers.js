@@ -48,7 +48,7 @@ function cevRenderCard(v) {
   return `
     <div style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:12px; overflow:hidden;">
       <div onclick="cevToggle(${v.expenseId})" style="padding:11px 14px; background:var(--highlight-bg); display:flex; align-items:center; flex-wrap:wrap; gap:10px; cursor:pointer;">
-        <span style="font-family:monospace; color:var(--muted); font-size:0.8rem;">${formatDateDMY(v.createdDate)}</span>
+        <span style="font-family:monospace; color:var(--muted); font-size:0.8rem;">${formatOrdinalDate(v.createdDate)}</span>
         <strong style="color:#111827;">${escapeHtml(v.employeeName)}</strong>
         <span style="color:var(--muted); font-size:0.85rem;">${escapeHtml(v.departmentName || '—')}</span>
         <span style="font-size:0.85rem;">${cevTypeLabel(v)}</span>
@@ -65,7 +65,7 @@ function cevRenderCard(v) {
               <th style="padding:8px;">Type</th><th style="padding:8px;">Payment Mode</th><th style="padding:8px; text-align:right;">Advance Amount</th>
             </tr></thead>
             <tbody><tr>
-              <td style="padding:8px;">${formatDateDMY(v.createdDate)}</td>
+              <td style="padding:8px;">${formatOrdinalDate(v.createdDate)}</td>
               <td style="padding:8px;">${escapeHtml(v.employeeName)}</td>
               <td style="padding:8px;">${escapeHtml(v.departmentName || '—')}</td>
               <td style="padding:8px;">${cevTypeLabel(v)}</td>

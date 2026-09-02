@@ -71,7 +71,7 @@ async function edInitEmployeeSection(ns) {
   panel.innerHTML = `
     ${limitsBlock}
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-      <div style="font-size:0.8rem; color:var(--muted);">One shared employee list across Tour Expense and Daily Cash/UPI Expenses — Tour Balance and Daily Balance are tracked separately.</div>
+      <div style="font-size:0.8rem; color:var(--muted);">One shared employee list across Tour Expense and Daily Cash/UPI/Online Expenses — Tour Balance and Daily Balance are tracked separately.</div>
       <button class="nav-btn-styled" onclick="edToggleAddForm('${ns}')">+ Add Employee</button>
     </div>
     <div id="${ns}-add-form" style="display:none; background:var(--highlight-bg); padding:16px; border-radius:var(--radius); margin-bottom:16px;">
@@ -178,7 +178,7 @@ async function edSubmitAddEmployee(ns) {
       [`${ns}-new-name`, `${ns}-new-empcode`, `${ns}-new-dept`, `${ns}-new-balance`].forEach(id => document.getElementById(id).value = "");
       document.getElementById(`${ns}-new-position`).value = "Staff";
       edLoadEmployeeDetailsTable(ns);
-      cfg.success("Employee added — active in both Tour Expense and Daily Cash/UPI Expenses.", "Add Another Employee", cfg.afterAdd);
+      cfg.success("Employee added — active in both Tour Expense and Daily Cash/UPI/Online Expenses.", "Add Another Employee", cfg.afterAdd);
     } else {
       cfg.feedback(data.error, "error");
     }
