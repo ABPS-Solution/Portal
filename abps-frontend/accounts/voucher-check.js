@@ -132,22 +132,30 @@ function tvcRenderCard(v) {
 function tvcRenderTicketPicker(v) {
   const candidates = v.linkableTravelTickets || [];
   if (candidates.length === 0) return "";
+  // CSS Grid, not flex/label — a checkbox+flex-content+price row built
+  // with <label>/bare <span> here was collapsing the middle column to a
+  // sliver in production (root cause never pinned down); grid with an
+  // explicit minmax(0,1fr) track can't do that, so it's rebuilt on that
+  // instead of chasing the original layout further.
   const rows = candidates.map(t => {
     const dateCell = t.tripType === 'Round Trip' && t.returnDate
       ? `${formatDateDMY(t.departDate)} → ${formatDateDMY(t.returnDate)}` : formatDateDMY(t.departDate);
     const overlapBadge = t.overlapsVisit
-      ? `<span style="background:#dcfce7; color:#15803d; padding:2px 7px; border-radius:10px; font-size:0.72rem; font-weight:700; margin-left:6px;">Matches visit dates</span>`
-      : `<span style="background:#f1f5f9; color:var(--muted); padding:2px 7px; border-radius:10px; font-size:0.72rem; margin-left:6px;">Outside visit window</span>`;
-    return `<label style="display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid ${t.overlapsVisit ? '#86efac' : 'var(--border)'}; border-radius:6px; margin-bottom:6px; cursor:pointer; background:${t.overlapsVisit ? '#f0fdf4' : '#fff'};">
-      <input type="checkbox" class="tvc-ticket-input" data-traveller-id="${t.travellerId}">
-      <span style="flex:1;">
-        <strong>${escapeHtml(t.modeOfTravel)}: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)}</strong>
-        <span style="color:var(--muted); font-size:0.82rem; margin-left:8px;">${dateCell}</span>
-        ${t.pnrNumber ? `<span style="color:var(--muted); font-size:0.8rem; margin-left:8px;">PNR: ${escapeHtml(t.pnrNumber)}</span>` : ''}
-        ${overlapBadge}
-      </span>
-      <span style="font-weight:700;">${formatINRComma(t.price)}</span>
-    </label>`;
+      ? `<div style="display:inline-block; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:10px; font-size:0.72rem; font-weight:700;">Matches visit dates</div>`
+      : `<div style="display:inline-block; background:#f1f5f9; color:var(--muted); padding:2px 8px; border-radius:10px; font-size:0.72rem;">Outside visit window</div>`;
+    const metaBits = [dateCell, t.pnrNumber ? `PNR: ${escapeHtml(t.pnrNumber)}` : null].filter(Boolean).join(' · ');
+    return `<div class="tvc-ticket-row" onclick="tvcToggleTicketRow(event, ${t.travellerId})"
+        style="display:grid; grid-template-columns:24px minmax(0,1fr) auto; align-items:center; column-gap:12px;
+               padding:10px 12px; border:1px solid ${t.overlapsVisit ? '#86efac' : 'var(--border)'}; border-radius:6px;
+               margin-bottom:8px; cursor:pointer; background:${t.overlapsVisit ? '#f0fdf4' : '#fff'};">
+      <input type="checkbox" class="tvc-ticket-input" data-traveller-id="${t.travellerId}" onclick="event.stopPropagation();" style="width:16px; height:16px; margin:0;">
+      <div style="min-width:0;">
+        <div style="font-weight:700; overflow-wrap:break-word;">${escapeHtml(t.modeOfTravel)}: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)}</div>
+        <div style="color:var(--muted); font-size:0.82rem; margin-top:2px;">${metaBits}</div>
+        <div style="margin-top:4px;">${overlapBadge}</div>
+      </div>
+      <div style="font-weight:700; white-space:nowrap;">${formatINRComma(t.price)}</div>
+    </div>`;
   }).join("");
   return `
     <div style="margin-bottom:14px; padding:12px; background:var(--highlight-bg); border-radius:var(--radius);">
@@ -157,6 +165,13 @@ function tvcRenderTicketPicker(v) {
       </div>
       ${rows}
     </div>`;
+}
+
+// Clicking anywhere on a ticket row toggles its checkbox — the checkbox
+// itself already stops propagation so this doesn't double-toggle.
+function tvcToggleTicketRow(event, travellerId) {
+  const cb = document.querySelector(`.tvc-ticket-input[data-traveller-id="${travellerId}"]`);
+  if (cb) cb.checked = !cb.checked;
 }
 
 // Position-based daily expense limit (migration 167) — shows/hides the
