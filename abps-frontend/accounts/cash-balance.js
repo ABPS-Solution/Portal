@@ -1,15 +1,14 @@
 // accounts/cash-balance.js — "Add to Cash Box" toggle (renamed from "Add
 // to Account Balance"). Shows the current Cash and UPI pool balances and
-// lets Accounts top either one up. Also flags when the combined Cash+UPI
-// balance drifts outside the 3,000-10,000 target range — see
-// cashBoxRangeCheck()/renderCashBoxRangeFlag() below, and their second
-// call site in cash-expense-shell.js (so the flag stays visible from any
-// toggle, not just this one).
+// lets Accounts top either one up. The out-of-range banner itself is
+// rendered only once, in cash-expense-shell.js above the toggle bar (so
+// it stays visible regardless of which toggle is active) — this panel
+// used to also render its own copy here, which just double-printed the
+// same banner whenever this toggle was the active one.
 
 async function initializeCashBalancePanel() {
   const panel = document.getElementById("ce-panel-balance");
   panel.innerHTML = `
-    <div id="cb-range-flag"></div>
     <div style="display:flex; gap:16px; margin-bottom:20px; flex-wrap:wrap;">
       <div style="flex:1; min-width:200px; background:var(--highlight-bg); padding:16px; border-radius:var(--radius);">
         <div style="font-size:0.8rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Current Cash Balance</div>
@@ -59,7 +58,6 @@ async function loadCashUpiBalance() {
     if (data.success) {
       document.getElementById("cb-cash-balance").textContent = formatINRComma(data.cashBalance);
       document.getElementById("cb-upi-balance").textContent = formatINRComma(data.upiBalance);
-      renderCashBoxRangeFlag(document.getElementById("cb-range-flag"), data.cashBalance, data.upiBalance);
       refreshCashExpenseShellRangeFlag(data.cashBalance, data.upiBalance);
     }
   } catch (e) { console.error("fetchCashUpiBalance failed:", e.message); }

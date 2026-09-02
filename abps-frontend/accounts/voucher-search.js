@@ -114,10 +114,6 @@ async function initializeVoucherSearchPanel() {
           <div><label class="field-label">Status</label>
             <select id="tvs-f-status" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
               <option value="">All</option><option value="Unchecked">Unchecked</option><option value="Checked">Checked</option></select></div>
-          <div><label class="field-label">&nbsp;</label>
-            <label style="display:flex; align-items:center; gap:6px; padding:8px 0; white-space:nowrap;">
-              <input type="checkbox" id="tvs-f-overlimit"> Over Limit Only
-            </label></div>
         </div>
         <div id="tvs-advance-only-filters" style="display:none;">
           <div><label class="field-label">Purpose of Visit</label>
@@ -134,6 +130,11 @@ async function initializeVoucherSearchPanel() {
         <div><label class="field-label" id="tvs-label-to">Date To</label>
           <input type="date" id="tvs-f-to" style="padding:8px; border:1px solid var(--border); border-radius:6px;"></div>
         <button class="nav-btn-styled" style="margin-left:auto;" onclick="runTourVoucherSearch()">Search</button>
+      </div>
+      <div id="tvs-overlimit-row" style="margin-top:12px;">
+        <label style="display:flex; align-items:center; gap:6px; white-space:nowrap; width:fit-content;">
+          <input type="checkbox" id="tvs-f-overlimit"> Over Limit Only
+        </label>
       </div>
     </div>
 
@@ -163,6 +164,7 @@ function tvsSetSearchMode(mode) {
   document.getElementById("tvs-mode-advance").style.background = mode === "advance" ? "var(--brand)" : "#e2e8f0";
   document.getElementById("tvs-mode-advance").style.color = mode === "advance" ? "#fff" : "#334155";
   document.getElementById("tvs-expense-only-filters").style.display = mode === "expense" ? "contents" : "none";
+  document.getElementById("tvs-overlimit-row").style.display = mode === "expense" ? "block" : "none";
   document.getElementById("tvs-advance-only-filters").style.display = mode === "advance" ? "contents" : "none";
   // The shared date-range filter means "Visit Date" in Expense mode
   // (filters visit_start_date/visit_end_date) but "Paid Date" in Advance
