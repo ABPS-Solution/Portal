@@ -113,8 +113,8 @@ function adRenderDashboard(data) {
   document.getElementById("ad-s-checktime").textContent = adFormatDays(stats.avgCheckDays);
 
   const varianceEl = document.getElementById("ad-s-variance");
-  varianceEl.textContent = (stats.claimVariance < 0 ? "-" : "") + adFmtINR(Math.abs(stats.claimVariance));
-  varianceEl.style.color = stats.claimVariance < 0 ? "#b91c1c" : "#15803d";
+  varianceEl.textContent = stats.claimVariancePct === null ? "—" : stats.claimVariancePct + "%";
+  varianceEl.style.color = stats.claimVariancePct === null ? "var(--text)" : (stats.claimVariancePct < 0 ? "#b91c1c" : "#15803d");
 
   document.getElementById("ad-s-overlimit").textContent = adFmtINR(stats.overLimitAmount);
   document.getElementById("ad-s-overlimit-sub").textContent = `${stats.overLimitLines} line${stats.overLimitLines === 1 ? '' : 's'} flagged`;

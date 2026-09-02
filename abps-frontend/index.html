@@ -3409,49 +3409,12 @@
       <!-- BODY -->
       <div id="ad-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
-        <!-- ROW 1: Needs Action Now (live, never period-filtered) -->
+        <!-- ROW 1 -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Unchecked Tour Vouchers</div>
-            <div class="dd-stat-val" id="ad-s-unchecked" style="color:#b91c1c;">—</div>
-            <div class="dd-stat-sub" id="ad-s-unchecked-sub"></div>
-          </div>
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Open Daily Advances</div>
-            <div class="dd-stat-val" id="ad-s-openadv" style="color:#b45309;">—</div>
-            <div class="dd-stat-sub" id="ad-s-openadv-sub"></div>
-          </div>
           <div class="dd-stat-card">
             <div class="dd-stat-label">Unactioned Travel Tickets</div>
             <div class="dd-stat-val" id="ad-s-unactioned" style="color:#b45309;">—</div>
             <div class="dd-stat-sub" id="ad-s-unactioned-sub"></div>
-          </div>
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Cash + UPI Box</div>
-            <div class="dd-stat-val" id="ad-s-cashbox">—</div>
-            <div class="dd-stat-sub" id="ad-s-cashbox-sub"></div>
-          </div>
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Outstanding with Employees</div>
-            <div class="dd-stat-val" id="ad-s-outstanding" style="color:var(--brand);">—</div>
-            <div class="dd-stat-sub" id="ad-s-outstanding-sub"></div>
-          </div>
-        </div>
-
-        <!-- ROW 2: Money Out (period-filtered) -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Total Expense Recognised</div>
-            <div class="dd-stat-val" id="ad-s-totalexp" style="color:var(--brand);">—</div>
-          </div>
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Tour Expense Paid</div>
-            <div class="dd-stat-val" id="ad-s-tourpaid">—</div>
-          </div>
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Daily Expenses Spent</div>
-            <div class="dd-stat-val" id="ad-s-dailyspent">—</div>
-            <div class="dd-stat-sub" id="ad-s-dailyspent-sub"></div>
           </div>
           <div class="dd-stat-card">
             <div class="dd-stat-label">Company-Paid Travel</div>
@@ -3459,24 +3422,33 @@
             <div class="dd-stat-sub" id="ad-s-travelpaid-sub"></div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Advances Paid</div>
+            <div class="dd-stat-label">Tour Advances Paid</div>
             <div class="dd-stat-val" id="ad-s-advpaid">—</div>
             <div class="dd-stat-sub" id="ad-s-advpaid-sub"></div>
           </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Unchecked Tour Vouchers</div>
+            <div class="dd-stat-val" id="ad-s-unchecked" style="color:#b91c1c;">—</div>
+            <div class="dd-stat-sub" id="ad-s-unchecked-sub"></div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Avg Tour Voucher Check Time</div>
+            <div class="dd-stat-val" id="ad-s-checktime">—</div>
+          </div>
         </div>
 
-        <!-- ROW 3: Activity & Control (period-filtered) -->
+        <!-- ROW 2 -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Vouchers Checked</div>
+            <div class="dd-stat-label">Tour Vouchers Checked</div>
             <div class="dd-stat-val" id="ad-s-vouchers" style="color:#15803d;">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Avg Voucher Check Time</div>
-            <div class="dd-stat-val" id="ad-s-checktime">—</div>
+            <div class="dd-stat-label">Tour Expense Paid</div>
+            <div class="dd-stat-val" id="ad-s-tourpaid">—</div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Claimed vs Paid Variance</div>
+            <div class="dd-stat-label">Claimed vs Paid Difference %</div>
             <div class="dd-stat-val" id="ad-s-variance">—</div>
           </div>
           <div class="dd-stat-card">
@@ -3485,8 +3457,36 @@
             <div class="dd-stat-sub" id="ad-s-overlimit-sub"></div>
           </div>
           <div class="dd-stat-card">
+            <div class="dd-stat-label">Total Balance of Employees</div>
+            <div class="dd-stat-val" id="ad-s-outstanding" style="color:var(--brand);">—</div>
+            <div class="dd-stat-sub" id="ad-s-outstanding-sub"></div>
+          </div>
+        </div>
+
+        <!-- ROW 3 -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Open Daily Advances</div>
+            <div class="dd-stat-val" id="ad-s-openadv" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub" id="ad-s-openadv-sub"></div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Cash + UPI Box</div>
+            <div class="dd-stat-val" id="ad-s-cashbox">—</div>
+            <div class="dd-stat-sub" id="ad-s-cashbox-sub"></div>
+          </div>
+          <div class="dd-stat-card">
             <div class="dd-stat-label">Cash Box Top-Ups</div>
             <div class="dd-stat-val" id="ad-s-topups" style="color:#15803d;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Daily Expenses Spent</div>
+            <div class="dd-stat-val" id="ad-s-dailyspent">—</div>
+            <div class="dd-stat-sub" id="ad-s-dailyspent-sub"></div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Total Expense</div>
+            <div class="dd-stat-val" id="ad-s-totalexp" style="color:var(--brand);">—</div>
           </div>
         </div>
 
