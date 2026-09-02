@@ -22,6 +22,14 @@ let ttkEditingBookingType = null; // locked to the entry's own type while editin
 let ttkLastSearchTickets = []; // last searchTravelTickets (Travel) result
 let ttkLastSearchHotels = [];  // last searchTravelTickets (Hotel) result
 
+// Emp Name filter typeahead state — separate per manage panel, same
+// pattern as cash-expense-search.js's cesSelectedEmployeeId/Name.
+let ttkFilterCachedEmployees = [];
+let ttkFilterEmployeeId = null;
+let ttkFilterEmployeeName = "";
+let htlFilterEmployeeId = null;
+let htlFilterEmployeeName = "";
+
 function initializeTravelTicketsPanel() {
   document.getElementById("ttk-feedback").style.display = "none";
   document.getElementById("ttk-success").style.display = "none";
@@ -516,7 +524,7 @@ async function submitTravelTicket() {
   payload.travellers = ttkTravellerRows.map(r => ({ employeeId: r.employeeId, price: Number(r.price) }));
   payload.invoices = ttkInvoiceFiles;
 
-  showBlockingOverlay(ttkEditingTicketId ? "Saving changes..." : "Booking...");
+  showBlockingOverlay(ttkEditingTicketId ? "Saving changes..." : "Saving booking...");
   try {
     const data = ttkEditingTicketId
       ? await acFetch("updateTravelTicket", { ticketId: ttkEditingTicketId, ...payload })
@@ -542,9 +550,16 @@ async function submitTravelTicket() {
 // ── Search / Manage ───────────────────────────────────────────────────
 
 async function ttkInitializeManagePanel() {
+  ttkFilterEmployeeId = null;
+  ttkFilterEmployeeName = "";
   const panel = document.getElementById("ttk-panel-manage");
   panel.innerHTML = `
     <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:flex-end;">
+      <div style="position:relative;"><label class="field-label">Emp Name</label>
+        <input type="text" id="ttk-filter-employee" placeholder="All (type to search)" autocomplete="off"
+          style="padding:8px 10px; border:1px solid var(--border); border-radius:6px;"
+          oninput="ttkHandleFilterEmployeeSearch(this.value, 'ttk')">
+        <div id="ttk-emp-filter-dropdown" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:4px; z-index:9999; max-height:220px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>
       <div><label class="field-label">Status</label>
         <select id="ttk-filter-status" style="padding:8px 10px; border:1px solid var(--border); border-radius:6px;">
           <option value="">All</option><option value="Booked">Booked</option><option value="Cancelled">Cancelled</option>
@@ -572,13 +587,55 @@ async function ttkInitializeManagePanel() {
     <div id="ttk-search-results"></div>`;
   enhanceAllDateInputsForDMY();
   try {
-    const deptData = await acFetch("listTourDepartments", {});
+    const [deptData, empData] = await Promise.all([
+      acFetch("listTourDepartments", {}),
+      acFetch("searchTourEmployees", {}),
+    ]);
     if (deptData.success) {
       document.getElementById("ttk-filter-dept").innerHTML += deptData.departments.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join("");
     }
-  } catch (e) { console.error("Travel ticket department filter bootstrap failed:", e.message); }
+    if (empData.success) ttkFilterCachedEmployees = empData.employees;
+  } catch (e) { console.error("Travel ticket filter bootstrap failed:", e.message); }
   ttkRunSearch();
 }
+
+// Shared Emp Name typeahead for both manage panels, `ns` is 'ttk' or
+// 'htl' — same pattern as cash-expense-search.js's Employee field.
+function ttkHandleFilterEmployeeSearch(query, ns) {
+  const dd = document.getElementById(`${ns}-emp-filter-dropdown`);
+  if (ns === 'ttk') { ttkFilterEmployeeId = null; ttkFilterEmployeeName = query; }
+  else { htlFilterEmployeeId = null; htlFilterEmployeeName = query; }
+  const q = (query || "").trim().toLowerCase();
+  if (!q || !dd) { if (dd) dd.style.display = "none"; return; }
+  const matches = ttkFilterCachedEmployees.filter(e => e.employeeName.toLowerCase().includes(q)).slice(0, 15);
+  if (matches.length === 0) { dd.style.display = "none"; return; }
+  dd.innerHTML = matches.map(e => `
+    <div onmousedown="event.preventDefault(); ttkSelectFilterEmployee(${e.employeeId}, '${ns}')"
+      style="padding:8px 10px; cursor:pointer; font-size:0.85rem; border-bottom:1px solid #f1f5f9;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      ${escapeHtml(e.employeeName)} <span style="color:var(--muted); font-size:0.75rem;">${e.empCode ? '· ' + escapeHtml(e.empCode) : ''}</span>
+    </div>`).join("");
+  const input = document.getElementById(`${ns}-filter-employee`);
+  const rect = input.getBoundingClientRect();
+  dd.style.top = rect.bottom + "px"; dd.style.left = rect.left + "px"; dd.style.width = rect.width + "px";
+  dd.style.display = "block";
+}
+
+function ttkSelectFilterEmployee(employeeId, ns) {
+  const emp = ttkFilterCachedEmployees.find(e => e.employeeId === employeeId);
+  if (!emp) return;
+  if (ns === 'ttk') { ttkFilterEmployeeId = employeeId; ttkFilterEmployeeName = emp.employeeName; }
+  else { htlFilterEmployeeId = employeeId; htlFilterEmployeeName = emp.employeeName; }
+  document.getElementById(`${ns}-filter-employee`).value = emp.employeeName;
+  document.getElementById(`${ns}-emp-filter-dropdown`).style.display = "none";
+}
+
+document.addEventListener("click", (e) => {
+  ["ttk", "htl"].forEach(ns => {
+    const dd = document.getElementById(`${ns}-emp-filter-dropdown`);
+    if (dd && !e.target.closest(`#${ns}-emp-filter-dropdown`) && e.target.id !== `${ns}-filter-employee`) dd.style.display = "none";
+  });
+});
 
 function ttkBuildSearchLabel() {
   const esc = (s) => (s || "").toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -591,8 +648,9 @@ function ttkBuildSearchLabel() {
   const toCityLabel = document.getElementById("ttk-filter-to-city").value || "All";
   const departDateVal = document.getElementById("ttk-filter-depart-date").value;
   const departDateLabel = departDateVal ? formatOrdinalDate(departDateVal) : "All";
+  const employeeLabel = ttkFilterEmployeeId ? ttkFilterEmployeeName : "All";
   return `<span style="color:#000;">Searching for</span>` +
-    `<br><span style="color:#000;">Status:</span> ${val(statusLabel)} &nbsp; <span style="color:#000;">Actioned:</span> ${val(actionedLabel)} &nbsp; <span style="color:#000;">Mode:</span> ${val(modeLabel)} &nbsp; <span style="color:#000;">Department:</span> ${val(deptLabel)}` +
+    `<br><span style="color:#000;">Emp Name:</span> ${val(employeeLabel)} &nbsp; <span style="color:#000;">Status:</span> ${val(statusLabel)} &nbsp; <span style="color:#000;">Actioned:</span> ${val(actionedLabel)} &nbsp; <span style="color:#000;">Mode:</span> ${val(modeLabel)} &nbsp; <span style="color:#000;">Department:</span> ${val(deptLabel)}` +
     `<br><span style="color:#000;">From City:</span> ${val(fromCityLabel)} &nbsp; <span style="color:#000;">To City:</span> ${val(toCityLabel)}` +
     `<br><span style="color:#000;">Departure Date:</span> ${val(departDateLabel)}`;
 }
@@ -607,6 +665,7 @@ async function ttkRunSearch() {
   try {
     const data = await acFetch("searchTravelTickets", {
       bookingType: "Travel",
+      employeeId: ttkFilterEmployeeId || null,
       status: document.getElementById("ttk-filter-status").value || null,
       actionedFilter: document.getElementById("ttk-filter-actioned").value || null,
       modeOfTravel: document.getElementById("ttk-filter-mode").value || null,
@@ -754,9 +813,16 @@ async function ttkCancelTicket(ticketId) {
 // tickets, per explicit design decision.
 
 async function ttkInitializeHotelManagePanel() {
+  htlFilterEmployeeId = null;
+  htlFilterEmployeeName = "";
   const panel = document.getElementById("ttk-panel-manage-hotels");
   panel.innerHTML = `
     <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:flex-end;">
+      <div style="position:relative;"><label class="field-label">Emp Name</label>
+        <input type="text" id="htl-filter-employee" placeholder="All (type to search)" autocomplete="off"
+          style="padding:8px 10px; border:1px solid var(--border); border-radius:6px;"
+          oninput="ttkHandleFilterEmployeeSearch(this.value, 'htl')">
+        <div id="htl-emp-filter-dropdown" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:4px; z-index:9999; max-height:220px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>
       <div><label class="field-label">Status</label>
         <select id="htl-filter-status" style="padding:8px 10px; border:1px solid var(--border); border-radius:6px;">
           <option value="">All</option><option value="Booked">Booked</option><option value="Cancelled">Cancelled</option>
@@ -778,11 +844,15 @@ async function ttkInitializeHotelManagePanel() {
     <div id="htl-search-results"></div>`;
   enhanceAllDateInputsForDMY();
   try {
-    const deptData = await acFetch("listTourDepartments", {});
+    const [deptData, empData] = await Promise.all([
+      acFetch("listTourDepartments", {}),
+      acFetch("searchTourEmployees", {}),
+    ]);
     if (deptData.success) {
       document.getElementById("htl-filter-dept").innerHTML += deptData.departments.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join("");
     }
-  } catch (e) { console.error("Hotel department filter bootstrap failed:", e.message); }
+    if (empData.success) ttkFilterCachedEmployees = empData.employees;
+  } catch (e) { console.error("Hotel filter bootstrap failed:", e.message); }
   ttkRunHotelSearch();
 }
 
@@ -795,8 +865,9 @@ function ttkBuildHotelSearchLabel() {
   const cityLabel = document.getElementById("htl-filter-city").value || "All";
   const dateVal = document.getElementById("htl-filter-date").value;
   const dateLabel = dateVal ? formatOrdinalDate(dateVal) : "All";
+  const employeeLabel = htlFilterEmployeeId ? htlFilterEmployeeName : "All";
   return `<span style="color:#000;">Searching for</span>` +
-    `<br><span style="color:#000;">Status:</span> ${val(statusLabel)} &nbsp; <span style="color:#000;">Actioned:</span> ${val(actionedLabel)} &nbsp; <span style="color:#000;">Department:</span> ${val(deptLabel)}` +
+    `<br><span style="color:#000;">Emp Name:</span> ${val(employeeLabel)} &nbsp; <span style="color:#000;">Status:</span> ${val(statusLabel)} &nbsp; <span style="color:#000;">Actioned:</span> ${val(actionedLabel)} &nbsp; <span style="color:#000;">Department:</span> ${val(deptLabel)}` +
     `<br><span style="color:#000;">Hotel City:</span> ${val(cityLabel)} &nbsp; <span style="color:#000;">Stay Date:</span> ${val(dateLabel)}`;
 }
 
@@ -810,6 +881,7 @@ async function ttkRunHotelSearch() {
   try {
     const data = await acFetch("searchTravelTickets", {
       bookingType: "Hotel",
+      employeeId: htlFilterEmployeeId || null,
       status: document.getElementById("htl-filter-status").value || null,
       actionedFilter: document.getElementById("htl-filter-actioned").value || null,
       departmentName: document.getElementById("htl-filter-dept").value || null,
