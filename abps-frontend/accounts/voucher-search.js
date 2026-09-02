@@ -114,6 +114,10 @@ async function initializeVoucherSearchPanel() {
           <div><label class="field-label">Status</label>
             <select id="tvs-f-status" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
               <option value="">All</option><option value="Unchecked">Unchecked</option><option value="Checked">Checked</option></select></div>
+          <div><label class="field-label">&nbsp;</label>
+            <label style="display:flex; align-items:center; gap:6px; padding:8px 0;">
+              <input type="checkbox" id="tvs-f-overlimit"> Over Limit Only
+            </label></div>
         </div>
         <div id="tvs-advance-only-filters" style="display:none;">
           <div><label class="field-label">Purpose of Visit</label>
@@ -240,6 +244,7 @@ async function runTourVoucherSearch() {
       purposeOfVisit: document.getElementById("tvs-f-purpose").value || null,
       expenseType: document.getElementById("tvs-f-type").value || null,
       status: document.getElementById("tvs-f-status").value || null,
+      overLimitOnly: document.getElementById("tvs-f-overlimit").checked || null,
     };
     const data = await acFetch("searchTourVouchers", expenseFilters);
     if (!data.success) { resultsEl.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
@@ -250,7 +255,8 @@ async function runTourVoucherSearch() {
 
     document.getElementById("tvs-total").innerHTML =
       `Total Voucher Amount (Checked, Actual): ${formatINRComma(data.totalCheckedActual)}` +
-      `&nbsp;&nbsp;·&nbsp;&nbsp;Company-Paid Travel (Checked): ${formatINRComma(data.totalCompanyPaidTravel || 0)}`;
+      `&nbsp;&nbsp;·&nbsp;&nbsp;Company-Paid Travel (Checked): ${formatINRComma(data.totalCompanyPaidTravel || 0)}` +
+      `&nbsp;&nbsp;·&nbsp;&nbsp;Over Limit Amount: ${formatINRComma(data.overLimitAmount || 0)}`;
 
     if (data.vouchers.length === 0) {
       resultsEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No vouchers match this filter.</div>`;
@@ -320,17 +326,23 @@ function tvsRenderCard(v) {
       : l.noBillReason ? `<span style="font-style:italic;">Reason: ${escapeHtml(l.noBillReason)}</span>` : "—";
     const rawActual = Number(l.actualAmount) || 0;
     const actualCell = canEditActual
-      ? `<input type="number" id="tvs-actual-input-${l.lineId}" value="${rawActual}" min="0" step="0.01"
+      ? `<input type="number" id="tvs-actual-input-${l.lineId}" data-cap="${l.capAmount != null ? l.capAmount : ''}" value="${rawActual}" min="0" step="0.01"
            style="width:80px; padding:2px 4px; font-size:0.78rem; text-align:right;" onclick="event.stopPropagation();"
            onchange="event.stopPropagation(); tvsSaveLineActual(${v.voucherId}, ${l.lineId}, ${rawActual})">
          <span id="tvs-actual-err-${l.lineId}" style="color:#b91c1c; font-size:0.62rem; display:block;"></span>`
       : (l.actualAmount !== null && l.actualAmount !== undefined ? formatINRComma(l.actualAmount) : '—');
+    // Position-based daily expense limit (migration 167) — over_limit_flag
+    // reflects whether the ORIGINAL CLAIM triggered a cap; over_limit_amount
+    // is the realized excess actually paid, which can be 0 even when flagged.
+    const overLimitBadge = l.overLimitFlag
+      ? `<span style="color:#b91c1c; font-weight:700; font-size:0.7rem; display:block;">${Number(l.overLimitAmount) > 0 ? `Over by ${formatINRComma(l.overLimitAmount)}` : 'Was capped'}${l.overLimitReason ? ' — ' + escapeHtml(l.overLimitReason) : ''}</span>`
+      : '';
     return `<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:6px;">${l.srNo}</td><td style="padding:6px;">${formatDateDMY(l.expenseDate)}</td>
       <td style="padding:6px;">${escapeHtml(l.expenseType)}${l.conveyanceMode ? ' (' + escapeHtml(l.conveyanceMode) + ')' : ''}</td>
       <td style="padding:6px; text-align:right;">${formatINRComma(l.amount)}</td>
       <td style="padding:6px; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
-      <td style="padding:6px; text-align:right;">${actualCell}</td>
+      <td style="padding:6px; text-align:right;">${actualCell}${overLimitBadge}</td>
       <td style="padding:6px;">${billCell}</td>
     </tr>`;
   }).join("");
@@ -434,10 +446,24 @@ async function tvsSaveLineActual(voucherId, lineId, previousValue) {
     return;
   }
   if (newActualAmount === previousValue) return; // unchanged on blur — nothing to save
+
+  // Position-based daily expense limit (migration 167) — the line's cap
+  // was persisted at Check time; if this revision pushes Actual above it,
+  // a reason is required, same rule checkTourVoucher enforces.
+  const cap = input.dataset.cap !== '' ? Number(input.dataset.cap) : null;
+  let overLimitReason;
+  if (cap !== null && newActualAmount > cap) {
+    overLimitReason = prompt(`This exceeds the position-based daily limit cap of ${cap} — enter a reason to proceed:`);
+    if (!overLimitReason || !overLimitReason.trim()) {
+      input.value = previousValue;
+      return;
+    }
+  }
+
   if (errEl) errEl.textContent = "";
   input.disabled = true;
   try {
-    const data = await acFetch("reviseTourVoucherActualAmount", { voucherId, lineId, newActualAmount });
+    const data = await acFetch("reviseTourVoucherActualAmount", { voucherId, lineId, newActualAmount, overLimitReason });
     if (!data.success) {
       input.disabled = false;
       input.value = previousValue;

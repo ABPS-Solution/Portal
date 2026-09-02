@@ -42,9 +42,16 @@ function tvcRenderCard(v) {
       <td style="padding:7px; width:14%; overflow-wrap:anywhere;">${billCell}</td>
       <td style="padding:7px; text-align:right;">${formatINRComma(l.amount)}</td>
       <td style="padding:7px 7px 7px 20px; width:26%; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
-      <td style="padding:7px;"><input type="number" class="tvc-actual-input" data-line-id="${l.lineId}" value="${trimNum(l.amount)}" min="0"
-            style="width:100px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:right;"
-            oninput="tvcRecalcTotals(${v.voucherId})"></td>
+      <td style="padding:7px;">
+        <input type="number" class="tvc-actual-input" data-line-id="${l.lineId}"
+              data-cap="${l.capAmount != null ? l.capAmount : l.amount}"
+              value="${trimNum(l.capAmount != null ? l.capAmount : l.amount)}" min="0"
+              style="width:100px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:right;"
+              oninput="tvcRecalcTotals(${v.voucherId}); tvcCheckOverLimit(${l.lineId})">
+        ${l.overLimitFlag ? `<div class="tvc-overlimit-badge" style="color:#b91c1c; font-size:0.7rem; font-weight:700; margin-top:2px;">Over daily limit by ${formatINRComma(l.overLimitAmount)}</div>` : ''}
+        <textarea class="tvc-reason-input" data-line-id="${l.lineId}" placeholder="Reason for exceeding limit"
+              style="display:none; width:140px; margin-top:4px; font-size:0.72rem; padding:4px; border:1px solid var(--border); border-radius:4px;"></textarea>
+      </td>
       <td style="padding:7px; text-align:center;"><input type="checkbox" class="tvc-checked-input" data-line-id="${l.lineId}"></td>
     </tr>`;
   }).join("");
@@ -152,6 +159,19 @@ function tvcRenderTicketPicker(v) {
     </div>`;
 }
 
+// Position-based daily expense limit (migration 167) — shows/hides the
+// per-row reason box live as the checker edits Actual, comparing against
+// this row's FIXED cap (data-cap, computed server-side from the claimed
+// amount at queue-fetch time — never recomputed client-side).
+function tvcCheckOverLimit(lineId) {
+  const input = document.querySelector(`.tvc-actual-input[data-line-id="${lineId}"]`);
+  const reasonBox = document.querySelector(`.tvc-reason-input[data-line-id="${lineId}"]`);
+  if (!input || !reasonBox) return;
+  const cap = Number(input.dataset.cap);
+  const val = Number(input.value) || 0;
+  reasonBox.style.display = val > cap ? "block" : "none";
+}
+
 function tvcRecalcTotals(voucherId) {
   const card = document.getElementById(`tvc-card-${voucherId}`);
   if (!card) return;
@@ -171,23 +191,35 @@ function tvcRecalcTotals(voucherId) {
 async function submitTourVoucherCheck(voucherId) {
   const card = document.getElementById(`tvc-card-${voucherId}`);
   const rows = [...card.querySelectorAll("tbody tr")];
-  const lines = rows.map(tr => ({
-    lineId: Number(tr.dataset.lineId),
-    actualAmount: parseFloat(tr.querySelector(".tvc-actual-input").value),
-    billChecked: tr.querySelector(".tvc-checked-input").checked,
-  }));
+  const lines = rows.map(tr => {
+    const actualInput = tr.querySelector(".tvc-actual-input");
+    const reasonInput = tr.querySelector(".tvc-reason-input");
+    return {
+      lineId: Number(tr.dataset.lineId),
+      actualAmount: parseFloat(actualInput.value),
+      billChecked: tr.querySelector(".tvc-checked-input").checked,
+      overLimitReason: reasonInput ? reasonInput.value.trim() : "",
+      _cap: Number(actualInput.dataset.cap),
+    };
+  });
   if (lines.some(l => !l.billChecked)) {
     return showTourFeedback("Every line's Bill Checked box must be ticked before you can submit.", "error");
   }
   if (lines.some(l => isNaN(l.actualAmount) || l.actualAmount < 0)) {
     return showTourFeedback("Every line needs a valid non-negative Actual Amount.", "error");
   }
+  // Position-based daily expense limit — client-side pre-check, mirrors
+  // (does not replace) the authoritative server-side check.
+  if (lines.some(l => l.actualAmount > l._cap && !l.overLimitReason)) {
+    return showTourFeedback("One or more lines exceed their position-based daily limit cap — a reason is required before this voucher can be submitted.", "error");
+  }
+  const linesToSend = lines.map(({ _cap, ...l }) => l);
 
   const travellerIds = [...card.querySelectorAll(".tvc-ticket-input:checked")].map(cb => Number(cb.dataset.travellerId));
 
   showBlockingOverlay("Submitting check...");
   try {
-    const data = await acFetch("checkTourVoucher", { voucherId, lines, travellerIds });
+    const data = await acFetch("checkTourVoucher", { voucherId, lines: linesToSend, travellerIds });
     hideBlockingOverlay();
     if (data.success) {
       const pdfLine = data.pdfUrl
