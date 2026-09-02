@@ -28,9 +28,9 @@ async function loadVoucherCheckQueue() {
 function tvcRenderCard(v) {
   const lines = v.lines || [];
   const colBorder = "border-left:2px solid var(--border);";
-  const cell = "padding:6px; font-size:0.82rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;";
-  const headCell = "padding:6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); vertical-align:middle;";
-  const amtCell = "padding:6px; font-size:0.95rem; font-weight:700; color:#000; text-align:center; vertical-align:middle;";
+  const cell = "padding:4px 6px; line-height:1.25; font-size:0.82rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word;";
+  const headCell = "padding:4px 6px; line-height:1.25; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); vertical-align:middle;";
+  const amtCell = "padding:4px 6px; line-height:1.25; font-size:0.95rem; font-weight:700; color:#000; text-align:center; vertical-align:middle;";
   const rows = lines.map(l => {
     const bills = (l.bills && l.bills.length > 0) ? l.bills : (l.billUrl ? [{ fileName: l.billFileName, url: l.billUrl }] : []);
     const billCell = bills.length > 0
@@ -51,11 +51,11 @@ function tvcRenderCard(v) {
         <input type="number" class="tvc-actual-input" data-line-id="${l.lineId}"
               data-cap="${l.capAmount != null ? l.capAmount : l.amount}"
               value="${trimNum(l.capAmount != null ? l.capAmount : l.amount)}" min="0"
-              style="width:90px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:right; font-size:0.95rem; font-weight:700;"
+              style="width:80px; padding:3px 5px; border:1px solid var(--border); border-radius:4px; text-align:right; font-size:0.9rem; font-weight:700; line-height:1.2;"
               oninput="tvcRecalcTotals(${v.voucherId}); tvcCheckOverLimit(${l.lineId})">
-        ${l.overLimitFlag ? `<div class="tvc-overlimit-badge" style="color:#b91c1c; font-size:0.7rem; font-weight:700; margin-top:2px;">Over daily limit by ${formatINRComma(l.overLimitAmount)}</div>` : ''}
+        ${l.overLimitFlag ? `<div class="tvc-overlimit-badge" style="color:#b91c1c; font-size:0.68rem; font-weight:700; line-height:1.2; margin-top:1px;">Over limit by ${formatINRComma(l.overLimitAmount)}</div>` : ''}
         <textarea class="tvc-reason-input" data-line-id="${l.lineId}" placeholder="Reason for exceeding limit"
-              style="display:none; width:140px; margin-top:4px; font-size:0.72rem; padding:4px; border:1px solid var(--border); border-radius:4px;"></textarea>
+              style="display:none; width:130px; margin-top:2px; font-size:0.7rem; padding:3px; border:1px solid var(--border); border-radius:4px;"></textarea>
       </td>
       <td style="${cell} ${colBorder}"><input type="checkbox" class="tvc-checked-input" data-line-id="${l.lineId}"></td>
     </tr>`;
