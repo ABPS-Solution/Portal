@@ -391,40 +391,43 @@ function tvsRenderCard(v) {
     ? `<div style="font-size:0.78rem; margin-top:4px;">Voucher PDF (v${v.pdfVersion || 1}): <a href="${driveLink(v.pdfUrl)}" target="_blank" rel="noopener">Download</a></div>` : '';
 
   // Company-Paid Travel & Hotel — read-only, clearly tagged, never folded
-  // into Claimed/Actual. Admin-only Unlink (perm_admin, checked
-  // client-side for display and re-checked server-side) since these
-  // bookings are only ever attached during Check (routes/accounts.js
-  // checkTourVoucher) — there is no ordinary "unlink before submit" path
-  // once a voucher shows up here at all.
-  const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
+  // into Claimed/Actual. Link/Unlink is NOT admin-gated (explicit
+  // decision) — anyone with perm_tour_expense can do either, from either
+  // an Unchecked or already-Checked voucher (both re-checked server-side
+  // regardless). Always rendered, even with nothing linked yet, so the
+  // "+ Link" affordance is always reachable.
   const linkedBookings = v.linkedCompanyPaidBookings || [];
-  const ticketsBlock = linkedBookings.length ? `
+  const linkedRows = linkedBookings.map(t => {
+    const isHotel = t.bookingType === 'Hotel';
+    const dateCell = isHotel
+      ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}`
+      : (t.tripType === 'Round Trip' && t.returnDate
+          ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}` : formatOrdinalDate(t.departDate));
+    const cancelledTag = t.ticketStatus === 'Cancelled' ? `<span style="color:#b91c1c; font-weight:700; margin-left:6px;">Cancelled</span>` : '';
+    const invoiceLink = t.invoiceUrl ? ` · <a href="${driveLink(t.invoiceUrl)}" target="_blank" rel="noopener">Invoice</a>` : '';
+    const unlinkBtn = `<button class="nav-btn-styled" onclick="event.stopPropagation(); tvsUnlinkTicket(${v.voucherId}, ${t.travellerId})" style="padding:3px 10px; font-size:0.72rem; margin-left:8px; background:#fee2e2; color:#b91c1c;">Unlink</button>`;
+    // Claimable from an Additional Person's own booking too — tag whose
+    // booking it is whenever that's not the voucher's own primary
+    // employee.
+    const forTag = t.travellerEmployeeName && t.travellerEmployeeName !== v.employeeName
+      ? ` · <span style="color:var(--brand);">for ${escapeHtml(t.travellerEmployeeName)}</span>` : '';
+    const label = isHotel
+      ? `<b>Hotel</b>: ${escapeHtml(t.hotelName || t.hotelCity)}, ${escapeHtml(t.hotelCity)} · ${dateCell}${forTag}`
+      : `<b>${escapeHtml(t.modeOfTravel)}</b>: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)} · ${dateCell}${forTag}`;
+    return `<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:0.9rem;">
+      <span>${label}${invoiceLink}${cancelledTag}</span>
+      <span style="font-weight:700;">${formatINRComma(t.price)}${unlinkBtn}</span>
+    </div>`;
+  }).join("");
+  const ticketsBlock = `
     <div style="margin-top:12px; padding:10px; background:var(--highlight-bg); border-radius:var(--radius);">
-      <div style="font-weight:700; font-size:0.92rem; margin-bottom:6px;">Company-Paid</div>
-      ${linkedBookings.map(t => {
-        const isHotel = t.bookingType === 'Hotel';
-        const dateCell = isHotel
-          ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}`
-          : (t.tripType === 'Round Trip' && t.returnDate
-              ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}` : formatOrdinalDate(t.departDate));
-        const cancelledTag = t.ticketStatus === 'Cancelled' ? `<span style="color:#b91c1c; font-weight:700; margin-left:6px;">Cancelled</span>` : '';
-        const invoiceLink = t.invoiceUrl ? ` · <a href="${driveLink(t.invoiceUrl)}" target="_blank" rel="noopener">Invoice</a>` : '';
-        const unlinkBtn = isAdminUser
-          ? `<button class="nav-btn-styled" onclick="event.stopPropagation(); tvsUnlinkTicket(${v.voucherId}, ${t.travellerId})" style="padding:3px 10px; font-size:0.72rem; margin-left:8px; background:#fee2e2; color:#b91c1c;">Unlink</button>` : '';
-        // Now claimable from an Additional Person's own booking too — tag
-        // whose booking it is whenever that's not the voucher's own
-        // primary employee.
-        const forTag = t.travellerEmployeeName && t.travellerEmployeeName !== v.employeeName
-          ? ` · <span style="color:var(--brand);">for ${escapeHtml(t.travellerEmployeeName)}</span>` : '';
-        const label = isHotel
-          ? `<b>Hotel</b>: ${escapeHtml(t.hotelName || t.hotelCity)}, ${escapeHtml(t.hotelCity)} · ${dateCell}${forTag}`
-          : `<b>${escapeHtml(t.modeOfTravel)}</b>: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)} · ${dateCell}${forTag}`;
-        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:0.9rem;">
-          <span>${label}${invoiceLink}${cancelledTag}</span>
-          <span style="font-weight:700;">${formatINRComma(t.price)}${unlinkBtn}</span>
-        </div>`;
-      }).join("")}
-    </div>` : '';
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div style="font-weight:700; font-size:0.92rem;">Company-Paid</div>
+        <button class="nav-btn-styled" onclick="event.stopPropagation(); tvsToggleLinkPicker(${v.voucherId})" id="tvs-link-toggle-${v.voucherId}" style="padding:3px 10px; font-size:0.72rem;">+ Link</button>
+      </div>
+      ${linkedRows || `<div style="color:var(--muted); font-size:0.85rem;">No company-paid bookings linked.</div>`}
+      <div id="tvs-link-picker-${v.voucherId}" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);"></div>
+    </div>`;
 
   return `
     <div class="contact-summary-card-parent">
@@ -492,6 +495,56 @@ async function tvsUnlinkTicket(voucherId, travellerId) {
   showBlockingOverlay("Unlinking travel ticket...");
   try {
     const data = await acFetch("unlinkTravelTicketFromVoucher", { voucherId, travellerId });
+    hideBlockingOverlay();
+    if (!data.success) { alert(data.error); return; }
+    runTourVoucherSearch();
+  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
+}
+
+// Lazy-loaded picker for linking an Unactioned travel/hotel booking (made
+// for the voucher's primary employee OR any Additional Person on it) to
+// this voucher — same candidate shape/eligibility as the Check Voucher
+// queue's picker, just offered again here for a voucher already searched
+// up. Toggled open/closed; only fetches once per open.
+async function tvsToggleLinkPicker(voucherId) {
+  const box = document.getElementById(`tvs-link-picker-${voucherId}`);
+  if (!box) return;
+  if (box.style.display === "block") { box.style.display = "none"; return; }
+  box.style.display = "block";
+  box.innerHTML = `<div style="color:var(--muted); font-size:0.85rem;">Loading...</div>`;
+  try {
+    const data = await acFetch("fetchLinkableCompanyPaidBookings", { voucherId });
+    if (!data.success) { box.innerHTML = `<p style="color:var(--warn); font-size:0.85rem;">${escapeHtml(data.error)}</p>`; return; }
+    if (data.bookings.length === 0) {
+      box.innerHTML = `<div style="color:var(--muted); font-size:0.85rem;">No Unactioned bookings available to link.</div>`;
+      return;
+    }
+    box.innerHTML = data.bookings.map(t => {
+      const isHotel = t.bookingType === 'Hotel';
+      const dateCell = isHotel
+        ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}`
+        : (t.tripType === 'Round Trip' && t.returnDate
+            ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}` : formatOrdinalDate(t.departDate));
+      const overlapBadge = t.overlapsVisit
+        ? `<span style="color:#15803d; font-weight:700; font-size:0.72rem;">Matches visit dates</span>`
+        : `<span style="color:var(--muted); font-size:0.72rem;">Outside visit window</span>`;
+      const label = isHotel
+        ? `<b>Hotel</b>: ${escapeHtml(t.hotelName || t.hotelCity)}, ${escapeHtml(t.hotelCity)}${t.nights ? ` · ${t.nights} night${t.nights === 1 ? '' : 's'}` : ''}`
+        : `<b>${escapeHtml(t.modeOfTravel)}</b>: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)}`;
+      return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; font-size:0.85rem; border-top:1px solid var(--border);">
+        <span>${label} · ${dateCell} · for ${escapeHtml(t.employeeName)} · ${overlapBadge}</span>
+        <span style="white-space:nowrap;">${formatINRComma(t.price)}
+          <button class="nav-btn-styled" onclick="event.stopPropagation(); tvsLinkBooking(${voucherId}, ${t.travellerId})" style="padding:3px 10px; font-size:0.72rem; margin-left:8px;">Link</button>
+        </span>
+      </div>`;
+    }).join("");
+  } catch (e) { box.innerHTML = `<p style="color:var(--warn); font-size:0.85rem;">Network error: ${escapeHtml(e.message)}</p>`; }
+}
+
+async function tvsLinkBooking(voucherId, travellerId) {
+  showBlockingOverlay("Linking booking...");
+  try {
+    const data = await acFetch("linkCompanyPaidBooking", { voucherId, travellerId });
     hideBlockingOverlay();
     if (!data.success) { alert(data.error); return; }
     runTourVoucherSearch();
