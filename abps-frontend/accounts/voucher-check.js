@@ -148,7 +148,7 @@ function tvcRenderTicketPicker(v) {
   // sliver in production (root cause never pinned down); grid with an
   // explicit minmax(0,1fr) track can't do that, so it's rebuilt on that
   // instead of chasing the original layout further.
-  const rows = candidates.map(t => {
+  const renderRow = (t) => {
     const isHotel = t.bookingType === 'Hotel';
     const dateCell = isHotel
       ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}`
@@ -178,14 +178,27 @@ function tvcRenderTicketPicker(v) {
       </div>
       <div style="font-weight:700; white-space:nowrap;">${formatINRComma(t.price)}</div>
     </div>`;
-  }).join("");
+  };
+  // Two columns, Travel left / Hotel right — cleaner and more
+  // height-efficient than one long stacked list once both types are
+  // present. Either column is simply omitted (not an empty placeholder)
+  // when there's nothing of that type.
+  const travelRows = candidates.filter(t => t.bookingType !== 'Hotel').map(renderRow).join("");
+  const hotelRows = candidates.filter(t => t.bookingType === 'Hotel').map(renderRow).join("");
+  const column = (label, rows) => rows ? `
+    <div style="flex:1; min-width:0;">
+      <div style="font-weight:700; font-size:0.8rem; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">${label}</div>
+      ${rows}
+    </div>` : '';
   return `
     <div style="margin-bottom:14px; padding:12px; background:var(--highlight-bg); border-radius:var(--radius);">
       <div style="font-weight:700; margin-bottom:8px;">Company-Paid Travel &amp; Hotel Bookings</div>
       <div style="font-size:0.8rem; color:var(--muted); margin-bottom:8px; font-style:italic;">
         Recorded on the voucher for the record. Not added to Total Actual Amount and not paid to the employee.
       </div>
-      ${rows}
+      <div style="display:flex; gap:16px; flex-wrap:wrap;">
+        ${column('Travel', travelRows)}${column('Hotel', hotelRows)}
+      </div>
     </div>`;
 }
 
