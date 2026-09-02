@@ -94,6 +94,7 @@ function tvcRenderCard(v) {
         </div>
       </div>
       <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
+        ${tvcRenderTicketPicker(v)}
         <div style="overflow-x:auto;">
           <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
             <thead><tr style="background:var(--highlight-bg); text-align:left;">
@@ -112,6 +113,42 @@ function tvcRenderCard(v) {
           <button class="nav-btn-styled" onclick="submitTourVoucherCheck(${v.voucherId})">Submit</button>
         </div>
       </div>
+    </div>`;
+}
+
+// Company-Paid Travel Tickets — this employee's Unactioned bookings,
+// sorted by travel date (server order), with the ones overlapping this
+// voucher's own visit window visually flagged. Checkboxes (not radio) —
+// a voucher may link several tickets (outbound/return booked
+// separately). No blocking validation: employee-claimed Travel lines and
+// company-paid tickets can legitimately coexist on one voucher.
+function tvcRenderTicketPicker(v) {
+  const candidates = v.linkableTravelTickets || [];
+  if (candidates.length === 0) return "";
+  const rows = candidates.map(t => {
+    const dateCell = t.tripType === 'Round Trip' && t.returnDate
+      ? `${formatDateDMY(t.departDate)} → ${formatDateDMY(t.returnDate)}` : formatDateDMY(t.departDate);
+    const overlapBadge = t.overlapsVisit
+      ? `<span style="background:#dcfce7; color:#15803d; padding:2px 7px; border-radius:10px; font-size:0.72rem; font-weight:700; margin-left:6px;">Matches visit dates</span>`
+      : `<span style="background:#f1f5f9; color:var(--muted); padding:2px 7px; border-radius:10px; font-size:0.72rem; margin-left:6px;">Outside visit window</span>`;
+    return `<label style="display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid ${t.overlapsVisit ? '#86efac' : 'var(--border)'}; border-radius:6px; margin-bottom:6px; cursor:pointer; background:${t.overlapsVisit ? '#f0fdf4' : '#fff'};">
+      <input type="checkbox" class="tvc-ticket-input" data-traveller-id="${t.travellerId}">
+      <span style="flex:1;">
+        <strong>${escapeHtml(t.modeOfTravel)}: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)}</strong>
+        <span style="color:var(--muted); font-size:0.82rem; margin-left:8px;">${dateCell}</span>
+        ${t.pnrNumber ? `<span style="color:var(--muted); font-size:0.8rem; margin-left:8px;">PNR: ${escapeHtml(t.pnrNumber)}</span>` : ''}
+        ${overlapBadge}
+      </span>
+      <span style="font-weight:700;">${formatINRComma(t.price)}</span>
+    </label>`;
+  }).join("");
+  return `
+    <div style="margin-bottom:14px; padding:12px; background:var(--highlight-bg); border-radius:var(--radius);">
+      <div style="font-weight:700; margin-bottom:8px;">Company-Paid Travel Tickets</div>
+      <div style="font-size:0.8rem; color:var(--muted); margin-bottom:8px; font-style:italic;">
+        Recorded on the voucher for the record. Not added to Total Actual Amount and not paid to the employee.
+      </div>
+      ${rows}
     </div>`;
 }
 
@@ -146,9 +183,11 @@ async function submitTourVoucherCheck(voucherId) {
     return showTourFeedback("Every line needs a valid non-negative Actual Amount.", "error");
   }
 
+  const travellerIds = [...card.querySelectorAll(".tvc-ticket-input:checked")].map(cb => Number(cb.dataset.travellerId));
+
   showBlockingOverlay("Submitting check...");
   try {
-    const data = await acFetch("checkTourVoucher", { voucherId, lines });
+    const data = await acFetch("checkTourVoucher", { voucherId, lines, travellerIds });
     hideBlockingOverlay();
     if (data.success) {
       const pdfLine = data.pdfUrl

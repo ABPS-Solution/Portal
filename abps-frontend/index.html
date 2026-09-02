@@ -746,6 +746,7 @@
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-tour-expense" onclick="switchActiveDashboardModule('tour-expense')"><span class="mc-label">Tour Expense Tracker</span></div>
         <div class="menu-card" id="mod-cash-expenses" onclick="switchActiveDashboardModule('cash-expenses')"><span class="mc-label">Daily Cash / UPI Expenses</span></div>
+        <div class="menu-card" id="mod-travel-tickets" onclick="switchActiveDashboardModule('travel-tickets')"><span class="mc-label">Travel Ticket Booking</span></div>
       </div>
     </div>
     
@@ -2149,6 +2150,26 @@
 
     <!-- EMPLOYEE DETAILS -->
     <div id="ce-panel-employees" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div id="canvas-module-travel-tickets" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitTravelTicketsBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <h2 class="panel-title">Travel Ticket Booking</h2>
+    <div id="ttk-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+    <div id="ttk-success" style="display:none; margin-bottom:12px;"></div>
+
+    <div id="ttk-toggle-bar" style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
+      <button id="ttk-toggle-book" class="nav-btn-styled" onclick="switchTravelTicketToggle('book')" style="flex:1; padding:11px 16px;">Book a Ticket</button>
+      <button id="ttk-toggle-manage" class="nav-btn-styled" onclick="switchTravelTicketToggle('manage')" style="flex:1; padding:11px 16px;">Search / Manage Tickets</button>
+    </div>
+
+    <div id="ttk-panel-book"></div>
+    <div id="ttk-panel-manage" style="display:none;"></div>
     </div>
   </div>
 
@@ -4522,5 +4543,6 @@
 <script src="accounts/cash-balance.js"></script>
 <script src="accounts/cash-expense-search.js"></script>
 <script src="accounts/cash-expense-employees.js"></script>
+<script src="accounts/travel-tickets.js"></script>
 </body>
 </html>

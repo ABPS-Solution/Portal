@@ -248,7 +248,9 @@ async function runTourVoucherSearch() {
       ${tvsRenderBucket("Balance over ₹10,000", data.employeesOver10k, "#b91c1c")}
       ${tvsRenderBucket("Balance -₹10,000 or under", data.employeesUnder10k, "#15803d")}`;
 
-    document.getElementById("tvs-total").textContent = `Total Voucher Amount (Checked, Actual): ${formatINRComma(data.totalCheckedActual)}`;
+    document.getElementById("tvs-total").innerHTML =
+      `Total Voucher Amount (Checked, Actual): ${formatINRComma(data.totalCheckedActual)}` +
+      `&nbsp;&nbsp;·&nbsp;&nbsp;Company-Paid Travel (Checked): ${formatINRComma(data.totalCompanyPaidTravel || 0)}`;
 
     if (data.vouchers.length === 0) {
       resultsEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No vouchers match this filter.</div>`;
@@ -344,6 +346,32 @@ function tvsRenderCard(v) {
   const cardActual = lines.reduce((s, l) => s + (Number(l.actualAmount) || 0), 0);
   const pdfLine = v.pdfUrl
     ? `<div style="font-size:0.78rem; margin-top:4px;">Voucher PDF (v${v.pdfVersion || 1}): <a href="${driveLink(v.pdfUrl)}" target="_blank" rel="noopener">Download</a></div>` : '';
+
+  // Company-Paid Travel — read-only, clearly tagged, never folded into
+  // Claimed/Actual. Admin-only Unlink (perm_admin, checked client-side
+  // for display and re-checked server-side) since these tickets are only
+  // ever attached during Check (routes/accounts.js checkTourVoucher) —
+  // there is no ordinary "unlink before submit" path once a voucher shows
+  // up here at all.
+  const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
+  const linkedTickets = v.linkedTravelTickets || [];
+  const ticketsBlock = linkedTickets.length ? `
+    <div style="margin-top:12px; padding:10px; background:var(--highlight-bg); border-radius:var(--radius);">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px;">Company-Paid Travel</div>
+      ${linkedTickets.map(t => {
+        const dateCell = t.tripType === 'Round Trip' && t.returnDate
+          ? `${formatDateDMY(t.departDate)} → ${formatDateDMY(t.returnDate)}` : formatDateDMY(t.departDate);
+        const cancelledTag = t.ticketStatus === 'Cancelled' ? `<span style="color:#b91c1c; font-weight:700; margin-left:6px;">Cancelled</span>` : '';
+        const invoiceLink = t.invoiceUrl ? ` · <a href="${driveLink(t.invoiceUrl)}" target="_blank" rel="noopener">Invoice</a>` : '';
+        const unlinkBtn = isAdminUser
+          ? `<button class="nav-btn-styled" onclick="event.stopPropagation(); tvsUnlinkTicket(${v.voucherId}, ${t.travellerId})" style="padding:3px 10px; font-size:0.72rem; margin-left:8px; background:#fee2e2; color:#b91c1c;">Unlink</button>` : '';
+        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:0.82rem;">
+          <span>${escapeHtml(t.modeOfTravel)}: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)} · ${dateCell}${t.pnrNumber ? ' · PNR ' + escapeHtml(t.pnrNumber) : ''}${invoiceLink}${cancelledTag}</span>
+          <span>${formatINRComma(t.price)}${unlinkBtn}</span>
+        </div>`;
+      }).join("")}
+    </div>` : '';
+
   return `
     <div class="contact-summary-card-parent">
       <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
@@ -371,8 +399,20 @@ function tvsRenderCard(v) {
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
+        ${ticketsBlock}
       </div>
     </div>`;
+}
+
+async function tvsUnlinkTicket(voucherId, travellerId) {
+  if (!confirm("Unlink this travel ticket from the voucher? This regenerates the voucher PDF.")) return;
+  showBlockingOverlay("Unlinking travel ticket...");
+  try {
+    const data = await acFetch("unlinkTravelTicketFromVoucher", { voucherId, travellerId });
+    hideBlockingOverlay();
+    if (!data.success) { alert(data.error); return; }
+    runTourVoucherSearch();
+  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
 }
 
 // Per-line Actual Amount correction (Search Vouchers, revised 31 Aug 2026

@@ -376,6 +376,12 @@ function exitCashExpensesBackToMenu() {
   document.getElementById("dashboard-view").style.display = "flex";
 }
 
+function exitTravelTicketsBackToMenu() {
+  document.getElementById("canvas-module-travel-tickets").style.display = "none";
+  enforceDynamicModuleRoleGateways(userPermissions);
+  document.getElementById("dashboard-view").style.display = "flex";
+}
+
 function exitDesignWorkspacePanelBackToMenu() {
   document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
   const dd = document.getElementById("canvas-module-design-dashboard");
