@@ -87,22 +87,18 @@ async function ttkRenderBookForm() {
           <select id="ttk-trip-type" onchange="ttkOnTripTypeChange()" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
             <option value="">Select...</option>${TTK_TRIP_TYPES.map(t => `<option value="${t}">${t}</option>`).join("")}
           </select></div>
-      </div>
-      <div style="display:flex; gap:10px; margin-bottom:12px;">
         <div style="flex:1;"><label class="field-label">From City *</label>
           <input type="text" id="ttk-from-city" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;"></div>
         <div style="flex:1;"><label class="field-label">To City *</label>
           <input type="text" id="ttk-to-city" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;"></div>
       </div>
       <div style="display:flex; gap:10px; margin-bottom:12px;">
+        <div style="flex:1;"><label class="field-label">PNR / Ticket No</label>
+          <input type="text" id="ttk-pnr" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;"></div>
         <div style="flex:1;"><label class="field-label">Departure Date *</label>
           <input type="date" id="ttk-depart-date" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;"></div>
         <div style="flex:1;" id="ttk-return-date-wrap"><label class="field-label">Return Date *</label>
           <input type="date" id="ttk-return-date" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;"></div>
-      </div>
-      <div style="display:flex; gap:10px; margin-bottom:12px;">
-        <div style="flex:1;"><label class="field-label">PNR / Ticket No</label>
-          <input type="text" id="ttk-pnr" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;"></div>
       </div>
       <div style="margin-bottom:12px; position:relative;">
         <label class="field-label">Company(ies) of Visit</label>
