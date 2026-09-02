@@ -298,18 +298,6 @@ function tvsRenderBucket(title, employees, color) {
 // "2nd Sep 2026" style — day-of-month with ordinal suffix, short month
 // name, full year. Local to this file; no shared helper for this exists
 // yet elsewhere in abps-frontend.
-function formatOrdinalDate(isoOrDate) {
-  if (!isoOrDate) return '—';
-  const d = new Date(isoOrDate);
-  if (isNaN(d.getTime())) return '—';
-  const day = d.getDate();
-  const suffix = (day % 10 === 1 && day !== 11) ? 'st'
-    : (day % 10 === 2 && day !== 12) ? 'nd'
-    : (day % 10 === 3 && day !== 13) ? 'rd' : 'th';
-  const month = d.toLocaleDateString('en-IN', { month: 'short' });
-  return `${day}${suffix} ${month} ${d.getFullYear()}`;
-}
-
 // Same bordered/wrapping table shape as marketing/tasks-followups.js's
 // task table — left border between columns, values wrap instead of
 // truncating (so a row grows taller rather than clipping text), every

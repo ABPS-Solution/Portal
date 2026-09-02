@@ -26,6 +26,9 @@ async function loadVoucherCheckQueue() {
 
 function tvcRenderCard(v) {
   const lines = v.lines || [];
+  const colBorder = "border-left:2px solid var(--border);";
+  const cell = "padding:8px 6px; font-size:0.85rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;";
+  const headCell = "padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); vertical-align:middle;";
   const rows = lines.map(l => {
     const bills = (l.bills && l.bills.length > 0) ? l.bills : (l.billUrl ? [{ fileName: l.billFileName, url: l.billUrl }] : []);
     const billCell = bills.length > 0
@@ -35,14 +38,14 @@ function tvcRenderCard(v) {
         : `<span style="color:var(--muted);">— no bill required —</span>`;
     const typeLabel = l.expenseType === 'Local Conveyance' && l.conveyanceMode ? `Local Conveyance (${escapeHtml(l.conveyanceMode)})`
       : l.expenseType === 'Others' && l.otherText ? `Others (${escapeHtml(l.otherText)})` : escapeHtml(l.expenseType);
-    return `<tr style="border-bottom:1px solid var(--border);" data-line-id="${l.lineId}">
-      <td style="padding:7px;">${l.srNo}</td>
-      <td style="padding:7px;">${formatDateDMY(l.expenseDate)}</td>
-      <td style="padding:7px;">${typeLabel}</td>
-      <td style="padding:7px; width:14%; overflow-wrap:anywhere;">${billCell}</td>
-      <td style="padding:7px; text-align:right;">${formatINRComma(l.amount)}</td>
-      <td style="padding:7px 7px 7px 20px; width:26%; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
-      <td style="padding:7px;">
+    return `<tr style="border-bottom:2px solid var(--border);" data-line-id="${l.lineId}">
+      <td style="${cell}">${l.srNo}</td>
+      <td style="${cell} ${colBorder}">${formatOrdinalDate(l.expenseDate)}</td>
+      <td style="${cell} ${colBorder}">${typeLabel}</td>
+      <td style="${cell} ${colBorder}">${billCell}</td>
+      <td style="${cell} ${colBorder}">${formatINRComma(l.amount)}</td>
+      <td style="${cell} ${colBorder}; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
+      <td style="${cell} ${colBorder}">
         <input type="number" class="tvc-actual-input" data-line-id="${l.lineId}"
               data-cap="${l.capAmount != null ? l.capAmount : l.amount}"
               value="${trimNum(l.capAmount != null ? l.capAmount : l.amount)}" min="0"
@@ -52,29 +55,9 @@ function tvcRenderCard(v) {
         <textarea class="tvc-reason-input" data-line-id="${l.lineId}" placeholder="Reason for exceeding limit"
               style="display:none; width:140px; margin-top:4px; font-size:0.72rem; padding:4px; border:1px solid var(--border); border-radius:4px;"></textarea>
       </td>
-      <td style="padding:7px; text-align:center;"><input type="checkbox" class="tvc-checked-input" data-line-id="${l.lineId}"></td>
+      <td style="${cell} ${colBorder}"><input type="checkbox" class="tvc-checked-input" data-line-id="${l.lineId}"></td>
     </tr>`;
   }).join("");
-
-  // Daily Total Food flag — a same-day sanity check for the checker
-  // (multiple Food lines on one date summed together), one line per
-  // unique date that actually has a Food line, in date order.
-  const foodTotalsByDate = {};
-  lines.filter(l => l.expenseType === 'Food').forEach(l => {
-    foodTotalsByDate[l.expenseDate] = (foodTotalsByDate[l.expenseDate] || 0) + (Number(l.amount) || 0);
-  });
-  const dailyFoodTotalsLine = Object.keys(foodTotalsByDate).sort().map(date =>
-    `<div>Daily Total Food for ${formatDateDMY(date)}: <strong>${formatINRComma(foodTotalsByDate[date])}</strong></div>`
-  ).join("");
-
-  // Same pattern, for Local Conveyance.
-  const conveyanceTotalsByDate = {};
-  lines.filter(l => l.expenseType === 'Local Conveyance').forEach(l => {
-    conveyanceTotalsByDate[l.expenseDate] = (conveyanceTotalsByDate[l.expenseDate] || 0) + (Number(l.amount) || 0);
-  });
-  const dailyConveyanceTotalsLine = Object.keys(conveyanceTotalsByDate).sort().map(date =>
-    `<div>Daily Total Local Conveyance for ${formatDateDMY(date)}: <strong>${formatINRComma(conveyanceTotalsByDate[date])}</strong></div>`
-  ).join("");
 
   const peopleLine = (v.additionalPeople || []).length
     ? `<div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">With: ${v.additionalPeople.map(escapeHtml).join(", ")}</div>` : "";
@@ -103,17 +86,16 @@ function tvcRenderCard(v) {
       <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
         ${tvcRenderTicketPicker(v)}
         <div style="overflow-x:auto;">
-          <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
-            <thead><tr style="background:var(--highlight-bg); text-align:left;">
-              <th style="padding:7px;">Sr No</th><th style="padding:7px;">Date</th><th style="padding:7px;">Type</th>
-              <th style="padding:7px; width:14%;">Uploaded Bill</th><th style="padding:7px; text-align:right;">Amount</th>
-              <th style="padding:7px 7px 7px 20px; width:26%;">Description</th>
-              <th style="padding:7px;">Actual Amount</th><th style="padding:7px;">Bill Checked?</th>
+          <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+            <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">
+              <th style="${headCell}">Sr No</th><th style="${headCell} ${colBorder}">Date</th><th style="${headCell} ${colBorder}">Type</th>
+              <th style="${headCell} ${colBorder}">Uploaded Bill</th><th style="${headCell} ${colBorder}">Amount</th>
+              <th style="${headCell} ${colBorder}">Description</th>
+              <th style="${headCell} ${colBorder}">Actual Amount</th><th style="${headCell} ${colBorder}">Bill Checked?</th>
             </tr></thead>
             <tbody>${rows}</tbody>
           </table>
         </div>
-        ${(dailyFoodTotalsLine || dailyConveyanceTotalsLine) ? `<div style="margin-top:12px; font-size:0.85rem; color:var(--muted);">${dailyFoodTotalsLine}${dailyConveyanceTotalsLine}</div>` : ""}
         <div style="display:flex; justify-content:flex-end; gap:24px; margin-top:14px; align-items:center; flex-wrap:wrap;">
           <div style="font-weight:700;">Total Voucher Actual Amount: <span id="tvc-actual-total-${v.voucherId}">${formatINRComma(v.totalAmount)}</span></div>
           <div style="font-weight:700;">Total Voucher Amount Difference: <span id="tvc-diff-${v.voucherId}">0</span></div>

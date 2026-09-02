@@ -164,6 +164,21 @@ function trimNum(n) {
 // the native input's own text. This runs on a short poll rather than a
 // one-time DOMContentLoaded pass, since every panel here renders its
 // date inputs dynamically via innerHTML at unpredictable times.
+// Ordinal display date, e.g. "6th Sep 2026" — accepts an ISO date string
+// or a Date. Used anywhere a friendlier, unambiguous date than DD/MM/YYYY
+// is wanted (Advance Vouchers table, voucher-check line items).
+function formatOrdinalDate(value) {
+  if (!value) return '';
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) return '';
+  const day = d.getDate();
+  const suffix = (day % 10 === 1 && day !== 11) ? 'st'
+    : (day % 10 === 2 && day !== 12) ? 'nd'
+    : (day % 10 === 3 && day !== 13) ? 'rd' : 'th';
+  const month = d.toLocaleString('en-US', { month: 'short' });
+  return `${day}${suffix} ${month} ${d.getFullYear()}`;
+}
+
 function formatDMYFromISO(iso) {
   if (!iso) return '';
   const parts = iso.split('-');
