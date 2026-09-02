@@ -88,7 +88,7 @@ async function ttkRenderBookForm() {
           style="width:100%; padding:7px 0;">
         <div id="ttk-invoice-file-list" style="margin-top:4px;"></div>
         <button type="button" class="nav-btn-styled" id="ttk-gemini-btn" onclick="ttkProcessWithGemini()" disabled
-          style="margin-top:10px; padding:8px 16px; font-size:0.85rem; opacity:0.5;">Process with Gemini</button>
+          style="margin-top:10px; padding:8px 16px; font-size:0.85rem; opacity:0.5;">Process Doc with AI</button>
         <div id="ttk-gemini-status" style="font-size:0.78rem; color:var(--muted); margin-top:6px;"></div>
       </div>
       <div style="margin-bottom:12px;">
