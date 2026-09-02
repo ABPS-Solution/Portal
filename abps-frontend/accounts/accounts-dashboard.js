@@ -6,7 +6,7 @@
 // ═══════════════════════════════════════════════════════
 let adCurrentPeriod = "today";
 let adCurrentCustomType = "customday";
-let adChartTrend = null, adChartType = null, adChartDept = null;
+let adChartTrend = null, adChartTourType = null, adChartDailyType = null;
 
 function adReturnToMain() {
   const c = document.getElementById("canvas-module-accounts-dashboard");
@@ -73,7 +73,7 @@ function adFormatDays(n) {
 }
 
 function adRenderDashboard(data) {
-  const { stats, expenseTrend, spendByType, spendByDept } = data;
+  const { stats, expenseTrend, tourSpendByType, dailySpendByType } = data;
 
   // Row 1 — live backlog
   document.getElementById("ad-s-unchecked").textContent = stats.uncheckedVouchers;
@@ -155,15 +155,15 @@ function adRenderDashboard(data) {
     });
   }
 
-  // Chart 2 — Spend by Expense Type (horizontal bar)
-  if (adChartType) adChartType.destroy();
-  const ctx2 = document.getElementById("ad-chart-type").getContext("2d");
-  if (spendByType.length === 0) {
-    adChartType = new Chart(ctx2, { type: "bar", data: { labels: ["No data"], datasets: [{ data: [0], backgroundColor: "#f1f5f9" }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+  // Chart (left) — Tour Expense by Type, top 5 (horizontal bar)
+  if (adChartTourType) adChartTourType.destroy();
+  const ctx2 = document.getElementById("ad-chart-tour-type").getContext("2d");
+  if (tourSpendByType.length === 0) {
+    adChartTourType = new Chart(ctx2, { type: "bar", data: { labels: ["No data"], datasets: [{ data: [0], backgroundColor: "#f1f5f9" }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } } } });
   } else {
-    adChartType = new Chart(ctx2, {
+    adChartTourType = new Chart(ctx2, {
       type: "bar",
-      data: { labels: spendByType.map(r => r.label), datasets: [{ label: "Amount", data: spendByType.map(r => r.amount), backgroundColor: "rgba(124,58,237,0.7)", borderRadius: 3 }] },
+      data: { labels: tourSpendByType.map(r => r.label), datasets: [{ label: "Amount", data: tourSpendByType.map(r => r.amount), backgroundColor: "rgba(124,58,237,0.7)", borderRadius: 3 }] },
       options: {
         indexAxis: "y", responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
@@ -172,15 +172,15 @@ function adRenderDashboard(data) {
     });
   }
 
-  // Chart 3 — Spend by Department (horizontal bar)
-  if (adChartDept) adChartDept.destroy();
-  const ctx3 = document.getElementById("ad-chart-dept").getContext("2d");
-  if (spendByDept.length === 0) {
-    adChartDept = new Chart(ctx3, { type: "bar", data: { labels: ["No data"], datasets: [{ data: [0], backgroundColor: "#f1f5f9" }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+  // Chart (right) — Daily Expense by Type, top 5 (horizontal bar)
+  if (adChartDailyType) adChartDailyType.destroy();
+  const ctx3 = document.getElementById("ad-chart-daily-type").getContext("2d");
+  if (dailySpendByType.length === 0) {
+    adChartDailyType = new Chart(ctx3, { type: "bar", data: { labels: ["No data"], datasets: [{ data: [0], backgroundColor: "#f1f5f9" }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } } } });
   } else {
-    adChartDept = new Chart(ctx3, {
+    adChartDailyType = new Chart(ctx3, {
       type: "bar",
-      data: { labels: spendByDept.map(r => r.label), datasets: [{ label: "Amount", data: spendByDept.map(r => r.amount), backgroundColor: "rgba(15,118,110,0.7)", borderRadius: 3 }] },
+      data: { labels: dailySpendByType.map(r => r.label), datasets: [{ label: "Amount", data: dailySpendByType.map(r => r.amount), backgroundColor: "rgba(15,118,110,0.7)", borderRadius: 3 }] },
       options: {
         indexAxis: "y", responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
