@@ -722,7 +722,7 @@ function ttkRenderTicketsTable(tickets) {
       ? `<span style="color:#b91c1c; font-weight:700;">Cancelled</span>`
       : `<span style="color:#15803d; font-weight:700;">Booked</span>`;
     const actionsCell = t.status === 'Cancelled'
-      ? `<span style="color:var(--muted); font-size:0.72rem;">${t.cancelReason ? escapeHtml(t.cancelReason) : '—'}</span>`
+      ? `<span style="color:var(--muted); font-size:0.72rem;">—</span>`
       : `<button class="nav-btn-styled" onclick="ttkStartEdit(${t.ticketId})" style="padding:4px 8px; font-size:0.72rem;">Edit</button>
          <button class="nav-btn-styled" onclick="ttkCancelTicket(${t.ticketId})" style="padding:4px 8px; font-size:0.72rem; margin-top:3px; background:#fee2e2; color:#b91c1c;">Cancel</button>`;
     const travellers = t.travellers && t.travellers.length ? t.travellers : [null];
@@ -803,13 +803,12 @@ async function ttkStartEdit(ticketId) {
 async function ttkCancelTicket(ticketId) {
   const refundInput = prompt("Refund amount received from the vendor (leave blank if none):");
   if (refundInput === null) return;
-  const reason = prompt("Reason for cancelling (optional):") || null;
   const refundAmount = refundInput.trim() === "" ? null : Number(refundInput);
   if (refundInput.trim() !== "" && (isNaN(refundAmount) || refundAmount < 0)) return showTicketFeedback("Refund amount must be a valid non-negative number.", "error");
 
   showBlockingOverlay("Cancelling...");
   try {
-    const data = await acFetch("cancelTravelTicket", { ticketId, refundAmount, cancelReason: reason });
+    const data = await acFetch("cancelTravelTicket", { ticketId, refundAmount });
     hideBlockingOverlay();
     if (data.success) {
       const hotelsPanel = document.getElementById("ttk-panel-manage-hotels");
@@ -930,7 +929,7 @@ function ttkRenderHotelsTable(hotels) {
       ? `<span style="color:#b91c1c; font-weight:700;">Cancelled</span>`
       : `<span style="color:#15803d; font-weight:700;">Booked</span>`;
     const actionsCell = t.status === 'Cancelled'
-      ? `<span style="color:var(--muted); font-size:0.72rem;">${t.cancelReason ? escapeHtml(t.cancelReason) : '—'}</span>`
+      ? `<span style="color:var(--muted); font-size:0.72rem;">—</span>`
       : `<button class="nav-btn-styled" onclick="ttkStartEdit(${t.ticketId})" style="padding:4px 8px; font-size:0.72rem;">Edit</button>
          <button class="nav-btn-styled" onclick="ttkCancelTicket(${t.ticketId})" style="padding:4px 8px; font-size:0.72rem; margin-top:3px; background:#fee2e2; color:#b91c1c;">Cancel</button>`;
     const travellers = t.travellers && t.travellers.length ? t.travellers : [null];
