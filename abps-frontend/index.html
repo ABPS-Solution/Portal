@@ -747,7 +747,7 @@
         </div>
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-travel-tickets" onclick="switchActiveDashboardModule('travel-tickets')"><span class="mc-label">Travel Ticket Booking</span></div>
+        <div class="menu-card" id="mod-travel-tickets" onclick="switchActiveDashboardModule('travel-tickets')"><span class="mc-label">Travel Ticket / Hotel Booking</span></div>
         <div class="menu-card" id="mod-tour-expense" onclick="switchActiveDashboardModule('tour-expense')"><span class="mc-label">Tour Expense Tracker</span></div>
         <div class="menu-card" id="mod-cash-expenses" onclick="switchActiveDashboardModule('cash-expenses')"><span class="mc-label">Daily Cash / UPI / Online Expenses</span></div>
       </div>
@@ -2162,17 +2162,19 @@
       <button class="nav-btn-styled" onclick="exitTravelTicketsBackToMenu()">Return to Main Dashboard</button>
     </div>
     <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-    <h2 class="panel-title">Travel Ticket Booking</h2>
+    <h2 class="panel-title">Travel Ticket / Hotel Booking</h2>
     <div id="ttk-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
     <div id="ttk-success" style="display:none; margin-bottom:12px;"></div>
 
     <div id="ttk-toggle-bar" style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
-      <button id="ttk-toggle-book" class="nav-btn-styled" onclick="switchTravelTicketToggle('book')" style="flex:1; padding:11px 16px;">Book a Ticket</button>
+      <button id="ttk-toggle-book" class="nav-btn-styled" onclick="switchTravelTicketToggle('book')" style="flex:1; padding:11px 16px;">Book a Ticket / Hotel</button>
       <button id="ttk-toggle-manage" class="nav-btn-styled" onclick="switchTravelTicketToggle('manage')" style="flex:1; padding:11px 16px;">Search / Manage Tickets</button>
+      <button id="ttk-toggle-manage-hotels" class="nav-btn-styled" onclick="switchTravelTicketToggle('manage-hotels')" style="flex:1; padding:11px 16px;">Search / Manage Hotels</button>
     </div>
 
     <div id="ttk-panel-book"></div>
     <div id="ttk-panel-manage" style="display:none;"></div>
+    <div id="ttk-panel-manage-hotels" style="display:none;"></div>
     </div>
   </div>
 
@@ -3412,12 +3414,12 @@
         <!-- ROW 1 -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Unactioned Travel Tickets</div>
+            <div class="dd-stat-label">Unactioned Travel / Hotel Tickets</div>
             <div class="dd-stat-val" id="ad-s-unactioned" style="color:#b45309;">—</div>
             <div class="dd-stat-sub" id="ad-s-unactioned-sub"></div>
           </div>
           <div class="dd-stat-card">
-            <div class="dd-stat-label">Company-Paid Travel</div>
+            <div class="dd-stat-label">Company-Paid Travel / Hotel</div>
             <div class="dd-stat-val" id="ad-s-travelpaid">—</div>
             <div class="dd-stat-sub" id="ad-s-travelpaid-sub"></div>
           </div>

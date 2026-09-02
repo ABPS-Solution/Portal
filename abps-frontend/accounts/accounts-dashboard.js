@@ -84,7 +84,8 @@ function adRenderDashboard(data) {
   document.getElementById("ad-s-openadv-sub").textContent = adFmtINR(stats.openAdvanceAmount) + " out";
 
   document.getElementById("ad-s-unactioned").textContent = stats.unactionedTravellers;
-  document.getElementById("ad-s-unactioned-sub").textContent = adFmtINR(stats.unactionedTravelAmount) + " unreconciled";
+  document.getElementById("ad-s-unactioned-sub").textContent = adFmtINR(stats.unactionedTravelAmount) + " unreconciled"
+    + ` (${stats.unactionedTicketCount} ticket${stats.unactionedTicketCount === 1 ? '' : 's'} · ${stats.unactionedHotelCount} hotel${stats.unactionedHotelCount === 1 ? '' : 's'})`;
 
   const cashBoxEl = document.getElementById("ad-s-cashbox");
   cashBoxEl.textContent = adFmtINR(stats.cashBoxCombined);
@@ -104,7 +105,8 @@ function adRenderDashboard(data) {
   document.getElementById("ad-s-dailyspent").textContent = adFmtINR(stats.cashSpent);
   document.getElementById("ad-s-dailyspent-sub").textContent = stats.onlineSpent > 0 ? `${adFmtINR(stats.onlineSpent)} online` : '';
   document.getElementById("ad-s-travelpaid").textContent = adFmtINR(stats.travelPaid);
-  document.getElementById("ad-s-travelpaid-sub").textContent = `${stats.travelTicketCount} ticket${stats.travelTicketCount === 1 ? '' : 's'}`;
+  document.getElementById("ad-s-travelpaid-sub").textContent =
+    `${stats.travelTicketCount} ticket${stats.travelTicketCount === 1 ? '' : 's'} · ${stats.travelHotelCount} hotel${stats.travelHotelCount === 1 ? '' : 's'}`;
   document.getElementById("ad-s-advpaid").textContent = adFmtINR(stats.advancesPaid);
   document.getElementById("ad-s-advpaid-sub").textContent = `${stats.advanceCount} advance${stats.advanceCount === 1 ? '' : 's'}`;
 
@@ -167,7 +169,7 @@ function adRenderDashboard(data) {
       options: {
         indexAxis: "y", responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
-        scales: { x: { grid: { color: "#f1f5f9" } }, y: { grid: { display: false }, ticks: { font: { size: 9 } } } }
+        scales: { x: { grid: { color: "#f1f5f9" } }, y: { grid: { display: false }, ticks: { font: { size: 11 } } } }
       }
     });
   }
@@ -184,7 +186,7 @@ function adRenderDashboard(data) {
       options: {
         indexAxis: "y", responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
-        scales: { x: { grid: { color: "#f1f5f9" } }, y: { grid: { display: false }, ticks: { font: { size: 9 } } } }
+        scales: { x: { grid: { color: "#f1f5f9" } }, y: { grid: { display: false }, ticks: { font: { size: 11 } } } }
       }
     });
   }

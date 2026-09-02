@@ -262,7 +262,7 @@ async function runTourVoucherSearch() {
 
     document.getElementById("tvs-total").innerHTML =
       `Total Voucher Amount (Checked, Actual): ${formatINRComma(data.totalCheckedActual)}` +
-      `&nbsp;&nbsp;·&nbsp;&nbsp;Company-Paid Travel (Checked): ${formatINRComma(data.totalCompanyPaidTravel || 0)}` +
+      `&nbsp;&nbsp;·&nbsp;&nbsp;Company-Paid (Checked): ${formatINRComma(data.totalCompanyPaid || 0)}` +
       `&nbsp;&nbsp;·&nbsp;&nbsp;Over Limit Amount: ${formatINRComma(data.overLimitAmount || 0)}`;
 
     if (data.vouchers.length === 0) {
@@ -384,26 +384,32 @@ function tvsRenderCard(v) {
   const pdfLine = v.pdfUrl
     ? `<div style="font-size:0.78rem; margin-top:4px;">Voucher PDF (v${v.pdfVersion || 1}): <a href="${driveLink(v.pdfUrl)}" target="_blank" rel="noopener">Download</a></div>` : '';
 
-  // Company-Paid Travel — read-only, clearly tagged, never folded into
-  // Claimed/Actual. Admin-only Unlink (perm_admin, checked client-side
-  // for display and re-checked server-side) since these tickets are only
-  // ever attached during Check (routes/accounts.js checkTourVoucher) —
-  // there is no ordinary "unlink before submit" path once a voucher shows
-  // up here at all.
+  // Company-Paid Travel & Hotel — read-only, clearly tagged, never folded
+  // into Claimed/Actual. Admin-only Unlink (perm_admin, checked
+  // client-side for display and re-checked server-side) since these
+  // bookings are only ever attached during Check (routes/accounts.js
+  // checkTourVoucher) — there is no ordinary "unlink before submit" path
+  // once a voucher shows up here at all.
   const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
-  const linkedTickets = v.linkedTravelTickets || [];
-  const ticketsBlock = linkedTickets.length ? `
+  const linkedBookings = v.linkedCompanyPaidBookings || [];
+  const ticketsBlock = linkedBookings.length ? `
     <div style="margin-top:12px; padding:10px; background:var(--highlight-bg); border-radius:var(--radius);">
-      <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px;">Company-Paid Travel</div>
-      ${linkedTickets.map(t => {
-        const dateCell = t.tripType === 'Round Trip' && t.returnDate
-          ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}` : formatOrdinalDate(t.departDate);
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px;">Company-Paid</div>
+      ${linkedBookings.map(t => {
+        const isHotel = t.bookingType === 'Hotel';
+        const dateCell = isHotel
+          ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}`
+          : (t.tripType === 'Round Trip' && t.returnDate
+              ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}` : formatOrdinalDate(t.departDate));
         const cancelledTag = t.ticketStatus === 'Cancelled' ? `<span style="color:#b91c1c; font-weight:700; margin-left:6px;">Cancelled</span>` : '';
         const invoiceLink = t.invoiceUrl ? ` · <a href="${driveLink(t.invoiceUrl)}" target="_blank" rel="noopener">Invoice</a>` : '';
         const unlinkBtn = isAdminUser
           ? `<button class="nav-btn-styled" onclick="event.stopPropagation(); tvsUnlinkTicket(${v.voucherId}, ${t.travellerId})" style="padding:3px 10px; font-size:0.72rem; margin-left:8px; background:#fee2e2; color:#b91c1c;">Unlink</button>` : '';
+        const label = isHotel
+          ? `Hotel: ${escapeHtml(t.hotelName || t.hotelCity)}, ${escapeHtml(t.hotelCity)} · ${dateCell}${t.pnrNumber ? ' · Ref ' + escapeHtml(t.pnrNumber) : ''}`
+          : `${escapeHtml(t.modeOfTravel)}: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)} · ${dateCell}${t.pnrNumber ? ' · PNR ' + escapeHtml(t.pnrNumber) : ''}`;
         return `<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:0.82rem;">
-          <span>${escapeHtml(t.modeOfTravel)}: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)} · ${dateCell}${t.pnrNumber ? ' · PNR ' + escapeHtml(t.pnrNumber) : ''}${invoiceLink}${cancelledTag}</span>
+          <span>${label}${invoiceLink}${cancelledTag}</span>
           <span>${formatINRComma(t.price)}${unlinkBtn}</span>
         </div>`;
       }).join("")}

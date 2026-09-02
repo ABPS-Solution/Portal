@@ -133,14 +133,15 @@ function tvcRenderCard(v) {
     </div>`;
 }
 
-// Company-Paid Travel Tickets — this employee's Unactioned bookings,
-// sorted by travel date (server order), with the ones overlapping this
-// voucher's own visit window visually flagged. Checkboxes (not radio) —
-// a voucher may link several tickets (outbound/return booked
+// Company-Paid Travel & Hotel Bookings — this employee's Unactioned
+// bookings, sorted by travel/stay date (server order), with the ones
+// overlapping this voucher's own visit window visually flagged.
+// Checkboxes (not radio) — a voucher may link several bookings
+// (outbound/return tickets, or a ticket plus a hotel, booked
 // separately). No blocking validation: employee-claimed Travel lines and
-// company-paid tickets can legitimately coexist on one voucher.
+// company-paid bookings can legitimately coexist on one voucher.
 function tvcRenderTicketPicker(v) {
-  const candidates = v.linkableTravelTickets || [];
+  const candidates = v.linkableCompanyPaidBookings || [];
   if (candidates.length === 0) return "";
   // CSS Grid, not flex/label — a checkbox+flex-content+price row built
   // with <label>/bare <span> here was collapsing the middle column to a
@@ -148,19 +149,25 @@ function tvcRenderTicketPicker(v) {
   // explicit minmax(0,1fr) track can't do that, so it's rebuilt on that
   // instead of chasing the original layout further.
   const rows = candidates.map(t => {
-    const dateCell = t.tripType === 'Round Trip' && t.returnDate
-      ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}` : formatOrdinalDate(t.departDate);
+    const isHotel = t.bookingType === 'Hotel';
+    const dateCell = isHotel
+      ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}`
+      : (t.tripType === 'Round Trip' && t.returnDate
+          ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}` : formatOrdinalDate(t.departDate));
     const overlapBadge = t.overlapsVisit
       ? `<div style="display:inline-block; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:10px; font-size:0.72rem; font-weight:700;">Matches visit dates</div>`
       : `<div style="display:inline-block; background:#f1f5f9; color:var(--muted); padding:2px 8px; border-radius:10px; font-size:0.72rem;">Outside visit window</div>`;
-    const metaBits = [dateCell, t.pnrNumber ? `PNR: ${escapeHtml(t.pnrNumber)}` : null].filter(Boolean).join(' · ');
+    const titleLine = isHotel
+      ? `Hotel: ${escapeHtml(t.hotelName || t.hotelCity)}, ${escapeHtml(t.hotelCity)}${t.nights ? ` · ${t.nights} night${t.nights === 1 ? '' : 's'}` : ''}`
+      : `${escapeHtml(t.modeOfTravel)}: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)}`;
+    const metaBits = [dateCell, t.pnrNumber ? `${isHotel ? 'Ref' : 'PNR'}: ${escapeHtml(t.pnrNumber)}` : null].filter(Boolean).join(' · ');
     return `<div class="tvc-ticket-row" onclick="tvcToggleTicketRow(event, ${t.travellerId})"
         style="display:grid; grid-template-columns:24px minmax(0,1fr) auto; align-items:center; column-gap:12px;
                padding:10px 12px; border:1px solid ${t.overlapsVisit ? '#86efac' : 'var(--border)'}; border-radius:6px;
                margin-bottom:8px; cursor:pointer; background:${t.overlapsVisit ? '#f0fdf4' : '#fff'};">
       <input type="checkbox" class="tvc-ticket-input" data-traveller-id="${t.travellerId}" onclick="event.stopPropagation();" style="width:16px; height:16px; margin:0;">
       <div style="min-width:0;">
-        <div style="font-weight:700; overflow-wrap:break-word;">${escapeHtml(t.modeOfTravel)}: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)}</div>
+        <div style="font-weight:700; overflow-wrap:break-word;">${titleLine}</div>
         <div style="color:var(--muted); font-size:0.82rem; margin-top:2px;">${metaBits}</div>
         <div style="margin-top:4px;">${overlapBadge}</div>
       </div>
@@ -169,7 +176,7 @@ function tvcRenderTicketPicker(v) {
   }).join("");
   return `
     <div style="margin-bottom:14px; padding:12px; background:var(--highlight-bg); border-radius:var(--radius);">
-      <div style="font-weight:700; margin-bottom:8px;">Company-Paid Travel Tickets</div>
+      <div style="font-weight:700; margin-bottom:8px;">Company-Paid Travel &amp; Hotel Bookings</div>
       <div style="font-size:0.8rem; color:var(--muted); margin-bottom:8px; font-style:italic;">
         Recorded on the voucher for the record. Not added to Total Actual Amount and not paid to the employee.
       </div>
