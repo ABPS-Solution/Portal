@@ -288,26 +288,33 @@ function tvsRenderBucket(title, employees, color) {
     <div style="font-weight:700; margin-bottom:6px; font-size:0.85rem;">${title}</div>${rows}</div>`;
 }
 
+// Same bordered/wrapping table shape as marketing/tasks-followups.js's
+// task table — left border between columns, values wrap instead of
+// truncating (so a row grows taller rather than clipping text), every
+// header and value centered both ways.
 function tvsRenderAdvanceTable(advances) {
+  const colBorder = "border-left:2px solid var(--border);";
+  const cell = "padding:8px 6px; font-size:0.85rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;";
   const rows = advances.map(a => `
-    <tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:7px;">${escapeHtml(a.employeeName)}</td>
-      <td style="padding:7px;">${escapeHtml(a.departmentName || '—')}</td>
-      <td style="padding:7px;">${escapeHtml(a.placeOfVisit || '—')}</td>
-      <td style="padding:7px;">${escapeHtml(a.purposeOfVisit || '—')}</td>
-      <td style="padding:7px; color:var(--muted);">${a.remarks ? escapeHtml(a.remarks) : '—'}</td>
-      <td style="padding:7px; text-align:right; font-weight:700;">${formatINRComma(a.amount)}</td>
-      <td style="padding:7px;">${formatDateDMY(a.paidDate)}</td>
-      <td style="padding:7px;">${a.createdBy ? escapeHtml(a.createdBy) : '—'}</td>
+    <tr style="border-bottom:2px solid var(--border);">
+      <td style="${cell}">${escapeHtml(a.employeeName)}</td>
+      <td style="${cell} ${colBorder}">${escapeHtml(a.departmentName || '—')}</td>
+      <td style="${cell} ${colBorder}">${escapeHtml(a.placeOfVisit || '—')}</td>
+      <td style="${cell} ${colBorder}">${escapeHtml(a.purposeOfVisit || '—')}</td>
+      <td style="${cell} ${colBorder}">${a.remarks ? escapeHtml(a.remarks) : '—'}</td>
+      <td style="${cell} ${colBorder} font-weight:700;">${formatINRComma(a.amount)}</td>
+      <td style="${cell} ${colBorder}">${formatDateDMY(a.paidDate)}</td>
+      <td style="${cell} ${colBorder}">${a.createdBy ? escapeHtml(a.createdBy) : '—'}</td>
     </tr>`).join("");
+  const th = "padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); vertical-align:middle;";
   return `
     <div style="overflow-x:auto;">
-      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
-        <thead><tr style="background:var(--highlight-bg); text-align:left;">
-          <th style="padding:7px;">Emp Name</th><th style="padding:7px;">Department</th>
-          <th style="padding:7px;">Company of Visit</th><th style="padding:7px;">Purpose of Visit</th>
-          <th style="padding:7px;">Remarks</th><th style="padding:7px; text-align:right;">Advance Amount</th>
-          <th style="padding:7px;">Paid on Date</th><th style="padding:7px;">Paid by</th>
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+        <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">
+          <th style="${th}">Emp Name</th><th style="${th} ${colBorder}">Department</th>
+          <th style="${th} ${colBorder}">Company of Visit</th><th style="${th} ${colBorder}">Purpose of Visit</th>
+          <th style="${th} ${colBorder}">Remarks</th><th style="${th} ${colBorder}">Advance Amount</th>
+          <th style="${th} ${colBorder}">Paid on Date</th><th style="${th} ${colBorder}">Paid by</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
