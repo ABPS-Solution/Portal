@@ -119,7 +119,7 @@ async function ttkRenderBookForm() {
         <div style="flex:1;"><label class="field-label">Remarks</label>
           <textarea id="ttk-remarks" rows="1" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; resize:vertical;"></textarea></div>
       </div>
-      <button class="nav-btn-styled" onclick="submitTravelTicket()">${editing ? "Save Changes" : "Book Ticket"}</button>
+      <button class="nav-btn-styled" onclick="submitTravelTicket()">${editing ? "Save Changes" : "Save Ticket Booking"}</button>
       ${editing ? `<button class="nav-btn-styled" onclick="ttkCancelEdit()" style="margin-left:8px; background:#e2e8f0; color:#334155;">Cancel Edit</button>` : ""}
     </div>`;
 
@@ -365,8 +365,9 @@ async function submitTravelTicket() {
     if (data.success) {
       const wasEditing = !!ttkEditingTicketId;
       ttkEditingTicketId = null;
+      const travellerNames = ttkTravellerRows.map(r => r.employeeName).filter(Boolean).join(", ");
       showTicketSuccess(
-        wasEditing ? "Travel ticket updated." : `Travel ticket booked. Total: ${formatINRComma(data.totalPrice || 0)}.`,
+        wasEditing ? "Travel ticket updated." : `${modeOfTravel} ticket booked for ${travellerNames}, Total Price: ${formatINRComma(data.totalPrice || 0)}`,
         "Book Another Ticket", "switchTravelTicketToggle('book')"
       );
     } else {
@@ -377,7 +378,7 @@ async function submitTravelTicket() {
 
 // ── Search / Manage ───────────────────────────────────────────────────
 
-function ttkInitializeManagePanel() {
+async function ttkInitializeManagePanel() {
   const panel = document.getElementById("ttk-panel-manage");
   panel.innerHTML = `
     <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:flex-end;">
@@ -389,6 +390,8 @@ function ttkInitializeManagePanel() {
         <select id="ttk-filter-mode" style="padding:8px 10px; border:1px solid var(--border); border-radius:6px;">
           <option value="">All</option>${TTK_MODES.map(m => `<option value="${m}">${m}</option>`).join("")}
         </select></div>
+      <div><label class="field-label">Department</label>
+        <select id="ttk-filter-dept" style="padding:8px 10px; border:1px solid var(--border); border-radius:6px;"><option value="">All</option></select></div>
       <div><label class="field-label">From City</label>
         <input type="text" id="ttk-filter-from-city" style="padding:8px 10px; border:1px solid var(--border); border-radius:6px;"></div>
       <div><label class="field-label">To City</label>
@@ -401,6 +404,12 @@ function ttkInitializeManagePanel() {
     <div id="ttk-search-totals" style="margin-bottom:12px; font-weight:700;"></div>
     <div id="ttk-search-results"></div>`;
   enhanceAllDateInputsForDMY();
+  try {
+    const deptData = await acFetch("listTourDepartments", {});
+    if (deptData.success) {
+      document.getElementById("ttk-filter-dept").innerHTML += deptData.departments.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join("");
+    }
+  } catch (e) { console.error("Travel ticket department filter bootstrap failed:", e.message); }
   ttkRunSearch();
 }
 
@@ -409,12 +418,13 @@ function ttkBuildSearchLabel() {
   const val = (s) => `<span style="color:var(--brand);">${esc(s || 'All')}</span>`;
   const statusLabel = document.getElementById("ttk-filter-status").value || "All";
   const modeLabel = document.getElementById("ttk-filter-mode").value || "All";
+  const deptLabel = document.getElementById("ttk-filter-dept").value || "All";
   const fromCityLabel = document.getElementById("ttk-filter-from-city").value || "All";
   const toCityLabel = document.getElementById("ttk-filter-to-city").value || "All";
   const departDateVal = document.getElementById("ttk-filter-depart-date").value;
   const departDateLabel = departDateVal ? formatDateDMY(departDateVal) : "All";
   return `<span style="color:#000;">Searching for</span>` +
-    `<br><span style="color:#000;">Status:</span> ${val(statusLabel)} &nbsp; <span style="color:#000;">Mode:</span> ${val(modeLabel)}` +
+    `<br><span style="color:#000;">Status:</span> ${val(statusLabel)} &nbsp; <span style="color:#000;">Mode:</span> ${val(modeLabel)} &nbsp; <span style="color:#000;">Department:</span> ${val(deptLabel)}` +
     `<br><span style="color:#000;">From City:</span> ${val(fromCityLabel)} &nbsp; <span style="color:#000;">To City:</span> ${val(toCityLabel)}` +
     `<br><span style="color:#000;">Departure Date:</span> ${val(departDateLabel)}`;
 }
@@ -430,6 +440,7 @@ async function ttkRunSearch() {
     const data = await acFetch("searchTravelTickets", {
       status: document.getElementById("ttk-filter-status").value || null,
       modeOfTravel: document.getElementById("ttk-filter-mode").value || null,
+      departmentName: document.getElementById("ttk-filter-dept").value || null,
       fromCity: document.getElementById("ttk-filter-from-city").value.trim() || null,
       toCity: document.getElementById("ttk-filter-to-city").value.trim() || null,
       departDate: document.getElementById("ttk-filter-depart-date").value || null,
