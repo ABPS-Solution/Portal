@@ -429,7 +429,10 @@ function tvsRenderCard(v) {
               <span style="background:var(--brand); color:#fff; padding:3px 8px; font-weight:700;">${escapeHtml(v.voucherNumber)}</span>
               <span style="margin-left:8px; font-weight:700;">${escapeHtml(v.employeeName)}</span>
             </div>
-            <span style="background:${statusColor}; color:#fff; font-weight:700; font-size:0.75rem; padding:3px 8px; border-radius:3px;">${v.status}</span>
+            <span style="display:flex; align-items:center; gap:8px;">
+              <span style="background:${statusColor}; color:#fff; font-weight:700; font-size:0.75rem; padding:3px 8px; border-radius:3px;">${v.status}</span>
+              ${isAdminUser && v.status === 'Unchecked' ? `<button class="nav-btn-styled" onclick="event.stopPropagation(); tvsDeleteVoucher(${v.voucherId})" style="padding:3px 10px; font-size:0.72rem; background:#fee2e2; color:#b91c1c;">Delete</button>` : ''}
+            </span>
           </div>
           <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
             ${escapeHtml(v.departmentName || '—')} · ${escapeHtml(v.purposeOfVisit)} · ${escapeHtml(v.placeOfVisit)} ·
@@ -461,6 +464,21 @@ function tvsRenderCard(v) {
         ${ticketsBlock}
       </div>
     </div>`;
+}
+
+// Admin-only, Unchecked-only — for the "employee made a mistake, needs
+// to resubmit" case (wrong date, wrong doc, etc.). Re-checked server-side
+// regardless of what the button's own visibility already enforces.
+async function tvsDeleteVoucher(voucherId) {
+  const reason = prompt("Reason for deleting this voucher (optional):") || null;
+  if (!confirm("Permanently delete this Unchecked voucher? This cannot be undone — the employee will need to resubmit.")) return;
+  showBlockingOverlay("Deleting voucher...");
+  try {
+    const data = await acFetch("deleteTourVoucher", { voucherId, reason });
+    hideBlockingOverlay();
+    if (!data.success) { alert(data.error); return; }
+    runTourVoucherSearch();
+  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
 }
 
 async function tvsUnlinkTicket(voucherId, travellerId) {

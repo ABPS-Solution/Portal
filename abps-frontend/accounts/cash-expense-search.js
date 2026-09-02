@@ -143,6 +143,12 @@ async function runCashExpenseSearch() {
     const colBorder = "border-left:2px solid var(--border);";
     const cell = "padding:8px 6px; font-size:0.85rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;";
     const th = "padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); vertical-align:middle;";
+    const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
+    // Deletable if still Open (never closed) or Online (always net-zero,
+    // never touches the pool) — same eligibility deleteCashExpenseVoucher
+    // re-checks server-side. An already-closed Cash/UPI voucher isn't
+    // deletable here; correct it via the Actual Amount input instead.
+    const canDelete = (x) => isAdminUser && (x.isOpen || x.paymentMode === 'Online');
     const rows = data.expenses.map(x => {
       const typeLabel = x.expenseType === 'Food & Snacks' && x.subType ? `Food & Snacks (${escapeHtml(x.subType)})`
         : x.expenseType === 'Others' && x.otherText ? `Others (${escapeHtml(x.otherText)})` : escapeHtml(x.expenseType);
@@ -160,6 +166,9 @@ async function runCashExpenseSearch() {
              style="width:90px; padding:2px 4px; font-size:0.8rem; text-align:right; font-weight:700;"
              onchange="cesSaveActual(${x.expenseId}, ${rawActual})">
            <span id="ces-actual-err-${x.expenseId}" style="color:#b91c1c; font-size:0.62rem; display:block;"></span>`;
+      const deleteCell = isAdminUser
+        ? `<td style="${cell} ${colBorder}">${canDelete(x) ? `<button class="nav-btn-styled" onclick="cesDeleteVoucher(${x.expenseId})" style="padding:3px 10px; font-size:0.72rem; background:#fee2e2; color:#b91c1c;">Delete</button>` : '—'}</td>`
+        : '';
       return `<tr style="border-bottom:2px solid var(--border);">
         <td style="${cell}">${formatOrdinalDate(x.createdDate)}</td>
         <td style="${cell} ${colBorder}">${escapeHtml(x.employeeName)}</td>
@@ -167,6 +176,7 @@ async function runCashExpenseSearch() {
         <td style="${cell} ${colBorder}">${typeLabel}</td>
         <td style="${cell} ${colBorder}"><span style="background:${modeColor}; color:#fff; font-weight:700; font-size:0.75rem; padding:3px 8px; border-radius:3px;">${x.paymentMode}</span></td>
         <td style="${cell} ${colBorder}">${actualCell}</td>
+        ${deleteCell}
       </tr>`;
     }).join("");
     resultsEl.innerHTML = `
@@ -175,11 +185,27 @@ async function runCashExpenseSearch() {
           <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">
             <th style="${th}">Date</th><th style="${th} ${colBorder}">Employee</th><th style="${th} ${colBorder}">Department</th>
             <th style="${th} ${colBorder}">Type</th><th style="${th} ${colBorder}">Payment Mode</th><th style="${th} ${colBorder}">Actual Amount</th>
+            ${isAdminUser ? `<th style="${th} ${colBorder}">Actions</th>` : ''}
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>`;
   } catch (e) { resultsEl.innerHTML = `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`; }
+}
+
+// Admin-only — for the "employee made a mistake" case. Only offered for
+// an Open (never closed) or Online (always net-zero) voucher; server-side
+// deleteCashExpenseVoucher re-checks this regardless of what got sent.
+async function cesDeleteVoucher(expenseId) {
+  const reason = prompt("Reason for deleting this voucher (optional):") || null;
+  if (!confirm("Permanently delete this voucher? This cannot be undone — the employee will need a new one.")) return;
+  showBlockingOverlay("Deleting voucher...");
+  try {
+    const data = await acFetch("deleteCashExpenseVoucher", { expenseId, reason });
+    hideBlockingOverlay();
+    if (!data.success) { alert(data.error); return; }
+    runCashExpenseSearch();
+  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
 }
 
 // Actual Amount correction for an already-closed voucher (revised 31 Aug
