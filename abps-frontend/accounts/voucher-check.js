@@ -44,7 +44,7 @@ function tvcRenderCard(v) {
       <td style="${cell}">${l.srNo}</td>
       <td style="${cell} ${colBorder}">${formatOrdinalDate(l.expenseDate)}</td>
       <td style="${cell} ${colBorder}">${typeLabel}</td>
-      <td style="${cell} ${colBorder}; white-space:nowrap; text-align:left;">${billCell}</td>
+      <td style="${cell} ${colBorder}; white-space:nowrap;">${billCell}</td>
       <td style="${amtCell} ${colBorder}">${formatINRComma(l.amount)}</td>
       <td style="${cell} ${colBorder}; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
       <td style="${cell} ${colBorder}">
