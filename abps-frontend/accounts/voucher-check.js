@@ -149,7 +149,7 @@ function tvcRenderTicketPicker(v) {
   // instead of chasing the original layout further.
   const rows = candidates.map(t => {
     const dateCell = t.tripType === 'Round Trip' && t.returnDate
-      ? `${formatDateDMY(t.departDate)} → ${formatDateDMY(t.returnDate)}` : formatDateDMY(t.departDate);
+      ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}` : formatOrdinalDate(t.departDate);
     const overlapBadge = t.overlapsVisit
       ? `<div style="display:inline-block; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:10px; font-size:0.72rem; font-weight:700;">Matches visit dates</div>`
       : `<div style="display:inline-block; background:#f1f5f9; color:var(--muted); padding:2px 8px; border-radius:10px; font-size:0.72rem;">Outside visit window</div>`;
