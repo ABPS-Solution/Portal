@@ -350,11 +350,17 @@ function tvsRenderCard(v) {
       ? bills.map(b => `<a href="${driveLink(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.fileName || 'View')}</a>`).join("<br>")
       : l.noBillReason ? `<span style="font-style:italic;">Reason: ${escapeHtml(l.noBillReason)}</span>` : "—";
     const rawActual = Number(l.actualAmount) || 0;
+    const rawCap = l.capAmount != null ? Number(l.capAmount) : null;
+    const startsOverCap = rawCap !== null && rawActual > rawCap;
     const actualCell = canEditActual
       ? `<input type="number" id="tvs-actual-input-${l.lineId}" data-cap="${l.capAmount != null ? l.capAmount : ''}" value="${rawActual}" min="0" step="0.01"
            style="width:80px; padding:3px 5px; border:1px solid var(--border); border-radius:4px; text-align:right; font-size:0.9rem; font-weight:700;" onclick="event.stopPropagation();"
+           oninput="event.stopPropagation(); tvsCheckOverLimit(${l.lineId})"
            onchange="event.stopPropagation(); tvsSaveLineActual(${v.voucherId}, ${l.lineId}, ${rawActual})">
-         <span id="tvs-actual-err-${l.lineId}" style="color:#b91c1c; font-size:0.62rem; display:block;"></span>`
+         <span id="tvs-actual-err-${l.lineId}" style="color:#b91c1c; font-size:0.62rem; display:block;"></span>
+         <textarea id="tvs-reason-input-${l.lineId}" placeholder="Reason for exceeding limit" onclick="event.stopPropagation();"
+           onchange="event.stopPropagation(); tvsSubmitLineActualWithReason(${v.voucherId}, ${l.lineId}, ${rawActual})"
+           style="display:${startsOverCap ? 'block' : 'none'}; width:100%; box-sizing:border-box; margin:2px auto 0; text-align:center; font-size:0.7rem; padding:3px; border:1px solid var(--border); border-radius:4px;">${escapeHtml(l.overLimitReason || '')}</textarea>`
       : (l.actualAmount !== null && l.actualAmount !== undefined ? formatINRComma(l.actualAmount) : '—');
     // Position-based daily expense limit (migration 167) — over_limit_flag
     // reflects whether the ORIGINAL CLAIM triggered a cap; over_limit_amount
@@ -501,9 +507,28 @@ async function tvsUnlinkTicket(voucherId, travellerId) {
 // reviseTourVoucherActualAmount re-derives the voucher's total_actual_amount
 // as the sum of every line, re-applies the balance delta, and regenerates
 // the voucher PDF at the next version.
+// Shows/hides the inline reason box live as the value is edited — same
+// pattern as voucher-check.js's tvcCheckOverLimit, replacing an earlier
+// prompt()-based dialog.
+function tvsCheckOverLimit(lineId) {
+  const input = document.getElementById(`tvs-actual-input-${lineId}`);
+  const reasonBox = document.getElementById(`tvs-reason-input-${lineId}`);
+  if (!input || !reasonBox) return;
+  const cap = input.dataset.cap !== '' ? Number(input.dataset.cap) : null;
+  const val = Number(input.value) || 0;
+  reasonBox.style.display = (cap !== null && val > cap) ? "block" : "none";
+}
+
+// Triggered by the Actual input's onchange (blur). When the new value is
+// over cap and the reason box is still empty, this deliberately does NOT
+// revert the typed value or submit — it just leaves the reason box open
+// so the user can tab into it and type without losing what they entered.
+// tvsSubmitLineActual (below, wired to the reason box's own onchange)
+// does the actual submit once a reason exists.
 async function tvsSaveLineActual(voucherId, lineId, previousValue) {
   const input = document.getElementById(`tvs-actual-input-${lineId}`);
   const errEl = document.getElementById(`tvs-actual-err-${lineId}`);
+  const reasonBox = document.getElementById(`tvs-reason-input-${lineId}`);
   const newActualAmount = Number(input.value);
   if (isNaN(newActualAmount) || newActualAmount < 0) {
     if (errEl) errEl.textContent = "Enter a valid non-negative amount.";
@@ -512,17 +537,41 @@ async function tvsSaveLineActual(voucherId, lineId, previousValue) {
   }
   if (newActualAmount === previousValue) return; // unchanged on blur — nothing to save
 
+  const cap = input.dataset.cap !== '' ? Number(input.dataset.cap) : null;
+  if (cap !== null && newActualAmount > cap && !(reasonBox && reasonBox.value.trim())) {
+    if (errEl) errEl.textContent = "A reason is required to exceed the limit — type it below.";
+    if (reasonBox) { reasonBox.style.display = "block"; reasonBox.focus(); }
+    return;
+  }
+
+  await tvsSubmitLineActual(voucherId, lineId, previousValue);
+}
+
+// Fires on the reason box's own onchange (blur) — completes the save
+// once a reason has been typed for an over-cap value still sitting in
+// the Actual input.
+async function tvsSubmitLineActualWithReason(voucherId, lineId, previousValue) {
+  const reasonBox = document.getElementById(`tvs-reason-input-${lineId}`);
+  if (!reasonBox || !reasonBox.value.trim()) return;
+  await tvsSubmitLineActual(voucherId, lineId, previousValue);
+}
+
+async function tvsSubmitLineActual(voucherId, lineId, previousValue) {
+  const input = document.getElementById(`tvs-actual-input-${lineId}`);
+  const errEl = document.getElementById(`tvs-actual-err-${lineId}`);
+  const reasonBox = document.getElementById(`tvs-reason-input-${lineId}`);
+  const newActualAmount = Number(input.value);
+  if (newActualAmount === previousValue) return; // already saved / unchanged
+
   // Position-based daily expense limit (migration 167) — the line's cap
   // was persisted at Check time; if this revision pushes Actual above it,
-  // a reason is required, same rule checkTourVoucher enforces.
+  // a reason is required inline in the row's own reason box, same rule
+  // checkTourVoucher enforces.
   const cap = input.dataset.cap !== '' ? Number(input.dataset.cap) : null;
   let overLimitReason;
   if (cap !== null && newActualAmount > cap) {
-    overLimitReason = prompt(`This exceeds the position-based daily limit cap of ${cap} — enter a reason to proceed:`);
-    if (!overLimitReason || !overLimitReason.trim()) {
-      input.value = previousValue;
-      return;
-    }
+    overLimitReason = reasonBox ? reasonBox.value.trim() : '';
+    if (!overLimitReason) return; // caller (tvsSaveLineActual) already surfaced the prompt to fill it in
   }
 
   if (errEl) errEl.textContent = "";
