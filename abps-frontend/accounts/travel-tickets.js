@@ -676,7 +676,7 @@ async function ttkRunSearch() {
     });
     if (!data.success) { results.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
     document.getElementById("ttk-search-totals").textContent =
-      `Total Live Booking Value: ${formatINRComma(data.totalLivePrice)} · Total Refunded: ${formatINRComma(data.totalRefund)}`;
+      `Total Live Booking Value: ${formatINRComma(data.totalLivePrice)} | Total Refunded: ${formatINRComma(data.totalRefund)}`;
     ttkLastSearchTickets = data.tickets;
     if (data.tickets.length === 0) {
       results.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No travel tickets found.</div>`;
@@ -890,7 +890,7 @@ async function ttkRunHotelSearch() {
     });
     if (!data.success) { results.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
     document.getElementById("htl-search-totals").textContent =
-      `Total Live Booking Value: ${formatINRComma(data.totalLivePrice)} · Total Refunded: ${formatINRComma(data.totalRefund)}`;
+      `Total Live Booking Value: ${formatINRComma(data.totalLivePrice)} | Total Refunded: ${formatINRComma(data.totalRefund)}`;
     ttkLastSearchHotels = data.tickets;
     if (data.tickets.length === 0) {
       results.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No hotel bookings found.</div>`;
