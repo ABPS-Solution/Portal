@@ -9,25 +9,7 @@
 async function initializeEmployeeDetailsPanel() {
   const panel = document.getElementById("te-panel-employees");
   panel.innerHTML = `
-    <div style="display:flex; justify-content:flex-end; margin-bottom:14px;">
-      <button class="nav-btn-styled" onclick="edToggleAddForm()">+ Add Employee</button>
-    </div>
-    <div id="ed-add-form" style="display:none; background:var(--highlight-bg); padding:16px; border-radius:var(--radius); margin-bottom:16px;">
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-        <input type="text" id="ed-new-name" placeholder="Employee Name" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; flex:1; min-width:160px;">
-        <input type="text" id="ed-new-empcode" placeholder="EMP ID" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; flex:1; min-width:120px;">
-        <input type="text" id="ed-new-dept" placeholder="Department" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; flex:1; min-width:140px;">
-        <select id="ed-new-position" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; flex:1; min-width:120px;">
-          <option value="Staff">Staff</option><option value="Manager">Manager</option>
-        </select>
-        <input type="number" id="ed-new-balance" placeholder="Opening Balance" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; flex:1; min-width:140px;">
-      </div>
-      <button class="nav-btn-styled" onclick="submitAddEmployee()">Submit</button>
-      <button class="nav-btn-styled" onclick="document.getElementById('ed-add-form').style.display='none';">Cancel</button>
-    </div>
-    <div id="ed-table-wrap" style="overflow-x:auto;"></div>
-
-    <div style="margin-top:28px; padding-top:20px; border-top:2px solid var(--border);">
+    <div style="margin-bottom:28px; padding-bottom:20px; border-bottom:2px solid var(--border);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
         <h3 style="margin:0;">Position-Based Daily Expense Limits</h3>
         <button class="nav-btn-styled" onclick="elToggleAddForm()">+ Add Limit</button>
@@ -46,9 +28,27 @@ async function initializeEmployeeDetailsPanel() {
         <button class="nav-btn-styled" onclick="document.getElementById('el-add-form').style.display='none';">Cancel</button>
       </div>
       <div id="el-table-wrap" style="overflow-x:auto;"></div>
-    </div>`;
-  await loadEmployeeDetailsTable();
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; margin-bottom:14px;">
+      <button class="nav-btn-styled" onclick="edToggleAddForm()">+ Add Employee</button>
+    </div>
+    <div id="ed-add-form" style="display:none; background:var(--highlight-bg); padding:16px; border-radius:var(--radius); margin-bottom:16px;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+        <input type="text" id="ed-new-name" placeholder="Employee Name" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; flex:1; min-width:160px;">
+        <input type="text" id="ed-new-empcode" placeholder="EMP ID" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; flex:1; min-width:120px;">
+        <input type="text" id="ed-new-dept" placeholder="Department" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; flex:1; min-width:140px;">
+        <select id="ed-new-position" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; flex:1; min-width:120px;">
+          <option value="Staff">Staff</option><option value="Manager">Manager</option>
+        </select>
+        <input type="number" id="ed-new-balance" placeholder="Opening Balance" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; flex:1; min-width:140px;">
+      </div>
+      <button class="nav-btn-styled" onclick="submitAddEmployee()">Submit</button>
+      <button class="nav-btn-styled" onclick="document.getElementById('ed-add-form').style.display='none';">Cancel</button>
+    </div>
+    <div id="ed-table-wrap" style="overflow-x:auto;"></div>`;
   await loadExpenseLimitsTable();
+  await loadEmployeeDetailsTable();
 }
 
 function edToggleAddForm() {
