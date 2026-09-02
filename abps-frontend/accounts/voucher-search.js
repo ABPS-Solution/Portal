@@ -129,9 +129,9 @@ async function initializeVoucherSearchPanel() {
             style="padding:8px; border:1px solid var(--border); border-radius:6px; min-width:140px;"
             oninput="tvsHandlePlaceSearch(this.value)">
           <div id="tvs-place-dropdown" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:4px; z-index:9999; max-height:220px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>
-        <div><label class="field-label">Date From</label>
+        <div><label class="field-label" id="tvs-label-from">Date From</label>
           <input type="date" id="tvs-f-from" style="padding:8px; border:1px solid var(--border); border-radius:6px;"></div>
-        <div><label class="field-label">Date To</label>
+        <div><label class="field-label" id="tvs-label-to">Date To</label>
           <input type="date" id="tvs-f-to" style="padding:8px; border:1px solid var(--border); border-radius:6px;"></div>
         <button class="nav-btn-styled" style="margin-left:auto;" onclick="runTourVoucherSearch()">Search</button>
       </div>
@@ -164,6 +164,11 @@ function tvsSetSearchMode(mode) {
   document.getElementById("tvs-mode-advance").style.color = mode === "advance" ? "#fff" : "#334155";
   document.getElementById("tvs-expense-only-filters").style.display = mode === "expense" ? "contents" : "none";
   document.getElementById("tvs-advance-only-filters").style.display = mode === "advance" ? "contents" : "none";
+  // The shared date-range filter means "Visit Date" in Expense mode
+  // (filters visit_start_date/visit_end_date) but "Paid Date" in Advance
+  // mode (filters paid_date) — same inputs, different backend meaning.
+  document.getElementById("tvs-label-from").textContent = mode === "advance" ? "Paid Date From" : "Date From";
+  document.getElementById("tvs-label-to").textContent = mode === "advance" ? "Paid Date To" : "Date To";
   runTourVoucherSearch();
 }
 
@@ -288,6 +293,21 @@ function tvsRenderBucket(title, employees, color) {
     <div style="font-weight:700; margin-bottom:6px; font-size:0.85rem;">${title}</div>${rows}</div>`;
 }
 
+// "2nd Sep 2026" style — day-of-month with ordinal suffix, short month
+// name, full year. Local to this file; no shared helper for this exists
+// yet elsewhere in abps-frontend.
+function formatOrdinalDate(isoOrDate) {
+  if (!isoOrDate) return '—';
+  const d = new Date(isoOrDate);
+  if (isNaN(d.getTime())) return '—';
+  const day = d.getDate();
+  const suffix = (day % 10 === 1 && day !== 11) ? 'st'
+    : (day % 10 === 2 && day !== 12) ? 'nd'
+    : (day % 10 === 3 && day !== 13) ? 'rd' : 'th';
+  const month = d.toLocaleDateString('en-IN', { month: 'short' });
+  return `${day}${suffix} ${month} ${d.getFullYear()}`;
+}
+
 // Same bordered/wrapping table shape as marketing/tasks-followups.js's
 // task table — left border between columns, values wrap instead of
 // truncating (so a row grows taller rather than clipping text), every
@@ -297,13 +317,13 @@ function tvsRenderAdvanceTable(advances) {
   const cell = "padding:8px 6px; font-size:0.85rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;";
   const rows = advances.map(a => `
     <tr style="border-bottom:2px solid var(--border);">
-      <td style="${cell}">${escapeHtml(a.employeeName)}</td>
+      <td style="${cell} font-weight:700;">${escapeHtml(a.employeeName)}</td>
       <td style="${cell} ${colBorder}">${escapeHtml(a.departmentName || '—')}</td>
       <td style="${cell} ${colBorder}">${escapeHtml(a.placeOfVisit || '—')}</td>
       <td style="${cell} ${colBorder}">${escapeHtml(a.purposeOfVisit || '—')}</td>
       <td style="${cell} ${colBorder}">${a.remarks ? escapeHtml(a.remarks) : '—'}</td>
       <td style="${cell} ${colBorder} font-weight:700;">${formatINRComma(a.amount)}</td>
-      <td style="${cell} ${colBorder}">${formatDateDMY(a.paidDate)}</td>
+      <td style="${cell} ${colBorder}">${formatOrdinalDate(a.paidDate)}</td>
       <td style="${cell} ${colBorder}">${a.createdBy ? escapeHtml(a.createdBy) : '—'}</td>
     </tr>`).join("");
   const th = "padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); vertical-align:middle;";

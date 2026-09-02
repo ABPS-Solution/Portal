@@ -16,13 +16,11 @@ async function initializeEmployeeDetailsPanel() {
       </div>
       <div id="el-add-form" style="display:none; background:var(--highlight-bg); padding:16px; border-radius:var(--radius); margin-bottom:16px;">
         <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-          <select id="el-new-position" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
-            <option value="Staff">Staff</option><option value="Manager">Manager</option>
-          </select>
           <select id="el-new-type" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
             ${TOUR_EXPENSE_TYPES.map(t => `<option value="${t}">${t}</option>`).join("")}
           </select>
-          <input type="number" id="el-new-limit" placeholder="Daily Limit (₹)" min="0" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
+          <input type="number" id="el-new-manager-limit" placeholder="Manager Daily Limit (₹)" min="0" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
+          <input type="number" id="el-new-staff-limit" placeholder="Staff Daily Limit (₹)" min="0" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
         </div>
         <button class="nav-btn-styled" onclick="submitAddExpenseLimit()">Submit</button>
         <button class="nav-btn-styled" onclick="document.getElementById('el-add-form').style.display='none';">Cancel</button>
@@ -142,10 +140,14 @@ async function submitDeleteEmployee(employeeId, employeeName) {
 }
 
 // ── Position-Based Daily Expense Limits (migration 167) ─────────────────
-// positionType/expenseType are read-only once a row exists — editing
-// either via the upsert route would silently create a NEW row via
-// ON CONFLICT rather than moving the old one. Only dailyLimit is
-// editable in place; changing the pair means Delete + re-Add.
+// One row per Expense Type, with Manager/Staff limits side by side —
+// the backend still stores one row per (position, expense_type) pair
+// (upsertTourExpenseLimit/deleteTourExpenseLimit), so a single Save or
+// Delete here just fires that route once per position that actually has
+// a value. expenseType is read-only once a row exists — there is no
+// rename; add a new one via + Add Limit if a different type is needed.
+let elLimitsData = []; // flat rows from listTourExpenseLimits, kept for elSubmitAddLimit's duplicate check
+
 function elToggleAddForm() {
   const f = document.getElementById("el-add-form");
   f.style.display = f.style.display === "none" ? "block" : "none";
@@ -157,26 +159,37 @@ async function loadExpenseLimitsTable() {
   try {
     const data = await acFetch("listTourExpenseLimits", {});
     if (!data.success) { wrap.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
-    if (data.limits.length === 0) {
+    elLimitsData = data.limits;
+    if (elLimitsData.length === 0) {
       wrap.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No expense limits configured.</div>`;
       return;
     }
-    const rows = data.limits.map(l => `
-      <tr style="border-bottom:1px solid var(--border);" data-limit-id="${l.limitId}">
-        <td style="padding:7px;">${escapeHtml(l.positionType)}</td>
-        <td style="padding:7px;">${escapeHtml(l.expenseType)}</td>
-        <td style="padding:7px;"><input type="number" class="el-f-limit" value="${trimNum(l.dailyLimit)}" min="0"
+    // Pivot the flat (position, expenseType, dailyLimit) rows into one
+    // row per expenseType with both positions' values side by side.
+    const byType = {};
+    for (const l of elLimitsData) {
+      const g = (byType[l.expenseType] ||= { expenseType: l.expenseType });
+      if (l.positionType === 'Manager') { g.managerLimitId = l.limitId; g.managerLimit = l.dailyLimit; }
+      else { g.staffLimitId = l.limitId; g.staffLimit = l.dailyLimit; }
+    }
+    const groups = Object.values(byType).sort((a, b) => a.expenseType.localeCompare(b.expenseType));
+    const rows = groups.map(g => `
+      <tr style="border-bottom:1px solid var(--border);" data-expense-type="${escapeHtml(g.expenseType)}">
+        <td style="padding:7px;">${escapeHtml(g.expenseType)}</td>
+        <td style="padding:7px;"><input type="number" class="el-f-manager-limit" value="${g.managerLimit != null ? trimNum(g.managerLimit) : ''}" min="0" placeholder="—"
+              style="width:100px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:right;"></td>
+        <td style="padding:7px;"><input type="number" class="el-f-staff-limit" value="${g.staffLimit != null ? trimNum(g.staffLimit) : ''}" min="0" placeholder="—"
               style="width:100px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:right;"></td>
         <td style="padding:7px; white-space:nowrap;">
-          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem;" onclick="submitUpdateExpenseLimit(${l.limitId}, '${escapeHtml(l.positionType)}', '${escapeHtml(l.expenseType).replace(/'/g, "\\'")}')">Save</button>
-          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem; background:#b91c1c; color:#fff;" onclick="submitDeleteExpenseLimit(${l.limitId}, '${escapeHtml(l.positionType)} / ${escapeHtml(l.expenseType).replace(/'/g, "\\'")}')">Delete</button>
+          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem;" onclick="submitUpdateExpenseLimit('${escapeHtml(g.expenseType).replace(/'/g, "\\'")}')">Save</button>
+          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem; background:#b91c1c; color:#fff;" onclick="submitDeleteExpenseLimit('${escapeHtml(g.expenseType).replace(/'/g, "\\'")}')">Delete</button>
         </td>
       </tr>`).join("");
     wrap.innerHTML = `
-      <table style="width:100%; border-collapse:collapse; font-size:0.85rem; max-width:520px;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem; max-width:640px;">
         <thead><tr style="background:var(--highlight-bg); text-align:left;">
-          <th style="padding:8px;">Position</th><th style="padding:8px;">Expense Type</th>
-          <th style="padding:8px;">Daily Limit (₹)</th><th style="padding:8px;">Actions</th>
+          <th style="padding:8px;">Expense Type</th><th style="padding:8px;">Manager Daily Limit (₹)</th>
+          <th style="padding:8px;">Staff Daily Limit (₹)</th><th style="padding:8px;">Actions</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
@@ -184,46 +197,65 @@ async function loadExpenseLimitsTable() {
 }
 
 async function submitAddExpenseLimit() {
-  const positionType = document.getElementById("el-new-position").value;
   const expenseType = document.getElementById("el-new-type").value;
-  const dailyLimit = document.getElementById("el-new-limit").value;
-  if (!dailyLimit || Number(dailyLimit) <= 0) return showTourFeedback("Daily Limit must be a positive number.", "error");
+  const managerLimit = document.getElementById("el-new-manager-limit").value;
+  const staffLimit = document.getElementById("el-new-staff-limit").value;
+  if (!managerLimit && !staffLimit) return showTourFeedback("Enter at least one of Manager or Staff Daily Limit.", "error");
+  if ((managerLimit && Number(managerLimit) <= 0) || (staffLimit && Number(staffLimit) <= 0)) {
+    return showTourFeedback("Daily Limit must be a positive number.", "error");
+  }
 
   showBlockingOverlay("Saving limit...");
   try {
-    const data = await acFetch("upsertTourExpenseLimit", { positionType, expenseType, dailyLimit });
-    hideBlockingOverlay();
-    if (data.success) {
-      document.getElementById("el-add-form").style.display = "none";
-      document.getElementById("el-new-limit").value = "";
-      loadExpenseLimitsTable();
-    } else {
-      showTourFeedback(data.error, "error");
+    if (managerLimit) {
+      const d = await acFetch("upsertTourExpenseLimit", { positionType: "Manager", expenseType, dailyLimit: managerLimit });
+      if (!d.success) { hideBlockingOverlay(); return showTourFeedback(d.error, "error"); }
     }
+    if (staffLimit) {
+      const d = await acFetch("upsertTourExpenseLimit", { positionType: "Staff", expenseType, dailyLimit: staffLimit });
+      if (!d.success) { hideBlockingOverlay(); return showTourFeedback(d.error, "error"); }
+    }
+    hideBlockingOverlay();
+    document.getElementById("el-add-form").style.display = "none";
+    document.getElementById("el-new-manager-limit").value = "";
+    document.getElementById("el-new-staff-limit").value = "";
+    loadExpenseLimitsTable();
   } catch (e) { hideBlockingOverlay(); showTourFeedback("Network error: " + e.message, "error"); }
 }
 
-async function submitUpdateExpenseLimit(limitId, positionType, expenseType) {
-  const row = document.querySelector(`tr[data-limit-id="${limitId}"]`);
-  const dailyLimit = row.querySelector(".el-f-limit").value;
-  if (!dailyLimit || Number(dailyLimit) <= 0) return showTourFeedback("Daily Limit must be a positive number.", "error");
+async function submitUpdateExpenseLimit(expenseType) {
+  const row = document.querySelector(`tr[data-expense-type="${CSS.escape(expenseType)}"]`);
+  const managerLimit = row.querySelector(".el-f-manager-limit").value;
+  const staffLimit = row.querySelector(".el-f-staff-limit").value;
+  if ((managerLimit && Number(managerLimit) <= 0) || (staffLimit && Number(staffLimit) <= 0)) {
+    return showTourFeedback("Daily Limit must be a positive number.", "error");
+  }
 
   showBlockingOverlay("Saving...");
   try {
-    const data = await acFetch("upsertTourExpenseLimit", { positionType, expenseType, dailyLimit });
+    if (managerLimit) {
+      const d = await acFetch("upsertTourExpenseLimit", { positionType: "Manager", expenseType, dailyLimit: managerLimit });
+      if (!d.success) { hideBlockingOverlay(); return showTourFeedback(d.error, "error"); }
+    }
+    if (staffLimit) {
+      const d = await acFetch("upsertTourExpenseLimit", { positionType: "Staff", expenseType, dailyLimit: staffLimit });
+      if (!d.success) { hideBlockingOverlay(); return showTourFeedback(d.error, "error"); }
+    }
     hideBlockingOverlay();
-    if (data.success) loadExpenseLimitsTable();
-    else showTourFeedback(data.error, "error");
+    loadExpenseLimitsTable();
   } catch (e) { hideBlockingOverlay(); showTourFeedback("Network error: " + e.message, "error"); }
 }
 
-async function submitDeleteExpenseLimit(limitId, label) {
-  if (!confirm(`Delete the ${label} daily limit?`)) return;
+async function submitDeleteExpenseLimit(expenseType) {
+  if (!confirm(`Delete the ${expenseType} daily limit (both Manager and Staff)?`)) return;
+  const group = elLimitsData.filter(l => l.expenseType === expenseType);
   showBlockingOverlay("Deleting...");
   try {
-    const data = await acFetch("deleteTourExpenseLimit", { limitId });
+    for (const l of group) {
+      const d = await acFetch("deleteTourExpenseLimit", { limitId: l.limitId });
+      if (!d.success) { hideBlockingOverlay(); return showTourFeedback(d.error, "error"); }
+    }
     hideBlockingOverlay();
-    if (data.success) loadExpenseLimitsTable();
-    else showTourFeedback(data.error, "error");
+    loadExpenseLimitsTable();
   } catch (e) { hideBlockingOverlay(); showTourFeedback("Network error: " + e.message, "error"); }
 }
