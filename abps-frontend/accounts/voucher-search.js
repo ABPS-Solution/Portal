@@ -115,7 +115,7 @@ async function initializeVoucherSearchPanel() {
             <select id="tvs-f-status" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
               <option value="">All</option><option value="Unchecked">Unchecked</option><option value="Checked">Checked</option></select></div>
           <div><label class="field-label">&nbsp;</label>
-            <label style="display:flex; align-items:center; gap:6px; padding:8px 0;">
+            <label style="display:flex; align-items:center; gap:6px; padding:8px 0; white-space:nowrap;">
               <input type="checkbox" id="tvs-f-overlimit"> Over Limit Only
             </label></div>
         </div>
@@ -234,7 +234,7 @@ async function runTourVoucherSearch() {
         resultsEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No advances match this filter.</div>`;
         return;
       }
-      resultsEl.innerHTML = data.advances.map(a => tvsRenderAdvanceCard(a)).join("");
+      resultsEl.innerHTML = tvsRenderAdvanceTable(data.advances);
       await tvsRefreshBalanceBuckets();
       return;
     }
@@ -288,24 +288,29 @@ function tvsRenderBucket(title, employees, color) {
     <div style="font-weight:700; margin-bottom:6px; font-size:0.85rem;">${title}</div>${rows}</div>`;
 }
 
-function tvsRenderAdvanceCard(a) {
+function tvsRenderAdvanceTable(advances) {
+  const rows = advances.map(a => `
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:7px;">${escapeHtml(a.employeeName)}</td>
+      <td style="padding:7px;">${escapeHtml(a.departmentName || '—')}</td>
+      <td style="padding:7px;">${escapeHtml(a.placeOfVisit || '—')}</td>
+      <td style="padding:7px;">${escapeHtml(a.purposeOfVisit || '—')}</td>
+      <td style="padding:7px; color:var(--muted);">${a.remarks ? escapeHtml(a.remarks) : '—'}</td>
+      <td style="padding:7px; text-align:right; font-weight:700;">${formatINRComma(a.amount)}</td>
+      <td style="padding:7px;">${formatDateDMY(a.paidDate)}</td>
+      <td style="padding:7px;">${a.createdBy ? escapeHtml(a.createdBy) : '—'}</td>
+    </tr>`).join("");
   return `
-    <div class="contact-summary-card-parent">
-      <div class="contact-summary-title-info" style="width:100%;">
-        <div style="display:flex; justify-content:space-between; width:100%; align-items:center; flex-wrap:wrap; gap:8px;">
-          <div>
-            <span style="font-weight:700;">${escapeHtml(a.employeeName)}</span>
-            <span style="color:var(--muted); font-size:0.8rem; margin-left:6px;">${escapeHtml(a.departmentName || '—')}</span>
-          </div>
-          <span style="background:var(--brand); color:#fff; font-weight:700; font-size:0.85rem; padding:3px 10px; border-radius:3px;">${formatINRComma(a.amount)}</span>
-        </div>
-        <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
-          ${escapeHtml(a.placeOfVisit || '—')}${a.purposeOfVisit ? ' · ' + escapeHtml(a.purposeOfVisit) : ''} ·
-          Start ${formatDateDMY(a.startDate)}${a.estimatedDays ? ` · ${a.estimatedDays} day(s)` : ''} ·
-          Paid ${formatDateDMY(a.paidDate)}${a.createdBy ? ' by ' + escapeHtml(a.createdBy) : ''}
-        </div>
-        ${a.remarks ? `<div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">Remarks: ${escapeHtml(a.remarks)}</div>` : ''}
-      </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:7px;">Emp Name</th><th style="padding:7px;">Department</th>
+          <th style="padding:7px;">Company of Visit</th><th style="padding:7px;">Purpose of Visit</th>
+          <th style="padding:7px;">Remarks</th><th style="padding:7px; text-align:right;">Advance Amount</th>
+          <th style="padding:7px;">Paid on Date</th><th style="padding:7px;">Paid by</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
     </div>`;
 }
 
