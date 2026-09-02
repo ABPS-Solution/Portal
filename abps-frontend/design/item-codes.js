@@ -668,7 +668,18 @@ async function cloneItemCodeIntoCreateForm(itemCode) {
   typeInput.value = item.typeOfMaterial || "";
   await handleIcfNewTypeChange(item.typeOfMaterial || "");
 
-  if (item.formatId) {
+  // A handful of item codes carry a stale format_id — pointing at a
+  // format for a DIFFERENT Type of Material than the one stored on the
+  // item code itself (found 2 Sep 2026: 158 rows, same set in both
+  // Portal and ERP, most likely a leftover from the Aug 2026 item-code
+  // renumbering — see CLAUDE.md §69). Locking the dropdown to a
+  // format_id that isn't even in icfCurrentFormats for this Type left
+  // the Sub-Option select empty and the whole fixed form blank with no
+  // explanation. Detect that here and fall back to an unlocked, manually
+  // pickable Sub-Option instead of silently rendering nothing.
+  const formatStillValid = item.formatId && icfCurrentFormats.some(f => String(f.formatId) === String(item.formatId));
+
+  if (formatStillValid) {
     // format_values is a JSONB column — the pg driver already hands it
     // back as a parsed object, not a JSON string; no JSON.parse here.
     const initialValues = item.formatValues || null;
@@ -677,6 +688,12 @@ async function cloneItemCodeIntoCreateForm(itemCode) {
     if (document.getElementById("icf-new-fixed-make")) document.getElementById("icf-new-fixed-make").value = item.make || "";
     typeInput.disabled = true;
     subSelect.disabled = true;
+  } else if (item.formatId) {
+    // Stale format_id — Type of Material is still correct and locked,
+    // but the Sub-Option is left for the operator to pick themselves.
+    typeInput.disabled = true;
+    subSelect.disabled = false;
+    if (document.getElementById("icf-new-fixed-make")) document.getElementById("icf-new-fixed-make").value = item.make || "";
   } else {
     if (document.getElementById("itemcode-new-name"))  document.getElementById("itemcode-new-name").value  = item.productName || "";
     if (document.getElementById("itemcode-new-rating")) document.getElementById("itemcode-new-rating").value = item.rating || "";
@@ -685,8 +702,13 @@ async function cloneItemCodeIntoCreateForm(itemCode) {
   }
 
   const banner = document.getElementById("itemcode-feedback-banner");
-  banner.style.cssText = "display:block; background:#eff6ff; border-color:var(--brand); color:var(--brand); padding:10px; border-left:4px solid var(--brand); border-radius:var(--radius); font-size:0.85rem;";
-  banner.textContent = `Cloned from ${itemCode}${item.formatId ? " — Type of Material and Sub-Option are locked to match its fixed format" : ""}. Change what's different, then Create to save as a new item code.`;
+  if (item.formatId && !formatStillValid) {
+    banner.style.cssText = "display:block; background:#fffbeb; border-color:#d97706; color:#92400e; padding:10px; border-left:4px solid #d97706; border-radius:var(--radius); font-size:0.85rem;";
+    banner.textContent = `Cloned from ${itemCode} — its saved Sub-Option no longer matches a valid format for "${item.typeOfMaterial}" (likely stale data). Type of Material is locked; please pick the correct Sub-Option yourself, then fill in the values and Create.`;
+  } else {
+    banner.style.cssText = "display:block; background:#eff6ff; border-color:var(--brand); color:var(--brand); padding:10px; border-left:4px solid var(--brand); border-radius:var(--radius); font-size:0.85rem;";
+    banner.textContent = `Cloned from ${itemCode}${item.formatId ? " — Type of Material and Sub-Option are locked to match its fixed format" : ""}. Change what's different, then Create to save as a new item code.`;
+  }
 }
 
 function updateIcfNewPreview() {
