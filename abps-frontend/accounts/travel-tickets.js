@@ -16,6 +16,7 @@ let ttkTravellerRows = [];      // [{employeeId, employeeName, empCode, price}]
 let ttkSelectedCompanies = [];  // [companyName]
 let ttkInvoiceFiles = [];       // [{base64Data, fileName, mimeType}] — Invoice Upload is compulsory, multiple allowed
 let ttkEditingTicketId = null;
+let ttkLastSearchTickets = []; // last searchTravelTickets result, for the table's own state
 
 function initializeTravelTicketsPanel() {
   document.getElementById("ttk-feedback").style.display = "none";
@@ -386,6 +387,10 @@ async function ttkInitializeManagePanel() {
         <select id="ttk-filter-status" style="padding:8px 10px; border:1px solid var(--border); border-radius:6px;">
           <option value="">All</option><option value="Booked">Booked</option><option value="Cancelled">Cancelled</option>
         </select></div>
+      <div><label class="field-label">Actioned</label>
+        <select id="ttk-filter-actioned" style="padding:8px 10px; border:1px solid var(--border); border-radius:6px;">
+          <option value="">All</option><option value="Unactioned">Unactioned</option><option value="Actioned">Actioned</option>
+        </select></div>
       <div><label class="field-label">Mode</label>
         <select id="ttk-filter-mode" style="padding:8px 10px; border:1px solid var(--border); border-radius:6px;">
           <option value="">All</option>${TTK_MODES.map(m => `<option value="${m}">${m}</option>`).join("")}
@@ -417,14 +422,15 @@ function ttkBuildSearchLabel() {
   const esc = (s) => (s || "").toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const val = (s) => `<span style="color:var(--brand);">${esc(s || 'All')}</span>`;
   const statusLabel = document.getElementById("ttk-filter-status").value || "All";
+  const actionedLabel = document.getElementById("ttk-filter-actioned").value || "All";
   const modeLabel = document.getElementById("ttk-filter-mode").value || "All";
   const deptLabel = document.getElementById("ttk-filter-dept").value || "All";
   const fromCityLabel = document.getElementById("ttk-filter-from-city").value || "All";
   const toCityLabel = document.getElementById("ttk-filter-to-city").value || "All";
   const departDateVal = document.getElementById("ttk-filter-depart-date").value;
-  const departDateLabel = departDateVal ? formatDateDMY(departDateVal) : "All";
+  const departDateLabel = departDateVal ? formatOrdinalDate(departDateVal) : "All";
   return `<span style="color:#000;">Searching for</span>` +
-    `<br><span style="color:#000;">Status:</span> ${val(statusLabel)} &nbsp; <span style="color:#000;">Mode:</span> ${val(modeLabel)} &nbsp; <span style="color:#000;">Department:</span> ${val(deptLabel)}` +
+    `<br><span style="color:#000;">Status:</span> ${val(statusLabel)} &nbsp; <span style="color:#000;">Actioned:</span> ${val(actionedLabel)} &nbsp; <span style="color:#000;">Mode:</span> ${val(modeLabel)} &nbsp; <span style="color:#000;">Department:</span> ${val(deptLabel)}` +
     `<br><span style="color:#000;">From City:</span> ${val(fromCityLabel)} &nbsp; <span style="color:#000;">To City:</span> ${val(toCityLabel)}` +
     `<br><span style="color:#000;">Departure Date:</span> ${val(departDateLabel)}`;
 }
@@ -439,6 +445,7 @@ async function ttkRunSearch() {
   try {
     const data = await acFetch("searchTravelTickets", {
       status: document.getElementById("ttk-filter-status").value || null,
+      actionedFilter: document.getElementById("ttk-filter-actioned").value || null,
       modeOfTravel: document.getElementById("ttk-filter-mode").value || null,
       departmentName: document.getElementById("ttk-filter-dept").value || null,
       fromCity: document.getElementById("ttk-filter-from-city").value.trim() || null,
@@ -448,66 +455,75 @@ async function ttkRunSearch() {
     if (!data.success) { results.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
     document.getElementById("ttk-search-totals").textContent =
       `Total Live Booking Value: ${formatINRComma(data.totalLivePrice)} · Total Refunded: ${formatINRComma(data.totalRefund)}`;
+    ttkLastSearchTickets = data.tickets;
     if (data.tickets.length === 0) {
       results.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No travel tickets found.</div>`;
       return;
     }
-    results.innerHTML = data.tickets.map(t => ttkRenderTicketCard(t)).join("");
+    results.innerHTML = ttkRenderTicketsTable(data.tickets);
   } catch (e) { results.innerHTML = `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`; }
 }
 
-function ttkRenderTicketCard(t) {
-  const travellerRows = (t.travellers || []).map(tv => `
-    <tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:6px;">${escapeHtml(tv.employeeName)}${tv.empCode ? ' · ' + escapeHtml(tv.empCode) : ''}</td>
-      <td style="padding:6px; text-align:right;">${formatINRComma(tv.price)}</td>
-      <td style="padding:6px;"><span style="padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:700;
-          background:${tv.status === 'Linked' ? '#dcfce7' : tv.status === 'Cancelled' ? '#fee2e2' : '#e0f2fe'};
-          color:${tv.status === 'Linked' ? '#15803d' : tv.status === 'Cancelled' ? '#b91c1c' : '#0369a1'};">
-        ${tv.status}${tv.linkedVoucherNumber ? ' · ' + escapeHtml(tv.linkedVoucherNumber) : ''}</span></td>
-    </tr>`).join("");
-  const companiesLine = (t.companiesOfVisit || []).length ? `<div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">Companies: ${(t.companiesOfVisit || []).map(escapeHtml).join(", ")}</div>` : "";
-  const invoices = t.invoices || [];
-  const invoiceLine = invoices.length
-    ? invoices.map((inv, idx) => `<a href="${driveLink(inv.url)}" target="_blank" rel="noopener" style="font-size:0.8rem; margin-right:10px;">${escapeHtml(inv.fileName || `Invoice ${idx + 1}`)} ↗</a>`).join("")
-    : `<span style="font-size:0.8rem; color:var(--muted);">No invoice uploaded</span>`;
-  const statusBadge = t.status === 'Cancelled'
-    ? `<span style="background:#fee2e2; color:#b91c1c; padding:3px 8px; font-weight:700; font-size:0.8rem;">Cancelled</span>`
-    : `<span style="background:#dcfce7; color:#15803d; padding:3px 8px; font-weight:700; font-size:0.8rem;">Booked</span>`;
-  const dateLine = t.tripType === 'Round Trip' && t.returnDate
-    ? `${formatDateDMY(t.departDate)} → ${formatDateDMY(t.returnDate)}` : formatDateDMY(t.departDate);
-
+// Same bordered/wrapping table shape as voucher-search.js's
+// tvsRenderAdvanceTable — one row per TRAVELLER (a ticket with 3
+// travellers renders 3 rows), since Emp Name/Department/Amount/Status
+// are all per-traveller, not per-ticket. Ticket-level fields (Mode,
+// Route, Trip Type, dates, Companies, Booked On/By, Doc link) repeat
+// identically across every traveller row of the same ticket.
+function ttkRenderTicketsTable(tickets) {
+  const colBorder = "border-left:2px solid var(--border);";
+  const cell = "padding:6px; font-size:0.82rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word;";
+  const rows = [];
+  tickets.forEach(t => {
+    const dateOfTravel = t.tripType === 'Round Trip' && t.returnDate
+      ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}` : formatOrdinalDate(t.departDate);
+    const companiesCell = (t.companiesOfVisit || []).length ? t.companiesOfVisit.map(escapeHtml).join(", ") : "—";
+    const invoices = t.invoices || [];
+    const docCell = invoices.length
+      ? invoices.map((inv, idx) => `<a href="${driveLink(inv.url)}" target="_blank" rel="noopener">${escapeHtml(inv.fileName || `Invoice ${idx + 1}`)}</a>`).join("<br>")
+      : "—";
+    const bookedOrCancelled = t.status === 'Cancelled'
+      ? `<span style="color:#b91c1c; font-weight:700;">Cancelled</span>`
+      : `<span style="color:#15803d; font-weight:700;">Booked</span>`;
+    const actionsCell = t.status === 'Cancelled'
+      ? `<span style="color:var(--muted); font-size:0.72rem;">${t.cancelReason ? escapeHtml(t.cancelReason) : '—'}</span>`
+      : `<button class="nav-btn-styled" onclick="ttkStartEdit(${t.ticketId})" style="padding:4px 8px; font-size:0.72rem;">Edit</button>
+         <button class="nav-btn-styled" onclick="ttkCancelTicket(${t.ticketId})" style="padding:4px 8px; font-size:0.72rem; margin-top:3px; background:#fee2e2; color:#b91c1c;">Cancel</button>`;
+    const travellers = t.travellers && t.travellers.length ? t.travellers : [null];
+    travellers.forEach(tv => {
+      const statusColor = !tv ? { bg: '#f1f5f9', fg: 'var(--muted)' }
+        : tv.status === 'Linked' ? { bg: '#dcfce7', fg: '#15803d' }
+        : tv.status === 'Cancelled' ? { bg: '#fee2e2', fg: '#b91c1c' } : { bg: '#e0f2fe', fg: '#0369a1' };
+      rows.push(`
+        <tr style="border-bottom:2px solid var(--border);">
+          <td style="${cell} font-weight:700;">${tv ? escapeHtml(tv.employeeName) : '—'}</td>
+          <td style="${cell} ${colBorder}">${tv ? escapeHtml(tv.departmentName || '—') : '—'}</td>
+          <td style="${cell} ${colBorder} font-weight:700;">${tv ? formatINRComma(tv.price) : '—'}</td>
+          <td style="${cell} ${colBorder}"><span style="padding:2px 8px; border-radius:10px; font-size:0.72rem; font-weight:700; background:${statusColor.bg}; color:${statusColor.fg};">${tv ? tv.status : '—'}</span></td>
+          <td style="${cell} ${colBorder}">${escapeHtml(t.modeOfTravel)}</td>
+          <td style="${cell} ${colBorder}">${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)}</td>
+          <td style="${cell} ${colBorder}">${escapeHtml(t.tripType)}</td>
+          <td style="${cell} ${colBorder}">${dateOfTravel}</td>
+          <td style="${cell} ${colBorder}">${tv && tv.linkedVoucherNumber ? escapeHtml(tv.linkedVoucherNumber) : '—'}</td>
+          <td style="${cell} ${colBorder}">${companiesCell}</td>
+          <td style="${cell} ${colBorder}">${formatOrdinalDate(t.bookingDate)}</td>
+          <td style="${cell} ${colBorder}">${escapeHtml(t.bookedBy)}</td>
+          <td style="${cell} ${colBorder}">${bookedOrCancelled}</td>
+          <td style="${cell} ${colBorder}">${docCell}</td>
+          <td style="${cell} ${colBorder}">${actionsCell}</td>
+        </tr>`);
+    });
+  });
+  const th = "padding:6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); vertical-align:middle;";
+  const headers = ["Emp Name", "Department", "Amount", "Status", "Mode of Travel", "Route", "Trip Type", "Date of Travel", "PRN", "Companies", "Booked On", "Booked By", "Booked or Cancelled", "Doc Link", "Actions"];
   return `
-    <div class="contact-summary-card-parent" id="ttk-card-${t.ticketId}">
-      <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
-        <div class="contact-summary-title-info" style="width:100%;">
-          <div style="display:flex; justify-content:space-between; width:100%; align-items:center; flex-wrap:wrap; gap:8px;">
-            <div>
-              <span style="font-weight:700;">${escapeHtml(t.modeOfTravel)}: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)}</span>
-              <span style="color:var(--muted); font-size:0.8rem; margin-left:8px;">${dateLine}</span>
-              ${statusBadge}
-            </div>
-            <span style="font-weight:700;">${formatINRComma(t.livePrice)}</span>
-          </div>
-          <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
-            ${t.pnrNumber ? 'PNR: ' + escapeHtml(t.pnrNumber) + ' · ' : ''}Booked by ${escapeHtml(t.bookedBy)} on ${formatDateDMY(t.bookingDate)}
-          </div>
-          ${companiesLine}
-        </div>
-      </div>
-      <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
-        <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:12px;">
-          <thead><tr style="background:var(--highlight-bg); text-align:left;"><th style="padding:6px;">Traveller</th><th style="padding:6px; text-align:right;">Price</th><th style="padding:6px;">Status</th></tr></thead>
-          <tbody>${travellerRows}</tbody>
-        </table>
-        ${t.remarks ? `<div style="font-size:0.85rem; margin-bottom:8px;"><strong>Remarks:</strong> ${escapeHtml(t.remarks)}</div>` : ""}
-        <div style="margin-bottom:12px;">${invoiceLine}</div>
-        ${t.status === 'Cancelled' ? `<div style="font-size:0.8rem; color:var(--muted);">Cancelled by ${escapeHtml(t.cancelledBy || '—')} on ${formatDateDMY(t.cancelledAt)}${t.cancelReason ? ': ' + escapeHtml(t.cancelReason) : ''}${t.refundAmount ? ' · Refund: ' + formatINRComma(t.refundAmount) : ''}</div>`
-          : `<div style="display:flex; gap:8px;">
-              <button class="nav-btn-styled" onclick="ttkStartEdit(${t.ticketId})" style="padding:7px 14px; font-size:0.85rem;">Edit</button>
-              <button class="nav-btn-styled" onclick="ttkCancelTicket(${t.ticketId})" style="padding:7px 14px; font-size:0.85rem; background:#fee2e2; color:#b91c1c;">Cancel Ticket</button>
-            </div>`}
-      </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+        <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">
+          ${headers.map((h, i) => `<th style="${th} ${i > 0 ? colBorder : ''}">${h}</th>`).join("")}
+        </tr></thead>
+        <tbody>${rows.join("")}</tbody>
+      </table>
     </div>`;
 }
 
