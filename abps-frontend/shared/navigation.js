@@ -485,6 +485,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     "mod-store-dashboard-wrapper":       userPermissionsObject.viewStoreDashboard,
     "mod-production-dashboard-wrapper":  userPermissionsObject.viewProductionDashboard,
     "mod-marketing-dashboard-wrapper":   userPermissionsObject.viewMarketingDashboard,
+    "mod-accounts-dashboard-wrapper":    userPermissionsObject.viewAccountsDashboard,
   };
   Object.keys(dashMap).forEach(function(id) {
     const el = document.getElementById(id);
@@ -526,7 +527,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
       const canTravelTickets = userPermissionsObject.travelTickets === true;
       if (document.getElementById("mod-travel-tickets")) document.getElementById("mod-travel-tickets").style.display = canTravelTickets ? "block" : "none";
       const accountsHeaderBlock = document.getElementById("dashboard-accounts-department-header-block");
-      if (accountsHeaderBlock) accountsHeaderBlock.style.display = (canTourExpense || canCashExpenses || canTravelTickets) ? "block" : "none";
+      if (accountsHeaderBlock) accountsHeaderBlock.style.display = (canTourExpense || canCashExpenses || canTravelTickets || userPermissionsObject.viewAccountsDashboard === true) ? "block" : "none";
 
   // Every dept-block's display was just finalized above, purely from
   // permissions — the tab bar layers on top of that rather than

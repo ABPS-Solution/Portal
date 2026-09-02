@@ -267,10 +267,10 @@ function showDashboardGlobalToolbar(title, periodBtnsId, returnFn) {
   // content starts underneath the floating bar.
   requestAnimationFrame(syncDashboardCanvasTopPadding);
   document.getElementById("dash-global-title").textContent = title;
-  ["dd-period-btns","pd-period-btns","sd-period-btns","md-period-btns","pd2-period-btns"].forEach(id => {
+  ["dd-period-btns","pd-period-btns","sd-period-btns","md-period-btns","pd2-period-btns","ad-period-btns"].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = (id === periodBtnsId) ? "flex" : "none";
   });
-  ["dd-custom-zone","pd-custom-zone","sd-custom-zone","md-custom-zone","pd2-custom-zone"].forEach(id => {
+  ["dd-custom-zone","pd-custom-zone","sd-custom-zone","md-custom-zone","pd2-custom-zone","ad-custom-zone"].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = "none";
   });
   document.querySelectorAll('[id$="-workspace-enclosure-panel"] > .navigation-action-header-row').forEach(h => h.style.display = "none");
@@ -323,6 +323,19 @@ function sdReturnToMain() {
   if (c) c.style.display = "none";
   enforceDynamicModuleRoleGateways(userPermissions);
   document.getElementById("dashboard-view").style.display = "flex";
+}
+
+function navigateToAccountsDashboard() {
+  document.getElementById("dashboard-view").style.display = "none";
+  document.getElementById("module-workspace-container").style.display = "none";
+  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+  // Same fix as every other dashboard — the canvas isn't reliably nested
+  // under its own department's enclosure panel, so show all of them.
+  ddShowAllWorkspaceEnclosures();
+  const c = document.getElementById("canvas-module-accounts-dashboard");
+  if (c) c.style.display = "block";
+  showDashboardGlobalToolbar("Accounts Dashboard", "ad-period-btns", adReturnToMain);
+  if (typeof adLoadDashboard === "function") adLoadDashboard();
 }
 
 function pd2ReturnToMain() {

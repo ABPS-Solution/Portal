@@ -742,6 +742,9 @@
       <div class="dept-header">
         <div class="dept-bar" style="background:#0f766e;"></div>
         <span class="dept-name">Accounts Department</span>
+        <div id="mod-accounts-dashboard-wrapper" style="display:none;">
+          <button class="dept-dash-pill" id="mod-accounts-dashboard" onclick="navigateToAccountsDashboard()" style="background:#f0fdfa; color:#0f766e;">📊 Dashboard</button>
+        </div>
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-travel-tickets" onclick="switchActiveDashboardModule('travel-tickets')"><span class="mc-label">Travel Ticket Booking</span></div>
@@ -3400,6 +3403,113 @@
       </div>
     </div>
 
+    <!-- ACCOUNTS DASHBOARD CANVAS -->
+    <div id="canvas-module-accounts-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
+
+      <!-- BODY -->
+      <div id="ad-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+
+        <!-- ROW 1: Needs Action Now (live, never period-filtered) -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Unchecked Tour Vouchers</div>
+            <div class="dd-stat-val" id="ad-s-unchecked" style="color:#b91c1c;">—</div>
+            <div class="dd-stat-sub" id="ad-s-unchecked-sub"></div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Open Daily Advances</div>
+            <div class="dd-stat-val" id="ad-s-openadv" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub" id="ad-s-openadv-sub"></div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Unactioned Travel Tickets</div>
+            <div class="dd-stat-val" id="ad-s-unactioned" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub" id="ad-s-unactioned-sub"></div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Cash + UPI Box</div>
+            <div class="dd-stat-val" id="ad-s-cashbox">—</div>
+            <div class="dd-stat-sub" id="ad-s-cashbox-sub"></div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Outstanding with Employees</div>
+            <div class="dd-stat-val" id="ad-s-outstanding" style="color:var(--brand);">—</div>
+            <div class="dd-stat-sub" id="ad-s-outstanding-sub"></div>
+          </div>
+        </div>
+
+        <!-- ROW 2: Money Out (period-filtered) -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Total Expense Recognised</div>
+            <div class="dd-stat-val" id="ad-s-totalexp" style="color:var(--brand);">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Tour Expense Paid</div>
+            <div class="dd-stat-val" id="ad-s-tourpaid">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Daily Expenses Spent</div>
+            <div class="dd-stat-val" id="ad-s-dailyspent">—</div>
+            <div class="dd-stat-sub" id="ad-s-dailyspent-sub"></div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Company-Paid Travel</div>
+            <div class="dd-stat-val" id="ad-s-travelpaid">—</div>
+            <div class="dd-stat-sub" id="ad-s-travelpaid-sub"></div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Advances Paid</div>
+            <div class="dd-stat-val" id="ad-s-advpaid">—</div>
+            <div class="dd-stat-sub" id="ad-s-advpaid-sub"></div>
+          </div>
+        </div>
+
+        <!-- ROW 3: Activity & Control (period-filtered) -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Vouchers Checked</div>
+            <div class="dd-stat-val" id="ad-s-vouchers" style="color:#15803d;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Avg Voucher Check Time</div>
+            <div class="dd-stat-val" id="ad-s-checktime">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Claimed vs Paid Variance</div>
+            <div class="dd-stat-val" id="ad-s-variance">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Over-Limit Amount</div>
+            <div class="dd-stat-val" id="ad-s-overlimit" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub" id="ad-s-overlimit-sub"></div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Cash Box Top-Ups</div>
+            <div class="dd-stat-val" id="ad-s-topups" style="color:#15803d;">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 4: Charts — no panel row on this dashboard, so charts get
+             the remaining ~half of the viewport instead of Purchase's 26%. -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title">Expense Trend</div>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="ad-chart-trend"></canvas></div>
+          </div>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title">Spend by Expense Type</div>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="ad-chart-type"></canvas></div>
+          </div>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title">Spend by Department</div>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="ad-chart-dept"></canvas></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- STORE DASHBOARD CANVAS -->
     <div id="canvas-module-store-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
@@ -3838,6 +3948,15 @@
           <button class="dd-period-btn" data-period="thisyear" onclick="pd2SetPeriod(this)">This Year</button>
           <button class="dd-period-btn" data-period="custom" onclick="pd2SetPeriod(this)">Custom ▾</button>
         </div>
+        <div id="ad-period-btns" style="display:none; gap:4px; flex-wrap:nowrap;">
+          <button class="dd-period-btn active" data-period="today" onclick="adSetPeriod(this)">Today</button>
+          <button class="dd-period-btn" data-period="yesterday" onclick="adSetPeriod(this)">Yesterday</button>
+          <button class="dd-period-btn" data-period="thisweek" onclick="adSetPeriod(this)">This Week</button>
+          <button class="dd-period-btn" data-period="thismonth" onclick="adSetPeriod(this)">This Month</button>
+          <button class="dd-period-btn" data-period="thisquarter" onclick="adSetPeriod(this)">This Quarter</button>
+          <button class="dd-period-btn" data-period="thisyear" onclick="adSetPeriod(this)">This Year</button>
+          <button class="dd-period-btn" data-period="custom" onclick="adSetPeriod(this)">Custom ▾</button>
+        </div>
       </div>
       <span id="dash-global-title" style="font-size:1.35rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);"></span>
       <button class="nav-btn-styled" onclick="dashboardGlobalReturnClick()" style="font-size:0.75rem;">Return to Main Dashboard</button>
@@ -3886,6 +4005,15 @@
       </select>
       <input id="pd2-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
       <button onclick="pd2LoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
+    </div>
+    <div id="ad-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
+      <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
+      <select id="ad-custom-type" onchange="adCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
+        <option value="customday">Day</option><option value="customweek">Week</option><option value="custommonth">Month</option>
+        <option value="customquarter">Quarter</option><option value="customyear">Year</option>
+      </select>
+      <input id="ad-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
+      <button onclick="adLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
     </div>
   </div>
 
@@ -4544,5 +4672,6 @@
 <script src="accounts/cash-expense-search.js"></script>
 <script src="accounts/cash-expense-employees.js"></script>
 <script src="accounts/travel-tickets.js"></script>
+<script src="accounts/accounts-dashboard.js"></script>
 </body>
 </html>
