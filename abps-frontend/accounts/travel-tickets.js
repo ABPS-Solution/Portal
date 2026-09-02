@@ -67,8 +67,17 @@ async function ttkRenderBookForm() {
   const panel = document.getElementById("ttk-panel-book");
   const editing = !!ttkEditingTicketId;
   panel.innerHTML = `
-    <div style="background:var(--highlight-bg); padding:18px; border-radius:var(--radius); max-width:760px;">
+    <div style="background:var(--highlight-bg); padding:18px; border-radius:var(--radius);">
       ${editing ? `<div style="margin-bottom:12px; font-weight:700; color:var(--brand);">Editing Ticket #${ttkEditingTicketId}</div>` : ""}
+      <div style="margin-bottom:16px; padding:14px; background:#fff; border:1px solid var(--border); border-radius:6px;">
+        <label class="field-label">Invoice Upload *</label>
+        <input type="file" id="ttk-invoice-file" accept="image/*,application/pdf" multiple onchange="ttkHandleInvoiceFile(this)"
+          style="width:100%; padding:7px 0;">
+        <div id="ttk-invoice-file-list" style="font-size:0.75rem; color:var(--muted); margin-top:4px;"></div>
+        <button type="button" class="nav-btn-styled" id="ttk-gemini-btn" onclick="ttkProcessWithGemini()" disabled
+          style="margin-top:10px; padding:8px 16px; font-size:0.85rem; opacity:0.5;">✨ Process with Gemini</button>
+        <div id="ttk-gemini-status" style="font-size:0.78rem; color:var(--muted); margin-top:6px;"></div>
+      </div>
       <div style="display:flex; gap:10px; margin-bottom:12px;">
         <div style="flex:1;"><label class="field-label">Mode of Travel *</label>
           <select id="ttk-mode" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
@@ -112,13 +121,9 @@ async function ttkRenderBookForm() {
         Booking Total: <span id="ttk-total" style="margin-left:8px;">₹0</span>
       </div>
 
-      <div style="display:flex; gap:10px; margin-bottom:16px;">
-        <div style="flex:1;"><label class="field-label">Invoice Upload *</label>
-          <input type="file" id="ttk-invoice-file" accept="image/*,application/pdf" multiple onchange="ttkHandleInvoiceFile(this)"
-            style="width:100%; padding:7px 0;">
-          <div id="ttk-invoice-file-list" style="font-size:0.75rem; color:var(--muted); margin-top:4px;"></div></div>
-        <div style="flex:1;"><label class="field-label">Remarks</label>
-          <textarea id="ttk-remarks" rows="1" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; resize:vertical;"></textarea></div>
+      <div style="margin-bottom:16px;">
+        <label class="field-label">Remarks</label>
+        <textarea id="ttk-remarks" rows="1" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; resize:vertical;"></textarea>
       </div>
       <button class="nav-btn-styled" onclick="submitTravelTicket()">${editing ? "Save Changes" : "Save Ticket Booking"}</button>
       ${editing ? `<button class="nav-btn-styled" onclick="ttkCancelEdit()" style="margin-left:8px; background:#e2e8f0; color:#334155;">Cancel Edit</button>` : ""}
@@ -304,10 +309,61 @@ function ttkHandleInvoiceFile(input) {
 
 function ttkRenderInvoiceFileList() {
   const el = document.getElementById("ttk-invoice-file-list");
-  if (!el) return;
-  el.textContent = ttkInvoiceFiles.length
-    ? `${ttkInvoiceFiles.length} file(s) selected: ${ttkInvoiceFiles.map(f => f.fileName).join(", ")}`
-    : "";
+  if (el) {
+    el.textContent = ttkInvoiceFiles.length
+      ? `${ttkInvoiceFiles.length} file(s) selected: ${ttkInvoiceFiles.map(f => f.fileName).join(", ")}`
+      : "";
+  }
+  const btn = document.getElementById("ttk-gemini-btn");
+  if (btn) {
+    btn.disabled = ttkInvoiceFiles.length === 0;
+    btn.style.opacity = ttkInvoiceFiles.length === 0 ? "0.5" : "1";
+  }
+}
+
+async function ttkProcessWithGemini() {
+  if (ttkInvoiceFiles.length === 0) return;
+  const btn = document.getElementById("ttk-gemini-btn");
+  const status = document.getElementById("ttk-gemini-status");
+  if (btn) btn.disabled = true;
+  if (status) status.textContent = "Reading document(s) with Gemini...";
+  try {
+    const data = await acFetch("extractTravelTicketFromDocs", {
+      invoices: ttkInvoiceFiles,
+      employees: ttkCachedEmployees.map(e => ({ employeeId: e.employeeId, employeeName: e.employeeName })),
+    });
+    if (!data.success) {
+      if (status) status.textContent = "";
+      showTicketFeedback(data.error || "Gemini extraction failed.", "error");
+      return;
+    }
+    const x = data.extracted;
+    if (x.modeOfTravel) document.getElementById("ttk-mode").value = x.modeOfTravel;
+    if (x.tripType) document.getElementById("ttk-trip-type").value = x.tripType;
+    ttkOnTripTypeChange();
+    if (x.fromCity) document.getElementById("ttk-from-city").value = x.fromCity;
+    if (x.toCity) document.getElementById("ttk-to-city").value = x.toCity;
+    if (x.departDate) document.getElementById("ttk-depart-date").value = x.departDate;
+    if (x.tripType === "Round Trip" && x.returnDate) document.getElementById("ttk-return-date").value = x.returnDate;
+    if (x.pnrNumber) document.getElementById("ttk-pnr").value = x.pnrNumber;
+
+    if (Array.isArray(x.travellers) && x.travellers.length > 0) {
+      ttkTravellerRows = x.travellers.map(t => {
+        if (t.matchedEmployeeId) {
+          const emp = ttkCachedEmployees.find(e => e.employeeId === t.matchedEmployeeId);
+          if (emp) return { employeeId: emp.employeeId, employeeName: emp.employeeName, empCode: emp.empCode || "", price: t.price || "" };
+        }
+        return { employeeId: null, employeeName: t.name || "", empCode: "", price: t.price || "" };
+      });
+      ttkRenderTravellerRows();
+    }
+    if (status) status.textContent = "✓ Fields filled from Gemini — please review before saving.";
+  } catch (e) {
+    if (status) status.textContent = "";
+    showTicketFeedback("Network error: " + e.message, "error");
+  } finally {
+    if (btn) btn.disabled = ttkInvoiceFiles.length === 0;
+  }
 }
 
 document.addEventListener("click", (e) => {
