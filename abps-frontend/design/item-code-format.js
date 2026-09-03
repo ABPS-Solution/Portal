@@ -128,18 +128,19 @@ function icfIsValidNumericPlaceholderValue(v, label) {
 }
 
 function icfValidateValues(template, values) {
-  const { placeholders, error } = icfParseTemplate(template);
+  const { segments, placeholders, error } = icfParseTemplate(template);
   if (error) return error;
   const vals = Array.isArray(values) ? values : [];
 
   // Client-side mirror of lib/itemCodeFormat.js's validateValues Fiber
-  // Glass Tie Rod carve-out — see that function's comment.
-  const tieRodLPh = placeholders.find(p => p.kind === 'number' && /^mm l$/i.test((p.label || '').trim()));
-  const tieRodThreadsPh = placeholders.find(p => p.kind === 'number' && /threads on both side$/i.test((p.label || '').trim()));
-  const threadsIsOptional = tieRodLPh && tieRodThreadsPh && (() => {
-    const lVal = parseFloat(vals[tieRodLPh.index]);
+  // Glass Tie Rod carve-out — see that function's comment. Matched
+  // STRUCTURALLY (icfMatchFiberGlassTieRodShape), not by label alone.
+  const tieRodShape = icfMatchFiberGlassTieRodShape(segments);
+  const threadsIsOptional = tieRodShape && (() => {
+    const lVal = parseFloat(vals[tieRodShape.lIndex]);
     return !isNaN(lVal) && lVal <= 1000;
   })();
+  const tieRodThreadsPh = tieRodShape ? placeholders[tieRodShape.threadsIndex] : null;
 
   for (const ph of placeholders) {
     const raw = vals[ph.index];
@@ -472,16 +473,30 @@ function icfRenderTemplate(template, values) {
 // reasoning; unlike every other auto-calc mirror in this file, it runs on
 // the already-RENDERED string (called right after icfRenderTemplate),
 // since it swaps which literal text appears rather than a value.
+// Structural match, same fix as lib/itemCodeFormat.js's
+// matchFiberGlassTieRodShape (3 Sep 2026) — matching by label alone let
+// an unrelated future format with those same three label patterns get
+// its whole Rating silently replaced.
+function icfMatchFiberGlassTieRodShape(segments) {
+  for (let i = 0; i + 5 < segments.length; i++) {
+    const [nph1, lit1, nph2, lit2, nph3, lit3] = segments.slice(i, i + 6);
+    if (nph1.kind === 'number' && lit1.kind === 'literal' && /\bmm dia\b/i.test(lit1.text) &&
+        nph2.kind === 'number' && lit2.kind === 'literal' && /\bmm l\b/i.test(lit2.text) && /\bwith\b/i.test(lit2.text) &&
+        nph3.kind === 'number' && lit3.kind === 'literal' && /threads on both side/i.test(lit3.text)) {
+      return { diaIndex: nph1.index, lIndex: nph2.index, threadsIndex: nph3.index };
+    }
+  }
+  return null;
+}
+
 function icfApplyFiberGlassTieRodThreading(template, values, rendered) {
-  const { placeholders, error } = icfParseTemplate(template);
-  if (error || !placeholders) return rendered;
-  const diaPh = placeholders.find(p => p.kind === 'number' && /^mm dia$/i.test((p.label || '').trim()));
-  const lPh = placeholders.find(p => p.kind === 'number' && /^mm l$/i.test((p.label || '').trim()));
-  const threadsPh = placeholders.find(p => p.kind === 'number' && /threads on both side$/i.test((p.label || '').trim()));
-  if (!diaPh || !lPh || !threadsPh) return rendered;
-  const lVal = parseFloat(values[lPh.index]);
+  const { segments, error } = icfParseTemplate(template);
+  if (error || !segments) return rendered;
+  const shape = icfMatchFiberGlassTieRodShape(segments);
+  if (!shape) return rendered;
+  const lVal = parseFloat(values[shape.lIndex]);
   if (isNaN(lVal) || lVal > 1000) return rendered;
-  const diaVal = values[diaPh.index] == null ? '' : String(values[diaPh.index]).trim();
+  const diaVal = values[shape.diaIndex] == null ? '' : String(values[shape.diaIndex]).trim();
   if (!diaVal) return rendered;
   return `${diaVal} mm Dia, ${lVal} mm L, with Full Threading`;
 }
