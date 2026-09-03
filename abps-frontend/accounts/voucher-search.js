@@ -120,7 +120,7 @@ async function initializeVoucherSearchPanel() {
             <select id="tvs-f-adv-purpose" style="padding:8px; border:1px solid var(--border); border-radius:6px; min-width:140px;">
               <option value="">All</option>${TOUR_PURPOSES.map(p => `<option value="${p}">${p}</option>`).join("")}</select></div>
         </div>
-        <div style="position:relative;"><label class="field-label">Place of Visit</label>
+        <div style="position:relative;"><label class="field-label">Company of Visit</label>
           <input type="text" id="tvs-f-place" placeholder="Type to search..." autocomplete="off"
             style="padding:8px; border:1px solid var(--border); border-radius:6px; min-width:140px;"
             oninput="tvsHandlePlaceSearch(this.value)">
