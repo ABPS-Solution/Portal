@@ -131,6 +131,16 @@ function icfValidateValues(template, values) {
   const { placeholders, error } = icfParseTemplate(template);
   if (error) return error;
   const vals = Array.isArray(values) ? values : [];
+
+  // Client-side mirror of lib/itemCodeFormat.js's validateValues Fiber
+  // Glass Tie Rod carve-out — see that function's comment.
+  const tieRodLPh = placeholders.find(p => p.kind === 'number' && /^mm l$/i.test((p.label || '').trim()));
+  const tieRodThreadsPh = placeholders.find(p => p.kind === 'number' && /threads on both side$/i.test((p.label || '').trim()));
+  const threadsIsOptional = tieRodLPh && tieRodThreadsPh && (() => {
+    const lVal = parseFloat(vals[tieRodLPh.index]);
+    return !isNaN(lVal) && lVal <= 1000;
+  })();
+
   for (const ph of placeholders) {
     const raw = vals[ph.index];
 
@@ -150,7 +160,10 @@ function icfValidateValues(template, values) {
     }
 
     const v = raw == null ? '' : String(raw).trim();
-    if (!v) return `"${ph.label}" is required.`;
+    if (!v) {
+      if (ph === tieRodThreadsPh && threadsIsOptional) continue;
+      return `"${ph.label}" is required.`;
+    }
     if ((ph.kind === 'number' || ph.kind === 'mirror') && !icfIsValidNumericPlaceholderValue(v, ph.label)) {
       return icfIsSlashAllowedLabel(ph.label)
         ? `"${ph.label}" must be a number (e.g. 415, or a ratio/multi-value like 240/415).`
