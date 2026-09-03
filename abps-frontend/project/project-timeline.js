@@ -650,7 +650,7 @@ function ptlRenderLaneSteps(lane, c, canWrite) {
         <td style="width:13%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(s.planned)}</td>
         <td style="width:13%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(currentTarget)}</td>
         <td style="width:20%; padding:5px 8px; text-align:center; ${colBorder}">${canWrite && (s.terminal || !done) ? `<input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
-              style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; max-width:150px; box-sizing:border-box;" />` : `<span style="color:var(--muted); font-size:0.8rem;">—</span>`}</td>
+              style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; max-width:150px; box-sizing:border-box; text-align:center;" />` : `<span style="color:var(--muted); font-size:0.8rem;">—</span>`}</td>
         <td style="width:30%; padding:5px 8px; text-align:center; ${colBorder}">
           <div style="display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px;">${actionCell}</div>
         </td>
