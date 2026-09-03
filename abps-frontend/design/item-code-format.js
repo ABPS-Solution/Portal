@@ -453,6 +453,26 @@ function icfRenderTemplate(template, values) {
   return out.replace(/\s+/g, ' ').trim();
 }
 
+// Client-side mirror of lib/itemCodeFormat.js's applyFiberGlassTieRodThreading
+// — live preview only; the server recomputes and overwrites this
+// authoritatively on write. See that function's comment for the full
+// reasoning; unlike every other auto-calc mirror in this file, it runs on
+// the already-RENDERED string (called right after icfRenderTemplate),
+// since it swaps which literal text appears rather than a value.
+function icfApplyFiberGlassTieRodThreading(template, values, rendered) {
+  const { placeholders, error } = icfParseTemplate(template);
+  if (error || !placeholders) return rendered;
+  const diaPh = placeholders.find(p => p.kind === 'number' && /^mm dia$/i.test((p.label || '').trim()));
+  const lPh = placeholders.find(p => p.kind === 'number' && /^mm l$/i.test((p.label || '').trim()));
+  const threadsPh = placeholders.find(p => p.kind === 'number' && /threads on both side$/i.test((p.label || '').trim()));
+  if (!diaPh || !lPh || !threadsPh) return rendered;
+  const lVal = parseFloat(values[lPh.index]);
+  if (isNaN(lVal) || lVal > 1000) return rendered;
+  const diaVal = values[diaPh.index] == null ? '' : String(values[diaPh.index]).trim();
+  if (!diaVal) return rendered;
+  return `${diaVal} mm Dia, ${lVal} mm L, with Full Threading`;
+}
+
 // ── Form builder — renders the fill-in inputs for one template into a
 // container element, wiring each input to call `onChange()` (a real
 // listener, not an inline-stringified handler — inline handlers run in
