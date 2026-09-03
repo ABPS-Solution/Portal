@@ -81,7 +81,7 @@ let ptlSelected = null;
 // every non-admin's Mark Done always meant.
 const ptlIsAdmin = () => localStorage.getItem("isUserAdminGlobal") === "true";
 const ptlAsOfInputHtml = (id, value) => ptlIsAdmin()
-  ? `<input type="date" id="ptl-asof-${id}" value="${value || ''}" title="Admin only — set/backdate this completion for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.74rem;" />`
+  ? `<input type="date" id="ptl-asof-${id}" value="${value || ''}" title="Admin only — set/backdate this completion for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.74rem; width:130px; box-sizing:border-box;" />`
   : "";
 const ptlReadAsOf = (id) => { const el = document.getElementById(`ptl-asof-${id}`); return el && el.value ? el.value : undefined; };
 
@@ -640,8 +640,8 @@ function ptlRenderLaneSteps(lane, c, canWrite) {
           <span style="display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; background:${done ? c : '#fff'}; border:2px solid ${late ? 'var(--warn)' : c};"></span>
           ${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.78rem;">(automatic)</span>' : ''}
         </td>
-        <td style="padding:7px 8px; font-size:0.8rem; color:var(--muted); font-family:monospace; text-align:center;">${ptlFmt(s.planned)}</td>
-        <td style="padding:7px 8px; font-size:0.8rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center;">${ptlFmt(currentTarget)}</td>
+        <td style="padding:7px 8px; font-size:0.88rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center;">${ptlFmt(s.planned)}</td>
+        <td style="padding:7px 8px; font-size:0.88rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center;">${ptlFmt(currentTarget)}</td>
         <td style="padding:7px 8px; text-align:center;">${canWrite && (s.terminal || !done) ? `<input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
               style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; max-width:150px; box-sizing:border-box;" />` : `<span style="color:var(--muted); font-size:0.8rem;">—</span>`}</td>
         <td style="padding:7px 8px; text-align:right; white-space:nowrap;">${actionCell}</td>
@@ -651,7 +651,7 @@ function ptlRenderLaneSteps(lane, c, canWrite) {
   return `
     <div style="overflow-x:auto;">
       <table style="width:100%; border-collapse:collapse; min-width:600px; table-layout:fixed;">
-        <colgroup><col style="width:auto;"><col style="width:120px;"><col style="width:120px;"><col style="width:150px;"><col style="width:${canWrite ? '210px' : '110px'};"></colgroup>
+        <colgroup><col style="width:150px;"><col style="width:120px;"><col style="width:120px;"><col style="width:150px;"><col style="width:${canWrite ? '190px' : '110px'};"></colgroup>
         <thead><tr style="border-bottom:2px solid var(--border);">
           <th style="padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:left;">Process Name</th>
           <th style="padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Initial Planning Date</th>
