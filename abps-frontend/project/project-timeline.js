@@ -643,16 +643,16 @@ function ptlRenderLaneSteps(lane, c, canWrite) {
     const colBorder = "border-left:1px solid var(--border);";
     return `
       <tr id="ptl-step-${lane.boqId}-${s.id}" style="border-bottom:1px solid var(--border);">
-        <td style="width:24%; padding:8px; font-size:0.85rem; font-weight:600; color:${late ? 'var(--warn)' : 'var(--text)'};">
-          <span style="display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; background:${done ? c : '#fff'}; border:2px solid ${late ? 'var(--warn)' : c};"></span>
+        <td style="width:24%; padding:5px 8px; font-size:0.85rem; font-weight:600; color:${late ? 'var(--warn)' : 'var(--text)'}; text-align:center;">
+          <span style="display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; background:${done ? c : '#fff'}; border:2px solid ${late ? 'var(--warn)' : c}; vertical-align:middle;"></span>
           ${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.78rem;">(automatic)</span>' : ''}
         </td>
-        <td style="width:13%; padding:8px; font-size:0.88rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(s.planned)}</td>
-        <td style="width:13%; padding:8px; font-size:0.88rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(currentTarget)}</td>
-        <td style="width:20%; padding:8px; text-align:center; ${colBorder}">${canWrite && (s.terminal || !done) ? `<input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
-              style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; max-width:150px; box-sizing:border-box;" />` : `<span style="color:var(--muted); font-size:0.8rem;">—</span>`}</td>
-        <td style="width:30%; padding:8px; text-align:right; ${colBorder}">
-          <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:6px;">${actionCell}</div>
+        <td style="width:13%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(s.planned)}</td>
+        <td style="width:13%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(currentTarget)}</td>
+        <td style="width:20%; padding:5px 8px; text-align:center; ${colBorder}">${canWrite && (s.terminal || !done) ? `<input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
+              style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; max-width:150px; box-sizing:border-box;" />` : `<span style="color:var(--muted); font-size:0.8rem;">—</span>`}</td>
+        <td style="width:30%; padding:5px 8px; text-align:center; ${colBorder}">
+          <div style="display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px;">${actionCell}</div>
         </td>
       </tr>`;
   }).join("");
@@ -662,11 +662,11 @@ function ptlRenderLaneSteps(lane, c, canWrite) {
     <div style="border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
       <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <thead><tr style="background:${c}14; border-bottom:1px solid var(--border);">
-          <th style="width:24%; padding:8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:left;">Process Name</th>
-          <th style="width:13%; padding:8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Initial Planning Date</th>
-          <th style="width:13%; padding:8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Current Target Date</th>
-          <th style="width:20%; padding:8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">${canWrite ? 'New Target Date' : ''}</th>
-          <th style="width:30%; padding:8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:right; ${colBorder}"></th>
+          <th style="width:24%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Process Name</th>
+          <th style="width:13%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Initial Planning Date</th>
+          <th style="width:13%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Current Target Date</th>
+          <th style="width:20%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">${canWrite ? 'New Target Date' : ''}</th>
+          <th style="width:30%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}"></th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
