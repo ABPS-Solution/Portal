@@ -92,7 +92,9 @@ function tvcRenderCard(v) {
   const peopleLine = (v.additionalPeople || []).length
     ? `<div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">With: ${v.additionalPeople.map(escapeHtml).join(", ")}</div>` : "";
   const serviceReportLine = v.serviceReportUrl
-    ? `<div style="font-size:0.8rem; margin-top:4px;">Service Report: <a href="${driveLink(v.serviceReportUrl)}" target="_blank" rel="noopener">${escapeHtml(v.serviceReportFileName || 'View')}</a></div>` : "";
+    ? `<div style="font-size:0.8rem; margin-top:4px;">Service Report: <a href="${driveLink(v.serviceReportUrl)}" target="_blank" rel="noopener">${escapeHtml(v.serviceReportFileName || 'View')}</a></div>`
+    : v.serviceReportNoReason
+      ? `<div style="font-size:0.8rem; margin-top:4px; color:var(--muted); font-style:italic;">No Service Report — ${escapeHtml(v.serviceReportNoReason)}</div>` : "";
 
   return `
     <div class="contact-summary-card-parent" id="tvc-card-${v.voucherId}">
