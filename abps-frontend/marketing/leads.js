@@ -505,15 +505,6 @@ function handleQualChange() {
   document.getElementById('vendor-fields').style.display = document.getElementById('q8').checked ? 'block' : 'none';
   document.getElementById('qualificationOther').style.display = document.getElementById('q9').checked ? 'block' : 'none';
 }
-function toggleDropdownNo(selectNode, inputId) {
-  const targetInput = document.getElementById(inputId);
-  if (selectNode.value === "No") {
-    targetInput.value = "No";
-  } else if (targetInput.value === "No") {
-    targetInput.value = "";
-  }
-}
-
 function collapseNewEntryDropdownFormExplicitly() {
   document.getElementById("step2-new-entry-dropdown").style.display = "none";
   document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
@@ -1659,26 +1650,6 @@ async function submitLead() {
 function updateSelectedDisplay() {
   const checked = Array.from(document.querySelectorAll('input[name="searchQual"]:checked')).map(i => i.value);
   document.getElementById("selected-quals-display").textContent = checked.length > 0 ? "Filtering for: " + checked.join(" and ") : "";
-}
-
-function handleOthersQualificationToggleDrawer(triggerNode) {
-  const drawerPanel = document.getElementById("custom-qualifications-sub-drawer");
-  const triggerLabel = triggerNode.nextElementSibling;
-  
-  if (triggerNode.checked) {
-     // Expand the sub-drawer panel and rotate arrow indicator indicator label element
-     drawerPanel.style.display = "block";
-     if(triggerLabel) triggerLabel.textContent = "Others ▴";
-  } else {
-     // Collapse the view drawer
-     drawerPanel.style.display = "none";
-     if(triggerLabel) triggerLabel.textContent = "Others ▾";
-     
-     // Wipe any active checkbox choices inside the hidden drawer to prevent confusion
-     const customCheckboxes = drawerPanel.querySelectorAll('input[name="searchQual"]');
-     customCheckboxes.forEach(cb => cb.checked = false);
-     updateSelectedDisplay();
-  }
 }
 
 async function triggerQualificationSearch() {
