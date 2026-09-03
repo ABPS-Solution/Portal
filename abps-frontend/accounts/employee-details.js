@@ -57,7 +57,7 @@ async function edInitEmployeeSection(ns) {
             ${TOUR_EXPENSE_TYPES.map(t => `<option value="${t}">${t}</option>`).join("")}
           </select>
           <input type="number" id="el-new-manager-limit" placeholder="Manager Daily Limit (₹)" min="0" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
-          <input type="number" id="el-new-staff-limit" placeholder="Staff Daily Limit (₹)" min="0" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
+          <input type="number" id="el-new-staff-limit" placeholder="Executive Daily Limit (₹)" min="0" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
         </div>
         <button class="nav-btn-styled" onclick="submitAddExpenseLimit()">Submit</button>
         <button class="nav-btn-styled" onclick="document.getElementById('el-add-form').style.display='none';">Cancel</button>
@@ -78,7 +78,7 @@ async function edInitEmployeeSection(ns) {
           <option value="">Department *</option>${EMP_DEPARTMENT_OPTIONS.map(d => `<option value="${d}">${d}</option>`).join("")}
         </select>
         <select id="${ns}-new-position" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px; flex:1; min-width:120px;">
-          <option value="Staff">Staff</option><option value="Manager">Manager</option>
+          <option value="Executive">Executive</option><option value="Manager">Manager</option>
         </select>
       </div>
       <button class="nav-btn-styled" onclick="edSubmitAddEmployee('${ns}')">Submit</button>
@@ -100,10 +100,28 @@ function edToggleAddForm(ns) {
   f.style.display = f.style.display === "none" ? "block" : "none";
 }
 
-function edStatusPill(label, status) {
+// onclickCall — passed only for the editable (Travel Ticket) screen;
+// Tour Expense Tracker's and Daily Cash/UPI/Online's own screens stay
+// pure display, no way to flip status from there (view-only, 3 Sep 2026).
+function edStatusPill(label, status, onclickCall) {
   const active = status === 'Active';
-  return `<span style="display:inline-block; padding:2px 8px; border-radius:10px; font-size:0.72rem; font-weight:700;
+  const clickable = !!onclickCall;
+  return `<span ${clickable ? `onclick="${onclickCall}" title="Click to ${active ? 'deactivate' : 'activate'}"` : ''}
+        style="display:inline-block; padding:2px 8px; border-radius:10px; font-size:0.72rem; font-weight:700; ${clickable ? 'cursor:pointer;' : ''}
                background:${active ? '#dcfce7' : '#fee2e2'}; color:${active ? '#15803d' : '#b91c1c'};">${label}: ${status}</span>`;
+}
+
+async function edToggleModuleStatus(employeeId, module, currentStatus, ns) {
+  const cfg = EMP_SCREEN_CONFIG[ns];
+  const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+  const action = module === 'tour' ? 'setTourEmployeeStatus' : 'setCashExpenseEmployeeStatus';
+  showBlockingOverlay("Updating status...");
+  try {
+    const data = await acFetch(action, { employeeId, status: newStatus });
+    hideBlockingOverlay();
+    if (data.success) edLoadEmployeeDetailsTable(ns);
+    else cfg.feedback(data.error, "error");
+  } catch (e) { hideBlockingOverlay(); cfg.feedback("Network error: " + e.message, "error"); }
 }
 
 // Same bordered/wrapping table shape as voucher-search.js's
@@ -136,7 +154,7 @@ async function edLoadEmployeeDetailsTable(ns) {
         : escapeHtml(e.departmentName || '—');
       const positionCell = cfg.editable
         ? `<select class="${ns}-f-position" style="width:100%; padding:5px; border:1px solid var(--border); border-radius:4px;">
-             <option value="Staff" ${e.positionType !== 'Manager' ? 'selected' : ''}>Staff</option>
+             <option value="Executive" ${e.positionType !== 'Manager' ? 'selected' : ''}>Executive</option>
              <option value="Manager" ${e.positionType === 'Manager' ? 'selected' : ''}>Manager</option>
            </select>`
         : escapeHtml(e.positionType || '—');
@@ -152,9 +170,9 @@ async function edLoadEmployeeDetailsTable(ns) {
         <td style="${cell} ${cb}">${deptCell}</td>
         <td style="${cell} ${cb}">${positionCell}</td>
         <td style="${cell} ${cb}; font-weight:700;">${formatINRComma(e.balance)}</td>
-        <td style="${cell} ${cb}">${edStatusPill('Tour', e.status)}</td>
+        <td style="${cell} ${cb}">${edStatusPill('Tour', e.status, cfg.editable ? `edToggleModuleStatus(${e.employeeId}, 'tour', '${e.status}', '${ns}')` : null)}</td>
         <td style="${cell} ${cb}; font-weight:700;">${formatINRComma(e.cashBalance)}</td>
-        <td style="${cell} ${cb}">${edStatusPill('Daily', e.cashStatus)}</td>
+        <td style="${cell} ${cb}">${edStatusPill('Daily', e.cashStatus, cfg.editable ? `edToggleModuleStatus(${e.employeeId}, 'cash', '${e.cashStatus}', '${ns}')` : null)}</td>
         ${actionsCell}
       </tr>`;
     }).join("");
@@ -189,7 +207,7 @@ async function edSubmitAddEmployee(ns) {
       document.getElementById(`${ns}-add-form`).style.display = "none";
       [`${ns}-new-name`, `${ns}-new-empcode`].forEach(id => document.getElementById(id).value = "");
       document.getElementById(`${ns}-new-dept`).value = "";
-      document.getElementById(`${ns}-new-position`).value = "Staff";
+      document.getElementById(`${ns}-new-position`).value = "Executive";
       edLoadEmployeeDetailsTable(ns);
       cfg.success("Employee added — active in Tour Expense, Daily Cash/UPI/Online Expenses and Travel Ticket / Hotel Booking.", "Add Another Employee", cfg.afterAdd);
     } else {
@@ -232,7 +250,7 @@ async function edSubmitDeleteEmployee(employeeId, employeeName, ns) {
 
 // ── Position-Based Daily Expense Limits (migration 167) — Tour Expense
 // only, unaffected by the shared-employee-list change above. ───────────
-// One row per Expense Type, with Manager/Staff limits side by side —
+// One row per Expense Type, with Manager/Executive limits side by side —
 // the backend still stores one row per (position, expense_type) pair
 // (upsertTourExpenseLimit/deleteTourExpenseLimit), so a single Save or
 // Delete here just fires that route once per position that actually has
@@ -281,7 +299,7 @@ async function loadExpenseLimitsTable() {
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem; max-width:640px;">
         <thead><tr style="background:var(--highlight-bg); text-align:left;">
           <th style="padding:8px;">Expense Type</th><th style="padding:8px;">Manager Daily Limit (₹)</th>
-          <th style="padding:8px;">Staff Daily Limit (₹)</th><th style="padding:8px;">Actions</th>
+          <th style="padding:8px;">Executive Daily Limit (₹)</th><th style="padding:8px;">Actions</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
@@ -292,7 +310,7 @@ async function submitAddExpenseLimit() {
   const expenseType = document.getElementById("el-new-type").value;
   const managerLimit = document.getElementById("el-new-manager-limit").value;
   const staffLimit = document.getElementById("el-new-staff-limit").value;
-  if (!managerLimit && !staffLimit) return showTourFeedback("Enter at least one of Manager or Staff Daily Limit.", "error");
+  if (!managerLimit && !staffLimit) return showTourFeedback("Enter at least one of Manager or Executive Daily Limit.", "error");
   if ((managerLimit && Number(managerLimit) <= 0) || (staffLimit && Number(staffLimit) <= 0)) {
     return showTourFeedback("Daily Limit must be a positive number.", "error");
   }
@@ -304,7 +322,7 @@ async function submitAddExpenseLimit() {
       if (!d.success) { hideBlockingOverlay(); return showTourFeedback(d.error, "error"); }
     }
     if (staffLimit) {
-      const d = await acFetch("upsertTourExpenseLimit", { positionType: "Staff", expenseType, dailyLimit: staffLimit });
+      const d = await acFetch("upsertTourExpenseLimit", { positionType: "Executive", expenseType, dailyLimit: staffLimit });
       if (!d.success) { hideBlockingOverlay(); return showTourFeedback(d.error, "error"); }
     }
     hideBlockingOverlay();
@@ -330,7 +348,7 @@ async function submitUpdateExpenseLimit(expenseType) {
       if (!d.success) { hideBlockingOverlay(); return showTourFeedback(d.error, "error"); }
     }
     if (staffLimit) {
-      const d = await acFetch("upsertTourExpenseLimit", { positionType: "Staff", expenseType, dailyLimit: staffLimit });
+      const d = await acFetch("upsertTourExpenseLimit", { positionType: "Executive", expenseType, dailyLimit: staffLimit });
       if (!d.success) { hideBlockingOverlay(); return showTourFeedback(d.error, "error"); }
     }
     hideBlockingOverlay();
@@ -339,7 +357,7 @@ async function submitUpdateExpenseLimit(expenseType) {
 }
 
 async function submitDeleteExpenseLimit(expenseType) {
-  if (!confirm(`Delete the ${expenseType} daily limit (both Manager and Staff)?`)) return;
+  if (!confirm(`Delete the ${expenseType} daily limit (both Manager and Executive)?`)) return;
   const group = elLimitsData.filter(l => l.expenseType === expenseType);
   showBlockingOverlay("Deleting...");
   try {
