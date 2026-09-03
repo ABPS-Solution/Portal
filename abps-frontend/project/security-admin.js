@@ -688,6 +688,7 @@ function renderRegisteredDevicesList(devices) {
       <td style="padding:8px;">${formatDateDMY(d.created_at)}</td>
       <td style="padding:8px;">${d.last_used_at ? formatDateDMY(d.last_used_at) : '—'}</td>
       <td style="padding:8px; white-space:nowrap;">
+        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="openAddDevicePersonModal(${d.device_id})">Add Person</button>
         <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="openDeviceRestrictionModal(${d.device_id})">Restrict Access</button>
         <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitDeleteRegisteredDevice(${d.device_id})">Delete</button>
       </td>
@@ -778,6 +779,120 @@ async function submitDeleteRegisteredDevice(deviceId) {
     else showBOQBanner("sa-feedback", data.error || "Failed to delete.", "error");
   } catch (e) {
     showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+  }
+}
+
+// Add Person — lets multiple people share ONE registered device (one PC's
+// abpsPcDeviceSecret, one admin_db.registered_devices row) instead of each
+// enrollment code minting its own separate device row, which is what the
+// self-service "Generate Enrollment Code" flow does today (and which
+// silently locks out whoever enrolled first, since the browser only ever
+// holds one device secret — the second enrollment overwrites it). This
+// adds a person directly to an EXISTING device's allowlist server-side, no
+// re-enrollment, no new device row, no new secret — everyone already
+// enrolled here keeps their own PIN and just picks their own name at
+// login. Backend: setRegisteredDeviceUsers (routes/security.js), which
+// REPLACES the whole allowlist — this always resubmits the full set built
+// from the modal's own tracked state, never a partial one.
+function openAddDevicePersonModal(deviceId) {
+  const device = saRegisteredDevicesCache.find(d => d.device_id === deviceId);
+  if (!device) return;
+  const existing = document.getElementById("sa-device-addperson-modal");
+  if (existing) existing.remove();
+  const modal = document.createElement("div");
+  modal.id = "sa-device-addperson-modal";
+  modal._deviceId = deviceId;
+  modal._allowedKeys = [...(device.allowed_person_keys || [])];
+  modal._allowedNames = [...(device.allowed_users || [])];
+  modal.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;";
+  modal.innerHTML = `<div style="background:#fff; border-radius:12px; width:100%; max-width:420px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
+      <div style="font-weight:800; font-size:1rem; color:var(--brand);">Manage People — ${escapeHtml(device.device_label)}</div>
+      <div style="font-size:0.78rem; color:var(--muted); margin-top:4px;">Everyone below can PIN-login on this device with their own PIN. Add or remove people here — no re-enrollment or new code needed.</div>
+    </div>
+    <div style="padding:14px 20px; overflow-y:auto; flex:1;">
+      <div id="sa-device-addperson-current" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;"></div>
+      <label class="field-label" style="margin-top:0;">Add a person</label>
+      <div style="position:relative;">
+        <input type="text" id="sa-device-addperson-search" placeholder="Search by name..." autocomplete="off"
+          oninput="handleAddDevicePersonSearch(this.value)"
+          style="width:100%; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box; font-size:0.85rem;" />
+        <div id="sa-device-addperson-results" style="display:none; position:absolute; z-index:10; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); width:100%; max-height:220px; overflow-y:auto;"></div>
+      </div>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid var(--border); background:#f8fafc;">
+      <button onclick="document.getElementById('sa-device-addperson-modal').remove()" style="padding:9px 18px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600;">Close</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  saRenderDeviceAddPersonChips(modal);
+}
+
+function saRenderDeviceAddPersonChips(modal) {
+  const mount = document.getElementById("sa-device-addperson-current");
+  if (!mount) return;
+  mount.innerHTML = modal._allowedKeys.map((k, i) => `
+    <span style="display:inline-flex; align-items:center; gap:5px; background:var(--highlight-bg); color:var(--brand); font-weight:600; font-size:0.8rem; padding:5px 9px; border-radius:14px; border:1px solid var(--border);">
+      ${escapeHtml(modal._allowedNames[i] || k)}
+      <span onclick="saDeviceAddPersonRemove('${k}')" style="cursor:pointer; font-weight:800; color:#b91c1c;" title="Remove">✕</span>
+    </span>`).join('') || `<span style="color:var(--muted); font-size:0.82rem;">No one allowed on this device yet.</span>`;
+}
+
+function handleAddDevicePersonSearch(rawQuery) {
+  const modal = document.getElementById("sa-device-addperson-modal");
+  const box = document.getElementById("sa-device-addperson-results");
+  if (!modal || !box) return;
+  const q = (rawQuery || "").toLowerCase().trim();
+  if (!q) { box.style.display = "none"; return; }
+  const already = new Set(modal._allowedKeys);
+  const matches = saAllUsers.filter(u => !already.has(u.personKey) &&
+    `${u.first_name || ''} ${u.last_name || ''}`.toLowerCase().includes(q)).slice(0, 8);
+  if (matches.length === 0) {
+    box.style.display = "block";
+    box.innerHTML = `<div style="padding:10px; font-size:0.82rem; color:var(--muted);">No matching person.</div>`;
+    return;
+  }
+  box.style.display = "block";
+  box.innerHTML = matches.map(u => `
+    <div onmousedown="event.preventDefault();" onclick="saDeviceAddPersonAdd('${u.personKey}', \`${(`${u.first_name || ''} ${u.last_name || ''}`).replace(/`/g, "'")}\`)"
+      style="padding:9px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.85rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      <strong>${escapeHtml(u.first_name || '')} ${escapeHtml(u.last_name || '')}</strong>
+      <span style="color:var(--muted); font-size:0.78rem;"> — ${escapeHtml(u.department || 'No department')}</span>
+    </div>`).join('');
+}
+
+async function saDeviceAddPersonAdd(personKey, displayNameStr) {
+  const modal = document.getElementById("sa-device-addperson-modal");
+  if (!modal || modal._allowedKeys.includes(personKey)) return;
+  modal._allowedKeys.push(personKey);
+  modal._allowedNames.push(displayNameStr);
+  await saDeviceAddPersonCommit(modal);
+}
+
+async function saDeviceAddPersonRemove(personKey) {
+  const modal = document.getElementById("sa-device-addperson-modal");
+  if (!modal) return;
+  const idx = modal._allowedKeys.indexOf(personKey);
+  if (idx === -1) return;
+  if (!confirm(`Remove ${modal._allowedNames[idx]} from this device? They will no longer be able to PIN-login here.`)) return;
+  modal._allowedKeys.splice(idx, 1);
+  modal._allowedNames.splice(idx, 1);
+  await saDeviceAddPersonCommit(modal);
+}
+
+async function saDeviceAddPersonCommit(modal) {
+  try {
+    const data = await apFetch({ action: "setRegisteredDeviceUsers", deviceId: modal._deviceId, allowedPersonKeys: modal._allowedKeys });
+    if (!data.success) { alert(data.error || "Could not update this device's allowed people."); return; }
+    const searchInput = document.getElementById("sa-device-addperson-search");
+    const resultsBox = document.getElementById("sa-device-addperson-results");
+    if (searchInput) searchInput.value = "";
+    if (resultsBox) resultsBox.style.display = "none";
+    saRenderDeviceAddPersonChips(modal);
+    loadRegisteredDevices(); // background refresh of the underlying table; the modal itself renders from its own tracked state above
+  } catch (e) {
+    alert("Connection error: " + e.message);
   }
 }
 
