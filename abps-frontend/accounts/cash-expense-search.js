@@ -144,11 +144,12 @@ async function runCashExpenseSearch() {
     const cell = "padding:8px 6px; font-size:0.85rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;";
     const th = "padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); vertical-align:middle;";
     const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
-    // Deletable if still Open (never closed) or Online (always net-zero,
-    // never touches the pool) — same eligibility deleteCashExpenseVoucher
-    // re-checks server-side. An already-closed Cash/UPI voucher isn't
-    // deletable here; correct it via the Actual Amount input instead.
-    const canDelete = (x) => isAdminUser && (x.isOpen || x.paymentMode === 'Online');
+    // Deletable only while still Open (never closed), for every payment
+    // mode including Online (3 Sep 2026) — same eligibility
+    // deleteCashExpenseVoucher re-checks server-side. An already-closed
+    // voucher isn't deletable here; correct it via the Actual Amount
+    // input instead.
+    const canDelete = (x) => isAdminUser && x.isOpen;
     const rows = data.expenses.map(x => {
       const typeLabel = x.expenseType === 'Food & Snacks' && x.subType ? `Food & Snacks (${escapeHtml(x.subType)})`
         : x.expenseType === 'Others' && x.otherText ? `Others (${escapeHtml(x.otherText)})` : escapeHtml(x.expenseType);

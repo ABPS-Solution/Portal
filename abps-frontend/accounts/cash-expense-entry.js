@@ -129,11 +129,11 @@ async function submitCashExpense() {
     hideBlockingOverlay();
     if (data.success) {
       const balanceLine = data.paymentMode === "Online"
-        ? "Online — created already closed, no pool balance affected."
+        ? "Online — no pool balance affected."
         : `New ${data.paymentMode} balance: <strong style="font-size:1.05rem;">${formatINRComma(data.newBalance)}</strong>`;
       document.getElementById("ce-panel-expenses").innerHTML = `
         <div style="background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:20px; border-radius:var(--radius); max-width:520px;">
-          <strong>Advance recorded${data.employeeName ? ' for ' + escapeHtml(data.employeeName) : ''}.</strong> ${data.paymentMode === "Online" ? "" : "Close it out later in Daily Expense Vouchers once the actual spend is known."}<br/>
+          <strong>Advance recorded${data.employeeName ? ' for ' + escapeHtml(data.employeeName) : ''}.</strong> Close it out later in Daily Expense Vouchers once the actual spend is known.<br/>
           ${balanceLine}
           <div style="margin-top:12px;">
             <button class="nav-btn-styled" onclick="initializeCashExpenseEntryPanel()">+ Give New Advance</button>

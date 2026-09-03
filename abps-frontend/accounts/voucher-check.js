@@ -33,11 +33,19 @@ function tvcRenderCard(v) {
   const amtCell = "padding:4px 6px; line-height:1.25; font-size:0.95rem; font-weight:700; color:#000; text-align:center; vertical-align:middle;";
   const rows = lines.map(l => {
     const bills = (l.bills && l.bills.length > 0) ? l.bills : (l.billUrl ? [{ fileName: l.billFileName, url: l.billUrl }] : []);
-    const billCell = bills.length > 0
+    const billLinksHtml = bills.length > 0
       ? bills.map(b => `<a href="${driveLink(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.fileName || 'View')}</a>`).join("<br>")
       : l.noBillReason
         ? `<span style="color:var(--muted); font-style:italic;">Reason: ${escapeHtml(l.noBillReason)}</span>`
         : `<span style="color:var(--muted);">— no bill required —</span>`;
+    // Lets Accounts attach a bill it obtained directly from the employee
+    // (forgotten upload, wrong file) without leaving the checking queue —
+    // see routes/accounts.js's addBillToTourVoucherLine.
+    const billCell = `
+      <div id="tvc-bills-${l.lineId}">${billLinksHtml}</div>
+      <input type="file" id="tvc-bill-file-${l.lineId}" accept="image/*,application/pdf" style="display:none;" onchange="tvcUploadBillForLine(${l.lineId})">
+      <button type="button" style="margin-top:4px; font-size:0.7rem; padding:2px 6px; border:1px solid var(--border); border-radius:4px; background:#fff; cursor:pointer;"
+              onclick="document.getElementById('tvc-bill-file-${l.lineId}').click()">+ Upload Bill</button>`;
     const typeLabel = l.expenseType === 'Local Conveyance' && l.conveyanceMode ? `Local Conveyance (${escapeHtml(l.conveyanceMode)})`
       : l.expenseType === 'Others' && l.otherText ? `Others (${escapeHtml(l.otherText)})` : escapeHtml(l.expenseType);
     return `<tr style="border-bottom:2px solid var(--border);" data-line-id="${l.lineId}">
@@ -220,6 +228,32 @@ function tvcCheckOverLimit(lineId) {
   const cap = Number(input.dataset.cap);
   const val = Number(input.value) || 0;
   reasonBox.style.display = val > cap ? "block" : "none";
+}
+
+async function tvcUploadBillForLine(lineId) {
+  const input = document.getElementById(`tvc-bill-file-${lineId}`);
+  const file = input?.files?.[0];
+  if (!file) return;
+
+  showBlockingOverlay("Uploading bill...");
+  try {
+    const base64Data = await new Promise(res => {
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(",")[1]);
+      r.readAsDataURL(file);
+    });
+    const data = await acFetch("addBillToTourVoucherLine", {
+      lineId, bill: { fileName: file.name, mimeType: file.type, base64Data },
+    });
+    hideBlockingOverlay();
+    input.value = "";
+    if (data.success) {
+      document.getElementById(`tvc-bills-${lineId}`).innerHTML =
+        data.bills.map(b => `<a href="${driveLink(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.fileName || 'View')}</a>`).join("<br>");
+    } else {
+      showTourFeedback(data.error, "error");
+    }
+  } catch (e) { hideBlockingOverlay(); showTourFeedback("Network error: " + e.message, "error"); }
 }
 
 function tvcRecalcTotals(voucherId) {

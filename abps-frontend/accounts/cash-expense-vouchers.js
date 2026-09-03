@@ -44,7 +44,7 @@ function cevRender() {
 
 function cevRenderCard(v) {
   const expanded = cevExpandedId === v.expenseId;
-  const modeColor = v.paymentMode === 'Cash' ? '#b45309' : '#0369a1';
+  const modeColor = v.paymentMode === 'Cash' ? '#b45309' : v.paymentMode === 'UPI' ? '#0369a1' : '#7c3aed';
   return `
     <div style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:12px; overflow:hidden;">
       <div onclick="cevToggle(${v.expenseId})" style="padding:11px 14px; background:var(--highlight-bg); display:flex; align-items:center; flex-wrap:wrap; gap:10px; cursor:pointer;">
@@ -78,7 +78,7 @@ function cevRenderCard(v) {
           <label class="field-label">Actual Amount Spent *</label>
           <input type="number" id="cev-actual-${v.expenseId}" min="0" placeholder="e.g. ${trimNum(v.advanceAmount)}"
             style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
-          <div style="font-size:0.76rem; color:var(--muted); margin-top:5px;">Less than the advance comes back into the balance; more is pulled from it.</div>
+          <div style="font-size:0.76rem; color:var(--muted); margin-top:5px;">${v.paymentMode === 'Online' ? 'Online — no pool balance is affected either way.' : 'Less than the advance comes back into the balance; more is pulled from it.'}</div>
           <button class="nav-btn-styled" style="margin-top:10px;" onclick="cevCloseVoucher(${v.expenseId})">Submit &amp; Close Voucher</button>
         </div>
       </div>` : ''}
