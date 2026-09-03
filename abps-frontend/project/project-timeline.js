@@ -500,6 +500,22 @@ function ptlIsStage3Done() {
     return n && (!!n.actual || n.done === true);
   });
 }
+// ptlCanWriteLane — mirrors routes/timeline.js's getRequesterProductionRole
+// write-gate EXACTLY ("own department, or admin, or Project"), using the
+// server-authoritative isAdmin/department/productionSubDept values
+// applyServerRoleFlags refreshes on every page load (shared/apFetch.js) —
+// NOT the legacy isUserAdminGlobal heuristic alone, which is what let a
+// user moved out of the Admin department keep seeing every write control
+// here until a fresh login. This only controls what's SHOWN — the server
+// route re-checks the identical rule on every write, so this can never be
+// the only thing standing between a wrong department and a real edit.
+function ptlCanWriteLane(lane) {
+  if (localStorage.getItem("isUserAdminGlobal") === "true") return true;
+  const dept = localStorage.getItem("userDepartment") || "";
+  if (dept === "Project") return true;
+  if (dept === "Production" && (localStorage.getItem("userProductionSubDept") || "") === lane.ownerDept) return true;
+  return false;
+}
 const PTL_LANE_COLOR = { Reactor: '#b45309', Capacitor: '#047857', Panel: '#c2410c' };
 let ptlExpandedLanes = new Set();
 
@@ -538,30 +554,36 @@ function ptlRenderLane(lane) {
         <div>
           <span style="display:inline-block; width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:6px solid ${c}; margin-right:8px; transform:rotate(${expanded ? 90 : 0}deg); transition:transform .15s;"></span>
           <span style="font-weight:800; color:${c};">${escapeHtml(lane.name)}</span>
-          <span style="color:var(--muted); font-size:0.82rem;"> — ${escapeHtml(title)}</span>
+          <span style="color:var(--text); font-size:0.82rem;"> — ${escapeHtml(title)}</span>
           <span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:${c}; margin-left:6px;">${escapeHtml(lane.ownerDept)} Production</span>
         </div>
-        <span style="font-size:0.72rem; font-weight:700; font-family:monospace; color:${c};">${escapeHtml(ptlLaneStageLabel(lane))}</span>
+        <span style="font-size:0.88rem; font-weight:700; font-family:monospace; color:${c};">${escapeHtml(ptlLaneStageLabel(lane))}</span>
       </div>
       ${expanded ? `<div style="padding:12px 14px;">
-        ${lane.planInitialized ? ptlRenderLaneSteps(lane, c) : ptlRenderLaneInitialPlanForm(lane)}
+        ${lane.planInitialized ? ptlRenderLaneSteps(lane, c, ptlCanWriteLane(lane)) : ptlRenderLaneInitialPlanForm(lane)}
       </div>` : ''}
     </div>`;
 }
 
 function ptlRenderLaneInitialPlanForm(lane) {
-  // Locked for anyone but an admin until Stage 3 — Pre Production is
-  // fully done — the form still shows (so Production can see what's
-  // coming), it just can't take values yet. Server-side
-  // submitInitialProductPlan is the real gate; this only avoids letting a
-  // non-admin fill the whole thing out only to get refused on Submit.
-  const locked = !ptlIsAdmin() && !ptlIsStage3Done();
+  // Two independent reasons this can be locked: (1) view-only — the viewer
+  // isn't this lane's own Production sub-department, Project, or admin
+  // (ptlCanWriteLane, mirrors the server's real write-gate exactly); (2)
+  // Stage 3 — Pre Production isn't fully done yet (admin bypass only). The
+  // form still shows either way (so Production can see what's coming), it
+  // just can't take values. Server-side submitInitialProductPlan enforces
+  // both independently — this only avoids letting someone fill the whole
+  // thing out only to get refused on Submit.
+  const canWrite = ptlCanWriteLane(lane);
+  const stageLocked = !ptlIsAdmin() && !ptlIsStage3Done();
+  const locked = !canWrite || stageLocked;
   const dis = locked ? 'disabled' : '';
   return `
     <div style="font-size:0.82rem; color:var(--muted); margin-bottom:10px;">
       No plan submitted yet. ${escapeHtml(lane.ownerDept)} Production enters a planned date for every step below, including Packing and Adding to FG — Material Issue Tickets for this product's Job Cards stay blocked until then. Only its completion is automatic; the planned/target date is entered like any other step.
     </div>
-    ${locked ? `<div style="font-size:0.8rem; color:#92400e; background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius); padding:8px 12px; margin-bottom:10px;">Locked until Stage 3 — Pre Production is fully done.</div>` : ''}
+    ${!canWrite ? `<div style="font-size:0.8rem; color:var(--muted); background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); padding:8px 12px; margin-bottom:10px;">View only — only ${escapeHtml(lane.ownerDept)} Production or Project can enter this plan.</div>`
+      : (stageLocked ? `<div style="font-size:0.8rem; color:#92400e; background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius); padding:8px 12px; margin-bottom:10px;">Locked until Stage 3 — Pre Production is fully done.</div>` : '')}
     <div style="display:grid; grid-template-columns:minmax(160px,260px) minmax(180px,220px); gap:4px 16px; align-items:center;">
       <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); padding-bottom:4px; border-bottom:1px solid var(--border);">Production Stage</div>
       <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); padding-bottom:4px; border-bottom:1px solid var(--border);">Production Planning Date</div>
@@ -582,8 +604,11 @@ function ptlRenderLaneInitialPlanForm(lane) {
 // same updateProductPlanStepTarget call as before) / Mark Done or Mark
 // Undone. Mark Undone is NOT admin-only — it's everyday mistake
 // correction (see unmarkProductPlanStepDone's own header comment), not a
-// testing override.
-function ptlRenderLaneSteps(lane, c) {
+// testing override. `canWrite` (ptlCanWriteLane) additionally decides
+// whether the New Target Date / Mark Done-Undone controls render at all —
+// a viewer outside this lane's own department gets the same table as pure
+// read-only display, no inputs, no buttons.
+function ptlRenderLaneSteps(lane, c, canWrite) {
   const today = ptlToday();
   const rows = lane.steps.map(s => {
     const done = !!s.actual;
@@ -594,6 +619,10 @@ function ptlRenderLaneSteps(lane, c) {
     let actionCell;
     if (s.terminal) {
       actionCell = `<span style="font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(s.chip || '')}</span>`;
+    } else if (!canWrite) {
+      actionCell = done
+        ? `<span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${ptlFmt(s.actual)}</span>`
+        : `<span style="font-size:0.78rem; color:var(--muted);">View only</span>`;
     } else if (done) {
       actionCell = `
         <span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${ptlFmt(s.actual)}</span>
@@ -609,12 +638,12 @@ function ptlRenderLaneSteps(lane, c) {
       <tr id="ptl-step-${lane.boqId}-${s.id}" style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:7px 8px; font-size:0.85rem; font-weight:600; color:${late ? 'var(--warn)' : 'var(--text)'};">
           <span style="display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; background:${done ? c : '#fff'}; border:2px solid ${late ? 'var(--warn)' : c};"></span>
-          ${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.72rem;">(automatic)</span>' : ''}
+          ${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.78rem;">(automatic)</span>' : ''}
         </td>
-        <td style="padding:7px 8px; font-size:0.68rem; color:var(--muted); font-family:monospace; text-align:center;">${ptlFmt(s.planned)}</td>
-        <td style="padding:7px 8px; font-size:0.68rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center;">${ptlFmt(currentTarget)}</td>
-        <td style="padding:7px 8px; text-align:center;">${s.terminal || !done ? `<input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
-              style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:118px; box-sizing:border-box;" />` : `<span style="color:var(--muted); font-size:0.78rem;">—</span>`}</td>
+        <td style="padding:7px 8px; font-size:0.8rem; color:var(--muted); font-family:monospace; text-align:center;">${ptlFmt(s.planned)}</td>
+        <td style="padding:7px 8px; font-size:0.8rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center;">${ptlFmt(currentTarget)}</td>
+        <td style="padding:7px 8px; text-align:center;">${canWrite && (s.terminal || !done) ? `<input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
+              style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; max-width:150px; box-sizing:border-box;" />` : `<span style="color:var(--muted); font-size:0.8rem;">—</span>`}</td>
         <td style="padding:7px 8px; text-align:right; white-space:nowrap;">${actionCell}</td>
       </tr>`;
   }).join("");
@@ -622,13 +651,13 @@ function ptlRenderLaneSteps(lane, c) {
   return `
     <div style="overflow-x:auto;">
       <table style="width:100%; border-collapse:collapse; min-width:600px; table-layout:fixed;">
-        <colgroup><col style="width:auto;"><col style="width:110px;"><col style="width:110px;"><col style="width:130px;"><col style="width:auto;"></colgroup>
+        <colgroup><col style="width:auto;"><col style="width:120px;"><col style="width:120px;"><col style="width:150px;"><col style="width:${canWrite ? '210px' : '110px'};"></colgroup>
         <thead><tr style="border-bottom:2px solid var(--border);">
-          <th style="padding:6px 8px; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:left;">Process Name</th>
-          <th style="padding:6px 8px; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Initial Planning Date</th>
-          <th style="padding:6px 8px; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Current Target Date</th>
-          <th style="padding:6px 8px; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">New Target Date</th>
-          <th style="padding:6px 8px; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:right;"></th>
+          <th style="padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:left;">Process Name</th>
+          <th style="padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Initial Planning Date</th>
+          <th style="padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Current Target Date</th>
+          <th style="padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">${canWrite ? 'New Target Date' : ''}</th>
+          <th style="padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:right;"></th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>

@@ -57,6 +57,41 @@ function driveLink(url) {
   return url;
 }
 
+// applyServerRoleFlags — writes the AUTHORITATIVE, server-computed
+// isAdmin/department/productionSubDept from a getSessionPermissions
+// response into localStorage. `isUserAdminGlobal` used to be set ONLY at
+// login time from a client-side heuristic (whether the login screen's
+// department dropdown text contained "admin") and never corrected again
+// for the rest of that browser session — so an account moved OUT of the
+// Admin department (e.g. reassigned to Production/Reactor) kept showing
+// every admin-only control (Stage 4's "Update (admin)" backdate box among
+// them) until a fresh login, because nothing ever re-derived it from the
+// real perm_admin column. This is called every time getSessionPermissions
+// is (window.onload, on every page load — see the D1 comment above), so
+// it self-corrects on the next reload, same freshness guarantee D1
+// already established for permissions generally.
+function applyServerRoleFlags(permData) {
+  localStorage.setItem("isUserAdminGlobal", permData.isAdmin ? "true" : "false");
+  localStorage.setItem("userDepartment", permData.department || "");
+  localStorage.setItem("userProductionSubDept", permData.productionSubDept || "");
+}
+
+// refreshServerRoleFlags — same as applyServerRoleFlags, but fetches its
+// own getSessionPermissions first. Used right after login, where the
+// login response itself doesn't carry department/productionSubDept (only
+// getSessionPermissions does) — fire-and-forget, non-blocking, so it never
+// delays showAppView(); until it resolves, isUserAdminGlobal keeps
+// whatever completeSuccessfulLogin's own login-time heuristic set (and
+// userDepartment/userProductionSubDept are simply unset, which every
+// consumer must treat as "no elevated access" — see e.g.
+// project-timeline.js's ptlCanWriteLane).
+async function refreshServerRoleFlags() {
+  try {
+    const data = await apFetch({ action: "getSessionPermissions" });
+    if (data.success) applyServerRoleFlags(data);
+  } catch (e) { /* best-effort — next page load's D1 refresh will catch up */ }
+}
+
 // ── File-token click handler (driveFile proxy auth) ─────────────────────
 // Mints a short-lived signed token (lib/fileToken.js, ~2min TTL) on demand
 // and appends it to the clicked link's href, then opens it — rather than
@@ -209,6 +244,7 @@ window.onload = async function() {
         userPermissions = permData.permissions;
         // Refresh localStorage with the server's authoritative copy
         localStorage.setItem("userPermissions", JSON.stringify(userPermissions));
+        applyServerRoleFlags(permData);
         showAppView();
       } else {
         clearAppLocalStorageKeepingDeviceKeys();
@@ -295,6 +331,12 @@ function completeSuccessfulLogin(data, activeOperatorDisplayName, isUserAdminGlo
   appActiveOperatorIdentityString = activeOperatorDisplayName;
   userPermissions = data.permissions;
   showAppView();
+  // Corrects isUserAdminGlobal (set above from a client-side heuristic) to
+  // the real perm_admin value, and populates userDepartment/
+  // userProductionSubDept for the first time this session — see
+  // refreshServerRoleFlags's own comment. Fire-and-forget, after
+  // showAppView() so it never delays login.
+  refreshServerRoleFlags();
 }
 
 async function handleGooglePlatformCredentialResponse(response) {
