@@ -963,8 +963,9 @@
 
     <div id="canvas-module-store-live-stock" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
       <div style="display:flex; gap:10px; margin-bottom:16px;">
-        <button class="nav-btn-styled" id="rm-toggle-live" onclick="switchStoreLedgerView('rm', 'live')" style="flex:1; padding:9px; background:var(--accent);">Live Store Stock</button>
-        <button class="nav-btn-styled" id="rm-toggle-ledger" onclick="switchStoreLedgerView('rm', 'ledger')" style="flex:1; padding:9px; background:#718096;">Store Ledger</button>
+        <button class="nav-btn-styled" id="rm-toggle-live" onclick="switchRMStockView('live')" style="flex:1; padding:9px; background:var(--accent);">Live Store Stock</button>
+        <button class="nav-btn-styled" id="rm-toggle-ledger" onclick="switchRMStockView('ledger')" style="flex:1; padding:9px; background:#718096;">Store Ledger</button>
+        <button class="nav-btn-styled" id="rm-toggle-variance" onclick="switchRMStockView('variance')" style="flex:1; padding:9px; background:#718096;">Consumption Variance</button>
       </div>
       <div id="rm-live-view">
         <div style="margin-bottom:14px;">
@@ -1015,6 +1016,49 @@
                 </tr>
               </thead>
               <tbody id="rm-ledger-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="rm-variance-view" style="display:none;">
+        <p style="margin:0 0 14px; font-size:0.82rem; color:var(--muted);">
+          Compares each project's BOQ estimate against what was actually issued out of Store.
+          A row with no estimate (Service issues, Spare draws, borrowed stock) is flagged — that's usually where the real leakage is.
+        </p>
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:14px; align-items:end; margin-bottom:14px;">
+          <div style="position:relative;">
+            <label class="field-label" style="margin-top:0;">Project ID or Customer Name (up to 20)</label>
+            <input type="text" id="cvar-project-ta-input" placeholder="Type to search and add a project..." autocomplete="off"
+              oninput="cvarHandleProjectInput(this.value)"
+              style="width:100%; padding:8px; box-sizing:border-box;" />
+            <div id="cvar-project-ta-dropdown" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); overflow-y:auto; min-width:280px;"></div>
+            <div id="cvar-selected-projects" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;"></div>
+          </div>
+          <div><label class="field-label" style="margin-top:0;">Start Date</label><input type="date" id="cvar-start-date" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <div><label class="field-label" style="margin-top:0;">End Date</label><input type="date" id="cvar-end-date" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <button class="nav-btn-styled" onclick="runConsumptionVarianceReport()" style="background:var(--accent); padding:9px 20px; font-weight:700; white-space:nowrap;">Generate Report</button>
+        </div>
+
+        <div id="cvar-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+        <div id="cvar-results" style="display:none;">
+          <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+            <button class="nav-btn-styled" onclick="downloadConsumptionVarianceReportFile()" style="background:var(--brand); padding:8px 18px; font-weight:700;">⬇ Download Excel</button>
+          </div>
+          <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+            <table style="width:100%; border-collapse:collapse; min-width:1100px;">
+              <thead>
+                <tr style="background:#f8fafc;">
+                  <th style="padding:8px; font-size:0.72rem; text-align:left;">Project ID</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:left;">Material</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Estimate Qty (BOQ)</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Approved Increase</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Actual Qty (Issued)</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:center;">Variance</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:left;">Flags</th>
+                </tr>
+              </thead>
+              <tbody id="cvar-table-body"></tbody>
             </table>
           </div>
         </div>
@@ -4647,6 +4691,7 @@
 <script src="store/approvals.js"></script>
 <script src="store/live-stock.js"></script>
 <script src="store/store-ledger.js"></script>
+<script src="store/consumption-variance.js"></script>
 <script src="store/stock-sweep.js"></script>
 <script src="store/store-history.js"></script>
 <script src="store/store-dashboard.js"></script>

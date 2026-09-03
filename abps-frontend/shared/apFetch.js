@@ -46,16 +46,63 @@ async function acFetch(path, payload) {
 
 // driveLink — backend-generated document links (BOQ/PRN/PO PDFs, drawing
 // documents, project invoices...) point at this app's own authenticated
-// proxy (GET /api/driveFile/:fileId), not a public Drive URL — the files
-// carry no public sharing permission, so the proxy requires the viewer's
-// own session token as a query param (a plain <a href> navigation can't
-// send apFetch's JSON body). Every href/src that renders one of these
-// URLs must be wrapped in this, or the link 401s.
+// proxy (GET /api/driveFile/:fileId), not a public Drive URL. It used to
+// append the raw, session-lifetime sessionToken as ?token= here — that put
+// a long-lived credential into every href, meaning browser history, any
+// Referer header, and view-source all carried it. Fixed: this now returns
+// the BARE proxy URL, unchanged, and a delegated click handler below mints
+// a short-lived, single-purpose file token AT CLICK TIME and appends it
+// then — so every one of the 40+ existing call sites needed zero changes.
 function driveLink(url) {
-  if (!url) return url;
-  const token = localStorage.getItem("sessionToken") || "";
-  return url + (url.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(token);
+  return url;
 }
+
+// ── File-token click handler (driveFile proxy auth) ─────────────────────
+// Mints a short-lived signed token (lib/fileToken.js, ~2min TTL) on demand
+// and appends it to the clicked link's href, then opens it — rather than
+// caching one on a timer, which would have a staleness window (tab left
+// open for hours, clicked right after login before a timer fires). Minting
+// fresh at the moment of the click has none of that: it's always valid at
+// the instant it's used, and the tiny TTL means a captured/copied link
+// stops working almost immediately instead of for the rest of the session.
+//
+// Delegated (one listener, capture phase) rather than touching each of the
+// ~40 driveLink() call sites — every one of them renders a plain <a href>
+// (verified: no <img>/<iframe> uses driveLink). Scoped tightly to anchors
+// whose href already points at the driveFile proxy, so it never intercepts
+// any other link in the app (including Accounts' own document links, which
+// use the same proxy and are covered the same way).
+let _fileTokenCache = null; // { token, mintedAt }
+async function ensureFileToken() {
+  // Reuse a just-minted token for a burst of clicks (e.g. opening several
+  // documents from a search results table in a row) — refresh with margin
+  // well before the server-side ~120s expiry rather than cutting it close.
+  if (_fileTokenCache && (Date.now() - _fileTokenCache.mintedAt) < 60_000) {
+    return _fileTokenCache.token;
+  }
+  const data = await apFetch({ action: "mintFileToken" });
+  if (!data.success) throw new Error(data.error || "Could not open document.");
+  _fileTokenCache = { token: data.fileToken, mintedAt: Date.now() };
+  return data.fileToken;
+}
+
+document.addEventListener("click", async (e) => {
+  const a = e.target.closest && e.target.closest('a[href*="/api/driveFile/"]');
+  if (!a) return;
+  e.preventDefault();
+  // Open the tab synchronously, before the await, so popup blockers (which
+  // key off "was this triggered directly by a user gesture") don't eat it
+  // — then point it at the real URL once the token is minted.
+  const w = window.open('', '_blank');
+  try {
+    const ft = await ensureFileToken();
+    const href = a.href + (a.href.includes("?") ? "&" : "?") + "ft=" + encodeURIComponent(ft);
+    if (w) w.location = href; else window.open(href, '_blank');
+  } catch (err) {
+    if (w) w.close();
+    alert("Could not open document: " + err.message);
+  }
+}, true);
 
 async function apFetch(payload) {
   payload.sessionToken = localStorage.getItem("sessionToken");

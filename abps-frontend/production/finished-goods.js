@@ -503,7 +503,7 @@ function updateFGSubmitButtonState() {
 }
 
 function resetFGAddForm() {
-  ["fg-add-department","fg-add-project","fg-add-prod-person","fg-add-unit"].forEach(id => {
+  ["fg-add-department","fg-add-project-ta-input","fg-add-prod-person","fg-add-unit"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
   ["fg-add-customer","fg-add-product-name-display","fg-add-product-name",
