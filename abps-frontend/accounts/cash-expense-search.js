@@ -131,7 +131,7 @@ async function runCashExpenseSearch() {
     const data = await acFetch("searchCashExpenses", filters);
     if (!data.success) { resultsEl.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
 
-    document.getElementById("ces-total").textContent = `Total Voucher Amount: ${formatINRComma(data.totalAmount)}`;
+    document.getElementById("ces-total").textContent = `Voucher Count: ${data.expenses.length}  |  Total Voucher Amount: ${formatINRComma(data.totalAmount)}`;
 
     if (data.expenses.length === 0) {
       resultsEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No expenses match this filter.</div>`;

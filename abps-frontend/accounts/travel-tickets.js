@@ -8,7 +8,7 @@
 // same invariant enforced server-side in routes/travelTickets.js and
 // routes/accounts.js.
 
-const TTK_TOGGLES = ["book", "manage", "manage-hotels"];
+const TTK_TOGGLES = ["book", "manage", "manage-hotels", "employees"];
 const TTK_MODES = ["Flight", "Train", "Bus"];
 const TTK_TRIP_TYPES = ["One Way", "Round Trip"];
 
@@ -49,6 +49,7 @@ function switchTravelTicketToggle(toggle) {
   if (toggle === "book") ttkRenderBookForm();
   if (toggle === "manage") ttkInitializeManagePanel();
   if (toggle === "manage-hotels") ttkInitializeHotelManagePanel();
+  if (toggle === "employees") initializeTravelTicketEmployeesPanel();
 }
 
 function showTicketFeedback(message, type) {

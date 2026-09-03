@@ -236,7 +236,7 @@ async function runTourVoucherSearch() {
       const data = await acFetch("searchTourAdvances", advanceFilters);
       if (!data.success) { resultsEl.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
       document.getElementById("tvs-balance-buckets").innerHTML = "";
-      document.getElementById("tvs-total").textContent = `Total Advance Amount: ${formatINRComma(data.totalAmount)}`;
+      document.getElementById("tvs-total").textContent = `Voucher Count: ${data.advances.length}  |  Total Advance Amount: ${formatINRComma(data.totalAmount)}`;
       if (data.advances.length === 0) {
         resultsEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No advances match this filter.</div>`;
         return;
@@ -261,6 +261,7 @@ async function runTourVoucherSearch() {
       ${tvsRenderBucket("Balance -₹10,000 or under", data.employeesUnder10k, "#15803d")}`;
 
     document.getElementById("tvs-total").innerHTML =
+      `Voucher Count: ${data.vouchers.length}&nbsp;&nbsp;|&nbsp;&nbsp;` +
       `Total Voucher Amount (Checked, Actual): ${formatINRComma(data.totalCheckedActual)}` +
       `&nbsp;&nbsp;|&nbsp;&nbsp;Company-Paid (Checked): ${formatINRComma(data.totalCompanyPaid || 0)}` +
       `&nbsp;&nbsp;|&nbsp;&nbsp;Over Limit Amount: ${formatINRComma(data.overLimitAmount || 0)}`;
