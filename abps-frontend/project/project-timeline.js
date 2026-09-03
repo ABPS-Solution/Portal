@@ -627,37 +627,46 @@ function ptlRenderLaneSteps(lane, c, canWrite) {
       actionCell = `
         <span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${ptlFmt(s.actual)}</span>
         <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem; background:#fff; color:var(--muted); border:1px solid var(--border);" onclick="ptlUnmarkStepDone('${lane.boqId}','${s.id}')">Mark Undone</button>
-        ${ptlIsAdmin() ? `<span style="display:inline-flex; align-items:center; gap:6px; margin-left:4px;">${ptlAsOfInputHtml(`${lane.boqId}-${s.id}`, s.actual)}<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem;" onclick="ptlMarkStepDone('${lane.boqId}','${s.id}')">Update (admin)</button></span>` : ''}`;
+        ${ptlIsAdmin() ? `<span style="display:inline-flex; align-items:center; gap:6px;">${ptlAsOfInputHtml(`${lane.boqId}-${s.id}`, s.actual)}<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem;" onclick="ptlMarkStepDone('${lane.boqId}','${s.id}')">Update (admin)</button></span>` : ''}`;
     } else {
       actionCell = `
         ${ptlAsOfInputHtml(`${lane.boqId}-${s.id}`)}
         <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.74rem;" onclick="ptlMarkStepDone('${lane.boqId}','${s.id}')">Mark Done</button>`;
     }
 
+    // Column dividers (border-left on every column after the first) match
+    // the bordered-table convention used on Search Tasks/Follow-Ups
+    // (marketing/tasks-followups.js) — percentage widths on
+    // table-layout:fixed instead of fixed px, so the table fits the panel
+    // instead of forcing horizontal scroll; the action cell's controls
+    // wrap onto a second line (flex-wrap) rather than pushing the row wide.
+    const colBorder = "border-left:1px solid var(--border);";
     return `
-      <tr id="ptl-step-${lane.boqId}-${s.id}" style="border-bottom:1px solid #f1f5f9;">
-        <td style="padding:7px 8px; font-size:0.85rem; font-weight:600; color:${late ? 'var(--warn)' : 'var(--text)'};">
+      <tr id="ptl-step-${lane.boqId}-${s.id}" style="border-bottom:1px solid var(--border);">
+        <td style="width:24%; padding:8px; font-size:0.85rem; font-weight:600; color:${late ? 'var(--warn)' : 'var(--text)'};">
           <span style="display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; background:${done ? c : '#fff'}; border:2px solid ${late ? 'var(--warn)' : c};"></span>
           ${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.78rem;">(automatic)</span>' : ''}
         </td>
-        <td style="padding:7px 8px; font-size:0.88rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center;">${ptlFmt(s.planned)}</td>
-        <td style="padding:7px 8px; font-size:0.88rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center;">${ptlFmt(currentTarget)}</td>
-        <td style="padding:7px 8px; text-align:center;">${canWrite && (s.terminal || !done) ? `<input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
+        <td style="width:13%; padding:8px; font-size:0.88rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(s.planned)}</td>
+        <td style="width:13%; padding:8px; font-size:0.88rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(currentTarget)}</td>
+        <td style="width:20%; padding:8px; text-align:center; ${colBorder}">${canWrite && (s.terminal || !done) ? `<input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
               style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; max-width:150px; box-sizing:border-box;" />` : `<span style="color:var(--muted); font-size:0.8rem;">—</span>`}</td>
-        <td style="padding:7px 8px; text-align:right; white-space:nowrap;">${actionCell}</td>
+        <td style="width:30%; padding:8px; text-align:right; ${colBorder}">
+          <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:6px;">${actionCell}</div>
+        </td>
       </tr>`;
   }).join("");
 
+  const colBorder = "border-left:1px solid var(--border);";
   return `
-    <div style="overflow-x:auto;">
-      <table style="width:100%; border-collapse:collapse; min-width:600px; table-layout:fixed;">
-        <colgroup><col style="width:150px;"><col style="width:120px;"><col style="width:120px;"><col style="width:150px;"><col style="width:${canWrite ? '190px' : '110px'};"></colgroup>
-        <thead><tr style="border-bottom:2px solid var(--border);">
-          <th style="padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:left;">Process Name</th>
-          <th style="padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Initial Planning Date</th>
-          <th style="padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Current Target Date</th>
-          <th style="padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">${canWrite ? 'New Target Date' : ''}</th>
-          <th style="padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:right;"></th>
+    <div style="border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+        <thead><tr style="background:${c}14; border-bottom:1px solid var(--border);">
+          <th style="width:24%; padding:8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:left;">Process Name</th>
+          <th style="width:13%; padding:8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Initial Planning Date</th>
+          <th style="width:13%; padding:8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Current Target Date</th>
+          <th style="width:20%; padding:8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">${canWrite ? 'New Target Date' : ''}</th>
+          <th style="width:30%; padding:8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:right; ${colBorder}"></th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
