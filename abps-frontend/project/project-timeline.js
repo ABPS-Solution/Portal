@@ -1220,7 +1220,14 @@ function ptlRenderCanvas(containerId) {
   // earlier than the panel actually had room for. Deriving wrapChars
   // directly from gutterW's own real text area closes that gap.
   const gutterW = PAD_L + Math.round(64 * ptlFS) - 10;
-  const wrapChars = Math.max(10, Math.floor((gutterW - 28 * ptlFS - 16) / (6.6 * ptlFS)));
+  // The trailing *0.9 is deliberate headroom, not a measurement of
+  // anything - char-width-based wrapping is only ever an estimate (bold
+  // 700/800-weight glyphs run wider than the 6.6px/char average, and BOQ
+  // rating text is full of wide characters: digits, "kVAr", "%"), so this
+  // stays a hair under the true fit rather than exactly at it. Being a
+  // little short (a slightly earlier wrap) is invisible; being even one
+  // character long lets text visibly run past the gutter's right edge.
+  const wrapChars = Math.max(10, Math.floor((gutterW - 28 * ptlFS - 16) / (6.6 * ptlFS) * 0.9));
   ptlDayW = Math.max(16, Math.min(320, (availW - PAD_L - LEAD - PAD_R) / PTL_MODES[ptlMode]));
   const DENSE = ptlDayW < 38;
 
@@ -1271,11 +1278,19 @@ function ptlRenderCanvas(containerId) {
     let cursorY = RULER_H + TRUNK_BAND_H;
     groups.forEach((g, gi) => {
       const collapsed = ptlCollapsedProductGroups.has(g.key);
-      // Header text (the product name + rating count) is wrapped the same
-      // way a lane's own label is now, and the header band grows to fit it
-      // - a long product name used to render as one un-wrapped <text> that
-      // simply ran off the right edge of the gutter into the canvas.
-      const headerLines = ptlWrapLbl(g.label || '', wrapChars, 3);
+      // Header text (product name + rating count) is wrapped the same way
+      // a lane's own label is, and the header band grows to fit it - a
+      // long product name used to render as one un-wrapped <text> that ran
+      // off the right edge of the gutter into the canvas. The "(N
+      // ratings)" suffix is wrapped IN, as part of the same string, not
+      // appended to the last line after wrapping was already decided -
+      // appending it afterward let a long last line (e.g. "...Filter Bank
+      // (1 rating)") run past the gutter's right edge with nothing
+      // accounting for those extra characters. 2 chars reserved off
+      // wrapChars for the "▾ " chevron prefix on line 1, for the same
+      // reason.
+      const countLabel = `${g.lanes.length} rating${g.lanes.length === 1 ? '' : 's'}`;
+      const headerLines = ptlWrapLbl(`${g.label || ''} (${countLabel})`, Math.max(8, wrapChars - 2), 3);
       const hdrH = Math.max(GROUP_HDR_H, Math.round(10 * ptlFS + headerLines.length * LANE_LINE_H));
       rowPlan.push({ type: 'header', group: g, y: cursorY + hdrH / 2, hdrH, headerLines, collapsed, groupIndex: gi });
       cursorY += hdrH;
@@ -1665,11 +1680,10 @@ function ptlRenderCanvas(containerId) {
           G.push(`<rect x="16" y="${item.y - 6 * ptlFS}" width="4" height="${12 * ptlFS}" rx="2" fill="${gc}"/>`);
           const chevron = item.collapsed ? '▸' : '▾';
           const countLabel = `${item.group.lanes.length} rating${item.group.lanes.length === 1 ? '' : 's'}`;
-          const headerLines = item.headerLines && item.headerLines.length ? item.headerLines : [item.group.label || ''];
+          const headerLines = item.headerLines && item.headerLines.length ? item.headerLines : [`${item.group.label || ''} (${countLabel})`];
           headerLines.forEach((ln, li) => {
             const prefix = li === 0 ? `${chevron} ` : '';
-            const suffix = li === headerLines.length - 1 ? ` (${esc(countLabel)})` : '';
-            G.push(`<text x="28" y="${item.y + 4 * ptlFS + (li - (headerLines.length - 1) / 2) * LANE_LINE_H}" font-size="${11.5 * ptlFS}" font-weight="800" fill="${gc}">${prefix}${esc(ln)}${suffix}</text>`);
+            G.push(`<text x="28" y="${item.y + 4 * ptlFS + (li - (headerLines.length - 1) / 2) * LANE_LINE_H}" font-size="${11.5 * ptlFS}" font-weight="800" fill="${gc}">${prefix}${esc(ln)}</text>`);
           });
           G.push(`<rect class="ptl-group-hit" data-group="${esc(item.group.key)}" x="0" y="${hdrTop}" width="${gutterW}" height="${hdrH}" fill="transparent" style="cursor:pointer;"/>`);
         } else if (item.type === 'summary') {
