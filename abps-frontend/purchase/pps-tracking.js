@@ -263,14 +263,21 @@ async function loadPPSForPRN() {
       const orderedOnPO = pos.reduce((s, po) => s + (Number(po.orderedQty) || 0), 0);
       const receivedOnPO = pos.reduce((s, po) => s + (Number(po.receivedQty) || 0), 0);
       const pct = orderedOnPO > 0 ? Math.min(100, (receivedOnPO / orderedOnPO) * 100) : 0;
-      // Status reads received/ordered — a purchase quantity of 0 means the
-      // line is fully covered from store and has nothing to wait for.
-      const statusCell = purchaseNeeded <= 0
+      // Status reads received/ordered. A PO's own receipt history takes
+      // priority over the current purchase quantity — a line's
+      // purchaseQty can drop to 0 AFTER a PO was already raised and fully
+      // received (e.g. Material Requirement Date staleness resolving
+      // itself once store stock covers the remainder), which must still
+      // read "All Received" against the PO that actually happened, not
+      // "From store" (which means no PO was ever needed at all).
+      const statusCell = orderedOnPO > 0
+        ? (receivedOnPO >= orderedOnPO
+            ? `<span style="font-size:0.72rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px;">All Received</span>`
+            : `<div style="font-weight:800; font-family:monospace; font-size:0.98rem; color:#b45309;">${fmt(receivedOnPO)} / ${fmt(orderedOnPO)}</div>
+               <div style="height:4px; background:#e2e8f0; border-radius:2px; margin-top:4px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:#f59e0b;"></div></div>`)
+        : purchaseNeeded <= 0
         ? `<span style="font-size:0.72rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px;">From store</span>`
-        : orderedOnPO <= 0
-        ? `<span style="font-size:0.72rem; font-weight:700; color:#b91c1c; background:#fee2e2; padding:2px 8px; border-radius:4px;">Not yet ordered</span>`
-        : `<div style="font-weight:800; font-family:monospace; font-size:0.98rem; color:${receivedOnPO >= orderedOnPO ? "#15803d" : "#b45309"};">${fmt(receivedOnPO)} / ${fmt(orderedOnPO)}</div>
-           <div style="height:4px; background:#e2e8f0; border-radius:2px; margin-top:4px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:${receivedOnPO >= orderedOnPO ? "#15803d" : "#f59e0b"};"></div></div>`;
+        : `<span style="font-size:0.72rem; font-weight:700; color:#b91c1c; background:#fee2e2; padding:2px 8px; border-radius:4px;">Not yet ordered</span>`;
 
       const poCell = pos.length === 0
         ? (Number(m.stillToOrder) > 0
