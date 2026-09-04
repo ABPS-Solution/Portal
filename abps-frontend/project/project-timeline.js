@@ -1831,12 +1831,21 @@ function ptlOpenFullscreen() {
     document.body.appendChild(ov);
   }
   if (!document.getElementById("ptl-fs-style")) {
-    // The scroller still scrolls left/right (drag, wheel, trackpad) -
-    // this only hides the native scrollbar track, which sat as a bare
-    // grey bar under the legend and read as leftover chrome.
+    // Was fully hidden (scrollbar-width:none) - click-drag-to-pan alone
+    // turned out not to read as "this canvas scrolls" to someone who
+    // hasn't tried dragging it yet, especially with no visible affordance
+    // for how much more content there is in either direction. A thin,
+    // always-visible custom scrollbar on both axes replaces the bare grey
+    // native track (why it was hidden in the first place) while still
+    // giving a real, directly-draggable handle.
     const style = document.createElement("style");
     style.id = "ptl-fs-style";
-    style.textContent = `#ptl-fs-scroller{scrollbar-width:none;}#ptl-fs-scroller::-webkit-scrollbar{display:none;}`;
+    style.textContent = `#ptl-fs-scroller{scrollbar-width:thin; scrollbar-color:var(--muted) transparent;}
+#ptl-fs-scroller::-webkit-scrollbar{width:12px; height:12px;}
+#ptl-fs-scroller::-webkit-scrollbar-track{background:transparent;}
+#ptl-fs-scroller::-webkit-scrollbar-thumb{background:var(--muted); border-radius:7px; border:3px solid var(--bg,#f0f4f8); background-clip:padding-box;}
+#ptl-fs-scroller::-webkit-scrollbar-thumb:hover{background:var(--text);}
+#ptl-fs-scroller::-webkit-scrollbar-corner{background:transparent;}`;
     document.head.appendChild(style);
   }
   ov.style.display = "flex";
