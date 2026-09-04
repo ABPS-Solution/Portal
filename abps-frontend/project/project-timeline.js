@@ -467,14 +467,20 @@ function ptlRender() {
     return;
   }
 
-  // prodPlan (Stage 3/4 boundary) renders before the lanes it summarizes;
-  // inspCall + the QA chain (Stage 4/5 boundary onward) render after -
-  // they depend on the lanes' own terminal-step dates.
-  const preLanes = trunk.filter(n => n.stage <= 3 || n.id === 'prodPlan');
-  const postLanes = trunk.filter(n => n.id === 'inspCall' || n.stage === 5);
-  body.innerHTML = header + stepsOpen + ptlRenderList(preLanes, today)
-    + ptlRenderLanes(ptlData.lanes || [])
-    + ptlRenderList(postLanes, today)
+  // Stage 4 spans three pieces rendered by two different functions
+  // (the trunk's own "Production Planning"/"Inspection Call Release" rows,
+  // plus the per-product lane cards in between) -- previously each trunk
+  // row got its OWN "Stage 4" header via two separate ptlRenderList calls,
+  // so collapsing one left the lane cards and the other row still showing.
+  // ptlRenderStage4Block wraps all three under one header/collapse toggle
+  // instead, so collapsing Stage 4 hides everything through to Stage 5.
+  const stage123 = trunk.filter(n => n.stage <= 3);
+  const prodPlanNodes = trunk.filter(n => n.id === 'prodPlan');
+  const inspCallNodes = trunk.filter(n => n.id === 'inspCall');
+  const stage5Nodes = trunk.filter(n => n.stage === 5);
+  body.innerHTML = header + stepsOpen + ptlRenderList(stage123, today)
+    + ptlRenderStage4Block(prodPlanNodes, inspCallNodes, today)
+    + `<div style="margin-top:26px;">${ptlRenderList(stage5Nodes, today)}</div>`
     + `</div>`;
   ptlSetViewMode(ptlViewMode);
 }
@@ -519,14 +525,17 @@ function ptlCanWriteLane(lane) {
 const PTL_LANE_COLOR = { Reactor: '#b45309', Capacitor: '#047857', Panel: '#c2410c' };
 let ptlExpandedLanes = new Set();
 
+// No own "Stage 4" heading here -- ptlRenderStage4Block (the caller) now
+// wraps this together with the Production Planning / Inspection Call
+// Release trunk rows under one shared header/collapse toggle, so a second
+// heading here would be a redundant duplicate.
 function ptlRenderLanes(lanes) {
   if (lanes.length === 0) {
     return `<div style="margin-top:18px; background:var(--highlight-bg); border:1px dashed var(--border); border-radius:var(--radius); padding:14px; font-size:0.82rem; color:var(--muted);">
-      Stage 4 - Production Planning: no Authorized BOQ on this project falls under Reactor, Capacitor, or Panel Production yet.
+      No Authorized BOQ on this project falls under Reactor, Capacitor, or Panel Production yet.
     </div>`;
   }
-  return `<div style="margin-top:20px;">
-    <div style="font-weight:800; font-size:0.95rem; color:var(--text); margin-bottom:10px;">Stage 4 - Production Planning</div>
+  return `<div style="margin-top:14px;">
     ${lanes.map(ptlRenderLane).join("")}
   </div>`;
 }
@@ -813,6 +822,26 @@ function ptlRenderList(nodes, today) {
     const bodyHtml = ptlRenderStageRows(stageGroups[stage], today, prodPlanDone);
     return stageHeader + `<div style="display:${collapsed ? 'none' : 'flex'}; flex-direction:column; gap:0;">${bodyHtml}</div>`;
   }).join("");
+}
+
+// One header/collapse toggle covering all of Stage 4: the "Production
+// Planning" trunk row, every per-product lane card, and the "Inspection
+// Call Release" trunk row -- see the call site's comment for why these
+// three, from two different render functions, need a single shared toggle.
+function ptlRenderStage4Block(prodPlanNodes, inspCallNodes, today) {
+  const prodPlanNode = ptlData && ptlData.trunk && ptlData.trunk.find(n => n.id === 'prodPlan');
+  const prodPlanDone = !!(prodPlanNode && prodPlanNode.done);
+  const stage = 4;
+  const collapsed = ptlCollapsedStages.has(stage);
+  const stageHeader = `
+    <div onclick="ptlToggleStageCollapse(${stage})" style="margin-top:26px; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; user-select:none; padding-bottom:8px; border-bottom:2px solid var(--border);">
+      <span style="font-weight:800; font-size:1.15rem; color:var(--text);">Stage ${stage} - ${PTL_STAGE_LABEL[stage] || ''}</span>
+      <button style="background:transparent; border:1px solid var(--border); color:var(--brand); font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:4px; cursor:pointer;">${collapsed ? '▼ Expand' : '▲ Collapse'}</button>
+    </div>`;
+  const bodyHtml = `<div style="display:flex; flex-direction:column; gap:0;">${ptlRenderStageRows(prodPlanNodes, today, prodPlanDone)}</div>`
+    + ptlRenderLanes(ptlData.lanes || [])
+    + `<div style="display:flex; flex-direction:column; gap:0;">${ptlRenderStageRows(inspCallNodes, today, prodPlanDone)}</div>`;
+  return stageHeader + `<div style="display:${collapsed ? 'none' : 'block'};">${bodyHtml}</div>`;
 }
 
 function ptlRenderStageRows(nodes, today, prodPlanDone) {
