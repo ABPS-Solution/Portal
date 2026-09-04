@@ -1036,6 +1036,40 @@ let ptlFsRailOpen = true;
 const PTL_LANE_HEX = { Reactor: '#b45309', Capacitor: '#047857', Panel: '#c2410c' };
 const PTL_TRUNK_HEX = { marketing: '#be185d', project: '#0056b3', design: '#00a878', store: '#0369a1', purchase: '#7c3aed', qa: '#dc2626' };
 
+// Row layout kicks in at this many Stage 4 lanes (a multi-rating project
+// can have 12-16 Authorized BOQs; the centred fan-out schematic below was
+// built for the 2-4 lanes a single-rating project produces and does not
+// survive more than that - see HANDOFF for the full investigation).
+const PTL_ROW_MODE_MIN_LANES = 5;
+
+// Row mode groups lanes by PRODUCT (not by rating) - the Tier-2/FG BOQ a
+// product's rating consumes has no stored parent-BOQ column (it's an
+// implicit many-to-one link inside boq_drafts.material_rows JSONB, see
+// routes/design.js's resolveAllowedBoqProducts/cascadeQuantityDownstream),
+// so "which rating" cannot always be resolved to one group. "Which
+// product" always can - it's the plain productName already on every lane.
+let ptlCollapsedProductGroups = new Set();
+function ptlToggleProductGroup(key) {
+  if (ptlCollapsedProductGroups.has(key)) ptlCollapsedProductGroups.delete(key);
+  else ptlCollapsedProductGroups.add(key);
+  ptlRenderCanvas();
+}
+function ptlGroupLanesByProduct(lanes) {
+  const order = [];
+  const map = {};
+  lanes.forEach(l => {
+    const key = (l.productName || l.name || '').trim().toLowerCase() || '(unnamed)';
+    if (!map[key]) { map[key] = { key, label: l.productName || l.name, lanes: [] }; order.push(key); }
+    map[key].lanes.push(l);
+  });
+  return order.map(k => map[k]);
+}
+// Colour now binds to the PRODUCT GROUP, not the raw lane index - with
+// 12-16 lanes the old index-based cycling made lanes 0/6/12 (6-colour
+// palette) visually indistinguishable. Every rating inside one product
+// shares its product's colour instead.
+const ptlGroupTraceColor = (i) => PTL_LANE_TRACE_PALETTE[i % PTL_LANE_TRACE_PALETTE.length];
+
 function ptlBuildDayRange() {
   const dates = [];
   (ptlData.trunk || []).forEach(n => { const e = ptlEff(n); if (e) dates.push(e); });
@@ -1120,9 +1154,18 @@ function ptlPlacer() {
   const clear = b => !taken.some(p => b.x0 < p.x1 - 2 && p.x0 < b.x1 - 2 && b.y0 < p.y1 - 2 && p.y0 < b.y1 - 2);
   return {
     block: b => taken.push(b),
-    place(mk) {
-      for (let k = 0; k < PTL_MAX_SLOT; k++) { const b = mk(k); if (clear(b)) { taken.push(b); return k; } }
-      taken.push(mk(PTL_MAX_SLOT - 1)); return PTL_MAX_SLOT - 1;
+    // maxK bounds how far this particular label is allowed to escalate -
+    // callers compute it from the real vertical room above/below the node
+    // (its own row's ceiling/floor, or the ruler/canvas edge) so a label
+    // can never be placed inside the date ruler or a neighbouring row.
+    // Without a bound (the pre-existing behavior) the loop always ran the
+    // full PTL_MAX_SLOT regardless of whether that space actually existed
+    // above the node, which is exactly what let a crowded label stack
+    // punch through the ruler.
+    place(mk, maxK = PTL_MAX_SLOT) {
+      const limit = Math.max(1, Math.min(PTL_MAX_SLOT, maxK));
+      for (let k = 0; k < limit; k++) { const b = mk(k); if (clear(b)) { taken.push(b); return k; } }
+      taken.push(mk(limit - 1)); return limit - 1;
     },
   };
 }
@@ -1165,19 +1208,65 @@ function ptlRenderCanvas(containerId) {
   const SLOT_UP = 26 * ptlFS, SLOT_DN = 30 * ptlFS, LINE_H = 12 * ptlFS;
   const R = 7.5 * (1 + (ptlFS - 1) * 0.55);
 
-  // The spine sits at the vertical centre of the whole surface, always -
-  // Stage 1-3 have nothing to branch, so it's just a straight line down
-  // the middle. Lanes (once Production Planning is submitted) fan out
-  // symmetrically above and below that same centre, never displacing it.
-  // Hard container height, and the container never scrolls vertically
-  // (see ptl-fs-scroller's overflow-y:hidden) - so FAN below MUST adapt
-  // to how many nodes actually share the busiest date, or a 4-way
-  // same-day cluster (e.g. MFC from Customer landing on the same day
-  // Stage 3's +3-business-day offsets do) needs more vertical room than
-  // exists and either clips or forces a scrollbar.
-  const H = Math.max(480, wrap.clientHeight || 520);
-  const top = RULER_H + (DENSE ? 120 : 90) * ptlFS;
-  const bot = H - 46 * ptlFS;
+  // Row mode (>= PTL_ROW_MODE_MIN_LANES lanes): the trunk (Stages 1-3/5)
+  // collapses into one band near the top instead of sitting at the
+  // vertical centre, and every lane becomes a fixed-pitch row stacked
+  // below it, grouped by product. This is what makes 12-16 lanes
+  // reachable at all -- the old symmetric fan-out's `gap` had no
+  // lane-count term and floored at 90*ptlFS, so at 16 lanes the fan spans
+  // ~1540px inside a viewport-height canvas with vertical scroll
+  // disabled: most rows render entirely outside the visible/scrollable
+  // area. Row mode instead sizes the canvas to its OWN content height and
+  // scrolls vertically to reach it. See PTL_ROW_MODE_MIN_LANES's comment
+  // for why <= 4 lanes keeps the old centred schematic unchanged.
+  const rowMode = lanes.length >= PTL_ROW_MODE_MIN_LANES;
+  const TRUNK_BAND_H = Math.round(210 * ptlFS);
+  const GROUP_HDR_H = Math.round(30 * ptlFS);
+  const ROW_PITCH = Math.round(92 * ptlFS);
+  const PAD_B = Math.round(40 * ptlFS);
+
+  const laneGroupKey = l => (l.productName || l.name || '').trim().toLowerCase() || '(unnamed)';
+  let groups = null, rowPlan = null, laneYByBoq = null, summaryYByGroupKey = null, rowsBottom = 0;
+  if (rowMode) {
+    groups = ptlGroupLanesByProduct(lanes);
+    rowPlan = [];
+    laneYByBoq = {};
+    summaryYByGroupKey = {};
+    let cursorY = RULER_H + TRUNK_BAND_H;
+    groups.forEach((g, gi) => {
+      const collapsed = ptlCollapsedProductGroups.has(g.key);
+      rowPlan.push({ type: 'header', group: g, y: cursorY + GROUP_HDR_H / 2, collapsed, groupIndex: gi });
+      cursorY += GROUP_HDR_H;
+      if (collapsed) {
+        const y = cursorY + ROW_PITCH / 2;
+        rowPlan.push({ type: 'summary', group: g, y, groupIndex: gi });
+        summaryYByGroupKey[g.key] = y;
+        cursorY += ROW_PITCH;
+      } else {
+        g.lanes.forEach(l => {
+          const y = cursorY + ROW_PITCH / 2;
+          laneYByBoq[l.boqId] = y;
+          rowPlan.push({ type: 'lane', group: g, lane: l, y, groupIndex: gi });
+          cursorY += ROW_PITCH;
+        });
+      }
+    });
+    rowsBottom = cursorY + PAD_B;
+  }
+
+  // Hard container height in centred mode (unchanged): the container
+  // never scrolls vertically there, so FAN below MUST adapt to how many
+  // nodes actually share the busiest date. In row mode height is
+  // CONTENT-driven instead -- it grows to fit every row, and
+  // #ptl-fs-scroller (see ptlRenderFullscreen) gets overflow-y:auto so
+  // the extra height is reachable by scrolling rather than clipped.
+  const H = rowMode
+    ? Math.max(wrap.clientHeight || 520, rowsBottom)
+    : Math.max(480, wrap.clientHeight || 520);
+  // The trunk's own usable vertical band: full centre-to-edge span in
+  // centred mode, a fixed top band in row mode.
+  const top = rowMode ? RULER_H + (DENSE ? 60 : 40) * ptlFS : RULER_H + (DENSE ? 120 : 90) * ptlFS;
+  const bot = rowMode ? RULER_H + TRUNK_BAND_H - (DENSE ? 34 : 18) * ptlFS : H - 46 * ptlFS;
   const gap = Math.max(90 * ptlFS, Math.min(220 * ptlFS, (bot - top) / 2.4));
   const dateGroupSizes = {};
   [...spine, ...tail, ...standalone].forEach(n => { const d = ptlEff(n); if (d) dateGroupSizes[d] = (dateGroupSizes[d] || 0) + 1; });
@@ -1188,9 +1277,19 @@ function ptlRenderCanvas(containerId) {
   const FAN = maxGroupSize > 1
     ? Math.min(96 * ptlFS, gap * 0.86, vertRoomForFan / (maxGroupSize - 1))
     : Math.min(96 * ptlFS, gap * 0.86);
-  const spineY = (top + bot) / 2;
+  const spineY = rowMode ? RULER_H + TRUNK_BAND_H / 2 : (top + bot) / 2;
   const laneCount = lanes.length;
-  const laneYs = lanes.map((_, i) => spineY + (i - (laneCount - 1) / 2) * gap);
+  const laneYs = rowMode
+    ? lanes.map(l => {
+        if (laneYByBoq[l.boqId] !== undefined) return laneYByBoq[l.boqId];
+        // This lane's product group is collapsed -- it has no row of its
+        // own, only the group's single summary row. Falling back to that
+        // shared y keeps every downstream formula finite; the trace/node
+        // loops below explicitly skip per-lane rendering for a collapsed
+        // group's lanes (represented once by the summary row instead).
+        return summaryYByGroupKey[laneGroupKey(l)] ?? (RULER_H + TRUNK_BAND_H + ROW_PITCH / 2);
+      })
+    : lanes.map((_, i) => spineY + (i - (laneCount - 1) / 2) * gap);
 
   // Every date within ptlBuildDayRange's from/to span is now in the index
   // (Sundays/holidays included, 31 Aug 2026) - this fallback is purely
@@ -1220,17 +1319,24 @@ function ptlRenderCanvas(containerId) {
 
   const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const P = [];
+  // Ruler content is collected separately and wrapped in its own <g>,
+  // pinned to the vertical scroll position the same way #ptl-gutter is
+  // pinned to the horizontal one (see pinGutter below, renamed to cover
+  // both axes) - in row mode the canvas can be much taller than the
+  // viewport, so without this the date ruler would scroll away exactly
+  // when it's most needed (deep in a long list of product rows).
+  const RULER_G = [];
   const DOW = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-  // Ruler + week gridlines
+  // Week gridlines - ordinary scrolling content, not pinned.
   P.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="var(--bg,#f0f4f8)"/>`);
   ptlDays.forEach((d, i) => {
     if (ptlParse(d).getUTCDay() !== 1) return;
     const x = PAD_L + LEAD + i * ptlDayW;
     P.push(`<line x1="${x}" y1="${RULER_H}" x2="${x}" y2="${H}" stroke="var(--border)" stroke-width="1.5"/>`);
   });
-  P.push(`<rect x="0" y="0" width="${W}" height="${RULER_H}" fill="var(--card)"/>`);
-  P.push(`<line x1="0" y1="${RULER_H}" x2="${W}" y2="${RULER_H}" stroke="var(--border)" stroke-width="1.5"/>`);
+  RULER_G.push(`<rect x="0" y="0" width="${W}" height="${RULER_H}" fill="var(--card)"/>`);
+  RULER_G.push(`<line x1="0" y1="${RULER_H}" x2="${W}" y2="${RULER_H}" stroke="var(--border)" stroke-width="1.5"/>`);
   let lastM = -1;
   // Sunday/holiday columns (31 Aug 2026) render their date+day-name in the
   // same green as the TODAY line (#15803d) so they read as "day off" at a
@@ -1242,12 +1348,12 @@ function ptlRenderCanvas(containerId) {
   ptlDays.forEach((d, i) => {
     const x = PAD_L + LEAD + i * ptlDayW, dt = ptlParse(d), m = dt.getUTCMonth(), mon = dt.getUTCDay() === 1;
     const isRest = ptlDayIsRest(d);
-    if (m !== lastM) { lastM = m; P.push(`<text x="${x}" y="${14 * ptlFS}" font-size="${11 * ptlFS}" font-weight="800" letter-spacing="1.5" fill="var(--muted)">${PTL_MON[m].toUpperCase()} ${dt.getUTCFullYear()}</text>`); }
+    if (m !== lastM) { lastM = m; RULER_G.push(`<text x="${x}" y="${14 * ptlFS}" font-size="${11 * ptlFS}" font-weight="800" letter-spacing="1.5" fill="var(--muted)">${PTL_MON[m].toUpperCase()} ${dt.getUTCFullYear()}</text>`); }
     if (!DENSE || mon || isRest) {
       const dateColor = isRest ? PTL_REST_GREEN : (mon ? 'var(--text)' : 'var(--muted)');
       const dowColor = isRest ? PTL_REST_GREEN : 'var(--muted)';
-      P.push(`<text x="${x}" y="${RULER_H - 15 * ptlFS}" text-anchor="middle" font-size="${11.5 * ptlFS}" font-family="monospace" font-weight="${mon || isRest ? 800 : 600}" fill="${dateColor}">${dt.getUTCDate()}</text>`);
-      P.push(`<text x="${x}" y="${RULER_H - 5 * ptlFS}" text-anchor="middle" font-size="${9 * ptlFS}" font-family="monospace" font-weight="600" fill="${dowColor}">${DOW[dt.getUTCDay()]}</text>`);
+      RULER_G.push(`<text x="${x}" y="${RULER_H - 15 * ptlFS}" text-anchor="middle" font-size="${11.5 * ptlFS}" font-family="monospace" font-weight="${mon || isRest ? 800 : 600}" fill="${dateColor}">${dt.getUTCDate()}</text>`);
+      RULER_G.push(`<text x="${x}" y="${RULER_H - 5 * ptlFS}" text-anchor="middle" font-size="${9 * ptlFS}" font-family="monospace" font-weight="600" fill="${dowColor}">${DOW[dt.getUTCDay()]}</text>`);
     }
   });
 
@@ -1256,7 +1362,11 @@ function ptlRenderCanvas(containerId) {
   // than one unbroken run of dots.
   const stageXs = {};
   [...spine, ...tail, ...standalone].forEach(n => { if (n.stage) (stageXs[n.stage] = stageXs[n.stage] || []).push(xOf(ptlEff(n))); });
-  lanes.forEach(l => l.steps.forEach(s => (stageXs[4] = stageXs[4] || []).push(xOf(s.actual || s.target || s.planned))));
+  // hasAnyDate-guarded, same as the trace/node loops below - an unplanned
+  // lane's steps are all null, and feeding that into xOf(undefined) used
+  // to drag the Stage 4 divider all the way to PAD_L+LEAD (day zero) the
+  // moment even one lane had no plan yet.
+  lanes.forEach(l => { const dated = l.steps.filter(s => s.actual || s.target || s.planned); if (dated.length) dated.forEach(s => (stageXs[4] = stageXs[4] || []).push(xOf(s.actual || s.target || s.planned))); });
   // Skip a stage's label (never the divider line itself) when the next
   // stage starts too close after it for the text to fit - a small Stage
   // 4 window otherwise collided with Stage 5's label right after it.
@@ -1303,6 +1413,15 @@ function ptlRenderCanvas(containerId) {
     return out;
   });
 
+  // Colour binds to the PRODUCT GROUP in row mode (every rating under one
+  // product shares its colour, 3-4 products stay clearly distinct even at
+  // 16 lanes) and to the raw lane index in centred mode, UNCHANGED from
+  // before - centred mode only ever has a handful of lanes, where the
+  // original index-based cycling was never actually a problem.
+  const laneGroupIndex = l => groups ? groups.findIndex(g => g.key === laneGroupKey(l)) : -1;
+  const laneColor = (l, i) => rowMode ? ptlGroupTraceColor(laneGroupIndex(l)) : ptlLaneTraceColor(i);
+  const laneCollapsedInRow = l => rowMode && ptlCollapsedProductGroups.has(laneGroupKey(l));
+
   const poly = pts => pts.map((p, i) => (i ? "L" : "M") + p.x + " " + p.y).join(" ");
   const traces = [];
   if (laneCount === 0) {
@@ -1311,21 +1430,60 @@ function ptlRenderCanvas(containerId) {
     traces.push({ d: poly(spine.map(n => pos[n.id])), c: 'var(--brand)' });
     const split = pos[spine[spine.length - 1].id];
     const merge = tail.length ? pos[tail[0].id] : split;
+    // Row mode: 12-16 lanes' worth of split/merge beziers all converging
+    // on the same two points (fixed midpoint control points) becomes an
+    // unreadable bundle - replaced with the standard bus idiom instead: one
+    // vertical bus dropping from the split point, a short horizontal stub
+    // into each row. The merge-back-to-tail curve is dropped entirely in
+    // row mode (16 curves returning to one point is pure noise; the trunk
+    // band above already carries into Stage 5) - centred mode is
+    // untouched, still both curves exactly as before.
+    const rowStubs = [];
     lanes.forEach((l, i) => {
+      // Collapsed product group - represented once by its own summary
+      // span below, not per-rating here.
+      if (laneCollapsedInRow(l)) return;
       // No planned/target/actual date on any step yet (BOQ authorized but
       // Stage 4's initial plan not submitted) - nothing dated to trace or
       // plot a node for. The lane still gets its row/label (see the gutter
       // block below); skip the trace/branch geometry entirely rather than
       // feeding xOf(undefined) and drawing every point bunched at x=0.
       if (!l.steps.some(s => s.actual || s.target || s.planned)) return;
-      const c = ptlLaneTraceColor(i);
+      const c = laneColor(l, i);
       const y = laneYs[i];
       const stepPts = l.steps.filter(s => s.actual || s.target || s.planned).map(s => ({ x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id] }));
       const fx = stepPts[0].x, lx = stepPts[stepPts.length - 1].x;
-      traces.push({ d: `M${split.x} ${split.y} C${(split.x + fx) / 2} ${split.y}, ${(split.x + fx) / 2} ${y}, ${fx} ${y}`, c });
+      if (rowMode) {
+        rowStubs.push({ y, fx, c });
+      } else {
+        traces.push({ d: `M${split.x} ${split.y} C${(split.x + fx) / 2} ${split.y}, ${(split.x + fx) / 2} ${y}, ${fx} ${y}`, c });
+      }
       traces.push({ d: poly(stepPts), c });
-      traces.push({ d: `M${lx} ${y} C${(lx + merge.x) / 2} ${y}, ${(lx + merge.x) / 2} ${merge.y}, ${merge.x} ${merge.y}`, c });
+      if (!rowMode) traces.push({ d: `M${lx} ${y} C${(lx + merge.x) / 2} ${y}, ${(lx + merge.x) / 2} ${merge.y}, ${merge.x} ${merge.y}`, c });
     });
+    if (rowMode) {
+      // Collapsed groups get one summary span (earliest -> latest dated
+      // point across the whole group) instead of a per-rating trace.
+      (groups || []).forEach((g, gi) => {
+        if (!ptlCollapsedProductGroups.has(g.key)) return;
+        const dates = [];
+        g.lanes.forEach(l => l.steps.forEach(s => { const d = s.actual || s.target || s.planned; if (d) dates.push(d); }));
+        if (!dates.length) return;
+        dates.sort();
+        const y = summaryYByGroupKey[g.key];
+        const c = ptlGroupTraceColor(gi);
+        const x0 = xOf(dates[0]), x1 = xOf(dates[dates.length - 1]);
+        rowStubs.push({ y, fx: x0, c });
+        traces.push({ d: `M${x0} ${y} L${x1} ${y}`, c });
+      });
+      if (rowStubs.length) {
+        const busX = split.x;
+        const busTop = Math.min(split.y, ...rowStubs.map(s => s.y));
+        const busBot = Math.max(split.y, ...rowStubs.map(s => s.y));
+        traces.push({ d: `M${busX} ${busTop} L${busX} ${busBot}`, c: PTL_SCHEDULED_GREY });
+        rowStubs.forEach(s => traces.push({ d: `M${busX} ${s.y} L${s.fx} ${s.y}`, c: s.c }));
+      }
+    }
     if (tail.length) traces.push({ d: poly(tail.map(n => pos[n.id])), c: 'var(--brand)' });
   }
   const clipId = "ptlclip" + Math.random().toString(36).slice(2, 8);
@@ -1337,12 +1495,33 @@ function ptlRenderCanvas(containerId) {
 
   // Nodes
   const laid = [];
-  spine.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
-  tail.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
-  standalone.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
-  // Same hasAnyDate guard as the trace loop above - an unplanned lane has
-  // nothing dated to plot a node for.
-  lanes.forEach((l, i) => { if (l.steps.some(s => s.actual || s.target || s.planned)) l.steps.forEach(s => laid.push({ n: { ...s, dept: l.ownerDept === 'Reactor' ? 'lane_r' : l.ownerDept === 'Capacitor' ? 'lane_c' : 'lane_p' }, x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id], boqId: l.boqId, ownerLabel: `${l.ownerDept} Production` })); });
+  // Trunk labels are bounded by the ruler above and (in row mode) the
+  // trunk band's own bottom edge - this is the fix for the reported bug:
+  // ptlPlacer previously had no notion of a ceiling at all, so a crowded
+  // label stack could escalate straight into the ruler band and punch a
+  // hole through the date row via its own background halo.
+  const trunkCeil = RULER_H + 4 * ptlFS;
+  const trunkFloor = rowMode ? (RULER_H + TRUNK_BAND_H - 4 * ptlFS) : (H - 4 * ptlFS);
+  spine.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y, ceilY: trunkCeil, floorY: trunkFloor }));
+  tail.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y, ceilY: trunkCeil, floorY: trunkFloor }));
+  standalone.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y, ceilY: trunkCeil, floorY: trunkFloor }));
+  lanes.forEach((l, i) => {
+    // Collapsed product group - no per-rating nodes, just the group's
+    // single summary span drawn above.
+    if (laneCollapsedInRow(l)) return;
+    // Same hasAnyDate guard as the trace loop above - an unplanned lane
+    // has nothing dated to plot a node for.
+    if (!l.steps.some(s => s.actual || s.target || s.planned)) return;
+    const y = laneYs[i];
+    // In row mode a lane's labels are bounded to its OWN row, not the
+    // whole canvas - this is what makes "always show every step name"
+    // (rather than hover-only) legible at 16 rows: a label can no longer
+    // stack up/down into a neighbouring product's row. Centred mode keeps
+    // the shared trunk-wide bound, unchanged.
+    const ceilY = rowMode ? (y - ROW_PITCH / 2 + 4 * ptlFS) : trunkCeil;
+    const floorY = rowMode ? (y + ROW_PITCH / 2 - 4 * ptlFS) : trunkFloor;
+    l.steps.forEach(s => laid.push({ n: { ...s, dept: l.ownerDept }, x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id], boqId: l.boqId, ownerLabel: `${l.ownerDept} Production`, ceilY, floorY }));
+  });
   laid.sort((a, b) => a.x - b.x);
 
   const PL = ptlPlacer();
@@ -1354,7 +1533,7 @@ function ptlRenderCanvas(containerId) {
   // exclusively for something open past its own due date. Department is
   // still readable from the label text / lane gutter, just not color.
   const clickMap = [];
-  laid.forEach(({ n, x, y, boqId, ownerLabel }) => {
+  laid.forEach(({ n, x, y, boqId, ownerLabel, ceilY, floorY }) => {
     const c = 'var(--accent)';
     const eff = n.actual || n.target || n.planned;
     const done = !!n.actual || n.done === true;
@@ -1365,7 +1544,12 @@ function ptlRenderCanvas(containerId) {
     const lines = ptlWrapLbl(n.label, 16);
     const lw = Math.max(...lines.map(ptlWLbl));
     const GAP = 12 * ptlFS, ASC = 9 * ptlFS;
-    const kU = PL.place(k => { const b = y - R - GAP - k * (SLOT_UP + LINE_H); return { x0: x - lw / 2 - PTL_LBL_PAD, x1: x + lw / 2 + PTL_LBL_PAD, y0: b - (lines.length - 1) * LINE_H - ASC, y1: b + 3 }; });
+    // How many upward slots actually fit before the label's top edge
+    // would cross ceilY - clamped to [1, PTL_MAX_SLOT] so there's always
+    // at least one placement attempt even when room is tight.
+    const roomUpK = Math.floor((y - R - GAP - ceilY - (lines.length - 1) * LINE_H - ASC) / (SLOT_UP + LINE_H));
+    const maxSlotsUp = Math.max(1, Math.min(PTL_MAX_SLOT, roomUpK + 1));
+    const kU = PL.place(k => { const b = y - R - GAP - k * (SLOT_UP + LINE_H); return { x0: x - lw / 2 - PTL_LBL_PAD, x1: x + lw / 2 + PTL_LBL_PAD, y0: b - (lines.length - 1) * LINE_H - ASC, y1: b + 3 }; }, maxSlotsUp);
     const base = y - R - GAP - kU * (SLOT_UP + LINE_H);
     if (kU > 0) P.push(`<line x1="${x}" y1="${y - R}" x2="${x}" y2="${base + 4}" stroke="${ring}" stroke-width="1" opacity=".3"/>`);
     lines.forEach((ln, i) => P.push(`<text x="${x}" y="${base - (lines.length - 1 - i) * LINE_H}" text-anchor="middle" font-size="${11 * ptlFS}" font-weight="600" fill="${late ? '#e84545' : 'var(--text)'}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(ln)}</text>`));
@@ -1379,7 +1563,9 @@ function ptlRenderCanvas(containerId) {
     const chipTxt = n.chip || '';
     const bw = Math.max(ptlWMono(dtx, 10.5), chipTxt ? ptlWMono(chipTxt, 9.5) : 0);
     const chipExtra = chipTxt ? LINE_H : 0;
-    const kD = PL.place(k => { const d = y + R + GAP + k * SLOT_DN; return { x0: x - bw / 2 - PTL_LBL_PAD, x1: x + bw / 2 + PTL_LBL_PAD, y0: d - ASC, y1: d + 3 + chipExtra }; });
+    const roomDnK = Math.floor((floorY - 3 - chipExtra - y - R - GAP) / SLOT_DN);
+    const maxSlotsDn = Math.max(1, Math.min(PTL_MAX_SLOT, roomDnK + 1));
+    const kD = PL.place(k => { const d = y + R + GAP + k * SLOT_DN; return { x0: x - bw / 2 - PTL_LBL_PAD, x1: x + bw / 2 + PTL_LBL_PAD, y0: d - ASC, y1: d + 3 + chipExtra }; }, maxSlotsDn);
     const dy = y + R + GAP + kD * SLOT_DN;
     if (kD > 0) P.push(`<line x1="${x}" y1="${y + R}" x2="${x}" y2="${dy - ASC}" stroke="${ring}" stroke-width="1" opacity=".3"/>`);
     P.push(`<text x="${x}" y="${dy}" text-anchor="middle" font-size="${10.5 * ptlFS}" font-weight="700" font-family="monospace" fill="${late ? '#e84545' : 'var(--muted)'}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(dtx)}</text>`);
@@ -1397,13 +1583,17 @@ function ptlRenderCanvas(containerId) {
     P.push(`<circle cx="${x}" cy="${y}" r="${R * 2.2}" fill="transparent" class="ptl-hit" data-anchor="${anchorId}" data-idx="${idx}"/>`);
   });
 
-  // Gutter - shows each lane's full "Product Name - Rating - Description"
-  // (not just the bare flow name), colored to match that lane's own
-  // trace line (ptlLaneTraceColor). Pinned to the left edge of the
-  // viewport via a scroll-compensating transform (see the scroll
-  // listener wired below), same technique as the design prototype's own
-  // pinGutter() - drawing it as ordinary SVG content with no pinning at
-  // all let it scroll away with everything else instead of staying put.
+  // Gutter - centred mode shows each lane's full "Product Name - Rating -
+  // Description" (not just the bare flow name); row mode instead shows a
+  // collapsible PRODUCT header (colour chip + name + rating count) with
+  // just the rating/description underneath each of its rows, since the
+  // product name now lives on the header - this is also what relieves
+  // the cramped wrapping, the label per row is much shorter. Pinned to
+  // the left edge of the viewport via a scroll-compensating transform
+  // (see the scroll listener wired below), same technique as the design
+  // prototype's own pinGutter() - drawing it as ordinary SVG content with
+  // no pinning at all let it scroll away with everything else instead of
+  // staying put.
   if (laneCount) {
     // Frozen at the ORIGINAL lead value (64), not the new wider LEAD above
     // - the visible panel itself must stay exactly the width it was;
@@ -1411,31 +1601,73 @@ function ptlRenderCanvas(containerId) {
     // the first plotted day, not a wider gutter.
     const gutterW = PAD_L + (64 * ptlFS) - 10;
     const G = [`<g id="ptl-gutter">`, `<rect x="0" y="${RULER_H}" width="${gutterW}" height="${H - RULER_H}" fill="var(--bg,#f0f4f8)"/>`, `<line x1="${gutterW}" y1="${RULER_H}" x2="${gutterW}" y2="${H}" stroke="var(--border)" stroke-width="1"/>`];
-    // Full name, not truncated to 2 lines - ptlWrapLbl's default 2-line cap
-    // (built for short node labels) was silently dropping the rating/
-    // description tail of longer product names here. maxLines is derived
-    // from the actual vertical room between lanes (`gap`) so labels never
-    // run into a neighboring lane's own text.
-    const gutterMaxLines = Math.max(2, Math.floor((gap * 0.85) / (13 * ptlFS)));
-    lanes.forEach((l, i) => {
-      const y = laneYs[i];
-      const lc = ptlLaneTraceColor(i);
-      const fullLabel = [l.productName, l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.name;
-      const labelLines = ptlWrapLbl(fullLabel, longestName, gutterMaxLines);
-      G.push(`<rect x="16" y="${y - 12 * ptlFS}" width="4" height="${24 * ptlFS}" rx="2" fill="${lc}"/>`);
-      labelLines.forEach((ln, li) => {
-        G.push(`<text x="28" y="${y + 4.5 * ptlFS + (li - (labelLines.length - 1) / 2) * 13 * ptlFS}" font-size="${11.5 * ptlFS}" font-weight="800" fill="${lc}">${esc(ln)}</text>`);
+    if (rowMode) {
+      (rowPlan || []).forEach(item => {
+        const gc = ptlGroupTraceColor(item.groupIndex);
+        if (item.type === 'header') {
+          const hdrTop = item.y - GROUP_HDR_H / 2;
+          // Backgrounds/hit-rects stay within gutterW, not the full canvas
+          // width W - this <g> is horizontally pinned to the viewport via
+          // a scroll-compensating transform (pinGutter below), so a
+          // full-width rect here would drift away from the visible,
+          // pinned header text the moment the canvas is scrolled right.
+          G.push(`<rect x="0" y="${hdrTop}" width="${gutterW}" height="${GROUP_HDR_H}" fill="color-mix(in srgb, ${gc} 10%, transparent)"/>`);
+          G.push(`<rect x="16" y="${item.y - 6 * ptlFS}" width="4" height="${12 * ptlFS}" rx="2" fill="${gc}"/>`);
+          const chevron = item.collapsed ? '▸' : '▾';
+          const countLabel = `${item.group.lanes.length} rating${item.group.lanes.length === 1 ? '' : 's'}`;
+          G.push(`<text x="28" y="${item.y + 4 * ptlFS}" font-size="${11.5 * ptlFS}" font-weight="800" fill="${gc}">${chevron} ${esc(item.group.label || '')} (${esc(countLabel)})</text>`);
+          G.push(`<rect class="ptl-group-hit" data-group="${esc(item.group.key)}" x="0" y="${hdrTop}" width="${gutterW}" height="${GROUP_HDR_H}" fill="transparent" style="cursor:pointer;"/>`);
+        } else if (item.type === 'summary') {
+          G.push(`<rect x="16" y="${item.y - 12 * ptlFS}" width="4" height="${24 * ptlFS}" rx="2" fill="${gc}"/>`);
+          G.push(`<text x="28" y="${item.y + 4.5 * ptlFS}" font-size="${10.5 * ptlFS}" font-style="italic" fill="var(--muted)">Collapsed - click to expand</text>`);
+          G.push(`<rect class="ptl-group-hit" data-group="${esc(item.group.key)}" x="0" y="${item.y - ROW_PITCH / 2}" width="${gutterW}" height="${ROW_PITCH}" fill="transparent" style="cursor:pointer;"/>`);
+        } else if (item.type === 'lane') {
+          const l = item.lane, y = item.y;
+          const ratingLabel = [l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.name;
+          const maxLines = Math.max(2, Math.floor((ROW_PITCH * 0.85) / (13 * ptlFS)));
+          const labelLines = ptlWrapLbl(ratingLabel, longestName, maxLines);
+          G.push(`<rect x="16" y="${y - 12 * ptlFS}" width="4" height="${24 * ptlFS}" rx="2" fill="${gc}"/>`);
+          labelLines.forEach((ln, li) => {
+            G.push(`<text x="28" y="${y + 4.5 * ptlFS + (li - (labelLines.length - 1) / 2) * 13 * ptlFS}" font-size="${11.5 * ptlFS}" font-weight="700" fill="${gc}">${esc(ln)}</text>`);
+          });
+          if (!l.steps.some(s => s.actual || s.target || s.planned)) {
+            G.push(`<text x="${gutterW + 14}" y="${y + 4 * ptlFS}" font-size="${10.5 * ptlFS}" font-style="italic" fill="var(--muted)">Not planned yet</text>`);
+          }
+        }
       });
-      // BOQ authorized (so it has a lane/label at all) but Stage 4's
-      // initial plan hasn't been submitted yet - nothing dated to trace,
-      // so say so explicitly rather than leaving an unexplained empty row.
-      if (!l.steps.some(s => s.actual || s.target || s.planned)) {
-        G.push(`<text x="${gutterW + 14}" y="${y + 4 * ptlFS}" font-size="${10.5 * ptlFS}" font-style="italic" fill="var(--muted)">Not planned yet</text>`);
-      }
-    });
+    } else {
+      // Full name, not truncated to 2 lines - ptlWrapLbl's default 2-line
+      // cap (built for short node labels) was silently dropping the
+      // rating/description tail of longer product names here. maxLines is
+      // derived from the actual vertical room between lanes (`gap`) so
+      // labels never run into a neighboring lane's own text.
+      const gutterMaxLines = Math.max(2, Math.floor((gap * 0.85) / (13 * ptlFS)));
+      lanes.forEach((l, i) => {
+        const y = laneYs[i];
+        const lc = ptlLaneTraceColor(i);
+        const fullLabel = [l.productName, l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.name;
+        const labelLines = ptlWrapLbl(fullLabel, longestName, gutterMaxLines);
+        G.push(`<rect x="16" y="${y - 12 * ptlFS}" width="4" height="${24 * ptlFS}" rx="2" fill="${lc}"/>`);
+        labelLines.forEach((ln, li) => {
+          G.push(`<text x="28" y="${y + 4.5 * ptlFS + (li - (labelLines.length - 1) / 2) * 13 * ptlFS}" font-size="${11.5 * ptlFS}" font-weight="800" fill="${lc}">${esc(ln)}</text>`);
+        });
+        // BOQ authorized (so it has a lane/label at all) but Stage 4's
+        // initial plan hasn't been submitted yet - nothing dated to trace,
+        // so say so explicitly rather than leaving an unexplained empty row.
+        if (!l.steps.some(s => s.actual || s.target || s.planned)) {
+          G.push(`<text x="${gutterW + 14}" y="${y + 4 * ptlFS}" font-style="italic" fill="var(--muted)" font-size="${10.5 * ptlFS}">Not planned yet</text>`);
+        }
+      });
+    }
     G.push(`</g>`);
     P.push(G.join(""));
   }
+
+  // Ruler drawn after the gutter so it paints over it at the corner where
+  // the two cross - it needs its own opaque background regardless, but
+  // this keeps z-order consistent with how the gutter already overlays
+  // ordinary scrolling content.
+  P.push(`<g id="ptl-ruler">${RULER_G.join("")}</g>`);
 
   // Last of all, so nothing can cover it. Sits at the BOTTOM of the line,
   // not the top - the top is where stage-divider labels live, and the two
@@ -1447,16 +1679,22 @@ function ptlRenderCanvas(containerId) {
   wrap.innerHTML = svg;
   ptlWireCanvasInteractions(wrap, clickMap);
 
-  // Pin the gutter to the viewport's left edge - it's ordinary content
-  // inside the same horizontally-scrolling SVG, so without this it would
-  // just scroll away like everything else. `.onscroll` (not
-  // addEventListener) deliberately overwrites any previous handler
-  // rather than stacking one per re-render.
-  const pinGutter = () => {
+  // Pin the gutter to the viewport's left edge and the ruler to its top
+  // edge - both are ordinary content inside the same scrolling SVG, so
+  // without this they'd scroll away like everything else. In row mode the
+  // canvas can be much taller than the viewport (content-driven height,
+  // see H above), so the ruler pin matters there specifically - without
+  // it, scrolling down through a long product list would scroll the date
+  // ruler away exactly when it's most needed. `.onscroll` (not
+  // addEventListener) deliberately overwrites any previous handler rather
+  // than stacking one per re-render.
+  const pinOverlays = () => {
     const g = wrap.querySelector('#ptl-gutter');
     if (g) g.setAttribute('transform', `translate(${wrap.scrollLeft},0)`);
+    const r = wrap.querySelector('#ptl-ruler');
+    if (r) r.setAttribute('transform', `translate(0,${wrap.scrollTop})`);
   };
-  wrap.onscroll = pinGutter;
+  wrap.onscroll = pinOverlays;
 
   // Land the horizontal scroll on today - except in "This Week" mode,
   // where centering today gave a floating 6-day window (e.g. Wed-Mon)
@@ -1470,7 +1708,7 @@ function ptlRenderCanvas(containerId) {
   } else {
     wrap.scrollLeft = Math.max(0, todayX - wrap.clientWidth / 2);
   }
-  pinGutter();
+  pinOverlays();
 }
 
 let ptlCanvasContainerId = "ptl-fs-scroller";
@@ -1703,7 +1941,7 @@ function ptlRenderFullscreen() {
     </div>
     <div style="flex:1 1 auto; display:flex; min-height:0;">
       <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column;">
-        <div id="ptl-fs-scroller" style="flex:1 1 auto; min-height:0; overflow-x:auto; overflow-y:hidden; cursor:grab; background:var(--bg,#f0f4f8);"></div>
+        <div id="ptl-fs-scroller" style="flex:1 1 auto; min-height:0; overflow-x:auto; overflow-y:auto; cursor:grab; background:var(--bg,#f0f4f8);"></div>
         <div style="flex:none; border-top:1px solid var(--border); background:var(--card); padding:8px 18px; display:flex; flex-wrap:wrap; align-items:center; gap:6px 20px; font-size:0.74rem; color:var(--muted);">
           <span style="color:var(--accent);">● Complete</span><span style="color:var(--accent);">○ Scheduled</span><span style="color:#e84545;">○ Overdue</span><span>- Done so far</span><span style="opacity:.6;">┄ Still to come</span>
           <span style="margin-left:auto;">Click a point to jump to it in Steps. Hover for its date.</span>
@@ -1747,6 +1985,13 @@ function ptlTipHtml(info) {
   return h;
 }
 
+// Held at module scope so ptlWireCanvasInteractions can remove its OWN
+// previous window listeners before adding new ones - it used to add a
+// fresh pair on every single render and never remove them (a real leak,
+// found while wiring up the row-mode collapse re-renders, which call this
+// far more often than the old canvas ever did).
+let ptlDragMouseUpHandler = null, ptlDragMouseMoveHandler = null;
+
 function ptlWireCanvasInteractions(sc, clickMap) {
   if (!sc) return;
   let tip = document.getElementById("ptl-tip");
@@ -1767,10 +2012,25 @@ function ptlWireCanvasInteractions(sc, clickMap) {
     el.addEventListener("mouseleave", () => { tip.style.opacity = "0"; });
     el.addEventListener("click", () => ptlSetViewMode("steps", el.dataset.anchor));
   });
-  let down = false, sx = 0, sl = 0;
-  sc.addEventListener("mousedown", e => { if (e.target.closest(".ptl-hit")) return; down = true; sx = e.pageX; sl = sc.scrollLeft; sc.style.cursor = "grabbing"; });
-  addEventListener("mouseup", () => { down = false; sc.style.cursor = "grab"; });
-  addEventListener("mousemove", e => { if (down) sc.scrollLeft = sl - (e.pageX - sx); });
+  // Row-mode product-group headers/summary rows - click to collapse/expand.
+  sc.querySelectorAll(".ptl-group-hit").forEach(el => {
+    el.addEventListener("click", () => ptlToggleProductGroup(el.dataset.group));
+  });
+  let down = false, sx = 0, sy = 0, sl = 0, st = 0;
+  sc.addEventListener("mousedown", e => {
+    if (e.target.closest(".ptl-hit") || e.target.closest(".ptl-group-hit")) return;
+    down = true; sx = e.pageX; sy = e.pageY; sl = sc.scrollLeft; st = sc.scrollTop; sc.style.cursor = "grabbing";
+  });
+  if (ptlDragMouseUpHandler) removeEventListener("mouseup", ptlDragMouseUpHandler);
+  if (ptlDragMouseMoveHandler) removeEventListener("mousemove", ptlDragMouseMoveHandler);
+  ptlDragMouseUpHandler = () => { down = false; sc.style.cursor = "grab"; };
+  // Vertical drag-pan (sc.scrollTop) added alongside the existing
+  // horizontal one - row mode's content-driven height needs it; centred
+  // mode's canvas rarely exceeds the viewport vertically so this is a
+  // no-op there.
+  ptlDragMouseMoveHandler = e => { if (down) { sc.scrollLeft = sl - (e.pageX - sx); sc.scrollTop = st - (e.pageY - sy); } };
+  addEventListener("mouseup", ptlDragMouseUpHandler);
+  addEventListener("mousemove", ptlDragMouseMoveHandler);
 }
 
 async function ptlMarkMilestoneDone(nodeId) {
