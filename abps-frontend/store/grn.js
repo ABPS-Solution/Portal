@@ -159,7 +159,7 @@ async function initializeStoreEntryWorkspaceQueue() {
           </td>
           <td class="se-invqty-cell-${item.gateNumber}" data-idx="${idx}" style="text-align:center; color:#1e293b; font-weight:800; vertical-align:middle; width:80px; font-family:monospace; font-size:1.05rem; padding:6px; border-left:1px solid var(--border);">
             <div class="se-invqty-parts-wrap-${item.gateNumber}" data-idx="${idx}">
-              ${seInvQtyPartBlockHtml(item.gateNumber, idx, 0, line.gateQuantity, true)}
+              ${seInvQtyPartBlockHtml(item.gateNumber, idx, 0, line.gateQuantity, false)}
             </div>
             <div class="se-invqty-sum-${item.gateNumber}" data-idx="${idx}" data-total="${line.gateQuantity}" style="font-size:0.58rem; color:var(--muted); margin-top:2px; display:none;"></div>
           </td>
@@ -354,8 +354,10 @@ function addSEPartRow(gateNum, idx) {
   const existingParts = poWrap.querySelectorAll(`.se-po-part-${gateNum}[data-idx="${idx}"]`).length;
   const newPart = existingParts; // dense 0..n
 
-  // First split: unlock the invoice-qty input on part 0 so it becomes
-  // editable (it was a readonly full-line display until now).
+  // Invoice Qty is already editable on part 0 from render (no longer a
+  // readonly full-line display) — this no-ops on the readonly flag now,
+  // kept only for the border/background reset in case part 0's input was
+  // ever left in some other visual state.
   if (existingParts === 1) {
     const part0Input = document.querySelector(`.se-invqty-input-${gateNum}[data-idx="${idx}"][data-part="0"]`);
     if (part0Input) { part0Input.readOnly = false; part0Input.style.border = '1px solid var(--border)'; part0Input.style.background = '#fff'; part0Input.style.padding = '5px 2px'; }

@@ -117,7 +117,10 @@ async function parseGateDocumentsWithAI() {
             readonly
             style="font-size:0.85rem; padding:5px 4px; font-weight:700; text-align:center; width:100%; border:1.5px solid var(--border); border-radius:3px; background:#f1f5f9; cursor:not-allowed;">
         </td>
-        <td style="text-align:center; color:#64748b; font-weight:700; font-size:1.05rem; vertical-align:middle; width:140px;">${item.gateQuantity ?? "—"}</td>
+        <td style="width:140px; padding:6px; vertical-align:middle;">
+          <input type="number" class="gate-row-qty-input" value="${item.gateQuantity ?? ''}" step="any" min="0"
+            style="font-size:1.05rem; padding:5px 4px; font-weight:700; color:#000; text-align:center; width:100%; border:1.5px solid var(--border); border-radius:3px;">
+        </td>
       </tr>`;
     });
     document.getElementById('gate-ai-verification-workspace').style.display = "block";
@@ -150,6 +153,7 @@ async function commitGateEntryRecordsToBackend() {
   
   const codeInputs = document.querySelectorAll('.gate-row-item-code-input');
   const unitInputs = document.querySelectorAll('.gate-row-unit-input');
+  const qtyInputs  = document.querySelectorAll('.gate-row-qty-input');
   const tableRows = document.querySelectorAll('#gate-verification-table-body tr');
 
   activeParsedGatePayloadCache.lineItems.forEach((item, idx) => {
@@ -157,6 +161,14 @@ async function commitGateEntryRecordsToBackend() {
     // Invoice Unit is read-only here (not operator-editable) — this just
     // reads back whatever the AI extraction/default already set.
     item.unitType = unitInputs[idx] ? (unitInputs[idx].value.trim() || 'NOS') : (item.unitType || 'NOS');
+    // Invoice Qty is editable — a vendor sometimes combines a previous
+    // PO's missing/shortfall units with a new PO's delivery in one
+    // document; splitting that into two Gate Entries against the same
+    // document (adjusting Qty and Default PO on each) is simpler than
+    // splitting one line across multiple POs, so the operator needs to
+    // be able to correct the AI-read quantity down to just the portion
+    // this particular Gate Entry is actually for.
+    item.gateQuantity = qtyInputs[idx] && qtyInputs[idx].value !== '' ? Number(qtyInputs[idx].value) : item.gateQuantity;
     if (!item.rawDescriptionLine && tableRows[idx]) {
       item.rawDescriptionLine = tableRows[idx].cells[1].textContent.trim();
     }
