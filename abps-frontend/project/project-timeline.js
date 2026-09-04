@@ -1193,10 +1193,13 @@ function ptlRenderCanvas(containerId) {
   // (long descriptions wrapped into 6-7 short lines while the gutter's
   // own column sat mostly blank) -- scale the wrap width off the actual
   // available surface width instead, capped so it can never eat more than
-  // ~22% of a very wide screen and never shrink below the original 24 on
-  // a narrow one. See the gutter block below for the actual line-wrapping
-  // (reuses ptlWrapLbl, same as node labels).
-  const longestName = Math.max(24, Math.min(44, Math.round((availW * 0.22) / (6.6 * ptlFS))));
+  // ~15% of a very wide screen and never shrink below 18 on a narrow one.
+  // Narrowed from the original 24-44/22% range (explicit request to make
+  // the product-name panel itself narrower) -- see wrapChars below for the
+  // value actually used to wrap gutter text, which is derived from the
+  // real rendered gutter width, not this sizing target, so the panel's
+  // width and its text-wrap width can no longer drift apart.
+  const longestName = Math.max(18, Math.min(30, Math.round((availW * 0.15) / (6.6 * ptlFS))));
   // LEAD is pure breathing room between the gutter's right edge and the
   // first plotted day - kept separate from the gutter's own width (see
   // gutterW below, which is PAD_L-based only) so widening this doesn't
@@ -1204,8 +1207,20 @@ function ptlRenderCanvas(containerId) {
   // Sent etc.) room to not sit flush against the gutter when scrolled all
   // the way left.
   const LEAD = Math.round(110 * ptlFS);
-  const PAD_L = Math.round(70 + longestName * 6.6 * ptlFS);
+  const PAD_L = Math.round(56 + longestName * 6.6 * ptlFS);
   const PAD_R = 90;
+  // Gutter pixel width, hoisted up here (was computed much later, right
+  // where it's drawn) because wrapChars below - the actual per-line
+  // character budget for every gutter text block, header or lane - needs
+  // it computed FIRST. Previously the wrap width was independently
+  // estimated from availW (see longestName's old comment) while the
+  // panel's real pixel width came from a different formula off the same
+  // longestName - the two didn't quite agree, which is what left an
+  // unused strip on the right of the panel and made text wrap a word
+  // earlier than the panel actually had room for. Deriving wrapChars
+  // directly from gutterW's own real text area closes that gap.
+  const gutterW = PAD_L + Math.round(64 * ptlFS) - 10;
+  const wrapChars = Math.max(10, Math.floor((gutterW - 28 * ptlFS - 16) / (6.6 * ptlFS)));
   ptlDayW = Math.max(16, Math.min(320, (availW - PAD_L - LEAD - PAD_R) / PTL_MODES[ptlMode]));
   const DENSE = ptlDayW < 38;
 
@@ -1256,8 +1271,14 @@ function ptlRenderCanvas(containerId) {
     let cursorY = RULER_H + TRUNK_BAND_H;
     groups.forEach((g, gi) => {
       const collapsed = ptlCollapsedProductGroups.has(g.key);
-      rowPlan.push({ type: 'header', group: g, y: cursorY + GROUP_HDR_H / 2, collapsed, groupIndex: gi });
-      cursorY += GROUP_HDR_H;
+      // Header text (the product name + rating count) is wrapped the same
+      // way a lane's own label is now, and the header band grows to fit it
+      // - a long product name used to render as one un-wrapped <text> that
+      // simply ran off the right edge of the gutter into the canvas.
+      const headerLines = ptlWrapLbl(g.label || '', wrapChars, 3);
+      const hdrH = Math.max(GROUP_HDR_H, Math.round(10 * ptlFS + headerLines.length * LANE_LINE_H));
+      rowPlan.push({ type: 'header', group: g, y: cursorY + hdrH / 2, hdrH, headerLines, collapsed, groupIndex: gi });
+      cursorY += hdrH;
       if (collapsed) {
         const y = cursorY + ROW_PITCH / 2;
         rowPlan.push({ type: 'summary', group: g, y, groupIndex: gi });
@@ -1268,7 +1289,7 @@ function ptlRenderCanvas(containerId) {
           const ratingLabel = [l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.name;
           // Generous line cap here (10) - this is sizing the row to the
           // label, not clipping the label to a pre-decided row size.
-          const labelLines = ptlWrapLbl(ratingLabel, longestName, 10);
+          const labelLines = ptlWrapLbl(ratingLabel, wrapChars, 10);
           const rowH = Math.max(ROW_PITCH, Math.round(LANE_ROW_PAD + labelLines.length * LANE_LINE_H));
           const y = cursorY + rowH / 2;
           laneYByBoq[l.boqId] = y;
@@ -1628,41 +1649,42 @@ function ptlRenderCanvas(containerId) {
   // no pinning at all let it scroll away with everything else instead of
   // staying put.
   if (laneCount) {
-    // Frozen at the ORIGINAL lead value (64), not the new wider LEAD above
-    // - the visible panel itself must stay exactly the width it was;
-    // LEAD growing is what creates the extra gap between this edge and
-    // the first plotted day, not a wider gutter.
-    const gutterW = PAD_L + (64 * ptlFS) - 10;
     const G = [`<g id="ptl-gutter">`, `<rect x="0" y="${RULER_H}" width="${gutterW}" height="${H - RULER_H}" fill="var(--bg,#f0f4f8)"/>`, `<line x1="${gutterW}" y1="${RULER_H}" x2="${gutterW}" y2="${H}" stroke="var(--border)" stroke-width="1"/>`];
     if (rowMode) {
       (rowPlan || []).forEach(item => {
         const gc = ptlGroupTraceColor(item.groupIndex);
         if (item.type === 'header') {
-          const hdrTop = item.y - GROUP_HDR_H / 2;
+          const hdrH = item.hdrH || GROUP_HDR_H;
+          const hdrTop = item.y - hdrH / 2;
           // Backgrounds/hit-rects stay within gutterW, not the full canvas
           // width W - this <g> is horizontally pinned to the viewport via
           // a scroll-compensating transform (pinGutter below), so a
           // full-width rect here would drift away from the visible,
           // pinned header text the moment the canvas is scrolled right.
-          G.push(`<rect x="0" y="${hdrTop}" width="${gutterW}" height="${GROUP_HDR_H}" fill="color-mix(in srgb, ${gc} 10%, transparent)"/>`);
+          G.push(`<rect x="0" y="${hdrTop}" width="${gutterW}" height="${hdrH}" fill="color-mix(in srgb, ${gc} 10%, transparent)"/>`);
           G.push(`<rect x="16" y="${item.y - 6 * ptlFS}" width="4" height="${12 * ptlFS}" rx="2" fill="${gc}"/>`);
           const chevron = item.collapsed ? '▸' : '▾';
           const countLabel = `${item.group.lanes.length} rating${item.group.lanes.length === 1 ? '' : 's'}`;
-          G.push(`<text x="28" y="${item.y + 4 * ptlFS}" font-size="${11.5 * ptlFS}" font-weight="800" fill="${gc}">${chevron} ${esc(item.group.label || '')} (${esc(countLabel)})</text>`);
-          G.push(`<rect class="ptl-group-hit" data-group="${esc(item.group.key)}" x="0" y="${hdrTop}" width="${gutterW}" height="${GROUP_HDR_H}" fill="transparent" style="cursor:pointer;"/>`);
+          const headerLines = item.headerLines && item.headerLines.length ? item.headerLines : [item.group.label || ''];
+          headerLines.forEach((ln, li) => {
+            const prefix = li === 0 ? `${chevron} ` : '';
+            const suffix = li === headerLines.length - 1 ? ` (${esc(countLabel)})` : '';
+            G.push(`<text x="28" y="${item.y + 4 * ptlFS + (li - (headerLines.length - 1) / 2) * LANE_LINE_H}" font-size="${11.5 * ptlFS}" font-weight="800" fill="${gc}">${prefix}${esc(ln)}${suffix}</text>`);
+          });
+          G.push(`<rect class="ptl-group-hit" data-group="${esc(item.group.key)}" x="0" y="${hdrTop}" width="${gutterW}" height="${hdrH}" fill="transparent" style="cursor:pointer;"/>`);
         } else if (item.type === 'summary') {
           G.push(`<rect x="16" y="${item.y - 12 * ptlFS}" width="4" height="${24 * ptlFS}" rx="2" fill="${gc}"/>`);
           G.push(`<text x="28" y="${item.y + 4.5 * ptlFS}" font-size="${10.5 * ptlFS}" font-style="italic" fill="var(--muted)">Collapsed - click to expand</text>`);
           G.push(`<rect class="ptl-group-hit" data-group="${esc(item.group.key)}" x="0" y="${item.y - ROW_PITCH / 2}" width="${gutterW}" height="${ROW_PITCH}" fill="transparent" style="cursor:pointer;"/>`);
         } else if (item.type === 'lane') {
           const l = item.lane, y = item.y;
-          const labelLines = item.labelLines || ptlWrapLbl([l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.name, longestName, 10);
+          const labelLines = item.labelLines || ptlWrapLbl([l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.name, wrapChars, 10);
           G.push(`<rect x="16" y="${y - 12 * ptlFS}" width="4" height="${24 * ptlFS}" rx="2" fill="${gc}"/>`);
           labelLines.forEach((ln, li) => {
             G.push(`<text x="28" y="${y + 4.5 * ptlFS + (li - (labelLines.length - 1) / 2) * 13 * ptlFS}" font-size="${11.5 * ptlFS}" font-weight="700" fill="${gc}">${esc(ln)}</text>`);
           });
           if (!l.steps.some(s => s.actual || s.target || s.planned)) {
-            G.push(`<text x="${gutterW + 14}" y="${y + 4 * ptlFS}" font-size="${10.5 * ptlFS}" font-style="italic" fill="var(--muted)">Not planned yet</text>`);
+            G.push(`<text x="${gutterW + 14}" y="${y + 4 * ptlFS}" font-size="${10.5 * ptlFS}" font-weight="800" font-style="italic" fill="var(--muted)">Not planned yet</text>`);
           }
         }
       });
@@ -1677,7 +1699,7 @@ function ptlRenderCanvas(containerId) {
         const y = laneYs[i];
         const lc = ptlLaneTraceColor(i);
         const fullLabel = [l.productName, l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.name;
-        const labelLines = ptlWrapLbl(fullLabel, longestName, gutterMaxLines);
+        const labelLines = ptlWrapLbl(fullLabel, wrapChars, gutterMaxLines);
         G.push(`<rect x="16" y="${y - 12 * ptlFS}" width="4" height="${24 * ptlFS}" rx="2" fill="${lc}"/>`);
         labelLines.forEach((ln, li) => {
           G.push(`<text x="28" y="${y + 4.5 * ptlFS + (li - (labelLines.length - 1) / 2) * 13 * ptlFS}" font-size="${11.5 * ptlFS}" font-weight="800" fill="${lc}">${esc(ln)}</text>`);
@@ -1686,7 +1708,7 @@ function ptlRenderCanvas(containerId) {
         // initial plan hasn't been submitted yet - nothing dated to trace,
         // so say so explicitly rather than leaving an unexplained empty row.
         if (!l.steps.some(s => s.actual || s.target || s.planned)) {
-          G.push(`<text x="${gutterW + 14}" y="${y + 4 * ptlFS}" font-style="italic" fill="var(--muted)" font-size="${10.5 * ptlFS}">Not planned yet</text>`);
+          G.push(`<text x="${gutterW + 14}" y="${y + 4 * ptlFS}" font-weight="800" font-style="italic" fill="var(--muted)" font-size="${10.5 * ptlFS}">Not planned yet</text>`);
         }
       });
     }
@@ -2053,9 +2075,17 @@ function ptlWireCanvasInteractions(sc, clickMap) {
   sc.querySelectorAll(".ptl-group-hit").forEach(el => {
     el.addEventListener("click", () => ptlToggleProductGroup(el.dataset.group));
   });
+  // Click-drag-to-pan, both axes. user-select:none on the scroller (not
+  // just preventDefault on mousedown) is what actually stops a drag from
+  // turning into a text selection over the SVG <text> nodes - without it
+  // the drag still scrolled, but every drag also highlighted a swath of
+  // gutter/label text, which reads as "panning is broken" even though it
+  // technically wasn't.
+  sc.style.userSelect = "none";
   let down = false, sx = 0, sy = 0, sl = 0, st = 0;
   sc.addEventListener("mousedown", e => {
     if (e.target.closest(".ptl-hit") || e.target.closest(".ptl-group-hit")) return;
+    e.preventDefault();
     down = true; sx = e.pageX; sy = e.pageY; sl = sc.scrollLeft; st = sc.scrollTop; sc.style.cursor = "grabbing";
   });
   if (ptlDragMouseUpHandler) removeEventListener("mouseup", ptlDragMouseUpHandler);
@@ -2065,7 +2095,7 @@ function ptlWireCanvasInteractions(sc, clickMap) {
   // horizontal one - row mode's content-driven height needs it; centred
   // mode's canvas rarely exceeds the viewport vertically so this is a
   // no-op there.
-  ptlDragMouseMoveHandler = e => { if (down) { sc.scrollLeft = sl - (e.pageX - sx); sc.scrollTop = st - (e.pageY - sy); } };
+  ptlDragMouseMoveHandler = e => { if (down) { e.preventDefault(); sc.scrollLeft = sl - (e.pageX - sx); sc.scrollTop = st - (e.pageY - sy); } };
   addEventListener("mouseup", ptlDragMouseUpHandler);
   addEventListener("mousemove", ptlDragMouseMoveHandler);
 }
