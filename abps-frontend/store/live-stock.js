@@ -1746,7 +1746,7 @@ async function eiDelivRunSearch(params, label) {
       return;
     }
     results.innerHTML = "";
-    const schemeDelivered = { sectionBg: "#f0fdf4", sectionBorder: "#86efac", headerColor: "#15803d", badgeBg: "#dcfce7", badgeColor: "#15803d", icon: "✅" };
+    const schemeDelivered = { sectionBg: "#f0fdf4", sectionBorder: "#86efac", headerColor: "#15803d", badgeBg: "#dcfce7", badgeColor: "#15803d" };
     results.appendChild(renderExpectedInboundsSection("Delivered", data.delivered, schemeDelivered));
   } catch(e) {
     results.innerHTML = `<div style="color:var(--warn); padding:12px;">Network error: ${e.message}</div>`;
@@ -1797,16 +1797,15 @@ async function loadExpectedInbounds() {
 
     if (totalCount === 0) {
       zone.innerHTML = `<div style="text-align:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted);">
-        <div style="font-size:2.5rem; margin-bottom:12px;">📦</div>
         <div style="font-weight:700; color:var(--accent); font-size:0.95rem;">No Pending Deliveries</div>
       </div>`;
       return;
     }
 
-    const schemeDueToday = { sectionBg: "#fff7ed", sectionBorder: "#f59e0b", headerColor: "#b45309", badgeBg: "#fef3c7", badgeColor: "#b45309", icon: "🕐" };
-    const schemeOverdue  = { sectionBg: "#fff5f5", sectionBorder: "#fca5a5", headerColor: "#b91c1c", badgeBg: "#fee2e2", badgeColor: "#b91c1c", icon: "🚨" };
-    const schemeUpcoming = { sectionBg: "#f0fdf4", sectionBorder: "#86efac", headerColor: "#15803d", badgeBg: "#dcfce7", badgeColor: "#15803d", icon: "📅" };
-    const schemeUnscheduled = { sectionBg: "#f8fafc", sectionBorder: "#cbd5e1", headerColor: "#475569", badgeBg: "#f1f5f9", badgeColor: "#475569", icon: "❓" };
+    const schemeDueToday = { sectionBg: "#fff7ed", sectionBorder: "#f59e0b", headerColor: "#b45309", badgeBg: "#fef3c7", badgeColor: "#b45309" };
+    const schemeOverdue  = { sectionBg: "#fff5f5", sectionBorder: "#fca5a5", headerColor: "#b91c1c", badgeBg: "#fee2e2", badgeColor: "#b91c1c" };
+    const schemeUpcoming = { sectionBg: "#f0fdf4", sectionBorder: "#86efac", headerColor: "#15803d", badgeBg: "#dcfce7", badgeColor: "#15803d" };
+    const schemeUnscheduled = { sectionBg: "#f8fafc", sectionBorder: "#cbd5e1", headerColor: "#475569", badgeBg: "#f1f5f9", badgeColor: "#475569" };
 
     // Overdue/Today called out first regardless of window; Upcoming is already
     // sorted ascending by daysRemaining from the backend.
@@ -1829,7 +1828,6 @@ function renderExpectedInboundsSection(title, poList, scheme) {
   sectionEl.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:${scheme.sectionBg}; border-bottom:1.5px solid ${scheme.sectionBorder};">
       <div style="display:flex; align-items:center; gap:10px;">
-        <span style="font-size:1.1rem;">${scheme.icon}</span>
         <span style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:${scheme.headerColor}; letter-spacing:0.5px;">${title}</span>
         <span style="font-size:0.72rem; font-weight:700; background:${scheme.badgeBg}; color:${scheme.badgeColor}; padding:2px 8px; border-radius:10px;">${poList.length} PO${poList.length !== 1 ? "s" : ""}</span>
       </div>
@@ -1866,7 +1864,7 @@ function renderExpectedInboundsPOCard(po, scheme) {
   const lineItemsHtml = po.lineItems.map(item => {
     let statusBadge;
     if (item.fullyReceived) {
-      statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:3px;">✅ Fully Received</span>`;
+      statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:3px;">Fully Received</span>`;
     } else if (item.partialReceived) {
       statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:3px;">Partial</span>`;
     } else {
@@ -1875,14 +1873,18 @@ function renderExpectedInboundsPOCard(po, scheme) {
     // Delivery schedule (migration 112) — each still-outstanding tranche
     // shown as its own qty-on-date chip, so a line split into several
     // planned deliveries reads as several distinct dated amounts rather
-    // than one collapsed date. A line with nothing planned yet (and not
-    // fully received) shows the same "Unscheduled" flag this PO-level
-    // Unscheduled bucket itself is built from.
-    const pending = (item.pendingTranches || []);
+    // than one collapsed date. windowTranches (not pendingTranches) is
+    // scoped to THIS tab's own date range by the backend now — a line
+    // with tranches, just none of them in this particular window, reads
+    // differently from a line with genuinely nothing scheduled at all
+    // (the same "Unscheduled" flag the PO-level Unscheduled bucket uses).
+    const windowPending = (item.windowTranches || []);
     const scheduleCell = item.fullyReceived ? `<span style="color:var(--muted); font-size:0.72rem;">—</span>`
-      : pending.length === 0
-        ? `<span style="font-size:0.68rem; font-weight:700; background:#f1f5f9; color:#64748b; padding:2px 6px; border-radius:3px;">Unscheduled</span>`
-        : pending.map(s => `<div style="font-size:0.68rem; white-space:nowrap;"><strong>${(parseFloat(s.plannedQty)||0)}</strong> on ${formatDateDMY(s.plannedDate)}</div>`).join("");
+      : windowPending.length > 0
+        ? windowPending.map(s => `<div style="font-size:0.68rem; white-space:nowrap;"><strong>${(parseFloat(s.plannedQty)||0)}</strong> on ${formatOrdinalDate(s.plannedDate)}</div>`).join("")
+        : (item.pendingTranches || []).length === 0
+          ? `<span style="font-size:0.68rem; font-weight:700; background:#f1f5f9; color:#64748b; padding:2px 6px; border-radius:3px;">Unscheduled</span>`
+          : `<span style="font-size:0.68rem; color:var(--muted);">Outside this window</span>`;
     return `<tr style="border-bottom:1px solid #f1f5f9;">
       <td style="padding:6px 8px; font-family:monospace; font-size:0.75rem; font-weight:700; color:var(--brand); white-space:nowrap;">${item.itemCode || "—"}</td>
       <td style="padding:6px 8px; font-size:0.8rem; font-weight:600; line-height:1.4;">${item.materialName}</td>
@@ -1904,13 +1906,13 @@ function renderExpectedInboundsPOCard(po, scheme) {
             <span style="font-size:0.78rem; font-weight:700; color:var(--muted); margin-left:10px;">Vendor: <strong style="color:var(--text);">${po.vendorName}</strong></span>
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-            ${po.actualDeliveryDate ? `<span style="font-size:0.72rem; font-weight:800; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:4px;">✅ Delivered on ${formatDateDMY(po.actualDeliveryDate)}</span>` : daysLabel}
+            ${po.actualDeliveryDate ? `<span style="font-size:0.72rem; font-weight:800; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:4px;">Delivered on ${formatOrdinalDate(po.actualDeliveryDate)}</span>` : daysLabel}
           </div>
         </div>
         <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.78rem; color:var(--muted);">
-          <span>📅 Order Date: <strong>${po.orderDate || "—"}</strong></span>
-          <span>🚚 Expected Delivery Date: <strong>${formatDateDMY(po.deliveryDate) || "—"}</strong></span>
-          <span>📦 Actual Delivery Date: <strong>${po.actualDeliveryDate ? formatDateDMY(po.actualDeliveryDate) : "—"}</strong></span>
+          <span>Order Date: <strong>${po.orderDate ? formatOrdinalDate(po.orderDate) : "—"}</strong></span>
+          <span>Expected Delivery Date: <strong>${po.deliveryDate ? formatOrdinalDate(po.deliveryDate) : "—"}</strong></span>
+          <span>Actual Delivery Date: <strong>${po.actualDeliveryDate ? formatOrdinalDate(po.actualDeliveryDate) : "—"}</strong></span>
         </div>
       </div>
 
