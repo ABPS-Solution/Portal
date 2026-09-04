@@ -1038,18 +1038,30 @@ function ptlCanvasNodes() {
     spine: spineIds.map(dated).filter(Boolean),
     tail: tailIds.map(dated).filter(Boolean),
     standalone: standaloneIds.map(dated).filter(Boolean),
-    lanes: (ptlData.lanes || []).filter(l => l.planInitialized),
+    // Every in-scope Authorized BOQ gets a lane and a gutter label as soon
+    // as it exists — the backend already scopes `lanes` to
+    // `design.boq_drafts WHERE status = 'Authorized'` (routes/timeline.js),
+    // i.e. exactly "All BOQs Released", not "Production Planning
+    // submitted". Previously filtered to `planInitialized` only, which
+    // meant a product didn't get its own labeled row here until Stage 4's
+    // initial plan was entered — well after the products actually being
+    // made were finalized. A BOQ revision changing the product set is
+    // reflected automatically next load, same as everywhere else on this
+    // screen, since this is a live re-query, not a snapshot. Lanes with no
+    // plan yet still get a row + label but no trace/step markers — see the
+    // `hasAnyDate` guards below.
+    lanes: ptlData.lanes || [],
   };
 }
 
-function ptlWrapLbl(t, max) {
+function ptlWrapLbl(t, max, maxLines = 2) {
   const out = []; let cur = "";
   t.split(" ").forEach(w => {
     if ((cur + " " + w).trim().length > max && cur) { out.push(cur); cur = w; }
     else cur = (cur + " " + w).trim();
   });
   if (cur) out.push(cur);
-  return out.slice(0, 2);
+  return out.slice(0, maxLines);
 }
 // 5.8px/char under-measured real (bold, mixed-case) rendered text widths
 // enough that adjacent close-dated nodes' labels ("Drawing Approved" /
@@ -1249,9 +1261,15 @@ function ptlRenderCanvas(containerId) {
     const split = pos[spine[spine.length - 1].id];
     const merge = tail.length ? pos[tail[0].id] : split;
     lanes.forEach((l, i) => {
+      // No planned/target/actual date on any step yet (BOQ authorized but
+      // Stage 4's initial plan not submitted) — nothing dated to trace or
+      // plot a node for. The lane still gets its row/label (see the gutter
+      // block below); skip the trace/branch geometry entirely rather than
+      // feeding xOf(undefined) and drawing every point bunched at x=0.
+      if (!l.steps.some(s => s.actual || s.target || s.planned)) return;
       const c = ptlLaneTraceColor(i);
       const y = laneYs[i];
-      const stepPts = l.steps.map(s => ({ x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id] }));
+      const stepPts = l.steps.filter(s => s.actual || s.target || s.planned).map(s => ({ x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id] }));
       const fx = stepPts[0].x, lx = stepPts[stepPts.length - 1].x;
       traces.push({ d: `M${split.x} ${split.y} C${(split.x + fx) / 2} ${split.y}, ${(split.x + fx) / 2} ${y}, ${fx} ${y}`, c });
       traces.push({ d: poly(stepPts), c });
@@ -1271,7 +1289,9 @@ function ptlRenderCanvas(containerId) {
   spine.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
   tail.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
   standalone.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
-  lanes.forEach((l, i) => l.steps.forEach(s => laid.push({ n: { ...s, dept: l.ownerDept === 'Reactor' ? 'lane_r' : l.ownerDept === 'Capacitor' ? 'lane_c' : 'lane_p' }, x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id], boqId: l.boqId, ownerLabel: `${l.ownerDept} Production` })));
+  // Same hasAnyDate guard as the trace loop above — an unplanned lane has
+  // nothing dated to plot a node for.
+  lanes.forEach((l, i) => { if (l.steps.some(s => s.actual || s.target || s.planned)) l.steps.forEach(s => laid.push({ n: { ...s, dept: l.ownerDept === 'Reactor' ? 'lane_r' : l.ownerDept === 'Capacitor' ? 'lane_c' : 'lane_p' }, x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id], boqId: l.boqId, ownerLabel: `${l.ownerDept} Production` })); });
   laid.sort((a, b) => a.x - b.x);
 
   const PL = ptlPlacer();
@@ -1340,15 +1360,27 @@ function ptlRenderCanvas(containerId) {
     // the first plotted day, not a wider gutter.
     const gutterW = PAD_L + (64 * ptlFS) - 10;
     const G = [`<g id="ptl-gutter">`, `<rect x="0" y="${RULER_H}" width="${gutterW}" height="${H - RULER_H}" fill="var(--bg,#f0f4f8)"/>`, `<line x1="${gutterW}" y1="${RULER_H}" x2="${gutterW}" y2="${H}" stroke="var(--border)" stroke-width="1"/>`];
+    // Full name, not truncated to 2 lines — ptlWrapLbl's default 2-line cap
+    // (built for short node labels) was silently dropping the rating/
+    // description tail of longer product names here. maxLines is derived
+    // from the actual vertical room between lanes (`gap`) so labels never
+    // run into a neighboring lane's own text.
+    const gutterMaxLines = Math.max(2, Math.floor((gap * 0.85) / (13 * ptlFS)));
     lanes.forEach((l, i) => {
       const y = laneYs[i];
       const lc = ptlLaneTraceColor(i);
       const fullLabel = [l.productName, l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.name;
-      const labelLines = ptlWrapLbl(fullLabel, longestName);
+      const labelLines = ptlWrapLbl(fullLabel, longestName, gutterMaxLines);
       G.push(`<rect x="16" y="${y - 12 * ptlFS}" width="4" height="${24 * ptlFS}" rx="2" fill="${lc}"/>`);
       labelLines.forEach((ln, li) => {
         G.push(`<text x="28" y="${y + 4.5 * ptlFS + (li - (labelLines.length - 1) / 2) * 13 * ptlFS}" font-size="${11.5 * ptlFS}" font-weight="800" fill="${lc}">${esc(ln)}</text>`);
       });
+      // BOQ authorized (so it has a lane/label at all) but Stage 4's
+      // initial plan hasn't been submitted yet — nothing dated to trace,
+      // so say so explicitly rather than leaving an unexplained empty row.
+      if (!l.steps.some(s => s.actual || s.target || s.planned)) {
+        G.push(`<text x="${gutterW + 14}" y="${y + 4 * ptlFS}" font-size="${10.5 * ptlFS}" font-style="italic" fill="var(--muted)">Not planned yet</text>`);
+      }
     });
     G.push(`</g>`);
     P.push(G.join(""));
