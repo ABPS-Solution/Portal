@@ -129,7 +129,13 @@ async function commitGateEntryRecordsToBackend() {
   if (!activeParsedGatePayloadCache || !activeParsedGatePayloadCache.lineItems) return alert("Process data missing.");
 
   if (!document.getElementById('gate-meta-vendor').value.trim()) return alert("Vendor Name is compulsory.");
-  if (!document.getElementById('gate-meta-invoice').value.trim()) return alert("Invoice Number is compulsory.");
+  // Which number is required tracks which document was actually uploaded —
+  // Invoice Number only matters if an Invoice was attached, Challan Number
+  // only if a Challan was attached, and both if both were. Previously
+  // Invoice Number was unconditionally required even for a challan-only
+  // Gate Entry, which had no invoice number to give.
+  if (targetGateInvoiceFileObj && !document.getElementById('gate-meta-invoice').value.trim()) return alert("Invoice Number is compulsory.");
+  if (targetGateChallanFileObj && !document.getElementById('gate-meta-challan').value.trim()) return alert("Challan Number is compulsory.");
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Generating Gate Entry...';
