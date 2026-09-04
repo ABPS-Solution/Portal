@@ -1621,7 +1621,7 @@ let expectedInboundsFilterMode = "all";
 
 function initializeExpectedInboundsPanel() {
   document.getElementById("expected-inbounds-feedback").style.display = "none";
-  setExpectedInboundsFilter("7");
+  setExpectedInboundsFilter("today");
 }
 
 function setExpectedInboundsFilter(mode) {
