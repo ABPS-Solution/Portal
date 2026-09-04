@@ -171,10 +171,10 @@ function renderStoreLedgerTable(prefix, rows) {
       <td style="padding:8px; font-weight:600;">${r.materialName || '—'}</td>
       <td style="padding:8px; text-align:center;">${r.unit || '—'}</td>
       <td style="padding:8px;">${r.typeOfMaterial || '—'}</td>
-      <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${trimNum(r.startingStock)}</td>
-      <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:#15803d;">${trimNum(r.inwardQty)}</td>
-      <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:#b91c1c;">${trimNum(r.issuedQty)}</td>
-      <td style="padding:8px; text-align:center; font-family:monospace; font-weight:800; color:var(--brand);">${trimNum(r.endingStock)}</td>
+      <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.15rem;">${trimNum(r.startingStock)}</td>
+      <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.15rem; color:#15803d;">${trimNum(r.inwardQty)}</td>
+      <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.15rem; color:#b91c1c;">${trimNum(r.issuedQty)}</td>
+      <td style="padding:8px; text-align:center; font-family:monospace; font-weight:800; font-size:1.15rem; color:var(--brand);">${trimNum(r.endingStock)}</td>
     </tr>`).join('');
 }
 

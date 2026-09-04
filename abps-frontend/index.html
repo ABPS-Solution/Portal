@@ -976,16 +976,16 @@
         <div class="dashboard-grid" id="dashboard-live-inventory-metrics-mount-zone" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap:10px; padding:0;"></div>
       </div>
       <div id="rm-ledger-view" style="display:none;">
-        <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:14px; align-items:end; margin-bottom:14px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr auto auto; gap:14px; align-items:end; margin-bottom:14px;">
           <div><label class="field-label" style="margin-top:0;">Start Date</label><input type="date" id="rm-ledger-start" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
           <div><label class="field-label" style="margin-top:0;">End Date</label><input type="date" id="rm-ledger-end" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <label style="display:inline-flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:700; padding:9px 16px; border:1.5px solid var(--border); border-radius:var(--radius); cursor:pointer; background:#fff; white-space:nowrap; user-select:none;">
+            <input type="checkbox" id="rm-ledger-all-materials" checked onchange="toggleStoreLedgerAllMaterials('rm')" style="width:17px; height:17px; cursor:pointer; accent-color:var(--brand);" /> All Materials
+          </label>
           <button class="nav-btn-styled" onclick="generateStoreLedgerReport('rm', 'Raw Materials')" style="background:var(--accent); padding:9px 20px; font-weight:700; white-space:nowrap;">Generate Report</button>
         </div>
 
         <div style="margin-bottom:14px;">
-          <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; font-weight:700; margin-bottom:8px; cursor:pointer;">
-            <input type="checkbox" id="rm-ledger-all-materials" checked onchange="toggleStoreLedgerAllMaterials('rm')" /> All Materials
-          </label>
           <div id="rm-ledger-material-picker" style="display:none;">
             <div style="position:relative; max-width:420px;">
               <input type="text" id="rm-ledger-material-search" placeholder="🔎 Search and add material..." autocomplete="off"
@@ -1146,16 +1146,16 @@
       </div>
       </div>
       <div id="fgstock-ledger-view" style="display:none;">
-        <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:14px; align-items:end; margin-bottom:14px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr auto auto; gap:14px; align-items:end; margin-bottom:14px;">
           <div><label class="field-label" style="margin-top:0;">Start Date</label><input type="date" id="fgstock-ledger-start" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
           <div><label class="field-label" style="margin-top:0;">End Date</label><input type="date" id="fgstock-ledger-end" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <label style="display:inline-flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:700; padding:9px 16px; border:1.5px solid var(--border); border-radius:var(--radius); cursor:pointer; background:#fff; white-space:nowrap; user-select:none;">
+            <input type="checkbox" id="fgstock-ledger-all-materials" checked onchange="toggleStoreLedgerAllMaterials('fgstock')" style="width:17px; height:17px; cursor:pointer; accent-color:var(--brand);" /> All Materials
+          </label>
           <button class="nav-btn-styled" onclick="generateStoreLedgerReport('fgstock', 'Finished Goods')" style="background:var(--accent); padding:9px 20px; font-weight:700; white-space:nowrap;">Generate Report</button>
         </div>
 
         <div style="margin-bottom:14px;">
-          <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; font-weight:700; margin-bottom:8px; cursor:pointer;">
-            <input type="checkbox" id="fgstock-ledger-all-materials" checked onchange="toggleStoreLedgerAllMaterials('fgstock')" /> All Materials
-          </label>
           <div id="fgstock-ledger-material-picker" style="display:none;">
             <div style="position:relative; max-width:420px;">
               <input type="text" id="fgstock-ledger-material-search" placeholder="🔎 Search and add material..." autocomplete="off"
@@ -1206,16 +1206,16 @@
       <div class="dashboard-grid" id="dashboard-live-spare-inventory-metrics-mount-zone" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap:10px; padding:0;"></div>
       </div>
       <div id="spare-ledger-view" style="display:none;">
-        <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:14px; align-items:end; margin-bottom:14px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr auto auto; gap:14px; align-items:end; margin-bottom:14px;">
           <div><label class="field-label" style="margin-top:0;">Start Date</label><input type="date" id="spare-ledger-start" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
           <div><label class="field-label" style="margin-top:0;">End Date</label><input type="date" id="spare-ledger-end" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <label style="display:inline-flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:700; padding:9px 16px; border:1.5px solid var(--border); border-radius:var(--radius); cursor:pointer; background:#fff; white-space:nowrap; user-select:none;">
+            <input type="checkbox" id="spare-ledger-all-materials" checked onchange="toggleStoreLedgerAllMaterials('spare')" style="width:17px; height:17px; cursor:pointer; accent-color:var(--brand);" /> All Materials
+          </label>
           <button class="nav-btn-styled" onclick="generateStoreLedgerReport('spare', 'Spare')" style="background:var(--accent); padding:9px 20px; font-weight:700; white-space:nowrap;">Generate Report</button>
         </div>
 
         <div style="margin-bottom:14px;">
-          <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; font-weight:700; margin-bottom:8px; cursor:pointer;">
-            <input type="checkbox" id="spare-ledger-all-materials" checked onchange="toggleStoreLedgerAllMaterials('spare')" /> All Materials
-          </label>
           <div id="spare-ledger-material-picker" style="display:none;">
             <div style="position:relative; max-width:420px;">
               <input type="text" id="spare-ledger-material-search" placeholder="🔎 Search and add material..." autocomplete="off"
