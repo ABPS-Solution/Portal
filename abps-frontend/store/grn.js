@@ -194,7 +194,7 @@ async function initializeStoreEntryWorkspaceQueue() {
         </div>
         <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
           <div style="max-width:300px; margin-bottom:14px;">
-            <label class="field-label">Default PO — applies to any line left unassigned</label>
+            <label class="field-label">PO Number</label>
             <input type="text" id="se-po-number-${item.gateNumber}" value="${item.defaultPoNo || ''}" placeholder="e.g. PO_26-27_00002"
               style="width:100%; padding:6px; background:#f1f5f9; border:1.5px solid var(--border); border-radius:3px;"
               onblur="checkStoreEntryPONumber('${item.gateNumber}'); applyDefaultPOToAllLines('${item.gateNumber}');">
