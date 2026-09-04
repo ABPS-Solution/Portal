@@ -199,7 +199,7 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
       }));
     }
     const editorCell = purchaseQty <= 0
-      ? `<span style="font-size:0.78rem; color:#15803d; font-weight:700;">Fully covered from store — no date needed</span>`
+      ? `<span style="font-size:0.95rem; color:#15803d; font-weight:700;">Fully covered from store — no date needed</span>`
       : readOnly
         ? mrdReadOnlyTranches(st.lines[key])
         : `<div id="mrdsched-${ns}-${key}">${mrdRenderScheduleEditor(ns, key)}</div>`;
@@ -208,9 +208,9 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
       <tr style="border-bottom:1px solid #e2e8f0;">
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${esc(line.itemCode)}</td>
         <td style="padding:8px; font-size:0.9rem; font-weight:600;">${esc(line.materialName)}</td>
-        <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.9rem;">${fmt(line.storeQty)}</td>
-        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:0.9rem;">${fmt(line.purchaseQty)}</td>
-        <td style="padding:8px;">${editorCell}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-size:1.05rem;">${fmt(line.storeQty)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.05rem;">${fmt(line.purchaseQty)}</td>
+        <td style="padding:8px; font-size:0.95rem;">${editorCell}</td>
       </tr>`;
   }).join("");
 
@@ -226,11 +226,11 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
       <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:900px;">
         <thead><tr style="background:#f8fafc;">
-          <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
-          <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:200px;">Material Name</th>
-          <th style="padding:8px; font-size:0.7rem; text-align:center;">Store Qty</th>
-          <th style="padding:8px; font-size:0.7rem; text-align:center;">Purchase Qty</th>
-          <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:260px;">Production Requirement Date</th>
+          <th style="padding:8px; font-size:0.92rem; text-align:left;">Item Code</th>
+          <th style="padding:8px; font-size:0.92rem; text-align:left; min-width:200px;">Material Name</th>
+          <th style="padding:8px; font-size:0.92rem; text-align:center;">Store Qty</th>
+          <th style="padding:8px; font-size:0.92rem; text-align:center;">Purchase Qty</th>
+          <th style="padding:8px; font-size:0.92rem; text-align:left; min-width:260px;">Production Requirement Date</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
@@ -239,8 +239,8 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
 }
 
 function mrdReadOnlyTranches(list) {
-  if (!list || list.length === 0) return `<span style="color:var(--muted); font-size:0.78rem;">—</span>`;
-  return list.map(t => `<div style="font-size:0.78rem;">${(parseFloat(t.requiredQty)||0).toLocaleString("en-IN")} on ${formatOrdinalDate(t.requiredDate)}</div>`).join("");
+  if (!list || list.length === 0) return `<span style="color:var(--muted); font-size:0.9rem;">—</span>`;
+  return list.map(t => `<div style="font-size:0.9rem;">${(parseFloat(t.requiredQty)||0).toLocaleString("en-IN")} on ${formatOrdinalDate(t.requiredDate)}</div>`).join("");
 }
 
 function mrdRerenderSchedule(ns, key) {
