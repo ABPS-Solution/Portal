@@ -1893,6 +1893,7 @@
         Record all material recovered from every department/job card in this sweep, regardless of project.
       </p>
       <div id="sweep-feedback" style="display:none; margin-bottom:14px;"></div>
+      <div id="sweep-form-body">
       <div style="display:grid; grid-template-columns:minmax(200px,1fr) minmax(260px,2fr); gap:12px; margin-bottom:12px; align-items:end;">
         <div>
           <label class="field-label">Sweep Type *</label>
@@ -1925,6 +1926,7 @@
         <tbody id="sweep-basket-body"><tr id="sweep-basket-empty"><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No items added yet.</td></tr></tbody>
       </table>
       <button id="sweep-submit-btn" class="nav-btn-styled" style="background:var(--brand);" onclick="submitStockSweep()" disabled>Submit Stock Sweep</button>
+      </div>
     </div>
 
     <div id="canvas-module-assign-current-stock" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">

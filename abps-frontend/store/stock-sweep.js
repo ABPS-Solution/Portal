@@ -5,6 +5,8 @@ function initializeStockSweepPanel() {
   document.getElementById("sweep-material-dropdown").style.display = "none";
   const st = document.getElementById("sweep-type");
   if (st) st.value = "Production Return";
+  const formBody = document.getElementById("sweep-form-body");
+  if (formBody) formBody.style.display = "";
   renderSweepBasket();
 }
 
@@ -155,6 +157,8 @@ async function submitStockSweep() {
       renderSweepBasket();
       const docLinks = data.pdfUrl ? [{ url: driveLink(data.pdfUrl), label: "Download Stock Sweep Record PDF" }] : [];
       showSuccessWithReset("sweep-feedback", msg, "Record Another Sweep", "initializeStockSweepPanel()", docLinks);
+      const formBody = document.getElementById("sweep-form-body");
+      if (formBody) formBody.style.display = "none";
     } else {
       showBOQBanner("sweep-feedback", data.error || "Failed to record sweep.", "error");
     }
