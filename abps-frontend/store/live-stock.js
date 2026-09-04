@@ -1870,29 +1870,22 @@ function renderExpectedInboundsPOCard(po, scheme) {
     } else {
       statusBadge = `<span style="font-size:0.7rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:3px;">Pending</span>`;
     }
-    // Delivery schedule (migration 112) — each still-outstanding tranche
-    // shown as its own qty-on-date chip, so a line split into several
-    // planned deliveries reads as several distinct dated amounts rather
-    // than one collapsed date. windowTranches (not pendingTranches) is
-    // scoped to THIS tab's own date range by the backend now — a line
-    // with tranches, just none of them in this particular window, reads
-    // differently from a line with genuinely nothing scheduled at all
-    // (the same "Unscheduled" flag the PO-level Unscheduled bucket uses).
-    const windowPending = (item.windowTranches || []);
-    const scheduleCell = item.fullyReceived ? `<span style="color:var(--muted); font-size:0.72rem;">—</span>`
-      : windowPending.length > 0
-        ? windowPending.map(s => `<div style="font-size:0.68rem; white-space:nowrap;"><strong>${(parseFloat(s.plannedQty)||0)}</strong> on ${formatOrdinalDate(s.plannedDate)}</div>`).join("")
-        : (item.pendingTranches || []).length === 0
-          ? `<span style="font-size:0.68rem; font-weight:700; background:#f1f5f9; color:#64748b; padding:2px 6px; border-radius:3px;">Unscheduled</span>`
-          : `<span style="font-size:0.68rem; color:var(--muted);">Outside this window</span>`;
+    // Ordered Qty now shows only the quantity actually due IN THIS
+    // WINDOW (windowOrderedQty — the sum of whichever of this line's
+    // tranches matched the current tab's date range), not the PO line's
+    // full lifetime order quantity — the whole point of the schedule
+    // split is that different amounts of the same line are due on
+    // different dates, so "Ordered Qty" should move with that split
+    // rather than always showing the undivided total. Falls back to the
+    // real total for Delivered/Unscheduled, where no window applies.
+    const displayQty = item.windowOrderedQty !== undefined ? formatQtyTrimmed(item.windowOrderedQty) : item.orderedQty;
     return `<tr style="border-bottom:1px solid #f1f5f9;">
       <td style="padding:6px 8px; font-family:monospace; font-size:0.75rem; font-weight:700; color:var(--brand); white-space:nowrap;">${item.itemCode || "—"}</td>
       <td style="padding:6px 8px; font-size:0.8rem; font-weight:600; line-height:1.4;">${item.materialName}</td>
-      <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap;">${item.orderedQty} ${item.unit}</td>
+      <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap;">${displayQty} ${item.unit}</td>
       <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap; color:#15803d;">${item.receivedQty}</td>
       <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap; color:#b45309;">${item.repairQty}</td>
       <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap; color:#b91c1c;">${item.returnMissingQty}</td>
-      <td style="padding:6px 8px; text-align:center;">${scheduleCell}</td>
       <td style="padding:6px 8px; text-align:center;">${statusBadge}</td>
     </tr>`;
   }).join("");
@@ -1924,16 +1917,15 @@ function renderExpectedInboundsPOCard(po, scheme) {
       </div>
 
       <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; min-width:1040px; table-layout:fixed;">
+        <table style="width:100%; border-collapse:collapse; min-width:900px; table-layout:fixed;">
           <colgroup>
-            <col style="width:7%;">
-            <col style="width:32%;">
-            <col style="width:10%;">
-            <col style="width:10%;">
-            <col style="width:10%;">
-            <col style="width:10%;">
-            <col style="width:11%;">
-            <col style="width:10%;">
+            <col style="width:8%;">
+            <col style="width:37%;">
+            <col style="width:12%;">
+            <col style="width:12%;">
+            <col style="width:12%;">
+            <col style="width:12%;">
+            <col style="width:12%;">
           </colgroup>
           <thead>
             <tr style="background:#f8fafc; border-bottom:1px solid var(--border);">
@@ -1943,7 +1935,6 @@ function renderExpectedInboundsPOCard(po, scheme) {
               <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Received<br>Qty</th>
               <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Being Repaired<br>at ABPS Qty</th>
               <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Return to Vendor<br>/ Missing Qty</th>
-              <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Delivery Schedule</th>
               <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Status</th>
             </tr>
           </thead>
