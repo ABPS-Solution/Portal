@@ -2198,7 +2198,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
                 <div style="font-weight:700; font-size:0.78rem; text-transform:uppercase; color:#15803d; margin-bottom:8px; letter-spacing:0.3px;">Please verify the extracted data below is correct:</div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
                   <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Number</span><br/><strong style="font-family:monospace; color:#111827;">${data.extractedPONumber || '—'}</strong></div>
-                  <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Date</span><br/><strong style="color:#111827;">${formatDateDMY(data.extractedPODate) || '—'}</strong></div>
+                  <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Date</span><br/><strong style="color:#111827;">${formatOrdinalDate(data.extractedPODate) || '—'}</strong></div>
                   <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Basic Amount (excl. GST)</span><br/><strong style="color:#111827;">${data.extractedBasicAmount ? '₹' + Number(data.extractedBasicAmount).toLocaleString('en-IN') : '—'}</strong></div>
                   <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Total Amount (incl. GST)</span><br/><strong style="color:#111827;">${data.extractedTotalAmount ? '₹' + Number(data.extractedTotalAmount).toLocaleString('en-IN') : '—'}</strong></div>
                   <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Line Items Captured</span><br/><strong style="color:#111827;">${data.extractedLineItemCount || 0} items</strong></div>
@@ -2836,7 +2836,7 @@ function renderPurchaseOrderCommitSuccess(data) {
       <div style="margin-top:10px; background:#fff; border:1px solid #86efac; border-radius:6px; padding:10px; font-size:0.82rem; color:#166534;">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
           <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Number</span><br/><strong style="font-family:monospace; color:#111827;">${data.extractedPONumber || '—'}</strong></div>
-          <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Date</span><br/><strong style="color:#111827;">${formatDateDMY(data.extractedPODate) || '—'}</strong></div>
+          <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Date</span><br/><strong style="color:#111827;">${formatOrdinalDate(data.extractedPODate) || '—'}</strong></div>
           <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Basic Amount (excl. GST)</span><br/><strong style="color:#111827;">${data.extractedBasicAmount ? '₹' + Number(data.extractedBasicAmount).toLocaleString('en-IN') : '—'}</strong></div>
           <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Total Amount (incl. GST)</span><br/><strong style="color:#111827;">${data.extractedTotalAmount ? '₹' + Number(data.extractedTotalAmount).toLocaleString('en-IN') : '—'}</strong></div>
           <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Products</span><br/><strong style="color:#111827;">${data.extractedLineItemCount || 0} Product${data.extractedLineItemCount === 1 ? '' : 's'}</strong></div>
@@ -2966,7 +2966,7 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
       if (rawValue === null || rawValue === undefined || rawValue === "") return "";
       let value = rawValue;
       if (typeof value === "boolean") value = value ? "Yes" : "No";
-      else if (dateFieldLabels.has(label)) value = formatDateDMY(value);
+      else if (dateFieldLabels.has(label)) value = formatOrdinalDate(value);
       else if (amountFieldLabels.has(label)) value = formatQtyTrimmed(value);
       return `<div style="display:flex; flex-direction:column; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px 8px; min-width:0; word-break:break-word;">
         <span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">${escapeHtml(label)}</span>
@@ -3013,7 +3013,7 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
         ["Invoice Number", inv.invoiceNo],
         ["Invoice Type", inv.invoiceType + (inv.revision > 1 ? ` (Revision ${inv.revision})` : "")],
         ["Trade Type", inv.tradeType],
-        ["Invoice Date", inv.createdAt ? formatDateTimeDMY(inv.createdAt) : ""],
+        ["Invoice Date", inv.createdAt ? formatOrdinalDateTime(inv.createdAt) : ""],
         ["Basic Invoice Amount (in Rs)", formatQtyTrimmed(inv.basicAmount)],
         ["Invoice GST Amount", formatQtyTrimmed(inv.gstAmount)],
         ["Total Invoice Amount", formatQtyTrimmed(inv.totalAmount)],

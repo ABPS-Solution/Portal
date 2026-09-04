@@ -96,7 +96,7 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
         <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere; vertical-align:middle; ${centered} ${colBorder}">${t.eng}</td>
         <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere; vertical-align:middle; ${centered} ${colBorder}">${t.assigner || "System"}</td>
         <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${t.shift}</td>
-        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${formatCleanDateOnly(t.targetDate)}</td>
+        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${formatOrdinalDate(t.targetDate)}</td>
         <td style="width:6%; padding:6px 4px; vertical-align:middle; ${centered} ${colBorder}"><span style="font-size:0.72rem; font-weight:700; color:#fff; background:${priorityColor}; padding:1px 6px; border-radius:3px;">${t.priority || "Medium"}</span></td>
         <td style="width:30%; padding:6px 4px; font-size:0.85rem; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; vertical-align:middle; ${colBorder}">${t.desc || 'None'}</td>
         <td style="width:17.5%; padding:6px 4px; font-size:0.85rem; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; vertical-align:middle; ${colBorder}">${t.completionNotes || '—'}</td>
@@ -344,7 +344,7 @@ async function executeTaskMatrixSearch() {
           </div>
           <div style="font-size:0.93rem; line-height:1.5; color:#000;">
             <strong>Engineer:</strong> ${t.eng} | <strong>Assigner:</strong> ${t.assigner || "System"}<br/>
-            <strong>Target Date:</strong> ${formatCleanDateOnly(t.targetDate)} | <strong>Target Completion Time:</strong> ${t.shift}<br/>
+            <strong>Target Date:</strong> ${formatOrdinalDate(t.targetDate)} | <strong>Target Completion Time:</strong> ${t.shift}<br/>
             <strong>Lead Reference:</strong> ${t.companyName} (${t.personName})
           </div>
           <div style="font-size:0.93rem; color:#000; padding:6px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; margin-top:6px; white-space:pre-wrap;"><strong>Description:</strong> ${t.desc || 'None'}</div>

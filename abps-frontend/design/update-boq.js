@@ -92,7 +92,7 @@ async function toggleBOQRevisionExpansion(updateId) {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Date</label>
-          <input type="text" value="${formatDateDMY(reqItem.createdAt)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" value="${formatOrdinalDate(reqItem.createdAt)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Department (locked)</label>
@@ -477,7 +477,7 @@ function renderUBOQForm() {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Date</label>
-          <input type="text" value="${formatDateDMY(draft.date)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" value="${formatOrdinalDate(draft.date)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Department (locked)</label>

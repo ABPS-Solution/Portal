@@ -1769,7 +1769,7 @@ async function loadExpectedInbounds() {
     // visible alongside Overdue/Today/Upcoming, not hidden behind a
     // separate tab — the whole point of this bucket existing is that
     // unplanned material shouldn't be able to go unnoticed.
-    const totalCount = (data.today || []).length + (data.overdue || []).length + (data.upcoming || []).length + (data.unscheduled || []).length;
+    const totalCount = (data.today || []).length + (data.overdue || []).length + (data.upcoming || []).length + (data.unscheduled || []).length + (data.partiallyDelivered || []).length;
 
     if (totalCount === 0) {
       zone.innerHTML = `<div style="text-align:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted);">
@@ -1782,6 +1782,7 @@ async function loadExpectedInbounds() {
     const schemeOverdue  = { sectionBg: "#fff5f5", sectionBorder: "#fca5a5", headerColor: "#b91c1c", badgeBg: "#fee2e2", badgeColor: "#b91c1c" };
     const schemeUpcoming = { sectionBg: "#f0fdf4", sectionBorder: "#86efac", headerColor: "#15803d", badgeBg: "#dcfce7", badgeColor: "#15803d" };
     const schemeUnscheduled = { sectionBg: "#f8fafc", sectionBorder: "#cbd5e1", headerColor: "#475569", badgeBg: "#f1f5f9", badgeColor: "#475569" };
+    const schemePartial = { sectionBg: "#fff7ed", sectionBorder: "#fdba74", headerColor: "#c2410c", badgeBg: "#ffedd5", badgeColor: "#c2410c" };
 
     // Overdue/Today called out first regardless of window; Upcoming is already
     // sorted ascending by daysRemaining from the backend.
@@ -1789,6 +1790,10 @@ async function loadExpectedInbounds() {
     if ((data.today || []).length > 0)    zone.appendChild(renderExpectedInboundsSection("Due Today", data.today,    schemeDueToday));
     if ((data.upcoming || []).length > 0) zone.appendChild(renderExpectedInboundsSection("Upcoming",  data.upcoming, schemeUpcoming));
     if ((data.unscheduled || []).length > 0) zone.appendChild(renderExpectedInboundsSection("Unscheduled", data.unscheduled, schemeUnscheduled));
+    // Partially Delivered — only populated when that tab is selected
+    // (filterMode === 'partiallyDelivered'), unlike Overdue/Today/
+    // Unscheduled above which ride along with every date-window request.
+    if ((data.partiallyDelivered || []).length > 0) zone.appendChild(renderExpectedInboundsSection("Partially Delivered", data.partiallyDelivered, schemePartial));
 
   } catch(e) {
     zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${e.message}</div>`;

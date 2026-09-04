@@ -152,7 +152,7 @@ async function initializeRevisePOPanel() {
             <div style="flex:1; min-width:240px;">
               <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${po.poNo}${po.revisionNumber > 1 ? ` <span style="font-size:0.7rem; color:var(--muted);">(V${po.revisionNumber})</span>` : ""}</div>
               <div style="font-size:0.8rem; font-weight:600; margin-top:2px;">${po.vendorName || ""}</div>
-              <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Ordered ${po.orderDate ? formatDateDMY(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatDateDMY(po.deliveryDate) : "—"}</div>
+              <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Ordered ${po.orderDate ? formatOrdinalDate(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatOrdinalDate(po.deliveryDate) : "—"}</div>
             </div>
             <div style="display:flex; gap:8px; flex-shrink:0;">
               <button onclick="dismissPORevision('${po.poNo}')" style="padding:7px 14px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.8rem;">No Revision Needed</button>
@@ -259,7 +259,7 @@ async function searchPOsForRevisionUI() {
         <div>
           <div style="font-family:monospace; font-weight:800; color:var(--brand);">${po.poNo}${po.revisionNumber > 1 ? ` <span style="font-size:0.7rem; color:var(--muted);">(V${po.revisionNumber})</span>` : ""}</div>
           <div style="font-size:0.8rem; font-weight:600;">${po.vendorName || ""}</div>
-          <div style="font-size:0.72rem; color:var(--muted);">Ordered ${po.orderDate ? formatDateDMY(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatDateDMY(po.deliveryDate) : "—"}</div>
+          <div style="font-size:0.72rem; color:var(--muted);">Ordered ${po.orderDate ? formatOrdinalDate(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatOrdinalDate(po.deliveryDate) : "—"}</div>
         </div>
         ${po.revisionPending
           ? `<span style="font-size:0.72rem; font-weight:700; color:#b45309; background:#fef3c7; padding:4px 10px; border-radius:4px;">Revision already pending</span>`
@@ -918,7 +918,7 @@ async function initializeAuthorizePORevisionPanel() {
           <div>
             <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.95rem;">${r.poNo} <span style="font-size:0.7rem; color:var(--muted);">→ V${(Number(r.revisionNumber)||1) + 1}</span></div>
             <div style="font-size:0.82rem; font-weight:700;">${r.vendorName || ""}</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Drafted by ${r.requestedBy || "—"} · ${r.requestedAt ? formatDateDMY(r.requestedAt) : ""}</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Drafted by ${r.requestedBy || "—"} · ${r.requestedAt ? formatOrdinalDate(r.requestedAt) : ""}</div>
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <span style="font-size:0.68rem; font-weight:800; padding:4px 10px; border-radius:4px; background:${r.revisionKind === "Cancellation" ? "#fee2e2" : "#fef3c7"}; color:${r.revisionKind === "Cancellation" ? "#7f1d1d" : "#78350f"};">${r.revisionKind === "Cancellation" ? "FULL CANCELLATION" : r.revisionKind.toUpperCase()}</span>
@@ -981,8 +981,8 @@ function renderAPORCard(r) {
   // material table itself: header fields, taxes/charges/terms, and the
   // resulting Sub Total / Grand Total movement.
   const bulletHtml = (f) => {
-    const curDisp = f.isDate ? formatDateDMY(f.cur) : (f.isText ? (f.cur || "—") : fmt(f.cur));
-    const revDisp = f.isDate ? formatDateDMY(f.rev) : (f.isText ? f.rev : fmt(f.rev));
+    const curDisp = f.isDate ? formatOrdinalDate(f.cur) : (f.isText ? (f.cur || "—") : fmt(f.cur));
+    const revDisp = f.isDate ? formatOrdinalDate(f.rev) : (f.isText ? f.rev : fmt(f.rev));
     return `<li><strong>${f.label}</strong>: ${curDisp} → <span style="font-weight:700; color:#b45309;">${revDisp}</span></li>`;
   };
   const changedField = (f) => {

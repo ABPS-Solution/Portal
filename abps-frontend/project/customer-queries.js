@@ -82,7 +82,7 @@ function renderCqUnattributedList() {
       <div style="font-weight:700; color:#854d0e; margin-bottom:10px;">We found ${cqUnattributedComms.length} email(s) to a customer — which query does each answer?</div>
       ${cqUnattributedComms.map(c => `
         <div style="background:#fff; border:1px solid var(--border); border-radius:4px; padding:10px; margin-bottom:8px; font-size:0.82rem;">
-          <div><strong>${c.commType}</strong> to ${c.sentTo || ''} — ${formatDateDMY(c.sentAt)} ${c.threadLink ? `<a href="${c.threadLink}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Email ↗</a>` : ''}</div>
+          <div><strong>${c.commType}</strong> to ${c.sentTo || ''} — ${formatOrdinalDate(c.sentAt)} ${c.threadLink ? `<a href="${c.threadLink}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Email ↗</a>` : ''}</div>
           <div style="color:var(--muted); margin:4px 0;">${c.subject || ''}${c.aiSummary ? ' — ' + c.aiSummary : ''}</div>
           <div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
             <select id="cq-attr-select-${c.communicationId}" style="flex:1; padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.8rem;">
@@ -188,7 +188,7 @@ function renderCqIncomingList() {
     return `<div style="border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:12px; background:#fff;">
       <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
         <div style="flex:1; min-width:240px;">
-          <div style="font-size:0.78rem; color:var(--muted);">${formatDateDMY(mail.receivedDate)} — ${mail.inboxAccount || ''}</div>
+          <div style="font-size:0.78rem; color:var(--muted);">${formatOrdinalDate(mail.receivedDate)} — ${mail.inboxAccount || ''}</div>
           <div style="font-weight:700; margin-top:2px;">${mail.fromAddress || '—'}</div>
           <div style="font-size:0.85rem; margin-top:2px;">${mail.subject || '(no subject)'}</div>
           <div style="font-size:0.8rem; color:var(--muted); margin-top:6px;">${mail.aiSummary || mail.bodySnippet || ''}</div>
@@ -488,10 +488,10 @@ function cqRenderPendingCard(q) {
   return `<div style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:10px; background:#fff; overflow:hidden;">
     <div style="padding:12px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;" onclick="toggleCqPendingCard(${q.queryId})">
       <div style="font-size:0.82rem;">
-        <strong>${q.projectId}</strong> — ${q.customerName || ''} &nbsp;|&nbsp; ${formatDateDMY(q.customerQueryDate)} &nbsp;|&nbsp; ${q.stageName}${q.stageName === 'Others' && q.stageOtherText ? ` (${q.stageOtherText})` : ''}<br>
+        <strong>${q.projectId}</strong> — ${q.customerName || ''} &nbsp;|&nbsp; ${formatOrdinalDate(q.customerQueryDate)} &nbsp;|&nbsp; ${q.stageName}${q.stageName === 'Others' && q.stageOtherText ? ` (${q.stageOtherText})` : ''}<br>
         <span style="color:var(--muted);">${(q.concernedDepartments || []).join(', ')} — Owner: ${q.abpsResponsiblePerson}</span>
       </div>
-      <div style="font-weight:700; color:var(--brand);">Target: ${formatDateDMY(q.targetClosingDate)}</div>
+      <div style="font-weight:700; color:var(--brand);">Target: ${formatOrdinalDate(q.targetClosingDate)}</div>
     </div>
     <div id="cq-pending-edit-${q.queryId}" style="${isOpen ? '' : 'display:none;'} padding:14px; border-top:1px solid var(--border);"></div>
   </div>`;
@@ -568,7 +568,7 @@ function renderCqPendingEditForm(queryId) {
       </div>
       <div>
         <label class="field-label" style="margin-top:0;">Target Closing Date Given by Departments</label>
-        <input type="text" readonly value="${formatDateDMY(s.targetClosingDate)}" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9;" />
+        <input type="text" readonly value="${formatOrdinalDate(s.targetClosingDate)}" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9;" />
       </div>
     </div>
     <div style="margin-bottom:12px;">
@@ -647,7 +647,7 @@ function renderCqCommunicationsList(queryId) {
   if (comms.length === 0) { el.innerHTML = `<span style="color:var(--muted);">No emails detected for this query yet.</span>`; return; }
   el.innerHTML = comms.map(c => `
     <div style="padding:6px 0; border-bottom:1px solid #e0f2fe;">
-      <strong>${c.commType}</strong> — ${c.sentTo || ''} — ${formatDateDMY(c.sentAt)}
+      <strong>${c.commType}</strong> — ${c.sentTo || ''} — ${formatOrdinalDate(c.sentAt)}
       ${c.threadLink ? `<a href="${c.threadLink}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; margin-left:6px;">Open Email ↗</a>` : ''}
       <div style="color:var(--muted); font-size:0.75rem;">${c.subject || ''}${c.aiSummary ? ' — ' + c.aiSummary : ''}</div>
     </div>
@@ -797,7 +797,7 @@ function renderCqResolvedList() {
           <strong>${q.projectId}</strong> — ${q.customerName || ''} &nbsp;|&nbsp; ${q.stageName}<br>
           <span style="color:var(--muted);">${(q.concernedDepartments || []).join(', ')} — Owner: ${q.abpsResponsiblePerson}</span>
         </div>
-        <div style="font-weight:700; color:#15803d;">Closed: ${formatDateDMY(q.actualClosingDate)} (${q.delayDays} day(s) delay)</div>
+        <div style="font-weight:700; color:#15803d;">Closed: ${formatOrdinalDate(q.actualClosingDate)} (${q.delayDays} day(s) delay)</div>
       </div>
       ${isOpen ? cqRenderResolvedDetail(q) : ''}
     </div>`;
@@ -808,10 +808,10 @@ function cqRenderResolvedDetail(q) {
   return `<div style="padding:14px; border-top:1px solid var(--border); font-size:0.85rem;">
     <div><strong>Standard Product Name(s):</strong> ${(q.standardProductNames || []).join(', ')}</div>
     <div><strong>Order Product Description(s):</strong> ${(q.orderProductDescriptions || []).join('; ') || '—'}</div>
-    <div><strong>Customer Query Date:</strong> ${formatDateDMY(q.customerQueryDate)}</div>
+    <div><strong>Customer Query Date:</strong> ${formatOrdinalDate(q.customerQueryDate)}</div>
     <div><strong>Customer Query:</strong> ${q.customerQuery || '—'}</div>
-    <div><strong>Target Closing Date:</strong> ${formatDateDMY(q.targetClosingDate)}</div>
-    <div><strong>Actual Closing Date:</strong> ${formatDateDMY(q.actualClosingDate)}</div>
+    <div><strong>Target Closing Date:</strong> ${formatOrdinalDate(q.targetClosingDate)}</div>
+    <div><strong>Actual Closing Date:</strong> ${formatOrdinalDate(q.actualClosingDate)}</div>
     <div><strong>Number of Delay Days:</strong> ${q.delayDays}</div>
     <div><strong>Reason for Delay:</strong> ${q.reasonForDelay || '—'}</div>
     <div style="text-align:right; margin-top:12px;">

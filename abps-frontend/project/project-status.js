@@ -321,7 +321,7 @@ function renderPstatLaneDetail(lane) {
             : `<span style="font-weight:400;">${po.poNo}</span>`;
           return `<div class="pstat-po-card">
             <div class="pstat-po-row1"><span>${poNoHtml} <span style="font-weight:600; color:var(--muted);">— ${po.vendorName || "—"}</span></span><span>${fmtQty(po.receivedQty)} / ${fmtQty(po.orderedQty)} recv</span></div>
-            <div class="pstat-po-row2"><span>Exp: ${formatDateDMY(po.expectedDelivery) || "—"}${po.actualDelivery ? ` · Delivered: ${formatDateDMY(po.actualDelivery)}` : ""}</span><span class="pstat-po-chip ${chipClass}">${chipLabel}</span></div>
+            <div class="pstat-po-row2"><span>Exp: ${formatOrdinalDate(po.expectedDelivery) || "—"}${po.actualDelivery ? ` · Delivered: ${formatOrdinalDate(po.actualDelivery)}` : ""}</span><span class="pstat-po-chip ${chipClass}">${chipLabel}</span></div>
           </div>`;
         }).join("")}
       </div>`;

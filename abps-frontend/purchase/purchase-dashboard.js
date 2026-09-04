@@ -209,7 +209,7 @@ function pdRenderDashboard(data) {
         return `<tr style="border-bottom:1px solid #f1f5f9; background:${rowBg};">
           <td style="padding:4px 5px; font-family:monospace; font-size:0.68rem; font-weight:700;">${po.poId}</td>
           <td style="padding:4px 5px; font-size:0.7rem;">${po.vendor}</td>
-          <td style="padding:4px 5px; text-align:center; font-size:0.68rem;">${formatDateDMY(po.deliveryDate)}</td>
+          <td style="padding:4px 5px; text-align:center; font-size:0.68rem;">${formatOrdinalDate(po.deliveryDate)}</td>
           <td style="padding:4px 5px; text-align:center;"><span style="font-size:0.62rem; font-weight:700; padding:1px 6px; border-radius:8px; background:${overdueBg}; color:${overdueColor};">${po.daysOverdue}d</span></td>
           <td style="padding:4px 5px; text-align:right; font-family:monospace; font-size:0.7rem;">${fmtNum(po.grand)}</td>
         </tr>`;

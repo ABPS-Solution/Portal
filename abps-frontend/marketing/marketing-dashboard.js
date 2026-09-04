@@ -136,7 +136,7 @@ function mdRenderDashboard(data) {
         <tr style="border-bottom:1px solid var(--border);">
           <td style="padding:4px;">${w.company}</td>
           <td style="padding:4px;">${w.engineer}</td>
-          <td style="padding:4px; text-align:right;">${formatDateDMY(w.date)}</td>
+          <td style="padding:4px; text-align:right;">${formatOrdinalDate(w.date)}</td>
         </tr>`).join("");
 }
 

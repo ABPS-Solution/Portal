@@ -129,7 +129,7 @@ async function searchVendorCostingInfoUI() {
 
   const materialLabel = document.getElementById("svci-material-input").value.trim();
   const vendorLabel = window.svciSelectedVendorName || "All Vendors";
-  const dateRangeLabel = `${svciFmtDisplayDate(dateFrom)} to ${svciFmtDisplayDate(dateTo)}`;
+  const dateRangeLabel = `${formatOrdinalDate(dateFrom)} to ${formatOrdinalDate(dateTo)}`;
 
   const results = document.getElementById("svci-results");
   results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
@@ -203,8 +203,8 @@ function renderSVCIResultsTable() {
       <td style="padding:8px;">${r.city || "—"}${r.state ? ', ' + r.state : ''}</td>
       <td style="padding:8px; text-align:center; font-family:monospace; font-size:1rem; font-weight:700;">${fmtQty(r.poQuantity)}</td>
       <td style="padding:8px; text-align:center; font-family:monospace; font-size:1rem; font-weight:700;">${fmtQty(r.ratePerQty)}</td>
-      <td style="padding:8px; text-align:center; white-space:nowrap;">${fmtPODate(r.orderDate) || "—"}</td>
-      <td style="padding:8px; text-align:center; white-space:nowrap;">${fmtPODate(r.deliveryDate) || "—"}</td>
+      <td style="padding:8px; text-align:center; white-space:nowrap;">${formatOrdinalDate(r.orderDate) || "—"}</td>
+      <td style="padding:8px; text-align:center; white-space:nowrap;">${formatOrdinalDate(r.deliveryDate) || "—"}</td>
     </tr>`).join("");
 
   results.innerHTML = `

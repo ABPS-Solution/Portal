@@ -93,7 +93,7 @@ async function loadManufacturingClearanceList() {
         <td style="padding:8px; font-family:monospace; word-break:break-word;">${p.projectId}</td>
         <td style="padding:8px; word-break:break-word;">${p.companyName}</td>
         <td style="padding:8px; white-space:pre-line; word-break:break-word;">${escapeHtml(p.orderProductDescription) || "—"}</td>
-        <td style="padding:8px;">${formatDateDMY(p.deliveryDate) || "—"}</td>
+        <td style="padding:8px;">${formatOrdinalDate(p.deliveryDate) || "—"}</td>
         <td style="padding:8px;">
           ${mcCurrentStatus === "Inactive"
             ? `<button class="nav-btn-styled" style="background:#2f9e58; padding:5px 12px; font-size:0.78rem;" onclick="mcActivateProject('${p.projectId}')">Activate</button>`
@@ -136,7 +136,7 @@ function renderMcProjectCard(project) {
         <div class="meta-row-line-block" style="display:flex; align-items:center; flex-wrap:wrap; gap:10px;">
           <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:3px 8px; font-size:0.85rem; border-radius:3px;">${project.projectId}</span>
           <strong style="color:#111827; font-size:0.9rem;">${project.companyName}</strong>
-          <span style="font-size:0.85rem;">${deliveryLabel}: <strong style="color:#111827;">${formatDateDMY(deliveryValue) || "—"}</strong></span>
+          <span style="font-size:0.85rem;">${deliveryLabel}: <strong style="color:#111827;">${formatOrdinalDate(deliveryValue) || "—"}</strong></span>
           <span style="margin-left:auto; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#fff; background:${status.color}; padding:3px 8px; border-radius:10px;">${status.text}</span>
           <span id="mc-caret-${safeId}" style="font-weight:700; color:var(--muted);">▸</span>
         </div>

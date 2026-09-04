@@ -144,7 +144,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
         <div class="contact-summary-title-info">
           <div class="meta-row-line-block">
             <span style="background:var(--highlight-bg); border:1px solid var(--brand); color:var(--brand); font-family:monospace; text-transform:none;">${mail.destinationInboxAccount}</span>
-            <span style="background:#cbd5e1; color:#1e293b; font-weight:700;">${formatDateDMY(mail.receivedDate)}${receivedTimeLabel}</span>
+            <span style="background:#cbd5e1; color:#1e293b; font-weight:700;">${formatOrdinalDate(mail.receivedDate)}${receivedTimeLabel}</span>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px;">
             <span style="background:#e2e8f0;">Company:</span><strong style="margin-right:20px; color:var(--brand);">${escapeHtml(mail.extractedCompany)}</strong>

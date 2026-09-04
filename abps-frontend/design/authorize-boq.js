@@ -53,7 +53,7 @@ async function initializeAuthorizeBOQPanel(mode) {
             <div class="meta-row-line-block">
               <span style="background:#edf2f7;">Department:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${draft.department}</span>
               <span style="background:#edf2f7;">MFC Qty:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${formatQtyTrimmed(draft.orderQuantity)}</span>
-              <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${formatDateDMY(draft.date)}</span>
+              <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${formatOrdinalDate(draft.date)}</span>
             </div>
           </div>
         </div>
@@ -116,7 +116,7 @@ async function initializeAuthorizeBOQRevisionPanel() {
             <div class="meta-row-line-block">
               <span style="background:#edf2f7;">Department:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${reqItem.department || ""}</span>
               <span style="background:#edf2f7;">MFC Qty:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${formatQtyTrimmed(reqItem.newOrderQuantity)}</span>
-              <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${formatDateDMY(reqItem.createdAt)}</span>
+              <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${formatOrdinalDate(reqItem.createdAt)}</span>
             </div>
           </div>
         </div>
@@ -325,7 +325,7 @@ function renderEBOQForm(containerId) {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Date</label>
-          <input type="text" value="${formatDateDMY(draft.date)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" value="${formatOrdinalDate(draft.date)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Department ${eboqMode === "authorize-update" ? "(locked)" : "*"}</label>

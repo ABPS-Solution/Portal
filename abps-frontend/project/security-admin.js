@@ -213,7 +213,7 @@ async function loadAllowedNetworks() {
         <td style="padding:8px; font-family:monospace;">${n.cidr}</td>
         <td style="padding:8px;">${n.label}</td>
         <td style="padding:8px;">${n.active ? 'Active' : 'Inactive'}</td>
-        <td style="padding:8px;">${formatDateDMY ? formatDateDMY(n.created_at) : new Date(n.created_at).toLocaleDateString()}</td>
+        <td style="padding:8px;">${formatOrdinalDate(n.created_at)}</td>
         <td style="padding:8px;">${n.active ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="deactivateNetwork(${n.network_id})">Deactivate</button>` : '—'}</td>
       </tr>`).join('') || `<tr><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No networks configured.</td></tr>`;
   } catch (e) { console.error("loadAllowedNetworks failed:", e); }
@@ -305,9 +305,9 @@ async function loadTrustedDevices() {
       <tr style="border-top:1px solid var(--border);">
         <td style="padding:8px;">${d.user_name || '—'}</td>
         <td style="padding:8px; font-size:0.78rem; color:var(--muted); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.device_label || '—'}</td>
-        <td style="padding:8px;">${formatDateDMY(d.created_at)}</td>
-        <td style="padding:8px;">${d.last_used_at ? formatDateDMY(d.last_used_at) : '—'}</td>
-        <td style="padding:8px;">${formatDateDMY(d.expires_at)}</td>
+        <td style="padding:8px;">${formatOrdinalDate(d.created_at)}</td>
+        <td style="padding:8px;">${d.last_used_at ? formatOrdinalDate(d.last_used_at) : '—'}</td>
+        <td style="padding:8px;">${formatOrdinalDate(d.expires_at)}</td>
         <td style="padding:8px;">${d.revoked ? 'Revoked' : 'Active'}</td>
         <td style="padding:8px;"><button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitDeleteTrustedDevice(${d.device_id})">Delete</button></td>
       </tr>`).join('') || `<tr><td colspan="7" style="padding:14px; text-align:center; color:var(--muted);">No trusted devices yet.</td></tr>`;
@@ -341,7 +341,7 @@ function renderLoginLog() {
   const filtered = saAllLoginLogEntries.filter(l => !q || (l.user_name || "").toLowerCase().includes(q));
   tbody.innerHTML = filtered.map(l => `
       <tr style="border-top:1px solid var(--border); ${l.allowed ? '' : 'background:#fef2f2;'}">
-        <td style="padding:8px; white-space:nowrap;">${formatDateTimeDMY(l.created_at)}</td>
+        <td style="padding:8px; white-space:nowrap;">${formatOrdinalDateTime(l.created_at)}</td>
         <td style="padding:8px;">${l.user_name || '—'}</td>
         <td style="padding:8px; font-family:monospace;">${l.ip || '—'}</td>
         <td style="padding:8px; font-weight:700; color:${l.allowed ? '#16a34a' : '#dc2626'};">${l.allowed ? 'Allowed' : 'Blocked'}</td>
@@ -389,7 +389,7 @@ function renderOutageModeStatus(settings) {
   if (active) {
     box.innerHTML = `
       <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
-        <div style="line-height:1.5;">⚠️ <strong>Outage Mode is ACTIVE</strong> — activated by ${escapeHtml(settings.outage_mode_activated_by || 'unknown')} at ${formatDateTimeDMY(settings.outage_mode_started_at)}, expires ${formatDateTimeDMY(settings.outage_mode_expires_at)}.</div>
+        <div style="line-height:1.5;">⚠️ <strong>Outage Mode is ACTIVE</strong> — activated by ${escapeHtml(settings.outage_mode_activated_by || 'unknown')} at ${formatOrdinalDateTime(settings.outage_mode_started_at)}, expires ${formatOrdinalDateTime(settings.outage_mode_expires_at)}.</div>
         <button class="nav-btn-styled" style="padding:6px 16px; font-size:0.8rem; flex-shrink:0; white-space:nowrap;" onclick="deactivateOutageModeNow()">Deactivate Now</button>
       </div>`;
     box.style.background = '#fef3c7'; box.style.borderLeftColor = '#f59e0b'; box.style.color = '#78350f';

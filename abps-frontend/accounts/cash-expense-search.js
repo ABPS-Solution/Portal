@@ -95,7 +95,7 @@ function cesBuildSearchLabel() {
   const modeLabel = document.getElementById("ces-f-mode").value || "All";
   const from = document.getElementById("ces-f-from").value;
   const to = document.getElementById("ces-f-to").value;
-  const dateRangeLabel = (from || to) ? `${from ? formatDateDMY(from) : '…'} to ${to ? formatDateDMY(to) : '…'}` : "All";
+  const dateRangeLabel = (from || to) ? `${from ? formatOrdinalDate(from) : '…'} to ${to ? formatOrdinalDate(to) : '…'}` : "All";
   return `<span style="color:#000;">Searching for</span>` +
     `<br><span style="color:#000;">Employee:</span> ${val(employeeLabel)} &nbsp; <span style="color:#000;">Department:</span> ${val(deptLabel)}` +
     `<br><span style="color:#000;">Type of Expense:</span> ${val(typeLabel)} &nbsp; <span style="color:#000;">Payment Mode:</span> ${val(modeLabel)}` +

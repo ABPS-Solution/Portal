@@ -339,7 +339,7 @@ function renderPinvInvoiceForm() {
   zone.style.display = "block";
   const s = pinvInvoiceState;
   const today = new Date();
-  const todayDMY = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+  const todayDMY = formatOrdinalDate(today);
   const esc = (v) => (v == null ? '' : v.toString()).replace(/"/g, '&quot;');
 
   // Auto-growing textarea instead of a single-line <input> — a long Bill

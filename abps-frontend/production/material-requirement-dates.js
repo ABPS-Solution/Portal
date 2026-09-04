@@ -240,7 +240,7 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
 
 function mrdReadOnlyTranches(list) {
   if (!list || list.length === 0) return `<span style="color:var(--muted); font-size:0.78rem;">—</span>`;
-  return list.map(t => `<div style="font-size:0.78rem;">${(parseFloat(t.requiredQty)||0).toLocaleString("en-IN")} on ${formatDateDMY(t.requiredDate)}</div>`).join("");
+  return list.map(t => `<div style="font-size:0.78rem;">${(parseFloat(t.requiredQty)||0).toLocaleString("en-IN")} on ${formatOrdinalDate(t.requiredDate)}</div>`).join("");
 }
 
 function mrdRerenderSchedule(ns, key) {

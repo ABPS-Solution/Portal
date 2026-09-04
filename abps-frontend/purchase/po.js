@@ -18,7 +18,7 @@ async function initializeAuthorizePOPanel() {
             <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNumber}</span>
             <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
           </div>
-          <div style="font-size:0.85rem; color:var(--muted);">${fmtPODate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${po.preparedBy}</div>
+          <div style="font-size:0.85rem; color:var(--muted);">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${po.preparedBy}</div>
         </div>
         <div id="po-auth-expand-${po.poNumber}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
       </div>`).join("");
@@ -281,7 +281,7 @@ async function searchRMPOMatrixUI() {
   const esc = (s) => (s || "").toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const black = (s) => `<span style="color:#000;">${s}</span>`;
   const val = (s) => `<span style="color:var(--brand);">${esc(s)}</span>`;
-  const dateRangeDisplay = dateFrom ? `${srchpoFmtDisplayDate(dateFrom)} to ${srchpoFmtDisplayDate(dateTo)}` : "All Dates";
+  const dateRangeDisplay = dateFrom ? `${formatOrdinalDate(dateFrom)} to ${formatOrdinalDate(dateTo)}` : "All Dates";
   lbl.innerHTML = `${black("Searching for")}<br>`
     + `${black("PO Number :")} ${val(poNumberQuery || "All POs")}<br>`
     + `${black("Vendor Name:")} ${val(vendorName || "All Vendors")}<br>`
@@ -320,7 +320,7 @@ function renderSrchPOResultsAsPOCards(list) {
           <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
           ${po.revisionNumber ? `<span style="margin-left:8px; font-size:0.72rem; color:var(--muted);">V${po.revisionNumber}</span>` : ""}
         </div>
-        <div style="font-size:0.85rem; color:var(--muted);">${fmtPODate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></div>
+        <div style="font-size:0.85rem; color:var(--muted);">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></div>
       </div>
       <div id="srchpo-expand-${po.poNo}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
     </div>`).join("");
@@ -386,8 +386,8 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:14px;">
         ${field("Vendor Name", po.vendorName)}
         ${field("Supplier Offer No", po.supplierRef)}
-        ${field("Order Date", fmtPODate(po.orderDate))}
-        ${field("Delivery Date", fmtPODate(po.deliveryDate))}
+        ${field("Order Date", formatOrdinalDate(po.orderDate))}
+        ${field("Delivery Date", formatOrdinalDate(po.deliveryDate))}
         ${field("Prepared By", po.preparedBy)}
         ${field("Authorized By", po.authorizedBy)}
         ${field("Revision Number", po.revisionNumber || 0)}

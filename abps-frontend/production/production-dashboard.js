@@ -168,7 +168,7 @@ function pd2RenderDashboard(data) {
               <div style="font-size:0.67rem; color:var(--muted);">${fg.projectId} · ${fg.department} · ${fg.jobCardNumber}</div>
             </div>
             <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
-              <span style="font-size:0.62rem; color:var(--muted);">${formatDateDMY(fg.date)}</span>
+              <span style="font-size:0.62rem; color:var(--muted);">${formatOrdinalDate(fg.date)}</span>
             </div>
           </div>
         </div>`).join("");
