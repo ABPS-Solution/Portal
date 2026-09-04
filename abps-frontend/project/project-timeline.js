@@ -644,7 +644,17 @@ function ptlRenderLaneSteps(lane, c, canWrite) {
 
     let actionCell;
     if (s.terminal) {
-      actionCell = `<span style="font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(s.chip || '')}</span>`;
+      // Real completion is still fully automatic (derived off Job
+      // Cards actually reaching FG Store) - this admin control is a
+      // testing-only override so a realistic multi-week test pass
+      // doesn't need real Job Card/FG Store activity to exist for the
+      // terminal step, same precedent as the Stage 3 system-milestone
+      // overrides above. adminSetPackingFgDate/adminClearPackingFgDate
+      // write straight into this step's own actual_date - see their
+      // header comment in routes/timeline.js.
+      const chip = `<span style="font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(s.chip || '')}</span>`;
+      const adminCtl = ptlIsAdmin() ? `<span style="display:inline-flex; align-items:center; gap:6px;">${ptlAsOfInputHtml(`${lane.boqId}-${s.id}`, s.actual)}<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem;" onclick="ptlAdminSetPackingFgDate('${lane.boqId}')">${s.actual ? 'Update (admin)' : 'Set date (admin)'}</button>${s.actual ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem; background:#fff; color:var(--muted); border:1px solid var(--border);" onclick="ptlAdminClearPackingFgDate('${lane.boqId}')">Clear</button>` : ''}</span>` : '';
+      actionCell = `${chip}${adminCtl}`;
     } else if (!canWrite) {
       actionCell = done
         ? `<span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${ptlFmt(s.actual)}</span>`
@@ -749,6 +759,29 @@ async function ptlUnmarkStepDone(boqId, stepKey) {
     const step = lane && lane.steps.find(s => s.id === stepKey);
     if (step) step.actual = null;
     ptlRender();
+  } catch (e) { alert("Network error: " + e.message); }
+}
+
+// Admin-only, testing-only override for the terminal "Packing and Adding
+// to FG" step - see adminSetPackingFgDate's header comment in
+// routes/timeline.js for why this needs its own route instead of reusing
+// markProductPlanStepDone (which explicitly refuses this step for
+// everyone, admin included, outside this override).
+async function ptlAdminSetPackingFgDate(boqId) {
+  const date = ptlReadAsOf(`${boqId}-packing_add_fg`);
+  if (!date) { alert("Pick a date first."); return; }
+  try {
+    const data = await apFetch({ action: "adminSetPackingFgDate", operatorName: appActiveOperatorIdentityString, boqId, date });
+    if (!data.success) { alert(data.error || "Could not set this date."); return; }
+    await selectPtlProject(ptlData.project.projectId);
+  } catch (e) { alert("Network error: " + e.message); }
+}
+
+async function ptlAdminClearPackingFgDate(boqId) {
+  try {
+    const data = await apFetch({ action: "adminClearPackingFgDate", operatorName: appActiveOperatorIdentityString, boqId });
+    if (!data.success) { alert(data.error || "Could not clear this override."); return; }
+    await selectPtlProject(ptlData.project.projectId);
   } catch (e) { alert("Network error: " + e.message); }
 }
 
