@@ -111,12 +111,13 @@ async function parseGateDocumentsWithAI() {
             placeholder="Not found" readonly
             style="font-size:0.85rem; padding:5px 4px; font-weight:700; color:${codeColor}; border:${codeBorder}; background:${codeBg}; text-align:center; width:100%; border-radius:3px; cursor:not-allowed;">
         </td>
-        <td style="padding:8px; font-size:0.82rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:400px;">${item.rawDescriptionLine || item.materialName || "Line Item Description"}</td>
+        <td style="padding:8px; font-size:0.95rem; color:#000; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:400px;">${item.rawDescriptionLine || item.materialName || "Line Item Description"}</td>
         <td style="width:90px; padding:6px; vertical-align:middle;">
           <input type="text" class="gate-row-unit-input" value="${item.unitType || 'NOS'}"
-            style="font-size:0.85rem; padding:5px 4px; font-weight:700; text-align:center; width:100%; border:1.5px solid var(--border); border-radius:3px;">
+            readonly
+            style="font-size:0.85rem; padding:5px 4px; font-weight:700; text-align:center; width:100%; border:1.5px solid var(--border); border-radius:3px; background:#f1f5f9; cursor:not-allowed;">
         </td>
-        <td style="text-align:center; color:#64748b; font-weight:700; vertical-align:middle; width:140px;">${item.gateQuantity ?? "—"}</td>
+        <td style="text-align:center; color:#64748b; font-weight:700; font-size:1.05rem; vertical-align:middle; width:140px;">${item.gateQuantity ?? "—"}</td>
       </tr>`;
     });
     document.getElementById('gate-ai-verification-workspace').style.display = "block";
@@ -153,8 +154,8 @@ async function commitGateEntryRecordsToBackend() {
 
   activeParsedGatePayloadCache.lineItems.forEach((item, idx) => {
     item.itemCode = codeInputs[idx] ? codeInputs[idx].value.trim() : "";
-    // Invoice Unit — editable here so the operator can correct whatever
-    // the AI read off the document before it ever reaches Store Entry.
+    // Invoice Unit is read-only here (not operator-editable) — this just
+    // reads back whatever the AI extraction/default already set.
     item.unitType = unitInputs[idx] ? (unitInputs[idx].value.trim() || 'NOS') : (item.unitType || 'NOS');
     if (!item.rawDescriptionLine && tableRows[idx]) {
       item.rawDescriptionLine = tableRows[idx].cells[1].textContent.trim();
