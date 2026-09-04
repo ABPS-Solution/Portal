@@ -102,17 +102,17 @@ async function initializeStoreEntryWorkspaceQueue() {
           ? "font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #86efac; text-align:center; width:100%; background:#f0fdf4; color:var(--brand); border-radius:3px;"
           : "font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #fca5a5; text-align:center; width:100%; background:#fff7f7; color:#b91c1c; border-radius:3px;";
 
-        trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:top;">
-          <td style="padding:6px; width:140px; vertical-align:middle;">
+        trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
+          <td style="padding:6px; width:100px; text-align:center; vertical-align:middle;">
             <input type="text" class="se-item-code-${item.gateNumber}" data-idx="${idx}"
               value="${existingCode}" placeholder="Not found"
               readonly
               style="${codeStyle}">
           </td>
-          <td style="padding:8px; font-size:0.78rem; color:var(--text); white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:150px; max-width:200px; line-height:1.4;">
+          <td style="padding:8px; font-size:0.78rem; color:var(--text); white-space:normal; word-wrap:break-word; overflow-wrap:break-word; width:180px; line-height:1.4; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
             ${rawDesc}
           </td>
-          <td style="padding:6px; min-width:300px;">
+          <td style="padding:6px; width:220px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
             <div class="se-mat-name-display-${item.gateNumber}" data-idx="${idx}"
               onclick="reopenSEMaterialSearch('${item.gateNumber}', ${idx})"
               title="Click to change"
@@ -127,28 +127,28 @@ async function initializeStoreEntryWorkspaceQueue() {
                 placeholder="${isPreFilled ? 'Search to change...' : 'Type to search material name...'}"
                 oninput="handleSENameSearch(this, '${item.gateNumber}', ${idx})"
                 autocomplete="off"
-                style="font-size:0.78rem; padding:4px 6px; border:1px solid var(--border); width:100%; border-radius:3px; ${isPreFilled ? 'display:none;' : ''}" />
+                style="font-size:0.78rem; padding:4px 6px; border:1px solid var(--border); width:100%; border-radius:3px; text-align:center; ${isPreFilled ? 'display:none;' : ''}" />
               <div id="${dropId}" style="display:none; position:fixed; background:#fff; border:1px solid var(--border); border-radius:4px; z-index:9999; max-height:180px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,0.15); min-width:240px;"></div>
             </div>
             ${isPreFilled ? '' : suggestionHtml}
           </td>
-          <td style="width:70px; padding:6px; vertical-align:middle;">
+          <td style="width:75px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
             <input type="text" class="se-invoice-unit-${item.gateNumber}" data-idx="${idx}" value="${invoiceUnitVal}"
               style="width:100%; text-align:center; font-family:monospace; font-weight:700; border:1px solid var(--border); padding:5px 2px; border-radius:3px;"
               onblur="updateSEUnitConverterLock('${item.gateNumber}', ${idx})">
           </td>
-          <td style="width:70px; padding:6px; text-align:center; vertical-align:middle;">
+          <td style="width:90px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
             <input type="text" class="se-item-code-unit-${item.gateNumber}" data-idx="${idx}" value="${preFilledUnit}" readonly
               style="width:100%; text-align:center; font-family:monospace; font-weight:700; border:none; background:transparent; color:#1e293b;">
           </td>
-          <td style="width:85px; padding:6px; text-align:center; vertical-align:middle;">
+          <td style="width:90px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
             <input type="number" class="se-unit-converter-${item.gateNumber}" data-idx="${idx}"
               value="${sameUnit ? '1' : ''}" ${sameUnit ? 'readonly' : ''} step="any" min="0"
               placeholder="${sameUnit ? '' : 'Factor'}"
               title="${sameUnit ? 'Locked at 1 — Invoice Unit already matches Item Code Unit' : 'Units differ — enter the factor that converts Invoice Unit to Item Code Unit'}"
               style="width:100%; text-align:center; font-weight:700; padding:5px; font-size:0.85rem; border-radius:3px;${sameUnit ? ' border:1px solid var(--border); background:#f1f5f9; color:var(--muted); cursor:not-allowed;' : ' border:1.5px solid #f59e0b; background:#fffbeb;'}">
           </td>
-          <td class="se-po-cell-${item.gateNumber}" data-idx="${idx}" style="width:190px; padding:6px; vertical-align:top;">
+          <td class="se-po-cell-${item.gateNumber}" data-idx="${idx}" style="width:190px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
             <div class="se-po-parts-wrap-${item.gateNumber}" data-idx="${idx}">
               ${sePoPartBlockHtml(item.gateNumber, idx, 0, line.poNo || "")}
             </div>
@@ -157,13 +157,13 @@ async function initializeStoreEntryWorkspaceQueue() {
               <span onclick="addSEPartRow('${item.gateNumber}', ${idx})" style="font-size:0.65rem; font-weight:700; color:var(--brand); cursor:pointer; text-decoration:underline;">+ Split</span>
             </div>
           </td>
-          <td class="se-invqty-cell-${item.gateNumber}" data-idx="${idx}" style="text-align:center; color:#1e293b; font-weight:800; vertical-align:top; width:75px; font-family:monospace; font-size:0.9rem; padding:6px;">
+          <td class="se-invqty-cell-${item.gateNumber}" data-idx="${idx}" style="text-align:center; color:#1e293b; font-weight:800; vertical-align:middle; width:80px; font-family:monospace; font-size:0.9rem; padding:6px; border-left:1px solid var(--border);">
             <div class="se-invqty-parts-wrap-${item.gateNumber}" data-idx="${idx}">
               ${seInvQtyPartBlockHtml(item.gateNumber, idx, 0, line.gateQuantity, true)}
             </div>
             <div class="se-invqty-sum-${item.gateNumber}" data-idx="${idx}" data-total="${line.gateQuantity}" style="font-size:0.58rem; color:var(--muted); margin-top:2px; display:none;"></div>
           </td>
-          <td class="se-recvqty-cell-${item.gateNumber}" data-idx="${idx}" style="text-align:center; width:100px; padding:6px 6px 6px 16px; vertical-align:top;">
+          <td class="se-recvqty-cell-${item.gateNumber}" data-idx="${idx}" style="text-align:center; width:110px; padding:6px; vertical-align:middle; border-left:1px solid var(--border);">
             <div class="se-recvqty-parts-wrap-${item.gateNumber}" data-idx="${idx}">
               ${seRecvQtyPartBlockHtml(item.gateNumber, idx, 0, line.gateQuantity)}
             </div>
@@ -201,18 +201,18 @@ async function initializeStoreEntryWorkspaceQueue() {
             <div id="se-po-check-msg-${item.gateNumber}" style="font-size:0.68rem; font-weight:700; margin-top:3px;"></div>
           </div>
           <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
-            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:1090px; border-collapse:collapse;">
+            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:1160px; border-collapse:collapse;">
               <thead>
                 <tr style="background:#f8fafc;">
-                  <th style="width:100px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
-                  <th style="width:200px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Material Description</th>
-                  <th style="width:230px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name *</th>
-                  <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Invoice Unit</th>
-                  <th style="width:70px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code Unit</th>
-                  <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Unit Converter</th>
-                  <th style="width:190px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Purchase Order *</th>
-                  <th style="width:75px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Invoice Qty</th>
-                  <th style="width:100px; text-align:center; font-size:0.72rem; padding:8px 6px 8px 16px; white-space:nowrap;">Received Qty *</th>
+                  <th style="width:100px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3;">Item Code</th>
+                  <th style="width:180px; text-align:left; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Invoice Material Description</th>
+                  <th style="width:220px; text-align:left; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Standard Material Name *</th>
+                  <th style="width:75px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Invoice<br>Unit</th>
+                  <th style="width:90px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Item Code<br>Unit</th>
+                  <th style="width:90px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Unit<br>Converter</th>
+                  <th style="width:190px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Purchase Order *</th>
+                  <th style="width:80px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Invoice<br>Qty</th>
+                  <th style="width:110px; text-align:center; font-size:0.68rem; padding:8px 6px 8px 16px; line-height:1.3; border-left:1px solid var(--border);">Received<br>Qty *</th>
                 </tr>
               </thead>
               <tbody>${trs}</tbody>
