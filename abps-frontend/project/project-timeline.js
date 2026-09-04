@@ -1128,12 +1128,15 @@ function ptlRenderCanvas(containerId) {
   // strip squeezed above a list, so it gets real screen real estate.
   const availW = Math.max(900, (wrap.clientWidth || window.innerWidth) - 4);
   // Gutter now shows each lane's full "Product Name - Rating -
-  // Description" (not just the flow name like "Reactor"), so its width is
-  // a fixed, generous wrap column rather than scaling with content -
-  // scaling to the full label's raw length would make the gutter
-  // enormous for a long description. See the gutter block below for the
-  // actual line-wrapping (reuses ptlWrapLbl, same as node labels).
-  const longestName = 24;
+  // Description" (not just the flow name like "Reactor"). A flat 24-char
+  // wrap width left most of a wide monitor's width completely unused
+  // (long descriptions wrapped into 6-7 short lines while the gutter's
+  // own column sat mostly blank) -- scale the wrap width off the actual
+  // available surface width instead, capped so it can never eat more than
+  // ~22% of a very wide screen and never shrink below the original 24 on
+  // a narrow one. See the gutter block below for the actual line-wrapping
+  // (reuses ptlWrapLbl, same as node labels).
+  const longestName = Math.max(24, Math.min(44, Math.round((availW * 0.22) / (6.6 * ptlFS))));
   // LEAD is pure breathing room between the gutter's right edge and the
   // first plotted day - kept separate from the gutter's own width (see
   // gutterW below, which is PAD_L-based only) so widening this doesn't
