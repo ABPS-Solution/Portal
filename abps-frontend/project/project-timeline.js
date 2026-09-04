@@ -578,18 +578,32 @@ function ptlRenderLaneInitialPlanForm(lane) {
   const stageLocked = !ptlIsAdmin() && !ptlIsStage3Done();
   const locked = !canWrite || stageLocked;
   const dis = locked ? 'disabled' : '';
+  // Same bordered/percentage-width table convention as the after-planning
+  // table (ptlRenderLaneSteps) — kept visually consistent rather than the
+  // earlier bare CSS-grid layout, which looked like a different screen.
+  const colBorder = "border-left:1px solid var(--border);";
+  const rows = lane.steps.map(s => `
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="width:60%; padding:6px 8px; font-size:0.85rem; font-weight:600; color:var(--text); text-align:center;">${escapeHtml(s.label)}</td>
+      <td style="width:40%; padding:5px 8px; text-align:center; ${colBorder}">
+        <input type="date" ${dis} id="ptl-plan-${lane.boqId}-${s.id}"
+          style="display:block; margin:0 auto; padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; max-width:170px; box-sizing:border-box; text-align:center;${locked ? ' background:#f1f5f9; cursor:not-allowed;' : ''}" />
+      </td>
+    </tr>`).join("");
   return `
     <div style="font-size:0.82rem; color:var(--muted); margin-bottom:10px;">
       No plan submitted yet. ${escapeHtml(lane.ownerDept)} Production enters a planned date for every step below, including Packing and Adding to FG — Material Issue Tickets for this product's Job Cards stay blocked until then. Only its completion is automatic; the planned/target date is entered like any other step.
     </div>
     ${!canWrite ? `<div style="font-size:0.8rem; color:var(--muted); background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); padding:8px 12px; margin-bottom:10px;">View only — only ${escapeHtml(lane.ownerDept)} Production or Project can enter this plan.</div>`
       : (stageLocked ? `<div style="font-size:0.8rem; color:#92400e; background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius); padding:8px 12px; margin-bottom:10px;">Locked until Stage 3 — Pre Production is fully done.</div>` : '')}
-    <div style="display:grid; grid-template-columns:minmax(160px,260px) minmax(180px,220px); gap:4px 16px; align-items:center;">
-      <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); padding-bottom:4px; border-bottom:1px solid var(--border);">Production Stage</div>
-      <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); padding-bottom:4px; border-bottom:1px solid var(--border);">Production Planning Date</div>
-      ${lane.steps.map(s => `
-        <label style="font-size:0.85rem; padding:5px 0;">${escapeHtml(s.label)}</label>
-        <input type="date" ${dis} id="ptl-plan-${lane.boqId}-${s.id}" style="padding:6px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;${locked ? ' background:#f1f5f9; cursor:not-allowed;' : ''}" />`).join("")}
+    <div style="border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+        <thead><tr style="background:var(--highlight-bg); border-bottom:1px solid var(--border);">
+          <th style="width:60%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Production Stage</th>
+          <th style="width:40%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Production Planning Date</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
     </div>
     <div style="margin-top:12px;">
       <button class="nav-btn-styled" ${dis} style="${locked ? 'opacity:0.5; cursor:not-allowed;' : ''}" onclick="ptlSubmitInitialPlan('${lane.boqId}')">Submit Initial Plan</button>
@@ -650,7 +664,7 @@ function ptlRenderLaneSteps(lane, c, canWrite) {
         <td style="width:13%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(s.planned)}</td>
         <td style="width:13%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(currentTarget)}</td>
         <td style="width:20%; padding:5px 8px; text-align:center; ${colBorder}">${canWrite && (s.terminal || !done) ? `<input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
-              style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; max-width:150px; box-sizing:border-box; text-align:center;" />` : `<span style="color:var(--muted); font-size:0.8rem;">—</span>`}</td>
+              style="display:block; margin:0 auto; padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; max-width:150px; box-sizing:border-box; text-align:center;" />` : `<span style="color:var(--muted); font-size:0.8rem;">—</span>`}</td>
         <td style="width:30%; padding:5px 8px; text-align:center; ${colBorder}">
           <div style="display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px;">${actionCell}</div>
         </td>
@@ -755,6 +769,17 @@ function ptlToggleNodeDetail(nodeId) {
   ptlRender();
 }
 
+// Per-stage collapse/expand on the Steps list — same affordance as
+// store/live-stock.js's per-material-type sections. Empty set = every
+// stage expanded by default; only stages the viewer has explicitly
+// collapsed are tracked, so a fresh load always opens fully expanded.
+let ptlCollapsedStages = new Set();
+function ptlToggleStageCollapse(stage) {
+  if (ptlCollapsedStages.has(stage)) ptlCollapsedStages.delete(stage);
+  else ptlCollapsedStages.add(stage);
+  ptlRender();
+}
+
 // A plain, honest list — the branching SVG schematic from the design
 // exploration is Stage 4's job (it needs the product lanes to be worth
 // drawing); Stages 1-3 are a single line, so a list reads better than a
@@ -766,12 +791,30 @@ function ptlRenderList(nodes, today) {
   // that only surfaces as an alert() after Set Date is clicked.
   const prodPlanNode = ptlData && ptlData.trunk && ptlData.trunk.find(n => n.id === 'prodPlan');
   const prodPlanDone = !!(prodPlanNode && prodPlanNode.done);
-  let lastStage = null;
-  return `<div style="display:flex; flex-direction:column; gap:0;">` + nodes.map(n => {
-    const stageHeader = n.stage !== lastStage
-      ? `<div style="margin-top:${lastStage === null ? '0' : '20px'}; font-weight:800; font-size:0.95rem; color:var(--text); margin-bottom:4px;">Stage ${n.stage} — ${PTL_STAGE_LABEL[n.stage] || ''}</div>`
-      : '';
-    lastStage = n.stage;
+
+  // Group nodes by stage (order-preserving) so each stage's rows can be
+  // wrapped in one collapsible container with its own header toggle.
+  const stageOrder = [];
+  const stageGroups = {};
+  nodes.forEach(n => {
+    if (!stageGroups[n.stage]) { stageGroups[n.stage] = []; stageOrder.push(n.stage); }
+    stageGroups[n.stage].push(n);
+  });
+
+  return stageOrder.map((stage, stageIdx) => {
+    const collapsed = ptlCollapsedStages.has(stage);
+    const stageHeader = `
+      <div onclick="ptlToggleStageCollapse(${stage})" style="margin-top:${stageIdx === 0 ? '0' : '20px'}; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; user-select:none; padding-bottom:4px;">
+        <span style="font-weight:800; font-size:0.95rem; color:var(--text);">Stage ${stage} — ${PTL_STAGE_LABEL[stage] || ''}</span>
+        <button style="background:transparent; border:1px solid var(--border); color:var(--brand); font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:4px; cursor:pointer;">${collapsed ? '▼ Expand' : '▲ Collapse'}</button>
+      </div>`;
+    const bodyHtml = ptlRenderStageRows(stageGroups[stage], today, prodPlanDone);
+    return stageHeader + `<div style="display:${collapsed ? 'none' : 'flex'}; flex-direction:column; gap:0;">${bodyHtml}</div>`;
+  }).join("");
+}
+
+function ptlRenderStageRows(nodes, today, prodPlanDone) {
+  return nodes.map(n => {
     const c = PTL_COLORS[n.dept] || 'var(--muted)';
     const done = !!n.actual || n.done === true;
     const late = ptlLate(n);
@@ -798,7 +841,7 @@ function ptlRenderList(nodes, today) {
     const qaBlockedByPlan = PTL_QA_CHAIN.has(n.id) && !n.actual && !prodPlanDone;
     const systemDateCanEdit = PTL_ADMIN_SYSTEM_DATE_IDS.has(n.id) && ptlIsAdmin();
     const milestoneOverrideCanEdit = !!PTL_ADMIN_MILESTONE_OVERRIDE_KEY[n.id] && ptlIsAdmin();
-    return stageHeader + `
+    return `
       <div id="ptl-row-${n.id}" ${hasDetail ? `onclick="ptlToggleNodeDetail('${n.id}')"` : ''} style="display:flex; align-items:flex-start; gap:12px; padding:10px 4px; border-bottom:1px solid var(--border); border-radius:4px;${hasDetail ? ' cursor:pointer;' : ''}">
         <div style="flex:none; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
           background:${done ? dotColor : '#fff'}; border:2.5px solid ${dotColor}; margin-top:2px;">
@@ -808,7 +851,7 @@ function ptlRenderList(nodes, today) {
           <div style="display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;">
             <span style="font-weight:700; font-size:0.92rem; color:${late ? 'var(--warn)' : 'var(--text)'};">${escapeHtml(n.label)}</span>
             <span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:${c};">${escapeHtml(PTL_DEPT_NAME[n.dept] || n.dept)}</span>
-            ${n.kind === 'manual' ? '<span style="font-size:0.68rem; color:var(--muted);">· ticked by hand</span>' : ''}
+            ${n.kind === 'manual' ? '<span style="font-size:0.68rem; color:var(--muted);">· marked here</span>' : ''}
             ${n.kind === 'derived' ? '<span style="font-size:0.68rem; color:var(--muted);">· automatic</span>' : ''}
           </div>
           <div style="font-size:0.8rem; color:${late ? 'var(--warn)' : 'var(--muted)'}; margin-top:2px;">${escapeHtml(dateTxt)}${late ? ` · ${Math.abs(ptlBdBetween(eff, today))} business days late` : ''}</div>
@@ -847,7 +890,7 @@ function ptlRenderList(nodes, today) {
           return `<li style="margin-bottom:4px;">${ptlEscapeWithOptionalBold(parts[0])}${parts[1] ? `<div style="color:var(--muted);">${ptlEscapeWithOptionalBold(parts[1])}</div>` : ''}</li>`;
         }).join("")}</ul>
       </div>` : ''}`;
-  }).join("") + `</div>`;
+  }).join("");
 }
 
 async function ptlSetMilestoneOverride(nodeId) {
