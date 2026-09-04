@@ -82,9 +82,8 @@ function pdRenderDashboard(data) {
   document.getElementById("pd-s-pendingpo").textContent    = stats.pendingPOAuthorizations;
   document.getElementById("pd-s-pendingporev").textContent = stats.pendingPORevisionAuthorizations;
   document.getElementById("pd-s-pos").textContent          = stats.totalPOs;
-  document.getElementById("pd-s-matcov").textContent       = stats.materialsCovered;
-  document.getElementById("pd-s-matcov-total").textContent = "/ " + stats.materialsTotal + " needing purchase";
   document.getElementById("pd-s-ontime").textContent       = pdFormatPct(stats.onTimeDeliveryRate);
+  document.getElementById("pd-s-actioninprogress").textContent = stats.actionInProgressUnresolvedRows;
 
   // Chart 1 — RM POs Created Over Time. A single-day period (Today,
   // Yesterday, or a 1-day custom range) buckets to exactly one point —
