@@ -794,8 +794,17 @@ async function initializeRejectedMaterialPanel(toggle) {
     }
 
     feed.innerHTML = toggleBar;
+    let anyCardRendered = false;
 
     data.queue.forEach(item => {
+      // Once every line on a GRN is Resolved, there's nothing left to
+      // track here — drop the card entirely instead of leaving a
+      // fully-done GRN sitting in the queue forever.
+      const totalLineCount = item.lineItems.length;
+      const resolvedLineCount = item.lineItems.filter(l => l.status === 'Resolved').length;
+      if (resolvedLineCount === totalLineCount) return;
+      anyCardRendered = true;
+
       let cardHasEditableLine = false;
       let trs = "";
       item.lineItems.forEach((line, idx) => {
@@ -804,11 +813,11 @@ async function initializeRejectedMaterialPanel(toggle) {
         if (isEditable) cardHasEditableLine = true;
         trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
           <td style="width:110px; padding:8px 6px; text-align:center; font-family:monospace; font-weight:700;">${line.itemCode}</td>
-          <td style="min-width:180px; padding:8px 6px; font-size:0.85rem;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+          <td style="min-width:260px; padding:8px 6px; font-size:0.85rem;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
           <td style="width:70px; padding:8px 6px; text-align:center; font-weight:700; font-size:1rem;">${Number(line.missingQuantity) || 0}</td>
           <td style="width:70px; padding:8px 6px; text-align:center; font-weight:700; font-size:1rem;">${line.notOkQuantity}</td>
           <td style="width:90px; padding:8px 6px; text-align:center; font-weight:700; font-size:1rem;">${line.outstandingQuantity}</td>
-          <td style="width:180px; padding:8px 6px; font-size:0.8rem; color:#64748b;">${(line.reasonForNotOk || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+          <td style="width:130px; padding:8px 6px; font-size:0.8rem; color:#64748b;">${(line.reasonForNotOk || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
           <td style="width:170px; padding:8px 6px;">
             ${isMissingOnly ? `<span style="font-size:0.8rem; font-weight:600; color:#64748b;">Awaiting vendor replacement</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>` :
               isEditable ? `
@@ -835,7 +844,10 @@ async function initializeRejectedMaterialPanel(toggle) {
               <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
               ${item.poNo ? `<span style="background:#e0f2fe; color:#0369a1; margin-left:4px; font-weight:700;">PO: ${item.poNo}</span>` : ''}
             </div>
-            ${rejDateDisplay ? `<span style="background:#cbd5e1; color:#1e293b; font-weight:700; font-size:0.8rem; padding:3px 8px;">${rejDateDisplay}</span>` : ''}
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="background:#fef3c7; color:#92400e; font-weight:700; font-size:0.8rem; padding:3px 8px;">${resolvedLineCount}/${totalLineCount} Resolved</span>
+              ${rejDateDisplay ? `<span style="background:#cbd5e1; color:#1e293b; font-weight:700; font-size:0.8rem; padding:3px 8px;">${rejDateDisplay}</span>` : ''}
+            </div>
           </div>
         </div>
         <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
@@ -843,11 +855,11 @@ async function initializeRejectedMaterialPanel(toggle) {
             <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:900px; border-collapse:collapse;">
               <thead><tr style="background:#f8fafc;">
                 <th style="width:100px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
-                <th style="width:140px; text-align:left; font-size:0.72rem; padding:8px 6px;">Material Name</th>
+                <th style="width:260px; text-align:left; font-size:0.72rem; padding:8px 6px;">Material Name</th>
                 <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Missing Qty</th>
                 <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Not OK</th>
                 <th style="width:110px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Pending Qty</th>
-                <th style="width:220px; text-align:left; font-size:0.72rem; padding:8px 6px;">Reason for Not OK</th>
+                <th style="width:130px; text-align:left; font-size:0.72rem; padding:8px 6px;">Reason for Not OK</th>
                 <th style="width:170px; text-align:left; font-size:0.72rem; padding:8px 6px;">Action for Rejected</th>
               </tr></thead>
               <tbody>${trs}</tbody>
@@ -859,6 +871,13 @@ async function initializeRejectedMaterialPanel(toggle) {
         </div>`;
       feed.appendChild(card);
     });
+
+    // Every GRN in the fetched queue may have turned out fully Resolved
+    // (dropped above one by one) — show the same empty state the initial
+    // zero-results check above shows, instead of leaving a bare toggle bar.
+    if (!anyCardRendered) {
+      feed.innerHTML = toggleBar + `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records found.</div>`;
+    }
   } catch(e) { feed.innerHTML = toggleBar + `<p style="color:var(--warn);">${e.message}</p>`; }
 }
 
