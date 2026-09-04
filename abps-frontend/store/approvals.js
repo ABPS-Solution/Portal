@@ -73,7 +73,7 @@ function renderBOQIncreaseTicketCard(ticket) {
         <div class="meta-row-line-block" style="margin-top:8px; font-size:0.85rem;">
           <span>By:</span> <strong style="color:#111827;">${ticket.requestedBy}</strong>
           <span style="margin-left:8px;">|</span>
-          <strong style="color:#111827; margin-left:8px;">${fmtPstatDateTime(ticket.dateCreated)}</strong>
+          <strong style="color:#111827; margin-left:8px;">${formatOrdinalDateTime(ticket.dateCreated)}</strong>
           <span style="margin-left:12px;">Dept:</span> <strong style="color:#111827;">${ticket.department || "—"}</strong>
           <span style="margin-left:8px;">|</span>
           <span style="margin-left:8px;">Store:</span> <strong style="color:#111827;">${ticket.storeType || "—"}</strong>

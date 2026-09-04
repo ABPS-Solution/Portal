@@ -86,9 +86,14 @@ async function parseGateDocumentsWithAI() {
     if (activeParsedGatePayloadCache.poNumber) checkGatePONumber();
     checkVendorOpenRejections();
 
-    // Always use today's upload date — not the date on the document
+    // Always use today's upload date — not the date on the document.
+    // Display-only: this field's value (combined with the time field at
+    // submit into invoiceDate) is never actually read by
+    // commitGateEntryPipelineStep server-side — the real recorded
+    // timestamp is the ledger row's own DB-default `ts` column — so
+    // reformatting it here is safe.
     const rawDateObj      = new Date();
-    const formattedDateStr = String(rawDateObj.getDate()).padStart(2,'0') + '/' + String(rawDateObj.getMonth()+1).padStart(2,'0') + '/' + rawDateObj.getFullYear();
+    const formattedDateStr = formatOrdinalDate(rawDateObj);
     const formattedTimeStr = rawDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
 
     document.getElementById('gate-meta-date').value = formattedDateStr;

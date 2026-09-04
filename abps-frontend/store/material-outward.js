@@ -250,7 +250,7 @@ async function runMaterialOutwardSearch() {
           ${challans.map(c => `
             <tr>
               <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.challan_number || '')}</td>
-              <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(formatDMYFromISO ? formatDMYFromISO(c.challan_date) : (c.challan_date || ''))}</td>
+              <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(formatOrdinalDate(c.challan_date) || c.challan_date || '')}</td>
               <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.project_id || 'Legacy')}${c.company_name ? ' — ' + escapeHtml(c.company_name) : ''}</td>
               <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.ticket_id || '')}</td>
               <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.consignee_name || '')}</td>

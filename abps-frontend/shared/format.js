@@ -179,6 +179,20 @@ function formatOrdinalDate(value) {
   return `${day}${suffix} ${month} ${d.getFullYear()}`;
 }
 
+// Ordinal date + 12h time, e.g. "6th Sep 2026, 3:45 PM" — for the
+// several Store screens (GRN, QA Check, Approvals, tickets/dashboard
+// timestamps) that previously showed a DD/MM/YYYY + time pair.
+function formatOrdinalDateTime(value) {
+  if (!value) return '';
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) return '';
+  let h = d.getHours();
+  const m = String(d.getMinutes()).padStart(2, '0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if (h === 0) h = 12;
+  return `${formatOrdinalDate(d)}, ${h}:${m} ${ampm}`;
+}
+
 function formatDMYFromISO(iso) {
   if (!iso) return '';
   const parts = iso.split('-');

@@ -136,7 +136,7 @@ function sdRenderDashboard(data) {
           </div>
           <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
             <span style="font-size:0.65rem; font-weight:700; padding:1px 7px; border-radius:6px; background:${sc.bg}; color:${sc.color};">${t.status}</span>
-            <span style="font-size:0.62rem; color:var(--muted);">${formatDateTimeDMY(t.dateCreated) || t.dateCreated}</span>
+            <span style="font-size:0.62rem; color:var(--muted);">${formatOrdinalDateTime(t.dateCreated) || t.dateCreated}</span>
           </div>
         </div>`;
       }).join("");

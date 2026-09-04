@@ -255,7 +255,7 @@ async function runQARevisionSearch() {
             <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700; padding:3px 8px;">Vendor: ${r.vendorName}</span>
             ${r.poNo ? `<span style="background:#e0f2fe; color:#0369a1; margin-left:4px; font-weight:700; padding:3px 8px;">PO: ${r.poNo}</span>` : ''}
           </div>
-          <div style="font-size:0.78rem; color:var(--muted); font-weight:600;">${r.lineCount} line(s) · Q/A by ${r.qaPerson || '—'} · ${formatDateTimeDMY(r.qaTimestamp)}</div>
+          <div style="font-size:0.78rem; color:var(--muted); font-weight:600;">${r.lineCount} line(s) · Q/A by ${r.qaPerson || '—'} · ${formatOrdinalDateTime(r.qaTimestamp)}</div>
         </div>
         <div id="qarev-detail-${r.grnNumber}" style="display:none; padding-top:12px; margin-top:10px; border-top:1px dashed var(--border);"></div>
       </div>`).join("");
@@ -484,7 +484,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
         });
 
         // Date/time badge — same source and formatting as the GRN card in Store Entry.
-        let repairDateDisplay = formatDateTimeDMY(item.invoiceDate);
+        let repairDateDisplay = formatOrdinalDateTime(item.invoiceDate);
 
         let card = document.createElement("div"); card.className = "contact-summary-card-parent";
         card.innerHTML = `
@@ -581,7 +581,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
         });
 
         // Date/time badge — same source and formatting as the GRN card in Store Entry.
-        let qaDateDisplay = formatDateTimeDMY(item.invoiceDate);
+        let qaDateDisplay = formatOrdinalDateTime(item.invoiceDate);
 
         let card = document.createElement("div"); card.className = "contact-summary-card-parent";
         card.innerHTML = `
@@ -824,7 +824,7 @@ async function initializeRejectedMaterialPanel(toggle) {
       });
 
       // Date/time badge — same source and formatting as the GRN card in Store Entry.
-      let rejDateDisplay = formatDateTimeDMY(item.invoiceDate);
+      let rejDateDisplay = formatOrdinalDateTime(item.invoiceDate);
 
       let card = document.createElement("div"); card.className = "contact-summary-card-parent";
       card.innerHTML = `

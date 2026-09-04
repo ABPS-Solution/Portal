@@ -517,7 +517,7 @@ async function initializeAuthorizePRNPanel() {
             </div>
             <div class="meta-row-line-block" style="margin-bottom:6px;">
               <span style="background:#e2e8f0;">Product:</span><span style="margin-right:15px;">${p.productName || ""} ${p.productRating || ""}</span>
-              <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;${isRevision ? " margin-right:15px;" : ""}">${formatDateDMY(p.createdDate)}</span>
+              <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;${isRevision ? " margin-right:15px;" : ""}">${formatOrdinalDate(p.createdDate)}</span>
               ${isRevision ? `<span style="background:#edf2f7;">Version:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">v${p.version}</span>` : ""}
             </div>
             </div>

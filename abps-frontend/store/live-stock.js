@@ -276,8 +276,8 @@ function executeClientSideStoreTicketFilterSearch() {
     const statusBadgeText = currentStatus.toUpperCase();
     const mappedStorageScope = ticket.storeTargetScope || "Raw Materials Store";
 
-    let cleanCreatedDate = formatDateTimeDMY(ticket.dateCreated);
-    let cleanActionedDate = ticket.dateActioned ? formatDateTimeDMY(ticket.dateActioned) : "Not Actioned Yet";
+    let cleanCreatedDate = formatOrdinalDateTime(ticket.dateCreated);
+    let cleanActionedDate = ticket.dateActioned ? formatOrdinalDateTime(ticket.dateActioned) : "Not Actioned Yet";
 
     card.innerHTML = `
       <div class="contact-summary-header-row" onclick="toggleMatrixCardBody('${ticket.ticketId}')" style="margin-bottom:0; padding-bottom:6px; cursor:pointer;">

@@ -1110,7 +1110,7 @@ async function openFGReleaseSelectionModal(ticketId) {
             <input type="checkbox" ${it.reserved.some(r => r.fgId === c.fgId) ? 'checked' : ''}
               onchange="toggleFGReleaseSelection('${it.itemCode}', ${c.fgId}, this.checked, ${it.quantity})">
             <span style="font-family:monospace;">${c.serial || '(no serial)'}</span>
-            <span style="color:var(--muted); font-size:0.75rem;">${new Date(c.fgDate).toLocaleDateString()}</span>
+            <span style="color:var(--muted); font-size:0.75rem;">${formatOrdinalDate(c.fgDate)}</span>
           </label>`).join("")}
       </div>`).join("");
 

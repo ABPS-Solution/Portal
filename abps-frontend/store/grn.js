@@ -172,7 +172,7 @@ async function initializeStoreEntryWorkspaceQueue() {
       });
 
       // Date formatting
-      let cleanDateDisplay = formatDateTimeDMY(item.invoiceDate) || item.invoiceDate || "";
+      let cleanDateDisplay = formatOrdinalDateTime(item.invoiceDate) || item.invoiceDate || "";
 
       let card = document.createElement("div");
       card.className = "contact-summary-card-parent";
