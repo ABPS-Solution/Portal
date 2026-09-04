@@ -51,14 +51,23 @@ async function parseGateDocumentsWithAI() {
     
     const existingMaterialNamesList = (window.itemCodeCatalogCache || []).map(i => i.productName);
 
-    // Use whichever document is available, prefer invoice, fall back to challan
-    const data = await apFetch({ 
-      action: "storeProcessAIInvoiceBlob", 
+    // Use whichever document is available, prefer invoice, fall back to challan.
+    // The mimeType sent MUST match whichever file actually ended up as the
+    // "invoice" blob — when only a challan was selected, the challan's own
+    // file becomes invoiceBase64 (the fallback above), but the mimeType was
+    // still hardcoded to "image/jpeg" regardless of the challan's real
+    // format, mislabeling e.g. a PNG/HEIC file as JPEG and making Gemini's
+    // API reject it outright ("Unable to process input image"). Derive both
+    // from whichever File object actually supplied each blob.
+    const primaryFile = targetGateInvoiceFileObj || targetGateChallanFileObj;
+    const secondaryBase64 = (targetGateInvoiceFileObj && targetGateChallanFileObj) ? ch64 : null;
+    const data = await apFetch({
+      action: "storeProcessAIInvoiceBlob",
       invoiceBase64: inv64 || ch64,
-      invoiceMimeType: targetGateInvoiceFileObj ? targetGateInvoiceFileObj.type : "image/jpeg",
-      challanBase64: (inv64 && ch64) ? ch64 : null,
+      invoiceMimeType: primaryFile ? primaryFile.type : "image/jpeg",
+      challanBase64: secondaryBase64,
       challanMimeType: targetGateChallanFileObj ? targetGateChallanFileObj.type : "image/jpeg",
-      canonicalMaterialsCatalog: existingMaterialNamesList 
+      canonicalMaterialsCatalog: existingMaterialNamesList
     });
     if (!data.success) return alert("AI Processing failed: " + data.error);
     activeParsedGatePayloadCache = data.extractedData;
