@@ -115,9 +115,8 @@ async function initializeStoreEntryWorkspaceQueue() {
             ${isPreFilled ? '' : suggestionHtml}
           </td>
           <td style="width:90px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
-            <input type="text" class="se-invoice-unit-${item.gateNumber}" data-idx="${idx}" value="${invoiceUnitVal}"
-              style="width:100%; text-align:center; font-family:monospace; font-weight:700; border:1px solid var(--border); padding:5px 2px; border-radius:3px;"
-              onblur="updateSEUnitConverterLock('${item.gateNumber}', ${idx})">
+            <input type="text" class="se-invoice-unit-${item.gateNumber}" data-idx="${idx}" value="${invoiceUnitVal}" readonly
+              style="width:100%; text-align:center; font-family:monospace; font-weight:700; border:none; background:transparent; color:#1e293b;">
           </td>
           <td style="width:100px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
             <input type="text" class="se-item-code-unit-${item.gateNumber}" data-idx="${idx}" value="${preFilledUnit}" readonly
