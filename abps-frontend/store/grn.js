@@ -109,10 +109,10 @@ async function initializeStoreEntryWorkspaceQueue() {
               readonly
               style="${codeStyle}">
           </td>
-          <td style="padding:8px; font-size:0.78rem; color:var(--text); white-space:normal; word-wrap:break-word; overflow-wrap:break-word; width:180px; line-height:1.4; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
+          <td style="padding:8px; font-size:0.78rem; color:var(--text); white-space:normal; word-wrap:break-word; overflow-wrap:break-word; width:210px; line-height:1.4; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
             ${rawDesc}
           </td>
-          <td style="padding:6px; width:220px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
+          <td style="padding:6px; width:250px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
             <div class="se-mat-name-display-${item.gateNumber}" data-idx="${idx}"
               onclick="reopenSEMaterialSearch('${item.gateNumber}', ${idx})"
               title="Click to change"
@@ -148,7 +148,7 @@ async function initializeStoreEntryWorkspaceQueue() {
               title="${sameUnit ? 'Locked at 1 — Invoice Unit already matches Item Code Unit' : 'Units differ — enter the factor that converts Invoice Unit to Item Code Unit'}"
               style="width:100%; text-align:center; font-weight:700; padding:5px; font-size:0.85rem; border-radius:3px;${sameUnit ? ' border:1px solid var(--border); background:#f1f5f9; color:var(--muted); cursor:not-allowed;' : ' border:1.5px solid #f59e0b; background:#fffbeb;'}">
           </td>
-          <td class="se-po-cell-${item.gateNumber}" data-idx="${idx}" style="width:190px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
+          <td class="se-po-cell-${item.gateNumber}" data-idx="${idx}" style="width:150px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
             <div class="se-po-parts-wrap-${item.gateNumber}" data-idx="${idx}">
               ${sePoPartBlockHtml(item.gateNumber, idx, 0, line.poNo || "")}
             </div>
@@ -157,7 +157,7 @@ async function initializeStoreEntryWorkspaceQueue() {
               <span onclick="addSEPartRow('${item.gateNumber}', ${idx})" style="font-size:0.65rem; font-weight:700; color:var(--brand); cursor:pointer; text-decoration:underline;">+ Split</span>
             </div>
           </td>
-          <td class="se-invqty-cell-${item.gateNumber}" data-idx="${idx}" style="text-align:center; color:#1e293b; font-weight:800; vertical-align:middle; width:80px; font-family:monospace; font-size:0.9rem; padding:6px; border-left:1px solid var(--border);">
+          <td class="se-invqty-cell-${item.gateNumber}" data-idx="${idx}" style="text-align:center; color:#1e293b; font-weight:800; vertical-align:middle; width:80px; font-family:monospace; font-size:1.05rem; padding:6px; border-left:1px solid var(--border);">
             <div class="se-invqty-parts-wrap-${item.gateNumber}" data-idx="${idx}">
               ${seInvQtyPartBlockHtml(item.gateNumber, idx, 0, line.gateQuantity, true)}
             </div>
@@ -201,16 +201,16 @@ async function initializeStoreEntryWorkspaceQueue() {
             <div id="se-po-check-msg-${item.gateNumber}" style="font-size:0.68rem; font-weight:700; margin-top:3px;"></div>
           </div>
           <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
-            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:1160px; border-collapse:collapse;">
+            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:1180px; border-collapse:collapse;">
               <thead>
                 <tr style="background:#f8fafc;">
                   <th style="width:100px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3;">Item Code</th>
-                  <th style="width:180px; text-align:left; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Invoice Material Description</th>
-                  <th style="width:220px; text-align:left; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Standard Material Name *</th>
+                  <th style="width:210px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Invoice Material Description</th>
+                  <th style="width:250px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Standard Material Name *</th>
                   <th style="width:75px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Invoice<br>Unit</th>
                   <th style="width:90px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Item Code<br>Unit</th>
                   <th style="width:90px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Unit<br>Converter</th>
-                  <th style="width:190px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Purchase Order *</th>
+                  <th style="width:150px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Purchase Order *</th>
                   <th style="width:80px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Invoice<br>Qty</th>
                   <th style="width:110px; text-align:center; font-size:0.68rem; padding:8px 6px 8px 16px; line-height:1.3; border-left:1px solid var(--border);">Received<br>Qty *</th>
                 </tr>
@@ -330,7 +330,7 @@ function seInvQtyPartBlockHtml(gateNum, idx, part, value, readonly) {
     <input type="number" class="se-invqty-input-${gateNum}" data-idx="${idx}" data-part="${part}"
       value="${value}" ${readonly ? 'readonly' : ''} step="any" min="0"
       oninput="recalcSEPartSums('${gateNum}', ${idx})"
-      style="width:100%; text-align:center; font-weight:800; font-family:monospace; font-size:0.9rem; border-radius:3px; ${readonly ? 'border:none; background:transparent; color:#1e293b;' : 'border:1px solid var(--border); padding:5px 2px;'}">
+      style="width:100%; text-align:center; font-weight:800; font-family:monospace; font-size:1.05rem; border-radius:3px; ${readonly ? 'border:none; background:transparent; color:#1e293b;' : 'border:1px solid var(--border); padding:5px 2px;'}">
   </div>`;
 }
 
@@ -338,7 +338,7 @@ function seRecvQtyPartBlockHtml(gateNum, idx, part, value) {
   return `<div class="se-recvqty-part-${gateNum}" data-idx="${idx}" data-part="${part}" style="margin-bottom:4px;">
     <input type="number" class="se-phys-qty-${gateNum}" data-idx="${idx}" data-part="${part}"
       value="${value}" step="any" min="0"
-      style="width:100%; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:5px; font-size:0.9rem; border-radius:3px;">
+      style="width:100%; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:5px; font-size:1.05rem; border-radius:3px;">
   </div>`;
 }
 
