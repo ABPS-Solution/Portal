@@ -1040,7 +1040,12 @@ const PTL_TRUNK_HEX = { marketing: '#be185d', project: '#0056b3', design: '#00a8
 // can have 12-16 Authorized BOQs; the centred fan-out schematic below was
 // built for the 2-4 lanes a single-rating project produces and does not
 // survive more than that - see HANDOFF for the full investigation).
-const PTL_ROW_MODE_MIN_LANES = 5;
+// Row mode now also owns "only ever show 3 products, scroll for the rest"
+// (explicit request) - that only means something once there's a 4th
+// product to hide, so the threshold dropped from 5 to 4, matching
+// VISIBLE_GROUPS (3) + 1 inside ptlRenderCanvas. A 2-3 lane project still
+// gets the original centred schematic unchanged.
+const PTL_ROW_MODE_MIN_LANES = 4;
 
 // Row mode groups lanes by PRODUCT (not by rating) - the Tier-2/FG BOQ a
 // product's rating consumes has no stored parent-BOQ column (it's an
