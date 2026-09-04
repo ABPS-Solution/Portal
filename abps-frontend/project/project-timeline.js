@@ -804,8 +804,8 @@ function ptlRenderList(nodes, today) {
   return stageOrder.map((stage, stageIdx) => {
     const collapsed = ptlCollapsedStages.has(stage);
     const stageHeader = `
-      <div onclick="ptlToggleStageCollapse(${stage})" style="margin-top:${stageIdx === 0 ? '0' : '20px'}; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; user-select:none; padding-bottom:4px;">
-        <span style="font-weight:800; font-size:0.95rem; color:var(--text);">Stage ${stage} — ${PTL_STAGE_LABEL[stage] || ''}</span>
+      <div onclick="ptlToggleStageCollapse(${stage})" style="margin-top:${stageIdx === 0 ? '0' : '26px'}; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; user-select:none; padding-bottom:8px; border-bottom:2px solid var(--border);">
+        <span style="font-weight:800; font-size:1.15rem; color:var(--text);">Stage ${stage} — ${PTL_STAGE_LABEL[stage] || ''}</span>
         <button style="background:transparent; border:1px solid var(--border); color:var(--brand); font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:4px; cursor:pointer;">${collapsed ? '▼ Expand' : '▲ Collapse'}</button>
       </div>`;
     const bodyHtml = ptlRenderStageRows(stageGroups[stage], today, prodPlanDone);
