@@ -175,11 +175,11 @@ function cvarRenderTable(rows) {
     <tr style="border-bottom:1px solid var(--border); ${r.orphan ? 'background:#fffbeb;' : ''}">
       <td style="padding:8px; font-family:monospace; font-weight:700;">${escapeHtml(r.projectId || '')}</td>
       <td style="padding:8px; font-weight:600;">${escapeHtml(r.materialName || r.itemCode || '—')}</td>
-      <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${r.estimateQty != null ? trimNum(r.estimateQty) + (r.estUnit ? ' ' + escapeHtml(r.estUnit) : '') : '—'}</td>
-      <td style="padding:8px; text-align:center; font-family:monospace;">${r.approvedIncreaseQty != null ? trimNum(r.approvedIncreaseQty) : '—'}</td>
-      <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${trimNum(r.actualQty)}${r.actUnit ? ' ' + escapeHtml(r.actUnit) : ''}</td>
-      <td style="padding:8px; text-align:center; font-family:monospace; font-weight:800; color:${varianceColor};">${varianceCell}</td>
-      <td style="padding:8px; font-size:0.76rem; color:var(--muted);">${flags.length ? escapeHtml(flags.join(', ')) : '—'}</td>
+      <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.05rem;">${r.estimateQty != null ? trimNum(r.estimateQty) + (r.estUnit ? ' ' + escapeHtml(r.estUnit) : '') : '—'}</td>
+      <td style="padding:8px; text-align:center; font-family:monospace; font-size:1.05rem;">${r.approvedIncreaseQty != null ? trimNum(r.approvedIncreaseQty) : '—'}</td>
+      <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.05rem;">${trimNum(r.actualQty)}${r.actUnit ? ' ' + escapeHtml(r.actUnit) : ''}</td>
+      <td style="padding:8px; text-align:center; font-family:monospace; font-weight:800; font-size:1.05rem; color:${varianceColor};">${varianceCell}</td>
+      <td style="padding:8px; font-size:0.85rem; color:var(--muted);">${flags.length ? escapeHtml(flags.join(', ')) : '—'}</td>
     </tr>`;
   }).join('');
 }
