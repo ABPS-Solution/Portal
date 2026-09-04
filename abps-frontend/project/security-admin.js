@@ -805,27 +805,32 @@ function openAddDevicePersonModal(deviceId) {
   modal._allowedKeys = [...(device.allowed_person_keys || [])];
   modal._allowedNames = [...(device.allowed_users || [])];
   modal.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;";
-  modal.innerHTML = `<div style="background:#fff; border-radius:12px; width:100%; max-width:420px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
-    <div style="padding:16px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
-      <div style="font-weight:800; font-size:1rem; color:var(--brand);">Manage People — ${escapeHtml(device.device_label)}</div>
-      <div style="font-size:0.78rem; color:var(--muted); margin-top:4px;">Everyone below can PIN-login on this device with their own PIN. Add or remove people here — no re-enrollment or new code needed.</div>
+  modal.onclick = (e) => { if (e.target === modal) closeAddDevicePersonModal(); };
+  modal.innerHTML = `<div style="background:#fff; border-radius:12px; width:100%; max-width:560px; height:min(640px, 88vh); display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border); background:#f8fafc; display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+      <div>
+        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Manage People — ${escapeHtml(device.device_label)}</div>
+        <div style="font-size:0.78rem; color:var(--muted); margin-top:4px;">Everyone below can PIN-login on this device with their own PIN. Add or remove people here — no re-enrollment or new code needed.</div>
+      </div>
+      <button onclick="closeAddDevicePersonModal()" style="background:transparent; border:none; font-size:1.3rem; line-height:1; color:var(--muted); cursor:pointer; padding:0 0 0 10px;">&times;</button>
     </div>
-    <div style="padding:14px 20px; overflow-y:auto; flex:1;">
+    <div style="padding:16px 20px; overflow-y:auto; flex:1;">
       <div id="sa-device-addperson-current" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;"></div>
       <label class="field-label" style="margin-top:0;">Add a person</label>
-      <div style="position:relative;">
-        <input type="text" id="sa-device-addperson-search" placeholder="Search by name..." autocomplete="off"
-          oninput="handleAddDevicePersonSearch(this.value)"
-          style="width:100%; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box; font-size:0.85rem;" />
-        <div id="sa-device-addperson-results" style="display:none; position:absolute; z-index:10; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); width:100%; max-height:220px; overflow-y:auto;"></div>
-      </div>
-    </div>
-    <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid var(--border); background:#f8fafc;">
-      <button onclick="document.getElementById('sa-device-addperson-modal').remove()" style="padding:9px 18px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600;">Close</button>
+      <input type="text" id="sa-device-addperson-search" placeholder="Search by name..." autocomplete="off"
+        oninput="handleAddDevicePersonSearch(this.value)"
+        style="width:100%; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box; font-size:0.85rem;" />
     </div>
   </div>`;
   document.body.appendChild(modal);
   saRenderDeviceAddPersonChips(modal);
+}
+
+function closeAddDevicePersonModal() {
+  const modal = document.getElementById("sa-device-addperson-modal");
+  if (modal) modal.remove();
+  const dd = document.getElementById("sa-device-addperson-results");
+  if (dd) dd.style.display = "none";
 }
 
 function saRenderDeviceAddPersonChips(modal) {
@@ -838,12 +843,33 @@ function saRenderDeviceAddPersonChips(modal) {
     </span>`).join('') || `<span style="color:var(--muted); font-size:0.82rem;">No one allowed on this device yet.</span>`;
 }
 
+// Single shared floating dropdown appended to document.body with
+// position:fixed, positioned via the search input's own getBoundingClientRect()
+// on open — same clipped-dropdown fix pattern as store/grn.js's PO dropdown,
+// needed here because the modal itself is a fixed-height flex column with
+// overflow-y:auto, which would otherwise clip the suggestion list.
+function saGetAddDevicePersonDropdown() {
+  let box = document.getElementById("sa-device-addperson-results");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "sa-device-addperson-results";
+    box.style.cssText = "display:none; position:fixed; z-index:1001; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); max-height:220px; overflow-y:auto;";
+    document.body.appendChild(box);
+  }
+  return box;
+}
+
 function handleAddDevicePersonSearch(rawQuery) {
   const modal = document.getElementById("sa-device-addperson-modal");
-  const box = document.getElementById("sa-device-addperson-results");
-  if (!modal || !box) return;
+  const input = document.getElementById("sa-device-addperson-search");
+  const box = saGetAddDevicePersonDropdown();
+  if (!modal || !input) return;
   const q = (rawQuery || "").toLowerCase().trim();
   if (!q) { box.style.display = "none"; return; }
+  const rect = input.getBoundingClientRect();
+  box.style.top = rect.bottom + "px";
+  box.style.left = rect.left + "px";
+  box.style.width = rect.width + "px";
   const already = new Set(modal._allowedKeys);
   const matches = saAllUsers.filter(u => !already.has(u.personKey) &&
     `${u.first_name || ''} ${u.last_name || ''}`.toLowerCase().includes(q)).slice(0, 8);
