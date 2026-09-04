@@ -271,6 +271,7 @@ const ptlDeliveryValue = p => p.actualDelivery || p.tentativeDelivery;
 
 const ptlEff = n => n.actual || n.target || n.planned;
 const ptlLate = n => !n.actual && !n.done && ptlEff(n) && ptlEff(n) < ptlToday();
+const ptlNodeDone = n => !!n.actual || n.done === true;
 
 // Per-stage fractions - used for the "Stage N of 5" label, the segmented
 // strip's per-block fill, and the late/on-time color. Stage 4 averages
@@ -373,7 +374,7 @@ function ptlProgressStageInfo(p) {
   const currentStage = p.stages.find(s => s.frac > 0 && s.frac < 1) || p.stages.find(s => s.frac === 0) || p.stages[p.stages.length - 1];
   const stageIdx = p.stages.filter(s => s.frac >= 1).length + (p.stages.some(s => s.frac > 0 && s.frac < 1) ? 1 : 0);
   const late = !!(currentStage && currentStage.late);
-  return { stageIdx, late, color: late ? '#e84545' : 'var(--brand)' };
+  return { stageIdx, late, color: late ? '#e84545' : 'var(--accent)' };
 }
 
 // Fullscreen Timeline header - the ring. A single continuous shape reads
@@ -408,7 +409,7 @@ function ptlStageProgressStripHtml() {
   const blocks = p.stages.map(s => {
     const complete = s.total > 0 && s.frac >= 1;
     const started = s.frac > 0 && !complete;
-    const c = s.late ? '#e84545' : 'var(--brand)';
+    const c = s.late ? '#e84545' : 'var(--accent)';
     let inner;
     if (complete) inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="3" fill="${c}"/>`;
     else if (started) inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="3" fill="none" stroke="${c}" stroke-width="1.6" opacity=".5"/><rect x="0" y="0" width="${Math.max(3, w * s.frac)}" height="${h}" rx="3" fill="${c}"/>`;
@@ -814,9 +815,13 @@ function ptlRenderList(nodes, today) {
 
   return stageOrder.map((stage, stageIdx) => {
     const collapsed = ptlCollapsedStages.has(stage);
+    // Stage number/name turns green only while EVERY node in it is done -
+    // it reverts to black the moment any of them is marked undone, and
+    // only turns green again once the whole stage is complete again.
+    const stageAllDone = stageGroups[stage].every(ptlNodeDone);
     const stageHeader = `
       <div onclick="ptlToggleStageCollapse(${stage})" style="margin-top:${stageIdx === 0 ? '0' : '26px'}; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; user-select:none; padding-bottom:8px; border-bottom:2px solid var(--border);">
-        <span style="font-weight:800; font-size:1.15rem; color:var(--text);">Stage ${stage} - ${PTL_STAGE_LABEL[stage] || ''}</span>
+        <span style="font-weight:800; font-size:1.15rem; color:${stageAllDone ? 'var(--accent)' : 'var(--text)'};">Stage ${stage} - ${PTL_STAGE_LABEL[stage] || ''}</span>
         <button style="background:transparent; border:1px solid var(--border); color:var(--brand); font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:4px; cursor:pointer;">${collapsed ? '▼ Expand' : '▲ Collapse'}</button>
       </div>`;
     const bodyHtml = ptlRenderStageRows(stageGroups[stage], today, prodPlanDone);
@@ -833,13 +838,20 @@ function ptlRenderStage4Block(prodPlanNodes, inspCallNodes, today) {
   const prodPlanDone = !!(prodPlanNode && prodPlanNode.done);
   const stage = 4;
   const collapsed = ptlCollapsedStages.has(stage);
+  // Same zero-denominator trap this codebase has hit before (see
+  // CLAUDE.md's "All BOQs Released"/Stage 5 gate history) -- a project
+  // with no in-scope lane yet is NOT "all done", so lanes.length > 0 is
+  // required, not just every() vacuously passing on an empty array.
+  const lanes = ptlData.lanes || [];
+  const stageAllDone = prodPlanNodes.every(ptlNodeDone) && inspCallNodes.every(ptlNodeDone)
+    && lanes.length > 0 && lanes.every(l => l.steps.every(ptlNodeDone));
   const stageHeader = `
     <div onclick="ptlToggleStageCollapse(${stage})" style="margin-top:26px; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; user-select:none; padding-bottom:8px; border-bottom:2px solid var(--border);">
-      <span style="font-weight:800; font-size:1.15rem; color:var(--text);">Stage ${stage} - ${PTL_STAGE_LABEL[stage] || ''}</span>
+      <span style="font-weight:800; font-size:1.15rem; color:${stageAllDone ? 'var(--accent)' : 'var(--text)'};">Stage ${stage} - ${PTL_STAGE_LABEL[stage] || ''}</span>
       <button style="background:transparent; border:1px solid var(--border); color:var(--brand); font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:4px; cursor:pointer;">${collapsed ? '▼ Expand' : '▲ Collapse'}</button>
     </div>`;
   const bodyHtml = `<div style="display:flex; flex-direction:column; gap:0;">${ptlRenderStageRows(prodPlanNodes, today, prodPlanDone)}</div>`
-    + ptlRenderLanes(ptlData.lanes || [])
+    + ptlRenderLanes(lanes)
     + `<div style="display:flex; flex-direction:column; gap:0;">${ptlRenderStageRows(inspCallNodes, today, prodPlanDone)}</div>`;
   return stageHeader + `<div style="display:${collapsed ? 'none' : 'block'};">${bodyHtml}</div>`;
 }
