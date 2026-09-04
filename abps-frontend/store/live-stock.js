@@ -1824,6 +1824,10 @@ function renderExpectedInboundsSection(title, poList, scheme) {
   sectionEl.style.cssText = `background:#fff; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;`;
 
   const safeSectionId = "ei-section-" + title.replace(/\s+/g, "_").toLowerCase();
+  // Overdue/Today are what someone opening this screen most needs to see
+  // at a glance, so their cards start expanded; every other tab can hold
+  // many POs at once, so those start collapsed.
+  const defaultCardExpanded = title === "Overdue" || title === "Due Today";
 
   sectionEl.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:${scheme.sectionBg}; border-bottom:1.5px solid ${scheme.sectionBorder};">
@@ -1833,7 +1837,7 @@ function renderExpectedInboundsSection(title, poList, scheme) {
       </div>
     </div>
     <div id="${safeSectionId}-body" style="display:flex; flex-direction:column; gap:10px; padding:12px;">
-      ${poList.map(po => renderExpectedInboundsPOCard(po, scheme)).join("")}
+      ${poList.map((po, i) => renderExpectedInboundsPOCard(po, scheme, safeSectionId + "-po-" + i, defaultCardExpanded)).join("")}
     </div>`;
 
   return sectionEl;
@@ -1848,7 +1852,22 @@ function toggleEISection(sectionId) {
   btn.textContent    = isOpen ? "▼ Expand" : "▲ Collapse";
 }
 
-function renderExpectedInboundsPOCard(po, scheme) {
+// Per-PO card collapse/expand (distinct from toggleEISection's whole-
+// section collapse above). Overdue/Today start expanded — those tabs
+// exist specifically to call out what needs attention right now, so
+// hiding the detail by default would defeat the point. Every other tab
+// (7/30/90 Days, Delivered, Unscheduled) can legitimately hold many POs
+// at once, so those start collapsed — still one click away either way.
+function toggleEICard(cardId) {
+  const body = document.getElementById(cardId + "-body");
+  const chevron = document.getElementById(cardId + "-chevron");
+  if (!body) return;
+  const isOpen = body.style.display !== "none";
+  body.style.display = isOpen ? "none" : "block";
+  if (chevron) chevron.textContent = isOpen ? "▸" : "▾";
+}
+
+function renderExpectedInboundsPOCard(po, scheme, cardId, defaultExpanded) {
   const receivedPct   = po.totalCount > 0 ? Math.round((po.receivedCount / po.totalCount) * 100) : 0;
   const hasPartial    = po.lineItems.some(i => i.partialReceived);
   const allPending    = po.receivedCount === 0 && !hasPartial;
@@ -1892,9 +1911,10 @@ function renderExpectedInboundsPOCard(po, scheme) {
 
   return `
     <div style="background:#fff; border:1px solid ${scheme.sectionBorder}; border-radius:var(--radius); overflow:hidden;">
-      <div style="padding:10px 14px; background:${scheme.sectionBg}; border-bottom:1px solid ${scheme.sectionBorder};">
+      <div onclick="toggleEICard('${cardId}')" style="padding:10px 14px; background:${scheme.sectionBg}; border-bottom:1px solid ${scheme.sectionBorder}; cursor:pointer;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
-          <div>
+          <div style="display:flex; align-items:baseline; gap:8px;">
+            <span id="${cardId}-chevron" style="font-size:0.75rem; color:var(--muted); flex:none;">${defaultExpanded ? "▾" : "▸"}</span>
             <span style="font-size:0.78rem; font-weight:700; color:var(--muted);">Purchase Order Number: <strong style="color:var(--text);">${po.poNumber || "—"}</strong></span>
             <span style="font-size:0.78rem; font-weight:700; color:var(--muted); margin-left:10px;">Vendor: <strong style="color:var(--text);">${po.vendorName}</strong></span>
           </div>
@@ -1909,37 +1929,39 @@ function renderExpectedInboundsPOCard(po, scheme) {
         </div>
       </div>
 
-      <div style="padding:6px 14px; background:#f8fafc; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px;">
-        <div style="flex:1; background:#e2e8f0; border-radius:4px; height:6px; overflow:hidden;">
-          <div style="height:100%; width:${receivedPct}%; background:${progressColor}; border-radius:4px; transition:width 0.3s ease;"></div>
+      <div id="${cardId}-body" style="display:${defaultExpanded ? "block" : "none"};">
+        <div style="padding:6px 14px; background:#f8fafc; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px;">
+          <div style="flex:1; background:#e2e8f0; border-radius:4px; height:6px; overflow:hidden;">
+            <div style="height:100%; width:${receivedPct}%; background:${progressColor}; border-radius:4px; transition:width 0.3s ease;"></div>
+          </div>
+          <span style="font-size:0.72rem; font-weight:700; color:${progressColor}; white-space:nowrap;">${po.receivedCount} / ${po.totalCount} fully received</span>
         </div>
-        <span style="font-size:0.72rem; font-weight:700; color:${progressColor}; white-space:nowrap;">${po.receivedCount} / ${po.totalCount} fully received</span>
-      </div>
 
-      <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; min-width:900px; table-layout:fixed;">
-          <colgroup>
-            <col style="width:8%;">
-            <col style="width:37%;">
-            <col style="width:12%;">
-            <col style="width:12%;">
-            <col style="width:12%;">
-            <col style="width:12%;">
-            <col style="width:12%;">
-          </colgroup>
-          <thead>
-            <tr style="background:#f8fafc; border-bottom:1px solid var(--border);">
-              <th style="padding:6px 8px; font-size:0.68rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Item Code</th>
-              <th style="padding:6px 8px; font-size:0.68rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase;">Material Name</th>
-              <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Ordered<br>Qty</th>
-              <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Received<br>Qty</th>
-              <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Being Repaired<br>at ABPS Qty</th>
-              <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Return to Vendor<br>/ Missing Qty</th>
-              <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Status</th>
-            </tr>
-          </thead>
-          <tbody>${lineItemsHtml}</tbody>
-        </table>
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; min-width:900px; table-layout:fixed;">
+            <colgroup>
+              <col style="width:8%;">
+              <col style="width:37%;">
+              <col style="width:12%;">
+              <col style="width:12%;">
+              <col style="width:12%;">
+              <col style="width:12%;">
+              <col style="width:12%;">
+            </colgroup>
+            <thead>
+              <tr style="background:#f8fafc; border-bottom:1px solid var(--border);">
+                <th style="padding:6px 8px; font-size:0.68rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase; white-space:nowrap;">Item Code</th>
+                <th style="padding:6px 8px; font-size:0.68rem; text-align:left; color:var(--muted); font-weight:700; text-transform:uppercase;">Material Name</th>
+                <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Ordered<br>Qty</th>
+                <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Received<br>Qty</th>
+                <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Being Repaired<br>at ABPS Qty</th>
+                <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Return to Vendor<br>/ Missing Qty</th>
+                <th style="padding:6px 4px; font-size:0.65rem; text-align:center; color:var(--muted); font-weight:700; text-transform:uppercase; line-height:1.3;">Status</th>
+              </tr>
+            </thead>
+            <tbody>${lineItemsHtml}</tbody>
+          </table>
+        </div>
       </div>
     </div>`;
 }
