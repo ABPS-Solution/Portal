@@ -1222,15 +1222,31 @@ function ptlRenderCanvas(containerId) {
   const rowMode = lanes.length >= PTL_ROW_MODE_MIN_LANES;
   const TRUNK_BAND_H = Math.round(210 * ptlFS);
   const GROUP_HDR_H = Math.round(30 * ptlFS);
+  // ROW_PITCH is now a MINIMUM, not a flat pitch - a lane's real height is
+  // sized to however many lines its own wrapped rating/description label
+  // actually needs (LANE_LINE_H apart, LANE_ROW_PAD of breathing room top
+  // and bottom), floored at this minimum. Previously every row was a fixed
+  // 92*ptlFS regardless of label length, which is what left a large dead
+  // gap below a short 1-2 line label while a long 6-line label's text sat
+  // flush against its own row's top/bottom edge (still centred on a fixed
+  // pitch, but with wildly different amounts of surrounding air row to row).
   const ROW_PITCH = Math.round(92 * ptlFS);
+  const LANE_LINE_H = 13 * ptlFS;
+  const LANE_ROW_PAD = 22 * ptlFS;
   const PAD_B = Math.round(40 * ptlFS);
+  // How many product groups stay visible before the scroller has to be
+  // scrolled for the rest - explicit product request: always show exactly
+  // 3 at a time, never however many happen to fit the monitor.
+  const VISIBLE_GROUPS = 3;
 
   const laneGroupKey = l => (l.productName || l.name || '').trim().toLowerCase() || '(unnamed)';
   let groups = null, rowPlan = null, laneYByBoq = null, summaryYByGroupKey = null, rowsBottom = 0;
+  let laneRowHByBoq = null, visibleScrollH = 0;
   if (rowMode) {
     groups = ptlGroupLanesByProduct(lanes);
     rowPlan = [];
     laneYByBoq = {};
+    laneRowHByBoq = {};
     summaryYByGroupKey = {};
     let cursorY = RULER_H + TRUNK_BAND_H;
     groups.forEach((g, gi) => {
@@ -1244,14 +1260,25 @@ function ptlRenderCanvas(containerId) {
         cursorY += ROW_PITCH;
       } else {
         g.lanes.forEach(l => {
-          const y = cursorY + ROW_PITCH / 2;
+          const ratingLabel = [l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.name;
+          // Generous line cap here (10) - this is sizing the row to the
+          // label, not clipping the label to a pre-decided row size.
+          const labelLines = ptlWrapLbl(ratingLabel, longestName, 10);
+          const rowH = Math.max(ROW_PITCH, Math.round(LANE_ROW_PAD + labelLines.length * LANE_LINE_H));
+          const y = cursorY + rowH / 2;
           laneYByBoq[l.boqId] = y;
-          rowPlan.push({ type: 'lane', group: g, lane: l, y, groupIndex: gi });
-          cursorY += ROW_PITCH;
+          laneRowHByBoq[l.boqId] = rowH;
+          rowPlan.push({ type: 'lane', group: g, lane: l, y, rowH, labelLines, groupIndex: gi });
+          cursorY += rowH;
         });
       }
+      // Snapshot the scroll height right after the VISIBLE_GROUPS-th group
+      // finishes - everything beyond this point is reachable by scrolling,
+      // never by the canvas simply growing taller to fit it.
+      if (gi === VISIBLE_GROUPS - 1) visibleScrollH = cursorY;
     });
     rowsBottom = cursorY + PAD_B;
+    if (!visibleScrollH || groups.length <= VISIBLE_GROUPS) visibleScrollH = rowsBottom;
   }
 
   // Hard container height in centred mode (unchanged): the container
@@ -1518,8 +1545,9 @@ function ptlRenderCanvas(containerId) {
     // (rather than hover-only) legible at 16 rows: a label can no longer
     // stack up/down into a neighbouring product's row. Centred mode keeps
     // the shared trunk-wide bound, unchanged.
-    const ceilY = rowMode ? (y - ROW_PITCH / 2 + 4 * ptlFS) : trunkCeil;
-    const floorY = rowMode ? (y + ROW_PITCH / 2 - 4 * ptlFS) : trunkFloor;
+    const laneRowH = rowMode ? (laneRowHByBoq[l.boqId] || ROW_PITCH) : ROW_PITCH;
+    const ceilY = rowMode ? (y - laneRowH / 2 + 4 * ptlFS) : trunkCeil;
+    const floorY = rowMode ? (y + laneRowH / 2 - 4 * ptlFS) : trunkFloor;
     l.steps.forEach(s => laid.push({ n: { ...s, dept: l.ownerDept }, x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id], boqId: l.boqId, ownerLabel: `${l.ownerDept} Production`, ceilY, floorY }));
   });
   laid.sort((a, b) => a.x - b.x);
@@ -1623,9 +1651,7 @@ function ptlRenderCanvas(containerId) {
           G.push(`<rect class="ptl-group-hit" data-group="${esc(item.group.key)}" x="0" y="${item.y - ROW_PITCH / 2}" width="${gutterW}" height="${ROW_PITCH}" fill="transparent" style="cursor:pointer;"/>`);
         } else if (item.type === 'lane') {
           const l = item.lane, y = item.y;
-          const ratingLabel = [l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.name;
-          const maxLines = Math.max(2, Math.floor((ROW_PITCH * 0.85) / (13 * ptlFS)));
-          const labelLines = ptlWrapLbl(ratingLabel, longestName, maxLines);
+          const labelLines = item.labelLines || ptlWrapLbl([l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.name, longestName, 10);
           G.push(`<rect x="16" y="${y - 12 * ptlFS}" width="4" height="${24 * ptlFS}" rx="2" fill="${gc}"/>`);
           labelLines.forEach((ln, li) => {
             G.push(`<text x="28" y="${y + 4.5 * ptlFS + (li - (labelLines.length - 1) / 2) * 13 * ptlFS}" font-size="${11.5 * ptlFS}" font-weight="700" fill="${gc}">${esc(ln)}</text>`);
@@ -1677,6 +1703,12 @@ function ptlRenderCanvas(containerId) {
   const svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;">${P.join("")}</svg>`;
   ptlLastTodayX = todayX;
   wrap.innerHTML = svg;
+  // Cap the scroller to exactly VISIBLE_GROUPS products' worth of height in
+  // row mode, so the 4th product onward is reachable by scrolling rather
+  // than the container simply growing to whatever a tall monitor allows.
+  // maxHeight (not height) so a short list or a small monitor still just
+  // fills whatever flex space it actually has.
+  wrap.style.maxHeight = rowMode ? `${Math.round(visibleScrollH)}px` : "";
   ptlWireCanvasInteractions(wrap, clickMap);
 
   // Pin the gutter to the viewport's left edge and the ruler to its top
