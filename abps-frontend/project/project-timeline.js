@@ -1,29 +1,29 @@
-// project/project-timeline.js — Project Timeline Tracking (Project
+// project/project-timeline.js - Project Timeline Tracking (Project
 // department, after Manufacturing Clearance). Stages 1-3 and 5 render as
-// a plain list (Stage 5 has no lanes of its own to branch — the SVG
+// a plain list (Stage 5 has no lanes of its own to branch - the SVG
 // schematic from the design exploration earns its keep at Stage 4, which
 // has real product lanes). Stage 4 is a real read/write surface: submit
 // an initial plan once per BOQ, then revise target dates and tick
 // non-terminal steps as work happens; the terminal "Packing and Adding
 // to FG" step is derived automatically, never a button here. Stage 5's
 // four QA/dispatch milestones take a real entered date (booked ahead or
-// logged after the fact), not a same-day "mark done" — Inspection Call
+// logged after the fact), not a same-day "mark done" - Inspection Call
 // Release is the one item in the whole screen that's flagged but never
 // enterable: it's purely a computed deadline.
 //
 // Write permission isn't checked client-side beyond perm_project_timeline
-// gating the whole screen — every write button is shown to anyone who can
+// gating the whole screen - every write button is shown to anyone who can
 // see the screen, and the real "own department, or admin" gate lives
 // server-side in routes/timeline.js. A rejected write surfaces the
 // server's message via alert() rather than silently hiding the control,
 // same trade-off Stage 3's Mark Done button already made.
 //
 // Design tokens/engine mirror the ABPS Portal's own :root variables
-// (see index.html) rather than inventing a palette — this screen sits
+// (see index.html) rather than inventing a palette - this screen sits
 // inside the app, not next to it.
 
 // The portal's CSS vars don't carry one hue per department the way the
-// prototype's mock palette did — Stage 1-3 only touches Marketing/
+// prototype's mock palette did - Stage 1-3 only touches Marketing/
 // Project/Design/Store/Purchase, so a small fixed set covers it without
 // inventing new tokens.
 const PTL_COLORS = {
@@ -32,40 +32,40 @@ const PTL_COLORS = {
 };
 const PTL_DEPT_NAME = { marketing: 'Marketing', project: 'Project', design: 'Design', store: 'Store', purchase: 'Purchase', qa: 'Quality Assurance', production: 'Production' };
 // Shared completion-status circle color, used identically by the canvas
-// map and the Steps list (30 Aug 2026) — department no longer drives
+// map and the Steps list (30 Aug 2026) - department no longer drives
 // circle color anywhere; grey = scheduled/on-track, green = done, red =
 // late is the only meaning a circle's color carries now.
 const PTL_SCHEDULED_GREY = '#94a3b8';
-// Per-lane (per-PRODUCT, not per-department — two products under the same
+// Per-lane (per-PRODUCT, not per-department - two products under the same
 // Reactor/Capacitor/Panel department get different colors here) trace
 // line color, so multiple products running in parallel through Stage 4
 // are visually distinguishable. Deliberately excludes red/reddish/green/
 // blue/black (reserved: red=late, green=TODAY line/done-state, blue=
-// brand/spine, black=text) — cycles if there are ever more lanes than
+// brand/spine, black=text) - cycles if there are ever more lanes than
 // colors. Node circles stay the shared green/grey/red completion scheme
 // regardless of lane; only the connecting line (and its gutter label)
 // carries this color.
 const PTL_LANE_TRACE_PALETTE = ['#7c3aed', '#0d9488', '#be185d', '#92400e', '#c026d3', '#c2410c'];
 const ptlLaneTraceColor = (i) => PTL_LANE_TRACE_PALETTE[i % PTL_LANE_TRACE_PALETTE.length];
-// Dispatch is no longer part of this chain — it's Store's, derived
+// Dispatch is no longer part of this chain - it's Store's, derived
 // automatically from when the Final Project Invoice was generated (see
 // routes/timeline.js), never a hand-entered date.
 const PTL_QA_CHAIN = new Set(['customer_inspection', 'inspection_clearance_note', 'dispatch_clearance']);
 // Stage 2's two "system" trunk nodes have no dedicated owning department
 // (activated_at flips when a project leaves Inactive; date_of_internal_mfc
-// is set once by Manufacturing Clearance) — admin-only test backdate via
+// is set once by Manufacturing Clearance) - admin-only test backdate via
 // adminBackdateSystemDate, same resolveAdminBackdate gate as everything
 // else on this screen.
 const PTL_ADMIN_SYSTEM_DATE_IDS = new Set(['activated', 'mfcInt']);
 // Stage 3's four "system" trunk nodes are normally computed live off real
-// BOQ/PRN/PO/PPS rows, so — unlike Stage 2's two above — there's no
+// BOQ/PRN/PO/PPS rows, so - unlike Stage 2's two above - there's no
 // column to backdate. adminOverrideSystemMilestone writes a testing-only
 // actual_date into the same project.timeline_milestones row Stage 3's
 // planned dates already live in; fetchProjectTimeline prefers it over the
 // live computation. adminClearSystemMilestoneOverride removes it again
 // once real data should take back over.
 const PTL_ADMIN_MILESTONE_OVERRIDE_KEY = { boqs: 'boqs_released', prns: 'prns_released', mrdates: 'production_requirement_dates_released', rmpos: 'rmpos_released', pps: 'pps_released', wdesign: 'working_designs_released' };
-// Stage headers — ptlRenderList inserts one automatically whenever a
+// Stage headers - ptlRenderList inserts one automatically whenever a
 // node's stage differs from the previous one, so Stage 1/2/3 get the same
 // section labeling Stage 4/5 already had (those two used to be hardcoded
 // separately by the caller; now folded into the same mechanism).
@@ -75,18 +75,18 @@ let ptlProjects = [];
 let ptlData = null;
 let ptlSelected = null;
 
-// Admin-only test backdate — server re-checks perm_admin regardless (see
+// Admin-only test backdate - server re-checks perm_admin regardless (see
 // resolveAdminBackdate in routes/timeline.js), this just decides whether
 // to show the control at all. A blank value means "today", same as
 // every non-admin's Mark Done always meant.
 const ptlIsAdmin = () => localStorage.getItem("isUserAdminGlobal") === "true";
 const ptlAsOfInputHtml = (id, value) => ptlIsAdmin()
-  ? `<input type="date" id="ptl-asof-${id}" value="${value || ''}" title="Admin only — set/backdate this completion for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.74rem; width:130px; box-sizing:border-box;" />`
+  ? `<input type="date" id="ptl-asof-${id}" value="${value || ''}" title="Admin only - set/backdate this completion for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.74rem; width:130px; box-sizing:border-box;" />`
   : "";
 const ptlReadAsOf = (id) => { const el = document.getElementById(`ptl-asof-${id}`); return el && el.value ? el.value : undefined; };
 
 // Persistent green highlight on whatever row a Timeline-canvas click just
-// jumped to — cleared on the next jump (or lost on the row's own next
+// jumped to - cleared on the next jump (or lost on the row's own next
 // re-render, which is fine: it's a "you clicked this" affordance, not
 // stored state).
 let ptlLastHighlightEl = null;
@@ -144,7 +144,7 @@ function handlePtlProjectInput(query) {
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:700;">${escapeHtml(p.projectId)}</span>
-      <span style="color:var(--muted);"> — ${escapeHtml(p.companyName || '')} · ${escapeHtml(p.status)}</span>
+      <span style="color:var(--muted);"> - ${escapeHtml(p.companyName || '')} · ${escapeHtml(p.status)}</span>
     </div>`).join("");
   dd.style.display = "block";
 }
@@ -153,30 +153,30 @@ document.addEventListener("click", (e) => {
   if (dd && !e.target.closest("#ptl-project-input") && !e.target.closest("#ptl-project-dropdown")) dd.style.display = "none";
 });
 
-// Holidays (31 Aug 2026) — fetched once per page load and cached module-wide
+// Holidays (31 Aug 2026) - fetched once per page load and cached module-wide
 // (admin_db.holidays has no admin UI, changes are rare direct-SQL edits, so
 // there's no need to re-fetch per project the way ptlData itself is).
 // Display-only: marks a Sunday/holiday's date in green on the canvas axis
-// and improves ptlBdBetween's own estimate — every REAL business-day
+// and improves ptlBdBetween's own estimate - every REAL business-day
 // freeze/calculation still happens server-side via lib/businessDays.js,
 // unchanged either way.
 let ptlHolidaySet = new Set();
 let ptlHolidaysLoaded = false;
 async function ptlEnsureHolidaysLoaded() {
   if (ptlHolidaysLoaded) return;
-  ptlHolidaysLoaded = true; // set first — a failed fetch shouldn't retry on every render
+  ptlHolidaysLoaded = true; // set first - a failed fetch shouldn't retry on every render
   try {
     const data = await apFetch({ action: "fetchTimelineHolidays" });
     if (data.success) {
       ptlHolidaySet = new Set(data.holidays || []);
       // The canvas's first paint likely already happened before this
       // resolved (fired in parallel with the timeline fetch, not awaited)
-      // — re-render once so holiday shading isn't missing until the next
+      // - re-render once so holiday shading isn't missing until the next
       // unrelated interaction. Cheap: ptlRender() is already the standard
       // re-render call used throughout this file.
       if (ptlData && typeof ptlRender === 'function') ptlRender();
     }
-  } catch (e) { /* non-critical — canvas still works, just without holiday shading */ }
+  } catch (e) { /* non-critical - canvas still works, just without holiday shading */ }
 }
 function ptlDayIsRest(dateStr) {
   return ptlParse(dateStr).getUTCDay() === 0 || ptlHolidaySet.has(dateStr);
@@ -207,7 +207,7 @@ async function selectPtlProject(projectId) {
   }
 }
 
-/* ── Business-day engine — same convention as lib/businessDays.js:
+/* ── Business-day engine - same convention as lib/businessDays.js:
    dates as "YYYY-MM-DD" strings, parsed as UTC midnight, so this can
    never drift a day depending on the viewer's own timezone. ─────────── */
 const PTL_DAYMS = 86400000;
@@ -220,7 +220,7 @@ function ptlBdBetween(a, b) {
   while (ptlIso(d) !== b) {
     d = new Date(d.getTime() + dir * PTL_DAYMS);
     // Holidays are now fetched client-side (ptlHolidaySet, 31 Aug 2026) so
-    // this can skip them too, not just Sundays — still just a DISPLAY
+    // this can skip them too, not just Sundays - still just a DISPLAY
     // estimate, the server (lib/businessDays.js) is authoritative for any
     // real freezing/calculation.
     if (!ptlDayIsRest(ptlIso(d))) count += dir;
@@ -228,22 +228,22 @@ function ptlBdBetween(a, b) {
   return count;
 }
 const PTL_MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const ptlFmt = s => { if (!s) return "—"; const d = ptlParse(s); return d.getUTCDate() + " " + PTL_MON[d.getUTCMonth()]; };
-const ptlFmtFull = s => { if (!s) return "—"; const d = ptlParse(s); return d.getUTCDate() + " " + PTL_MON[d.getUTCMonth()] + " " + d.getUTCFullYear(); };
+const ptlFmt = s => { if (!s) return "-"; const d = ptlParse(s); return d.getUTCDate() + " " + PTL_MON[d.getUTCMonth()]; };
+const ptlFmtFull = s => { if (!s) return "-"; const d = ptlParse(s); return d.getUTCDate() + " " + PTL_MON[d.getUTCMonth()] + " " + d.getUTCFullYear(); };
 
-// Admin-only test override for "today" — every late/overdue flag, the
+// Admin-only test override for "today" - every late/overdue flag, the
 // canvas's TODAY marker, and the flags rail all key off ptlToday(), so
 // overriding it here is enough to test a whole multi-week scenario
 // (backdated milestones + a moved "today") without waiting out real
 // calendar days. Client-side only (localStorage), never sent to the
-// server — every real write still stamps the server's own CURRENT_DATE
+// server - every real write still stamps the server's own CURRENT_DATE
 // unless explicitly backdated via resolveAdminBackdate. Non-admins never
 // see the control and always get the real date.
 const PTL_TODAY_OVERRIDE_KEY = "ptlTodayOverride";
 function ptlToday() {
   const override = ptlIsAdmin() ? localStorage.getItem(PTL_TODAY_OVERRIDE_KEY) : null;
   if (override && /^\d{4}-\d{2}-\d{2}$/.test(override)) return override;
-  // Server timezone is Asia/Kolkata (db.js) — match it here so "today"
+  // Server timezone is Asia/Kolkata (db.js) - match it here so "today"
   // agrees with what the backend just froze/derived, rather than the
   // viewer's own local clock.
   const now = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
@@ -259,11 +259,11 @@ function ptlSetTodayOverride(value) {
 // Same convention as Manufacturing Clearance's wrapper header: Tentative
 // (projects.delivery_date, from the customer PO) until Internal MFC is
 // given, then Expected (projects.mfc_actual_delivery_date, a gating field
-// entered at clearance time — column is named "actual" in the schema,
+// entered at clearance time - column is named "actual" in the schema,
 // but it's never a record of an already-happened delivery, so the
 // screen calls it Expected everywhere, not Actual).
 // mfc_actual_delivery_date (Expected Delivery Date) is one of the
-// Manufacturing Clearance gating fields — it's entered before Internal MFC
+// Manufacturing Clearance gating fields - it's entered before Internal MFC
 // itself is ever given, so this switches the moment THAT value exists,
 // not on mfcInt (which can lag it by however long clearance takes).
 const ptlDeliveryLabel = p => p.actualDelivery ? "Expected Delivery" : "Tentative Delivery";
@@ -272,11 +272,11 @@ const ptlDeliveryValue = p => p.actualDelivery || p.tentativeDelivery;
 const ptlEff = n => n.actual || n.target || n.planned;
 const ptlLate = n => !n.actual && !n.done && ptlEff(n) && ptlEff(n) < ptlToday();
 
-// Per-stage fractions — used for the "Stage N of 5" label, the segmented
+// Per-stage fractions - used for the "Stage N of 5" label, the segmented
 // strip's per-block fill, and the late/on-time color. Stage 4 averages
 // each BOQ LANE rather than pooling every lane's steps together, since a
 // Reactor flow and a Panel flow don't have the same step count
-// (lib/productionFlows.js) — pooling would let whichever flow type has
+// (lib/productionFlows.js) - pooling would let whichever flow type has
 // more BOQs/steps on this project dominate Stage 4's own fraction.
 function ptlComputeStageFractions() {
   const { trunk, lanes } = ptlData;
@@ -300,21 +300,21 @@ function ptlComputeStageFractions() {
   });
 }
 
-// Overall progress % — schedule-weighted, not a flat stage/milestone
+// Overall progress % - schedule-weighted, not a flat stage/milestone
 // count. Equal-weighting the 5 stages (the earlier version of this)
 // looked wrong in practice: 2 of 5 stages fully done read as "40%" even
 // though Stages 1-2 (a couple of weeks) are nowhere near as much real
 // project time as Stages 3-5 (which run for months). Instead, every
-// trunk/lane node's own EFFECTIVE date (ptlEff — actual once done, else
+// trunk/lane node's own EFFECTIVE date (ptlEff - actual once done, else
 // its current target/planned estimate) is plotted on one timeline, and
 // each node is credited with the business-day GAP since the previous
-// dated node — so a milestone representing 6 weeks of work counts for
+// dated node - so a milestone representing 6 weeks of work counts for
 // far more than one immediately next to another. Nodes with no date yet
 // (e.g. Stage 5's QA milestones before anything's scheduled, or Stage 4
 // steps before a plan is submitted) simply don't exist as separate
 // points yet; that time is not lost, it's absorbed into the gap leading
-// up to the next node that DOES have a date — which, worst case, is
-// trunk's 'delivery' node (always known — the PO's own delivery date,
+// up to the next node that DOES have a date - which, worst case, is
+// trunk's 'delivery' node (always known - the PO's own delivery date,
 // or the MFC-set one once that happens), so an early-stage project
 // correctly shows only a small sliver of a still-mostly-open timeline
 // rather than jumping ahead just because a couple of quick early stages
@@ -328,12 +328,12 @@ function ptlComputeScheduleWeightedPct() {
   (lanes || []).forEach(l => l.steps.forEach(s => { const d = ptlEff(s); if (d) dated.push({ date: d, done: !!s.actual || s.done === true }); }));
   if (dated.length < 2) return 0;
 
-  // Floor at the earliest node that's actually DONE — a planned/target/
+  // Floor at the earliest node that's actually DONE - a planned/target/
   // tentative estimate dated earlier than the project's own first real
   // milestone is bad data (e.g. a delivery date typo'd a year early), and
   // without this guard it sorts to the very front of the timeline; the
   // whole gap up to the next done milestone then gets credited as "done"
-  // purely because it's chronologically ahead of that (wrong) date —
+  // purely because it's chronologically ahead of that (wrong) date -
   // this is what produced 96% on a brand-new project with nothing past
   // Order Acceptance/PO Upload done. Any node dated before that floor is
   // dropped from the weighting entirely rather than trusted.
@@ -376,7 +376,7 @@ function ptlProgressStageInfo(p) {
   return { stageIdx, late, color: late ? '#e84545' : 'var(--brand)' };
 }
 
-// Fullscreen Timeline header — the ring. A single continuous shape reads
+// Fullscreen Timeline header - the ring. A single continuous shape reads
 // well at the larger size this header has room for.
 function ptlStageProgressHtml() {
   const p = ptlComputeStageProgress();
@@ -396,7 +396,7 @@ function ptlStageProgressHtml() {
   </div>`;
 }
 
-// Steps header (compact, inline next to Today override) — a 5-segment
+// Steps header (compact, inline next to Today override) - a 5-segment
 // strip instead of the ring, one block per Stage 1-5, so it stays legible
 // at a small inline size and doubles as a "which stage am I in" glance
 // rather than needing the ring's more precise arc-reading.
@@ -431,11 +431,11 @@ function ptlRender() {
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border);">
       <div>
         <div style="font-weight:800; font-size:1.05rem; color:var(--text);">${escapeHtml(project.projectId)}</div>
-        <div style="font-size:0.82rem; color:var(--muted);">${escapeHtml(project.companyName || '—')} · <strong>${escapeHtml(project.status)}</strong> · ${ptlDeliveryLabel(project)} <strong>${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
+        <div style="font-size:0.82rem; color:var(--muted);">${escapeHtml(project.companyName || '-')} · <strong>${escapeHtml(project.status)}</strong> · ${ptlDeliveryLabel(project)} <strong>${ptlFmtFull(ptlDeliveryValue(project))}</strong></div>
         ${ptlLdSummaryHtml()}
       </div>
       <div style="display:flex; align-items:center; gap:14px;">
-        ${ptlIsAdmin() ? `<div style="display:flex; align-items:center; gap:6px;" title="Admin only — overrides 'today' everywhere on this screen for testing">
+        ${ptlIsAdmin() ? `<div style="display:flex; align-items:center; gap:6px;" title="Admin only - overrides 'today' everywhere on this screen for testing">
           <span style="font-size:0.72rem; font-weight:700; color:#b45309;">Today override:</span>
           <input type="date" value="${localStorage.getItem(PTL_TODAY_OVERRIDE_KEY) || ''}" onchange="ptlSetTodayOverride(this.value)" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.78rem;" />
           ${localStorage.getItem(PTL_TODAY_OVERRIDE_KEY) ? `<button type="button" onclick="ptlSetTodayOverride('')" style="padding:5px 10px; font-size:0.72rem; font-weight:700; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--muted); cursor:pointer;">Reset</button>` : ''}
@@ -445,12 +445,12 @@ function ptlRender() {
     </div>`;
 
   // Two full views, not a canvas strip glued above a list: Timeline is
-  // the schematic overview (big — real screen space, its own fullscreen
+  // the schematic overview (big - real screen space, its own fullscreen
   // overlay); Steps is where the actual Mark Done / Set Date / target
   // editing happens, and is the default landing view. Rather than a
   // two-tab toggle inline in the body (redundant once you're already
   // looking at Steps), a single "Timeline" entry button lives in the
-  // panel's top-left, next to Return to Main Dashboard — the fullscreen
+  // panel's top-left, next to Return to Main Dashboard - the fullscreen
   // overlay's own "‹ Steps" button is the way back.
   const elHeaderLeft = document.getElementById("ptl-header-left");
   if (elHeaderLeft) elHeaderLeft.innerHTML = `<button type="button" onclick="ptlSetViewMode('timeline')" title="Open Timeline" style="display:inline-flex; align-items:center; gap:5px; padding:7px 12px; font-size:0.82rem; font-weight:800; border:0; border-radius:var(--radius); background:var(--brand); color:#fff; cursor:pointer;">Timeline &rsaquo;</button>`;
@@ -459,7 +459,7 @@ function ptlRender() {
   if (!mfcComplete) {
     body.innerHTML = header + stepsOpen + `
       <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius); padding:14px; font-size:0.85rem; color:#92400e;">
-        Stage 3 onward unlocks once Manufacturing Clearance sets this project's Internal MFC date — nothing has been cleared yet, so only Stages 1-2 are shown below.
+        Stage 3 onward unlocks once Manufacturing Clearance sets this project's Internal MFC date - nothing has been cleared yet, so only Stages 1-2 are shown below.
       </div>
       <div style="margin-top:16px;">${ptlRenderList(trunk.filter(n => n.stage <= 2), today)}</div>
       </div>`;
@@ -468,7 +468,7 @@ function ptlRender() {
   }
 
   // prodPlan (Stage 3/4 boundary) renders before the lanes it summarizes;
-  // inspCall + the QA chain (Stage 4/5 boundary onward) render after —
+  // inspCall + the QA chain (Stage 4/5 boundary onward) render after -
   // they depend on the lanes' own terminal-step dates.
   const preLanes = trunk.filter(n => n.stage <= 3 || n.id === 'prodPlan');
   const postLanes = trunk.filter(n => n.id === 'inspCall' || n.stage === 5);
@@ -479,13 +479,13 @@ function ptlRender() {
   ptlSetViewMode(ptlViewMode);
 }
 
-/* ── Stage 4 — one card per in-scope BOQ, collapsed to its header
+/* ── Stage 4 - one card per in-scope BOQ, collapsed to its header
    (product + current stage) until clicked. Expansion state is kept in a
    module-level Set (not per-render local state) so it survives the
    re-renders every Mark Done / Submit Plan action triggers, and so a
    Timeline-canvas click can force a lane open before scrolling to it
    (see ptlSetViewMode's focusAnchorId handling). ─────────────────────── */
-// Stage 4 doesn't take values until Stage 3 (Pre Production) is done —
+// Stage 4 doesn't take values until Stage 3 (Pre Production) is done -
 // same reasoning Stage 5 already applies against Stage 4. The server is
 // the real gate (submitInitialProductPlan refuses non-admins outright);
 // this only decides whether to show the form as usable or locked, so a
@@ -500,13 +500,13 @@ function ptlIsStage3Done() {
     return n && (!!n.actual || n.done === true);
   });
 }
-// ptlCanWriteLane — mirrors routes/timeline.js's getRequesterProductionRole
+// ptlCanWriteLane - mirrors routes/timeline.js's getRequesterProductionRole
 // write-gate EXACTLY ("own department, or admin, or Project"), using the
 // server-authoritative isAdmin/department/productionSubDept values
-// applyServerRoleFlags refreshes on every page load (shared/apFetch.js) —
+// applyServerRoleFlags refreshes on every page load (shared/apFetch.js) -
 // NOT the legacy isUserAdminGlobal heuristic alone, which is what let a
 // user moved out of the Admin department keep seeing every write control
-// here until a fresh login. This only controls what's SHOWN — the server
+// here until a fresh login. This only controls what's SHOWN - the server
 // route re-checks the identical rule on every write, so this can never be
 // the only thing standing between a wrong department and a real edit.
 function ptlCanWriteLane(lane) {
@@ -522,11 +522,11 @@ let ptlExpandedLanes = new Set();
 function ptlRenderLanes(lanes) {
   if (lanes.length === 0) {
     return `<div style="margin-top:18px; background:var(--highlight-bg); border:1px dashed var(--border); border-radius:var(--radius); padding:14px; font-size:0.82rem; color:var(--muted);">
-      Stage 4 — Production Planning: no Authorized BOQ on this project falls under Reactor, Capacitor, or Panel Production yet.
+      Stage 4 - Production Planning: no Authorized BOQ on this project falls under Reactor, Capacitor, or Panel Production yet.
     </div>`;
   }
   return `<div style="margin-top:20px;">
-    <div style="font-weight:800; font-size:0.95rem; color:var(--text); margin-bottom:10px;">Stage 4 — Production Planning</div>
+    <div style="font-weight:800; font-size:0.95rem; color:var(--text); margin-bottom:10px;">Stage 4 - Production Planning</div>
     ${lanes.map(ptlRenderLane).join("")}
   </div>`;
 }
@@ -535,7 +535,7 @@ function ptlLaneStageLabel(lane) {
   if (!lane.planInitialized) return "Not planned yet";
   const doneCount = lane.steps.filter(s => !!s.actual).length;
   if (doneCount === lane.steps.length) return "Complete";
-  return `In progress — ${doneCount}/${lane.steps.length} steps done`;
+  return `In progress - ${doneCount}/${lane.steps.length} steps done`;
 }
 
 function ptlToggleLane(boqId) {
@@ -547,14 +547,14 @@ function ptlToggleLane(boqId) {
 function ptlRenderLane(lane) {
   const c = PTL_LANE_COLOR[lane.ownerDept] || 'var(--muted)';
   const expanded = ptlExpandedLanes.has(lane.boqId);
-  const title = [lane.productName, lane.productRating, lane.descriptionOfMaterial].filter(Boolean).join(" — ");
+  const title = [lane.productName, lane.productRating, lane.descriptionOfMaterial].filter(Boolean).join(" - ");
   return `
     <div id="ptl-lane-${lane.boqId}" style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:14px; overflow:hidden;">
       <div onclick="ptlToggleLane('${lane.boqId}')" style="padding:10px 14px; background:${c}14; border-left:4px solid ${c}; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; cursor:pointer;">
         <div>
           <span style="display:inline-block; width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:6px solid ${c}; margin-right:8px; transform:rotate(${expanded ? 90 : 0}deg); transition:transform .15s;"></span>
           <span style="font-weight:800; color:${c};">${escapeHtml(lane.name)}</span>
-          <span style="color:var(--text); font-size:0.82rem;"> — ${escapeHtml(title)}</span>
+          <span style="color:var(--text); font-size:0.82rem;"> - ${escapeHtml(title)}</span>
           <span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:${c}; margin-left:6px;">${escapeHtml(lane.ownerDept)} Production</span>
         </div>
         <span style="font-size:0.88rem; font-weight:700; font-family:monospace; color:${c};">${escapeHtml(ptlLaneStageLabel(lane))}</span>
@@ -566,36 +566,38 @@ function ptlRenderLane(lane) {
 }
 
 function ptlRenderLaneInitialPlanForm(lane) {
-  // Two independent reasons this can be locked: (1) view-only — the viewer
+  // Two independent reasons this can be locked: (1) view-only - the viewer
   // isn't this lane's own Production sub-department, Project, or admin
   // (ptlCanWriteLane, mirrors the server's real write-gate exactly); (2)
-  // Stage 3 — Pre Production isn't fully done yet (admin bypass only). The
+  // Stage 3 - Pre Production isn't fully done yet (admin bypass only). The
   // form still shows either way (so Production can see what's coming), it
   // just can't take values. Server-side submitInitialProductPlan enforces
-  // both independently — this only avoids letting someone fill the whole
+  // both independently - this only avoids letting someone fill the whole
   // thing out only to get refused on Submit.
   const canWrite = ptlCanWriteLane(lane);
   const stageLocked = !ptlIsAdmin() && !ptlIsStage3Done();
   const locked = !canWrite || stageLocked;
   const dis = locked ? 'disabled' : '';
   // Same bordered/percentage-width table convention as the after-planning
-  // table (ptlRenderLaneSteps) — kept visually consistent rather than the
+  // table (ptlRenderLaneSteps) - kept visually consistent rather than the
   // earlier bare CSS-grid layout, which looked like a different screen.
   const colBorder = "border-left:1px solid var(--border);";
   const rows = lane.steps.map(s => `
     <tr style="border-bottom:1px solid var(--border);">
-      <td style="width:60%; padding:6px 8px; font-size:0.85rem; font-weight:600; color:var(--text); text-align:center;">${escapeHtml(s.label)}</td>
+      <td style="width:60%; padding:6px 8px; font-size:0.98rem; font-weight:600; color:var(--text); text-align:center;">${escapeHtml(s.label)}</td>
       <td style="width:40%; padding:5px 8px; text-align:center; ${colBorder}">
-        <input type="date" ${dis} id="ptl-plan-${lane.boqId}-${s.id}"
-          style="display:block; margin:0 auto; padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; max-width:170px; box-sizing:border-box; text-align:center;${locked ? ' background:#f1f5f9; cursor:not-allowed;' : ''}" />
+        <div style="max-width:170px; margin:0 auto;">
+          <input type="date" ${dis} id="ptl-plan-${lane.boqId}-${s.id}"
+            style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box; text-align:center;${locked ? ' background:#f1f5f9; cursor:not-allowed;' : ''}" />
+        </div>
       </td>
     </tr>`).join("");
   return `
     <div style="font-size:0.82rem; color:var(--muted); margin-bottom:10px;">
-      No plan submitted yet. ${escapeHtml(lane.ownerDept)} Production enters a planned date for every step below, including Packing and Adding to FG — Material Issue Tickets for this product's Job Cards stay blocked until then. Only its completion is automatic; the planned/target date is entered like any other step.
+      No plan submitted yet. ${escapeHtml(lane.ownerDept)} Production enters a planned date for every step below, including Packing and Adding to FG. Material Issue Tickets for this product's Job Cards stay blocked until then. Only its completion is automatic; the planned/target date is entered like any other step.
     </div>
-    ${!canWrite ? `<div style="font-size:0.8rem; color:var(--muted); background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); padding:8px 12px; margin-bottom:10px;">View only — only ${escapeHtml(lane.ownerDept)} Production or Project can enter this plan.</div>`
-      : (stageLocked ? `<div style="font-size:0.8rem; color:#92400e; background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius); padding:8px 12px; margin-bottom:10px;">Locked until Stage 3 — Pre Production is fully done.</div>` : '')}
+    ${!canWrite ? `<div style="font-size:0.95rem; font-weight:700; color:#000; background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); padding:9px 12px; margin-bottom:10px;">View only. Only ${escapeHtml(lane.ownerDept)} Production or Project can enter this plan.</div>`
+      : (stageLocked ? `<div style="font-size:0.8rem; color:#92400e; background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius); padding:8px 12px; margin-bottom:10px;">Locked until Stage 3, Pre Production, is fully done.</div>` : '')}
     <div style="border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
       <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <thead><tr style="background:var(--highlight-bg); border-bottom:1px solid var(--border);">
@@ -610,16 +612,16 @@ function ptlRenderLaneInitialPlanForm(lane) {
     </div>`;
 }
 
-// Table form (30 Aug 2026) — Process Name / Initial Planning Date (frozen,
+// Table form (30 Aug 2026) - Process Name / Initial Planning Date (frozen,
 // = s.planned) / Current Target Date (the currently-committed date: the
 // most recent New Target Date if one was ever set, else the initial
-// planning date itself — a plain display of s.target || s.planned, never
+// planning date itself - a plain display of s.target || s.planned, never
 // edited directly) / New Target Date (the only editable date column,
 // same updateProductPlanStepTarget call as before) / Mark Done or Mark
-// Undone. Mark Undone is NOT admin-only — it's everyday mistake
+// Undone. Mark Undone is NOT admin-only - it's everyday mistake
 // correction (see unmarkProductPlanStepDone's own header comment), not a
 // testing override. `canWrite` (ptlCanWriteLane) additionally decides
-// whether the New Target Date / Mark Done-Undone controls render at all —
+// whether the New Target Date / Mark Done-Undone controls render at all -
 // a viewer outside this lane's own department gets the same table as pure
 // read-only display, no inputs, no buttons.
 function ptlRenderLaneSteps(lane, c, canWrite) {
@@ -650,21 +652,21 @@ function ptlRenderLaneSteps(lane, c, canWrite) {
 
     // Column dividers (border-left on every column after the first) match
     // the bordered-table convention used on Search Tasks/Follow-Ups
-    // (marketing/tasks-followups.js) — percentage widths on
+    // (marketing/tasks-followups.js) - percentage widths on
     // table-layout:fixed instead of fixed px, so the table fits the panel
     // instead of forcing horizontal scroll; the action cell's controls
     // wrap onto a second line (flex-wrap) rather than pushing the row wide.
     const colBorder = "border-left:1px solid var(--border);";
     return `
       <tr id="ptl-step-${lane.boqId}-${s.id}" style="border-bottom:1px solid var(--border);">
-        <td style="width:24%; padding:5px 8px; font-size:0.85rem; font-weight:600; color:${late ? 'var(--warn)' : 'var(--text)'}; text-align:center;">
+        <td style="width:24%; padding:5px 8px; font-size:0.98rem; font-weight:600; color:${late ? 'var(--warn)' : 'var(--text)'}; text-align:center;">
           <span style="display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; background:${done ? c : '#fff'}; border:2px solid ${late ? 'var(--warn)' : c}; vertical-align:middle;"></span>
           ${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.78rem;">(automatic)</span>' : ''}
         </td>
         <td style="width:13%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(s.planned)}</td>
         <td style="width:13%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(currentTarget)}</td>
-        <td style="width:20%; padding:5px 8px; text-align:center; ${colBorder}">${canWrite && (s.terminal || !done) ? `<input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
-              style="display:block; margin:0 auto; padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; max-width:150px; box-sizing:border-box; text-align:center;" />` : `<span style="color:var(--muted); font-size:0.8rem;">—</span>`}</td>
+        <td style="width:20%; padding:5px 8px; text-align:center; ${colBorder}">${canWrite && (s.terminal || !done) ? `<div style="max-width:150px; margin:0 auto;"><input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
+              style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box; text-align:center;" /></div>` : `<span style="color:var(--muted); font-size:0.8rem;">-</span>`}</td>
         <td style="width:30%; padding:5px 8px; text-align:center; ${colBorder}">
           <div style="display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px;">${actionCell}</div>
         </td>
@@ -727,7 +729,7 @@ async function ptlMarkStepDone(boqId, stepKey) {
   } catch (e) { alert("Network error: " + e.message); }
 }
 
-// Undoes an accidental/wrong Mark Done — everyday mistake correction,
+// Undoes an accidental/wrong Mark Done - everyday mistake correction,
 // not admin-only (see unmarkProductPlanStepDone's own header comment).
 async function ptlUnmarkStepDone(boqId, stepKey) {
   try {
@@ -741,7 +743,7 @@ async function ptlUnmarkStepDone(boqId, stepKey) {
 }
 
 // A detail line is untrusted text (material names, etc.) so it must
-// always go through escapeHtml — but some backend-built lines (see
+// always go through escapeHtml - but some backend-built lines (see
 // routes/timeline.js's "All RM POs Released" detail, 31 Aug 2026) want
 // one span bold (the qty+unit). Sending real <strong> tags isn't safe
 // here since the whole line still needs escaping; instead the backend
@@ -759,7 +761,7 @@ function ptlEscapeWithOptionalBold(text) {
   return `${escapeHtml(before)}<strong>${escapeHtml(bold)}</strong>${escapeHtml(after)}`;
 }
 
-// Which system nodes carry a "what's left" drill-down — the backend
+// Which system nodes carry a "what's left" drill-down - the backend
 // attaches n.detail (a plain array of strings, empty = nothing
 // outstanding) to boqs/prns/rmpos/pps/prodPlan only, see routes/timeline.js.
 let ptlExpandedNodes = new Set();
@@ -769,7 +771,7 @@ function ptlToggleNodeDetail(nodeId) {
   ptlRender();
 }
 
-// Per-stage collapse/expand on the Steps list — same affordance as
+// Per-stage collapse/expand on the Steps list - same affordance as
 // store/live-stock.js's per-material-type sections. Empty set = every
 // stage expanded by default; only stages the viewer has explicitly
 // collapsed are tracked, so a fresh load always opens fully expanded.
@@ -780,13 +782,13 @@ function ptlToggleStageCollapse(stage) {
   ptlRender();
 }
 
-// A plain, honest list — the branching SVG schematic from the design
+// A plain, honest list - the branching SVG schematic from the design
 // exploration is Stage 4's job (it needs the product lanes to be worth
 // drawing); Stages 1-3 are a single line, so a list reads better than a
 // canvas here and ships without carrying that engine's full weight.
 function ptlRenderList(nodes, today) {
   // Stage 5's QA dates are refused server-side until every in-scope
-  // product has a Stage 4 plan on file (routes/timeline.js) — reflect
+  // product has a Stage 4 plan on file (routes/timeline.js) - reflect
   // that client-side too, rather than letting the input take a value
   // that only surfaces as an alert() after Set Date is clicked.
   const prodPlanNode = ptlData && ptlData.trunk && ptlData.trunk.find(n => n.id === 'prodPlan');
@@ -805,7 +807,7 @@ function ptlRenderList(nodes, today) {
     const collapsed = ptlCollapsedStages.has(stage);
     const stageHeader = `
       <div onclick="ptlToggleStageCollapse(${stage})" style="margin-top:${stageIdx === 0 ? '0' : '26px'}; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; user-select:none; padding-bottom:8px; border-bottom:2px solid var(--border);">
-        <span style="font-weight:800; font-size:1.15rem; color:var(--text);">Stage ${stage} — ${PTL_STAGE_LABEL[stage] || ''}</span>
+        <span style="font-weight:800; font-size:1.15rem; color:var(--text);">Stage ${stage} - ${PTL_STAGE_LABEL[stage] || ''}</span>
         <button style="background:transparent; border:1px solid var(--border); color:var(--brand); font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:4px; cursor:pointer;">${collapsed ? '▼ Expand' : '▲ Collapse'}</button>
       </div>`;
     const bodyHtml = ptlRenderStageRows(stageGroups[stage], today, prodPlanDone);
@@ -820,16 +822,16 @@ function ptlRenderStageRows(nodes, today, prodPlanDone) {
     const late = ptlLate(n);
     const eff = ptlEff(n);
     const dateTxt = n.actual ? ptlFmtFull(n.actual) : (n.done ? `On or before ${ptlFmtFull(eff)} (exact date not tracked)` : eff ? `Due ${ptlFmtFull(eff)}` : 'Not yet scheduled');
-    // Same completion-status coloring as the canvas map (30 Aug 2026) —
+    // Same completion-status coloring as the canvas map (30 Aug 2026) -
     // grey scheduled / green done / red late, not department. `c` is
     // kept only for the department name badge text just below.
     const dotColor = late ? 'var(--warn)' : (done ? 'var(--accent)' : PTL_SCHEDULED_GREY);
     // "Show what's left" should only ever be a clickable toggle when
     // there's genuinely something outstanding to drill into. An empty
-    // n.detail means one of two very different things — either this
+    // n.detail means one of two very different things - either this
     // node is fully covered (show a plain "Completed" line) or it hasn't
     // been reached yet because an earlier stage hasn't produced anything
-    // for it to act on (n.blocked, e.g. "Waiting on BOQs." — show that
+    // for it to act on (n.blocked, e.g. "Waiting on BOQs." - show that
     // message directly, not behind a click that would only ever expand
     // to nothing). Only a non-empty n.detail gets the expand/collapse
     // affordance at all.
@@ -868,12 +870,12 @@ function ptlRenderStageRows(nodes, today, prodPlanDone) {
           ${qaBlockedByPlan ? `<div style="margin-top:7px; font-size:0.76rem; color:var(--muted); font-style:italic;">Stage 4 Production Planning has to be submitted for every in-scope product before this can be entered.</div>` : ''}
           ${systemDateCanEdit ? `
             <div onclick="event.stopPropagation()" style="margin-top:7px; display:flex; align-items:center; gap:8px;">
-              <input type="date" id="ptl-sysdate-${n.id}" value="${n.actual || ''}" title="Admin only — set/backdate this for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.78rem;" />
+              <input type="date" id="ptl-sysdate-${n.id}" value="${n.actual || ''}" title="Admin only - set/backdate this for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.78rem;" />
               <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlSetSystemDate('${n.id}')">${n.actual ? 'Update (admin)' : 'Set (admin)'}</button>
             </div>` : ''}
           ${milestoneOverrideCanEdit ? `
             <div onclick="event.stopPropagation()" style="margin-top:7px; display:flex; align-items:center; gap:8px;">
-              <input type="date" id="ptl-msoverride-${n.id}" value="${n.actual || ''}" title="Admin only — override this milestone's date for testing (normally computed live)" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.78rem;" />
+              <input type="date" id="ptl-msoverride-${n.id}" value="${n.actual || ''}" title="Admin only - override this milestone's date for testing (normally computed live)" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.78rem;" />
               <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlSetMilestoneOverride('${n.id}')">${n.actual ? 'Update (admin)' : 'Set (admin)'}</button>
               ${n.actual ? `<button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem; background:#fff; color:var(--muted); border:1px solid var(--border);" onclick="ptlClearMilestoneOverride('${n.id}')">Clear override</button>` : ''}
             </div>` : ''}
@@ -882,7 +884,7 @@ function ptlRenderStageRows(nodes, today, prodPlanDone) {
       ${hasDetail && expanded ? `<div style="margin:0 0 10px 40px; padding:10px 12px; background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); font-size:0.8rem; color:var(--text);">
         <ul style="margin:0; padding-left:18px;">${n.detail.map(d => {
           // Backend joins the item's identity and the trailing "still
-          // has no..." sentence with \n — split them onto their own
+          // has no..." sentence with \n - split them onto their own
           // lines within the SAME bullet, rather than reading as if the
           // sentence were its own separate list item.
           const parts = d.split("\n");
@@ -938,10 +940,10 @@ async function ptlSetSystemDate(fieldId) {
   }
 }
 
-// wdesign dropped 29 Aug 2026 — Working Designs & Drawings is now
+// wdesign dropped 29 Aug 2026 - Working Designs & Drawings is now
 // kind:'derived' (first drawing upload), no longer a manual tick, so
 // ptlMarkMilestoneDone's button for it no longer renders. costing dropped
-// 30 Aug 2026 — folded into 'boqs' (All BOQs and Final Costing Released),
+// 30 Aug 2026 - folded into 'boqs' (All BOQs and Final Costing Released),
 // no manual-tick Stage 3 milestone is left.
 const PTL_MILESTONE_KEY = {};
 
@@ -954,7 +956,7 @@ async function ptlSetQaMilestoneDate(milestoneKey) {
   try {
     const data = await apFetch({ action: "saveTimelineMilestoneDate", operatorName: appActiveOperatorIdentityString, projectId, milestoneKey, date });
     if (!data.success) { alert(data.error || "Could not set this date."); return; }
-    // A full reload, not a local patch — the rest of the QA chain
+    // A full reload, not a local patch - the rest of the QA chain
     // (Inspection Clearance Note -> Dispatch Clearance -> Predicted
     // Delivery) is a live server-side projection off whichever of these
     // dates are now real (computeQaChainProjection), so setting just
@@ -967,18 +969,18 @@ async function ptlSetQaMilestoneDate(milestoneKey) {
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   Canvas — the schematic overview from the design exploration, now fed
+   Canvas - the schematic overview from the design exploration, now fed
    by ptlData instead of sample data. Read-only: hover a node for its
    detail, click it to jump to the matching row below, where the actual
    Mark Done / Set Date / target-revision controls live (same
-   client-side-permission stance as the rest of this file — the canvas
+   client-side-permission stance as the rest of this file - the canvas
    doesn't try to duplicate that write surface inline).
 
-   Only DATED points get plotted — a step with no planned/target/actual
+   Only DATED points get plotted - a step with no planned/target/actual
    yet has no x position to place it at, so it simply doesn't appear on
    the canvas; the list below still shows it as "Not yet scheduled".
    A lane only appears once its initial plan is submitted (every step,
-   including the terminal one, has a planned date at that point — see
+   including the terminal one, has a planned date at that point - see
    submitInitialProductPlan).
    ══════════════════════════════════════════════════════════════════ */
 const PTL_MODES = { week: 6, days15: 15, month: 26 };
@@ -987,7 +989,7 @@ let ptlMode = "days15", ptlDayW = 30, ptlFS = 1.14;
 let ptlDays = [], ptlIndexMap = {};
 let ptlLastTodayX = 0;
 let ptlFsRailOpen = true;
-// DEAD as of 30 Aug 2026 — canvas node/trace coloring dropped department
+// DEAD as of 30 Aug 2026 - canvas node/trace coloring dropped department
 // hues entirely (green on-track / red late only, see ptlCanvasNodes).
 // Flagged, not deleted, per repo convention.
 const PTL_LANE_HEX = { Reactor: '#b45309', Capacitor: '#047857', Panel: '#c2410c' };
@@ -1000,18 +1002,18 @@ function ptlBuildDayRange() {
   dates.push(ptlToday());
   if (dates.length === 0) return false;
   dates.sort();
-  // Starts right on the earliest dated point — no multi-day dead zone to
+  // Starts right on the earliest dated point - no multi-day dead zone to
   // scroll into before Stage 1's own first node (LEAD below still leaves
   // a small margin so that node's label/circle isn't flush against the edge).
   const from = ptlParse(dates[0]);
   const to = new Date(ptlParse(dates[dates.length - 1]).getTime() + 6 * PTL_DAYMS);
-  // Every calendar day is plotted now (31 Aug 2026, was Sunday-skipped) —
+  // Every calendar day is plotted now (31 Aug 2026, was Sunday-skipped) -
   // for date-continuity: something can genuinely happen on a Sunday or
   // holiday (this business does sometimes work them), and omitting that
   // day from the axis entirely would make such an action look like it
   // happened on the wrong date, or vanish. Sunday/holiday columns are
   // still excluded from all BUSINESS-DAY math (ptlBdBetween above,
-  // lib/businessDays.js server-side) — this only widens what's DRAWN.
+  // lib/businessDays.js server-side) - this only widens what's DRAWN.
   ptlDays = []; ptlIndexMap = {};
   for (let t = from.getTime(); t <= to.getTime(); t += PTL_DAYMS) {
     const d = new Date(t);
@@ -1022,10 +1024,10 @@ function ptlBuildDayRange() {
 
 function ptlCanvasNodes() {
   const spineIds = ['oa', 'po', 'activated', 'dwgSent', 'dwgAppr', 'mfcCust', 'mfcInt', 'boqs', 'wdesign', 'prns', 'mrdates', 'rmpos', 'pps', 'prodPlan'];
-  // 'dispatched' merged into 'delivery' 29 Aug 2026 — see routes/timeline.js.
+  // 'dispatched' merged into 'delivery' 29 Aug 2026 - see routes/timeline.js.
   // The connecting trunk line now ends at 'predictedDelivery' (the QA
   // chain's own realistic projection), not 'delivery' (the PO's
-  // contractual/promised date) — 'delivery' moved to `standalone` (30 Aug
+  // contractual/promised date) - 'delivery' moved to `standalone` (30 Aug
   // 2026) so it renders as its own point without implying it's just
   // another step in the same sequence; the two dates can legitimately
   // diverge and that divergence is the point of showing both.
@@ -1038,16 +1040,16 @@ function ptlCanvasNodes() {
     tail: tailIds.map(dated).filter(Boolean),
     standalone: standaloneIds.map(dated).filter(Boolean),
     // Every in-scope Authorized BOQ gets a lane and a gutter label as soon
-    // as it exists — the backend already scopes `lanes` to
+    // as it exists - the backend already scopes `lanes` to
     // `design.boq_drafts WHERE status = 'Authorized'` (routes/timeline.js),
     // i.e. exactly "All BOQs Released", not "Production Planning
     // submitted". Previously filtered to `planInitialized` only, which
     // meant a product didn't get its own labeled row here until Stage 4's
-    // initial plan was entered — well after the products actually being
+    // initial plan was entered - well after the products actually being
     // made were finalized. A BOQ revision changing the product set is
     // reflected automatically next load, same as everywhere else on this
     // screen, since this is a live re-query, not a snapshot. Lanes with no
-    // plan yet still get a row + label but no trace/step markers — see the
+    // plan yet still get a row + label but no trace/step markers - see the
     // `hasAnyDate` guards below.
     lanes: ptlData.lanes || [],
   };
@@ -1065,7 +1067,7 @@ function ptlWrapLbl(t, max, maxLines = 2) {
 // 5.8px/char under-measured real (bold, mixed-case) rendered text widths
 // enough that adjacent close-dated nodes' labels ("Drawing Approved" /
 // "MFC from Customer") were passing the collision check and overlapping
-// on screen instead of stacking — bumped, plus PTL_LBL_PAD below adds a
+// on screen instead of stacking - bumped, plus PTL_LBL_PAD below adds a
 // visible gap rather than letting blocks just touch.
 const ptlWLbl = s => s.length * 7.2 * ptlFS;
 const PTL_LBL_PAD = 6;
@@ -1093,18 +1095,18 @@ function ptlRenderCanvas(containerId) {
   if (spine.length < 2) { wrap.innerHTML = `<div style="padding:30px; text-align:center; color:var(--muted);">Nothing dated yet to draw a timeline from.</div>`; return; }
 
   ptlFS = PTL_FONT_SCALE[ptlMode];
-  // Full-width, full-height surface — this is the primary view, not a
+  // Full-width, full-height surface - this is the primary view, not a
   // strip squeezed above a list, so it gets real screen real estate.
   const availW = Math.max(900, (wrap.clientWidth || window.innerWidth) - 4);
   // Gutter now shows each lane's full "Product Name - Rating -
   // Description" (not just the flow name like "Reactor"), so its width is
-  // a fixed, generous wrap column rather than scaling with content —
+  // a fixed, generous wrap column rather than scaling with content -
   // scaling to the full label's raw length would make the gutter
   // enormous for a long description. See the gutter block below for the
   // actual line-wrapping (reuses ptlWrapLbl, same as node labels).
   const longestName = 24;
   // LEAD is pure breathing room between the gutter's right edge and the
-  // first plotted day — kept separate from the gutter's own width (see
+  // first plotted day - kept separate from the gutter's own width (see
   // gutterW below, which is PAD_L-based only) so widening this doesn't
   // widen the side panel, just gives the earliest nodes (Order Acceptance
   // Sent etc.) room to not sit flush against the gutter when scrolled all
@@ -1119,12 +1121,12 @@ function ptlRenderCanvas(containerId) {
   const SLOT_UP = 26 * ptlFS, SLOT_DN = 30 * ptlFS, LINE_H = 12 * ptlFS;
   const R = 7.5 * (1 + (ptlFS - 1) * 0.55);
 
-  // The spine sits at the vertical centre of the whole surface, always —
+  // The spine sits at the vertical centre of the whole surface, always -
   // Stage 1-3 have nothing to branch, so it's just a straight line down
   // the middle. Lanes (once Production Planning is submitted) fan out
   // symmetrically above and below that same centre, never displacing it.
   // Hard container height, and the container never scrolls vertically
-  // (see ptl-fs-scroller's overflow-y:hidden) — so FAN below MUST adapt
+  // (see ptl-fs-scroller's overflow-y:hidden) - so FAN below MUST adapt
   // to how many nodes actually share the busiest date, or a 4-way
   // same-day cluster (e.g. MFC from Customer landing on the same day
   // Stage 3's +3-business-day offsets do) needs more vertical room than
@@ -1147,11 +1149,17 @@ function ptlRenderCanvas(containerId) {
   const laneYs = lanes.map((_, i) => spineY + (i - (laneCount - 1) / 2) * gap);
 
   // Every date within ptlBuildDayRange's from/to span is now in the index
-  // (Sundays/holidays included, 31 Aug 2026) — this fallback is purely
+  // (Sundays/holidays included, 31 Aug 2026) - this fallback is purely
   // defensive for a date outside that span, which shouldn't happen given
   // how `to`/`from` are derived from the same dated points this draws,
   // but snapping forward beats silently plotting at day zero.
   const xOf = (d) => {
+    // Guard against an undated call (e.g. an unplanned Stage 4 lane's
+    // step, which has no planned/target/actual date at all yet) - without
+    // this, ptlParse(undefined) produces an Invalid Date and the retry
+    // loop below throws a RangeError the first time it calls
+    // ptlIso()/toISOString() on it.
+    if (!d) return PAD_L + LEAD;
     let i = ptlIndexMap[d];
     if (i === undefined) {
       let dt = ptlParse(d);
@@ -1183,7 +1191,7 @@ function ptlRenderCanvas(containerId) {
   // Sunday/holiday columns (31 Aug 2026) render their date+day-name in the
   // same green as the TODAY line (#15803d) so they read as "day off" at a
   // glance, distinct from the normal text/muted greys AND from Monday's
-  // own bold-black emphasis — a rest day still shows even when DENSE mode
+  // own bold-black emphasis - a rest day still shows even when DENSE mode
   // would otherwise only label Mondays, since it's the whole point of
   // marking it.
   const PTL_REST_GREEN = '#15803d';
@@ -1199,14 +1207,14 @@ function ptlRenderCanvas(containerId) {
     }
   });
 
-  // Stage dividers — a real rule with the stage name against it, same as
+  // Stage dividers - a real rule with the stage name against it, same as
   // the design prototype, so the schematic reads as five stages rather
   // than one unbroken run of dots.
   const stageXs = {};
   [...spine, ...tail, ...standalone].forEach(n => { if (n.stage) (stageXs[n.stage] = stageXs[n.stage] || []).push(xOf(ptlEff(n))); });
   lanes.forEach(l => l.steps.forEach(s => (stageXs[4] = stageXs[4] || []).push(xOf(s.actual || s.target || s.planned))));
   // Skip a stage's label (never the divider line itself) when the next
-  // stage starts too close after it for the text to fit — a small Stage
+  // stage starts too close after it for the text to fit - a small Stage
   // 4 window otherwise collided with Stage 5's label right after it.
   const stageKeys = Object.keys(stageXs).sort((a, b) => a - b);
   const stageX0s = stageKeys.map(st => Math.min(...stageXs[st]) - ptlDayW * 0.75);
@@ -1230,7 +1238,7 @@ function ptlRenderCanvas(containerId) {
   // Traces: spine (split at prodPlan into lanes, rejoin at tail[0]).
   // Nodes sharing the exact same date (e.g. BOQs/Costing/Working Designs,
   // all frozen +3 business days from Internal MFC) would otherwise land
-  // on the identical (x, spineY) point and render as one merged dot —
+  // on the identical (x, spineY) point and render as one merged dot -
   // fan them vertically around the spine instead, same as the design
   // prototype did.
   const pos = {};
@@ -1261,7 +1269,7 @@ function ptlRenderCanvas(containerId) {
     const merge = tail.length ? pos[tail[0].id] : split;
     lanes.forEach((l, i) => {
       // No planned/target/actual date on any step yet (BOQ authorized but
-      // Stage 4's initial plan not submitted) — nothing dated to trace or
+      // Stage 4's initial plan not submitted) - nothing dated to trace or
       // plot a node for. The lane still gets its row/label (see the gutter
       // block below); skip the trace/branch geometry entirely rather than
       // feeding xOf(undefined) and drawing every point bunched at x=0.
@@ -1288,7 +1296,7 @@ function ptlRenderCanvas(containerId) {
   spine.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
   tail.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
   standalone.forEach(n => laid.push({ n, x: pos[n.id].x, y: pos[n.id].y }));
-  // Same hasAnyDate guard as the trace loop above — an unplanned lane has
+  // Same hasAnyDate guard as the trace loop above - an unplanned lane has
   // nothing dated to plot a node for.
   lanes.forEach((l, i) => { if (l.steps.some(s => s.actual || s.target || s.planned)) l.steps.forEach(s => laid.push({ n: { ...s, dept: l.ownerDept === 'Reactor' ? 'lane_r' : l.ownerDept === 'Capacitor' ? 'lane_c' : 'lane_p' }, x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id], boqId: l.boqId, ownerLabel: `${l.ownerDept} Production` })); });
   laid.sort((a, b) => a.x - b.x);
@@ -1297,7 +1305,7 @@ function ptlRenderCanvas(containerId) {
   laid.forEach(({ x, y }) => PL.block({ x0: x - R * 1.4, x1: x + R * 1.4, y0: y - R * 1.4, y1: y + R * 1.4 }));
 
   // Color is now purely a completion/lateness signal, not a department
-  // one (dropped 30 Aug 2026) — green filled+checked once done, grey
+  // one (dropped 30 Aug 2026) - green filled+checked once done, grey
   // hollow while still scheduled/on-track, red hollow reserved
   // exclusively for something open past its own due date. Department is
   // still readable from the label text / lane gutter, just not color.
@@ -1319,7 +1327,7 @@ function ptlRenderCanvas(containerId) {
     lines.forEach((ln, i) => P.push(`<text x="${x}" y="${base - (lines.length - 1 - i) * LINE_H}" text-anchor="middle" font-size="${11 * ptlFS}" font-weight="600" fill="${late ? '#e84545' : 'var(--text)'}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(ln)}</text>`));
 
     const dtx = ptlFmt(eff);
-    // Stage 3's progress chip (e.g. "3/4 PRNs") — was only ever rendered in
+    // Stage 3's progress chip (e.g. "3/4 PRNs") - was only ever rendered in
     // the Steps list, never on the canvas map, despite being exactly the
     // kind of at-a-glance progress the map is for. Rendered as a second
     // line under the date, reserved as part of the same placer slot so it
@@ -1345,21 +1353,21 @@ function ptlRenderCanvas(containerId) {
     P.push(`<circle cx="${x}" cy="${y}" r="${R * 2.2}" fill="transparent" class="ptl-hit" data-anchor="${anchorId}" data-idx="${idx}"/>`);
   });
 
-  // Gutter — shows each lane's full "Product Name - Rating - Description"
+  // Gutter - shows each lane's full "Product Name - Rating - Description"
   // (not just the bare flow name), colored to match that lane's own
   // trace line (ptlLaneTraceColor). Pinned to the left edge of the
   // viewport via a scroll-compensating transform (see the scroll
   // listener wired below), same technique as the design prototype's own
-  // pinGutter() — drawing it as ordinary SVG content with no pinning at
+  // pinGutter() - drawing it as ordinary SVG content with no pinning at
   // all let it scroll away with everything else instead of staying put.
   if (laneCount) {
     // Frozen at the ORIGINAL lead value (64), not the new wider LEAD above
-    // — the visible panel itself must stay exactly the width it was;
+    // - the visible panel itself must stay exactly the width it was;
     // LEAD growing is what creates the extra gap between this edge and
     // the first plotted day, not a wider gutter.
     const gutterW = PAD_L + (64 * ptlFS) - 10;
     const G = [`<g id="ptl-gutter">`, `<rect x="0" y="${RULER_H}" width="${gutterW}" height="${H - RULER_H}" fill="var(--bg,#f0f4f8)"/>`, `<line x1="${gutterW}" y1="${RULER_H}" x2="${gutterW}" y2="${H}" stroke="var(--border)" stroke-width="1"/>`];
-    // Full name, not truncated to 2 lines — ptlWrapLbl's default 2-line cap
+    // Full name, not truncated to 2 lines - ptlWrapLbl's default 2-line cap
     // (built for short node labels) was silently dropping the rating/
     // description tail of longer product names here. maxLines is derived
     // from the actual vertical room between lanes (`gap`) so labels never
@@ -1375,7 +1383,7 @@ function ptlRenderCanvas(containerId) {
         G.push(`<text x="28" y="${y + 4.5 * ptlFS + (li - (labelLines.length - 1) / 2) * 13 * ptlFS}" font-size="${11.5 * ptlFS}" font-weight="800" fill="${lc}">${esc(ln)}</text>`);
       });
       // BOQ authorized (so it has a lane/label at all) but Stage 4's
-      // initial plan hasn't been submitted yet — nothing dated to trace,
+      // initial plan hasn't been submitted yet - nothing dated to trace,
       // so say so explicitly rather than leaving an unexplained empty row.
       if (!l.steps.some(s => s.actual || s.target || s.planned)) {
         G.push(`<text x="${gutterW + 14}" y="${y + 4 * ptlFS}" font-size="${10.5 * ptlFS}" font-style="italic" fill="var(--muted)">Not planned yet</text>`);
@@ -1386,7 +1394,7 @@ function ptlRenderCanvas(containerId) {
   }
 
   // Last of all, so nothing can cover it. Sits at the BOTTOM of the line,
-  // not the top — the top is where stage-divider labels live, and the two
+  // not the top - the top is where stage-divider labels live, and the two
   // used to collide right where Today happened to fall inside a stage.
   P.push(`<text x="${todayX}" y="${H - 10 * ptlFS}" text-anchor="middle" font-size="${10 * ptlFS}" font-weight="800" letter-spacing="1" fill="#15803d" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="5">TODAY · ${esc(ptlFmt(today))}</text>`);
 
@@ -1395,7 +1403,7 @@ function ptlRenderCanvas(containerId) {
   wrap.innerHTML = svg;
   ptlWireCanvasInteractions(wrap, clickMap);
 
-  // Pin the gutter to the viewport's left edge — it's ordinary content
+  // Pin the gutter to the viewport's left edge - it's ordinary content
   // inside the same horizontally-scrolling SVG, so without this it would
   // just scroll away like everything else. `.onscroll` (not
   // addEventListener) deliberately overwrites any previous handler
@@ -1406,7 +1414,7 @@ function ptlRenderCanvas(containerId) {
   };
   wrap.onscroll = pinGutter;
 
-  // Land the horizontal scroll on today — except in "This Week" mode,
+  // Land the horizontal scroll on today - except in "This Week" mode,
   // where centering today gave a floating 6-day window (e.g. Wed-Mon)
   // instead of the actual calendar week. There, anchor on that week's
   // Monday instead, so the 6-wide view always reads as Monday-Saturday.
@@ -1426,11 +1434,11 @@ function ptlSetMode(m) { ptlMode = m; ptlRenderFullscreen(); }
 
 /* ── View toggle: Timeline (the canvas above) vs Steps (the existing
    lists/lane-cards with the actual Mark Done / Set Date / target-editing
-   controls). Both are always rendered into the DOM — only visibility
-   toggles — so a canvas click can switch to Steps and immediately
+   controls). Both are always rendered into the DOM - only visibility
+   toggles - so a canvas click can switch to Steps and immediately
    scrollIntoView its target without waiting on a re-render. ─────────── */
 // Default is Steps: the actual read/write surface. Timeline is the
-// schematic overview — opened full-screen (see ptlOpenFullscreen below),
+// schematic overview - opened full-screen (see ptlOpenFullscreen below),
 // matching the ABPS-Project-Timeline-Demo prototype, rather than squeezed
 // inline above the list.
 let ptlViewMode = "steps";
@@ -1450,7 +1458,7 @@ function ptlSetViewMode(mode, focusAnchorId) {
     ptlCloseFullscreen();
   }
   if (focusAnchorId) {
-    // A lane step's anchor is "ptl-step-<boqId>-<stepId>" — expand that
+    // A lane step's anchor is "ptl-step-<boqId>-<stepId>" - expand that
     // product's card first (it renders collapsed by default) or the
     // target element won't exist yet to scroll to.
     const laneMatch = /^ptl-step-(.+)-([a-z0-9_]+)$/.exec(focusAnchorId);
@@ -1467,7 +1475,7 @@ function ptlSetViewMode(mode, focusAnchorId) {
   }
 }
 
-/* ── Full-screen Timeline overlay — the same layout as the
+/* ── Full-screen Timeline overlay - the same layout as the
    ABPS-Project-Timeline-Demo prototype (topbar with project info, zoom
    segment, Today jump, flags rail toggle; a full-bleed scroller below;
    a dismissible Flags rail on the right), fed by live ptlData instead of
@@ -1482,7 +1490,7 @@ function ptlOpenFullscreen() {
     document.body.appendChild(ov);
   }
   if (!document.getElementById("ptl-fs-style")) {
-    // The scroller still scrolls left/right (drag, wheel, trackpad) —
+    // The scroller still scrolls left/right (drag, wheel, trackpad) -
     // this only hides the native scrollbar track, which sat as a bare
     // grey bar under the legend and read as leftover chrome.
     const style = document.createElement("style");
@@ -1509,7 +1517,7 @@ function ptlSeverity(n, today) {
   return d > 3 ? "high" : "normal";
 }
 
-// Every entry states something already true against live data — no
+// Every entry states something already true against live data - no
 // hardcoded scenario the way the design-exploration prototype had one.
 function ptlBuildFlags() {
   if (!ptlData) return [];
@@ -1538,26 +1546,26 @@ function ptlBuildFlags() {
     owner: ownerOf(n),
   }));
 
-  // LD (Liquidated Damages) — nodeId '__ld__' is a special case ptlGotoFlag
+  // LD (Liquidated Damages) - nodeId '__ld__' is a special case ptlGotoFlag
   // routes to the LD panel instead of a Steps-view jump. Severity here is
   // urgency-of-action (how soon exposure gets worse), not size of the
-  // rupee figure — an uncapped clause is flagged "high" even at ₹0 today,
+  // rupee figure - an uncapped clause is flagged "high" even at ₹0 today,
   // since the absence of a cap is itself the risk.
   const ld = ptlData.ld;
   if (ld) {
     if (ld.status === 'uncapped') {
       out.push({ sev: 'high', nodeId: '__ld__', title: `${ptlData.project.projectId} has an uncapped LD clause`,
-        msg: `${ptlFmtINR(ld.ld)} accruing, no cap stated — every week of delay adds more.`, owner: 'Project' });
+        msg: `${ptlFmtINR(ld.ld)} accruing, no cap stated - every week of delay adds more.`, owner: 'Project' });
     } else if (ld.status === 'accruing_projected' || ld.status === 'accrued_final') {
       const soon = ld.daysToNextStep != null && ld.daysToNextStep <= 3;
       out.push({ sev: soon ? 'high' : 'normal', nodeId: '__ld__',
-        title: `${ptlData.project.projectId} is accruing LD — ${ptlFmtINR(ld.ld)}${ld.dispatchMode === 'actual' ? ' (final)' : ' (projected)'}`,
+        title: `${ptlData.project.projectId} is accruing LD - ${ptlFmtINR(ld.ld)}${ld.dispatchMode === 'actual' ? ' (final)' : ' (projected)'}`,
         msg: ld.daysToNextStep != null
-          ? `Next LD step in ${ld.daysToNextStep} day${ld.daysToNextStep === 1 ? '' : 's'} — beating it saves ${ptlFmtINR(ld.marginal)}.`
+          ? `Next LD step in ${ld.daysToNextStep} day${ld.daysToNextStep === 1 ? '' : 's'} - beating it saves ${ptlFmtINR(ld.marginal)}.`
           : `Contractual delivery was ${ptlFmtFull(ld.graceEnd)}.`,
         owner: 'Project' });
     } else if (ld.status === 'at_cap') {
-      out.push({ sev: 'normal', nodeId: '__ld__', title: `${ptlData.project.projectId} is at its LD cap — ${ptlFmtINR(ld.ld)}`,
+      out.push({ sev: 'normal', nodeId: '__ld__', title: `${ptlData.project.projectId} is at its LD cap - ${ptlFmtINR(ld.ld)}`,
         msg: `Expediting this project recovers nothing further under this clause.`, owner: 'Project' });
     } else if (ld.status === 'pending_review') {
       out.push({ sev: 'normal', nodeId: '__ld__', title: `${ptlData.project.projectId}'s LD clause hasn't been reviewed`,
@@ -1603,8 +1611,8 @@ function ptlToggleFsRail() {
   ptlUpdateFsFlagsToggleBtn();
 }
 
-// Show Flags (rail hidden) is red — something is hidden that needs a
-// look. Hide Flags (rail open) is green — the state is fine to tuck away.
+// Show Flags (rail hidden) is red - something is hidden that needs a
+// look. Hide Flags (rail open) is green - the state is fine to tuck away.
 let ptlLastFlagsCount = 0;
 function ptlUpdateFsFlagsToggleBtn() {
   const btn = document.getElementById("ptl-fs-flags-toggle");
@@ -1617,7 +1625,7 @@ function ptlJumpToday() {
   const sc = document.getElementById(ptlCanvasContainerId);
   if (!sc) return;
   // In "This Week" mode, re-render rather than smooth-scroll to
-  // ptlLastTodayX (centered) — that would undo ptlRenderCanvas's own
+  // ptlLastTodayX (centered) - that would undo ptlRenderCanvas's own
   // Monday-anchored positioning for this mode and go back to a floating
   // 6-day window instead of the actual calendar week.
   if (ptlMode === 'week') { ptlRenderCanvas(ptlCanvasContainerId); return; }
@@ -1653,7 +1661,7 @@ function ptlRenderFullscreen() {
       <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column;">
         <div id="ptl-fs-scroller" style="flex:1 1 auto; min-height:0; overflow-x:auto; overflow-y:hidden; cursor:grab; background:var(--bg,#f0f4f8);"></div>
         <div style="flex:none; border-top:1px solid var(--border); background:var(--card); padding:8px 18px; display:flex; flex-wrap:wrap; align-items:center; gap:6px 20px; font-size:0.74rem; color:var(--muted);">
-          <span style="color:var(--accent);">● Complete</span><span style="color:var(--accent);">○ Scheduled</span><span style="color:#e84545;">○ Overdue</span><span>— Done so far</span><span style="opacity:.6;">┄ Still to come</span>
+          <span style="color:var(--accent);">● Complete</span><span style="color:var(--accent);">○ Scheduled</span><span style="color:#e84545;">○ Overdue</span><span>- Done so far</span><span style="opacity:.6;">┄ Still to come</span>
           <span style="margin-left:auto;">Click a point to jump to it in Steps. Hover for its date.</span>
         </div>
       </div>
@@ -1673,24 +1681,24 @@ function ptlRenderFullscreen() {
   ptlRenderCanvas("ptl-fs-scroller");
 }
 
-// Compact hover card — same shape as the design-exploration prototype's
+// Compact hover card - same shape as the design-exploration prototype's
 // #tip: title, then Owner/Planned/Target/Actual rows, plus a lateness
 // line when it applies.
 function ptlTipHtml(info) {
   const row = (k, v) => `<div style="display:flex; justify-content:space-between; gap:14px; font-size:0.74rem; color:var(--muted); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"><span>${k}</span><span style="color:var(--text);">${escapeHtml(v)}</span></div>`;
   let h = `<b style="display:block; font-size:0.82rem; font-weight:700; margin-bottom:6px;">${escapeHtml(info.label)}</b>`;
-  h += row("Department", info.owner || "—");
+  h += row("Department", info.owner || "-");
   // Planned is omitted entirely for the handful of Stage 1/2 nodes that
   // have no planned/estimate concept at all (Order Acceptance Sent, PO
-  // Uploaded, Project Activated, MFC from Customer, Internal MFC) —
-  // showing "Planned: —" there implied a value that was never coming.
+  // Uploaded, Project Activated, MFC from Customer, Internal MFC) -
+  // showing "Planned: -" there implied a value that was never coming.
   // New Target only ever applies to Stage 4 (Production's own steps),
-  // and even there only when it's actually been revised off Planned —
+  // and even there only when it's actually been revised off Planned -
   // every other stage (Drawing Sent/Approved, all of Stage 3, all of
   // Stage 5) has no separate "target" concept, just Planned vs Actual.
   if (info.planned) h += row("Planned", ptlFmt(info.planned));
   if (info.stage === 4 && info.eff && info.eff !== info.planned) h += row("New Target", ptlFmt(info.eff));
-  h += row("Actual", info.actual ? ptlFmt(info.actual) : "—");
+  h += row("Actual", info.actual ? ptlFmt(info.actual) : "-");
   if (info.late) h += `<div style="margin-top:5px; font-size:0.74rem; font-weight:700; color:#e84545;">${info.late} business day${info.late === 1 ? "" : "s"} late</div>`;
   return h;
 }
@@ -1738,32 +1746,32 @@ async function ptlMarkMilestoneDone(nodeId) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   LD (Liquidated Damages) — per-project panel + cross-project board.
+   LD (Liquidated Damages) - per-project panel + cross-project board.
    Money is only ever computed server-side (lib/ld.js) from a CONFIRMED
-   project.ld_terms row — this file only displays what the server sends
+   project.ld_terms row - this file only displays what the server sends
    and collects a human's review before calling saveLdTerms. No shared
-   INR formatter exists in this codebase (see shared/format.js) — house
+   INR formatter exists in this codebase (see shared/format.js) - house
    pattern is inline toLocaleString('en-IN'), same as everywhere else.
    ═══════════════════════════════════════════════════════════════════════ */
-const ptlFmtINR = (n) => (n == null ? "—" : "₹" + Math.round(Number(n)).toLocaleString("en-IN"));
+const ptlFmtINR = (n) => (n == null ? "-" : "₹" + Math.round(Number(n)).toLocaleString("en-IN"));
 
 const PTL_LD_STATUS_META = {
   unknown:             { label: "LD terms not reviewed",                    color: "#92400e", bg: "#fffbeb" },
   pending_review:      { label: "LD candidate awaiting confirmation",       color: "#92400e", bg: "#fffbeb" },
   not_applicable:      { label: "No LD clause on this PO",                  color: "#6b7a8d", bg: "#f1f5f9" },
-  no_basis:            { label: "LD terms confirmed — PO value unresolved", color: "#92400e", bg: "#fffbeb" },
+  no_basis:            { label: "LD terms confirmed - PO value unresolved", color: "#92400e", bg: "#fffbeb" },
   on_time:             { label: "No LD exposure at current projection",     color: "#15803d", bg: "#f0fdf4" },
   accruing_projected:  { label: "LD accruing (projected)",                  color: "#b45309", bg: "#fff7ed" },
   accrued_final:       { label: "LD accrued (final)",                      color: "#b91c1c", bg: "#fef2f2" },
   at_cap:              { label: "LD at cap",                               color: "#b91c1c", bg: "#fef2f2" },
-  uncapped:            { label: "LD accruing — uncapped clause",           color: "#b91c1c", bg: "#fef2f2" },
+  uncapped:            { label: "LD accruing - uncapped clause",           color: "#b91c1c", bg: "#fef2f2" },
 };
 const PTL_LD_MONEY_STATUSES = new Set(["accruing_projected", "accrued_final", "at_cap", "uncapped"]);
 
 function ptlLdSummaryHtml() {
   if (!ptlData || !ptlData.ld) return "";
   const meta = PTL_LD_STATUS_META[ptlData.ld.status] || PTL_LD_STATUS_META.unknown;
-  const amount = PTL_LD_MONEY_STATUSES.has(ptlData.ld.status) ? ptlFmtINR(ptlData.ld.ld) + " — " : "";
+  const amount = PTL_LD_MONEY_STATUSES.has(ptlData.ld.status) ? ptlFmtINR(ptlData.ld.ld) + " - " : "";
   return `<div style="margin-top:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
     <span style="font-size:0.74rem; font-weight:700; padding:3px 10px; border-radius:12px; background:${meta.bg}; color:${meta.color};">${amount}${escapeHtml(meta.label)}</span>
     <button type="button" onclick="ptlOpenLdPanel()" style="font-size:0.72rem; font-weight:700; padding:3px 10px; border:1px solid ${meta.color}; border-radius:12px; background:#fff; color:${meta.color}; cursor:pointer;">LD Terms</button>
@@ -1807,7 +1815,7 @@ async function ptlOpenLdPanel() {
       ldApplicable: true, periodUnit: "week", periodBasis: "calendar", partPeriodRule: "part_thereof",
       capPercent: null, basisKind: "whole_po_basic", graceDays: 0, currency: "INR", usdRate: null,
       // Defaults to the LD clause text already extracted off this PO at
-      // upload time (project.projects.ld_clause) — shown up front so the
+      // upload time (project.projects.ld_clause) - shown up front so the
       // reviewer can see/edit it before ever clicking Process, rather than
       // it only being used invisibly server-side as extractLdTermsPreview's
       // own fallback when no clauseText is sent.
@@ -1822,7 +1830,7 @@ async function ptlOpenLdPanel() {
   try {
     const bd = await apFetch({ action: "resolveLdBasisAmount", projectId: ptlLdPanelState.projectId });
     if (bd.success) ptlLdPanelState.basisCandidates = bd;
-  } catch (e) { /* non-fatal — panel still works with manual entry */ }
+  } catch (e) { /* non-fatal - panel still works with manual entry */ }
   ptlLdPanelState.loadingBasis = false;
   ptlRenderLdPanel();
 }
@@ -1918,12 +1926,12 @@ function ptlRenderLdPanel() {
   const dis = canWrite ? "" : "disabled";
 
   let html = `<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-    <h2 style="margin:0; font-size:1rem; font-weight:800; color:var(--text);">LD Terms — ${escapeHtml(ptlLdPanelState.projectId)}</h2>
+    <h2 style="margin:0; font-size:1rem; font-weight:800; color:var(--text);">LD Terms - ${escapeHtml(ptlLdPanelState.projectId)}</h2>
     <button type="button" onclick="ptlCloseLdPanel()" style="border:0; background:none; font-size:1.3rem; line-height:1; cursor:pointer; color:var(--muted);">&times;</button>
   </div>`;
 
   if (!canWrite) {
-    html += `<div style="background:#f1f5f9; border-radius:6px; padding:8px 12px; font-size:0.78rem; color:var(--muted); margin-bottom:14px;">View only — only Marketing, Project, or an admin can confirm LD terms.</div>`;
+    html += `<div style="background:#f1f5f9; border-radius:6px; padding:8px 12px; font-size:0.78rem; color:var(--muted); margin-bottom:14px;">View only - only Marketing, Project, or an admin can confirm LD terms.</div>`;
   }
 
   html += field("This PO has an LD clause",
@@ -1939,7 +1947,7 @@ function ptlRenderLdPanel() {
     }
     if (ptlLdPanelState.candidateQuotes.length || ptlLdPanelState.candidateUnresolved.length) {
       html += `<div style="background:#f7fafd; border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-bottom:12px; font-size:0.76rem;">
-        <div style="font-weight:700; margin-bottom:4px;">AI read (confidence: ${escapeHtml(ptlLdPanelState.candidateConfidence || "—")})</div>
+        <div style="font-weight:700; margin-bottom:4px;">AI read (confidence: ${escapeHtml(ptlLdPanelState.candidateConfidence || "-")})</div>
         ${ptlLdPanelState.candidateQuotes.map(q => `<div style="color:var(--muted); font-style:italic; margin-bottom:2px;">"${escapeHtml(q)}"</div>`).join("")}
         ${ptlLdPanelState.candidateUnresolved.map(u => `<div style="color:#b45309; margin-top:4px;">⚠ ${escapeHtml(u)}</div>`).join("")}
       </div>`;
@@ -1963,7 +1971,7 @@ function ptlRenderLdPanel() {
       + field("Grace days", `<input type="number" ${dis} value="${f.graceDays ?? 0}" style="${inputStyle}" oninput="ptlLdFormSet('graceDays', this.value)" />`)
       + field("Basis", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('basisKind', this.value)">
           <option value="whole_po_basic" ${f.basisKind === "whole_po_basic" ? "selected" : ""}>Whole PO value</option>
-          <option value="delayed_goods_basic" ${f.basisKind === "delayed_goods_basic" ? "selected" : ""}>Delayed goods only (not yet supported — falls back to whole PO)</option>
+          <option value="delayed_goods_basic" ${f.basisKind === "delayed_goods_basic" ? "selected" : ""}>Delayed goods only (not yet supported - falls back to whole PO)</option>
         </select>`)
       + field("Currency", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('currency', this.value); ptlRenderLdPanel();">
           <option value="INR" ${f.currency === "INR" ? "selected" : ""}>INR</option>
@@ -1975,11 +1983,11 @@ function ptlRenderLdPanel() {
     const currentContractual = t?.contractualDate || ptlData.project.tentativeDelivery;
     html += field(`Contractual delivery date${t?.contractualDateSource === "po_delivery_date" ? " (from PO Tentative Delivery Date)" : ""}`,
       isConfirmed
-        ? `<div style="padding:7px 0; font-size:0.85rem; font-weight:700;">${ptlFmtFull(currentContractual)} — frozen once confirmed; use "Extend Date" below to change it.</div>`
+        ? `<div style="padding:7px 0; font-size:0.85rem; font-weight:700;">${ptlFmtFull(currentContractual)} - frozen once confirmed; use "Extend Date" below to change it.</div>`
         : `<input type="date" ${dis} value="${f.contractualDateManual || currentContractual || ""}" style="${inputStyle}" oninput="ptlLdFormSet('contractualDateManual', this.value)" />`);
 
-    // Basis amount — two independently-typed candidates that are NOT
-    // guaranteed to agree (see routes/timeline.js's resolveLdBasisAmount) —
+    // Basis amount - two independently-typed candidates that are NOT
+    // guaranteed to agree (see routes/timeline.js's resolveLdBasisAmount) -
     // never auto-pick one.
     const bc = ptlLdPanelState.basisCandidates;
     html += `<div style="margin:12px 0;"><label style="display:block; font-size:0.72rem; font-weight:700; color:var(--muted); margin-bottom:5px;">PO basis value</label>`;
@@ -1994,7 +2002,7 @@ function ptlRenderLdPanel() {
       html += opt("po_line_items_sum", bc.candidates.poLineItemsSum, "Sum of PO line items");
       html += opt("basic_po_amount", bc.candidates.basicPoAmount, "Basic PO Amount (as typed on PO upload)");
       if (bc.delta != null && bc.delta > 0) {
-        html += `<div style="font-size:0.76rem; color:#b45309; margin:4px 0 8px;">⚠ These two figures differ by ${ptlFmtINR(bc.delta)} — pick the correct one.</div>`;
+        html += `<div style="font-size:0.76rem; color:#b45309; margin:4px 0 8px;">⚠ These two figures differ by ${ptlFmtINR(bc.delta)} - pick the correct one.</div>`;
       }
       html += `<label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; cursor:pointer;">
         <input type="radio" name="ptl-ld-basis" style="width:auto; flex:none;" ${dis} ${f.basisAmountSource === "manual" ? "checked" : ""}
@@ -2028,7 +2036,7 @@ function ptlRenderLdPanel() {
     html += `<div style="margin-top:18px; padding-top:12px; border-top:1px solid var(--border);">
       <h3 style="margin:0 0 8px; font-size:0.82rem; font-weight:800; color:var(--text);">Date extension history</h3>
       ${ptlData.ldHistory.map(h => `<div style="font-size:0.76rem; color:var(--muted); margin-bottom:6px;">
-        ${ptlFmt(h.oldDate)} → <strong style="color:var(--text)">${ptlFmt(h.newDate)}</strong> — ${escapeHtml(h.reason)}
+        ${ptlFmt(h.oldDate)} → <strong style="color:var(--text)">${ptlFmt(h.newDate)}</strong> - ${escapeHtml(h.reason)}
         <span style="opacity:0.7;"> (${escapeHtml(h.changedBy || "")}, ${ptlFmt(h.changedAt)})</span>
       </div>`).join("")}
     </div>`;
@@ -2037,10 +2045,10 @@ function ptlRenderLdPanel() {
   body.innerHTML = html;
 }
 
-/* ── LD Exposure Board — cross-project, ranked by MARGINAL value (what
+/* ── LD Exposure Board - cross-project, ranked by MARGINAL value (what
    expediting is actually worth), not total exposure. A project sitting
    at its LD cap is worth ₹0 to expedite even if its total figure is the
-   largest on the board — see lib/ld.js's header for why. ─────────────── */
+   largest on the board - see lib/ld.js's header for why. ─────────────── */
 async function ptlOpenLdBoard() {
   let ov = document.getElementById("ptl-ldboard-overlay");
   if (!ov) {
@@ -2076,18 +2084,18 @@ function ptlRenderLdBoard(board, realised) {
 
   const row = (r, showMarginal) => `<tr style="border-bottom:1px solid var(--border);">
     <td style="padding:8px 10px; font-weight:700; cursor:pointer; color:var(--brand);" onclick="ptlCloseLdBoard(); selectPtlProject('${r.projectId.replace(/'/g, "\\'")}');">${escapeHtml(r.projectId)}</td>
-    <td style="padding:8px 10px; font-size:0.82rem; color:var(--muted);">${escapeHtml(r.companyName || "—")}</td>
+    <td style="padding:8px 10px; font-size:0.82rem; color:var(--muted);">${escapeHtml(r.companyName || "-")}</td>
     <td style="padding:8px 10px; text-align:right;">${ptlFmtINR(r.ld.ld)}</td>
     ${showMarginal ? `<td style="padding:8px 10px; text-align:right; font-weight:700; color:#15803d;">${ptlFmtINR(r.ld.marginal)}</td>
-    <td style="padding:8px 10px; text-align:right;">${r.ld.daysToNextStep != null ? r.ld.daysToNextStep + "d" : "—"}</td>
-    <td style="padding:8px 10px; text-align:right; font-size:0.82rem; color:var(--muted);">${r.ld.rupeesPerDaySaved ? ptlFmtINR(r.ld.rupeesPerDaySaved) + "/day" : "—"}</td>` : `<td style="padding:8px 10px; text-align:right; color:var(--muted);">—</td><td></td><td></td>`}
+    <td style="padding:8px 10px; text-align:right;">${r.ld.daysToNextStep != null ? r.ld.daysToNextStep + "d" : "-"}</td>
+    <td style="padding:8px 10px; text-align:right; font-size:0.82rem; color:var(--muted);">${r.ld.rupeesPerDaySaved ? ptlFmtINR(r.ld.rupeesPerDaySaved) + "/day" : "-"}</td>` : `<td style="padding:8px 10px; text-align:right; color:var(--muted);">-</td><td></td><td></td>`}
   </tr>`;
 
   let html = `<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
     <h2 style="margin:0; font-size:1.05rem; font-weight:800; color:var(--text);">LD Exposure Board</h2>
     <button type="button" onclick="ptlCloseLdBoard()" style="border:0; background:none; font-size:1.3rem; line-height:1; cursor:pointer; color:var(--muted);">&times;</button>
   </div>
-  <p style="font-size:0.8rem; color:var(--muted); margin:0 0 14px;">Ranked by what expediting each project is actually worth — the rupees recoverable by beating the next LD step — not by total exposure. A project already at its LD cap recovers nothing further and is listed separately.</p>`;
+  <p style="font-size:0.8rem; color:var(--muted); margin:0 0 14px;">Ranked by what expediting each project is actually worth - the rupees recoverable by beating the next LD step - not by total exposure. A project already at its LD cap recovers nothing further and is listed separately.</p>`;
 
   if (!expeditable.length && !atCap.length) {
     html += `<div style="padding:24px; text-align:center; color:var(--muted); font-size:0.85rem;">No active project has confirmed, applicable LD terms yet.</div>`;
@@ -2103,13 +2111,13 @@ function ptlRenderLdBoard(board, realised) {
   }
 
   if (atCap.length) {
-    html += `<h3 style="margin:20px 0 8px; font-size:0.85rem; font-weight:800; color:var(--muted);">At LD cap — nothing further recoverable</h3>
+    html += `<h3 style="margin:20px 0 8px; font-size:0.85rem; font-weight:800; color:var(--muted);">At LD cap - nothing further recoverable</h3>
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
         <tbody>${atCap.map(r => row(r, false)).join("")}</tbody></table>`;
   }
 
   if (realised.length) {
-    html += `<h3 style="margin:20px 0 8px; font-size:0.85rem; font-weight:800; color:var(--muted);">Already dispatched — realised LD</h3>
+    html += `<h3 style="margin:20px 0 8px; font-size:0.85rem; font-weight:800; color:var(--muted);">Already dispatched - realised LD</h3>
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
         <tbody>${realised.map(r => row(r, false)).join("")}</tbody></table>`;
   }
