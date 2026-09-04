@@ -8,6 +8,7 @@ function resetGateEntryWorkspaceState() {
   const b1 = document.getElementById('gate-invoice-box'); const b2 = document.getElementById('gate-challan-box');
   if (b1) { b1.textContent = "📷 Select Invoice Image"; b1.classList.remove('done'); }
   if (b2) { b2.textContent = "📷 Select Challan Image"; b2.classList.remove('done'); }
+  if (typeof updateGateRequiredMarkers === 'function') updateGateRequiredMarkers();
   document.getElementById('gate-ai-verification-workspace').style.display = "none";
   document.getElementById('gate-verification-table-body').innerHTML = "";
 

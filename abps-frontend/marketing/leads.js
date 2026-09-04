@@ -2877,6 +2877,19 @@ function handleGateFileSelectionChange(input, boxId, textMsg) {
   else if (boxId === 'gate-challan-box') targetGateChallanFileObj = file;
   const box = document.getElementById(boxId);
   box.textContent = textMsg; box.classList.add('done');
+  updateGateRequiredMarkers();
+}
+
+// Invoice Number's "*" only makes sense while an Invoice is actually
+// attached (nothing to give a number for otherwise), same for Challan
+// Number — mirrors the same conditional-requirement logic
+// commitGateEntryRecordsToBackend enforces at submit, so the asterisk
+// never lies about what's actually required right now.
+function updateGateRequiredMarkers() {
+  const invMark = document.getElementById('gate-invoice-required-mark');
+  const chMark  = document.getElementById('gate-challan-required-mark');
+  if (invMark) invMark.style.display = targetGateInvoiceFileObj ? 'inline' : 'none';
+  if (chMark)  chMark.style.display  = targetGateChallanFileObj  ? 'inline' : 'none';
 }
 
 function togglePinvDocCard(bodyId) {
