@@ -660,29 +660,29 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
   let materialTypeMissing = false;
   let itemCodeMissing = false;
   let unitConverterMissing = false;
-  const usedRejectionIds = new Set(); // a rejectionId is attached to exactly one part, never broadcast to every matching line
+  const usedRejectionIds = new Set(); // a rejectionId is attached to exactly one line, never broadcast to every matching line
 
-  // Row-level fields (Item Code, Material Name/Type, Invoice Unit, Item
-  // Code Unit, Unit Converter) are read once per data-idx. Part-level
-  // fields (Purchase Order, this part's slice of the invoice qty, this
-  // part's Received Qty) are read once per [data-idx][data-part] — an
-  // unsplit line has exactly one part (0), so this produces the same
-  // wire shape as before when nothing was split.
+  // One PO for the whole Gate Entry (no more per-line Purchase Order
+  // selection/split — explicit request) — every line submits this same
+  // value. A vendor combining a previous PO's shortfall with a new PO's
+  // delivery in one document is handled by doing 2 separate Gate Entries
+  // against that document instead, each with its own PO Number and
+  // corrected Invoice Qty.
+  const poNoInput = document.getElementById(`se-po-number-${gateNum}`);
+  const headerPoNo = poNoInput ? poNoInput.value.trim() : "";
+
   const builtLineItems = [];
-  document.querySelectorAll(`.se-po-part-${gateNum}`).forEach(partEl => {
-    const idx = parseInt(partEl.dataset.idx, 10);
-    const part = parseInt(partEl.dataset.part, 10);
+  document.querySelectorAll(`.se-item-code-${gateNum}`).forEach(codeEl => {
+    const idx = parseInt(codeEl.dataset.idx, 10);
     const src = srcItem.lineItems[idx] || {};
 
-    const itemCode = (document.querySelector(`.se-item-code-${gateNum}[data-idx="${idx}"]`)?.value || '').trim();
+    const itemCode = (codeEl.value || '').trim();
     const materialName = (document.querySelector(`.se-mat-name-${gateNum}[data-idx="${idx}"]`)?.value || '').trim();
     const materialType = (document.querySelector(`.se-material-type-${gateNum}[data-idx="${idx}"]`)?.value || '').trim();
     const unitType = (document.querySelector(`.se-invoice-unit-${gateNum}[data-idx="${idx}"]`)?.value || '').trim() || 'NOS';
     const itemCodeUnit = (document.querySelector(`.se-item-code-unit-${gateNum}[data-idx="${idx}"]`)?.value || '').trim() || null;
-    if (part === 0) {
-      if (!itemCode) itemCodeMissing = true;
-      if (!materialType) materialTypeMissing = true;
-    }
+    if (!itemCode) itemCodeMissing = true;
+    if (!materialType) materialTypeMissing = true;
 
     const converterInput = document.querySelector(`.se-unit-converter-${gateNum}[data-idx="${idx}"]`);
     const factorRaw = converterInput ? converterInput.value.trim() : '1';
@@ -693,17 +693,16 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
       else unitConverter = factor;
     }
 
-    const poNo = (document.querySelector(`.se-po-value-${gateNum}[data-idx="${idx}"][data-part="${part}"]`)?.value || '').trim();
-    const gateQuantity = parseFloat(document.querySelector(`.se-invqty-input-${gateNum}[data-idx="${idx}"][data-part="${part}"]`)?.value) || 0;
-    const verifiedPhysicalQuantity = parseFloat(document.querySelector(`.se-phys-qty-${gateNum}[data-idx="${idx}"][data-part="${part}"]`)?.value) || 0;
+    const gateQuantity = parseFloat(document.querySelector(`.se-invqty-input-${gateNum}[data-idx="${idx}"]`)?.value) || 0;
+    const verifiedPhysicalQuantity = parseFloat(document.querySelector(`.se-phys-qty-${gateNum}[data-idx="${idx}"]`)?.value) || 0;
 
     const line = {
       ledgerId: src.ledgerId, itemCode, materialName, materialType, unitType, itemCodeUnit, unitConverter,
-      poNo, gateQuantity, verifiedPhysicalQuantity,
+      poNo: headerPoNo, gateQuantity, verifiedPhysicalQuantity,
       ratePerQuantity: src.ratePerQuantity, gstPercent: src.gstPercent,
     };
 
-    // Rejection link — matched by item code, attached to exactly one part.
+    // Rejection link — matched by item code, attached to exactly one line.
     for (const [rejId, link] of Object.entries(window.activeGateRejectionLinks || {})) {
       if (usedRejectionIds.has(rejId)) continue;
       if ((link.itemCode || '').toString().trim().toUpperCase() === itemCode.toUpperCase()) {
@@ -716,33 +715,10 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
     builtLineItems.push(line);
   });
 
-  const itemData = { gateNumber: srcItem.gateNumber, storePerson: appActiveOperatorIdentityString || "", lineItems: builtLineItems };
+  const itemData = { gateNumber: srcItem.gateNumber, storePerson: appActiveOperatorIdentityString || "", lineItems: builtLineItems, poNo: headerPoNo };
 
-  const poNoInput = document.getElementById(`se-po-number-${gateNum}`);
-  itemData.poNo = poNoInput ? poNoInput.value.trim() : ""; // header default — only used as a fallback for a part left unassigned
-
-  const poMissing = builtLineItems.some(l => !l.poNo && !itemData.poNo);
-  const sumMismatch = (() => {
-    const byIdx = {};
-    builtLineItems.forEach(l => { byIdx[l.ledgerId] = (byIdx[l.ledgerId] || 0) + (l.gateQuantity || 0); });
-    return Object.entries(byIdx).some(([ledgerId, sum]) => {
-      const partsForLedger = builtLineItems.filter(l => l.ledgerId == ledgerId);
-      if (partsForLedger.length <= 1) return false; // unsplit lines always match by construction
-      const original = srcItem.lineItems.find(l => l.ledgerId == ledgerId);
-      return original && Math.abs(sum - (Number(original.gateQuantity) || 0)) > 1e-9;
-    });
-  })();
-
-  if (poMissing) {
-    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Every line item needs a Purchase Order — pick one per line, or set a Default PO above for lines left unassigned.", "error");
-    banner.scrollIntoView({ behavior: "smooth", block: "center" });
-    btn.disabled = false;
-    btn.textContent = "Submit Store Entry and GRN";
-    return;
-  }
-
-  if (sumMismatch) {
-    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ A split line's allocated invoice quantities don't add up to its total invoice quantity.", "error");
+  if (!headerPoNo) {
+    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Enter a PO Number above before submitting.", "error");
     banner.scrollIntoView({ behavior: "smooth", block: "center" });
     btn.disabled = false;
     btn.textContent = "Submit Store Entry and GRN";

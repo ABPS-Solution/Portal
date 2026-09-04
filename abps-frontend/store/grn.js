@@ -1,9 +1,3 @@
-// Per-item-code Authorized-PO options for the Store Entry PO dropdown,
-// filled once per queue load (fetchStoreEntryPOOptions), topped up
-// lazily whenever a line's item code resolves later via the material
-// search (see design/item-codes.js's selectStoreEntryItemCodeMatch).
-window._sePoOptionsCache = window._sePoOptionsCache || {};
-
 async function initializeStoreEntryWorkspaceQueue() {
   const feed = document.getElementById("store-entry-queue-cards-feed");
   feed.innerHTML = `
@@ -19,18 +13,6 @@ async function initializeStoreEntryWorkspaceQueue() {
     if (!data.success || data.queue.length === 0) {
       feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records waiting for Raw Materials Store Entry and GRN.</div>';
       return;
-    }
-
-    // Batched PO-options lookup for every item code already resolved
-    // from Gate Entry, across every card in this queue in one call.
-    const allExistingCodes = [...new Set(
-      data.queue.flatMap(item => item.lineItems.map(l => (l.itemCode || "").trim()).filter(Boolean))
-    )];
-    if (allExistingCodes.length > 0) {
-      try {
-        const poData = await apFetch({ action: "fetchStoreEntryPOOptions", itemCodes: allExistingCodes });
-        if (poData.success) Object.assign(window._sePoOptionsCache, poData.optionsByItemCode || {});
-      } catch (e) { console.error("fetchStoreEntryPOOptions failed:", e); }
     }
 
     // ── PASS 1: Render cards immediately with empty matchMap ──────────────
@@ -109,10 +91,10 @@ async function initializeStoreEntryWorkspaceQueue() {
               readonly
               style="${codeStyle}">
           </td>
-          <td style="padding:8px; font-size:0.78rem; color:var(--text); white-space:normal; word-wrap:break-word; overflow-wrap:break-word; width:210px; line-height:1.4; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
+          <td style="padding:8px; font-size:0.78rem; color:var(--text); white-space:normal; word-wrap:break-word; overflow-wrap:break-word; width:240px; line-height:1.4; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
             ${rawDesc}
           </td>
-          <td style="padding:6px; width:250px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
+          <td style="padding:6px; width:280px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
             <div class="se-mat-name-display-${item.gateNumber}" data-idx="${idx}"
               onclick="reopenSEMaterialSearch('${item.gateNumber}', ${idx})"
               title="Click to change"
@@ -132,41 +114,29 @@ async function initializeStoreEntryWorkspaceQueue() {
             </div>
             ${isPreFilled ? '' : suggestionHtml}
           </td>
-          <td style="width:75px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
+          <td style="width:90px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
             <input type="text" class="se-invoice-unit-${item.gateNumber}" data-idx="${idx}" value="${invoiceUnitVal}"
               style="width:100%; text-align:center; font-family:monospace; font-weight:700; border:1px solid var(--border); padding:5px 2px; border-radius:3px;"
               onblur="updateSEUnitConverterLock('${item.gateNumber}', ${idx})">
           </td>
-          <td style="width:90px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
+          <td style="width:100px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
             <input type="text" class="se-item-code-unit-${item.gateNumber}" data-idx="${idx}" value="${preFilledUnit}" readonly
               style="width:100%; text-align:center; font-family:monospace; font-weight:700; border:none; background:transparent; color:#1e293b;">
           </td>
-          <td style="width:90px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
+          <td style="width:100px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
             <input type="number" class="se-unit-converter-${item.gateNumber}" data-idx="${idx}"
               value="${sameUnit ? '1' : ''}" ${sameUnit ? 'readonly' : ''} step="any" min="0"
               placeholder="${sameUnit ? '' : 'Factor'}"
               title="${sameUnit ? 'Locked at 1 — Invoice Unit already matches Item Code Unit' : 'Units differ — enter the factor that converts Invoice Unit to Item Code Unit'}"
               style="width:100%; text-align:center; font-weight:700; padding:5px; font-size:0.85rem; border-radius:3px;${sameUnit ? ' border:1px solid var(--border); background:#f1f5f9; color:var(--muted); cursor:not-allowed;' : ' border:1.5px solid #f59e0b; background:#fffbeb;'}">
           </td>
-          <td class="se-po-cell-${item.gateNumber}" data-idx="${idx}" style="width:150px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
-            <div class="se-po-parts-wrap-${item.gateNumber}" data-idx="${idx}">
-              ${sePoPartBlockHtml(item.gateNumber, idx, 0, line.poNo || "")}
-            </div>
-            <div class="se-po-sum-${item.gateNumber}" data-idx="${idx}" style="font-size:0.62rem; font-weight:700; margin-top:2px; display:none;"></div>
-            <div style="margin-top:4px;">
-              <span onclick="addSEPartRow('${item.gateNumber}', ${idx})" style="font-size:0.65rem; font-weight:700; color:var(--brand); cursor:pointer; text-decoration:underline;">+ Split</span>
-            </div>
+          <td class="se-invqty-cell-${item.gateNumber}" data-idx="${idx}" style="width:100px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
+            <input type="number" class="se-invqty-input-${item.gateNumber}" data-idx="${idx}" value="${line.gateQuantity}" step="any" min="0"
+              style="width:100%; text-align:center; font-weight:800; font-family:monospace; font-size:1.05rem; border:1px solid var(--border); padding:5px 2px; border-radius:3px;">
           </td>
-          <td class="se-invqty-cell-${item.gateNumber}" data-idx="${idx}" style="text-align:center; color:#1e293b; font-weight:800; vertical-align:middle; width:80px; font-family:monospace; font-size:1.05rem; padding:6px; border-left:1px solid var(--border);">
-            <div class="se-invqty-parts-wrap-${item.gateNumber}" data-idx="${idx}">
-              ${seInvQtyPartBlockHtml(item.gateNumber, idx, 0, line.gateQuantity, false)}
-            </div>
-            <div class="se-invqty-sum-${item.gateNumber}" data-idx="${idx}" data-total="${line.gateQuantity}" style="font-size:0.58rem; color:var(--muted); margin-top:2px; display:none;"></div>
-          </td>
-          <td class="se-recvqty-cell-${item.gateNumber}" data-idx="${idx}" style="text-align:center; width:110px; padding:6px; vertical-align:middle; border-left:1px solid var(--border);">
-            <div class="se-recvqty-parts-wrap-${item.gateNumber}" data-idx="${idx}">
-              ${seRecvQtyPartBlockHtml(item.gateNumber, idx, 0, line.gateQuantity)}
-            </div>
+          <td class="se-recvqty-cell-${item.gateNumber}" data-idx="${idx}" style="text-align:center; width:130px; padding:6px; vertical-align:middle; border-left:1px solid var(--border);">
+            <input type="number" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}" value="${line.gateQuantity}" step="any" min="0"
+              style="width:100%; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:5px; font-size:1.05rem; border-radius:3px;">
           </td>
         </tr>`;
       });
@@ -197,22 +167,21 @@ async function initializeStoreEntryWorkspaceQueue() {
             <label class="field-label">PO Number</label>
             <input type="text" id="se-po-number-${item.gateNumber}" value="${item.defaultPoNo || ''}" placeholder="e.g. PO_26-27_00002"
               style="width:100%; padding:6px; background:#f1f5f9; border:1.5px solid var(--border); border-radius:3px;"
-              onblur="checkStoreEntryPONumber('${item.gateNumber}'); applyDefaultPOToAllLines('${item.gateNumber}');">
+              onblur="checkStoreEntryPONumber('${item.gateNumber}');">
             <div id="se-po-check-msg-${item.gateNumber}" style="font-size:0.68rem; font-weight:700; margin-top:3px;"></div>
           </div>
           <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
-            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:1180px; border-collapse:collapse;">
+            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:1150px; border-collapse:collapse;">
               <thead>
                 <tr style="background:#f8fafc;">
                   <th style="width:100px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3;">Item Code</th>
-                  <th style="width:210px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Invoice Material Description</th>
-                  <th style="width:250px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Standard Material Name *</th>
-                  <th style="width:75px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Invoice<br>Unit</th>
-                  <th style="width:90px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Item Code<br>Unit</th>
-                  <th style="width:90px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Unit<br>Converter</th>
-                  <th style="width:150px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Purchase Order *</th>
-                  <th style="width:80px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Invoice<br>Qty</th>
-                  <th style="width:110px; text-align:center; font-size:0.68rem; padding:8px 6px 8px 16px; line-height:1.3; border-left:1px solid var(--border);">Received<br>Qty *</th>
+                  <th style="width:240px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Invoice Material Description</th>
+                  <th style="width:280px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Standard Material Name *</th>
+                  <th style="width:90px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Invoice<br>Unit</th>
+                  <th style="width:100px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Item Code<br>Unit</th>
+                  <th style="width:100px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Unit<br>Converter</th>
+                  <th style="width:100px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Invoice<br>Qty</th>
+                  <th style="width:130px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3; border-left:1px solid var(--border);">Received<br>Qty *</th>
                 </tr>
               </thead>
               <tbody>${trs}</tbody>
@@ -299,228 +268,11 @@ async function initializeStoreEntryWorkspaceQueue() {
   } catch(e) { feed.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
 }
 
-// ── Multi-PO Store Entry: PO parts, split, and the shared floating
-// PO dropdown ────────────────────────────────────────────────────────
-// A GRN can now span multiple POs — each invoice line (or a split piece
-// of one line) carries its own PO. Parts live INSIDE the row's PO/
-// Invoice Qty/Received Qty cells (never as extra <tr>s), because
-// data-idx is the join key every other Store Entry helper
-// (updateSEUnitConverterLock, selectStoreEntryItemCodeMatch,
-// reopenSEMaterialSearch, handleSENameSearch) uses to find a row —
-// duplicating data-idx across sibling <tr>s would make all of those
-// silently hit part 0 only.
-
-function sePoPartBlockHtml(gateNum, idx, part, poNo) {
-  const trigger = poNo || "Select PO…";
-  const borderColor = poNo ? "#86efac" : "#fca5a5";
-  return `<div class="se-po-part-${gateNum}" data-idx="${idx}" data-part="${part}" style="margin-bottom:4px; display:flex; align-items:center; gap:4px;">
-    <div class="se-po-trigger-${gateNum}" data-idx="${idx}" data-part="${part}"
-      onclick="toggleSEPODropdown('${gateNum}', ${idx}, ${part}, this)"
-      style="flex:1; cursor:pointer; padding:5px 6px; border:1.5px solid ${borderColor}; border-radius:3px; font-size:0.7rem; font-weight:700; background:#fff; min-height:26px; display:flex; align-items:center; justify-content:space-between; gap:4px; overflow:hidden;">
-      <span class="se-po-trigger-label-${gateNum}" data-idx="${idx}" data-part="${part}" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${trigger}</span>
-      <span style="font-size:0.6rem; flex-shrink:0;">▾</span>
-    </div>
-    <input type="hidden" class="se-po-value-${gateNum}" data-idx="${idx}" data-part="${part}" value="${poNo || ''}">
-    ${part > 0 ? `<span onclick="removeSEPartRow('${gateNum}', ${idx}, ${part})" title="Remove this split" style="cursor:pointer; color:#b91c1c; font-weight:800; font-size:0.85rem; flex-shrink:0;">✕</span>` : ''}
-  </div>`;
-}
-
-function seInvQtyPartBlockHtml(gateNum, idx, part, value, readonly) {
-  return `<div class="se-invqty-part-${gateNum}" data-idx="${idx}" data-part="${part}" style="margin-bottom:4px;">
-    <input type="number" class="se-invqty-input-${gateNum}" data-idx="${idx}" data-part="${part}"
-      value="${value}" ${readonly ? 'readonly' : ''} step="any" min="0"
-      oninput="recalcSEPartSums('${gateNum}', ${idx})"
-      style="width:100%; text-align:center; font-weight:800; font-family:monospace; font-size:1.05rem; border-radius:3px; ${readonly ? 'border:none; background:transparent; color:#1e293b;' : 'border:1px solid var(--border); padding:5px 2px;'}">
-  </div>`;
-}
-
-function seRecvQtyPartBlockHtml(gateNum, idx, part, value) {
-  return `<div class="se-recvqty-part-${gateNum}" data-idx="${idx}" data-part="${part}" style="margin-bottom:4px;">
-    <input type="number" class="se-phys-qty-${gateNum}" data-idx="${idx}" data-part="${part}"
-      value="${value}" step="any" min="0"
-      style="width:100%; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:5px; font-size:1.05rem; border-radius:3px;">
-  </div>`;
-}
-
-// addSEPartRow — splits a line into another PO-tagged part. Mutates the
-// PO/Invoice Qty/Received Qty cells in place (never re-renders the whole
-// table, which would wipe the operator's item-code/material selections).
-function addSEPartRow(gateNum, idx) {
-  const poWrap = document.querySelector(`.se-po-parts-wrap-${gateNum}[data-idx="${idx}"]`);
-  const invWrap = document.querySelector(`.se-invqty-parts-wrap-${gateNum}[data-idx="${idx}"]`);
-  const recvWrap = document.querySelector(`.se-recvqty-parts-wrap-${gateNum}[data-idx="${idx}"]`);
-  if (!poWrap || !invWrap || !recvWrap) return;
-
-  const existingParts = poWrap.querySelectorAll(`.se-po-part-${gateNum}[data-idx="${idx}"]`).length;
-  const newPart = existingParts; // dense 0..n
-
-  // Invoice Qty is already editable on part 0 from render (no longer a
-  // readonly full-line display) — this no-ops on the readonly flag now,
-  // kept only for the border/background reset in case part 0's input was
-  // ever left in some other visual state.
-  if (existingParts === 1) {
-    const part0Input = document.querySelector(`.se-invqty-input-${gateNum}[data-idx="${idx}"][data-part="0"]`);
-    if (part0Input) { part0Input.readOnly = false; part0Input.style.border = '1px solid var(--border)'; part0Input.style.background = '#fff'; part0Input.style.padding = '5px 2px'; }
-  }
-
-  poWrap.insertAdjacentHTML('beforeend', sePoPartBlockHtml(gateNum, idx, newPart, ""));
-  invWrap.insertAdjacentHTML('beforeend', seInvQtyPartBlockHtml(gateNum, idx, newPart, 0, false));
-  recvWrap.insertAdjacentHTML('beforeend', seRecvQtyPartBlockHtml(gateNum, idx, newPart, 0));
-  recalcSEPartSums(gateNum, idx);
-}
-
-function removeSEPartRow(gateNum, idx, part) {
-  document.querySelector(`.se-po-part-${gateNum}[data-idx="${idx}"][data-part="${part}"]`)?.remove();
-  document.querySelector(`.se-invqty-part-${gateNum}[data-idx="${idx}"][data-part="${part}"]`)?.remove();
-  document.querySelector(`.se-recvqty-part-${gateNum}[data-idx="${idx}"][data-part="${part}"]`)?.remove();
-
-  // Re-number remaining parts densely (0..n) so the backend's part index
-  // and the "remove" affordance (only shown for part > 0) stay correct.
-  const remaining = [...document.querySelectorAll(`.se-po-part-${gateNum}[data-idx="${idx}"]`)]
-    .sort((a, b) => Number(a.dataset.part) - Number(b.dataset.part));
-  remaining.forEach((el, newIdx) => {
-    const oldPart = el.dataset.part;
-    if (String(newIdx) === oldPart) return;
-    [`.se-po-part-${gateNum}`, `.se-invqty-part-${gateNum}`, `.se-recvqty-part-${gateNum}`].forEach(cls => {
-      document.querySelectorAll(`${cls}[data-idx="${idx}"][data-part="${oldPart}"] [data-part]`)
-        .forEach(sub => sub.dataset.part = String(newIdx));
-      const wrapEl = document.querySelector(`${cls}[data-idx="${idx}"][data-part="${oldPart}"]`);
-      if (wrapEl) wrapEl.dataset.part = String(newIdx);
-    });
-  });
-
-  // Back to a single part: relock the invoice-qty input to the full line total.
-  const stillThere = document.querySelectorAll(`.se-po-part-${gateNum}[data-idx="${idx}"]`);
-  if (stillThere.length === 1) {
-    const totalEl = document.querySelector(`.se-invqty-sum-${gateNum}[data-idx="${idx}"]`);
-    const total = totalEl ? Number(totalEl.dataset.total) || 0 : 0;
-    const onlyInput = document.querySelector(`.se-invqty-input-${gateNum}[data-idx="${idx}"][data-part="0"]`);
-    if (onlyInput) {
-      onlyInput.value = total;
-      onlyInput.readOnly = true;
-      onlyInput.style.border = 'none'; onlyInput.style.background = 'transparent'; onlyInput.style.padding = '';
-    }
-  }
-  recalcSEPartSums(gateNum, idx);
-}
-
-// Live "allocated so far / line total" indicator, red on mismatch —
-// commitStoreEntryPipelineStep re-validates this sum server-side against
-// the ledger row's own quantity_received, so this is purely operator
-// feedback, never the actual guard.
-function recalcSEPartSums(gateNum, idx) {
-  const totalEl = document.querySelector(`.se-invqty-sum-${gateNum}[data-idx="${idx}"]`);
-  if (!totalEl) return;
-  const total = Number(totalEl.dataset.total) || 0;
-  const inputs = document.querySelectorAll(`.se-invqty-input-${gateNum}[data-idx="${idx}"]`);
-  if (inputs.length <= 1) { totalEl.style.display = 'none'; return; }
-  const sum = [...inputs].reduce((s, el) => s + (Number(el.value) || 0), 0);
-  const ok = Math.abs(sum - total) < 1e-9;
-  totalEl.style.display = 'block';
-  totalEl.style.color = ok ? '#15803d' : '#b91c1c';
-  totalEl.textContent = `Σ ${trimNum(sum)} / ${trimNum(total)}`;
-}
-
-// The shared floating PO dropdown — single element appended to
-// document.body with position:fixed, positioned via the trigger's own
-// getBoundingClientRect() on open. Required because the table wrapper is
-// overflow-x:auto (see grn.js's card markup) — an absolutely-positioned
-// child would get clipped against that wrapper instead of floating over
-// the page. Same pattern as production/fg-approval.js's doc-type dropdown.
-let _sePoDropdownCtx = null; // { gateNum, idx, part }
-
-function ensureSEPODropdownEl() {
-  let dd = document.getElementById("se-po-shared-dd");
-  if (!dd) {
-    dd = document.createElement("div");
-    dd.id = "se-po-shared-dd";
-    dd.style.cssText = "display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:4px; z-index:9999; max-height:240px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15); min-width:260px;";
-    document.body.appendChild(dd);
-  }
-  return dd;
-}
-
-function toggleSEPODropdown(gateNum, idx, part, triggerEl) {
-  const dd = ensureSEPODropdownEl();
-  const alreadyOpenForThisPart = dd.style.display === "block" && _sePoDropdownCtx
-    && _sePoDropdownCtx.gateNum === gateNum && _sePoDropdownCtx.idx === idx && _sePoDropdownCtx.part === part;
-  if (alreadyOpenForThisPart) { dd.style.display = "none"; _sePoDropdownCtx = null; return; }
-
-  const itemCode = (document.querySelector(`.se-item-code-${gateNum}[data-idx="${idx}"]`)?.value || "").trim();
-  const options = (itemCode && window._sePoOptionsCache[itemCode]) || [];
-  dd.innerHTML = options.length === 0
-    ? `<div style="padding:8px 10px; font-size:0.75rem; color:var(--muted);">${itemCode ? 'No Authorized PO found for this Item Code.' : 'Resolve the Item Code first.'}</div>`
-    : options.map(o => {
-        const vendorTag = o.vendorMatch ? '' : `<span style="color:#b45309; font-weight:700;">⚠ diff. vendor</span>`;
-        const fullyTag = o.fullyReceived ? `<span style="color:var(--muted);">fully received</span>` : '';
-        return `<div onclick="selectSEPOOption('${o.poNo}', this)"
-            style="padding:6px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.75rem;"
-            onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-          <div style="font-weight:800; font-family:monospace; color:var(--brand);">${o.poNo}</div>
-          <div style="color:var(--muted); display:flex; justify-content:space-between; gap:6px;">
-            <span>Ordered ${trimNum(o.orderedQty)} · Received ${trimNum(o.receivedQty)} · Outstanding ${trimNum(o.outstandingQty)} ${o.unit || ''}</span>
-            <span>${vendorTag}${fullyTag}</span>
-          </div>
-        </div>`;
-      }).join("");
-
-  const rect = triggerEl.getBoundingClientRect();
-  dd.style.top = rect.bottom + "px";
-  dd.style.left = rect.left + "px";
-  dd.style.width = Math.max(rect.width, 260) + "px";
-  dd.style.display = "block";
-  _sePoDropdownCtx = { gateNum, idx, part };
-}
-
-function selectSEPOOption(poNo, clickedEl) {
-  if (!_sePoDropdownCtx) return;
-  const { gateNum, idx, part } = _sePoDropdownCtx;
-  const valueInput = document.querySelector(`.se-po-value-${gateNum}[data-idx="${idx}"][data-part="${part}"]`);
-  const label = document.querySelector(`.se-po-trigger-label-${gateNum}[data-idx="${idx}"][data-part="${part}"]`);
-  const trigger = document.querySelector(`.se-po-trigger-${gateNum}[data-idx="${idx}"][data-part="${part}"]`);
-  if (valueInput) valueInput.value = poNo;
-  if (label) label.textContent = poNo;
-  if (trigger) trigger.style.borderColor = "#86efac";
-  ensureSEPODropdownEl().style.display = "none";
-  _sePoDropdownCtx = null;
-}
-
-// A line whose PO is still unassigned adopts the header's Default PO —
-// never overwrites a part that already has an explicit choice.
-function applyDefaultPOToAllLines(gateNum) {
-  const defaultPo = (document.getElementById(`se-po-number-${gateNum}`)?.value || "").trim();
-  if (!defaultPo) return;
-  document.querySelectorAll(`.se-po-value-${gateNum}`).forEach(input => {
-    if (input.value.trim()) return;
-    input.value = defaultPo;
-    const idx = input.dataset.idx, part = input.dataset.part;
-    const label = document.querySelector(`.se-po-trigger-label-${gateNum}[data-idx="${idx}"][data-part="${part}"]`);
-    const trigger = document.querySelector(`.se-po-trigger-${gateNum}[data-idx="${idx}"][data-part="${part}"]`);
-    if (label) label.textContent = defaultPo;
-    if (trigger) trigger.style.borderColor = "#86efac";
-  });
-}
-
-// Item-code change invalidates whatever PO was picked for that row (the
-// PO options are keyed by item code) — called alongside
-// updateSEUnitConverterLock from design/item-codes.js's
-// selectStoreEntryItemCodeMatch.
-function resetSEPOSelectionsForRow(gateNum, idx) {
-  document.querySelectorAll(`.se-po-value-${gateNum}[data-idx="${idx}"]`).forEach(input => {
-    input.value = "";
-    const part = input.dataset.part;
-    const label = document.querySelector(`.se-po-trigger-label-${gateNum}[data-idx="${idx}"][data-part="${part}"]`);
-    const trigger = document.querySelector(`.se-po-trigger-${gateNum}[data-idx="${idx}"][data-part="${part}"]`);
-    if (label) label.textContent = "Select PO…";
-    if (trigger) trigger.style.borderColor = "#fca5a5";
-  });
-}
-
-document.addEventListener("click", function(e) {
-  const dd = document.getElementById("se-po-shared-dd");
-  if (!dd || dd.style.display !== "block") return;
-  if (e.target.closest && (e.target.closest("#se-po-shared-dd") || e.target.closest("[class^='se-po-trigger-']"))) return;
-  dd.style.display = "none";
-  _sePoDropdownCtx = null;
-});
+// Per-line Purchase Order selection/split was removed (explicit
+// request) — a Store Entry now always uses the single "PO Number"
+// field for every line on this Gate Entry. If a vendor combines a
+// previous PO's shortfall with a new PO's delivery in one document,
+// the operator does 2 separate Gate Entries against that same
+// document instead (adjusting Invoice Qty and PO Number on each), so
+// one Gate Entry/GRN never needs to span more than one PO.
 
