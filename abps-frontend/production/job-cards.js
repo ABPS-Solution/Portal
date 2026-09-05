@@ -93,7 +93,20 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
         ? `<span class="live-counter-pill ${styleClassFG}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${fmtQty(inStockCount)} ${unitTokenFG}</span>`
         : `<span style="font-size:0.78rem; color:var(--muted); margin-left:4px;">🔄 checking live stock…</span>`;
 
-      counterZone.innerHTML = `
+      // Same reasoning as the Raw Materials Store branch above: Service
+      // issues have no Job Card, so fetchServiceItemCatalog's reused
+      // ALLOTTED/USED/REMAINING shape shouldn't be labeled as if one exists.
+      counterZone.innerHTML = isServicePillFG ? `
+        <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
+          <div>
+            Finished Goods Store Total Stock Count:
+            ${countDisplay}
+          </div>
+          <div style="margin-top:6px;">
+            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">AVAILABLE FOR SERVICE ISSUE: ${fmtQty(jcmMatchFG.remainingQty)} ${unitTokenFG}</span>
+          </div>
+        </div>
+      ` : `
         <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
           <div>
             Finished Goods Store Total Stock Count:
@@ -294,7 +307,26 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       else if (availableCount <= 5) styleClass = "pill-stock-low";
       
       const totalStockCount = (inventoryMatch.totalStock !== undefined && inventoryMatch.totalStock !== null) ? Number(inventoryMatch.totalStock) : (availableCount + reservedCount);
-      counterZone.innerHTML = `
+      // Service issues draw from the free stock pool, not a Job Card's BOQ
+      // allotment (see submitEngineerMaterialTicket's own comment on this) —
+      // fetchServiceItemCatalog only mirrors the ALLOTTED/USED/REMAINING
+      // shape so the existing basket/submit code needs no changes, it isn't
+      // a real per-Job-Card allotment. Showing "ALLOTTED (THIS JOB CARD)"
+      // for a ticket that has no Job Card at all is misleading, so Service
+      // mode gets a single plain availability line instead of the 3-pill set.
+      counterZone.innerHTML = isServicePillRaw ? `
+        <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
+          <div>
+            Raw Material Store Total Stock Count:
+            <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
+              ${fmtQty(totalStockCount)} ${unitToken}
+            </span>
+          </div>
+          <div style="margin-top:6px;">
+            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">AVAILABLE FOR SERVICE ISSUE: ${fmtQty(jcmMatch.remainingQty)} ${unitToken}</span>
+          </div>
+        </div>
+      ` : `
         <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
           <div>
             Raw Material Store Total Stock Count:

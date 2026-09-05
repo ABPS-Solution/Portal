@@ -336,12 +336,24 @@ async function refreshLiveStockForSelectedMaterial() {
     // Job Card's allotment can all happen while this pill sits open, and
     // ALLOTTED/USED/REMAINING (plus the "Currently Reserved" figure above
     // them) come from this cache, not from getLiveStockForItem.
-    const jobCardNumberValPoll = document.getElementById("ticket-job-card-dropdown")?.value || "";
-    if (jobCardNumberValPoll && projectId) {
-      try {
-        const freshJcmPoll = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValPoll, projectId: projectId });
-        window._ticketJobCardMaterialsCache = { key: jobCardNumberValPoll + "|" + projectId, records: freshJcmPoll.records || [] };
-      } catch(e) { /* keep whatever was already cached on a transient failure */ }
+    // Service tickets are BOQ/Job-Card-free (see ticketIsServiceItemMode_) —
+    // without this guard, this poll tick unconditionally re-read whatever
+    // value happened to be sitting in the hidden #ticket-job-card-dropdown
+    // (a leftover selection from before Service mode was turned on) and
+    // clobbered the correct SERVICE|-keyed cache with real Job-Card
+    // allotment data every 5 seconds, which is exactly the stale
+    // ALLOTTED/USED/REMAINING a Service ticket showed despite never being
+    // linked to a Job Card. This is the third read site
+    // ticketJcmCacheKeyFor_/ticketEnsureJcmCache_'s own header comment
+    // warns about — route through it instead of a bare fetchJobCardMaterials.
+    if (!ticketIsServiceItemMode_()) {
+      const jobCardNumberValPoll = document.getElementById("ticket-job-card-dropdown")?.value || "";
+      if (jobCardNumberValPoll && projectId) {
+        try {
+          const freshJcmPoll = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberValPoll, projectId: projectId });
+          window._ticketJobCardMaterialsCache = { key: jobCardNumberValPoll + "|" + projectId, records: freshJcmPoll.records || [] };
+        } catch(e) { /* keep whatever was already cached on a transient failure */ }
+      }
     }
 
     // Patch inventory counts in local cache
