@@ -110,6 +110,7 @@ async function toggleFGApprovalCardBody(fgId) {
       newRows: [],
     };
     body.innerHTML = renderFGApprovalDetailBody(fgId);
+    updateFGApprovalSubmitState(fgId);
   } catch(e) {
     body.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
   }
@@ -149,7 +150,8 @@ function renderFGApprovalDetailBody(fgId) {
     </div>
     <button onclick="addFGDocRow(${fgId})" style="font-size:0.78rem; font-weight:700; padding:6px 14px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; margin-bottom:14px;">+ Add Row</button>
 
-    <div style="display:flex; justify-content:flex-end; gap:10px;">
+    <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px;">
+      <div id="fg-approval-submit-reason-${fgId}" style="font-size:0.78rem; font-weight:600; color:#b45309; text-align:right;"></div>
       <button class="nav-btn-styled" onclick="submitFGApprovalDecision(${fgId}, 'reject')" style="background:#dc2626;">Reject</button>
       <button class="nav-btn-styled" id="fg-approval-submit-${fgId}" disabled onclick="submitFGApprovalDecision(${fgId}, 'approve')"
         style="background:var(--accent); padding:8px 20px; font-weight:700; opacity:0.5; cursor:not-allowed;">
@@ -392,13 +394,29 @@ function updateFGApprovalSubmitState(fgId) {
   if (!btn) return;
   const st = window._fgApprovalState[fgId];
   const presentTypes = new Set(st.docs.map(d => d.docType));
-  const hasEveryRequiredType = FG_REQUIRED_DOC_TYPES.every(t => presentTypes.has(t));
-  const allChecked = st.docs.length > 0 && st.docs.every(d => d.qaChecked) && st.newRows.length === 0;
+  const missingTypes = FG_REQUIRED_DOC_TYPES.filter(t => !presentTypes.has(t));
+  const hasEveryRequiredType = missingTypes.length === 0;
+  const uncheckedCount = st.docs.filter(d => !d.qaChecked).length;
+  const allChecked = st.docs.length > 0 && uncheckedCount === 0 && st.newRows.length === 0;
   const canApprove = hasEveryRequiredType && allChecked;
   btn.disabled = !canApprove;
   btn.style.opacity = canApprove ? "1" : "0.5";
   btn.style.cursor = canApprove ? "pointer" : "not-allowed";
-  btn.title = hasEveryRequiredType ? "" : "Every required document type must have at least one upload before this can be approved.";
+
+  // Spells out exactly what's blocking Approve, right next to the
+  // button — the disabled state alone (or a hover-only title tooltip)
+  // left no visible clue why Approve wouldn't click, especially for the
+  // "deleted a doc to replace it, forgot to actually re-upload" case
+  // this whole gate exists to catch.
+  const reasons = [];
+  if (missingTypes.length > 0) {
+    reasons.push(`Missing: ${missingTypes.map(t => FG_DOC_TYPE_LABELS[t] || t).join(', ')}`);
+  }
+  if (st.newRows.length > 0) reasons.push(`${st.newRows.length} row(s) still need to be uploaded`);
+  if (uncheckedCount > 0) reasons.push(`${uncheckedCount} document(s) not yet QA-checked`);
+  const reasonEl = document.getElementById(`fg-approval-submit-reason-${fgId}`);
+  if (reasonEl) reasonEl.textContent = reasons.length ? `⚠️ ${reasons.join(' · ')}` : '';
+  btn.title = reasons.join(' · ');
 }
 
 async function submitFGApprovalDecision(fgId, action) {
