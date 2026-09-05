@@ -85,13 +85,7 @@ window._fgApprovalRowSeq = window._fgApprovalRowSeq || 0;
 
 function formatFGUploadTime(value) {
   if (!value) return "—";
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return "—";
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
-  }).formatToParts(d);
-  const get = (t) => parts.find(p => p.type === t)?.value || "";
-  return `${get('hour')}:${get('minute')} ${get('day')}-${get('month')}-${get('year')}`;
+  return formatOrdinalDateTime(value) || "—";
 }
 
 async function toggleFGApprovalCardBody(fgId) {
