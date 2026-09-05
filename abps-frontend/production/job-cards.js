@@ -103,7 +103,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
             ${countDisplay}
           </div>
           <div style="margin-top:6px;">
-            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">AVAILABLE FOR SERVICE ISSUE: ${fmtQty(jcmMatchFG.remainingQty)} ${unitTokenFG}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">EXTRA AVAILABLE IN STOCK: ${fmtQty(jcmMatchFG.remainingQty)} ${unitTokenFG}</span>
           </div>
         </div>
       ` : `
@@ -323,7 +323,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
             </span>
           </div>
           <div style="margin-top:6px;">
-            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">AVAILABLE FOR SERVICE ISSUE: ${fmtQty(jcmMatch.remainingQty)} ${unitToken}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">EXTRA AVAILABLE IN STOCK: ${fmtQty(jcmMatch.remainingQty)} ${unitToken}</span>
           </div>
         </div>
       ` : `
