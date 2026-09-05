@@ -154,24 +154,28 @@ async function runCashExpenseSearch() {
       const typeLabel = x.expenseType === 'Food & Snacks' && x.subType ? `Food & Snacks (${escapeHtml(x.subType)})`
         : x.expenseType === 'Others' && x.otherText ? `Others (${escapeHtml(x.otherText)})` : escapeHtml(x.expenseType);
       const modeColor = x.paymentMode === 'Cash' ? '#b45309' : x.paymentMode === 'UPI' ? '#0369a1' : '#7c3aed';
-      // Actual Amount is editable only once closed (isOpen === false) —
-      // reviseCashExpenseActualAmount requires actual_amount IS NOT NULL,
-      // same guard as the backend. A still-open advance is closed via
+      // Actual Amount is editable only once closed (isOpen === false) AND
+      // only for an admin — reviseCashExpenseActualAmount requires
+      // actual_amount IS NOT NULL and now also req.user.perm_admin,
+      // same guards enforced here. A still-open advance is closed via
       // Daily Expense Vouchers instead, not from here. Plain number input,
       // no Edit/Save buttons — saves automatically on blur (onchange) if
       // the value actually changed, same pattern as voucher-search.js.
       const rawActual = Number(x.amount) || 0;
       const actualCell = x.isOpen
         ? `${formatINRComma(x.amount)} <span style="font-weight:400; color:var(--muted); font-size:0.75rem;">(open)</span>`
-        : `<input type="number" id="ces-actual-input-${x.expenseId}" value="${rawActual}" min="0" step="0.01"
+        : isAdminUser
+        ? `<input type="number" id="ces-actual-input-${x.expenseId}" value="${rawActual}" min="0" step="0.01"
              style="width:90px; padding:2px 4px; font-size:0.8rem; text-align:right; font-weight:700;"
              onchange="cesSaveActual(${x.expenseId}, ${rawActual})">
-           <span id="ces-actual-err-${x.expenseId}" style="color:#b91c1c; font-size:0.62rem; display:block;"></span>`;
+           <span id="ces-actual-err-${x.expenseId}" style="color:#b91c1c; font-size:0.62rem; display:block;"></span>`
+        : formatINRComma(x.amount);
       const deleteCell = isAdminUser
         ? `<td style="${cell} ${colBorder}">${canDelete(x) ? `<button class="nav-btn-styled" onclick="cesDeleteVoucher(${x.expenseId})" style="padding:3px 10px; font-size:0.72rem; background:#fee2e2; color:#b91c1c;">Delete</button>` : '—'}</td>`
         : '';
       return `<tr style="border-bottom:2px solid var(--border);">
         <td style="${cell}">${formatOrdinalDate(x.createdDate)}</td>
+        <td style="${cell} ${colBorder}">${escapeHtml(x.voucherId || '—')}</td>
         <td style="${cell} ${colBorder}">${escapeHtml(x.employeeName)}</td>
         <td style="${cell} ${colBorder}">${escapeHtml(x.departmentName || '—')}</td>
         <td style="${cell} ${colBorder}">${typeLabel}</td>
@@ -184,7 +188,7 @@ async function runCashExpenseSearch() {
       <div style="overflow-x:auto;">
         <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
           <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">
-            <th style="${th}">Date</th><th style="${th} ${colBorder}">Employee</th><th style="${th} ${colBorder}">Department</th>
+            <th style="${th}">Date</th><th style="${th} ${colBorder}">Voucher ID</th><th style="${th} ${colBorder}">Employee</th><th style="${th} ${colBorder}">Department</th>
             <th style="${th} ${colBorder}">Type</th><th style="${th} ${colBorder}">Payment Mode</th><th style="${th} ${colBorder}">Actual Amount</th>
             ${isAdminUser ? `<th style="${th} ${colBorder}">Actions</th>` : ''}
           </tr></thead>

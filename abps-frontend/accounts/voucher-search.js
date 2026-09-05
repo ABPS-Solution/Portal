@@ -335,14 +335,15 @@ function tvsRenderAdvanceTable(advances) {
 function tvsRenderCard(v) {
   const lines = v.lines || [];
   // Actual is editable per line, only once the voucher is Checked (that's
-  // when actual_amount first exists) — reviseTourVoucherActualAmount only
-  // accepts a Checked voucher, same guard as the backend. The voucher's
-  // claimed total_amount is never editable here, only each line's Actual.
+  // when actual_amount first exists) AND only for an admin —
+  // reviseTourVoucherActualAmount only accepts a Checked voucher from an
+  // admin, same two guards enforced here. The voucher's claimed
+  // total_amount is never editable here, only each line's Actual.
   // A plain number input, no Edit/Save buttons — saves automatically on
   // blur (onchange) if the value actually changed (31 Aug 2026, replacing
   // an earlier click-to-edit/Save-Cancel affordance).
-  const canEditActual = v.status === 'Checked';
-  const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true"; // gates Delete Voucher only — Link/Unlink are not admin-gated
+  const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true"; // also gates Delete Voucher — Link/Unlink are not admin-gated
+  const canEditActual = v.status === 'Checked' && isAdminUser;
   const colBorder = "border-left:2px solid var(--border);";
   const cell = "padding:4px 6px; line-height:1.25; font-size:0.82rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word;";
   const amtCell = "padding:4px 6px; line-height:1.25; font-size:0.95rem; font-weight:700; color:#000; text-align:center; vertical-align:middle;";

@@ -79,6 +79,9 @@ function cevRenderCard(v) {
           <input type="number" id="cev-actual-${v.expenseId}" min="0" placeholder="e.g. ${trimNum(v.advanceAmount)}"
             style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
           <div style="font-size:0.76rem; color:var(--muted); margin-top:5px;">${v.paymentMode === 'Online' ? 'Online — no pool balance is affected either way.' : 'Less than the advance comes back into the balance; more is pulled from it.'}</div>
+          <label class="field-label" style="margin-top:10px;">Voucher ID</label>
+          <input type="text" id="cev-voucherid-${v.expenseId}" placeholder="e.g. physical voucher number"
+            style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
           <button class="nav-btn-styled" style="margin-top:10px;" onclick="cevCloseVoucher(${v.expenseId})">Submit &amp; Close Voucher</button>
         </div>
       </div>` : ''}
@@ -96,9 +99,11 @@ async function cevCloseVoucher(expenseId) {
   if (actualAmount === "" || Number(actualAmount) < 0 || Number.isNaN(Number(actualAmount))) {
     return showCashExpenseFeedback("Enter a valid Actual Amount (0 or more).", "error");
   }
+  const voucherIdInput = document.getElementById(`cev-voucherid-${expenseId}`);
+  const voucherId = voucherIdInput ? voucherIdInput.value.trim() : "";
   showBlockingOverlay("Closing voucher...");
   try {
-    const data = await acFetch("closeCashExpenseVoucher", { expenseId, actualAmount: Number(actualAmount) });
+    const data = await acFetch("closeCashExpenseVoucher", { expenseId, actualAmount: Number(actualAmount), voucherId });
     hideBlockingOverlay();
     if (!data.success) { showCashExpenseFeedback(data.error, "error"); return; }
     cevOpenVouchers = cevOpenVouchers.filter(v => v.expenseId !== expenseId);
