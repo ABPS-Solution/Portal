@@ -6,10 +6,11 @@ const FG_DOC_META = {
   packedProductsImages: { dropzoneId: "fg-add-packed-images-dropzone", listId: "fg-add-packed-images-filelist", label: "Packed Products Images",      placeholder: "📎 Click to attach Packed Products Images" },
   testCert:             { dropzoneId: "fg-add-test-cert-dropzone",     listId: "fg-add-test-cert-filelist",     label: "Test Certificate",            placeholder: "📎 Click to attach Test Certificate" },
   inProcessInspection:  { dropzoneId: "fg-add-inprocess-dropzone",     listId: "fg-add-inprocess-filelist",     label: "In Process Inspection Sheet", placeholder: "📎 Click to attach In Process Inspection Sheet" },
-  warrantyCard:         { dropzoneId: "fg-add-warranty-dropzone",      listId: "fg-add-warranty-filelist",      label: "Warranty Card",                placeholder: "📎 Click to attach Warranty Card" },
   otherDocuments:       { dropzoneId: "fg-add-otherdocs-dropzone",     listId: "fg-add-otherdocs-filelist",     label: "Other Documents",              placeholder: "📎 Click to attach Other Documents" },
 };
-const FG_REQUIRED_DOC_TYPES = ["jobCardSheet", "packedProductsImages", "testCert", "inProcessInspection", "warrantyCard"];
+// Warranty Card moved to Project Invoice Generation (5 Sep 2026) — it's a
+// per-project shipping document, not tied to one Job Card's finished good.
+const FG_REQUIRED_DOC_TYPES = ["jobCardSheet", "packedProductsImages", "testCert", "inProcessInspection"];
 let fgDocFiles = {};
 
 function resetFGDocFiles() {

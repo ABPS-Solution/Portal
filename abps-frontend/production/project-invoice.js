@@ -6,7 +6,9 @@ let pinvInvoiceState = null;
 // below) -- everything else is compulsory since it's never skippable for
 // a real dispatch. inspectionClearance moved here from Add to Finished
 // Goods Store / Add to Finished Goods Store Approval — it's project-level
-// now, not tied to one Job Card's finished good.
+// now, not tied to one Job Card's finished good. warrantyCard moved here
+// the same way (5 Sep 2026), but unlike inspectionClearance it IS
+// required — see PINV_REQUIRED_DOC_TYPES's exclusion list below.
 const PINV_DOC_META = {
   packingList:        { dropzoneId: "pinv-doc-packingList-dropzone",        listId: "pinv-doc-packingList-filelist",        label: "Packing List",                             placeholder: "📎 Click to attach Packing List" },
   deliveryChallan:     { dropzoneId: "pinv-doc-deliveryChallan-dropzone",    listId: "pinv-doc-deliveryChallan-filelist",    label: "Delivery Challan",                          placeholder: "📎 Click to attach Delivery Challan" },
@@ -15,6 +17,7 @@ const PINV_DOC_META = {
   truckLoadedImages:   { dropzoneId: "pinv-doc-truckLoadedImages-dropzone", listId: "pinv-doc-truckLoadedImages-filelist",  label: "Images of Products Loaded in Truck",        placeholder: "📎 Click to attach Images of Products Loaded in Truck" },
   mdcc:                { dropzoneId: "pinv-doc-mdcc-dropzone",              listId: "pinv-doc-mdcc-filelist",               label: "MD cc",                                     placeholder: "📎 Click to attach MD cc" },
   inspectionClearance: { dropzoneId: "pinv-doc-inspectionClearance-dropzone", listId: "pinv-doc-inspectionClearance-filelist", label: "Inspection Clearance",                    placeholder: "📎 Click to attach Inspection Clearance" },
+  warrantyCard:        { dropzoneId: "pinv-doc-warrantyCard-dropzone",       listId: "pinv-doc-warrantyCard-filelist",       label: "Warranty Card",                             placeholder: "📎 Click to attach Warranty Card" },
 };
 const PINV_REQUIRED_DOC_TYPES = Object.keys(PINV_DOC_META).filter(t => t !== 'lrCopy' && t !== 'mdcc' && t !== 'inspectionClearance');
 let pinvDocFiles = {};

@@ -70,7 +70,6 @@ const FG_DOC_TYPE_LABELS = {
   packedProductsImages: "Packed Products Images",
   testCert: "Test Certificate",
   inProcessInspection: "In Process Inspection Sheet",
-  warrantyCard: "Warranty Card",
   otherDocuments: "Other Documents",
 };
 
@@ -385,10 +384,10 @@ async function triggerFGNewRowUpload(fgId, tempId) {
 // Goods Store form itself) must still be present — before Approve
 // unlocks. Removing one of these (e.g. to replace a wrongly-uploaded
 // file) used to only be checked against "at least one document overall,
-// all of them ticked" — deleting a Warranty Card and never re-uploading
-// it still passed that bar as long as whatever docs remained were all
-// checked, letting an FG item through missing a document this system
-// treats as compulsory everywhere else.
+// all of them ticked" — deleting a required document and never
+// re-uploading it still passed that bar as long as whatever docs
+// remained were all checked, letting an FG item through missing a
+// document this system treats as compulsory everywhere else.
 function updateFGApprovalSubmitState(fgId) {
   const btn = document.getElementById(`fg-approval-submit-${fgId}`);
   if (!btn) return;
