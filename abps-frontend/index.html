@@ -1411,19 +1411,12 @@
     </div>
 
     <div id="canvas-module-fg-add" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <div style="margin-bottom:16px;">
         <h2 class="panel-title" style="margin:0;">Add to Finished Goods Store</h2>
-        <div>
-          <select id="fg-add-use-toggle" style="border-color:var(--brand); font-weight:700; color:var(--brand); padding:6px;">
-            <option value="" selected>— Select Use *</option>
-            <option value="Use in other Product">Use in other Product</option>
-            <option value="Keep in FG Store">Keep in FG Store</option>
-          </select>
-        </div>
       </div>
       <div id="fg-add-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="fg-add-form">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:14px; margin-bottom:14px;">
           <div>
             <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
             <div style="position:relative;">
@@ -1436,11 +1429,19 @@
           </div>
           <div>
             <label class="field-label" style="margin-top:0;">Department *</label>
-            <select id="fg-add-department" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <select id="fg-add-department" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
               <option value="">— Select —</option>
               <option value="Panel">Panel</option>
               <option value="Reactor">Reactor</option>
               <option value="Capacitor">Capacitor</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Select Use *</label>
+            <select id="fg-add-use-toggle" style="border-color:var(--brand); font-weight:700; color:var(--brand); padding:9px; width:100%; border-radius:var(--radius);">
+              <option value="" selected>— Select Use *</option>
+              <option value="Use in other Product">Use in other Product</option>
+              <option value="Keep in FG Store">Keep in FG Store</option>
             </select>
           </div>
         </div>
@@ -1454,31 +1455,31 @@
           <div id="fg-add-boq-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           <input type="hidden" id="fg-add-boq" value="" />
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div style="display:grid; grid-template-columns:15fr 35fr 50fr; gap:14px; margin-bottom:14px;">
           <div>
             <label class="field-label" style="margin-top:0;">Item Code</label>
-            <input type="text" id="fg-add-item-code-display" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); font-family:monospace;" placeholder="Auto-filled from selected BOQ ID" />
+            <textarea id="fg-add-item-code-display" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); font-family:monospace; width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1.5px solid var(--border);" placeholder="Auto-filled from selected BOQ ID"></textarea>
             <input type="hidden" id="fg-add-item-code" />
           </div>
           <div>
             <label class="field-label" style="margin-top:0;">Product Name</label>
-            <input type="text" id="fg-add-product-name-display" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from selected BOQ ID" />
+            <textarea id="fg-add-product-name-display" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1.5px solid var(--border);" placeholder="Auto-filled from selected BOQ ID"></textarea>
             <input type="hidden" id="fg-add-product-name" />
           </div>
           <div>
             <label class="field-label" style="margin-top:0;">Product Rating</label>
-            <input type="text" id="fg-add-rating" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from selected BOQ ID" />
+            <textarea id="fg-add-rating" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1.5px solid var(--border);" placeholder="Auto-filled from selected BOQ ID"></textarea>
           </div>
         </div>
         <div style="display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-bottom:14px;">
           <div>
             <label class="field-label" style="margin-top:0;">Description of Material</label>
-            <input type="text" id="fg-add-description" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from selected BOQ ID" />
+            <textarea id="fg-add-description" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1.5px solid var(--border);" placeholder="Auto-filled from selected BOQ ID"></textarea>
             <input type="hidden" id="fg-add-description-id" />
           </div>
           <div>
             <label class="field-label" style="margin-top:0;">Make</label>
-            <input type="text" id="fg-add-make" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from selected BOQ ID" />
+            <textarea id="fg-add-make" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1.5px solid var(--border);" placeholder="Auto-filled from selected BOQ ID"></textarea>
           </div>
         </div>
         <div style="margin-bottom:14px; position:relative;">

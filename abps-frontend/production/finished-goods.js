@@ -317,6 +317,8 @@ function handleFGBOQChange(boqId) {
     document.getElementById("fg-add-description").value = "";
     document.getElementById("fg-add-description-id").value = "";
     document.getElementById("fg-add-make").value = "";
+    ["fg-add-product-name-display", "fg-add-rating", "fg-add-item-code-display", "fg-add-description", "fg-add-make"]
+      .forEach(id => autoGrowTextField(document.getElementById(id)));
     return;
   }
   const filtered = (window.fgJobCardsCache || []).filter(jc => jc.boqId === boqId);
@@ -339,6 +341,8 @@ function handleFGBOQChange(boqId) {
   document.getElementById("fg-add-description").value = sample.descriptionOfMaterial || "";
   document.getElementById("fg-add-description-id").value = sample.descriptionId || "";
   document.getElementById("fg-add-make").value = sample.make || "";
+  ["fg-add-product-name-display", "fg-add-rating", "fg-add-item-code-display", "fg-add-description", "fg-add-make"]
+    .forEach(id => autoGrowTextField(document.getElementById(id)));
 
   fgJobCardDisplayReset("— Select Job Card Number —");
   fgJobCardPopulate(filtered.map(jc => ({ value: jc.jobCardNumber, label: `${jc.jobCardNumber} (Set ${jc.setNumber})` })));
@@ -512,6 +516,8 @@ function resetFGAddForm() {
    "fg-add-description","fg-add-description-id","fg-add-make"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
+  ["fg-add-product-name-display", "fg-add-rating", "fg-add-item-code-display", "fg-add-description", "fg-add-make"]
+    .forEach(id => autoGrowTextField(document.getElementById(id)));
   fgBOQDisplayReset("— Select Project First —");
   fgJobCardDisplayReset("— Select BOQ First —");
   document.getElementById("fg-add-packing-quality").value = "No";
