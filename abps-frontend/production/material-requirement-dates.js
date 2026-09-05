@@ -34,8 +34,8 @@ function mrdSanitizeKey(itemCode) {
 async function initializeAssignMaterialRequirementDatePanel() {
   const fb = document.getElementById("mrd-feedback");
   if (fb) { fb.style.display = "none"; fb.innerHTML = ""; }
-  const prnSel = document.getElementById("mrd-prn-select");
-  if (prnSel) prnSel.innerHTML = `<option value="">— Select a project first —</option>`;
+  genericDropdownReset("mrd-prn-select", "— Select a project first —");
+  genericDropdownSetDisabled("mrd-prn-select", true);
   const header = document.getElementById("mrd-prn-header");
   if (header) header.style.display = "none";
   const body = document.getElementById("mrd-body");
@@ -99,8 +99,9 @@ async function jumpToMRDFromQueue(projectId, prnId, btn) {
   try {
     document.getElementById("mrd-project-select-ta-input").value = projectId;
     await loadMRDPRNList();
-    const sel = document.getElementById("mrd-prn-select");
-    sel.value = prnId;
+    const cached = (window.mrdPrnListCache || {})[prnId];
+    const label = cached ? `${cached.productName || ""}${cached.productRating ? " " + cached.productRating : ""} | ${cached.department || "—"}${cached.version > 1 ? ` (v${cached.version})` : ""}` : prnId;
+    genericDropdownSelect("mrd-prn-select", prnId, label, null);
     await loadMRDForPRN();
     const bodyZone = document.getElementById("mrd-body");
     if (bodyZone) bodyZone.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -111,21 +112,27 @@ async function jumpToMRDFromQueue(projectId, prnId, btn) {
 
 async function loadMRDPRNList() {
   const projectId = document.getElementById("mrd-project-select-ta-input").value;
-  const prnSel = document.getElementById("mrd-prn-select");
   document.getElementById("mrd-body").innerHTML = "";
   const header = document.getElementById("mrd-prn-header");
   if (header) header.style.display = "none";
-  if (!projectId) { prnSel.innerHTML = `<option value="">— Select a project first —</option>`; return; }
-  prnSel.innerHTML = `<option value="">Loading…</option>`;
+  if (!projectId) { genericDropdownReset("mrd-prn-select", "— Select a project first —"); genericDropdownSetDisabled("mrd-prn-select", true); return; }
+  genericDropdownReset("mrd-prn-select", "Loading…");
+  genericDropdownSetDisabled("mrd-prn-select", true);
   try {
     const data = await apFetch({ action: "fetchPRNsByProjectAndStatus", projectId, scopeToProductionDept: true });
     const prns = (data.success ? (data.prns || []) : []);
     window.mrdPrnListCache = Object.fromEntries(prns.map(p => [p.prnId, p]));
-    prnSel.innerHTML = prns.length === 0
-      ? `<option value="">No PRNs for this project</option>`
-      : `<option value="">— Select PRN —</option>` + prns.map(p =>
-          `<option value="${p.prnId.replace(/"/g,'&quot;')}">${p.productName || ""}${p.productRating ? " " + p.productRating : ""} | ${p.department || "—"}${p.version > 1 ? ` (v${p.version})` : ""}</option>`).join("");
-  } catch (e) { prnSel.innerHTML = `<option value="">Failed to load PRNs</option>`; }
+    if (prns.length === 0) {
+      genericDropdownReset("mrd-prn-select", "No PRNs for this project");
+      return;
+    }
+    genericDropdownSetDisabled("mrd-prn-select", false);
+    genericDropdownReset("mrd-prn-select", "— Select PRN —");
+    genericDropdownPopulate("mrd-prn-select", prns.map(p => ({
+      value: p.prnId,
+      label: `${p.productName || ""}${p.productRating ? " " + p.productRating : ""} | ${p.department || "—"}${p.version > 1 ? ` (v${p.version})` : ""}`
+    })), loadMRDForPRN);
+  } catch (e) { genericDropdownReset("mrd-prn-select", "Failed to load PRNs"); }
 }
 
 async function loadMRDForPRN() {
@@ -450,7 +457,8 @@ async function submitReviseMRDQueue(ns, prnId, btn) {
 // store/revise-prn.js's "Other PRN Revisions" tab structure.
 async function initializeReviseMRDOtherTab() {
   document.getElementById("rmrd-body").innerHTML = "";
-  document.getElementById("rmrd-prn-select").innerHTML = `<option value="">— Select a project first —</option>`;
+  genericDropdownReset("rmrd-prn-select", "— Select a project first —");
+  genericDropdownSetDisabled("rmrd-prn-select", true);
   document.getElementById("rmrd-selector-row").style.display = "grid";
   const sel = document.getElementById("rmrd-project-select-ta-input");
   sel.value = "";
@@ -468,19 +476,25 @@ async function initializeReviseMRDOtherTab() {
 
 async function loadReviseMRDList() {
   const projectId = document.getElementById("rmrd-project-select-ta-input").value;
-  const prnSel = document.getElementById("rmrd-prn-select");
   document.getElementById("rmrd-body").innerHTML = "";
-  if (!projectId) { prnSel.innerHTML = `<option value="">— Select a project first —</option>`; return; }
-  prnSel.innerHTML = `<option value="">Loading…</option>`;
+  if (!projectId) { genericDropdownReset("rmrd-prn-select", "— Select a project first —"); genericDropdownSetDisabled("rmrd-prn-select", true); return; }
+  genericDropdownReset("rmrd-prn-select", "Loading…");
+  genericDropdownSetDisabled("rmrd-prn-select", true);
   try {
     const data = await apFetch({ action: "fetchPRNsByProjectAndStatus", projectId, prnStatus: "Pending", scopeToProductionDept: true });
     const prns = (data.success ? (data.prns || []) : []);
     window.rmrdOtherListMeta = Object.fromEntries(prns.map(p => [p.prnId, p]));
-    prnSel.innerHTML = prns.length === 0
-      ? `<option value="">No PRNs for this project</option>`
-      : `<option value="">— Select PRN —</option>` + prns.map(p =>
-          `<option value="${p.prnId.replace(/"/g,'&quot;')}">${p.productName || ""}${p.productRating ? " " + p.productRating : ""} | ${p.department || "—"}${p.version > 1 ? ` (v${p.version})` : ""}</option>`).join("");
-  } catch (e) { prnSel.innerHTML = `<option value="">Failed to load PRNs</option>`; }
+    if (prns.length === 0) {
+      genericDropdownReset("rmrd-prn-select", "No PRNs for this project");
+      return;
+    }
+    genericDropdownSetDisabled("rmrd-prn-select", false);
+    genericDropdownReset("rmrd-prn-select", "— Select PRN —");
+    genericDropdownPopulate("rmrd-prn-select", prns.map(p => ({
+      value: p.prnId,
+      label: `${p.productName || ""}${p.productRating ? " " + p.productRating : ""} | ${p.department || "—"}${p.version > 1 ? ` (v${p.version})` : ""}`
+    })), loadReviseMRDForPRN);
+  } catch (e) { genericDropdownReset("rmrd-prn-select", "Failed to load PRNs"); }
 }
 
 async function loadReviseMRDForPRN() {

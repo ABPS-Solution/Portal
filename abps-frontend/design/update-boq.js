@@ -325,7 +325,7 @@ async function initializeUpdateBOQPanel() {
   if (selectorZone) { selectorZone.style.display = "grid"; selectorZone.style.gridTemplateColumns = "1fr 2fr"; }
   if (projInput)  { projInput.value = ""; projInput.placeholder = "Type Project ID or Customer Name..."; }
   if (projDropdown) projDropdown.style.display = "none";
-  if (boqDrop)  { boqDrop.innerHTML   = '<option value="">— Select Project First —</option>'; boqDrop.disabled = true; }
+  if (boqDrop)  { genericDropdownReset("update-boq-select", "— Select Project First —"); genericDropdownSetDisabled("update-boq-select", true); }
   if (formEl)     formEl.style.display  = "none";
   if (fbEl)     { fbEl.style.display    = "none"; fbEl.innerHTML = ""; }
 
@@ -347,7 +347,7 @@ async function handleUpdateBOQStatusChange(selectedStatus) {
   const formEl   = document.getElementById("update-boq-form");
 
   if (projDrop) projDrop.innerHTML = '<option value="">Loading...</option>';
-  if (boqDrop)  { boqDrop.innerHTML = '<option value="">— Select Project First —</option>'; boqDrop.disabled = true; }
+  if (boqDrop)  { genericDropdownReset("update-boq-select", "— Select Project First —"); genericDropdownSetDisabled("update-boq-select", true); }
   if (formEl)   formEl.style.display = "none";
 
   try {
@@ -365,28 +365,24 @@ async function handleUpdateBOQStatusChange(selectedStatus) {
 }
 
 async function loadAuthorizedBOQsForProject(projectId) {
-  const boqDrop = document.getElementById("update-boq-select");
   document.getElementById("update-boq-form").style.display = "none";
-  if (!projectId) { boqDrop.innerHTML = '<option value="">— Select Project First —</option>'; boqDrop.disabled = true; return; }
+  if (!projectId) { genericDropdownReset("update-boq-select", "— Select Project First —"); genericDropdownSetDisabled("update-boq-select", true); return; }
 
-  boqDrop.innerHTML = '<option value="">Loading...</option>';
-  boqDrop.disabled  = true;
+  genericDropdownReset("update-boq-select", "Loading...");
+  genericDropdownSetDisabled("update-boq-select", true);
 
   try {
     const data = await apFetch({ action:"fetchAuthorizedBOQsForUpdate", projectId });
-    boqDrop.innerHTML = '<option value="">— Select BOQ —</option>';
     window.uboqDraftsMeta = {};
-    (data.drafts || []).forEach(draft => {
-      const opt = document.createElement("option");
-      opt.value = draft.boqId;
-      const pendingTag = draft.hasPendingRevision ? " — REVISION PENDING AUTHORIZATION" : "";
-      opt.textContent = `${draft.productName || ""}${draft.productRating ? " " + draft.productRating : ""} | ${draft.department}${pendingTag}`;
-      window.uboqDraftsMeta[draft.boqId] = draft;
-      boqDrop.appendChild(opt);
-    });
-    boqDrop.disabled = false;
+    (data.drafts || []).forEach(draft => { window.uboqDraftsMeta[draft.boqId] = draft; });
+    genericDropdownReset("update-boq-select", "— Select BOQ —");
+    genericDropdownPopulate("update-boq-select", (data.drafts || []).map(draft => ({
+      value: draft.boqId,
+      label: `${draft.productName || ""}${draft.productRating ? " " + draft.productRating : ""} | ${draft.department}${draft.hasPendingRevision ? " — REVISION PENDING AUTHORIZATION" : ""}`
+    })), loadBOQForUpdate);
+    genericDropdownSetDisabled("update-boq-select", false);
   } catch(e) {
-    boqDrop.innerHTML = '<option value="">Error loading BOQs</option>';
+    genericDropdownReset("update-boq-select", "Error loading BOQs");
   }
 }
 

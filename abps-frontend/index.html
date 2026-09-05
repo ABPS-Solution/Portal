@@ -1353,9 +1353,15 @@
             <div id="mrd-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
         </div>
-        <div>
+        <div style="position:relative;">
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
-          <select id="mrd-prn-select" onchange="loadMRDForPRN()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
+          <input type="hidden" id="mrd-prn-select" value="" />
+          <div id="mrd-prn-select-display" class="gwd-display" data-disabled="1" onclick="toggleGenericDropdown('mrd-prn-select')"
+            style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; min-height:40px; padding:9px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="mrd-prn-select-display-text" style="white-space:normal; word-break:break-word;">— Select a project first —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="mrd-prn-select-list" class="gwd-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
         </div>
       </div>
       <div id="mrd-prn-header" style="display:none; margin-bottom:10px; font-size:0.85rem;"></div>
@@ -1389,9 +1395,15 @@
               <div id="rmrd-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
             </div>
           </div>
-          <div>
+          <div style="position:relative;">
             <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
-            <select id="rmrd-prn-select" onchange="loadReviseMRDForPRN()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
+            <input type="hidden" id="rmrd-prn-select" value="" />
+            <div id="rmrd-prn-select-display" class="gwd-display" data-disabled="1" onclick="toggleGenericDropdown('rmrd-prn-select')"
+              style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; min-height:40px; padding:9px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+              <span id="rmrd-prn-select-display-text" style="white-space:normal; word-break:break-word;">— Select a project first —</span>
+              <span style="flex-shrink:0; margin-top:2px;">▾</span>
+            </div>
+            <div id="rmrd-prn-select-list" class="gwd-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
         </div>
         <div id="rmrd-body"></div>
@@ -2595,11 +2607,15 @@
             <div id="update-boq-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
         </div>
-        <div>
+        <div style="position:relative;">
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select BOQ *</label>
-          <select id="update-boq-select" onchange="loadBOQForUpdate(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" disabled>
-            <option value="">— Select Project First —</option>
-          </select>
+          <input type="hidden" id="update-boq-select" value="" />
+          <div id="update-boq-select-display" class="gwd-display" data-disabled="1" onclick="toggleGenericDropdown('update-boq-select')"
+            style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; min-height:40px; padding:9px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="update-boq-select-display-text" style="white-space:normal; word-break:break-word;">— Select Project First —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="update-boq-select-list" class="gwd-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
         </div>
       </div>
 
@@ -3006,9 +3022,15 @@
               <div id="rprn-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
             </div>
           </div>
-          <div>
+          <div style="position:relative;">
             <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
-            <select id="rprn-prn-select" onchange="loadPRNForRevision()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
+            <input type="hidden" id="rprn-prn-select" value="" />
+            <div id="rprn-prn-select-display" class="gwd-display" data-disabled="1" onclick="toggleGenericDropdown('rprn-prn-select')"
+              style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; min-height:40px; padding:9px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+              <span id="rprn-prn-select-display-text" style="white-space:normal; word-break:break-word;">— Select a project first —</span>
+              <span style="flex-shrink:0; margin-top:2px;">▾</span>
+            </div>
+            <div id="rprn-prn-select-list" class="gwd-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
         </div>
         <div id="rprn-body"></div>
@@ -3081,9 +3103,15 @@
             <div id="pps-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
         </div>
-        <div>
+        <div style="position:relative;">
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
-          <select id="pps-prn-select" onchange="loadPPSForPRN()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
+          <input type="hidden" id="pps-prn-select" value="" />
+          <div id="pps-prn-select-display" class="gwd-display" data-disabled="1" onclick="toggleGenericDropdown('pps-prn-select')"
+            style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; min-height:40px; padding:9px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="pps-prn-select-display-text" style="white-space:normal; word-break:break-word;">— Select a project first —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="pps-prn-select-list" class="gwd-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
         </div>
       </div>
       <div id="pps-prn-header" style="display:none; margin-bottom:10px; font-size:0.85rem;"></div>

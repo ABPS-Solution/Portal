@@ -298,7 +298,8 @@ async function submitRPRNDelta() {
 
 async function initializeRevisePRNOtherTab() {
   document.getElementById("rprn-body").innerHTML = "";
-  document.getElementById("rprn-prn-select").innerHTML = `<option value="">— Select a project first —</option>`;
+  genericDropdownReset("rprn-prn-select", "— Select a project first —");
+  genericDropdownSetDisabled("rprn-prn-select", true);
   document.getElementById("rprn-selector-row").style.display = "grid";
   const sel = document.getElementById("rprn-project-select-ta-input");
   sel.value = "";
@@ -316,21 +317,27 @@ async function initializeRevisePRNOtherTab() {
 
 async function loadRevisePRNList() {
   const projectId = document.getElementById("rprn-project-select-ta-input").value;
-  const prnSel = document.getElementById("rprn-prn-select");
   document.getElementById("rprn-body").innerHTML = "";
-  if (!projectId) { prnSel.innerHTML = `<option value="">— Select a project first —</option>`; return; }
-  prnSel.innerHTML = `<option value="">Loading…</option>`;
+  if (!projectId) { genericDropdownReset("rprn-prn-select", "— Select a project first —"); genericDropdownSetDisabled("rprn-prn-select", true); return; }
+  genericDropdownReset("rprn-prn-select", "Loading…");
+  genericDropdownSetDisabled("rprn-prn-select", true);
   try {
     // Only "Pending" PRNs — a Completed PRN has nothing left to procure,
     // so there is no split left to change.
     const data = await apFetch({ action: "fetchPRNsByProjectAndStatus", projectId, prnStatus: "Pending" });
     const prns = (data.success ? (data.prns || []) : []);
     window.rprnOtherListMeta = Object.fromEntries(prns.map(p => [p.prnId, p]));
-    prnSel.innerHTML = prns.length === 0
-      ? `<option value="">No open PRNs for this project</option>`
-      : `<option value="">— Select PRN —</option>` + prns.map(p =>
-          `<option value="${p.prnId.replace(/"/g,'&quot;')}">${p.productName || ""}${p.productRating ? " " + p.productRating : ""} | ${p.department || "—"}${p.version > 1 ? ` (v${p.version})` : ""}${p.revisionPending ? " — REVISION PENDING AUTHORIZATION" : ""}</option>`).join("");
-  } catch (e) { prnSel.innerHTML = `<option value="">Failed to load PRNs</option>`; }
+    if (prns.length === 0) {
+      genericDropdownReset("rprn-prn-select", "No open PRNs for this project");
+      return;
+    }
+    genericDropdownSetDisabled("rprn-prn-select", false);
+    genericDropdownReset("rprn-prn-select", "— Select PRN —");
+    genericDropdownPopulate("rprn-prn-select", prns.map(p => ({
+      value: p.prnId,
+      label: `${p.productName || ""}${p.productRating ? " " + p.productRating : ""} | ${p.department || "—"}${p.version > 1 ? ` (v${p.version})` : ""}${p.revisionPending ? " — REVISION PENDING AUTHORIZATION" : ""}`
+    })), loadPRNForRevision);
+  } catch (e) { genericDropdownReset("rprn-prn-select", "Failed to load PRNs"); }
 }
 
 async function loadPRNForRevision() {

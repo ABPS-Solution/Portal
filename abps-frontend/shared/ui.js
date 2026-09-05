@@ -126,6 +126,74 @@ function autoGrowAllIn(container) {
 }
 
 // ═══════════════════════════════════════════════════════
+// GENERIC WRAPPING DROPDOWN — for any picker whose option text is too
+// long for a native <select> (browsers never wrap a native <select>'s own
+// option rows onto multiple lines — no CSS can override that; it has to
+// be a plain div-based dropdown instead, same as store/tickets.js's
+// pre-existing ticket-boq-* picker). Markup convention per baseId:
+//   <input type="hidden" id="{baseId}">                      -- holds .value, unchanged for every existing caller
+//   <div id="{baseId}-display" class="gwd-display" onclick="toggleGenericDropdown('{baseId}')">
+//     <span id="{baseId}-display-text">...</span><span>▾</span>
+//   </div>
+//   <div id="{baseId}-list" class="gwd-list"></div>
+// A single delegated click-outside handler (below) closes every open
+// .gwd-list, keyed off the shared class rather than one id per widget.
+// ═══════════════════════════════════════════════════════
+function genericDropdownPopulate(baseId, options, onSelectCallback) {
+  const list = document.getElementById(`${baseId}-list`);
+  if (!list) return;
+  if (!options || options.length === 0) {
+    list.innerHTML = `<div style="padding:8px 10px; color:var(--muted); font-size:0.82rem;">No options.</div>`;
+    return;
+  }
+  list.innerHTML = options.map((o, i) => `
+    <div data-idx="${i}" style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
+  Array.from(list.children).forEach((el, i) => {
+    el.onclick = (e) => { e.stopPropagation(); genericDropdownSelect(baseId, options[i].value, options[i].label, onSelectCallback); };
+  });
+}
+function genericDropdownSelect(baseId, value, label, onSelectCallback) {
+  const hidden = document.getElementById(baseId);
+  if (hidden) hidden.value = value;
+  const textEl = document.getElementById(`${baseId}-display-text`);
+  if (textEl) textEl.textContent = label;
+  const list = document.getElementById(`${baseId}-list`);
+  if (list) list.style.display = "none";
+  if (onSelectCallback) onSelectCallback(value);
+}
+function genericDropdownReset(baseId, placeholderText) {
+  const hidden = document.getElementById(baseId);
+  if (hidden) hidden.value = "";
+  const textEl = document.getElementById(`${baseId}-display-text`);
+  if (textEl) textEl.textContent = placeholderText;
+  const list = document.getElementById(`${baseId}-list`);
+  if (list) { list.innerHTML = ""; list.style.display = "none"; }
+}
+function genericDropdownSetDisabled(baseId, disabled) {
+  const disp = document.getElementById(`${baseId}-display`);
+  if (!disp) return;
+  disp.dataset.disabled = disabled ? "1" : "0";
+  disp.style.opacity = disabled ? "0.5" : "1";
+  disp.style.cursor = disabled ? "not-allowed" : "pointer";
+  disp.style.background = disabled ? "#f1f5f9" : "#fff";
+  disp.style.color = disabled ? "var(--muted)" : "var(--text)";
+}
+function toggleGenericDropdown(baseId) {
+  const disp = document.getElementById(`${baseId}-display`);
+  if (!disp || disp.dataset.disabled === "1") return;
+  const list = document.getElementById(`${baseId}-list`);
+  if (!list) return;
+  const isOpen = list.style.display === "block";
+  document.querySelectorAll(".gwd-list").forEach(l => { l.style.display = "none"; });
+  list.style.display = isOpen ? "none" : "block";
+}
+document.addEventListener("click", (e) => {
+  if (e.target.closest(".gwd-display") || e.target.closest(".gwd-list")) return;
+  document.querySelectorAll(".gwd-list").forEach(l => { l.style.display = "none"; });
+});
+
+// ═══════════════════════════════════════════════════════
 // ASSIGN CURRENT STOCK
 // ═══════════════════════════════════════════════════════
 

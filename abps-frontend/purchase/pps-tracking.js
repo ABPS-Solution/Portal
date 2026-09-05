@@ -69,8 +69,8 @@ function renderPstatOnePps(elId, prn, ppsData) {
 }
 
 async function initializePPSTrackingPanel() {
-  const prnSel = document.getElementById("pps-prn-select");
-  if (prnSel) prnSel.innerHTML = `<option value="">— Select a project first —</option>`;
+  genericDropdownReset("pps-prn-select", "— Select a project first —");
+  genericDropdownSetDisabled("pps-prn-select", true);
   const header = document.getElementById("pps-prn-header");
   if (header) header.style.display = "none";
   // Previously left the typed Project ID and any prior search results
@@ -180,7 +180,9 @@ async function jumpToPPSFromQueue(projectId, prnId, btn) {
     projDrop.value = projectId;
     await loadPPSPRNList();
     if (prnSel) {
-      prnSel.value = prnId;
+      const cached = (window.ppsPrnListCache || {})[prnId];
+      const label = cached ? `${cached.productName || ""}${cached.productRating ? " " + cached.productRating : ""} | ${cached.department || "—"}${cached.version > 1 ? ` (v${cached.version})` : ""}` : prnId;
+      genericDropdownSelect("pps-prn-select", prnId, label, null);
       await loadPPSForPRN();
     }
     const selectorRow = document.getElementById("pps-selector-row");
@@ -192,27 +194,31 @@ async function jumpToPPSFromQueue(projectId, prnId, btn) {
 
 async function loadPPSPRNList() {
   const projectId = document.getElementById("pps-project-select-ta-input").value;
-  const prnSel = document.getElementById("pps-prn-select");
   const body = document.getElementById("pps-results-body");
   const header = document.getElementById("pps-prn-header");
   body.innerHTML = "";
   if (header) header.style.display = "none";
-  if (!projectId) { prnSel.innerHTML = `<option value="">— Select a project first —</option>`; return; }
+  if (!projectId) { genericDropdownReset("pps-prn-select", "— Select a project first —"); genericDropdownSetDisabled("pps-prn-select", true); return; }
 
-  prnSel.innerHTML = `<option value="">Loading…</option>`;
+  genericDropdownReset("pps-prn-select", "Loading…");
+  genericDropdownSetDisabled("pps-prn-select", true);
   try {
     const data = await apFetch({ action: "fetchPRNsByProjectAndStatus", projectId });
     const prns = (data.success ? (data.prns || []) : []);
     window.ppsPrnListCache = {};
     prns.forEach(p => { window.ppsPrnListCache[p.prnId] = p; });
     if (prns.length === 0) {
-      prnSel.innerHTML = `<option value="">No PRNs for this project</option>`;
+      genericDropdownReset("pps-prn-select", "No PRNs for this project");
       return;
     }
-    prnSel.innerHTML = `<option value="">— Select PRN —</option>` +
-      prns.map(p => `<option value="${p.prnId.replace(/"/g,'&quot;')}">${p.productName || ""}${p.productRating ? " " + p.productRating : ""} | ${p.department || "—"}${p.version > 1 ? ` (v${p.version})` : ""}</option>`).join("");
+    genericDropdownSetDisabled("pps-prn-select", false);
+    genericDropdownReset("pps-prn-select", "— Select PRN —");
+    genericDropdownPopulate("pps-prn-select", prns.map(p => ({
+      value: p.prnId,
+      label: `${p.productName || ""}${p.productRating ? " " + p.productRating : ""} | ${p.department || "—"}${p.version > 1 ? ` (v${p.version})` : ""}`
+    })), loadPPSForPRN);
   } catch (e) {
-    prnSel.innerHTML = `<option value="">Failed to load PRNs</option>`;
+    genericDropdownReset("pps-prn-select", "Failed to load PRNs");
   }
 }
 
