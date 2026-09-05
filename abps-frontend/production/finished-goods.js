@@ -162,6 +162,12 @@ async function initializeFGAddWorkspace() {
   // show the form regardless of how the screen was left last time.
   const formEl = document.getElementById("fg-add-form");
   if (formEl) formEl.style.display = "block";
+  // Also clear out whatever was left over from the last visit (a prior
+  // successful submission's Project ID/BOQ/Job Card/docs, or an
+  // in-progress-but-abandoned entry) — leaving and coming back should
+  // start fresh every time, same as every other Store/Production entry
+  // screen, not just after "+ Add Another FG Material".
+  resetFGAddForm();
   try {
   await loadItemCodeCatalogIntoCache();
 
