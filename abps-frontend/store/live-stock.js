@@ -226,7 +226,7 @@ function executeClientSideStoreTicketFilterSearch() {
   if (matrixActiveProjectSearchQuery) summaryParts.push(`Project ID: ${valSpan(`"${matrixActiveProjectSearchDisplay}"`)}`);
   if (checkedDeptLabels.length) summaryParts.push(`Department: ${valSpan(checkedDeptLabels.join(", or "))}`);
   const summaryEl = document.getElementById("matrix-search-summary-text");
-  if (summaryEl) { summaryEl.style.display = "block"; summaryEl.innerHTML = `Searching for:<br>${summaryParts.join(" • ")}`; }
+  if (summaryEl) { summaryEl.style.display = "block"; summaryEl.innerHTML = `Searching for:<br>${summaryParts.join(" | ")}`; }
 
   resultsFeedZone.innerHTML = "";
 
