@@ -1194,13 +1194,15 @@ function ptlWrapLbl(t, max, maxLines = 2) {
   if (cur) out.push(cur);
   return out.slice(0, maxLines);
 }
-// 5.8px/char under-measured real (bold, mixed-case) rendered text widths
-// enough that adjacent close-dated nodes' labels ("Drawing Approved" /
-// "MFC from Customer") were passing the collision check and overlapping
-// on screen instead of stacking - bumped, plus PTL_LBL_PAD below adds a
-// visible gap rather than letting blocks just touch.
-const ptlWLbl = s => s.length * 7.2 * ptlFS;
-const PTL_LBL_PAD = 6;
+// 5.8px/char, then 7.2px/char, still under-measured real (bold,
+// mixed-case) rendered text widths enough that adjacent close-dated
+// nodes' labels ("Spider Assembly Manufacturing Completion" / "Painting
+// Completion", "Busbar Completion" / "Power Cabling Completion") were
+// still passing the collision check and overlapping on screen instead of
+// stacking - bumped again, plus PTL_LBL_PAD widened so blocks get a
+// visible gap rather than just touching.
+const ptlWLbl = s => s.length * 8.6 * ptlFS;
+const PTL_LBL_PAD = 10;
 const ptlWMono = (s, px) => s.length * px * 0.6 * ptlFS;
 
 const PTL_MAX_SLOT = 6;
