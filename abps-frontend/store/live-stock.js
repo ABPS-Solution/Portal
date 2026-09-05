@@ -1020,7 +1020,7 @@ function renderFinishedGoodsStoreStockTables() {
         <td style="padding:8px; font-size:0.82rem;">${g.unit}</td>
         <td style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:${g.inStock > 0 ? "var(--accent)" : "#b91c1c"};">
           ${g.inStock}
-          ${g.jobCards.length > 0 ? `<div style="font-size:0.65rem; color:var(--muted); font-weight:400; margin-top:2px;">JC: ${g.jobCards.join(", ")}</div>` : ""}
+          ${g.jobCards.length > 0 ? `<div style="font-size:0.65rem; color:var(--muted); font-weight:400; margin-top:2px;">${g.jobCards.map(jc => (jc.match(/^JC_Set-\d+/) || [jc])[0]).join(", ")}</div>` : ""}
         </td>
       </tr>`).join("");
   });
