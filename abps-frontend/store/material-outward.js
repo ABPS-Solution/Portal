@@ -60,7 +60,7 @@ async function loadMaterialOutwardServiceQueue() {
 // modal-based version used.
 window._mowFilesByTicket = window._mowFilesByTicket || {};
 window._mowExtractedPreviewByTicket = window._mowExtractedPreviewByTicket || {};
-window._mowMorfLineCountByTicket = window._mowMorfLineCountByTicket || {};
+window._mowLineCountByTicket = window._mowLineCountByTicket || {};
 window._mowReleasedTotalByTicket = window._mowReleasedTotalByTicket || {};
 window._mowBlockingCountByTicket = window._mowBlockingCountByTicket || {};
 
@@ -169,6 +169,34 @@ async function processMaterialOutwardDocsWithAI(ticketId) {
   }
 }
 
+// The Delivery Challan and the Material Out Request Form describe the
+// SAME physical delivery, not two separate things — merge their extracted
+// line items into one editable Materials table (by position: DC row i and
+// MORF row i are assumed to be the same material) rather than showing two
+// near-duplicate tables side by side. commitMaterialOutwardChallan below
+// still sends the backend its two separate lineItems/morfLineItems arrays
+// (that's the real storage shape, store.material_outward_challans keeps
+// both independently) — it just derives both from this one merged table
+// instead of the operator maintaining two copies by hand.
+function mergeMowLineItems(preview) {
+  const dc = preview.lineItems || [];
+  const morf = preview.morfLineItems || [];
+  const count = Math.max(dc.length, morf.length);
+  const merged = [];
+  for (let i = 0; i < count; i++) {
+    const d = dc[i] || {};
+    const m = morf[i] || {};
+    merged.push({
+      materialName: d.materialName || m.materialName || '',
+      hsnCode: d.hsnCode || '',
+      quantity: d.quantity ?? m.quantity ?? '',
+      unit: d.unit || m.unit || '',
+      rating: m.rating || '',
+    });
+  }
+  return merged;
+}
+
 function renderMaterialOutwardReviewForm(ticketId, preview) {
   const zone = document.getElementById(`mow-review-zone-${ticketId}`);
   if (!zone) return;
@@ -178,38 +206,34 @@ function renderMaterialOutwardReviewForm(ticketId, preview) {
   const uploadSection = document.getElementById(`mow-upload-section-${ticketId}`);
   if (uploadSection) uploadSection.style.display = "none";
   window._mowReleasedTotalByTicket[ticketId] = Number(preview.releasedTotal) || 0;
-  window._mowMorfLineCountByTicket[ticketId] = (preview.morfLineItems || []).length;
 
-  const lineRows = (preview.lineItems || []).map((li, idx) => `
-    <tr style="${(li.quantityMismatch || li.morfQuantityMismatch) ? 'background:#fffbeb;' : ''}">
-      <td style="padding:6px; border:1px solid var(--border);"><input type="text" id="mow-li-name-${ticketId}-${idx}" value="${escapeHtml(li.materialName || '')}" style="width:100%; border:1px solid var(--border); border-radius:4px; padding:4px;" /></td>
-      <td style="padding:6px; border:1px solid var(--border);"><input type="text" id="mow-li-hsn-${ticketId}-${idx}" value="${escapeHtml(li.hsnCode || '')}" style="width:80px; border:1px solid var(--border); border-radius:4px; padding:4px;" /></td>
-      <td style="padding:6px; border:1px solid var(--border);"><input type="number" id="mow-li-qty-${ticketId}-${idx}" value="${escapeHtml(String(li.quantity ?? ''))}" oninput="recomputeMaterialOutwardCrossChecks('${ticketId}')" style="width:90px; border:1px solid var(--border); border-radius:4px; padding:4px;" /></td>
-      <td style="padding:6px; border:1px solid var(--border);"><input type="text" id="mow-li-unit-${ticketId}-${idx}" value="${escapeHtml(li.unit || '')}" style="width:70px; border:1px solid var(--border); border-radius:4px; padding:4px;" /></td>
-      <td style="padding:6px; border:1px solid var(--border); font-size:0.78rem; color:${(li.quantityMismatch || li.morfQuantityMismatch) ? '#b45309' : 'var(--muted)'};">
-        Ticket ${li.releasedQty ?? '—'} · MORF ${li.morfQty ?? '—'}
-      </td>
-    </tr>`).join("");
+  const mergedLines = mergeMowLineItems(preview);
+  window._mowLineCountByTicket[ticketId] = mergedLines.length;
 
-  const morfLineRows = (preview.morfLineItems || []).map((li, idx) => `
-    <tr id="mow-morf-li-row-${ticketId}-${idx}">
-      <td style="padding:6px; border:1px solid var(--border);"><input type="text" id="mow-morf-li-name-${ticketId}-${idx}" value="${escapeHtml(li.materialName || '')}" style="width:100%; border:1px solid var(--border); border-radius:4px; padding:4px;" /></td>
-      <td style="padding:6px; border:1px solid var(--border);"><input type="number" id="mow-morf-li-qty-${ticketId}-${idx}" value="${escapeHtml(String(li.quantity ?? ''))}" oninput="recomputeMaterialOutwardCrossChecks('${ticketId}')" style="width:90px; border:1px solid var(--border); border-radius:4px; padding:4px;" /></td>
-      <td style="padding:6px; border:1px solid var(--border);"><input type="text" id="mow-morf-li-unit-${ticketId}-${idx}" value="${escapeHtml(li.unit || '')}" style="width:70px; border:1px solid var(--border); border-radius:4px; padding:4px;" /></td>
-      <td style="padding:6px; border:1px solid var(--border);"><input type="text" id="mow-morf-li-rating-${ticketId}-${idx}" value="${escapeHtml(li.rating || '')}" style="width:100%; border:1px solid var(--border); border-radius:4px; padding:4px;" /></td>
+  const lineRows = mergedLines.map((li, idx) => `
+    <tr>
+      <td style="padding:7px; border:1px solid var(--border);"><input type="text" id="mow-li-name-${ticketId}-${idx}" value="${escapeHtml(li.materialName || '')}" style="width:100%; border:1px solid var(--border); border-radius:4px; padding:5px;" /></td>
+      <td style="padding:7px; border:1px solid var(--border);"><input type="text" id="mow-li-hsn-${ticketId}-${idx}" value="${escapeHtml(li.hsnCode || '')}" style="width:80px; border:1px solid var(--border); border-radius:4px; padding:5px;" /></td>
+      <td style="padding:7px; border:1px solid var(--border);"><input type="number" id="mow-li-qty-${ticketId}-${idx}" value="${escapeHtml(String(li.quantity ?? ''))}" oninput="recomputeMaterialOutwardCrossChecks('${ticketId}')" style="width:90px; border:1px solid var(--border); border-radius:4px; padding:5px;" /></td>
+      <td style="padding:7px; border:1px solid var(--border);"><input type="text" id="mow-li-unit-${ticketId}-${idx}" value="${escapeHtml(li.unit || '')}" style="width:80px; border:1px solid var(--border); border-radius:4px; padding:5px;" /></td>
+      <td style="padding:7px; border:1px solid var(--border);"><input type="text" id="mow-li-rating-${ticketId}-${idx}" value="${escapeHtml(li.rating || '')}" style="width:100%; border:1px solid var(--border); border-radius:4px; padding:5px;" /></td>
     </tr>`).join("");
 
   const morf = preview.morf || {};
   const returnableOptions = ['', 'Returnable', 'Non-Returnable'].map(v =>
     `<option value="${v}" ${morf.returnableStatus === v ? 'selected' : ''}>${v || '— Select —'}</option>`).join("");
 
+  const fieldBoxStyle = "border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;";
+  const sectionHeadingStyle = "margin:0 0 10px; font-size:0.95rem; font-weight:800; color:var(--brand);";
+
   zone.innerHTML = `
-    <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:14px;">
-      <h4 style="margin-top:0;">Review — ${escapeHtml(ticketId)}</h4>
+    <div style="margin-top:14px; border-top:2px solid var(--border); padding-top:16px;">
+      <h3 style="margin:0 0 4px; font-size:1.05rem;">Review — ${escapeHtml(ticketId)}</h3>
+      <p style="margin:0 0 12px; font-size:0.78rem; color:var(--muted);">Extracted from both the Delivery Challan and the Material Out Request Form — check the values below before saving.</p>
       <div id="mow-crosscheck-band-${ticketId}"></div>
 
-      <h4 style="margin-bottom:6px;">Delivery Challan</h4>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+      <h4 style="${sectionHeadingStyle}">Delivery Challan Details</h4>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; margin-bottom:20px; ${fieldBoxStyle}">
         <div><label class="field-label" style="margin-top:0;">Challan Number *</label><input type="text" id="mow-review-number-${ticketId}" value="${escapeHtml(preview.challanNumber || '')}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" /></div>
         <div><label class="field-label" style="margin-top:0;">Challan Date *</label><input type="date" id="mow-review-date-${ticketId}" value="${escapeHtml(preview.challanDate || '')}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" /></div>
         <div><label class="field-label" style="margin-top:0;">Consignee Name</label><input type="text" id="mow-review-consignee-name-${ticketId}" value="${escapeHtml(preview.consigneeName || '')}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" /></div>
@@ -223,19 +247,9 @@ function renderMaterialOutwardReviewForm(ticketId, preview) {
         <div><label class="field-label" style="margin-top:0;">Freight</label><input type="text" id="mow-review-freight-${ticketId}" value="${escapeHtml(preview.freight || '')}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" /></div>
         <div><label class="field-label" style="margin-top:0;">Remarks</label><input type="text" id="mow-review-remarks-${ticketId}" value="${escapeHtml(preview.remarks || '')}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" /></div>
       </div>
-      <table style="width:100%; border-collapse:collapse; margin-bottom:18px;">
-        <thead><tr style="background:var(--highlight-bg);">
-          <th style="padding:6px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Material</th>
-          <th style="padding:6px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">HSN</th>
-          <th style="padding:6px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Qty</th>
-          <th style="padding:6px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Unit</th>
-          <th style="padding:6px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Reconciliation</th>
-        </tr></thead>
-        <tbody id="mow-review-lines-body-${ticketId}">${lineRows || '<tr><td colspan="5" style="padding:8px; text-align:center; color:var(--muted);">No line items extracted.</td></tr>'}</tbody>
-      </table>
 
-      <h4 style="margin-bottom:6px; border-top:1px solid var(--border); padding-top:14px;">Material Out Request Form</h4>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius); padding:12px;">
+      <h4 style="${sectionHeadingStyle}">Material Out Request Form Details</h4>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; margin-bottom:20px; ${fieldBoxStyle}">
         <div><label class="field-label" style="margin-top:0;">Requested By</label><input type="text" id="mow-morf-requested-by-${ticketId}" value="${escapeHtml(morf.requestedBy || '')}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" /></div>
         <div><label class="field-label" style="margin-top:0;">Department</label><input type="text" id="mow-morf-department-${ticketId}" value="${escapeHtml(morf.department || '')}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" /></div>
         <div><label class="field-label" style="margin-top:0;">Customer Name</label><input type="text" id="mow-morf-customer-name-${ticketId}" value="${escapeHtml(morf.customerName || '')}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" /></div>
@@ -247,16 +261,19 @@ function renderMaterialOutwardReviewForm(ticketId, preview) {
         <div><label class="field-label" style="margin-top:0;">Reason</label><input type="text" id="mow-morf-reason-${ticketId}" value="${escapeHtml(morf.reason || '')}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" /></div>
         <div><label class="field-label" style="margin-top:0;">Remarks</label><input type="text" id="mow-morf-remarks-${ticketId}" value="${escapeHtml(morf.remarks || '')}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" /></div>
       </div>
+
+      <h4 style="${sectionHeadingStyle}">Materials</h4>
       <table style="width:100%; border-collapse:collapse; margin-bottom:8px;">
         <thead><tr style="background:var(--highlight-bg);">
-          <th style="padding:6px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Material</th>
-          <th style="padding:6px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Qty</th>
-          <th style="padding:6px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Unit</th>
-          <th style="padding:6px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Rating</th>
+          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Material Name</th>
+          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.75rem; text-transform:uppercase; color:var(--muted);">HSN</th>
+          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Qty</th>
+          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Unit</th>
+          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Rating</th>
         </tr></thead>
-        <tbody id="mow-morf-lines-body-${ticketId}">${morfLineRows || '<tr><td colspan="4" style="padding:8px; text-align:center; color:var(--muted);">No line items extracted.</td></tr>'}</tbody>
+        <tbody id="mow-review-lines-body-${ticketId}">${lineRows || '<tr><td colspan="5" style="padding:8px; text-align:center; color:var(--muted);">No materials extracted.</td></tr>'}</tbody>
       </table>
-      <div style="margin-bottom:18px;"><span onclick="addMowMorfLineRow('${ticketId}')" style="font-size:0.78rem; font-weight:700; color:var(--brand); cursor:pointer; text-decoration:underline;">+ Add row</span></div>
+      <div style="margin-bottom:20px;"><span onclick="addMowLineRow('${ticketId}')" style="font-size:0.78rem; font-weight:700; color:var(--brand); cursor:pointer; text-decoration:underline;">+ Add row</span></div>
 
       <div style="display:flex; justify-content:flex-end; gap:10px;">
         <button class="nav-btn-styled" style="background:#718096;" onclick="cancelMaterialOutwardReview('${ticketId}')">Cancel</button>
@@ -278,42 +295,41 @@ function cancelMaterialOutwardReview(ticketId) {
   delete window._mowExtractedPreviewByTicket[ticketId];
 }
 
-function addMowMorfLineRow(ticketId) {
-  const tbody = document.getElementById(`mow-morf-lines-body-${ticketId}`);
+function addMowLineRow(ticketId) {
+  const tbody = document.getElementById(`mow-review-lines-body-${ticketId}`);
   if (!tbody) return;
   if (tbody.querySelector("td[colspan]")) tbody.innerHTML = "";
-  const idx = window._mowMorfLineCountByTicket[ticketId] || 0;
-  window._mowMorfLineCountByTicket[ticketId] = idx + 1;
+  const idx = window._mowLineCountByTicket[ticketId] || 0;
+  window._mowLineCountByTicket[ticketId] = idx + 1;
   const row = document.createElement("tr");
-  row.id = `mow-morf-li-row-${ticketId}-${idx}`;
   row.innerHTML = `
-    <td style="padding:6px; border:1px solid var(--border);"><input type="text" id="mow-morf-li-name-${ticketId}-${idx}" style="width:100%; border:1px solid var(--border); border-radius:4px; padding:4px;" /></td>
-    <td style="padding:6px; border:1px solid var(--border);"><input type="number" id="mow-morf-li-qty-${ticketId}-${idx}" oninput="recomputeMaterialOutwardCrossChecks('${ticketId}')" style="width:90px; border:1px solid var(--border); border-radius:4px; padding:4px;" /></td>
-    <td style="padding:6px; border:1px solid var(--border);"><input type="text" id="mow-morf-li-unit-${ticketId}-${idx}" style="width:70px; border:1px solid var(--border); border-radius:4px; padding:4px;" /></td>
-    <td style="padding:6px; border:1px solid var(--border);"><input type="text" id="mow-morf-li-rating-${ticketId}-${idx}" style="width:100%; border:1px solid var(--border); border-radius:4px; padding:4px;" /></td>`;
+    <td style="padding:7px; border:1px solid var(--border);"><input type="text" id="mow-li-name-${ticketId}-${idx}" style="width:100%; border:1px solid var(--border); border-radius:4px; padding:5px;" /></td>
+    <td style="padding:7px; border:1px solid var(--border);"><input type="text" id="mow-li-hsn-${ticketId}-${idx}" style="width:80px; border:1px solid var(--border); border-radius:4px; padding:5px;" /></td>
+    <td style="padding:7px; border:1px solid var(--border);"><input type="number" id="mow-li-qty-${ticketId}-${idx}" oninput="recomputeMaterialOutwardCrossChecks('${ticketId}')" style="width:90px; border:1px solid var(--border); border-radius:4px; padding:5px;" /></td>
+    <td style="padding:7px; border:1px solid var(--border);"><input type="text" id="mow-li-unit-${ticketId}-${idx}" style="width:80px; border:1px solid var(--border); border-radius:4px; padding:5px;" /></td>
+    <td style="padding:7px; border:1px solid var(--border);"><input type="text" id="mow-li-rating-${ticketId}-${idx}" style="width:100%; border:1px solid var(--border); border-radius:4px; padding:5px;" /></td>`;
   tbody.appendChild(row);
 }
 
-// Re-derives just the BLOCKING quantity checks client-side, on every DC/
-// MORF quantity edit, so correcting a wrong number re-enables Confirm &
-// Save without needing a full re-extraction. The server re-validates the
-// same totals independently at commit regardless — this is convenience,
-// never the actual guard (see commitDeliveryChallan, routes/store.js).
+// Re-derives the BLOCKING quantity check client-side, on every Qty edit,
+// so correcting a wrong number re-enables Confirm & Save without needing
+// a full re-extraction. The server re-validates the same total
+// independently at commit regardless — this is convenience, never the
+// actual guard (see commitDeliveryChallan, routes/store.js). Only checked
+// against the ticket's own released quantity now — DC-vs-MORF used to be
+// checked too, but that comparison is moot once both documents feed one
+// merged Qty per material rather than two independently-typed numbers.
 function recomputeMaterialOutwardCrossChecks(ticketId) {
   const preview = window._mowExtractedPreviewByTicket[ticketId];
   if (!preview) return;
-  const dcQtyInputs = document.querySelectorAll(`[id^="mow-li-qty-${ticketId}-"]`);
-  const dcTotal = [...dcQtyInputs].reduce((s, el) => s + (Number(el.value) || 0), 0);
-  const morfQtyInputs = document.querySelectorAll(`[id^="mow-morf-li-qty-${ticketId}-"]`);
-  const morfCount = morfQtyInputs.length;
-  const morfTotal = [...morfQtyInputs].reduce((s, el) => s + (Number(el.value) || 0), 0);
+  const qtyInputs = document.querySelectorAll(`[id^="mow-li-qty-${ticketId}-"]`);
+  const total = [...qtyInputs].reduce((s, el) => s + (Number(el.value) || 0), 0);
   const releasedTotal = window._mowReleasedTotalByTicket[ticketId] || 0;
   const near = (a, b) => Math.abs(a - b) < 0.001;
 
   const blocking = [];
-  if (dcQtyInputs.length === 0) blocking.push('No line items on the Delivery Challan.');
-  if (!near(dcTotal, releasedTotal)) blocking.push(`Delivery Challan total quantity (${dcTotal}) does not match the quantity released on this ticket (${releasedTotal}).`);
-  if (morfCount && !near(dcTotal, morfTotal)) blocking.push(`Delivery Challan total quantity (${dcTotal}) does not match the Material Out Request Form total (${morfTotal}).`);
+  if (qtyInputs.length === 0) blocking.push('No materials listed.');
+  if (!near(total, releasedTotal)) blocking.push(`Total quantity (${total}) does not match the quantity released on this ticket (${releasedTotal}).`);
 
   renderMaterialOutwardCrossCheckBand(ticketId, { blocking, warnings: (preview.crossChecks && preview.crossChecks.warnings) || [] }, preview.parseWarnings || []);
 }
@@ -361,22 +377,21 @@ async function commitMaterialOutwardChallan(ticketId) {
     showError("Resolve the quantity mismatches above before saving.");
     return;
   }
-  const lineItems = (preview.lineItems || []).map((_, idx) => ({
-    materialName: document.getElementById(`mow-li-name-${ticketId}-${idx}`)?.value || "",
-    hsnCode: document.getElementById(`mow-li-hsn-${ticketId}-${idx}`)?.value || "",
-    quantity: document.getElementById(`mow-li-qty-${ticketId}-${idx}`)?.value || "",
-    unit: document.getElementById(`mow-li-unit-${ticketId}-${idx}`)?.value || "",
-  }));
+  // One merged Materials table feeds BOTH backend arrays — the DC's own
+  // fields (materialName/hsnCode/quantity/unit) and the MORF's own fields
+  // (materialName/quantity/unit/rating) — since store.material_outward
+  // _challans still keeps line_items and morf_line_items as two separate
+  // columns server-side even though the operator only edits one table.
+  const lineItems = [];
   const morfLineItems = [];
-  for (let idx = 0; idx < (window._mowMorfLineCountByTicket[ticketId] || 0); idx++) {
-    const nameEl = document.getElementById(`mow-morf-li-name-${ticketId}-${idx}`);
-    if (!nameEl) continue; // row was never rendered (e.g. dense re-count not needed here)
-    morfLineItems.push({
-      materialName: nameEl.value || "",
-      quantity: document.getElementById(`mow-morf-li-qty-${ticketId}-${idx}`)?.value || "",
-      unit: document.getElementById(`mow-morf-li-unit-${ticketId}-${idx}`)?.value || "",
-      rating: document.getElementById(`mow-morf-li-rating-${ticketId}-${idx}`)?.value || "",
-    });
+  for (let idx = 0; idx < (window._mowLineCountByTicket[ticketId] || 0); idx++) {
+    const nameEl = document.getElementById(`mow-li-name-${ticketId}-${idx}`);
+    if (!nameEl) continue; // row was never rendered
+    const materialName = nameEl.value || "";
+    const quantity = document.getElementById(`mow-li-qty-${ticketId}-${idx}`)?.value || "";
+    const unit = document.getElementById(`mow-li-unit-${ticketId}-${idx}`)?.value || "";
+    lineItems.push({ materialName, hsnCode: document.getElementById(`mow-li-hsn-${ticketId}-${idx}`)?.value || "", quantity, unit });
+    morfLineItems.push({ materialName, quantity, unit, rating: document.getElementById(`mow-li-rating-${ticketId}-${idx}`)?.value || "" });
   }
   const morf = {
     requestedBy: document.getElementById(`mow-morf-requested-by-${ticketId}`).value.trim(),
