@@ -95,13 +95,20 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
     let itemsArray = Array.isArray(ticket.items) ? ticket.items : [];
     
     const isRawTicket = (ticket.storeTargetScope || "Raw Materials Store") === "Raw Materials Store";
+    // Service issues draw from the free stock pool, never from Spare Store
+    // (submitEngineerMaterialTicket blocks that combination server-side) —
+    // Spare Stock Needed / Spare Store Extra Qty exist to cover a raw-stock
+    // shortfall against a Job Card's BOQ allotment, a concept that doesn't
+    // apply to Service at all. Drop both columns entirely for Service
+    // tickets rather than just locking the select to "No".
+    const isServiceTicket = (ticket.department || "").toString().trim() === "Service";
     let itemRowsHtml = "";
     itemsArray.forEach(item => {
       const overrunHighlightStyle = item.requiresBOQIncreaseFlag === true ? 'color: var(--warn); font-weight: 800; background: #fff5f2; padding: 2px 6px; border-radius: 4px; border: 1px solid #fca5a5;' : '';
       const reqQty = Number(item.quantity) || 0;
       const jcAllotted = (item.jcAllottedQty !== null && item.jcAllottedQty !== undefined) ? fmtQty(item.jcAllottedQty) : "—";
       const jcRemaining = (item.jcRemainingQty !== null && item.jcRemainingQty !== undefined) ? item.jcRemainingQty : null;
-      const spareCellsHtml = isRawTicket ? `
+      const spareCellsHtml = isServiceTicket ? "" : isRawTicket ? `
           <td style="padding:6px; text-align:center; vertical-align:middle;">
             <select class="ticket-spare-needed-select" data-itemcode="${item.itemCode}" onchange="handleSpareNeededChange(this)"
               style="width:100%; padding:5px 4px; font-size:0.82rem; font-weight:600; border:1.5px solid var(--border); border-radius:4px;">
@@ -153,7 +160,7 @@ ${spareCellsHtml}
             <span id="ticket-card-caret-${ticket.ticketId}" style="float:right; font-weight:700; color:var(--muted);">▸</span>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
-            <span>Project ID:</span><strong style="margin-right:15px; color:var(--brand);">${ticket.projectId}</strong>
+            <span>Project ID:</span><strong style="margin-right:15px; color:var(--brand);">${ticket.projectId || "None"}</strong>
             <span>Job Card Number:</span><strong style="color:var(--brand);">${ticket.jobCardNumber || "—"}</strong>
           </div>
         </div>
@@ -168,8 +175,8 @@ ${spareCellsHtml}
               <col style="width:90px;">
               <col style="width:140px;">
               <col style="width:140px;">
-              <col style="width:130px;">
-              <col style="width:110px;">
+              ${isServiceTicket ? "" : `<col style="width:130px;">
+              <col style="width:110px;">`}
             </colgroup>
             <thead>
               <tr style="border-bottom:1px solid #e2e8f0;">
@@ -179,8 +186,8 @@ ${spareCellsHtml}
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Unit</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Requested Quantity</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Actual Quantity *</th>
-                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Spare Stock Needed</th>
-                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Spare Store Extra Qty</th>
+                ${isServiceTicket ? "" : `<th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Spare Stock Needed</th>
+                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Spare Store Extra Qty</th>`}
               </tr>
             </thead>
             <tbody>${itemRowsHtml}</tbody>
