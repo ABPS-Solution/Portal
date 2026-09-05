@@ -760,6 +760,15 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   if (document.getElementById("canvas-module-fg-capacitor")) document.getElementById("canvas-module-fg-capacitor").style.display = "none";
   if (document.getElementById("canvas-module-fg-panel"))     document.getElementById("canvas-module-fg-panel").style.display     = "none";
   if (document.getElementById("canvas-module-store-history-matrix")) document.getElementById("canvas-module-store-history-matrix").style.display = "none";
+  // These share module-store-workspace-enclosure-panel with each other but
+  // were missing from this sweep — navigating directly from one to another
+  // (e.g. Project Invoice Generation -> Material Outward on Delivery
+  // Challan) without going back to the dashboard in between never hid the
+  // previous one, so its content rendered stacked underneath the new panel.
+  if (document.getElementById("canvas-module-fg-add"))       document.getElementById("canvas-module-fg-add").style.display       = "none";
+  if (document.getElementById("canvas-module-fg-approval"))  document.getElementById("canvas-module-fg-approval").style.display  = "none";
+  if (document.getElementById("canvas-module-project-invoice")) document.getElementById("canvas-module-project-invoice").style.display = "none";
+  if (document.getElementById("canvas-module-material-outward")) document.getElementById("canvas-module-material-outward").style.display = "none";
   
   // 3. Hide all design engineering sub-module views panels
   if (document.getElementById("module-design-workspace-enclosure-panel")) document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
