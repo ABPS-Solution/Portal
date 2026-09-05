@@ -632,7 +632,7 @@ async function submitFGAddItem() {
     if (data.success) {
       document.getElementById("fg-add-form").style.display = "none";
       showBOQBanner("fg-add-feedback",
-        `<strong>${productName}</strong> submitted for ${department} Finished Goods Store — pending FG Approval.
+        `<strong>${productName} (${escapeHtml(jobCard)})</strong><br>submitted for ${department} Finished Goods Store, pending FG Approval by QA.
          <div style="margin-top:10px;">
            <button class="nav-btn-styled" onclick="startAnotherFGAddEntry()" style="background:#15803d; color:#fff; font-weight:700; padding:8px 18px;">+ Add Another FG Material</button>
          </div>`,
