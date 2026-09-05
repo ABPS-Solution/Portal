@@ -383,17 +383,28 @@ async function triggerFGNewRowUpload(fgId, tempId) {
   }
 }
 
-// Every "QA Document Check" checkbox must be ticked, there must be at
-// least one document, and no "+ Add Row" row can still be sitting
-// unuploaded — before Approve unlocks.
+// Every "QA Document Check" checkbox must be ticked, no "+ Add Row" row
+// can still be sitting unuploaded, AND at least one document of each
+// required type (FG_REQUIRED_DOC_TYPES, shared with the Add to Finished
+// Goods Store form itself) must still be present — before Approve
+// unlocks. Removing one of these (e.g. to replace a wrongly-uploaded
+// file) used to only be checked against "at least one document overall,
+// all of them ticked" — deleting a Warranty Card and never re-uploading
+// it still passed that bar as long as whatever docs remained were all
+// checked, letting an FG item through missing a document this system
+// treats as compulsory everywhere else.
 function updateFGApprovalSubmitState(fgId) {
   const btn = document.getElementById(`fg-approval-submit-${fgId}`);
   if (!btn) return;
   const st = window._fgApprovalState[fgId];
+  const presentTypes = new Set(st.docs.map(d => d.docType));
+  const hasEveryRequiredType = FG_REQUIRED_DOC_TYPES.every(t => presentTypes.has(t));
   const allChecked = st.docs.length > 0 && st.docs.every(d => d.qaChecked) && st.newRows.length === 0;
-  btn.disabled = !allChecked;
-  btn.style.opacity = allChecked ? "1" : "0.5";
-  btn.style.cursor = allChecked ? "pointer" : "not-allowed";
+  const canApprove = hasEveryRequiredType && allChecked;
+  btn.disabled = !canApprove;
+  btn.style.opacity = canApprove ? "1" : "0.5";
+  btn.style.cursor = canApprove ? "pointer" : "not-allowed";
+  btn.title = hasEveryRequiredType ? "" : "Every required document type must have at least one upload before this can be approved.";
 }
 
 async function submitFGApprovalDecision(fgId, action) {
