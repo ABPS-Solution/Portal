@@ -683,7 +683,10 @@ function ptlRenderLaneSteps(lane, c, canWrite) {
           <span style="display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; background:${done ? c : '#fff'}; border:2px solid ${late ? 'var(--warn)' : c}; vertical-align:middle;"></span>
           ${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.78rem;">(automatic)</span>' : ''}
         </td>
-        <td style="width:13%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(s.planned)}</td>
+        <td style="width:13%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">
+          ${ptlFmt(s.planned)}
+          ${ptlIsAdmin() && s.planned ? `<div style="margin-top:4px; display:flex; flex-direction:column; align-items:center; gap:3px;">${ptlAsOfInputHtml(`planned-${lane.boqId}-${s.id}`, s.planned)}<button class="nav-btn-styled" style="padding:2px 8px; font-size:0.65rem;" onclick="ptlAdminOverridePlanned('${lane.boqId}','${s.id}')">Update (admin)</button></div>` : ''}
+        </td>
         <td style="width:13%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(currentTarget)}</td>
         <td style="width:20%; padding:5px 8px; text-align:center; ${colBorder}">${canWrite && (s.terminal || !done) ? `<div style="max-width:150px; margin:0 auto;"><input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
               style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box; text-align:center;" /></div>` : `<span style="color:var(--muted); font-size:0.8rem;">-</span>`}</td>
@@ -734,6 +737,20 @@ async function ptlUpdateTarget(boqId, stepKey, targetDate) {
     const lane = ptlData.lanes.find(l => l.boqId === boqId);
     const step = lane && lane.steps.find(s => s.id === stepKey);
     if (step) step.target = data.targetDate;
+  } catch (e) { alert("Network error: " + e.message); }
+}
+
+// Admin-only testing override for the frozen Initial Planning Date —
+// same precedent as the terminal step's admin date override just above.
+// Never available to a non-admin; ptlAsOfInputHtml already hides the
+// control entirely for anyone else.
+async function ptlAdminOverridePlanned(boqId, stepKey) {
+  try {
+    const date = ptlReadAsOf(`planned-${boqId}-${stepKey}`);
+    if (!date) { alert('Pick a date.'); return; }
+    const data = await apFetch({ action: "adminOverridePlannedDate", operatorName: appActiveOperatorIdentityString, boqId, stepKey, date });
+    if (!data.success) { alert(data.error || "Could not override the Initial Planning Date."); return; }
+    await selectPtlProject(ptlData.project.projectId); // reload real server state rather than guess it locally
   } catch (e) { alert("Network error: " + e.message); }
 }
 

@@ -361,7 +361,7 @@ async function handleCreateTicketProjectChange(chosenProjectVal) {
   if (storeScopeLabel) storeScopeLabel.style.color = "var(--muted)";
 
   const meta = (window._ticketProjectMetaCache || {})[chosenProjectVal];
-  if (customerNameField) customerNameField.value = meta ? (meta.companyName || "") : "";
+  if (customerNameField) { customerNameField.value = meta ? (meta.companyName || "") : ""; autoGrowTextField(customerNameField); }
 
   if (!chosenProjectVal) {
     ticketBOQDisplayReset("— Choose Project First —");
