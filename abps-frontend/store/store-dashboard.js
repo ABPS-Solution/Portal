@@ -28,8 +28,8 @@ function sdLoadCustom() {
 }
 
 async function sdLoadDashboard(customVal) {
-  ["sd-s-tickets","sd-s-pending","sd-s-boqneedprn","sd-s-grns","sd-s-spare",
-   "sd-s-boqinc","sd-s-overruns"].forEach(id => {
+  ["sd-s-tickets","sd-s-pending","sd-s-boqneedprn","sd-s-grns",
+   "sd-s-boqinc","sd-s-gateawaiting","sd-s-qaawaiting","sd-s-rejrate","sd-s-sweeps","sd-s-challans"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
   try {
@@ -46,18 +46,25 @@ async function sdLoadDashboard(customVal) {
 }
 
 function sdRenderDashboard(data) {
-  const { stats, byDept, dailyTrend, grnByType, projectHealth, recentTickets } = data;
+  const { stats, byDept, inboundOutboundTrend, grnByType, projectHealth, recentTickets, inboundPipelineAging } = data;
 
-  // Row 1 stat cards
-  document.getElementById("sd-s-tickets").textContent   = stats.totalTickets;
+  // Row 1 stat cards — live queues
   document.getElementById("sd-s-pending").textContent   = stats.pendingApprovals;
-  document.getElementById("sd-s-grns").textContent      = stats.totalGRNs;
-  document.getElementById("sd-s-spare").textContent     = stats.spareStoreItems;
   document.getElementById("sd-s-boqneedprn").textContent = stats.boqsNeedingPRN ?? "—";
+  document.getElementById("sd-s-gateawaiting").textContent = stats.gateAwaitingGRN.count;
+  document.getElementById("sd-s-gateawaiting-sub").textContent = stats.gateAwaitingGRN.count > 0
+    ? `oldest ${stats.gateAwaitingGRN.oldestDays}d` : "";
+  document.getElementById("sd-s-qaawaiting").textContent = stats.grnAwaitingQA.count;
+  document.getElementById("sd-s-qaawaiting-sub").textContent = stats.grnAwaitingQA.count > 0
+    ? `oldest ${stats.grnAwaitingQA.oldestDays}d` : "";
+  document.getElementById("sd-s-boqinc").textContent    = stats.pendingBOQIncrease;
 
-  // Row 2 stat cards
-  document.getElementById("sd-s-boqinc").textContent          = stats.pendingBOQIncrease;
-  document.getElementById("sd-s-overruns").textContent        = stats.boqOverruns;
+  // Row 2 stat cards — period throughput / rates
+  document.getElementById("sd-s-tickets").textContent   = stats.totalTickets;
+  document.getElementById("sd-s-grns").textContent      = stats.totalGRNs;
+  document.getElementById("sd-s-rejrate").textContent   = stats.qaRejectionRate === null ? "—" : `${stats.qaRejectionRate.toFixed(1)}%`;
+  document.getElementById("sd-s-sweeps").textContent    = stats.stockSweeps;
+  document.getElementById("sd-s-challans").textContent  = stats.challansIssued;
 
   // Chart 1 — Tickets by Department (horizontal bar)
   if (sdChartDept) sdChartDept.destroy();
@@ -75,18 +82,24 @@ function sdRenderDashboard(data) {
       scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false } } } }
   });
 
-  // Chart 2 — Daily Ticket Volume (line)
+  // Chart 2 — Inbound vs Outbound Trend (dual line: GRNs completed vs
+  // tickets approved). Both series share inboundOutboundTrend.labels.
   if (sdChartTrend) sdChartTrend.destroy();
   const ctx2 = document.getElementById("sd-chart-trend").getContext("2d");
   sdChartTrend = new Chart(ctx2, {
     type: "line",
     data: {
-      labels: dailyTrend.map(d => d.label),
-      datasets: [{ label:"Tickets", data: dailyTrend.map(d => d.count),
-        borderColor: "rgba(37,99,235,0.8)", backgroundColor: "rgba(37,99,235,0.08)",
-        pointRadius: 3, fill: true, tension: 0.3 }]
+      labels: inboundOutboundTrend.labels,
+      datasets: [
+        { label:"Inbound (GRNs)", data: inboundOutboundTrend.inbound,
+          borderColor: "rgba(16,185,129,0.8)", backgroundColor: "rgba(16,185,129,0.08)",
+          pointRadius: 3, fill: true, tension: 0.3 },
+        { label:"Outbound (Approved)", data: inboundOutboundTrend.outbound,
+          borderColor: "rgba(37,99,235,0.8)", backgroundColor: "rgba(37,99,235,0.08)",
+          pointRadius: 3, fill: true, tension: 0.3 },
+      ]
     },
-    options: { responsive:true, plugins:{ legend:{ display:false } },
+    options: { responsive:true, plugins:{ legend:{ display:true, labels:{ font:{ size:9 }, boxWidth:10 } } },
       scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
   });
 
@@ -106,7 +119,29 @@ function sdRenderDashboard(data) {
       scales:{ y:{ grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false } } } }
   });
 
-  // Row 4 left — Project Health
+  // Row 4 left — Inbound Pipeline Aging (Gate Entered / GRN Done, oldest first)
+  const pipelineTbody = document.getElementById("sd-pipeline-tbody");
+  if (pipelineTbody) {
+    if (!inboundPipelineAging || inboundPipelineAging.length === 0) {
+      pipelineTbody.innerHTML = `<tr><td colspan="5" style="color:var(--muted); font-size:0.72rem; padding:8px; text-align:center;">Nothing stuck before QA — pipeline is clear.</td></tr>`;
+    } else {
+      pipelineTbody.innerHTML = inboundPipelineAging.map((r, i) => {
+        const rowBg = i % 2 === 0 ? "var(--card)" : "#f8fafc";
+        const stageBg = r.stage === "Awaiting GRN" ? "#fef9c3" : "#ede9fe";
+        const stageColor = r.stage === "Awaiting GRN" ? "#854d0e" : "#6d28d9";
+        const daysColor = r.daysWaiting >= 3 ? "#b91c1c" : (r.daysWaiting >= 1 ? "#b45309" : "var(--muted)");
+        return `<tr style="background:${rowBg}; border-bottom:1px solid #f1f5f9;">
+          <td style="padding:6px; font-size:0.68rem;"><span style="font-weight:700; padding:1px 6px; border-radius:6px; background:${stageBg}; color:${stageColor};">${r.stage}</span></td>
+          <td style="padding:6px; font-size:0.72rem;">${r.vendorName || "—"}</td>
+          <td style="padding:6px; font-size:0.72rem; font-family:monospace;">${r.invoiceNumber || "—"}</td>
+          <td style="padding:6px; font-size:0.72rem;">${r.materialName || r.itemCode || "—"}</td>
+          <td style="padding:6px; text-align:center; font-weight:700; color:${daysColor}; font-size:0.72rem;">${r.daysWaiting}d</td>
+        </tr>`;
+      }).join("");
+    }
+  }
+
+  // Row 4 middle — Project Health
   sdHealthData        = projectHealth;
   sdHealthFiltered    = [...projectHealth];
   sdHealthCurrentPage = 1;
@@ -121,11 +156,12 @@ function sdRenderDashboard(data) {
       feed.innerHTML = `<div style="font-size:0.75rem; color:var(--muted); padding:8px;">No recent ticket activity.</div>`;
     } else {
       const statusColors = {
-        "Pending Approval":           { bg:"#fef9c3", color:"#854d0e" },
+        "Pending":                    { bg:"#fef9c3", color:"#854d0e" },
+        "Approved":                   { bg:"#dcfce7", color:"#15803d" },
         "Increase Approved":          { bg:"#dcfce7", color:"#15803d" },
         "Rejected":                   { bg:"#fee2e2", color:"#b91c1c" },
+        "Rejected by Admin":          { bg:"#fee2e2", color:"#b91c1c" },
         "Pending BOQ Increase Review":{ bg:"#ede9fe", color:"#6d28d9" },
-        "Return Complete":            { bg:"#e0f2fe", color:"#0369a1" }
       };
       feed.innerHTML = recentTickets.map(t => {
         const sc = statusColors[t.status] || { bg:"#f1f5f9", color:"#475569" };
@@ -179,18 +215,20 @@ function sdRenderHealthTable() {
 
   if (!tbody) return;
   if (page.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--muted); font-size:0.72rem; padding:6px;">No projects found</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--muted); font-size:0.72rem; padding:6px;">No projects found</td></tr>`;
     return;
   }
   tbody.innerHTML = page.map((p, i) => {
     const rowBg = i % 2 === 0 ? "var(--card)" : "#f8fafc";
     return `<tr style="background:${rowBg}; border-bottom:1px solid #f1f5f9;">
-      <td style="padding:8px 6px; font-weight:700; font-family:monospace; font-size:0.75rem;">${p.projId}</td>
-      <td style="padding:8px 6px; font-size:0.75rem;">${p.customer}</td>
+      <td style="padding:8px 6px; font-size:0.75rem;">
+        <div style="font-weight:700; font-family:monospace;">${p.projId}</div>
+        <div style="font-size:0.65rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.customer}</div>
+      </td>
       <td style="padding:8px 6px; text-align:center; font-size:0.75rem;">${p.totalTickets}</td>
       <td style="padding:8px 6px; text-align:center; color:#15803d; font-weight:700; font-size:0.75rem;">${p.approved}</td>
       <td style="padding:8px 6px; text-align:center; color:${p.pending > 0 ? "#b45309" : "var(--muted)"}; font-weight:${p.pending > 0 ? "700" : "400"}; font-size:0.75rem;">${p.pending}</td>
-      <td style="padding:8px 6px; text-align:center; font-family:monospace; font-size:0.75rem;">${p.qtyConsumed}</td>
+      <td style="padding:8px 6px; text-align:center; font-family:monospace; font-size:0.75rem;">${p.itemsIssued}</td>
     </tr>`;
   }).join("");
 }
