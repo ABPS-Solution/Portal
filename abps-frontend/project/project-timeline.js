@@ -1194,16 +1194,31 @@ function ptlWrapLbl(t, max, maxLines = 2) {
   if (cur) out.push(cur);
   return out.slice(0, maxLines);
 }
-// 5.8px/char, then 7.2px/char, still under-measured real (bold,
-// mixed-case) rendered text widths enough that adjacent close-dated
-// nodes' labels ("Spider Assembly Manufacturing Completion" / "Painting
-// Completion", "Busbar Completion" / "Power Cabling Completion") were
-// still passing the collision check and overlapping on screen instead of
-// stacking - bumped again, plus PTL_LBL_PAD widened so blocks get a
-// visible gap rather than just touching.
-const ptlWLbl = s => s.length * 8.6 * ptlFS;
+// 5.8px/char, then 7.2px/char, then 8.6px/char, STILL under/over-measured
+// real (bold, mixed-case) rendered text widths enough that adjacent
+// close-dated nodes' labels ("Spider Assembly Manufacturing Completion" /
+// "Painting Completion", "All PRNs Released" / "All Production
+// Requirement Dates Released") kept passing the collision check and
+// overlapping on screen instead of stacking, no matter how many times the
+// multiplier got bumped -- that whole recurring bug class is a
+// measurement-ACCURACY problem, not a margin-SIZE problem: a flat
+// px-per-char guess can never account for how much a real string's mix of
+// wide/narrow characters actually renders at. Measuring the real glyph
+// widths via a cached offscreen <canvas> 2D context (same technique
+// browsers themselves use internally for text layout) removes the whole
+// class of "still wrong, bump it again" fixes instead of extending it.
+let _ptlMeasureCtx = null;
+function ptlMeasureTextWidth(text, fontPx, weight, family) {
+  if (!_ptlMeasureCtx) _ptlMeasureCtx = document.createElement('canvas').getContext('2d');
+  _ptlMeasureCtx.font = `${weight} ${fontPx}px ${family}`;
+  return _ptlMeasureCtx.measureText(text).width;
+}
+// Font/weight here must match the actual <text> elements ptlWLbl/ptlWMono
+// are sizing for (11 * ptlFS px, weight 600, the app's own body font stack
+// for labels; monospace for the date/chip text below each node).
+const ptlWLbl = s => ptlMeasureTextWidth(s, 11 * ptlFS, 600, '-apple-system, system-ui, sans-serif');
 const PTL_LBL_PAD = 10;
-const ptlWMono = (s, px) => s.length * px * 0.6 * ptlFS;
+const ptlWMono = (s, px) => ptlMeasureTextWidth(s, px * ptlFS, 700, 'monospace');
 
 const PTL_MAX_SLOT = 6;
 function ptlPlacer() {
@@ -1662,7 +1677,12 @@ function ptlRenderCanvas(containerId) {
     const bd = late ? Math.abs(ptlBdBetween(eff, today) || 0) : null;
     const ring = late ? '#e84545' : (done ? c : PTL_SCHEDULED_GREY);
 
-    const lines = ptlWrapLbl(n.label, 16);
+    // maxLines 3, not the default 2 — a long label like "All Production
+    // Requirement Dates Released" wraps to 3 lines at 16 chars/line, and
+    // the default silently dropped its last line entirely (rendered as
+    // "All Production" / "Requirement", with "Dates Released" just gone)
+    // rather than fitting it in.
+    const lines = ptlWrapLbl(n.label, 16, 3);
     const lw = Math.max(...lines.map(ptlWLbl));
     const GAP = 12 * ptlFS, ASC = 9 * ptlFS;
     // How many upward slots actually fit before the label's top edge
