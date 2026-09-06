@@ -5,38 +5,82 @@ let activeEmailLeadContextIndex = null;
 // which mailboxes exist — see EMAIL_LEADS_ENGINEER_DIRECTORY in
 // routes/marketing.js). 6 Sep 2026.
 let cachedEmailLeadsEngineerDirectory = [];
+// The selected mailbox is held here rather than read off a <select> — the
+// filter is a laid-out row of pills now (7 Sep 2026, explicit request:
+// the dropdown hid the whole list behind a click and made it impossible
+// to see at a glance which mailboxes exist).
+let activeEmailLeadsEngineerFilter = "ALL";
 
 function resolveEmailLeadEngineerName(inboxAccount) {
   if (!inboxAccount) return "Unknown";
   const entry = cachedEmailLeadsEngineerDirectory.find(e => e.email && e.email.toLowerCase() === String(inboxAccount).toLowerCase());
-  return entry ? entry.engineerName : "Engineer Name Pending";
+  return entry ? entry.engineerName : "Not a recognised ABPS mailbox";
 }
 
 function getCurrentEmailLeadsFilters() {
-  const engineerEmail = document.getElementById("email-leads-engineer-filter")?.value || "ALL";
   const dateRadio = document.querySelector('input[name="emailLeadsDateFilter"]:checked');
   const dateFilter = dateRadio ? dateRadio.value : "all";
-  return { engineerEmail, dateFilter };
+  return { engineerEmail: activeEmailLeadsEngineerFilter, dateFilter };
+}
+
+function selectEmailLeadsEngineerFilter(email) {
+  activeEmailLeadsEngineerFilter = email;
+  renderEmailLeadsEngineerPills();
+  refetchEmailLeadsListWithFilters();
+}
+
+// One pill per mailbox, wrapping across as many rows as it takes. The
+// backend only ever sends OUR OWN mailboxes here plus, when there are
+// still leftover rows from the old resolution bug, a single synthetic
+// "__UNRECOGNISED__" bucket — a customer's address is never its own pill.
+function renderEmailLeadsEngineerPills() {
+  const wrap = document.getElementById("email-leads-engineer-pills");
+  if (!wrap) return;
+  const pill = (value, title, subtitle, isStray) => {
+    const active = activeEmailLeadsEngineerFilter === value;
+    const border = active ? "var(--brand)" : "var(--border)";
+    const bg = active ? "var(--highlight-bg)" : "#fff";
+    const titleColor = active ? "var(--brand)" : (isStray ? "var(--warn)" : "var(--text)");
+    return `
+      <div onclick="selectEmailLeadsEngineerFilter('${escapeHtml(value).replace(/'/g, "\\'")}')"
+        style="cursor:pointer; user-select:none; border:1.5px solid ${border}; background:${bg}; border-radius:6px;
+               padding:6px 10px; min-width:0; display:flex; flex-direction:column; gap:1px; line-height:1.25;">
+        <span style="font-size:0.78rem; font-weight:700; color:${titleColor};">${escapeHtml(title)}</span>
+        ${subtitle ? `<span style="font-size:0.68rem; font-family:monospace; color:var(--muted); word-break:break-all;">${escapeHtml(subtitle)}</span>` : ""}
+      </div>`;
+  };
+  wrap.innerHTML =
+    pill("ALL", "All Engineers", "", false) +
+    cachedEmailLeadsEngineerDirectory.map(e =>
+      e.unrecognised ? pill(e.email, e.engineerName, "", true) : pill(e.email, e.engineerName, e.email, false)
+    ).join("");
 }
 
 function populateEmailLeadsEngineerDropdown(directory) {
   cachedEmailLeadsEngineerDirectory = Array.isArray(directory) ? directory : [];
-  const select = document.getElementById("email-leads-engineer-filter");
-  if (!select) return;
-  const previousValue = select.value || "ALL";
-  select.innerHTML = `<option value="ALL">All Engineers</option>` +
-    cachedEmailLeadsEngineerDirectory.map(e =>
-      `<option value="${escapeHtml(e.email)}">${escapeHtml(e.engineerName)} — ${escapeHtml(e.email)}</option>`
-    ).join("");
-  // Preserve whatever was selected before this refresh, if it still exists.
-  if ([...select.options].some(o => o.value === previousValue)) select.value = previousValue;
+  // A previously-selected mailbox can disappear between refreshes (its
+  // last unactioned lead got handled) — fall back to All rather than
+  // silently filtering on something no longer offered.
+  if (activeEmailLeadsEngineerFilter !== "ALL"
+      && !cachedEmailLeadsEngineerDirectory.some(e => e.email === activeEmailLeadsEngineerFilter)) {
+    activeEmailLeadsEngineerFilter = "ALL";
+  }
+  renderEmailLeadsEngineerPills();
 }
 
 function updateEmailLeadsFilteringForText() {
   const display = document.getElementById("email-leads-active-filters-display");
   if (!display) return;
   const { engineerEmail, dateFilter } = getCurrentEmailLeadsFilters();
-  const engineerLabel = engineerEmail === "ALL" ? "All Engineers" : resolveEmailLeadEngineerName(engineerEmail) + " — " + engineerEmail;
+  let engineerLabel;
+  if (engineerEmail === "ALL") {
+    engineerLabel = "All Engineers";
+  } else {
+    const entry = cachedEmailLeadsEngineerDirectory.find(e => e.email === engineerEmail);
+    engineerLabel = entry && entry.unrecognised
+      ? entry.engineerName
+      : resolveEmailLeadEngineerName(engineerEmail) + " — " + engineerEmail;
+  }
   const DATE_LABELS = { all: "All Time", today: "Today", yesterday: "Yesterday", thisWeek: "This Week", thisMonth: "This Month" };
   display.textContent = `Filtering for: ${engineerLabel} | for ${DATE_LABELS[dateFilter] || "All Time"}`;
 }
@@ -210,8 +254,8 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
       <div class="contact-summary-header-row" style="margin-bottom:6px;">
         <div class="contact-summary-title-info">
           <div class="meta-row-line-block">
-            <span style="background:var(--highlight-bg); border:1px solid var(--brand); color:var(--brand); font-family:monospace; text-transform:none;" title="Received into">To: ${escapeHtml(resolveEmailLeadEngineerName(mail.destinationInboxAccount))} — ${escapeHtml(mail.destinationInboxAccount || "Unknown")}</span>
-            <span style="background:#f1f5f9; border:1px solid var(--border); color:var(--text); font-family:monospace; text-transform:none;" title="Customer's email address">From: ${escapeHtml(mail.senderEmail || "Unknown")}</span>
+            <span style="background:var(--highlight-bg); border:1px solid var(--brand); color:var(--brand); font-family:monospace; text-transform:none;" title="The ABPS mailbox this email was received into">To: ${escapeHtml(resolveEmailLeadEngineerName(mail.destinationInboxAccount))} — ${escapeHtml(mail.destinationInboxAccount || "Unknown")}</span>
+            <span style="background:#f1f5f9; border:1px solid var(--border); color:var(--text); font-family:monospace; text-transform:none;" title="The customer's email address">From: ${escapeHtml(mail.senderEmail || "Not recorded yet")}</span>
             <span style="background:#cbd5e1; color:#1e293b; font-weight:700;">${formatOrdinalDate(mail.receivedDate)}${receivedTimeLabel}</span>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px;">

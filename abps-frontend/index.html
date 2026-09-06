@@ -4366,12 +4366,10 @@
     <div id="workspace-emailWhatsapp" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Leads Received through Email</h2>
 
-      <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; background:#f8fafc; border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-bottom:8px;">
-        <div>
-          <label style="display:block; font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Engineer / Email</label>
-          <select id="email-leads-engineer-filter" onchange="refetchEmailLeadsListWithFilters()" style="padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:0.82rem; min-width:220px;">
-            <option value="ALL">All Engineers</option>
-          </select>
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-bottom:8px;">
+        <div style="margin-bottom:10px;">
+          <label style="display:block; font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Engineer / Email</label>
+          <div id="email-leads-engineer-pills" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:6px;"></div>
         </div>
         <div>
           <label style="display:block; font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Received</label>
