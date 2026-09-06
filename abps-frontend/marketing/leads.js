@@ -1872,8 +1872,18 @@ function openEmailLeadCreateEntryForm(index, mountEl, onCancelJs) {
 
   const collapseBar = document.createElement("div");
   collapseBar.style.cssText = "display:flex; justify-content:flex-end; margin-bottom:8px;";
+  // The shared template node (step2-new-entry-dropdown) was MOVED here via
+  // appendChild, not copied — Cancel must relocate it back to document.body
+  // BEFORE any caller-supplied cleanup clears out this mount's innerHTML,
+  // or that clear destroys the template node outright (innerHTML='' on an
+  // ancestor removes every descendant regardless of the descendant's own
+  // display style). Losing the node this way made every subsequent
+  // "+ Create New Lead"/"Create New Entry" click silently do nothing —
+  // document.getElementById('step2-new-entry-dropdown') just returned null
+  // forever after the first Cancel, found 6 Sep 2026.
   collapseBar.innerHTML = `<button class="nav-btn-styled" style="background:#718096; font-size:0.72rem; padding:3px 10px;" onclick="
-    document.getElementById('step2-new-entry-dropdown').style.display='none';
+    const fts = document.getElementById('step2-new-entry-dropdown');
+    if (fts) { fts.style.display = 'none'; document.body.appendChild(fts); }
     ${onCancelJs}
   ">✕ Cancel</button>`;
   formTemplateSource.prepend(collapseBar);
