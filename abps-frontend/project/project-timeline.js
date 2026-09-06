@@ -271,7 +271,7 @@ function ptlSetTodayOverride(value) {
 // Manufacturing Clearance gating fields - it's entered before Internal MFC
 // itself is ever given, so this switches the moment THAT value exists,
 // not on mfcInt (which can lag it by however long clearance takes).
-const ptlDeliveryLabel = p => p.actualDelivery ? "Expected Delivery" : "Tentative Delivery";
+const ptlDeliveryLabel = p => p.actualDelivery ? "Final Delivery" : "Tentative Delivery";
 const ptlDeliveryValue = p => p.actualDelivery || p.tentativeDelivery;
 
 const ptlEff = n => n.actual || n.target || n.planned;
@@ -1717,6 +1717,18 @@ function ptlRenderCanvas(containerId) {
     P.push(`<text x="${x}" y="${dy}" text-anchor="middle" font-size="${10.5 * ptlFS}" font-weight="700" font-family="monospace" fill="${late ? '#e84545' : 'var(--muted)'}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(dtx)}</text>`);
     if (chipTxt) P.push(`<text x="${x}" y="${dy + LINE_H}" text-anchor="middle" font-size="${9.5 * ptlFS}" font-weight="700" font-family="monospace" fill="var(--text)" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(chipTxt)}</text>`);
 
+    // 'delivery' (Final Delivery / Dispatch Date) is the single most
+    // consequential point on the whole map - a real Final Project Invoice
+    // is what LD exposure actually keys off (lib/ld.js), so a slipped
+    // Final Delivery date deserves more than the same plain red every
+    // other late node already gets. Pulsing halo, added 6 Sep 2026 -
+    // explicit request to make this specific point impossible to miss.
+    if (n.id === 'delivery' && late) {
+      P.push(`<circle cx="${x}" cy="${y}" r="${R * 1.6}" fill="none" stroke="#e84545" stroke-width="${2 * ptlFS}" opacity="0.6">
+        <animate attributeName="r" values="${R * 1.4};${R * 2.4};${R * 1.4}" dur="1.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.65;0.05;0.65" dur="1.6s" repeatCount="indefinite"/>
+      </circle>`);
+    }
     P.push(`<circle cx="${x}" cy="${y}" r="${R}" fill="${done ? c : 'var(--card)'}" stroke="${ring}" stroke-width="${(late ? 2.6 : 2.2) * ptlFS}"/>`);
     if (done) P.push(`<path d="M${x - R * 0.43} ${y} l${R * 0.31} ${R * 0.32} l${R * 0.55} -${R * 0.61}" fill="none" stroke="var(--card)" stroke-width="${1.8 * ptlFS}" stroke-linecap="round" stroke-linejoin="round"/>`);
 
