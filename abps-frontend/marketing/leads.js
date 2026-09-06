@@ -1696,14 +1696,20 @@ async function triggerStatusSearch() {
 
 async function triggerEngineerSearch() {
     const btn = document.getElementById("eng-search-btn");
-    const engVal = document.getElementById("engineer-filter-select").value;
+    const engSelect = document.getElementById("engineer-filter-select");
+    const engVal = engSelect.value;
     if(!engVal) return alert("Please select an engineer.");
+    // engVal is the person_key (the select's value, needed for the actual
+    // search query) — the banner below must show the resolved display
+    // name instead (the select's own option text), or it prints the raw
+    // person_key (e.g. "alok.kumar.admin") rather than a real name.
+    const engDisplayName = engSelect.options[engSelect.selectedIndex]?.textContent || engVal;
     btn.classList.add("loading"); btn.textContent = "Searching...";
     try {
         const data = await apFetch({ action: "searchByEngineer", activeEngineer: appActiveOperatorIdentityString, engName: engVal });
         if (data.success) {
           const canvas = document.getElementById("step2-inline-interaction-canvas");
-          document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `<div class="qualification-status-bar" style="width: 100%;">Engineer: ${engVal}</div>`;
+          document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `<div class="qualification-status-bar" style="width: 100%;">Engineer: ${escapeHtml(engDisplayName)}</div>`;
           document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
           globalFollowUpsCacheMap = data.followups; globalTasksCacheMap = data.tasks;
           buildMultiContactDirectoryInterface(data.leads, "");
