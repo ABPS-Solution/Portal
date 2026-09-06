@@ -64,7 +64,12 @@ const PTL_ADMIN_SYSTEM_DATE_IDS = new Set(['activated', 'mfcInt']);
 // planned dates already live in; fetchProjectTimeline prefers it over the
 // live computation. adminClearSystemMilestoneOverride removes it again
 // once real data should take back over.
-const PTL_ADMIN_MILESTONE_OVERRIDE_KEY = { boqs: 'boqs_released', prns: 'prns_released', mrdates: 'production_requirement_dates_released', rmpos: 'rmpos_released', pps: 'pps_released', wdesign: 'working_designs_released', prodPlan: 'production_planning_released' };
+// predictedDelivery/delivery (Stage 5) added 6 Sep 2026 — both are
+// otherwise 100% live-computed (the QA chain projection / a real Final
+// Invoice date), same override-takes-priority-else-compute-live pattern
+// as the Stage 3/Production Planning nodes above; never a one-way door —
+// clearing the override hands control straight back to live computation.
+const PTL_ADMIN_MILESTONE_OVERRIDE_KEY = { boqs: 'boqs_released', prns: 'prns_released', mrdates: 'production_requirement_dates_released', rmpos: 'rmpos_released', pps: 'pps_released', wdesign: 'working_designs_released', prodPlan: 'production_planning_released', predictedDelivery: 'predicted_delivery_date', delivery: 'expected_delivery_date' };
 // Stage headers - ptlRenderList inserts one automatically whenever a
 // node's stage differs from the previous one, so Stage 1/2/3 get the same
 // section labeling Stage 4/5 already had (those two used to be hardcoded
