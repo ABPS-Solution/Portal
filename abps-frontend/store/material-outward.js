@@ -191,14 +191,19 @@ function renderMaterialOutwardReviewForm(ticketId, preview) {
     `<option value="${v}" ${(preview.morf || {}).returnableStatus === v ? 'selected' : ''}>${v || '— Select —'}</option>`).join("");
 
   const fieldBoxStyle = "border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;";
+  // A plain single-line <input> clips a long value instead of showing it —
+  // every field here is an auto-growing textarea instead (shared
+  // autoGrowTextField, shared/ui.js), same convention as Project
+  // Invoice's own field() helper. autoGrowAllIn(zone) below sizes them
+  // once on first render, since a prefilled value never fires its own
+  // input event.
   const field = (label, id, value, required) =>
-    `<div><label class="field-label" style="margin-top:0;">${label}${required ? ' *' : ''}</label><input type="text" id="${id}" value="${escapeHtml(value || '')}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" /></div>`;
+    `<div><label class="field-label" style="margin-top:0;">${label}${required ? ' *' : ''}</label><textarea rows="1" id="${id}" oninput="autoGrowTextField(this);" onfocus="autoGrowTextField(this);" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius); resize:none; overflow:hidden; font-family:inherit; font-size:inherit;">${escapeHtml(value || '')}</textarea></div>`;
 
   const materialRowsHtml = items.map(it => `
     <tr>
       <td style="padding:8px; border:1px solid var(--border); white-space:normal; word-break:break-word;">${escapeHtml(it.materialName || it.itemCode || "")}</td>
-      <td style="padding:8px; border:1px solid var(--border);">—</td>
-      <td style="padding:8px; border:1px solid var(--border); text-align:center; font-family:monospace; font-weight:700;">${escapeHtml(String(fmtQty(it.__releaseQty ?? it.quantity ?? 0)))}</td>
+      <td style="padding:8px; border:1px solid var(--border); text-align:center; font-family:monospace; font-weight:700; font-size:1.15rem;">${escapeHtml(String(fmtQty(it.__releaseQty ?? it.quantity ?? 0)))}</td>
       <td style="padding:8px; border:1px solid var(--border); text-align:center;">${escapeHtml(it.unitType || "—")}</td>
     </tr>`).join("");
 
@@ -209,7 +214,7 @@ function renderMaterialOutwardReviewForm(ticketId, preview) {
       <div id="mow-crosscheck-band-${ticketId}"></div>
 
       <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:12px 16px; margin-bottom:12px; ${fieldBoxStyle}">
-        <div><label class="field-label" style="margin-top:0;">Challan Number *</label><input type="text" id="mow-review-number-${ticketId}" value="${escapeHtml(preview.challanNumber || '')}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" /></div>
+        ${field('Challan Number', `mow-review-number-${ticketId}`, preview.challanNumber, true)}
         <div><label class="field-label" style="margin-top:0;">Challan Date *</label><input type="date" id="mow-review-date-${ticketId}" value="${escapeHtml(preview.challanDate || '')}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" /></div>
         ${field('Company Name', `mow-review-consignee-name-${ticketId}`, preview.consigneeName, true)}
         ${field('Contact Person', `mow-review-contact-name-${ticketId}`, preview.contactPersonName, true)}
@@ -234,14 +239,13 @@ function renderMaterialOutwardReviewForm(ticketId, preview) {
       <h4 style="margin:0 0 6px; font-size:0.95rem; font-weight:800; color:var(--brand);">Materials Table</h4>
       <p style="margin:0 0 8px; font-size:0.78rem; color:var(--muted);">Material Name and Qty here come from the approved Material Request (this ticket's own release) — not from the uploaded document. If you see a mismatch, upload a new document instead of editing here.</p>
       <table style="width:100%; border-collapse:collapse; margin-bottom:20px; table-layout:fixed;">
-        <colgroup><col style="width:55%;" /><col style="width:15%;" /><col style="width:15%;" /><col style="width:15%;" /></colgroup>
+        <colgroup><col style="width:70%;" /><col style="width:15%;" /><col style="width:15%;" /></colgroup>
         <thead><tr style="background:var(--highlight-bg);">
           <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Material Name</th>
-          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.75rem; text-transform:uppercase; color:var(--muted);">HSN</th>
           <th style="padding:8px; border:1px solid var(--border); text-align:center; font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Qty</th>
           <th style="padding:8px; border:1px solid var(--border); text-align:center; font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Unit</th>
         </tr></thead>
-        <tbody>${materialRowsHtml || '<tr><td colspan="4" style="padding:8px; text-align:center; color:var(--muted);">No items on this ticket.</td></tr>'}</tbody>
+        <tbody>${materialRowsHtml || '<tr><td colspan="3" style="padding:8px; text-align:center; color:var(--muted);">No items on this ticket.</td></tr>'}</tbody>
       </table>
 
       <div style="display:flex; justify-content:flex-end; gap:10px;">
@@ -251,6 +255,7 @@ function renderMaterialOutwardReviewForm(ticketId, preview) {
       <div id="mow-modal-inline-feedback-${ticketId}" style="display:none; margin-top:12px; padding:10px; border-left:4px solid; border-radius:var(--radius);"></div>
     </div>
   `;
+  autoGrowAllIn(zone);
   renderMaterialOutwardCrossCheckBand(ticketId, preview.crossChecks || { blocking: [], warnings: [] }, preview.parseWarnings || []);
 }
 
