@@ -3727,7 +3727,7 @@
       <!-- DASHBOARD BODY -->
       <div id="pd2-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
-        <!-- ROW 1: Job Card Pulse — 5 cards -->
+        <!-- ROW 1: Job Card Pulse + Material Requirement Date queues — 5 cards -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Active Job Cards</div>
@@ -3743,44 +3743,41 @@
             <div class="dd-stat-sub">tickets raised, no FG entry</div>
           </div>
           <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">Pending Store Approvals</div>
-            <div class="dd-stat-val" id="pd2-s-store-approvals" style="color:#b45309;">—</div>
-            <div class="dd-stat-sub">live · all projects</div>
+            <div class="dd-stat-label">PRNs Awaiting Material Requirement Dates</div>
+            <div class="dd-stat-val" id="pd2-s-mrd-awaiting" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub">live · blocks Purchase</div>
           </div>
           <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">Active Projects</div>
-            <div class="dd-stat-val" id="pd2-s-unique-proj">—</div>
-            <div class="dd-stat-sub">with active job cards</div>
+            <div class="dd-stat-label">PRNs Needing Requirement Date Revision</div>
+            <div class="dd-stat-val" id="pd2-s-mrd-revision" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub">live · Purchase Qty changed</div>
           </div>
         </div>
 
-        <!-- ROW 2: Material & Operations — 5 cards -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+        <!-- ROW 2: Material & Operations — 4 cards -->
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 11%;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Material Issue Tickets Created</div>
             <div class="dd-stat-val" id="pd2-s-tickets">—</div>
-          </div>
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">BOQ Utilization</div>
-            <div class="dd-stat-val" id="pd2-s-boqutil">—</div>
-            <div class="dd-stat-sub" id="pd2-s-boqutil-sub">avg across active projects</div>
           </div>
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Excess Material Requests Pending</div>
             <div class="dd-stat-val" id="pd2-s-jc-increase" style="color:#b91c1c;">—</div>
             <div class="dd-stat-sub">live · all projects</div>
           </div>
-          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
-            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">BOQs Awaiting Initial Production Plan</div>
+            <div class="dd-stat-val" id="pd2-s-boq-awaiting-plan" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub">live · blocks Material Issue Tickets</div>
           </div>
-          <div class="dd-stat-card" style="opacity:0.45; pointer-events:none;">
-            <div class="dd-stat-label" style="color:var(--muted);">Coming Soon</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">—</div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">FG Items Awaiting QA Approval</div>
+            <div class="dd-stat-val" id="pd2-s-fg-pending" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub" id="pd2-s-fg-pending-sub">live · all departments</div>
           </div>
         </div>
 
-        <!-- ROW 3: Charts — 2 real + 1 upcoming -->
+        <!-- ROW 3: Charts -->
         <div style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 26%;">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
             <div class="dd-card-title">Finished Goods by Department</div>
@@ -3791,13 +3788,13 @@
             <canvas id="pd2-chart-trend" style="max-height:100px;"></canvas>
           </div>
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
-            <div class="dd-card-title">Project Completion Progress</div>
+            <div class="dd-card-title">Average Step Slip by Flow</div>
             <canvas id="pd2-chart-completion" style="max-height:100px;"></canvas>
           </div>
         </div>
 
-        <!-- ROW 4: Two Tables -->
-        <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:10px; flex:1; min-height:0;">
+        <!-- ROW 4: In Progress Job Cards | Due Today | Overdue (Project Timeline) -->
+        <div style="display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
 
           <!-- In Progress Job Cards -->
           <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
@@ -3831,10 +3828,37 @@
             </div>
           </div>
 
-          <!-- Recent Finished Goods Activity -->
-          <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
-            <div class="dd-card-title" style="margin-bottom:6px;">✅ Recent Finished Goods</div>
-            <div id="pd2-fg-feed" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex:1;"></div>
+          <!-- Due Today (Production Planning, Project Timeline) -->
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title" style="margin-bottom:8px;">Due Today (Active projects, Project Timeline)</div>
+            <div style="flex:1; min-height:0; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead>
+                  <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
+                    <th style="padding:4px;">Project</th>
+                    <th style="padding:4px;">Item</th>
+                  </tr>
+                </thead>
+                <tbody id="pd2-duetoday-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Overdue (Production Planning, Project Timeline) -->
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title" style="margin-bottom:8px;">Overdue (Active projects, Project Timeline)</div>
+            <div style="flex:1; min-height:0; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead>
+                  <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
+                    <th style="padding:4px;">Project</th>
+                    <th style="padding:4px;">Item</th>
+                    <th style="padding:4px; text-align:right;">Days Late</th>
+                  </tr>
+                </thead>
+                <tbody id="pd2-overdue-tbody"></tbody>
+              </table>
+            </div>
           </div>
 
         </div>

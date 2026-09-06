@@ -28,15 +28,16 @@ function pd2LoadCustom() {
 }
 
 async function pd2LoadDashboard(customVal) {
-  ["pd2-s-activejcn","pd2-s-finished","pd2-s-inprogress","pd2-s-store-approvals","pd2-s-unique-proj",
-   "pd2-s-tickets","pd2-s-boqutil","pd2-s-jc-increase"].forEach(id => {
+  ["pd2-s-activejcn","pd2-s-finished","pd2-s-inprogress","pd2-s-mrd-awaiting","pd2-s-mrd-revision",
+   "pd2-s-tickets","pd2-s-jc-increase","pd2-s-boq-awaiting-plan","pd2-s-fg-pending"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
   try {
     const data = await apFetch({
       action:      "fetchProductionDashboardData",
       periodType:  pd2CurrentPeriod,
-      periodValue: customVal || ""
+      periodValue: customVal || "",
+      todayOverride: localStorage.getItem("ptlTodayOverride") || "",
     });
     if (!data.success) { alert("Production Dashboard load failed: " + data.error); return; }
     pd2RenderDashboard(data);
@@ -46,25 +47,32 @@ async function pd2LoadDashboard(customVal) {
 }
 
 function pd2RenderDashboard(data) {
-  const { stats, byDept, dailyTrend, inProgressJCNs, recentFG, projectCompletion } = data;
+  const { stats, byDept, dailyTrend, inProgressJCNs, stepSlipByFlow, dueToday, overdue } = data;
+
+  // Sub-department scoping (explicit request, 6 Sep 2026) — a Reactor/
+  // Capacitor/Panel person's session is scoped server-side (routes/
+  // dashboards.js's resolveProductionSubDeptScope); this just reflects
+  // that back in the title so it's never silently unclear why the
+  // numbers only cover one department. Unscoped for everyone else.
+  const titleEl = document.getElementById("dash-global-title");
+  if (titleEl) titleEl.textContent = stats.subDept ? `Production Dashboard — ${stats.subDept}` : "Production Dashboard";
 
   // Row 1
-  document.getElementById("pd2-s-activejcn").textContent      = stats.activeJCNs;
-  document.getElementById("pd2-s-finished").textContent       = stats.finishedThisPeriod;
-  document.getElementById("pd2-s-inprogress").textContent     = stats.inProgress;
-  document.getElementById("pd2-s-store-approvals").textContent= stats.pendingStoreApprovals ?? "—";
-  document.getElementById("pd2-s-unique-proj").textContent    = stats.uniqueProjectsActive  ?? "—";
+  document.getElementById("pd2-s-activejcn").textContent   = stats.activeJCNs;
+  document.getElementById("pd2-s-finished").textContent    = stats.finishedThisPeriod;
+  document.getElementById("pd2-s-inprogress").textContent  = stats.inProgress;
+  document.getElementById("pd2-s-mrd-awaiting").textContent= stats.prnsAwaitingMrd ?? "—";
+  document.getElementById("pd2-s-mrd-revision").textContent= stats.prnsNeedingMrdRevision ?? "—";
 
   // Row 2
-  document.getElementById("pd2-s-tickets").textContent    = stats.storeTickets;
-  document.getElementById("pd2-s-jc-increase").textContent= stats.jcIncreaseRequestsPending ?? "—";
-  if (stats.boqUtilPct !== null) {
-    document.getElementById("pd2-s-boqutil").textContent     = stats.boqUtilPct + "%";
-    document.getElementById("pd2-s-boqutil-sub").textContent = "avg across active projects";
-  } else {
-    document.getElementById("pd2-s-boqutil").textContent     = "—";
-    document.getElementById("pd2-s-boqutil-sub").textContent = "no active BOQ data";
-  }
+  document.getElementById("pd2-s-tickets").textContent          = stats.storeTickets;
+  document.getElementById("pd2-s-jc-increase").textContent      = stats.jcIncreaseRequestsPending ?? "—";
+  document.getElementById("pd2-s-boq-awaiting-plan").textContent= stats.boqsAwaitingProductionPlan ?? "—";
+  document.getElementById("pd2-s-fg-pending").textContent       = stats.fgAwaitingQaApproval ?? "—";
+  const fgSub = document.getElementById("pd2-s-fg-pending-sub");
+  if (fgSub) fgSub.textContent = stats.fgAwaitingQaApprovalOldest
+    ? `live · oldest ${formatOrdinalDate(stats.fgAwaitingQaApprovalOldest)}`
+    : (stats.subDept ? `live · ${stats.subDept}` : "live · all departments");
 
   // Chart 1 — FG by Department (bar)
   if (pd2ChartDept) pd2ChartDept.destroy();
@@ -97,31 +105,30 @@ function pd2RenderDashboard(data) {
       scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
   });
 
-  // Chart 3 — Project Completion Progress (horizontal stacked bar)
+  // Chart 3 — Average Step Slip by Flow (horizontal bar). Positive days =
+  // finished later than its own target date; negative = early. Replaces
+  // Project Completion Progress (thin/redundant once Due Today/Overdue
+  // below covers the same lateness question with real dates).
   if (pd2ChartCompletion) pd2ChartCompletion.destroy();
   const ctx3el = document.getElementById("pd2-chart-completion");
-  if (ctx3el && projectCompletion && projectCompletion.length > 0) {
-    const compLabels   = projectCompletion.map(p => p.customerName.length > 18 ? p.customerName.substring(0, 16) + "…" : p.customerName);
-    const finishedData = projectCompletion.map(p => p.finished);
-    const inProgData   = projectCompletion.map(p => p.inProgress);
+  if (ctx3el && stepSlipByFlow && stepSlipByFlow.length > 0) {
+    const slipLabels = stepSlipByFlow.map(f => f.flowName);
+    const slipData    = stepSlipByFlow.map(f => f.avgSlipDays);
     pd2ChartCompletion = new Chart(ctx3el.getContext("2d"), {
       type: "bar",
       data: {
-        labels: compLabels,
-        datasets: [
-          { label: "Finished",    data: finishedData, backgroundColor: "rgba(16,185,129,0.75)", borderRadius: 3 },
-          { label: "In Progress", data: inProgData,   backgroundColor: "rgba(245,158,11,0.75)", borderRadius: 3 }
-        ]
+        labels: slipLabels,
+        datasets: [{ label: "Avg Slip (days)", data: slipData,
+          backgroundColor: slipData.map(v => v > 0 ? "rgba(239,68,68,0.75)" : "rgba(16,185,129,0.75)"),
+          borderRadius: 3 }]
       },
       options: {
         indexAxis: "y",
         responsive: true,
-        plugins: {
-          legend: { display: true, position: "bottom", labels: { font: { size: 9 }, boxWidth: 10, padding: 6 } }
-        },
+        plugins: { legend: { display: false } },
         scales: {
-          x: { stacked: true, ticks: { stepSize: 1 }, grid: { color: "#f1f5f9" } },
-          y: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 } } }
+          x: { grid: { color: "#f1f5f9" } },
+          y: { grid: { display: false }, ticks: { font: { size: 9 } } }
         }
       }
     });
@@ -131,7 +138,7 @@ function pd2RenderDashboard(data) {
     c.fillStyle = "#94a3b8";
     c.font = "11px sans-serif";
     c.textAlign = "center";
-    c.fillText("No active projects with job cards", ctx3el.width / 2, ctx3el.height / 2);
+    c.fillText("No completed steps with target dates yet", ctx3el.width / 2, ctx3el.height / 2);
   }
 
   // Row 4 left — In Progress JCN table
@@ -154,25 +161,33 @@ function pd2RenderDashboard(data) {
   if (searchEl) searchEl.value = "";
   pd2RenderJCNTable();
 
-  // Row 4 right — Recent FG feed
-  const feed = document.getElementById("pd2-fg-feed");
-  if (feed) {
-    if (recentFG.length === 0) {
-      feed.innerHTML = `<div style="font-size:0.75rem; color:var(--muted); padding:8px;">No finished goods entries yet.</div>`;
-    } else {
-      feed.innerHTML = recentFG.map(fg => `
-        <div style="padding:7px 10px; background:#fff; border:1px solid var(--border); border-radius:4px;">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px;">
-            <div style="flex:1; min-width:0;">
-              <div style="font-size:0.75rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fg.productName} <span style="color:var(--muted); font-weight:400;">${fg.productRating}</span></div>
-              <div style="font-size:0.67rem; color:var(--muted);">${fg.projectId} · ${fg.department} · ${fg.jobCardNumber}</div>
-            </div>
-            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
-              <span style="font-size:0.62rem; color:var(--muted);">${formatOrdinalDate(fg.date)}</span>
-            </div>
-          </div>
-        </div>`).join("");
-    }
+  // Row 4 right two panels — Due Today / Overdue, Production's own
+  // Project Timeline trunk item (Production Planning), across every
+  // Active project (routes/dashboards.js's fetchProductionTimelineDueOverdue)
+  // — same shape/convention as Design's and Purchase's own Due Today/
+  // Overdue panels (dd-duetoday-tbody/dd-overdue-tbody,
+  // pd-duetoday-tbody/pd-overdue-tbody).
+  const dueTbody = document.getElementById("pd2-duetoday-tbody");
+  if (dueTbody) {
+    dueTbody.innerHTML = (dueToday || []).length === 0
+      ? `<tr><td colspan="2" style="color:var(--muted); padding:6px;">Nothing due today.</td></tr>`
+      : dueToday.map(r => `
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${r.companyName}</span></td>
+            <td style="padding:4px;">${r.label}</td>
+          </tr>`).join("");
+  }
+
+  const overdueTbody = document.getElementById("pd2-overdue-tbody");
+  if (overdueTbody) {
+    overdueTbody.innerHTML = (overdue || []).length === 0
+      ? `<tr><td colspan="3" style="color:var(--muted); padding:6px;">Nothing overdue — nice work.</td></tr>`
+      : overdue.map(r => `
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${r.companyName}</span></td>
+            <td style="padding:4px;">${r.label}</td>
+            <td style="padding:4px; text-align:right; color:#b91c1c; font-weight:700;">${r.daysOverdue}d</td>
+          </tr>`).join("");
   }
 }
 
