@@ -46,7 +46,7 @@ async function sdLoadDashboard(customVal) {
 }
 
 function sdRenderDashboard(data) {
-  const { stats, byDept, inboundOutboundTrend, expectedDeliveryTimeline, projectHealth, recentTickets, inboundPipelineAging } = data;
+  const { stats, byDept, inboundOutboundTrend, expectedDeliveryTimeline, projectHealth, inboundPipelineAging } = data;
 
   // Row 1 stat cards — live queues
   document.getElementById("sd-s-pending").textContent   = stats.pendingApprovals;
@@ -152,43 +152,13 @@ function sdRenderDashboard(data) {
     }
   }
 
-  // Row 4 middle — Project Health
+  // Row 4 right — Project Health
   sdHealthData        = projectHealth;
   sdHealthFiltered    = [...projectHealth];
   sdHealthCurrentPage = 1;
   const searchEl = document.getElementById("sd-health-search");
   if (searchEl) searchEl.value = "";
   sdRenderHealthTable();
-
-  // Row 4 right — Recent Ticket Activity
-  const feed = document.getElementById("sd-recent-feed");
-  if (feed) {
-    if (recentTickets.length === 0) {
-      feed.innerHTML = `<div style="font-size:0.75rem; color:var(--muted); padding:8px;">No recent ticket activity.</div>`;
-    } else {
-      const statusColors = {
-        "Pending":                    { bg:"#fef9c3", color:"#854d0e" },
-        "Approved":                   { bg:"#dcfce7", color:"#15803d" },
-        "Increase Approved":          { bg:"#dcfce7", color:"#15803d" },
-        "Rejected":                   { bg:"#fee2e2", color:"#b91c1c" },
-        "Rejected by Admin":          { bg:"#fee2e2", color:"#b91c1c" },
-        "Pending BOQ Increase Review":{ bg:"#ede9fe", color:"#6d28d9" },
-      };
-      feed.innerHTML = recentTickets.map(t => {
-        const sc = statusColors[t.status] || { bg:"#f1f5f9", color:"#475569" };
-        return `<div style="display:flex; justify-content:space-between; align-items:flex-start; padding:6px 8px; background:#fff; border:1px solid var(--border); border-radius:4px; gap:8px;">
-          <div style="flex:1; min-width:0;">
-            <div style="font-size:0.72rem; font-weight:700; font-family:monospace; color:var(--brand); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.ticketId}</div>
-            <div style="font-size:0.68rem; color:var(--muted);">${t.projectId} · ${t.department} · ${t.requestedBy}</div>
-          </div>
-          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
-            <span style="font-size:0.65rem; font-weight:700; padding:1px 7px; border-radius:6px; background:${sc.bg}; color:${sc.color};">${t.status}</span>
-            <span style="font-size:0.62rem; color:var(--muted);">${formatOrdinalDateTime(t.dateCreated) || t.dateCreated}</span>
-          </div>
-        </div>`;
-      }).join("");
-    }
-  }
 }
 
 function sdFilterHealth() {
