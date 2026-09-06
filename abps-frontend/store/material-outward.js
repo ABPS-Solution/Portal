@@ -38,6 +38,12 @@ function switchMaterialOutwardToggle(mode) {
 async function loadMaterialOutwardServiceQueue() {
   const feed = document.getElementById("mow-service-queue-feed");
   if (!feed) return;
+  // Restores visibility in case a prior Confirm & Save hid this feed to
+  // show its own dedicated success view (see commitMaterialOutwardChallan/
+  // mowResetAfterChallanSave) — every path back into this queue (toggle
+  // switch, Load Next Ticket, Refresh Queue after Reject) goes through
+  // here, so this is the one place that needs to undo that hide.
+  feed.style.display = "flex";
   feed.innerHTML = `<div style="color:var(--muted); padding:20px; text-align:center;">Loading approved Service tickets...</div>`;
   try {
     const data = await apFetch({ action: "fetchServiceTicketsAwaitingChallan" });
@@ -366,8 +372,14 @@ async function commitMaterialOutwardChallan(ticketId) {
     if (!data.success) throw new Error(data.error || "Save failed.");
     delete window._mowExtractedPreviewByTicket[ticketId];
     delete window._mowFilesByTicket[ticketId];
-    showSuccessWithReset("mow-feedback-banner", `Delivery Challan ${escapeHtml(challanNumber)} and Material Out Request Form saved for ${escapeHtml(ticketId)}.`, "Load Next Ticket", "loadMaterialOutwardServiceQueue()");
-    loadMaterialOutwardServiceQueue();
+    // Own dedicated success view, same convention as Stock Sweep/Create
+    // BOQ — hide the rest of the queue entirely (don't leave the other
+    // still-pending tickets visible underneath) until the operator
+    // explicitly clicks Load Next Ticket, which is what actually reloads
+    // the queue and dismisses this banner (mowResetAfterChallanSave).
+    const feed = document.getElementById("mow-service-queue-feed");
+    if (feed) feed.style.display = "none";
+    showSuccessWithReset("mow-feedback-banner", `Delivery Challan ${escapeHtml(challanNumber)} and Material Out Request Form saved for ${escapeHtml(ticketId)}.`, "Load Next Ticket", "mowResetAfterChallanSave()");
   } catch (err) {
     showError(err.message);
   } finally {
@@ -375,11 +387,38 @@ async function commitMaterialOutwardChallan(ticketId) {
   }
 }
 
+// "+ Load Next Ticket" — dismisses the Confirm & Save success view and
+// reloads the queue (which also restores the feed's own visibility, see
+// loadMaterialOutwardServiceQueue's own comment).
+function mowResetAfterChallanSave() {
+  const banner = document.getElementById("mow-feedback-banner");
+  if (banner) banner.style.display = "none";
+  loadMaterialOutwardServiceQueue();
+}
+
+// Same "Searching for ..." summary convention as the Accounts search
+// screens (cash-expense-search.js's cesBuildSearchLabel and siblings) —
+// shown once a search actually runs, between the filter row and results.
+function mowBuildSearchLabel() {
+  const esc = (s) => (s || "").toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const val = (s) => `<span style="color:var(--brand);">${esc(s || 'All')}</span>`;
+  const projectId = document.getElementById("mow-search-project-ta-input").value.trim();
+  const dateFrom = document.getElementById("mow-search-date-from").value;
+  const dateTo = document.getElementById("mow-search-date-to").value;
+  const dateRangeLabel = (dateFrom || dateTo) ? `${dateFrom ? formatOrdinalDate(dateFrom) : '…'} to ${dateTo ? formatOrdinalDate(dateTo) : '…'}` : "All";
+  return `<span style="color:#000;">Searching for</span>` +
+    `<br><span style="color:#000;">Project ID or Customer Name:</span> ${val(projectId)}` +
+    `<br><span style="color:#000;">Date:</span> ${val(dateRangeLabel)}`;
+}
+
 async function runMaterialOutwardSearch() {
   const projectId = document.getElementById("mow-search-project-ta-input").value.trim();
   const dateFrom = document.getElementById("mow-search-date-from").value;
   const dateTo = document.getElementById("mow-search-date-to").value;
+  const label = document.getElementById("mow-search-label");
   const results = document.getElementById("mow-search-results");
+  label.style.display = "block";
+  label.innerHTML = mowBuildSearchLabel();
   results.innerHTML = `<div style="color:var(--muted); padding:16px; text-align:center;">Searching...</div>`;
   try {
     const data = await apFetch({ action: "searchMaterialOutwardChallans", projectId: projectId || null, dateFrom: dateFrom || null, dateTo: dateTo || null });
@@ -389,30 +428,43 @@ async function runMaterialOutwardSearch() {
       results.innerHTML = `<div style="color:var(--muted); padding:16px; text-align:center;">No Delivery Challans match this search.</div>`;
       return;
     }
+    // Challan Materials — every material + qty on this challan, one per
+    // line WITHIN the same cell (not a separate row per material), so a
+    // multi-material challan still reads as one register entry. Needs
+    // real width, so Date/Project/Ticket/Returnable/the two document
+    // columns are all narrowed slightly to make room. Challan No. and
+    // Consignee columns dropped (explicit request) — Ticket + Project
+    // already identify the row, and the challan document itself (View
+    // link) has both if ever needed.
     results.innerHTML = `
-      <table style="width:100%; border-collapse:collapse;">
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+        <colgroup><col style="width:9%;" /><col style="width:16%;" /><col style="width:9%;" /><col style="width:34%;" /><col style="width:10%;" /><col style="width:11%;" /><col style="width:11%;" /></colgroup>
         <thead><tr style="background:var(--highlight-bg);">
-          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Challan No.</th>
           <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Date</th>
           <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Project</th>
           <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Ticket</th>
-          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Consignee</th>
+          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Challan Materials</th>
           <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Returnable</th>
           <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Delivery Challan</th>
           <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Request Form</th>
         </tr></thead>
         <tbody>
-          ${challans.map(c => `
+          ${challans.map(c => {
+            const materials = Array.isArray(c.line_items) ? c.line_items : [];
+            const materialsHtml = materials.length
+              ? materials.map(it => `${escapeHtml(it.materialName || '')} — ${escapeHtml(String(it.quantity ?? ''))} ${escapeHtml(it.unit || '')}`).join('<br>')
+              : '—';
+            return `
             <tr>
-              <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.challan_number || '')}</td>
               <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(formatOrdinalDate(c.challan_date) || c.challan_date || '')}</td>
-              <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.project_id || 'Legacy')}${c.company_name ? ' — ' + escapeHtml(c.company_name) : ''}</td>
+              <td style="padding:8px; border:1px solid var(--border); word-wrap:break-word;">${escapeHtml(c.project_id || 'Legacy')}${c.company_name ? ' — ' + escapeHtml(c.company_name) : ''}</td>
               <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.ticket_id || '')}</td>
-              <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.consignee_name || '')}</td>
+              <td style="padding:8px; border:1px solid var(--border); word-wrap:break-word;">${materialsHtml}</td>
               <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.morf_returnable_status || '—')}</td>
               <td style="padding:8px; border:1px solid var(--border);">${c.document_url ? `<a href="${driveLink(c.document_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">View ↗</a>` : '—'}</td>
               <td style="padding:8px; border:1px solid var(--border);">${c.morf_document_url ? `<a href="${driveLink(c.morf_document_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">View ↗</a>` : '—'}</td>
-            </tr>`).join("")}
+            </tr>`;
+          }).join("")}
         </tbody>
       </table>`;
   } catch (err) {
