@@ -1714,9 +1714,12 @@
           </div>
         </div>
 
-        <div id="pinv-generate-zone" style="display:none; margin-top:16px; gap:10px; justify-content:flex-end;">
-          <button class="nav-btn-styled" id="pinv-generate-partial-btn" disabled style="background:var(--accent); padding:10px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;" onclick="openPinvConfirmModal('partial')">Generate Partial Invoice</button>
-          <button class="nav-btn-styled" id="pinv-generate-final-btn" disabled style="background:#15803d; padding:10px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;" onclick="openPinvConfirmModal('final')">Generate Final Invoice</button>
+        <div id="pinv-generate-zone" style="display:none; flex-direction:column; align-items:flex-end; gap:6px; margin-top:16px;">
+          <div id="pinv-generate-reason" style="font-size:0.78rem; color:#b45309; font-weight:600; text-align:right;"></div>
+          <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button class="nav-btn-styled" id="pinv-generate-partial-btn" disabled style="background:var(--accent); padding:10px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;" onclick="openPinvConfirmModal('partial')">Generate Partial Invoice</button>
+            <button class="nav-btn-styled" id="pinv-generate-final-btn" disabled style="background:#15803d; padding:10px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;" onclick="openPinvConfirmModal('final')">Generate Final Invoice</button>
+          </div>
         </div>
       </div>
 

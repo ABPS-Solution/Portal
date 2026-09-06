@@ -1,4 +1,8 @@
 let pinvInvoiceState = null;
+// Master copy of every candidate line fetched for the current project —
+// see handlePinvProjectChange's own comment on why this is kept separate
+// from pinvCache.lines (which pinvDeleteLineItem trims).
+let pinvAllLines = [];
 
 // Invoice Documents — one dropzone per type, each accepting multiple
 // files, mirroring finished-goods.js's FG_DOC_META pattern. lrCopy, mdcc,
@@ -142,6 +146,15 @@ async function handlePinvProjectChange(projectId) {
       apFetch({ action: "fetchNextInvoiceNumberPreview" }),
     ]);
     if (!lineData.success) { showBOQBanner("pinv-feedback", lineData.error || "Failed to load.", "error"); return; }
+    // Kept separate from pinvCache.lines (which pinvDeleteLineItem trims
+    // as rows are removed from the draft) so a deleted row can be re-added
+    // via "+ Add row" without a full project reload — every candidate here
+    // already resolves to a real project.customer_po_line_items row via
+    // lineId, same requirement pinvDeleteLineItem's own header comment
+    // documents (project_invoice_line_items.po_line_id is NOT NULL+FK'd,
+    // so a genuinely new/unbacked row could never be added, only an
+    // already-fetched one re-added).
+    pinvAllLines = lineData.lines.slice();
     pinvCache = {
       projectId, lines: lineData.lines, poNumber: prefillData.poNumber || "", poDate: prefillData.poDate || "",
       // Preview only -- the server mints the real number atomically at
@@ -194,7 +207,7 @@ function renderPinvDetail() {
       <td style="padding:8px; text-align:center;">
         <input type="number" min="0" max="${maxQty}" ${pinvInvoiceState.lineItems[idx].quantity > 0 ? `value="${pinvInvoiceState.lineItems[idx].quantity}"` : `value="" placeholder="0"`}
           ${blockerMsgs.length ? 'disabled' : ''}
-          oninput="updatePinvClaimQty(${idx}, this.value, ${maxQty})"
+          oninput="updatePinvClaimQty(${idx}, this.value, ${maxQty}, this)"
           style="width:70px; text-align:center; padding:4px; font-size:0.87rem;" />
       </td>
     </tr>`;
@@ -211,12 +224,20 @@ function renderPinvDetail() {
 // Qty typed against a per-line readiness cap (readyToInvoiceQty for a
 // BOQ-linked line, orderedQuantity for a freight/service line) — the
 // server re-validates and re-claims independently, this is only what's
-// shown/sent.
-function updatePinvClaimQty(idx, value, maxQty) {
+// shown/sent. inputEl is optional (4th arg) so this can be called from
+// places with no live DOM input to sync back to.
+function updatePinvClaimQty(idx, value, maxQty, inputEl) {
   const qty = Math.max(0, Math.min(Number(value) || 0, maxQty));
   const li = pinvInvoiceState.lineItems[idx];
   li.quantity = qty;
   li.totalBasicPrice = qty * (parseFloat(li.ratePerQuantity) || 0);
+  // Typing above maxQty (e.g. above Ready to Invoice) silently clamped
+  // the STATE to maxQty already, but left the box showing the raw typed
+  // number — an operator could see "1" in the box while the real,
+  // submitted quantity was actually 0, with nothing here to explain why
+  // Generate stayed disabled. Sync the box back to what was actually
+  // accepted.
+  if (inputEl && Number(inputEl.value) !== qty) inputEl.value = qty > 0 ? qty : '';
   renderPinvLineItemsTable();
   recalcPinvTotals();
   updatePinvGenerateButtonsState();
@@ -225,22 +246,54 @@ function updatePinvClaimQty(idx, value, maxQty) {
 // Final Invoice only unlocks once every BOQ-linked line has nothing left
 // to produce — already invoiced + currently ready together cover the full
 // ordered quantity, and every Job Card that exists is QA-passed.
+//
+// Also spells out exactly what's blocking each button, right next to
+// them — same convention as FG Approval's own submit-reason line
+// (production/fg-approval.js's updateFGApprovalSubmitState). The
+// disabled state alone (or a hover-only title tooltip) gave no visible
+// clue why Generate wouldn't click, especially since "Ready to Invoice:
+// 0" for a product whose actual assembly-level Job Card hasn't reached
+// QA/FG yet reads as a bug if nothing says so out loud.
 function updatePinvGenerateButtonsState() {
   const partialBtn = document.getElementById("pinv-generate-partial-btn");
   const finalBtn = document.getElementById("pinv-generate-final-btn");
+  const reasonEl = document.getElementById("pinv-generate-reason");
   if (!partialBtn || !finalBtn) return;
   const anyQty = (pinvInvoiceState.lineItems || []).some(li => Number(li.quantity) > 0);
-  const anyBlocked = pinvCache.lines.some(l => l.pendingTicketsCount > 0 || l.pendingBoqIncreaseCount > 0);
+  const blockedLines = pinvCache.lines.filter(l => l.pendingTicketsCount > 0 || l.pendingBoqIncreaseCount > 0);
+  const anyBlocked = blockedLines.length > 0;
   partialBtn.disabled = !anyQty || anyBlocked;
   partialBtn.style.opacity = partialBtn.disabled ? "0.5" : "1";
   partialBtn.style.cursor = partialBtn.disabled ? "not-allowed" : "pointer";
 
-  const allSettled = pinvCache.lines.filter(l => l.boqId).every(l =>
-    l.jcTotal > 0 && l.jcQaPassed === l.jcTotal && (l.alreadyInvoicedQty + l.readyToInvoiceQty) >= l.orderedQuantity
+  const boqLines = pinvCache.lines.filter(l => l.boqId);
+  const unsettledLines = boqLines.filter(l =>
+    !(l.jcTotal > 0 && l.jcQaPassed === l.jcTotal && (l.alreadyInvoicedQty + l.readyToInvoiceQty) >= l.orderedQuantity)
   );
+  const allSettled = unsettledLines.length === 0;
   finalBtn.disabled = !allSettled || anyBlocked;
   finalBtn.style.opacity = finalBtn.disabled ? "0.5" : "1";
   finalBtn.style.cursor = finalBtn.disabled ? "not-allowed" : "pointer";
+
+  const partialReasons = [];
+  if (anyBlocked) partialReasons.push(`${blockedLines.length} product(s) blocked by pending store tickets/BOQ Increase Requests`);
+  if (!anyQty) partialReasons.push(`Qty to Bill Now is 0 for every product`);
+
+  const finalReasons = [];
+  if (anyBlocked) finalReasons.push(`${blockedLines.length} product(s) blocked by pending store tickets/BOQ Increase Requests`);
+  unsettledLines.forEach(l => {
+    const name = l.productName || l.description || 'This product';
+    if (!(l.jcTotal > 0)) finalReasons.push(`${name}: no Job Card exists yet`);
+    else if (l.jcQaPassed !== l.jcTotal) finalReasons.push(`${name}: ${l.jcTotal - l.jcQaPassed} of ${l.jcTotal} Job Card(s) not yet QA-passed`);
+    else if ((l.alreadyInvoicedQty + l.readyToInvoiceQty) < l.orderedQuantity) finalReasons.push(`${name}: only ${l.alreadyInvoicedQty + l.readyToInvoiceQty} of ${l.orderedQuantity} ordered qty invoiced/ready`);
+  });
+
+  if (reasonEl) {
+    // Show whichever button's blockers are more relevant — if Partial is
+    // already generatable, only Final's remaining blockers matter.
+    const shown = !partialBtn.disabled ? finalReasons : [...new Set([...partialReasons, ...finalReasons])];
+    reasonEl.textContent = shown.length ? `⚠️ ${shown.join(' · ')}` : '';
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -541,21 +594,67 @@ function renderPinvLineItemsTable() {
               style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.76rem; font-weight:700; padding:3px 7px; cursor:pointer;">✕</button></td>
           </tr>`).join('')}
       </tbody>
-    </table>`;
+    </table>
+    <div id="pinv-addrow-zone" style="margin-top:8px;">
+      <span onclick="pinvShowAddRowPicker()" style="font-size:0.78rem; font-weight:700; color:var(--brand); cursor:pointer; text-decoration:underline;">+ Add row</span>
+    </div>`;
   wrap.querySelectorAll('textarea').forEach(pinvAutoGrowField);
 }
 
-// Delete-only, not add: every row here is tied to a real
-// project.customer_po_line_items row via lineId, and
-// project_invoice_line_items.po_line_id is NOT NULL + FK'd to that table --
-// a freely-typed new row with no backing PO line item would just be
-// silently dropped by generatePartialProjectInvoice/generateFinalProjectInvoice
-// at submit time, since both only ever bill lines that resolve to a real PO
-// line. Removing an existing line from THIS invoice is safe (same effect as
+// Re-add only, never a freely-typed new row: every row here is tied to a
+// real project.customer_po_line_items row via lineId, and
+// project_invoice_line_items.po_line_id is NOT NULL + FK'd to that table
+// (confirmed live, 6 Sep 2026) -- a genuinely new/unbacked row would just
+// be silently dropped by generatePartialProjectInvoice/
+// generateFinalProjectInvoice at submit time, since both only ever bill
+// lines that resolve to a real PO line. "+ Add row" therefore only ever
+// re-adds a line that was already fetched for this project (pinvAllLines,
+// the untrimmed master copy) but got removed from the current draft via
+// pinvDeleteLineItem -- never a blank row.
+function pinvShowAddRowPicker() {
+  const zone = document.getElementById("pinv-addrow-zone");
+  if (!zone) return;
+  const presentIds = new Set(pinvCache.lines.map(l => l.lineId));
+  const candidates = pinvAllLines.filter(l => !presentIds.has(l.lineId));
+  if (candidates.length === 0) {
+    zone.innerHTML = `<span style="font-size:0.78rem; color:var(--muted);">Every product for this project is already listed above.</span>`;
+    return;
+  }
+  zone.innerHTML = `
+    <div style="display:flex; gap:8px; align-items:center;">
+      <select id="pinv-addrow-select" style="padding:6px 8px; font-size:0.85rem; border:1px solid var(--border); border-radius:4px; max-width:400px;">
+        ${candidates.map(l => `<option value="${l.lineId}">${escapeHtml(l.productName || l.description || ('Line ' + l.lineId))}</option>`).join('')}
+      </select>
+      <button type="button" onclick="pinvAddLineItemRow()" class="nav-btn-styled" style="background:var(--accent); padding:5px 12px; font-size:0.78rem;">Add</button>
+      <span onclick="renderPinvLineItemsTable()" style="font-size:0.78rem; color:var(--muted); cursor:pointer; text-decoration:underline;">Cancel</span>
+    </div>`;
+}
+
+function pinvAddLineItemRow() {
+  const select = document.getElementById("pinv-addrow-select");
+  if (!select || !select.value) return;
+  const lineId = Number(select.value);
+  const line = pinvAllLines.find(l => l.lineId === lineId);
+  if (!line) return;
+  pinvCache.lines.push(line);
+  // Same default-quantity rule as the initial load (initPinvInvoiceStateFromLines):
+  // Ready to Invoice for a BOQ-linked line, the full ordered quantity for a
+  // freight/service line with no BOQ.
+  const qty = line.boqId ? line.readyToInvoiceQty : 0;
+  pinvInvoiceState.lineItems.push({
+    lineId: line.lineId, description: line.description, hsnNumber: line.hsnNumber, unit: line.unit,
+    quantity: qty, ratePerQuantity: line.ratePerQuantity, totalBasicPrice: qty * (parseFloat(line.ratePerQuantity) || 0),
+  });
+  renderPinvDetail();
+}
+
+// Removing an existing line from THIS draft is safe (same effect as
 // zeroing its quantity) and keeps pinvCache.lines in step with
 // pinvInvoiceState.lineItems since the JC-readiness table above (Ordered
-// Qty/JCs Total/etc.) is index-aligned against pinvCache.lines by the same
-// idx — re-rendering both via renderPinvDetail() keeps them in sync.
+// Qty/Total QA-Passed Job Cards/etc.) is index-aligned against
+// pinvCache.lines by the same idx — re-rendering both via
+// renderPinvDetail() keeps them in sync. The removed line stays available
+// in pinvAllLines for "+ Add row" to bring back.
 function pinvDeleteLineItem(idx) {
   if (!pinvInvoiceState.lineItems[idx]) return;
   pinvInvoiceState.lineItems.splice(idx, 1);
