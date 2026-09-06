@@ -963,6 +963,18 @@ function handleFgStockSearchInput(query) {
   renderFinishedGoodsStoreStockTables();
 }
 
+// Collapse/expand one of the Reactor/Capacitor/Panel tables on Live
+// Finished Goods Store Stock — display-only toggle, doesn't touch the
+// underlying cached rows or trigger a re-fetch.
+function toggleFgStockGroup(key) {
+  const wrap = document.getElementById(`fg-stock-${key}-wrap`);
+  const chevron = document.getElementById(`fg-stock-${key}-chevron`);
+  if (!wrap) return;
+  const collapsed = wrap.style.display === "none";
+  wrap.style.display = collapsed ? "" : "none";
+  if (chevron) chevron.style.transform = collapsed ? "rotate(0deg)" : "rotate(-90deg)";
+}
+
 function renderFinishedGoodsStoreStockTables() {
   const cached = window.cachedFinishedGoodsStoreStockCollection;
   if (!cached) return;

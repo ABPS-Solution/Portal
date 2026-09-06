@@ -1086,8 +1086,10 @@
       </div>
       <!-- Reactor -->
       <div style="margin-bottom:20px;">
-        <div style="font-size:0.8rem; font-weight:700; color:#1a2332; margin-bottom:8px; padding:6px 10px; background:#f8fafc; border-radius:var(--radius); border-left:3px solid var(--brand);">Reactor</div>
-        <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+        <div onclick="toggleFgStockGroup('reactor')" style="cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; color:#1a2332; margin-bottom:8px; padding:6px 10px; background:#f8fafc; border-radius:var(--radius); border-left:3px solid var(--brand);">
+          <span id="fg-stock-reactor-chevron" style="display:inline-block; transition:transform 0.15s;">▾</span> Reactor
+        </div>
+        <div id="fg-stock-reactor-wrap" style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
           <table style="width:100%; border-collapse:collapse; min-width:700px;">
             <thead>
               <tr style="background:#f8fafc;">
@@ -1109,8 +1111,10 @@
 
       <!-- Capacitor -->
       <div style="margin-bottom:20px;">
-        <div style="font-size:0.8rem; font-weight:700; color:#1a2332; margin-bottom:8px; padding:6px 10px; background:#f8fafc; border-radius:var(--radius); border-left:3px solid var(--brand);">Capacitor</div>
-        <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+        <div onclick="toggleFgStockGroup('capacitor')" style="cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; color:#1a2332; margin-bottom:8px; padding:6px 10px; background:#f8fafc; border-radius:var(--radius); border-left:3px solid var(--brand);">
+          <span id="fg-stock-capacitor-chevron" style="display:inline-block; transition:transform 0.15s;">▾</span> Capacitor
+        </div>
+        <div id="fg-stock-capacitor-wrap" style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
           <table style="width:100%; border-collapse:collapse; min-width:700px;">
             <thead>
               <tr style="background:#f8fafc;">
@@ -1132,8 +1136,10 @@
 
       <!-- Panel -->
       <div style="margin-bottom:8px;">
-        <div style="font-size:0.8rem; font-weight:700; color:#1a2332; margin-bottom:8px; padding:6px 10px; background:#f8fafc; border-radius:var(--radius); border-left:3px solid var(--brand);">Panel</div>
-        <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+        <div onclick="toggleFgStockGroup('panel')" style="cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; color:#1a2332; margin-bottom:8px; padding:6px 10px; background:#f8fafc; border-radius:var(--radius); border-left:3px solid var(--brand);">
+          <span id="fg-stock-panel-chevron" style="display:inline-block; transition:transform 0.15s;">▾</span> Panel
+        </div>
+        <div id="fg-stock-panel-wrap" style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
           <table style="width:100%; border-collapse:collapse; min-width:700px;">
             <thead>
               <tr style="background:#f8fafc;">
