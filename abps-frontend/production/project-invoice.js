@@ -589,8 +589,8 @@ function pinvAutoSetGstFromBillToGst(value) {
 // Switching to Export clears GST% (no GST on an export invoice, enforced
 // again server-side in renderProjectInvoiceHTML) and clears the IFSC/Swift
 // field, since Swift Code is always typed manually, never carried over from
-// whatever IFSC an Import invoice had. Switching back to Import clears the
-// USD rate so a stale rate can't accidentally survive into an Import
+// whatever IFSC a Local invoice had. Switching back to Local clears the
+// USD rate so a stale rate can't accidentally survive into a Local
 // invoice's state.
 function updatePinvTradeType(value) {
   pinvInvoiceState.tradeType = value;
