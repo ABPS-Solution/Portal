@@ -9,7 +9,6 @@ async function commitIsolatedFollowUpItem(leadRef, scopeNode) {
     num: form.querySelector(".fup-num-input").value,
     leadRef: leadRef, company: activeSearchCompany,
     notes: form.querySelector(".fup-notes-input").value,
-    nextDate: form.querySelector(".fup-nexttarget-input").value, nextTime: form.querySelector(".fup-nexttime-select").value,
     outcome: form.querySelector(".fup-outcome-select").value, mode: form.querySelector(".fup-mode-select").value,
     nextActionType: form.querySelector(".fup-nextaction-input").value, objectionRaised: form.querySelector(".fup-objection-input").value
   };

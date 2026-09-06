@@ -773,13 +773,11 @@ function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
     fupForm.querySelector(".fup-leadid-input").value = leadRef;
     // Full reset — this same form node is reused for both "+ Log
     // Follow-Up" and Edit, so anything an Edit populated (Outcome, Mode,
-    // Next Follow-Up Time, Next Action Type, Objection Raised) was
-    // otherwise still sitting there on a fresh "+ Log Follow-Up" open.
+    // Next Action Type, Objection Raised) was otherwise still sitting
+    // there on a fresh "+ Log Follow-Up" open.
     fupForm.querySelector(".fup-notes-input").value = "";
-    fupForm.querySelector(".fup-nexttarget-input").value = "";
     fupForm.querySelector(".fup-outcome-select").value = "";
     fupForm.querySelector(".fup-mode-select").value = "";
-    fupForm.querySelector(".fup-nexttime-select").value = "";
     fupForm.querySelector(".fup-nextaction-input").value = "";
     fupForm.querySelector(".fup-objection-input").value = "";
     fupForm.style.display = "grid"; fupOpen.style.display = "none"; fupClose.style.display = "inline-flex";
@@ -1813,6 +1811,90 @@ async function executeLeadMatrixFilterSearch() {
   }
 }
 
+// Populates the shared "Create New Entry" form (step2-new-entry-dropdown)
+// into `mountEl`, prefilled from an Email Leads card — extracted so both
+// Scenario B (company not in the database at all) and the "+ Create New
+// Lead for this Company" button under Scenario A (company already has
+// OTHER contacts, e.g. an email from a genuinely new person DEF at a
+// company that already has a lead for ACB) can open the exact same form
+// instead of two independently-drifting copies. `onCancel` lets each
+// caller supply what "Cancel" should restore afterward, since the two
+// scenarios leave different things open around this form.
+function openEmailLeadCreateEntryForm(index, mountEl, onCancelJs) {
+  const mailObject = cachedInboundEmailLeadsArray[index];
+  if (!mountEl) return;
+  const formTemplateSource = document.getElementById("step2-new-entry-dropdown");
+  if (!formTemplateSource) return;
+
+  formTemplateSource.style.display = "block";
+  mountEl.appendChild(formTemplateSource);
+  mountEl.style.display = "block";
+
+  const remainingFormNode = document.getElementById("remaining-sections-form");
+  const successScreenNode = document.getElementById("success-screen");
+  if (remainingFormNode) remainingFormNode.style.display = "block";
+  if (successScreenNode) successScreenNode.style.display = "none";
+
+  // Clear old inputs
+  document.querySelectorAll("#remaining-sections-form input, #remaining-sections-form textarea, #remaining-sections-form select").forEach(input => {
+    if (input.type === "checkbox" || input.type === "radio") {
+      input.checked = false;
+    } else if (input.tagName === "SELECT") {
+      if (["act1","act2","act3","act4","actOffer","act7"].includes(input.id)) {
+        input.value = "No";
+      } else if (input.id !== "dropform-status") {
+        input.value = "";
+      }
+    } else if (input.id !== "dropform-company-locked") {
+      input.value = "";
+    }
+  });
+
+  document.querySelectorAll(".other-input, #vendor-fields").forEach(el => el.style.display = "none");
+
+  const dropCompanyLocked = document.getElementById("dropform-company-locked");
+  const dropName = document.getElementById("dropform-name");
+  const dropEmailField = document.getElementById("dropform-email");
+  if (dropCompanyLocked) dropCompanyLocked.value = mailObject.extractedCompany;
+  if (dropName) dropName.value = mailObject.extractedContactName;
+  if (dropEmailField && mailObject.destinationInboxAccount) dropEmailField.value = mailObject.destinationInboxAccount;
+
+  // Email Leads is always an individual laptop login, never the shared
+  // Visiting Card Details phone — force out of any leftover "CARD"
+  // context so the Engineer Name field locks to the logged-in user.
+  currentActiveModuleContext = "DROPDOWN";
+  applyEngineerFieldLockState();
+
+  // Always keep global nav buttons hidden
+  document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
+  document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
+  document.getElementById("canvas-back-btn-enclosure-row").innerHTML = "";
+
+  const collapseBar = document.createElement("div");
+  collapseBar.style.cssText = "display:flex; justify-content:flex-end; margin-bottom:8px;";
+  collapseBar.innerHTML = `<button class="nav-btn-styled" style="background:#718096; font-size:0.72rem; padding:3px 10px;" onclick="
+    document.getElementById('step2-new-entry-dropdown').style.display='none';
+    ${onCancelJs}
+  ">✕ Cancel</button>`;
+  formTemplateSource.prepend(collapseBar);
+}
+
+// "+ Create New Lead for this Company" — Scenario A (company already has
+// OTHER contacts on file) still needs a way to add a genuinely new person
+// at that same company, e.g. an email from DEF at a company where only
+// ACB has a lead so far. Opens the same shared creation form INSIDE the
+// existing-records panel (not replacing it) so the operator can see both
+// at once and decide per-email whether this is "log a follow-up for the
+// person we already have" or "this is someone new — create a lead".
+function openEmailLeadCreateEntryFormUnderExisting(index) {
+  const mountEl = document.getElementById(`nested-email-create-form-mount-${index}`);
+  activeEmailLeadContextIndex = index;
+  openEmailLeadCreateEntryForm(index, mountEl, `
+    document.getElementById('nested-email-create-form-mount-${index}').style.display='none';
+    document.getElementById('nested-email-create-form-mount-${index}').innerHTML='';
+  `);
+}
+
 async function triggerEmailLeadDatabaseActionPipeline(index) {
   const mailObject = cachedInboundEmailLeadsArray[index];
   const nestedWorkspace = document.getElementById(`email-nested-inline-database-workspace-anchor-${index}`);
@@ -1850,17 +1932,21 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
       actionBtn.style.display = "none"; // hide while form is open
 
       nestedWorkspace.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:4px; border-bottom:1px solid var(--border);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:4px; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:6px;">
           <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--brand);">🏢 Existing records for ${escapeHtml(mailObject.extractedCompany)}</span>
-          <button class="nav-btn-styled" style="background:#718096; font-size:0.72rem; padding:3px 10px;" onclick="
-            document.getElementById('email-nested-inline-database-workspace-anchor-${index}').style.display='none';
-            document.getElementById('email-nested-inline-database-workspace-anchor-${index}').innerHTML='';
-            const ab = document.getElementById('email-form-toggle-btn-text-${index}');
-            if(ab){ab.textContent='Check in CRM / Log Follow-up';ab.style.display='inline-flex';ab.disabled=false;}
-            document.getElementById('global-direct-inline-create-entry-btn').style.display='none';
-            document.getElementById('canvas-back-btn-enclosure-row').innerHTML='';
-          ">Collapse</button>
+          <div style="display:flex; gap:6px;">
+            <button class="nav-btn-styled" style="background:var(--accent); font-size:0.72rem; padding:3px 10px;" onclick="openEmailLeadCreateEntryFormUnderExisting(${index})">+ Create New Lead for this Company</button>
+            <button class="nav-btn-styled" style="background:#718096; font-size:0.72rem; padding:3px 10px;" onclick="
+              document.getElementById('email-nested-inline-database-workspace-anchor-${index}').style.display='none';
+              document.getElementById('email-nested-inline-database-workspace-anchor-${index}').innerHTML='';
+              const ab = document.getElementById('email-form-toggle-btn-text-${index}');
+              if(ab){ab.textContent='Check in CRM / Log Follow-up';ab.style.display='inline-flex';ab.disabled=false;}
+              document.getElementById('global-direct-inline-create-entry-btn').style.display='none';
+              document.getElementById('canvas-back-btn-enclosure-row').innerHTML='';
+            ">Collapse</button>
+          </div>
         </div>
+        <div id="nested-email-create-form-mount-${index}" style="display:none; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border);"></div>
         <div id="nested-email-contacts-mount-canvas-${index}" style="max-height:500px; overflow-y:auto;"></div>
       `;
       nestedWorkspace.style.display = "block";
@@ -1892,67 +1978,15 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
       nestedWorkspace.innerHTML = `<div id="nested-email-creation-form-mount-${index}" style="width:100%;"></div>`;
       nestedWorkspace.style.display = "block";
 
-      const formTemplateSource = document.getElementById("step2-new-entry-dropdown");
       const targetFormMountNode = nestedWorkspace.querySelector(`#nested-email-creation-form-mount-${index}`);
-
-      if (formTemplateSource && targetFormMountNode) {
-        formTemplateSource.style.display = "block";
-        targetFormMountNode.appendChild(formTemplateSource);
-
-        const remainingFormNode = document.getElementById("remaining-sections-form");
-        const successScreenNode = document.getElementById("success-screen");
-        if (remainingFormNode) remainingFormNode.style.display = "block";
-        if (successScreenNode) successScreenNode.style.display = "none";
-
-        // Clear old inputs
-        document.querySelectorAll("#remaining-sections-form input, #remaining-sections-form textarea, #remaining-sections-form select").forEach(input => {
-          if (input.type === "checkbox" || input.type === "radio") {
-            input.checked = false;
-          } else if (input.tagName === "SELECT") {
-            if (["act1","act2","act3","act4","actOffer","act7"].includes(input.id)) {
-              input.value = "No";
-            } else if (input.id !== "dropform-status") {
-              input.value = "";
-            }
-          } else if (input.id !== "dropform-company-locked") {
-            input.value = "";
-          }
-        });
-
-        document.querySelectorAll(".other-input, #vendor-fields").forEach(el => el.style.display = "none");
-
-        const dropCompanyLocked = document.getElementById("dropform-company-locked");
-        const dropName = document.getElementById("dropform-name");
-        const dropEmailField = document.getElementById("dropform-email");
-        if (dropCompanyLocked) dropCompanyLocked.value = mailObject.extractedCompany;
-        if (dropName) dropName.value = mailObject.extractedContactName;
-        if (dropEmailField && mailObject.destinationInboxAccount) dropEmailField.value = mailObject.destinationInboxAccount;
-
-        // Email Leads is always an individual laptop login, never the shared
-        // Visiting Card Details phone — force out of any leftover "CARD"
-        // context so the Engineer Name field locks to the logged-in user.
-        currentActiveModuleContext = "DROPDOWN";
-        applyEngineerFieldLockState();
-
-        // Always keep global nav buttons hidden
-        document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
-        document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
-        document.getElementById("canvas-back-btn-enclosure-row").innerHTML = "";
-
-        // Add a Collapse button at the top of the form
-        const collapseBar = document.createElement("div");
-        collapseBar.style.cssText = "display:flex; justify-content:flex-end; margin-bottom:8px;";
-        collapseBar.innerHTML = `<button class="nav-btn-styled" style="background:#718096; font-size:0.72rem; padding:3px 10px;" onclick="
-          document.getElementById('step2-new-entry-dropdown').style.display='none';
-          document.getElementById('email-nested-inline-database-workspace-anchor-${index}').style.display='none';
-          document.getElementById('email-nested-inline-database-workspace-anchor-${index}').innerHTML='';
-          const ab = document.getElementById('email-form-toggle-btn-text-${index}');
-          if(ab){ab.textContent='Create New Entry';ab.style.display='inline-flex';ab.disabled=false;}
-          document.getElementById('global-direct-inline-create-entry-btn').style.display='none';
-          document.getElementById('canvas-back-btn-enclosure-row').innerHTML='';
-        ">✕ Cancel</button>`;
-        formTemplateSource.prepend(collapseBar);
-      }
+      openEmailLeadCreateEntryForm(index, targetFormMountNode, `
+        document.getElementById('email-nested-inline-database-workspace-anchor-${index}').style.display='none';
+        document.getElementById('email-nested-inline-database-workspace-anchor-${index}').innerHTML='';
+        const ab = document.getElementById('email-form-toggle-btn-text-${index}');
+        if(ab){ab.textContent='Create New Entry';ab.style.display='inline-flex';ab.disabled=false;}
+        document.getElementById('global-direct-inline-create-entry-btn').style.display='none';
+        document.getElementById('canvas-back-btn-enclosure-row').innerHTML='';
+      `);
     }
   } catch(e) {
     alert("Error: " + e.message);
