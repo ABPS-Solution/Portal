@@ -727,7 +727,7 @@ function pinvShowAddRowPicker() {
   }
   zone.innerHTML = `
     <div style="display:flex; gap:8px; align-items:center;">
-      <select id="pinv-addrow-select" style="padding:6px 8px; font-size:0.85rem; border:1px solid var(--border); border-radius:4px; max-width:400px;">
+      <select id="pinv-addrow-select" style="padding:6px 8px; font-size:0.85rem; border:1px solid var(--border); border-radius:4px; flex:1; min-width:0; max-width:900px;">
         ${candidates.map(l => `<option value="${l.lineId}">${escapeHtml(l.productName || l.description || ('Line ' + l.lineId))}</option>`).join('')}
       </select>
       <button type="button" onclick="pinvAddLineItemRow()" class="nav-btn-styled" style="background:var(--accent); padding:5px 12px; font-size:0.78rem;">Add</button>
