@@ -1170,7 +1170,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         } 
         else if (key === "Products Discussed") {
           rowsData = [
-            ["APFC", "RPTFC", "Harmonic Filter", "SVG"],
+            ["APFC", "RTPFC", "Harmonic Filter", "SVG"],
             ["MV Capacitor Bank", "Reactor", "Others"]
           ];
           hasOtherInputBox = true;
@@ -1184,7 +1184,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
             chk.id = uniqueIdStr; chk.className = `live-lead-check-subset-${leadRef}`; chk.dataset.masterKey = key;
             
             let matchFound = currentValues.indexOf(o) !== -1;
-            if (!matchFound && o === "Others" && extractOthersValueText(leadMap[key], ["Industry","EPC","Govt/PSU","Consultant","Developer","Electrical Contractor","Dealer","Vendor","APFC","RPTFC","Harmonic Filter","SVG","MV Capacitor Bank","Reactor"])) {
+            if (!matchFound && o === "Others" && extractOthersValueText(leadMap[key], ["Industry","EPC","Govt/PSU","Consultant","Developer","Electrical Contractor","Dealer","Vendor","APFC","RTPFC","Harmonic Filter","SVG","MV Capacitor Bank","Reactor"])) {
               matchFound = true; 
             }
             if (matchFound) chk.checked = true;
@@ -1212,7 +1212,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
           
           let excludedKeywords = [];
           if(key === "Type of Customer") excludedKeywords = ["Industry","EPC","Govt/PSU","Consultant","Developer","Electrical Contractor","Dealer","Vendor"];
-          if(key === "Products Discussed") excludedKeywords = ["APFC","RPTFC","Harmonic Filter","SVG","MV Capacitor Bank","Reactor"];
+          if(key === "Products Discussed") excludedKeywords = ["APFC","RTPFC","Harmonic Filter","SVG","MV Capacitor Bank","Reactor"];
           
           txtBox.value = extractOthersValueText(leadMap[key], excludedKeywords);
           mainWrapper.appendChild(txtBox);
@@ -2719,9 +2719,7 @@ function renderPurchaseOrderReview() {
         ${editField('PO Total Amount', 'poTotalAmount', 'number', 'grid-column: span 3;', true)}
         ${lockedRow('Order Acceptance Link', orderAcceptanceLinkHtml, 'grid-column: span 3;')}
         ${lockedRow('Contract Review Link', contractReviewLinkHtml, 'grid-column: span 3;')}
-        ${editField('Advance Amount', 'advanceAmount', 'number', 'grid-column: span 3;')}
         ${editField('Order Acceptance Sent Date', '_orderAcceptanceSentDate', 'date', 'grid-column: span 3;', true)}
-        ${editField('Advance Received Date', 'advanceReceivedDate', 'date', 'grid-column: span 3;')}
       </div>
 
       <div id="purchase-order-review-feedback" style="display:none; margin-top:14px; padding:12px; border-radius:var(--radius); border-left:4px solid;"></div>
@@ -2933,7 +2931,7 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
 
     const poFields = [
       "Project ID", "Purchase Order Number", "Purchase Order Date",
-      "Tentative Delivery Date", "Expected Delivery Date",
+      "Tentative Delivery Date", "Final Delivery Date from MFC",
       "Order Product Description", "PO Summary", "Name of ABPS Owner of Order",
       "Basic Purchase Order Amount (in Rs)", "Purchase Order GST Amount", "Purchase Order Total Amount",
       "Freight Scope", "Insurance Scope", "Packaging and Forwarding Scope", "Delivery Schedule as per PO",
@@ -2954,7 +2952,7 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
     // currency amounts trimmed of trailing decimal zeros (CLAUDE.md rule —
     // trimNum/formatQtyTrimmed).
     const dateFieldLabels = new Set([
-      "Purchase Order Date", "Tentative Delivery Date", "Expected Delivery Date", "Date of Product Commissioning"
+      "Purchase Order Date", "Tentative Delivery Date", "Final Delivery Date from MFC", "Date of Product Commissioning"
     ]);
     const amountFieldLabels = new Set([
       "Basic Purchase Order Amount (in Rs)", "Purchase Order GST Amount", "Purchase Order Total Amount"
