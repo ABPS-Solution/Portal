@@ -4284,7 +4284,6 @@
         <input type="checkbox" name="searchQual" value="Developer" id="sq_developer" onchange="updateSelectedDisplay()"><label for="sq_developer">Developer</label>
         <input type="checkbox" name="searchQual" value="Electrical Contractor" id="sq_contractor" onchange="updateSelectedDisplay()"><label for="sq_contractor">Electrical Contractor</label>
         <input type="checkbox" name="searchQual" value="Dealer" id="sq_dealer" onchange="updateSelectedDisplay()"><label for="sq_dealer">Dealer</label>
-        <input type="checkbox" name="searchQual" value="Vendor" id="sq_vendor" onchange="updateSelectedDisplay()"><label for="sq_vendor">Vendor</label>
       </div>
 
       <div id="custom-qualifications-sub-drawer" style="display: block; background: #f8fafc; border: 1px dashed var(--border); border-radius: var(--radius); padding: 10px; margin: 5px 0 15px; text-align: left;">
@@ -4516,26 +4515,9 @@
               <input type="checkbox" name="qualification" value="Developer" id="q5"><label for="q5">Developer</label>
               <input type="checkbox" name="qualification" value="Electrical Contractor" id="q6"><label for="q6">Electrical Contractor</label>
               <input type="checkbox" name="qualification" value="Dealer" id="q7"><label for="q7">Dealer</label>
-              <input type="checkbox" name="qualification" value="Vendor" id="q8" onchange="handleQualChange()"><label for="q8">Vendor</label>
               <input type="checkbox" name="qualification" value="Others" id="q9" onchange="handleQualChange()"><label for="q9">Others ▾</label>
             </div>
             <input type="text" id="qualificationOther" placeholder="Specify other type..." class="other-input" style="display: none; margin-top: 6px;" />
-          </div>
-
-          <div id="vendor-fields" style="display: none; background: #f8fafc; padding: 10px; border: 1px dashed var(--border); border-radius: 4px; margin-bottom: 12px;">
-            <label class="field-label">Type of Vendor</label>
-            <div class="pill-group">
-              <input type="checkbox" name="vendorType" value="Raw Materials supplier" id="vt1"><label for="vt1">Raw Materials Supplier</label>
-              <input type="checkbox" name="vendorType" value="MC Supplier" id="vt2"><label for="vt2">MC Supplier</label>
-              <input type="checkbox" name="vendorType" value="Capital Goods Supplier" id="vt3"><label for="vt3">Capital Goods Supplier</label>
-              <input type="checkbox" name="vendorType" value="Others" id="vt4" onchange="toggleOtherCheck(this, 'vtoText')"><label for="vt4">Others</label>
-            </div>
-            <input type="text" id="vtoText" placeholder="Specify vendor type details..." class="other-input" style="display: none; margin-top: 4px;" />
-            
-            <div style="margin-top: 10px;">
-              <label class="field-label" style="margin-top:0;">Name of Materials Supplied</label>
-              <input type="text" id="materialsName" placeholder="Enter materials supplied..." />
-            </div>
           </div>
 
           <div class="section-divider-line" style="margin: 15px 0; background: var(--border); height: 1px;"></div>
@@ -4717,16 +4699,16 @@
     <span class="fup-status-label" style="display:none; position:absolute; left:50%; transform:translateX(-50%); font-weight:700; color:var(--brand); font-size:1.15rem;">Logging Follow-up</span>
   </div>
   
-  <div class="template-fup-form" style="display:none; grid-template-columns:1fr 1fr; gap:8px; background:#f8fafc; padding:10px; border-radius:var(--radius); border:1px solid var(--border); margin-bottom:8px;">
+  <div class="template-fup-form" style="display:none; grid-template-columns:repeat(4,1fr); gap:8px; background:#f8fafc; padding:10px; border-radius:var(--radius); border:1px solid var(--border); margin-bottom:8px;">
     <input type="hidden" class="fup-is-edit-flag" value="false">
     <input type="hidden" class="fup-leadid-input">
     <input type="hidden" class="fup-num-input">
     <div><label class="field-label">Interaction Outcome</label><select class="fup-outcome-select"><option value="">— Select —</option><option value="Positive">Positive</option><option value="Neutral">Neutral</option><option value="Negative">Negative</option><option value="No Response">No Response</option></select></div>
     <div><label class="field-label">Interaction Mode</label><select class="fup-mode-select"><option value="">— Select —</option><option value="Phone Call">Phone Call</option><option value="Email">Email</option><option value="WhatsApp">WhatsApp</option><option value="In-Person Visit">In-Person Visit</option><option value="Video Call">Video Call</option></select></div>
-    <div style="grid-column:span 2;"><label class="field-label">Interaction Notes *</label><textarea class="fup-notes-input" style="min-height:50px;"></textarea></div>
+    <div><label class="field-label">Objection Raised</label><input type="text" class="fup-objection-input" placeholder="e.g. Price, Timeline, Already has a supplier..." /></div>
     <div><label class="field-label">Next Action Type</label><input type="text" class="fup-nextaction-input" placeholder="e.g. Send Offer, Site Visit..." /></div>
-    <div><label class="field-label">Objection Raised</label><input type="text" class="fup-objection-input" placeholder="e.g. Price, Timeline, Already has vendor..." /></div>
-    <div style="grid-column:span 2; display:flex; justify-content:flex-end;">
+    <div style="grid-column:span 4;"><label class="field-label">Interaction Notes *</label><textarea class="fup-notes-input" style="min-height:50px;"></textarea></div>
+    <div style="grid-column:span 4; display:flex; justify-content:flex-end;">
       <button class="nav-btn-styled commit-fup-btn-trigger" style="background:var(--accent); padding:8px 20px;">Save Follow-Up</button>
     </div>
   </div>
@@ -4741,17 +4723,17 @@
     <span class="task-status-label" style="display:none; position:absolute; left:50%; transform:translateX(-50%); font-weight:700; color:var(--brand); font-size:1.15rem;">Creating Task</span>
   </div>
 
-  <div class="template-task-form" style="display:none; grid-template-columns:1fr 1fr; gap:8px; background:#f0fdf4; padding:10px; border-radius:var(--radius); border:1px solid var(--border); margin-bottom:8px;">
+  <div class="template-task-form" style="display:none; grid-template-columns:repeat(6,1fr); gap:8px; background:#f0fdf4; padding:10px; border-radius:var(--radius); border:1px solid var(--border); margin-bottom:8px;">
     <input type="hidden" class="task-edit-id">
-    <div><label class="field-label">Task Type</label><select class="task-type-select"><option value="">— Select —</option><option value="Site Visit">Site Visit</option><option value="Call">Call</option><option value="Email">Email</option><option value="Meeting">Meeting</option><option value="Proposal">Proposal</option><option value="Other">Other</option></select></div>
     <div><label class="field-label">Task Status</label><select class="task-status-select"><option value="Assigned">Assigned</option><option value="Completed">Completed</option></select></div>
+    <div><label class="field-label">Task Type</label><select class="task-type-select"><option value="">— Select —</option><option value="Site Visit">Site Visit</option><option value="Call">Call</option><option value="Email">Email</option><option value="Meeting">Meeting</option><option value="Proposal">Proposal</option><option value="Other">Other</option></select></div>
     <div><label class="field-label">Assigned To (ABPS Engineer) *</label><select class="task-eng-select"></select></div>
     <div><label class="field-label">Target Completion Time</label><select class="task-shift-select"><option value="">— Select —</option><option value="Morning">Morning</option><option value="Afternoon">Afternoon</option><option value="Evening">Evening</option></select></div>
     <div><label class="field-label">Target Date *</label><input type="date" class="task-targetdate-input"></div>
     <div><label class="field-label">Task Priority</label><select class="task-priority-select"><option value="">— Select —</option><option value="Low">Low</option><option value="Medium">Medium</option><option value="High">High</option><option value="Urgent">Urgent</option></select></div>
-    <div style="grid-column:span 2;"><label class="field-label">Task Description *</label><textarea class="task-desc-input" style="min-height:45px;"></textarea></div>
-    <div style="grid-column:span 2;"><label class="field-label">Completion Notes / Outcome</label><textarea class="task-completionnotes-input" style="min-height:35px;" placeholder="Filled in once the task is done — what actually happened?"></textarea></div>
-    <div style="grid-column:span 2; display:flex; justify-content:flex-end;">
+    <div style="grid-column:span 3;"><label class="field-label">Task Description *</label><textarea class="task-desc-input" style="min-height:45px;"></textarea></div>
+    <div style="grid-column:span 3;"><label class="field-label">Completion Notes / Outcome</label><textarea class="task-completionnotes-input" style="min-height:35px;" placeholder="Filled in once the task is done — what actually happened?"></textarea></div>
+    <div style="grid-column:span 6; display:flex; justify-content:flex-end;">
       <button class="nav-btn-styled commit-task-btn-trigger" style="background:var(--accent); padding:8px 20px;">Save Task</button>
     </div>
   </div>

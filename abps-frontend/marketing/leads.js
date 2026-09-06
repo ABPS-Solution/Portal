@@ -492,7 +492,7 @@ function resetSequentialFormState() {
   if (document.getElementById("esd")) document.getElementById("esd").value = "";
 
   // 3. Reset visibility layouts back to hidden defaults
-  document.querySelectorAll('.other-input, #vendor-fields').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.other-input').forEach(el => el.style.display = 'none');
 }
 
 function toggleOtherText(r, id) {
@@ -502,7 +502,6 @@ function toggleOtherCheck(c, id) {
   document.getElementById(id).style.display = c.checked ? 'block' : 'none';
 }
 function handleQualChange() {
-  document.getElementById('vendor-fields').style.display = document.getElementById('q8').checked ? 'block' : 'none';
   document.getElementById('qualificationOther').style.display = document.getElementById('q9').checked ? 'block' : 'none';
 }
 function collapseNewEntryDropdownFormExplicitly() {
@@ -879,7 +878,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
     { type: "META", keys: ["Status"] },
     { type: "CARD", keys: ["Contact Person Name", "Company Name", "Position", "Phone", "Alt Phone", "Email", "Website", "City", "State", "Country", "Company Address"] },
     { type: "SEC1", keys: ["Date of Meeting", "Time of Meeting", "Meeting Venue", "Venue Name / City", "Additional Meeting Details (if any)"] },
-    { type: "SEC2", keys: ["ABPS Business Vertical", "Type of Customer", "Type of Vendor"] }, 
+    { type: "SEC2", keys: ["ABPS Business Vertical", "Type of Customer"] },
     { type: "SEC3", keys: ["Low Power Factor Issue", "High Electricity Bill Issue", "Harmonics Issue", "Transformer Heating / Breakdown Issue", "Grid Stability Issue", "Tender Inquire", "Existing System Details", "Contract Demand (MVA)", "Voltage Level Requirements"] }, 
     { type: "SEC4", keys: ["Existing Project", "Products Discussed", "Expected Tender / RFQ Date", "Approx Requirement", "Technical Discussion Summary", "Competitor Details", "Approx Business Potential"] },
     { type: "SEC5", keys: ["Send Company Profile", "Send Technical Presentation", "Arrange Site Visit", "Get Enquiry", "Send Offer", "Follow-Up Required"] },
@@ -910,7 +909,6 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
       // Grid column spans — 6-col desktop grid
       if (key === "ABPS Business Vertical")         cell.style.gridColumn = "span 2";
       if (key === "Type of Customer")               cell.style.gridColumn = "span 2";
-      if (key === "Type of Vendor")                 cell.style.gridColumn = "span 2";
       if (key === "Contract Demand (MVA)")          cell.style.gridColumn = "span 2";
       if (key === "Voltage Level Requirements")     cell.style.gridColumn = "span 2";
       if (key === "Existing System Details")        cell.style.gridColumn = "span 2";
@@ -1101,71 +1099,6 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         cell.appendChild(inp);
       }
 
-      // --- 7. VENDOR SELECTION AND CONDITIONAL CONTENT LOOPS ---
-      else if (key === "Type of Vendor") {
-        label.textContent = "Vendor Specifications";
-        let mainWrapper = document.createElement("div"); mainWrapper.style.cssText = "display: flex; flex-direction: column; gap: 4px;";
-        let currentValues = (leadMap[key] || "").toString().split(",").map(v => v.trim());
-        
-        let pillGroup = document.createElement("div"); pillGroup.className = "pill-group"; pillGroup.style.margin = "2px 0";
-        const vOptions = ["Raw Materials supplier", "MC Supplier", "Capital Goods Supplier"];
-        
-        vOptions.forEach(o => {
-          const uniqueIdStr = `live_chk_${leadRef}_VendorType_${o.replace(/\s+/g,'_')}`;
-          let chk = document.createElement("input"); chk.type = "checkbox"; chk.value = o; chk.id = uniqueIdStr;
-          chk.className = `live-lead-check-subset-${leadRef}`; chk.dataset.masterKey = key;
-          if (currentValues.indexOf(o) !== -1) chk.checked = true;
-          
-          let lbl = document.createElement("label"); lbl.htmlFor = uniqueIdStr; lbl.textContent = o;
-          pillGroup.appendChild(chk); pillGroup.appendChild(lbl);
-        });
-        
-        const otherIdStr = `live_chk_${leadRef}_VendorType_Others`;
-        let otherChk = document.createElement("input"); otherChk.type = "checkbox"; otherChk.value = "Others"; otherChk.id = otherIdStr;
-        otherChk.className = `live-lead-check-subset-${leadRef}`; otherChk.dataset.masterKey = key;
-        
-        let customTextVal = extractOthersValueText(leadMap[key], vOptions);
-        if (customTextVal) otherChk.checked = true;
-        
-        let otherLbl = document.createElement("label"); otherLbl.htmlFor = otherIdStr; otherLbl.textContent = "Others";
-        pillGroup.appendChild(otherChk); pillGroup.appendChild(otherLbl);
-        mainWrapper.appendChild(pillGroup);
-
-        let txtBox = document.createElement("textarea"); txtBox.rows = 1;
-        txtBox.id = `live-subset-other-text-${leadRef}-Type_of_Vendor`;
-        txtBox.placeholder = "Specify other vendor details...";
-        txtBox.value = customTextVal;
-        txtBox.oninput = function() { autoGrowPoField(this); };
-        txtBox.onfocus = function() { autoGrowPoField(this); };
-        mainWrapper.appendChild(txtBox);
-
-        let conditionalMaterialSubBlock = document.createElement("div");
-        conditionalMaterialSubBlock.id = `live-conditional-materials-block-mount-${leadRef}`;
-
-        let matLabel = document.createElement("div"); matLabel.style.cssText = "font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-top:8px; margin-bottom:2px;";
-        matLabel.textContent = "Name of Materials Supplied";
-        let matInput = document.createElement("textarea"); matInput.rows = 1;
-        matInput.className = `live-lead-field-input-${leadRef}`; matInput.dataset.headerKey = "Name of Materials Supplied";
-        matInput.value = leadMap["Name of Materials Supplied"] || "";
-        matInput.oninput = function() { autoGrowPoField(this); };
-        matInput.onfocus = function() { autoGrowPoField(this); };
-        
-        conditionalMaterialSubBlock.appendChild(matLabel); 
-        conditionalMaterialSubBlock.appendChild(matInput);
-        mainWrapper.appendChild(conditionalMaterialSubBlock);
-        cell.appendChild(mainWrapper);
-
-        const evalVisibilityTrigger = () => {
-          const vendorCheckboxParentNode = document.getElementById(`live_chk_${leadRef}_Type_of_Customer_Vendor`);
-          if (vendorCheckboxParentNode && vendorCheckboxParentNode.checked) {
-            conditionalMaterialSubBlock.style.display = "block";
-          } else {
-            conditionalMaterialSubBlock.style.display = "none";
-          }
-        };
-        setTimeout(evalVisibilityTrigger, 50);
-      } 
-      
       // --- 8. MULTI-SELECT PILLED SELECTION TILES ---
       else if (key === "Type of Customer" || key === "Products Discussed" || key === "Voltage Level Requirements") {
         let mainWrapper = document.createElement("div"); mainWrapper.style.cssText = "display: flex; flex-direction: column; gap: 4px;";
@@ -1184,10 +1117,10 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         else if (key === "Type of Customer") {
           rowsData = [
             ["Industry", "EPC", "Govt/PSU", "Consultant", "Developer"],
-            ["Electrical Contractor", "Dealer", "Vendor", "Others"]
+            ["Electrical Contractor", "Dealer", "Others"]
           ];
           hasOtherInputBox = true;
-        } 
+        }
         else if (key === "Products Discussed") {
           rowsData = [
             ["APFC", "RTPFC", "Harmonic Filter", "SVG"],
@@ -1204,17 +1137,10 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
             chk.id = uniqueIdStr; chk.className = `live-lead-check-subset-${leadRef}`; chk.dataset.masterKey = key;
             
             let matchFound = currentValues.indexOf(o) !== -1;
-            if (!matchFound && o === "Others" && extractOthersValueText(leadMap[key], ["Industry","EPC","Govt/PSU","Consultant","Developer","Electrical Contractor","Dealer","Vendor","APFC","RTPFC","Harmonic Filter","SVG","MV Capacitor Bank","Reactor"])) {
-              matchFound = true; 
+            if (!matchFound && o === "Others" && extractOthersValueText(leadMap[key], ["Industry","EPC","Govt/PSU","Consultant","Developer","Electrical Contractor","Dealer","APFC","RTPFC","Harmonic Filter","SVG","MV Capacitor Bank","Reactor"])) {
+              matchFound = true;
             }
             if (matchFound) chk.checked = true;
-
-            if (key === "Type of Customer" && o === "Vendor") {
-               chk.onchange = () => {
-                 const mountBlock = document.getElementById(`live-conditional-materials-block-mount-${leadRef}`);
-                 if (mountBlock) mountBlock.style.display = chk.checked ? "block" : "none";
-               };
-            }
 
             let lbl = document.createElement("label"); lbl.htmlFor = uniqueIdStr; lbl.textContent = o;
             pillGroup.appendChild(chk); pillGroup.appendChild(lbl);
@@ -1231,7 +1157,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
           txtBox.onfocus = function() { autoGrowPoField(this); };
           
           let excludedKeywords = [];
-          if(key === "Type of Customer") excludedKeywords = ["Industry","EPC","Govt/PSU","Consultant","Developer","Electrical Contractor","Dealer","Vendor"];
+          if(key === "Type of Customer") excludedKeywords = ["Industry","EPC","Govt/PSU","Consultant","Developer","Electrical Contractor","Dealer"];
           if(key === "Products Discussed") excludedKeywords = ["APFC","RTPFC","Harmonic Filter","SVG","MV Capacitor Bank","Reactor"];
           
           txtBox.value = extractOthersValueText(leadMap[key], excludedKeywords);
@@ -1315,7 +1241,7 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
   }
   
   // 2. Map and stitch multi-select arrays context definitions
-  const targetCheckKeys = ["Voltage Level Requirements", "Products Discussed", "Type of Customer", "Type of Vendor"];
+  const targetCheckKeys = ["Voltage Level Requirements", "Products Discussed", "Type of Customer"];
   
   targetCheckKeys.forEach(masterKey => {
     let selectedPillsList = [];
@@ -1337,7 +1263,7 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
   // This form mixes Company-level fields (identity, shared across all a company's
   // Leads) with Lead-level fields (this specific project) — split them here so
   // the lead-update save would silently no-op (the header doesn't exist there).
-  const companyLevelKeys = ["Company Name", "City", "State", "Country", "Company Address", "Website", "Type of Customer", "Type of Vendor", "Type of Industry", "Name of Materials Supplied"];
+  const companyLevelKeys = ["Company Name", "City", "State", "Country", "Company Address", "Website", "Type of Customer", "Type of Industry"];
   let companyFieldsPayload = {};
   companyLevelKeys.forEach(k => {
     if (fieldsPayload[k] !== undefined) {
@@ -1461,15 +1387,11 @@ async function submitLead() {
     const hiNode   = document.getElementById("hi");   const selHiNode   = document.getElementById("sel-hi");
     const thiNode  = document.getElementById("thi");  const selThiNode  = document.getElementById("sel-thi");
     const gsiNode  = document.getElementById("gsi");  const selGsiNode  = document.getElementById("sel-gsi");
-    const vtoNode  = document.getElementById("vtoText");
     const pdoNode  = document.getElementById("pdoText");
     const qOtherNode = document.getElementById("qualificationOther");
 
     const qualChecked = getChecks('qualification');
     const qualFinal = qualChecked.map(v => v === 'Others' ? ((qOtherNode && qOtherNode.value) ? qOtherNode.value : 'Others') : v);
-
-    const vtChecked = getChecks('vendorType');
-    const vtFinal = vtChecked.map(v => v === 'Others' ? ((vtoNode && vtoNode.value) ? vtoNode.value : 'Others') : v);
 
     const prodChecked = getChecks('prod');
     const prodFinal = prodChecked.map(v => v === 'Others' ? ((pdoNode && pdoNode.value) ? pdoNode.value : 'Others') : v);
@@ -1497,10 +1419,8 @@ async function submitLead() {
       additionalMeetingDetails: document.getElementById('additionalMeetingDetails').value,
       businessVertical: getRadioStrict('businessVertical') === 'Other' ? (document.getElementById('businessVerticalOther') ? document.getElementById('businessVerticalOther').value : 'Other') : getRadioStrict('businessVertical'),
       industry: document.getElementById('industry').value, 
-      "Type of Customer": qualFinal, 
-      vendorType: vtFinal,
-      "Name of Materials Supplied": document.getElementById('materialsName').value, 
-      lpi: document.getElementById("lpi").value.trim(), 
+      "Type of Customer": qualFinal,
+      lpi: document.getElementById("lpi").value.trim(),
       hbi: document.getElementById("hbi").value.trim(), 
       hi: document.getElementById("hi").value.trim(), 
       thi: document.getElementById("thi").value.trim(), 
@@ -1890,7 +1810,7 @@ function openEmailLeadCreateEntryForm(index, mountEl, onCancelFn) {
     }
   });
 
-  document.querySelectorAll(".other-input, #vendor-fields").forEach(el => el.style.display = "none");
+  document.querySelectorAll(".other-input").forEach(el => el.style.display = "none");
 
   const dropCompanyLocked = document.getElementById("dropform-company-locked");
   const dropName = document.getElementById("dropform-name");
