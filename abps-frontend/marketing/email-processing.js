@@ -170,7 +170,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
         </div>
       </div>
 
-      <div style="font-size:0.72rem; font-weight:700; color:var(--muted); margin-bottom:8px;">
+      <div style="font-size:0.88rem; font-weight:700; color:var(--muted); margin-bottom:8px;">
         📎 Attachments: <span style="color:#4a5568; font-family:monospace;">${escapeHtml(attsLabel)}</span>
       </div>
 
