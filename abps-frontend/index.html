@@ -1707,7 +1707,7 @@
 
           <div>
             <label class="field-label" style="margin-top:0;">Payment Received Confirmation *</label>
-            <select id="pinv-payment-received" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); max-width:260px;">
+            <select id="pinv-payment-received" onchange="persistPinvDraft()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); max-width:260px;">
               <option value="No">No</option>
               <option value="Yes">Yes</option>
             </select>
@@ -1717,6 +1717,7 @@
         <div id="pinv-generate-zone" style="display:none; flex-direction:column; align-items:flex-end; gap:6px; margin-top:16px;">
           <div id="pinv-generate-reason" style="font-size:0.78rem; color:#b45309; font-weight:600; text-align:right;"></div>
           <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button class="nav-btn-styled" onclick="clearPinvForm()" style="background:#718096; padding:10px 20px; font-weight:700;">Clear Invoice</button>
             <button class="nav-btn-styled" id="pinv-generate-partial-btn" disabled style="background:var(--accent); padding:10px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;" onclick="openPinvConfirmModal('partial')">Generate Partial Invoice</button>
             <button class="nav-btn-styled" id="pinv-generate-final-btn" disabled style="background:#15803d; padding:10px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;" onclick="openPinvConfirmModal('final')">Generate Final Invoice</button>
           </div>

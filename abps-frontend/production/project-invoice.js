@@ -98,6 +98,7 @@ async function initializePinvWorkspace() {
   document.getElementById("pinv-success-zone").style.display = "none";
   document.getElementById("pinv-select-zone").style.display = "block";
   pinvInvoiceState = null;
+  pinvCache = null;
   const select = document.getElementById("pinv-project-select");
   select.innerHTML = '<option value="">Loading...</option>';
   try {
@@ -107,6 +108,18 @@ async function initializePinvWorkspace() {
       data.projects.map(p => `<option value="${p.projectId}">${p.projectId} — ${p.companyName || ''}</option>`).join("");
     if (data.projects.length === 0) {
       select.innerHTML = '<option value="">No eligible Project IDs — at least one product\'s Job Cards must be QA-passed and not yet invoiced</option>';
+      return;
+    }
+    // Return to Main Dashboard (or an accidental reload) shouldn't lose an
+    // in-progress invoice — same draft-persistence pattern as Create PO's
+    // CPO_DRAFT_STORAGE_KEY. Only restored if the saved project is still a
+    // genuinely eligible option; a project that's since gone Complete or
+    // had its invoice generated elsewhere just silently drops the stale
+    // draft instead of restoring into a project the dropdown can't select.
+    const draft = loadPinvDraft();
+    if (draft && draft.projectId && data.projects.some(p => p.projectId === draft.projectId)) {
+      select.value = draft.projectId;
+      await handlePinvProjectChange(draft.projectId, draft);
     }
   } catch(e) {
     select.innerHTML = '<option value="">Network error</option>';
@@ -118,10 +131,10 @@ async function initializePinvWorkspace() {
 // readyToInvoiceQty). Lines with no linked BOQ (freight/service items)
 // aren't gated by Job Card completion at all — they're only billable on
 // the Final Invoice, same as the old single-shot flow allowed.
-async function handlePinvProjectChange(projectId) {
+async function handlePinvProjectChange(projectId, restoreDraft) {
   const detailZone = document.getElementById("pinv-detail-zone");
   const invoiceFormZone = document.getElementById("pinv-invoice-form-zone");
-  if (!projectId) { detailZone.style.display = "none"; invoiceFormZone.style.display = "none"; invoiceFormZone.innerHTML = ""; return; }
+  if (!projectId) { detailZone.style.display = "none"; invoiceFormZone.style.display = "none"; invoiceFormZone.innerHTML = ""; clearPinvDraftStorage(); return; }
   // A <select> can re-fire 'change' for the value it already has (browser
   // autofill/back-forward restore, or a stray re-render touching the
   // element) -- without this guard that silently wiped pinvDocFiles via
@@ -163,10 +176,101 @@ async function handlePinvProjectChange(projectId) {
       invoiceNoPreview: invoiceNoData.success ? invoiceNoData.invoiceNo : "",
     };
     initPinvInvoiceStateFromLines();
+    if (restoreDraft && restoreDraft.invoiceState) {
+      applyPinvDraftOverlay(restoreDraft.invoiceState);
+      if (restoreDraft.paymentReceived) document.getElementById("pinv-payment-received").value = restoreDraft.paymentReceived;
+    }
     renderPinvDetail();
+    persistPinvDraft();
   } catch(e) {
     showBOQBanner("pinv-feedback", "Network error: " + e.message, "error");
   }
+}
+
+// ── Generate Invoice draft persistence ──────────────────────────────────
+// Return to Main Dashboard (or an accidental reload) shouldn't lose an
+// in-progress invoice — every field write below calls persistPinvDraft(),
+// and initializePinvWorkspace restores from it on next entry. Cleared only
+// on a successful Generate or an explicit Clear Invoice. Revise mode has
+// no draft of its own — it always starts from the last submitted invoice
+// on file, same as before.
+const PINV_DRAFT_STORAGE_KEY = 'abps_pinv_draft_v1';
+
+function persistPinvDraft() {
+  if (!pinvCache || !pinvCache.projectId || !pinvInvoiceState) return;
+  try {
+    const draft = {
+      projectId: pinvCache.projectId,
+      invoiceState: pinvInvoiceState,
+      paymentReceived: document.getElementById("pinv-payment-received")?.value || "No",
+    };
+    localStorage.setItem(PINV_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  } catch (e) { /* storage unavailable/full — resume just won't work, not fatal */ }
+}
+
+function loadPinvDraft() {
+  try {
+    const raw = localStorage.getItem(PINV_DRAFT_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+function clearPinvDraftStorage() {
+  try { localStorage.removeItem(PINV_DRAFT_STORAGE_KEY); } catch (e) { /* ignore */ }
+}
+
+// Overlays a saved draft's editable field values onto the freshly-fetched
+// pinvInvoiceState built by initPinvInvoiceStateFromLines — JC-readiness
+// caps (readyToInvoiceQty etc.) always come from the live fetch, never the
+// draft, since those can genuinely change between visits. Line items are
+// rebuilt from the draft's own list (matched back to pinvAllLines by
+// lineId) rather than the default full candidate set, so a "+ Add row" or
+// a deleted row from before the navigation-away is preserved exactly;
+// any lineId no longer resolvable against this project's live data is
+// silently dropped rather than restored into a broken state.
+function applyPinvDraftOverlay(saved) {
+  if (!saved || !pinvInvoiceState) return;
+  const scalarKeys = ['invoiceNo','insuranceNo','mdccNo','transportName','lrNoDate','lcNoDate','dcNoDate','vehicleNo','mobileNo','incoterms','incotermsPlace','tradeType','usdRate','igstPercent','cgstPercent','sgstPercent','roundOff','bankAccountKey','declaration'];
+  scalarKeys.forEach(k => { if (saved[k] !== undefined) pinvInvoiceState[k] = saved[k]; });
+  if (saved.billTo) pinvInvoiceState.billTo = { ...pinvInvoiceState.billTo, ...saved.billTo };
+  if (saved.shipTo) pinvInvoiceState.shipTo = { ...pinvInvoiceState.shipTo, ...saved.shipTo };
+  if (saved.bankDetails) pinvInvoiceState.bankDetails = { ...pinvInvoiceState.bankDetails, ...saved.bankDetails };
+
+  if (Array.isArray(saved.lineItems) && saved.lineItems.length > 0) {
+    const newCacheLines = [];
+    const newStateLineItems = [];
+    saved.lineItems.forEach(s => {
+      const line = pinvAllLines.find(l => l.lineId === s.lineId);
+      if (!line) return; // no longer a valid candidate for this project
+      newCacheLines.push(line);
+      const maxQty = line.boqId ? line.readyToInvoiceQty : line.orderedQuantity;
+      const qty = Math.max(0, Math.min(Number(s.quantity) || 0, maxQty));
+      const rate = s.ratePerQuantity !== undefined ? s.ratePerQuantity : line.ratePerQuantity;
+      newStateLineItems.push({
+        lineId: line.lineId,
+        description: s.description !== undefined ? s.description : line.description,
+        hsnNumber: s.hsnNumber !== undefined ? s.hsnNumber : line.hsnNumber,
+        unit: line.unit, quantity: qty, ratePerQuantity: rate,
+        totalBasicPrice: qty * (parseFloat(rate) || 0),
+      });
+    });
+    if (newCacheLines.length > 0) {
+      pinvCache.lines = newCacheLines;
+      pinvInvoiceState.lineItems = newStateLineItems;
+    }
+  }
+}
+
+// Explicit "Clear Invoice" — wipes the saved draft and reloads the
+// project-selection screen fresh, same shape as Create PO's Clear PO.
+// Attached documents (pinvDocFiles) were never persisted to storage in the
+// first place (File objects aren't serializable), so nothing extra to
+// clear there beyond what initializePinvWorkspace's resetPinvDocFiles()
+// already does.
+function clearPinvForm() {
+  if (!confirm("Clear the entire invoice in progress: project selection, invoice details, and Product Details?")) return;
+  clearPinvDraftStorage();
+  initializePinvWorkspace();
 }
 
 function initPinvInvoiceStateFromLines() {
@@ -241,6 +345,7 @@ function updatePinvClaimQty(idx, value, maxQty, inputEl) {
   renderPinvLineItemsTable();
   recalcPinvTotals();
   updatePinvGenerateButtonsState();
+  persistPinvDraft();
 }
 
 // Final Invoice only unlocks once every BOQ-linked line has nothing left
@@ -646,6 +751,7 @@ function pinvAddLineItemRow() {
     quantity: qty, ratePerQuantity: line.ratePerQuantity, totalBasicPrice: qty * (parseFloat(line.ratePerQuantity) || 0),
   });
   renderPinvDetail();
+  persistPinvDraft();
 }
 
 // Removing an existing line from THIS draft is safe (same effect as
@@ -660,10 +766,11 @@ function pinvDeleteLineItem(idx) {
   pinvInvoiceState.lineItems.splice(idx, 1);
   pinvCache.lines.splice(idx, 1);
   renderPinvDetail();
+  persistPinvDraft();
 }
 
-function updatePinvField(key, value) { pinvInvoiceState[key] = value; }
-function updatePinvNested(parentKey, childKey, value) { pinvInvoiceState[parentKey][childKey] = value; }
+function updatePinvField(key, value) { pinvInvoiceState[key] = value; persistPinvDraft(); }
+function updatePinvNested(parentKey, childKey, value) { pinvInvoiceState[parentKey][childKey] = value; persistPinvDraft(); }
 // ABPS is Maharashtra-based (GSTIN prefix 27) -- a Bill To GST No. also
 // starting 27 is an intra-state (same-state) supply, so CGST+SGST applies;
 // any other state prefix is inter-state, so IGST applies. Recomputed on
@@ -684,6 +791,7 @@ function pinvAutoSetGstFromBillToGst(value) {
   if (sgstEl) sgstEl.value = pinvInvoiceState.sgstPercent;
   if (igstEl) igstEl.value = pinvInvoiceState.igstPercent;
   recalcPinvTotals();
+  persistPinvDraft();
 }
 // Switching to Export clears GST% (no GST on an export invoice, enforced
 // again server-side in renderProjectInvoiceHTML) and clears the IFSC/Swift
@@ -700,6 +808,7 @@ function updatePinvTradeType(value) {
     pinvInvoiceState.usdRate = "";
   }
   renderPinvInvoiceForm();
+  persistPinvDraft();
 }
 function selectPinvBankOption(key) {
   pinvInvoiceState.bankAccountKey = key;
@@ -709,6 +818,7 @@ function selectPinvBankOption(key) {
   // from a bank option), so switching accounts shouldn't wipe either.
   pinvInvoiceState.bankDetails = { ...pinvInvoiceState.bankDetails, bankName: o.bankName, ifsc: o.ifsc, ac: o.ac, address: o.address, branch: o.branch };
   renderPinvInvoiceForm();
+  persistPinvDraft();
 }
 function updatePinvLineItem(idx, key, value) {
   const item = pinvInvoiceState.lineItems[idx];
@@ -721,6 +831,7 @@ function updatePinvLineItem(idx, key, value) {
     if (amountEl) amountEl.value = amount;
     recalcPinvTotals();
   }
+  persistPinvDraft();
 }
 
 // Export: no GST (enforced regardless of whatever stale %s might be in
@@ -852,6 +963,7 @@ async function submitPinvGeneration() {
       paymentReceivedConfirmation, documents,
     });
     if (data.success) {
+      clearPinvDraftStorage();
       document.getElementById("pinv-select-zone").style.display = "none";
       document.getElementById("pinv-detail-zone").style.display = "none";
       const successZone = document.getElementById("pinv-success-zone");
