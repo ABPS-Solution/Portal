@@ -1862,7 +1862,7 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
   if (nestedWorkspace.style.display === "block") {
     nestedWorkspace.style.display = "none";
     nestedWorkspace.innerHTML = "";
-    actionBtn.textContent = "Check in CRM / Log Follow-up";
+    actionBtn.textContent = "Add in CRM / Log Follow-up";
     actionBtn.style.display = "inline-flex";
     actionBtn.disabled = false;
     // Ensure global buttons stay hidden — email leads never use them
@@ -1900,7 +1900,7 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
               document.getElementById('email-nested-inline-database-workspace-anchor-${index}').style.display='none';
               document.getElementById('email-nested-inline-database-workspace-anchor-${index}').innerHTML='';
               const ab = document.getElementById('email-form-toggle-btn-text-${index}');
-              if(ab){ab.textContent='Check in CRM / Log Follow-up';ab.style.display='inline-flex';ab.disabled=false;}
+              if(ab){ab.textContent='Add in CRM / Log Follow-up';ab.style.display='inline-flex';ab.disabled=false;}
               document.getElementById('global-direct-inline-create-entry-btn').style.display='none';
               document.getElementById('canvas-back-btn-enclosure-row').innerHTML='';
             ">Collapse</button>

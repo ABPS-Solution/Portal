@@ -327,7 +327,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
       </div>
       
       <div style="margin-top:10px;" id="email-action-response-mount-zone-${mIdx}">
-        <button class="btn btn-sub" style="width:auto; font-size:0.78rem; padding:5px 12px;" onclick="triggerEmailLeadDatabaseActionPipeline(${mIdx})" id="email-form-toggle-btn-text-${mIdx}">Check in CRM / Log Follow-up</button>
+        <button class="btn btn-sub" style="width:auto; font-size:0.78rem; padding:5px 12px;" onclick="triggerEmailLeadDatabaseActionPipeline(${mIdx})" id="email-form-toggle-btn-text-${mIdx}">Add in CRM / Log Follow-up</button>
       </div>
       
       <div id="email-nested-inline-database-workspace-anchor-${mIdx}" style="margin-top:10px; display:none; background:#f1f5f9; padding:8px; border-radius:6px; border:1px solid var(--border);"></div>
