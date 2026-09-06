@@ -636,6 +636,28 @@ function revealNewEntryFormDropdownFromBanner() {
 }
 
 function returnToDirectoryCardsFromFormView() {
+  // Email Leads opened this same shared form inline (openEmailLeadCreate
+  // EntryForm) — its own cleanup was registered on window rather than a
+  // second local Cancel button (which used to get re-added, uncleared, on
+  // every open — see that function's own comment). Run it instead of the
+  // generic behavior below, which knows nothing about Email Leads' nested
+  // mount points and would leave this screen in the wrong state.
+  if (typeof window._emailLeadFormCancelCleanup === "function") {
+    const cleanup = window._emailLeadFormCancelCleanup;
+    window._emailLeadFormCancelCleanup = null;
+    // The template node was MOVED into the Email Leads mount via
+    // appendChild, not copied — relocate it back to document.body BEFORE
+    // cleanup clears that mount's innerHTML, or the clear destroys the
+    // node outright (innerHTML='' on an ancestor removes every descendant
+    // regardless of the descendant's own display style), breaking every
+    // future "+ Create New Lead"/"Create New Entry" click until a full
+    // page reload.
+    const fts = document.getElementById("step2-new-entry-dropdown");
+    if (fts) { fts.style.display = "none"; document.body.appendChild(fts); }
+    activeEmailLeadContextIndex = null;
+    cleanup();
+    return;
+  }
   document.getElementById("step2-new-entry-dropdown").style.display = "none";
   document.getElementById("staged-back-button-row").style.display = "none";
   // The top-left header pair is never used on Card Details or Search by
@@ -1574,6 +1596,12 @@ async function submitLead() {
           document.body.appendChild(formTemplateSource);
         }
         activeEmailLeadContextIndex = null;
+        // A successful submit doesn't go through returnToDirectoryCards
+        // FromFormView, so this stale cleanup callback (whichever mount it
+        // still points at, now gone) has to be cleared here too — left
+        // set, it would wrongly fire on some unrelated future Cancel & Back
+        // click elsewhere in the app.
+        window._emailLeadFormCancelCleanup = null;
         // Persists actioned=true server-side (not just this session's DOM),
         // so the card stays gone next time the feed is refreshed/reopened.
         markEmailLeadActionedAndRemoveCard(capturedEmailLeadIndex);
@@ -1823,10 +1851,16 @@ async function executeLeadMatrixFilterSearch() {
 // Lead for this Company" button under Scenario A (company already has
 // OTHER contacts, e.g. an email from a genuinely new person DEF at a
 // company that already has a lead for ACB) can open the exact same form
-// instead of two independently-drifting copies. `onCancel` lets each
-// caller supply what "Cancel" should restore afterward, since the two
-// scenarios leave different things open around this form.
-function openEmailLeadCreateEntryForm(index, mountEl, onCancelJs) {
+// instead of two independently-drifting copies. `onCancelFn` lets each
+// caller supply what "Cancel & Back" should restore afterward, since the
+// two scenarios leave different things open around this form — stashed
+// on window so the form's own existing bottom "Cancel & Back" button
+// (returnToDirectoryCardsFromFormView) can run it. This screen used to
+// prepend its OWN local Cancel button on every open instead, which never
+// got cleared on a re-open, so the button count grew by one every time
+// (found 6 Sep 2026) — removed in favor of the one Cancel/Back the form
+// already has.
+function openEmailLeadCreateEntryForm(index, mountEl, onCancelFn) {
   const mailObject = cachedInboundEmailLeadsArray[index];
   if (!mountEl) return;
   const formTemplateSource = document.getElementById("step2-new-entry-dropdown");
@@ -1876,23 +1910,10 @@ function openEmailLeadCreateEntryForm(index, mountEl, onCancelJs) {
   document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
   document.getElementById("canvas-back-btn-enclosure-row").innerHTML = "";
 
-  const collapseBar = document.createElement("div");
-  collapseBar.style.cssText = "display:flex; justify-content:flex-end; margin-bottom:8px;";
-  // The shared template node (step2-new-entry-dropdown) was MOVED here via
-  // appendChild, not copied — Cancel must relocate it back to document.body
-  // BEFORE any caller-supplied cleanup clears out this mount's innerHTML,
-  // or that clear destroys the template node outright (innerHTML='' on an
-  // ancestor removes every descendant regardless of the descendant's own
-  // display style). Losing the node this way made every subsequent
-  // "+ Create New Lead"/"Create New Entry" click silently do nothing —
-  // document.getElementById('step2-new-entry-dropdown') just returned null
-  // forever after the first Cancel, found 6 Sep 2026.
-  collapseBar.innerHTML = `<button class="nav-btn-styled" style="background:#718096; font-size:0.72rem; padding:3px 10px;" onclick="
-    const fts = document.getElementById('step2-new-entry-dropdown');
-    if (fts) { fts.style.display = 'none'; document.body.appendChild(fts); }
-    ${onCancelJs}
-  ">✕ Cancel</button>`;
-  formTemplateSource.prepend(collapseBar);
+  // Registered for returnToDirectoryCardsFromFormView (the form's own
+  // bottom "Cancel & Back" button) to run instead of its normal generic
+  // behavior — see that function's own comment.
+  window._emailLeadFormCancelCleanup = onCancelFn;
 }
 
 // "+ Create New Lead for this Company" — Scenario A (company already has
@@ -1905,10 +1926,10 @@ function openEmailLeadCreateEntryForm(index, mountEl, onCancelJs) {
 function openEmailLeadCreateEntryFormUnderExisting(index) {
   const mountEl = document.getElementById(`nested-email-create-form-mount-${index}`);
   activeEmailLeadContextIndex = index;
-  openEmailLeadCreateEntryForm(index, mountEl, `
-    document.getElementById('nested-email-create-form-mount-${index}').style.display='none';
-    document.getElementById('nested-email-create-form-mount-${index}').innerHTML='';
-  `);
+  openEmailLeadCreateEntryForm(index, mountEl, () => {
+    mountEl.style.display = "none";
+    mountEl.innerHTML = "";
+  });
 }
 
 async function triggerEmailLeadDatabaseActionPipeline(index) {
@@ -1953,6 +1974,9 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
           <div style="display:flex; gap:6px;">
             <button class="nav-btn-styled" style="background:var(--accent); font-size:0.72rem; padding:3px 10px;" onclick="openEmailLeadCreateEntryFormUnderExisting(${index})">+ Create New Lead for this Company</button>
             <button class="nav-btn-styled" style="background:#718096; font-size:0.72rem; padding:3px 10px;" onclick="
+              const fts = document.getElementById('step2-new-entry-dropdown');
+              if (fts && document.getElementById('email-nested-inline-database-workspace-anchor-${index}').contains(fts)) { fts.style.display='none'; document.body.appendChild(fts); }
+              window._emailLeadFormCancelCleanup = null; activeEmailLeadContextIndex = null;
               document.getElementById('email-nested-inline-database-workspace-anchor-${index}').style.display='none';
               document.getElementById('email-nested-inline-database-workspace-anchor-${index}').innerHTML='';
               const ab = document.getElementById('email-form-toggle-btn-text-${index}');
@@ -1995,14 +2019,14 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
       nestedWorkspace.style.display = "block";
 
       const targetFormMountNode = nestedWorkspace.querySelector(`#nested-email-creation-form-mount-${index}`);
-      openEmailLeadCreateEntryForm(index, targetFormMountNode, `
-        document.getElementById('email-nested-inline-database-workspace-anchor-${index}').style.display='none';
-        document.getElementById('email-nested-inline-database-workspace-anchor-${index}').innerHTML='';
-        const ab = document.getElementById('email-form-toggle-btn-text-${index}');
-        if(ab){ab.textContent='Create New Entry';ab.style.display='inline-flex';ab.disabled=false;}
-        document.getElementById('global-direct-inline-create-entry-btn').style.display='none';
-        document.getElementById('canvas-back-btn-enclosure-row').innerHTML='';
-      `);
+      openEmailLeadCreateEntryForm(index, targetFormMountNode, () => {
+        nestedWorkspace.style.display = "none";
+        nestedWorkspace.innerHTML = "";
+        const ab = document.getElementById(`email-form-toggle-btn-text-${index}`);
+        if (ab) { ab.textContent = "Create New Entry"; ab.style.display = "inline-flex"; ab.disabled = false; }
+        document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
+        document.getElementById("canvas-back-btn-enclosure-row").innerHTML = "";
+      });
     }
   } catch(e) {
     alert("Error: " + e.message);
