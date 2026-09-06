@@ -138,15 +138,15 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
   });
 }
 
-// Legacy Task Status values collapse onto the current 3-option set — a
-// value the <select> has no matching <option> for silently fails to
-// assign, which read as "Assigned To/Target Date reset on Edit" (really
-// the whole select fell back to its first option). Normalizes any
-// pre-25-Aug-2026 status still in the DB.
+// Legacy Task Status values collapse onto the current 2-option set
+// (In Process removed 6 Sep 2026 — explicit request) — a value the
+// <select> has no matching <option> for silently fails to assign, which
+// read as "Assigned To/Target Date reset on Edit" (really the whole
+// select fell back to its first option). Normalizes any old status still
+// in the DB, including "In Process" itself now.
 function normalizeTaskStatusForEdit(status) {
-  if (status === "In Progress" || status === "Under Review") return "In Process";
-  if (status === "Resolved") return "Completed";
-  return status || "Assigned";
+  if (status === "Resolved" || status === "Completed") return "Completed";
+  return "Assigned";
 }
 
 // Target Completion Time / Target Date / Task Priority / Task Description /
