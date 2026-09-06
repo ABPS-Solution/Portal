@@ -564,7 +564,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
           <div><label class="field-label" style="margin-top:0;">Packing<span id="cpo-pkg-gst-note"> (including GST)</span></label><input type="number" id="cpo-packing" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           <div><label class="field-label" style="margin-top:0;">Freight<span id="cpo-frt-gst-note"> (including GST)</span></label><input type="number" id="cpo-freight" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           <div><label class="field-label" style="margin-top:0;">Other<span id="cpo-oth-gst-note"> (including GST)</span></label><input type="number" id="cpo-other" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-          <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="cpo-roundoff" placeholder="0" step="any" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="cpo-roundoff" placeholder="0" step="any" data-allow-negative="true" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         </div>
       </div>
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">

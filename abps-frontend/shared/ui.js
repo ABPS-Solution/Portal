@@ -3,9 +3,20 @@
 // fields that make no sense with them (quantities, rates, percentages).
 // Blocks the keystroke where possible, and strips it on paste/autofill
 // too, since keydown alone doesn't catch those.
+//
+// Negative now blocked by DEFAULT on every number input (6 Sep 2026,
+// explicit request after a Qty field going negative via the native
+// up/down spinner corrupted a GST calculation) — previously this only
+// blocked negative when a field happened to declare min >= 0, so any
+// field with no min attribute (most of them) was wide open. A field that
+// genuinely needs negative values (e.g. Round Off, which can legitimately
+// round down) opts back in with data-allow-negative="true", or by giving
+// it a negative min itself.
 (function() {
   function allowsNegative(inp) {
-    return !(inp.min !== "" && inp.min != null && Number(inp.min) >= 0);
+    if (inp.dataset.allowNegative === "true") return true;
+    if (inp.min !== "" && inp.min != null && !isNaN(Number(inp.min))) return Number(inp.min) < 0;
+    return false;
   }
   document.addEventListener("keydown", function(e) {
     const t = e.target;
@@ -18,7 +29,23 @@
     if (!(t && t.tagName === "INPUT" && t.type === "number")) return;
     let v = t.value;
     let cleaned = v.replace(/[eE+]/g, "");
-    if (!allowsNegative(t)) cleaned = cleaned.replace(/-/g, "");
+    if (!allowsNegative(t)) {
+      // The native up/down spinner (the actual reported case — clicking
+      // the down arrow at 0) sets a whole negative value in one shot, e.g.
+      // "-1" — a blind minus-strip used to turn that INTO "1" (positive)
+      // instead of clamping it, inverting the sign rather than blocking
+      // it. Parse the value and clamp to the field's floor (its min, or 0)
+      // whenever it parses as a real negative number; only fall back to
+      // stripping the character for a bare/mid-typed "-" that doesn't
+      // parse yet.
+      const num = Number(cleaned);
+      if (cleaned !== "" && cleaned !== "-" && !isNaN(num) && num < 0) {
+        const floor = (t.min !== "" && t.min != null && !isNaN(Number(t.min))) ? Number(t.min) : 0;
+        cleaned = String(floor);
+      } else {
+        cleaned = cleaned.replace(/-/g, "");
+      }
+    }
     if (cleaned !== v) t.value = cleaned;
   }, true);
 })();

@@ -603,7 +603,7 @@ function renderPinvInvoiceForm() {
           </div>`}
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Round Off</span>
-            <input type="number" value="${esc(s.roundOff)}" oninput="updatePinvField('roundOff', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
+            <input type="number" value="${esc(s.roundOff)}" data-allow-negative="true" oninput="updatePinvField('roundOff', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; background:#f0fdf4; border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:#15803d; text-transform:uppercase;">Grand Total</span>
@@ -1269,7 +1269,7 @@ function renderPinvReviseInvoiceForm() {
           </div>`}
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Round Off</span>
-            <input type="number" value="${esc(s.roundOff)}" oninput="updatePinvReviseField('roundOff', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
+            <input type="number" value="${esc(s.roundOff)}" data-allow-negative="true" oninput="updatePinvReviseField('roundOff', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; background:#f0fdf4; border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:#15803d; text-transform:uppercase;">Grand Total</span>
