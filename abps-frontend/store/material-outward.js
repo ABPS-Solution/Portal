@@ -190,6 +190,19 @@ function renderMaterialOutwardReviewForm(ticketId, preview) {
   const returnableOptions = ['', 'Returnable', 'Non-Returnable'].map(v =>
     `<option value="${v}" ${(preview.morf || {}).returnableStatus === v ? 'selected' : ''}>${v || '— Select —'}</option>`).join("");
 
+  // Contact Person/Number are now ONE merged field on this screen, but the
+  // two source documents each carry their own copy — the Delivery
+  // Challan's own contactPersonName/contactNumber, and the Material Out
+  // Request Form's separate contactName/contactNumber (parseMaterialOut
+  // RequestForm). Falling back to the MORF's copy when the challan's own
+  // is blank was dropped by mistake when the two sections were merged —
+  // a challan whose contact cell is phone-digits-only (so
+  // contactPersonName correctly comes back "") can still have a named
+  // contact on the MORF, and that name shouldn't be lost.
+  const morf = preview.morf || {};
+  const mergedContactPerson = preview.contactPersonName || morf.contactName || '';
+  const mergedContactNumber = preview.contactNumber || morf.contactNumber || '';
+
   const fieldBoxStyle = "border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;";
   // A plain single-line <input> clips a long value instead of showing it —
   // every field here is an auto-growing textarea instead (shared
@@ -217,8 +230,8 @@ function renderMaterialOutwardReviewForm(ticketId, preview) {
         ${field('Challan Number', `mow-review-number-${ticketId}`, preview.challanNumber, true)}
         <div><label class="field-label" style="margin-top:0;">Challan Date *</label><input type="date" id="mow-review-date-${ticketId}" value="${escapeHtml(preview.challanDate || '')}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" /></div>
         ${field('Company Name', `mow-review-consignee-name-${ticketId}`, preview.consigneeName, true)}
-        ${field('Contact Person', `mow-review-contact-name-${ticketId}`, preview.contactPersonName, true)}
-        ${field('Contact Number', `mow-review-contact-number-${ticketId}`, preview.contactNumber, false)}
+        ${field('Contact Person', `mow-review-contact-name-${ticketId}`, mergedContactPerson, true)}
+        ${field('Contact Number', `mow-review-contact-number-${ticketId}`, mergedContactNumber, false)}
       </div>
       <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px 16px; margin-bottom:12px; ${fieldBoxStyle}">
         ${field('Transporter Name', `mow-review-transporter-${ticketId}`, preview.transporterName, false)}
@@ -233,7 +246,7 @@ function renderMaterialOutwardReviewForm(ticketId, preview) {
       <div style="display:grid; grid-template-columns:1fr 2fr 2fr; gap:12px 16px; margin-bottom:20px; ${fieldBoxStyle}">
         <div><label class="field-label" style="margin-top:0;">Returnable Status</label><select id="mow-morf-returnable-${ticketId}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);">${returnableOptions}</select></div>
         ${field('Delivery Challan Remarks', `mow-review-remarks-${ticketId}`, preview.remarks, false)}
-        ${field('Material Out Request Form Remarks', `mow-morf-remarks-${ticketId}`, (preview.morf || {}).remarks, false)}
+        ${field('Material Out Request Form Remarks', `mow-morf-remarks-${ticketId}`, morf.remarks, false)}
       </div>
 
       <h4 style="margin:0 0 6px; font-size:0.95rem; font-weight:800; color:var(--brand);">Materials Table</h4>
