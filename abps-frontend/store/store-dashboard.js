@@ -46,7 +46,7 @@ async function sdLoadDashboard(customVal) {
 }
 
 function sdRenderDashboard(data) {
-  const { stats, byDept, inboundOutboundTrend, grnByType, projectHealth, recentTickets, inboundPipelineAging } = data;
+  const { stats, byDept, inboundOutboundTrend, expectedDeliveryTimeline, projectHealth, recentTickets, inboundPipelineAging } = data;
 
   // Row 1 stat cards — live queues
   document.getElementById("sd-s-pending").textContent   = stats.pendingApprovals;
@@ -103,20 +103,31 @@ function sdRenderDashboard(data) {
       scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
   });
 
-  // Chart 3 — GRN Volume by Material Type (bar)
+  // Chart 3 — Expected Deliveries (bar) — replaces GRN Volume by Material
+  // Type, which was unreadable with 30+ distinct material types. Same
+  // 4-bucket breakdown + color convention as the Purchase Dashboard's own
+  // Purchase Order Delivery Timeline chart, since both read the same
+  // computeExpectedDeliveryTimeline data (backend, routes/dashboards.js).
   if (sdChartGrnType) sdChartGrnType.destroy();
-  const grnLabels = Object.keys(grnByType);
-  const ctx3 = document.getElementById("sd-chart-grn-type").getContext("2d");
+  const dl = expectedDeliveryTimeline;
+  const ctx3 = document.getElementById("sd-chart-expected-deliveries").getContext("2d");
   sdChartGrnType = new Chart(ctx3, {
     type: "bar",
     data: {
-      labels: grnLabels,
-      datasets: [{ label:"Qty", data: grnLabels.map(t => grnByType[t]),
-        backgroundColor: ["rgba(16,185,129,0.7)","rgba(37,99,235,0.7)","rgba(245,158,11,0.7)","rgba(139,92,246,0.7)","rgba(239,68,68,0.7)"],
-        borderRadius: 4 }]
+      labels: ["Overdue", "Due This Week", "Due This Month", "Due Later"],
+      datasets: [{
+        data: [dl.overdue, dl.thisWeek, dl.thisMonth, dl.later],
+        backgroundColor: [
+          "rgba(239,68,68,0.75)",
+          "rgba(245,158,11,0.75)",
+          "rgba(37,99,235,0.7)",
+          "rgba(16,185,129,0.7)"
+        ],
+        borderRadius: 4
+      }]
     },
     options: { responsive:true, plugins:{ legend:{ display:false } },
-      scales:{ y:{ grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false } } } }
+      scales:{ y:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, x:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
   });
 
   // Row 4 left — Inbound Pipeline Aging (Gate Entered / GRN Done, oldest first)
