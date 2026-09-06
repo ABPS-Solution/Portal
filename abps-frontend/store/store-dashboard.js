@@ -82,8 +82,10 @@ function sdRenderDashboard(data) {
       scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false } } } }
   });
 
-  // Chart 2 — Inbound vs Outbound Trend (dual line: GRNs completed vs
-  // tickets approved). Both series share inboundOutboundTrend.labels.
+  // Chart 2 — Material Received vs Issued Trend (dual line: GRNs
+  // completed vs tickets approved). Both series share
+  // inboundOutboundTrend.labels — the backend field name is unchanged,
+  // only the on-screen title/legend wording moved off "Inbound/Outbound".
   if (sdChartTrend) sdChartTrend.destroy();
   const ctx2 = document.getElementById("sd-chart-trend").getContext("2d");
   sdChartTrend = new Chart(ctx2, {
@@ -91,10 +93,10 @@ function sdRenderDashboard(data) {
     data: {
       labels: inboundOutboundTrend.labels,
       datasets: [
-        { label:"Inbound (GRNs)", data: inboundOutboundTrend.inbound,
+        { label:"Material Received (GRNs)", data: inboundOutboundTrend.inbound,
           borderColor: "rgba(16,185,129,0.8)", backgroundColor: "rgba(16,185,129,0.08)",
           pointRadius: 3, fill: true, tension: 0.3 },
-        { label:"Outbound (Approved)", data: inboundOutboundTrend.outbound,
+        { label:"Material Issued (Tickets Approved)", data: inboundOutboundTrend.outbound,
           borderColor: "rgba(37,99,235,0.8)", backgroundColor: "rgba(37,99,235,0.08)",
           pointRadius: 3, fill: true, tension: 0.3 },
       ]
