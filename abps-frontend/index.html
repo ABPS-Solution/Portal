@@ -127,6 +127,14 @@
      + 2x4px gap + 28px vertical padding, rounded up for rendering slop —
      the first attempt at 74px undershot this and the mismatch persisted. */
   .dd-stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; display:flex; flex-direction:column; gap:4px; justify-content:center; min-height:100px; box-sizing:border-box; }
+  /* Row 1/2 (and Accounts row 3) stat tiles are tinted by whether the
+     period selector actually changes the number: .stat-live tiles read
+     the current live backlog/snapshot (same value regardless of Today/
+     This Month/This Year), .stat-period tiles are computed FROM the
+     selected date range and change when it does. Purely a visual cue —
+     no tile's underlying query changes because of this class. */
+  .dd-stat-card.stat-live   { background:#fef2f2; border-color:#fecaca; }
+  .dd-stat-card.stat-period { background:#f0fdf4; border-color:#bbf7d0; }
   .dd-stat-label { font-size:0.7rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
   .dd-stat-val { font-size:1.7rem; font-weight:800; color:var(--text); line-height:1.2; }
   .dd-stat-sub { font-size:0.7rem; color:var(--muted); }
@@ -3233,23 +3241,23 @@
 
         <!-- ROW 1: 5 Stat Cards -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Design Work Overdue in Project Timeline</div>
             <div class="dd-stat-val" id="dd-s-overdue" style="color:#b91c1c;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Pending BOQ Authorizations</div>
             <div class="dd-stat-val" id="dd-s-pending" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending BOQ Revision Authorizations</div>
             <div class="dd-stat-val" id="dd-s-pendingrevisions" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">New Item Codes Added</div>
             <div class="dd-stat-val" id="dd-s-itemcodes">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Drawings Uploaded</div>
             <div class="dd-stat-val" id="dd-s-drawingsuploaded">—</div>
           </div>
@@ -3257,23 +3265,23 @@
 
         <!-- ROW 2: Throughput/Averages -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">BOQs Authorized</div>
             <div class="dd-stat-val" id="dd-s-authorized" style="color:#15803d;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">BOQs Revised</div>
             <div class="dd-stat-val" id="dd-s-revised">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Average Drawing Turnaround (Sent → Approved)</div>
             <div class="dd-stat-val" id="dd-s-drawingturnaround">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Average BOQs per Active Project</div>
             <div class="dd-stat-val" id="dd-s-avgboqs">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">BOQ Revision Rate</div>
             <div class="dd-stat-val" id="dd-s-revrate">—</div>
             <div class="dd-stat-sub">via Revise BOQ, not auto-cascades</div>
@@ -3352,23 +3360,23 @@
 
         <!-- ROW 1: PRN coverage / scheduling / rejection health -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">PRNs With No Materials Assigned in a PO</div>
             <div class="dd-stat-val" id="pd-s-noassign" style="color:#b91c1c;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">PRNs With Partial Materials Assigned in a PO</div>
             <div class="dd-stat-val" id="pd-s-partassign" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">PRNs with Unscheduled Delivery Date</div>
             <div class="dd-stat-val" id="pd-s-unsched" style="color:#b91c1c;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">PRNs with Partially Scheduled Delivery Date</div>
             <div class="dd-stat-val" id="pd-s-partsched" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Unactioned GRNs with Missing/Rejected Material</div>
             <div class="dd-stat-val" id="pd-s-grns" style="color:#b91c1c;">—</div>
           </div>
@@ -3376,23 +3384,23 @@
 
         <!-- ROW 2: PO lifecycle throughput -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending PO Authorizations</div>
             <div class="dd-stat-val" id="pd-s-pendingpo" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending PO Revision Authorizations</div>
             <div class="dd-stat-val" id="pd-s-pendingporev" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">RM POs Created</div>
             <div class="dd-stat-val" id="pd-s-pos">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">On-Time Delivery Rate</div>
             <div class="dd-stat-val" id="pd-s-ontime" style="color:#15803d;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Action in Progress GRNs with Missing/Rejected Material</div>
             <div class="dd-stat-val" id="pd-s-actioninprogress" style="color:var(--warn);">—</div>
           </div>
@@ -3481,27 +3489,27 @@
 
         <!-- ROW 1 -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Unactioned Travel / Hotel Tickets</div>
             <div class="dd-stat-val" id="ad-s-unactioned" style="color:#b45309;">—</div>
             <div class="dd-stat-sub" id="ad-s-unactioned-sub"></div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Company-Paid Travel / Hotel</div>
             <div class="dd-stat-val" id="ad-s-travelpaid">—</div>
             <div class="dd-stat-sub" id="ad-s-travelpaid-sub"></div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Tour Advances Paid</div>
             <div class="dd-stat-val" id="ad-s-advpaid">—</div>
             <div class="dd-stat-sub" id="ad-s-advpaid-sub"></div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Unchecked Tour Vouchers</div>
             <div class="dd-stat-val" id="ad-s-unchecked" style="color:#b91c1c;">—</div>
             <div class="dd-stat-sub" id="ad-s-unchecked-sub"></div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Avg Tour Voucher Check Time</div>
             <div class="dd-stat-val" id="ad-s-checktime">—</div>
           </div>
@@ -3509,24 +3517,24 @@
 
         <!-- ROW 2 -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Tour Vouchers Checked</div>
             <div class="dd-stat-val" id="ad-s-vouchers" style="color:#15803d;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Tour Expense Paid</div>
             <div class="dd-stat-val" id="ad-s-tourpaid">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Tour Claimed vs Paid Difference %</div>
             <div class="dd-stat-val" id="ad-s-variance">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Tour Over-Limit Amount</div>
             <div class="dd-stat-val" id="ad-s-overlimit" style="color:#b45309;">—</div>
             <div class="dd-stat-sub" id="ad-s-overlimit-sub"></div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Total Balance of Tour Employees</div>
             <div class="dd-stat-val" id="ad-s-outstanding" style="color:var(--brand);">—</div>
             <div class="dd-stat-sub" id="ad-s-outstanding-sub"></div>
@@ -3535,26 +3543,26 @@
 
         <!-- ROW 3 -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Open Daily Cash/UPI Advances</div>
             <div class="dd-stat-val" id="ad-s-openadv" style="color:#b45309;">—</div>
             <div class="dd-stat-sub" id="ad-s-openadv-sub"></div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Daily Cash + UPI Box Balance</div>
             <div class="dd-stat-val" id="ad-s-cashbox">—</div>
             <div class="dd-stat-sub" id="ad-s-cashbox-sub"></div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Daily Cash Box Top-Ups</div>
             <div class="dd-stat-val" id="ad-s-topups" style="color:#15803d;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Daily Cash/UPI/Online Expenses Spent</div>
             <div class="dd-stat-val" id="ad-s-dailyspent">—</div>
             <div class="dd-stat-sub" id="ad-s-dailyspent-sub"></div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Total Expense (Tour + Daily + Travel/Hotel)</div>
             <div class="dd-stat-val" id="ad-s-totalexp" style="color:var(--brand);">—</div>
           </div>
@@ -3588,25 +3596,25 @@
 
         <!-- ROW 1: Live Queues — needs action right now -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending Ticket Approvals</div>
             <div class="dd-stat-val" id="sd-s-pending" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">BOQs Needing PRN</div>
             <div class="dd-stat-val" id="sd-s-boqneedprn" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Gate Entries Awaiting GRN</div>
             <div class="dd-stat-val" id="sd-s-gateawaiting" style="color:#b45309;">—</div>
             <div class="dd-stat-sub" id="sd-s-gateawaiting-sub"></div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">GRNs Awaiting QA Check</div>
             <div class="dd-stat-val" id="sd-s-qaawaiting" style="color:#b45309;">—</div>
             <div class="dd-stat-sub" id="sd-s-qaawaiting-sub"></div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending Excess Material Requests</div>
             <div class="dd-stat-val" id="sd-s-boqinc" style="color:#b91c1c;">—</div>
           </div>
@@ -3614,23 +3622,23 @@
 
         <!-- ROW 2: Period Throughput / Rates -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Tickets</div>
             <div class="dd-stat-val" id="sd-s-tickets">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">GRNs</div>
             <div class="dd-stat-val" id="sd-s-grns">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">QA Rejection Rate</div>
             <div class="dd-stat-val" id="sd-s-rejrate">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Stock Sweeps Recorded</div>
             <div class="dd-stat-val" id="sd-s-sweeps">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Delivery Challans Issued</div>
             <div class="dd-stat-val" id="sd-s-challans">—</div>
           </div>
@@ -3716,25 +3724,25 @@
 
         <!-- ROW 1: Job Card Pulse — 5 cards -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Active Job Cards</div>
             <div class="dd-stat-val" id="pd2-s-activejcn">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Job Cards Finished</div>
             <div class="dd-stat-val" id="pd2-s-finished" style="color:#15803d;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">In Progress Job Cards</div>
             <div class="dd-stat-val" id="pd2-s-inprogress" style="color:#b45309;">—</div>
             <div class="dd-stat-sub">tickets raised, no FG entry</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending Store Approvals</div>
             <div class="dd-stat-val" id="pd2-s-store-approvals" style="color:#b45309;">—</div>
             <div class="dd-stat-sub">live · all projects</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Active Projects</div>
             <div class="dd-stat-val" id="pd2-s-unique-proj">—</div>
             <div class="dd-stat-sub">with active job cards</div>
@@ -3743,7 +3751,7 @@
 
         <!-- ROW 2: Material & Operations — 5 cards -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Material Issue Tickets Created</div>
             <div class="dd-stat-val" id="pd2-s-tickets">—</div>
           </div>
@@ -3752,7 +3760,7 @@
             <div class="dd-stat-val" id="pd2-s-boqutil">—</div>
             <div class="dd-stat-sub" id="pd2-s-boqutil-sub">avg across active projects</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Excess Material Requests Pending</div>
             <div class="dd-stat-val" id="pd2-s-jc-increase" style="color:#b91c1c;">—</div>
             <div class="dd-stat-sub">live · all projects</div>
@@ -3836,23 +3844,23 @@
 
         <!-- ROW 1: Lead Funnel Pulse -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">New Leads</div>
             <div class="dd-stat-val" id="md-s-newleads">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Email Leads Awaiting Action</div>
             <div class="dd-stat-val" id="md-s-emailleads" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">In Progress</div>
             <div class="dd-stat-val" id="md-s-inprogress" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Open Tasks</div>
             <div class="dd-stat-val" id="md-s-opentasks">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Leads With Zero Follow-Up</div>
             <div class="dd-stat-val" id="md-s-zerofollowup" style="color:#b91c1c;">—</div>
           </div>
@@ -3860,23 +3868,23 @@
 
         <!-- ROW 2: Activity & Engagement Health -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Email Offers Sent</div>
             <div class="dd-stat-val" id="md-s-offerssent">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Purchase Orders Uploaded</div>
             <div class="dd-stat-val" id="md-s-pouploads" style="color:#15803d;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Average Days For Lead → Order</div>
             <div class="dd-stat-val" id="md-s-avgdays">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Win Rate</div>
             <div class="dd-stat-val" id="md-s-winrate">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Cold Emails Sent</div>
             <div class="dd-stat-val" id="md-s-coldemails">—</div>
           </div>
