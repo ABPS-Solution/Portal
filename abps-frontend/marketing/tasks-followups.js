@@ -229,7 +229,11 @@ async function commitIsolatedTaskItem(leadRef, scopeNode) {
       const taskBox = scopeNode.querySelector(".template-task-box");
       if (taskBox) taskBox.innerHTML = '<div style="font-size:0.8rem; color:var(--brand); font-weight:600; padding:8px; display:flex; align-items:center; gap:6px;"><span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span> Creating new task...</div>';
       await globalExecutionScopeReloader(leadRef, scopeNode);
-      markEmailLeadActionedIfInEmailContext(scopeNode);
+      // Deliberately does NOT call markEmailLeadActionedIfInEmailContext —
+      // an Email Leads card should only disappear on Delete, a genuine new
+      // lead, or a logged follow-up, not merely a task (explicit request,
+      // 6 Sep 2026). Follow-up creation just above (commitIsolatedFollowUpItem)
+      // and new-lead creation (leads.js) still call it.
     }
   } catch(e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = "Save Task"; }
 }

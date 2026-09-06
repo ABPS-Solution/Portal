@@ -4366,6 +4366,27 @@
 
     <div id="workspace-emailWhatsapp" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Leads Received through Email</h2>
+
+      <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; background:#f8fafc; border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-bottom:8px;">
+        <div>
+          <label style="display:block; font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Engineer / Email</label>
+          <select id="email-leads-engineer-filter" onchange="refetchEmailLeadsListWithFilters()" style="padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:0.82rem; min-width:220px;">
+            <option value="ALL">All Engineers</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block; font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Received</label>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; padding-bottom:5px;">
+            <label style="font-size:0.82rem; display:flex; align-items:center; gap:4px;"><input type="radio" name="emailLeadsDateFilter" value="all" checked onchange="refetchEmailLeadsListWithFilters()"> All Time</label>
+            <label style="font-size:0.82rem; display:flex; align-items:center; gap:4px;"><input type="radio" name="emailLeadsDateFilter" value="today" onchange="refetchEmailLeadsListWithFilters()"> Today</label>
+            <label style="font-size:0.82rem; display:flex; align-items:center; gap:4px;"><input type="radio" name="emailLeadsDateFilter" value="yesterday" onchange="refetchEmailLeadsListWithFilters()"> Yesterday</label>
+            <label style="font-size:0.82rem; display:flex; align-items:center; gap:4px;"><input type="radio" name="emailLeadsDateFilter" value="thisWeek" onchange="refetchEmailLeadsListWithFilters()"> This Week</label>
+            <label style="font-size:0.82rem; display:flex; align-items:center; gap:4px;"><input type="radio" name="emailLeadsDateFilter" value="thisMonth" onchange="refetchEmailLeadsListWithFilters()"> This Month</label>
+          </div>
+        </div>
+      </div>
+      <div id="email-leads-active-filters-display" style="font-size:0.8rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-bottom:12px;">Filtering for: All Engineers | for All Time</div>
+
       <div id="email-leads-runtime-status-feedback" style="display:none; margin-bottom:10px; padding:8px; border-radius:4px; font-size:0.8rem; font-weight:700; text-align:center;"></div>
       <div id="email-leads-inbound-feed-canvas" style="display:flex; flex-direction:column; gap:12px;"></div>
     </div>

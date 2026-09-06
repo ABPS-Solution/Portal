@@ -1,5 +1,69 @@
 let cachedInboundEmailLeadsArray = [];
 let activeEmailLeadContextIndex = null;
+// engineer-name directory + the two active filter values, all populated
+// from fetchEmailLeadsList's response (server is the source of truth for
+// which mailboxes exist — see EMAIL_LEADS_ENGINEER_DIRECTORY in
+// routes/marketing.js). 6 Sep 2026.
+let cachedEmailLeadsEngineerDirectory = [];
+
+function resolveEmailLeadEngineerName(inboxAccount) {
+  if (!inboxAccount) return "Unknown";
+  const entry = cachedEmailLeadsEngineerDirectory.find(e => e.email && e.email.toLowerCase() === String(inboxAccount).toLowerCase());
+  return entry ? entry.engineerName : "Engineer Name Pending";
+}
+
+function getCurrentEmailLeadsFilters() {
+  const engineerEmail = document.getElementById("email-leads-engineer-filter")?.value || "ALL";
+  const dateRadio = document.querySelector('input[name="emailLeadsDateFilter"]:checked');
+  const dateFilter = dateRadio ? dateRadio.value : "all";
+  return { engineerEmail, dateFilter };
+}
+
+function populateEmailLeadsEngineerDropdown(directory) {
+  cachedEmailLeadsEngineerDirectory = Array.isArray(directory) ? directory : [];
+  const select = document.getElementById("email-leads-engineer-filter");
+  if (!select) return;
+  const previousValue = select.value || "ALL";
+  select.innerHTML = `<option value="ALL">All Engineers</option>` +
+    cachedEmailLeadsEngineerDirectory.map(e =>
+      `<option value="${escapeHtml(e.email)}">${escapeHtml(e.engineerName)} — ${escapeHtml(e.email)}</option>`
+    ).join("");
+  // Preserve whatever was selected before this refresh, if it still exists.
+  if ([...select.options].some(o => o.value === previousValue)) select.value = previousValue;
+}
+
+function updateEmailLeadsFilteringForText() {
+  const display = document.getElementById("email-leads-active-filters-display");
+  if (!display) return;
+  const { engineerEmail, dateFilter } = getCurrentEmailLeadsFilters();
+  const engineerLabel = engineerEmail === "ALL" ? "All Engineers" : resolveEmailLeadEngineerName(engineerEmail) + " — " + engineerEmail;
+  const DATE_LABELS = { all: "All Time", today: "Today", yesterday: "Yesterday", thisWeek: "This Week", thisMonth: "This Month" };
+  display.textContent = `Filtering for: ${engineerLabel} | for ${DATE_LABELS[dateFilter] || "All Time"}`;
+}
+
+// Lighter-weight than executeInboundEmailSyncPipelineFetch — just re-runs
+// fetchEmailLeadsList with the currently-selected filters, no Gmail poll
+// (fetchAndProcessInboundEmailLeads is expensive/quota-bound and has no
+// reason to re-run just because the operator changed a filter dropdown).
+async function refetchEmailLeadsListWithFilters() {
+  updateEmailLeadsFilteringForText();
+  const feedCanvas = document.getElementById("email-leads-inbound-feed-canvas");
+  if (feedCanvas) feedCanvas.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted); font-size:0.85rem;">Loading...</div>`;
+  const { engineerEmail, dateFilter } = getCurrentEmailLeadsFilters();
+  try {
+    const data = await apFetch({ action: "fetchEmailLeadsList", engineerEmail, dateFilter });
+    if (data.success) {
+      cachedInboundEmailLeadsArray = data.emailLeads || [];
+      if (data.engineerDirectory) populateEmailLeadsEngineerDropdown(data.engineerDirectory);
+      try { localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray)); } catch(e) { /* quota — ok */ }
+      renderEmailLeadsFeedInterface(cachedInboundEmailLeadsArray);
+    } else if (feedCanvas) {
+      feedCanvas.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-size:0.85rem;">Failed to load leads: ${escapeHtml(data.error || "Unknown error")}</div>`;
+    }
+  } catch (e) {
+    if (feedCanvas) feedCanvas.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-size:0.85rem;">Network error: ${escapeHtml(e.message)}</div>`;
+  }
+}
 
 /**
  * EXECUTE INBOUND EMAIL SYNC PIPELINE FETCH
@@ -69,11 +133,14 @@ async function executeInboundEmailSyncPipelineFetch() {
       return;
     }
 
-    const data = await apFetch({ action: "fetchEmailLeadsList" });
+    const { engineerEmail, dateFilter } = getCurrentEmailLeadsFilters();
+    const data = await apFetch({ action: "fetchEmailLeadsList", engineerEmail, dateFilter });
+    updateEmailLeadsFilteringForText();
 
     // 4. Handle response success states and mount elements to your interface canvas
     if (data.success) {
       cachedInboundEmailLeadsArray = data.emailLeads || [];
+      if (data.engineerDirectory) populateEmailLeadsEngineerDropdown(data.engineerDirectory);
       try {
         localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray));
       } catch(storageErr) {
@@ -143,7 +210,8 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
       <div class="contact-summary-header-row" style="margin-bottom:6px;">
         <div class="contact-summary-title-info">
           <div class="meta-row-line-block">
-            <span style="background:var(--highlight-bg); border:1px solid var(--brand); color:var(--brand); font-family:monospace; text-transform:none;">${mail.destinationInboxAccount}</span>
+            <span style="background:var(--highlight-bg); border:1px solid var(--brand); color:var(--brand); font-family:monospace; text-transform:none;" title="Received into">To: ${escapeHtml(resolveEmailLeadEngineerName(mail.destinationInboxAccount))} — ${escapeHtml(mail.destinationInboxAccount || "Unknown")}</span>
+            <span style="background:#f1f5f9; border:1px solid var(--border); color:var(--text); font-family:monospace; text-transform:none;" title="Customer's email address">From: ${escapeHtml(mail.senderEmail || "Unknown")}</span>
             <span style="background:#cbd5e1; color:#1e293b; font-weight:700;">${formatOrdinalDate(mail.receivedDate)}${receivedTimeLabel}</span>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px;">
