@@ -1620,7 +1620,7 @@
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px; min-width:760px;">
           <thead><tr style="background:var(--highlight-bg); text-align:left;">
             <th style="padding:8px;">Product</th><th style="padding:8px; text-align:center;">Ordered Qty</th>
-            <th style="padding:8px; text-align:center;">JCs Total</th><th style="padding:8px; text-align:center;">JCs QA-Passed</th>
+            <th style="padding:8px; text-align:center;">Total QA-Passed Job Cards</th>
             <th style="padding:8px; text-align:center;">Already Invoiced</th><th style="padding:8px; text-align:center;">Ready to Invoice</th>
             <th style="padding:8px; text-align:center;">Qty to Bill Now</th>
           </tr></thead>
@@ -1632,7 +1632,7 @@
         <div id="pinv-documents-zone" style="display:none; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-top:16px;">
           <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:12px; letter-spacing:0.5px;">Invoice Documents</div>
 
-          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Packing List * <span style="color:#b91c1c;">(required)</span></label>
               <div class="card-box" id="pinv-doc-packingList-dropzone" onclick="document.getElementById('pinv-doc-packingList-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
@@ -1649,17 +1649,17 @@
               <input type="file" id="pinv-doc-deliveryChallan-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'deliveryChallan')" />
               <div id="pinv-doc-deliveryChallan-filelist"></div>
             </div>
-            <div>
-              <label class="field-label" style="margin-top:0;">LR Copy</label>
-              <div class="card-box" id="pinv-doc-lrCopy-dropzone" onclick="document.getElementById('pinv-doc-lrCopy-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-                📎 Click to attach LR Copy
-              </div>
-              <input type="file" id="pinv-doc-lrCopy-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'lrCopy')" />
-              <div id="pinv-doc-lrCopy-filelist"></div>
-            </div>
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Warranty Card * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="pinv-doc-warrantyCard-dropzone" onclick="document.getElementById('pinv-doc-warrantyCard-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Warranty Card
+              </div>
+              <input type="file" id="pinv-doc-warrantyCard-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'warrantyCard')" />
+              <div id="pinv-doc-warrantyCard-filelist"></div>
+            </div>
             <div>
               <label class="field-label" style="margin-top:0;">History Card * <span style="color:#b91c1c;">(required)</span></label>
               <div class="card-box" id="pinv-doc-historyCard-dropzone" onclick="document.getElementById('pinv-doc-historyCard-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
@@ -1676,6 +1676,17 @@
               <input type="file" id="pinv-doc-truckLoadedImages-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'truckLoadedImages')" />
               <div id="pinv-doc-truckLoadedImages-filelist"></div>
             </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">LR Copy</label>
+              <div class="card-box" id="pinv-doc-lrCopy-dropzone" onclick="document.getElementById('pinv-doc-lrCopy-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach LR Copy
+              </div>
+              <input type="file" id="pinv-doc-lrCopy-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'lrCopy')" />
+              <div id="pinv-doc-lrCopy-filelist"></div>
+            </div>
             <div>
               <label class="field-label" style="margin-top:0;">MD cc</label>
               <div class="card-box" id="pinv-doc-mdcc-dropzone" onclick="document.getElementById('pinv-doc-mdcc-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
@@ -1684,9 +1695,6 @@
               <input type="file" id="pinv-doc-mdcc-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'mdcc')" />
               <div id="pinv-doc-mdcc-filelist"></div>
             </div>
-          </div>
-
-          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Inspection Clearance</label>
               <div class="card-box" id="pinv-doc-inspectionClearance-dropzone" onclick="document.getElementById('pinv-doc-inspectionClearance-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
@@ -1694,14 +1702,6 @@
               </div>
               <input type="file" id="pinv-doc-inspectionClearance-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'inspectionClearance')" />
               <div id="pinv-doc-inspectionClearance-filelist"></div>
-            </div>
-            <div>
-              <label class="field-label" style="margin-top:0;">Warranty Card * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="pinv-doc-warrantyCard-dropzone" onclick="document.getElementById('pinv-doc-warrantyCard-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-                📎 Click to attach Warranty Card
-              </div>
-              <input type="file" id="pinv-doc-warrantyCard-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'warrantyCard')" />
-              <div id="pinv-doc-warrantyCard-filelist"></div>
             </div>
           </div>
 

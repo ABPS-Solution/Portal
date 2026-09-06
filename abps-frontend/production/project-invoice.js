@@ -159,7 +159,7 @@ async function handlePinvProjectChange(projectId) {
 function initPinvInvoiceStateFromLines() {
   pinvInvoiceState = {
     invoiceNo: pinvCache.invoiceNoPreview || "", insuranceNo: "", mdccNo: "", transportName: "", lrNoDate: "", lcNoDate: "", dcNoDate: "", vehicleNo: "", mobileNo: "", incoterms: PINV_INCOTERMS_OPTIONS[0].code, incotermsPlace: "",
-    tradeType: "Import", usdRate: "",
+    tradeType: "Local", usdRate: "",
     poNumber: pinvCache.poNumber, poDate: pinvCache.poDate,
     billTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "" },
     shipTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "" },
@@ -188,7 +188,6 @@ function renderPinvDetail() {
     return `<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:8px;">${l.productName || l.description}${blockerMsgs.length ? `<div style="color:#b91c1c; font-size:0.78rem; font-weight:700; margin-top:2px;">⚠ ${blockerMsgs.join(', ')} — this product is blocked</div>` : ''}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.orderedQuantity : '—'}</td>
-      <td style="padding:8px; text-align:center;">${hasBoq ? l.jcTotal : '—'}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.jcQaPassed : '—'}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.alreadyInvoicedQty : '—'}</td>
       <td style="padding:8px; text-align:center; font-weight:700; color:${maxQty > 0 ? '#15803d' : 'var(--muted)'};">${hasBoq ? l.readyToInvoiceQty : 'Final only'}</td>
@@ -362,9 +361,9 @@ function renderPinvInvoiceForm() {
 
       <div style="display:flex; gap:14px; align-items:flex-end; margin-bottom:14px; flex-wrap:wrap;">
         <div class="grid-cell-item" style="max-width:200px; margin:0;">
-          <label>Import / Export</label>
+          <label>Local / Export</label>
           <select onchange="updatePinvTradeType(this.value)" style="width:100%; padding:6px 4px;">
-            <option value="Import" ${s.tradeType !== 'Export' ? 'selected' : ''}>Import</option>
+            <option value="Local" ${s.tradeType !== 'Export' ? 'selected' : ''}>Local</option>
             <option value="Export" ${s.tradeType === 'Export' ? 'selected' : ''}>Export</option>
           </select>
         </div>
@@ -420,7 +419,7 @@ function renderPinvInvoiceForm() {
         </div>
       </div>
 
-      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.9rem;">Item Details</div>
+      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.9rem;">Product Details</div>
       <div id="pinv-lineitems-wrap"></div>
 
       <div style="display:flex; justify-content:flex-end; margin-top:12px;">
@@ -522,10 +521,10 @@ function renderPinvLineItemsTable() {
                 // hand-typed total" stance as the Item Code Format engine's
                 // auto-calc fields.
                 return `<td><input type="number" id="pinv-amount-${idx}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" readonly
-                  style="width:100%; min-width:80px; padding:4px; font-size:0.85rem; background:#f1f5f9; color:var(--muted); cursor:not-allowed;" /></td>`;
+                  style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; background:#f1f5f9; color:var(--muted); cursor:not-allowed;" /></td>`;
               }
               if (type === 'text') {
-                return `<td><textarea rows="1" oninput="updatePinvLineItem(${idx}, '${key}', this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; min-width:80px; padding:4px; font-size:0.85rem; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`;
+                return `<td><textarea rows="1" oninput="updatePinvLineItem(${idx}, '${key}', this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`;
               }
               // Qty starts at value="" + placeholder="0" when it's genuinely
               // 0 (e.g. mirrors pinv-jc-body's own Qty to Bill Now input),
@@ -536,7 +535,7 @@ function renderPinvLineItemsTable() {
               const rawVal = key === 'quantity' && (parseFloat(it[key]) || 0) === 0
                 ? `value="" placeholder="0"`
                 : `value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}"`;
-              return `<td><input type="${type}" ${rawVal} oninput="updatePinvLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:80px; padding:4px; font-size:0.85rem;" /></td>`;
+              return `<td><input type="${type}" ${rawVal} oninput="updatePinvLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px;" /></td>`;
             }).join('')}
             <td style="text-align:center;"><button type="button" onclick="pinvDeleteLineItem(${idx})" title="Remove this line from the invoice"
               style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.76rem; font-weight:700; padding:3px 7px; cursor:pointer;">✕</button></td>
@@ -934,7 +933,7 @@ async function loadPinvReviseForm(invoiceId) {
       invoiceNo: last.invoiceNo || "", insuranceNo: last.insuranceNo || "", mdccNo: last.mdccNo || "",
       transportName: last.transportName || "", lrNoDate: last.lrNoDate || "", lcNoDate: last.lcNoDate || "", dcNoDate: last.dcNoDate || "", vehicleNo: last.vehicleNo || "",
       mobileNo: last.mobileNo || "", incoterms: last.incoterms || PINV_INCOTERMS_OPTIONS[0].code, incotermsPlace: last.incotermsPlace || "",
-      tradeType: last.tradeType || "Import", usdRate: last.usdRate || "",
+      tradeType: last.tradeType || "Local", usdRate: last.usdRate || "",
       poNumber: data.poNumber || "", poDate: data.poDate || "",
       billTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "", ...(last.billTo || {}) },
       shipTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "", ...(last.shipTo || {}) },
@@ -976,9 +975,9 @@ function renderPinvReviseInvoiceForm() {
 
       <div style="display:flex; gap:14px; align-items:flex-end; margin-bottom:14px; flex-wrap:wrap;">
         <div class="grid-cell-item" style="max-width:200px; margin:0;">
-          <label>Import / Export</label>
+          <label>Local / Export</label>
           <select onchange="updatePinvReviseTradeType(this.value)" style="width:100%; padding:6px 4px;">
-            <option value="Import" ${s.tradeType !== 'Export' ? 'selected' : ''}>Import</option>
+            <option value="Local" ${s.tradeType !== 'Export' ? 'selected' : ''}>Local</option>
             <option value="Export" ${s.tradeType === 'Export' ? 'selected' : ''}>Export</option>
           </select>
         </div>
@@ -1033,7 +1032,7 @@ function renderPinvReviseInvoiceForm() {
         </div>
       </div>
 
-      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.9rem;">Item Details</div>
+      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.9rem;">Product Details</div>
       <div id="pinv-revise-lineitems-wrap"></div>
 
       <div style="display:flex; justify-content:flex-end; margin-top:12px;">
@@ -1121,16 +1120,16 @@ function renderPinvReviseLineItemsTable() {
             ${cols.map(([key, , type]) => {
               if (key === 'totalBasicPrice') {
                 return `<td><input type="number" id="pinv-revise-amount-${idx}" value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}" readonly
-                  style="width:100%; min-width:80px; padding:4px; font-size:0.85rem; background:#f1f5f9; color:var(--muted); cursor:not-allowed;" /></td>`;
+                  style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; background:#f1f5f9; color:var(--muted); cursor:not-allowed;" /></td>`;
               }
               if (type === 'text') {
-                return `<td><textarea rows="1" oninput="updatePinvReviseLineItem(${idx}, '${key}', this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; min-width:80px; padding:4px; font-size:0.85rem; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`;
+                return `<td><textarea rows="1" oninput="updatePinvReviseLineItem(${idx}, '${key}', this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`;
               }
               // Same value=""+placeholder="0" convention as renderPinvLineItemsTable.
               const rawVal = key === 'quantity' && (parseFloat(it[key]) || 0) === 0
                 ? `value="" placeholder="0"`
                 : `value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}"`;
-              return `<td><input type="${type}" ${rawVal} oninput="updatePinvReviseLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:80px; padding:4px; font-size:0.85rem;" /></td>`;
+              return `<td><input type="${type}" ${rawVal} oninput="updatePinvReviseLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px;" /></td>`;
             }).join('')}
             <td style="text-align:center;"><button type="button" onclick="pinvReviseDeleteLineItem(${idx})" title="Remove this line from the invoice"
               style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.76rem; font-weight:700; padding:3px 7px; cursor:pointer;">✕</button></td>
