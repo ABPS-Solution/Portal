@@ -10,6 +10,14 @@ let cachedEmailLeadsEngineerDirectory = [];
 // the dropdown hid the whole list behind a click and made it impossible
 // to see at a glance which mailboxes exist).
 let activeEmailLeadsEngineerFilter = "ALL";
+// Same reasoning, same pill pattern, applied to the date filter too
+// (7 Sep 2026) — the native radio row read as five bare dots with no
+// visual grouping, which is what looked "bad" about it.
+let activeEmailLeadsDateFilter = "all";
+const EMAIL_LEADS_DATE_FILTER_OPTIONS = [
+  ["all", "All Time"], ["today", "Today"], ["yesterday", "Yesterday"],
+  ["thisWeek", "This Week"], ["thisMonth", "This Month"],
+];
 
 function resolveEmailLeadEngineerName(inboxAccount) {
   if (!inboxAccount) return "Unknown";
@@ -18,15 +26,32 @@ function resolveEmailLeadEngineerName(inboxAccount) {
 }
 
 function getCurrentEmailLeadsFilters() {
-  const dateRadio = document.querySelector('input[name="emailLeadsDateFilter"]:checked');
-  const dateFilter = dateRadio ? dateRadio.value : "all";
-  return { engineerEmail: activeEmailLeadsEngineerFilter, dateFilter };
+  return { engineerEmail: activeEmailLeadsEngineerFilter, dateFilter: activeEmailLeadsDateFilter };
 }
 
 function selectEmailLeadsEngineerFilter(email) {
   activeEmailLeadsEngineerFilter = email;
   renderEmailLeadsEngineerPills();
   refetchEmailLeadsListWithFilters();
+}
+
+function selectEmailLeadsDateFilter(value) {
+  activeEmailLeadsDateFilter = value;
+  renderEmailLeadsDatePills();
+  refetchEmailLeadsListWithFilters();
+}
+
+function renderEmailLeadsDatePills() {
+  const wrap = document.getElementById("email-leads-date-pills");
+  if (!wrap) return;
+  wrap.innerHTML = EMAIL_LEADS_DATE_FILTER_OPTIONS.map(([value, label]) => {
+    const active = activeEmailLeadsDateFilter === value;
+    return `
+      <div onclick="selectEmailLeadsDateFilter('${value}')"
+        style="cursor:pointer; user-select:none; border:1.5px solid ${active ? "var(--brand)" : "var(--border)"};
+               background:${active ? "var(--highlight-bg)" : "#fff"}; color:${active ? "var(--brand)" : "var(--text)"};
+               border-radius:6px; padding:6px 12px; font-size:0.78rem; font-weight:700;">${label}</div>`;
+  }).join("");
 }
 
 // One pill per mailbox, wrapping across as many rows as it takes. The
@@ -115,6 +140,10 @@ async function refetchEmailLeadsListWithFilters() {
  * and updates the interface layout with instruction-centered headers.
  */
 async function executeInboundEmailSyncPipelineFetch() {
+  // Static list, no server round-trip needed — rendered here (the
+  // panel-open entry point) so the pills exist before the first fetch
+  // resolves, not just after selectEmailLeadsDateFilter is first clicked.
+  renderEmailLeadsDatePills();
   // syncBtn no longer exists — the "Sync Inbox" button was retired since scanning now
   // runs automatically via background triggers. This function still runs on panel-open
   // to populate the feed, so every reference to syncBtn below is now optional.
@@ -253,10 +282,10 @@ function renderEmailLeadsFeedInterface(emailLeadsList) {
     card.innerHTML = `
       <div class="contact-summary-header-row" style="margin-bottom:6px;">
         <div class="contact-summary-title-info">
-          <div class="meta-row-line-block">
-            <span style="background:var(--highlight-bg); border:1px solid var(--brand); color:var(--brand); font-family:monospace; text-transform:none;" title="The ABPS mailbox this email was received into">To: ${escapeHtml(resolveEmailLeadEngineerName(mail.destinationInboxAccount))} — ${escapeHtml(mail.destinationInboxAccount || "Unknown")}</span>
-            <span style="background:#f1f5f9; border:1px solid var(--border); color:var(--text); font-family:monospace; text-transform:none;" title="The customer's email address">From: ${escapeHtml(mail.senderEmail || "Not recorded yet")}</span>
-            <span style="background:#cbd5e1; color:#1e293b; font-weight:700;">${formatOrdinalDate(mail.receivedDate)}${receivedTimeLabel}</span>
+          <div class="meta-row-line-block" style="font-size:0.8rem;">
+            <span title="The ABPS mailbox this email was received into">To:</span><strong style="font-weight:600; margin-right:18px;">${escapeHtml(resolveEmailLeadEngineerName(mail.destinationInboxAccount))} <small style="color:var(--muted); font-weight:400; font-family:monospace;">— ${escapeHtml(mail.destinationInboxAccount || "Unknown")}</small></strong>
+            <span title="The customer's email address">From:</span><strong style="font-weight:600; font-family:monospace; margin-right:18px;">${escapeHtml(mail.senderEmail || "Not recorded yet")}</strong>
+            <span>Received:</span><strong style="font-weight:600;">${formatOrdinalDate(mail.receivedDate)}${receivedTimeLabel}</strong>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px;">
             <span style="background:#e2e8f0;">Company:</span><strong style="margin-right:20px; color:var(--brand);">${escapeHtml(mail.extractedCompany)}</strong>

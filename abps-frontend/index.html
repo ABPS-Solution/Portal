@@ -4372,14 +4372,8 @@
           <div id="email-leads-engineer-pills" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:6px;"></div>
         </div>
         <div>
-          <label style="display:block; font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Received</label>
-          <div style="display:flex; gap:10px; flex-wrap:wrap; padding-bottom:5px;">
-            <label style="font-size:0.82rem; display:flex; align-items:center; gap:4px;"><input type="radio" name="emailLeadsDateFilter" value="all" checked onchange="refetchEmailLeadsListWithFilters()"> All Time</label>
-            <label style="font-size:0.82rem; display:flex; align-items:center; gap:4px;"><input type="radio" name="emailLeadsDateFilter" value="today" onchange="refetchEmailLeadsListWithFilters()"> Today</label>
-            <label style="font-size:0.82rem; display:flex; align-items:center; gap:4px;"><input type="radio" name="emailLeadsDateFilter" value="yesterday" onchange="refetchEmailLeadsListWithFilters()"> Yesterday</label>
-            <label style="font-size:0.82rem; display:flex; align-items:center; gap:4px;"><input type="radio" name="emailLeadsDateFilter" value="thisWeek" onchange="refetchEmailLeadsListWithFilters()"> This Week</label>
-            <label style="font-size:0.82rem; display:flex; align-items:center; gap:4px;"><input type="radio" name="emailLeadsDateFilter" value="thisMonth" onchange="refetchEmailLeadsListWithFilters()"> This Month</label>
-          </div>
+          <label style="display:block; font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Email Receiving Day</label>
+          <div id="email-leads-date-pills" style="display:flex; gap:6px; flex-wrap:wrap;"></div>
         </div>
       </div>
       <div id="email-leads-active-filters-display" style="font-size:0.8rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-bottom:12px;">Filtering for: All Engineers | for All Time</div>
