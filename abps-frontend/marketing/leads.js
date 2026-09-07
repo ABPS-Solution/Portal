@@ -69,7 +69,9 @@ function initializeGoogleAuthPlatformEngine() {
     document.getElementById("auth-portal-processing-loader").style.display = "none";
   }
   
-  clearAppLocalStorageKeepingDeviceKeys();
+  // Reached on involuntary session loss as well as after logout; on a
+  // real logout executeLogout has already wiped drafts, so this is a no-op there.
+  clearAppLocalStorageKeepingDeviceKeys({ keepDrafts: true });
   appActiveOperatorIdentityString = "";
   document.getElementById("app-container").style.display = "none";
   document.getElementById("auth-container").style.display = "flex";

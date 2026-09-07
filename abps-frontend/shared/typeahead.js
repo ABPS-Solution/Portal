@@ -238,6 +238,22 @@ async function initializeCreateBOQPanel() {
   renderCBOQMaterialRows();
   if (_g("create-boq-feedback")) _g("create-boq-feedback").style.display = "none";
 
+  // Draft autosave (shared/drafts.js). The material rows live in the
+  // cboqMaterialRows array rather than the DOM, so they're passed as the
+  // extra state a field scan can't see. Offered only on a first visit —
+  // on a return visit the in-memory form is still populated (the
+  // isFirstVisit gate above), so a restore prompt would be noise.
+  if (typeof abpsDraftAttach === "function") {
+    abpsDraftAttach("createBOQ", "cboq-form-body", () => cboqMaterialRows);
+    if (isFirstVisit) {
+      abpsDraftOfferRestore("createBOQ", "cboq-form-body", (rows) => {
+        cboqMaterialRows = Array.isArray(rows) ? rows : [];
+        renderCBOQMaterialRows();
+        updateCBOQTotals();
+      }, { hasFileUploads: true });
+    }
+  }
+
   // Load Project IDs + item code catalog + personnel all in parallel
   const projDrop = _g("cboq-project-id-ta-input");
   if (!projDrop) return;

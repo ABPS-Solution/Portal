@@ -626,6 +626,9 @@ document.addEventListener("visibilitychange", function() {
   }
 });
 function resetCreateBOQForm() {
+  // A submitted or explicitly-reset BOQ is finished work — drop its
+  // autosaved draft so it can't be offered back later.
+  if (typeof abpsDraftClear === 'function') abpsDraftClear('createBOQ');
   cboqMaterialRows = [];
   renderCBOQMaterialRows();
   ["cboq-project-id-ta-input","cboq-department"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });

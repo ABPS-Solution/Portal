@@ -22,12 +22,27 @@ const GAS_URL = "https://abps-backend-244281871074.asia-south1.run.app/exec";
 // registered PCs several people share). Leaving that readable for whoever
 // logs in next is a worse outcome than losing offline dropdowns until the
 // next successful login, so the wipe is the intended behaviour.
-function clearAppLocalStorageKeepingDeviceKeys() {
+// keepDrafts: session EXPIRY is involuntary and you come back as the same
+// person, so an in-progress Create BOQ / RM PO / Project Invoice draft
+// (shared/drafts.js) should survive it — losing 30 minutes of typing to a
+// 12h token timeout is exactly what draft autosave exists to prevent.
+// An explicit LOGOUT is different: it's deliberate and may mean handing a
+// shared PC to someone else, so drafts go with everything else.
+function clearAppLocalStorageKeepingDeviceKeys(options) {
+  const keepDrafts = !!(options && options.keepDrafts);
   const deviceToken = localStorage.getItem("abpsDeviceToken");
   const pcDeviceSecret = localStorage.getItem("abpsPcDeviceSecret");
+  const drafts = [];
+  if (keepDrafts) {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("abpsDraft:")) drafts.push([k, localStorage.getItem(k)]);
+    }
+  }
   localStorage.clear();
   if (deviceToken) localStorage.setItem("abpsDeviceToken", deviceToken);
   if (pcDeviceSecret) localStorage.setItem("abpsPcDeviceSecret", pcDeviceSecret);
+  drafts.forEach(([k, v]) => { try { localStorage.setItem(k, v); } catch (_) {} });
 }
 
 // ── Network-failure retry ──────────────────────────────────────────────
@@ -93,7 +108,7 @@ async function acFetch(path, payload) {
   }
   const data = await res.json();
   if (!data.success && data.code === "SESSION_EXPIRED") {
-    clearAppLocalStorageKeepingDeviceKeys();
+    clearAppLocalStorageKeepingDeviceKeys({ keepDrafts: true });
     document.getElementById("app-container").style.display  = "none";
     document.getElementById("auth-container").style.display = "flex";
     initializeGoogleAuthPlatformEngine();
@@ -210,7 +225,7 @@ async function apFetch(payload) {
   }
   const data = await res.json();
   if (!data.success && data.code === "SESSION_EXPIRED") {
-    clearAppLocalStorageKeepingDeviceKeys();
+    clearAppLocalStorageKeepingDeviceKeys({ keepDrafts: true });
     document.getElementById("app-container").style.display   = "none";
     document.getElementById("auth-container").style.display  = "flex";
     // Show a clean message on the auth card
@@ -376,18 +391,18 @@ window.onload = async function() {
         applyServerRoleFlags(permData);
         showAppView();
       } else {
-        clearAppLocalStorageKeepingDeviceKeys();
+        clearAppLocalStorageKeepingDeviceKeys({ keepDrafts: true });
         syncPlatformPersonnelDropdownOptionsList();
         initializeGoogleAuthPlatformEngine();
       }
     } catch(e) {
       if (e.message === "SESSION_EXPIRED") return; // apFetch already handled redirect + clear
-      clearAppLocalStorageKeepingDeviceKeys();
+      clearAppLocalStorageKeepingDeviceKeys({ keepDrafts: true });
       syncPlatformPersonnelDropdownOptionsList();
       initializeGoogleAuthPlatformEngine();
     }
   } else {
-    clearAppLocalStorageKeepingDeviceKeys();
+    clearAppLocalStorageKeepingDeviceKeys({ keepDrafts: true });
     syncPlatformPersonnelDropdownOptionsList();
     initializeGoogleAuthPlatformEngine();
   }
