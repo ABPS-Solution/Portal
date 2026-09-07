@@ -1,7 +1,7 @@
 async function ensureSharedProjectTypeaheadData(forceRefresh = false) {
   if (window._sharedProjectTypeaheadLoaded && !forceRefresh) return;
   try {
-    const data = await apFetch({ action: "pullLiveActiveProjectCodes" });
+    const data = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes" });
     window.sharedActiveProjectCodes = data.projects || [];
     window.sharedProjectMeta = data.projectMeta || {};
     window._sharedProjectTypeaheadLoaded = true;
@@ -66,7 +66,7 @@ async function initializeProjectStatusPanel() {
   document.getElementById("pstat-project-input").value = "";
   document.getElementById("pstat-results").style.display = "none";
   try {
-    const data = await apFetch({ action: "pullLiveActiveProjectCodes" });
+    const data = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes" });
     window.pstatKnownProjectCodes = (data.success && data.projects) ? data.projects : [];
     window.pstatProjectMeta = data.projectMeta || {};
   } catch (e) { window.pstatKnownProjectCodes = []; window.pstatProjectMeta = {}; }
@@ -156,8 +156,8 @@ async function initializeFinishedGoodsAddWorkspace(department, canvasId) {
 
   // Fetch projects and staff in parallel
   const [projData, staffData] = await Promise.all([
-    apFetch({ action:"pullLiveActiveProjectCodes" }),
-    apFetch({ action:"getStoreOperatorsList" })
+    fetchWithStaleCache({ action:"pullLiveActiveProjectCodes" }),
+    fetchWithStaleCache({ action:"getStoreOperatorsList" })
   ]);
 
   window.fgProjectMetaCache = projData.projectMeta || {};
@@ -245,9 +245,9 @@ async function initializeCreateBOQPanel() {
   if (isFirstVisit) projDrop.innerHTML = '<option value="">Loading projects...</option>';
 
   const [projResult, , personnelResult, importListResult] = await Promise.allSettled([
-    apFetch({ action: "pullLiveActiveProjectCodes" }),
+    fetchWithStaleCache({ action: "pullLiveActiveProjectCodes" }),
     loadItemCodeCatalogIntoCache(),
-    apFetch({ action: "getStoreOperatorsList" }),
+    fetchWithStaleCache({ action: "getStoreOperatorsList" }),
     apFetch({ action: "fetchBOQsForImport" })
   ]);
 
@@ -280,7 +280,7 @@ async function initializeJCLHWorkspace() {
   resetJCLHWorkspace();                // guarantee first-time-like state on every entry
   jclhWorkspaceInitInProgress = true;
   try {
-    const data = await apFetch({ action: "pullLiveActiveProjectCodes" });
+    const data = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes" });
     window.jclhProjectMeta = data.projectMeta || {};
     // Same shared typeahead component Create BOQ uses (handleSharedProjectTypeaheadInput /
     // selectSharedProjectTypeahead) — it filters window.sharedActiveProjectCodes /

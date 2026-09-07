@@ -15,6 +15,13 @@ const GAS_URL = "https://abps-backend-244281871074.asia-south1.run.app/exec";
 // through here instead of a bare call, or a per-device secret silently
 // stops surviving the next session expiry and that PC/browser has to be
 // re-enrolled for no reason.
+// The offline reference-data caches (abpsStale:*, see fetchWithStaleCache
+// below) are deliberately NOT preserved here. They hold business data —
+// customer company names, active project codes, the item-code catalog —
+// and this app runs on genuinely shared devices (the marketing phone, and
+// registered PCs several people share). Leaving that readable for whoever
+// logs in next is a worse outcome than losing offline dropdowns until the
+// next successful login, so the wipe is the intended behaviour.
 function clearAppLocalStorageKeepingDeviceKeys() {
   const deviceToken = localStorage.getItem("abpsDeviceToken");
   const pcDeviceSecret = localStorage.getItem("abpsPcDeviceSecret");
@@ -23,13 +30,59 @@ function clearAppLocalStorageKeepingDeviceKeys() {
   if (pcDeviceSecret) localStorage.setItem("abpsPcDeviceSecret", pcDeviceSecret);
 }
 
+// ── Network-failure retry ──────────────────────────────────────────────
+// WHAT IS SAFE TO RETRY, and why the rule is this narrow: almost every
+// write in this app is a POST with no idempotency key, so a retry that
+// lands twice can create a second PRN / invoice / ticket. The ONLY
+// failure we can retry safely is one where the request provably never
+// reached the server — fetch() rejecting with a TypeError (offline, DNS
+// failure, connection refused). Everything else is deliberately NOT
+// retried:
+//   - a 60s AbortSignal timeout: the server may be mid-transaction (a
+//     Cloud Run cold start plus withTransaction work can legitimately
+//     exceed 60s), so a retry is exactly how you get a duplicate;
+//   - ANY HTTP response, 5xx included: a 502 can arrive after the
+//     container already committed;
+//   - SESSION_EXPIRED, which is a real answer, not a transport failure.
+const ABPS_RETRY_MAX = 2; // retries AFTER the first attempt
+const ABPS_RETRY_BASE_MS = 400;
+
+function abpsIsRetriableNetworkError(err) {
+  // fetch() rejects with TypeError only when no response was received at
+  // all. An AbortError (our own timeout) is explicitly excluded.
+  return err instanceof TypeError && err.name !== "AbortError";
+}
+
+async function fetchWithRetry(url, init) {
+  let indicatorShown = false;
+  try {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await fetch(url, init);
+      } catch (err) {
+        if (!abpsIsRetriableNetworkError(err) || attempt >= ABPS_RETRY_MAX) throw err;
+        if (!indicatorShown && typeof showReconnectingIndicator === "function") {
+          showReconnectingIndicator();
+          indicatorShown = true;
+        }
+        // Exponential with jitter, so a whole screen's worth of parallel
+        // requests doesn't retry in lockstep.
+        const delay = ABPS_RETRY_BASE_MS * Math.pow(3, attempt) * (0.75 + Math.random() * 0.5);
+        await new Promise(r => setTimeout(r, delay));
+      }
+    }
+  } finally {
+    if (indicatorShown && typeof hideReconnectingIndicator === "function") hideReconnectingIndicator();
+  }
+}
+
 // Direct REST helper for new modules — per server.js's own comment, new
 // modules should call real REST paths, not the /exec legacy-action bridge.
 // Derives the backend's base URL from GAS_URL so there's only one place
 // (GAS_URL itself) that ever needs to change if the backend URL changes.
 async function acFetch(path, payload) {
   const base = GAS_URL.replace(/\/exec$/, "");
-  const res  = await fetch(base + "/api/accounts/" + path, {
+  const res  = await fetchWithRetry(base + "/api/accounts/" + path, {
     method: "POST",
     body: JSON.stringify({ ...payload, sessionToken: localStorage.getItem("sessionToken") }),
     signal: AbortSignal.timeout(60000),
@@ -146,7 +199,7 @@ document.addEventListener("click", async (e) => {
 
 async function apFetch(payload) {
   payload.sessionToken = localStorage.getItem("sessionToken");
-  const res = await fetch(GAS_URL, {
+  const res = await fetchWithRetry(GAS_URL, {
     method: "POST",
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(60000),
@@ -173,6 +226,69 @@ async function apFetch(payload) {
     throw new Error("SESSION_EXPIRED");
   }
   return data;
+}
+
+// ── Stale-but-usable reference data ────────────────────────────────────
+// Dropdown/catalog sources (item codes, project codes, engineers, company
+// names) are near-static and are re-fetched on every page load. If that
+// fetch fails during an outage the dropdowns render EMPTY, which looks
+// like data loss. This keeps the last good response and serves it when
+// the network is down, annotated so the caller can show "last synced".
+//
+// ★ WHAT MUST NEVER GO THROUGH THIS ★
+//   - getSessionPermissions / anything permission- or role-derived. It is
+//     deliberately re-fetched fresh on EVERY load and localStorage is
+//     explicitly not trusted for it (a stale isUserAdminGlobal caused a
+//     real access-control display bug on 4 Sep 2026), and device
+//     restriction is computed server-side per session.
+//   - anything a WRITE is keyed on, as opposed to merely displayed — a
+//     cached id posted back to the server is how you write against a row
+//     that no longer exists.
+//   - live stock, ticket queues, dashboard tiles, Job-Card or invoice data.
+// Keep this to lists a human reads off a dropdown.
+const ABPS_STALE_PREFIX = "abpsStale:";
+const ABPS_STALE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+// The key must include the params that change the RESULT, not just the
+// action — pullLiveActiveProjectCodes is called both unfiltered and with a
+// status filter, and one shared key would cross-contaminate the two.
+function staleCacheKey(payload) {
+  const { action, sessionToken, ...rest } = payload || {};
+  const params = Object.keys(rest).sort().map(k => `${k}=${JSON.stringify(rest[k])}`).join("&");
+  return ABPS_STALE_PREFIX + action + (params ? "|" + params : "");
+}
+
+async function fetchWithStaleCache(payload) {
+  const key = staleCacheKey(payload);
+  try {
+    const data = await apFetch(payload);
+    if (data && data.success) {
+      try {
+        localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+      } catch (_) { /* quota full or private mode — caching is best-effort */ }
+    }
+    return data;
+  } catch (err) {
+    if (err && err.message === "SESSION_EXPIRED") throw err; // a real answer, not an outage
+    let cached = null;
+    try { cached = JSON.parse(localStorage.getItem(key) || "null"); } catch (_) { cached = null; }
+    if (!cached || !cached.data || (Date.now() - cached.ts) > ABPS_STALE_MAX_AGE_MS) throw err;
+    // Annotated so a caller can surface "last synced HH:MM" — every
+    // existing key on the response is untouched, so a caller that doesn't
+    // know about staleness behaves exactly as before.
+    return { ...cached.data, __stale: true, __syncedAt: cached.ts };
+  }
+}
+
+// Human-readable "last synced" label for a response fetchWithStaleCache
+// served from cache. Returns "" for a live response, so a call site can
+// interpolate it unconditionally.
+function staleSyncedLabel(data) {
+  if (!data || !data.__stale || !data.__syncedAt) return "";
+  const d = new Date(data.__syncedAt);
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `Offline — showing data last synced at ${hh}:${mm}`;
 }
 
 /**
@@ -513,7 +629,7 @@ async function showAppView() {
   });
 
   try {
-    const data = await apFetch({ 
+    const data = await fetchWithStaleCache({ 
       action: "getEngineers",
       activeEngineer: appActiveOperatorIdentityString
     });
@@ -610,7 +726,7 @@ async function showAppView() {
 // building <option> elements.
 async function triggerCompanyDropdownArrayFetch() {
   try {
-    const d = await apFetch({
+    const d = await fetchWithStaleCache({
       action: "getUniqueCompaniesList",
       activeEngineer: appActiveOperatorIdentityString
     });
@@ -682,7 +798,7 @@ async function loadQualFilter() {
   container.innerHTML = '<p style="font-size:0.75rem; color:var(--brand); font-weight:600; margin:0; display:flex; align-items:center; gap:6px;"><span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span> Loading Other Types of Customer...</p>';
   
   try {
-    const data = await apFetch({ 
+    const data = await fetchWithStaleCache({ 
       action: "getUniqueQualifications",
       activeEngineer: appActiveOperatorIdentityString
     });
@@ -732,7 +848,7 @@ async function loadDesignPersonnelIntoSelect(selectId) {
   selectEl.innerHTML = '<option value="">Loading...</option>';
 
   try {
-    const data = await apFetch({ action:"getStoreOperatorsList" });
+    const data = await fetchWithStaleCache({ action:"getStoreOperatorsList" });
     window.cboqAllPersonnel = data.fullPersonnelDataRecordsTree || [];
     // Don't populate yet — wait for department selection
     selectEl.innerHTML = '<option value="">— Select Department First —</option>';

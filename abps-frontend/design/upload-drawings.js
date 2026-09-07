@@ -7,7 +7,7 @@ async function initializeUploadDrawingsPanel() {
   document.getElementById("upload-drawings-feedback").style.display = "none";
 
   try {
-    const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: "Active" });
+    const data = await fetchWithStaleCache({ action:"pullLiveActiveProjectCodes", statusFilter: "Active" });
     window.sharedActiveProjectCodes = data.projects || [];
     window.sharedProjectMeta = data.projectMeta || {};
   } catch(e) {
@@ -25,7 +25,7 @@ async function handleUploadDrawingsStatusChange(selectedStatus) {
   uploadZone.style.display = "none";
 
   try {
-    const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: selectedStatus });
+    const data = await fetchWithStaleCache({ action:"pullLiveActiveProjectCodes", statusFilter: selectedStatus });
     window.sharedActiveProjectCodes = data.projects || [];
     window.sharedProjectMeta = data.projectMeta || {};
     projDrop.placeholder = (data.projects || []).length === 0 ? `No projects with status: ${selectedStatus}` : "Type Project ID or Customer Name...";

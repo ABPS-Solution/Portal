@@ -41,6 +41,37 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2   # need the previous commit to diff CACHE_VERSION
+
+      # The service worker caches JS cache-first, so a deploy that changes a
+      # script WITHOUT bumping CACHE_VERSION leaves users on fresh HTML with
+      # stale JS — the exact stale-deploy bug the no-cache meta tags were
+      # added for, which a service worker makes inert. Fail loudly here
+      # rather than discover it in production.
+      - name: Require a CACHE_VERSION bump when frontend files change
+        run: |
+          if ! git rev-parse HEAD~1 >/dev/null 2>&1; then
+            echo "No previous commit to compare against — skipping."; exit 0
+          fi
+          CHANGED=$(git diff --name-only HEAD~1 HEAD -- abps-frontend/ \
+                    | grep -v '^abps-frontend/sw.js$' || true)
+          if [ -z "$CHANGED" ]; then
+            echo "No abps-frontend changes (other than sw.js itself) — no bump required."; exit 0
+          fi
+          OLD=$(git show HEAD~1:abps-frontend/sw.js 2>/dev/null \
+                | grep -oE "^const CACHE_VERSION = '[^']+'" || echo "none")
+          NEW=$(grep -oE "^const CACHE_VERSION = '[^']+'" abps-frontend/sw.js)
+          if [ "$OLD" = "none" ]; then
+            echo "sw.js is new in this commit — nothing to compare."; exit 0
+          fi
+          if [ "$OLD" = "$NEW" ]; then
+            echo "::error::abps-frontend changed but CACHE_VERSION in sw.js was not bumped."
+            echo "Users would get fresh HTML against cached old JS. Bump it and push again."
+            echo "Changed files:"; echo "$CHANGED"
+            exit 1
+          fi
+          echo "CACHE_VERSION bumped ($OLD -> $NEW)."
 
       - uses: actions/configure-pages@v5
 

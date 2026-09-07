@@ -30,7 +30,7 @@ async function initializeStoreHistoryMatrixWorkspace() {
   try {
     const [ticketsData, projectsData] = await Promise.all([
       apFetch({ action: "fetchAllHistoricalStoreTicketsStream" }),
-      apFetch({ action: "pullLiveActiveProjectCodes" })
+      fetchWithStaleCache({ action: "pullLiveActiveProjectCodes" })
     ]);
 
     if (!ticketsData.success || !projectsData.success) {

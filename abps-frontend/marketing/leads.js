@@ -202,7 +202,7 @@ async function loadCityStateFilterOptions() {
   if (btn) btn.disabled = true;
   
   try {
-    const data = await apFetch({
+    const data = await fetchWithStaleCache({
       action: "getUniqueCityStatePayloadTree",
       activeEngineer: appActiveOperatorIdentityString
     });

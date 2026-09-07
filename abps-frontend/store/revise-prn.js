@@ -306,7 +306,7 @@ async function initializeRevisePRNOtherTab() {
   const selDropList = document.getElementById("rprn-project-select-ta-dropdown");
   if (selDropList) selDropList.style.display = "none";
   try {
-    const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
+    const data = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
     window.sharedActiveProjectCodes = data.success ? (data.projects || []) : [];
     window.sharedProjectMeta = data.success ? (data.projectMeta || {}) : {};
   } catch (e) {

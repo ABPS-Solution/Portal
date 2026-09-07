@@ -95,7 +95,7 @@ async function initializePPSTrackingPanel() {
   const queueZone = document.getElementById("pps-needqueue-zone");
   if (queueZone) queueZone.style.display = "block";
   try {
-    const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
+    const data = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
     // The typeahead input filters/renders from these two globals itself
     // (handleSharedProjectTypeaheadInput) — no <select> to populate here.
     window.sharedActiveProjectCodes = data.success ? (data.projects || []) : [];

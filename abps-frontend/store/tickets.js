@@ -64,7 +64,7 @@ async function initializeMaterialRequestWorkspace() {
   try {
     const [inventoryData, staffData, sessionData] = await Promise.all([
       apFetch({ action: "pullLiveInventoryCounts" }),
-      apFetch({ action: "getStoreOperatorsList" }),
+      fetchWithStaleCache({ action: "getStoreOperatorsList" }),
       apFetch({ action: "getSessionPermissions" }),
     ]);
 
@@ -1335,7 +1335,7 @@ async function ticketLoadProjectListForDepartment_(isService) {
     window.sharedProjectMeta = window._ticketServiceProjectsCache.projectMeta;
   } else {
     if (!window._ticketActiveProjectsCache) {
-      const data = await apFetch({ action: "pullLiveActiveProjectCodes" });
+      const data = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes" });
       window._ticketActiveProjectsCache = { projects: data.success ? (data.projects || []) : [], projectMeta: data.success ? (data.projectMeta || {}) : {} };
     }
     window.sharedActiveProjectCodes = window._ticketActiveProjectsCache.projects;

@@ -114,7 +114,7 @@ async function loadItemCodeCatalogIntoCache(forceRefresh = false) {
     return; // Cache is fresh — skip backend hit
   }
   try {
-    const data = await apFetch({ action: "fetchItemCodeCatalog" });
+    const data = await fetchWithStaleCache({ action: "fetchItemCodeCatalog" });
     if (data.success) {
       window.itemCodeCatalogCache = data.catalog;
       window._itemCodeCacheLoadedAt = Date.now();

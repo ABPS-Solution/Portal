@@ -95,7 +95,7 @@ async function initializeSearchRMPOPanel() {
   if (lbl) lbl.style.display = "none";
   loadItemCodeCatalogIntoCache();
   try {
-    const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
+    const data = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
     window.srchpoActiveProjects = (data.success ? (data.projects || []) : []);
   } catch(e) { window.srchpoActiveProjects = []; }
 }
@@ -492,7 +492,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
 
   const [vendorRes, projRes] = await Promise.allSettled([
     apFetch({ action: "fetchVendorList" }),
-    apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" })
+    fetchWithStaleCache({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" })
   ]);
   if (isStale()) return;
   loadItemCodeCatalogIntoCache();

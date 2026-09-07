@@ -199,7 +199,7 @@ async function initializeFGAddWorkspace() {
   const prodDrop  = document.getElementById("fg-add-prod-person");
   prodDrop.innerHTML  = '<option value="">Loading...</option>';
   try {
-    const data = await apFetch({ action:"getStoreOperatorsList" });
+    const data = await fetchWithStaleCache({ action:"getStoreOperatorsList" });
     const allPersonnel = data.fullPersonnelDataRecordsTree || [];
 
     const prodPeople  = filterOutPureAdminPersonnel(allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().trim() === "production" || d.toLowerCase().trim() === "admin")));

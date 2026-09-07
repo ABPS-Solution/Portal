@@ -120,7 +120,7 @@ async function jumpToRPRNDelta(boqId, btn) {
   try {
     const [previewData, personnelData] = await Promise.all([
       apFetch({ action: "previewPRNMaterials", projectId, boqId }),
-      apFetch({ action: "getStoreOperatorsList" })
+      fetchWithStaleCache({ action: "getStoreOperatorsList" })
     ]);
     if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
     if (!previewData.success) {
@@ -176,7 +176,7 @@ async function initializePRNPanel() {
   prnStoreQtyLocked = false;
 
   try {
-    const data = await apFetch({ action:"pullLiveActiveProjectCodes" });
+    const data = await fetchWithStaleCache({ action:"pullLiveActiveProjectCodes" });
     if (!data || !data.success) {
       projDrop.placeholder = "Error loading projects";
       showPurchaseFeedback("prn-feedback", (data && data.error) ? data.error : "Failed to load project list. Please refresh.", "error");
@@ -355,7 +355,7 @@ async function startNewPRNCreation() {
   try {
     const [previewData, personnelData, boqMetaCheck] = await Promise.all([
       apFetch({ action: "previewPRNMaterials", projectId, boqId }),
-      apFetch({ action: "getStoreOperatorsList" }),
+      fetchWithStaleCache({ action: "getStoreOperatorsList" }),
       Promise.resolve((window.prnBOQMeta || {})[boqId] || {})
     ]);
 

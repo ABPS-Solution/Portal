@@ -77,6 +77,33 @@ function hideBlockingOverlay() {
   if (ov) ov.style.display = "none";
 }
 
+// ── "Reconnecting…" indicator (apFetch's network retry) ────────────────
+// Deliberately NOT showBlockingOverlay: that one is a full-screen blocker
+// already used by long submit flows, and it has no reference counting, so
+// a retry's hide() would tear down a submit's overlay early. This is a
+// small non-blocking pill instead, at a z-index BELOW both the overlay
+// (99999) and the error banners (9999) so it can never cover either.
+// Ref-counted because several requests can be retrying at once.
+let reconnectingRefCount = 0;
+
+function showReconnectingIndicator() {
+  reconnectingRefCount++;
+  let el = document.getElementById("app-reconnecting-pill");
+  if (el) { el.style.display = "flex"; return; }
+  el = document.createElement("div");
+  el.id = "app-reconnecting-pill";
+  el.style.cssText = "position:fixed; top:60px; left:50%; transform:translateX(-50%); background:#fff3cd; border:1px solid #ffc107; color:#856404; padding:8px 16px; border-radius:20px; font-size:0.82rem; font-weight:700; z-index:9998; box-shadow:0 4px 12px rgba(0,0,0,0.12); display:flex; align-items:center; gap:8px;";
+  el.innerHTML = `<div class="spinner" style="width:13px; height:13px; border:2px solid rgba(133,100,4,0.25); border-top-color:#856404; border-radius:50%; animation:spin 0.6s linear infinite;"></div><span>Reconnecting…</span>`;
+  document.body.appendChild(el);
+}
+
+function hideReconnectingIndicator() {
+  reconnectingRefCount = Math.max(0, reconnectingRefCount - 1);
+  if (reconnectingRefCount > 0) return; // another request is still retrying
+  const el = document.getElementById("app-reconnecting-pill");
+  if (el) el.style.display = "none";
+}
+
 function showBOQBanner(elementId, message, type, persist) {
   const el = document.getElementById(elementId);
   if (!el) return;

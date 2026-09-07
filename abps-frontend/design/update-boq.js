@@ -332,7 +332,7 @@ async function initializeUpdateBOQPanel() {
   await loadItemCodeCatalogIntoCache().catch(() => {});
   await loadMaterialDescriptionsIntoCache().catch(() => {});
   try {
-    const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: "Active" });
+    const data = await fetchWithStaleCache({ action:"pullLiveActiveProjectCodes", statusFilter: "Active" });
     window.sharedActiveProjectCodes = data.projects || [];
     window.sharedProjectMeta = data.projectMeta || {};
     window.uboqProjectMeta = data.projectMeta || {};
@@ -351,7 +351,7 @@ async function handleUpdateBOQStatusChange(selectedStatus) {
   if (formEl)   formEl.style.display = "none";
 
   try {
-    const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: selectedStatus });
+    const data = await fetchWithStaleCache({ action:"pullLiveActiveProjectCodes", statusFilter: selectedStatus });
     if (projDrop) {
       window.sharedActiveProjectCodes = data.projects || [];
       window.sharedProjectMeta = data.projectMeta || {};

@@ -404,7 +404,7 @@ function renderEBOQForm(containerId) {
         allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().includes("design")))
           .forEach(p => { const o = document.createElement("option"); o.value = p.fullName; o.textContent = p.fullName; authByEl.appendChild(o); });
       } else {
-        apFetch({ action: "getStoreOperatorsList" }).then(data => {
+        fetchWithStaleCache({ action: "getStoreOperatorsList" }).then(data => {
           window.cboqAllPersonnel = data.fullPersonnelDataRecordsTree || [];
           authByEl.innerHTML = '<option value="">— Select Authorized By —</option>';
           window.cboqAllPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().includes("design")))

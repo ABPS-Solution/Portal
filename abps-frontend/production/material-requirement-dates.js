@@ -49,7 +49,7 @@ async function initializeAssignMaterialRequirementDatePanel() {
   window.mrdState.mrd = { lines: {}, meta: {}, prnId: null, itemCodeByKey: {} };
   window.mrdPrnListCache = {};
   try {
-    const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
+    const data = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
     window.sharedActiveProjectCodes = data.success ? (data.projects || []) : [];
     window.sharedProjectMeta = data.success ? (data.projectMeta || {}) : {};
   } catch (e) { window.sharedActiveProjectCodes = []; }
@@ -465,7 +465,7 @@ async function initializeReviseMRDOtherTab() {
   const dd = document.getElementById("rmrd-project-select-ta-dropdown");
   if (dd) dd.style.display = "none";
   try {
-    const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
+    const data = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
     window.sharedActiveProjectCodes = data.success ? (data.projects || []) : [];
     window.sharedProjectMeta = data.success ? (data.projectMeta || {}) : {};
   } catch (e) {
