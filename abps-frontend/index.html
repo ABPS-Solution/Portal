@@ -133,8 +133,8 @@
      This Month/This Year), .stat-period tiles are computed FROM the
      selected date range and change when it does. Purely a visual cue —
      no tile's underlying query changes because of this class. */
-  .dd-stat-card.stat-live   { background:#fef2f2; border-color:#fecaca; }
-  .dd-stat-card.stat-period { background:#f0fdf4; border-color:#bbf7d0; }
+  .dd-stat-card.stat-live   { background:#fee2e2; border-color:#fca5a5; }
+  .dd-stat-card.stat-period { background:#dcfce7; border-color:#86efac; }
   .dd-stat-label { font-size:0.7rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
   .dd-stat-val { font-size:1.7rem; font-weight:800; color:var(--text); line-height:1.2; }
   .dd-stat-sub { font-size:0.7rem; color:var(--muted); }
@@ -3730,11 +3730,11 @@
         <!-- ROW 1: Job Card Pulse + Material Requirement Date queues — 5 cards -->
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
           <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">Active Job Cards</div>
+            <div class="dd-stat-label">Total Current Job Cards</div>
             <div class="dd-stat-val" id="pd2-s-activejcn">—</div>
           </div>
           <div class="dd-stat-card stat-period">
-            <div class="dd-stat-label">Job Cards Finished</div>
+            <div class="dd-stat-label">Job Cards Products Add to FG</div>
             <div class="dd-stat-val" id="pd2-s-finished" style="color:#15803d;">—</div>
           </div>
           <div class="dd-stat-card stat-live">
@@ -3754,16 +3754,21 @@
           </div>
         </div>
 
-        <!-- ROW 2: Material & Operations — 4 cards -->
-        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 11%;">
+        <!-- ROW 2: Material & Operations — 5 cards -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Material Issue Tickets Created</div>
             <div class="dd-stat-val" id="pd2-s-tickets">—</div>
           </div>
           <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">Excess Material Requests Pending</div>
-            <div class="dd-stat-val" id="pd2-s-jc-increase" style="color:#b91c1c;">—</div>
-            <div class="dd-stat-sub">live · all projects</div>
+            <div class="dd-stat-label">Currently Being Repaired at ABPS</div>
+            <div class="dd-stat-val" id="pd2-s-repair-qty" style="color:#b91c1c;">—</div>
+            <div class="dd-stat-sub">live · repair-track material</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Overdue Expected Deliveries</div>
+            <div class="dd-stat-val" id="pd2-s-overdue-deliveries" style="color:#b91c1c;">—</div>
+            <div class="dd-stat-sub">live · past planned delivery date</div>
           </div>
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">BOQs Awaiting Initial Production Plan</div>
@@ -3780,7 +3785,7 @@
         <!-- ROW 3: Charts -->
         <div style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 26%;">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
-            <div class="dd-card-title">Finished Goods by Department</div>
+            <div class="dd-card-title">Products Added to Finished Goods by Department</div>
             <canvas id="pd2-chart-dept" style="max-height:100px;"></canvas>
           </div>
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
@@ -3816,12 +3821,10 @@
             <div style="overflow-y:auto; flex:1;">
               <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
                 <thead><tr style="color:var(--muted); font-size:0.68rem; border-bottom:1.5px solid var(--border); position:sticky; top:0; background:var(--card);">
-                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Job Card</th>
+                  <th style="text-align:left; padding:3px 6px; font-weight:700; width:34%;">Job Card</th>
                   <th style="text-align:left; padding:3px 6px; font-weight:700;">Project</th>
-                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Product</th>
                   <th style="text-align:left; padding:3px 6px; font-weight:700;">Department</th>
                   <th style="text-align:center; padding:3px 6px; font-weight:700;">Tickets</th>
-                  <th style="text-align:center; padding:3px 6px; font-weight:700;">Last Activity</th>
                 </tr></thead>
                 <tbody id="pd2-jcn-tbody"></tbody>
               </table>

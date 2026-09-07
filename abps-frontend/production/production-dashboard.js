@@ -29,7 +29,7 @@ function pd2LoadCustom() {
 
 async function pd2LoadDashboard(customVal) {
   ["pd2-s-activejcn","pd2-s-finished","pd2-s-inprogress","pd2-s-mrd-awaiting","pd2-s-mrd-revision",
-   "pd2-s-tickets","pd2-s-jc-increase","pd2-s-boq-awaiting-plan","pd2-s-fg-pending"].forEach(id => {
+   "pd2-s-tickets","pd2-s-repair-qty","pd2-s-overdue-deliveries","pd2-s-boq-awaiting-plan","pd2-s-fg-pending"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
   try {
@@ -66,7 +66,8 @@ function pd2RenderDashboard(data) {
 
   // Row 2
   document.getElementById("pd2-s-tickets").textContent          = stats.storeTickets;
-  document.getElementById("pd2-s-jc-increase").textContent      = stats.jcIncreaseRequestsPending ?? "—";
+  document.getElementById("pd2-s-repair-qty").textContent       = stats.materialsBeingRepaired ?? "—";
+  document.getElementById("pd2-s-overdue-deliveries").textContent = stats.overdueExpectedDeliveries ?? "—";
   document.getElementById("pd2-s-boq-awaiting-plan").textContent= stats.boqsAwaitingProductionPlan ?? "—";
   document.getElementById("pd2-s-fg-pending").textContent       = stats.fgAwaitingQaApproval ?? "—";
   const fgSub = document.getElementById("pd2-s-fg-pending-sub");
@@ -228,7 +229,7 @@ function pd2RenderJCNTable() {
 
   if (!tbody) return;
   if (page.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--muted); font-size:0.72rem; padding:10px;">No in-progress job cards found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--muted); font-size:0.72rem; padding:10px;">No in-progress job cards found.</td></tr>`;
     return;
   }
   tbody.innerHTML = page.map((j, i) => {
@@ -236,10 +237,8 @@ function pd2RenderJCNTable() {
     return `<tr style="background:${rowBg}; border-bottom:1px solid #f1f5f9;">
       <td style="padding:7px 6px; font-family:monospace; font-size:0.72rem; font-weight:700; color:var(--brand);">${j.jcn}</td>
       <td style="padding:7px 6px; font-size:0.72rem; font-weight:600;">${j.projectId}</td>
-      <td style="padding:7px 6px; font-size:0.72rem;">${j.productName} <span style="color:var(--muted);">${j.productRating}</span></td>
       <td style="padding:7px 6px; font-size:0.72rem;">${j.department}</td>
       <td style="padding:7px 6px; text-align:center; font-size:0.72rem; font-weight:700; color:var(--brand);">${j.ticketCount}</td>
-      <td style="padding:7px 6px; text-align:center; font-size:0.68rem; color:var(--muted);">${j.lastActivity}</td>
     </tr>`;
   }).join("");
 }
