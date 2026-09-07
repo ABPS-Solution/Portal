@@ -61,7 +61,7 @@ function tvsHandlePlaceSearch(query) {
   const matches = tvsCachedCompanies.filter(c => c.companyName.toLowerCase().includes(q)).slice(0, 15);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(c => `
-    <div onmousedown="event.preventDefault(); tvsSelectPlace('${c.companyName.replace(/'/g, "\\'")}')"
+    <div onmousedown="event.preventDefault(); tvsSelectPlace('${encodeURIComponent(c.companyName)}')"
       style="padding:8px 10px; cursor:pointer; font-size:0.85rem; border-bottom:1px solid #f1f5f9;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${escapeHtml(c.companyName)}</div>`).join("");
   const input = document.getElementById("tvs-f-place");
@@ -70,8 +70,8 @@ function tvsHandlePlaceSearch(query) {
   dd.style.display = "block";
 }
 
-function tvsSelectPlace(companyName) {
-  document.getElementById("tvs-f-place").value = companyName;
+function tvsSelectPlace(encodedCompanyName) {
+  document.getElementById("tvs-f-place").value = decodeURIComponent(encodedCompanyName);
   document.getElementById("tvs-place-dropdown").style.display = "none";
 }
 

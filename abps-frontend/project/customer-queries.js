@@ -82,12 +82,12 @@ function renderCqUnattributedList() {
       <div style="font-weight:700; color:#854d0e; margin-bottom:10px;">We found ${cqUnattributedComms.length} email(s) to a customer — which query does each answer?</div>
       ${cqUnattributedComms.map(c => `
         <div style="background:#fff; border:1px solid var(--border); border-radius:4px; padding:10px; margin-bottom:8px; font-size:0.82rem;">
-          <div><strong>${c.commType}</strong> to ${c.sentTo || ''} — ${formatOrdinalDate(c.sentAt)} ${c.threadLink ? `<a href="${c.threadLink}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Email ↗</a>` : ''}</div>
-          <div style="color:var(--muted); margin:4px 0;">${c.subject || ''}${c.aiSummary ? ' — ' + c.aiSummary : ''}</div>
+          <div><strong>${escapeHtml(c.commType)}</strong> to ${escapeHtml(c.sentTo || '')} — ${formatOrdinalDate(c.sentAt)} ${c.threadLink ? `<a href="${escapeHtml(c.threadLink)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Email ↗</a>` : ''}</div>
+          <div style="color:var(--muted); margin:4px 0;">${escapeHtml(c.subject || '')}${c.aiSummary ? ' — ' + escapeHtml(c.aiSummary) : ''}</div>
           <div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
             <select id="cq-attr-select-${c.communicationId}" style="flex:1; padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.8rem;">
               <option value="">— Select the query this answers —</option>
-              ${cqPendingQueries.map(q => `<option value="${q.queryId}">#${q.queryId} — ${q.projectId} — ${q.customerName || ''}</option>`).join('')}
+              ${cqPendingQueries.map(q => `<option value="${q.queryId}">#${q.queryId} — ${escapeHtml(q.projectId)} — ${escapeHtml(q.customerName || '')}</option>`).join('')}
             </select>
             <button class="nav-btn-styled" style="background:var(--accent); padding:5px 12px; font-size:0.78rem;" onclick="attributeCqCommunication(${c.communicationId})">Attribute</button>
           </div>
@@ -188,11 +188,11 @@ function renderCqIncomingList() {
     return `<div style="border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:12px; background:#fff;">
       <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
         <div style="flex:1; min-width:240px;">
-          <div style="font-size:0.78rem; color:var(--muted);">${formatOrdinalDate(mail.receivedDate)} — ${mail.inboxAccount || ''}</div>
-          <div style="font-weight:700; margin-top:2px;">${mail.fromAddress || '—'}</div>
-          <div style="font-size:0.85rem; margin-top:2px;">${mail.subject || '(no subject)'}</div>
-          <div style="font-size:0.8rem; color:var(--muted); margin-top:6px;">${mail.aiSummary || mail.bodySnippet || ''}</div>
-          ${mail.threadLink ? `<a href="${mail.threadLink}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; font-size:0.8rem; display:inline-block; margin-top:6px;">Open Email ↗</a>` : ''}
+          <div style="font-size:0.78rem; color:var(--muted);">${formatOrdinalDate(mail.receivedDate)} — ${escapeHtml(mail.inboxAccount || '')}</div>
+          <div style="font-weight:700; margin-top:2px;">${escapeHtml(mail.fromAddress || '—')}</div>
+          <div style="font-size:0.85rem; margin-top:2px;">${escapeHtml(mail.subject || '(no subject)')}</div>
+          <div style="font-size:0.8rem; color:var(--muted); margin-top:6px;">${escapeHtml(mail.aiSummary || mail.bodySnippet || '')}</div>
+          ${mail.threadLink ? `<a href="${escapeHtml(mail.threadLink)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; font-size:0.8rem; display:inline-block; margin-top:6px;">Open Email ↗</a>` : ''}
         </div>
         <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
           <button class="nav-btn-styled" style="background:var(--accent); padding:7px 16px; font-size:0.8rem;" onclick="toggleCqCreateForm('${mail.messageId}')">${isOpen ? 'Close' : 'Create Query'}</button>
@@ -488,8 +488,8 @@ function cqRenderPendingCard(q) {
   return `<div style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:10px; background:#fff; overflow:hidden;">
     <div style="padding:12px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;" onclick="toggleCqPendingCard(${q.queryId})">
       <div style="font-size:0.82rem;">
-        <strong>${q.projectId}</strong> — ${q.customerName || ''} &nbsp;|&nbsp; ${formatOrdinalDate(q.customerQueryDate)} &nbsp;|&nbsp; ${q.stageName}${q.stageName === 'Others' && q.stageOtherText ? ` (${q.stageOtherText})` : ''}<br>
-        <span style="color:var(--muted);">${(q.concernedDepartments || []).join(', ')} — Owner: ${q.abpsResponsiblePerson}</span>
+        <strong>${escapeHtml(q.projectId)}</strong> — ${escapeHtml(q.customerName || '')} &nbsp;|&nbsp; ${formatOrdinalDate(q.customerQueryDate)} &nbsp;|&nbsp; ${escapeHtml(q.stageName)}${q.stageName === 'Others' && q.stageOtherText ? ` (${escapeHtml(q.stageOtherText)})` : ''}<br>
+        <span style="color:var(--muted);">${(q.concernedDepartments || []).map(escapeHtml).join(', ')} — Owner: ${escapeHtml(q.abpsResponsiblePerson || '')}</span>
       </div>
       <div style="font-weight:700; color:var(--brand);">Target: ${formatOrdinalDate(q.targetClosingDate)}</div>
     </div>
@@ -647,9 +647,9 @@ function renderCqCommunicationsList(queryId) {
   if (comms.length === 0) { el.innerHTML = `<span style="color:var(--muted);">No emails detected for this query yet.</span>`; return; }
   el.innerHTML = comms.map(c => `
     <div style="padding:6px 0; border-bottom:1px solid #e0f2fe;">
-      <strong>${c.commType}</strong> — ${c.sentTo || ''} — ${formatOrdinalDate(c.sentAt)}
-      ${c.threadLink ? `<a href="${c.threadLink}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; margin-left:6px;">Open Email ↗</a>` : ''}
-      <div style="color:var(--muted); font-size:0.75rem;">${c.subject || ''}${c.aiSummary ? ' — ' + c.aiSummary : ''}</div>
+      <strong>${escapeHtml(c.commType)}</strong> — ${escapeHtml(c.sentTo || '')} — ${formatOrdinalDate(c.sentAt)}
+      ${c.threadLink ? `<a href="${escapeHtml(c.threadLink)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; margin-left:6px;">Open Email ↗</a>` : ''}
+      <div style="color:var(--muted); font-size:0.75rem;">${escapeHtml(c.subject || '')}${c.aiSummary ? ' — ' + escapeHtml(c.aiSummary) : ''}</div>
     </div>
   `).join("");
 }
@@ -794,8 +794,8 @@ function renderCqResolvedList() {
     return `<div style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:10px; background:#fff; overflow:hidden;">
       <div style="padding:12px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;" onclick="toggleCqResolvedCard(${q.queryId})">
         <div style="font-size:0.82rem;">
-          <strong>${q.projectId}</strong> — ${q.customerName || ''} &nbsp;|&nbsp; ${q.stageName}<br>
-          <span style="color:var(--muted);">${(q.concernedDepartments || []).join(', ')} — Owner: ${q.abpsResponsiblePerson}</span>
+          <strong>${escapeHtml(q.projectId)}</strong> — ${escapeHtml(q.customerName || '')} &nbsp;|&nbsp; ${escapeHtml(q.stageName)}<br>
+          <span style="color:var(--muted);">${(q.concernedDepartments || []).map(escapeHtml).join(', ')} — Owner: ${escapeHtml(q.abpsResponsiblePerson || '')}</span>
         </div>
         <div style="font-weight:700; color:#15803d;">Closed: ${formatOrdinalDate(q.actualClosingDate)} (${q.delayDays} day(s) delay)</div>
       </div>
@@ -806,14 +806,14 @@ function renderCqResolvedList() {
 
 function cqRenderResolvedDetail(q) {
   return `<div style="padding:14px; border-top:1px solid var(--border); font-size:0.85rem;">
-    <div><strong>Standard Product Name(s):</strong> ${(q.standardProductNames || []).join(', ')}</div>
-    <div><strong>Order Product Description(s):</strong> ${(q.orderProductDescriptions || []).join('; ') || '—'}</div>
+    <div><strong>Standard Product Name(s):</strong> ${(q.standardProductNames || []).map(escapeHtml).join(', ')}</div>
+    <div><strong>Order Product Description(s):</strong> ${(q.orderProductDescriptions || []).map(escapeHtml).join('; ') || '—'}</div>
     <div><strong>Customer Query Date:</strong> ${formatOrdinalDate(q.customerQueryDate)}</div>
-    <div><strong>Customer Query:</strong> ${q.customerQuery || '—'}</div>
+    <div><strong>Customer Query:</strong> ${escapeHtml(q.customerQuery || '—')}</div>
     <div><strong>Target Closing Date:</strong> ${formatOrdinalDate(q.targetClosingDate)}</div>
     <div><strong>Actual Closing Date:</strong> ${formatOrdinalDate(q.actualClosingDate)}</div>
     <div><strong>Number of Delay Days:</strong> ${q.delayDays}</div>
-    <div><strong>Reason for Delay:</strong> ${q.reasonForDelay || '—'}</div>
+    <div><strong>Reason for Delay:</strong> ${escapeHtml(q.reasonForDelay || '—')}</div>
     <div style="text-align:right; margin-top:12px;">
       <button class="nav-btn-styled" style="background:var(--accent); padding:8px 20px; font-weight:700;" onclick="reopenCqQuery(${q.queryId})">Reopen Query</button>
     </div>

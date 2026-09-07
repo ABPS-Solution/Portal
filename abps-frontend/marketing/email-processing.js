@@ -29,8 +29,8 @@ function getCurrentEmailLeadsFilters() {
   return { engineerEmail: activeEmailLeadsEngineerFilter, dateFilter: activeEmailLeadsDateFilter };
 }
 
-function selectEmailLeadsEngineerFilter(email) {
-  activeEmailLeadsEngineerFilter = email;
+function selectEmailLeadsEngineerFilter(encodedEmail) {
+  activeEmailLeadsEngineerFilter = decodeURIComponent(encodedEmail);
   renderEmailLeadsEngineerPills();
   refetchEmailLeadsListWithFilters();
 }
@@ -67,7 +67,7 @@ function renderEmailLeadsEngineerPills() {
     const bg = active ? "var(--highlight-bg)" : "#fff";
     const titleColor = active ? "var(--brand)" : (isStray ? "var(--warn)" : "var(--text)");
     return `
-      <div onclick="selectEmailLeadsEngineerFilter('${escapeHtml(value).replace(/'/g, "\\'")}')"
+      <div onclick="selectEmailLeadsEngineerFilter('${encodeURIComponent(value)}')"
         style="cursor:pointer; user-select:none; border:1.5px solid ${border}; background:${bg}; border-radius:6px;
                padding:6px 10px; min-width:0; display:flex; flex-direction:column; gap:1px; line-height:1.25;">
         <span style="font-size:0.78rem; font-weight:700; color:${titleColor};">${escapeHtml(title)}</span>

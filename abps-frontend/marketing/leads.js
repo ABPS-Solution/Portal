@@ -703,9 +703,8 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
     }
 
     const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
-    const escForOnclick = s => (s || "").toString().replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-    const deleteButtonHtml = isAdminUser 
-      ? `<button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}', '${escForOnclick(companyLabelName)}', '${escForOnclick(cardDisplayName)}')">Delete Record</button>`
+    const deleteButtonHtml = isAdminUser
+      ? `<button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}', '${encodeURIComponent(companyLabelName)}', '${encodeURIComponent(cardDisplayName)}')">Delete Record</button>`
       : ""; // Non-admins get absolutely nothing rendered
 
     wrapperCard.innerHTML = `
@@ -1307,7 +1306,9 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
   } catch(e) { alert(e.message); } finally { if(btn) { btn.disabled = false; btn.innerHTML = "Save Modifications"; } }
 }
 
-async function removeLeadRowEntirely(leadRef, companyNameForConfirm, contactNameForConfirm) {
+async function removeLeadRowEntirely(leadRef, encodedCompanyNameForConfirm, encodedContactNameForConfirm) {
+    const companyNameForConfirm = decodeURIComponent(encodedCompanyNameForConfirm || "");
+    const contactNameForConfirm = decodeURIComponent(encodedContactNameForConfirm || "");
     const confirmLabel = [companyNameForConfirm, contactNameForConfirm].filter(Boolean).join(" ") || "this record";
     if (!confirm(`Confirm Delete of ${confirmLabel}?`)) return;
     const btn = event.target; 

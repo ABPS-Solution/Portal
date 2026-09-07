@@ -32,7 +32,12 @@ async function acFetch(path, payload) {
   const res  = await fetch(base + "/api/accounts/" + path, {
     method: "POST",
     body: JSON.stringify({ ...payload, sessionToken: localStorage.getItem("sessionToken") }),
+    signal: AbortSignal.timeout(60000),
   });
+  const contentType = res.headers.get("content-type") || "";
+  if (!res.ok || !contentType.includes("application/json")) {
+    return { success: false, error: "Server error (HTTP " + res.status + ")" };
+  }
   const data = await res.json();
   if (!data.success && data.code === "SESSION_EXPIRED") {
     clearAppLocalStorageKeepingDeviceKeys();
@@ -141,7 +146,15 @@ document.addEventListener("click", async (e) => {
 
 async function apFetch(payload) {
   payload.sessionToken = localStorage.getItem("sessionToken");
-  const res  = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
+  const res = await fetch(GAS_URL, {
+    method: "POST",
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(60000),
+  });
+  const contentType = res.headers.get("content-type") || "";
+  if (!res.ok || !contentType.includes("application/json")) {
+    return { success: false, error: "Server error (HTTP " + res.status + ")" };
+  }
   const data = await res.json();
   if (!data.success && data.code === "SESSION_EXPIRED") {
     clearAppLocalStorageKeepingDeviceKeys();

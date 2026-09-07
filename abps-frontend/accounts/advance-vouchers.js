@@ -116,11 +116,11 @@ function advHandleCompanySearch(query) {
   const matches = advCachedCompanies.filter(c => c.companyName.toLowerCase().includes(q)).slice(0, 15);
   const exactHit = advCachedCompanies.some(c => c.companyName.trim().toLowerCase() === q);
   let html = matches.map(c => `
-    <div onmousedown="event.preventDefault(); advSelectCompany('${c.companyName.replace(/'/g, "\\'")}')"
+    <div onmousedown="event.preventDefault(); advSelectCompany('${encodeURIComponent(c.companyName)}')"
       style="padding:8px 10px; cursor:pointer; font-size:0.85rem; border-bottom:1px solid #f1f5f9;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${escapeHtml(c.companyName)}</div>`).join("");
   if (!exactHit && query.trim()) {
-    html += `<div onmousedown="event.preventDefault(); advAddNewCompany('${query.trim().replace(/'/g, "\\'")}')"
+    html += `<div onmousedown="event.preventDefault(); advAddNewCompany('${encodeURIComponent(query.trim())}')"
       style="padding:8px 10px; cursor:pointer; font-size:0.85rem; color:var(--brand); font-weight:700;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">+ Add "${escapeHtml(query.trim())}" as a new company</div>`;
   }
@@ -132,19 +132,21 @@ function advHandleCompanySearch(query) {
   dd.style.display = "block";
 }
 
-function advSelectCompany(companyName) {
+function advSelectCompany(encodedCompanyName) {
+  const companyName = decodeURIComponent(encodedCompanyName);
   advSelectedCompany = companyName;
   document.getElementById("adv-company-search").value = companyName;
   document.getElementById("adv-company-dropdown").style.display = "none";
 }
 
-async function advAddNewCompany(companyName) {
+async function advAddNewCompany(encodedCompanyName) {
+  const companyName = decodeURIComponent(encodedCompanyName);
   document.getElementById("adv-company-dropdown").style.display = "none";
   try {
     const data = await acFetch("addTourCompany", { companyName });
     if (data.success) {
       advCachedCompanies.push(data.company);
-      advSelectCompany(data.company.companyName);
+      advSelectCompany(encodeURIComponent(data.company.companyName));
     } else {
       alert("Could not add company: " + data.error);
     }

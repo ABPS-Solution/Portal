@@ -262,9 +262,8 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
       const isTarget = (lead["Contact Person Name"] || "").toLowerCase() === personName.toLowerCase();
       const cardName = lead["Contact Person Name"] || "Unspecified";
       const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
-      const escForOnclick2 = s => (s || "").toString().replace(/\\/g, "\\\\").replace(/'/g, "\\'");
       const deleteHtml = isAdminUser
-        ? `<button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}', '${escForOnclick2(companyName)}', '${escForOnclick2(cardName)}')">Delete Record</button>`
+        ? `<button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}', '${encodeURIComponent(companyName)}', '${encodeURIComponent(cardName)}')">Delete Record</button>`
         : "";
 
       const card = document.createElement("div");

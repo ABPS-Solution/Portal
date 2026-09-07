@@ -311,11 +311,11 @@ function ttkHandleCompanySearch(query) {
   const matches = ttkCachedCompanies.filter(c => c.companyName.toLowerCase().includes(q) && !ttkSelectedCompanies.includes(c.companyName)).slice(0, 15);
   const exactHit = ttkCachedCompanies.some(c => c.companyName.trim().toLowerCase() === q) || ttkSelectedCompanies.some(c => c.trim().toLowerCase() === q);
   let html = matches.map(c => `
-    <div onmousedown="event.preventDefault(); ttkSelectCompany('${c.companyName.replace(/'/g, "\\'")}')"
+    <div onmousedown="event.preventDefault(); ttkSelectCompany('${encodeURIComponent(c.companyName)}')"
       style="padding:8px 10px; cursor:pointer; font-size:0.85rem; border-bottom:1px solid #f1f5f9;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${escapeHtml(c.companyName)}</div>`).join("");
   if (!exactHit && query.trim()) {
-    html += `<div onmousedown="event.preventDefault(); ttkAddNewCompany('${query.trim().replace(/'/g, "\\'")}')"
+    html += `<div onmousedown="event.preventDefault(); ttkAddNewCompany('${encodeURIComponent(query.trim())}')"
       style="padding:8px 10px; cursor:pointer; font-size:0.85rem; color:var(--brand); font-weight:700;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">+ Add "${escapeHtml(query.trim())}" as a new company</div>`;
   }
@@ -327,27 +327,30 @@ function ttkHandleCompanySearch(query) {
   dd.style.display = "block";
 }
 
-function ttkSelectCompany(companyName) {
+function ttkSelectCompany(encodedCompanyName) {
+  const companyName = decodeURIComponent(encodedCompanyName);
   if (!ttkSelectedCompanies.includes(companyName)) ttkSelectedCompanies.push(companyName);
   document.getElementById("ttk-company-search").value = "";
   document.getElementById("ttk-company-dropdown").style.display = "none";
   ttkRenderCompanyChips();
 }
 
-async function ttkAddNewCompany(companyName) {
+async function ttkAddNewCompany(encodedCompanyName) {
+  const companyName = decodeURIComponent(encodedCompanyName);
   document.getElementById("ttk-company-dropdown").style.display = "none";
   try {
     const data = await acFetch("addTourCompany", { companyName });
     if (data.success) {
       ttkCachedCompanies.push(data.company);
-      ttkSelectCompany(data.company.companyName);
+      ttkSelectCompany(encodeURIComponent(data.company.companyName));
     } else {
       alert("Could not add company: " + data.error);
     }
   } catch (e) { alert("Network error adding company: " + e.message); }
 }
 
-function ttkRemoveCompanyChip(companyName) {
+function ttkRemoveCompanyChip(encodedCompanyName) {
+  const companyName = decodeURIComponent(encodedCompanyName);
   ttkSelectedCompanies = ttkSelectedCompanies.filter(c => c !== companyName);
   ttkRenderCompanyChips();
 }
@@ -357,7 +360,7 @@ function ttkRenderCompanyChips() {
   if (!wrap) return;
   wrap.innerHTML = ttkSelectedCompanies.map(c => `
     <span style="background:var(--brand); color:#fff; padding:4px 10px; border-radius:14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px;">
-      ${escapeHtml(c)} <span onclick="ttkRemoveCompanyChip('${c.replace(/'/g, "\\'")}')" style="cursor:pointer; font-weight:700;">✕</span>
+      ${escapeHtml(c)} <span onclick="ttkRemoveCompanyChip('${encodeURIComponent(c)}')" style="cursor:pointer; font-weight:700;">✕</span>
     </span>`).join("");
 }
 
