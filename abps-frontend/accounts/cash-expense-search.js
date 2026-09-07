@@ -185,6 +185,7 @@ async function runCashExpenseSearch() {
       </tr>`;
     }).join("");
     resultsEl.innerHTML = `
+      ${data.truncated ? `<div style="background:#fef3c7; border-left:4px solid #b45309; color:#92400e; padding:10px 12px; border-radius:var(--radius); margin-bottom:12px; font-size:0.82rem; font-weight:600;">Showing the first 500 results only &mdash; the count and total above cover just these. Narrow your search to see the rest.</div>` : ''}
       <div style="overflow-x:auto;">
         <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
           <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">

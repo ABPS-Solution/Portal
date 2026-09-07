@@ -1434,7 +1434,7 @@ function updatePRNPurchaseQtyCell(inputEl, idx) {
   const purchaseQty = Math.max(0, bufferedQty - storeQty);
   prnCurrentData.lineItems[idx].currentUnassignedStoreQty = storeQty;
   const cell = document.getElementById(`prn-purchase-qty-cell-${idx}`);
-  if (cell) { cell.textContent = Number.isInteger(purchaseQty) ? String(purchaseQty) : purchaseQty.toFixed(2); cell.style.color = "#1a2332"; }
+  if (cell) { cell.textContent = trimNum(purchaseQty); cell.style.color = "#1a2332"; }
 }
 
 async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, availableQty, storeType) {

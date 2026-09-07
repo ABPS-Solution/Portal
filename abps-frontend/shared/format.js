@@ -134,7 +134,7 @@ function formatDateDMY(value) {
   const dateOnlyMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (dateOnlyMatch) {
     const [, yyyy, mm, dd] = dateOnlyMatch;
-    return `${dd}-${mm}-${yyyy}`;
+    return `${dd}/${mm}/${yyyy}`;
   }
   const d = new Date(s);
   if (isNaN(d.getTime())) return s; // already a plain/unparseable string — show as-is rather than blank
@@ -143,7 +143,7 @@ function formatDateDMY(value) {
   // must never depend on the browser's own local timezone setting.
   const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' }).formatToParts(d);
   const get = (t) => parts.find(p => p.type === t)?.value || "";
-  return `${get('day')}-${get('month')}-${get('year')}`;
+  return `${get('day')}/${get('month')}/${get('year')}`;
 }
 
 function trimNum(n) {

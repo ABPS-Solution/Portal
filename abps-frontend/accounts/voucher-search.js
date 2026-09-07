@@ -82,6 +82,8 @@ document.addEventListener("click", (e) => {
   if (empDd && !e.target.closest("#tvs-emp-dropdown") && e.target.id !== "tvs-f-employee") empDd.style.display = "none";
 });
 
+const tvsTruncNote = (t) => t ? `<div style="background:#fef3c7; border-left:4px solid #b45309; color:#92400e; padding:10px 12px; border-radius:var(--radius); margin-bottom:12px; font-size:0.82rem; font-weight:600;">Showing the first 500 results only — the count and totals above cover just these. Narrow your search to see the rest.</div>` : "";
+
 async function initializeVoucherSearchPanel() {
   tvsSearchMode = "expense";
   tvsSelectedEmployeeId = null;
@@ -241,7 +243,7 @@ async function runTourVoucherSearch() {
         resultsEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No advances match this filter.</div>`;
         return;
       }
-      resultsEl.innerHTML = tvsRenderAdvanceTable(data.advances);
+      resultsEl.innerHTML = tvsTruncNote(data.truncated) + tvsRenderAdvanceTable(data.advances);
       await tvsRefreshBalanceBuckets();
       return;
     }
@@ -270,7 +272,7 @@ async function runTourVoucherSearch() {
       resultsEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No vouchers match this filter.</div>`;
       return;
     }
-    resultsEl.innerHTML = data.vouchers.map(v => tvsRenderCard(v)).join("");
+    resultsEl.innerHTML = tvsTruncNote(data.truncated) + data.vouchers.map(v => tvsRenderCard(v)).join("");
   } catch (e) { resultsEl.innerHTML = `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`; }
 }
 

@@ -578,7 +578,7 @@ function renderPinvInvoiceForm() {
       </div>
 
       <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.9rem;">Product Details</div>
-      <div id="pinv-lineitems-wrap"></div>
+      <div id="pinv-lineitems-wrap" style="overflow-x:auto;"></div>
 
       <div style="display:flex; justify-content:flex-end; margin-top:12px;">
         <div style="width:300px; display:flex; flex-direction:column; gap:6px;">
@@ -1244,7 +1244,7 @@ function renderPinvReviseInvoiceForm() {
       </div>
 
       <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.9rem;">Product Details</div>
-      <div id="pinv-revise-lineitems-wrap"></div>
+      <div id="pinv-revise-lineitems-wrap" style="overflow-x:auto;"></div>
 
       <div style="display:flex; justify-content:flex-end; margin-top:12px;">
         <div style="width:300px; display:flex; flex-direction:column; gap:6px;">

@@ -1774,7 +1774,6 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       let jcmFetch;
       try {
         jcmFetch = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: chosenJobCardVal, projectId: chosenProjectVal });
-        console.log("fetchJobCardMaterials response for", chosenJobCardVal, "/", chosenProjectVal, ":", jcmFetch);
       } catch(e) {
         console.error("fetchJobCardMaterials threw:", e);
         jcmFetch = { success: false, records: [], error: e.message };

@@ -482,8 +482,6 @@ async function showAppView() {
   // with no thrown error — that's the failure mode this guards against.
   if (!userPermissions || Object.keys(userPermissions).length === 0) {
     console.error("showAppView: userPermissions is empty or missing — dashboard will render with all cards hidden.", userPermissions);
-  } else {
-    console.log("showAppView: rendering with permissions for", Object.keys(userPermissions).length, "keys.");
   }
   enforceDynamicModuleRoleGateways(userPermissions || {});
   // Pre-load ItemCodes catalog into memory (fire-and-forget, suppress unhandled rejection)

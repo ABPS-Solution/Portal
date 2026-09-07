@@ -661,26 +661,25 @@ function renderAPRNRows(prnId) {
   // bufferedRequirement; decrease/removed rows are computed and
   // store the signed change in deltaRequirement instead.
   const buffered = r.editable !== false ? (Number(r.bufferedRequirement) || 0) : Math.abs(Number(r.deltaRequirement) || 0);
-  const trimN = (n) => { const x = Number(n) || 0; return Number.isInteger(x) ? String(x) : x.toFixed(2); };
     return `
       <tr style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${r.materialName || ""}</td>
-        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${trimN(r.boqRequiredQty)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${trimNum(r.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center; color:#b45309; font-weight:700;">${r.bufferPct || 0}%</td>
-        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${trimN(buffered)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${trimNum(buffered)}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${r.unit || "—"}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="aprn-livestock" data-itemcode="${r.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
           ${r.editable === false
-            ? `<span style="font-family:monospace; font-weight:700;">${trimN(r.newStoreTotal ?? r.currentUnassignedStoreQty ?? 0)}</span>
+            ? `<span style="font-family:monospace; font-weight:700;">${trimNum(r.newStoreTotal ?? r.currentUnassignedStoreQty ?? 0)}</span>
                <div style="font-size:0.6rem; color:#94a3b8; font-weight:700;">AUTO</div>`
             : `<input type="number" min="0" max="${buffered}" value="${Number(r.storeDelta) || 0}"
                  class="aprn-storeqty" data-idx="${idx}"
                  oninput="updateAPRNRow(${idx}, this.value, '${prnId}')"
                  style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />`}
         </td>
-        <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">${trimN(r.editable !== false ? Number(r.purchaseDelta || 0) : Number(r.newPurchaseTotal || 0))}</td>
+        <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">${trimNum(r.editable !== false ? Number(r.purchaseDelta || 0) : Number(r.newPurchaseTotal || 0))}</td>
       </tr>`;
   }).join("");
 
@@ -819,7 +818,6 @@ function renderPRNCreateTable() {
 
   let rowsHtml = "";
   pending.lineItems.forEach((item, idx) => {
-    const trimNum = (n) => { const x = Number(n) || 0; return Number.isInteger(x) ? String(x) : x.toFixed(2); };
     const common = `
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${item.materialName || ""}</td>

@@ -115,7 +115,6 @@ function initializeGoogleAuthPlatformEngine() {
     );
     
     // FedCM compatible — do not call prompt(), rely only on renderButton click
-    console.log("Google Auth: FedCM mode active, button rendered.");
 
   }, 250); 
 }

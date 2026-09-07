@@ -208,19 +208,13 @@ async function executeItemCodeSearch() {
     const catalogToSearch = window.icfSearchSelectedType
       ? allCatalog.filter(item => item.typeOfMaterial === window.icfSearchSelectedType)
       : allCatalog;
-    console.log("Searching catalog of", catalogToSearch.length, "items for query:", query);
-
     // Direct exact match check first — whole typed phrase as one substring.
     const exactMatch = catalogToSearch.filter(item =>
       (item.combinedName || item.productName || "").toLowerCase().includes(query.toLowerCase())
     );
-    console.log("Direct includes match:", exactMatch.length, "items");
-
     // Step 1: strict client-side pre-filter (every query word must really
     // match, not the loose OR-scoring fuzzyPreFilterCatalog does) → top 15.
     const top30 = filterItemCodeCatalogStrict(query, catalogToSearch, 15);
-    console.log("Strict pre-filter top15:", top30.length, "items");
-
     const candidatesToUse = top30.length > 0 ? top30 : exactMatch;
 
     if (candidatesToUse.length === 0) {
