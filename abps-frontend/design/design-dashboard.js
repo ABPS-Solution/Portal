@@ -1,5 +1,5 @@
 function ddSetPeriod(btn) {
-  document.querySelectorAll(".dd-period-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll("#dd-period-btns .dd-period-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
   const p = btn.dataset.period;
   ddCurrentPeriod = p;
