@@ -78,7 +78,7 @@ function mdRenderDashboard(data) {
         backgroundColor: "rgba(37,99,235,0.7)", borderRadius: 4 }]
     },
     options: { indexAxis:"y", responsive:true, plugins:{ legend:{ display:false } },
-      scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
+      scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false }, ticks:{ font:{ size:9 }, autoSkip:false } } } }
   });
 
   // Chart 2 — Approx Business Potential (vertical bar). Live snapshot
@@ -95,7 +95,7 @@ function mdRenderDashboard(data) {
         backgroundColor: "rgba(124,58,237,0.7)", borderRadius: 4 }]
     },
     options: { responsive:true, plugins:{ legend:{ display:false } },
-      scales:{ y:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, x:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
+      scales:{ y:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, x:{ grid:{ display:false }, ticks:{ font:{ size:12 } } } } }
   });
 
   // Chart 3 — Business Vertical (horizontal bar, not a donut — angle/area
