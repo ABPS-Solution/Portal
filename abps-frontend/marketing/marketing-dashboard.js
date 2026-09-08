@@ -70,7 +70,7 @@ function mdRenderDashboard(data) {
       datasets: [{ label:"Leads", data: funnelLabels.map(k => statusCounts[k]),
         backgroundColor: "rgba(37,99,235,0.7)", borderRadius: 4 }]
     },
-    options: { indexAxis:"y", responsive:true, plugins:{ legend:{ display:false } },
+    options: { indexAxis:"y", responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
       scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false }, ticks:{ font:{ size:9 }, autoSkip:false } } } }
   });
 
@@ -87,7 +87,7 @@ function mdRenderDashboard(data) {
       datasets: [{ label:"Open Leads", data: potentialLabels.map(k => potentialCounts[k]),
         backgroundColor: "rgba(124,58,237,0.7)", borderRadius: 4 }]
     },
-    options: { responsive:true, plugins:{ legend:{ display:false } },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
       scales:{ y:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, x:{ grid:{ display:false }, ticks:{ font:{ size:12 } } } } }
   });
 
@@ -105,7 +105,7 @@ function mdRenderDashboard(data) {
       datasets: [{ label:"Open Leads", data: verticalLabels.map(k => verticalCounts[k]),
         backgroundColor: "rgba(21,128,61,0.7)", borderRadius: 4 }]
     },
-    options: { indexAxis:"y", responsive:true, plugins:{ legend:{ display:false } },
+    options: { indexAxis:"y", responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
       scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
   });
 

@@ -71,7 +71,7 @@ function sdRenderDashboard(data) {
         backgroundColor: ["rgba(37,99,235,0.7)","rgba(16,185,129,0.7)","rgba(245,158,11,0.7)","rgba(239,68,68,0.7)","rgba(139,92,246,0.7)","rgba(236,72,153,0.7)"],
         borderRadius: 4 }]
     },
-    options: { indexAxis:"y", responsive:true, plugins:{ legend:{ display:false } },
+    options: { indexAxis:"y", responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
       scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false } } } }
   });
 
@@ -94,7 +94,7 @@ function sdRenderDashboard(data) {
           pointRadius: 3, fill: true, tension: 0.3 },
       ]
     },
-    options: { responsive:true, plugins:{ legend:{ display:true, labels:{ font:{ size:9 }, boxWidth:10 } } },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:true, labels:{ font:{ size:9 }, boxWidth:10 } } },
       scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
   });
 
@@ -121,7 +121,7 @@ function sdRenderDashboard(data) {
         borderRadius: 4
       }]
     },
-    options: { responsive:true, plugins:{ legend:{ display:false } },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
       scales:{ y:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, x:{ grid:{ display:false }, ticks:{ font:{ size:9 } } } } }
   });
 

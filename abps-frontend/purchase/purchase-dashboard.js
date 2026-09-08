@@ -88,7 +88,7 @@ function pdRenderDashboard(data) {
   if (pdChartPoTrend) pdChartPoTrend.destroy();
   const ctx1 = document.getElementById("pd-chart-po-trend").getContext("2d");
   if (poTrend.length === 0) {
-    pdChartPoTrend = new Chart(ctx1, { type:"line", data:{ labels:["No data"], datasets:[{ data:[0], borderColor:"#f1f5f9" }] }, options:{ plugins:{ legend:{ display:false } } } });
+    pdChartPoTrend = new Chart(ctx1, { type:"line", data:{ labels:["No data"], datasets:[{ data:[0], borderColor:"#f1f5f9" }] }, options:{ maintainAspectRatio:false, plugins:{ legend:{ display:false } } } });
   } else if (poTrend.length === 1) {
     pdChartPoTrend = new Chart(ctx1, {
       type: "bar",
@@ -97,7 +97,7 @@ function pdRenderDashboard(data) {
         datasets: [{ label: "RM POs Created", data: poTrend.map(t => t.count), backgroundColor: "rgba(37,99,235,0.75)", borderRadius: 4, barThickness: 40 }]
       },
       options: {
-        responsive: true, plugins: { legend: { display:false } },
+        responsive: true, maintainAspectRatio: false, plugins: { legend: { display:false } },
         scales: { x: { grid: { display:false }, ticks: { font: { size:9 } } },
                   y: { ticks: { stepSize:1 }, grid: { color:"#f1f5f9" } } }
       }
@@ -114,7 +114,7 @@ function pdRenderDashboard(data) {
         }]
       },
       options: {
-        responsive: true, plugins: { legend: { display:false } },
+        responsive: true, maintainAspectRatio: false, plugins: { legend: { display:false } },
         scales: { x: { grid: { display:false }, ticks: { font: { size:9 } } },
                   y: { ticks: { stepSize:1 }, grid: { color:"#f1f5f9" } } }
       }
@@ -143,6 +143,7 @@ function pdRenderDashboard(data) {
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
         y: { ticks: { stepSize:1 }, grid: { color:"#f1f5f9" } },
@@ -155,7 +156,7 @@ function pdRenderDashboard(data) {
   if (pdChartVendorDelay) pdChartVendorDelay.destroy();
   const ctx3 = document.getElementById("pd-chart-vendor-delay").getContext("2d");
   if (vendorDelay.length === 0) {
-    pdChartVendorDelay = new Chart(ctx3, { type:"bar", data:{ labels:["No late deliveries"], datasets:[{ data:[0], backgroundColor:"#f1f5f9" }] }, options:{ plugins:{ legend:{ display:false } } } });
+    pdChartVendorDelay = new Chart(ctx3, { type:"bar", data:{ labels:["No late deliveries"], datasets:[{ data:[0], backgroundColor:"#f1f5f9" }] }, options:{ maintainAspectRatio:false, plugins:{ legend:{ display:false } } } });
   } else {
     pdChartVendorDelay = new Chart(ctx3, {
       type: "bar",
@@ -164,7 +165,7 @@ function pdRenderDashboard(data) {
         datasets: [{ label:"Avg Days Late", data: vendorDelay.map(v => v.avgDaysLate), backgroundColor:"rgba(239,68,68,0.7)", borderRadius:3 }]
       },
       options: {
-        indexAxis: "y", responsive: true,
+        indexAxis: "y", responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display:false } },
         scales: { x: { grid: { color:"#f1f5f9" } }, y: { grid: { display:false }, ticks: { font: { size:9 } } } }
       }

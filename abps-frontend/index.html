@@ -126,7 +126,7 @@
      100px = label line (~14px) + value line (~33px) + sub line (~14px)
      + 2x4px gap + 28px vertical padding, rounded up for rendering slop —
      the first attempt at 74px undershot this and the mismatch persisted. */
-  .dd-stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; display:flex; flex-direction:column; gap:4px; justify-content:center; min-height:100px; box-sizing:border-box; overflow:hidden; }
+  .dd-stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; display:flex; flex-direction:column; gap:3px; justify-content:center; height:100%; box-sizing:border-box; overflow:hidden; }
   /* Row 1/2 (and Accounts row 3) stat tiles are tinted by whether the
      period selector actually changes the number: .stat-live tiles read
      the current live backlog/snapshot (same value regardless of Today/
@@ -3407,7 +3407,7 @@
       <div id="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Live snapshots -->
-        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 122px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Design Work Overdue in Project Timeline</div>
             <div class="dd-stat-val" id="dd-s-overdue" style="color:#b91c1c;">—</div>
@@ -3427,7 +3427,7 @@
         </div>
 
         <!-- ROW 2: Period throughput/averages -->
-        <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 122px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">New Item Codes Added</div>
             <div class="dd-stat-val" id="dd-s-itemcodes">—</div>
@@ -3456,7 +3456,7 @@
         </div>
 
         <!-- ROW 3: MFC-cleared-awaiting-BOQ table + Charts -->
-        <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 200px; min-height:0;">
+        <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 250px; min-height:0;">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; min-height:0; height:100%;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; flex-shrink:0;">
               <div class="dd-card-title" style="margin:0;">Products Cleared at MFC, Still Awaiting a BOQ</div>
@@ -3475,11 +3475,11 @@
           </div>
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">BOQs by Department</div>
-            <canvas id="dd-chart-dept" style="max-height:130px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="dd-chart-dept" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">BOQ Version Distribution</div>
-            <canvas id="dd-chart-version" style="max-height:130px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="dd-chart-version" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
         </div>
 
@@ -3526,7 +3526,7 @@
       <div id="pd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: PRN coverage / scheduling / rejection health -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 122px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">PRNs With No Materials Assigned in a PO</div>
             <div class="dd-stat-val" id="pd-s-noassign" style="color:#b91c1c;">—</div>
@@ -3550,7 +3550,7 @@
         </div>
 
         <!-- ROW 2: PO lifecycle throughput -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 122px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending PO Authorizations</div>
             <div class="dd-stat-val" id="pd-s-pendingpo" style="color:#b45309;">—</div>
@@ -3574,18 +3574,18 @@
         </div>
 
         <!-- ROW 3: Charts -->
-        <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 200px; min-height:0;">
-          <div class="dd-card" style="padding:8px 10px;">
+        <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 250px; min-height:0;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">RM POs Created Over Time</div>
-            <canvas id="pd-chart-po-trend" style="max-height:130px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="pd-chart-po-trend" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
-          <div class="dd-card" style="padding:8px 10px;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">Purchase Order Delivery Timeline</div>
-            <canvas id="pd-chart-delivery" style="max-height:130px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="pd-chart-delivery" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
-          <div class="dd-card" style="padding:8px 10px;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">Average Delivery Delay by Vendor</div>
-            <canvas id="pd-chart-vendor-delay" style="max-height:130px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="pd-chart-vendor-delay" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
         </div>
 
@@ -3762,7 +3762,7 @@
       <div id="sd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Live Queues — needs action right now -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 122px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending Ticket Approvals</div>
             <div class="dd-stat-val" id="sd-s-pending" style="color:#b45309;">—</div>
@@ -3788,7 +3788,7 @@
         </div>
 
         <!-- ROW 2: Period Throughput / Rates -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 122px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Material Issue Tickets</div>
             <div class="dd-stat-val" id="sd-s-tickets">—</div>
@@ -3812,18 +3812,18 @@
         </div>
 
         <!-- ROW 3: Charts -->
-        <div style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 200px; min-height:0;">
-          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+        <div style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 250px; min-height:0;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">Tickets by Department</div>
-            <canvas id="sd-chart-dept" style="max-height:100px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="sd-chart-dept" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
-          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">Material Received vs Issued Trend</div>
-            <canvas id="sd-chart-trend" style="max-height:100px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="sd-chart-trend" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
-          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">Expected Deliveries</div>
-            <canvas id="sd-chart-expected-deliveries" style="max-height:100px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="sd-chart-expected-deliveries" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
         </div>
 
@@ -3882,7 +3882,7 @@
       <div id="qad-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Live Queues -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 122px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Raw Materials Pending Q/A Check</div>
             <div class="dd-stat-val" id="qad-s-pendingqa" style="color:#b45309;">—</div>
@@ -3908,7 +3908,7 @@
         </div>
 
         <!-- ROW 2: Period Throughput / Rates -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 122px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Materials QA-Checked</div>
             <div class="dd-stat-val" id="qad-s-checked">—</div>
@@ -3932,14 +3932,14 @@
         </div>
 
         <!-- ROW 3: Charts -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:0 0 200px; min-height:0;">
-          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:0 0 250px; min-height:0;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">QA Rejection Rate Trend</div>
-            <canvas id="qad-chart-rejtrend" style="max-height:100px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="qad-chart-rejtrend" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
-          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">Materials QA-Checked Volume Over Time</div>
-            <canvas id="qad-chart-volume" style="max-height:100px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="qad-chart-volume" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
         </div>
 
@@ -3999,7 +3999,7 @@
       <div id="pd2-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Job Card Pulse + Material Requirement Date queues — 5 cards -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 122px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Total Current Job Cards</div>
             <div class="dd-stat-val" id="pd2-s-activejcn">—</div>
@@ -4026,7 +4026,7 @@
         </div>
 
         <!-- ROW 2: Material & Operations — 5 cards -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 122px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Material Issue Tickets Created</div>
             <div class="dd-stat-val" id="pd2-s-tickets">—</div>
@@ -4054,18 +4054,18 @@
         </div>
 
         <!-- ROW 3: Charts -->
-        <div style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 200px; min-height:0;">
-          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+        <div style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 250px; min-height:0;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">Products Added to Finished Goods by Department</div>
-            <canvas id="pd2-chart-dept" style="max-height:100px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="pd2-chart-dept" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
-          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">Job Card Completion Trend</div>
-            <canvas id="pd2-chart-trend" style="max-height:100px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="pd2-chart-trend" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
-          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">Avg Days Late vs Target, by Production Flow</div>
-            <canvas id="pd2-chart-completion" style="max-height:100px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="pd2-chart-completion" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
         </div>
 
@@ -4146,7 +4146,7 @@
       <div id="md-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Live snapshots -->
-        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 122px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Email Leads Awaiting Action</div>
             <div class="dd-stat-val" id="md-s-emailleads" style="color:#b45309;">—</div>
@@ -4167,7 +4167,7 @@
         </div>
 
         <!-- ROW 2: Period throughput -->
-        <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 122px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">New Leads</div>
             <div class="dd-stat-val" id="md-s-newleads">—</div>
@@ -4195,18 +4195,18 @@
         </div>
 
         <!-- ROW 3: 3 Charts -->
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:0 0 200px; min-height:0;">
-          <div class="dd-stat-card" style="display:flex; flex-direction:column; justify-content:center;">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:0 0 250px; min-height:0;">
+          <div class="dd-stat-card" style="display:flex; flex-direction:column;">
             <div class="dd-stat-label" style="margin-bottom:6px;">Lead Status Funnel (all leads, current)</div>
-            <canvas id="md-chart-funnel" style="max-height:140px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="md-chart-funnel" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
-          <div class="dd-stat-card" style="display:flex; flex-direction:column; justify-content:center;">
+          <div class="dd-stat-card" style="display:flex; flex-direction:column;">
             <div class="dd-stat-label" style="margin-bottom:6px;">Approx Business Potential (active leads, current)</div>
-            <canvas id="md-chart-potential" style="max-height:140px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="md-chart-potential" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
-          <div class="dd-stat-card" style="display:flex; flex-direction:column; justify-content:center;">
+          <div class="dd-stat-card" style="display:flex; flex-direction:column;">
             <div class="dd-stat-label" style="margin-bottom:6px;">Business Vertical (active leads, current)</div>
-            <canvas id="md-chart-vertical" style="max-height:140px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="md-chart-vertical" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
         </div>
 

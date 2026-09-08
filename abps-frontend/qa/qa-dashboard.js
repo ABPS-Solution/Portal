@@ -98,7 +98,7 @@ function qadRenderDashboard(data) {
         borderColor: "rgba(239,68,68,0.8)", backgroundColor: "rgba(239,68,68,0.08)",
         pointRadius: 3, fill: true, tension: 0.3 }]
     },
-    options: { responsive: true, plugins: { legend: { display: false } },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
       scales: { y: { grid: { color: "#f1f5f9" } }, x: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
   });
 
@@ -118,7 +118,7 @@ function qadRenderDashboard(data) {
           pointRadius: 3, fill: true, tension: 0.3 },
       ]
     },
-    options: { responsive: true, plugins: { legend: { display: true, labels: { font: { size: 9 }, boxWidth: 10 } } },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { font: { size: 9 }, boxWidth: 10 } } },
       scales: { y: { grid: { color: "#f1f5f9" } }, x: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
   });
 
