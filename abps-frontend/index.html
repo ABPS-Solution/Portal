@@ -441,6 +441,11 @@
     #workspace-meetingPreparation [id$="-caret"] { display: none !important; }
     #workspace-meetingPreparation div[id^="mprep-person-body-"] { display: block !important; }
     #workspace-meetingPreparation div[style*="break-inside:avoid"] { break-inside: avoid; }
+    /* Full details are collapsed on screen, but a printed brief should
+       always include everything — the toggle prompt itself is hidden and
+       the detail body forced open regardless of its on-screen state. */
+    #workspace-meetingPreparation #mprep-detail-body { display: block !important; }
+    #workspace-meetingPreparation [onclick="mprepToggleDetail()"] { display: none !important; }
   }
 
 </style>

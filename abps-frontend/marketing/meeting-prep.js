@@ -380,6 +380,20 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
   ];
   const refHtml = `<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:6px;">${refFields.map(([l, v]) => mprepFieldRow(l, v)).join("")}</div>`;
 
+  // ── Below-the-fold detail — People/Timeline/Order Execution/Invoices/
+  // Offers/Documents/Reference are backup material, not what you need to
+  // walk into the meeting knowing. Collapsed by default behind one
+  // toggle; AI Briefing/At A Glance/Open Items stay visible on their own.
+  const detailHtml = [
+    mprepSection("People", "#be185d", peopleHtml),
+    mprepSection("Activity Timeline", "#334155", `<div style="border:1px solid #e2e8f0; border-radius:4px;">${timelineHtml}</div>`),
+    mprepSection("Order Execution", "#0f766e", projectsHtml || `<div style="font-size:0.8rem; color:var(--muted); font-style:italic;">No linked project found.</div>`),
+    mprepSection("Invoices", "#0f766e", invoicesHtml),
+    mprepSection("Offers Sent", "#7c3aed", offersHtml),
+    mprepSection("Documents", "#0056b3", documentsHtml),
+    mprepSection("Reference — Company Detail", "#64748b", refHtml),
+  ].join("");
+
   resultsNode.innerHTML = `
     <div id="mprep-brief-print-area">
       <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">
@@ -388,16 +402,22 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
       </div>
       ${aiHtml}
       ${mprepSection("At A Glance", "#0369a1", glanceHtml)}
-      ${mprepSection("People", "#be185d", peopleHtml)}
       ${mprepSection("Open Items", "#b91c1c", openItemsHtml)}
-      ${mprepSection("Activity Timeline", "#334155", `<div style="border:1px solid #e2e8f0; border-radius:4px;">${timelineHtml}</div>`)}
-      ${mprepSection("Order Execution", "#0f766e", projectsHtml || `<div style="font-size:0.8rem; color:var(--muted); font-style:italic;">No linked project found.</div>`)}
-      ${mprepSection("Invoices", "#0f766e", invoicesHtml)}
-      ${mprepSection("Offers Sent", "#7c3aed", offersHtml)}
-      ${mprepSection("Documents", "#0056b3", documentsHtml)}
-      ${mprepSection("Reference — Company Detail", "#64748b", refHtml)}
+      <div onclick="mprepToggleDetail()" style="cursor:pointer; display:flex; align-items:center; gap:6px; padding:8px 10px; margin-bottom:10px; background:#f8fafc; border:1px solid var(--border); border-radius:4px; font-size:0.8rem; font-weight:700; color:var(--muted);">
+        <span id="mprep-detail-caret">▸</span> Show full details (people, timeline, orders, invoices, documents)
+      </div>
+      <div id="mprep-detail-body" style="display:none;">${detailHtml}</div>
     </div>
   `;
+}
+
+function mprepToggleDetail() {
+  const body = document.getElementById("mprep-detail-body");
+  const caret = document.getElementById("mprep-detail-caret");
+  if (!body) return;
+  const isOpen = body.style.display === "block";
+  body.style.display = isOpen ? "none" : "block";
+  if (caret) caret.textContent = isOpen ? "▸" : "▾";
 }
 
 function mprepToggleCard(bodyId) {
