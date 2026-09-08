@@ -126,7 +126,7 @@
      100px = label line (~14px) + value line (~33px) + sub line (~14px)
      + 2x4px gap + 28px vertical padding, rounded up for rendering slop —
      the first attempt at 74px undershot this and the mismatch persisted. */
-  .dd-stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; display:flex; flex-direction:column; gap:4px; justify-content:center; min-height:100px; box-sizing:border-box; }
+  .dd-stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; display:flex; flex-direction:column; gap:4px; justify-content:center; min-height:100px; box-sizing:border-box; overflow:hidden; }
   /* Row 1/2 (and Accounts row 3) stat tiles are tinted by whether the
      period selector actually changes the number: .stat-live tiles read
      the current live backlog/snapshot (same value regardless of Today/
@@ -3407,7 +3407,7 @@
       <div id="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Live snapshots -->
-        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 116px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 122px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Design Work Overdue in Project Timeline</div>
             <div class="dd-stat-val" id="dd-s-overdue" style="color:#b91c1c;">—</div>
@@ -3427,7 +3427,7 @@
         </div>
 
         <!-- ROW 2: Period throughput/averages -->
-        <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 116px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 122px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">New Item Codes Added</div>
             <div class="dd-stat-val" id="dd-s-itemcodes">—</div>
@@ -3526,7 +3526,7 @@
       <div id="pd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: PRN coverage / scheduling / rejection health -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 116px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 122px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">PRNs With No Materials Assigned in a PO</div>
             <div class="dd-stat-val" id="pd-s-noassign" style="color:#b91c1c;">—</div>
@@ -3550,7 +3550,7 @@
         </div>
 
         <!-- ROW 2: PO lifecycle throughput -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 116px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 122px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending PO Authorizations</div>
             <div class="dd-stat-val" id="pd-s-pendingpo" style="color:#b45309;">—</div>
@@ -3762,7 +3762,7 @@
       <div id="sd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Live Queues — needs action right now -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 116px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 122px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending Ticket Approvals</div>
             <div class="dd-stat-val" id="sd-s-pending" style="color:#b45309;">—</div>
@@ -3788,7 +3788,7 @@
         </div>
 
         <!-- ROW 2: Period Throughput / Rates -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 116px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 122px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Material Issue Tickets</div>
             <div class="dd-stat-val" id="sd-s-tickets">—</div>
@@ -3882,7 +3882,7 @@
       <div id="qad-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Live Queues -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 116px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 122px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Raw Materials Pending Q/A Check</div>
             <div class="dd-stat-val" id="qad-s-pendingqa" style="color:#b45309;">—</div>
@@ -3908,7 +3908,7 @@
         </div>
 
         <!-- ROW 2: Period Throughput / Rates -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 116px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 122px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Materials QA-Checked</div>
             <div class="dd-stat-val" id="qad-s-checked">—</div>
@@ -3999,7 +3999,7 @@
       <div id="pd2-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Job Card Pulse + Material Requirement Date queues — 5 cards -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 116px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 122px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Total Current Job Cards</div>
             <div class="dd-stat-val" id="pd2-s-activejcn">—</div>
@@ -4026,7 +4026,7 @@
         </div>
 
         <!-- ROW 2: Material & Operations — 5 cards -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 116px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 122px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Material Issue Tickets Created</div>
             <div class="dd-stat-val" id="pd2-s-tickets">—</div>
@@ -4146,7 +4146,7 @@
       <div id="md-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Live snapshots -->
-        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 116px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 122px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Email Leads Awaiting Action</div>
             <div class="dd-stat-val" id="md-s-emailleads" style="color:#b45309;">—</div>
@@ -4166,7 +4166,7 @@
         </div>
 
         <!-- ROW 2: Period throughput -->
-        <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 116px; min-height:0;">
+        <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 122px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">New Leads</div>
             <div class="dd-stat-val" id="md-s-newleads">—</div>
