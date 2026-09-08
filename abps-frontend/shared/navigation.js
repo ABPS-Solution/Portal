@@ -32,6 +32,20 @@ async function checkMaterialRequirementDateReminder() {
   } catch (e) { /* non-critical — leave banner state as-is on network error */ }
 }
 
+// Same shape as checkMaterialRequirementDateReminder just above, for
+// Production Planning's own reminder banner — ungated count route
+// (checkProductionPlansNeededCount), keyed off a class so multiple
+// banners could share one check.
+async function checkProductionPlanningReminder() {
+  const banners = document.querySelectorAll(".production-planning-reminder-banner-el");
+  if (!banners.length) return;
+  try {
+    const data = await apFetch({ action: "checkProductionPlansNeededCount" });
+    const show = data.success && data.count > 0;
+    banners.forEach(b => { b.style.display = show ? "block" : "none"; });
+  } catch (e) { /* non-critical — leave banner state as-is on network error */ }
+}
+
 async function checkPurchasePORevisionReminder() {
   const banner = document.getElementById("purchase-po-revision-reminder-banner");
   if (!banner) return;
@@ -217,6 +231,7 @@ function returnToDashboard() {
   if(document.getElementById("canvas-module-material-outward")) document.getElementById("canvas-module-material-outward").style.display = "none";
   if(document.getElementById("canvas-module-assign-material-requirement-date")) document.getElementById("canvas-module-assign-material-requirement-date").style.display = "none";
   if(document.getElementById("canvas-module-revise-material-requirement-date")) document.getElementById("canvas-module-revise-material-requirement-date").style.display = "none";
+  if(document.getElementById("canvas-module-production-planning")) document.getElementById("canvas-module-production-planning").style.display = "none";
 
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("dashboard-view").style.display = "block"; 
@@ -324,6 +339,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // 3. EXTRACT FINISHED GOODS & DESIGN PRIVILEGES MATRIX MATRICES
   const canAddFinishedGoods = userPermissionsObject.addFinishedGoodsStore === true;
   const canFgApproval       = userPermissionsObject.fgApproval           === true;
+  const canProductionPlanning = userPermissionsObject.productionPlanning === true;
   const canAssignMRD        = userPermissionsObject.assignMaterialRequirementDate === true;
   const canReviseMRD        = userPermissionsObject.reviseMaterialRequirementDate === true;
   const canCreateBOQ        = userPermissionsObject.createBOQ        === true;
@@ -402,6 +418,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   
   if (document.getElementById("mod-fg-add")) document.getElementById("mod-fg-add").style.display = canAddFinishedGoods ? "block" : "none";
   if (document.getElementById("mod-fg-approval")) document.getElementById("mod-fg-approval").style.display = canFgApproval ? "block" : "none";
+  if (document.getElementById("mod-production-planning")) document.getElementById("mod-production-planning").style.display = canProductionPlanning ? "block" : "none";
   if (document.getElementById("mod-assign-material-requirement-date")) document.getElementById("mod-assign-material-requirement-date").style.display = canAssignMRD ? "block" : "none";
   if (document.getElementById("mod-revise-material-requirement-date")) document.getElementById("mod-revise-material-requirement-date").style.display = canReviseMRD ? "block" : "none";
   const canProjectInvoiceGeneration = userPermissionsObject.projectInvoiceGeneration === true;
@@ -476,7 +493,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // Production Department block visibility
   const productionHeaderBlock = document.getElementById("dashboard-production-department-header-block");
   if (productionHeaderBlock) {
-    productionHeaderBlock.style.display = (canCreateJobCardNumber || canCreateTicket || canAddFinishedGoods || canFgApproval || canProjectInvoiceGeneration || canAssignMRD || canReviseMRD) ? "block" : "none";
+    productionHeaderBlock.style.display = (canCreateJobCardNumber || canCreateTicket || canAddFinishedGoods || canFgApproval || canProjectInvoiceGeneration || canProductionPlanning || canAssignMRD || canReviseMRD) ? "block" : "none";
   }
 
   // Live Spare Store Stock card visibility
@@ -750,6 +767,7 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   window.scrollTo(0, 0);
   checkStorePRNRevisionReminder();
   checkMaterialRequirementDateReminder();
+  checkProductionPlanningReminder();
   // 1. Hide the primary dashboard menu card view and inline popup filters
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
@@ -854,6 +872,14 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     navigateToDesignWorkspacePanel('design-auth-boq-upd');
   } else if (targetCanvasModuleId === 'design-upload-drawings') {
     navigateToDesignWorkspacePanel('design-upload-drawings');
+  } else if (targetCanvasModuleId === 'production-planning') {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    const leftControlsPPlan = document.getElementById("store-panel-left-controls");
+    const centerTitlePPlan  = document.getElementById("store-panel-center-title");
+    if (leftControlsPPlan) leftControlsPPlan.style.visibility = "hidden";
+    if (centerTitlePPlan)  centerTitlePPlan.style.visibility  = "hidden";
+    document.getElementById("canvas-module-production-planning").style.display = "block";
+    initializeProductionPlanningPanel();
   } else if (targetCanvasModuleId === 'assign-material-requirement-date') {
     document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
     const leftControlsMRD = document.getElementById("store-panel-left-controls");

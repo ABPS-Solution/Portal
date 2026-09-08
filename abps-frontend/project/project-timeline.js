@@ -497,13 +497,12 @@ function ptlRender() {
    re-renders every Mark Done / Submit Plan action triggers, and so a
    Timeline-canvas click can force a lane open before scrolling to it
    (see ptlSetViewMode's focusAnchorId handling). ─────────────────────── */
-// Stage 4 doesn't take values until Stage 3 (Pre Production) is done -
-// same reasoning Stage 5 already applies against Stage 4. The server is
-// the real gate (submitInitialProductPlan refuses non-admins outright);
-// this only decides whether to show the form as usable or locked, so a
-// non-admin doesn't fill it out only to get refused on Submit. Derived
-// from the trunk's own 6 Stage 3 nodes rather than a separate flag from
-// the server, so it can never disagree with what's actually displayed.
+// DEAD as of the Production Planning move (8 Sep 2026) — this only ever
+// gated ptlRenderLaneInitialPlanForm's "locked until Stage 3 is done"
+// notice, and that form moved to production/production-planning.js along
+// with the rest of Stage 4's write surface. Flagged, not deleted, per
+// house convention — kept in case a Stage-3-done display elsewhere on
+// this screen ever wants it again.
 function ptlIsStage3Done() {
   if (!ptlData || !ptlData.trunk) return false;
   const keys = ['boqs', 'wdesign', 'prns', 'mrdates', 'rmpos', 'pps'];
@@ -511,22 +510,6 @@ function ptlIsStage3Done() {
     const n = ptlData.trunk.find(t => t.id === id);
     return n && (!!n.actual || n.done === true);
   });
-}
-// ptlCanWriteLane - mirrors routes/timeline.js's getRequesterProductionRole
-// write-gate EXACTLY ("own department, or admin, or Project"), using the
-// server-authoritative isAdmin/department/productionSubDept values
-// applyServerRoleFlags refreshes on every page load (shared/apFetch.js) -
-// NOT the legacy isUserAdminGlobal heuristic alone, which is what let a
-// user moved out of the Admin department keep seeing every write control
-// here until a fresh login. This only controls what's SHOWN - the server
-// route re-checks the identical rule on every write, so this can never be
-// the only thing standing between a wrong department and a real edit.
-function ptlCanWriteLane(lane) {
-  if (localStorage.getItem("isUserAdminGlobal") === "true") return true;
-  const dept = localStorage.getItem("userDepartment") || "";
-  if (dept === "Project") return true;
-  if (dept === "Production" && (localStorage.getItem("userProductionSubDept") || "") === lane.ownerDept) return true;
-  return false;
 }
 const PTL_LANE_COLOR = { Reactor: '#b45309', Capacitor: '#047857', Panel: '#c2410c' };
 let ptlExpandedLanes = new Set();
@@ -575,236 +558,57 @@ function ptlRenderLane(lane) {
         <span style="font-size:0.88rem; font-weight:700; font-family:monospace; color:${c};">${escapeHtml(ptlLaneStageLabel(lane))}</span>
       </div>
       ${expanded ? `<div style="padding:12px 14px;">
-        ${lane.planInitialized ? ptlRenderLaneSteps(lane, c, ptlCanWriteLane(lane)) : ptlRenderLaneInitialPlanForm(lane)}
+        ${lane.planInitialized ? ptlRenderLaneSteps(lane, c) : `<div style="font-size:0.82rem; color:var(--muted); background:var(--highlight-bg); border:1px dashed var(--border); border-radius:var(--radius); padding:10px 12px;">Not planned yet — managed in Production Planning (${escapeHtml(lane.ownerDept)} Production).</div>`}
       </div>` : ''}
     </div>`;
 }
 
-function ptlRenderLaneInitialPlanForm(lane) {
-  // Two independent reasons this can be locked: (1) view-only - the viewer
-  // isn't this lane's own Production sub-department, Project, or admin
-  // (ptlCanWriteLane, mirrors the server's real write-gate exactly); (2)
-  // Stage 3 - Pre Production isn't fully done yet (admin bypass only). The
-  // form still shows either way (so Production can see what's coming), it
-  // just can't take values. Server-side submitInitialProductPlan enforces
-  // both independently - this only avoids letting someone fill the whole
-  // thing out only to get refused on Submit.
-  const canWrite = ptlCanWriteLane(lane);
-  const stageLocked = !ptlIsAdmin() && !ptlIsStage3Done();
-  const locked = !canWrite || stageLocked;
-  const dis = locked ? 'disabled' : '';
-  // Same bordered/percentage-width table convention as the after-planning
-  // table (ptlRenderLaneSteps) - kept visually consistent rather than the
-  // earlier bare CSS-grid layout, which looked like a different screen.
-  const colBorder = "border-left:1px solid var(--border);";
-  const rows = lane.steps.map(s => `
-    <tr style="border-bottom:1px solid var(--border);">
-      <td style="width:60%; padding:6px 8px; font-size:0.98rem; font-weight:600; color:var(--text); text-align:center;">${escapeHtml(s.label)}</td>
-      <td style="width:40%; padding:5px 8px; text-align:center; ${colBorder}">
-        <div style="max-width:170px; margin:0 auto;">
-          <input type="date" ${dis} id="ptl-plan-${lane.boqId}-${s.id}"
-            style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box; text-align:center;${locked ? ' background:#f1f5f9; cursor:not-allowed;' : ''}" />
-        </div>
-      </td>
-    </tr>`).join("");
-  return `
-    <div style="font-size:0.82rem; color:var(--muted); margin-bottom:10px;">
-      No plan submitted yet. ${escapeHtml(lane.ownerDept)} Production enters a planned date for every step below, including Packing and Adding to FG. Material Issue Tickets for this product's Job Cards stay blocked until then. Only its completion is automatic; the planned/target date is entered like any other step.
-    </div>
-    ${!canWrite ? `<div style="font-size:0.95rem; font-weight:700; color:#000; background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); padding:9px 12px; margin-bottom:10px;">View only. Only ${escapeHtml(lane.ownerDept)} Production or Project can enter this plan.</div>`
-      : (stageLocked ? `<div style="font-size:0.8rem; color:#92400e; background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius); padding:8px 12px; margin-bottom:10px;">Locked until Stage 3, Pre Production, is fully done.</div>` : '')}
-    <div style="border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
-      <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
-        <thead><tr style="background:var(--highlight-bg); border-bottom:1px solid var(--border);">
-          <th style="width:60%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Production Stage</th>
-          <th style="width:40%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Production Planning Date</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>
-    <div style="margin-top:12px;">
-      <button class="nav-btn-styled" ${dis} style="${locked ? 'opacity:0.5; cursor:not-allowed;' : ''}" onclick="ptlSubmitInitialPlan('${lane.boqId}')">Submit Initial Plan</button>
-    </div>`;
-}
-
-// Table form (30 Aug 2026) - Process Name / Initial Planning Date (frozen,
-// = s.planned) / Current Target Date (the currently-committed date: the
-// most recent New Target Date if one was ever set, else the initial
-// planning date itself - a plain display of s.target || s.planned, never
-// edited directly) / New Target Date (the only editable date column,
-// same updateProductPlanStepTarget call as before) / Mark Done or Mark
-// Undone. Mark Undone is NOT admin-only - it's everyday mistake
-// correction (see unmarkProductPlanStepDone's own header comment), not a
-// testing override. `canWrite` (ptlCanWriteLane) additionally decides
-// whether the New Target Date / Mark Done-Undone controls render at all -
-// a viewer outside this lane's own department gets the same table as pure
-// read-only display, no inputs, no buttons.
-function ptlRenderLaneSteps(lane, c, canWrite) {
+// Read-only display (Production Planning, Production department, is the
+// only place these dates are entered/revised/marked done now — see
+// routes/productionPlanning.js's header comment). Process Name / Initial
+// Planning Date (frozen) / Current Target Date (s.target || s.planned) /
+// a status cell (Done date, or a "not yet due"/"overdue" read), no inputs,
+// no buttons.
+function ptlRenderLaneSteps(lane, c) {
   const today = ptlToday();
   const rows = lane.steps.map(s => {
     const done = !!s.actual;
     const eff = s.actual || s.target || s.planned;
     const late = !done && eff && eff < today;
     const currentTarget = s.target || s.planned;
-
-    let actionCell;
-    if (s.terminal) {
-      // Real completion is still fully automatic (derived off Job
-      // Cards actually reaching FG Store) - this admin control is a
-      // testing-only override so a realistic multi-week test pass
-      // doesn't need real Job Card/FG Store activity to exist for the
-      // terminal step, same precedent as the Stage 3 system-milestone
-      // overrides above. adminSetPackingFgDate/adminClearPackingFgDate
-      // write straight into this step's own actual_date - see their
-      // header comment in routes/timeline.js.
-      const chip = `<span style="font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(s.chip || '')}</span>`;
-      const adminCtl = ptlIsAdmin() ? `<span style="display:inline-flex; align-items:center; gap:6px;">${ptlAsOfInputHtml(`${lane.boqId}-${s.id}`, s.actual)}<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem;" onclick="ptlAdminSetPackingFgDate('${lane.boqId}')">${s.actual ? 'Update (admin)' : 'Set date (admin)'}</button>${s.actual ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem; background:#fff; color:var(--muted); border:1px solid var(--border);" onclick="ptlAdminClearPackingFgDate('${lane.boqId}')">Clear</button>` : ''}</span>` : '';
-      actionCell = `${chip}${adminCtl}`;
-    } else if (!canWrite) {
-      actionCell = done
+    const statusCell = s.terminal
+      ? `<span style="font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(s.chip || '')}</span>`
+      : done
         ? `<span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${ptlFmt(s.actual)}</span>`
-        : `<span style="font-size:0.78rem; color:var(--muted);">View only</span>`;
-    } else if (done) {
-      actionCell = `
-        <span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${ptlFmt(s.actual)}</span>
-        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem; background:#fff; color:var(--muted); border:1px solid var(--border);" onclick="ptlUnmarkStepDone('${lane.boqId}','${s.id}')">Mark Undone</button>
-        ${ptlIsAdmin() ? `<span style="display:inline-flex; align-items:center; gap:6px;">${ptlAsOfInputHtml(`${lane.boqId}-${s.id}`, s.actual)}<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem;" onclick="ptlMarkStepDone('${lane.boqId}','${s.id}')">Update (admin)</button></span>` : ''}`;
-    } else {
-      actionCell = `
-        ${ptlAsOfInputHtml(`${lane.boqId}-${s.id}`)}
-        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.74rem;" onclick="ptlMarkStepDone('${lane.boqId}','${s.id}')">Mark Done</button>`;
-    }
+        : `<span style="font-size:0.78rem; color:${late ? 'var(--warn)' : 'var(--muted)'};">${late ? 'Overdue' : 'Pending'}</span>`;
 
-    // Column dividers (border-left on every column after the first) match
-    // the bordered-table convention used on Search Tasks/Follow-Ups
-    // (marketing/tasks-followups.js) - percentage widths on
-    // table-layout:fixed instead of fixed px, so the table fits the panel
-    // instead of forcing horizontal scroll; the action cell's controls
-    // wrap onto a second line (flex-wrap) rather than pushing the row wide.
     const colBorder = "border-left:1px solid var(--border);";
     return `
-      <tr id="ptl-step-${lane.boqId}-${s.id}" style="border-bottom:1px solid var(--border);">
-        <td style="width:24%; padding:5px 8px; font-size:0.98rem; font-weight:600; color:${late ? 'var(--warn)' : 'var(--text)'}; text-align:center;">
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="width:34%; padding:5px 8px; font-size:0.98rem; font-weight:600; color:${late ? 'var(--warn)' : 'var(--text)'}; text-align:center;">
           <span style="display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; background:${done ? c : '#fff'}; border:2px solid ${late ? 'var(--warn)' : c}; vertical-align:middle;"></span>
           ${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.78rem;">(automatic)</span>' : ''}
         </td>
-        <td style="width:13%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">
-          ${ptlFmt(s.planned)}
-          ${ptlIsAdmin() && s.planned ? `<div style="margin-top:4px; display:flex; flex-direction:column; align-items:center; gap:3px;">${ptlAsOfInputHtml(`planned-${lane.boqId}-${s.id}`, s.planned)}<button class="nav-btn-styled" style="padding:2px 8px; font-size:0.65rem;" onclick="ptlAdminOverridePlanned('${lane.boqId}','${s.id}')">Update (admin)</button></div>` : ''}
-        </td>
-        <td style="width:13%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(currentTarget)}</td>
-        <td style="width:20%; padding:5px 8px; text-align:center; ${colBorder}">${canWrite && (s.terminal || !done) ? `<div style="max-width:150px; margin:0 auto;"><input type="date" value="${s.target || ''}" onchange="ptlUpdateTarget('${lane.boqId}','${s.id}', this.value)"
-              style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box; text-align:center;" /></div>` : `<span style="color:var(--muted); font-size:0.8rem;">-</span>`}</td>
-        <td style="width:30%; padding:5px 8px; text-align:center; ${colBorder}">
-          <div style="display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px;">${actionCell}</div>
-        </td>
+        <td style="width:22%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(s.planned)}</td>
+        <td style="width:22%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(currentTarget)}</td>
+        <td style="width:22%; padding:5px 8px; text-align:center; ${colBorder}">${statusCell}</td>
       </tr>`;
   }).join("");
 
   const colBorder = "border-left:1px solid var(--border);";
   return `
+    <div style="font-size:0.76rem; color:var(--muted); margin-bottom:8px; font-style:italic;">Managed in Production Planning (Production department) — view only here.</div>
     <div style="border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
       <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <thead><tr style="background:${c}14; border-bottom:1px solid var(--border);">
-          <th style="width:24%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Process Name</th>
-          <th style="width:13%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Initial Planning Date</th>
-          <th style="width:13%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Current Target Date</th>
-          <th style="width:20%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">${canWrite ? 'New Target Date' : ''}</th>
-          <th style="width:30%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}"></th>
+          <th style="width:34%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Process Name</th>
+          <th style="width:22%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Initial Planning Date</th>
+          <th style="width:22%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Current Target Date</th>
+          <th style="width:22%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Status</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
-}
-
-async function ptlSubmitInitialPlan(boqId) {
-  const lane = (ptlData.lanes || []).find(l => l.boqId === boqId);
-  if (!lane) return;
-  const steps = [];
-  for (const s of lane.steps) {
-    const el = document.getElementById(`ptl-plan-${boqId}-${s.id}`);
-    const val = el ? el.value : "";
-    if (!val) { alert(`Enter a planned date for "${s.label}".`); return; }
-    steps.push({ stepKey: s.id, plannedDate: val });
-  }
-  try {
-    const data = await apFetch({ action: "submitInitialProductPlan", operatorName: appActiveOperatorIdentityString, boqId, steps });
-    if (!data.success) { alert(data.error || "Could not submit the plan."); return; }
-    await selectPtlProject(ptlData.project.projectId); // reload real server state rather than guess it locally
-  } catch (e) { alert("Network error: " + e.message); }
-}
-
-async function ptlUpdateTarget(boqId, stepKey, targetDate) {
-  if (!targetDate) return;
-  try {
-    const data = await apFetch({ action: "updateProductPlanStepTarget", boqId, stepKey, targetDate });
-    if (!data.success) { alert(data.error || "Could not update the target date."); ptlRender(); return; }
-    const lane = ptlData.lanes.find(l => l.boqId === boqId);
-    const step = lane && lane.steps.find(s => s.id === stepKey);
-    if (step) step.target = data.targetDate;
-  } catch (e) { alert("Network error: " + e.message); }
-}
-
-// Admin-only testing override for the frozen Initial Planning Date —
-// same precedent as the terminal step's admin date override just above.
-// Never available to a non-admin; ptlAsOfInputHtml already hides the
-// control entirely for anyone else.
-async function ptlAdminOverridePlanned(boqId, stepKey) {
-  try {
-    const date = ptlReadAsOf(`planned-${boqId}-${stepKey}`);
-    if (!date) { alert('Pick a date.'); return; }
-    const data = await apFetch({ action: "adminOverridePlannedDate", operatorName: appActiveOperatorIdentityString, boqId, stepKey, date });
-    if (!data.success) { alert(data.error || "Could not override the Initial Planning Date."); return; }
-    await selectPtlProject(ptlData.project.projectId); // reload real server state rather than guess it locally
-  } catch (e) { alert("Network error: " + e.message); }
-}
-
-async function ptlMarkStepDone(boqId, stepKey) {
-  try {
-    const asOfDate = ptlReadAsOf(`${boqId}-${stepKey}`);
-    const data = await apFetch({ action: "markProductPlanStepDone", operatorName: appActiveOperatorIdentityString, boqId, stepKey, asOfDate });
-    if (!data.success) { alert(data.error || "Could not mark this step done."); return; }
-    const lane = ptlData.lanes.find(l => l.boqId === boqId);
-    const step = lane && lane.steps.find(s => s.id === stepKey);
-    if (step) step.actual = data.actualDate;
-    ptlRender();
-  } catch (e) { alert("Network error: " + e.message); }
-}
-
-// Undoes an accidental/wrong Mark Done - everyday mistake correction,
-// not admin-only (see unmarkProductPlanStepDone's own header comment).
-async function ptlUnmarkStepDone(boqId, stepKey) {
-  try {
-    const data = await apFetch({ action: "unmarkProductPlanStepDone", operatorName: appActiveOperatorIdentityString, boqId, stepKey });
-    if (!data.success) { alert(data.error || "Could not mark this step undone."); return; }
-    const lane = ptlData.lanes.find(l => l.boqId === boqId);
-    const step = lane && lane.steps.find(s => s.id === stepKey);
-    if (step) step.actual = null;
-    ptlRender();
-  } catch (e) { alert("Network error: " + e.message); }
-}
-
-// Admin-only, testing-only override for the terminal "Packing and Adding
-// to FG" step - see adminSetPackingFgDate's header comment in
-// routes/timeline.js for why this needs its own route instead of reusing
-// markProductPlanStepDone (which explicitly refuses this step for
-// everyone, admin included, outside this override).
-async function ptlAdminSetPackingFgDate(boqId) {
-  const date = ptlReadAsOf(`${boqId}-packing_add_fg`);
-  if (!date) { alert("Pick a date first."); return; }
-  try {
-    const data = await apFetch({ action: "adminSetPackingFgDate", operatorName: appActiveOperatorIdentityString, boqId, date });
-    if (!data.success) { alert(data.error || "Could not set this date."); return; }
-    await selectPtlProject(ptlData.project.projectId);
-  } catch (e) { alert("Network error: " + e.message); }
-}
-
-async function ptlAdminClearPackingFgDate(boqId) {
-  try {
-    const data = await apFetch({ action: "adminClearPackingFgDate", operatorName: appActiveOperatorIdentityString, boqId });
-    if (!data.success) { alert(data.error || "Could not clear this override."); return; }
-    await selectPtlProject(ptlData.project.projectId);
-  } catch (e) { alert("Network error: " + e.message); }
 }
 
 // A detail line is untrusted text (material names, etc.) so it must

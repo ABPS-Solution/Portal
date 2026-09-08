@@ -746,8 +746,9 @@
           <button class="dept-dash-pill" id="mod-production-dashboard" onclick="navigateToProductionDashboard()" style="background:#fffbeb; color:#b45309;">📊 Dashboard</button>
         </div>
       </div>
-      <div class="sec-label">Material Requirement Dates</div>
+      <div class="sec-label">Production Planning &amp; Material Requirement Dates</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-production-planning" onclick="switchActiveDashboardModule('production-planning')"><span class="mc-label">Production Planning</span></div>
         <div class="menu-card" id="mod-assign-material-requirement-date" onclick="switchActiveDashboardModule('assign-material-requirement-date')"><span class="mc-label">Assign Material Requirement Date</span></div>
         <div class="menu-card" id="mod-revise-material-requirement-date" onclick="switchActiveDashboardModule('revise-material-requirement-date')"><span class="mc-label">Revise Material Requirement Date</span></div>
       </div>
@@ -1440,6 +1441,32 @@
         </div>
         <div id="rmrd-body"></div>
       </div>
+    </div>
+
+    <div id="canvas-module-production-planning" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Production Planning</h2>
+      <div id="pplan-reminder-banner" class="production-planning-reminder-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ One or more products are due or overdue for Production Planning.</div>
+      <div id="pplan-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div id="pplan-tabs-bar" style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--border);">
+        <button id="pplan-tab-submit" onclick="switchProductionPlanningTab('submit')" style="flex:1; padding:11px 16px; border:none; cursor:pointer; font-weight:800; font-size:0.85rem; background:var(--brand); color:#fff;">Submit Initial Plan</button>
+        <button id="pplan-tab-update" onclick="switchProductionPlanningTab('update')" style="flex:1; padding:11px 16px; border:none; cursor:pointer; font-weight:800; font-size:0.85rem; background:#e2e8f0; color:#334155;">Update Plan</button>
+      </div>
+
+      <div id="pplan-needqueue-zone" style="margin-bottom:16px;"></div>
+
+      <div id="pplan-selector-row" style="margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+        <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
+        <div style="position:relative;">
+          <input type="text" id="pplan-project-select-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+            oninput="handleSharedProjectTypeaheadInput(this.value, 'pplan-project-select-ta-input', 'pplan-project-select-ta-dropdown')"
+            onchange="loadProductionPlanForProject()"
+            style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          <div id="pplan-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        </div>
+      </div>
+
+      <div id="pplan-body"></div>
     </div>
 
     <div id="canvas-module-fg-add" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
@@ -4830,6 +4857,7 @@
 <script src="production/project-invoice.js"></script>
 <script src="production/production-dashboard.js"></script>
 <script src="production/material-requirement-dates.js"></script>
+<script src="production/production-planning.js"></script>
 <script src="accounts/tour-shell.js"></script>
 <script src="accounts/advance-vouchers.js"></script>
 <script src="accounts/voucher-check.js"></script>
