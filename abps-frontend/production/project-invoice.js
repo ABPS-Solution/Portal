@@ -22,6 +22,7 @@ const PINV_DOC_META = {
   mdcc:                { dropzoneId: "pinv-doc-mdcc-dropzone",              listId: "pinv-doc-mdcc-filelist",               label: "MD cc",                                     placeholder: "📎 Click to attach MD cc" },
   inspectionClearance: { dropzoneId: "pinv-doc-inspectionClearance-dropzone", listId: "pinv-doc-inspectionClearance-filelist", label: "Inspection Clearance",                    placeholder: "📎 Click to attach Inspection Clearance" },
   warrantyCard:        { dropzoneId: "pinv-doc-warrantyCard-dropzone",       listId: "pinv-doc-warrantyCard-filelist",       label: "Warranty Card",                             placeholder: "📎 Click to attach Warranty Card" },
+  serialNumberConfirmationSheet: { dropzoneId: "pinv-doc-serialNumberConfirmationSheet-dropzone", listId: "pinv-doc-serialNumberConfirmationSheet-filelist", label: "Serial Number Confirmation Sheet", placeholder: "📎 Click to attach Serial Number Confirmation Sheet" },
 };
 const PINV_REQUIRED_DOC_TYPES = Object.keys(PINV_DOC_META).filter(t => t !== 'lrCopy' && t !== 'mdcc' && t !== 'inspectionClearance');
 let pinvDocFiles = {};
@@ -230,7 +231,7 @@ function clearPinvDraftStorage() {
 // silently dropped rather than restored into a broken state.
 function applyPinvDraftOverlay(saved) {
   if (!saved || !pinvInvoiceState) return;
-  const scalarKeys = ['invoiceNo','insuranceNo','mdccNo','transportName','lrNoDate','lcNoDate','dcNoDate','vehicleNo','mobileNo','incoterms','incotermsPlace','tradeType','usdRate','igstPercent','cgstPercent','sgstPercent','roundOff','bankAccountKey','declaration'];
+  const scalarKeys = ['invoiceNo','insuranceNo','mdccNo','transportName','lrNoDate','lcNoDate','dcNoDate','vehicleNo','mobileNo','incoterms','incotermsPlace','tradeType','usdRate','igstPercent','cgstPercent','sgstPercent','roundOff','freightAmount','othersAmount','bankAccountKey','declaration'];
   scalarKeys.forEach(k => { if (saved[k] !== undefined) pinvInvoiceState[k] = saved[k]; });
   if (saved.billTo) pinvInvoiceState.billTo = { ...pinvInvoiceState.billTo, ...saved.billTo };
   if (saved.shipTo) pinvInvoiceState.shipTo = { ...pinvInvoiceState.shipTo, ...saved.shipTo };
@@ -287,11 +288,25 @@ function initPinvInvoiceStateFromLines() {
         quantity: qty, ratePerQuantity: l.ratePerQuantity, totalBasicPrice: qty * (parseFloat(l.ratePerQuantity) || 0),
       };
     }),
-    igstPercent: "18", cgstPercent: "", sgstPercent: "", roundOff: "0",
+    igstPercent: "18", cgstPercent: "", sgstPercent: "", roundOff: "0", freightAmount: "0", othersAmount: "0",
     bankAccountKey: PINV_BANK_OPTIONS[0].key,
     bankDetails: { beneficiary: "ABPS SOLUTION PRIVATE LIMITED", swift: "", ...PINV_STANDARD_BANK_DETAILS },
     declaration: PINV_STANDARD_DECLARATION,
   };
+}
+
+// Product Serial Number linkage (migration 185) -- shows the operator
+// exactly which Job Card Numbers / Product Serial Numbers this line would
+// claim if generated right now (source: production.finished_goods_inventory
+// .product_serial_number, same fetchProjectInvoiceLineDetail response
+// claimReadyJobCards would itself pick from, oldest Set first). A plain
+// confirm-style listing, not a modal, to keep this a lightweight
+// see-and-confirm step rather than a whole new screen.
+function showPinvReadySerials(idx) {
+  const l = pinvCache.lines[idx];
+  if (!l || !(l.readySerials || []).length) return;
+  const lines = l.readySerials.map(s => `${s.jobCardNumber} — Serial No.: ${s.serialNumber || '(not recorded)'}`);
+  alert(`${l.productName || l.description}\n\nJob Cards / Product Serial Numbers ready to invoice:\n\n${lines.join('\n')}`);
 }
 
 function renderPinvDetail() {
@@ -307,7 +322,7 @@ function renderPinvDetail() {
       <td style="padding:8px; text-align:center;">${hasBoq ? l.orderedQuantity : '—'}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.jcQaPassed : '—'}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.alreadyInvoicedQty : '—'}</td>
-      <td style="padding:8px; text-align:center; font-weight:700; color:${maxQty > 0 ? '#15803d' : 'var(--muted)'};">${hasBoq ? l.readyToInvoiceQty : 'Final only'}</td>
+      <td style="padding:8px; text-align:center; font-weight:700; color:${maxQty > 0 ? '#15803d' : 'var(--muted)'};">${hasBoq ? l.readyToInvoiceQty : 'Final only'}${(hasBoq && (l.readySerials || []).length) ? `<div><a href="javascript:void(0)" onclick="showPinvReadySerials(${idx})" style="font-size:0.72rem; font-weight:600; color:var(--brand);">View Job Cards / Serial Nos.</a></div>` : ''}</td>
       <td style="padding:8px; text-align:center;">
         <input type="number" min="0" max="${maxQty}" ${pinvInvoiceState.lineItems[idx].quantity > 0 ? `value="${pinvInvoiceState.lineItems[idx].quantity}"` : `value="" placeholder="0"`}
           ${blockerMsgs.length ? 'disabled' : ''}
@@ -602,6 +617,14 @@ function renderPinvInvoiceForm() {
             <input id="pinv-igst-input" type="number" min="0" value="${esc(s.igstPercent)}" oninput="updatePinvField('igstPercent', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>`}
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
+            <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Freight <span style="text-transform:none; font-weight:500;">(incl. GST)</span></span>
+            <input id="pinv-freight-input" type="number" min="0" placeholder="0" value="${esc(s.freightAmount)}" oninput="updatePinvField('freightAmount', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
+            <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Others <span style="text-transform:none; font-weight:500;">(incl. GST)</span></span>
+            <input id="pinv-others-input" type="number" min="0" placeholder="0" value="${esc(s.othersAmount)}" oninput="updatePinvField('othersAmount', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Round Off</span>
             <input type="number" value="${esc(s.roundOff)}" data-allow-negative="true" oninput="updatePinvField('roundOff', this.value); recalcPinvTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>
@@ -847,14 +870,18 @@ function recalcPinvTotals() {
   const usdRate = parseFloat(pinvInvoiceState.usdRate) || 0;
   const subTotal = (isExport && usdRate > 0) ? rawSubTotal / usdRate : rawSubTotal;
   const roundOff = parseFloat(pinvInvoiceState.roundOff) || 0;
+  // Freight/Others (including GST) -- entered GST-inclusive, added after
+  // tax like Round Off, never re-divided by the USD rate (migration 185).
+  const freightAmount = parseFloat(pinvInvoiceState.freightAmount) || 0;
+  const othersAmount = parseFloat(pinvInvoiceState.othersAmount) || 0;
   let grandTotal;
   if (isExport) {
-    grandTotal = subTotal + roundOff;
+    grandTotal = subTotal + freightAmount + othersAmount + roundOff;
   } else {
     const igstAmount = rawSubTotal * (parseFloat(pinvInvoiceState.igstPercent) || 0) / 100;
     const cgstAmount = rawSubTotal * (parseFloat(pinvInvoiceState.cgstPercent) || 0) / 100;
     const sgstAmount = rawSubTotal * (parseFloat(pinvInvoiceState.sgstPercent) || 0) / 100;
-    grandTotal = subTotal + cgstAmount + sgstAmount + igstAmount + roundOff;
+    grandTotal = subTotal + cgstAmount + sgstAmount + igstAmount + freightAmount + othersAmount + roundOff;
   }
   const st = document.getElementById("pinv-subtotal-display");
   const gt = document.getElementById("pinv-grandtotal-display");
@@ -1150,6 +1177,7 @@ async function loadPinvReviseForm(invoiceId) {
       shipTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "", ...(last.shipTo || {}) },
       lineItems: (data.lineItems || []).map(li => ({ ...li })),
       igstPercent: last.igstPercent || "18", cgstPercent: last.cgstPercent || "", sgstPercent: last.sgstPercent || "", roundOff: last.roundOff || "0",
+      freightAmount: last.freightAmount || "0", othersAmount: last.othersAmount || "0",
       // Match the prior invoice's bank details back to one of the 3 known
       // accounts by A/C number so the dropdown reflects what was actually
       // used last time; falls back to the default if it doesn't match any
@@ -1267,6 +1295,14 @@ function renderPinvReviseInvoiceForm() {
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">IGST %</span>
             <input id="pinv-revise-igst-input" type="number" min="0" value="${esc(s.igstPercent)}" oninput="updatePinvReviseField('igstPercent', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
           </div>`}
+          <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
+            <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Freight <span style="text-transform:none; font-weight:500;">(incl. GST)</span></span>
+            <input id="pinv-revise-freight-input" type="number" min="0" placeholder="0" value="${esc(s.freightAmount)}" oninput="updatePinvReviseField('freightAmount', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
+            <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Others <span style="text-transform:none; font-weight:500;">(incl. GST)</span></span>
+            <input id="pinv-revise-others-input" type="number" min="0" placeholder="0" value="${esc(s.othersAmount)}" oninput="updatePinvReviseField('othersAmount', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
+          </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Round Off</span>
             <input type="number" value="${esc(s.roundOff)}" data-allow-negative="true" oninput="updatePinvReviseField('roundOff', this.value); recalcPinvReviseTotals();" style="width:70px; text-align:right; padding:3px;" />
@@ -1409,14 +1445,17 @@ function recalcPinvReviseTotals() {
   const usdRate = parseFloat(pinvReviseState.usdRate) || 0;
   const subTotal = (isExport && usdRate > 0) ? rawSubTotal / usdRate : rawSubTotal;
   const roundOff = parseFloat(pinvReviseState.roundOff) || 0;
+  // Freight/Others (including GST) -- see recalcPinvTotals' comment.
+  const freightAmount = parseFloat(pinvReviseState.freightAmount) || 0;
+  const othersAmount = parseFloat(pinvReviseState.othersAmount) || 0;
   let grandTotal;
   if (isExport) {
-    grandTotal = subTotal + roundOff;
+    grandTotal = subTotal + freightAmount + othersAmount + roundOff;
   } else {
     const igstAmount = rawSubTotal * (parseFloat(pinvReviseState.igstPercent) || 0) / 100;
     const cgstAmount = rawSubTotal * (parseFloat(pinvReviseState.cgstPercent) || 0) / 100;
     const sgstAmount = rawSubTotal * (parseFloat(pinvReviseState.sgstPercent) || 0) / 100;
-    grandTotal = subTotal + cgstAmount + sgstAmount + igstAmount + roundOff;
+    grandTotal = subTotal + cgstAmount + sgstAmount + igstAmount + freightAmount + othersAmount + roundOff;
   }
   const st = document.getElementById("pinv-revise-subtotal-display");
   const gt = document.getElementById("pinv-revise-grandtotal-display");
