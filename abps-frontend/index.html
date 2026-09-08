@@ -580,6 +580,7 @@
     <button class="dept-tab" id="dept-tab-design"     data-accent="#2563eb" onclick="handleDepartmentTabClick('design')">Design</button>
     <button class="dept-tab" id="dept-tab-purchase"   data-accent="#7c3aed" onclick="handleDepartmentTabClick('purchase')">Purchase</button>
     <button class="dept-tab" id="dept-tab-store"      data-accent="#0369a1" onclick="handleDepartmentTabClick('store')">Store</button>
+    <button class="dept-tab" id="dept-tab-qa"         data-accent="#dc2626" onclick="handleDepartmentTabClick('qa')">Quality Assurance</button>
     <button class="dept-tab" id="dept-tab-production" data-accent="#b45309" onclick="handleDepartmentTabClick('production')">Production</button>
     <button class="dept-tab" id="dept-tab-accounts"   data-accent="#0f766e" onclick="handleDepartmentTabClick('accounts')">Accounts</button>
   </div>
@@ -714,7 +715,6 @@
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-store-gate"        onclick="navigateToStoreWorkspacePanel('store-gate-entry')"><span class="mc-label">Gate Entry</span></div>
         <div class="menu-card" id="mod-store-entry"       onclick="navigateToStoreWorkspacePanel('store-entry')"><span class="mc-label">Raw Materials Store Entry and GRN</span></div>
-        <div class="menu-card" id="mod-store-grn"         onclick="navigateToStoreWorkspacePanel('store-grn')"><span class="mc-label">Raw Materials Q/A Check</span></div>
         <div class="menu-card" id="mod-expected-inbounds" onclick="navigateToStoreWorkspacePanel('expected-inbounds')"><span class="mc-label">Expected Deliveries</span></div>
         <div class="menu-card" id="mod-stock-sweep"       onclick="navigateToStoreWorkspacePanel('stock-sweep')"><span class="mc-label">Stock Sweep (Weekly Return)</span></div>
       </div>
@@ -734,6 +734,26 @@
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-project-invoice"         onclick="switchActiveDashboardModule('project-invoice')"><span class="mc-label">Project Invoice Generation</span></div>
         <div class="menu-card" id="mod-material-outward"        onclick="switchActiveDashboardModule('material-outward')"><span class="mc-label">Material Outward on Delivery Challan</span></div>
+      </div>
+    </div>
+
+    <!-- ── QUALITY ASSURANCE ─────────────────────────────────────────────── -->
+    <div id="dashboard-qa-department-header-block" class="dept-block" style="display:none; --dept-accent:#dc2626;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#dc2626;"></div>
+        <span class="dept-name">Quality Assurance Department</span>
+      </div>
+      <div class="sec-label">Inward Quality</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-store-grn" onclick="navigateToStoreWorkspacePanel('store-grn')"><span class="mc-label">Raw Materials Q/A Check</span></div>
+      </div>
+      <div class="sec-label">Finished Goods</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-fg-approval" onclick="switchActiveDashboardModule('fg-approval')"><span class="mc-label">Add to Finished Goods Store Approval</span></div>
+      </div>
+      <div class="sec-label">Inspection</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-qa-inspection-timeline" onclick="switchActiveDashboardModule('qa-inspection-timeline')"><span class="mc-label">QA Inspection Timeline</span></div>
       </div>
     </div>
 
@@ -760,7 +780,6 @@
       <div class="sec-label">Finished Goods</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-fg-add"                  onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
-        <div class="menu-card" id="mod-fg-approval"             onclick="switchActiveDashboardModule('fg-approval')"><span class="mc-label">Add to Finished Goods Store Approval</span></div>
       </div>
     </div>
 
@@ -2056,6 +2075,36 @@
     <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
     <h2 class="panel-title">Project Timeline</h2>
     <div id="ptl-mount"></div>
+    </div>
+  </div>
+
+  <div id="canvas-module-qa-inspection-timeline" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">QA Inspection Timeline</h2>
+      <div id="qait-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="qait-bucket-filter-bar" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;"></div>
+      <div id="qait-summary-strip" style="margin-bottom:14px;"></div>
+      <div id="qait-table-wrap" style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+          <thead>
+            <tr style="text-align:left; border-bottom:2px solid var(--border);">
+              <th style="padding:8px;"></th>
+              <th style="padding:8px;">Project</th>
+              <th style="padding:8px;">Company</th>
+              <th style="padding:8px;">Next Step</th>
+              <th style="padding:8px;">Expected</th>
+              <th style="padding:8px;">Customer Inspection</th>
+              <th style="padding:8px;">Inspection Clearance Note</th>
+              <th style="padding:8px;">Dispatch Clearance</th>
+            </tr>
+          </thead>
+          <tbody id="qait-table-body"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -4858,6 +4907,7 @@
 <script src="production/production-dashboard.js"></script>
 <script src="production/material-requirement-dates.js"></script>
 <script src="production/production-planning.js"></script>
+<script src="qa/qa-inspection-timeline.js"></script>
 <script src="accounts/tour-shell.js"></script>
 <script src="accounts/advance-vouchers.js"></script>
 <script src="accounts/voucher-check.js"></script>

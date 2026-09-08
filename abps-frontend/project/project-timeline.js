@@ -739,8 +739,12 @@ function ptlRenderStageRows(nodes, today, prodPlanDone) {
     const isEmptyDetailArray = Array.isArray(n.detail) && n.detail.length === 0;
     const expanded = hasDetail && ptlExpandedNodes.has(n.id);
     const manualCanEdit = n.kind === 'manual' && !PTL_QA_CHAIN.has(n.id) && (!n.actual || ptlIsAdmin());
-    const qaCanEdit = PTL_QA_CHAIN.has(n.id) && prodPlanDone && (!n.actual || ptlIsAdmin());
-    const qaBlockedByPlan = PTL_QA_CHAIN.has(n.id) && !n.actual && !prodPlanDone;
+    // Stage 5's QA-chain dates (customer_inspection/inspection_clearance_note/
+    // dispatch_clearance) moved to Quality Assurance > QA Inspection Timeline
+    // (8 Sep 2026) — this screen renders them read-only now, with a pointer
+    // to where they're actually set. saveTimelineMilestoneDate/
+    // ptlSetQaMilestoneDate no longer exist; see routes/qaInspection.js.
+    const qaUnsetPointer = PTL_QA_CHAIN.has(n.id) && !n.actual;
     const systemDateCanEdit = PTL_ADMIN_SYSTEM_DATE_IDS.has(n.id) && ptlIsAdmin();
     const milestoneOverrideCanEdit = !!PTL_ADMIN_MILESTONE_OVERRIDE_KEY[n.id] && ptlIsAdmin();
     return `
@@ -762,12 +766,7 @@ function ptlRenderStageRows(nodes, today, prodPlanDone) {
             ? `<div style="font-size:0.76rem; color:var(--muted); font-style:italic; margin-top:5px;">${escapeHtml(n.blocked)}</div>`
             : `<div style="font-size:0.72rem; color:var(--accent); margin-top:5px; font-weight:600;">✓ Completed</div>`) : ''}
           ${manualCanEdit ? `<div onclick="event.stopPropagation()" style="margin-top:7px; display:flex; align-items:center; gap:8px;">${ptlAsOfInputHtml(n.id, n.actual)}<button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlMarkMilestoneDone('${n.id}')">${n.actual ? 'Update (admin)' : 'Mark Done'}</button></div>` : ''}
-          ${qaCanEdit ? `
-            <div onclick="event.stopPropagation()" style="margin-top:7px; display:flex; align-items:center; gap:8px;">
-              <input type="date" id="ptl-qa-date-${n.id}" value="${n.actual || ''}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;" />
-              <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlSetQaMilestoneDate('${n.id}')">${n.actual ? 'Update (admin)' : 'Set Date'}</button>
-            </div>` : ''}
-          ${qaBlockedByPlan ? `<div style="margin-top:7px; font-size:0.76rem; color:var(--muted); font-style:italic;">Stage 4 Production Planning has to be submitted for every in-scope product before this can be entered.</div>` : ''}
+          ${qaUnsetPointer ? `<div style="margin-top:7px; font-size:0.76rem; color:var(--muted); font-style:italic;">Set in Quality Assurance → QA Inspection Timeline.</div>` : ''}
           ${systemDateCanEdit ? `
             <div onclick="event.stopPropagation()" style="margin-top:7px; display:flex; align-items:center; gap:8px;">
               <input type="date" id="ptl-sysdate-${n.id}" value="${n.actual || ''}" title="Admin only - set/backdate this for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.78rem;" />
@@ -847,26 +846,12 @@ async function ptlSetSystemDate(fieldId) {
 // no manual-tick Stage 3 milestone is left.
 const PTL_MILESTONE_KEY = {};
 
-async function ptlSetQaMilestoneDate(milestoneKey) {
-  if (!ptlData) return;
-  const el = document.getElementById(`ptl-qa-date-${milestoneKey}`);
-  const date = el ? el.value : "";
-  if (!date) { alert("Pick a date first."); return; }
-  const projectId = ptlData.project.projectId;
-  try {
-    const data = await apFetch({ action: "saveTimelineMilestoneDate", operatorName: appActiveOperatorIdentityString, projectId, milestoneKey, date });
-    if (!data.success) { alert(data.error || "Could not set this date."); return; }
-    // A full reload, not a local patch - the rest of the QA chain
-    // (Inspection Clearance Note -> Dispatch Clearance -> Predicted
-    // Delivery) is a live server-side projection off whichever of these
-    // dates are now real (computeQaChainProjection), so setting just
-    // THIS node's actual locally left every downstream estimate frozen
-    // on its old value instead of cascading forward.
-    await selectPtlProject(projectId);
-  } catch (e) {
-    alert("Network error: " + e.message);
-  }
-}
+// ptlSetQaMilestoneDate removed (8 Sep 2026) — Stage 5's QA-chain dates are
+// now set from Quality Assurance > QA Inspection Timeline
+// (qaitSetMilestoneDate, qa/qa-inspection-timeline.js), which calls
+// saveQaMilestoneDate instead of the now-removed saveTimelineMilestoneDate.
+// PTL_QA_CHAIN (above) is still used here to render those three nodes
+// read-only.
 
 /* ══════════════════════════════════════════════════════════════════
    Canvas - the schematic overview from the design exploration, now fed

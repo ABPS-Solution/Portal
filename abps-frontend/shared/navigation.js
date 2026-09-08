@@ -232,6 +232,7 @@ function returnToDashboard() {
   if(document.getElementById("canvas-module-assign-material-requirement-date")) document.getElementById("canvas-module-assign-material-requirement-date").style.display = "none";
   if(document.getElementById("canvas-module-revise-material-requirement-date")) document.getElementById("canvas-module-revise-material-requirement-date").style.display = "none";
   if(document.getElementById("canvas-module-production-planning")) document.getElementById("canvas-module-production-planning").style.display = "none";
+  if(document.getElementById("canvas-module-qa-inspection-timeline")) document.getElementById("canvas-module-qa-inspection-timeline").style.display = "none";
 
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("dashboard-view").style.display = "block"; 
@@ -340,6 +341,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canAddFinishedGoods = userPermissionsObject.addFinishedGoodsStore === true;
   const canFgApproval       = userPermissionsObject.fgApproval           === true;
   const canProductionPlanning = userPermissionsObject.productionPlanning === true;
+  const canQaInspectionTimeline = userPermissionsObject.qaInspectionTimeline === true;
   const canAssignMRD        = userPermissionsObject.assignMaterialRequirementDate === true;
   const canReviseMRD        = userPermissionsObject.reviseMaterialRequirementDate === true;
   const canCreateBOQ        = userPermissionsObject.createBOQ        === true;
@@ -419,6 +421,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-fg-add")) document.getElementById("mod-fg-add").style.display = canAddFinishedGoods ? "block" : "none";
   if (document.getElementById("mod-fg-approval")) document.getElementById("mod-fg-approval").style.display = canFgApproval ? "block" : "none";
   if (document.getElementById("mod-production-planning")) document.getElementById("mod-production-planning").style.display = canProductionPlanning ? "block" : "none";
+  if (document.getElementById("mod-qa-inspection-timeline")) document.getElementById("mod-qa-inspection-timeline").style.display = canQaInspectionTimeline ? "block" : "none";
   if (document.getElementById("mod-assign-material-requirement-date")) document.getElementById("mod-assign-material-requirement-date").style.display = canAssignMRD ? "block" : "none";
   if (document.getElementById("mod-revise-material-requirement-date")) document.getElementById("mod-revise-material-requirement-date").style.display = canReviseMRD ? "block" : "none";
   const canProjectInvoiceGeneration = userPermissionsObject.projectInvoiceGeneration === true;
@@ -493,7 +496,15 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // Production Department block visibility
   const productionHeaderBlock = document.getElementById("dashboard-production-department-header-block");
   if (productionHeaderBlock) {
-    productionHeaderBlock.style.display = (canCreateJobCardNumber || canCreateTicket || canAddFinishedGoods || canFgApproval || canProjectInvoiceGeneration || canProductionPlanning || canAssignMRD || canReviseMRD) ? "block" : "none";
+    productionHeaderBlock.style.display = (canCreateJobCardNumber || canCreateTicket || canAddFinishedGoods || canProjectInvoiceGeneration || canProductionPlanning || canAssignMRD || canReviseMRD) ? "block" : "none";
+  }
+
+  // Quality Assurance Department block visibility (8 Sep 2026) — perm_qa_check
+  // and perm_fg_approval moved here from Store/Production; their OR terms
+  // moved with them, not duplicated.
+  const qaHeaderBlock = document.getElementById("dashboard-qa-department-header-block");
+  if (qaHeaderBlock) {
+    qaHeaderBlock.style.display = (userPermissionsObject.qaCheck === true || canFgApproval || canQaInspectionTimeline) ? "block" : "none";
   }
 
   // Live Spare Store Stock card visibility
@@ -532,7 +543,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");
       if (storeHeaderBlock) {
-        storeHeaderBlock.style.display = (canViewLiveStock || canReleaseTicket || canSearchStoreMat || canApproveBOQIncrease || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntryAndGrn === true || userPermissionsObject.qaCheck === true || canViewLiveFinishedStock || canLiveSpareStoreStock || canReserveStoreStock || canPurchaseRequestNote) ? "block" : "none";
+        storeHeaderBlock.style.display = (canViewLiveStock || canReleaseTicket || canSearchStoreMat || canApproveBOQIncrease || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntryAndGrn === true || canViewLiveFinishedStock || canLiveSpareStoreStock || canReserveStoreStock || canPurchaseRequestNote) ? "block" : "none";
       }
 
       if (document.getElementById("mod-manufacturing-clearance")) document.getElementById("mod-manufacturing-clearance").style.display = canManufacturingClearance ? "block" : "none";
@@ -570,7 +581,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 // currently shown". Called at the end of enforceDynamicModuleRoleGateways
 // on every refresh, so it stays in sync with permission changes without
 // needing to be threaded through every call site separately.
-const DEPT_TAB_KEYS = ['marketing', 'project', 'design', 'purchase', 'store', 'production', 'accounts'];
+const DEPT_TAB_KEYS = ['marketing', 'project', 'design', 'purchase', 'store', 'qa', 'production', 'accounts'];
 const DEPT_TAB_STORAGE_KEY = 'abpsActiveDepartmentTab';
 // Which departments are actually permission-visible, as of the last
 // enforceDynamicModuleRoleGateways pass. selectDepartmentTab consults
@@ -795,7 +806,8 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   if (document.getElementById("canvas-module-fg-approval"))  document.getElementById("canvas-module-fg-approval").style.display  = "none";
   if (document.getElementById("canvas-module-project-invoice")) document.getElementById("canvas-module-project-invoice").style.display = "none";
   if (document.getElementById("canvas-module-material-outward")) document.getElementById("canvas-module-material-outward").style.display = "none";
-  
+  if (document.getElementById("canvas-module-qa-inspection-timeline")) document.getElementById("canvas-module-qa-inspection-timeline").style.display = "none";
+
   // 3. Hide all design engineering sub-module views panels
   if (document.getElementById("module-design-workspace-enclosure-panel")) document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
 
@@ -956,6 +968,10 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     document.getElementById("dashboard-view").style.display = "none";
     const ptlCanvas = document.getElementById("canvas-module-project-timeline");
     if (ptlCanvas) { ptlCanvas.style.display = "block"; initializeProjectTimelinePanel(); }
+  } else if (targetCanvasModuleId === 'qa-inspection-timeline') {
+    document.getElementById("dashboard-view").style.display = "none";
+    const qaitCanvas = document.getElementById("canvas-module-qa-inspection-timeline");
+    if (qaitCanvas) { qaitCanvas.style.display = "block"; initializeQaInspectionTimelinePanel(); }
   } else if (targetCanvasModuleId === 'project-status') {
     document.getElementById("dashboard-view").style.display = "none";
     const psCanvas = document.getElementById("canvas-module-project-status");
