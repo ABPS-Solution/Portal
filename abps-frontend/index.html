@@ -4145,23 +4145,19 @@
       <!-- DASHBOARD BODY -->
       <div id="md-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
-        <!-- ROW 1: Lead Funnel Pulse -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
-          <div class="dd-stat-card stat-period">
-            <div class="dd-stat-label">New Leads</div>
-            <div class="dd-stat-val" id="md-s-newleads">—</div>
-          </div>
+        <!-- ROW 1: Live snapshots -->
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 11%;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Email Leads Awaiting Action</div>
             <div class="dd-stat-val" id="md-s-emailleads" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card stat-period">
-            <div class="dd-stat-label">In Progress</div>
-            <div class="dd-stat-val" id="md-s-inprogress" style="color:#b45309;">—</div>
-          </div>
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Open Tasks</div>
             <div class="dd-stat-val" id="md-s-opentasks">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Leads Currently In Progress</div>
+            <div class="dd-stat-val" id="md-s-inprogress" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Leads With Zero Follow-Up</div>
@@ -4169,8 +4165,12 @@
           </div>
         </div>
 
-        <!-- ROW 2: Activity & Engagement Health -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+        <!-- ROW 2: Period throughput -->
+        <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 11%;">
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">New Leads</div>
+            <div class="dd-stat-val" id="md-s-newleads">—</div>
+          </div>
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Email Offers Sent</div>
             <div class="dd-stat-val" id="md-s-offerssent">—</div>
@@ -4180,12 +4180,12 @@
             <div class="dd-stat-val" id="md-s-pouploads" style="color:#15803d;">—</div>
           </div>
           <div class="dd-stat-card stat-period">
-            <div class="dd-stat-label">Average Days For Lead → Order</div>
-            <div class="dd-stat-val" id="md-s-avgdays">—</div>
-          </div>
-          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Win Rate</div>
             <div class="dd-stat-val" id="md-s-winrate">—</div>
+          </div>
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">Average Days For Lead → Order</div>
+            <div class="dd-stat-val" id="md-s-avgdays">—</div>
           </div>
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Cold Emails Sent</div>
@@ -4196,15 +4196,15 @@
         <!-- ROW 3: 3 Charts -->
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:0 0 26%;">
           <div class="dd-stat-card" style="display:flex; flex-direction:column; justify-content:center;">
-            <div class="dd-stat-label" style="margin-bottom:6px;">Lead Status Funnel (live pipeline)</div>
+            <div class="dd-stat-label" style="margin-bottom:6px;">Lead Status Funnel (all leads, current)</div>
             <canvas id="md-chart-funnel" style="max-height:140px;"></canvas>
           </div>
           <div class="dd-stat-card" style="display:flex; flex-direction:column; justify-content:center;">
-            <div class="dd-stat-label" style="margin-bottom:6px;">Approx Business Potential (open pipeline)</div>
+            <div class="dd-stat-label" style="margin-bottom:6px;">Approx Business Potential (active leads, current)</div>
             <canvas id="md-chart-potential" style="max-height:140px;"></canvas>
           </div>
           <div class="dd-stat-card" style="display:flex; flex-direction:column; justify-content:center;">
-            <div class="dd-stat-label" style="margin-bottom:6px;">Business Vertical (open pipeline)</div>
+            <div class="dd-stat-label" style="margin-bottom:6px;">Business Vertical (active leads, current)</div>
             <canvas id="md-chart-vertical" style="max-height:140px;"></canvas>
           </div>
         </div>
