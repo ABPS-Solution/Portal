@@ -290,8 +290,12 @@ function dashCustomTypeChange(prefix) {
   const type = document.getElementById(`${prefix}-custom-type`).value;
   const activeSuffix = DASH_CUSTOM_TYPE_SUFFIX[type];
   Object.values(DASH_CUSTOM_TYPE_SUFFIX).forEach(suf => {
+    // .hidden (the HTML attribute), not .style.display — more reliable
+    // than display:none at actually clearing a native date/month input's
+    // own internal picker-widget paint when toggling several of these
+    // controls in and out, confirmed by direct testing.
     const el = document.getElementById(`${prefix}-custom-val-${suf}`);
-    if (el) el.style.display = (suf === activeSuffix) ? "inline-block" : "none";
+    if (el) el.hidden = (suf !== activeSuffix);
   });
   return type;
 }
