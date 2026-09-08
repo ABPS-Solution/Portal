@@ -136,7 +136,7 @@ async function mprepOnCompanySelected(companyName) {
       { value: MPREP_ALL_PEOPLE_VALUE, label: `ALL people at this company (${mprepContacts.length} contact${mprepContacts.length === 1 ? "" : "s"})` },
       ...mprepContacts.map((c, i) => ({
         value: String(i),
-        label: `${escapeHtml(c.contactPersonName)}${c.position ? " — " + escapeHtml(c.position) : ""}${c.lastActivityAt ? " — last touched " + escapeHtml(c.lastActivityAt) : ""}`,
+        label: `${escapeHtml(c.contactPersonName)}${c.position ? " — " + escapeHtml(c.position) : ""}${c.lastActivityAt ? " — last touched " + escapeHtml(formatOrdinalDate(c.lastActivityAt)) : ""}`,
       })),
     ];
     mprepPopulatePersonDropdown(options);
@@ -195,11 +195,19 @@ async function mprepGenerateBrief() {
 // ── Rendering — mirrors renderIsolatedDocumentInfoSection's inline-style
 // model (marketing/leads.js) so this carries zero shared-CSS risk. ──────
 
+// Labels whose value is a plain 'YYYY-MM-DD' string that should render
+// as "8th Sep 2026" (formatOrdinalDate, shared/format.js) rather than
+// the raw ISO form.
+const MPREP_DATE_FIELD_LABELS = new Set([
+  "Date of Meeting", "Tentative Delivery", "Expected Delivery", "Created", "Last Contacted",
+]);
+
 function mprepFieldRow(label, rawValue) {
   if (rawValue === null || rawValue === undefined || rawValue === "") return "";
+  const display = MPREP_DATE_FIELD_LABELS.has(label) ? formatOrdinalDate(rawValue) : String(rawValue);
   return `<div style="display:flex; flex-direction:column; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px 8px; min-width:0; word-break:break-word;">
     <span style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">${escapeHtml(label)}</span>
-    <span style="font-size:0.82rem; font-weight:600; color:var(--text);">${escapeHtml(String(rawValue))}</span>
+    <span style="font-size:0.82rem; font-weight:600; color:var(--text);">${escapeHtml(display)}</span>
   </div>`;
 }
 
@@ -321,10 +329,10 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
 
   // ── Open items ──────────────────────────────────────────────────────
   const openItemsHtml = mprepBulletList([
-    ...oi.overdueTasks.map(t => `<strong>Overdue task</strong> (due ${escapeHtml(t.targetDate)}, assigned to ${escapeHtml(t.eng || "—")}): ${escapeHtml(t.desc || "")}`),
-    ...oi.pendingFollowUps.map(f => `<strong>Follow-up due</strong> ${escapeHtml(f.nextDate)} — ${escapeHtml(f.nextActionType || "")} (${escapeHtml(f.eng || "—")})`),
-    ...oi.openQueries.map(q => `<strong>${q.breached ? "Breached" : "Open"} customer query</strong> — ${escapeHtml(q.stageName || "")}, target ${escapeHtml(q.targetClosingDate || "—")}, owner ${escapeHtml(q.responsiblePerson || "—")}`),
-    ...oi.lateProjects.map(p => `<strong>Project past delivery</strong> — ${escapeHtml(p.projectId)} (PO ${escapeHtml(p.poNumber || "—")}), promised ${escapeHtml(p.promisedDate || "—")}`),
+    ...oi.overdueTasks.map(t => `<strong>Overdue task</strong> (due ${escapeHtml(formatOrdinalDate(t.targetDate))}, assigned to ${escapeHtml(t.eng || "—")}): ${escapeHtml(t.desc || "")}`),
+    ...oi.pendingFollowUps.map(f => `<strong>Follow-up due</strong> ${escapeHtml(formatOrdinalDate(f.nextDate))} — ${escapeHtml(f.nextActionType || "")} (${escapeHtml(f.eng || "—")})`),
+    ...oi.openQueries.map(q => `<strong>${q.breached ? "Breached" : "Open"} customer query</strong> — ${escapeHtml(q.stageName || "")}, target ${escapeHtml(q.targetClosingDate ? formatOrdinalDate(q.targetClosingDate) : "—")}, owner ${escapeHtml(q.responsiblePerson || "—")}`),
+    ...oi.lateProjects.map(p => `<strong>Project past delivery</strong> — ${escapeHtml(p.projectId)} (PO ${escapeHtml(p.poNumber || "—")}), promised ${escapeHtml(p.promisedDate ? formatOrdinalDate(p.promisedDate) : "—")}`),
   ], "Nothing outstanding right now.");
 
   // ── Timeline ────────────────────────────────────────────────────────
@@ -357,11 +365,11 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
   )) : "";
 
   const offersHtml = facts.offers.length ? mprepBulletList(facts.offers.map(o =>
-    `<strong>${escapeHtml(o.email_sent_date || "")}</strong> — ${escapeHtml(o.email_subject || "Offer")}${o.estimated_value ? ` (₹${escapeHtml(formatQtyTrimmed(o.estimated_value))})` : ""}`
+    `<strong>${escapeHtml(o.email_sent_date ? formatOrdinalDate(o.email_sent_date) : "")}</strong> — ${escapeHtml(o.email_subject || "Offer")}${o.estimated_value ? ` (₹${escapeHtml(formatQtyTrimmed(o.estimated_value))})` : ""}`
   )) : "";
 
   const documentsHtml = facts.documents.length ? mprepBulletList(facts.documents.map(d =>
-    `PO ${escapeHtml(d.purchase_order_number || "—")} (${escapeHtml(d.purchase_order_date || "—")})${d.po_document_url ? ` <a href="${driveLink(d.po_document_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">↗</a>` : ""}`
+    `PO ${escapeHtml(d.purchase_order_number || "—")} (${escapeHtml(d.purchase_order_date ? formatOrdinalDate(d.purchase_order_date) : "—")})${d.po_document_url ? ` <a href="${driveLink(d.po_document_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">↗</a>` : ""}`
   )) : "";
 
   // ── Reference (collapsed) ──────────────────────────────────────────
@@ -376,7 +384,7 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
     <div id="mprep-brief-print-area">
       <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">
         <h3 style="margin:0; font-size:1.1rem;">${escapeHtml(c.company_name)}${facts.scopeIsAllPeople ? "" : ` — ${escapeHtml(facts.contacts[0]?.contactPersonName || "")}`}</h3>
-        <button class="btn btn-sub" id="mprep-print-btn" onclick="window.print()">🖨 Print Brief</button>
+        <button class="btn btn-sub" id="mprep-print-btn" onclick="window.print()" style="width:auto; flex-shrink:0; padding:8px 16px;">🖨 Print Brief</button>
       </div>
       ${aiHtml}
       ${mprepSection("At A Glance", "#0369a1", glanceHtml)}
