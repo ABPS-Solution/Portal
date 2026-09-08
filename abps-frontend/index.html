@@ -2364,7 +2364,6 @@
       <button id="sa-tab-devices" class="nav-btn-styled" onclick="switchSecurityAdminTab('devices')" style="flex:1; padding:11px 16px;">Trusted Devices</button>
       <button id="sa-tab-networks" class="nav-btn-styled" onclick="switchSecurityAdminTab('networks')" style="flex:1; padding:11px 16px;">Office Networks</button>
       <button id="sa-tab-holidays" class="nav-btn-styled" onclick="switchSecurityAdminTab('holidays')" style="flex:1; padding:11px 16px;">Holidays</button>
-      <button id="sa-tab-settings" class="nav-btn-styled" onclick="switchSecurityAdminTab('settings')" style="flex:1; padding:11px 16px;">Settings</button>
     </div>
 
     <!-- PERMISSIONS MATRIX — a visual, per-user, department-colored view
@@ -2418,6 +2417,15 @@
         </tr></thead>
         <tbody id="sa-network-list-body"></tbody>
       </table>
+
+      <!-- OUTAGE MODE — moved here from the removed Settings tab (8 Sep
+           2026); it's an office-network concern (a confirmed office
+           network/power outage), so it belongs alongside the network
+           allowlist rather than its own tab. -->
+      <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--border); max-width:520px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">Outage Mode</div>
+        <div id="sa-outage-mode-status" style="padding:12px 14px; border-left:4px solid; border-radius:var(--radius); font-size:0.85rem;"></div>
+      </div>
     </div>
 
     <!-- HOLIDAYS (1 Sep 2026) — admin_db.holidays, read by
@@ -2468,20 +2476,6 @@
         </tr></thead>
         <tbody id="sa-log-list-body"></tbody>
       </table>
-    </div>
-
-    <!-- SETTINGS -->
-    <div id="sa-panel-settings" style="display:none; max-width:520px;">
-      <label class="field-label" style="margin-top:0;">Business Hours Start</label>
-      <input type="time" id="sa-settings-hours-start">
-      <label class="field-label">Business Hours End</label>
-      <input type="time" id="sa-settings-hours-end">
-      <button class="nav-btn-styled" style="margin-top:16px;" onclick="submitSecuritySettings()">Save Settings</button>
-
-      <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--border);">
-        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">Outage Mode</div>
-        <div id="sa-outage-mode-status" style="padding:12px 14px; border-left:4px solid; border-radius:var(--radius); font-size:0.85rem;"></div>
-      </div>
     </div>
 
     <!-- PIN LOGIN (migration 140, redesigned 26 Aug 2026) — view-only PIN

@@ -38,7 +38,7 @@ function exitSecurityAdminBackToMenu() {
 }
 
 function switchSecurityAdminTab(tab) {
-  ['permissions', 'users', 'networks', 'holidays', 'devices', 'log', 'settings', 'pins', 'registeredpcs'].forEach(t => {
+  ['permissions', 'users', 'networks', 'holidays', 'devices', 'log', 'pins', 'registeredpcs'].forEach(t => {
     document.getElementById(`sa-panel-${t}`).style.display = (t === tab) ? 'block' : 'none';
     document.getElementById(`sa-tab-${t}`).style.background = (t === tab) ? 'var(--brand)' : '#e2e8f0';
     document.getElementById(`sa-tab-${t}`).style.color = (t === tab) ? '#fff' : '#334155';
@@ -352,29 +352,25 @@ function renderLoginLog() {
       </tr>`).join('') || `<tr><td colspan="8" style="padding:14px; text-align:center; color:var(--muted);">No login attempts recorded yet.</td></tr>`;
 }
 
-// ── Settings ──────────────────────────────────────────────────────────
+// ── Outage Mode (Office Networks tab) ────────────────────────────────────
+// The standalone Settings tab was removed (8 Sep 2026) — it held Business
+// Hours Start/End fields that were saved (admin_db.security_settings) but
+// never read by anything (no login-gating logic ever checked them; grep
+// confirms lib/ipAccess.js has zero business-hours awareness), plus this
+// Outage Mode block, which DOES matter and moved to Office Networks since
+// it's an office-network concern. fetchSecuritySettings is still called
+// here purely for the outage-mode fields on that same row.
 async function loadSecuritySettings() {
   try {
     const data = await apFetch({ action: "fetchSecuritySettings" });
-    if (data.success && data.settings) {
-      document.getElementById("sa-settings-hours-start").value = (data.settings.business_hours_start || '').slice(0, 5);
-      document.getElementById("sa-settings-hours-end").value = (data.settings.business_hours_end || '').slice(0, 5);
-      renderOutageModeStatus(data.settings);
-    }
+    if (data.success && data.settings) renderOutageModeStatus(data.settings);
   } catch (e) { console.error("loadSecuritySettings failed:", e); }
 }
 
-async function submitSecuritySettings() {
-  const businessHoursStart = document.getElementById("sa-settings-hours-start").value;
-  const businessHoursEnd = document.getElementById("sa-settings-hours-end").value;
-  try {
-    const data = await apFetch({ action: "updateSecuritySettings", businessHoursStart, businessHoursEnd });
-    if (data.success) showBOQBanner("sa-feedback", "Settings saved.", "success");
-    else showBOQBanner("sa-feedback", data.error || "Failed to save settings.", "error");
-  } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
-  }
-}
+// submitSecuritySettings/updateSecuritySettings (routes/security.js) are
+// now unreachable — their only caller was the removed Settings tab's Save
+// button. Flagged, not deleted, per house convention; the business-hours
+// columns themselves are untouched in the DB.
 
 // Manual Outage Mode (migration 100) — deliberately NOT automatic. A real
 // human with Security & Login Access flips this on when there's a
