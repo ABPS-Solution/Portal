@@ -111,18 +111,18 @@ function ddRenderDashboard(data) {
       scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false }, ticks:{ font:{ size:10 } } } } }
   });
 
-  // Chart 3 — Version distribution
+  // Chart 3 — BOQ Version distribution
   if (ddChartVersion) ddChartVersion.destroy();
   const ctx3 = document.getElementById("dd-chart-version").getContext("2d");
   ddChartVersion = new Chart(ctx3, {
     type: "bar",
     data: {
-      labels: ["v1","v2","v3+"],
-      datasets: [{ label:"BOQs", data: [versionDist["v1"], versionDist["v2"], versionDist["v3+"]],
-        backgroundColor: ["rgba(16,185,129,0.7)","rgba(245,158,11,0.7)","rgba(239,68,68,0.7)"],
+      labels: ["V1","V2","V3","V4","V5+"],
+      datasets: [{ label:"BOQs", data: ["v1","v2","v3","v4","v5+"].map(k => versionDist[k] || 0),
+        backgroundColor: ["rgba(16,185,129,0.7)","rgba(52,211,153,0.7)","rgba(245,158,11,0.7)","rgba(249,115,22,0.7)","rgba(239,68,68,0.7)"],
         borderRadius: 4 }]
     },
-    options: { responsive:true, plugins:{ legend:{ display:false } },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
       scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false } } } }
   });
 

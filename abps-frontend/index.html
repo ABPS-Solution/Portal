@@ -3406,8 +3406,8 @@
       <!-- DASHBOARD BODY -->
       <div id="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
-        <!-- ROW 1: 5 Stat Cards -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+        <!-- ROW 1: Live snapshots -->
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 11%;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Design Work Overdue in Project Timeline</div>
             <div class="dd-stat-val" id="dd-s-overdue" style="color:#b91c1c;">—</div>
@@ -3420,6 +3420,14 @@
             <div class="dd-stat-label">Pending BOQ Revision Authorizations</div>
             <div class="dd-stat-val" id="dd-s-pendingrevisions" style="color:#b45309;">—</div>
           </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Average BOQs per Active Project</div>
+            <div class="dd-stat-val" id="dd-s-avgboqs">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 2: Period throughput/averages -->
+        <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 11%;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">New Item Codes Added</div>
             <div class="dd-stat-val" id="dd-s-itemcodes">—</div>
@@ -3428,10 +3436,6 @@
             <div class="dd-stat-label">Drawings Uploaded</div>
             <div class="dd-stat-val" id="dd-s-drawingsuploaded">—</div>
           </div>
-        </div>
-
-        <!-- ROW 2: Throughput/Averages -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">BOQs Authorized</div>
             <div class="dd-stat-val" id="dd-s-authorized" style="color:#15803d;">—</div>
@@ -3443,10 +3447,6 @@
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Average Drawing Sent → Approved Days</div>
             <div class="dd-stat-val" id="dd-s-drawingturnaround">—</div>
-          </div>
-          <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">Average BOQs per Active Project</div>
-            <div class="dd-stat-val" id="dd-s-avgboqs">—</div>
           </div>
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">BOQ Revision Rate</div>
@@ -3473,13 +3473,13 @@
               </table>
             </div>
           </div>
-          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">BOQs by Department</div>
             <canvas id="dd-chart-dept" style="max-height:130px;"></canvas>
           </div>
-          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
-            <div class="dd-card-title">Version Distribution</div>
-            <canvas id="dd-chart-version" style="max-height:90px;"></canvas>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
+            <div class="dd-card-title">BOQ Version Distribution</div>
+            <canvas id="dd-chart-version" style="max-height:130px;"></canvas>
           </div>
         </div>
 
