@@ -63,10 +63,6 @@ function pd2RenderDashboard(data) {
   document.getElementById("pd2-s-overdue-deliveries").textContent = stats.overdueExpectedDeliveries ?? "—";
   document.getElementById("pd2-s-boq-awaiting-plan").textContent= stats.boqsAwaitingProductionPlan ?? "—";
   document.getElementById("pd2-s-fg-pending").textContent       = stats.fgAwaitingQaApproval ?? "—";
-  const fgSub = document.getElementById("pd2-s-fg-pending-sub");
-  if (fgSub) fgSub.textContent = stats.fgAwaitingQaApprovalOldest
-    ? `live · oldest ${formatOrdinalDate(stats.fgAwaitingQaApprovalOldest)}`
-    : (stats.subDept ? `live · ${stats.subDept}` : "live · all departments");
 
   // Chart 1 — FG by Department (bar)
   if (pd2ChartDept) pd2ChartDept.destroy();
