@@ -10,8 +10,12 @@
 //
 // Reuses the generalized company typeahead in shared/apFetch.js
 // (handleCompanySearchTypeaheadInput/selectCompanySearchTypeahead, both
-// now take inputId/ddId) and the generic wrapping dropdown in
-// shared/ui.js for the person picker. Rendering mirrors
+// now take inputId/ddId). The person picker below is its OWN copy of the
+// same body-appended, position:fixed overlay pattern (not
+// shared/ui.js's genericDropdown, which floats only within its own
+// panel) — deliberately, so it renders in front of the whole card the
+// same way the Material Name / company suggestion lists do, per
+// CLAUDE.md's "clipped-dropdown fix pattern". Rendering below mirrors
 // renderIsolatedDocumentInfoSection in marketing/leads.js — inline
 // styles only, so it carries zero shared-CSS risk.
 // ═══════════════════════════════════════════════════════════════════════
@@ -22,6 +26,72 @@ let mprepSelectedLeadIds = null; // null = ALL people
 
 const MPREP_ALL_PEOPLE_VALUE = "__ALL__";
 
+// ── Person picker — body-appended position:fixed overlay, same pattern
+// as ensureCompanySearchDropdownEl (shared/apFetch.js). ─────────────────
+function mprepEnsurePersonDropdownEl() {
+  let dd = document.getElementById("mprep-person-picker-dd");
+  if (!dd) {
+    dd = document.createElement("div");
+    dd.id = "mprep-person-picker-dd";
+    dd.style.cssText = "display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:4px; z-index:9999; max-height:260px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);";
+    document.body.appendChild(dd);
+  }
+  return dd;
+}
+
+function mprepSetPersonDropdownDisabled(disabled, placeholderText) {
+  const display = document.getElementById("mprep-person-picker-display");
+  if (!display) return;
+  display.dataset.disabled = disabled ? "1" : "0";
+  display.style.opacity = disabled ? "0.5" : "1";
+  display.style.cursor = disabled ? "not-allowed" : "pointer";
+  display.style.background = disabled ? "#f1f5f9" : "#fff";
+  if (placeholderText !== undefined) {
+    const textEl = document.getElementById("mprep-person-picker-display-text");
+    if (textEl) textEl.textContent = placeholderText;
+  }
+  if (disabled) mprepEnsurePersonDropdownEl().style.display = "none";
+}
+
+function mprepPopulatePersonDropdown(options) {
+  const dd = mprepEnsurePersonDropdownEl();
+  dd.innerHTML = options.map((o, i) => `
+    <div data-idx="${i}" style="padding:9px 12px; cursor:pointer; font-size:0.88rem; border-bottom:1px solid var(--border); line-height:1.35;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">${o.label}</div>
+  `).join("");
+  Array.from(dd.children).forEach((el, i) => {
+    el.onclick = () => mprepSelectPersonDropdown(options[i].value, options[i].label);
+  });
+}
+
+function mprepToggleAndPositionPersonDropdown() {
+  const display = document.getElementById("mprep-person-picker-display");
+  if (!display || display.dataset.disabled === "1") return;
+  const dd = mprepEnsurePersonDropdownEl();
+  if (dd.style.display === "block") { dd.style.display = "none"; return; }
+  const rect = display.getBoundingClientRect();
+  dd.style.top = rect.bottom + "px";
+  dd.style.left = rect.left + "px";
+  dd.style.width = rect.width + "px";
+  dd.style.display = "block";
+}
+
+function mprepSelectPersonDropdown(value, label) {
+  const textEl = document.getElementById("mprep-person-picker-display-text");
+  if (textEl) textEl.textContent = label;
+  const dd = document.getElementById("mprep-person-picker-dd");
+  if (dd) dd.style.display = "none";
+  mprepOnPersonPicked(value);
+}
+
+document.addEventListener("click", (e) => {
+  const dd = document.getElementById("mprep-person-picker-dd");
+  if (!dd) return;
+  if (!e.target.closest("#mprep-person-picker-display") && !e.target.closest("#mprep-person-picker-dd")) {
+    dd.style.display = "none";
+  }
+});
+
 function mprepResetScreen() {
   mprepSelectedCompanyName = "";
   mprepContacts = [];
@@ -30,10 +100,7 @@ function mprepResetScreen() {
   if (companyInput) companyInput.value = "";
   const dd = document.getElementById("mprep-company-suggestions");
   if (dd) dd.style.display = "none";
-  if (typeof genericDropdownReset === "function") {
-    genericDropdownReset("mprep-person-picker", "Select a company first");
-    genericDropdownSetDisabled("mprep-person-picker", true);
-  }
+  mprepSetPersonDropdownDisabled(true, "Select a company first");
   const generateBtn = document.getElementById("mprep-generate-btn");
   if (generateBtn) generateBtn.disabled = true;
   const resultsNode = document.getElementById("mprep-results");
@@ -57,10 +124,7 @@ async function mprepOnCompanySelected(companyName) {
   if (generateBtn) generateBtn.disabled = true;
   const resultsNode = document.getElementById("mprep-results");
   if (resultsNode) resultsNode.innerHTML = "";
-  if (typeof genericDropdownReset === "function") {
-    genericDropdownReset("mprep-person-picker", "Loading contacts...");
-    genericDropdownSetDisabled("mprep-person-picker", true);
-  }
+  mprepSetPersonDropdownDisabled(true, "Loading contacts...");
   try {
     const data = await apFetch({ action: "fetchMeetingPrepContacts", companyName });
     if (!data.success) {
@@ -72,12 +136,11 @@ async function mprepOnCompanySelected(companyName) {
       { value: MPREP_ALL_PEOPLE_VALUE, label: `ALL people at this company (${mprepContacts.length} contact${mprepContacts.length === 1 ? "" : "s"})` },
       ...mprepContacts.map((c, i) => ({
         value: String(i),
-        label: `${c.contactPersonName}${c.position ? " — " + c.position : ""}${c.lastActivityAt ? " — last touched " + escapeHtml(c.lastActivityAt) : ""}`,
+        label: `${escapeHtml(c.contactPersonName)}${c.position ? " — " + escapeHtml(c.position) : ""}${c.lastActivityAt ? " — last touched " + escapeHtml(c.lastActivityAt) : ""}`,
       })),
     ];
-    genericDropdownPopulate("mprep-person-picker", options, mprepOnPersonPicked);
-    genericDropdownReset("mprep-person-picker", "Select a contact or ALL people");
-    genericDropdownSetDisabled("mprep-person-picker", false);
+    mprepPopulatePersonDropdown(options);
+    mprepSetPersonDropdownDisabled(false, "Select a contact or ALL people");
   } catch (e) {
     mprepShowError("Network error loading contacts: " + e.message);
   }

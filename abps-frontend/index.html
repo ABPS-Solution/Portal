@@ -4289,13 +4289,11 @@
           style="width:100%; font-size:0.95rem; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
       </div>
       <label class="field-label">Contact Person</label>
-      <div style="margin-bottom:12px; position:relative;">
-        <input type="hidden" id="mprep-person-picker" />
-        <div id="mprep-person-picker-display" class="gwd-display" onclick="toggleGenericDropdown('mprep-person-picker')"
+      <div style="margin-bottom:12px;">
+        <div id="mprep-person-picker-display" onclick="mprepToggleAndPositionPersonDropdown()"
           style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius); cursor:not-allowed; opacity:0.5; background:#f1f5f9;" data-disabled="1">
           <span id="mprep-person-picker-display-text" style="font-size:0.9rem;">Select a company first</span><span>▾</span>
         </div>
-        <div id="mprep-person-picker-list" class="gwd-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
       </div>
       <button class="btn btn-sub" id="mprep-generate-btn" disabled onclick="mprepGenerateBrief()">Generate Brief</button>
       <div id="mprep-results" style="margin-top:18px;"></div>
