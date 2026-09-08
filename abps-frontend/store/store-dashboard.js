@@ -10,18 +10,11 @@ function sdSetPeriod(btn) {
 }
 
 function sdCustomTypeChange() {
-  const type = document.getElementById("sd-custom-type").value;
-  sdCurrentCustomType = type;
-  const valInput = document.getElementById("sd-custom-val");
-  if (type === "customday")      { valInput.type = "date"; valInput.placeholder = ""; }
-  else if (type === "customweek")  { valInput.type = "date"; valInput.placeholder = "Pick any day in the week"; }
-  else if (type === "custommonth") { valInput.type = "month"; }
-  else if (type === "customquarter") { valInput.type = "text"; valInput.placeholder = "e.g. 2025-Q2"; }
-  else if (type === "customyear")  { valInput.type = "number"; valInput.placeholder = "e.g. 2025"; }
+  sdCurrentCustomType = dashCustomTypeChange("sd");
 }
 
 function sdLoadCustom() {
-  const val = document.getElementById("sd-custom-val").value.trim();
+  const val = dashReadCustomVal("sd");
   if (!val) return alert("Please enter a value for the custom period.");
   sdCurrentPeriod = sdCurrentCustomType;
   sdLoadDashboard(val);

@@ -10,18 +10,11 @@ function pd2SetPeriod(btn) {
 }
 
 function pd2CustomTypeChange() {
-  const type = document.getElementById("pd2-custom-type").value;
-  pd2CurrentCustomType = type;
-  const valInput = document.getElementById("pd2-custom-val");
-  if (type === "customday")        { valInput.type = "date";   valInput.placeholder = ""; }
-  else if (type === "customweek")  { valInput.type = "date";   valInput.placeholder = "Pick any day in the week"; }
-  else if (type === "custommonth") { valInput.type = "month"; }
-  else if (type === "customquarter") { valInput.type = "text"; valInput.placeholder = "e.g. 2025-Q2"; }
-  else if (type === "customyear")  { valInput.type = "number"; valInput.placeholder = "e.g. 2025"; }
+  pd2CurrentCustomType = dashCustomTypeChange("pd2");
 }
 
 function pd2LoadCustom() {
-  const val = document.getElementById("pd2-custom-val").value.trim();
+  const val = dashReadCustomVal("pd2");
   if (!val) return alert("Please enter a value for the custom period.");
   pd2CurrentPeriod = pd2CurrentCustomType;
   pd2LoadDashboard(val);

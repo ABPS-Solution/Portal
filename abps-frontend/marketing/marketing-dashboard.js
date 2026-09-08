@@ -11,18 +11,11 @@ function mdSetPeriod(btn) {
 }
 
 function mdCustomTypeChange() {
-  const type = document.getElementById("md-custom-type").value;
-  mdCurrentCustomType = type;
-  const valInput = document.getElementById("md-custom-val");
-  if (type === "customday")     { valInput.type = "date";  valInput.placeholder = ""; }
-  else if (type === "customweek")  { valInput.type = "date";  valInput.placeholder = "Pick any day in the week"; }
-  else if (type === "custommonth") { valInput.type = "month"; }
-  else if (type === "customquarter") { valInput.type = "text"; valInput.placeholder = "e.g. 2025-Q2"; }
-  else if (type === "customyear")  { valInput.type = "number"; valInput.placeholder = "e.g. 2025"; }
+  mdCurrentCustomType = dashCustomTypeChange("md");
 }
 
 function mdLoadCustom() {
-  const val = document.getElementById("md-custom-val").value.trim();
+  const val = dashReadCustomVal("md");
   if (!val) return alert("Please enter a value for the custom period.");
   mdCurrentPeriod = mdCurrentCustomType;
   mdLoadDashboard(val);
@@ -274,6 +267,38 @@ function showDashboardGlobalToolbar(title, periodBtnsId, returnFn) {
     const el = document.getElementById(id); if (el) el.style.display = "none";
   });
   document.querySelectorAll('[id$="-workspace-enclosure-panel"] > .navigation-action-header-row').forEach(h => h.style.display = "none");
+}
+
+// ── Custom-period value input, shared across all 7 dashboards ──────────
+// Each dashboard's custom-zone has 5 SEPARATE inputs (-day/-week/-month/
+// -quarter/-year), toggled by display rather than one shared <input>
+// whose `type` gets mutated at runtime between date/month/text/number.
+// That used to be a single input with its `type` reassigned in
+// xxCustomTypeChange() — real bug, confirmed live: switching an
+// <input>'s type between "date"/"month" and back leaves the browser's
+// native date-picker chrome (the calendar icon, internal date sub-
+// fields) visually stuck on top of the new type in at least one real
+// browser engine, so Month/Quarter/Year all still looked like a day
+// picker regardless of what was actually selected. Separate elements
+// per granularity sidestep the problem entirely — nothing's type is
+// ever mutated after page load.
+const DASH_CUSTOM_TYPE_SUFFIX = {
+  customday: "day", customweek: "week", custommonth: "month",
+  customquarter: "quarter", customyear: "year",
+};
+function dashCustomTypeChange(prefix) {
+  const type = document.getElementById(`${prefix}-custom-type`).value;
+  const activeSuffix = DASH_CUSTOM_TYPE_SUFFIX[type];
+  Object.values(DASH_CUSTOM_TYPE_SUFFIX).forEach(suf => {
+    const el = document.getElementById(`${prefix}-custom-val-${suf}`);
+    if (el) el.style.display = (suf === activeSuffix) ? "inline-block" : "none";
+  });
+  return type;
+}
+function dashReadCustomVal(prefix) {
+  const type = document.getElementById(`${prefix}-custom-type`).value;
+  const el = document.getElementById(`${prefix}-custom-val-${DASH_CUSTOM_TYPE_SUFFIX[type]}`);
+  return el ? el.value.trim() : "";
 }
 
 function navigateToDesignDashboard() {

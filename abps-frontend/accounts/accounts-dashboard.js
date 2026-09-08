@@ -27,16 +27,11 @@ function adSetPeriod(btn) {
 }
 
 function adCustomTypeChange() {
-  adCurrentCustomType = document.getElementById("ad-custom-type").value;
-  const v = document.getElementById("ad-custom-val");
-  if (adCurrentCustomType === "custommonth") v.type = "month";
-  else if (adCurrentCustomType === "customquarter") { v.type = "text"; v.placeholder = "e.g. 2025-Q2"; }
-  else if (adCurrentCustomType === "customyear") { v.type = "number"; v.placeholder = "e.g. 2025"; }
-  else v.type = "date";
+  adCurrentCustomType = dashCustomTypeChange("ad");
 }
 
 function adLoadCustom() {
-  const val = document.getElementById("ad-custom-val").value.trim();
+  const val = dashReadCustomVal("ad");
   if (!val) return alert("Please enter a value for the custom period.");
   adCurrentPeriod = adCurrentCustomType;
   adLoadDashboard(val);

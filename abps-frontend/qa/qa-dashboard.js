@@ -38,18 +38,11 @@ function qadSetPeriod(btn) {
 }
 
 function qadCustomTypeChange() {
-  const type = document.getElementById("qad-custom-type").value;
-  qadCurrentCustomType = type;
-  const valInput = document.getElementById("qad-custom-val");
-  if (type === "customday")      { valInput.type = "date"; valInput.placeholder = ""; }
-  else if (type === "customweek")  { valInput.type = "date"; valInput.placeholder = "Pick any day in the week"; }
-  else if (type === "custommonth") { valInput.type = "month"; }
-  else if (type === "customquarter") { valInput.type = "text"; valInput.placeholder = "e.g. 2025-Q2"; }
-  else if (type === "customyear")  { valInput.type = "number"; valInput.placeholder = "e.g. 2025"; }
+  qadCurrentCustomType = dashCustomTypeChange("qad");
 }
 
 function qadLoadCustom() {
-  const val = document.getElementById("qad-custom-val").value.trim();
+  const val = dashReadCustomVal("qad");
   if (!val) return alert("Please enter a value for the custom period.");
   qadCurrentPeriod = qadCurrentCustomType;
   qadLoadDashboard(val);

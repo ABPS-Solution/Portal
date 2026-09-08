@@ -24,16 +24,11 @@ function pdSetPeriod(btn) {
 }
 
 function pdCustomTypeChange() {
-  pdCurrentCustomType = document.getElementById("pd-custom-type").value;
-  const v = document.getElementById("pd-custom-val");
-  if (pdCurrentCustomType === "custommonth") v.type = "month";
-  else if (pdCurrentCustomType === "customquarter") { v.type = "text"; v.placeholder = "e.g. 2025-Q2"; }
-  else if (pdCurrentCustomType === "customyear") { v.type = "number"; v.placeholder = "e.g. 2025"; }
-  else v.type = "date";
+  pdCurrentCustomType = dashCustomTypeChange("pd");
 }
 
 function pdLoadCustom() {
-  const val = document.getElementById("pd-custom-val").value.trim();
+  const val = dashReadCustomVal("pd");
   if (!val) return alert("Please enter a value for the custom period.");
   pdCurrentPeriod = pdCurrentCustomType;
   pdLoadDashboard(val);

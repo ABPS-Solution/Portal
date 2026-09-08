@@ -11,18 +11,11 @@ function ddSetPeriod(btn) {
 }
 
 function ddCustomTypeChange() {
-  const type = document.getElementById("dd-custom-type").value;
-  ddCurrentCustomType = type;
-  const valInput = document.getElementById("dd-custom-val");
-  if (type === "customday")     { valInput.type = "date";  valInput.placeholder = ""; }
-  else if (type === "customweek")  { valInput.type = "date";  valInput.placeholder = "Pick any day in the week"; }
-  else if (type === "custommonth") { valInput.type = "month"; }
-  else if (type === "customquarter") { valInput.type = "text"; valInput.placeholder = "e.g. 2025-Q2"; }
-  else if (type === "customyear")  { valInput.type = "number"; valInput.placeholder = "e.g. 2025"; }
+  ddCurrentCustomType = dashCustomTypeChange("dd");
 }
 
 function ddLoadCustom() {
-  const val = document.getElementById("dd-custom-val").value.trim();
+  const val = dashReadCustomVal("dd");
   if (!val) return alert("Please enter a value for the custom period.");
   ddCurrentPeriod = ddCurrentCustomType;
   ddLoadDashboard(val);
