@@ -136,7 +136,7 @@ async function mprepOnCompanySelected(companyName) {
       { value: MPREP_ALL_PEOPLE_VALUE, label: `ALL people at this company (${mprepContacts.length} contact${mprepContacts.length === 1 ? "" : "s"})` },
       ...mprepContacts.map((c, i) => ({
         value: String(i),
-        label: `${escapeHtml(c.contactPersonName)}${c.position ? " — " + escapeHtml(c.position) : ""}${c.lastActivityAt ? " — last touched " + escapeHtml(formatOrdinalDate(c.lastActivityAt)) : ""}`,
+        label: `${escapeHtml(c.contactPersonName)}${c.position ? " · " + escapeHtml(c.position) : ""}${c.lastActivityAt ? " · last touched " + escapeHtml(formatOrdinalDate(c.lastActivityAt)) : ""}`,
       })),
     ];
     mprepPopulatePersonDropdown(options);
@@ -199,7 +199,7 @@ async function mprepGenerateBrief() {
 // as "8th Sep 2026" (formatOrdinalDate, shared/format.js) rather than
 // the raw ISO form.
 const MPREP_DATE_FIELD_LABELS = new Set([
-  "Date of Meeting", "Tentative Delivery", "Expected Delivery", "Created", "Last Contacted",
+  "Date of Meeting", "Created", "Last Contacted",
 ]);
 
 function mprepFieldRow(label, rawValue) {
@@ -264,24 +264,32 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
   const ag = facts.atAGlance;
   const oi = facts.openItems;
 
-  // ── AI brief block ──────────────────────────────────────────────────
+  // ── AI brief block — 4 distinct mini-cards (colored top border, own
+  // box) instead of stacked text sections, so each category is visually
+  // separated rather than reading as one dense cluster. ──────────────────
   let aiHtml = "";
   if (aiBrief) {
-    const section = (title, arr) => arr && arr.length
-      ? `<div style="margin-bottom:8px;"><div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:#3730a3; margin-bottom:4px;">${escapeHtml(title)}</div>${mprepBulletList(arr.map(escapeHtml))}</div>`
-      : "";
+    const CATS = [
+      { title: "Where We Stand", arr: aiBrief.whereWeStand, color: "#0369a1" },
+      { title: "Open Items", arr: aiBrief.openItems, color: "#b45309" },
+      { title: "Talking Points", arr: aiBrief.talkingPoints, color: "#15803d" },
+      { title: "Watch Outs", arr: aiBrief.watchOuts, color: "#b91c1c" },
+    ].filter(c => c.arr && c.arr.length);
+    const catCard = (c) => `<div style="background:#fff; border:1px solid var(--border); border-top:3px solid ${c.color}; border-radius:6px; padding:10px 12px;">
+        <div style="font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; color:${c.color}; margin-bottom:6px;">${escapeHtml(c.title)}</div>
+        ${mprepBulletList(c.arr.map(escapeHtml))}
+      </div>`;
     aiHtml = `<div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:6px; padding:14px 16px; margin-bottom:16px;">
-      <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#4338ca; letter-spacing:0.5px; margin-bottom:6px;">🤖 AI Briefing</div>
-      <div style="font-size:0.9rem; font-weight:700; color:var(--text); margin-bottom:10px;">${escapeHtml(aiBrief.headline || "")}</div>
-      ${section("Where We Stand", aiBrief.whereWeStand)}
-      ${section("Open Items", aiBrief.openItems)}
-      ${section("Talking Points", aiBrief.talkingPoints)}
-      ${section("Watch Outs", aiBrief.watchOuts)}
-      <button class="btn btn-sub" style="margin-top:6px; font-size:0.75rem; padding:5px 10px;" onclick="mprepGenerateBrief()">↻ Regenerate summary</button>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#4338ca; letter-spacing:0.5px;">AI Briefing</div>
+        <button class="btn btn-sub" style="width:auto; font-size:0.7rem; padding:3px 10px;" onclick="mprepGenerateBrief()">↻ Regenerate</button>
+      </div>
+      <div style="font-size:0.95rem; font-weight:700; color:var(--text); background:#fff; border-radius:6px; padding:10px 12px; margin-bottom:10px;">${escapeHtml(aiBrief.headline || "")}</div>
+      ${CATS.length ? `<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:8px;">${CATS.map(catCard).join("")}</div>` : ""}
     </div>`;
   } else {
     aiHtml = `<div style="background:#fef3c7; border:1px solid #fde68a; border-radius:6px; padding:10px 14px; margin-bottom:16px; font-size:0.82rem; color:#92400e;">
-      AI summary unavailable${aiError ? `: ${escapeHtml(aiError)}` : ""} — the facts below are complete and unaffected.
+      AI summary unavailable${aiError ? `: ${escapeHtml(aiError)}` : ""}. The facts below are complete and unaffected.
       <button class="btn btn-sub" style="margin-left:8px; font-size:0.72rem; padding:4px 8px;" onclick="mprepGenerateBrief()">Try again</button>
     </div>`;
   }
@@ -315,12 +323,12 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
     const fieldsHtml = fields.map(([l, v]) => mprepFieldRow(l, v)).join("");
     const body = `<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:6px; padding:8px 0 4px;">${fieldsHtml}</div>`;
     if (facts.contacts.length === 1) {
-      return `<div style="margin-bottom:6px;"><strong style="font-size:0.88rem;">${escapeHtml(p.contactPersonName)}${p.position ? " — " + escapeHtml(p.position) : ""}</strong>${body}</div>`;
+      return `<div style="margin-bottom:6px;"><strong style="font-size:0.88rem;">${escapeHtml(p.contactPersonName)}${p.position ? " · " + escapeHtml(p.position) : ""}</strong>${body}</div>`;
     }
     const bodyId = `mprep-person-body-${i}`;
     return `<div style="margin-bottom:6px; border:1px solid #e2e8f0; border-radius:4px; overflow:hidden;">
       <div onclick="mprepToggleCard('${bodyId}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:6px 10px;">
-        <strong style="font-size:0.82rem;">${escapeHtml(p.contactPersonName)}${p.position ? " — " + escapeHtml(p.position) : ""}</strong>
+        <strong style="font-size:0.82rem;">${escapeHtml(p.contactPersonName)}${p.position ? " · " + escapeHtml(p.position) : ""}</strong>
         <span id="${bodyId}-caret" style="font-size:0.7rem; color:var(--muted);">▸</span>
       </div>
       <div id="${bodyId}" style="display:none; padding:0 10px;">${body}</div>
@@ -329,10 +337,10 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
 
   // ── Open items ──────────────────────────────────────────────────────
   const openItemsHtml = mprepBulletList([
-    ...oi.overdueTasks.map(t => `<strong>Overdue task</strong> (due ${escapeHtml(formatOrdinalDate(t.targetDate))}, assigned to ${escapeHtml(t.eng || "—")}): ${escapeHtml(t.desc || "")}`),
-    ...oi.pendingFollowUps.map(f => `<strong>Follow-up due</strong> ${escapeHtml(formatOrdinalDate(f.nextDate))} — ${escapeHtml(f.nextActionType || "")} (${escapeHtml(f.eng || "—")})`),
-    ...oi.openQueries.map(q => `<strong>${q.breached ? "Breached" : "Open"} customer query</strong> — ${escapeHtml(q.stageName || "")}, target ${escapeHtml(q.targetClosingDate ? formatOrdinalDate(q.targetClosingDate) : "—")}, owner ${escapeHtml(q.responsiblePerson || "—")}`),
-    ...oi.lateProjects.map(p => `<strong>Project past delivery</strong> — ${escapeHtml(p.projectId)} (PO ${escapeHtml(p.poNumber || "—")}), promised ${escapeHtml(p.promisedDate ? formatOrdinalDate(p.promisedDate) : "—")}`),
+    ...oi.overdueTasks.map(t => `<strong>Overdue task</strong> (due ${escapeHtml(formatOrdinalDate(t.targetDate))}, assigned to ${escapeHtml(t.eng || "-")}): ${escapeHtml(t.desc || "")}`),
+    ...oi.pendingFollowUps.map(f => `<strong>Follow-up due</strong> ${escapeHtml(formatOrdinalDate(f.nextDate))}: ${escapeHtml(f.nextActionType || "")} (${escapeHtml(f.eng || "-")})`),
+    ...oi.openQueries.map(q => `<strong>${q.breached ? "Breached" : "Open"} customer query</strong>: ${escapeHtml(q.stageName || "")}, target ${escapeHtml(q.targetClosingDate ? formatOrdinalDate(q.targetClosingDate) : "-")}, owner ${escapeHtml(q.responsiblePerson || "-")}`),
+    ...oi.lateProjects.map(p => `<strong>Project past delivery</strong>: ${escapeHtml(p.projectId)} (PO ${escapeHtml(p.poNumber || "-")}), promised ${escapeHtml(p.promisedDate ? formatOrdinalDate(p.promisedDate) : "-")}`),
   ], "Nothing outstanding right now.");
 
   // ── Timeline ────────────────────────────────────────────────────────
@@ -343,15 +351,22 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
   // ── Order execution (projects + line items) ────────────────────────
   const projectsHtml = facts.projects.map(p => {
     const weak = p.matchReason === "company_name"
-      ? `<span style="font-size:0.6rem; font-weight:700; color:#b45309; margin-left:6px;">NAME MATCH — verify</span>` : "";
+      ? `<span style="font-size:0.6rem; font-weight:700; color:#b45309; margin-left:6px;">NAME MATCH: VERIFY</span>` : "";
     const lines = facts.poLineItems.filter(li => li.project_id === p.project_id);
     const lineFields = lines.map(li => `<div style="font-size:0.78rem; padding:4px 0; border-bottom:1px dashed #e2e8f0;">
-      ${escapeHtml(li.standard_product_name || li.description || "")} — Qty ${escapeHtml(String(li.mfc_quantity ?? li.quantity ?? ""))} ${escapeHtml(li.unit || "")}
+      ${escapeHtml(li.standard_product_name || li.description || "")} (Qty ${escapeHtml(String(li.mfc_quantity ?? li.quantity ?? ""))} ${escapeHtml(li.unit || "")})
       ${li.on_hold ? `<span style="color:#b45309; font-weight:700;"> (ON HOLD${li.hold_reason ? ": " + escapeHtml(li.hold_reason) : ""})</span>` : ""}
     </div>`).join("");
+    // Final Delivery -- the real Final Project Invoice date, not the
+    // tentative delivery_date entered at PO commit and not
+    // mfc_actual_delivery_date (an MFC gating field entered before
+    // Internal MFC, never a genuine delivery estimate -- see CLAUDE.md).
+    // "Not yet dispatched" until a Final invoice actually exists, same
+    // "hollow until a real Final invoice lands" convention Project
+    // Timeline's own merged delivery/dispatch node uses.
+    const finalDeliveryDisplay = p.final_delivery_date ? formatOrdinalDate(p.final_delivery_date) : "Not yet dispatched";
     const fields = [
-      ["Status", p.project_status], ["PO Number", p.po_number],
-      ["Tentative Delivery", p.delivery_date], ["Expected Delivery", p.mfc_actual_delivery_date],
+      ["Status", p.project_status], ["PO Number", p.po_number], ["Final Delivery", finalDeliveryDisplay],
     ];
     return `<div style="margin-bottom:10px; border:1px solid #e2e8f0; border-radius:4px; padding:8px 10px;">
       <strong style="font-size:0.85rem;">${escapeHtml(p.project_id)}${weak}</strong>
@@ -361,15 +376,15 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
   }).join("");
 
   const invoicesHtml = facts.invoices.length ? mprepBulletList(facts.invoices.map(inv =>
-    `<strong>${escapeHtml(inv.invoiceType)} Invoice ${escapeHtml(inv.invoiceNo)}</strong>${inv.revision > 1 ? ` (Rev ${inv.revision})` : ""} — ₹${escapeHtml(formatQtyTrimmed(inv.totalAmount))}${inv.pdfUrl ? ` <a href="${driveLink(inv.pdfUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">↗</a>` : ""}`
+    `<strong>${escapeHtml(inv.invoiceType)} Invoice ${escapeHtml(inv.invoiceNo)}</strong>${inv.revision > 1 ? ` (Rev ${inv.revision})` : ""}: ₹${escapeHtml(formatQtyTrimmed(inv.totalAmount))}${inv.pdfUrl ? ` <a href="${driveLink(inv.pdfUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">↗</a>` : ""}`
   )) : "";
 
   const offersHtml = facts.offers.length ? mprepBulletList(facts.offers.map(o =>
-    `<strong>${escapeHtml(o.email_sent_date ? formatOrdinalDate(o.email_sent_date) : "")}</strong> — ${escapeHtml(o.email_subject || "Offer")}${o.estimated_value ? ` (₹${escapeHtml(formatQtyTrimmed(o.estimated_value))})` : ""}`
+    `<strong>${escapeHtml(o.email_sent_date ? formatOrdinalDate(o.email_sent_date) : "")}</strong>: ${escapeHtml(o.email_subject || "Offer")}${o.estimated_value ? ` (₹${escapeHtml(formatQtyTrimmed(o.estimated_value))})` : ""}`
   )) : "";
 
   const documentsHtml = facts.documents.length ? mprepBulletList(facts.documents.map(d =>
-    `PO ${escapeHtml(d.purchase_order_number || "—")} (${escapeHtml(d.purchase_order_date ? formatOrdinalDate(d.purchase_order_date) : "—")})${d.po_document_url ? ` <a href="${driveLink(d.po_document_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">↗</a>` : ""}`
+    `PO ${escapeHtml(d.purchase_order_number || "-")} (${escapeHtml(d.purchase_order_date ? formatOrdinalDate(d.purchase_order_date) : "-")})${d.po_document_url ? ` <a href="${driveLink(d.po_document_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">↗</a>` : ""}`
   )) : "";
 
   // ── Reference (collapsed) ──────────────────────────────────────────
@@ -391,13 +406,13 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
     mprepSection("Invoices", "#0f766e", invoicesHtml),
     mprepSection("Offers Sent", "#7c3aed", offersHtml),
     mprepSection("Documents", "#0056b3", documentsHtml),
-    mprepSection("Reference — Company Detail", "#64748b", refHtml),
+    mprepSection("Reference: Company Detail", "#64748b", refHtml),
   ].join("");
 
   resultsNode.innerHTML = `
     <div id="mprep-brief-print-area">
       <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">
-        <h3 style="margin:0; font-size:1.1rem;">${escapeHtml(c.company_name)}${facts.scopeIsAllPeople ? "" : ` — ${escapeHtml(facts.contacts[0]?.contactPersonName || "")}`}</h3>
+        <h3 style="margin:0; font-size:1.1rem;">${escapeHtml(c.company_name)}${facts.scopeIsAllPeople ? "" : ` · ${escapeHtml(facts.contacts[0]?.contactPersonName || "")}`}</h3>
         <button class="btn btn-sub" id="mprep-print-btn" onclick="window.print()" style="width:auto; flex-shrink:0; padding:8px 16px;">🖨 Print Brief</button>
       </div>
       ${aiHtml}

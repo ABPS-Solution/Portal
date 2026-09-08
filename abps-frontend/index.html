@@ -4554,20 +4554,22 @@
     <div id="workspace-meetingPreparation" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Meeting Preparation</h2>
       <div id="mprep-error-banner" style="display:none; background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; border-radius:4px; padding:8px 12px; font-size:0.85rem; margin-bottom:12px;"></div>
-      <label class="field-label">Company Name</label>
-      <div style="margin-bottom:10px;">
-        <input type="text" id="mprep-company-input" placeholder="Start typing a company name..." autocomplete="off"
-          oninput="handleCompanySearchTypeaheadInput(this.value, 'mprep-company-input', 'mprep-company-suggestions')"
-          style="width:100%; font-size:0.95rem; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
-      </div>
-      <label class="field-label">Contact Person</label>
-      <div style="margin-bottom:12px;">
-        <div id="mprep-person-picker-display" onclick="mprepToggleAndPositionPersonDropdown()"
-          style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius); cursor:not-allowed; opacity:0.5; background:#f1f5f9;" data-disabled="1">
-          <span id="mprep-person-picker-display-text" style="font-size:0.9rem;">Select a company first</span><span>▾</span>
+      <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end; margin-bottom:12px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Company Name</label>
+          <input type="text" id="mprep-company-input" placeholder="Start typing a company name..." autocomplete="off"
+            oninput="handleCompanySearchTypeaheadInput(this.value, 'mprep-company-input', 'mprep-company-suggestions')"
+            style="width:100%; font-size:0.95rem; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
         </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Contact Person</label>
+          <div id="mprep-person-picker-display" onclick="mprepToggleAndPositionPersonDropdown()"
+            style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius); cursor:not-allowed; opacity:0.5; background:#f1f5f9;" data-disabled="1">
+            <span id="mprep-person-picker-display-text" style="font-size:0.9rem;">Select a company first</span><span>▾</span>
+          </div>
+        </div>
+        <button class="btn btn-sub" id="mprep-generate-btn" disabled onclick="mprepGenerateBrief()" style="width:auto; white-space:nowrap; padding:9px 20px;">Generate Brief</button>
       </div>
-      <button class="btn btn-sub" id="mprep-generate-btn" disabled onclick="mprepGenerateBrief()">Generate Brief</button>
       <div id="mprep-results" style="margin-top:18px;"></div>
     </div>
 
