@@ -152,8 +152,6 @@ function pd2RenderDashboard(data) {
   pd2JCNData        = inProgressJCNs;
   pd2JCNFiltered    = [...inProgressJCNs];
   pd2JCNCurrentPage = 1;
-  const searchEl = document.getElementById("pd2-jcn-search");
-  if (searchEl) searchEl.value = "";
   pd2RenderJCNTable();
 
   // Row 4 right two panels — Due Today / Overdue, Production's own
@@ -187,13 +185,8 @@ function pd2RenderDashboard(data) {
 }
 
 function pd2FilterJCN() {
-  const q    = (document.getElementById("pd2-jcn-search")?.value || "").toLowerCase();
   const dept = document.getElementById("pd2-jcn-dept-filter")?.value || "";
-  pd2JCNFiltered = pd2JCNData.filter(j => {
-    const matchQ    = !q    || j.jcn.toLowerCase().includes(q) || j.projectId.toLowerCase().includes(q);
-    const matchDept = !dept || j.department === dept;
-    return matchQ && matchDept;
-  });
+  pd2JCNFiltered = pd2JCNData.filter(j => !dept || j.department === dept);
   pd2JCNCurrentPage = 1;
   pd2RenderJCNTable();
 }
@@ -223,14 +216,13 @@ function pd2RenderJCNTable() {
 
   if (!tbody) return;
   if (page.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--muted); font-size:0.72rem; padding:10px;">No in-progress job cards found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="3" style="color:var(--muted); font-size:0.72rem; padding:10px;">No in-progress job cards found.</td></tr>`;
     return;
   }
   tbody.innerHTML = page.map((j, i) => {
     const rowBg = i % 2 === 0 ? "var(--card)" : "#f8fafc";
     return `<tr style="background:${rowBg}; border-bottom:1px solid #f1f5f9;">
       <td style="padding:7px 6px; font-family:monospace; font-size:0.72rem; font-weight:700; color:var(--brand);">${j.jcn}</td>
-      <td style="padding:7px 6px; font-size:0.72rem; font-weight:600;">${j.projectId}</td>
       <td style="padding:7px 6px; font-size:0.72rem;">${j.department}</td>
       <td style="padding:7px 6px; text-align:center; font-size:0.72rem; font-weight:700; color:var(--brand);">${j.ticketCount}</td>
     </tr>`;
