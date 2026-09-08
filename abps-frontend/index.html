@@ -742,6 +742,9 @@
       <div class="dept-header">
         <div class="dept-bar" style="background:#dc2626;"></div>
         <span class="dept-name">Quality Assurance Department</span>
+        <div id="mod-qa-dashboard-wrapper" style="display:none;">
+          <button class="dept-dash-pill" id="mod-qa-dashboard" onclick="navigateToQaDashboard()" style="background:#fef2f2; color:#dc2626;">📊 Dashboard</button>
+        </div>
       </div>
       <div class="sec-label">Inward Quality</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -3790,7 +3793,7 @@
             <div class="dd-stat-val" id="sd-s-grns">—</div>
           </div>
           <div class="dd-stat-card stat-period">
-            <div class="dd-stat-label">QA Rejection Rate</div>
+            <div class="dd-stat-label">Average GRN Turnaround</div>
             <div class="dd-stat-val" id="sd-s-rejrate">—</div>
           </div>
           <div class="dd-stat-card stat-period">
@@ -3861,6 +3864,121 @@
                   <th style="text-align:center; padding:3px 6px; font-weight:700;">Items Issued</th>
                 </tr></thead>
                 <tbody id="sd-health-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- QA DASHBOARD CANVAS -->
+    <div id="canvas-module-qa-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
+      <div id="qad-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+
+        <!-- ROW 1: Live Queues -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Raw Materials Pending Q/A Check</div>
+            <div class="dd-stat-val" id="qad-s-pendingqa" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub" id="qad-s-pendingqa-sub"></div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Pending FG Approvals</div>
+            <div class="dd-stat-val" id="qad-s-fgpending" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">QA Inspections Due/Overdue</div>
+            <div class="dd-stat-val" id="qad-s-dueoverdue" style="color:#b91c1c;">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Currently Being Repaired at ABPS</div>
+            <div class="dd-stat-val" id="qad-s-repairing" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub" id="qad-s-repairing-sub"></div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Inspection Documents Pending Upload</div>
+            <div class="dd-stat-val" id="qad-s-docgap" style="color:#b45309;">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 2: Period Throughput / Rates -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">Materials QA-Checked</div>
+            <div class="dd-stat-val" id="qad-s-checked">—</div>
+          </div>
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">QA Rejection Rate</div>
+            <div class="dd-stat-val" id="qad-s-rejrate">—</div>
+          </div>
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">FG Units Approved</div>
+            <div class="dd-stat-val" id="qad-s-fgapproved">—</div>
+          </div>
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">Repair QA Resolved</div>
+            <div class="dd-stat-val" id="qad-s-repairresolved">—</div>
+          </div>
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">Average QA Turnaround Time</div>
+            <div class="dd-stat-val" id="qad-s-turnaround">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 3: Charts -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:0 0 26%;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+            <div class="dd-card-title">QA Rejection Rate Trend</div>
+            <canvas id="qad-chart-rejtrend" style="max-height:100px;"></canvas>
+          </div>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+            <div class="dd-card-title">Materials QA-Checked Volume Over Time</div>
+            <canvas id="qad-chart-volume" style="max-height:100px;"></canvas>
+          </div>
+        </div>
+
+        <!-- ROW 4: Aging Rejection Queue + Due Today + Overdue -->
+        <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
+
+          <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title" style="margin-bottom:6px;">Aging Rejection Queue</div>
+            <div style="overflow-y:auto; flex:1;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead><tr style="color:var(--muted); font-size:0.68rem; border-bottom:1.5px solid var(--border); position:sticky; top:0; background:var(--card);">
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">GRN</th>
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Material</th>
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Vendor</th>
+                  <th style="text-align:center; padding:3px 6px; font-weight:700;">Days Waiting</th>
+                </tr></thead>
+                <tbody id="qad-aging-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title" style="margin-bottom:6px;">Due Today</div>
+            <div style="overflow-y:auto; flex:1;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead><tr style="color:var(--muted); font-size:0.68rem; border-bottom:1.5px solid var(--border); position:sticky; top:0; background:var(--card);">
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Project</th>
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Milestone</th>
+                </tr></thead>
+                <tbody id="qad-duetoday-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title" style="margin-bottom:6px;">Overdue</div>
+            <div style="overflow-y:auto; flex:1;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead><tr style="color:var(--muted); font-size:0.68rem; border-bottom:1.5px solid var(--border); position:sticky; top:0; background:var(--card);">
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Project</th>
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Milestone</th>
+                  <th style="text-align:center; padding:3px 6px; font-weight:700;">Days Overdue</th>
+                </tr></thead>
+                <tbody id="qad-overdue-tbody"></tbody>
               </table>
             </div>
           </div>
@@ -4242,6 +4360,15 @@
           <button class="dd-period-btn" data-period="thisyear" onclick="adSetPeriod(this)">This Year</button>
           <button class="dd-period-btn" data-period="custom" onclick="adSetPeriod(this)">Custom ▾</button>
         </div>
+        <div id="qad-period-btns" style="display:none; gap:4px; flex-wrap:nowrap;">
+          <button class="dd-period-btn active" data-period="today" onclick="qadSetPeriod(this)">Today</button>
+          <button class="dd-period-btn" data-period="yesterday" onclick="qadSetPeriod(this)">Yesterday</button>
+          <button class="dd-period-btn" data-period="thisweek" onclick="qadSetPeriod(this)">This Week</button>
+          <button class="dd-period-btn" data-period="thismonth" onclick="qadSetPeriod(this)">This Month</button>
+          <button class="dd-period-btn" data-period="thisquarter" onclick="qadSetPeriod(this)">This Quarter</button>
+          <button class="dd-period-btn" data-period="thisyear" onclick="qadSetPeriod(this)">This Year</button>
+          <button class="dd-period-btn" data-period="custom" onclick="qadSetPeriod(this)">Custom ▾</button>
+        </div>
       </div>
       <span id="dash-global-title" style="font-size:1.35rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);"></span>
       <button class="nav-btn-styled" onclick="dashboardGlobalReturnClick()" style="font-size:0.75rem;">Return to Main Dashboard</button>
@@ -4299,6 +4426,15 @@
       </select>
       <input id="ad-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
       <button onclick="adLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
+    </div>
+    <div id="qad-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc;">
+      <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
+      <select id="qad-custom-type" onchange="qadCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
+        <option value="customday">Day</option><option value="customweek">Week</option><option value="custommonth">Month</option>
+        <option value="customquarter">Quarter</option><option value="customyear">Year</option>
+      </select>
+      <input id="qad-custom-val" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" />
+      <button onclick="qadLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
     </div>
   </div>
 
@@ -4963,6 +5099,7 @@
 <script src="production/production-planning.js"></script>
 <script src="qa/qa-inspection-timeline.js"></script>
 <script src="qa/product-serial-tracking.js"></script>
+<script src="qa/qa-dashboard.js"></script>
 <script src="accounts/tour-shell.js"></script>
 <script src="accounts/advance-vouchers.js"></script>
 <script src="accounts/voucher-check.js"></script>

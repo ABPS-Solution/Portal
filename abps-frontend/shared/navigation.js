@@ -507,7 +507,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // moved with them, not duplicated.
   const qaHeaderBlock = document.getElementById("dashboard-qa-department-header-block");
   if (qaHeaderBlock) {
-    qaHeaderBlock.style.display = (userPermissionsObject.qaCheck === true || canFgApproval || canQaInspectionTimeline || canProductSerialTracking) ? "block" : "none";
+    qaHeaderBlock.style.display = (userPermissionsObject.qaCheck === true || canFgApproval || canQaInspectionTimeline || canProductSerialTracking || userPermissionsObject.viewQaDashboard === true) ? "block" : "none";
   }
 
   // Live Spare Store Stock card visibility
@@ -525,6 +525,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     "mod-production-dashboard-wrapper":  userPermissionsObject.viewProductionDashboard,
     "mod-marketing-dashboard-wrapper":   userPermissionsObject.viewMarketingDashboard,
     "mod-accounts-dashboard-wrapper":    userPermissionsObject.viewAccountsDashboard,
+    "mod-qa-dashboard-wrapper":          userPermissionsObject.viewQaDashboard,
   };
   Object.keys(dashMap).forEach(function(id) {
     const el = document.getElementById(id);

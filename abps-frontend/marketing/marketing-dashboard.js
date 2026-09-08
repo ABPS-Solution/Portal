@@ -267,10 +267,10 @@ function showDashboardGlobalToolbar(title, periodBtnsId, returnFn) {
   // content starts underneath the floating bar.
   requestAnimationFrame(syncDashboardCanvasTopPadding);
   document.getElementById("dash-global-title").textContent = title;
-  ["dd-period-btns","pd-period-btns","sd-period-btns","md-period-btns","pd2-period-btns","ad-period-btns"].forEach(id => {
+  ["dd-period-btns","pd-period-btns","sd-period-btns","md-period-btns","pd2-period-btns","ad-period-btns","qad-period-btns"].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = (id === periodBtnsId) ? "flex" : "none";
   });
-  ["dd-custom-zone","pd-custom-zone","sd-custom-zone","md-custom-zone","pd2-custom-zone","ad-custom-zone"].forEach(id => {
+  ["dd-custom-zone","pd-custom-zone","sd-custom-zone","md-custom-zone","pd2-custom-zone","ad-custom-zone","qad-custom-zone"].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = "none";
   });
   document.querySelectorAll('[id$="-workspace-enclosure-panel"] > .navigation-action-header-row').forEach(h => h.style.display = "none");
