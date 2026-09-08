@@ -168,8 +168,11 @@ async function navigateToModule(key) {
       if (engineerSelectNode && engineerSelectNode.value) triggerEngineerSearch();
     } else if (key === "searchCityState") {
       loadCityStateFilterOptions();
-    } else if (key === "emailLeads") { 
+    } else if (key === "emailLeads") {
       executeInboundEmailSyncPipelineFetch();
+    } else if (key === "meetingPreparation") {
+      if (typeof mprepResetScreen === "function") mprepResetScreen();
+      triggerCompanyDropdownArrayFetch();
     }
 }
 
@@ -277,6 +280,7 @@ function returnToDashboard() {
   const taskOutput = document.getElementById("task-matrix-results-output-node"); if (taskOutput) taskOutput.innerHTML = "";
   const tfd = document.getElementById("task-matrix-active-filters-display"); if (tfd) { tfd.style.display = "none"; tfd.textContent = ""; }
   const lfd = document.getElementById("lead-matrix-active-filters-display"); if (lfd) { lfd.style.display = "none"; lfd.textContent = ""; }
+  if (typeof mprepResetScreen === "function") mprepResetScreen();
   // Full "brand new" reset — stale results from a previous visit to any
   // marketing search screen should never carry over into the next one.
   globalFollowUpsCacheMap = {};
@@ -308,6 +312,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canSearchStatus            = userPermissionsObject.searchStatus === true;
   const canSearchQual              = userPermissionsObject.searchQualification === true;
   const canSearchCityState         = userPermissionsObject.searchCityState === true;
+  const canMeetingPreparation      = userPermissionsObject.meetingPreparation === true;
 
   // 2. EXTRACT RAW WAREHOUSE ACCESS PRIVILEGES MATRIX
   const canViewLiveStock           = userPermissionsObject.liveStoreStock === true;
@@ -375,6 +380,9 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   }
   if (document.getElementById("mod-city-state")) {
     document.getElementById("mod-city-state").style.display = canSearchCityState ? "block" : "none";
+  }
+  if (document.getElementById("mod-meeting-prep")) {
+    document.getElementById("mod-meeting-prep").style.display = canMeetingPreparation ? "block" : "none";
   }
 
   // --- SET INDIVIDUAL VISIBILITY FOR STORE & FINISHED GOODS CARDS ---
@@ -502,7 +510,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // --- EVALUATE DEPARTMENT ENCLOSURE OVERLAYS ---
   const marketingHeaderBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingHeaderBlock) {
-    marketingHeaderBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState) ? "block" : "none";
+    marketingHeaderBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation) ? "block" : "none";
   }
 
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");

@@ -759,19 +759,26 @@ async function triggerCompanyDropdownArrayFetch() {
 // overflow:hidden and clipped/squashed the list against its own bounds.
 // Same pattern already established in store/grn.js and
 // production/fg-approval.js for exactly this reason.
-function ensureCompanySearchDropdownEl() {
-  let dd = document.getElementById("lookup-module-company-dropdown-suggestions");
+// Generalized 6 Sep 2026 (default args preserve every existing call site
+// byte-for-byte) so Meeting Preparation's own company picker can reuse
+// this instead of a second copy — pass inputId/ddId to target a
+// different pair of elements; every function below still defaults to
+// the original Search by Company Name ids when called with none.
+function ensureCompanySearchDropdownEl(ddId = "lookup-module-company-dropdown-suggestions") {
+  let dd = document.getElementById(ddId);
   if (!dd) {
     dd = document.createElement("div");
-    dd.id = "lookup-module-company-dropdown-suggestions";
+    dd.id = ddId;
+    dd.className = "company-typeahead-dd";
     dd.style.cssText = "display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:4px; z-index:9999; max-height:240px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);";
     document.body.appendChild(dd);
   }
   return dd;
 }
 
-function handleCompanySearchTypeaheadInput(query) {
-  const dd = ensureCompanySearchDropdownEl();
+function handleCompanySearchTypeaheadInput(query, inputId = "lookup-module-company-dropdown", ddId = "lookup-module-company-dropdown-suggestions") {
+  const dd = ensureCompanySearchDropdownEl(ddId);
+  dd.dataset.inputId = inputId;
   if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
   const q = query.trim().toLowerCase();
   const matches = (window.cachedCompanySearchList || [])
@@ -779,11 +786,11 @@ function handleCompanySearchTypeaheadInput(query) {
     .slice(0, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(item => `
-    <div onmousedown="event.preventDefault(); selectCompanySearchTypeahead('${item.companyValue.replace(/'/g, "\\'")}')"
+    <div onmousedown="event.preventDefault(); selectCompanySearchTypeahead('${item.companyValue.replace(/'/g, "\\'")}', '${inputId}', '${ddId}')"
       style="padding:9px 12px; cursor:pointer; font-size:0.88rem; border-bottom:1px solid var(--border);"
-      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">${item.displayLabel}</div>
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">${escapeHtml(item.displayLabel)}</div>
   `).join("");
-  const input = document.getElementById("lookup-module-company-dropdown");
+  const input = document.getElementById(inputId);
   const rect = input.getBoundingClientRect();
   dd.style.top = rect.bottom + "px";
   dd.style.left = rect.left + "px";
@@ -791,19 +798,27 @@ function handleCompanySearchTypeaheadInput(query) {
   dd.style.display = "block";
 }
 
-function selectCompanySearchTypeahead(companyValue) {
-  const input = document.getElementById("lookup-module-company-dropdown");
-  input.value = companyValue;
-  const dd = document.getElementById("lookup-module-company-dropdown-suggestions");
+function selectCompanySearchTypeahead(companyValue, inputId = "lookup-module-company-dropdown", ddId = "lookup-module-company-dropdown-suggestions") {
+  const input = document.getElementById(inputId);
+  if (input) input.value = companyValue;
+  const dd = document.getElementById(ddId);
   if (dd) dd.style.display = "none";
+  if (typeof window.onCompanySearchTypeaheadSelect === "function" && ddId !== "lookup-module-company-dropdown-suggestions") {
+    window.onCompanySearchTypeaheadSelect(companyValue, inputId, ddId);
+  }
 }
 
+// Delegated click-outside — closes ANY open company-typeahead dropdown
+// (keyed off the shared class, same convention as shared/ui.js's
+// .gwd-list handler), checking each one's own recorded input id rather
+// than a single hardcoded pair.
 document.addEventListener("click", (e) => {
-  const dd = document.getElementById("lookup-module-company-dropdown-suggestions");
-  if (!dd) return;
-  if (!e.target.closest("#lookup-module-company-dropdown") && !e.target.closest("#lookup-module-company-dropdown-suggestions")) {
-    dd.style.display = "none";
-  }
+  document.querySelectorAll(".company-typeahead-dd").forEach((dd) => {
+    const inputId = dd.dataset.inputId || "lookup-module-company-dropdown";
+    if (!e.target.closest(`#${inputId}`) && !e.target.closest(`#${dd.id}`)) {
+      dd.style.display = "none";
+    }
+  });
 });
 
 async function loadQualFilter() {

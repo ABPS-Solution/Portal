@@ -426,6 +426,23 @@
     .pstat-header-company { text-align: left; }
   }
 
+  /* Meeting Preparation — print layout. Scoped to this panel only. */
+  @media print {
+    body * { visibility: hidden; }
+    #workspace-meetingPreparation, #workspace-meetingPreparation * { visibility: visible; }
+    #workspace-meetingPreparation { position: absolute; left: 0; top: 0; width: 100%; }
+    #workspace-meetingPreparation .panel-title,
+    #workspace-meetingPreparation label,
+    #workspace-meetingPreparation input,
+    #workspace-meetingPreparation #mprep-person-picker-display,
+    #workspace-meetingPreparation #mprep-generate-btn,
+    #workspace-meetingPreparation #mprep-print-btn,
+    #workspace-meetingPreparation #mprep-error-banner { display: none !important; }
+    #workspace-meetingPreparation [id$="-caret"] { display: none !important; }
+    #workspace-meetingPreparation div[id^="mprep-person-body-"] { display: block !important; }
+    #workspace-meetingPreparation div[style*="break-inside:avoid"] { break-inside: avoid; }
+  }
+
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -582,6 +599,7 @@
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-card" onclick="navigateToModule('cardDetails')"><span class="mc-label">Create New Leads Details</span></div>
         <div class="menu-card" id="mod-email-whatsapp" onclick="navigateToModule('emailLeads')"><span class="mc-label">Leads Received through Email</span></div>
+        <div class="menu-card" id="mod-meeting-prep" onclick="navigateToModule('meetingPreparation')"><span class="mc-label">Meeting Preparation</span></div>
       </div>
       <div class="sec-label">Upload Documents</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -4261,6 +4279,28 @@
       <div id="purchase-order-review-zone" style="display:none;"></div>
     </div>
 
+    <div id="workspace-meetingPreparation" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Meeting Preparation</h2>
+      <div id="mprep-error-banner" style="display:none; background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; border-radius:4px; padding:8px 12px; font-size:0.85rem; margin-bottom:12px;"></div>
+      <label class="field-label">Company Name</label>
+      <div style="margin-bottom:10px;">
+        <input type="text" id="mprep-company-input" placeholder="Start typing a company name..." autocomplete="off"
+          oninput="handleCompanySearchTypeaheadInput(this.value, 'mprep-company-input', 'mprep-company-suggestions')"
+          style="width:100%; font-size:0.95rem; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+      </div>
+      <label class="field-label">Contact Person</label>
+      <div style="margin-bottom:12px;">
+        <input type="hidden" id="mprep-person-picker" />
+        <div id="mprep-person-picker-display" class="gwd-display" onclick="toggleGenericDropdown('mprep-person-picker')"
+          style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius); cursor:not-allowed; opacity:0.5; background:#f1f5f9;" data-disabled="1">
+          <span id="mprep-person-picker-display-text" style="font-size:0.9rem;">Select a company first</span><span>▾</span>
+        </div>
+        <div id="mprep-person-picker-list" class="gwd-list" style="display:none; position:relative; background:#fff; border:1.5px solid var(--brand); border-radius:4px; margin-top:2px; max-height:240px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15); z-index:50;"></div>
+      </div>
+      <button class="btn btn-sub" id="mprep-generate-btn" disabled onclick="mprepGenerateBrief()">Generate Brief</button>
+      <div id="mprep-results" style="margin-top:18px;"></div>
+    </div>
+
     <div id="workspace-searchCompany" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Search by Company Name</h2>
       <div id="company-dropdown-selector-block">
@@ -4756,6 +4796,7 @@
 <script src="marketing/email-processing.js"></script>
 <script src="marketing/business-card.js"></script>
 <script src="marketing/marketing-dashboard.js"></script>
+<script src="marketing/meeting-prep.js"></script>
 <script src="design/item-code-format.js"></script>
 <script src="design/item-codes.js"></script>
 <script src="design/material-descriptions.js"></script>
