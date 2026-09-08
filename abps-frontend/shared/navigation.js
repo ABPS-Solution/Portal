@@ -233,6 +233,7 @@ function returnToDashboard() {
   if(document.getElementById("canvas-module-revise-material-requirement-date")) document.getElementById("canvas-module-revise-material-requirement-date").style.display = "none";
   if(document.getElementById("canvas-module-production-planning")) document.getElementById("canvas-module-production-planning").style.display = "none";
   if(document.getElementById("canvas-module-qa-inspection-timeline")) document.getElementById("canvas-module-qa-inspection-timeline").style.display = "none";
+  if(document.getElementById("canvas-module-product-serial-tracking")) document.getElementById("canvas-module-product-serial-tracking").style.display = "none";
 
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("dashboard-view").style.display = "block"; 
@@ -342,6 +343,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canFgApproval       = userPermissionsObject.fgApproval           === true;
   const canProductionPlanning = userPermissionsObject.productionPlanning === true;
   const canQaInspectionTimeline = userPermissionsObject.qaInspectionTimeline === true;
+  const canProductSerialTracking = userPermissionsObject.productSerialTracking === true;
   const canAssignMRD        = userPermissionsObject.assignMaterialRequirementDate === true;
   const canReviseMRD        = userPermissionsObject.reviseMaterialRequirementDate === true;
   const canCreateBOQ        = userPermissionsObject.createBOQ        === true;
@@ -422,6 +424,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-fg-approval")) document.getElementById("mod-fg-approval").style.display = canFgApproval ? "block" : "none";
   if (document.getElementById("mod-production-planning")) document.getElementById("mod-production-planning").style.display = canProductionPlanning ? "block" : "none";
   if (document.getElementById("mod-qa-inspection-timeline")) document.getElementById("mod-qa-inspection-timeline").style.display = canQaInspectionTimeline ? "block" : "none";
+  if (document.getElementById("mod-product-serial-tracking")) document.getElementById("mod-product-serial-tracking").style.display = canProductSerialTracking ? "block" : "none";
   if (document.getElementById("mod-assign-material-requirement-date")) document.getElementById("mod-assign-material-requirement-date").style.display = canAssignMRD ? "block" : "none";
   if (document.getElementById("mod-revise-material-requirement-date")) document.getElementById("mod-revise-material-requirement-date").style.display = canReviseMRD ? "block" : "none";
   const canProjectInvoiceGeneration = userPermissionsObject.projectInvoiceGeneration === true;
@@ -504,7 +507,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // moved with them, not duplicated.
   const qaHeaderBlock = document.getElementById("dashboard-qa-department-header-block");
   if (qaHeaderBlock) {
-    qaHeaderBlock.style.display = (userPermissionsObject.qaCheck === true || canFgApproval || canQaInspectionTimeline) ? "block" : "none";
+    qaHeaderBlock.style.display = (userPermissionsObject.qaCheck === true || canFgApproval || canQaInspectionTimeline || canProductSerialTracking) ? "block" : "none";
   }
 
   // Live Spare Store Stock card visibility
@@ -807,6 +810,7 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   if (document.getElementById("canvas-module-project-invoice")) document.getElementById("canvas-module-project-invoice").style.display = "none";
   if (document.getElementById("canvas-module-material-outward")) document.getElementById("canvas-module-material-outward").style.display = "none";
   if (document.getElementById("canvas-module-qa-inspection-timeline")) document.getElementById("canvas-module-qa-inspection-timeline").style.display = "none";
+  if (document.getElementById("canvas-module-product-serial-tracking")) document.getElementById("canvas-module-product-serial-tracking").style.display = "none";
 
   // 3. Hide all design engineering sub-module views panels
   if (document.getElementById("module-design-workspace-enclosure-panel")) document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
@@ -972,6 +976,10 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     document.getElementById("dashboard-view").style.display = "none";
     const qaitCanvas = document.getElementById("canvas-module-qa-inspection-timeline");
     if (qaitCanvas) { qaitCanvas.style.display = "block"; initializeQaInspectionTimelinePanel(); }
+  } else if (targetCanvasModuleId === 'product-serial-tracking') {
+    document.getElementById("dashboard-view").style.display = "none";
+    const psnCanvas = document.getElementById("canvas-module-product-serial-tracking");
+    if (psnCanvas) { psnCanvas.style.display = "block"; initializeProductSerialTrackingPanel(); }
   } else if (targetCanvasModuleId === 'project-status') {
     document.getElementById("dashboard-view").style.display = "none";
     const psCanvas = document.getElementById("canvas-module-project-status");
