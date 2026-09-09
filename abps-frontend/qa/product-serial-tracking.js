@@ -16,6 +16,8 @@ let psnActiveTab = 'search';
 let psnHits = [];
 let psnActiveFgId = null;
 let psnQueueFilter = { missingSnapshotOnly: false };
+let psnSearchDebounceTimer = null;
+let psnSearchReqToken = 0;
 
 const PSN_TIER_META = {
   exact: { label: 'Exact', color: '#15803d', bg: '#dcfce7' },
@@ -28,6 +30,7 @@ function initializeProductSerialTrackingPanel() {
   psnHits = [];
   psnActiveFgId = null;
   psnQueueFilter = { missingSnapshotOnly: false };
+  psnSearchReqToken++; // invalidate any in-flight suggestion fetch from a prior visit
 
   const feedback = document.getElementById('psn-feedback');
   if (feedback) feedback.style.display = 'none';
@@ -38,20 +41,35 @@ function initializeProductSerialTrackingPanel() {
   psnRenderTabBar();
   psnShowTab('search');
 
-  const input = document.getElementById('psn-search-input');
+  const input = document.getElementById('psn-search-ta-input');
+  const dd = document.getElementById('psn-search-ta-dropdown');
   if (input) {
     input.value = '';
-    input.onkeydown = (e) => { if (e.key === 'Enter') psnRunSearch(); };
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter') {
+        if (dd) dd.style.display = 'none';
+        psnRunSearch();
+      }
+    };
   }
+  if (dd) dd.style.display = 'none';
 }
 
+// Same look as the Add/Check Item Code Search/Format toggle
+// (icf-mode-btn-search/format in switchItemCodeMode) — the bare
+// .nav-btn-styled base class (5px 10px padding, 0.75rem font) is sized
+// for a small inline action button, not a prominent tab switcher, and the
+// old inactive style here (bordered white pill) didn't match that
+// established toggle convention anywhere else in the app.
 function psnRenderTabBar() {
   const bar = document.getElementById('psn-tab-bar');
   if (!bar) return;
   const tabs = [{ key: 'search', label: 'Search by Serial' }, { key: 'queue', label: 'All Units' }];
   bar.innerHTML = tabs.map(t => {
     const active = psnActiveTab === t.key;
-    return `<button class="nav-btn-styled" style="${active ? '' : 'background:var(--card); color:var(--text); border:1px solid var(--border);'}" onclick="psnShowTab('${t.key}')">${escapeHtml(t.label)}</button>`;
+    const bg = active ? 'var(--brand)' : '#e2e8f0';
+    const color = active ? '#fff' : '#334155';
+    return `<button class="nav-btn-styled" style="background:${bg}; color:${color}; font-weight:700; padding:11px 20px;" onclick="psnShowTab('${t.key}')">${escapeHtml(t.label)}</button>`;
   }).join('');
 }
 
@@ -64,8 +82,57 @@ function psnShowTab(tab) {
 }
 
 // ── Search ────────────────────────────────────────────────────────────────
+// Suggestion dropdown as you type, same shape as the Type of Material
+// typeahead (design/item-codes.js's handleIcfTypeTypeaheadInput) — debounced
+// against the live server (there's no client-side serial-number cache to
+// filter locally the way that screen's Type of Material list is cached),
+// with a request token so a slow earlier response can never clobber a
+// faster later one.
+function psnHandleSearchInput(query) {
+  clearTimeout(psnSearchDebounceTimer);
+  const dd = document.getElementById('psn-search-ta-dropdown');
+  const q = (query || '').trim();
+  if (!q) { if (dd) dd.style.display = 'none'; return; }
+  psnSearchDebounceTimer = setTimeout(() => psnFetchSearchSuggestions(q), 300);
+}
+
+async function psnFetchSearchSuggestions(q) {
+  const dd = document.getElementById('psn-search-ta-dropdown');
+  if (!dd) return;
+  const myToken = ++psnSearchReqToken;
+  try {
+    const data = await apFetch({ action: 'searchProductSerial', serial: q });
+    if (myToken !== psnSearchReqToken) return; // a newer keystroke already superseded this
+    if (!data.success || !data.rows || data.rows.length === 0) { dd.style.display = 'none'; return; }
+    const matches = data.rows.slice(0, 8);
+    dd.innerHTML = matches.map(h => `
+      <div onmousedown="event.preventDefault();" onclick="psnSelectSearchSuggestion(${h.fgId}, '${(h.productSerialNumber || '').replace(/'/g, "\\'")}')"
+        style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
+        onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+        <span style="font-weight:700;">${escapeHtml(h.productSerialNumber || '')}</span>
+        <span style="font-size:0.75rem; color:var(--muted); margin-left:8px;">${escapeHtml(h.productName || '')}${h.productRating ? ' ' + escapeHtml(h.productRating) : ''}</span>
+        <div style="font-size:0.7rem; color:var(--muted); margin-top:2px;">${escapeHtml(h.customerName || '—')} · ${escapeHtml(h.status || '')}</div>
+      </div>`).join('');
+    dd.style.display = 'block';
+  } catch (err) {
+    dd.style.display = 'none';
+  }
+}
+
+function psnSelectSearchSuggestion(fgId, serial) {
+  const input = document.getElementById('psn-search-ta-input');
+  if (input) input.value = serial;
+  const dd = document.getElementById('psn-search-ta-dropdown');
+  if (dd) dd.style.display = 'none';
+  psnHits = [];
+  document.getElementById('psn-results').innerHTML = '';
+  psnOpenDetail(fgId);
+}
+
 async function psnRunSearch() {
-  const input = document.getElementById('psn-search-input');
+  const dd = document.getElementById('psn-search-ta-dropdown');
+  if (dd) dd.style.display = 'none';
+  const input = document.getElementById('psn-search-ta-input');
   const serial = (input?.value || '').trim();
   document.getElementById('psn-detail').innerHTML = '';
   if (!serial) {
@@ -138,6 +205,20 @@ function psnRenderDetail(data) {
   const documents = data.documents || [];
   const trace = data.trace;
 
+  // Status shown here is intentionally NOT the bare fg.status column.
+  // production.finished_goods_inventory.status only ever tracks physical
+  // stock-room state ('Pending FG Approval' / 'In Store' / 'Reserved / On
+  // Ticket' / 'Consumed in Production') — Project Invoice Generation never
+  // writes to it (confirmed: it only sets production.job_cards
+  // .invoiced_in_invoice_id), so a genuinely-dispatched unit's raw status
+  // stays 'In Store' forever. h.invoiceId (joined off that same column) is
+  // what actually tells us it shipped, so it overrides the display here.
+  // Note this is a display-only fix — the underlying fg.status value is
+  // untouched, so any OTHER screen that counts "In Store" as live stock
+  // (Live FG Stock, Store Ledger) still includes dispatched units; that is
+  // a separate, larger gap this change does not address.
+  const statusDisplay = h.invoiceId ? 'Dispatched' : escapeHtml(h.status || '');
+
   const identity = `
     <div style="font-size:1.4rem; font-weight:700; margin-bottom:10px;">${escapeHtml(h.productSerialNumber || '')}</div>
     <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px;">
@@ -149,11 +230,11 @@ function psnRenderDetail(data) {
       ${psnField('Unit', escapeHtml(h.unit || ''))}
       ${psnField('Finished Good Use', escapeHtml(h.finishedGoodUse || ''))}
       ${psnField('Department', escapeHtml(h.department || ''))}
-      ${psnField('Status', escapeHtml(h.status || ''))}
+      ${psnField('Status', statusDisplay)}
     </div>`;
 
   const dispatchLine = h.invoiceId
-    ? `Invoice ${escapeHtml(h.invoiceNo || '')} (${escapeHtml(h.invoiceType || '')}) — ${formatDateDMY(h.dispatchDate)}`
+    ? `Invoice ${escapeHtml(h.invoiceNo || '')} (${escapeHtml(h.invoiceType || '')}) — ${formatOrdinalDate(h.dispatchDate)}`
     : `<span style="color:var(--muted);">Not dispatched</span>`;
   const whereItWent = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
       ${psnField('Project ID', escapeHtml(h.projectId || ''))}
@@ -162,15 +243,15 @@ function psnRenderDetail(data) {
     </div>`;
 
   const qaApprovedLine = h.qaApprovedOn
-    ? formatDateDMY(h.qaApprovedOn)
+    ? formatOrdinalDate(h.qaApprovedOn)
     : `<span style="color:var(--muted);">— <span style="font-size:0.75rem;">(recorded from Sep 2026 onward)</span></span>`;
   const buildChain = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
       ${psnField('Production Person', escapeHtml(h.productionPerson || ''))}
       ${psnField('Job Card', escapeHtml(h.jobCardNumber || ''))}
       ${psnField('BOQ ID', escapeHtml(h.boqId || ''))}
       ${psnField('Set Number', h.setNumber != null ? escapeHtml(String(h.setNumber)) : '')}
-      ${psnField('Job Card Created', formatDateDMY(h.jobCardCreated))}
-      ${psnField('FG Date', formatDateDMY(h.fgDate))}
+      ${psnField('Job Card Created', formatOrdinalDate(h.jobCardCreated))}
+      ${psnField('FG Date', formatOrdinalDate(h.fgDate))}
       ${psnField('QA Authorizing Person', escapeHtml(h.qaAuthorizingPerson || ''))}
       ${psnField('QA Approved On', qaApprovedLine)}
     </div>`;
@@ -190,7 +271,7 @@ function psnRenderDetail(data) {
       </div>
       <button class="nav-btn-styled" onclick="psnRebuildSnapshot(${h.fgId})">Rebuild attribution</button>`;
   } else {
-    provenanceHtml = `<div style="font-size:0.8rem; color:var(--muted);">Source attribution frozen on ${escapeHtml(trace.builtAt || '')}${trace.builtBy ? ' by ' + escapeHtml(trace.builtBy) : ''}.
+    provenanceHtml = `<div style="font-size:0.8rem; color:var(--muted);">Source attribution frozen on ${escapeHtml(formatOrdinalDateTime(trace.builtAt) || '')}${trace.builtBy ? ' by ' + escapeHtml(trace.builtBy) : ''}.
       <button class="nav-btn-styled" style="margin-left:10px; padding:2px 10px; font-size:0.75rem;" onclick="psnRebuildSnapshot(${h.fgId})">Rebuild</button></div>`;
   }
 
@@ -212,13 +293,13 @@ function psnRenderMaterialSources(trace) {
       const tier = PSN_TIER_META[pl.tier] || { label: pl.tier, color: '#334155', bg: '#f1f5f9' };
       const chip = `<span style="display:inline-block; padding:2px 8px; border-radius:999px; font-size:0.72rem; font-weight:600; color:${tier.color}; background:${tier.bg};">${escapeHtml(tier.label)}</span>`;
       const evidence = pl.grnNumber
-        ? `GRN ${escapeHtml(pl.grnNumber)}${pl.invoiceNumber ? ' · Invoice ' + escapeHtml(pl.invoiceNumber) : ''}${pl.qaPerson ? ' · QA by ' + escapeHtml(pl.qaPerson) : ''}${pl.qaPassDate ? ' on ' + formatDateDMY(pl.qaPassDate) : ''}`
+        ? `GRN ${escapeHtml(pl.grnNumber)}${pl.invoiceNumber ? ' · Invoice ' + escapeHtml(pl.invoiceNumber) : ''}${pl.qaPerson ? ' · QA by ' + escapeHtml(pl.qaPerson) : ''}${pl.qaPassDate ? ' on ' + formatOrdinalDate(pl.qaPassDate) : ''}`
         : (pl.poNo ? '' : '<span style="color:var(--muted);">No receipt could be matched for this quantity.</span>');
       const okNotOk = (pl.okQuantity != null || pl.notOkQuantity != null || pl.missingQuantity != null)
         ? ` <span style="color:var(--muted); font-size:0.78rem;">(OK ${trimNum(pl.okQuantity || 0)} / Not-OK ${trimNum(pl.notOkQuantity || 0)} / Missing ${trimNum(pl.missingQuantity || 0)})</span>` : '';
       return `<div style="padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); margin-top:6px;">
           ${chip} <strong style="margin-left:6px;">${pl.poNo ? escapeHtml(pl.poNo) : '<span style="color:var(--muted);">No PO</span>'}</strong>
-          ${pl.poDate ? ' — ' + formatDateDMY(pl.poDate) : ''} ${pl.vendorName ? ' — ' + escapeHtml(pl.vendorName) : ''}
+          ${pl.poDate ? ' — ' + formatOrdinalDate(pl.poDate) : ''} ${pl.vendorName ? ' — ' + escapeHtml(pl.vendorName) : ''}
           <span style="float:right; font-weight:600;">${trimNum(pl.attributedQuantity || 0)}</span>
           <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">${evidence}${okNotOk}</div>
         </div>`;
@@ -232,7 +313,7 @@ function psnRenderMaterialSources(trace) {
       ? `<div style="margin-top:8px;"><div style="font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Rejection / repair history</div>
           ${m.rejections.map(r => `<div style="font-size:0.8rem; padding:6px 0; border-top:1px solid var(--border);">
               ${escapeHtml(r.status || '')} — Not-OK ${trimNum(r.notOkQuantity || 0)} / Missing ${trimNum(r.missingQuantity || 0)}
-              ${r.reasonForNotOk ? ' — ' + escapeHtml(r.reasonForNotOk) : ''} ${r.setDate ? ' (' + formatDateDMY(r.setDate) + ')' : ''}
+              ${r.reasonForNotOk ? ' — ' + escapeHtml(r.reasonForNotOk) : ''} ${r.setDate ? ' (' + formatOrdinalDate(r.setDate) + ')' : ''}
             </div>`).join('')}
         </div>`
       : '';
@@ -276,11 +357,11 @@ async function psnLoadQueue() {
         : (r.snapshotStatus === 'ok' ? `<span style="color:#15803d;">OK (${r.poCount || 0} PO${r.poCount === 1 ? '' : 's'})</span>` : `<span style="color:#b45309;">${escapeHtml(r.snapshotStatus)}</span>`);
       return `<tr style="cursor:pointer; border-top:1px solid var(--border);" onclick="psnOpenFromQueue(${r.fgId})">
           <td style="padding:8px;">${escapeHtml(r.productSerialNumber || '')}</td>
-          <td style="padding:8px;">${escapeHtml(r.jobCardNumber || '')}</td>
+          <td style="padding:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(r.jobCardNumber || '')}">${escapeHtml(psnShortJobCard(r.jobCardNumber))}</td>
           <td style="padding:8px;">${escapeHtml(r.projectId || '')}</td>
           <td style="padding:8px;">${escapeHtml(r.customerName || '')}</td>
           <td style="padding:8px;">${escapeHtml(r.productName || '')} ${escapeHtml(r.productRating || '')}</td>
-          <td style="padding:8px;">${formatDateDMY(r.fgDate)}</td>
+          <td style="padding:8px;">${formatOrdinalDate(r.fgDate)}</td>
           <td style="padding:8px;">${escapeHtml(r.status || '')}</td>
           <td style="padding:8px;">${attribution}</td>
         </tr>`;
@@ -288,6 +369,18 @@ async function psnLoadQueue() {
   } catch (err) {
     body.innerHTML = `<tr><td colspan="8" style="padding:10px; color:#b91c1c;">Failed to load.</td></tr>`;
   }
+}
+
+// psnShortJobCard -- the full job_card_number is `JC_Set-<n>_<boqIdSuffix>`
+// (see routes/design.js's deriveJobCardNumber) — very long, and this table
+// already has separate Project ID / Product Name columns carrying that
+// same information, so only the "JC_Set-<n>" lead segment is shown here.
+// Falls back to the full string for any legacy row that doesn't match the
+// expected shape, rather than silently showing nothing.
+function psnShortJobCard(jobCardNumber) {
+  const s = (jobCardNumber || '').toString();
+  const m = /^(JC_Set-\d+)/.exec(s);
+  return m ? m[1] : s;
 }
 
 function psnToggleQueueFilter() {
