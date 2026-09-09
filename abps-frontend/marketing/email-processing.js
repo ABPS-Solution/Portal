@@ -274,6 +274,45 @@ async function executeInboundEmailSyncPipelineFetch() {
   }
 }
 
+// Some senders' mail systems (auto-generated transmittal/EDI tools are
+// the usual culprit — the L&T one that surfaced this is exactly that)
+// put the SAME raw HTML into both the text/html part and the text/plain
+// alternative, instead of a real plain-text rendering. lib/gmail.js's
+// fetchUnreadMessages only ever reads the text/plain part (by MIME
+// rules), so there's nothing to fix upstream — the "plain text" it
+// received back really is a full HTML document. Detected and stripped
+// here at display time so both this already-stored message and any
+// future one shaped the same way render as readable text instead of
+// literal <table>/<td> markup. Uses a detached DOMParser document and
+// only ever reads .textContent from it — never inserted into the live
+// page and DOMParser-parsed <script> tags never execute, so this is
+// safe on fully untrusted sender content (same "never innerHTML
+// untrusted text" rule escapeHtml() exists for elsewhere in this app).
+function looksLikeHtmlBody(s) {
+  return /<\s*(html|body|table|div|span|td|tr|br|p|a)\b/i.test(s || "");
+}
+function stripHtmlBodyToPlainText(html) {
+  try {
+    // .textContent alone ignores every element boundary — a <td>Label</td>
+    // <td>:</td><td>Value</td> row (exactly this kind of transmittal
+    // email's shape) would otherwise concatenate into "Label:Value" with
+    // no spacing at all, or across rows into one unreadable run-on line.
+    // Inserting a real separator at each boundary FIRST (still just a
+    // string replace on the raw source — nothing here is parsed as HTML
+    // until the untouched DOMParser call below, which never executes
+    // anything) fixes both within a row and between rows/blocks.
+    const withBreaks = String(html)
+      .replace(/<\/(td|th)>/gi, " ")
+      .replace(/<\/(tr|table|div|p|li|h[1-6])>/gi, "\n")
+      .replace(/<br\s*\/?>/gi, "\n");
+    const doc = new DOMParser().parseFromString(withBreaks, "text/html");
+    const raw = doc.body ? doc.body.textContent : "";
+    return raw.split("\n").map(line => line.replace(/[ \t]+/g, " ").trim()).filter(Boolean).join("\n");
+  } catch (e) {
+    return html;
+  }
+}
+
 // Age-since-received bucket for a lead card's left-border/chip color —
 // same 3-color language (fresh/soon/overdue) already used by QA
 // Inspection Timeline and the department dashboards, applied here so a
@@ -368,7 +407,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
       </div>
       <div id="email-full-message-body-${mIdx}" style="display:none; margin-top:-4px; background:#fff; border:1px solid var(--border); border-radius:4px; padding:10px; font-size:0.82rem; color:var(--text);">
         <div style="font-weight:700; margin-bottom:6px;">${escapeHtml(mail.subject || "(no subject)")}</div>
-        <div style="white-space:pre-wrap; line-height:1.5; max-height:400px; overflow-y:auto;">${escapeHtml(mail.body || "(no body content available)")}</div>
+        <div style="white-space:pre-wrap; line-height:1.5; max-height:400px; overflow-y:auto;">${escapeHtml(looksLikeHtmlBody(mail.body) ? stripHtmlBodyToPlainText(mail.body) : (mail.body || "(no body content available)"))}</div>
       </div>
 
       <div id="email-notes-zone-${mIdx}">
