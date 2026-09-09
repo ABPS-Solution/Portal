@@ -4770,91 +4770,71 @@
 
 
           <div id="dropform-duplicate-fields-block">
-            <div style="margin-bottom: 12px;">
-              <label class="field-label">Company Name *</label>
-              <input type="text" id="dropform-company-locked" placeholder="Enter company name..." style="background: #ffffff; font-weight: 600;" />
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+              <div><label class="field-label">Company Name *</label><input type="text" id="dropform-company-locked" placeholder="Enter company name..." style="background: #ffffff; font-weight: 600;" /></div>
+              <div><label class="field-label">Contact Person Name</label><input type="text" id="dropform-name" placeholder="Enter contact name..." /></div>
+              <div><label class="field-label">Position</label><input type="text" id="dropform-position" placeholder="Enter job position..." /></div>
             </div>
 
-            <div style="margin-bottom: 12px;">
-              <label class="field-label">Contact Person Name</label>
-              <input type="text" id="dropform-name" placeholder="Enter contact name..." />
-            </div>
-
-            <div style="margin-bottom: 12px;">
-              <label class="field-label">Position</label>
-              <input type="text" id="dropform-position" placeholder="Enter job position..." />
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
               <div><label class="field-label">Phone</label><input type="tel" id="dropform-phone" /></div>
               <div><label class="field-label">Alt Phone</label><input type="tel" id="dropform-altphone" /></div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
               <div><label class="field-label">Email Address</label><input type="email" id="dropform-email" /></div>
               <div><label class="field-label">Website</label><input type="url" id="dropform-website" /></div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 3fr; gap: 10px; margin-bottom: 12px;">
               <div><label class="field-label">City *</label><input type="text" id="dropform-city" /></div>
               <div><label class="field-label">State *</label><input type="text" id="dropform-state" /></div>
               <div><label class="field-label">Country *</label><input type="text" id="dropform-country" placeholder="e.g. India" /></div>
-            </div>
-
-            <div style="margin-bottom: 12px;">
-              <label class="field-label">Company Address</label>
-              <textarea id="dropform-address" style="min-height: 80px;"></textarea>
+              <div>
+                <label class="field-label">Company Address</label>
+                <textarea id="dropform-address" rows="1" style="min-height: 34px; overflow: hidden; resize: none;" oninput="autoGrowTextField(this)"></textarea>
+              </div>
             </div>
           </div>
 
           <div class="section-divider-line" style="margin: 15px 0; background: var(--border); height: 1px;"></div>
 
           <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--brand); margin-bottom: 8px; text-transform: uppercase;">Section 1: Meeting Information</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
             <div><label class="field-label">Date of Meeting *</label><input type="date" id="meetingDate" /></div>
             <div><label class="field-label">Time of Meeting</label><input type="time" id="meetingTime" /></div>
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <label class="field-label">Meeting Venue</label>
-            <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px;">
-              <label style="width:auto; cursor:pointer;"><input type="radio" name="meetingVenue" value="ABPS Office" onclick="toggleOtherText(this, 'meetingVenueOther')" style="width:auto; margin-right:4px;"> ABPS Office</label>
-              <label style="width:auto; cursor:pointer;"><input type="radio" name="meetingVenue" value="Exhibition" onclick="toggleOtherText(this, 'meetingVenueOther')" style="width:auto; margin-right:4px;"> Exhibition</label>
-              <label style="width:auto; cursor:pointer;"><input type="radio" name="meetingVenue" value="Customer's Place" onclick="toggleOtherText(this, 'meetingVenueOther')" style="width:auto; margin-right:4px;"> Customer's Place</label>
-              <label style="width:auto; cursor:pointer;"><input type="radio" name="meetingVenue" value="Other" onclick="toggleOtherText(this, 'meetingVenueOther')" style="width:auto; margin-right:4px;"> Other</label>
+            <div>
+              <label class="field-label">Meeting Venue</label>
+              <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px;">
+                <label style="width:auto; cursor:pointer;"><input type="radio" name="meetingVenue" value="ABPS Office" onclick="toggleOtherText(this, 'meetingVenueOther')" style="width:auto; margin-right:4px;"> ABPS Office</label>
+                <label style="width:auto; cursor:pointer;"><input type="radio" name="meetingVenue" value="Exhibition" onclick="toggleOtherText(this, 'meetingVenueOther')" style="width:auto; margin-right:4px;"> Exhibition</label>
+                <label style="width:auto; cursor:pointer;"><input type="radio" name="meetingVenue" value="Customer's Place" onclick="toggleOtherText(this, 'meetingVenueOther')" style="width:auto; margin-right:4px;"> Customer's Place</label>
+                <label style="width:auto; cursor:pointer;"><input type="radio" name="meetingVenue" value="Other" onclick="toggleOtherText(this, 'meetingVenueOther')" style="width:auto; margin-right:4px;"> Other</label>
+              </div>
+              <input type="text" id="meetingVenueOther" placeholder="Specify other venue..." class="other-input" style="display: none; margin-top: 6px;" />
             </div>
-            <input type="text" id="meetingVenueOther" placeholder="Specify other venue..." class="other-input" style="display: none; margin-top: 6px;" />
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <label class="field-label">Venue Name / City</label>
-            <input type="text" id="venueName">
+            <div><label class="field-label">Venue Name / City</label><input type="text" id="venueName"></div>
           </div>
 
           <div style="margin-bottom: 12px;">
             <label class="field-label">Additional Meeting Details (if any)</label>
-            <textarea id="additionalMeetingDetails" style="min-height: 40px;"></textarea>
+            <textarea id="additionalMeetingDetails" rows="1" style="min-height: 34px; overflow: hidden; resize: none;" oninput="autoGrowTextField(this)"></textarea>
           </div>
 
           <div class="section-divider-line" style="margin: 15px 0; background: var(--border); height: 1px;"></div>
 
           <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--brand); margin-bottom: 8px; text-transform: uppercase;">Section 2: Lead Profile Categorization</h3>
-          <div style="margin-bottom: 12px;">
-            <label class="field-label">ABPS Business Vertical *</label>
-            <div style="display: flex; gap: 12px; margin-top: 4px;">
-              <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Industrial" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Industrial</label>
-              <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Power" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Power</label>
-              <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Renewable" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Renewable</label>
-              <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Data Center" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Data Center</label>
-              <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Oil & Gas" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Oil &amp; Gas</label>
-              <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Other" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Other</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+            <div>
+              <label class="field-label">ABPS Business Vertical *</label>
+              <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px;">
+                <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Industrial" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Industrial</label>
+                <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Power" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Power</label>
+                <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Renewable" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Renewable</label>
+                <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Data Center" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Data Center</label>
+                <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Oil & Gas" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Oil &amp; Gas</label>
+                <label style="width:auto; cursor:pointer;"><input type="radio" name="businessVertical" value="Other" onclick="toggleOtherText(this, 'businessVerticalOther')" style="width:auto; margin-right:4px;"> Other</label>
+              </div>
+              <input type="text" id="businessVerticalOther" placeholder="Specify vertical..." class="other-input" style="display: none; margin-top: 6px;" />
             </div>
-            <input type="text" id="businessVerticalOther" placeholder="Specify vertical..." class="other-input" style="display: none; margin-top: 6px;" />
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <label class="field-label">Type of Industry</label>
-            <input type="text" id="industry" placeholder="e.g. Cement, Steel, Chemical" />
+            <div><label class="field-label">Type of Industry</label><input type="text" id="industry" placeholder="e.g. Cement, Steel, Chemical" /></div>
           </div>
 
           <div style="margin-bottom: 12px;">
@@ -4875,8 +4855,8 @@
           <div class="section-divider-line" style="margin: 15px 0; background: var(--border); height: 1px;"></div>
 
           <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--brand); margin-bottom: 8px; text-transform: uppercase;">Section 3: Engineering Metrics & Diagnostics</h3>
-          
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; display:flex; flex-direction:column; gap:6px;">
               <label class="field-label" style="margin:0;">Low Power Factor Issue</label>
               <input type="text" id="lpi" value="" placeholder="Describe, if any" />
@@ -4885,9 +4865,6 @@
               <label class="field-label" style="margin:0;">High Electricity Bill Issue</label>
               <input type="text" id="hbi" value="" placeholder="Describe, if any" />
             </div>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; display:flex; flex-direction:column; gap:6px;">
               <label class="field-label" style="margin:0;">Harmonics Issue</label>
               <input type="text" id="hi" value="" placeholder="Describe, if any" />
@@ -4898,21 +4875,18 @@
             </div>
           </div>
 
-          <div style="margin-bottom: 12px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; display:flex; flex-direction:column; gap:6px;">
               <label class="field-label" style="margin:0;">Grid Stability Issue</label>
               <input type="text" id="gsi" value="" placeholder="Describe, if any" />
             </div>
+            <div><label class="field-label">Existing System Details</label><input type="text" id="esd" placeholder="Provide system details..." /></div>
+            <div><label class="field-label">Problem Observed</label><input type="text" id="problemObserved" placeholder="Summarize primary problems..." /></div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
             <div><label class="field-label">Purchase Inquire</label><input type="text" id="purchaseInquire" placeholder="Name of End User" /></div>
             <div><label class="field-label">Tender Inquire</label><input type="text" id="tenderInquire" placeholder="Name of End User" /></div>
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <label class="field-label">Existing System Details</label>
-            <input type="text" id="esd" placeholder="Provide system details..." />
           </div>
 
           <div style="margin-bottom: 12px;">
@@ -4938,22 +4912,12 @@
             <div><label class="field-label">Avg Power Factor</label><input type="number" step="any" id="avgPf" /></div>
           </div>
 
-          <div style="margin-bottom: 12px;">
-            <label class="field-label">Problem Observed</label>
-            <input type="text" id="problemObserved" placeholder="Summarize primary problems..." />
-          </div>
-
           <div class="section-divider-line" style="margin: 15px 0; background: var(--border); height: 1px;"></div>
 
           <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--brand); margin-bottom: 8px; text-transform: uppercase;">Section 4: Technical Commercial Opportunities</h3>
           <div style="margin-bottom: 12px;">
             <label class="field-label">Technical Discussion Summary</label>
-            <textarea id="techSummary" style="min-height: 40px;"></textarea>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-            <div><label class="field-label">Existing Project</label><input type="text" id="epInput" /></div>
-            <div><label class="field-label">Upcoming Project</label><input type="text" id="upInput" /></div>
+            <textarea id="techSummary" rows="1" style="min-height: 34px; overflow: hidden; resize: none;" oninput="autoGrowTextField(this)"></textarea>
           </div>
 
           <div style="margin-bottom: 12px;">
@@ -4970,14 +4934,16 @@
             <input type="text" id="pdoText" placeholder="Specify other engineering systems..." class="other-input" style="display: none; margin-top: 4px;" />
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-            <div><label class="field-label">Approx Requirement</label><input type="text" id="approxReq" placeholder="e.g. 2 Units SVG" /></div>
-            <div><label class="field-label">Expected Tender / RFQ Date</label><input type="date" id="tenderDate" /></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+            <div><label class="field-label">Existing Project</label><input type="text" id="epInput" /></div>
+            <div><label class="field-label">Upcoming Project</label><input type="text" id="upInput" /></div>
+            <div><label class="field-label">Competitor Details</label><input type="text" id="competitors" /></div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+            <div><label class="field-label">Approx Requirement</label><input type="text" id="approxReq" placeholder="e.g. 2 Units SVG" /></div>
+            <div><label class="field-label">Expected Tender / RFQ Date</label><input type="date" id="tenderDate" /></div>
             <div><label class="field-label">Expected Order Timeline</label><input type="text" id="orderTimeline" /></div>
-            <div><label class="field-label">Competitor Details</label><input type="text" id="competitors" /></div>
           </div>
 
           <div style="margin-bottom: 12px;">

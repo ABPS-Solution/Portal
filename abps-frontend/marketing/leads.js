@@ -1809,6 +1809,11 @@ function openEmailLeadCreateEntryForm(index, mountEl, onCancelFn) {
       }
     } else if (input.id !== "dropform-company-locked") {
       input.value = "";
+      // Company Address/Additional Meeting Details/Technical Discussion
+      // Summary auto-grow with typed content (autoGrowTextField) — clearing
+      // .value alone leaves the grown height in place until the next
+      // keystroke, so a reopened form shows a tall empty box.
+      if (input.tagName === "TEXTAREA") input.style.height = "auto";
     }
   });
 
@@ -1819,7 +1824,11 @@ function openEmailLeadCreateEntryForm(index, mountEl, onCancelFn) {
   const dropEmailField = document.getElementById("dropform-email");
   if (dropCompanyLocked) dropCompanyLocked.value = mailObject.extractedCompany;
   if (dropName) dropName.value = mailObject.extractedContactName;
-  if (dropEmailField && mailObject.destinationInboxAccount) dropEmailField.value = mailObject.destinationInboxAccount;
+  // The customer's own address (senderEmail), never destinationInboxAccount
+  // — that's one of OUR mailboxes (marketing@abpowerindia.com etc.), and
+  // filling it in here was silently recording our own address as the
+  // lead's contact email on every new entry created off an Email Lead.
+  if (dropEmailField && mailObject.senderEmail) dropEmailField.value = mailObject.senderEmail;
 
   // Email Leads is always an individual laptop login, never the shared
   // Visiting Card Details phone — force out of any leftover "CARD"
