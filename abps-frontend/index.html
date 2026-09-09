@@ -142,6 +142,28 @@
   .dd-card-title { font-size:0.7rem; font-weight:800; color:var(--brand); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px; }
   .dd-period-btn { font-size:0.68rem; font-weight:700; padding:3px 8px; border:1.5px solid var(--border); border-radius:4px; cursor:pointer; background:var(--card); color:var(--text); transition:all 0.15s; }
   .dd-period-btn.active { background:var(--brand); color:#fff; border-color:var(--brand); }
+
+  /* Accounts Dashboard's 3 stat rows reflow on a narrower (laptop) screen
+     instead of squeezing 5 columns into a width too narrow for their own
+     label text — same pattern ERP's port of this screen already uses.
+     Scoped by #canvas-module-accounts-dashboard so the shared
+     .dd-stat-card/its 80px-row convention used by the other 6 dashboards
+     is untouched. At the narrower breakpoints the row switches to a
+     natural height (flex:0 0 auto) and the card drops its fixed
+     height:100%/overflow:hidden so a wrapped label gets the room it
+     needs instead of being clipped. */
+  #canvas-module-accounts-dashboard .ad-stat-row { flex:0 0 80px; min-height:0; }
+  @media (max-width:1400px) {
+    #canvas-module-accounts-dashboard .ad-stat-row { grid-template-columns:repeat(3,1fr) !important; flex:0 0 auto !important; }
+    #canvas-module-accounts-dashboard .dd-stat-card { height:auto; min-height:80px; overflow:visible; }
+  }
+  @media (max-width:900px) {
+    #canvas-module-accounts-dashboard .ad-stat-row { grid-template-columns:repeat(2,1fr) !important; }
+  }
+  @media (max-width:1200px) {
+    #canvas-module-accounts-dashboard .ad-chart-row { grid-template-columns:1fr !important; flex:0 0 auto !important; min-height:0 !important; }
+    #canvas-module-accounts-dashboard .ad-chart-row .dd-card { min-height:260px; }
+  }
   .dd-period-btn:hover:not(.active) { border-color:var(--brand); color:var(--brand); }
   .dd-pending-row { display:flex; justify-content:space-between; align-items:center; padding:3px 4px; border-bottom:1px solid #f1f5f9; }
   .dd-age-badge { font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:8px; }
@@ -3652,10 +3674,10 @@
     <div id="canvas-module-accounts-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- BODY -->
-      <div id="ad-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+      <div id="ad-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; min-height:calc(100vh - 100px); box-sizing:border-box; overflow-y:auto; overflow-x:hidden;">
 
         <!-- ROW 1 -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+        <div class="ad-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Unactioned Travel / Hotel Tickets</div>
             <div class="dd-stat-val" id="ad-s-unactioned" style="color:#b45309;">—</div>
@@ -3683,7 +3705,7 @@
         </div>
 
         <!-- ROW 2 -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+        <div class="ad-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Tour Vouchers Checked</div>
             <div class="dd-stat-val" id="ad-s-vouchers" style="color:#15803d;">—</div>
@@ -3709,7 +3731,7 @@
         </div>
 
         <!-- ROW 3 -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+        <div class="ad-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Open Daily Cash/UPI Advances</div>
             <div class="dd-stat-val" id="ad-s-openadv" style="color:#b45309;">—</div>
@@ -3737,7 +3759,7 @@
 
         <!-- ROW 4: Charts — no panel row on this dashboard, so charts get
              the remaining ~half of the viewport instead of Purchase's 26%. -->
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
+        <div class="ad-chart-row" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:1; min-height:300px;">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; min-height:0;">
             <div class="dd-card-title">Tour Expense by Type (Top 5)</div>
             <div style="flex:1; min-height:0; position:relative;"><canvas id="ad-chart-tour-type"></canvas></div>
