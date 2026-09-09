@@ -42,10 +42,7 @@ const QAIT_DOC_TYPES = ["Inspection Clearance Note", "Customer Inspection Report
 const qaitIsAdmin = () => localStorage.getItem("isUserAdminGlobal") === "true";
 
 function qaitFmt(s) {
-  if (!s) return "—";
-  const d = new Date(s + "T00:00:00Z");
-  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return d.getUTCDate() + " " + MON[d.getUTCMonth()] + " " + d.getUTCFullYear();
+  return s ? formatOrdinalDate(s) : "—";
 }
 
 async function initializeQaInspectionTimelinePanel() {
@@ -59,17 +56,20 @@ async function initializeQaInspectionTimelinePanel() {
   await qaitLoadQueue();
 }
 
+// .dd-period-btn/.dd-period-btn.active is the same toggle style every
+// department dashboard's period selector (Today/This Week/.../Custom)
+// already uses — reused here instead of a bespoke, differently-colored-
+// per-bucket chip design so this screen's filter bar reads the same way
+// as everywhere else in the app.
 function qaitRenderFilterBar() {
   const bar = document.getElementById("qait-bucket-filter-bar");
   if (!bar) return;
   const counts = { all: qaitRows ? qaitRows.length : 0 };
   QAIT_BUCKETS.forEach(b => { counts[b.key] = qaitRows ? qaitRows.filter(r => r.bucket === b.key).length : 0; });
-  const chips = [{ key: "all", label: "All", color: "var(--text)", bg: "var(--highlight-bg)" }, ...QAIT_BUCKETS];
+  const chips = [{ key: "all", label: "All" }, ...QAIT_BUCKETS];
   bar.innerHTML = chips.map(c => {
     const active = qaitActiveBucketFilter === c.key;
-    return `<button class="nav-btn-styled" onclick="qaitSetBucketFilter('${c.key}')"
-      style="padding:6px 14px; font-size:0.8rem; border:1.5px solid ${c.color}; background:${active ? c.color : c.bg}; color:${active ? '#fff' : c.color};">
-      ${escapeHtml(c.label)} (${counts[c.key] || 0})</button>`;
+    return `<button class="dd-period-btn${active ? ' active' : ''}" onclick="qaitSetBucketFilter('${c.key}')" style="font-size:0.78rem; padding:6px 14px;">${escapeHtml(c.label)} (${counts[c.key] || 0})</button>`;
   }).join("");
 }
 
@@ -125,20 +125,22 @@ function qaitBucketBadge(bucket) {
 
 function qaitRenderRow(r) {
   const expanded = qaitExpanded.has(r.projectId);
-  const nextStepLabel = r.nextStep ? QAIT_MILESTONE_LABELS[r.nextStep] : (r.bucket === "completed" ? "—" : "—");
+  const nextStepLabel = r.nextStep ? QAIT_MILESTONE_LABELS[r.nextStep] : "—";
+  const colBorder = "border-left:2px solid var(--border);";
+  const centered = "text-align:center;";
   const rowMain = `
-    <tr id="qait-row-${r.projectId}" onclick="qaitToggleRow('${r.projectId}')" style="cursor:pointer; border-bottom:1px solid var(--border);">
-      <td style="padding:8px; font-weight:700; color:var(--brand);">${expanded ? '▾' : '▸'}</td>
-      <td style="padding:8px; font-weight:700;">${escapeHtml(r.projectId)}${r.hasLdExposure ? ' <span title="LD applicable on this project" style="color:#b91c1c;">⚠</span>' : ''}</td>
-      <td style="padding:8px;">${escapeHtml(r.companyName || '')}</td>
-      <td style="padding:8px;">${escapeHtml(nextStepLabel)} ${qaitBucketBadge(r.bucket)}</td>
-      <td style="padding:8px; ${r.bucket === 'overdue' ? 'color:#b91c1c; font-weight:700;' : ''}">${r.nextStepDate ? qaitFmt(r.nextStepDate) + (r.daysOverdue ? ` (${r.daysOverdue}d late)` : '') : '—'}</td>
-      <td style="padding:8px;">${r.actuals.customer_inspection ? '✓ ' + qaitFmt(r.actuals.customer_inspection) : (r.chain.inspection ? 'Est. ' + qaitFmt(r.chain.inspection) : '—')}</td>
-      <td style="padding:8px;">${r.actuals.inspection_clearance_note ? '✓ ' + qaitFmt(r.actuals.inspection_clearance_note) : (r.chain.clearanceNote ? 'Est. ' + qaitFmt(r.chain.clearanceNote) : '—')}</td>
-      <td style="padding:8px;">${r.actuals.dispatch_clearance ? '✓ ' + qaitFmt(r.actuals.dispatch_clearance) : (r.chain.dispatchClearance ? 'Est. ' + qaitFmt(r.chain.dispatchClearance) : '—')}</td>
+    <tr id="qait-row-${r.projectId}" onclick="qaitToggleRow('${r.projectId}')" style="cursor:pointer; border-bottom:2px solid var(--border);">
+      <td style="padding:8px 6px; ${centered} font-weight:700; color:var(--brand);">${expanded ? '▾' : '▸'}</td>
+      <td style="padding:8px 6px; font-weight:700; ${colBorder}">${escapeHtml(r.projectId)}${r.hasLdExposure ? ' <span title="LD applicable on this project" style="color:#b91c1c;">⚠</span>' : ''}</td>
+      <td style="padding:8px 6px; ${colBorder}">${escapeHtml(r.companyName || '')}</td>
+      <td style="padding:8px 6px; ${colBorder}">${escapeHtml(nextStepLabel)} ${qaitBucketBadge(r.bucket)}</td>
+      <td style="padding:8px 6px; ${centered} ${colBorder} ${r.bucket === 'overdue' ? 'color:#b91c1c; font-weight:700;' : ''}">${r.nextStepDate ? qaitFmt(r.nextStepDate) + (r.daysOverdue ? ` (${r.daysOverdue}d late)` : '') : '—'}</td>
+      <td style="padding:8px 6px; ${centered} ${colBorder}">${r.actuals.customer_inspection ? '✓ ' + qaitFmt(r.actuals.customer_inspection) : (r.chain.inspection ? 'Est. ' + qaitFmt(r.chain.inspection) : '—')}</td>
+      <td style="padding:8px 6px; ${centered} ${colBorder}">${r.actuals.inspection_clearance_note ? '✓ ' + qaitFmt(r.actuals.inspection_clearance_note) : (r.chain.clearanceNote ? 'Est. ' + qaitFmt(r.chain.clearanceNote) : '—')}</td>
+      <td style="padding:8px 6px; ${centered} ${colBorder}">${r.actuals.dispatch_clearance ? '✓ ' + qaitFmt(r.actuals.dispatch_clearance) : (r.chain.dispatchClearance ? 'Est. ' + qaitFmt(r.chain.dispatchClearance) : '—')}</td>
     </tr>`;
   const detailRow = expanded
-    ? `<tr id="qait-detail-${r.projectId}"><td colspan="8" style="padding:0;"><div style="padding:14px; background:var(--highlight-bg); border-bottom:1px solid var(--border);">${qaitDetailCache.has(r.projectId) ? qaitRenderDetail(r.projectId, qaitDetailCache.get(r.projectId)) : '<div style="color:var(--muted); font-size:0.82rem;">Loading…</div>'}</div></td></tr>`
+    ? `<tr id="qait-detail-${r.projectId}"><td colspan="8" style="padding:0;"><div style="padding:14px; background:var(--highlight-bg); border-bottom:2px solid var(--border);">${qaitDetailCache.has(r.projectId) ? qaitRenderDetail(r.projectId, qaitDetailCache.get(r.projectId)) : '<div style="color:var(--muted); font-size:0.82rem;">Loading…</div>'}</div></td></tr>`
     : "";
   return rowMain + detailRow;
 }
@@ -175,9 +177,9 @@ function qaitRenderDetail(projectId, d) {
   if (d.blocked) return `<div style="color:var(--muted); font-style:italic; font-size:0.82rem;">${escapeHtml(d.blocked)}</div>`;
 
   const laneRows = (d.laneTerminals || []).map(l => `
-    <div style="font-size:0.78rem; padding:3px 0;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px 8px; font-size:0.78rem; border-bottom:1px solid var(--border);">
       <b>${escapeHtml(l.productName || '')}${l.productRating ? ' ' + escapeHtml(l.productRating) : ''}</b>
-      — Packing/Add to FG: ${l.actual ? '✓ ' + qaitFmt(l.actual) : (l.effective ? 'Est. ' + qaitFmt(l.effective) : 'Not yet scheduled')}
+      <span style="color:var(--muted); white-space:nowrap;">Packing/Add to FG: ${l.actual ? '✓ ' + qaitFmt(l.actual) : (l.effective ? 'Est. ' + qaitFmt(l.effective) : 'Not yet scheduled')}</span>
     </div>`).join("") || `<div style="color:var(--muted); font-size:0.78rem;">No in-scope lanes.</div>`;
 
   const chainRows = QAIT_MILESTONE_CHAIN.map((key, idx) => {
@@ -215,20 +217,20 @@ function qaitRenderDetail(projectId, d) {
       <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px;">Documents</div>
       ${(d.documents || []).map(doc => `<div style="font-size:0.78rem; padding:2px 0;">
         <a href="#" onclick="event.preventDefault(); driveLink('${doc.fileUrl}');" style="color:var(--brand); font-weight:600;">${escapeHtml(doc.documentType)}</a>
-        <span style="color:var(--muted);"> — ${escapeHtml(doc.fileName)} (${qaitFmt(doc.uploadedAt)})</span>
+        <span style="color:var(--muted);"> · ${escapeHtml(doc.fileName)} (${qaitFmt(doc.uploadedAt)})</span>
       </div>`).join("") || `<div style="color:var(--muted); font-size:0.78rem; margin-bottom:6px;">No documents uploaded yet.</div>`}
-      <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-        <select id="qait-doc-type-${projectId}" style="padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;">
+      <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:nowrap; align-items:center; overflow-x:auto;">
+        <select id="qait-doc-type-${projectId}" style="padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem; flex:none;">
           ${QAIT_DOC_TYPES.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("")}
         </select>
-        <input type="file" id="qait-doc-file-${projectId}" style="font-size:0.78rem;" />
-        <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="qaitUploadDocument('${projectId}')">Upload</button>
+        <input type="file" id="qait-doc-file-${projectId}" style="font-size:0.78rem; flex:none;" />
+        <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem; flex:none; white-space:nowrap;" onclick="qaitUploadDocument('${projectId}')">Upload</button>
       </div>
     </div>`;
 
   return `
-    <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px;">Stage 4 — In-Scope Lanes</div>
-    ${laneRows}
+    <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px;">Stage 4: In-Scope Lanes</div>
+    <div style="border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; background:var(--card);">${laneRows}</div>
     <div style="font-weight:700; font-size:0.85rem; margin:10px 0 4px;">Stage 5 Chain</div>
     ${chainRows}
     ${callBlock}
@@ -237,11 +239,11 @@ function qaitRenderDetail(projectId, d) {
 }
 
 function qaitCallFormHtml(projectId, existing) {
-  return `<div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-    <input type="date" id="qait-call-date-${projectId}" value="${existing ? existing.callPlacedOn : ''}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;" />
-    <input type="text" id="qait-call-contact-${projectId}" placeholder="Customer contact (optional)" value="${existing ? escapeHtml(existing.customerContact || '') : ''}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;" />
-    <input type="text" id="qait-call-notes-${projectId}" placeholder="Notes (optional)" value="${existing ? escapeHtml(existing.notes || '') : ''}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem; flex:1; min-width:120px;" />
-    <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="qaitRecordCall('${projectId}')">${existing ? 'Update' : 'Record Call'}</button>
+  return `<div style="margin-top:6px; display:flex; gap:8px; flex-wrap:nowrap; align-items:center; overflow-x:auto;">
+    <input type="date" id="qait-call-date-${projectId}" value="${existing ? existing.callPlacedOn : ''}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem; flex:none;" />
+    <input type="text" id="qait-call-contact-${projectId}" placeholder="Customer contact (optional)" value="${existing ? escapeHtml(existing.customerContact || '') : ''}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem; flex:none; width:180px;" />
+    <input type="text" id="qait-call-notes-${projectId}" placeholder="Notes (optional)" value="${existing ? escapeHtml(existing.notes || '') : ''}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem; flex:1; min-width:160px;" />
+    <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem; flex:none; white-space:nowrap;" onclick="qaitRecordCall('${projectId}')">${existing ? 'Update' : 'Record Call'}</button>
   </div>`;
 }
 

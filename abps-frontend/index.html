@@ -2133,18 +2133,18 @@
       <div id="qait-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="qait-bucket-filter-bar" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;"></div>
       <div id="qait-summary-strip" style="margin-bottom:14px;"></div>
-      <div id="qait-table-wrap" style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+      <div id="qait-table-wrap" style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+        <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:0.85rem;">
           <thead>
-            <tr style="text-align:left; border-bottom:2px solid var(--border);">
-              <th style="padding:8px;"></th>
-              <th style="padding:8px;">Project</th>
-              <th style="padding:8px;">Company</th>
-              <th style="padding:8px;">Next Step</th>
-              <th style="padding:8px;">Expected</th>
-              <th style="padding:8px;">Customer Inspection</th>
-              <th style="padding:8px;">Inspection Clearance Note</th>
-              <th style="padding:8px;">Dispatch Clearance</th>
+            <tr style="background:#f0fdf4; border-bottom:2px solid var(--border);">
+              <th style="width:4%; padding:8px 6px;"></th>
+              <th style="width:15%; padding:8px 6px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Project</th>
+              <th style="width:13%; padding:8px 6px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Company</th>
+              <th style="width:17%; padding:8px 6px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Next Step</th>
+              <th style="width:10%; padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Expected</th>
+              <th style="width:14%; padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Customer Inspection</th>
+              <th style="width:14%; padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Inspection Clearance Note</th>
+              <th style="width:13%; padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Dispatch Clearance</th>
             </tr>
           </thead>
           <tbody id="qait-table-body"></tbody>
