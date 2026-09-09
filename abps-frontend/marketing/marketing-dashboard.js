@@ -331,6 +331,9 @@ function dashCustomTypeChange(prefix) {
 }
 function dashReadCustomVal(prefix) {
   const type = document.getElementById(`${prefix}-custom-type`).value;
+  if (type === "customday") {
+    return document.getElementById(`${prefix}-custom-val-day-input`).value.trim();
+  }
   if (type === "customrange") {
     const s = document.getElementById(`${prefix}-custom-val-range-start`).value.trim();
     const e = document.getElementById(`${prefix}-custom-val-range-end`).value.trim();
