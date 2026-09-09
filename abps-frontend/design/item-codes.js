@@ -612,7 +612,7 @@ async function handleIcfNewTypeChange(typeOfMaterial) {
   } catch(e) { icfCurrentFormats = []; }
 
   subSelect.innerHTML = '<option value="">— Select Sub-Option —</option>' +
-    icfCurrentFormats.map(f => `<option value="${f.formatId}">${f.subOption}</option>`).join("");
+    icfCurrentFormats.map(f => `<option value="${f.formatId}">${escapeHtml(f.subOption)}</option>`).join("");
 }
 
 // initialValues (optional) — { materialNameValues, ratingValues }, same
@@ -758,13 +758,19 @@ async function handleIcfFormatTypeChange(typeOfMaterial) {
     listEl.innerHTML = '<div style="color:var(--muted); font-size:0.85rem;">No formats yet for this Type of Material.</div>';
     return;
   }
+  // Templates use this app's own "<A or B>" placeholder syntax (see
+  // lib/itemCodeFormat.js) — interpolated raw into innerHTML, a
+  // placeholder like "<SVG nph kVAr or AHF nph A>" gets parsed by the
+  // browser as a real <svg> element and swallows everything after it
+  // into foreign-content parsing, which is what produced the large blank
+  // gaps on cards like "LT Hybrid Thyristor Switched". Escape before display.
   listEl.innerHTML = icfCurrentFormats.map(f => `
     <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px 16px;">
       <div>
-        <div style="font-weight:700; color:var(--brand);">${f.subOption}</div>
-        <div style="font-size:0.78rem; color:var(--muted); font-family:monospace; margin-top:2px;">${f.materialNameTemplate}</div>
-        ${f.ratingTemplate ? `<div style="font-size:0.78rem; color:var(--muted); font-family:monospace;">${f.ratingTemplate}</div>` : ''}
-        <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Unit: <strong>${f.unit}</strong></div>
+        <div style="font-weight:700; color:var(--brand);">${escapeHtml(f.subOption)}</div>
+        <div style="font-size:0.78rem; color:var(--muted); font-family:monospace; margin-top:2px;">${escapeHtml(f.materialNameTemplate)}</div>
+        ${f.ratingTemplate ? `<div style="font-size:0.78rem; color:var(--muted); font-family:monospace;">${escapeHtml(f.ratingTemplate)}</div>` : ''}
+        <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Unit: <strong>${escapeHtml(f.unit)}</strong></div>
       </div>
       <button onclick="editIcfFormat(${f.formatId})" style="background:var(--brand); color:#fff; border:none; padding:6px 14px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.8rem;">Edit</button>
     </div>`).join("");
