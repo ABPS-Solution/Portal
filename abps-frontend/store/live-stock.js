@@ -1013,9 +1013,12 @@ function renderFinishedGoodsStoreStockTables() {
           inStock:      0
         };
       }
-      // addFinishedGoodsItem always writes status = 'In Store' — there is
-      // no other status transition yet, so this counts every row for now,
-      // but stays correct if a "Dispatched"-style transition is added later.
+      // getLiveFinishedGoodsInventory (routes/production.js) already
+      // filters to status = 'In Store' server-side, so every row received
+      // here already qualifies — this check is redundant defense, not the
+      // real gate. Kept exact-match on purpose: a dispatched unit now
+      // flips to 'Dispatched' (10 Sep 2026, routes/projects.js's
+      // markFinishedGoodsDispatched) and must NOT count as in-stock here.
       if ((row.status || "").trim() === "In Store") {
         groups[key].inStock++;
         if (row.jobCardNumber) groups[key].jobCards.push(row.jobCardNumber);

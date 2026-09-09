@@ -15,7 +15,6 @@
 let psnActiveTab = 'search';
 let psnHits = [];
 let psnActiveFgId = null;
-let psnQueueFilter = { missingSnapshotOnly: false };
 let psnSearchDebounceTimer = null;
 let psnSearchReqToken = 0;
 
@@ -29,7 +28,6 @@ function initializeProductSerialTrackingPanel() {
   psnActiveTab = 'search';
   psnHits = [];
   psnActiveFgId = null;
-  psnQueueFilter = { missingSnapshotOnly: false };
   psnSearchReqToken++; // invalidate any in-flight suggestion fetch from a prior visit
 
   const feedback = document.getElementById('psn-feedback');
@@ -341,13 +339,16 @@ async function psnRebuildSnapshot(fgId) {
 }
 
 // ── Queue ────────────────────────────────────────────────────────────────
+// "Needs attribution" filter toggle was removed (10 Sep 2026, explicit
+// request — "too confusing") — this now always loads the full, unfiltered
+// list. The backend route's missingSnapshotOnly param is untouched
+// (flagged, not deleted) in case a clearer surfacing of this is wanted
+// later; nothing on this screen sends it anymore.
 async function psnLoadQueue() {
-  document.getElementById('psn-queue-filter-bar').innerHTML = `
-    <button class="nav-btn-styled" style="${psnQueueFilter.missingSnapshotOnly ? '' : 'background:var(--card); color:var(--text); border:1px solid var(--border);'}" onclick="psnToggleQueueFilter()">Needs attribution</button>`;
   const body = document.getElementById('psn-queue-body');
   body.innerHTML = `<tr><td colspan="8" style="padding:10px; color:var(--muted);">Loading...</td></tr>`;
   try {
-    const data = await apFetch({ action: 'fetchProductSerialQueue', missingSnapshotOnly: psnQueueFilter.missingSnapshotOnly || undefined });
+    const data = await apFetch({ action: 'fetchProductSerialQueue' });
     if (!data.success) { body.innerHTML = `<tr><td colspan="8" style="padding:10px; color:#b91c1c;">${escapeHtml(data.error || 'Failed to load.')}</td></tr>`; return; }
     const rows = data.rows || [];
     if (rows.length === 0) { body.innerHTML = `<tr><td colspan="8" style="padding:10px; color:var(--muted);">No units found.</td></tr>`; return; }
@@ -381,11 +382,6 @@ function psnShortJobCard(jobCardNumber) {
   const s = (jobCardNumber || '').toString();
   const m = /^(JC_Set-\d+)/.exec(s);
   return m ? m[1] : s;
-}
-
-function psnToggleQueueFilter() {
-  psnQueueFilter.missingSnapshotOnly = !psnQueueFilter.missingSnapshotOnly;
-  psnLoadQueue();
 }
 
 async function psnOpenFromQueue(fgId) {
