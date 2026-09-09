@@ -32,6 +32,15 @@ function clearAppLocalStorageKeepingDeviceKeys(options) {
   const keepDrafts = !!(options && options.keepDrafts);
   const deviceToken = localStorage.getItem("abpsDeviceToken");
   const pcDeviceSecret = localStorage.getItem("abpsPcDeviceSecret");
+  // Remembered login Department + Name (10 Sep 2026) — same "survives
+  // logout, this is a per-device fact not per-session state" reasoning as
+  // the two device secrets above: on a device one person uses every time
+  // (99% of registered PCs/phones), re-selecting Department then Name from
+  // scratch on every single login is pure friction — the PIN is the actual
+  // authentication step. Saved in completeSuccessfulLogin, restored in
+  // syncPlatformPersonnelDropdownOptionsList.
+  const rememberedDept = localStorage.getItem("abpsRememberedLoginDept");
+  const rememberedName = localStorage.getItem("abpsRememberedLoginName");
   const drafts = [];
   if (keepDrafts) {
     for (let i = 0; i < localStorage.length; i++) {
@@ -42,6 +51,8 @@ function clearAppLocalStorageKeepingDeviceKeys(options) {
   localStorage.clear();
   if (deviceToken) localStorage.setItem("abpsDeviceToken", deviceToken);
   if (pcDeviceSecret) localStorage.setItem("abpsPcDeviceSecret", pcDeviceSecret);
+  if (rememberedDept) localStorage.setItem("abpsRememberedLoginDept", rememberedDept);
+  if (rememberedName) localStorage.setItem("abpsRememberedLoginName", rememberedName);
   drafts.forEach(([k, v]) => { try { localStorage.setItem(k, v); } catch (_) {} });
 }
 
@@ -454,9 +465,30 @@ async function syncPlatformPersonnelDropdownOptionsList() {
         opt.textContent = deptName;
         deptSelect.appendChild(opt);
       });
-      
+
       nameSelect.innerHTML = '<option value="">— Choose Department First —</option>';
       nameSelect.disabled = true;
+      // Reset the pyramid buttons' visual state to match the reset above —
+      // rebuilding deptSelect's <option>s resets its .value to "", but
+      // nothing previously touched the buttons' own .active class, so a
+      // department clicked before an earlier logout stayed visually
+      // highlighted (and Name stayed correctly blank) even though nothing
+      // was actually selected any more (found 10 Sep 2026).
+      document.querySelectorAll(".login-dept-btn").forEach(btn => btn.classList.remove("active"));
+
+      // Restore this device's remembered Department + Name (see
+      // clearAppLocalStorageKeepingDeviceKeys's comment) so a returning
+      // user only has to type their PIN — selectLoginDeptButton both sets
+      // the active button and populates the Name list correctly.
+      const rememberedDept = localStorage.getItem("abpsRememberedLoginDept");
+      const rememberedName = localStorage.getItem("abpsRememberedLoginName");
+      if (rememberedDept && data.departmentsList.includes(rememberedDept)) {
+        selectLoginDeptButton(rememberedDept);
+        if (rememberedName && globalPersonnelAuthDirectoryTreePayloadCache[rememberedDept] &&
+            globalPersonnelAuthDirectoryTreePayloadCache[rememberedDept].some(n => n.trim() === rememberedName)) {
+          nameSelect.value = rememberedName;
+        }
+      }
     } else {
       deptSelect.innerHTML = '<option value="">Error syncing department parameters</option>';
     }
@@ -477,6 +509,13 @@ async function syncPlatformPersonnelDropdownOptionsList() {
 // department-dropdown text it already reads itself, while PIN login can
 // (and should) use the real data.permissions.admin the server sent.
 function completeSuccessfulLogin(data, activeOperatorDisplayName, isUserAdminGlobal) {
+  // Remember Department + Name for next time on this device — read the
+  // login screen's own DOM before showAppView() below swaps it away.
+  // Deliberately saved on real success only, not on every click, so a
+  // wrong Department/Name never gets remembered.
+  const deptAtLogin = document.getElementById("app-auth-active-department-identity")?.value;
+  if (deptAtLogin) localStorage.setItem("abpsRememberedLoginDept", deptAtLogin);
+  if (activeOperatorDisplayName) localStorage.setItem("abpsRememberedLoginName", activeOperatorDisplayName);
   localStorage.setItem("sessionToken",    data.sessionToken);
   localStorage.setItem("sessionExpiry",   data.expires);
   localStorage.setItem("sessionUser",     data.personKey);
