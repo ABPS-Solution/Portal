@@ -179,20 +179,30 @@
   .dd-body { height:auto !important; min-height:calc(100vh - 100px); overflow-y:auto !important; overflow-x:hidden !important; }
   .dd-stat-row { flex:0 0 auto !important; }
   .dd-stat-row > .dd-stat-card { height:auto !important; min-height:80px; overflow:visible !important; }
+  /* iPad landscape (roughly 1024-1366px) used to hit the old ≤1400/≤1200
+     breakpoints and fully stack (3-col stats, 1-col charts/details) —
+     far more vertical scrolling than the PC layout for the exact same
+     content. These two tiers keep iPad landscape close to desktop
+     (4-col stats, 2-col charts/details) instead of collapsing early;
+     phones still degrade further via the ≤900/≤640 tiers below. */
   @media (max-width:1400px) {
-    .dd-stat-row { grid-template-columns:repeat(3,1fr) !important; }
+    .dd-stat-row { grid-template-columns:repeat(4,1fr) !important; }
   }
   @media (max-width:1200px) {
-    .dd-chart-row, .dd-detail-row { grid-template-columns:1fr !important; flex:0 0 auto !important; min-height:0 !important; }
+    .dd-chart-row, .dd-detail-row { grid-template-columns:repeat(2,1fr) !important; flex:0 0 auto !important; min-height:0 !important; }
     /* Both class names, because chart cards are .dd-card on 6 dashboards
        and .dd-stat-card on Marketing — an explicit height here is what
        keeps the absolutely-positioned canvases from collapsing to zero
        once the row is no longer a fixed 230px. */
     .dd-chart-row > .dd-card, .dd-chart-row > .dd-stat-card,
-    .dd-detail-row > .dd-card, .dd-detail-row > .dd-stat-card { min-height:260px; }
+    .dd-detail-row > .dd-card, .dd-detail-row > .dd-stat-card { min-height:230px; }
   }
   @media (max-width:900px) {
+    .dd-stat-row { grid-template-columns:repeat(3,1fr) !important; }
+  }
+  @media (max-width:640px) {
     .dd-stat-row { grid-template-columns:repeat(2,1fr) !important; }
+    .dd-chart-row, .dd-detail-row { grid-template-columns:1fr !important; }
   }
   .dd-period-btn:hover:not(.active) { border-color:var(--brand); color:var(--brand); }
   .dd-pending-row { display:flex; justify-content:space-between; align-items:center; padding:3px 4px; border-bottom:1px solid #f1f5f9; }
