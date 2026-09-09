@@ -103,10 +103,21 @@ async function acFetch(path, payload) {
     signal: AbortSignal.timeout(60000),
   });
   const contentType = res.headers.get("content-type") || "";
-  if (!res.ok || !contentType.includes("application/json")) {
+  // A non-2xx status does NOT mean the body isn't useful JSON — most of this
+  // app's own routes deliberately return res.status(400/500).json({success:
+  // false, error: "..."}) with a real, specific message (e.g. deleteCompany's
+  // "still has linked Enquiries", or a safeErrorMessage() reference id). Only
+  // fall back to the generic message when the body genuinely isn't JSON
+  // (a proxy/500 HTML error page, a network-level failure) — otherwise every
+  // one of those carefully-written messages was silently discarded and
+  // replaced with a useless "Server error (HTTP 400)" (found 10 Sep 2026).
+  if (!contentType.includes("application/json")) {
     return { success: false, error: "Server error (HTTP " + res.status + ")" };
   }
   const data = await res.json();
+  if (!res.ok && data && typeof data.error !== "string") {
+    return { success: false, error: "Server error (HTTP " + res.status + ")" };
+  }
   if (!data.success && data.code === "SESSION_EXPIRED") {
     clearAppLocalStorageKeepingDeviceKeys({ keepDrafts: true });
     document.getElementById("app-container").style.display  = "none";
@@ -220,10 +231,16 @@ async function apFetch(payload) {
     signal: AbortSignal.timeout(60000),
   });
   const contentType = res.headers.get("content-type") || "";
-  if (!res.ok || !contentType.includes("application/json")) {
+  // Same reasoning as acFetch's own copy of this comment: a non-2xx status
+  // doesn't mean the body isn't real, useful JSON — only fall back to the
+  // generic message when the body genuinely isn't JSON.
+  if (!contentType.includes("application/json")) {
     return { success: false, error: "Server error (HTTP " + res.status + ")" };
   }
   const data = await res.json();
+  if (!res.ok && data && typeof data.error !== "string") {
+    return { success: false, error: "Server error (HTTP " + res.status + ")" };
+  }
   if (!data.success && data.code === "SESSION_EXPIRED") {
     clearAppLocalStorageKeepingDeviceKeys({ keepDrafts: true });
     document.getElementById("app-container").style.display   = "none";
