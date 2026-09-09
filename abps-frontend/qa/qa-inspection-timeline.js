@@ -45,11 +45,12 @@ function qaitFmt(s) {
   return s ? formatOrdinalDate(s) : "—";
 }
 
-// A confirmed/actual date always renders as a green checkmark + the date,
+// A confirmed/actual date always renders green (checkmark AND the date
+// text together — a green check next to black text read as a mismatch),
 // vs. an estimated one (plain text, no mark) — used everywhere a Stage 5
 // milestone or lane terminal date shows up (table cells, lane rows).
 function qaitDoneDate(s) {
-  return `<span style="color:#15803d; font-weight:700;">✓</span> ${qaitFmt(s)}`;
+  return `<span style="color:#15803d; font-weight:700;">✓ ${qaitFmt(s)}</span>`;
 }
 
 async function initializeQaInspectionTimelinePanel() {
@@ -183,11 +184,19 @@ function qaitRenderDetail(projectId, d) {
   if (d.error) return `<div style="color:#b91c1c; font-size:0.82rem;">${escapeHtml(d.error)}</div>`;
   if (d.blocked) return `<div style="color:var(--muted); font-style:italic; font-size:0.82rem;">${escapeHtml(d.blocked)}</div>`;
 
-  const laneRows = (d.laneTerminals || []).map(l => `
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; padding:10px 14px; font-size:0.78rem; border-bottom:1px solid var(--border);">
-      <span style="font-weight:700;">${escapeHtml(l.productName || '')}${l.productRating ? ' ' + escapeHtml(l.productRating) : ''}</span>
-      <span style="color:var(--muted); white-space:nowrap; flex:none;">Packing/Add to FG: ${l.actual ? qaitDoneDate(l.actual) : (l.effective ? 'Estimated ' + qaitFmt(l.effective) : 'Not yet scheduled')}</span>
-    </div>`).join("") || `<div style="color:var(--muted); font-size:0.78rem; padding:10px 14px;">No in-scope lanes.</div>`;
+  const laneRows = (d.laneTerminals || []).length
+    ? `<table style="width:100%; border-collapse:collapse; font-size:0.78rem;">
+         <thead><tr style="background:var(--highlight-bg);">
+           <th style="text-align:left; padding:8px 14px; font-weight:700; color:var(--muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em; border-bottom:1px solid var(--border);">Product</th>
+           <th style="text-align:right; padding:8px 14px; font-weight:700; color:var(--muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em; border-bottom:1px solid var(--border); white-space:nowrap; width:220px;">Packing / Add to FG</th>
+         </tr></thead>
+         <tbody>${d.laneTerminals.map(l => `
+           <tr style="border-bottom:1px solid var(--border);">
+             <td style="padding:10px 14px; font-weight:700; vertical-align:top;">${escapeHtml(l.productName || '')}${l.productRating ? ' ' + escapeHtml(l.productRating) : ''}</td>
+             <td style="padding:10px 14px; text-align:right; white-space:nowrap; vertical-align:top; ${l.actual ? '' : 'color:var(--muted);'}">${l.actual ? qaitDoneDate(l.actual) : (l.effective ? 'Estimated ' + qaitFmt(l.effective) : 'Not yet scheduled')}</td>
+           </tr>`).join("")}</tbody>
+       </table>`
+    : `<div style="color:var(--muted); font-size:0.78rem; padding:10px 14px;">No in-scope lanes.</div>`;
 
   const chainRows = QAIT_MILESTONE_CHAIN.map((key, idx) => {
     const actual = d.actuals[key];
@@ -200,7 +209,7 @@ function qaitRenderDetail(projectId, d) {
         </div>
         <div style="flex:1;">
           <div style="font-weight:700; font-size:0.85rem;">${escapeHtml(QAIT_MILESTONE_LABELS[key])}</div>
-          <div style="font-size:0.78rem; color:var(--muted);">${actual ? qaitFmt(actual) : (chainDate ? `Estimated ${qaitFmt(chainDate)}` : 'Not yet estimable')}</div>
+          <div style="font-size:0.78rem; ${actual ? 'color:#15803d; font-weight:700;' : 'color:var(--muted);'}">${actual ? qaitFmt(actual) : (chainDate ? `Estimated ${qaitFmt(chainDate)}` : 'Not yet estimable')}</div>
         </div>
         ${canWrite ? `<div style="display:flex; align-items:center; gap:6px;">
           <input type="date" id="qait-date-${projectId}-${key}" value="${actual || ''}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem;" />
@@ -227,11 +236,11 @@ function qaitRenderDetail(projectId, d) {
         <span style="color:var(--muted);"> · ${escapeHtml(doc.fileName)} (${qaitFmt(doc.uploadedAt)})</span>
       </div>`).join("") || `<div style="color:var(--muted); font-size:0.78rem; margin-bottom:6px;">No documents uploaded yet.</div>`}
       <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-        <select id="qait-doc-type-${projectId}" style="padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem; flex:none; width:180px;">
+        <select id="qait-doc-type-${projectId}" style="padding:6px 8px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem; flex:1 1 240px; min-width:200px;">
           ${QAIT_DOC_TYPES.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("")}
         </select>
-        <input type="file" id="qait-doc-file-${projectId}" style="font-size:0.72rem; flex:none; width:180px;" />
-        <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem; flex:none; white-space:nowrap;" onclick="qaitUploadDocument('${projectId}')">Upload</button>
+        <input type="file" id="qait-doc-file-${projectId}" style="font-size:0.72rem; flex:2 1 320px; min-width:260px;" />
+        <button class="nav-btn-styled" style="padding:6px 16px; font-size:0.78rem; flex:none; white-space:nowrap;" onclick="qaitUploadDocument('${projectId}')">Upload</button>
       </div>
     </div>`;
 
