@@ -267,6 +267,26 @@ async function executeInboundEmailSyncPipelineFetch() {
   }
 }
 
+// Age-since-received bucket for a lead card's left-border/chip color —
+// same 3-color language (fresh/soon/overdue) already used by QA
+// Inspection Timeline and the department dashboards, applied here so a
+// stale, still-unactioned lead is visible at a glance without opening it.
+function emailLeadAgeInfo(receivedDate) {
+  if (!receivedDate) return { label: "", cls: "fresh" };
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const rd = new Date(String(receivedDate).slice(0, 10) + "T00:00:00");
+  const days = Math.round((today - rd) / 86400000);
+  if (days <= 0) return { label: "Received Today", cls: "fresh" };
+  if (days === 1) return { label: "1 day ago", cls: "fresh" };
+  if (days <= 4) return { label: `${days} days ago`, cls: "soon" };
+  return { label: `${days} days overdue`, cls: "overdue" };
+}
+const EMAIL_LEAD_AGE_COLORS = {
+  fresh: { border: "#15803d", chipBg: "#dcfce7", chipText: "#15803d" },
+  soon: { border: "#b45309", chipBg: "#fef3c7", chipText: "#b45309" },
+  overdue: { border: "#b91c1c", chipBg: "#fee2e2", chipText: "#b91c1c" },
+};
+
 /**
  * RENDER EMAIL LEADS LIVE FEED CANVAS
  * Generates interactive lead cards off compiled email assets caches,
@@ -294,73 +314,95 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
     let card = document.createElement("div");
     card.className = "contact-summary-card-parent";
     card.id = `email-lead-wrapper-node-${mIdx}`;
-    card.style.borderLeft = "4px solid var(--accent)";
-    
-    // attachments is a plain comma-separated text column, not an array
-    const attsLabel = mail.attachments && String(mail.attachments).trim() ? mail.attachments : "None";
-    const receivedTimeLabel = mail.receivedTime ? ` at ${formatTime12h(mail.receivedTime)}` : "";
-    
+    card.style.cssText = "display:flex; flex-direction:column; gap:12px;";
+
+    const age = emailLeadAgeInfo(mail.receivedDate);
+    const ageColor = EMAIL_LEAD_AGE_COLORS[age.cls];
+    card.style.borderLeft = `4px solid ${ageColor.border}`;
+
+    // attachments is a plain comma-separated text column, not an array —
+    // only shown at all when there's a real one, instead of a permanent
+    // "Attachments: None" row on every card.
+    const hasAttachments = mail.attachments && String(mail.attachments).trim();
+    const receivedTimeLabel = mail.receivedTime ? `, ${formatTime12h(mail.receivedTime)}` : "";
+
     // FIXED: Enforce role visibility restriction boundaries to guard delete actions
     const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
-    const deleteActionHtml = isAdminUser 
-      ? `<button class="nav-btn-styled" style="background:var(--warn); font-size:0.75rem; padding:4px 8px;" onclick="archiveEmailLeadFromSystemDatabaseCache('${mail.messageIdReference}', ${mIdx})">Delete</button>` 
+    const deleteActionHtml = isAdminUser
+      ? `<button style="background:none; border:none; color:var(--muted); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0;" onmouseover="this.style.color='var(--warn)'" onmouseout="this.style.color='var(--muted)'" onclick="archiveEmailLeadFromSystemDatabaseCache('${mail.messageIdReference}', ${mIdx})">Delete</button>`
       : "";
 
+    const hasNote = mail.notes && String(mail.notes).trim();
+
     card.innerHTML = `
-      <div class="contact-summary-header-row" style="margin-bottom:6px;">
-        <div class="contact-summary-title-info">
-          <div class="meta-row-line-block" style="font-size:0.8rem;">
-            <span title="The ABPS mailbox this email was received into">To:</span><strong style="font-weight:600; margin-right:18px;">${escapeHtml(resolveEmailLeadEngineerName(mail.destinationInboxAccount))} <small style="color:var(--muted); font-weight:400; font-family:monospace;">— ${escapeHtml(mail.destinationInboxAccount || "Unknown")}</small></strong>
-            <span title="The customer's email address">From:</span><strong style="font-weight:600; font-family:monospace; margin-right:18px;">${escapeHtml(mail.senderEmail || "Not recorded yet")}</strong>
-            <span>Received:</span><strong style="font-weight:600;">${formatOrdinalDate(mail.receivedDate)}${receivedTimeLabel}</strong>
-          </div>
-          <div class="meta-row-line-block" style="margin-top:6px;">
-            <span style="background:#e2e8f0;">Company:</span><strong style="margin-right:20px; color:var(--brand);">${escapeHtml(mail.extractedCompany)}</strong>
-            <span style="background:#edf2f7;">Contact Person Name:</span><strong>${escapeHtml(mail.extractedContactName)}</strong>
-          </div>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+        <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
+          <span style="font-size:1.02rem; font-weight:800; color:var(--brand);">${escapeHtml(mail.extractedCompany)}</span>
+          <span style="font-size:0.88rem; color:var(--text); font-weight:600;">· ${escapeHtml(mail.extractedContactName)}</span>
         </div>
-        <div class="directory-btn-actions-block" style="margin-top:4px; display:flex; gap:6px; align-items:center;">
-          ${deleteActionHtml}
-        </div>
+        <span style="flex-shrink:0; font-size:0.7rem; font-weight:800; letter-spacing:0.02em; text-transform:uppercase; padding:3px 10px; border-radius:20px; white-space:nowrap; background:${ageColor.chipBg}; color:${ageColor.chipText};">${escapeHtml(age.label)}</span>
       </div>
 
-      <div style="font-size:0.85rem; background:#f8fafc; border:1px solid #e2e8f0; padding:8px; border-radius:4px; margin:6px 0; line-height:1.4; color:var(--text);">
-        <strong>AI Email Summary:</strong> ${escapeHtml(mail.aiSummaryText)}
+      <div style="font-size:0.8rem; color:var(--muted); display:flex; flex-wrap:wrap; gap:4px 18px;">
+        <span title="The ABPS mailbox this email was received into">To <b style="color:var(--text); font-weight:600;">${escapeHtml(resolveEmailLeadEngineerName(mail.destinationInboxAccount))}</b> <span style="font-family:monospace; font-size:0.78rem;">${escapeHtml(mail.destinationInboxAccount || "Unknown")}</span></span>
+        <span title="The customer's email address">From <span style="font-family:monospace; font-size:0.78rem;">${escapeHtml(mail.senderEmail || "Not recorded yet")}</span></span>
+        <span>${formatOrdinalDate(mail.receivedDate)}${receivedTimeLabel}</span>
       </div>
 
-      <div style="margin-bottom:8px;">
-        <div style="font-size:0.78rem; font-weight:700; color:var(--brand); cursor:pointer; user-select:none; display:inline-flex; align-items:center; gap:4px;" onclick="toggleEmailLeadFullMessage(${mIdx})" id="email-full-message-toggle-${mIdx}">
+      <div style="font-size:0.85rem; background:var(--highlight-bg); border:1px solid var(--border); border-radius:6px; padding:10px 12px; line-height:1.5; color:var(--text);">
+        <strong>AI Summary —</strong> ${escapeHtml(mail.aiSummaryText)}
+      </div>
+
+      <div style="display:flex; align-items:center; gap:18px; font-size:0.8rem;">
+        <span style="color:var(--brand); font-weight:600; cursor:pointer; user-select:none; display:inline-flex; align-items:center; gap:4px;" onclick="toggleEmailLeadFullMessage(${mIdx})" id="email-full-message-toggle-${mIdx}">
           <span id="email-full-message-caret-${mIdx}">▸</span> View Full Email
+        </span>
+        ${hasAttachments ? `<span style="color:var(--muted); display:flex; align-items:center; gap:4px;">📎 ${escapeHtml(mail.attachments)}</span>` : ""}
+      </div>
+      <div id="email-full-message-body-${mIdx}" style="display:none; margin-top:-4px; background:#fff; border:1px solid var(--border); border-radius:4px; padding:10px; font-size:0.82rem; color:var(--text);">
+        <div style="font-weight:700; margin-bottom:6px;">${escapeHtml(mail.subject || "(no subject)")}</div>
+        <div style="white-space:pre-wrap; line-height:1.5; max-height:400px; overflow-y:auto;">${escapeHtml(mail.body || "(no body content available)")}</div>
+      </div>
+
+      <div id="email-notes-zone-${mIdx}">
+        <div id="email-notes-preview-${mIdx}" style="display:${hasNote ? "flex" : "none"}; align-items:flex-start; justify-content:space-between; gap:12px; background:var(--highlight-bg); border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-size:0.8rem;">
+          <div>
+            <div id="email-note-preview-text-${mIdx}" style="color:var(--text); line-height:1.4;">${escapeHtml(mail.notes || "")}</div>
+            <div id="email-note-creator-${mIdx}" style="color:var(--muted); font-size:0.72rem; margin-top:3px;">${mail.creatorOfNote ? "Last saved by: " + escapeHtml(mail.creatorOfNote) : ""}</div>
+          </div>
+          <span style="color:var(--brand); font-weight:700; cursor:pointer; flex-shrink:0;" onclick="toggleEmailLeadNotesEditor(${mIdx})">Edit</span>
         </div>
-        <div id="email-full-message-body-${mIdx}" style="display:none; margin-top:6px; background:#fff; border:1px solid var(--border); border-radius:4px; padding:10px; font-size:0.82rem; color:var(--text);">
-          <div style="font-weight:700; margin-bottom:6px;">${escapeHtml(mail.subject || "(no subject)")}</div>
-          <div style="white-space:pre-wrap; line-height:1.5; max-height:400px; overflow-y:auto;">${escapeHtml(mail.body || "(no body content available)")}</div>
+        <div id="email-notes-add-link-${mIdx}" style="display:${hasNote ? "none" : "block"}; font-size:0.8rem; color:var(--brand); font-weight:600; cursor:pointer; width:fit-content;" onclick="toggleEmailLeadNotesEditor(${mIdx})">+ Add note</div>
+        <div id="email-notes-editor-${mIdx}" style="display:none; align-items:flex-end; gap:8px;">
+          <textarea id="email-note-${mIdx}" placeholder="Add notes about this email lead..." style="flex:1; min-height:44px; padding:8px; font-size:0.82rem; border:1px solid var(--border); border-radius:4px; resize:vertical; font-family:inherit;">${escapeHtml(mail.notes || "")}</textarea>
+          <button class="nav-btn-styled" style="background:var(--brand); font-size:0.78rem; padding:8px 14px; white-space:nowrap; flex-shrink:0;" onclick="saveEmailLeadNote(${mIdx}, '${mail.messageIdReference}')">Save Note</button>
         </div>
       </div>
 
-      <div style="font-size:0.88rem; font-weight:700; color:var(--muted); margin-bottom:8px;">
-        📎 Attachments: <span style="color:#4a5568; font-family:monospace;">${escapeHtml(attsLabel)}</span>
+      <div style="display:flex; align-items:center; justify-content:flex-end; gap:16px; padding-top:10px; border-top:1px solid var(--border);" id="email-action-response-mount-zone-${mIdx}">
+        ${deleteActionHtml}
+        <button class="btn btn-sub" style="width:auto; font-size:0.82rem; padding:9px 18px;" onclick="triggerEmailLeadDatabaseActionPipeline(${mIdx})" id="email-form-toggle-btn-text-${mIdx}">Add in CRM / Log Follow-up</button>
       </div>
 
-      <div style="margin-top:8px;">
-        <div style="display:flex; align-items:center; gap:12px; margin-bottom:3px;">
-          <label style="font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Notes</label>
-          <span id="email-note-creator-${mIdx}" style="font-size:0.7rem; color:var(--muted); font-style:italic;">${mail.creatorOfNote ? "Last saved by: " + escapeHtml(mail.creatorOfNote) : ""}</span>
-        </div>
-        <div style="display:flex; align-items:flex-end; gap:8px;">
-          <textarea id="email-note-${mIdx}" placeholder="Add notes about this email lead..." style="flex:1; min-height:38px; padding:5px 8px; font-size:0.82rem; border:1px solid var(--border); border-radius:4px; resize:vertical;">${escapeHtml(mail.notes || "")}</textarea>
-          <button class="nav-btn-styled" style="background:var(--brand); font-size:0.75rem; padding:4px 10px; white-space:nowrap; flex-shrink:0;" onclick="saveEmailLeadNote(${mIdx}, '${mail.messageIdReference}')">Save Note</button>
-        </div>
-      </div>
-      
-      <div style="margin-top:10px;" id="email-action-response-mount-zone-${mIdx}">
-        <button class="btn btn-sub" style="width:auto; font-size:0.78rem; padding:5px 12px;" onclick="triggerEmailLeadDatabaseActionPipeline(${mIdx})" id="email-form-toggle-btn-text-${mIdx}">Add in CRM / Log Follow-up</button>
-      </div>
-      
-      <div id="email-nested-inline-database-workspace-anchor-${mIdx}" style="margin-top:10px; display:none; background:#f1f5f9; padding:8px; border-radius:6px; border:1px solid var(--border);"></div>
+      <div id="email-nested-inline-database-workspace-anchor-${mIdx}" style="display:none; background:#f1f5f9; padding:8px; border-radius:6px; border:1px solid var(--border);"></div>
     `;
     canvas.appendChild(card);
   });
+}
+
+// "+ Add note" (empty state) or "Edit" (a note already exists) reveals
+// the real textarea+Save row in place of whichever of those two was
+// showing — a one-way reveal, same as the old always-open textarea just
+// collapsed until asked for; nothing re-collapses it afterward, matching
+// how Save Note has never auto-closed the editor either. The textarea's
+// own id and saveEmailLeadNote are untouched.
+function toggleEmailLeadNotesEditor(idx) {
+  const preview = document.getElementById(`email-notes-preview-${idx}`);
+  const addLink = document.getElementById(`email-notes-add-link-${idx}`);
+  const editor = document.getElementById(`email-notes-editor-${idx}`);
+  if (editor) editor.style.display = "flex";
+  if (preview) preview.style.display = "none";
+  if (addLink) addLink.style.display = "none";
 }
 
 function toggleEmailLeadFullMessage(idx) {
