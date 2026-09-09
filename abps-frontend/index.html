@@ -143,26 +143,56 @@
   .dd-period-btn { font-size:0.68rem; font-weight:700; padding:3px 8px; border:1.5px solid var(--border); border-radius:4px; cursor:pointer; background:var(--card); color:var(--text); transition:all 0.15s; }
   .dd-period-btn.active { background:var(--brand); color:#fff; border-color:var(--brand); }
 
-  /* Accounts Dashboard's 3 stat rows reflow on a narrower (laptop) screen
-     instead of squeezing 5 columns into a width too narrow for their own
-     label text — same pattern ERP's port of this screen already uses.
-     Scoped by #canvas-module-accounts-dashboard so the shared
-     .dd-stat-card/its 80px-row convention used by the other 6 dashboards
-     is untouched. At the narrower breakpoints the row switches to a
-     natural height (flex:0 0 auto) and the card drops its fixed
-     height:100%/overflow:hidden so a wrapped label gets the room it
-     needs instead of being clipped. */
-  #canvas-module-accounts-dashboard .ad-stat-row { flex:0 0 80px; min-height:0; }
+  /* ── DASHBOARD RESPONSIVE LAYOUT — all 7 dashboards ──────────────────
+     Every dashboard is authored as a viewport-locked flex column: the body
+     is height:calc(100vh - 100px) + overflow:hidden, stat rows are pinned
+     to flex:0 0 80px, and .dd-stat-card is height:100% + overflow:hidden.
+     That only holds while each card is wide enough for its label to fit in
+     one or two lines. Once a label wraps to three, the extra line is
+     silently CLIPPED — measured on a real render, 55 of 86 stat cards
+     clipped at 1024px (the iPad-landscape width this app is actually used
+     at), and 3 were still clipping even at 1920px. So this is NOT purely a
+     small-screen bug and the base rules below are deliberately NOT inside a
+     media query — a width breakpoint would have left the widest screens
+     broken.
+     The fix turns 80px from a fixed height into a floor: nothing moves on a
+     screen where the content already fits, and a row grows only when a
+     label genuinely needs the room. The body correspondingly stops clipping
+     its own overflow and scrolls instead, keeping min-height so it still
+     fills the viewport. !important is required throughout because every one
+     of these properties is set inline on the element.
+     Accounts previously carried a scoped copy of this fix; it is
+     generalised here to every dashboard via the shared .dd-body /
+     .dd-stat-row / .dd-chart-row / .dd-detail-row hooks (the old
+     .ad-stat-row/.ad-chart-row names were CSS-only, never referenced from
+     JS, so folding them in was safe).
+     ★ Scoped to `.dd-stat-row > .dd-stat-card`, never bare .dd-stat-card:
+     Marketing's CHART cards are also (mis)labelled .dd-stat-card, and an
+     unscoped rule pinned them to 80px inside their 260px row, collapsing
+     the canvas wrapper to 34px and making all 3 charts silently vanish.
+     ★ Chart cards must keep a DEFINITE height at every width — each holds a
+     position:absolute canvas inside a flex:1 wrapper, so a row that goes
+     auto-height without a min-height collapses the canvas to zero and the
+     chart disappears (see CLAUDE.md's chart-card rule). That is why
+     .dd-chart-row keeps its fixed 230px until the ≤1200px block, which
+     hands its cards an explicit min-height in exchange. */
+  .dd-body { height:auto !important; min-height:calc(100vh - 100px); overflow-y:auto !important; overflow-x:hidden !important; }
+  .dd-stat-row { flex:0 0 auto !important; }
+  .dd-stat-row > .dd-stat-card { height:auto !important; min-height:80px; overflow:visible !important; }
   @media (max-width:1400px) {
-    #canvas-module-accounts-dashboard .ad-stat-row { grid-template-columns:repeat(3,1fr) !important; flex:0 0 auto !important; }
-    #canvas-module-accounts-dashboard .dd-stat-card { height:auto; min-height:80px; overflow:visible; }
-  }
-  @media (max-width:900px) {
-    #canvas-module-accounts-dashboard .ad-stat-row { grid-template-columns:repeat(2,1fr) !important; }
+    .dd-stat-row { grid-template-columns:repeat(3,1fr) !important; }
   }
   @media (max-width:1200px) {
-    #canvas-module-accounts-dashboard .ad-chart-row { grid-template-columns:1fr !important; flex:0 0 auto !important; min-height:0 !important; }
-    #canvas-module-accounts-dashboard .ad-chart-row .dd-card { min-height:260px; }
+    .dd-chart-row, .dd-detail-row { grid-template-columns:1fr !important; flex:0 0 auto !important; min-height:0 !important; }
+    /* Both class names, because chart cards are .dd-card on 6 dashboards
+       and .dd-stat-card on Marketing — an explicit height here is what
+       keeps the absolutely-positioned canvases from collapsing to zero
+       once the row is no longer a fixed 230px. */
+    .dd-chart-row > .dd-card, .dd-chart-row > .dd-stat-card,
+    .dd-detail-row > .dd-card, .dd-detail-row > .dd-stat-card { min-height:260px; }
+  }
+  @media (max-width:900px) {
+    .dd-stat-row { grid-template-columns:repeat(2,1fr) !important; }
   }
   .dd-period-btn:hover:not(.active) { border-color:var(--brand); color:var(--brand); }
   .dd-pending-row { display:flex; justify-content:space-between; align-items:center; padding:3px 4px; border-bottom:1px solid #f1f5f9; }
@@ -3437,10 +3467,10 @@
     <div id="canvas-module-design-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- DASHBOARD BODY -->
-      <div id="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+      <div id="dd-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Live snapshots -->
-        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Design Work Overdue in Project Timeline</div>
             <div class="dd-stat-val" id="dd-s-overdue" style="color:#b91c1c;">—</div>
@@ -3460,7 +3490,7 @@
         </div>
 
         <!-- ROW 2: Period throughput/averages -->
-        <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">New Item Codes Added</div>
             <div class="dd-stat-val" id="dd-s-itemcodes">—</div>
@@ -3489,7 +3519,7 @@
         </div>
 
         <!-- ROW 3: MFC-cleared-awaiting-BOQ table + Charts -->
-        <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
+        <div class="dd-chart-row" style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; min-height:0; height:100%;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; flex-shrink:0;">
               <div class="dd-card-title" style="margin:0;">Products Cleared at MFC, Still Awaiting a BOQ</div>
@@ -3517,7 +3547,7 @@
         </div>
 
         <!-- ROW 4: Design work Due Today / Overdue, from Project Timeline -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1; min-height:0;">
+        <div class="dd-detail-row" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1; min-height:0;">
           <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
             <div class="dd-card-title" style="margin-bottom:8px;">Due Today (Active projects, Project Timeline)</div>
             <div style="flex:1; min-height:0; overflow-y:auto;">
@@ -3556,10 +3586,10 @@
     <div id="canvas-module-purchase-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- BODY -->
-      <div id="pd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+      <div id="pd-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: PRN coverage / scheduling / rejection health -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">PRNs With No Materials Assigned in a PO</div>
             <div class="dd-stat-val" id="pd-s-noassign" style="color:#b91c1c;">—</div>
@@ -3583,7 +3613,7 @@
         </div>
 
         <!-- ROW 2: PO lifecycle throughput -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending PO Authorizations</div>
             <div class="dd-stat-val" id="pd-s-pendingpo" style="color:#b45309;">—</div>
@@ -3607,7 +3637,7 @@
         </div>
 
         <!-- ROW 3: Charts -->
-        <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
+        <div class="dd-chart-row" style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">RM POs Created Over Time</div>
             <div style="flex:1; min-height:0; position:relative;"><canvas id="pd-chart-po-trend" style="position:absolute; width:100%; height:100%;"></canvas></div>
@@ -3624,7 +3654,7 @@
 
         <!-- ROW 4: Due Today / Overdue (Purchase's own Project Timeline
              trunk nodes) + Overdue Purchase Orders -- 3 equal columns -->
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
+        <div class="dd-detail-row" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
 
           <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
             <div class="dd-card-title" style="margin-bottom:8px;">Due Today (Active projects, Project Timeline)</div>
@@ -3685,10 +3715,10 @@
     <div id="canvas-module-accounts-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- BODY -->
-      <div id="ad-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; min-height:calc(100vh - 100px); box-sizing:border-box; overflow-y:auto; overflow-x:hidden;">
+      <div id="ad-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; min-height:calc(100vh - 100px); box-sizing:border-box; overflow-y:auto; overflow-x:hidden;">
 
         <!-- ROW 1 -->
-        <div class="ad-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Unactioned Travel / Hotel Tickets</div>
             <div class="dd-stat-val" id="ad-s-unactioned" style="color:#b45309;">—</div>
@@ -3716,7 +3746,7 @@
         </div>
 
         <!-- ROW 2 -->
-        <div class="ad-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Tour Vouchers Checked</div>
             <div class="dd-stat-val" id="ad-s-vouchers" style="color:#15803d;">—</div>
@@ -3742,7 +3772,7 @@
         </div>
 
         <!-- ROW 3 -->
-        <div class="ad-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Open Daily Cash/UPI Advances</div>
             <div class="dd-stat-val" id="ad-s-openadv" style="color:#b45309;">—</div>
@@ -3770,7 +3800,7 @@
 
         <!-- ROW 4: Charts — no panel row on this dashboard, so charts get
              the remaining ~half of the viewport instead of Purchase's 26%. -->
-        <div class="ad-chart-row" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:1; min-height:300px;">
+        <div class="dd-chart-row" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:1; min-height:300px;">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; min-height:0;">
             <div class="dd-card-title">Tour Expense by Type (Top 5)</div>
             <div style="flex:1; min-height:0; position:relative;"><canvas id="ad-chart-tour-type"></canvas></div>
@@ -3792,10 +3822,10 @@
     <div id="canvas-module-store-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- DASHBOARD BODY -->
-      <div id="sd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+      <div id="sd-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Live Queues — needs action right now -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending Ticket Approvals</div>
             <div class="dd-stat-val" id="sd-s-pending" style="color:#b45309;">—</div>
@@ -3821,7 +3851,7 @@
         </div>
 
         <!-- ROW 2: Period Throughput / Rates -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Material Issue Tickets</div>
             <div class="dd-stat-val" id="sd-s-tickets">—</div>
@@ -3845,7 +3875,7 @@
         </div>
 
         <!-- ROW 3: Charts -->
-        <div style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
+        <div class="dd-chart-row" style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">Tickets by Department</div>
             <div style="flex:1; min-height:0; position:relative;"><canvas id="sd-chart-dept" style="position:absolute; width:100%; height:100%;"></canvas></div>
@@ -3861,7 +3891,7 @@
         </div>
 
         <!-- ROW 4: Inbound Pipeline Aging + Project Health -->
-        <div style="display:grid; grid-template-columns:1.3fr 1fr; gap:10px; flex:1; min-height:0;">
+        <div class="dd-detail-row" style="display:grid; grid-template-columns:1.3fr 1fr; gap:10px; flex:1; min-height:0;">
 
           <!-- Inbound Pipeline Aging -->
           <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
@@ -3912,10 +3942,10 @@
 
     <!-- QA DASHBOARD CANVAS -->
     <div id="canvas-module-qa-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
-      <div id="qad-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+      <div id="qad-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Live Queues -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Raw Materials Pending Q/A Check</div>
             <div class="dd-stat-val" id="qad-s-pendingqa" style="color:#b45309;">—</div>
@@ -3941,7 +3971,7 @@
         </div>
 
         <!-- ROW 2: Period Throughput / Rates -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Materials QA-Checked</div>
             <div class="dd-stat-val" id="qad-s-checked">—</div>
@@ -3965,7 +3995,7 @@
         </div>
 
         <!-- ROW 3: Charts -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
+        <div class="dd-chart-row" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">QA Rejection Rate Trend</div>
             <div style="flex:1; min-height:0; position:relative;"><canvas id="qad-chart-rejtrend" style="position:absolute; width:100%; height:100%;"></canvas></div>
@@ -3977,7 +4007,7 @@
         </div>
 
         <!-- ROW 4: Aging Rejection Queue + Due Today + Overdue -->
-        <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
+        <div class="dd-detail-row" style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
 
           <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
             <div class="dd-card-title" style="margin-bottom:6px;">Aging Rejection Queue</div>
@@ -4029,10 +4059,10 @@
     <div id="canvas-module-production-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- DASHBOARD BODY -->
-      <div id="pd2-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+      <div id="pd2-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Job Card Pulse + Material Requirement Date queues — 5 cards -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Total Current Job Cards</div>
             <div class="dd-stat-val" id="pd2-s-activejcn">—</div>
@@ -4056,7 +4086,7 @@
         </div>
 
         <!-- ROW 2: Material & Operations — 5 cards -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">Material Issue Tickets Created</div>
             <div class="dd-stat-val" id="pd2-s-tickets">—</div>
@@ -4080,7 +4110,7 @@
         </div>
 
         <!-- ROW 3: Charts -->
-        <div style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
+        <div class="dd-chart-row" style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">Products Added to Finished Goods by Department</div>
             <div style="flex:1; min-height:0; position:relative;"><canvas id="pd2-chart-dept" style="position:absolute; width:100%; height:100%;"></canvas></div>
@@ -4096,7 +4126,7 @@
         </div>
 
         <!-- ROW 4: In Progress Job Cards | Due Today | Overdue (Project Timeline) -->
-        <div style="display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
+        <div class="dd-detail-row" style="display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
 
           <!-- In Progress Job Cards -->
           <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
@@ -4165,10 +4195,10 @@
     <div id="canvas-module-marketing-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- DASHBOARD BODY -->
-      <div id="md-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+      <div id="md-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Live snapshots -->
-        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Email Leads Awaiting Action</div>
             <div class="dd-stat-val" id="md-s-emailleads" style="color:#b45309;">—</div>
@@ -4189,7 +4219,7 @@
         </div>
 
         <!-- ROW 2: Period throughput -->
-        <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">New Leads</div>
             <div class="dd-stat-val" id="md-s-newleads">—</div>
@@ -4217,7 +4247,7 @@
         </div>
 
         <!-- ROW 3: 3 Charts -->
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
+        <div class="dd-chart-row" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
           <div class="dd-stat-card" style="display:flex; flex-direction:column;">
             <div class="dd-stat-label" style="margin-bottom:6px;">Lead Status Funnel (all leads, current)</div>
             <div style="flex:1; min-height:0; position:relative;"><canvas id="md-chart-funnel" style="position:absolute; width:100%; height:100%;"></canvas></div>
@@ -4233,7 +4263,7 @@
         </div>
 
         <!-- ROW 4: Stale Leads + Recent Wins -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1; min-height:0;">
+        <div class="dd-detail-row" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1; min-height:0;">
           <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
             <div class="dd-stat-label" style="margin-bottom:8px;">Leads Needing Attention (7+ days, current)</div>
             <div style="flex:1; min-height:0; overflow-y:auto;">

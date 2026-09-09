@@ -61,9 +61,47 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
       document.getElementById("itemcode-no-results-zone").style.display       = "none";
       document.getElementById("itemcode-create-form-zone").style.display      = "none";
       document.getElementById("itemcode-feedback-banner").style.display       = "none";
+      // The success banner (submitNewItemCode) hides these three and only
+      // restores them via its own "+ Search / Add Another Item" button —
+      // leaving here any other way (Return to Main Dashboard, then back)
+      // used to strand the panel with the search box and direct-create
+      // button both gone and nothing on screen to bring them back. Reset
+      // to their default-visible state on every entry, not just via that
+      // one button.
+      const searchZoneWrapper = document.getElementById("itemcode-search-zone-wrapper");
+      if (searchZoneWrapper) searchZoneWrapper.style.display = "block";
+      const directCreateWrap = document.getElementById("itemcode-direct-create-btn-wrap");
+      if (directCreateWrap) directCreateWrap.style.display = "block";
+      const orSearchDivider = document.getElementById("itemcode-or-search-divider");
+      if (orSearchDivider) orSearchDivider.style.display = "block";
       window.icfSearchSelectedType = "";
       const searchTypeInput = document.getElementById("icf-search-type-ta-input");
       if (searchTypeInput) searchTypeInput.value = "";
+      // Reset the create form's own inner state too — Type of Material,
+      // both sub-zones, and the AI check result — in case the panel was
+      // left mid-create rather than after a completed search.
+      const typeInput = document.getElementById("icf-new-type-ta-input");
+      if (typeInput) { typeInput.value = ""; typeInput.disabled = false; }
+      const fixedZone = document.getElementById("icf-new-fixed-zone");
+      if (fixedZone) fixedZone.style.display = "none";
+      const freeformZone = document.getElementById("icf-new-freeform-zone");
+      if (freeformZone) freeformZone.style.display = "none";
+      const nameInput = document.getElementById("itemcode-new-name");
+      if (nameInput) nameInput.value = "";
+      const ratingInput = document.getElementById("itemcode-new-rating");
+      if (ratingInput) ratingInput.value = "";
+      const unitInput = document.getElementById("itemcode-new-unit");
+      if (unitInput) unitInput.value = "";
+      const makeInputFf = document.getElementById("itemcode-new-make");
+      if (makeInputFf) makeInputFf.value = "";
+      const makeInputFixed = document.getElementById("icf-new-fixed-make");
+      if (makeInputFixed) makeInputFixed.value = "";
+      const aiCheckResult = document.getElementById("icf-new-ai-check-result");
+      if (aiCheckResult) aiCheckResult.innerHTML = "";
+      const aiSkipCheckbox = document.getElementById("icf-new-ai-skip-checkbox");
+      if (aiSkipCheckbox) aiSkipCheckbox.checked = false;
+      const adminManualCheckbox = document.getElementById("icf-new-admin-manual-checkbox");
+      if (adminManualCheckbox) adminManualCheckbox.checked = false;
       // Admin-only "Add / Change Item Code Format" toggle — server routes
       // independently enforce perm_admin regardless of this, same
       // "localStorage is forgeable, the backend is the real gate" reasoning
