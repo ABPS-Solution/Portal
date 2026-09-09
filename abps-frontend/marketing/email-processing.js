@@ -14,6 +14,13 @@ let activeEmailLeadsEngineerFilter = "ALL";
 // (7 Sep 2026) — the native radio row read as five bare dots with no
 // visual grouping, which is what looked "bad" about it.
 let activeEmailLeadsDateFilter = "all";
+// Company Name Search (9 Sep 2026) — a pure client-side substring filter
+// over whatever engineer/date-filtered set is already cached, not a
+// server round-trip: the whole point is instant-as-you-type narrowing,
+// and the underlying list (unactioned leads for one mailbox/date range)
+// is small enough that re-filtering the in-memory array on every
+// keystroke is cheaper and simpler than debouncing a network call.
+let activeEmailLeadsCompanySearch = "";
 const EMAIL_LEADS_DATE_FILTER_OPTIONS = [
   ["all", "All Time"], ["today", "Today"], ["yesterday", "Yesterday"],
   ["thisWeek", "This Week"], ["thisMonth", "This Month"],
@@ -110,6 +117,24 @@ function updateEmailLeadsFilteringForText() {
   display.textContent = `Filtering for: ${engineerLabel} | for ${DATE_LABELS[dateFilter] || "All Time"}`;
 }
 
+// Filters cachedInboundEmailLeadsArray by the current Company Name Search
+// text (case-insensitive substring on extractedCompany) and renders the
+// result — called both on every keystroke and after any server refetch,
+// so the search stays applied across an engineer/date pill change rather
+// than resetting.
+function applyEmailLeadsCompanySearchAndRender() {
+  const term = activeEmailLeadsCompanySearch.trim().toLowerCase();
+  const filtered = term
+    ? cachedInboundEmailLeadsArray.filter(m => String(m.extractedCompany || "").toLowerCase().includes(term))
+    : cachedInboundEmailLeadsArray;
+  renderEmailLeadsFeedInterface(filtered, term ? `No companies matching "${activeEmailLeadsCompanySearch.trim()}" in this view.` : null);
+}
+
+function handleEmailLeadsCompanySearchInput(value) {
+  activeEmailLeadsCompanySearch = value;
+  applyEmailLeadsCompanySearchAndRender();
+}
+
 // Lighter-weight than executeInboundEmailSyncPipelineFetch — just re-runs
 // fetchEmailLeadsList with the currently-selected filters, no Gmail poll
 // (fetchAndProcessInboundEmailLeads is expensive/quota-bound and has no
@@ -125,7 +150,7 @@ async function refetchEmailLeadsListWithFilters() {
       cachedInboundEmailLeadsArray = data.emailLeads || [];
       if (data.engineerDirectory) populateEmailLeadsEngineerDropdown(data.engineerDirectory);
       try { localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray)); } catch(e) { /* quota — ok */ }
-      renderEmailLeadsFeedInterface(cachedInboundEmailLeadsArray);
+      applyEmailLeadsCompanySearchAndRender();
     } else if (feedCanvas) {
       feedCanvas.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-size:0.85rem;">Failed to load leads: ${escapeHtml(data.error || "Unknown error")}</div>`;
     }
@@ -144,6 +169,8 @@ async function executeInboundEmailSyncPipelineFetch() {
   // panel-open entry point) so the pills exist before the first fetch
   // resolves, not just after selectEmailLeadsDateFilter is first clicked.
   renderEmailLeadsDatePills();
+  const companySearchInput = document.getElementById("email-leads-company-search-input");
+  if (companySearchInput) companySearchInput.value = activeEmailLeadsCompanySearch;
   // syncBtn no longer exists — the "Sync Inbox" button was retired since scanning now
   // runs automatically via background triggers. This function still runs on panel-open
   // to populate the feed, so every reference to syncBtn below is now optional.
@@ -224,7 +251,7 @@ async function executeInboundEmailSyncPipelineFetch() {
         try { localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray)); } catch(e2) { /* silent fail */ }
       }
 
-      renderEmailLeadsFeedInterface(cachedInboundEmailLeadsArray);
+      applyEmailLeadsCompanySearchAndRender();
       feedbackNode.style.display = "none";
     } else {
       feedbackNode.style.cssText = "display: block; padding: 12px; border-radius: var(--radius); background: #fff5f5; border: 1px solid var(--warn); color: var(--warn); font-weight: 700; text-align: center; margin-bottom: 16px;";
@@ -245,16 +272,16 @@ async function executeInboundEmailSyncPipelineFetch() {
  * Generates interactive lead cards off compiled email assets caches,
  * implementing smart admin-only action guards and inline form workspace drawers.
  */
-function renderEmailLeadsFeedInterface(emailLeadsList) {
+function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
   const canvas = document.getElementById("email-leads-inbound-feed-canvas");
   if (!canvas) return;
   canvas.innerHTML = "";
-  
+
   if (emailLeadsList.length === 0) {
     canvas.innerHTML = `
       <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;">
         <h3 style="color: var(--accent); margin-bottom:6px;">No Email Leads Found</h3>
-        <p style="margin:0;">Nothing has been classified as a lead yet. New incoming emails are scanned automatically in the background every 5 minutes.</p>
+        <p style="margin:0;">${escapeHtml(emptyMessageOverride || "Nothing has been classified as a lead yet. New incoming emails are scanned automatically in the background every 5 minutes.")}</p>
       </div>
     `;
     return;
