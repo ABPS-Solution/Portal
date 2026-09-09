@@ -283,17 +283,44 @@ function showDashboardGlobalToolbar(title, periodBtnsId, returnFn) {
 // per granularity sidestep the problem entirely — nothing's type is
 // ever mutated after page load.
 const DASH_CUSTOM_TYPE_SUFFIX = {
-  customday: "day", customweek: "week", custommonth: "month",
+  customday: "day", customrange: "range", custommonth: "month",
   customquarter: "quarter", customyear: "year",
 };
+// 9 Sep 2026: Month/Quarter/Year switched from a typed/native-picker input
+// to pick-from-options <select>s (populated by dashPopulateYearSelects
+// below), and the old "Week" (pick any day, snapped to its Mon-Sun week)
+// became "Date Range" — two real date inputs, no calendar-week snapping.
+// Month/Quarter/Range each now live inside a wrapper <span id="{prefix}
+// -custom-val-{suffix}"> holding their 1-2 real controls — dashCustomType
+// Change still just toggles .hidden on whatever element has that id,
+// wrapper or bare input, so it needs no change itself.
+let dashYearSelectsPopulated = false;
+function dashPopulateYearSelects() {
+  if (dashYearSelectsPopulated) return;
+  dashYearSelectsPopulated = true;
+  const now = new Date();
+  const curCalYear = now.getFullYear();
+  const curFY = now.getMonth() >= 3 ? curCalYear : curCalYear - 1; // FY starts April (month index 3)
+  const calYears = []; for (let y = curCalYear; y >= curCalYear - 5; y--) calYears.push(y);
+  const fyYears = []; for (let y = curFY; y >= curFY - 5; y--) fyYears.push(y);
+  document.querySelectorAll(".dash-cal-year-select").forEach(sel => {
+    sel.innerHTML = calYears.map(y => `<option value="${y}">${y}</option>`).join("");
+  });
+  document.querySelectorAll(".dash-fy-year-select").forEach(sel => {
+    sel.innerHTML = fyYears.map(y => `<option value="${y}">${y}-${String((y + 1) % 100).padStart(2, "0")}</option>`).join("");
+  });
+}
 function dashCustomTypeChange(prefix) {
+  dashPopulateYearSelects();
   const type = document.getElementById(`${prefix}-custom-type`).value;
   const activeSuffix = DASH_CUSTOM_TYPE_SUFFIX[type];
   Object.values(DASH_CUSTOM_TYPE_SUFFIX).forEach(suf => {
     // .hidden (the HTML attribute), not .style.display — more reliable
     // than display:none at actually clearing a native date/month input's
     // own internal picker-widget paint when toggling several of these
-    // controls in and out, confirmed by direct testing.
+    // controls in and out, confirmed by direct testing. None of these
+    // wrapper elements may ever get an inline `display` style of their
+    // own for this reason — an inline style beats [hidden]'s UA rule.
     const el = document.getElementById(`${prefix}-custom-val-${suf}`);
     if (el) el.hidden = (suf !== activeSuffix);
   });
@@ -301,9 +328,31 @@ function dashCustomTypeChange(prefix) {
 }
 function dashReadCustomVal(prefix) {
   const type = document.getElementById(`${prefix}-custom-type`).value;
+  if (type === "customrange") {
+    const s = document.getElementById(`${prefix}-custom-val-range-start`).value.trim();
+    const e = document.getElementById(`${prefix}-custom-val-range-end`).value.trim();
+    return (s && e) ? `${s}_${e}` : "";
+  }
+  if (type === "custommonth") {
+    const y = document.getElementById(`${prefix}-custom-val-month-year`).value;
+    const m = document.getElementById(`${prefix}-custom-val-month-month`).value;
+    return (y && m) ? `${y}-${String(m).padStart(2, "0")}` : "";
+  }
+  if (type === "customquarter") {
+    const y = document.getElementById(`${prefix}-custom-val-quarter-year`).value;
+    const q = document.getElementById(`${prefix}-custom-val-quarter-q`).value;
+    return (y && q) ? `${y}-Q${q}` : "";
+  }
   const el = document.getElementById(`${prefix}-custom-val-${DASH_CUSTOM_TYPE_SUFFIX[type]}`);
   return el ? el.value.trim() : "";
 }
+// Populate every dashboard's Month/Quarter/Year <select>s at script-load
+// time, not just on first use of dashCustomTypeChange — the Custom zone
+// merely becomes visible (no onchange fires) when a department's period
+// buttons switch to "Custom", so waiting for that event would leave the
+// year dropdowns empty until the operator manually touched the type
+// dropdown once.
+dashPopulateYearSelects();
 
 function navigateToDesignDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
