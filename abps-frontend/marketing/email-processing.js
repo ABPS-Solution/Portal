@@ -21,9 +21,12 @@ let activeEmailLeadsDateFilter = "all";
 // is small enough that re-filtering the in-memory array on every
 // keystroke is cheaper and simpler than debouncing a network call.
 let activeEmailLeadsCompanySearch = "";
+// Order + default (9 Sep 2026, explicit request): Before Yesterday,
+// Yesterday, Today, All Time — All Time stays the default on entry
+// (activeEmailLeadsDateFilter below), unchanged from before.
 const EMAIL_LEADS_DATE_FILTER_OPTIONS = [
-  ["all", "All Time"], ["today", "Today"], ["yesterday", "Yesterday"],
-  ["thisWeek", "This Week"], ["thisMonth", "This Month"],
+  ["beforeYesterday", "Before Yesterday"], ["yesterday", "Yesterday"],
+  ["today", "Today"], ["all", "All Time"],
 ];
 
 function resolveEmailLeadEngineerName(inboxAccount) {
@@ -73,10 +76,14 @@ function renderEmailLeadsEngineerPills() {
     const border = active ? "var(--brand)" : "var(--border)";
     const bg = active ? "var(--highlight-bg)" : "#fff";
     const titleColor = active ? "var(--brand)" : (isStray ? "var(--warn)" : "var(--text)");
+    // A pill with no subtitle (All Engineers, the Unrecognised bucket) is
+    // just one line of text — center it both ways instead of leaving it
+    // pinned top-left the way a two-line email+subtitle pill needs to be.
+    const centerStyle = subtitle ? "" : "align-items:center; justify-content:center; text-align:center;";
     return `
       <div onclick="selectEmailLeadsEngineerFilter('${encodeURIComponent(value)}')"
         style="cursor:pointer; user-select:none; border:1.5px solid ${border}; background:${bg}; border-radius:6px;
-               padding:6px 10px; min-width:0; display:flex; flex-direction:column; gap:1px; line-height:1.25;">
+               padding:6px 10px; min-width:0; display:flex; flex-direction:column; gap:1px; line-height:1.25; ${centerStyle}">
         <span style="font-size:0.78rem; font-weight:700; color:${titleColor};">${escapeHtml(title)}</span>
         ${subtitle ? `<span style="font-size:0.68rem; font-family:monospace; color:var(--muted); word-break:break-all;">${escapeHtml(subtitle)}</span>` : ""}
       </div>`;
@@ -113,7 +120,7 @@ function updateEmailLeadsFilteringForText() {
       ? entry.engineerName
       : resolveEmailLeadEngineerName(engineerEmail) + " — " + engineerEmail;
   }
-  const DATE_LABELS = { all: "All Time", today: "Today", yesterday: "Yesterday", thisWeek: "This Week", thisMonth: "This Month" };
+  const DATE_LABELS = { all: "All Time", today: "Today", yesterday: "Yesterday", beforeYesterday: "Before Yesterday", thisWeek: "This Week", thisMonth: "This Month" };
   display.textContent = `Filtering for: ${engineerLabel} | for ${DATE_LABELS[dateFilter] || "All Time"}`;
 }
 
