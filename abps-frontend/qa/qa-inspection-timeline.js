@@ -45,6 +45,13 @@ function qaitFmt(s) {
   return s ? formatOrdinalDate(s) : "—";
 }
 
+// A confirmed/actual date always renders as a green checkmark + the date,
+// vs. an estimated one (plain text, no mark) — used everywhere a Stage 5
+// milestone or lane terminal date shows up (table cells, lane rows).
+function qaitDoneDate(s) {
+  return `<span style="color:#15803d; font-weight:700;">✓</span> ${qaitFmt(s)}`;
+}
+
 async function initializeQaInspectionTimelinePanel() {
   qaitRows = null;
   qaitExpanded = new Set();
@@ -135,9 +142,9 @@ function qaitRenderRow(r) {
       <td style="padding:8px 6px; ${colBorder}">${escapeHtml(r.companyName || '')}</td>
       <td style="padding:8px 6px; ${colBorder}">${escapeHtml(nextStepLabel)} ${qaitBucketBadge(r.bucket)}</td>
       <td style="padding:8px 6px; ${centered} ${colBorder} ${r.bucket === 'overdue' ? 'color:#b91c1c; font-weight:700;' : ''}">${r.nextStepDate ? qaitFmt(r.nextStepDate) + (r.daysOverdue ? ` (${r.daysOverdue}d late)` : '') : '—'}</td>
-      <td style="padding:8px 6px; ${centered} ${colBorder}">${r.actuals.customer_inspection ? '✓ ' + qaitFmt(r.actuals.customer_inspection) : (r.chain.inspection ? 'Est. ' + qaitFmt(r.chain.inspection) : '—')}</td>
-      <td style="padding:8px 6px; ${centered} ${colBorder}">${r.actuals.inspection_clearance_note ? '✓ ' + qaitFmt(r.actuals.inspection_clearance_note) : (r.chain.clearanceNote ? 'Est. ' + qaitFmt(r.chain.clearanceNote) : '—')}</td>
-      <td style="padding:8px 6px; ${centered} ${colBorder}">${r.actuals.dispatch_clearance ? '✓ ' + qaitFmt(r.actuals.dispatch_clearance) : (r.chain.dispatchClearance ? 'Est. ' + qaitFmt(r.chain.dispatchClearance) : '—')}</td>
+      <td style="padding:8px 6px; ${centered} ${colBorder}">${r.actuals.customer_inspection ? qaitDoneDate(r.actuals.customer_inspection) : (r.chain.inspection ? 'Estimated ' + qaitFmt(r.chain.inspection) : '—')}</td>
+      <td style="padding:8px 6px; ${centered} ${colBorder}">${r.actuals.inspection_clearance_note ? qaitDoneDate(r.actuals.inspection_clearance_note) : (r.chain.clearanceNote ? 'Estimated ' + qaitFmt(r.chain.clearanceNote) : '—')}</td>
+      <td style="padding:8px 6px; ${centered} ${colBorder}">${r.actuals.dispatch_clearance ? qaitDoneDate(r.actuals.dispatch_clearance) : (r.chain.dispatchClearance ? 'Estimated ' + qaitFmt(r.chain.dispatchClearance) : '—')}</td>
     </tr>`;
   const detailRow = expanded
     ? `<tr id="qait-detail-${r.projectId}"><td colspan="8" style="padding:0;"><div style="padding:14px; background:var(--highlight-bg); border-bottom:2px solid var(--border);">${qaitDetailCache.has(r.projectId) ? qaitRenderDetail(r.projectId, qaitDetailCache.get(r.projectId)) : '<div style="color:var(--muted); font-size:0.82rem;">Loading…</div>'}</div></td></tr>`
@@ -177,10 +184,10 @@ function qaitRenderDetail(projectId, d) {
   if (d.blocked) return `<div style="color:var(--muted); font-style:italic; font-size:0.82rem;">${escapeHtml(d.blocked)}</div>`;
 
   const laneRows = (d.laneTerminals || []).map(l => `
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px 8px; font-size:0.78rem; border-bottom:1px solid var(--border);">
-      <b>${escapeHtml(l.productName || '')}${l.productRating ? ' ' + escapeHtml(l.productRating) : ''}</b>
-      <span style="color:var(--muted); white-space:nowrap;">Packing/Add to FG: ${l.actual ? '✓ ' + qaitFmt(l.actual) : (l.effective ? 'Est. ' + qaitFmt(l.effective) : 'Not yet scheduled')}</span>
-    </div>`).join("") || `<div style="color:var(--muted); font-size:0.78rem;">No in-scope lanes.</div>`;
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; padding:10px 14px; font-size:0.78rem; border-bottom:1px solid var(--border);">
+      <span style="font-weight:700;">${escapeHtml(l.productName || '')}${l.productRating ? ' ' + escapeHtml(l.productRating) : ''}</span>
+      <span style="color:var(--muted); white-space:nowrap; flex:none;">Packing/Add to FG: ${l.actual ? qaitDoneDate(l.actual) : (l.effective ? 'Estimated ' + qaitFmt(l.effective) : 'Not yet scheduled')}</span>
+    </div>`).join("") || `<div style="color:var(--muted); font-size:0.78rem; padding:10px 14px;">No in-scope lanes.</div>`;
 
   const chainRows = QAIT_MILESTONE_CHAIN.map((key, idx) => {
     const actual = d.actuals[key];
@@ -219,11 +226,11 @@ function qaitRenderDetail(projectId, d) {
         <a href="#" onclick="event.preventDefault(); driveLink('${doc.fileUrl}');" style="color:var(--brand); font-weight:600;">${escapeHtml(doc.documentType)}</a>
         <span style="color:var(--muted);"> · ${escapeHtml(doc.fileName)} (${qaitFmt(doc.uploadedAt)})</span>
       </div>`).join("") || `<div style="color:var(--muted); font-size:0.78rem; margin-bottom:6px;">No documents uploaded yet.</div>`}
-      <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:nowrap; align-items:center; overflow-x:auto;">
-        <select id="qait-doc-type-${projectId}" style="padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem; flex:none;">
+      <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <select id="qait-doc-type-${projectId}" style="padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem; flex:none; width:180px;">
           ${QAIT_DOC_TYPES.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("")}
         </select>
-        <input type="file" id="qait-doc-file-${projectId}" style="font-size:0.78rem; flex:none;" />
+        <input type="file" id="qait-doc-file-${projectId}" style="font-size:0.72rem; flex:none; width:180px;" />
         <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem; flex:none; white-space:nowrap;" onclick="qaitUploadDocument('${projectId}')">Upload</button>
       </div>
     </div>`;
@@ -238,11 +245,20 @@ function qaitRenderDetail(projectId, d) {
   `;
 }
 
+// shared/format.js's DD/MM/YYYY overlay enhancer wraps every
+// <input type="date"> and forces the real input's own width to 100% (so
+// its overlay text tracks the input) — a width set directly on a date
+// input gets silently overwritten by that enhancer (CLAUDE.md, 4 Sep
+// 2026). Fix: wrap the input in its own sizing container instead.
+function qaitDateInput(id, value) {
+  return `<span style="display:inline-block; flex:none; width:130px;"><input type="date" id="${id}" value="${value || ''}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem; width:100%;" /></span>`;
+}
+
 function qaitCallFormHtml(projectId, existing) {
-  return `<div style="margin-top:6px; display:flex; gap:8px; flex-wrap:nowrap; align-items:center; overflow-x:auto;">
-    <input type="date" id="qait-call-date-${projectId}" value="${existing ? existing.callPlacedOn : ''}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem; flex:none;" />
-    <input type="text" id="qait-call-contact-${projectId}" placeholder="Customer contact (optional)" value="${existing ? escapeHtml(existing.customerContact || '') : ''}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem; flex:none; width:180px;" />
-    <input type="text" id="qait-call-notes-${projectId}" placeholder="Notes (optional)" value="${existing ? escapeHtml(existing.notes || '') : ''}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem; flex:1; min-width:160px;" />
+  return `<div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+    ${qaitDateInput(`qait-call-date-${projectId}`, existing ? existing.callPlacedOn : '')}
+    <input type="text" id="qait-call-contact-${projectId}" placeholder="Customer contact (optional)" value="${existing ? escapeHtml(existing.customerContact || '') : ''}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem; flex:1; min-width:220px;" />
+    <input type="text" id="qait-call-notes-${projectId}" placeholder="Notes (optional)" value="${existing ? escapeHtml(existing.notes || '') : ''}" style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.78rem; flex:1; min-width:220px;" />
     <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem; flex:none; white-space:nowrap;" onclick="qaitRecordCall('${projectId}')">${existing ? 'Update' : 'Record Call'}</button>
   </div>`;
 }
