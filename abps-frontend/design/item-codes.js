@@ -370,6 +370,63 @@ async function revealItemCodeCreateForm() {
   }
 }
 
+// "Check Formatting" button (9 Sep 2026) — a preview of the same
+// normalize+dupe-check gate createItemCode runs again, authoritatively,
+// at submit time (see that route's runItemCodeAiCheck). Deliberately a
+// button, not a blur handler — a Gemini call firing on every field blur
+// while someone's still mid-typing across Name -> Rating would be noisy
+// and waste calls. On a correction, the fields are silently updated in
+// place to the normalized text (no confirm-to-accept step) — a small
+// note explains what changed; a confirmed duplicate is a hard block,
+// same as createItemCode's own, so nothing here needs a "create anyway"
+// override path.
+async function checkIcfNewFormatting() {
+  const btn = document.getElementById("icf-new-check-formatting-btn");
+  const resultEl = document.getElementById("icf-new-ai-check-result");
+  const nameInput = document.getElementById("itemcode-new-name");
+  const ratingInput = document.getElementById("itemcode-new-rating");
+  const typeOfMat = document.getElementById("icf-new-type-ta-input").value.trim();
+  const makeInput = document.getElementById("itemcode-new-make");
+
+  const materialName = nameInput.value.trim();
+  const rating = ratingInput.value.trim();
+  if (!materialName) { resultEl.innerHTML = '<span style="color:var(--warn);">Enter a Material Name first.</span>'; return; }
+  if (!typeOfMat) { resultEl.innerHTML = '<span style="color:var(--warn);">Select a Type of Material first.</span>'; return; }
+
+  btn.disabled = true;
+  const origBtnText = btn.textContent;
+  btn.textContent = "Checking...";
+  resultEl.innerHTML = "";
+  try {
+    const data = await apFetch({
+      action: "checkItemCodeFormatting",
+      materialName, rating, typeOfMaterial: typeOfMat,
+      make: makeInput ? makeInput.value.trim() : "",
+    });
+    if (!data.success) {
+      resultEl.innerHTML = `<span style="color:var(--warn);">${escapeHtml(data.error || "Check failed.")}</span>`;
+      return;
+    }
+    if (data.duplicateBlocked) {
+      resultEl.innerHTML = `<span style="color:#b91c1c; font-weight:600;">⚠ Looks like the same part as ${escapeHtml(data.duplicateBlocked.itemCode)} (${escapeHtml(data.duplicateBlocked.materialName)}${data.duplicateBlocked.rating ? " | " + escapeHtml(data.duplicateBlocked.rating) : ""}). Creating this will be blocked — use that item code instead.</span>`;
+      return;
+    }
+    if (data.changed) {
+      nameInput.value = data.normalizedMaterialName || materialName;
+      ratingInput.value = data.normalizedRating || "";
+      const notes = (data.changes || []).map(c => escapeHtml(c.note || "")).filter(Boolean).join("; ");
+      resultEl.innerHTML = `<span style="color:#15803d; font-weight:600;">✓ Formatting corrected.</span>${notes ? ` <span style="color:var(--muted);">${notes}</span>` : ""}`;
+    } else {
+      resultEl.innerHTML = '<span style="color:#15803d;">✓ Looks good — no changes needed.</span>';
+    }
+  } catch (e) {
+    resultEl.innerHTML = `<span style="color:var(--warn);">Network error: ${escapeHtml(e.message)}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origBtnText;
+  }
+}
+
 async function submitNewItemCode() {
   const btn        = document.getElementById("itemcode-create-submit-btn");
   const banner     = document.getElementById("itemcode-feedback-banner");
@@ -424,7 +481,15 @@ async function submitNewItemCode() {
     unit = document.getElementById("itemcode-new-unit").value.trim();
     if (!materialName) { alert("Material Name is required."); return; }
     if (!unit)         { alert("Unit is required."); return; }
-    payload = { materialName, rating, typeOfMaterial: typeOfMat, unit, make };
+    // skipAiCheck is only ever honored server-side after re-verifying real
+    // admin status (req.user.perm_admin) — this client value is just what
+    // the checkbox says, not a trust boundary. The checkbox itself is only
+    // ever shown for genuine Free Form types (see handleIcfNewTypeChange),
+    // never for the admin-manual override of a Fixed Format type — that
+    // path is already admin-gated and doesn't need this gate too.
+    const skipToggle = document.getElementById("icf-new-ai-skip-checkbox");
+    const skipAiCheck = !!(skipToggle && skipToggle.checked);
+    payload = { materialName, rating, typeOfMaterial: typeOfMat, unit, make, skipAiCheck };
   }
 
   btn.disabled = true;
@@ -452,16 +517,26 @@ async function submitNewItemCode() {
       if (directCreateWrap) directCreateWrap.style.display = "none";
       if (orSearchDivider)  orSearchDivider.style.display  = "none";
 
-      // Show success banner
+      // Show success banner — for the Free Form path, the AI formatting
+      // gate may have silently substituted normalized text for what was
+      // typed (createItemCode's aiFormattingChanged/finalMaterialName/
+      // finalRating), so this shows what was ACTUALLY saved, not the raw
+      // input, with a small note when it differs.
+      const displayName_ = (data.finalMaterialName != null) ? data.finalMaterialName : materialName;
+      const displayRating_ = (data.finalRating != null) ? data.finalRating : rating;
+      const aiNote = data.aiFormattingChanged
+        ? `<div style="margin-top:6px; font-size:0.78rem; color:#166534;">✓ Formatting was auto-corrected to match house style before saving.</div>`
+        : "";
       banner.style.cssText = "display:block; background:#dcfce7; border-color:#15803d; color:#15803d; padding:14px; border-left:4px solid #15803d; border-radius:var(--radius);";
       banner.innerHTML = `
         <strong style="font-size:0.95rem;">Item Code Created Successfully!</strong><br/>
         <div style="margin-top:8px; display:flex; gap:16px; flex-wrap:wrap;">
           <span>Code: <strong style="font-family:monospace; font-size:1rem; background:#fff; padding:2px 8px; border-radius:4px; border:1px solid #15803d;">${data.itemCode || itemCode}</strong></span>
-          <span>Product: <strong>${materialName}${rating ? " - " + rating : ""}${make ? " - Make: " + make : ""}</strong></span>
+          <span>Product: <strong>${escapeHtml(displayName_)}${displayRating_ ? " - " + escapeHtml(displayRating_) : ""}${make ? " - Make: " + escapeHtml(make) : ""}</strong></span>
           <span>Type: <strong>${window.typeLabelDisplay_(typeOfMat)}</strong></span>
           <span>Unit: <strong>${unit}</strong></span>
         </div>
+        ${aiNote}
         <button onclick="
           document.getElementById('itemcode-feedback-banner').style.display='none';
           document.getElementById('itemcode-search-input').value='';
@@ -581,11 +656,16 @@ async function handleIcfNewTypeChange(typeOfMaterial) {
   const subSelect = document.getElementById("icf-new-suboption-select");
   const adminToggleWrap = document.getElementById("icf-new-admin-manual-toggle");
   const adminCheckbox = document.getElementById("icf-new-admin-manual-checkbox");
+  const aiSkipWrap = document.getElementById("icf-new-ai-skip-wrap");
+  const aiSkipCheckbox = document.getElementById("icf-new-ai-skip-checkbox");
+  const aiCheckResult = document.getElementById("icf-new-ai-check-result");
 
   icfSelectedFormat = null;
   fixedForm.style.display = "none";
   subSelect.innerHTML = '<option value="">— Select Sub-Option —</option>';
   adminCheckbox.checked = false;
+  if (aiSkipCheckbox) aiSkipCheckbox.checked = false;
+  if (aiCheckResult) aiCheckResult.innerHTML = "";
 
   const cfg = (window.itemCodeTypeConfigCache || []).find(t => t.typeOfMaterial === type);
   if (!type || !cfg) {
@@ -598,6 +678,11 @@ async function handleIcfNewTypeChange(typeOfMaterial) {
   if (cfg.entryMode === 'Free Form') {
     fixedZone.style.display = "none";
     freeformZone.style.display = "block";
+    // The AI formatting/duplicate check applies only to genuine Free Form
+    // types — the admin-manual override of a Fixed Format type (below)
+    // is already admin-gated and doesn't need this gate too, so the skip
+    // toggle only ever shows here.
+    if (aiSkipWrap) aiSkipWrap.style.display = isAdmin ? "block" : "none";
     return;
   }
 

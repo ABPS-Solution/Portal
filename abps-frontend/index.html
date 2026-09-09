@@ -3005,6 +3005,17 @@
               <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Combined with Material Name wherever this code is looked up. Leave blank if not applicable.</div>
             </div>
           </div>
+
+          <div id="icf-new-ai-skip-wrap" style="display:none; margin-bottom:10px;">
+            <label style="display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--muted); cursor:pointer;">
+              <input type="checkbox" id="icf-new-ai-skip-checkbox" style="width:auto;" /> Skip AI formatting check (admin only — saves the text exactly as typed)
+            </label>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+            <button type="button" onclick="checkIcfNewFormatting()" id="icf-new-check-formatting-btn" class="btn btn-sub" style="width:auto; padding:8px 16px; font-size:0.82rem;">Check Formatting</button>
+            <div id="icf-new-ai-check-result" style="font-size:0.8rem; flex:1;"></div>
+          </div>
+
           <div style="margin-bottom:14px;">
             <label class="field-label" style="margin-top:0;">Make (optional)</label>
             <input type="text" id="itemcode-new-make" oninput="this.value=this.value.toUpperCase()"
