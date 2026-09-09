@@ -301,8 +301,11 @@ function dashPopulateYearSelects() {
   const now = new Date();
   const curCalYear = now.getFullYear();
   const curFY = now.getMonth() >= 3 ? curCalYear : curCalYear - 1; // FY starts April (month index 3)
-  const calYears = []; for (let y = curCalYear; y >= curCalYear - 5; y--) calYears.push(y);
-  const fyYears = []; for (let y = curFY; y >= curFY - 5; y--) fyYears.push(y);
+  // 2026 is when this system went live — no real data exists before it,
+  // so the floor is fixed rather than a rolling "N years back" window.
+  const EARLIEST_YEAR = 2026;
+  const calYears = []; for (let y = curCalYear; y >= EARLIEST_YEAR; y--) calYears.push(y);
+  const fyYears = []; for (let y = curFY; y >= EARLIEST_YEAR; y--) fyYears.push(y);
   document.querySelectorAll(".dash-cal-year-select").forEach(sel => {
     sel.innerHTML = calYears.map(y => `<option value="${y}">${y}</option>`).join("");
   });

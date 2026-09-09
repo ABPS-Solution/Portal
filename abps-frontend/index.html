@@ -4390,7 +4390,7 @@
       <span id="dash-global-title" style="text-align:center; font-size:1.35rem; font-weight:800; color:var(--text); white-space:nowrap;"></span>
       <button class="nav-btn-styled" onclick="dashboardGlobalReturnClick()" style="justify-self:end; font-size:0.75rem;">Return to Main Dashboard</button>
     </div>
-    <div id="dd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:wrap;">
+    <div id="dd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
       <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
       <select id="dd-custom-type" onchange="ddCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
         <option value="customday">Day</option><option value="customrange">Date Range</option><option value="custommonth">Month</option>
@@ -4403,7 +4403,7 @@
       <select id="dd-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" hidden></select>
       <button onclick="ddLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
     </div>
-    <div id="pd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:wrap;">
+    <div id="pd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
       <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
       <select id="pd-custom-type" onchange="pdCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
         <option value="customday">Day</option><option value="customrange">Date Range</option><option value="custommonth">Month</option>
@@ -4416,7 +4416,7 @@
       <select id="pd-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" hidden></select>
       <button onclick="pdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
     </div>
-    <div id="sd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:wrap;">
+    <div id="sd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
       <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
       <select id="sd-custom-type" onchange="sdCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
         <option value="customday">Day</option><option value="customrange">Date Range</option><option value="custommonth">Month</option>
@@ -4429,7 +4429,7 @@
       <select id="sd-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" hidden></select>
       <button onclick="sdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
     </div>
-    <div id="md-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:wrap;">
+    <div id="md-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
       <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
       <select id="md-custom-type" onchange="mdCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
         <option value="customday">Day</option><option value="customrange">Date Range</option><option value="custommonth">Month</option>
@@ -4442,7 +4442,7 @@
       <select id="md-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" hidden></select>
       <button onclick="mdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
     </div>
-    <div id="pd2-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:wrap;">
+    <div id="pd2-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
       <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
       <select id="pd2-custom-type" onchange="pd2CustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
         <option value="customday">Day</option><option value="customrange">Date Range</option><option value="custommonth">Month</option>
@@ -4455,7 +4455,7 @@
       <select id="pd2-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" hidden></select>
       <button onclick="pd2LoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
     </div>
-    <div id="ad-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:wrap;">
+    <div id="ad-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
       <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
       <select id="ad-custom-type" onchange="adCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
         <option value="customday">Day</option><option value="customrange">Date Range</option><option value="custommonth">Month</option>
@@ -4468,7 +4468,7 @@
       <select id="ad-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;" hidden></select>
       <button onclick="adLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">Go</button>
     </div>
-    <div id="qad-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:wrap;">
+    <div id="qad-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
       <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
       <select id="qad-custom-type" onchange="qadCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
         <option value="customday">Day</option><option value="customrange">Date Range</option><option value="custommonth">Month</option>
