@@ -1014,6 +1014,30 @@ const ptlWLbl = s => ptlMeasureTextWidth(s, 11 * ptlFS, 600, '-apple-system, sys
 const PTL_LBL_PAD = 10;
 const ptlWMono = (s, px) => ptlMeasureTextWidth(s, px * ptlFS, 700, 'monospace');
 
+// Word-wraps a chip string (e.g. "Waiting on Production Requirement
+// Dates") to fit a real pixel width, measured with the SAME font/size
+// the chip <text> is actually drawn with — a long chip used to render as
+// one unbroken line, wide enough to bleed horizontally into the next
+// node's own date/chip text with nothing to stop it (the placer only
+// ever pushed a colliding block to a DEEPER slot, never shrank the block
+// itself, so two chips at the same depth with no vertical room left just
+// overlapped). Wrapping first keeps each line's width within budget, so
+// the existing placer collision-avoidance has a normal-sized box to work
+// with again.
+function ptlWrapChip(text, maxWidthPx, px, maxLines = 3) {
+  if (!text) return [];
+  const words = text.split(' ');
+  const out = [];
+  let cur = '';
+  words.forEach(w => {
+    const cand = cur ? `${cur} ${w}` : w;
+    if (cur && ptlWMono(cand, px) > maxWidthPx) { out.push(cur); cur = w; }
+    else cur = cand;
+  });
+  if (cur) out.push(cur);
+  return out.slice(0, maxLines);
+}
+
 const PTL_MAX_SLOT = 6;
 function ptlPlacer() {
   const taken = [];
@@ -1496,15 +1520,24 @@ function ptlRenderCanvas(containerId) {
     // line under the date, reserved as part of the same placer slot so it
     // can't collide with a neighboring node's stacked label/date.
     const chipTxt = n.chip || '';
-    const bw = Math.max(ptlWMono(dtx, 10.5), chipTxt ? ptlWMono(chipTxt, 9.5) : 0);
-    const chipExtra = chipTxt ? LINE_H : 0;
+    // A long chip (e.g. "Waiting on Production Requirement Dates") used to
+    // render as one unbroken line wide enough to bleed into a neighboring
+    // node's own date/chip text — wrapped to fit a real pixel budget
+    // instead, so its own reserved placer box stays a normal width and
+    // (b) the extra line(s) stack downward under the node rather than
+    // sideways into the next one.
+    const CHIP_MAX_W = 150 * ptlFS;
+    const chipLines = ptlWrapChip(chipTxt, CHIP_MAX_W, 9.5, 3);
+    const chipW = chipLines.length ? Math.max(...chipLines.map(l => ptlWMono(l, 9.5))) : 0;
+    const bw = Math.max(ptlWMono(dtx, 10.5), chipW);
+    const chipExtra = chipLines.length * LINE_H;
     const roomDnK = Math.floor((floorY - 3 - chipExtra - y - R - GAP) / SLOT_DN);
     const maxSlotsDn = Math.max(1, Math.min(PTL_MAX_SLOT, roomDnK + 1));
     const kD = PL.place(k => { const d = y + R + GAP + k * SLOT_DN; return { x0: x - bw / 2 - PTL_LBL_PAD, x1: x + bw / 2 + PTL_LBL_PAD, y0: d - ASC, y1: d + 3 + chipExtra }; }, maxSlotsDn);
     const dy = y + R + GAP + kD * SLOT_DN;
     if (kD > 0) P.push(`<line x1="${x}" y1="${y + R}" x2="${x}" y2="${dy - ASC}" stroke="${ring}" stroke-width="1" opacity=".3"/>`);
     P.push(`<text x="${x}" y="${dy}" text-anchor="middle" font-size="${10.5 * ptlFS}" font-weight="700" font-family="monospace" fill="${late ? '#e84545' : 'var(--muted)'}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(dtx)}</text>`);
-    if (chipTxt) P.push(`<text x="${x}" y="${dy + LINE_H}" text-anchor="middle" font-size="${9.5 * ptlFS}" font-weight="700" font-family="monospace" fill="var(--text)" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(chipTxt)}</text>`);
+    chipLines.forEach((ln, i) => P.push(`<text x="${x}" y="${dy + (i + 1) * LINE_H}" text-anchor="middle" font-size="${9.5 * ptlFS}" font-weight="700" font-family="monospace" fill="var(--text)" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(ln)}</text>`));
 
     // 'delivery' (Final Delivery / Dispatch Date) is the single most
     // consequential point on the whole map - a real Final Project Invoice
