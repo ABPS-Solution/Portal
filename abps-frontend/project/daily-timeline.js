@@ -206,7 +206,15 @@ async function dtlLoad() {
   if (chipsEl) chipsEl.innerHTML = dtlDeptChipsHtml();
 
   try {
-    const data = await apFetch({ action: 'fetchDailyTimeline', anchorDate: dtlAnchorDate, mode: dtlMode, todayOverride: dtlTodayOverrideValue() });
+    // fromIso/toIso are the exact window dtlDays just computed (Monday-
+    // anchored in week mode) — sent explicitly rather than making the
+    // backend re-derive a window from bare anchorDate+mode, which used to
+    // silently disagree with this file's own Monday-snap whenever "today"
+    // wasn't a Monday (backend was fetching anchorDate..anchorDate+5,
+    // frontend was rendering Mon-Sat of that week — two different
+    // windows, so items due earlier in the week never got fetched at all
+    // and items due after the fetched range vanished with no explanation).
+    const data = await apFetch({ action: 'fetchDailyTimeline', fromIso: dtlDays[0], toIso: dtlDays[dtlDays.length - 1], anchorDate: dtlAnchorDate, mode: dtlMode, todayOverride: dtlTodayOverrideValue() });
     if (!data.success) {
       dtlData = { items: [], overdue: [], truncated: { overdue: null }, holidays: [] };
       if (fb) {
@@ -459,7 +467,15 @@ function dtlEllipsize(text, maxW, fontPx, weight) {
 }
 
 function dtlNodeLabelText(it) {
-  if (dtlMode !== 'today') return it.label || '';
+  // Today mode has room for the full context + owner; week mode's much
+  // narrower columns still need SOME project identity on the node itself
+  // (dtlEllipsize below already truncates to fit) — a bare "Drawing Sent"
+  // node with no project shown left no way to tell two same-label dots on
+  // the same day apart without hovering each one individually.
+  if (dtlMode !== 'today') {
+    const proj = it.projectId || it.companyName || it.context || '';
+    return proj ? `${it.label} · ${proj}` : (it.label || '');
+  }
   const extra = [it.context, it.owner].filter(Boolean).join(' · ');
   return extra ? `${it.label} · ${extra}` : (it.label || '');
 }
@@ -704,7 +720,15 @@ function dtlWireCanvasInteractions(sc, clickMap) {
       const info = clickMap[+el.dataset.idx];
       if (info) {
         const it = info.it;
-        tip.innerHTML = `<b style="display:block; font-size:0.82rem; font-weight:700; margin-bottom:6px;">${escapeHtml(info.label)}</b>
+        // Project/Company is its own explicit line, always shown regardless
+        // of zoom mode — the canvas node's own inline label only carries
+        // this in "Today" mode (dtlNodeLabelText), so week-mode nodes had
+        // NO way to tell which project a point belonged to short of
+        // clicking through. projectId/companyName take priority; context
+        // (marketing items, which have no projectId) is the fallback.
+        const projectLine = [it.projectId, it.companyName].filter(Boolean).join(' · ') || it.context || null;
+        tip.innerHTML = `<b style="display:block; font-size:0.82rem; font-weight:700; margin-bottom:6px;">${escapeHtml(it.label || '')}</b>
+          ${projectLine ? `<div style="font-size:0.74rem; color:var(--muted);">Project: <span style="color:var(--text); font-weight:600;">${escapeHtml(projectLine)}</span></div>` : ''}
           <div style="font-size:0.74rem; color:var(--muted);">Department: <span style="color:var(--text);">${escapeHtml(PTL_DEPT_NAME[it.dept] || it.dept)}</span></div>
           <div style="font-size:0.74rem; color:var(--muted);">Due: <span style="color:var(--text);">${escapeHtml(formatOrdinalDate(it.due))}</span></div>
           ${it.owner ? `<div style="font-size:0.74rem; color:var(--muted);">Owner: <span style="color:var(--text);">${escapeHtml(it.owner)}</span></div>` : ''}
