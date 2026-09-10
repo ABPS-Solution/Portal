@@ -331,10 +331,10 @@ async function executeTaskMatrixSearch() {
       data.tasks.forEach(t => {
         let card = document.createElement("div");
         card.className = "task-item-card";
-        card.style.cssText = "padding:8px 10px; border:1px solid var(--border); border-left:3px solid var(--brand); background:#fff; margin-bottom:4px; border-radius:4px;";
+        card.style.cssText = "padding:10px 12px; border:1px solid var(--border); border-left:3px solid var(--brand); background:#fff; margin-bottom:6px; border-radius:4px;";
         const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
         const deleteActionHtml = isAdminUser
-          ? `<button class="nav-btn-styled" id="matrix-delete-task-btn-${t.id}" style="font-size:0.66rem; font-weight:700; height:22px; padding:0 8px; background:#fff; color:var(--warn); border:1px solid var(--warn); border-radius:4px; white-space:nowrap;">Delete</button>`
+          ? `<button class="nav-btn-styled" id="matrix-delete-task-btn-${t.id}" style="font-size:0.85rem; font-weight:700; padding:5px 12px; background:#fff; color:var(--warn); border:1px solid var(--warn); border-radius:4px; white-space:nowrap;">Delete</button>`
           : "";
 
         // Date chip color: overdue (red) if the target date is before today,
@@ -349,25 +349,25 @@ async function executeTaskMatrixSearch() {
           : "background:#edf2f7; color:#64748b;";
 
         card.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0;">
-              <strong style="color:var(--brand); font-size:0.85rem; white-space:nowrap;">${t.type}</strong>
-              <span style="font-size:0.65rem; background:#edf2f7; padding:1px 6px; border-radius:10px; font-weight:700; white-space:nowrap;">${t.status}</span>
-              <span style="font-size:0.68rem; font-weight:700; padding:2px 7px; border-radius:10px; white-space:nowrap; ${dateChipStyle}">Target Date: ${formatOrdinalDate(t.targetDate)} · ${t.shift}</span>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; min-width:0;">
+              <strong style="color:var(--brand); font-size:0.98rem; white-space:nowrap;">${t.type}</strong>
+              <span style="font-size:0.8rem; background:#edf2f7; padding:2px 9px; border-radius:10px; font-weight:700; white-space:nowrap;">${t.status}</span>
+              <span style="font-size:0.82rem; font-weight:700; padding:3px 10px; border-radius:10px; white-space:nowrap; ${dateChipStyle}">Target Date: ${formatOrdinalDate(t.targetDate)} · ${t.shift}</span>
             </div>
-            <div style="display:flex; gap:4px; flex-shrink:0;">
-              <button class="nav-btn-styled" id="view-company-btn-${t.id}" onclick="toggleTaskCompanyExpand('${t.id}', '${encodeURIComponent(t.companyName)}', '${encodeURIComponent(t.personName)}')" style="font-size:0.66rem; font-weight:700; height:22px; padding:0 8px; background:#fff; color:var(--brand); border:1px solid var(--brand); border-radius:4px; white-space:nowrap;">View Company</button>
-              <button class="nav-btn-styled" id="matrix-edit-task-btn-${t.id}" style="font-size:0.66rem; font-weight:700; height:22px; padding:0 8px; background:#fff; color:var(--accent); border:1px solid var(--accent); border-radius:4px; white-space:nowrap;">Edit</button>
+            <div style="display:flex; gap:6px; flex-shrink:0;">
+              <button class="nav-btn-styled" id="view-company-btn-${t.id}" onclick="toggleTaskCompanyExpand('${t.id}', '${encodeURIComponent(t.companyName)}', '${encodeURIComponent(t.personName)}')" style="font-size:0.85rem; font-weight:700; padding:5px 12px; background:#fff; color:var(--brand); border:1px solid var(--brand); border-radius:4px; white-space:nowrap;">View Company</button>
+              <button class="nav-btn-styled" id="matrix-edit-task-btn-${t.id}" style="font-size:0.85rem; font-weight:700; padding:5px 12px; background:#fff; color:var(--accent); border:1px solid var(--accent); border-radius:4px; white-space:nowrap;">Edit</button>
               ${deleteActionHtml}
             </div>
           </div>
-          <div style="font-size:0.82rem; color:var(--muted); margin-top:4px;">
-            <span style="font-size:0.62rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Assigned to</span> <b style="color:#000; font-weight:600;">${t.eng}</b>
+          <div style="font-size:0.95rem; color:var(--muted); margin-top:6px;">
+            <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Assigned to</span> <b style="color:#000; font-weight:600;">${t.eng}</b>
             <span style="color:var(--border);">|</span>
-            <span style="font-size:0.62rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">By</span> <b style="color:#000; font-weight:600;">${t.assigner || "System"}</b>
+            <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">By</span> <b style="color:#000; font-weight:600;">${t.assigner || "System"}</b>
             <span style="color:var(--border);">·</span> ${t.companyName} (${t.personName})
           </div>
-          <div style="font-size:0.82rem; color:#000; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${(t.desc || '').replace(/"/g, '&quot;')}">${t.desc || 'None'}</div>
+          <div style="font-size:0.95rem; color:#000; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${(t.desc || '').replace(/"/g, '&quot;')}">${t.desc || 'None'}</div>
           <div id="matrix-task-form-mount-${t.id}" style="margin-top:10px; display:none;"></div>
           <div id="matrix-task-company-expand-${t.id}" style="display:none; margin-top:12px; border-top:2px solid var(--border); padding-top:10px;"></div>
         `;

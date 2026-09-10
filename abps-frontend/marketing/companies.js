@@ -216,16 +216,29 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
   const btn         = document.getElementById(`view-company-btn-${taskId}`);
   if (!expandDiv || !btn) return;
 
+  // Collapsed/expanded button looks (font-size/height/padding/border-radius
+  // match the rest of the task card's action pills — companies.js sets
+  // the FULL style here rather than just background, since an earlier
+  // version only swapped background and left the outlined button's
+  // inline text color untouched, which could land text and background on
+  // the same/similar color (unreadable) depending on which state it was
+  // toggled from.
+  const setBtnLook = (label, variant) => {
+    btn.textContent = label;
+    btn.style.cssText = variant === "expanded"
+      ? "font-size:0.85rem; font-weight:700; padding:5px 12px; background:#475569; color:#fff; border:1px solid #475569; border-radius:4px; white-space:nowrap;"
+      : "font-size:0.85rem; font-weight:700; padding:5px 12px; background:#fff; color:var(--brand); border:1px solid var(--brand); border-radius:4px; white-space:nowrap;";
+  };
+
   // Collapse if already open
   if (expandDiv.style.display === "block") {
     expandDiv.style.display = "none";
     expandDiv.innerHTML = "";
-    btn.textContent = "View Company";
-    btn.style.background = "var(--brand)";
+    setBtnLook("View Company", "collapsed");
     return;
   }
 
-  btn.textContent = "Loading...";
+  setBtnLook("Loading...", "expanded");
   btn.disabled = true;
 
   try {
@@ -239,8 +252,7 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
     if (!data.success || !data.leads || data.leads.length === 0) {
       expandDiv.innerHTML = `<p style="color:var(--warn); font-size:0.85rem; font-weight:700;">No records found for "${companyName}".</p>`;
       expandDiv.style.display = "block";
-      btn.textContent = "Collapse Company";
-      btn.style.background = "#718096";
+      setBtnLook("Collapse Company", "expanded");
       btn.disabled = false;
       return;
     }
@@ -302,14 +314,12 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
     });
 
     expandDiv.style.display = "block";
-    btn.textContent = "Collapse Company";
-    btn.style.background = "#718096";
+    setBtnLook("Collapse Company", "expanded");
 
   } catch(e) {
     expandDiv.innerHTML = `<p style="color:var(--warn);">Error: ${e.message}</p>`;
     expandDiv.style.display = "block";
-    btn.textContent = "View Company";
-    btn.style.background = "var(--brand)";
+    setBtnLook("View Company", "collapsed");
   }
   btn.disabled = false;
 }
