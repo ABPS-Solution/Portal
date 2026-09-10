@@ -166,7 +166,7 @@ async function runCashExpenseSearch() {
         ? `${formatINRComma(x.amount)} <span style="font-weight:400; color:var(--muted); font-size:0.75rem;">(open)</span>`
         : isAdminUser
         ? `<input type="number" id="ces-actual-input-${x.expenseId}" value="${rawActual}" min="0" step="0.01"
-             style="width:90px; padding:2px 4px; font-size:0.8rem; text-align:right; font-weight:700;"
+             style="width:100%; max-width:140px; box-sizing:border-box; padding:6px 8px; font-size:0.85rem; text-align:right; font-weight:700;"
              onchange="cesSaveActual(${x.expenseId}, ${rawActual})">
            <span id="ces-actual-err-${x.expenseId}" style="color:#b91c1c; font-size:0.62rem; display:block;"></span>`
         : formatINRComma(x.amount);
