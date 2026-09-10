@@ -378,8 +378,6 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
       ? `<button style="background:none; border:none; color:var(--muted); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0;" onmouseover="this.style.color='var(--warn)'" onmouseout="this.style.color='var(--muted)'" onclick="archiveEmailLeadFromSystemDatabaseCache('${mail.messageIdReference}', ${mIdx})">Delete</button>`
       : "";
 
-    const hasNote = mail.notes && String(mail.notes).trim();
-
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
         <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
@@ -410,19 +408,12 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
         <div style="white-space:pre-wrap; line-height:1.5; max-height:400px; overflow-y:auto;">${escapeHtml(looksLikeHtmlBody(mail.body) ? stripHtmlBodyToPlainText(mail.body) : (mail.body || "(no body content available)"))}</div>
       </div>
 
-      <div id="email-notes-zone-${mIdx}">
-        <div id="email-notes-preview-${mIdx}" style="display:${hasNote ? "flex" : "none"}; align-items:flex-start; justify-content:space-between; gap:12px; background:var(--highlight-bg); border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-size:0.8rem;">
-          <div>
-            <div id="email-note-preview-text-${mIdx}" style="color:var(--text); line-height:1.4;">${escapeHtml(mail.notes || "")}</div>
-            <div id="email-note-creator-${mIdx}" style="color:var(--muted); font-size:0.72rem; margin-top:3px;">${mail.creatorOfNote ? "Last saved by: " + escapeHtml(mail.creatorOfNote) : ""}</div>
-          </div>
-          <span style="color:var(--brand); font-weight:700; cursor:pointer; flex-shrink:0;" onclick="toggleEmailLeadNotesEditor(${mIdx})">Edit</span>
+      <div id="email-notes-zone-${mIdx}" style="display:flex; align-items:center; gap:8px;">
+        <div id="email-notes-strip-${mIdx}" style="display:flex; gap:6px; overflow-x:auto; flex:1; min-width:0; padding:2px 0;">
+          ${renderEmailLeadNotesStrip(mail.notes)}
         </div>
-        <div id="email-notes-add-link-${mIdx}" style="display:${hasNote ? "none" : "block"}; font-size:0.8rem; color:var(--brand); font-weight:600; cursor:pointer; width:fit-content;" onclick="toggleEmailLeadNotesEditor(${mIdx})">+ Add note</div>
-        <div id="email-notes-editor-${mIdx}" style="display:none; align-items:flex-end; gap:8px;">
-          <textarea id="email-note-${mIdx}" placeholder="Add notes about this email lead..." style="flex:1; min-height:44px; padding:8px; font-size:0.82rem; border:1px solid var(--border); border-radius:4px; resize:vertical; font-family:inherit;">${escapeHtml(mail.notes || "")}</textarea>
-          <button class="nav-btn-styled" style="background:var(--brand); font-size:0.78rem; padding:8px 14px; white-space:nowrap; flex-shrink:0;" onclick="saveEmailLeadNote(${mIdx}, '${mail.messageIdReference}')">Save Note</button>
-        </div>
+        <input type="text" id="email-note-${mIdx}" placeholder="Add a note..." style="flex:0 0 160px; padding:6px 8px; font-size:0.78rem; border:1px solid var(--border); border-radius:4px;" onkeydown="if(event.key==='Enter'){event.preventDefault(); saveEmailLeadNote(${mIdx}, '${mail.messageIdReference}');}" />
+        <button class="nav-btn-styled" id="email-note-save-btn-${mIdx}" style="background:var(--brand); font-size:0.76rem; padding:6px 12px; white-space:nowrap; flex-shrink:0;" onclick="saveEmailLeadNote(${mIdx}, '${mail.messageIdReference}')">Add</button>
       </div>
 
       <div style="display:flex; align-items:center; justify-content:flex-end; gap:16px; padding-top:10px; border-top:1px solid var(--border);" id="email-action-response-mount-zone-${mIdx}">
@@ -436,19 +427,19 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
   });
 }
 
-// "+ Add note" (empty state) or "Edit" (a note already exists) reveals
-// the real textarea+Save row in place of whichever of those two was
-// showing — a one-way reveal, same as the old always-open textarea just
-// collapsed until asked for; nothing re-collapses it afterward, matching
-// how Save Note has never auto-closed the editor either. The textarea's
-// own id and saveEmailLeadNote are untouched.
-function toggleEmailLeadNotesEditor(idx) {
-  const preview = document.getElementById(`email-notes-preview-${idx}`);
-  const addLink = document.getElementById(`email-notes-add-link-${idx}`);
-  const editor = document.getElementById(`email-notes-editor-${idx}`);
-  if (editor) editor.style.display = "flex";
-  if (preview) preview.style.display = "none";
-  if (addLink) addLink.style.display = "none";
+// renderEmailLeadNotesStrip — notes are now append-only (10 Sep 2026,
+// migration 191), so a card can carry a whole history instead of one
+// overwritten note. Rendered as a compact horizontally-scrolling row of
+// small chips (explicit request: don't let this take up vertical space)
+// rather than a stacked list — each chip single-line-truncated with the
+// full text available via the native `title` hover tooltip.
+function renderEmailLeadNotesStrip(notes) {
+  if (!Array.isArray(notes) || notes.length === 0) return "";
+  return notes.map(n => `
+    <div style="flex:0 0 auto; max-width:200px; background:var(--highlight-bg); border:1px solid var(--border); border-radius:6px; padding:5px 9px;" title="${escapeHtml(n.noteText)}">
+      <div style="font-size:0.76rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(n.noteText)}</div>
+      <div style="font-size:0.64rem; color:var(--muted); white-space:nowrap; margin-top:1px;">${escapeHtml(n.createdBy || "")}${n.createdAt ? " · " + formatOrdinalDateTime(n.createdAt) : ""}</div>
+    </div>`).join("");
 }
 
 function toggleEmailLeadFullMessage(idx) {
@@ -496,37 +487,42 @@ function markEmailLeadActionedIfInEmailContext(scopeNode) {
 }
 
 async function saveEmailLeadNote(idx, messageId) {
-  const noteText = document.getElementById(`email-note-${idx}`)?.value?.trim() || "";
-  const btn = event.target;
-  btn.disabled = true; btn.textContent = "Saving...";
+  const input = document.getElementById(`email-note-${idx}`);
+  const noteText = input?.value?.trim() || "";
+  if (!noteText) return;
+  const btn = document.getElementById(`email-note-save-btn-${idx}`);
+  if (btn) { btn.disabled = true; btn.textContent = "Adding..."; }
+  if (input) input.disabled = true;
   try {
     const d = await apFetch({
-      action: "saveEmailLeadNote",
+      action: "addEmailLeadNote",
       activeEngineer: appActiveOperatorIdentityString,
       messageId: messageId,
       noteText: noteText
     });
     if (d.success) {
-      btn.textContent = "Saved ✓";
-      btn.style.background = "var(--accent)";
-      // Update creator display immediately
-      const creatorEl = document.getElementById(`email-note-creator-${idx}`);
-      if (creatorEl) creatorEl.textContent = "Last saved by: " + appActiveOperatorIdentityString;
-      // Update local cache
+      // Append, never replace — every prior note stays, this is the
+      // whole point of the switch away from the old overwrite-in-place
+      // single note column.
       const mail = cachedInboundEmailLeadsArray.find(m => m.messageIdReference === messageId);
-      if (mail) { 
-        mail.notes = noteText; 
-        mail.creatorOfNote = appActiveOperatorIdentityString;
-        localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray)); 
+      if (mail) {
+        if (!Array.isArray(mail.notes)) mail.notes = [];
+        mail.notes.push(d.note);
+        localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray));
       }
-      setTimeout(() => { btn.textContent = "Save Note"; btn.style.background = "var(--brand)"; btn.disabled = false; }, 2000);  
+      const strip = document.getElementById(`email-notes-strip-${idx}`);
+      if (strip) strip.innerHTML = renderEmailLeadNotesStrip(mail ? mail.notes : []);
+      if (input) { input.value = ""; input.disabled = false; input.focus(); }
+      if (btn) { btn.disabled = false; btn.textContent = "Add"; }
     } else {
-      alert("Failed to save note: " + (d.error || "Unknown error"));
-      btn.disabled = false; btn.textContent = "Save Note";
+      alert("Failed to add note: " + (d.error || "Unknown error"));
+      if (input) input.disabled = false;
+      if (btn) { btn.disabled = false; btn.textContent = "Add"; }
     }
   } catch(e) {
     alert("Error: " + e.message);
-    btn.disabled = false; btn.textContent = "Save Note";
+    if (input) input.disabled = false;
+    if (btn) { btn.disabled = false; btn.textContent = "Add"; }
   }
 }
 
