@@ -43,7 +43,7 @@ async function mdLoadDashboard(customVal) {
 }
 
 function mdRenderDashboard(data) {
-  const { stats, statusCounts, verticalCounts, potentialCounts, staleLeads, recentWins } = data;
+  const { stats, statusCounts, verticalCounts, taskPriorityOpenCounts, taskPriorityOverdueCounts, staleLeads, recentWins } = data;
 
   document.getElementById("md-s-newleads").textContent       = stats.newLeads;
   document.getElementById("md-s-inprogress").textContent     = stats.inProgress;
@@ -74,21 +74,25 @@ function mdRenderDashboard(data) {
       scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false }, ticks:{ font:{ size:9 }, autoSkip:false } } } }
   });
 
-  // Chart 2 — Approx Business Potential (vertical bar). Live snapshot
-  // of the currently OPEN pipeline only (terminal-status leads are
-  // already covered by the funnel above and Recent Wins/Stale Leads).
+  // Chart 2 — Open Tasks by Priority, Open vs Overdue (grouped vertical
+  // bar). Live snapshot, same "not Resolved" open-tasks filter as the
+  // stat tile above, split by whether target_date has already passed.
   if (mdChartPotential) mdChartPotential.destroy();
-  const potentialLabels = Object.keys(potentialCounts);
+  const priorityLabels = Object.keys(taskPriorityOpenCounts);
   const ctxPotential = document.getElementById("md-chart-potential").getContext("2d");
   mdChartPotential = new Chart(ctxPotential, {
     type: "bar",
     data: {
-      labels: potentialLabels,
-      datasets: [{ label:"Open Leads", data: potentialLabels.map(k => potentialCounts[k]),
-        backgroundColor: "rgba(124,58,237,0.7)", borderRadius: 4 }]
+      labels: priorityLabels,
+      datasets: [
+        { label:"Open", data: priorityLabels.map(k => taskPriorityOpenCounts[k]),
+          backgroundColor: "rgba(37,99,235,0.7)", borderRadius: 4 },
+        { label:"Overdue", data: priorityLabels.map(k => taskPriorityOverdueCounts[k]),
+          backgroundColor: "rgba(185,28,28,0.7)", borderRadius: 4 }
+      ]
     },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
-      scales:{ y:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, x:{ grid:{ display:false }, ticks:{ font:{ size:12 } } } } }
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:true, position:"top", labels:{ boxWidth:10, font:{ size:10 } } } },
+      scales:{ y:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, x:{ grid:{ display:false }, ticks:{ font:{ size:11 } } } } }
   });
 
   // Chart 3 — Business Vertical (horizontal bar, not a donut — angle/area
