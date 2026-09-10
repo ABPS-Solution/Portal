@@ -331,30 +331,43 @@ async function executeTaskMatrixSearch() {
       data.tasks.forEach(t => {
         let card = document.createElement("div");
         card.className = "task-item-card";
-        card.style.cssText = "padding:12px; border-left:4px solid var(--brand); background:#fff; margin-bottom:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02);";
+        card.style.cssText = "padding:8px 10px; border:1px solid var(--border); border-left:3px solid var(--brand); background:#fff; margin-bottom:4px; border-radius:4px;";
         const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
-        const deleteActionHtml = isAdminUser 
-          ? `<button class="nav-btn-styled" id="matrix-delete-task-btn-${t.id}" style="font-size:0.72rem; padding:3px 8px; background:var(--warn);">Delete</button>` 
+        const deleteActionHtml = isAdminUser
+          ? `<button class="nav-btn-styled" id="matrix-delete-task-btn-${t.id}" style="font-size:0.66rem; font-weight:700; height:22px; padding:0 8px; background:#fff; color:var(--warn); border:1px solid var(--warn); border-radius:4px; white-space:nowrap;">Delete</button>`
           : "";
 
+        // Date chip color: overdue (red) if the target date is before today,
+        // due today (amber), otherwise a neutral grey — same
+        // `target_date < CURRENT_DATE` overdue definition the Overdue quick
+        // filter above already uses, just evaluated client-side per card.
+        const todayStr = toDateInputValue(new Date().toISOString());
+        const targetStr = toDateInputValue(t.targetDate);
+        const dateChipStyle = !targetStr ? "background:#edf2f7; color:#64748b;"
+          : targetStr < todayStr ? "background:#fee2e2; color:#b91c1c;"
+          : targetStr === todayStr ? "background:#fef3c7; color:#92400e;"
+          : "background:#edf2f7; color:#64748b;";
+
         card.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px dashed #edf2f7; padding-bottom:6px; margin-bottom:6px;">
-            <div>
-              <strong style="color:var(--brand); font-size:0.9rem;">${t.type}</strong>
-              <span style="font-size:0.7rem; background:#edf2f7; padding:2px 6px; border-radius:4px; font-weight:700; margin-left:8px;">${t.status}</span>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0;">
+              <strong style="color:var(--brand); font-size:0.85rem; white-space:nowrap;">${t.type}</strong>
+              <span style="font-size:0.65rem; background:#edf2f7; padding:1px 6px; border-radius:10px; font-weight:700; white-space:nowrap;">${t.status}</span>
+              <span style="font-size:0.68rem; font-weight:700; padding:2px 7px; border-radius:10px; white-space:nowrap; ${dateChipStyle}">Target Date: ${formatOrdinalDate(t.targetDate)} · ${t.shift}</span>
             </div>
-            <button class="nav-btn-styled" id="view-company-btn-${t.id}" onclick="toggleTaskCompanyExpand('${t.id}', '${encodeURIComponent(t.companyName)}', '${encodeURIComponent(t.personName)}')" style="font-size:0.7rem; padding:3px 10px; background:var(--brand); white-space:nowrap;">View Company</button>
+            <div style="display:flex; gap:4px; flex-shrink:0;">
+              <button class="nav-btn-styled" id="view-company-btn-${t.id}" onclick="toggleTaskCompanyExpand('${t.id}', '${encodeURIComponent(t.companyName)}', '${encodeURIComponent(t.personName)}')" style="font-size:0.66rem; font-weight:700; height:22px; padding:0 8px; background:#fff; color:var(--brand); border:1px solid var(--brand); border-radius:4px; white-space:nowrap;">View Company</button>
+              <button class="nav-btn-styled" id="matrix-edit-task-btn-${t.id}" style="font-size:0.66rem; font-weight:700; height:22px; padding:0 8px; background:#fff; color:var(--accent); border:1px solid var(--accent); border-radius:4px; white-space:nowrap;">Edit</button>
+              ${deleteActionHtml}
+            </div>
           </div>
-          <div style="font-size:0.93rem; line-height:1.5; color:#000;">
-            <strong>Engineer:</strong> ${t.eng} | <strong>Assigner:</strong> ${t.assigner || "System"}<br/>
-            <strong>Target Date:</strong> ${formatOrdinalDate(t.targetDate)} | <strong>Target Completion Time:</strong> ${t.shift}<br/>
-            <strong>Lead Reference:</strong> ${t.companyName} (${t.personName})
+          <div style="font-size:0.82rem; color:var(--muted); margin-top:4px;">
+            <span style="font-size:0.62rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Assigned to</span> <b style="color:#000; font-weight:600;">${t.eng}</b>
+            <span style="color:var(--border);">|</span>
+            <span style="font-size:0.62rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">By</span> <b style="color:#000; font-weight:600;">${t.assigner || "System"}</b>
+            <span style="color:var(--border);">·</span> ${t.companyName} (${t.personName})
           </div>
-          <div style="font-size:0.93rem; color:#000; padding:6px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; margin-top:6px; white-space:pre-wrap;"><strong>Description:</strong> ${t.desc || 'None'}</div>
-          <div style="margin-top:10px; display:flex; gap:8px;">
-            <button class="nav-btn-styled" id="matrix-edit-task-btn-${t.id}" style="font-size:0.72rem; padding:3px 8px; background:var(--accent);">Edit Task Details</button>
-            ${deleteActionHtml}
-          </div>
+          <div style="font-size:0.82rem; color:#000; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${(t.desc || '').replace(/"/g, '&quot;')}">${t.desc || 'None'}</div>
           <div id="matrix-task-form-mount-${t.id}" style="margin-top:10px; display:none;"></div>
           <div id="matrix-task-company-expand-${t.id}" style="display:none; margin-top:12px; border-top:2px solid var(--border); padding-top:10px;"></div>
         `;
