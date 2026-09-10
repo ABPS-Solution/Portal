@@ -692,6 +692,9 @@
       <div class="dept-header">
         <div class="dept-bar" style="background:#2563eb;"></div>
         <span class="dept-name">Project Department</span>
+        <div id="mod-admin-dashboard-wrapper" style="display:none;">
+          <button class="dept-dash-pill" id="mod-admin-dashboard" onclick="navigateToAdminDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Admin Dashboard</button>
+        </div>
       </div>
       <div class="sec-label">Admin</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -701,6 +704,7 @@
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-manufacturing-clearance" onclick="switchActiveDashboardModule('manufacturing-clearance')"><span class="mc-label">Manufacturing Clearance</span></div>
         <div class="menu-card" id="mod-project-timeline" onclick="switchActiveDashboardModule('project-timeline')"><span class="mc-label">Project Timeline</span></div>
+        <div class="menu-card" id="mod-daily-timeline" onclick="switchActiveDashboardModule('daily-timeline')"><span class="mc-label">Daily Timeline</span></div>
         <div class="menu-card" id="mod-project-status" onclick="switchActiveDashboardModule('project-status')"><span class="mc-label">Project Status</span></div>
       </div>
       <div class="sec-label">Customer Communication</div>
@@ -2163,6 +2167,17 @@
     <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
     <h2 class="panel-title">Project Timeline</h2>
     <div id="ptl-mount"></div>
+    </div>
+  </div>
+
+  <div id="canvas-module-daily-timeline" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitDailyTimelineBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <h2 class="panel-title">Daily Timeline</h2>
+    <div id="dtl-mount"></div>
     </div>
   </div>
 
@@ -4079,6 +4094,74 @@
       </div>
     </div>
 
+    <!-- ADMIN DASHBOARD CANVAS — executive cross-department rollup. Two
+         tiles (Stock RM+Spare / Stock FG) are deliberate APPROXIMATIONS
+         (last-purchase-rate / design-costed basis — no FIFO costing
+         exists anywhere in this schema), labelled as such in their own
+         sub-label rather than presented as an exact valuation. -->
+    <div id="canvas-module-admin-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
+      <div id="adm-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+
+        <!-- ROW 1: Live — stock value, on-order value, LD exposure, late POs -->
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">RM + Spare Store Value</div>
+            <div class="dd-stat-val" id="adm-s-stockrm">—</div>
+            <div class="dd-stat-sub">approx., last purchase rate</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">FG Store Value (In Store)</div>
+            <div class="dd-stat-val" id="adm-s-stockfg">—</div>
+            <div class="dd-stat-sub">approx., design-costed</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Total On-Order RM PO Amount</div>
+            <div class="dd-stat-val" id="adm-s-onorder">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Total LD Exposure (At Risk)</div>
+            <div class="dd-stat-val" id="adm-s-ldexposure" style="color:#b91c1c;">—</div>
+            <div class="dd-stat-sub" id="adm-s-ldexposure-sub"></div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Late RM POs (Outstanding Value)</div>
+            <div class="dd-stat-val" id="adm-s-latepo" style="color:#b91c1c;">—</div>
+            <div class="dd-stat-sub" id="adm-s-latepo-sub"></div>
+          </div>
+        </div>
+
+        <!-- ROW 2: PO order/delivery value (period) + cash position (live) -->
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">Total PO Order Value</div>
+            <div class="dd-stat-val" id="adm-s-poorder">—</div>
+            <div class="dd-stat-sub" id="adm-s-poorder-sub"></div>
+          </div>
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">Total Delivered RM PO Amount</div>
+            <div class="dd-stat-val" id="adm-s-delivered" style="color:#15803d;">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Daily Cash + UPI Box Balance</div>
+            <div class="dd-stat-val" id="adm-s-cashbox">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Tour Advances Outstanding</div>
+            <div class="dd-stat-val" id="adm-s-advances" style="color:#b45309;">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 3: Chart -->
+        <div class="dd-chart-row" style="display:grid; grid-template-columns:1fr; gap:10px; flex:1; min-height:230px;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
+            <div class="dd-card-title">RM PO Order Value Over Time</div>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="adm-chart-po-trend" style="position:absolute; width:100%; height:100%;"></canvas></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- PRODUCTION DASHBOARD CANVAS -->
     <div id="canvas-module-production-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
@@ -4451,6 +4534,15 @@
           <button class="dd-period-btn" data-period="thisyear" onclick="qadSetPeriod(this)">This Year</button>
           <button class="dd-period-btn" data-period="custom" onclick="qadSetPeriod(this)">Custom ▾</button>
         </div>
+        <div id="adm-period-btns" style="display:none; gap:4px; flex-wrap:nowrap;">
+          <button class="dd-period-btn active" data-period="today" onclick="admSetPeriod(this)">Today</button>
+          <button class="dd-period-btn" data-period="yesterday" onclick="admSetPeriod(this)">Yesterday</button>
+          <button class="dd-period-btn" data-period="thisweek" onclick="admSetPeriod(this)">This Week</button>
+          <button class="dd-period-btn" data-period="thismonth" onclick="admSetPeriod(this)">This Month</button>
+          <button class="dd-period-btn" data-period="thisquarter" onclick="admSetPeriod(this)">This Quarter</button>
+          <button class="dd-period-btn" data-period="thisyear" onclick="admSetPeriod(this)">This Year</button>
+          <button class="dd-period-btn" data-period="custom" onclick="admSetPeriod(this)">Custom ▾</button>
+        </div>
       </div>
       <span id="dash-global-title" style="text-align:center; font-size:1.35rem; font-weight:800; color:var(--text); white-space:nowrap;"></span>
       <button class="nav-btn-styled" onclick="dashboardGlobalReturnClick()" style="justify-self:end; font-size:0.75rem;">Return to Main Dashboard</button>
@@ -4480,6 +4572,19 @@
       <span id="pd-custom-val-quarter" hidden style="flex:none; white-space:nowrap;"><select id="pd-custom-val-quarter-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="pd-custom-val-quarter-q" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:110px; margin-left:4px;"><option value="1">Q1 (Apr-Jun)</option><option value="2">Q2 (Jul-Sep)</option><option value="3">Q3 (Oct-Dec)</option><option value="4">Q4 (Jan-Mar)</option></select></span>
       <select id="pd-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:90px;" hidden></select>
       <button onclick="pdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700; flex:none; white-space:nowrap;">Go</button>
+    </div>
+    <div id="adm-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
+      <span style="font-size:0.72rem; font-weight:700; color:var(--muted); flex:none; white-space:nowrap;">Select:</span>
+      <select id="adm-custom-type" onchange="admCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:120px;">
+        <option value="customday">Day</option><option value="customrange">Date Range</option><option value="custommonth">Month</option>
+        <option value="customquarter">Quarter</option><option value="customyear">Year</option>
+      </select>
+      <span id="adm-custom-val-day" style="flex:none; white-space:nowrap;"><span style="display:inline-block; flex:none; width:130px;"><input id="adm-custom-val-day-input" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span></span>
+      <span id="adm-custom-val-range" hidden style="flex:none; white-space:nowrap;"><span style="display:inline-block; flex:none; width:130px;"><input id="adm-custom-val-range-start" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span><span style="font-size:0.72rem; color:var(--muted); margin:0 4px; flex:none;">to</span><span style="display:inline-block; flex:none; width:130px;"><input id="adm-custom-val-range-end" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span></span>
+      <span id="adm-custom-val-month" hidden style="flex:none; white-space:nowrap;"><select id="adm-custom-val-month-year" class="dash-cal-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="adm-custom-val-month-month" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:70px; margin-left:4px;"><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select></span>
+      <span id="adm-custom-val-quarter" hidden style="flex:none; white-space:nowrap;"><select id="adm-custom-val-quarter-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="adm-custom-val-quarter-q" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:110px; margin-left:4px;"><option value="1">Q1 (Apr-Jun)</option><option value="2">Q2 (Jul-Sep)</option><option value="3">Q3 (Oct-Dec)</option><option value="4">Q4 (Jan-Mar)</option></select></span>
+      <select id="adm-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:90px;" hidden></select>
+      <button onclick="admLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700; flex:none; white-space:nowrap;">Go</button>
     </div>
     <div id="sd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
       <span style="font-size:0.72rem; font-weight:700; color:var(--muted); flex:none; white-space:nowrap;">Select:</span>
@@ -5135,6 +5240,8 @@
 <script src="shared/navigation.js"></script>
 <script src="project/manufacturing-clearance.js"></script>
 <script src="project/project-timeline.js"></script>
+<script src="project/daily-timeline.js"></script>
+<script src="project/admin-dashboard.js"></script>
 <script src="project/project-status.js"></script>
 <script src="project/customer-queries.js"></script>
 <script src="project/security-admin.js"></script>

@@ -234,6 +234,7 @@ function returnToDashboard() {
   if(document.getElementById("canvas-module-production-planning")) document.getElementById("canvas-module-production-planning").style.display = "none";
   if(document.getElementById("canvas-module-qa-inspection-timeline")) document.getElementById("canvas-module-qa-inspection-timeline").style.display = "none";
   if(document.getElementById("canvas-module-product-serial-tracking")) document.getElementById("canvas-module-product-serial-tracking").style.display = "none";
+  if(document.getElementById("canvas-module-daily-timeline")) document.getElementById("canvas-module-daily-timeline").style.display = "none";
 
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("dashboard-view").style.display = "block"; 
@@ -360,6 +361,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canExpectedInbounds = userPermissionsObject.expectedDeliveries === true;
   const canManufacturingClearance = userPermissionsObject.manufacturingClearance === true;
   const canProjectTimeline = userPermissionsObject.projectTimeline === true;
+  const canDailyTimeline = userPermissionsObject.dailyTimeline === true;
+  const canViewAdminDashboard = userPermissionsObject.viewAdminDashboard === true;
   const canProjectStatus = userPermissionsObject.projectStatus === true;
   const canViewRejectedMaterial = userPermissionsObject.rejectedMaterial === true;
   const canCreatePO = userPermissionsObject.createRMPurchaseOrder === true;
@@ -526,6 +529,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     "mod-marketing-dashboard-wrapper":   userPermissionsObject.viewMarketingDashboard,
     "mod-accounts-dashboard-wrapper":    userPermissionsObject.viewAccountsDashboard,
     "mod-qa-dashboard-wrapper":          userPermissionsObject.viewQaDashboard,
+    "mod-admin-dashboard-wrapper":       userPermissionsObject.viewAdminDashboard,
   };
   Object.keys(dashMap).forEach(function(id) {
     const el = document.getElementById(id);
@@ -552,13 +556,14 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 
       if (document.getElementById("mod-manufacturing-clearance")) document.getElementById("mod-manufacturing-clearance").style.display = canManufacturingClearance ? "block" : "none";
       if (document.getElementById("mod-project-timeline")) document.getElementById("mod-project-timeline").style.display = canProjectTimeline ? "block" : "none";
+      if (document.getElementById("mod-daily-timeline")) document.getElementById("mod-daily-timeline").style.display = canDailyTimeline ? "block" : "none";
       if (document.getElementById("mod-project-status")) document.getElementById("mod-project-status").style.display = canProjectStatus ? "block" : "none";
       const canCustomerQueryManagement = userPermissionsObject.customerQueryManagement === true;
       if (document.getElementById("mod-customer-queries")) document.getElementById("mod-customer-queries").style.display = canCustomerQueryManagement ? "block" : "none";
       const canSecurityAdmin = userPermissionsObject.securityLoginAccess === true;
       if (document.getElementById("mod-security-admin")) document.getElementById("mod-security-admin").style.display = canSecurityAdmin ? "block" : "none";
       const projectHeaderBlock = document.getElementById("dashboard-project-department-header-block");
-      if (projectHeaderBlock) projectHeaderBlock.style.display = (canManufacturingClearance || canProjectTimeline || canProjectStatus || canCustomerQueryManagement || canSecurityAdmin) ? "block" : "none";
+      if (projectHeaderBlock) projectHeaderBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canCustomerQueryManagement || canSecurityAdmin || canViewAdminDashboard) ? "block" : "none";
 
       const canTourExpense = userPermissionsObject.tourExpense === true;
       if (document.getElementById("mod-tour-expense")) document.getElementById("mod-tour-expense").style.display = canTourExpense ? "block" : "none";
@@ -812,6 +817,7 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   if (document.getElementById("canvas-module-material-outward")) document.getElementById("canvas-module-material-outward").style.display = "none";
   if (document.getElementById("canvas-module-qa-inspection-timeline")) document.getElementById("canvas-module-qa-inspection-timeline").style.display = "none";
   if (document.getElementById("canvas-module-product-serial-tracking")) document.getElementById("canvas-module-product-serial-tracking").style.display = "none";
+  if (document.getElementById("canvas-module-daily-timeline")) document.getElementById("canvas-module-daily-timeline").style.display = "none";
 
   // 3. Hide all design engineering sub-module views panels
   if (document.getElementById("module-design-workspace-enclosure-panel")) document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
@@ -981,6 +987,10 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     document.getElementById("dashboard-view").style.display = "none";
     const psnCanvas = document.getElementById("canvas-module-product-serial-tracking");
     if (psnCanvas) { psnCanvas.style.display = "block"; initializeProductSerialTrackingPanel(); }
+  } else if (targetCanvasModuleId === 'daily-timeline') {
+    document.getElementById("dashboard-view").style.display = "none";
+    const dtlCanvas = document.getElementById("canvas-module-daily-timeline");
+    if (dtlCanvas) { dtlCanvas.style.display = "block"; initializeDailyTimelinePanel(); }
   } else if (targetCanvasModuleId === 'project-status') {
     document.getElementById("dashboard-view").style.display = "none";
     const psCanvas = document.getElementById("canvas-module-project-status");
