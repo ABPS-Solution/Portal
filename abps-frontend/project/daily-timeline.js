@@ -5,11 +5,14 @@
 // everything" board — the inverse question of project-timeline.js (which
 // answers "where is THIS project?" one project at a time). Two toggles,
 // same pattern as Project Timeline: a Steps list grouped by DEPARTMENT
-// (not stage) and a Timeline SVG canvas with NO divisions (a continuous
-// fan/scatter, department-clustered by sort order + a bracket, not a
-// hard divider line). Zoom is deliberately limited to Today (1 day) and
-// This Week (6 days) — wider windows put too much on screen at once for
-// a cross-project view; volume within a day is handled by a hard
+// (not stage) and a Timeline SVG canvas. In This Week mode, each day gets
+// its own bordered column (a light vertical divider, not a hard wall) so
+// a day's own items stay visually inside that day rather than bleeding
+// into the next one — item labels wrap to fit the column instead. Zoom
+// is deliberately limited to Today (1 day) and This Week (7 days,
+// Mon-Sun — Sunday is shown, colored as a rest day, same as Project
+// Timeline's own canvas) — wider windows put too much on screen at once
+// for a cross-project view; volume within a day is handled by a hard
 // per-column slot cap (DTL_MAX_SLOTS) + overflow routing back to Steps.
 //
 // Every top-level name here is prefixed dtl/DTL_ to avoid colliding with
@@ -22,10 +25,10 @@
 // Do NOT call ptlBuildDayRange/ptlRenderCanvas/ptlPlacer — those read
 // ptlData/ptlDays module globals scoped to the single-project screen and
 // would be wrong here; this file builds its own, much simpler day range
-// (1 or 6 days, not project-milestone-driven).
+// (1 or 7 days, not project-milestone-driven).
 // ═══════════════════════════════════════════════════════════════════════
 
-const DTL_MODES = { today: 1, week: 6 };
+const DTL_MODES = { today: 1, week: 7 };
 // Canonical department order (matches admin_db.departments' fixed order,
 // restricted to the departments this screen's seven sources ever emit —
 // Accounts/HR/Service own no project-dated work today, see the plan's
@@ -106,8 +109,16 @@ async function initializeDailyTimelinePanel() {
   dtlActiveDeptFilters = new Set(DTL_DEPT_ORDER);
   dtlDateFilter = null;
 
+  // Timeline entry point is a single "Timeline ›" button in the top-left
+  // (matching Project Timeline's own convention exactly — see
+  // project-timeline.js's ptl-header-left comment: Steps is the default
+  // landing view, so a two-way Steps/Timeline TAB toggle was redundant
+  // once already looking at Steps; the fullscreen overlay's own
+  // "‹ Steps" button is the only way back, same as here). Was previously
+  // a right-aligned two-button toggle pair.
   mount.innerHTML = `
     <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px;">
+      <button type="button" onclick="dtlSetViewMode('timeline')" title="Open Timeline" style="flex:none; display:inline-flex; align-items:center; gap:5px; padding:7px 12px; font-size:0.82rem; font-weight:800; border:0; border-radius:var(--radius); background:var(--brand); color:#fff; cursor:pointer;">Timeline &rsaquo;</button>
       <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; flex:none;">
         <button type="button" onclick="dtlStep(-1)" title="Previous" style="padding:8px 13px; border:0; background:#fff; cursor:pointer; font-weight:800; font-size:0.95rem;">&lsaquo;</button>
         <span id="dtl-range-label" style="padding:8px 14px; font-weight:700; font-size:0.85rem; background:#f7fafd; white-space:nowrap; border-left:1px solid var(--border); border-right:1px solid var(--border);"></span>
@@ -119,11 +130,6 @@ async function initializeDailyTimelinePanel() {
         <button type="button" id="dtl-mode-week" onclick="dtlSetMode('week')" style="padding:8px 14px; border:0; border-left:1px solid var(--border); cursor:pointer; font-weight:700; font-size:0.82rem;">This Week</button>
       </div>
       <div id="dtl-dept-chips" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;"></div>
-      <div style="flex:1 1 auto;"></div>
-      <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; flex:none;">
-        <button type="button" id="dtl-tab-steps" onclick="dtlSetViewMode('steps')" style="padding:8px 16px; border:0; cursor:pointer; font-weight:700; font-size:0.82rem;">Steps</button>
-        <button type="button" id="dtl-tab-timeline" onclick="dtlSetViewMode('timeline')" style="padding:8px 16px; border:0; border-left:1px solid var(--border); cursor:pointer; font-weight:700; font-size:0.82rem;">Timeline</button>
-      </div>
     </div>
     <div id="dtl-feedback" style="display:none; padding:12px; border-radius:var(--radius); margin-bottom:14px; border-left:4px solid;"></div>
     <div id="dtl-counts" style="margin-bottom:10px; font-size:0.8rem; color:var(--muted); display:flex; align-items:center; gap:10px; flex-wrap:wrap;"></div>
@@ -135,14 +141,17 @@ async function initializeDailyTimelinePanel() {
 
 function dtlComputeWindow() {
   if (dtlMode === 'today') return [dtlAnchorDate];
-  // Monday-anchored, 6 days (Mon-Sat) — this business runs Monday to
-  // Saturday (see CLAUDE.md's isBusinessDay note), so "this week" means
-  // the 6 working days of the calendar week containing the anchor date,
-  // not a floating anchor+5 window.
+  // Monday-anchored, 7 days (Mon-Sun) — this business runs Monday to
+  // Saturday for BUSINESS-DAY purposes (see CLAUDE.md's isBusinessDay
+  // note, unchanged), but something can still genuinely be due/marked
+  // done on a Sunday (see Project Timeline's own "draws every calendar
+  // day" precedent) — Sunday is shown here too, same reasoning, just
+  // colored as a rest day (dtlDayIsRest) rather than dropped from the
+  // week entirely.
   const dow = dtlParse(dtlAnchorDate).getUTCDay(); // 0=Sun..6=Sat
   const offsetToMon = dow === 0 ? -6 : (1 - dow);
   const mon = dtlAddDays(dtlAnchorDate, offsetToMon);
-  return Array.from({ length: 6 }, (_, i) => dtlAddDays(mon, i));
+  return Array.from({ length: 7 }, (_, i) => dtlAddDays(mon, i));
 }
 
 function dtlRangeLabelText() {
@@ -466,6 +475,30 @@ function dtlEllipsize(text, maxW, fontPx, weight) {
   return text.slice(0, lo) + '…';
 }
 
+// Word-wraps to fit a real pixel width (measured with the exact font/size
+// the label is actually drawn with) — used in This Week mode so an
+// item's label stays inside its own day column instead of bleeding
+// sideways into the next day's items. Capped at maxLines; any leftover
+// text on the last line is ellipsized rather than silently dropped.
+function dtlWrapToWidth(text, maxWidthPx, fontPx, weight, maxLines = 2) {
+  if (!text) return [];
+  const words = text.split(' ');
+  const out = [];
+  let cur = '';
+  words.forEach(w => {
+    const cand = cur ? `${cur} ${w}` : w;
+    if (cur && dtlMeasureTextWidth(cand, fontPx, weight) > maxWidthPx) { out.push(cur); cur = w; }
+    else cur = cand;
+  });
+  if (cur) out.push(cur);
+  if (out.length > maxLines) {
+    const kept = out.slice(0, maxLines);
+    kept[maxLines - 1] = dtlEllipsize(kept[maxLines - 1] + ' ' + out.slice(maxLines).join(' '), maxWidthPx, fontPx, weight);
+    return kept;
+  }
+  return out;
+}
+
 // Same format in both modes now — step + Project ID only, no company
 // name/owner (dropped per explicit request: the company name was already
 // baked into most projectId strings anyway, and it's what pushed labels
@@ -602,7 +635,11 @@ function dtlRenderCanvas(containerId) {
   const dayCount = DTL_MODES[dtlMode];
   const dtlDayW = Math.min(1400, Math.max(160, (availW - PAD_L - LEAD - PAD_R) / dayCount));
   const R = 7.5 * (1 + (dtlFS - 1) * 0.55);
-  const SLOT_PITCH = 34;   // 2R + one text line — collision is impossible
+  const LABEL_LINE_H = 12;
+  // Week mode's labels can wrap to 2 lines now (dtlWrapToWidth, below) —
+  // one extra line-height of pitch keeps a 2-line label from overlapping
+  // the next row's own circle/text at the same column.
+  const SLOT_PITCH = dtlMode === 'week' ? 34 + LABEL_LINE_H : 34;
   const FIRST_OFF = 30;    // centre line -> first slot centre
   const colL = i => PAD_L + LEAD + i * dtlDayW;
   const nodeXOf = i => colL(i) + Math.min(140, dtlDayW * 0.18);
@@ -655,6 +692,19 @@ function dtlRenderCanvas(containerId) {
   svg += `<line x1="0" y1="${RULER_H}" x2="${W}" y2="${RULER_H}" stroke="var(--border)" stroke-width="1"/>`;
   svg += `</g>`;
 
+  // Day-column dividers, week mode only — light, not a hard wall (thin,
+  // low-contrast border), but visible enough that each day's own items
+  // read as belonging inside that day rather than free-floating across
+  // the whole canvas. Drawn OUTSIDE the #dtl-ruler group on purpose — that
+  // group gets translate(0, scrollTop) to stay pinned during vertical
+  // scroll, which a full-height divider must NOT do (it needs to scroll
+  // with the actual content, not stay glued under the fixed header).
+  if (dtlMode === 'week') {
+    for (let i = 0; i <= dayCount; i++) {
+      svg += `<line x1="${colL(i)}" y1="${RULER_H}" x2="${colL(i)}" y2="${H - PAD_B}" stroke="var(--border)" stroke-width="1" opacity="0.7"/>`;
+    }
+  }
+
   // TODAY vertical line, week mode only.
   if (dtlMode === 'week' && dtlIndexMap[today] != null) {
     const tx = colL(dtlIndexMap[today]) + dtlDayW / 2;
@@ -705,19 +755,28 @@ function dtlRenderCanvas(containerId) {
       const opacity = done ? 0.35 : 1;
       const stroke = late ? '#e84545' : 'none';
       const strokeW = late ? 2 : 0;
-      // Full label, never ellipsized — a truncated "All BOQs & Final
-      // Costing Re…" told the viewer nothing useful; SVG text isn't
-      // clipped, so a long label just extends rightward past its own
-      // day column instead of disappearing (dtlNodeLabelText was already
-      // shortened to "step · Project ID" specifically so this is rarely
-      // long enough to matter in practice).
       const label = dtlNodeLabelText(it);
       const anchorId = 'dtl-canvas-' + idx;
-      clickMap[idx] = { it, label: dtlNodeLabelText(it) };
+      clickMap[idx] = { it, label };
       svg += `<circle class="dtl-hit" data-idx="${idx}" cx="${nodeX}" cy="${y}" r="${R * 2.2}" fill="transparent"/>`;
       svg += `<circle cx="${nodeX}" cy="${y}" r="${R}" fill="${fill}" opacity="${opacity}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
       if (done) svg += `<text x="${nodeX}" y="${y + 3}" text-anchor="middle" font-size="9" fill="#fff">&#10003;</text>`;
-      svg += `<text x="${nodeX + R + 8}" y="${y + 4}" font-size="11" font-weight="${done ? 400 : 700}" fill="${late ? '#e84545' : 'var(--text)'}">${escapeHtml(label)}</text>`;
+      const textX = nodeX + R + 8;
+      const labelWeight = done ? 400 : 700;
+      const labelFill = late ? '#e84545' : 'var(--text)';
+      if (dtlMode === 'week') {
+        // Wrapped to fit inside THIS day's own column (up to its divider,
+        // minus a little breathing room) rather than a full unbroken line
+        // bleeding into the next day's column — the whole point of the
+        // divider lines above.
+        const availW = colL(col.i) + dtlDayW - textX - 6;
+        const lines = dtlWrapToWidth(label, Math.max(24, availW), 11, labelWeight, 2);
+        lines.forEach((ln, li) => {
+          svg += `<text x="${textX}" y="${y + 4 + li * LABEL_LINE_H}" font-size="11" font-weight="${labelWeight}" fill="${labelFill}">${escapeHtml(ln)}</text>`;
+        });
+      } else {
+        svg += `<text x="${textX}" y="${y + 4}" font-size="11" font-weight="${labelWeight}" fill="${labelFill}">${escapeHtml(label)}</text>`;
+      }
       idx++;
     });
   });
