@@ -881,8 +881,13 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
     { type: "SEC2", keys: ["ABPS Business Vertical", "Type of Customer"] },
     { type: "SEC3", keys: ["Low Power Factor Issue", "High Electricity Bill Issue", "Harmonics Issue", "Transformer Heating / Breakdown Issue", "Grid Stability Issue", "Tender Inquire", "Existing System Details", "Contract Demand (MVA)", "Voltage Level Requirements"] }, 
     { type: "SEC4", keys: ["Existing Project", "Products Discussed", "Expected Tender / RFQ Date", "Approx Requirement", "Technical Discussion Summary", "Competitor Details", "Approx Business Potential"] },
-    { type: "SEC5", keys: ["Send Company Profile", "Send Technical Presentation", "Arrange Site Visit", "Get Enquiry", "Send Offer", "Follow-Up Required"] },
-
+    // SEC5 (Send Company Profile / Send Technical Presentation / Arrange
+    // Site Visit / Get Enquiry / Send Offer / Follow-Up Required) removed
+    // from View Details (10 Sep 2026) — a new lead's answers here now
+    // auto-create real Tasks instead (routes/marketing.js's /submit),
+    // so the underlying yes/no columns are redundant to show/edit on
+    // this view. Columns themselves are untouched, just not rendered
+    // here any more.
   ];
 
   customSectionLayout.forEach((sec, secIdx) => {
