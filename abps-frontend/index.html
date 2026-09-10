@@ -304,6 +304,21 @@
   .store-basket-data-table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: left; }
   .store-basket-data-table th { background: #f8fafc; color: #64748b; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; padding: 8px 10px; border-bottom: 1px solid var(--border); }
   .store-basket-data-table td { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
+
+  /* Purchase Order review's Product List — a bordered card wrapper (the
+     bare table used to float with no visible edge against the page's own
+     background) plus zebra striping and a hover highlight so a wide,
+     mostly-input-field row reads as one row instead of loose floating
+     boxes. */
+  .po-li-table-wrap { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: 10px; }
+  .po-li-table-wrap table.store-basket-data-table { margin-top: 0; }
+  .po-li-table-wrap th { background: #eef2f7; padding: 10px; }
+  .po-li-table-wrap td { border-bottom: 1px solid var(--border); padding: 8px; }
+  .po-li-table-wrap tbody tr:last-child td { border-bottom: none; }
+  .po-li-table-wrap tbody tr:nth-child(even) td { background: #f8fafc; }
+  .po-li-table-wrap tbody tr:hover td { background: #eff6ff; }
+  .po-li-del-btn { width: 26px; height: 26px; border-radius: 50%; border: none; background: transparent; color: #b91c1c; font-weight: 700; cursor: pointer; font-size: 0.95rem; line-height: 1; }
+  .po-li-del-btn:hover { background: #fee2e2; }
   
   .live-counter-pill { display: inline-block; padding: 2px 6px; font-size: 0.72rem; font-weight: 700; border-radius: 4px; font-family: monospace; text-transform: uppercase; }
   .pill-stock-healthy { background: #dcfce7; color: #15803d; }

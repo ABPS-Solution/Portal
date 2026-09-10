@@ -2454,9 +2454,18 @@ function updatePoReviewLineItem(idx, key, value) {
   if (!item) return;
 
   if (key === 'quantity' || key === 'ratePerQuantity') {
+    // Cache the last known non-zero GST-to-Basic ratio on the item itself
+    // (item._gstRate) rather than only deriving it from the CURRENT basic/
+    // gst on every edit — if Quantity is set to 0 (basic price -> 0), the
+    // ratio computed from the current 0 basic is undefined/lost, so
+    // bringing Quantity back up later had nothing to reapply and GST
+    // Amount stayed stuck at 0. The cached rate survives that zero dip.
     const oldBasic = parseFloat(item.totalBasicPrice);
     const oldGst = parseFloat(item.gstAmount);
-    const gstRate = (!isNaN(oldBasic) && oldBasic > 0 && !isNaN(oldGst)) ? (oldGst / oldBasic) : null;
+    if (!isNaN(oldBasic) && oldBasic > 0 && !isNaN(oldGst)) {
+      item._gstRate = oldGst / oldBasic;
+    }
+    const gstRate = (item._gstRate !== undefined && item._gstRate !== null) ? item._gstRate : null;
 
     item[key] = value;
     const qty = parseFloat(item.quantity);
@@ -2473,6 +2482,13 @@ function updatePoReviewLineItem(idx, key, value) {
     if (gstEl && document.activeElement !== gstEl) gstEl.value = formatIndianCurrencyInput(item.gstAmount);
   } else {
     item[key] = value;
+    // A manual GST Amount edit is itself a new ratio to remember, so a
+    // later Quantity/Rate change reapplies THIS ratio, not a stale one.
+    if (key === 'gstAmount') {
+      const basic = parseFloat(item.totalBasicPrice);
+      const gst = parseFloat(item.gstAmount);
+      if (!isNaN(basic) && basic > 0 && !isNaN(gst)) item._gstRate = gst / basic;
+    }
   }
 
   if (key === 'quantity' || key === 'ratePerQuantity' || key === 'gstAmount') {
@@ -2565,10 +2581,15 @@ function renderPoReviewLineItemsTable() {
   // definitions above updatePoReviewLineItem). Quantity is a count, not an
   // amount, so it stays a plain number input.
   const amountKeys = ['ratePerQuantity', 'totalBasicPrice', 'gstAmount', 'totalAmount'];
+  // Right-align every genuinely numeric column (Qty + the 4 amount columns)
+  // so digits/decimal points line up down the column — short text codes
+  // (Item Code/HSN/UOM) stay centered, Description stays left.
+  const numericKeys = ['quantity', ...amountKeys];
   wrap.innerHTML = `
+    <div class="po-li-table-wrap">
     <table class="store-basket-data-table" style="width:100%; table-layout:fixed;">
       <colgroup>${cols.map(c => `<col style="width:${c[3]}%;" />`).join('')}<col style="width:3%;" /></colgroup>
-      <thead><tr>${cols.map(c => `<th${c[0] === 'gstAmount' ? ' style="text-align:center;"' : ''}>${c[1]}</th>`).join('')}<th></th></tr></thead>
+      <thead><tr>${cols.map(c => `<th style="text-align:${c[0] === 'description' ? 'left' : numericKeys.includes(c[0]) ? 'right' : 'center'};">${c[1]}</th>`).join('')}<th></th></tr></thead>
       <tbody>
         ${items.length === 0 ? `<tr><td colspan="${cols.length + 1}" style="text-align:center; color:var(--muted);">No product rows extracted from the PO — click + Add Row to add one manually</td></tr>` : items.map((it, idx) => `
           <tr>
@@ -2579,30 +2600,31 @@ function renderPoReviewLineItemsTable() {
               const isAmount = amountKeys.includes(key);
               const val = (it[key] ?? '').toString();
               const valAttr = val.replace(/"/g, '&quot;');
-              const centerStyle = isDescription ? '' : 'text-align:center;';
+              const alignStyle = isDescription ? 'text-align:left;' : numericKeys.includes(key) ? 'text-align:right;' : 'text-align:center;';
               if (isAmount) {
                 const formattedAttr = formatIndianCurrencyInput(val).replace(/"/g, '&quot;');
                 if (isDerived) {
                   return `<td style="vertical-align:middle;"><input id="po-li-${key}-${idx}" type="text" inputmode="decimal" value="${formattedAttr}" readonly disabled
-                    style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${centerStyle} background:#eef1f5; color:var(--text); border:1px solid var(--border);" /></td>`;
+                    style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${alignStyle} background:#eef1f5; color:var(--text); border:1px solid var(--border);" /></td>`;
                 }
                 return `<td style="vertical-align:middle;"><input id="po-li-${key}-${idx}" type="text" inputmode="decimal" value="${formattedAttr}"
                   oninput="updatePoReviewLineItem(${idx}, '${key}', sanitizeAmountInput(this))"
                   onfocus="this.value = (poReviewState.lineItems[${idx}]['${key}'] ?? '').toString();"
                   onblur="this.value = formatIndianCurrencyInput(poReviewState.lineItems[${idx}]['${key}']);"
-                  style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${centerStyle}" /></td>`;
+                  style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${alignStyle}" /></td>`;
               }
               if (isWrap) {
                 return `<td style="vertical-align:middle;"><textarea rows="1" oninput="updatePoReviewLineItem(${idx}, '${key}', this.value); autoGrowPoField(this);" onfocus="autoGrowPoField(this);"
-                  style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${centerStyle} resize:none; overflow:hidden; font-family:inherit; min-height:28px;">${val.replace(/</g, '&lt;')}</textarea></td>`;
+                  style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${alignStyle} resize:none; overflow:hidden; font-family:inherit; min-height:28px;">${val.replace(/</g, '&lt;')}</textarea></td>`;
               }
               return `<td style="vertical-align:middle;"><input type="${type}" value="${valAttr}" oninput="updatePoReviewLineItem(${idx}, '${key}', this.value)"
-                style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${centerStyle}" /></td>`;
+                style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${alignStyle}" /></td>`;
             }).join('')}
-            <td style="vertical-align:middle; text-align:center;"><button onclick="removePoReviewLineItem(${idx})" title="Remove row" style="background:none; border:none; color:#b91c1c; font-weight:700; cursor:pointer; font-size:1rem;">✕</button></td>
+            <td style="vertical-align:middle; text-align:center;"><button class="po-li-del-btn" onclick="removePoReviewLineItem(${idx})" title="Remove row">✕</button></td>
           </tr>`).join('')}
       </tbody>
-    </table>`;
+    </table>
+    </div>`;
   wrap.querySelectorAll('textarea').forEach(autoGrowPoField);
 }
 
@@ -2667,7 +2689,7 @@ function renderPurchaseOrderReview() {
     : '—';
 
   const companyNameFieldHtml = `
-    <div class="grid-cell-item" style="grid-column: span 4;">
+    <div class="grid-cell-item" style="grid-column: span 8;">
       <label style="font-size:0.72rem;">Company Name</label>
       <select oninput="updatePoReviewField('companyName', this.value)" style="font-size:0.95rem; padding:7px 8px;">
         ${poReviewCompanyOptions().map(name => `<option value="${name.replace(/"/g, '&quot;')}" ${name === s.companyName ? 'selected' : ''}>${name}</option>`).join('')}
@@ -2690,9 +2712,9 @@ function renderPurchaseOrderReview() {
         ${editField('PO Number', 'poNumber', 'text', 'grid-column: span 4;', true)}
         ${editField('PO Date', 'poDate', 'date', 'grid-column: span 4;', true)}
         ${companyNameFieldHtml}
-        ${editField('GST Number', 'gstNumber', 'text', 'grid-column: span 4;')}
         ${poReviewRowBreak}
 
+        ${editField('GST Number', 'gstNumber', 'text', 'grid-column: span 4;')}
         ${editField('Head Office Address', 'headOfficeAddress', 'text', 'grid-column: span 8;')}
         ${editField('Delivery Address', 'deliveryAddress', 'text', 'grid-column: span 8;')}
         ${editField('Tentative Delivery Date', 'deliveryDate', 'date', 'grid-column: span 4;', true)}
@@ -2725,12 +2747,12 @@ function renderPurchaseOrderReview() {
         ${editField('Documents Requirement', 'documentsRequirement', 'text', 'grid-column: span 8;')}
         ${poReviewRowBreak}
 
-        ${editField('Basic PO Amount', 'poBasicAmount', 'number', 'grid-column: span 3;', true)}
-        ${editField('PO GST Amount', 'poGstAmount', 'number', 'grid-column: span 3;', true)}
-        ${editField('PO Total Amount', 'poTotalAmount', 'number', 'grid-column: span 3;', true)}
-        ${lockedRow('Order Acceptance Link', orderAcceptanceLinkHtml, 'grid-column: span 3;')}
-        ${lockedRow('Contract Review Link', contractReviewLinkHtml, 'grid-column: span 3;')}
-        ${editField('Order Acceptance Sent Date', '_orderAcceptanceSentDate', 'date', 'grid-column: span 3;', true)}
+        ${editField('Basic PO Amount', 'poBasicAmount', 'number', 'grid-column: span 4;', true)}
+        ${editField('PO GST Amount', 'poGstAmount', 'number', 'grid-column: span 4;', true)}
+        ${editField('PO Total Amount', 'poTotalAmount', 'number', 'grid-column: span 4;', true)}
+        ${lockedRow('Order Acceptance Link', orderAcceptanceLinkHtml, 'grid-column: span 4;')}
+        ${lockedRow('Contract Review Link', contractReviewLinkHtml, 'grid-column: span 4;')}
+        ${editField('Order Acceptance Sent Date', '_orderAcceptanceSentDate', 'date', 'grid-column: span 4;', true)}
       </div>
 
       <div id="purchase-order-review-feedback" style="display:none; margin-top:14px; padding:12px; border-radius:var(--radius); border-left:4px solid;"></div>
