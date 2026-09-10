@@ -1670,8 +1670,6 @@
         <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-bottom:16px;">
           <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:12px; letter-spacing:0.5px;">FG Documents</div>
 
-          <!-- Production uploads -->
-          <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:#7c3aed; letter-spacing:0.5px; margin-bottom:8px;">Production Documents</div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Job Card Sheet * <span style="color:#b91c1c;">(required)</span></label>
@@ -1688,27 +1686,6 @@
               </div>
               <input type="file" id="fg-add-packed-images-input" multiple hidden onchange="handleFGFileSelectionMulti(this, 'packedProductsImages')" />
               <div id="fg-add-packed-images-filelist"></div>
-            </div>
-          </div>
-
-          <!-- QA uploads -->
-          <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:#0056b3; letter-spacing:0.5px; margin-bottom:8px;">Quality Assurance Documents</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-            <div>
-              <label class="field-label" style="margin-top:0;">Test Certificate * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="fg-add-test-cert-dropzone" onclick="document.getElementById('fg-add-test-cert-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-                📎 Click to attach Test Certificate
-              </div>
-              <input type="file" id="fg-add-test-cert-input" multiple hidden onchange="handleFGFileSelectionMulti(this, 'testCert')" />
-              <div id="fg-add-test-cert-filelist"></div>
-            </div>
-            <div>
-              <label class="field-label" style="margin-top:0;">In Process Inspection Sheet * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="fg-add-inprocess-dropzone" onclick="document.getElementById('fg-add-inprocess-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-                📎 Click to attach In Process Inspection Sheet
-              </div>
-              <input type="file" id="fg-add-inprocess-input" multiple hidden onchange="handleFGFileSelectionMulti(this, 'inProcessInspection')" />
-              <div id="fg-add-inprocess-filelist"></div>
             </div>
           </div>
 

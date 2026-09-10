@@ -73,6 +73,16 @@ const FG_DOC_TYPE_LABELS = {
   otherDocuments: "Other Documents",
 };
 
+// FG_APPROVAL_REQUIRED_DOC_TYPES — the fuller set enforced before Approve
+// unlocks here, separate from finished-goods.js's own FG_REQUIRED_DOC_TYPES
+// (just jobCardSheet/packedProductsImages, gating the CREATE form). Test
+// Certificate / In Process Inspection Sheet moved here (10 Sep 2026) — QA's
+// own documents, uploaded directly on this screen via the dedicated
+// dropzones in renderFGApprovalDedicatedZones, not on the Add to Finished
+// Goods Store form anymore. Server-side twin: routes/production.js's
+// REQUIRED_FG_APPROVE_DOC_TYPES.
+const FG_APPROVAL_REQUIRED_DOC_TYPES = ["jobCardSheet", "packedProductsImages", "testCert", "inProcessInspection"];
+
 // Per-fgId working state for the expanded review card — documents already
 // on the server (docs) plus any rows added via "+ Add Row" that haven't
 // been uploaded yet (newRows, no documentId until the upload succeeds).
@@ -143,6 +153,9 @@ function renderFGApprovalDetailBody(fgId) {
       <div style="font-size:0.85rem; color:#111827; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:8px 10px;">${fg.additionalRemarks}</div>
     </div>` : ""}
 
+    <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#0056b3; letter-spacing:0.5px; margin-bottom:8px;">Quality Assurance Documents</div>
+    <div id="fg-approval-dedicated-zones-${fgId}">${renderFGDedicatedDocZones(fgId)}</div>
+
     <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px; margin-bottom:8px;">FG Documents</div>
     <div id="fg-doc-table-wrap-${fgId}" style="overflow-x:auto; margin-bottom:8px; position:relative;">
       ${renderFGDocTable(fgId)}
@@ -158,6 +171,70 @@ function renderFGApprovalDetailBody(fgId) {
       </button>
     </div>
   `;
+}
+
+// Dedicated top-of-card upload zones for the two QA-required doc types
+// plus Other Documents (10 Sep 2026) — same card-box dropzone style as
+// the Add to Finished Goods Store form used to use for these before they
+// moved here. Uploaded files still land in st.docs and show in the
+// generic FG Documents table below too (single source of truth for the
+// Approve gate) — these are just a faster, dedicated way in for QA
+// rather than "+ Add Row" then picking a type from a dropdown.
+function renderFGDedicatedDocZone(fgId, docType, required) {
+  const st = window._fgApprovalState[fgId];
+  const label = FG_DOC_TYPE_LABELS[docType];
+  const existing = st.docs.filter(d => d.docType === docType);
+  const fileListHtml = existing.length
+    ? existing.map(d => `<div style="font-size:0.78rem; margin-top:4px;"><a href="${driveLink(d.url)}" target="_blank" style="color:var(--brand); font-weight:600;">${d.fileName || d.docLabel}</a></div>`).join("")
+    : `<div style="font-size:0.78rem; color:var(--muted); margin-top:4px;">No file attached yet.</div>`;
+  return `
+    <div>
+      <label class="field-label" style="margin-top:0;">${label}${required ? ' * <span style="color:#b91c1c;">(required)</span>' : ''}</label>
+      <div class="card-box" id="fg-approval-dz-${fgId}-${docType}" onclick="triggerFGDedicatedUpload(${fgId}, '${docType}')" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+        📎 Click to attach ${label}
+      </div>
+      ${fileListHtml}
+    </div>`;
+}
+
+function renderFGDedicatedDocZones(fgId) {
+  return `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+      ${renderFGDedicatedDocZone(fgId, "testCert", true)}
+      ${renderFGDedicatedDocZone(fgId, "inProcessInspection", true)}
+    </div>
+    <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:16px;">
+      ${renderFGDedicatedDocZone(fgId, "otherDocuments", false)}
+    </div>`;
+}
+
+function refreshFGApprovalDedicatedZones(fgId) {
+  const wrap = document.getElementById(`fg-approval-dedicated-zones-${fgId}`);
+  if (wrap) wrap.innerHTML = renderFGDedicatedDocZones(fgId);
+}
+
+async function triggerFGDedicatedUpload(fgId, docType) {
+  const file = await pickFGFile();
+  if (!file) return;
+  const dz = document.getElementById(`fg-approval-dz-${fgId}-${docType}`);
+  if (dz) { dz.style.pointerEvents = "none"; dz.style.opacity = "0.6"; }
+  try {
+    const base64Data = await fileToBase64(file);
+    const data = await apFetch({
+      action: "addFinishedGoodsDocument", activeEngineer: appActiveOperatorIdentityString,
+      fgId, docType, docLabel: FG_DOC_TYPE_LABELS[docType],
+      file: { fileName: file.name, base64Data, mimeType: file.type || "application/octet-stream" },
+      operatorName: appActiveOperatorIdentityString,
+    });
+    if (!data.success) { alert(data.error || "Upload failed."); return; }
+    const st = window._fgApprovalState[fgId];
+    st.docs.push({ documentId: data.documentId, docType, docLabel: data.docLabel, fileName: data.fileName, url: data.url, createdAt: data.createdAt, qaChecked: false });
+    refreshFGDocTable(fgId);
+  } catch(e) {
+    alert("Network error: " + e.message);
+  } finally {
+    if (dz) { dz.style.pointerEvents = ""; dz.style.opacity = ""; }
+  }
 }
 
 function renderFGDocTable(fgId) {
@@ -216,6 +293,12 @@ function renderFGDocTable(fgId) {
 function refreshFGDocTable(fgId) {
   const wrap = document.getElementById(`fg-doc-table-wrap-${fgId}`);
   if (wrap) wrap.innerHTML = renderFGDocTable(fgId);
+  // Keep the dedicated top-of-card zones (testCert/inProcessInspection/
+  // otherDocuments) in sync too — every doc mutation (remove/replace/
+  // new-row-upload/dedicated-upload) already calls this one function, so
+  // folding the refresh in here means every path stays consistent without
+  // each call site having to remember a second refresh call.
+  refreshFGApprovalDedicatedZones(fgId);
   updateFGApprovalSubmitState(fgId);
 }
 
@@ -380,9 +463,8 @@ async function triggerFGNewRowUpload(fgId, tempId) {
 
 // Every "QA Document Check" checkbox must be ticked, no "+ Add Row" row
 // can still be sitting unuploaded, AND at least one document of each
-// required type (FG_REQUIRED_DOC_TYPES, shared with the Add to Finished
-// Goods Store form itself) must still be present — before Approve
-// unlocks. Removing one of these (e.g. to replace a wrongly-uploaded
+// required type (FG_APPROVAL_REQUIRED_DOC_TYPES) must still be present —
+// before Approve unlocks. Removing one of these (e.g. to replace a wrongly-uploaded
 // file) used to only be checked against "at least one document overall,
 // all of them ticked" — deleting a required document and never
 // re-uploading it still passed that bar as long as whatever docs
@@ -393,7 +475,7 @@ function updateFGApprovalSubmitState(fgId) {
   if (!btn) return;
   const st = window._fgApprovalState[fgId];
   const presentTypes = new Set(st.docs.map(d => d.docType));
-  const missingTypes = FG_REQUIRED_DOC_TYPES.filter(t => !presentTypes.has(t));
+  const missingTypes = FG_APPROVAL_REQUIRED_DOC_TYPES.filter(t => !presentTypes.has(t));
   const hasEveryRequiredType = missingTypes.length === 0;
   const uncheckedCount = st.docs.filter(d => !d.qaChecked).length;
   const allChecked = st.docs.length > 0 && uncheckedCount === 0 && st.newRows.length === 0;

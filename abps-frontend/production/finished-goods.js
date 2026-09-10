@@ -4,13 +4,16 @@
 const FG_DOC_META = {
   jobCardSheet:         { dropzoneId: "fg-add-jobcard-sheet-dropzone", listId: "fg-add-jobcard-sheet-filelist", label: "Job Card Sheet",              placeholder: "📎 Click to attach Job Card Sheet" },
   packedProductsImages: { dropzoneId: "fg-add-packed-images-dropzone", listId: "fg-add-packed-images-filelist", label: "Packed Products Images",      placeholder: "📎 Click to attach Packed Products Images" },
-  testCert:             { dropzoneId: "fg-add-test-cert-dropzone",     listId: "fg-add-test-cert-filelist",     label: "Test Certificate",            placeholder: "📎 Click to attach Test Certificate" },
-  inProcessInspection:  { dropzoneId: "fg-add-inprocess-dropzone",     listId: "fg-add-inprocess-filelist",     label: "In Process Inspection Sheet", placeholder: "📎 Click to attach In Process Inspection Sheet" },
   otherDocuments:       { dropzoneId: "fg-add-otherdocs-dropzone",     listId: "fg-add-otherdocs-filelist",     label: "Other Documents",              placeholder: "📎 Click to attach Other Documents" },
 };
 // Warranty Card moved to Project Invoice Generation (5 Sep 2026) — it's a
 // per-project shipping document, not tied to one Job Card's finished good.
-const FG_REQUIRED_DOC_TYPES = ["jobCardSheet", "packedProductsImages", "testCert", "inProcessInspection"];
+// Test Certificate / In Process Inspection Sheet moved to FG Approval
+// (10 Sep 2026) — they're QA's own documents, not Production's; QA now
+// uploads them directly while reviewing, above the document table on that
+// screen. See production/fg-approval.js's FG_APPROVAL_REQUIRED_DOC_TYPES
+// for the fuller set enforced before Approve unlocks.
+const FG_REQUIRED_DOC_TYPES = ["jobCardSheet", "packedProductsImages"];
 let fgDocFiles = {};
 
 function resetFGDocFiles() {
