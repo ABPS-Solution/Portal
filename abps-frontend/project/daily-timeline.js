@@ -115,7 +115,7 @@ async function initializeDailyTimelinePanel() {
       </div>
       <button type="button" onclick="dtlJumpToday()" style="flex:none; padding:8px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); background:var(--brand); color:#fff; cursor:pointer;">Today</button>
       <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; flex:none;">
-        <button type="button" id="dtl-mode-today" onclick="dtlSetMode('today')" style="padding:8px 14px; border:0; cursor:pointer; font-weight:700; font-size:0.82rem;">Today</button>
+        <button type="button" id="dtl-mode-today" onclick="dtlSetMode('today')" style="padding:8px 14px; border:0; cursor:pointer; font-weight:700; font-size:0.82rem;">Day</button>
         <button type="button" id="dtl-mode-week" onclick="dtlSetMode('week')" style="padding:8px 14px; border:0; border-left:1px solid var(--border); cursor:pointer; font-weight:700; font-size:0.82rem;">This Week</button>
       </div>
       <div id="dtl-dept-chips" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;"></div>
@@ -187,7 +187,7 @@ function dtlToggleDeptFilter(dept) {
   if (chipsEl) chipsEl.innerHTML = dtlDeptChipsHtml();
   dtlRenderCounts();
   dtlRenderSteps();
-  if (dtlViewMode === 'timeline') dtlRenderCanvas(dtlCanvasContainerId);
+  dtlRefreshTimelineView();
 }
 
 async function dtlLoad() {
@@ -238,7 +238,7 @@ async function dtlLoad() {
 
   dtlRenderCounts();
   dtlRenderSteps();
-  if (dtlViewMode === 'timeline') dtlRenderCanvas(dtlCanvasContainerId);
+  dtlRefreshTimelineView();
 }
 
 function dtlRenderCounts() {
@@ -466,18 +466,16 @@ function dtlEllipsize(text, maxW, fontPx, weight) {
   return text.slice(0, lo) + '…';
 }
 
+// Same format in both modes now — step + Project ID only, no company
+// name/owner (dropped per explicit request: the company name was already
+// baked into most projectId strings anyway, and it's what pushed labels
+// long enough that the old per-mode ellipsizing truncated them to a
+// useless "All BOQs & Final Costing Re…"). Company/owner are still shown
+// in the hover tooltip (dtlWireCanvasInteractions), just not on the node
+// itself.
 function dtlNodeLabelText(it) {
-  // Today mode has room for the full context + owner; week mode's much
-  // narrower columns still need SOME project identity on the node itself
-  // (dtlEllipsize below already truncates to fit) — a bare "Drawing Sent"
-  // node with no project shown left no way to tell two same-label dots on
-  // the same day apart without hovering each one individually.
-  if (dtlMode !== 'today') {
-    const proj = it.projectId || it.companyName || it.context || '';
-    return proj ? `${it.label} · ${proj}` : (it.label || '');
-  }
-  const extra = [it.context, it.owner].filter(Boolean).join(' · ');
-  return extra ? `${it.label} · ${extra}` : (it.label || '');
+  const proj = it.projectId || it.context || '';
+  return proj ? `${it.label} · ${proj}` : (it.label || '');
 }
 
 // Priority-first selection (late, then open, then done) BEFORE the
@@ -528,6 +526,27 @@ function dtlOpenFullscreen() {
   document.body.style.overflow = 'hidden';
   dtlRenderFullscreen();
 }
+// dtlRefreshTimelineView — the fullscreen overlay's header (date range
+// label, Day/This Week active state, department chips) is plain HTML
+// baked in once at dtlRenderFullscreen() time, not backed by ids that
+// dtlUpdateModeButtons()/dtlLoad() can reach into and patch afterward
+// (those only ever touch the mount's own hidden copies, behind the
+// overlay). Every state-changing action (step/mode/today/dept filter)
+// used to call bare dtlRenderCanvas(), which redraws the SVG map
+// correctly but leaves the header showing whatever mode/date/filter was
+// active the moment the overlay first opened — exactly why the button
+// row looked "stuck" even though the map itself was reacting correctly.
+// Calling dtlRenderFullscreen() instead rebuilds the whole header AND
+// the canvas together, so they can never drift apart again.
+function dtlFsIsOpen() {
+  const ov = document.getElementById('dtl-fs-overlay');
+  return !!(ov && ov.style.display !== 'none');
+}
+function dtlRefreshTimelineView() {
+  if (dtlViewMode !== 'timeline') return;
+  if (dtlFsIsOpen()) dtlRenderFullscreen();
+  else dtlRenderCanvas(dtlCanvasContainerId);
+}
 function dtlCloseFullscreen() {
   const ov = document.getElementById('dtl-fs-overlay');
   if (ov) ov.style.display = 'none';
@@ -548,7 +567,7 @@ function dtlRenderFullscreen() {
         </div>
         <button type="button" onclick="dtlJumpToday()" style="flex:none; padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); background:var(--brand); color:#fff; cursor:pointer;">Today</button>
         <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
-          <button type="button" onclick="dtlSetMode('today')" style="padding:7px 13px; font-size:0.82rem; font-weight:700; border:0; cursor:pointer; background:${dtlMode === 'today' ? 'var(--brand)' : '#fff'}; color:${dtlMode === 'today' ? '#fff' : 'var(--text)'};">Today</button>
+          <button type="button" onclick="dtlSetMode('today')" style="padding:7px 13px; font-size:0.82rem; font-weight:700; border:0; cursor:pointer; background:${dtlMode === 'today' ? 'var(--brand)' : '#fff'}; color:${dtlMode === 'today' ? '#fff' : 'var(--text)'};">Day</button>
           <button type="button" onclick="dtlSetMode('week')" style="padding:7px 13px; font-size:0.82rem; font-weight:700; border:0; border-left:1px solid var(--border); cursor:pointer; background:${dtlMode === 'week' ? 'var(--brand)' : '#fff'}; color:${dtlMode === 'week' ? '#fff' : 'var(--text)'};">This Week</button>
         </div>
         <div style="flex:1 1 auto;"></div>
@@ -587,7 +606,6 @@ function dtlRenderCanvas(containerId) {
   const FIRST_OFF = 30;    // centre line -> first slot centre
   const colL = i => PAD_L + LEAD + i * dtlDayW;
   const nodeXOf = i => colL(i) + Math.min(140, dtlDayW * 0.18);
-  const labelMaxW = dtlDayW - Math.min(140, dtlDayW * 0.18) - R - 26;
 
   const today = dtlToday();
   const inScope = (dtlData.items || []).filter(it => dtlActiveDeptFilters.has(it.dept) && dtlIndexMap[it.due] != null);
@@ -687,7 +705,13 @@ function dtlRenderCanvas(containerId) {
       const opacity = done ? 0.35 : 1;
       const stroke = late ? '#e84545' : 'none';
       const strokeW = late ? 2 : 0;
-      const label = dtlEllipsize(dtlNodeLabelText(it), labelMaxW, 11, done ? 400 : 700);
+      // Full label, never ellipsized — a truncated "All BOQs & Final
+      // Costing Re…" told the viewer nothing useful; SVG text isn't
+      // clipped, so a long label just extends rightward past its own
+      // day column instead of disappearing (dtlNodeLabelText was already
+      // shortened to "step · Project ID" specifically so this is rarely
+      // long enough to matter in practice).
+      const label = dtlNodeLabelText(it);
       const anchorId = 'dtl-canvas-' + idx;
       clickMap[idx] = { it, label: dtlNodeLabelText(it) };
       svg += `<circle class="dtl-hit" data-idx="${idx}" cx="${nodeX}" cy="${y}" r="${R * 2.2}" fill="transparent"/>`;
