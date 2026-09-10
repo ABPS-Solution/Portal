@@ -1600,10 +1600,11 @@ async function submitLead() {
   }
 }
 
-function updateSelectedDisplay() {
-  const checked = Array.from(document.querySelectorAll('input[name="searchQual"]:checked')).map(i => i.value);
-  document.getElementById("selected-quals-display").textContent = checked.length > 0 ? "Filtering for: " + checked.join(" and ") : "";
-}
+// No-op as of 10 Sep 2026 — its only target, #selected-quals-display,
+// was removed (redundant with the "Types of Customer: X and Y" summary
+// the search results themselves already show). Kept, not deleted, since
+// every Section 5 qualification checkbox's onchange still calls this.
+function updateSelectedDisplay() {}
 
 async function triggerQualificationSearch() {
     document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
