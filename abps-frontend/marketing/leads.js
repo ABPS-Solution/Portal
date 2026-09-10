@@ -2867,7 +2867,7 @@ function renderPurchaseOrderCommitSuccess(data) {
       <div style="margin-top:10px; background:#fff; border:1px solid #86efac; border-radius:6px; padding:10px; font-size:0.82rem; color:#166534;">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
           <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Number</span><br/><strong style="font-family:monospace; color:#111827;">${data.extractedPONumber || '—'}</strong></div>
-          <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Date</span><br/><strong style="color:#111827;">${formatOrdinalDate(data.extractedPODate) || '—'}</strong></div>
+          <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Tentative Delivery Date</span><br/><strong style="color:#111827;">${formatOrdinalDate(data.extractedDeliveryDate) || '—'}</strong></div>
           <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Basic Amount (excl. GST)</span><br/><strong style="color:#111827;">${data.extractedBasicAmount ? '₹' + Number(data.extractedBasicAmount).toLocaleString('en-IN') : '—'}</strong></div>
           <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">Total Amount (incl. GST)</span><br/><strong style="color:#111827;">${data.extractedTotalAmount ? '₹' + Number(data.extractedTotalAmount).toLocaleString('en-IN') : '—'}</strong></div>
           <div><span style="color:#6b7a8d; font-size:0.72rem; text-transform:uppercase;">PO Products</span><br/><strong style="color:#111827;">${data.extractedLineItemCount || 0} Product${data.extractedLineItemCount === 1 ? '' : 's'}</strong></div>
