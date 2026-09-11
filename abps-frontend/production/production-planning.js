@@ -282,8 +282,14 @@ function pplanRenderLaneInitialPlanForm(lane) {
   const colBorder = "border-left:1px solid var(--border);";
   const rows = lane.steps.map(s => `
     <tr style="border-bottom:1px solid var(--border);">
-      <td style="width:60%; padding:6px 8px; font-size:0.98rem; font-weight:600; color:var(--text); text-align:center;">${escapeHtml(s.label)}</td>
-      <td style="width:40%; padding:5px 8px; text-align:center; ${colBorder}">
+      <td style="width:40%; padding:6px 8px; font-size:0.98rem; font-weight:600; color:var(--text); text-align:center;">${escapeHtml(s.label)}</td>
+      <td style="width:30%; padding:5px 8px; text-align:center; ${colBorder}">
+        <div style="max-width:170px; margin:0 auto;">
+          <input type="date" ${dis} id="pplan-start-${lane.boqId}-${s.id}"
+            style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box; text-align:center;${!canWrite ? ' background:#f1f5f9; cursor:not-allowed;' : ''}" />
+        </div>
+      </td>
+      <td style="width:30%; padding:5px 8px; text-align:center; ${colBorder}">
         <div style="max-width:170px; margin:0 auto;">
           <input type="date" ${dis} id="pplan-plan-${lane.boqId}-${s.id}"
             style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box; text-align:center;${!canWrite ? ' background:#f1f5f9; cursor:not-allowed;' : ''}" />
@@ -292,14 +298,15 @@ function pplanRenderLaneInitialPlanForm(lane) {
     </tr>`).join("");
   return `
     <div style="font-size:0.82rem; color:var(--muted); margin-bottom:10px;">
-      No plan submitted yet. ${escapeHtml(lane.ownerDept)} Production enters a planned date for every step below, including Packing and Adding to FG. Material Issue Tickets for this product's Job Cards stay blocked until then. Only its completion is automatic; the planned/target date is entered like any other step.
+      No plan submitted yet. ${escapeHtml(lane.ownerDept)} Production enters a completion date for every step below, including Packing and Adding to FG. Material Issue Tickets for this product's Job Cards stay blocked until then. Only its completion is automatic; the planned/target date is entered like any other step. Starting Date is optional and purely informational — it never affects this timeline, and can be changed anytime once the plan is submitted.
     </div>
     ${!canWrite ? `<div style="font-size:0.95rem; font-weight:700; color:#000; background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); padding:9px 12px; margin-bottom:10px;">View only. Only ${escapeHtml(lane.ownerDept)} Production or Project can enter this plan.</div>` : ''}
     <div style="border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
       <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <thead><tr style="background:var(--highlight-bg); border-bottom:1px solid var(--border);">
-          <th style="width:60%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Production Stage</th>
-          <th style="width:40%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Production Planning Date</th>
+          <th style="width:40%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Production Stage</th>
+          <th style="width:30%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Production Planning Starting Date</th>
+          <th style="width:30%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Production Planning Completion Date</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
@@ -364,20 +371,38 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
       actionCell = `${doneLabel}${pills}${adminAsOf}`;
     }
 
+    // Current Starting Date — same editable-window gating as Current
+    // Target Completion Date (canWrite && (terminal || !done)), but
+    // purely informational: no "already done" business meaning, just
+    // reusing the same window so the two stay visually consistent.
+    // pplanUpdateStartDate never rejects on step status server-side.
+    const startCell = canWrite && (s.terminal || !done)
+      ? `<div style="max-width:150px; margin:0 auto;"><input type="date" value="${s.startDate || ''}" onchange="pplanUpdateStartDate('${lane.boqId}','${s.id}', this.value)"
+              style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box; text-align:center;" /></div>`
+      : `<span style="color:var(--muted); font-size:0.8rem;">${s.startDate ? pplanFmt(s.startDate) : '-'}</span>`;
+
+    // Current Target Completion Date — one editable field pre-filled with
+    // the current value (was two columns: a read-only "Current Target
+    // Date" display plus a separate blank "New Target Date" input;
+    // merged 11 Sep 2026 into a single in-place-editable field).
+    const targetCell = canWrite && (s.terminal || !done)
+      ? `<div style="max-width:150px; margin:0 auto;"><input type="date" value="${s.target || ''}" onchange="pplanUpdateTarget('${lane.boqId}','${s.id}', this.value)"
+              style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box; text-align:center;" /></div>`
+      : `<span style="color:var(--muted); font-size:0.8rem;">${pplanFmt(currentTarget)}</span>`;
+
     const colBorder = "border-left:1px solid var(--border);";
     const mainRow = `
       <tr id="pplan-step-${lane.boqId}-${s.id}" style="border-bottom:1px solid var(--border);">
-        <td style="width:24%; padding:5px 8px; font-size:0.98rem; font-weight:600; color:${late ? 'var(--warn)' : 'var(--text)'}; text-align:center;">
+        <td style="width:22%; padding:5px 8px; font-size:0.98rem; font-weight:600; color:${late ? 'var(--warn)' : 'var(--text)'}; text-align:center;">
           <span style="display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; background:${done ? c : '#fff'}; border:2px solid ${late ? 'var(--warn)' : c}; vertical-align:middle;"></span>
           ${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.78rem;">(automatic)</span>' : ''}${progressChip}
         </td>
-        <td style="width:13%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">
+        <td style="width:14%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">
           ${pplanFmt(s.planned)}
           ${pplanIsAdmin() && s.planned ? `<div style="margin-top:4px; display:flex; flex-direction:column; align-items:center; gap:3px;">${pplanAsOfInputHtml(`planned-${lane.boqId}-${s.id}`, s.planned)}<button class="nav-btn-styled" style="padding:2px 8px; font-size:0.65rem;" onclick="pplanAdminOverridePlanned('${lane.boqId}','${s.id}')">Update (admin)</button></div>` : ''}
         </td>
-        <td style="width:13%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center; ${colBorder}">${pplanFmt(currentTarget)}</td>
-        <td style="width:20%; padding:5px 8px; text-align:center; ${colBorder}">${canWrite && (s.terminal || !done) ? `<div style="max-width:150px; margin:0 auto;"><input type="date" value="${s.target || ''}" onchange="pplanUpdateTarget('${lane.boqId}','${s.id}', this.value)"
-              style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box; text-align:center;" /></div>` : `<span style="color:var(--muted); font-size:0.8rem;">-</span>`}</td>
+        <td style="width:14%; padding:5px 8px; text-align:center; ${colBorder}">${startCell}</td>
+        <td style="width:20%; padding:5px 8px; text-align:center; ${colBorder}">${targetCell}</td>
         <td style="width:30%; padding:5px 8px; text-align:center; ${colBorder}">
           ${actionCell}
         </td>
@@ -391,11 +416,11 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
     <div style="border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
       <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <thead><tr style="background:${c}14; border-bottom:1px solid var(--border);">
-          <th style="width:24%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Process Name</th>
-          <th style="width:13%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Initial Planning Date</th>
-          <th style="width:13%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Current Target Date</th>
-          <th style="width:20%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">${canWrite ? 'New Target Date' : ''}</th>
-          <th style="width:30%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}"></th>
+          <th style="width:22%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Process Name</th>
+          <th style="width:14%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Initial Planning Completion Date</th>
+          <th style="width:14%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Current Starting Date</th>
+          <th style="width:20%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Current Target Completion Date</th>
+          <th style="width:30%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Completion Status</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
@@ -410,8 +435,11 @@ async function pplanSubmitInitialPlan(boqId) {
   for (const s of lane.steps) {
     const el = document.getElementById(`pplan-plan-${boqId}-${s.id}`);
     const val = el ? el.value : "";
-    if (!val) { alert(`Enter a planned date for "${s.label}".`); return; }
-    steps.push({ stepKey: s.id, plannedDate: val });
+    if (!val) { alert(`Enter a completion date for "${s.label}".`); return; }
+    // Starting Date is optional (informational only, never gates submission).
+    const startEl = document.getElementById(`pplan-start-${boqId}-${s.id}`);
+    const startVal = startEl ? startEl.value : "";
+    steps.push({ stepKey: s.id, plannedDate: val, startDate: startVal || null });
   }
   try {
     const data = await apFetch({ action: "submitInitialProductPlan", operatorName: appActiveOperatorIdentityString, boqId, steps });
@@ -429,6 +457,19 @@ async function pplanUpdateTarget(boqId, stepKey, targetDate) {
     const lane = pplanData.lanes.find(l => l.boqId === boqId);
     const step = lane && lane.steps.find(s => s.id === stepKey);
     if (step) step.target = data.targetDate;
+  } catch (e) { alert("Network error: " + e.message); }
+}
+
+// Starting Date (11 Sep 2026) — purely informational, never gates
+// anything downstream. Directly editable in place, any time, unlike
+// Target Date's "already done" restriction.
+async function pplanUpdateStartDate(boqId, stepKey, startDate) {
+  try {
+    const data = await apFetch({ action: "updateProductPlanStepStartDate", boqId, stepKey, startDate });
+    if (!data.success) { alert(data.error || "Could not update the starting date."); pplanRenderLanes(); return; }
+    const lane = pplanData.lanes.find(l => l.boqId === boqId);
+    const step = lane && lane.steps.find(s => s.id === stepKey);
+    if (step) step.startDate = data.startDate;
   } catch (e) { alert("Network error: " + e.message); }
 }
 
