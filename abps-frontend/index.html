@@ -873,6 +873,7 @@
       <div class="sec-label">Finished Goods</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-fg-approval" onclick="switchActiveDashboardModule('fg-approval')"><span class="mc-label">Add to Finished Goods Store Approval</span></div>
+        <div class="menu-card" id="mod-in-process-sheet" onclick="switchActiveDashboardModule('in-process-sheet')"><span class="mc-label">In Process Sheet</span></div>
       </div>
       <div class="sec-label">Inspection</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -905,7 +906,7 @@
       <div class="sec-label">Material Issue & Job Cards</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-store-ticket"            onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Material Issue Ticket</span></div>
-        <div class="menu-card" id="mod-jc-letterhead"           onclick="switchActiveDashboardModule('jc-letterhead')"><span class="mc-label">Job Card & In Process Sheet</span></div>
+        <div class="menu-card" id="mod-job-card-sheet"          onclick="switchActiveDashboardModule('job-card-sheet')"><span class="mc-label">Job Card Sheet</span></div>
       </div>
       <div class="sec-label">Finished Goods</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -1434,76 +1435,66 @@
       </div>
     </div>
 
-    <div id="canvas-module-jc-letterhead" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 class="panel-title">Job Card & In Process Sheet</h2>
-      <div id="mrd-reminder-banner-jclh" class="material-requirement-date-revision-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ Purchase Quantities have changed on one or more PRNs — their <strong>Production Requirement Dates</strong> need revising.</div>
-      <div id="jclh-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+    <div id="canvas-module-job-card-sheet" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Job Card Sheet</h2>
+      <div id="mrd-reminder-banner-jcsh" class="material-requirement-date-revision-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ Purchase Quantities have changed on one or more PRNs — their <strong>Production Requirement Dates</strong> need revising.</div>
+      <div id="jcsh-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
         <div>
           <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
           <div style="position:relative;">
-            <input type="text" id="jclh-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
-              oninput="handleSharedProjectTypeaheadInput(this.value, 'jclh-project-ta-input', 'jclh-project-ta-dropdown')"
-              onchange="handleJCLHProjectChange(this.value)"
+            <input type="text" id="jcsh-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'jcsh-project-ta-input', 'jcsh-project-ta-dropdown')"
+              onchange="handleJCSHProjectChange(this.value)"
               style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
-            <div id="jclh-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+            <div id="jcsh-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Customer Name</label>
-          <input type="text" id="jclh-customer" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Project ID" />
+          <input type="text" id="jcsh-customer" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Project ID" />
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
         <div style="position:relative;">
           <label class="field-label" style="margin-top:0;">BOQ ID *</label>
-          <div id="jclh-boq-display" data-disabled="1" onclick="toggleJCLHBOQDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
-            <span id="jclh-boq-display-text" style="white-space:normal; word-break:break-word;">— Select Project First —</span>
+          <div id="jcsh-boq-display" data-disabled="1" onclick="toggleJCSHBOQDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="jcsh-boq-display-text" style="white-space:normal; word-break:break-word;">— Select Project First —</span>
             <span style="flex-shrink:0; margin-top:2px;">▾</span>
           </div>
-          <div id="jclh-boq-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
-          <input type="hidden" id="jclh-boq" value="" />
+          <div id="jcsh-boq-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="jcsh-boq" value="" />
         </div>
-        <input type="hidden" id="jclh-department" value="" />
-        <input type="hidden" id="jclh-description-of-material" value="" />
-        <input type="hidden" id="jclh-make" value="" />
+        <input type="hidden" id="jcsh-department" value="" />
+        <input type="hidden" id="jcsh-description-of-material" value="" />
+        <input type="hidden" id="jcsh-make" value="" />
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
         <div>
           <label class="field-label" style="margin-top:0;">Product Name</label>
-          <textarea id="jclh-product-name" readonly rows="1" oninput="autoGrowTextField(this)"
+          <textarea id="jcsh-product-name" readonly rows="1" oninput="autoGrowTextField(this)"
             style="width:100%; padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); border:1px solid var(--border); resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; font-family:inherit; line-height:1.3; box-sizing:border-box;" placeholder="Auto-filled from BOQ ID"></textarea>
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Product Rating</label>
-          <textarea id="jclh-product-rating" readonly rows="1" oninput="autoGrowTextField(this)"
+          <textarea id="jcsh-product-rating" readonly rows="1" oninput="autoGrowTextField(this)"
             style="width:100%; padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); border:1px solid var(--border); resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; font-family:inherit; line-height:1.3; box-sizing:border-box;" placeholder="Auto-filled from BOQ ID (blank if none)"></textarea>
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
         <div style="position:relative;">
           <label class="field-label" style="margin-top:0;">Job Card Number *</label>
-          <div id="jclh-jobcard-display" data-disabled="1" onclick="toggleJCLHJobCardDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
-            <span id="jclh-jobcard-display-text" style="white-space:normal; word-break:break-word;">— Select BOQ ID First —</span>
+          <div id="jcsh-jobcard-display" data-disabled="1" onclick="toggleJCSHJobCardDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="jcsh-jobcard-display-text" style="white-space:normal; word-break:break-word;">— Select BOQ ID First —</span>
             <span style="flex-shrink:0; margin-top:2px;">▾</span>
           </div>
-          <div id="jclh-jobcard-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
-          <input type="hidden" id="jclh-jobcard" value="" />
-        </div>
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px;">
-        <div>
-          <label class="field-label" style="margin-top:0;">Sheet Type *</label>
-          <select id="jclh-sheet-type" onchange="updateJCLHDownloadButtonState()" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-            <option value="">— Select Job Card Number First —</option>
-            <option value="Job Card">Job Card</option>
-            <option value="In Process">In Process</option>
-          </select>
+          <div id="jcsh-jobcard-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="jcsh-jobcard" value="" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Product Type *</label>
-          <select id="jclh-product-type" onchange="updateJCLHDownloadButtonState()" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
-            <option value="">— Select Sheet Type First —</option>
+          <select id="jcsh-product-type" onchange="updateJCSHDownloadButtonState()" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <option value="">— Select Job Card Number First —</option>
             <option value="Air Core Reactor">Air Core Reactor</option>
             <option value="Thyristor Switches">Thyristor Switches</option>
             <option value="ACU Panel">ACU Panel</option>
@@ -1514,8 +1505,94 @@
           </select>
         </div>
       </div>
+      <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:20px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Date *</label>
+          <input type="date" id="jcsh-sheet-date" style="width:100%; padding:9px; box-sizing:border-box; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        </div>
+      </div>
       <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
-        <button class="nav-btn-styled" id="jclh-download-btn" disabled onclick="submitJCLHDownload()" style="background:var(--accent); padding:8px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;">Download</button>
+        <button class="nav-btn-styled" id="jcsh-download-btn" disabled onclick="submitJCSHDownload()" style="background:var(--accent); padding:8px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;">Download</button>
+      </div>
+    </div>
+
+    <div id="canvas-module-in-process-sheet" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">In Process Sheet</h2>
+      <div id="ipsh-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
+          <div style="position:relative;">
+            <input type="text" id="ipsh-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'ipsh-project-ta-input', 'ipsh-project-ta-dropdown')"
+              onchange="handleIPSHProjectChange(this.value)"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+            <div id="ipsh-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Customer Name</label>
+          <input type="text" id="ipsh-customer" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Project ID" />
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
+        <div style="position:relative;">
+          <label class="field-label" style="margin-top:0;">BOQ ID *</label>
+          <div id="ipsh-boq-display" data-disabled="1" onclick="toggleIPSHBOQDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="ipsh-boq-display-text" style="white-space:normal; word-break:break-word;">— Select Project First —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="ipsh-boq-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="ipsh-boq" value="" />
+        </div>
+        <input type="hidden" id="ipsh-department" value="" />
+        <input type="hidden" id="ipsh-description-of-material" value="" />
+        <input type="hidden" id="ipsh-make" value="" />
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Product Name</label>
+          <textarea id="ipsh-product-name" readonly rows="1" oninput="autoGrowTextField(this)"
+            style="width:100%; padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); border:1px solid var(--border); resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; font-family:inherit; line-height:1.3; box-sizing:border-box;" placeholder="Auto-filled from BOQ ID"></textarea>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Product Rating</label>
+          <textarea id="ipsh-product-rating" readonly rows="1" oninput="autoGrowTextField(this)"
+            style="width:100%; padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); border:1px solid var(--border); resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; font-family:inherit; line-height:1.3; box-sizing:border-box;" placeholder="Auto-filled from BOQ ID (blank if none)"></textarea>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div style="position:relative;">
+          <label class="field-label" style="margin-top:0;">Job Card Number *</label>
+          <div id="ipsh-jobcard-display" data-disabled="1" onclick="toggleIPSHJobCardDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="ipsh-jobcard-display-text" style="white-space:normal; word-break:break-word;">— Select BOQ ID First —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="ipsh-jobcard-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="ipsh-jobcard" value="" />
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Product Type *</label>
+          <select id="ipsh-product-type" onchange="updateIPSHDownloadButtonState()" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <option value="">— Select Job Card Number First —</option>
+            <option value="Air Core Reactor">Air Core Reactor</option>
+            <option value="Thyristor Switches">Thyristor Switches</option>
+            <option value="ACU Panel">ACU Panel</option>
+            <option value="HT Panel">HT Panel</option>
+            <option value="Structure Panel">Structure Panel</option>
+            <option value="HT Capacitor">HT Capacitor</option>
+            <option value="LT Capacitor">LT Capacitor</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:20px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Date *</label>
+          <input type="date" id="ipsh-sheet-date" style="width:100%; padding:9px; box-sizing:border-box; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
+        <button class="nav-btn-styled" id="ipsh-download-btn" disabled onclick="submitIPSHDownload()" style="background:var(--accent); padding:8px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;">Download</button>
       </div>
     </div>
 
@@ -5328,6 +5405,7 @@
 <script src="qa/qa-inspection-timeline.js"></script>
 <script src="qa/product-serial-tracking.js"></script>
 <script src="qa/qa-dashboard.js"></script>
+<script src="qa/in-process-sheet.js"></script>
 <script src="accounts/tour-shell.js"></script>
 <script src="accounts/advance-vouchers.js"></script>
 <script src="accounts/voucher-check.js"></script>

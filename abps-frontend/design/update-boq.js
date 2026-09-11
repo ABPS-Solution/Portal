@@ -757,10 +757,12 @@ async function submitUpdateBOQ() {
 }
 
 // ═══════════════════════════════════════════════════════
-// JOB CARD LETTERHEAD
+// JOB CARD SHEET (Production dept — split from the old combined Job Card
+// & In Process Sheet screen 11 Sep 2026; the sibling In Process Sheet
+// screen's own ipsh-* globals live in qa/in-process-sheet.js)
 // ═══════════════════════════════════════════════════════
 
-let jclhWorkspaceInitInProgress = false;
-let jclhAllJobCardsForProject = []; // cache: full job-card list for the selected project
-let jclhSubmitInProgress = false;
+let jcshWorkspaceInitInProgress = false;
+let jcshAllJobCardsForProject = []; // cache: full job-card list for the selected project
+let jcshSubmitInProgress = false;
 

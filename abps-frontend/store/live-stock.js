@@ -55,7 +55,8 @@ function exitStoreWorkspacePanelBackToMenu() {
 
   // FIX: these panels share the Store enclosure but were never hidden or state-reset on exit,
   // so re-entering the section showed stale selections from the previous visit.
-  if(document.getElementById("canvas-module-jc-letterhead")) document.getElementById("canvas-module-jc-letterhead").style.display = "none";
+  if(document.getElementById("canvas-module-job-card-sheet")) document.getElementById("canvas-module-job-card-sheet").style.display = "none";
+  if(document.getElementById("canvas-module-in-process-sheet")) document.getElementById("canvas-module-in-process-sheet").style.display = "none";
   if(document.getElementById("canvas-module-assign-material-requirement-date")) document.getElementById("canvas-module-assign-material-requirement-date").style.display = "none";
   if(document.getElementById("canvas-module-revise-material-requirement-date")) document.getElementById("canvas-module-revise-material-requirement-date").style.display = "none";
   if(document.getElementById("canvas-module-stock-sweep")) { document.getElementById("canvas-module-stock-sweep").style.display = "none"; initializeStockSweepPanel(); }
@@ -66,7 +67,8 @@ function exitStoreWorkspacePanelBackToMenu() {
   if(document.getElementById("canvas-module-store-live-spare")) document.getElementById("canvas-module-store-live-spare").style.display = "none";
   if(document.getElementById("canvas-module-store-history-matrix")) document.getElementById("canvas-module-store-history-matrix").style.display = "none";
 
-  resetJCLHWorkspace();
+  if (typeof resetJCSHWorkspace === "function") resetJCSHWorkspace();
+  if (typeof resetIPSHWorkspace === "function") resetIPSHWorkspace();
 
   document.getElementById("dashboard-view").style.display = "flex"; 
   triggerCompanyDropdownArrayFetch(); 

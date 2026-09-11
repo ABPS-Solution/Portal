@@ -36,7 +36,7 @@
 // avoid needing every user to clear site data by hand.
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'abps-v70';
+const CACHE_VERSION = 'abps-v71';
 const CACHE_NAME = `abps-shell-${CACHE_VERSION}`;
 
 self.addEventListener('install', (event) => {

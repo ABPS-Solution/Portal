@@ -442,7 +442,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-project-invoice")) document.getElementById("mod-project-invoice").style.display = canProjectInvoiceGeneration ? "block" : "none";
   const canMaterialOutward = userPermissionsObject.materialOutward === true;
   if (document.getElementById("mod-material-outward")) document.getElementById("mod-material-outward").style.display = canMaterialOutward ? "block" : "none";
-  if (document.getElementById("mod-jc-letterhead")) document.getElementById("mod-jc-letterhead").style.display = userPermissionsObject.jobCardInProcessSheet === true ? "block" : "none";
+  if (document.getElementById("mod-job-card-sheet")) document.getElementById("mod-job-card-sheet").style.display = userPermissionsObject.jobCardSheet === true ? "block" : "none";
+  if (document.getElementById("mod-in-process-sheet")) document.getElementById("mod-in-process-sheet").style.display = userPermissionsObject.inProcessSheet === true ? "block" : "none";
 
   const canApproveBOQIncrease = userPermissionsObject.approveJCIncrease === true;
   if (document.getElementById("mod-boq-increase-approvals")) {
@@ -582,11 +583,31 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
       const accountsHeaderBlock = document.getElementById("dashboard-accounts-department-header-block");
       if (accountsHeaderBlock) accountsHeaderBlock.style.display = (canTourExpense || canCashExpenses || canTravelTickets || userPermissionsObject.viewAccountsDashboard === true) ? "block" : "none";
 
+  // A department's sub-heading (.sec-label) sits right before its own
+  // .dashboard-grid of .menu-card tiles — every card's display was just
+  // set above purely from permissions, so a user holding none of the
+  // permissions in one sub-section would otherwise see a bare label with
+  // an empty grid under it. Hide the pair together whenever every card
+  // in that grid ended up hidden.
+  hideEmptyDashboardSections();
+
   // Every dept-block's display was just finalized above, purely from
   // permissions — the tab bar layers on top of that rather than
   // duplicating the permission logic: it mirrors which blocks came out
   // visible, then narrows that down to whichever ONE tab is selected.
   refreshDepartmentTabsBar();
+}
+
+function hideEmptyDashboardSections() {
+  document.querySelectorAll(".sec-label").forEach((label) => {
+    const grid = label.nextElementSibling;
+    if (!grid || !grid.classList.contains("dashboard-grid")) return;
+    const cards = grid.querySelectorAll(".menu-card");
+    const anyVisible = Array.from(cards).some((c) => c.style.display !== "none");
+    const show = cards.length === 0 || anyVisible;
+    label.style.display = show ? "" : "none";
+    grid.style.display = show ? "" : "none";
+  });
 }
 
 // ── Department tab bar ───────────────────────────────────────────────────
@@ -966,14 +987,22 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     if (centerTitleRMRD)  centerTitleRMRD.style.visibility  = "hidden";
     document.getElementById("canvas-module-revise-material-requirement-date").style.display = "block";
     initializeReviseMRDPanel();
-  } else if (targetCanvasModuleId === 'jc-letterhead') {
+  } else if (targetCanvasModuleId === 'job-card-sheet') {
     document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
-    const leftControlsJCLH = document.getElementById("store-panel-left-controls");
-    const centerTitleJCLH  = document.getElementById("store-panel-center-title");
-    if (leftControlsJCLH) leftControlsJCLH.style.visibility = "hidden";
-    if (centerTitleJCLH)  centerTitleJCLH.style.visibility  = "hidden";
-    document.getElementById("canvas-module-jc-letterhead").style.display = "block";
-    initializeJCLHWorkspace();
+    const leftControlsJCSH = document.getElementById("store-panel-left-controls");
+    const centerTitleJCSH  = document.getElementById("store-panel-center-title");
+    if (leftControlsJCSH) leftControlsJCSH.style.visibility = "hidden";
+    if (centerTitleJCSH)  centerTitleJCSH.style.visibility  = "hidden";
+    document.getElementById("canvas-module-job-card-sheet").style.display = "block";
+    initializeJCSHWorkspace();
+  } else if (targetCanvasModuleId === 'in-process-sheet') {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    const leftControlsIPSH = document.getElementById("store-panel-left-controls");
+    const centerTitleIPSH  = document.getElementById("store-panel-center-title");
+    if (leftControlsIPSH) leftControlsIPSH.style.visibility = "hidden";
+    if (centerTitleIPSH)  centerTitleIPSH.style.visibility  = "hidden";
+    document.getElementById("canvas-module-in-process-sheet").style.display = "block";
+    initializeIPSHWorkspace();
   } else if (targetCanvasModuleId === 'fg-add') {
     document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
     const leftControls = document.getElementById("store-panel-left-controls");

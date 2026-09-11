@@ -291,23 +291,23 @@ async function initializeCreateBOQPanel() {
   }
 }
 
-async function initializeJCLHWorkspace() {
-  jclhWorkspaceInitInProgress = false; // clear any stuck guard from an abandoned prior load
-  resetJCLHWorkspace();                // guarantee first-time-like state on every entry
-  jclhWorkspaceInitInProgress = true;
+async function initializeJCSHWorkspace() {
+  jcshWorkspaceInitInProgress = false; // clear any stuck guard from an abandoned prior load
+  resetJCSHWorkspace();                // guarantee first-time-like state on every entry
+  jcshWorkspaceInitInProgress = true;
   try {
     const data = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes" });
-    window.jclhProjectMeta = data.projectMeta || {};
+    window.jcshProjectMeta = data.projectMeta || {};
     // Same shared typeahead component Create BOQ uses (handleSharedProjectTypeaheadInput /
     // selectSharedProjectTypeahead) — it filters window.sharedActiveProjectCodes /
     // window.sharedProjectMeta, so this screen must keep those populated too.
     window.sharedActiveProjectCodes = data.projects || [];
     window.sharedProjectMeta = data.projectMeta || {};
-    handleJCLHProjectChange("");
+    handleJCSHProjectChange("");
   } catch(e) {
     // Typeahead input just stays empty/unresponsive on failure — no dropdown to fall back to.
   } finally {
-    jclhWorkspaceInitInProgress = false;
+    jcshWorkspaceInitInProgress = false;
   }
 }
 
