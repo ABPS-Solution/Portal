@@ -584,11 +584,21 @@ function ptlRenderLaneSteps(lane, c) {
     const jcChip = !s.terminal && s.chip
       ? `<span style="display:block; margin-top:2px; font-size:0.68rem; font-family:monospace; font-weight:700; color:${c};">${escapeHtml(s.chip)}</span>`
       : '';
+    // Which specific Job Cards are done on this step (11 Sep 2026) — read
+    // only here (writes happen only in Production Planning), always
+    // visible rather than needing a click to reveal, same as Production
+    // Planning's own always-visible pills.
+    const jcPills = (!s.terminal && s.planned && Array.isArray(lane.allJobCards) && lane.allJobCards.length > 0)
+      ? `<div style="display:flex; flex-wrap:wrap; gap:4px; justify-content:center; margin-top:4px;">${lane.allJobCards.map(jc => {
+          const isDone = (s.doneJobCards || []).includes(jc);
+          return `<span title="${escapeHtml(jc)}" style="font-size:0.64rem; font-weight:700; font-family:monospace; padding:2px 6px; border-radius:9px; background:${isDone ? c : '#fff'}; color:${isDone ? '#fff' : c}; border:1.5px solid ${c};">${isDone ? '✓ ' : ''}${escapeHtml(ptlShortJobCard(jc))}</span>`;
+        }).join('')}</div>`
+      : '';
     const statusCell = s.terminal
       ? `<span style="font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(s.chip || '')}</span>`
       : done
-        ? `<span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${ptlFmt(s.actual)}</span>${jcChip}`
-        : `<span style="font-size:0.78rem; color:${late ? 'var(--warn)' : 'var(--muted)'};">${late ? 'Overdue' : 'Pending'}</span>${jcChip}`;
+        ? `<span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${ptlFmt(s.actual)}</span>${jcChip}${jcPills}`
+        : `<span style="font-size:0.78rem; color:${late ? 'var(--warn)' : 'var(--muted)'};">${late ? 'Overdue' : 'Pending'}</span>${jcChip}${jcPills}`;
 
     const colBorder = "border-left:1px solid var(--border);";
     return `
@@ -1482,7 +1492,7 @@ function ptlRenderCanvas(containerId) {
     const laneRowH = rowMode ? (laneRowHByBoq[l.boqId] || ROW_PITCH) : ROW_PITCH;
     const ceilY = rowMode ? (y - laneRowH / 2 + 4 * ptlFS) : trunkCeil;
     const floorY = rowMode ? (y + laneRowH / 2 - 4 * ptlFS) : trunkFloor;
-    l.steps.forEach(s => laid.push({ n: { ...s, dept: l.ownerDept }, x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id], boqId: l.boqId, ownerLabel: `${l.ownerDept} Production`, ceilY, floorY }));
+    l.steps.forEach(s => laid.push({ n: { ...s, dept: l.ownerDept, allJobCards: l.allJobCards }, x: xOf(s.actual || s.target || s.planned), y: laneStepY[i][s.id], boqId: l.boqId, ownerLabel: `${l.ownerDept} Production`, ceilY, floorY }));
   });
   laid.sort((a, b) => a.x - b.x);
 
@@ -1567,6 +1577,7 @@ function ptlRenderCanvas(containerId) {
     clickMap.push({
       label: n.label, owner: ownerLabel || (PTL_DEPT_NAME[n.dept] || n.dept),
       planned: n.planned, eff, actual: n.actual, late: bd, stage: boqId ? 4 : n.stage,
+      allJobCards: n.allJobCards || null, doneJobCards: n.doneJobCards || null,
     });
     P.push(`<circle cx="${x}" cy="${y}" r="${R * 2.2}" fill="transparent" class="ptl-hit" data-anchor="${anchorId}" data-idx="${idx}"/>`);
   });
@@ -1955,6 +1966,16 @@ function ptlRenderFullscreen() {
   ptlRenderCanvas("ptl-fs-scroller");
 }
 
+// job_card_number is a long composite string ("JC_Set-<n>_<rest>") - same
+// shortening precedent as pplanShortJobCard (production/production-
+// planning.js) and psnShortJobCard, duplicated locally rather than
+// cross-file-called since this file loads before production/*.js.
+function ptlShortJobCard(jobCardNumber) {
+  const s = jobCardNumber || "";
+  const m = /^(JC_Set-\d+)/.exec(s);
+  return m ? m[1] : s;
+}
+
 // Compact hover card - same shape as the design-exploration prototype's
 // #tip: title, then Owner/Planned/Target/Actual rows, plus a lateness
 // line when it applies.
@@ -1974,6 +1995,16 @@ function ptlTipHtml(info) {
   if (info.stage === 4 && info.eff && info.eff !== info.planned) h += row("New Target", ptlFmt(info.eff));
   h += row("Actual", info.actual ? ptlFmt(info.actual) : "-");
   if (info.late) h += `<div style="margin-top:5px; font-size:0.74rem; font-weight:700; color:#e84545;">${info.late} business day${info.late === 1 ? "" : "s"} late</div>`;
+  // Which specific Job Cards this Stage 4 step is done for (11 Sep 2026) -
+  // a hover was previously the only place on the whole map that couldn't
+  // answer "which sets" for a step showing e.g. "1/2 done".
+  if (Array.isArray(info.allJobCards) && info.allJobCards.length > 0) {
+    const doneSet = new Set(info.doneJobCards || []);
+    h += `<div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;">${info.allJobCards.map(jc => {
+      const isDone = doneSet.has(jc);
+      return `<span title="${escapeHtml(jc)}" style="font-size:0.66rem; font-weight:700; font-family:monospace; padding:2px 6px; border-radius:9px; background:${isDone ? 'var(--accent)' : '#fff'}; color:${isDone ? '#fff' : 'var(--muted)'}; border:1.5px solid var(--accent);">${isDone ? '✓ ' : ''}${escapeHtml(ptlShortJobCard(jc))}</span>`;
+    }).join('')}</div>`;
+  }
   return h;
 }
 

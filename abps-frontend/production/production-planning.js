@@ -23,9 +23,6 @@
 let pplanData = null;              // { project, stage3Done, lanes }
 let pplanExpandedLanes = new Set();
 let pplanActiveTab = "submit";     // "submit" | "update"
-// Which non-terminal steps currently have their per-Job-Card checklist
-// expanded (11 Sep 2026, migration 192) — keyed "boqId::stepKey".
-let pplanExpandedStepJcs = new Set();
 
 // job_card_number is a long composite string ("JC_Set-<n>_<rest>") —
 // same shortening convention qa/product-serial-tracking.js's
@@ -74,7 +71,6 @@ async function initializeProductionPlanningPanel() {
   pplanActiveTab = "submit";
   pplanData = null;
   pplanExpandedLanes = new Set();
-  pplanExpandedStepJcs = new Set();
   const input = document.getElementById("pplan-project-select-ta-input");
   if (input) input.value = "";
   const body = document.getElementById("pplan-body");
@@ -327,15 +323,14 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
     const eff = s.actual || s.target || s.planned;
     const late = !done && eff && eff < today;
     const currentTarget = s.target || s.planned;
-    const jcKey = `${lane.boqId}::${s.id}`;
-    const jcExpanded = pplanExpandedStepJcs.has(jcKey);
 
-    // Per-Job-Card progress (11 Sep 2026, migration 192) — every
-    // non-terminal step now, same shape the terminal step's own "X/Y JC
-    // in FG" chip has always had. s.planned gates this — an unplanned
-    // step has no meaningful Job Card list to show yet.
+    // Per-Job-Card progress (11 Sep 2026, migration 192; pills moved
+    // into the action cell 11 Sep 2026 — no more click-to-expand, every
+    // Job Card's toggle pill is always visible so marking one doesn't
+    // need a two-step "expand, then click" interaction). s.planned gates
+    // this — an unplanned step has no meaningful Job Card list to show.
     const progressChip = !s.terminal && s.planned
-      ? `<span onclick="event.stopPropagation(); pplanToggleStepJcs('${lane.boqId}','${s.id}')" style="cursor:pointer; display:inline-flex; align-items:center; gap:3px; font-size:0.68rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 7px; border-radius:10px; margin-left:6px; white-space:nowrap;" title="Click to show/hide each Job Card">${s.jcDone}/${s.jcTotal} done ${jcExpanded ? '▴' : '▾'}</span>`
+      ? `<span style="display:inline-flex; align-items:center; gap:3px; font-size:0.68rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 7px; border-radius:10px; margin-left:6px; white-space:nowrap;">${s.jcDone}/${s.jcTotal} done</span>`
       : '';
 
     let actionCell;
@@ -347,23 +342,26 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
       const chip = `<span style="font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(s.chip || '')}</span>`;
       const adminCtl = pplanIsAdmin() ? `<span style="display:inline-flex; align-items:center; gap:6px;">${pplanAsOfInputHtml(`${lane.boqId}-${s.id}`, s.actual)}<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem;" onclick="pplanAdminSetPackingFgDate('${lane.boqId}')">${s.actual ? 'Update (admin)' : 'Set date (admin)'}</button>${s.actual ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem; background:#fff; color:var(--muted); border:1px solid var(--border);" onclick="pplanAdminClearPackingFgDate('${lane.boqId}')">Clear</button>` : ''}</span>` : '';
       actionCell = `${chip}${adminCtl}`;
-    } else if (!canWrite) {
-      actionCell = done
-        ? `<span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${pplanFmt(s.actual)}</span>`
-        : `<span style="font-size:0.78rem; color:var(--muted);">View only</span>`;
-    } else if (done) {
-      // "Mark Undone" here clears every Job Card on the step at once —
-      // same bulk convenience "Mark Done" always was. Correcting just
-      // ONE wrong Job Card is done via the per-JC checklist below
-      // instead (progressChip), not this button.
-      actionCell = `
-        <span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${pplanFmt(s.actual)}</span>
-        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem; background:#fff; color:var(--muted); border:1px solid var(--border);" onclick="pplanUnmarkStepDone('${lane.boqId}','${s.id}')">Mark Undone (all)</button>
-        ${pplanIsAdmin() ? `<span style="display:inline-flex; align-items:center; gap:6px;">${pplanAsOfInputHtml(`${lane.boqId}-${s.id}`, s.actual)}<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem;" onclick="pplanMarkStepDone('${lane.boqId}','${s.id}')">Update (admin)</button></span>` : ''}`;
+    } else if (!s.planned) {
+      actionCell = `<span style="font-size:0.78rem; color:var(--muted);">-</span>`;
     } else {
-      actionCell = `
-        ${pplanAsOfInputHtml(`${lane.boqId}-${s.id}`)}
-        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.74rem;" onclick="pplanMarkStepDone('${lane.boqId}','${s.id}')">Mark Done (all)</button>`;
+      // One toggle pill per in-scope Job Card, always visible — click
+      // marks/unmarks just that one Job Card on this step
+      // (pplanMarkStepJcDone/pplanUnmarkStepJcDone). No more bulk
+      // "Mark Done (all)"/"Mark Undone (all)" button.
+      const pills = allJcs.length > 0
+        ? `<div style="display:flex; flex-wrap:wrap; gap:5px; justify-content:center;">${allJcs.map(jc => {
+            const jcIsDone = (s.doneJobCards || []).includes(jc);
+            const shortJc = escapeHtml(pplanShortJobCard(jc));
+            const onclick = !canWrite ? '' : jcIsDone
+              ? `onclick="pplanUnmarkStepJcDone('${lane.boqId}','${s.id}','${jc.replace(/'/g, "\\'")}')"`
+              : `onclick="pplanMarkStepJcDone('${lane.boqId}','${s.id}','${jc.replace(/'/g, "\\'")}')"`;
+            return `<span ${onclick} title="${escapeHtml(jc)}" style="font-size:0.68rem; font-weight:700; font-family:monospace; padding:3px 8px; border-radius:12px; ${canWrite ? 'cursor:pointer;' : ''} background:${jcIsDone ? c : '#fff'}; color:${jcIsDone ? '#fff' : c}; border:1.5px solid ${c};">${jcIsDone ? '✓ ' : ''}${shortJc}</span>`;
+          }).join('')}</div>`
+        : `<span style="font-size:0.78rem; color:var(--muted);">-</span>`;
+      const doneLabel = done ? `<div style="font-size:0.74rem; color:${c}; font-weight:700; margin-bottom:4px;">Done ${pplanFmt(s.actual)}</div>` : '';
+      const adminAsOf = (canWrite && pplanIsAdmin()) ? `<div style="margin-top:4px; display:flex; justify-content:center;">${pplanAsOfInputHtml(`${lane.boqId}-${s.id}`, s.actual)}</div>` : '';
+      actionCell = `${doneLabel}${pills}${adminAsOf}`;
     }
 
     const colBorder = "border-left:1px solid var(--border);";
@@ -381,33 +379,11 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
         <td style="width:20%; padding:5px 8px; text-align:center; ${colBorder}">${canWrite && (s.terminal || !done) ? `<div style="max-width:150px; margin:0 auto;"><input type="date" value="${s.target || ''}" onchange="pplanUpdateTarget('${lane.boqId}','${s.id}', this.value)"
               style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box; text-align:center;" /></div>` : `<span style="color:var(--muted); font-size:0.8rem;">-</span>`}</td>
         <td style="width:30%; padding:5px 8px; text-align:center; ${colBorder}">
-          <div style="display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px;">${actionCell}</div>
+          ${actionCell}
         </td>
       </tr>`;
 
-    // Per-Job-Card checklist row — one small pill per in-scope Job Card,
-    // green/checked once marked done on THIS step. Only rendered when
-    // expanded via the progress chip above, and only for a planned
-    // non-terminal step (matching progressChip's own gate).
-    const jcRow = (!s.terminal && s.planned && jcExpanded)
-      ? `<tr style="border-bottom:1px solid var(--border); background:var(--highlight-bg);">
-           <td colspan="5" style="padding:8px 10px;">
-             <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center;">
-               ${allJcs.map(jc => {
-                 const jcDone = (s.doneJobCards || []).includes(jc);
-                 const shortJc = escapeHtml(pplanShortJobCard(jc));
-                 const clickable = canWrite;
-                 const onclick = !clickable ? '' : jcDone
-                   ? `onclick="pplanUnmarkStepJcDone('${lane.boqId}','${s.id}','${jc.replace(/'/g, "\\'")}')"`
-                   : `onclick="pplanMarkStepJcDone('${lane.boqId}','${s.id}','${jc.replace(/'/g, "\\'")}')"`;
-                 return `<span ${onclick} title="${escapeHtml(jc)}" style="font-size:0.72rem; font-weight:700; font-family:monospace; padding:3px 9px; border-radius:12px; ${clickable ? 'cursor:pointer;' : ''} background:${jcDone ? c : '#fff'}; color:${jcDone ? '#fff' : c}; border:1.5px solid ${c};">${jcDone ? '✓ ' : ''}${shortJc}</span>`;
-               }).join('')}
-             </div>
-           </td>
-         </tr>`
-      : '';
-
-    return mainRow + jcRow;
+    return mainRow;
   }).join("");
 
   const colBorder = "border-left:1px solid var(--border);";
@@ -467,53 +443,13 @@ async function pplanAdminOverridePlanned(boqId, stepKey) {
   } catch (e) { alert("Network error: " + e.message); }
 }
 
-// Marks every in-scope Job Card done on this step at once (the bulk
-// convenience "Mark Done" has always been) — see markProductPlanStepDone
-// (routes/productionPlanning.js) for how this is really just inserting
-// one product_plan_step_job_cards row per Job Card, then recomputing.
-async function pplanMarkStepDone(boqId, stepKey) {
-  try {
-    const asOfDate = pplanReadAsOf(`${boqId}-${stepKey}`);
-    const data = await apFetch({ action: "markProductPlanStepDone", operatorName: appActiveOperatorIdentityString, boqId, stepKey, asOfDate });
-    if (!data.success) { alert(data.error || "Could not mark this step done."); return; }
-    const lane = pplanData.lanes.find(l => l.boqId === boqId);
-    const step = lane && lane.steps.find(s => s.id === stepKey);
-    if (step) {
-      step.actual = data.actualDate;
-      if (typeof data.jcTotal === "number") step.jcTotal = data.jcTotal;
-      if (typeof data.jcDone === "number") step.jcDone = data.jcDone;
-      if (lane) step.doneJobCards = (lane.allJobCards || []).slice();
-    }
-    pplanRenderLanes();
-  } catch (e) { alert("Network error: " + e.message); }
-}
-
-// Undoes an accidental/wrong Mark Done for EVERY Job Card on this step
-// at once — everyday mistake correction, not admin-only. Correcting
-// just one wrong Job Card is done via the per-JC checklist
-// (pplanUnmarkStepJcDone) instead.
-async function pplanUnmarkStepDone(boqId, stepKey) {
-  try {
-    const data = await apFetch({ action: "unmarkProductPlanStepDone", operatorName: appActiveOperatorIdentityString, boqId, stepKey });
-    if (!data.success) { alert(data.error || "Could not mark this step undone."); return; }
-    const lane = pplanData.lanes.find(l => l.boqId === boqId);
-    const step = lane && lane.steps.find(s => s.id === stepKey);
-    if (step) { step.actual = null; step.jcDone = 0; step.doneJobCards = []; }
-    pplanRenderLanes();
-  } catch (e) { alert("Network error: " + e.message); }
-}
-
-function pplanToggleStepJcs(boqId, stepKey) {
-  const key = `${boqId}::${stepKey}`;
-  if (pplanExpandedStepJcs.has(key)) pplanExpandedStepJcs.delete(key);
-  else pplanExpandedStepJcs.add(key);
-  pplanRenderLanes();
-}
-
-// Per-Job-Card mark/unmark (11 Sep 2026, migration 192) — the same
-// one-way-except-admin rule as the bulk routes, just scoped to one Job
-// Card. Keeps the step's checklist expanded across the re-render (the
-// toggle state lives in pplanExpandedStepJcs, untouched by this).
+// Per-Job-Card mark/unmark (11 Sep 2026, migration 192; the only way to
+// mark a step done since 11 Sep 2026 — the bulk "Mark Done (all)"/"Mark
+// Undone (all)" buttons and their pplanMarkStepDone/pplanUnmarkStepDone
+// handlers were removed the same day in favor of always-visible per-JC
+// pills, one click each). The backend's bulk markProductPlanStepDone/
+// unmarkProductPlanStepDone routes are unused by this screen now but
+// left in place (flagged, not deleted).
 async function pplanMarkStepJcDone(boqId, stepKey, jobCardNumber) {
   try {
     const asOfDate = pplanReadAsOf(`${boqId}-${stepKey}`);
