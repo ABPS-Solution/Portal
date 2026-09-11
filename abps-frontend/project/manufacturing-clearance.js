@@ -427,8 +427,7 @@ async function saveMcGatingField(projectId, field, value) {
 // wraps onto extra lines (row height grows) instead of clipping — same
 // technique as the Upload Purchase Order review screen's autoGrowPoField.
 function mcAutoGrowField(el) {
-  el.style.height = 'auto';
-  el.style.height = el.scrollHeight + 'px';
+  autoGrowTextField(el);
 }
 
 // Fixed-position dropdown, same reasoning/pattern as Create BOQ's material

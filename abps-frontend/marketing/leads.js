@@ -2502,9 +2502,12 @@ function updatePoReviewLineItem(idx, key, value) {
 }
 
 // Auto-grow a text-value box so long values wrap instead of clipping.
+// Delegates to shared/ui.js's autoGrowTextField rather than repeating the
+// measurement — that one adds the border width back (required under the
+// app-wide box-sizing:border-box, or the last wrapped line gets shaved)
+// and skips elements that aren't currently rendered.
 function autoGrowPoField(el) {
-  el.style.height = 'auto';
-  el.style.height = el.scrollHeight + 'px';
+  autoGrowTextField(el);
 }
 
 // "Select from a list of companies" for the review screen's Company Name —

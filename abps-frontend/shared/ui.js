@@ -171,13 +171,40 @@ function showSuccessWithReset(elementId, message, resetButtonLabel, resetFnCall,
 // ═══════════════════════════════════════════════════════
 function autoGrowTextField(el) {
   if (!el) return;
+  // Not rendered right now (hidden panel, a cloneNode template, a collapsed
+  // card): scrollHeight reads 0, so measuring here would pin a bogus tiny
+  // height that survives until something re-grows it. Leave it alone.
+  if (el.getClientRects().length === 0) return;
   el.style.height = "auto";
-  el.style.height = el.scrollHeight + "px";
+  // ★ The border MUST be added back. index.html:18 sets `box-sizing:
+  // border-box` on every element, so `height` has to cover content +
+  // padding + BORDER — but scrollHeight only ever measures content +
+  // padding. Setting height = scrollHeight is therefore short by exactly
+  // the vertical border width (3px on this app's standard 1.5px field
+  // border), which shaves the bottom off the LAST wrapped line. Invisible
+  // on a short one-line value (there's slack), very visible on a long
+  // wrapped one — that's what made Create BOQ's Product Rating render its
+  // final line sliced in half.
+  const cs = window.getComputedStyle(el);
+  const border = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
+  el.style.height = (el.scrollHeight + border) + "px";
 }
 function autoGrowAllIn(container) {
   (container ? container.querySelectorAll("textarea") : document.querySelectorAll("textarea"))
     .forEach(autoGrowTextField);
 }
+// A grown height is pinned in pixels against the width it was measured at —
+// if the field later gets narrower (window resize, a sibling field growing
+// and squeezing a grid column), the same text needs more lines than the
+// pinned height allows and the overflow is silently clipped. Re-measure
+// every rendered textarea after a resize settles. Debounced, and
+// autoGrowTextField itself skips anything not currently rendered, so this
+// can't touch hidden panels or #reusable-child-modules-template.
+let _autoGrowResizeTimer = null;
+window.addEventListener("resize", () => {
+  clearTimeout(_autoGrowResizeTimer);
+  _autoGrowResizeTimer = setTimeout(() => autoGrowAllIn(), 150);
+});
 
 // ═══════════════════════════════════════════════════════
 // GENERIC WRAPPING DROPDOWN — for any picker whose option text is too

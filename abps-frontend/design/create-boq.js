@@ -38,7 +38,7 @@ function handleCBOQImportProductSearch(query) {
 function selectCBOQImportProduct(productName, productRating) {
   const searchEl = document.getElementById("cboq-import-product-search");
   searchEl.value = productRating ? `${productName} - ${productRating}` : productName;
-  searchEl.style.height = "auto"; searchEl.style.height = searchEl.scrollHeight + "px";
+  autoGrowTextField(searchEl);
   document.getElementById("cboq-import-product-dropdown").style.display = "none";
   window.cboqImportSelectedProduct = { productName, productRating };
 
@@ -405,7 +405,7 @@ function selectCBOQProductOption(itemCode, descriptionId) {
   // an already-BOQ'd product kept reappearing as still-pending forever,
   // silently allowing duplicate BOQs for the same product on one project.
   document.getElementById("cboq-source-po-line-id").value = opt.lineId || "";
-  if (ratingEl) { ratingEl.value = opt.productRating || ""; ratingEl.style.height = "auto"; ratingEl.style.height = ratingEl.scrollHeight + "px"; }
+  if (ratingEl) { ratingEl.value = opt.productRating || ""; autoGrowTextField(ratingEl); }
   if (qtyEl) { qtyEl.value = trimNum(opt.lockedQuantity); updateCBOQTotals(); }
 
   // Description of Material / Make — Tier 2 (Finished Goods) options carry
@@ -515,10 +515,7 @@ function renderCBOQMaterialRows() {
   });
 
   // Auto-size all description textareas to fit existing content on initial render
-  tbody.querySelectorAll("textarea").forEach(ta => {
-    ta.style.height = "auto";
-    ta.style.height = ta.scrollHeight + "px";
-  });
+  autoGrowAllIn(tbody);
 
   updateCBOQTotals();
 }

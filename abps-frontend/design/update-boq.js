@@ -275,10 +275,7 @@ function renderBOQRevisionRows(updateId) {
       </div>
     </div>
   `;
-  mount.querySelectorAll("textarea").forEach(ta => {
-    ta.style.height = "auto";
-    ta.style.height = ta.scrollHeight + "px";
-  });
+  autoGrowAllIn(mount);
 }
 
 // Debounced-ish live re-diff as the authorizer edits, so the summary
@@ -619,10 +616,7 @@ function renderUBOQMaterialRows() {
     }
   });
 
-  tbody.querySelectorAll("textarea").forEach(ta => {
-    ta.style.height = "auto";
-    ta.style.height = ta.scrollHeight + "px";
-  });
+  autoGrowAllIn(tbody);
 
   updateUBOQTotals();
 }

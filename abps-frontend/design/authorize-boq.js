@@ -557,7 +557,7 @@ function recomputeEBOQBoqId(productName, rating) {
   const cleanSeg = (s) => (s || '').toString().trim().replace(/\s+/g, ' ');
   const newBoqId = `${prefix}_${cleanSeg(productName)}_${cleanSeg(rating)}${variantSuffix}`;
   boqIdBox.value = newBoqId;
-  boqIdBox.style.height = 'auto'; boqIdBox.style.height = boqIdBox.scrollHeight + 'px';
+  autoGrowTextField(boqIdBox);
 }
 
 function addEBOQMaterialRow() {
@@ -647,12 +647,7 @@ function renderEBOQMaterialRows() {
     }
   });
 
-  requestAnimationFrame(() => {
-    tbody.querySelectorAll("textarea").forEach(ta => {
-      ta.style.height = "auto";
-      ta.style.height = ta.scrollHeight + "px";
-    });
-  });
+  requestAnimationFrame(() => autoGrowAllIn(tbody));
 
   updateEBOQTotals();
 }

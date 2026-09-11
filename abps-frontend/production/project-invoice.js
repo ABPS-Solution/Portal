@@ -504,9 +504,10 @@ function numberToWordsUSDClient(amount) {
   return words.trim() + ' US Dollars Only';
 }
 
+// Delegates to shared/ui.js's autoGrowTextField — see autoGrowPoField
+// (marketing/leads.js) for why the measurement must not be duplicated.
 function pinvAutoGrowField(el) {
-  el.style.height = 'auto';
-  el.style.height = el.scrollHeight + 'px';
+  autoGrowTextField(el);
 }
 
 function renderPinvInvoiceForm() {
