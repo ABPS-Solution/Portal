@@ -545,9 +545,19 @@ async function savePPSDeliverySchedule(prnId, btn) {
       // renders it as its own separate, monospace, word-wrapped block
       // rather than plain text; this success message follows that
       // convention instead of "for PRN <id>." in one line.
+      // PPS Document (11 Sep 2026) — one Drive link per PO this save
+      // touched (usually just one; a save can span several PRNs on
+      // different POs). A save that regenerated no document (e.g. the
+      // regeneration itself failed server-side, logged but non-fatal)
+      // simply shows no link for that PO rather than an error — the
+      // schedule save itself already succeeded and must not appear to
+      // have failed over a best-effort document.
+      const docUrls = data.docUrls || {};
+      const docLinksHtml = Object.entries(docUrls).map(([poNo, url]) => `
+        <a href="${driveLink(url)}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 View PPS Document — ${poNo}</a>`).join("");
       showSuccessWithReset(
         "pps-feedback",
-        `✅ Delivery schedule saved.<div style="margin-top:8px; padding:8px 10px; background:#fff; border:1px solid #86efac; border-radius:6px; font-family:monospace; font-weight:800; font-size:0.8rem; color:var(--brand); line-height:1.4; word-break:break-word;">${prnId}</div>`,
+        `✅ Delivery schedule saved.<div style="margin-top:8px; padding:8px 10px; background:#fff; border:1px solid #86efac; border-radius:6px; font-family:monospace; font-weight:800; font-size:0.8rem; color:var(--brand); line-height:1.4; word-break:break-word;">${prnId}</div>${docLinksHtml}`,
         "Action Another PPS", "initializePPSTrackingPanel()"
       );
     } else {

@@ -910,6 +910,10 @@ function selectCPOMaterial(rowId, itemCode, combinedName, unitType) {
   row.allocations = []; // old allocations were tied to the previous item code
   row._allocationTouched = false;
   row.designRatePerQuantity = null; // was derived from the old item code's allocated PRNs
+  // Description of Material defaults to the selected Material Name (11 Sep
+  // 2026, explicit request) — still a free-text field the operator can
+  // edit afterward, this just saves retyping the obvious starting point.
+  row.additionalDescription = combinedName;
   document.getElementById(`cpo-desc-dd-${rowId}`).style.display = "none";
   renderCPOMaterialRows();
   persistCPODraft();
