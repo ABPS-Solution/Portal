@@ -36,12 +36,12 @@ async function loadRPRNQueueTab() {
       return;
     }
     queue.forEach(item => { window.rprnQueueMeta[item.boqId] = item; });
-    feed.innerHTML = queue.map(item => `
+    const cardHtml = item => `
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius);">
         <div style="min-width:0; padding:6px 0;">
           <span style="font-size:0.68rem; font-weight:800; background:#fef3c7; color:#b45309; padding:2px 7px; border-radius:4px; margin-right:8px;">Revised</span>
           <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${item.boqId}</span>
-          <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} — ${item.productName || ""} ${item.productRating || ""}</div>
+          <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.productName || ""} ${item.productRating || ""}</div>
         </div>
         <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
           <span style="font-size:0.72rem; color:#78350f; max-width:300px; line-height:1.35;">The BOQ linked to this PRN was revised, which may have increased or decreased quantities for some materials. Revise the PRN to match.</span>
@@ -50,7 +50,22 @@ async function loadRPRNQueueTab() {
             Revise PRN →
           </button>
         </div>
-      </div>`).join("");
+      </div>`;
+    // Sub-grouped by Project ID (11 Sep 2026, explicit request) — same
+    // grouping as store/create-prn.js's "New" queue and Material
+    // Requirement Date's own queues.
+    const groups = [];
+    const groupByProject = new Map();
+    queue.forEach(item => {
+      let g = groupByProject.get(item.projectId);
+      if (!g) { g = { projectId: item.projectId, customerName: item.customerName || item.projectId, items: [] }; groupByProject.set(item.projectId, g); groups.push(g); }
+      g.items.push(item);
+    });
+    feed.innerHTML = groups.map(g => `
+      <div style="padding:4px 4px 2px; font-weight:700; font-size:0.78rem; color:var(--muted);">
+        <span style="font-family:monospace; color:var(--text);">${escapeHtml(g.projectId)}</span> — ${escapeHtml(g.customerName)} <span style="font-weight:700; color:#b45309;">(${g.items.length})</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">${g.items.map(cardHtml).join("")}</div>`).join("");
   } catch (e) {
     feed.innerHTML = `<div style="color:var(--warn); padding:12px;">Network error: ${e.message}</div>`;
   }

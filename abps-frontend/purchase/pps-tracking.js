@@ -138,15 +138,15 @@ function ppsRenderNeedQueueList(title, items, emptyMessage) {
   if (items.length === 0) {
     return `<div style="padding:10px 14px; margin-bottom:10px; background:#f0fff4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-size:0.8rem; font-weight:600;">${emptyMessage}</div>`;
   }
-  const rows = items.map(item => {
+  const rowHtml = item => {
     const hint = (item.totalItems > 0)
       ? `<div style="font-size:0.85rem; font-weight:600; color:var(--muted); margin-top:2px;">${item.scheduledItems} of ${item.totalItems} items scheduled</div>`
       : "";
     return `
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #f1f5f9;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px 8px 22px; border-bottom:1px solid #f1f5f9;">
         <div style="min-width:0;">
           <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${item.prnId}</span>
-          <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} <strong> | </strong>  ${item.productName || ""}${item.productRating ? " " + item.productRating : ""}</div>
+          <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.productName || ""}${item.productRating ? " " + item.productRating : ""}</div>
           ${hint}
         </div>
         <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
@@ -154,14 +154,31 @@ function ppsRenderNeedQueueList(title, items, emptyMessage) {
           Action →
         </button>
       </div>`;
-  }).join("");
+  };
+
+  // Sub-grouped by Project ID (11 Sep 2026, explicit request) — same
+  // grouping as store/create-prn.js's own queue.
+  const groups = [];
+  const groupByProject = new Map();
+  items.forEach(item => {
+    let g = groupByProject.get(item.projectId);
+    if (!g) { g = { projectId: item.projectId, customerName: item.customerName || item.projectId, items: [] }; groupByProject.set(item.projectId, g); groups.push(g); }
+    g.items.push(item);
+  });
+  const groupsHtml = groups.map(g => `
+    <div style="padding:6px 12px; background:#fef9ec; border-bottom:1px solid #f1f5f9; border-top:1px solid #f1f5f9;">
+      <span style="font-family:monospace; font-weight:700; font-size:0.74rem; color:#92400e;">${escapeHtml(g.projectId)}</span>
+      <span style="font-size:0.74rem; color:#92400e;"> — ${escapeHtml(g.customerName)}</span>
+      <span style="font-size:0.68rem; color:#b45309; font-weight:700;"> (${g.items.length})</span>
+    </div>
+    ${g.items.map(rowHtml).join("")}`).join("");
 
   return `
     <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); overflow:hidden; margin-bottom:12px;">
       <div style="padding:10px 14px; font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; letter-spacing:0.5px; background:#fef3c7;">
         ${title} (${items.length})
       </div>
-      ${rows}
+      ${groupsHtml}
     </div>`;
 }
 

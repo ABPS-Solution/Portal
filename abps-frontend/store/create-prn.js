@@ -219,7 +219,7 @@ async function loadPRNNeedQueue() {
     // of the Create PRN button — the real block is server-side
     // (createPurchaseRequestNote's assertBoqNotOnHold), this is purely so
     // the operator sees WHY a BOQ they expect can't get a PRN raised.
-    const rows = queue.map(item => {
+    const rowHtml = item => {
       const heldBadge = item.onHold
         ? `<span title="${(item.holdReason || '').replace(/"/g,'&quot;')}" style="background:#fee2e2; color:#b91c1c; font-size:0.65rem; font-weight:800; padding:2px 7px; border-radius:10px; text-transform:uppercase; white-space:nowrap; flex-shrink:0;">⏸ On Hold</span>`
         : `<button class="nav-btn-styled prn-queue-create-btn" data-boqid="${item.boqId.replace(/"/g,"&quot;")}" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
@@ -227,23 +227,44 @@ async function loadPRNNeedQueue() {
               Create PRN →
             </button>`;
       return `
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #f1f5f9;${item.onHold ? ' background:#fef2f2;' : ''}">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px 8px 22px; border-bottom:1px solid #f1f5f9;${item.onHold ? ' background:#fef2f2;' : ''}">
           <div style="min-width:0;${item.onHold ? ' opacity:0.7;' : ''}">
             <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${item.boqId}</span>
-            <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} <strong> | </strong>  ${item.productDisplayLabel || item.productName || ""}</div>
+            <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.productDisplayLabel || item.productName || ""}</div>
           </div>
           <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
             ${heldBadge}
           </div>
         </div>`;
-    }).join("");
+    };
+
+    // Sub-grouped by Project ID (11 Sep 2026, explicit request) — a
+    // project with several products each needing a PRN used to list its
+    // BOQs interleaved with every other project's, no visual grouping at
+    // all. Groups keep the queue's own sort order (first-seen project
+    // order), not re-sorted, so this stays consistent with whatever
+    // order the backend already returns.
+    const groups = [];
+    const groupByProject = new Map();
+    queue.forEach(item => {
+      let g = groupByProject.get(item.projectId);
+      if (!g) { g = { projectId: item.projectId, customerName: item.customerName || item.projectId, items: [] }; groupByProject.set(item.projectId, g); groups.push(g); }
+      g.items.push(item);
+    });
+    const groupsHtml = groups.map(g => `
+      <div style="padding:6px 12px; background:#fef9ec; border-bottom:1px solid #f1f5f9; border-top:1px solid #f1f5f9;">
+        <span style="font-family:monospace; font-weight:700; font-size:0.74rem; color:#92400e;">${escapeHtml(g.projectId)}</span>
+        <span style="font-size:0.74rem; color:#92400e;"> — ${escapeHtml(g.customerName)}</span>
+        <span style="font-size:0.68rem; color:#b45309; font-weight:700;"> (${g.items.length})</span>
+      </div>
+      ${g.items.map(rowHtml).join("")}`).join("");
 
     zone.innerHTML = `
       <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); overflow:hidden;">
         <div style="padding:10px 14px; font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; letter-spacing:0.5px; background:#fef3c7;">
           BOQs Needing a PRN (${queue.length})
         </div>
-        ${rows}
+        ${groupsHtml}
       </div>`;
   } catch(e) {
     zone.innerHTML = "";
