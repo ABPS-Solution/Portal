@@ -37,7 +37,9 @@ const QAIT_MILESTONE_LABELS = {
   dispatch_clearance: "Dispatch Clearance",
 };
 const QAIT_MILESTONE_CHAIN = ["customer_inspection", "inspection_clearance_note", "dispatch_clearance"];
-const QAIT_DOC_TYPES = ["Inspection Clearance Note", "Customer Inspection Report", "Call Letter"];
+// Narrowed to the two document types actually uploaded in practice
+// (11 Sep 2026, explicit request).
+const QAIT_DOC_TYPES = ["Inspection Call", "DI"];
 
 const qaitIsAdmin = () => localStorage.getItem("isUserAdminGlobal") === "true";
 
