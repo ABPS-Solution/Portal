@@ -27,6 +27,13 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
   }
   window.scrollTo(0, 0);
   setTimeout(() => window.scrollTo(0, 0), 50);
+  // Blanket sweep — same fix/reasoning as switchActiveDashboardModule's
+  // own copy of this line. The explicit list below never touched the
+  // Design enclosure panel or the Store/Production/etc standalone
+  // canvas-module-* panels, so reaching Purchase directly from one of
+  // those (without Return to Main Dashboard first) left it visible
+  // underneath.
+  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";

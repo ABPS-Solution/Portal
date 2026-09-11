@@ -1,6 +1,13 @@
 function navigateToDesignWorkspacePanel(targetModuleId) {
   window.scrollTo(0, 0);
   setTimeout(() => window.scrollTo(0, 0), 50);
+  // Blanket sweep — same fix/reasoning as switchActiveDashboardModule's
+  // own copy of this line. The explicit allDesignCanvases list below
+  // never touched the Purchase/Store enclosure panels or the standalone
+  // canvas-module-* panels, so reaching Design directly from one of
+  // those (without Return to Main Dashboard first) left it visible
+  // underneath.
+  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   // 1. Un-nest and minimize homepage structures
   document.getElementById("dashboard-view").style.display = "none";
   

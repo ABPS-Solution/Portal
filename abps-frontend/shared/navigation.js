@@ -193,8 +193,15 @@ async function navigateToModule(key) {
 function returnToDashboard() {
   boqFormIsDirty   = false;
   boqUpdateIsDirty = false;
-  collapseNewEntryDropdownFormExplicitly(); 
+  collapseNewEntryDropdownFormExplicitly();
   resetSequentialFormState();
+
+  // Blanket sweep — same fix/reasoning as switchActiveDashboardModule's
+  // own copy of this line, applied here too so "Return to Main
+  // Dashboard" can never leave a panel/enclosure stacked behind the
+  // dashboard view either. The long explicit list further below is now
+  // redundant with this but left in place.
+  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
 
   // Clear any stale "missing person" banner / no-match notice left over from a prior visit
   const bannerHookReset = document.getElementById("split-missing-person-banner-hook");
@@ -686,6 +693,12 @@ function handleDepartmentTabClick(key) {
 function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   window.scrollTo(0, 0);
   setTimeout(() => window.scrollTo(0, 0), 50);
+  // Blanket sweep — same fix/reasoning as switchActiveDashboardModule's
+  // own copy of this line. This function's own explicit list below
+  // never touched the Purchase or Design enclosure panels at all, so
+  // reaching Store directly from either (without Return to Main
+  // Dashboard first) left them visible underneath.
+  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   // Approve Excess Material Requests and Gate Entry are their own focused
   // workflows — the "A BOQ has been revised, check Revise PRN" reminder
   // isn't actionable from either screen, just noise on top of them.
@@ -789,6 +802,22 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   checkStorePRNRevisionReminder();
   checkMaterialRequirementDateReminder();
   checkProductionPlanningReminder();
+  // Blanket sweep, same proven pattern navigateToModule (marketing) and
+  // every navigateToXDashboard function already use — every canvas-
+  // module-* panel AND all three workspace-enclosure-panel containers
+  // (Design/Purchase/Store) carry the .workspace-panel class, so one
+  // querySelectorAll clears all of them regardless of how many new
+  // panels get added later. This is the actual fix for a whole recurring
+  // bug class (this function's own history has individually patched in
+  // fg-add/fg-approval/project-invoice/material-outward/qa-inspection-
+  // timeline/product-serial-tracking/daily-timeline/documentation/
+  // production-planning/the MRD panels one at a time, plus the Purchase
+  // and Store enclosure CONTAINERS were never swept here at all) —
+  // hand-maintaining an ever-growing explicit id list is exactly the
+  // whack-a-mole that let each of those leak in the first place. The
+  // explicit list below every branch still re-shows whatever it needs
+  // afterward, unaffected by running this first.
+  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   // 1. Hide the primary dashboard menu card view and inline popup filters
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
@@ -826,6 +855,19 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
 
   // 3. Hide all design engineering sub-module views panels
   if (document.getElementById("module-design-workspace-enclosure-panel")) document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
+  // Same leak as every canvas-module-* panel above, one level up: these
+  // two enclosure CONTAINERS (Purchase's 13 sub-panels, Store's own set)
+  // were never reset here at all — every branch below that needs one
+  // re-shows it explicitly, but a branch for an UNRELATED target
+  // (Daily Timeline, Documentation, Production Planning, a Design panel,
+  // etc.) never touches either container, so navigating there directly
+  // from a Purchase/Store screen without going back to the dashboard
+  // first left the enclosure sitting visible underneath the new panel —
+  // navigateToPurchaseWorkspacePanel/the store branches inside this same
+  // function each do their own internal sweep, but only when THAT is the
+  // path taken to reach them.
+  if (document.getElementById("module-purchase-workspace-enclosure-panel")) document.getElementById("module-purchase-workspace-enclosure-panel").style.display = "none";
+  if (document.getElementById("module-store-workspace-enclosure-panel")) document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
 
   // 4. ROUTE CRITERIA SWITCH GATING HARNESS
   if (targetCanvasModuleId === 'marketing-leads') {
