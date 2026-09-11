@@ -23,6 +23,22 @@
 let pplanData = null;              // { project, stage3Done, lanes }
 let pplanExpandedLanes = new Set();
 let pplanActiveTab = "submit";     // "submit" | "update"
+// Which non-terminal steps currently have their per-Job-Card checklist
+// expanded (11 Sep 2026, migration 192) — keyed "boqId::stepKey".
+let pplanExpandedStepJcs = new Set();
+
+// job_card_number is a long composite string ("JC_Set-<n>_<rest>") —
+// same shortening convention qa/product-serial-tracking.js's
+// psnShortJobCard already established for the same reason (the full
+// string is 100+ chars and every other column already carries the rest
+// of that information). Kept as this file's own copy rather than
+// calling that one directly — this file's own header comment already
+// commits to every name here being self-contained/pplan*-prefixed.
+function pplanShortJobCard(jobCardNumber) {
+  const s = (jobCardNumber || '').toString();
+  const m = /^(JC_Set-\d+)/.exec(s);
+  return m ? m[1] : s;
+}
 
 const PPLAN_DAYMS = 86400000;
 const pplanParse = s => new Date(s + "T00:00:00Z");
@@ -58,6 +74,7 @@ async function initializeProductionPlanningPanel() {
   pplanActiveTab = "submit";
   pplanData = null;
   pplanExpandedLanes = new Set();
+  pplanExpandedStepJcs = new Set();
   const input = document.getElementById("pplan-project-select-ta-input");
   if (input) input.value = "";
   const body = document.getElementById("pplan-body");
@@ -304,11 +321,22 @@ function pplanRenderLaneInitialPlanForm(lane) {
 // gets the same table as pure read-only display, no inputs, no buttons.
 function pplanRenderLaneSteps(lane, c, canWrite) {
   const today = pplanToday();
+  const allJcs = lane.allJobCards || [];
   const rows = lane.steps.map(s => {
     const done = !!s.actual;
     const eff = s.actual || s.target || s.planned;
     const late = !done && eff && eff < today;
     const currentTarget = s.target || s.planned;
+    const jcKey = `${lane.boqId}::${s.id}`;
+    const jcExpanded = pplanExpandedStepJcs.has(jcKey);
+
+    // Per-Job-Card progress (11 Sep 2026, migration 192) — every
+    // non-terminal step now, same shape the terminal step's own "X/Y JC
+    // in FG" chip has always had. s.planned gates this — an unplanned
+    // step has no meaningful Job Card list to show yet.
+    const progressChip = !s.terminal && s.planned
+      ? `<span onclick="event.stopPropagation(); pplanToggleStepJcs('${lane.boqId}','${s.id}')" style="cursor:pointer; display:inline-flex; align-items:center; gap:3px; font-size:0.68rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 7px; border-radius:10px; margin-left:6px; white-space:nowrap;" title="Click to show/hide each Job Card">${s.jcDone}/${s.jcTotal} done ${jcExpanded ? '▴' : '▾'}</span>`
+      : '';
 
     let actionCell;
     if (s.terminal) {
@@ -324,22 +352,26 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
         ? `<span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${pplanFmt(s.actual)}</span>`
         : `<span style="font-size:0.78rem; color:var(--muted);">View only</span>`;
     } else if (done) {
+      // "Mark Undone" here clears every Job Card on the step at once —
+      // same bulk convenience "Mark Done" always was. Correcting just
+      // ONE wrong Job Card is done via the per-JC checklist below
+      // instead (progressChip), not this button.
       actionCell = `
         <span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${pplanFmt(s.actual)}</span>
-        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem; background:#fff; color:var(--muted); border:1px solid var(--border);" onclick="pplanUnmarkStepDone('${lane.boqId}','${s.id}')">Mark Undone</button>
+        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem; background:#fff; color:var(--muted); border:1px solid var(--border);" onclick="pplanUnmarkStepDone('${lane.boqId}','${s.id}')">Mark Undone (all)</button>
         ${pplanIsAdmin() ? `<span style="display:inline-flex; align-items:center; gap:6px;">${pplanAsOfInputHtml(`${lane.boqId}-${s.id}`, s.actual)}<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem;" onclick="pplanMarkStepDone('${lane.boqId}','${s.id}')">Update (admin)</button></span>` : ''}`;
     } else {
       actionCell = `
         ${pplanAsOfInputHtml(`${lane.boqId}-${s.id}`)}
-        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.74rem;" onclick="pplanMarkStepDone('${lane.boqId}','${s.id}')">Mark Done</button>`;
+        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.74rem;" onclick="pplanMarkStepDone('${lane.boqId}','${s.id}')">Mark Done (all)</button>`;
     }
 
     const colBorder = "border-left:1px solid var(--border);";
-    return `
+    const mainRow = `
       <tr id="pplan-step-${lane.boqId}-${s.id}" style="border-bottom:1px solid var(--border);">
         <td style="width:24%; padding:5px 8px; font-size:0.98rem; font-weight:600; color:${late ? 'var(--warn)' : 'var(--text)'}; text-align:center;">
           <span style="display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; background:${done ? c : '#fff'}; border:2px solid ${late ? 'var(--warn)' : c}; vertical-align:middle;"></span>
-          ${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.78rem;">(automatic)</span>' : ''}
+          ${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.78rem;">(automatic)</span>' : ''}${progressChip}
         </td>
         <td style="width:13%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">
           ${pplanFmt(s.planned)}
@@ -352,6 +384,30 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
           <div style="display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px;">${actionCell}</div>
         </td>
       </tr>`;
+
+    // Per-Job-Card checklist row — one small pill per in-scope Job Card,
+    // green/checked once marked done on THIS step. Only rendered when
+    // expanded via the progress chip above, and only for a planned
+    // non-terminal step (matching progressChip's own gate).
+    const jcRow = (!s.terminal && s.planned && jcExpanded)
+      ? `<tr style="border-bottom:1px solid var(--border); background:var(--highlight-bg);">
+           <td colspan="5" style="padding:8px 10px;">
+             <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center;">
+               ${allJcs.map(jc => {
+                 const jcDone = (s.doneJobCards || []).includes(jc);
+                 const shortJc = escapeHtml(pplanShortJobCard(jc));
+                 const clickable = canWrite;
+                 const onclick = !clickable ? '' : jcDone
+                   ? `onclick="pplanUnmarkStepJcDone('${lane.boqId}','${s.id}','${jc.replace(/'/g, "\\'")}')"`
+                   : `onclick="pplanMarkStepJcDone('${lane.boqId}','${s.id}','${jc.replace(/'/g, "\\'")}')"`;
+                 return `<span ${onclick} title="${escapeHtml(jc)}" style="font-size:0.72rem; font-weight:700; font-family:monospace; padding:3px 9px; border-radius:12px; ${clickable ? 'cursor:pointer;' : ''} background:${jcDone ? c : '#fff'}; color:${jcDone ? '#fff' : c}; border:1.5px solid ${c};">${jcDone ? '✓ ' : ''}${shortJc}</span>`;
+               }).join('')}
+             </div>
+           </td>
+         </tr>`
+      : '';
+
+    return mainRow + jcRow;
   }).join("");
 
   const colBorder = "border-left:1px solid var(--border);";
@@ -411,6 +467,10 @@ async function pplanAdminOverridePlanned(boqId, stepKey) {
   } catch (e) { alert("Network error: " + e.message); }
 }
 
+// Marks every in-scope Job Card done on this step at once (the bulk
+// convenience "Mark Done" has always been) — see markProductPlanStepDone
+// (routes/productionPlanning.js) for how this is really just inserting
+// one product_plan_step_job_cards row per Job Card, then recomputing.
 async function pplanMarkStepDone(boqId, stepKey) {
   try {
     const asOfDate = pplanReadAsOf(`${boqId}-${stepKey}`);
@@ -418,20 +478,70 @@ async function pplanMarkStepDone(boqId, stepKey) {
     if (!data.success) { alert(data.error || "Could not mark this step done."); return; }
     const lane = pplanData.lanes.find(l => l.boqId === boqId);
     const step = lane && lane.steps.find(s => s.id === stepKey);
-    if (step) step.actual = data.actualDate;
+    if (step) {
+      step.actual = data.actualDate;
+      if (typeof data.jcTotal === "number") step.jcTotal = data.jcTotal;
+      if (typeof data.jcDone === "number") step.jcDone = data.jcDone;
+      if (lane) step.doneJobCards = (lane.allJobCards || []).slice();
+    }
     pplanRenderLanes();
   } catch (e) { alert("Network error: " + e.message); }
 }
 
-// Undoes an accidental/wrong Mark Done — everyday mistake correction,
-// not admin-only.
+// Undoes an accidental/wrong Mark Done for EVERY Job Card on this step
+// at once — everyday mistake correction, not admin-only. Correcting
+// just one wrong Job Card is done via the per-JC checklist
+// (pplanUnmarkStepJcDone) instead.
 async function pplanUnmarkStepDone(boqId, stepKey) {
   try {
     const data = await apFetch({ action: "unmarkProductPlanStepDone", operatorName: appActiveOperatorIdentityString, boqId, stepKey });
     if (!data.success) { alert(data.error || "Could not mark this step undone."); return; }
     const lane = pplanData.lanes.find(l => l.boqId === boqId);
     const step = lane && lane.steps.find(s => s.id === stepKey);
-    if (step) step.actual = null;
+    if (step) { step.actual = null; step.jcDone = 0; step.doneJobCards = []; }
+    pplanRenderLanes();
+  } catch (e) { alert("Network error: " + e.message); }
+}
+
+function pplanToggleStepJcs(boqId, stepKey) {
+  const key = `${boqId}::${stepKey}`;
+  if (pplanExpandedStepJcs.has(key)) pplanExpandedStepJcs.delete(key);
+  else pplanExpandedStepJcs.add(key);
+  pplanRenderLanes();
+}
+
+// Per-Job-Card mark/unmark (11 Sep 2026, migration 192) — the same
+// one-way-except-admin rule as the bulk routes, just scoped to one Job
+// Card. Keeps the step's checklist expanded across the re-render (the
+// toggle state lives in pplanExpandedStepJcs, untouched by this).
+async function pplanMarkStepJcDone(boqId, stepKey, jobCardNumber) {
+  try {
+    const asOfDate = pplanReadAsOf(`${boqId}-${stepKey}`);
+    const data = await apFetch({ action: "markProductPlanStepJobCardDone", operatorName: appActiveOperatorIdentityString, boqId, stepKey, jobCardNumber, asOfDate });
+    if (!data.success) { alert(data.error || "Could not mark this Job Card done."); return; }
+    const lane = pplanData.lanes.find(l => l.boqId === boqId);
+    const step = lane && lane.steps.find(s => s.id === stepKey);
+    if (step) {
+      step.actual = data.actualDate;
+      step.jcTotal = data.jcTotal; step.jcDone = data.jcDone;
+      const set = new Set(step.doneJobCards || []); set.add(jobCardNumber);
+      step.doneJobCards = Array.from(set);
+    }
+    pplanRenderLanes();
+  } catch (e) { alert("Network error: " + e.message); }
+}
+
+async function pplanUnmarkStepJcDone(boqId, stepKey, jobCardNumber) {
+  try {
+    const data = await apFetch({ action: "unmarkProductPlanStepJobCardDone", operatorName: appActiveOperatorIdentityString, boqId, stepKey, jobCardNumber });
+    if (!data.success) { alert(data.error || "Could not mark this Job Card undone."); return; }
+    const lane = pplanData.lanes.find(l => l.boqId === boqId);
+    const step = lane && lane.steps.find(s => s.id === stepKey);
+    if (step) {
+      step.actual = data.complete ? step.actual : null;
+      step.jcTotal = data.jcTotal; step.jcDone = data.jcDone;
+      step.doneJobCards = (step.doneJobCards || []).filter(j => j !== jobCardNumber);
+    }
     pplanRenderLanes();
   } catch (e) { alert("Network error: " + e.message); }
 }

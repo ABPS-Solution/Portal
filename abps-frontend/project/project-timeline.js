@@ -576,11 +576,19 @@ function ptlRenderLaneSteps(lane, c) {
     const eff = s.actual || s.target || s.planned;
     const late = !done && eff && eff < today;
     const currentTarget = s.target || s.planned;
+    // Per-Job-Card progress chip (11 Sep 2026, migration 192) — same
+    // "X/Y done" shape the terminal step's own "X/Y JC in FG" chip
+    // already had, just for every non-terminal step now. Read-only here
+    // (writes happen only in Production Planning) so this is display
+    // only, no click target.
+    const jcChip = !s.terminal && s.chip
+      ? `<span style="display:block; margin-top:2px; font-size:0.68rem; font-family:monospace; font-weight:700; color:${c};">${escapeHtml(s.chip)}</span>`
+      : '';
     const statusCell = s.terminal
       ? `<span style="font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(s.chip || '')}</span>`
       : done
-        ? `<span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${ptlFmt(s.actual)}</span>`
-        : `<span style="font-size:0.78rem; color:${late ? 'var(--warn)' : 'var(--muted)'};">${late ? 'Overdue' : 'Pending'}</span>`;
+        ? `<span style="font-size:0.78rem; color:${c}; font-weight:700;">Done ${ptlFmt(s.actual)}</span>${jcChip}`
+        : `<span style="font-size:0.78rem; color:${late ? 'var(--warn)' : 'var(--muted)'};">${late ? 'Overdue' : 'Pending'}</span>${jcChip}`;
 
     const colBorder = "border-left:1px solid var(--border);";
     return `
