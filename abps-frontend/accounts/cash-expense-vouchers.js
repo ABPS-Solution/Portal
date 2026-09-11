@@ -74,16 +74,25 @@ function cevRenderCard(v) {
             </tr></tbody>
           </table>
         </div>
-        <div style="max-width:320px;">
-          <label class="field-label">Actual Amount Spent *</label>
-          <input type="number" id="cev-actual-${v.expenseId}" min="0" placeholder="e.g. ${trimNum(v.advanceAmount)}"
-            style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
-          <div style="font-size:0.76rem; color:var(--muted); margin-top:5px;">${v.paymentMode === 'Online' ? 'Online — no pool balance is affected either way.' : 'Less than the advance comes back into the balance; more is pulled from it.'}</div>
-          <label class="field-label" style="margin-top:10px;">Voucher ID</label>
-          <input type="text" id="cev-voucherid-${v.expenseId}" placeholder="e.g. physical voucher number"
-            style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
-          <button class="nav-btn-styled" style="margin-top:10px;" onclick="cevCloseVoucher(${v.expenseId})">Submit &amp; Close Voucher</button>
+        <div style="display:flex; gap:16px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:180px;">
+            <label class="field-label">Actual Amount Spent *</label>
+            <input type="number" id="cev-actual-${v.expenseId}" min="0" placeholder="e.g. ${trimNum(v.advanceAmount)}"
+              style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; box-sizing:border-box;">
+            <div style="font-size:0.76rem; color:var(--muted); margin-top:5px;">${v.paymentMode === 'Online' ? 'Online — no pool balance is affected either way.' : 'Less than the advance comes back into the balance; more is pulled from it.'}</div>
+          </div>
+          <div style="flex:1; min-width:180px;">
+            <label class="field-label">Voucher ID</label>
+            <input type="text" id="cev-voucherid-${v.expenseId}" placeholder="e.g. physical voucher number"
+              style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; box-sizing:border-box;">
+          </div>
+          <div style="flex:1; min-width:180px;">
+            <label class="field-label">Remark</label>
+            <input type="text" id="cev-remark-${v.expenseId}" placeholder="Optional"
+              style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; box-sizing:border-box;">
+          </div>
         </div>
+        <button class="nav-btn-styled" style="margin-top:10px;" onclick="cevCloseVoucher(${v.expenseId})">Submit &amp; Close Voucher</button>
       </div>` : ''}
     </div>`;
 }
@@ -101,9 +110,11 @@ async function cevCloseVoucher(expenseId) {
   }
   const voucherIdInput = document.getElementById(`cev-voucherid-${expenseId}`);
   const voucherId = voucherIdInput ? voucherIdInput.value.trim() : "";
+  const remarkInput = document.getElementById(`cev-remark-${expenseId}`);
+  const remark = remarkInput ? remarkInput.value.trim() : "";
   showBlockingOverlay("Closing voucher...");
   try {
-    const data = await acFetch("closeCashExpenseVoucher", { expenseId, actualAmount: Number(actualAmount), voucherId });
+    const data = await acFetch("closeCashExpenseVoucher", { expenseId, actualAmount: Number(actualAmount), voucherId, remark });
     hideBlockingOverlay();
     if (!data.success) { showCashExpenseFeedback(data.error, "error"); return; }
     cevOpenVouchers = cevOpenVouchers.filter(v => v.expenseId !== expenseId);
