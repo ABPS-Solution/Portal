@@ -325,6 +325,36 @@
   .pill-stock-low { background: #fef3c7; color: #b45309; }
   .pill-stock-empty { background: #fee2e2; color: #b91c1c; }
 
+  /* ── Documentation articles — every docs/content/*.html file is
+     authored against these classes so every article looks consistent
+     without repeating inline styles per file. Server-authored content
+     only (routes/documentation.js), rendered via innerHTML same as
+     every other dynamic screen in this app. ── */
+  .doc-article { font-size: 0.92rem; line-height: 1.65; color: var(--text); max-width: 900px; }
+  .doc-article h2 { font-size: 1.15rem; color: var(--brand); margin: 26px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--border); }
+  .doc-article h2:first-child { margin-top: 0; }
+  .doc-article h3 { font-size: 0.98rem; color: var(--text); margin: 18px 0 8px; }
+  .doc-article p { margin: 0 0 12px; }
+  .doc-article ul, .doc-article ol { margin: 0 0 12px; padding-left: 22px; }
+  .doc-article li { margin-bottom: 5px; }
+  .doc-article li > ul, .doc-article li > ol { margin-top: 5px; margin-bottom: 0; }
+  .doc-article strong { color: var(--text); }
+  .doc-article code, .doc-article .doc-field { font-family: monospace; background: #f1f5f9; padding: 1px 5px; border-radius: 3px; font-size: 0.88em; }
+  .doc-callout { border-left: 4px solid var(--brand); background: var(--highlight-bg); border-radius: var(--radius); padding: 10px 14px; margin: 14px 0; font-size: 0.88rem; }
+  .doc-callout-warn { border-left-color: #b45309; background: #fffbeb; }
+  .doc-callout-error { border-left-color: #b91c1c; background: #fef2f2; }
+  .doc-callout-tip { border-left-color: #15803d; background: #f0fdf4; }
+  .doc-callout p:last-child { margin-bottom: 0; }
+  .doc-steps { counter-reset: doc-step; list-style: none; padding-left: 0; margin: 0 0 14px; }
+  .doc-steps > li { counter-increment: doc-step; position: relative; padding: 4px 0 4px 34px; margin-bottom: 8px; }
+  .doc-steps > li::before { content: counter(doc-step); position: absolute; left: 0; top: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--brand); color: #fff; font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .doc-table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 0.85rem; }
+  .doc-table th { text-align: left; background: #f8fafc; color: var(--muted); text-transform: uppercase; font-size: 0.7rem; padding: 7px 10px; border-bottom: 1px solid var(--border); }
+  .doc-table td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  .doc-toc { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 20px; }
+  .doc-toc a { font-size: 0.76rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: #f1f5f9; color: var(--brand); text-decoration: none; }
+  .doc-toc a:hover { background: var(--highlight-bg); }
+
   /* --- NAVIGATION CONTROLS & COMPACT INTERACTION BUTTONS --- */
   .navigation-action-header-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; background: #ffffff; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 48px;}
   .nav-btn-styled { background: var(--brand); color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: background 0.15s; outline: none; }
@@ -654,6 +684,7 @@
       <div class="user-profile-meta">
         <div class="user-full-name" id="display-full-name"></div>
       </div>
+      <button class="logout-btn" onclick="switchActiveDashboardModule('documentation')" title="Documentation" style="margin-right:6px;">📖 Docs</button>
       <button class="logout-btn" onclick="executeLogout()">Sign Out</button>
     </div>
   </header>
@@ -2170,6 +2201,17 @@
     <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
     <h2 class="panel-title">Daily Timeline</h2>
     <div id="dtl-mount"></div>
+    </div>
+  </div>
+
+  <div id="canvas-module-documentation" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitDocumentationBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <h2 class="panel-title">Documentation</h2>
+    <div id="doc-mount"></div>
     </div>
   </div>
 
@@ -5229,6 +5271,7 @@
 <script src="shared/drafts.js"></script>
 <script src="shared/typeahead.js"></script>
 <script src="shared/navigation.js"></script>
+<script src="shared/documentation.js"></script>
 <script src="project/manufacturing-clearance.js"></script>
 <script src="project/project-timeline.js"></script>
 <script src="project/daily-timeline.js"></script>

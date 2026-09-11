@@ -235,6 +235,7 @@ function returnToDashboard() {
   if(document.getElementById("canvas-module-qa-inspection-timeline")) document.getElementById("canvas-module-qa-inspection-timeline").style.display = "none";
   if(document.getElementById("canvas-module-product-serial-tracking")) document.getElementById("canvas-module-product-serial-tracking").style.display = "none";
   if(document.getElementById("canvas-module-daily-timeline")) document.getElementById("canvas-module-daily-timeline").style.display = "none";
+  if(document.getElementById("canvas-module-documentation")) document.getElementById("canvas-module-documentation").style.display = "none";
 
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("dashboard-view").style.display = "block"; 
@@ -818,6 +819,7 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   if (document.getElementById("canvas-module-qa-inspection-timeline")) document.getElementById("canvas-module-qa-inspection-timeline").style.display = "none";
   if (document.getElementById("canvas-module-product-serial-tracking")) document.getElementById("canvas-module-product-serial-tracking").style.display = "none";
   if (document.getElementById("canvas-module-daily-timeline")) document.getElementById("canvas-module-daily-timeline").style.display = "none";
+  if (document.getElementById("canvas-module-documentation")) document.getElementById("canvas-module-documentation").style.display = "none";
 
   // 3. Hide all design engineering sub-module views panels
   if (document.getElementById("module-design-workspace-enclosure-panel")) document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
@@ -991,6 +993,10 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     document.getElementById("dashboard-view").style.display = "none";
     const dtlCanvas = document.getElementById("canvas-module-daily-timeline");
     if (dtlCanvas) { dtlCanvas.style.display = "block"; initializeDailyTimelinePanel(); }
+  } else if (targetCanvasModuleId === 'documentation') {
+    document.getElementById("dashboard-view").style.display = "none";
+    const docCanvas = document.getElementById("canvas-module-documentation");
+    if (docCanvas) { docCanvas.style.display = "block"; initializeDocumentationPanel(); }
   } else if (targetCanvasModuleId === 'project-status') {
     document.getElementById("dashboard-view").style.display = "none";
     const psCanvas = document.getElementById("canvas-module-project-status");
