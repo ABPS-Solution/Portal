@@ -820,6 +820,9 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   if (document.getElementById("canvas-module-product-serial-tracking")) document.getElementById("canvas-module-product-serial-tracking").style.display = "none";
   if (document.getElementById("canvas-module-daily-timeline")) document.getElementById("canvas-module-daily-timeline").style.display = "none";
   if (document.getElementById("canvas-module-documentation")) document.getElementById("canvas-module-documentation").style.display = "none";
+  if (document.getElementById("canvas-module-production-planning")) document.getElementById("canvas-module-production-planning").style.display = "none";
+  if (document.getElementById("canvas-module-assign-material-requirement-date")) document.getElementById("canvas-module-assign-material-requirement-date").style.display = "none";
+  if (document.getElementById("canvas-module-revise-material-requirement-date")) document.getElementById("canvas-module-revise-material-requirement-date").style.display = "none";
 
   // 3. Hide all design engineering sub-module views panels
   if (document.getElementById("module-design-workspace-enclosure-panel")) document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";

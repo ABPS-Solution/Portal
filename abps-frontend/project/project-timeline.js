@@ -1608,9 +1608,6 @@ function ptlRenderCanvas(containerId) {
           labelLines.forEach((ln, li) => {
             G.push(`<text x="28" y="${y + 4.5 * ptlFS + (li - (labelLines.length - 1) / 2) * 13 * ptlFS}" font-size="${11.5 * ptlFS}" font-weight="700" fill="${gc}">${esc(ln)}</text>`);
           });
-          if (!l.steps.some(s => s.actual || s.target || s.planned)) {
-            G.push(`<text x="${gutterW + 14}" y="${y + 4 * ptlFS}" font-size="${10.5 * ptlFS}" font-weight="800" font-style="italic" fill="var(--muted)">Not planned yet</text>`);
-          }
         }
       });
     } else {
@@ -1629,12 +1626,6 @@ function ptlRenderCanvas(containerId) {
         labelLines.forEach((ln, li) => {
           G.push(`<text x="28" y="${y + 4.5 * ptlFS + (li - (labelLines.length - 1) / 2) * 13 * ptlFS}" font-size="${11.5 * ptlFS}" font-weight="800" fill="${lc}">${esc(ln)}</text>`);
         });
-        // BOQ authorized (so it has a lane/label at all) but Stage 4's
-        // initial plan hasn't been submitted yet - nothing dated to trace,
-        // so say so explicitly rather than leaving an unexplained empty row.
-        if (!l.steps.some(s => s.actual || s.target || s.planned)) {
-          G.push(`<text x="${gutterW + 14}" y="${y + 4 * ptlFS}" font-weight="800" font-style="italic" fill="var(--muted)" font-size="${10.5 * ptlFS}">Not planned yet</text>`);
-        }
       });
     }
     G.push(`</g>`);

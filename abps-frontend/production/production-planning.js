@@ -65,8 +65,29 @@ async function initializeProductionPlanningPanel() {
   const fb = document.getElementById("pplan-feedback");
   if (fb) fb.style.display = "none";
   switchProductionPlanningTab("submit");
-  if (typeof ensureSharedProjectTypeaheadData === "function") ensureSharedProjectTypeaheadData();
+  pplanLoadEligibleProjects();
   loadProductionPlanningQueue();
+}
+
+// Swaps window.sharedActiveProjectCodes/sharedProjectMeta (the generic
+// shared typeahead's data source, see shared/typeahead.js) to a set
+// scoped to THIS screen's real eligibility — Stage 3 (all BOQs/PRNs/RM
+// POs/PPS) fully released for the project, not merely "a BOQ exists" —
+// same swap-the-shared-globals pattern store/tickets.js's
+// ticketLoadProjectListForDepartment_ already uses for its own
+// Active-vs-Service eligible-project split. Not cached across visits (no
+// window._pplanEligibleProjectsCache) since Stage 3 completion changes
+// underneath this screen constantly and a stale cache would silently let
+// an ineligible project back into the search results.
+async function pplanLoadEligibleProjects() {
+  try {
+    const data = await apFetch({ action: "fetchProductionPlanningEligibleProjects" });
+    window.sharedActiveProjectCodes = data.success ? (data.projects || []) : [];
+    window.sharedProjectMeta = data.success ? (data.projectMeta || {}) : {};
+  } catch (e) {
+    window.sharedActiveProjectCodes = [];
+    window.sharedProjectMeta = {};
+  }
 }
 
 function switchProductionPlanningTab(tab) {
