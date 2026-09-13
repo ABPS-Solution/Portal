@@ -109,16 +109,17 @@ async function initializeDailyTimelinePanel() {
   dtlActiveDeptFilters = new Set(DTL_DEPT_ORDER);
   dtlDateFilter = null;
 
-  // Timeline entry point is a single "Timeline ›" button in the top-left
-  // (matching Project Timeline's own convention exactly — see
-  // project-timeline.js's ptl-header-left comment: Steps is the default
-  // landing view, so a two-way Steps/Timeline TAB toggle was redundant
-  // once already looking at Steps; the fullscreen overlay's own
-  // "‹ Steps" button is the only way back, same as here). Was previously
-  // a right-aligned two-button toggle pair.
+  // Timeline entry point is a single "Timeline ›" button in the panel's
+  // top-left, next to Return to Main Dashboard — same convention and same
+  // reasoning as Project Timeline's own ptl-header-left (Steps is the
+  // default landing view, so a two-way Steps/Timeline tab toggle would be
+  // redundant once already looking at Steps; the fullscreen overlay's own
+  // "‹ Steps" button is the way back). Previously lived inline at the top
+  // of the body instead, one row below Return to Main Dashboard.
+  const elHeaderLeft = document.getElementById('dtl-header-left');
+  if (elHeaderLeft) elHeaderLeft.innerHTML = `<button type="button" onclick="dtlSetViewMode('timeline')" title="Open Timeline" style="display:inline-flex; align-items:center; gap:5px; padding:7px 12px; font-size:0.82rem; font-weight:800; border:0; border-radius:var(--radius); background:var(--brand); color:#fff; cursor:pointer;">Timeline &rsaquo;</button>`;
   mount.innerHTML = `
     <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px;">
-      <button type="button" onclick="dtlSetViewMode('timeline')" title="Open Timeline" style="flex:none; display:inline-flex; align-items:center; gap:5px; padding:7px 12px; font-size:0.82rem; font-weight:800; border:0; border-radius:var(--radius); background:var(--brand); color:#fff; cursor:pointer;">Timeline &rsaquo;</button>
       <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; flex:none;">
         <button type="button" onclick="dtlStep(-1)" title="Previous" style="padding:8px 13px; border:0; background:#fff; cursor:pointer; font-weight:800; font-size:0.95rem;">&lsaquo;</button>
         <span id="dtl-range-label" style="padding:8px 14px; font-weight:700; font-size:0.85rem; background:#f7fafd; white-space:nowrap; border-left:1px solid var(--border); border-right:1px solid var(--border);"></span>
@@ -305,6 +306,10 @@ function dtlRenderRow(it, isOverdueRow) {
   if (it.projectId) contextParts.push(escapeHtml(it.projectId));
   if (it.companyName) contextParts.push(escapeHtml(it.companyName));
   if (!contextParts.length && it.context) contextParts.push(escapeHtml(it.context));
+  // planStep's own context is "Product Rating · ProjectID" — genuinely new
+  // information (the product) beyond the bare projectId already shown
+  // above, so it's worth a second line rather than being dropped.
+  else if (it.kind === 'planStep' && it.context) contextParts.push(escapeHtml(it.context));
   const hue = PTL_COLORS[it.dept] || 'var(--brand)';
   return `<div id="dtl-row-${escapeHtml(String(it.id))}" onclick="dtlOpenItemById('${escapeHtml(String(it.id)).replace(/'/g, "\\'")}')"
       style="display:flex; align-items:center; gap:12px; padding:9px 12px; border-bottom:1px solid var(--border); cursor:pointer;"
@@ -312,8 +317,9 @@ function dtlRenderRow(it, isOverdueRow) {
     <span style="flex:none; width:28px; height:28px; border-radius:50%; border:2.5px solid ${color}; background:${done ? color : '#fff'}; display:flex; align-items:center; justify-content:center; font-size:0.85rem; color:#fff; font-weight:800;">${done ? '&#10003;' : ''}</span>
     <span style="flex:none; width:3px; align-self:stretch; border-radius:2px; background:${hue};"></span>
     <span style="flex:1 1 auto; min-width:0;">
-      <span style="display:block; font-weight:700; font-size:0.86rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(it.label || '')}</span>
-      <span style="display:block; font-size:0.76rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${contextParts.join(' &middot; ')}</span>
+      <span style="display:block; font-weight:700; font-size:0.86rem; color:var(--text); overflow-wrap:break-word;">${escapeHtml(it.label || '')}</span>
+      <span style="display:block; font-size:0.76rem; color:var(--muted); overflow-wrap:break-word;">${contextParts.join(' &middot; ')}</span>
+      ${it.detail ? `<span style="display:block; font-size:0.74rem; color:var(--muted); overflow-wrap:break-word; margin-top:2px;">${escapeHtml(it.detail)}</span>` : ''}
     </span>
     <span style="flex:none; font-size:0.76rem; font-weight:700; color:${late || isOverdueRow ? '#e84545' : 'var(--muted)'};">${isOverdueRow ? `${daysOverdue}d overdue` : `Due ${formatOrdinalDate(it.due)}`}</span>
     ${it.owner ? `<span style="flex:none; font-size:0.68rem; font-weight:700; padding:3px 9px; border-radius:10px; background:#eef2ff; color:#3730a3; white-space:nowrap;">${escapeHtml(it.owner)}</span>` : ''}
@@ -418,22 +424,38 @@ function dtlOpenItem(it) {
           return;
         }
         break;
-      case 'followUp':
       case 'task':
-        // Marketing's follow-up/task board isn't a canvas-module screen
-        // with a stable id this file can target directly — best-effort
-        // via navigateToModule's "searchTasks" workspace panel if the
-        // viewer has that permission, else fall back.
+        // Marketing's Task board isn't a canvas-module screen with a
+        // stable id this file can target directly — navigate to Search
+        // Tasks by ABPS Engineer Name and Status, then actually set its
+        // filters (engineer + Assigned) and run the search, rather than
+        // leaving the viewer on a blank screen to re-filter by hand.
         if (typeof navigateToModule === 'function' && userPermissions && userPermissions.searchTasks) {
           navigateToModule('searchTasks');
+          dtlApplyTaskFilterAndSearch(it);
+          return;
+        }
+        break;
+      case 'followUp':
+        // Follow-ups live inside a Lead's own View Details, not a
+        // dedicated board — the closest real screen is Search Leads by
+        // ABPS Engineer Name and Status, filtered to this follow-up's
+        // owner so the right Lead is easy to find among the results.
+        if (typeof navigateToModule === 'function' && userPermissions && userPermissions.searchStatus) {
+          navigateToModule('searchStatus');
+          dtlApplyLeadEngineerFilterAndSearch(it);
           return;
         }
         break;
       case 'query':
-        if (typeof switchActiveDashboardModule === 'function') { switchActiveDashboardModule('customer-queries'); return; }
-        break;
-      case 'mrd':
-        if (typeof switchActiveDashboardModule === 'function') { switchActiveDashboardModule('assign-material-requirement-date'); return; }
+        // Land on Current Pending Queries specifically, not whatever tab
+        // the screen defaults to — that's where an open, undone query
+        // (the only kind this board ever shows) actually lives.
+        if (typeof switchActiveDashboardModule === 'function') {
+          switchActiveDashboardModule('customer-queries');
+          setTimeout(() => { if (typeof switchCqMode === 'function') switchCqMode('pending'); }, 60);
+          return;
+        }
         break;
       case 'poTranche':
         // PPS Tracking isn't a canvas-module screen either (it lives under
@@ -445,6 +467,42 @@ function dtlOpenItem(it) {
     }
   } catch (e) { /* fall through to Steps */ }
   fallback();
+}
+
+// dtlWaitForCheckboxes — the target screen's own engineer checkboxes are
+// built once at login (shared/apFetch.js), not re-rendered on every
+// navigateToModule call, so they're normally already there by the time
+// this runs. Polls briefly anyway rather than assuming, since the very
+// first navigation in a session can still be mid-render.
+function dtlWaitForCheckboxes(selector, cb, triesLeft = 20) {
+  if (document.querySelectorAll(selector).length > 0 || triesLeft <= 0) { cb(); return; }
+  setTimeout(() => dtlWaitForCheckboxes(selector, cb, triesLeft - 1), 100);
+}
+
+// Pre-fills Search Tasks by ABPS Engineer Name and Status with this
+// task's own owner (engineer) and the Assigned status, then runs the
+// search — clicking a task card used to land on a completely blank
+// screen the viewer had to re-filter by hand to see anything at all.
+function dtlApplyTaskFilterAndSearch(it) {
+  dtlWaitForCheckboxes('input[name="taskMatrixEngineer"]', () => {
+    document.querySelectorAll('input[name="taskMatrixEngineer"]').forEach(cb => { cb.checked = !!it.ownerKey && cb.value === it.ownerKey; });
+    document.querySelectorAll('input[name="taskMatrixStatus"]').forEach(cb => { cb.checked = (cb.value === 'Assigned'); });
+    document.querySelectorAll('input[name="taskMatrixDate"]').forEach(cb => { cb.checked = false; });
+    if (typeof executeTaskMatrixSearch === 'function') executeTaskMatrixSearch();
+  });
+}
+
+// Same idea for Search Leads by ABPS Engineer Name and Status, used for a
+// Follow-up card (Follow-ups don't have their own board — the Lead they
+// belong to is the closest real screen). Status is left unchecked
+// (matches on engineer alone) since a Follow-up's own status doesn't map
+// onto a single Lead status.
+function dtlApplyLeadEngineerFilterAndSearch(it) {
+  dtlWaitForCheckboxes('input[name="leadMatrixEngineerFilter"]', () => {
+    document.querySelectorAll('input[name="leadMatrixEngineerFilter"]').forEach(cb => { cb.checked = !!it.ownerKey && cb.value === it.ownerKey; });
+    document.querySelectorAll('input[name="leadMatrixStatusFilter"]').forEach(cb => { cb.checked = false; });
+    if (it.ownerKey && typeof executeLeadMatrixFilterSearch === 'function') executeLeadMatrixFilterSearch();
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -507,7 +565,11 @@ function dtlWrapToWidth(text, maxWidthPx, fontPx, weight, maxLines = 2) {
 // in the hover tooltip (dtlWireCanvasInteractions), just not on the node
 // itself.
 function dtlNodeLabelText(it) {
-  const proj = it.projectId || it.context || '';
+  // planStep's own context already carries "Product Rating · ProjectID"
+  // (gatherPlanStepItems, lib/dailyTimeline.js) — using it instead of the
+  // bare projectId is what actually answers "for what project AND what
+  // product is this step" on the node itself, not just in the tooltip.
+  const proj = it.kind === 'planStep' ? (it.context || it.projectId || '') : (it.projectId || it.context || '');
   return proj ? `${it.label} · ${proj}` : (it.label || '');
 }
 
@@ -636,10 +698,11 @@ function dtlRenderCanvas(containerId) {
   const dtlDayW = Math.min(1400, Math.max(160, (availW - PAD_L - LEAD - PAD_R) / dayCount));
   const R = 7.5 * (1 + (dtlFS - 1) * 0.55);
   const LABEL_LINE_H = 12;
-  // Week mode's labels can wrap to 2 lines now (dtlWrapToWidth, below) —
-  // one extra line-height of pitch keeps a 2-line label from overlapping
-  // the next row's own circle/text at the same column.
-  const SLOT_PITCH = dtlMode === 'week' ? 34 + LABEL_LINE_H : 34;
+  const LABEL_MAX_LINES = 3;
+  // Week mode's labels can wrap up to LABEL_MAX_LINES lines now
+  // (dtlWrapToWidth, below) — extra pitch per line keeps a wrapped label
+  // from overlapping the next row's own circle/text at the same column.
+  const SLOT_PITCH = dtlMode === 'week' ? 34 + LABEL_LINE_H * (LABEL_MAX_LINES - 1) : 34;
   const FIRST_OFF = 30;    // centre line -> first slot centre
   const colL = i => PAD_L + LEAD + i * dtlDayW;
   const nodeXOf = i => colL(i) + Math.min(140, dtlDayW * 0.18);
@@ -770,7 +833,7 @@ function dtlRenderCanvas(containerId) {
         // bleeding into the next day's column — the whole point of the
         // divider lines above.
         const availW = colL(col.i) + dtlDayW - textX - 6;
-        const lines = dtlWrapToWidth(label, Math.max(24, availW), 11, labelWeight, 2);
+        const lines = dtlWrapToWidth(label, Math.max(24, availW), 11, labelWeight, LABEL_MAX_LINES);
         lines.forEach((ln, li) => {
           svg += `<text x="${textX}" y="${y + 4 + li * LABEL_LINE_H}" font-size="11" font-weight="${labelWeight}" fill="${labelFill}">${escapeHtml(ln)}</text>`;
         });
@@ -810,11 +873,18 @@ function dtlWireCanvasInteractions(sc, clickMap) {
         // clicking through. projectId/companyName take priority; context
         // (marketing items, which have no projectId) is the fallback.
         const projectLine = [it.projectId, it.companyName].filter(Boolean).join(' · ') || it.context || null;
-        tip.innerHTML = `<b style="display:block; font-size:0.82rem; font-weight:700; margin-bottom:6px;">${escapeHtml(it.label || '')}</b>
-          ${projectLine ? `<div style="font-size:0.74rem; color:var(--muted);">Project: <span style="color:var(--text); font-weight:600;">${escapeHtml(projectLine)}</span></div>` : ''}
+        // Product/context line: shown separately whenever it carries more
+        // than what projectLine already says (e.g. a planStep's context is
+        // "Product Rating · ProjectID" — genuinely new information, the
+        // product name, not just a repeat of the project/company line).
+        const contextLine = (it.context && it.context !== projectLine) ? it.context : null;
+        tip.innerHTML = `<b style="display:block; font-size:0.82rem; font-weight:700; margin-bottom:6px; white-space:normal; overflow-wrap:break-word;">${escapeHtml(it.label || '')}</b>
+          ${projectLine ? `<div style="font-size:0.74rem; color:var(--muted); white-space:normal; overflow-wrap:break-word;">Project: <span style="color:var(--text); font-weight:600;">${escapeHtml(projectLine)}</span></div>` : ''}
+          ${contextLine ? `<div style="font-size:0.74rem; color:var(--muted); white-space:normal; overflow-wrap:break-word;">Product: <span style="color:var(--text); font-weight:600;">${escapeHtml(contextLine)}</span></div>` : ''}
           <div style="font-size:0.74rem; color:var(--muted);">Department: <span style="color:var(--text);">${escapeHtml(PTL_DEPT_NAME[it.dept] || it.dept)}</span></div>
           <div style="font-size:0.74rem; color:var(--muted);">Due: <span style="color:var(--text);">${escapeHtml(formatOrdinalDate(it.due))}</span></div>
           ${it.owner ? `<div style="font-size:0.74rem; color:var(--muted);">Owner: <span style="color:var(--text);">${escapeHtml(it.owner)}</span></div>` : ''}
+          ${it.detail ? `<div style="margin-top:5px; font-size:0.74rem; color:var(--muted); white-space:normal; overflow-wrap:break-word;">${escapeHtml(it.detail)}</div>` : ''}
           ${it.late ? `<div style="margin-top:5px; font-size:0.74rem; font-weight:700; color:#e84545;">Late</div>` : (it.done ? `<div style="margin-top:5px; font-size:0.74rem; font-weight:700; color:#15803d;">Done</div>` : '')}`;
       }
       tip.style.opacity = '1';
