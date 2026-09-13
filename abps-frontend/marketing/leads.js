@@ -1308,6 +1308,24 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
       if (document.getElementById(`card-lbl-name-${leadRef}`)) document.getElementById(`card-lbl-name-${leadRef}`).textContent = updatedNameText;
       if (document.getElementById(`card-lbl-pos-${leadRef}`)) document.getElementById(`card-lbl-pos-${leadRef}`).textContent = updatedPositionText;
       if (document.getElementById(`card-lbl-status-${leadRef}`)) document.getElementById(`card-lbl-status-${leadRef}`).textContent = updatedStatusText;
+
+      // The collapse/expand toggle re-reads leadMap from a JSON blob baked
+      // into this card's onclick attribute at search-render time — closing
+      // and reopening the drawer without this patch re-decodes the
+      // pre-save snapshot, silently reverting every field back to its old
+      // value even though the save itself succeeded server-side. Patch
+      // that baked-in blob in place with what was just saved.
+      const headerRowEl = document.querySelector(`#contact-parent-wrapper-${leadRef} .contact-summary-header-row`);
+      if (headerRowEl) {
+        const onclickMatch = (headerRowEl.getAttribute('onclick') || '').match(/toggleContactExpansionView\('([^']*)',\s*`([\s\S]*?)`\)/);
+        if (onclickMatch) {
+          try {
+            const refreshedLeadMap = JSON.parse(decodeURIComponent(onclickMatch[2]));
+            Object.assign(refreshedLeadMap, fieldsPayload, companyFieldsPayload);
+            headerRowEl.setAttribute('onclick', `toggleContactExpansionView('${onclickMatch[1]}', \`${encodeURIComponent(JSON.stringify(refreshedLeadMap))}\`)`);
+          } catch(e) { console.error("Failed to refresh cached lead snapshot for reopen:", e); }
+        }
+      }
     }
   } catch(e) { alert(e.message); } finally { if(btn) { btn.disabled = false; btn.innerHTML = "Save Modifications"; } }
 }
