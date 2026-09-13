@@ -11,7 +11,16 @@ function renderBOQLimitExceededApprovalRequestWorkspaceBlock(materialsList) {
   // resolve to a different element than the first call, leaving the
   // original box orphaned in the DOM instead of being replaced.
   const bottomActionControlsRow = document.getElementById("shopping-basket-preview-table").parentElement.nextElementSibling;
-  
+
+  // This whole block gets rebuilt from scratch on every basket change
+  // (renderDraftBasketTableViewportRows calls this again on ANY add/remove,
+  // not just the first over-limit item) — adding another material used to
+  // silently wipe whatever the operator had already typed here, since a
+  // fresh empty <textarea> replaces the old one every time. Preserve it
+  // across the rebuild.
+  const existingNotesField = document.getElementById("boq-increase-justification-notes-input");
+  const preservedJustificationText = existingNotesField ? existingNotesField.value : "";
+
   if (inlineFeedbackBanner) {
     inlineFeedbackBanner.style.cssText = "display: block; background: #fffaf0; border-left: 4px solid #dd6b20; color: #c05621; padding: 12px; font-size: 0.82rem; font-weight: 700; text-align: left; margin-bottom: 12px;";
     inlineFeedbackBanner.innerHTML = `Requested Materials <strong>{ ${materialsList.join(", ")} }</strong> are over the Allotted BOQ for this project. Send an Approval request to Admin or Reduce the requested quantity.`;
@@ -28,6 +37,10 @@ function renderBOQLimitExceededApprovalRequestWorkspaceBlock(materialsList) {
       </div>
     </div>
   `;
+
+  if (preservedJustificationText) {
+    document.getElementById("boq-increase-justification-notes-input").value = preservedJustificationText;
+  }
 }
 
 function exitStoreWorkspacePanelBackToMenu() {

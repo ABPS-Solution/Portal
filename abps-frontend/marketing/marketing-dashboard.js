@@ -78,7 +78,10 @@ function mdRenderDashboard(data) {
   // bar). Live snapshot, same "not Resolved" open-tasks filter as the
   // stat tile above, split by whether target_date has already passed.
   if (mdChartPotential) mdChartPotential.destroy();
-  const priorityLabels = Object.keys(taskPriorityOpenCounts);
+  // "Unspecified" (a task with no priority set) is excluded from the axis
+  // by explicit request — the backend still counts it internally, this
+  // chart just doesn't plot that bucket.
+  const priorityLabels = Object.keys(taskPriorityOpenCounts).filter(k => k !== "Unspecified");
   const ctxPotential = document.getElementById("md-chart-potential").getContext("2d");
   mdChartPotential = new Chart(ctxPotential, {
     type: "bar",
