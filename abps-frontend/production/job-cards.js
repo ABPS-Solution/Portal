@@ -407,15 +407,29 @@ async function handleCreateTicketProjectChange(chosenProjectVal) {
 
   try {
     const data = await apFetch({ action:"fetchJobCardsForProject", projectId: chosenProjectVal });
-    // Extract unique BOQ IDs from job cards
+    // Cache job cards for BOQ filtering
+    window.ticketJobCardsCache = data.jobCards || [];
+
+    // Outgoing Use is the single source of truth for which department's
+    // material is being drawn — whether it was auto-locked to the
+    // requester's own Production sub-department or picked by hand (Store/
+    // Admin). Narrow the BOQ list to that department's own BOQs only, so
+    // a Capacitor person never sees a Reactor BOQ in this dropdown and
+    // vice versa. Service draws from the free pool with no single owning
+    // department, so it keeps seeing every BOQ, same as before this
+    // filter existed.
+    const outgoingUse = document.getElementById("ticket-department-outgoing-dropdown")?.value || "";
+    const scopedJobCards = (outgoingUse && outgoingUse !== "Service")
+      ? (data.jobCards || []).filter(jc => jc.department === outgoingUse)
+      : (data.jobCards || []);
+
+    // Extract unique BOQ IDs from the (possibly department-scoped) job cards
     const boqMap = {};
-    (data.jobCards || []).forEach(jc => {
+    scopedJobCards.forEach(jc => {
       if (jc.boqId && !boqMap[jc.boqId]) {
         boqMap[jc.boqId] = jc.boqId;
       }
     });
-    // Cache job cards for BOQ filtering
-    window.ticketJobCardsCache = data.jobCards || [];
 
     if (Object.keys(boqMap).length === 0) {
       ticketBOQDisplayReset("⚠ No BOQ IDs found for this project");
