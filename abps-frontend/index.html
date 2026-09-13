@@ -330,7 +330,7 @@
      without repeating inline styles per file. Server-authored content
      only (routes/documentation.js), rendered via innerHTML same as
      every other dynamic screen in this app. ── */
-  .doc-article { font-size: 0.92rem; line-height: 1.65; color: var(--text); max-width: 900px; }
+  .doc-article { font-size: 0.92rem; line-height: 1.65; color: var(--text); max-width: none; }
   .doc-article h2 { font-size: 1.15rem; color: var(--brand); margin: 26px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--border); }
   .doc-article h2:first-child { margin-top: 0; }
   .doc-article h3 { font-size: 0.98rem; color: var(--text); margin: 18px 0 8px; }
@@ -684,7 +684,7 @@
       <div class="user-profile-meta">
         <div class="user-full-name" id="display-full-name"></div>
       </div>
-      <button class="logout-btn" onclick="switchActiveDashboardModule('documentation')" title="Documentation" style="margin-right:6px;">📖 Docs</button>
+      <button class="logout-btn" onclick="switchActiveDashboardModule('documentation')" title="Documentation" style="margin-right:6px;">Docs</button>
       <button class="logout-btn" onclick="executeLogout()">Sign Out</button>
     </div>
   </header>

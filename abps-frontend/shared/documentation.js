@@ -63,7 +63,7 @@ function docRenderNav() {
 
   let html = '';
   if (docNavData.gettingStarted) {
-    html += docNavLinkHtml(docNavData.gettingStarted.key, '🚀 Getting Started', true);
+    html += docNavLinkHtml(docNavData.gettingStarted.key, 'Getting Started', true);
   }
 
   (docNavData.departments || []).forEach(dept => {
