@@ -35,8 +35,37 @@ function resolveEmailLeadEngineerName(inboxAccount) {
   return entry ? entry.engineerName : "Not a recognised ABPS mailbox";
 }
 
+// "Review rejected" mode lists the inbound mail the AI decided was NOT a
+// lead. Until this existed a confidently-wrong rejection was invisible
+// forever (only a classifier ERROR failed open into the feed), so a
+// genuine enquiry dropped by the classifier could never be noticed.
+let emailLeadsReviewRejected = false;
+
 function getCurrentEmailLeadsFilters() {
-  return { engineerEmail: activeEmailLeadsEngineerFilter, dateFilter: activeEmailLeadsDateFilter };
+  return {
+    engineerEmail: activeEmailLeadsEngineerFilter,
+    dateFilter: activeEmailLeadsDateFilter,
+    reviewRejected: emailLeadsReviewRejected,
+  };
+}
+
+function toggleEmailLeadsReviewRejected() {
+  emailLeadsReviewRejected = !emailLeadsReviewRejected;
+  renderEmailLeadsReviewToggle();
+  refetchEmailLeadsListWithFilters();
+}
+
+function renderEmailLeadsReviewToggle() {
+  const wrap = document.getElementById("email-leads-review-toggle");
+  if (!wrap) return;
+  const on = emailLeadsReviewRejected;
+  wrap.innerHTML = `
+    <div onclick="toggleEmailLeadsReviewRejected()" title="Show the inbound emails the AI decided were not leads, so a genuine enquiry it rejected can still be spotted"
+      style="cursor:pointer; user-select:none; border:1.5px solid ${on ? "var(--warn)" : "var(--border)"};
+             background:${on ? "#fff7ed" : "#fff"}; color:${on ? "var(--warn)" : "var(--text)"};
+             border-radius:6px; padding:6px 12px; font-size:0.78rem; font-weight:700;">
+      ${on ? "Viewing: Not classified as leads" : "Review rejected emails"}
+    </div>`;
 }
 
 function selectEmailLeadsEngineerFilter(encodedEmail) {
@@ -176,6 +205,11 @@ async function executeInboundEmailSyncPipelineFetch() {
   // panel-open entry point) so the pills exist before the first fetch
   // resolves, not just after selectEmailLeadsDateFilter is first clicked.
   renderEmailLeadsDatePills();
+  // Always re-entered in normal (leads) mode: the rejected-review view is
+  // a deliberate, temporary look at what the AI threw away, and leaving a
+  // panel stuck in it across navigation would quietly hide the real feed.
+  emailLeadsReviewRejected = false;
+  renderEmailLeadsReviewToggle();
   const companySearchInput = document.getElementById("email-leads-company-search-input");
   if (companySearchInput) companySearchInput.value = activeEmailLeadsCompanySearch;
   // syncBtn no longer exists — the "Sync Inbox" button was retired since scanning now
@@ -384,6 +418,15 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
       ? `<span title="${escapeHtml(repliedTitle)}" style="flex-shrink:0; font-size:0.7rem; font-weight:800; letter-spacing:0.02em; text-transform:uppercase; padding:3px 10px; border-radius:20px; white-space:nowrap; background:#dcfce7; color:#166534;">Replied</span>`
       : "";
 
+    // One card per CONVERSATION: the server collapses a thread to its
+    // newest unactioned message and reports how many are behind it, so a
+    // long back-and-forth no longer renders as several near-identical
+    // cards. Only shown when there genuinely is more than one.
+    const convCount = Number(mail.conversationCount) || 1;
+    const conversationBadgeHtml = convCount > 1
+      ? `<span title="${convCount} messages in this conversation are still unfiled. The newest is shown." style="flex-shrink:0; font-size:0.7rem; font-weight:800; letter-spacing:0.02em; text-transform:uppercase; padding:3px 10px; border-radius:20px; white-space:nowrap; background:#e0e7ff; color:#3730a3;">${convCount} in thread</span>`
+      : "";
+
     // FIXED: Enforce role visibility restriction boundaries to guard delete actions
     const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
     const deleteActionHtml = isAdminUser
@@ -397,6 +440,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
           <span style="font-size:0.88rem; color:var(--text); font-weight:600;">· ${escapeHtml(mail.extractedContactName)}</span>
         </div>
         <span style="flex-shrink:0; display:flex; gap:6px; align-items:center;">
+          ${conversationBadgeHtml}
           ${repliedBadgeHtml}
           <span style="font-size:0.7rem; font-weight:800; letter-spacing:0.02em; text-transform:uppercase; padding:3px 10px; border-radius:20px; white-space:nowrap; background:${ageColor.chipBg}; color:${ageColor.chipText};">${escapeHtml(age.label)}</span>
         </span>
