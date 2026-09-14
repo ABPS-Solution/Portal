@@ -3,17 +3,20 @@
 //
 // Cross-project, department-grouped "what is due today, across
 // everything" board — the inverse question of project-timeline.js (which
-// answers "where is THIS project?" one project at a time). Two toggles,
-// same pattern as Project Timeline: a Steps list grouped by DEPARTMENT
-// (not stage) and a Timeline SVG canvas. In This Week mode, each day gets
-// its own bordered column (a light vertical divider, not a hard wall) so
-// a day's own items stay visually inside that day rather than bleeding
-// into the next one — item labels wrap to fit the column instead. Zoom
-// is deliberately limited to Today (1 day) and This Week (7 days,
-// Mon-Sun — Sunday is shown, colored as a rest day, same as Project
-// Timeline's own canvas) — wider windows put too much on screen at once
-// for a cross-project view; volume within a day is handled by a hard
-// per-column slot cap (DTL_MAX_SLOTS) + overflow routing back to Steps.
+// answers "where is THIS project?" one project at a time). A Steps list
+// grouped by DEPARTMENT (not stage), with a project/lead badge on every
+// row so it's always clear what the item is against. Zoom is limited to
+// Today (1 day) and This Week (7 days, Mon-Sun — Sunday is shown,
+// colored as a rest day, same as Project Timeline's own canvas) — wider
+// windows put too much on screen at once for a cross-project view.
+//
+// A Timeline SVG canvas view (one column per day, department-clustered)
+// used to sit alongside Steps here, faithful to Project Timeline's own
+// canvas grammar. Removed 14 Sep 2026 (explicit request): with 40-50+
+// items due on a busy day it stopped being readable, and Steps was the
+// view actually in use. If a cross-project visual timeline is wanted
+// again, don't just restore this — the same volume problem would recur;
+// design for the real item counts first.
 //
 // Every top-level name here is prefixed dtl/DTL_ to avoid colliding with
 // project-timeline.js's ptl* globals or any other file — this app is one
@@ -34,24 +37,15 @@ const DTL_MODES = { today: 1, week: 7 };
 // Accounts/HR/Service own no project-dated work today, see the plan's
 // §4 "explicitly out of scope").
 const DTL_DEPT_ORDER = ['marketing', 'project', 'design', 'purchase', 'store', 'qa', 'production'];
-// Hard per-day-column slot cap on the Timeline canvas — content-driven
-// height with real vertical scroll (not shrink-to-fit) still needs a
-// ceiling, or one unusually busy day would make every OTHER day's
-// spacing microscopic. ≈1,850px tall at the cap.
-const DTL_MAX_SLOTS = 24;
 
 let dtlAnchorDate = null;          // "YYYY-MM-DD" — the date/week the view is centred on
 let dtlMode = 'today';             // 'today' | 'week'
-let dtlViewMode = 'steps';         // 'steps' | 'timeline'
 let dtlData = null;                // { items, overdue, truncated, holidays }
 let dtlItemsById = new Map();      // id -> item, merged from items + overdue, for click routing
 let dtlDays = [];                  // array of "YYYY-MM-DD" for the current window
-let dtlIndexMap = {};              // iso -> index within dtlDays
 let dtlCollapsedDepts = new Set(); // Steps view section collapse state, keyed by dept or '__overdue__'
 let dtlActiveDeptFilters = new Set(DTL_DEPT_ORDER); // all on by default — this is a coordination view
-let dtlDateFilter = null;          // set by a Timeline "+N more" pill to scope Steps to one date
-let dtlFS = 1;                     // font/geometry scale — fixed at 1, no zoom-level control on this screen
-let dtlCanvasContainerId = 'dtl-fs-scroller';
+let dtlDateFilter = null;          // scopes Steps to one date; currently only ever cleared, no UI sets it since the Timeline "+N more" pill that used to set it was removed
 let dtlLastHighlightEl = null;
 
 // ── Small local helpers (deliberately not sharing ptl*'s versions — those
@@ -100,24 +94,21 @@ async function initializeDailyTimelinePanel() {
   if (!mount) return;
   dtlAnchorDate = dtlToday();
   dtlMode = 'today';
-  dtlViewMode = 'steps';
   dtlData = null;
   dtlItemsById = new Map();
   dtlDays = [];
-  dtlIndexMap = {};
   dtlCollapsedDepts = new Set();
   dtlActiveDeptFilters = new Set(DTL_DEPT_ORDER);
   dtlDateFilter = null;
 
-  // Timeline entry point is a single "Timeline ›" button in the panel's
-  // top-left, next to Return to Main Dashboard — same convention and same
-  // reasoning as Project Timeline's own ptl-header-left (Steps is the
-  // default landing view, so a two-way Steps/Timeline tab toggle would be
-  // redundant once already looking at Steps; the fullscreen overlay's own
-  // "‹ Steps" button is the way back). Previously lived inline at the top
-  // of the body instead, one row below Return to Main Dashboard.
+  // The Timeline SVG canvas view was removed 14 Sep 2026 (explicit
+  // request) — with 40-50+ items due on a busy day, the fan-out canvas
+  // stopped being readable, and Steps (grouped by department, one row
+  // per item) is the view that's actually used. Steps is now the only
+  // view; dtl-header-left is left empty rather than removed from
+  // index.html, in case a different header-left action is wanted later.
   const elHeaderLeft = document.getElementById('dtl-header-left');
-  if (elHeaderLeft) elHeaderLeft.innerHTML = `<button type="button" onclick="dtlSetViewMode('timeline')" title="Open Timeline" style="display:inline-flex; align-items:center; gap:5px; padding:7px 12px; font-size:0.82rem; font-weight:800; border:0; border-radius:var(--radius); background:var(--brand); color:#fff; cursor:pointer;">Timeline &rsaquo;</button>`;
+  if (elHeaderLeft) elHeaderLeft.innerHTML = '';
   mount.innerHTML = `
     <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px;">
       <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; flex:none;">
@@ -136,7 +127,6 @@ async function initializeDailyTimelinePanel() {
     <div id="dtl-counts" style="margin-bottom:10px; font-size:0.8rem; color:var(--muted); display:flex; align-items:center; gap:10px; flex-wrap:wrap;"></div>
     <div id="dtl-steps-wrap"></div>
   `;
-  dtlSetViewMode('steps');
   await dtlLoad();
 }
 
@@ -197,7 +187,6 @@ function dtlToggleDeptFilter(dept) {
   if (chipsEl) chipsEl.innerHTML = dtlDeptChipsHtml();
   dtlRenderCounts();
   dtlRenderSteps();
-  dtlRefreshTimelineView();
 }
 
 async function dtlLoad() {
@@ -207,8 +196,6 @@ async function dtlLoad() {
   if (fb) fb.style.display = 'none';
 
   dtlDays = dtlComputeWindow();
-  dtlIndexMap = {};
-  dtlDays.forEach((d, i) => { dtlIndexMap[d] = i; });
   dtlUpdateModeButtons();
   const label = document.getElementById('dtl-range-label');
   if (label) label.textContent = dtlRangeLabelText();
@@ -248,7 +235,6 @@ async function dtlLoad() {
 
   dtlRenderCounts();
   dtlRenderSteps();
-  dtlRefreshTimelineView();
 }
 
 function dtlRenderCounts() {
@@ -272,18 +258,6 @@ function dtlClearDateFilter() {
   dtlRenderSteps();
 }
 
-function dtlSetViewMode(mode) {
-  dtlViewMode = mode;
-  const stepsWrap = document.getElementById('dtl-steps-wrap');
-  const tabTimeline = document.getElementById('dtl-tab-timeline');
-  const tabSteps = document.getElementById('dtl-tab-steps');
-  if (stepsWrap) stepsWrap.style.display = mode === 'steps' ? 'block' : 'none';
-  if (tabTimeline) { tabTimeline.style.background = mode === 'timeline' ? 'var(--brand)' : '#fff'; tabTimeline.style.color = mode === 'timeline' ? '#fff' : 'var(--text)'; }
-  if (tabSteps) { tabSteps.style.background = mode === 'steps' ? 'var(--brand)' : '#fff'; tabSteps.style.color = mode === 'steps' ? '#fff' : 'var(--text)'; }
-  if (mode === 'timeline') dtlOpenFullscreen();
-  else dtlCloseFullscreen();
-}
-
 // ═══════════════════════════════════════════════════════════════════════
 // Steps view — grouped by department (mirrors ptlRenderList/
 // ptlRenderStageRows structurally, department substituted for stage)
@@ -295,6 +269,24 @@ function dtlToggleDeptCollapse(key) {
   dtlRenderSteps();
 }
 
+// dtlStripToken — every source builds `context` by gluing projectId and/or
+// companyName onto some descriptive text (see lib/dailyTimeline.js — the
+// glue order varies per source: "projectId · companyName" for milestones,
+// "companyName · contactPerson" for tasks/follow-ups, "productName rating
+// · projectId" for planStep). Since projectId/companyName now get their
+// own badge below, strip a leading/trailing exact match of either out of
+// context before showing it, so the same id/name doesn't appear twice in
+// one row — this was the actual cause of a BOQ id showing up twice on a
+// planStep row (once as itself, once baked into the end of its context).
+function dtlStripToken(ctx, token) {
+  if (!token || !ctx) return ctx;
+  const prefix = token + ' · ', suffix = ' · ' + token;
+  if (ctx.startsWith(prefix)) return ctx.slice(prefix.length);
+  if (ctx.endsWith(suffix)) return ctx.slice(0, -suffix.length);
+  if (ctx === token) return '';
+  return ctx;
+}
+
 function dtlRenderRow(it, isOverdueRow) {
   const late = !!it.late, done = !!it.done;
   const color = late ? '#e84545' : (done ? 'var(--accent)' : PTL_SCHEDULED_GREY);
@@ -302,14 +294,20 @@ function dtlRenderRow(it, isOverdueRow) {
   const daysOverdue = isOverdueRow
     ? (it.daysOverdue != null ? it.daysOverdue : Math.max(0, Math.round((Date.parse(today) - Date.parse(it.due)) / DTL_DAYMS)))
     : null;
-  const contextParts = [];
-  if (it.projectId) contextParts.push(escapeHtml(it.projectId));
-  if (it.companyName) contextParts.push(escapeHtml(it.companyName));
-  if (!contextParts.length && it.context) contextParts.push(escapeHtml(it.context));
-  // planStep's own context is "Product Rating · ProjectID" — genuinely new
-  // information (the product) beyond the bare projectId already shown
-  // above, so it's worth a second line rather than being dropped.
-  else if (it.kind === 'planStep' && it.context) contextParts.push(escapeHtml(it.context));
+
+  // The one thing every row must make instantly clear: what project (or,
+  // for lead-scoped Marketing items with no project yet, what company/
+  // lead) this is against. projectId wins when present; companyName is
+  // the practical stand-in for task/follow-up items, which have no
+  // separate lead-id string in this dataset's shape.
+  const badgeText = it.projectId || it.companyName || '';
+  const badgeIsProject = !!it.projectId;
+
+  const descParts = [];
+  if (it.companyName && it.companyName !== badgeText) descParts.push(escapeHtml(it.companyName));
+  let ctx = dtlStripToken(dtlStripToken(it.context || '', it.projectId), it.companyName).trim();
+  if (ctx) descParts.push(escapeHtml(ctx));
+
   const hue = PTL_COLORS[it.dept] || 'var(--brand)';
   return `<div id="dtl-row-${escapeHtml(String(it.id))}" onclick="dtlOpenItemById('${escapeHtml(String(it.id)).replace(/'/g, "\\'")}')"
       style="display:flex; align-items:center; gap:12px; padding:9px 12px; border-bottom:1px solid var(--border); cursor:pointer;"
@@ -317,8 +315,11 @@ function dtlRenderRow(it, isOverdueRow) {
     <span style="flex:none; width:28px; height:28px; border-radius:50%; border:2.5px solid ${color}; background:${done ? color : '#fff'}; display:flex; align-items:center; justify-content:center; font-size:0.85rem; color:#fff; font-weight:800;">${done ? '&#10003;' : ''}</span>
     <span style="flex:none; width:3px; align-self:stretch; border-radius:2px; background:${hue};"></span>
     <span style="flex:1 1 auto; min-width:0;">
-      <span style="display:block; font-weight:700; font-size:0.86rem; color:var(--text); overflow-wrap:break-word;">${escapeHtml(it.label || '')}</span>
-      <span style="display:block; font-size:0.76rem; color:var(--muted); overflow-wrap:break-word;">${contextParts.join(' &middot; ')}</span>
+      <span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <span style="font-weight:700; font-size:0.86rem; color:var(--text); overflow-wrap:break-word;">${escapeHtml(it.label || '')}</span>
+        ${badgeText ? `<span style="flex:none; font-size:0.68rem; font-weight:800; padding:2px 9px; border-radius:8px; background:${badgeIsProject ? '#eef2ff' : '#f0fdf4'}; color:${badgeIsProject ? '#3730a3' : '#15803d'}; ${badgeIsProject ? 'font-family:ui-monospace, SFMono-Regular, Menlo, monospace;' : ''} white-space:nowrap;">${escapeHtml(badgeText)}</span>` : ''}
+      </span>
+      ${descParts.length ? `<span style="display:block; font-size:0.76rem; color:var(--muted); overflow-wrap:break-word; margin-top:2px;">${descParts.join(' &middot; ')}</span>` : ''}
       ${it.detail ? `<span style="display:block; font-size:0.74rem; color:var(--muted); overflow-wrap:break-word; margin-top:2px;">${escapeHtml(it.detail)}</span>` : ''}
     </span>
     <span style="flex:none; font-size:0.76rem; font-weight:700; color:${late || isOverdueRow ? '#e84545' : 'var(--muted)'};">${isOverdueRow ? `${daysOverdue}d overdue` : `Due ${formatOrdinalDate(it.due)}`}</span>
@@ -408,7 +409,6 @@ function dtlOpenItemById(id) {
 function dtlOpenItem(it) {
   if (!it) return;
   const fallback = () => {
-    dtlSetViewMode('steps');
     if (dtlCollapsedDepts.has(it.dept)) dtlCollapsedDepts.delete(it.dept);
     if (dtlCollapsedDepts.has('__overdue__')) dtlCollapsedDepts.delete('__overdue__');
     dtlRenderSteps();
@@ -506,426 +506,10 @@ function dtlApplyLeadEngineerFilterAndSearch(it) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// Timeline view — the SVG fan. Faithful to Project Timeline's canvas
-// (same hover/tooltip/drag-to-pan grammar) but with the project spine,
-// Stage-4 lanes, sticky gutter, trace lines, stage dividers, clipPath
-// past/future split, row-mode and ptlPlacer all DROPPED — none of them
-// mean anything cross-project. Instead: one column per day, department-
-// clustered top-to-bottom (not alternating), content-driven height with
-// real vertical scroll.
-// ═══════════════════════════════════════════════════════════════════════
-
-let dtlMeasureCtx = null;
-function dtlMeasureTextWidth(text, fontPx, weight) {
-  if (!dtlMeasureCtx) dtlMeasureCtx = document.createElement('canvas').getContext('2d');
-  dtlMeasureCtx.font = `${weight || 400} ${fontPx}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-  return dtlMeasureCtx.measureText(text).width;
-}
-function dtlEllipsize(text, maxW, fontPx, weight) {
-  if (!text) return '';
-  if (dtlMeasureTextWidth(text, fontPx, weight) <= maxW) return text;
-  let lo = 0, hi = text.length;
-  while (lo < hi) {
-    const mid = Math.ceil((lo + hi) / 2);
-    const cand = text.slice(0, mid) + '…';
-    if (dtlMeasureTextWidth(cand, fontPx, weight) <= maxW) lo = mid; else hi = mid - 1;
-  }
-  return text.slice(0, lo) + '…';
-}
-
-// Word-wraps to fit a real pixel width (measured with the exact font/size
-// the label is actually drawn with) — used in This Week mode so an
-// item's label stays inside its own day column instead of bleeding
-// sideways into the next day's items. Capped at maxLines; any leftover
-// text on the last line is ellipsized rather than silently dropped.
-function dtlWrapToWidth(text, maxWidthPx, fontPx, weight, maxLines = 2) {
-  if (!text) return [];
-  const words = text.split(' ');
-  const out = [];
-  let cur = '';
-  words.forEach(w => {
-    const cand = cur ? `${cur} ${w}` : w;
-    if (cur && dtlMeasureTextWidth(cand, fontPx, weight) > maxWidthPx) { out.push(cur); cur = w; }
-    else cur = cand;
-  });
-  if (cur) out.push(cur);
-  if (out.length > maxLines) {
-    const kept = out.slice(0, maxLines);
-    kept[maxLines - 1] = dtlEllipsize(kept[maxLines - 1] + ' ' + out.slice(maxLines).join(' '), maxWidthPx, fontPx, weight);
-    return kept;
-  }
-  return out;
-}
-
-// Same format in both modes now — step + Project ID only, no company
-// name/owner (dropped per explicit request: the company name was already
-// baked into most projectId strings anyway, and it's what pushed labels
-// long enough that the old per-mode ellipsizing truncated them to a
-// useless "All BOQs & Final Costing Re…"). Company/owner are still shown
-// in the hover tooltip (dtlWireCanvasInteractions), just not on the node
-// itself.
-function dtlNodeLabelText(it) {
-  // planStep's own context already carries "Product Rating · ProjectID"
-  // (gatherPlanStepItems, lib/dailyTimeline.js) — using it instead of the
-  // bare projectId is what actually answers "for what project AND what
-  // product is this step" on the node itself, not just in the tooltip.
-  const proj = it.kind === 'planStep' ? (it.context || it.projectId || '') : (it.projectId || it.context || '');
-  return proj ? `${it.label} · ${proj}` : (it.label || '');
-}
-
-// Priority-first selection (late, then open, then done) BEFORE the
-// display sort, so an overdue item can never be the one dropped by the
-// slot cap — only the reserved last slot becomes the "+N more" pill.
-function dtlSortForDisplay(items) {
-  return items.slice().sort((a, b) => {
-    const da = DTL_DEPT_ORDER.indexOf(a.dept), db = DTL_DEPT_ORDER.indexOf(b.dept);
-    if (da !== db) return da - db;
-    const sa = a.subDept || '', sb = b.subDept || '';
-    if (sa !== sb) return sa < sb ? -1 : 1;
-    const ra = a.late ? 0 : (a.done ? 2 : 1), rb = b.late ? 0 : (b.done ? 2 : 1);
-    if (ra !== rb) return ra - rb;
-    if (a.due !== b.due) return (a.due || '') < (b.due || '') ? -1 : 1;
-    return (a.label || '').localeCompare(b.label || '');
-  });
-}
-function dtlSelectColumnItems(items) {
-  if (items.length <= DTL_MAX_SLOTS) return { shown: dtlSortForDisplay(items), truncated: 0, total: items.length };
-  const late = items.filter(it => it.late);
-  const open = items.filter(it => !it.late && !it.done);
-  const done = items.filter(it => !it.late && it.done);
-  const priorityOrdered = late.concat(open, done);
-  const keep = priorityOrdered.slice(0, DTL_MAX_SLOTS - 1); // reserve the last slot for the "+N more" pill
-  return { shown: dtlSortForDisplay(keep), truncated: items.length - keep.length, total: items.length };
-}
-
-function dtlOpenFullscreen() {
-  let ov = document.getElementById('dtl-fs-overlay');
-  if (!ov) {
-    ov = document.createElement('div');
-    ov.id = 'dtl-fs-overlay';
-    ov.style.cssText = 'position:fixed; inset:0; z-index:9000; background:var(--bg,#f0f4f8); display:flex; flex-direction:column;';
-    document.body.appendChild(ov);
-  }
-  if (!document.getElementById('dtl-fs-style')) {
-    const style = document.createElement('style');
-    style.id = 'dtl-fs-style';
-    style.textContent = `#dtl-fs-scroller{scrollbar-width:thin; scrollbar-color:var(--muted) transparent;}
-#dtl-fs-scroller::-webkit-scrollbar{width:12px; height:12px;}
-#dtl-fs-scroller::-webkit-scrollbar-track{background:transparent;}
-#dtl-fs-scroller::-webkit-scrollbar-thumb{background:var(--muted); border-radius:7px; border:3px solid var(--bg,#f0f4f8); background-clip:padding-box;}
-#dtl-fs-scroller::-webkit-scrollbar-thumb:hover{background:var(--text);}
-#dtl-fs-scroller::-webkit-scrollbar-corner{background:transparent;}`;
-    document.head.appendChild(style);
-  }
-  ov.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-  dtlRenderFullscreen();
-}
-// dtlRefreshTimelineView — the fullscreen overlay's header (date range
-// label, Day/This Week active state, department chips) is plain HTML
-// baked in once at dtlRenderFullscreen() time, not backed by ids that
-// dtlUpdateModeButtons()/dtlLoad() can reach into and patch afterward
-// (those only ever touch the mount's own hidden copies, behind the
-// overlay). Every state-changing action (step/mode/today/dept filter)
-// used to call bare dtlRenderCanvas(), which redraws the SVG map
-// correctly but leaves the header showing whatever mode/date/filter was
-// active the moment the overlay first opened — exactly why the button
-// row looked "stuck" even though the map itself was reacting correctly.
-// Calling dtlRenderFullscreen() instead rebuilds the whole header AND
-// the canvas together, so they can never drift apart again.
-function dtlFsIsOpen() {
-  const ov = document.getElementById('dtl-fs-overlay');
-  return !!(ov && ov.style.display !== 'none');
-}
-function dtlRefreshTimelineView() {
-  if (dtlViewMode !== 'timeline') return;
-  if (dtlFsIsOpen()) dtlRenderFullscreen();
-  else dtlRenderCanvas(dtlCanvasContainerId);
-}
-function dtlCloseFullscreen() {
-  const ov = document.getElementById('dtl-fs-overlay');
-  if (ov) ov.style.display = 'none';
-  document.body.style.overflow = '';
-}
-
-function dtlRenderFullscreen() {
-  const ov = document.getElementById('dtl-fs-overlay');
-  if (!ov) return;
-  ov.innerHTML = `
-    <div style="flex:none; background:var(--card); border-bottom:1px solid var(--border); padding:8px 18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
-        <button type="button" onclick="dtlSetViewMode('steps')" title="Back to Steps" style="flex:none; display:inline-flex; align-items:center; gap:5px; padding:7px 12px; font-size:0.82rem; font-weight:800; border:0; border-radius:var(--radius); background:var(--brand); color:#fff; cursor:pointer;">&lsaquo; Steps</button>
-        <div style="width:1px; align-self:stretch; background:var(--border); flex:none;"></div>
-        <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
-          <button type="button" onclick="dtlStep(-1)" style="padding:6px 11px; border:0; background:#fff; cursor:pointer; font-weight:800;">&lsaquo;</button>
-          <span style="padding:6px 12px; font-weight:700; font-size:0.82rem; background:#f7fafd; white-space:nowrap;">${escapeHtml(dtlRangeLabelText())}</span>
-          <button type="button" onclick="dtlStep(1)" style="padding:6px 11px; border:0; border-left:1px solid var(--border); background:#fff; cursor:pointer; font-weight:800;">&rsaquo;</button>
-        </div>
-        <button type="button" onclick="dtlJumpToday()" style="flex:none; padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); background:var(--brand); color:#fff; cursor:pointer;">Today</button>
-        <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
-          <button type="button" onclick="dtlSetMode('today')" style="padding:7px 13px; font-size:0.82rem; font-weight:700; border:0; cursor:pointer; background:${dtlMode === 'today' ? 'var(--brand)' : '#fff'}; color:${dtlMode === 'today' ? '#fff' : 'var(--text)'};">Day</button>
-          <button type="button" onclick="dtlSetMode('week')" style="padding:7px 13px; font-size:0.82rem; font-weight:700; border:0; border-left:1px solid var(--border); cursor:pointer; background:${dtlMode === 'week' ? 'var(--brand)' : '#fff'}; color:${dtlMode === 'week' ? '#fff' : 'var(--text)'};">This Week</button>
-        </div>
-        <div style="flex:1 1 auto;"></div>
-        <div id="dtl-fs-dept-chips" style="display:flex; gap:6px; flex-wrap:wrap;">${dtlDeptChipsHtml()}</div>
-    </div>
-    <div style="flex:1 1 auto; display:flex; min-height:0;">
-      <div id="dtl-fs-scroller" style="flex:1 1 auto; min-width:0; min-height:0; overflow-x:auto; overflow-y:auto; cursor:grab; background:var(--bg,#f0f4f8);"></div>
-    </div>
-    <div style="flex:none; border-top:1px solid var(--border); background:var(--card); padding:8px 18px; display:flex; flex-wrap:wrap; align-items:center; gap:6px 20px; font-size:0.74rem; color:var(--muted);">
-      <span style="color:var(--accent);">● Done</span><span style="color:#e84545;">● Late</span><span>○ Scheduled</span>
-      <span style="margin-left:auto;">Click a point to jump to its screen. Hover for detail. Drag to pan.</span>
-    </div>`;
-  const chipsWrap = document.getElementById('dtl-fs-dept-chips');
-  if (chipsWrap) {
-    // Re-wire the chip buttons in the fullscreen header to also refresh
-    // the mount's own chip row (kept in sync, both are the same filter set).
-    chipsWrap.querySelectorAll('button').forEach((btn, i) => {
-      const dept = DTL_DEPT_ORDER[i];
-      btn.onclick = () => dtlToggleDeptFilter(dept);
-    });
-  }
-  dtlCanvasContainerId = 'dtl-fs-scroller';
-  dtlRenderCanvas('dtl-fs-scroller');
-}
-
-function dtlRenderCanvas(containerId) {
-  const wrap = document.getElementById(containerId || dtlCanvasContainerId);
-  if (!wrap || !dtlData) return;
-
-  const PAD_L = 28, LEAD = 40, PAD_R = 90, PAD_B = 40, RULER_H = 56;
-  const availW = wrap.clientWidth || (window.innerWidth - 400) || 900;
-  const dayCount = DTL_MODES[dtlMode];
-  const dtlDayW = Math.min(1400, Math.max(160, (availW - PAD_L - LEAD - PAD_R) / dayCount));
-  const R = 7.5 * (1 + (dtlFS - 1) * 0.55);
-  const LABEL_LINE_H = 12;
-  const LABEL_MAX_LINES = 3;
-  // Week mode's labels can wrap up to LABEL_MAX_LINES lines now
-  // (dtlWrapToWidth, below) — extra pitch per line keeps a wrapped label
-  // from overlapping the next row's own circle/text at the same column.
-  const SLOT_PITCH = dtlMode === 'week' ? 34 + LABEL_LINE_H * (LABEL_MAX_LINES - 1) : 34;
-  const FIRST_OFF = 30;    // centre line -> first slot centre
-  const colL = i => PAD_L + LEAD + i * dtlDayW;
-  const nodeXOf = i => colL(i) + Math.min(140, dtlDayW * 0.18);
-
-  const today = dtlToday();
-  const inScope = (dtlData.items || []).filter(it => dtlActiveDeptFilters.has(it.dept) && dtlIndexMap[it.due] != null);
-  const columns = dtlDays.map((day, i) => {
-    const dayItems = inScope.filter(it => it.due === day);
-    const sel = dtlSelectColumnItems(dayItems);
-    const entries = sel.shown.slice();
-    if (sel.truncated > 0) entries.push({ pill: true, count: sel.truncated, total: sel.total, date: day });
-    return { day, i, entries, truncated: sel.truncated, total: sel.total };
-  });
-
-  const N = Math.max(1, ...columns.map(c => c.entries.length));
-  const half = Math.ceil(N / 2);
-  const halfH = FIRST_OFF + (half - 1) * SLOT_PITCH + 34;
-  const H = Math.max(wrap.clientHeight || 520, RULER_H + 2 * halfH + PAD_B);
-  const spineY = RULER_H + (H - RULER_H - PAD_B) / 2;
-  const W = PAD_L + LEAD + dayCount * dtlDayW + PAD_R;
-
-  const posOf = (n, r) => {
-    const h = Math.ceil(n / 2);
-    return r < h ? spineY - FIRST_OFF - (h - 1 - r) * SLOT_PITCH : spineY + FIRST_OFF + (r - h) * SLOT_PITCH;
-  };
-
-  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">`;
-
-  // Today-mode full-column wash (no TODAY rule line at this zoom — a
-  // faint wash across the single visible day reads better than a
-  // redundant vertical rule right next to the day's own header).
-  if (dtlMode === 'today') {
-    svg += `<rect x="${colL(0)}" y="${RULER_H}" width="${dtlDayW}" height="${H - RULER_H - PAD_B}" fill="#dbeafe" opacity="0.35"/>`;
-  }
-
-  // Centre line, full width.
-  svg += `<line x1="${PAD_L}" y1="${spineY}" x2="${W - PAD_R}" y2="${spineY}" stroke="${PTL_SCHEDULED_GREY}" stroke-width="1.5"/>`;
-
-  // Ruler group — pinned via translate(0, scrollTop) on scroll (wired below).
-  svg += `<g id="dtl-ruler">`;
-  columns.forEach(col => {
-    const rest = dtlDayIsRest(col.day);
-    const cx = colL(col.i) + dtlDayW / 2;
-    const color = col.day === today ? '#15803d' : (rest ? '#15803d' : 'var(--text)');
-    svg += `<rect x="${colL(col.i)}" y="0" width="${dtlDayW}" height="${RULER_H}" fill="var(--card)"/>`;
-    svg += `<text x="${cx}" y="22" text-anchor="middle" font-size="12" font-weight="800" fill="${color}">${escapeHtml(dtlFmtDayShort(col.day))}</text>`;
-    svg += `<text x="${cx}" y="38" text-anchor="middle" font-size="10" fill="${color === '#15803d' ? '#15803d' : 'var(--muted)'}">${escapeHtml(dtlWeekdayShort(col.day))}${col.day === today ? ' · TODAY' : ''}</text>`;
-    svg += `<line x1="${colL(col.i)}" y1="${RULER_H - 2}" x2="${colL(col.i)}" y2="${RULER_H - 2}" stroke="var(--border)"/>`;
-  });
-  svg += `<line x1="0" y1="${RULER_H}" x2="${W}" y2="${RULER_H}" stroke="var(--border)" stroke-width="1"/>`;
-  svg += `</g>`;
-
-  // Day-column dividers, week mode only — light, not a hard wall (thin,
-  // low-contrast border), but visible enough that each day's own items
-  // read as belonging inside that day rather than free-floating across
-  // the whole canvas. Drawn OUTSIDE the #dtl-ruler group on purpose — that
-  // group gets translate(0, scrollTop) to stay pinned during vertical
-  // scroll, which a full-height divider must NOT do (it needs to scroll
-  // with the actual content, not stay glued under the fixed header).
-  if (dtlMode === 'week') {
-    for (let i = 0; i <= dayCount; i++) {
-      svg += `<line x1="${colL(i)}" y1="${RULER_H}" x2="${colL(i)}" y2="${H - PAD_B}" stroke="var(--border)" stroke-width="1" opacity="0.7"/>`;
-    }
-  }
-
-  // TODAY vertical line, week mode only.
-  if (dtlMode === 'week' && dtlIndexMap[today] != null) {
-    const tx = colL(dtlIndexMap[today]) + dtlDayW / 2;
-    svg += `<line x1="${tx}" y1="${RULER_H}" x2="${tx}" y2="${H - PAD_B}" stroke="#15803d" stroke-width="2" stroke-dasharray="2,3"/>`;
-  }
-
-  const clickMap = [];
-  let idx = 0;
-
-  columns.forEach(col => {
-    const nodeX = nodeXOf(col.i);
-    // Department-run brackets — a run of >=2 contiguous same-dept entries
-    // (excluding the trailing pill) gets a hue-tinted bracket just left
-    // of the node column, never crossing the centre line. Not a divider —
-    // it clusters without separating.
-    let runStart = 0;
-    for (let r = 0; r <= col.entries.length; r++) {
-      const atEnd = r === col.entries.length;
-      const cur = atEnd ? null : col.entries[r];
-      const prev = col.entries[runStart];
-      const sameDept = !atEnd && prev && !prev.pill && !cur.pill && cur.dept === prev.dept;
-      if (!sameDept) {
-        const runLen = r - runStart;
-        if (runLen >= 2 && prev && !prev.pill) {
-          const y0 = posOf(col.entries.length, runStart) - R;
-          const y1 = posOf(col.entries.length, r - 1) + R;
-          const hue = PTL_COLORS[prev.dept] || 'var(--brand)';
-          svg += `<rect x="${nodeX - R - 10}" y="${y0}" width="3" height="${y1 - y0}" rx="1.5" fill="${hue}"/>`;
-          svg += `<text x="${nodeX - R - 14}" y="${y0 + 8}" text-anchor="end" font-size="8.5" font-weight="800" letter-spacing="0.05em" fill="${hue}" transform="rotate(-90 ${nodeX - R - 14} ${y0 + 8})" style="text-transform:uppercase;">${escapeHtml((PTL_DEPT_NAME[prev.dept] || prev.dept).slice(0, 3))}</text>`;
-        }
-        runStart = r;
-      }
-    }
-
-    col.entries.forEach((it, r) => {
-      const y = posOf(col.entries.length, r);
-      if (it.pill) {
-        svg += `<g class="dtl-pill-hit" data-date="${escapeHtml(it.date)}" style="cursor:pointer;">
-          <rect x="${nodeX - R}" y="${y - 9}" width="${R * 2 + 100}" height="18" rx="9" fill="#475569"/>
-          <text x="${nodeX - R + 8}" y="${y + 4}" font-size="10.5" font-weight="700" fill="#fff">+${it.count} more &rsaquo;</text>
-        </g>`;
-        svg += `<text x="${nodeX - R}" y="${y + 24}" font-size="9" fill="var(--muted)">Showing ${it.total - it.count} of ${it.total}</text>`;
-        return;
-      }
-      const hue = PTL_COLORS[it.dept] || 'var(--brand)';
-      const late = !!it.late, done = !!it.done;
-      const fill = done ? hue : hue;
-      const opacity = done ? 0.35 : 1;
-      const stroke = late ? '#e84545' : 'none';
-      const strokeW = late ? 2 : 0;
-      const label = dtlNodeLabelText(it);
-      const anchorId = 'dtl-canvas-' + idx;
-      clickMap[idx] = { it, label };
-      svg += `<circle class="dtl-hit" data-idx="${idx}" cx="${nodeX}" cy="${y}" r="${R * 2.2}" fill="transparent"/>`;
-      svg += `<circle cx="${nodeX}" cy="${y}" r="${R}" fill="${fill}" opacity="${opacity}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
-      if (done) svg += `<text x="${nodeX}" y="${y + 3}" text-anchor="middle" font-size="9" fill="#fff">&#10003;</text>`;
-      const textX = nodeX + R + 8;
-      const labelWeight = done ? 400 : 700;
-      const labelFill = late ? '#e84545' : 'var(--text)';
-      if (dtlMode === 'week') {
-        // Wrapped to fit inside THIS day's own column (up to its divider,
-        // minus a little breathing room) rather than a full unbroken line
-        // bleeding into the next day's column — the whole point of the
-        // divider lines above.
-        const availW = colL(col.i) + dtlDayW - textX - 6;
-        const lines = dtlWrapToWidth(label, Math.max(24, availW), 11, labelWeight, LABEL_MAX_LINES);
-        lines.forEach((ln, li) => {
-          svg += `<text x="${textX}" y="${y + 4 + li * LABEL_LINE_H}" font-size="11" font-weight="${labelWeight}" fill="${labelFill}">${escapeHtml(ln)}</text>`;
-        });
-      } else {
-        svg += `<text x="${textX}" y="${y + 4}" font-size="11" font-weight="${labelWeight}" fill="${labelFill}">${escapeHtml(label)}</text>`;
-      }
-      idx++;
-    });
-  });
-
-  svg += `</svg>`;
-  wrap.innerHTML = svg;
-  dtlWireCanvasInteractions(wrap, clickMap);
-}
-
-let dtlDragMouseUpHandler = null, dtlDragMouseMoveHandler = null;
-function dtlWireCanvasInteractions(sc, clickMap) {
-  if (!sc) return;
-  let tip = document.getElementById('dtl-tip');
-  if (!tip) {
-    tip = document.createElement('div');
-    tip.id = 'dtl-tip';
-    tip.style.cssText = 'position:fixed; z-index:9500; pointer-events:none; opacity:0; transition:opacity .1s linear; background:var(--card); border:1px solid var(--border); border-radius:6px; padding:9px 11px; max-width:280px; box-shadow:0 6px 20px -6px rgba(0,0,0,.28);';
-    document.body.appendChild(tip);
-  }
-
-  sc.querySelectorAll('.dtl-hit').forEach(el => {
-    el.style.cursor = 'pointer';
-    el.addEventListener('mouseenter', () => {
-      const info = clickMap[+el.dataset.idx];
-      if (info) {
-        const it = info.it;
-        // Project/Company is its own explicit line, always shown regardless
-        // of zoom mode — the canvas node's own inline label only carries
-        // this in "Today" mode (dtlNodeLabelText), so week-mode nodes had
-        // NO way to tell which project a point belonged to short of
-        // clicking through. projectId/companyName take priority; context
-        // (marketing items, which have no projectId) is the fallback.
-        const projectLine = [it.projectId, it.companyName].filter(Boolean).join(' · ') || it.context || null;
-        // Product/context line: shown separately whenever it carries more
-        // than what projectLine already says (e.g. a planStep's context is
-        // "Product Rating · ProjectID" — genuinely new information, the
-        // product name, not just a repeat of the project/company line).
-        const contextLine = (it.context && it.context !== projectLine) ? it.context : null;
-        tip.innerHTML = `<b style="display:block; font-size:0.82rem; font-weight:700; margin-bottom:6px; white-space:normal; overflow-wrap:break-word;">${escapeHtml(it.label || '')}</b>
-          ${projectLine ? `<div style="font-size:0.74rem; color:var(--muted); white-space:normal; overflow-wrap:break-word;">Project: <span style="color:var(--text); font-weight:600;">${escapeHtml(projectLine)}</span></div>` : ''}
-          ${contextLine ? `<div style="font-size:0.74rem; color:var(--muted); white-space:normal; overflow-wrap:break-word;">Product: <span style="color:var(--text); font-weight:600;">${escapeHtml(contextLine)}</span></div>` : ''}
-          <div style="font-size:0.74rem; color:var(--muted);">Department: <span style="color:var(--text);">${escapeHtml(PTL_DEPT_NAME[it.dept] || it.dept)}</span></div>
-          <div style="font-size:0.74rem; color:var(--muted);">Due: <span style="color:var(--text);">${escapeHtml(formatOrdinalDate(it.due))}</span></div>
-          ${it.owner ? `<div style="font-size:0.74rem; color:var(--muted);">Owner: <span style="color:var(--text);">${escapeHtml(it.owner)}</span></div>` : ''}
-          ${it.detail ? `<div style="margin-top:5px; font-size:0.74rem; color:var(--muted); white-space:normal; overflow-wrap:break-word;">${escapeHtml(it.detail)}</div>` : ''}
-          ${it.late ? `<div style="margin-top:5px; font-size:0.74rem; font-weight:700; color:#e84545;">Late</div>` : (it.done ? `<div style="margin-top:5px; font-size:0.74rem; font-weight:700; color:#15803d;">Done</div>` : '')}`;
-      }
-      tip.style.opacity = '1';
-    });
-    el.addEventListener('mousemove', e => { tip.style.left = (e.clientX + 14) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; });
-    el.addEventListener('mouseleave', () => { tip.style.opacity = '0'; });
-    el.addEventListener('click', () => { const info = clickMap[+el.dataset.idx]; if (info) dtlOpenItem(info.it); });
-  });
-
-  sc.querySelectorAll('.dtl-pill-hit').forEach(el => {
-    el.addEventListener('click', () => { dtlDateFilter = el.dataset.date; dtlSetViewMode('steps'); });
-  });
-
-  // Pin the ruler group against vertical scroll.
-  const ruler = sc.querySelector('#dtl-ruler');
-  const onScroll = () => { if (ruler) ruler.setAttribute('transform', `translate(0, ${sc.scrollTop})`); };
-  sc.onscroll = onScroll;
-  onScroll();
-
-  // Drag-to-pan, both axes — vertical is load-bearing at this content-driven height.
-  sc.style.userSelect = 'none';
-  let down = false, sx = 0, sy = 0, sl = 0, st = 0;
-  sc.onmousedown = e => {
-    if (e.target.closest('.dtl-hit') || e.target.closest('.dtl-pill-hit')) return;
-    e.preventDefault();
-    down = true; sx = e.pageX; sy = e.pageY; sl = sc.scrollLeft; st = sc.scrollTop; sc.style.cursor = 'grabbing';
-  };
-  if (dtlDragMouseUpHandler) removeEventListener('mouseup', dtlDragMouseUpHandler);
-  if (dtlDragMouseMoveHandler) removeEventListener('mousemove', dtlDragMouseMoveHandler);
-  dtlDragMouseUpHandler = () => { down = false; sc.style.cursor = 'grab'; };
-  dtlDragMouseMoveHandler = e => { if (down) { e.preventDefault(); sc.scrollLeft = sl - (e.pageX - sx); sc.scrollTop = st - (e.pageY - sy); onScroll(); } };
-  addEventListener('mouseup', dtlDragMouseUpHandler);
-  addEventListener('mousemove', dtlDragMouseMoveHandler);
-}
-
-// ═══════════════════════════════════════════════════════════════════════
 // Exit
 // ═══════════════════════════════════════════════════════════════════════
 
 function exitDailyTimelineBackToMenu() {
-  dtlCloseFullscreen();
   document.getElementById('canvas-module-daily-timeline').style.display = 'none';
   enforceDynamicModuleRoleGateways(userPermissions);
   document.getElementById('dashboard-view').style.display = 'flex';
