@@ -372,6 +372,18 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
     const hasAttachments = mail.attachments && String(mail.attachments).trim();
     const receivedTimeLabel = mail.receivedTime ? `, ${formatTime12h(mail.receivedTime)}` : "";
 
+    // "Replied" badge — set server-side when an outbound email answering
+    // this conversation is detected (markConversationReplied). Deliberately
+    // does NOT remove the card: the feed is a CRM-entry worklist, so a
+    // replied-to email still needs filing. Tooltip names who replied and
+    // when, since the badge alone doesn't say whether it was handled.
+    const repliedTitle = mail.repliedAt
+      ? `Replied on ${formatOrdinalDate(String(mail.repliedAt).slice(0, 10))}${mail.repliedBy ? ` from ${mail.repliedBy}` : ""}`
+      : "";
+    const repliedBadgeHtml = mail.repliedAt
+      ? `<span title="${escapeHtml(repliedTitle)}" style="flex-shrink:0; font-size:0.7rem; font-weight:800; letter-spacing:0.02em; text-transform:uppercase; padding:3px 10px; border-radius:20px; white-space:nowrap; background:#dcfce7; color:#166534;">Replied</span>`
+      : "";
+
     // FIXED: Enforce role visibility restriction boundaries to guard delete actions
     const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
     const deleteActionHtml = isAdminUser
@@ -384,7 +396,10 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
           <span style="font-size:1.02rem; font-weight:800; color:var(--brand);">${escapeHtml(mail.extractedCompany)}</span>
           <span style="font-size:0.88rem; color:var(--text); font-weight:600;">· ${escapeHtml(mail.extractedContactName)}</span>
         </div>
-        <span style="flex-shrink:0; font-size:0.7rem; font-weight:800; letter-spacing:0.02em; text-transform:uppercase; padding:3px 10px; border-radius:20px; white-space:nowrap; background:${ageColor.chipBg}; color:${ageColor.chipText};">${escapeHtml(age.label)}</span>
+        <span style="flex-shrink:0; display:flex; gap:6px; align-items:center;">
+          ${repliedBadgeHtml}
+          <span style="font-size:0.7rem; font-weight:800; letter-spacing:0.02em; text-transform:uppercase; padding:3px 10px; border-radius:20px; white-space:nowrap; background:${ageColor.chipBg}; color:${ageColor.chipText};">${escapeHtml(age.label)}</span>
+        </span>
       </div>
 
       <div style="font-size:0.8rem; color:var(--muted); display:flex; flex-wrap:wrap; gap:4px 18px;">
