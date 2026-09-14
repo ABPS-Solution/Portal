@@ -269,6 +269,36 @@ function dtlToggleDeptCollapse(key) {
   dtlRenderSteps();
 }
 
+// Production items carry subDept (Reactor/Capacitor/Panel, off
+// design.boq_drafts.department — see lib/dailyTimeline.js's
+// gatherPlanStepItems) matching admin_db.users.production_sub_dept, the
+// same per-user attribute Production Planning's own write-gate uses
+// (CLAUDE.md's Reactor/Capacitor/Panel fold-back note). Sub-grouping the
+// Production section by this makes the board usable for someone who only
+// owns one of the three — the "Production Planning" trunk milestone has
+// no sub-department (it's a per-project gate, not sub-department-
+// specific) and falls into its own General bucket.
+const DTL_PROD_SUBDEPT_ORDER = ['Reactor', 'Capacitor', 'Panel'];
+function dtlRenderProductionSubgroups(items) {
+  const buckets = new Map([['General', []], ['Reactor', []], ['Capacitor', []], ['Panel', []]]);
+  items.forEach(it => buckets.get(DTL_PROD_SUBDEPT_ORDER.includes(it.subDept) ? it.subDept : 'General').push(it));
+  return ['General', ...DTL_PROD_SUBDEPT_ORDER].map(key => {
+    const bucket = buckets.get(key);
+    if (!bucket.length) return '';
+    const subKey = 'production:' + key;
+    const collapsed = dtlCollapsedDepts.has(subKey);
+    const lateCount = bucket.filter(it => it.late).length;
+    return `<div style="margin-left:14px; border-left:2px solid var(--border); margin-bottom:2px;">
+      <div style="display:flex; align-items:center; gap:8px; padding:6px 10px; cursor:pointer; font-weight:700; font-size:0.78rem; color:var(--muted);" onclick="dtlToggleDeptCollapse('${subKey}')">
+        <span>${collapsed ? '&#9656;' : '&#9662;'}</span>
+        <span>${escapeHtml(key)} &middot; ${bucket.length}</span>
+        ${lateCount ? `<span style="margin-left:auto; font-size:0.72rem; font-weight:700; color:#e84545;">${lateCount} late</span>` : ''}
+      </div>
+      ${collapsed ? '' : bucket.map(it => dtlRenderRow(it, false)).join('')}
+    </div>`;
+  }).join('');
+}
+
 // dtlStripToken — every source builds `context` by gluing projectId and/or
 // companyName onto some descriptive text (see lib/dailyTimeline.js — the
 // glue order varies per source: "projectId · companyName" for milestones,
@@ -371,7 +401,7 @@ function dtlRenderSteps() {
           : lateCount ? `<span style="margin-left:auto; font-size:0.74rem; font-weight:700; color:#e84545;">${lateCount} late</span>`
           : dueCount ? `<span style="margin-left:auto; font-size:0.74rem; font-weight:700; color:var(--muted);">${dueCount} due</span>` : ''}
       </div>
-      ${collapsed ? '' : `<div>${items.map(it => dtlRenderRow(it, false)).join('')}</div>`}
+      ${collapsed ? '' : `<div>${dept === 'production' ? dtlRenderProductionSubgroups(items) : items.map(it => dtlRenderRow(it, false)).join('')}</div>`}
     </div>`;
   });
 
@@ -411,6 +441,10 @@ function dtlOpenItem(it) {
   const fallback = () => {
     if (dtlCollapsedDepts.has(it.dept)) dtlCollapsedDepts.delete(it.dept);
     if (dtlCollapsedDepts.has('__overdue__')) dtlCollapsedDepts.delete('__overdue__');
+    if (it.dept === 'production') {
+      const subKey = 'production:' + (DTL_PROD_SUBDEPT_ORDER.includes(it.subDept) ? it.subDept : 'General');
+      dtlCollapsedDepts.delete(subKey);
+    }
     dtlRenderSteps();
     dtlFlashRow(it.id);
   };
