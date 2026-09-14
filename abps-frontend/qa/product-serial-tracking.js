@@ -17,6 +17,7 @@ let psnHits = [];
 let psnActiveFgId = null;
 let psnSearchDebounceTimer = null;
 let psnSearchReqToken = 0;
+let psnQueueRows = []; // cached full "All Units" list, filtered client-side by psnFilterQueue
 
 const PSN_TIER_META = {
   exact: { label: 'Exact', color: '#15803d', bg: '#dcfce7' },
@@ -24,10 +25,30 @@ const PSN_TIER_META = {
   fifo:  { label: 'FIFO-inferred', color: '#1d4ed8', bg: '#dbeafe' },
 };
 
+// Status badge colors — a real stock/lifecycle state (Pending FG Approval /
+// In Store / Reserved / On Ticket / Consumed in Production), or the
+// display-only "Dispatched" override psnRenderDetail/psnLoadQueue apply
+// once an invoice/job_card link says the unit actually shipped (see the
+// comment in psnRenderDetail for why fg.status itself never says this).
+const PSN_STATUS_META = {
+  'Pending FG Approval':     { color: '#b45309', bg: '#fef3c7' },
+  'In Store':                { color: '#1d4ed8', bg: '#dbeafe' },
+  'Reserved / On Ticket':    { color: '#7c3aed', bg: '#ede9fe' },
+  'Consumed in Production':  { color: '#475569', bg: '#e2e8f0' },
+  'Dispatched':              { color: '#15803d', bg: '#dcfce7' },
+};
+
+function psnStatusBadge(status) {
+  const s = status || 'Unknown';
+  const meta = PSN_STATUS_META[s] || { color: '#334155', bg: '#f1f5f9' };
+  return `<span class="psn-status-badge" style="color:${meta.color}; background:${meta.bg};">${escapeHtml(s)}</span>`;
+}
+
 function initializeProductSerialTrackingPanel() {
   psnActiveTab = 'search';
   psnHits = [];
   psnActiveFgId = null;
+  psnQueueRows = [];
   psnSearchReqToken++; // invalidate any in-flight suggestion fetch from a prior visit
 
   const feedback = document.getElementById('psn-feedback');
@@ -35,6 +56,10 @@ function initializeProductSerialTrackingPanel() {
   document.getElementById('psn-results').innerHTML = '';
   document.getElementById('psn-detail').innerHTML = '';
   document.getElementById('psn-queue-body').innerHTML = '';
+  const queueFilterInput = document.getElementById('psn-queue-filter-input');
+  if (queueFilterInput) queueFilterInput.value = '';
+  const queueCount = document.getElementById('psn-queue-count');
+  if (queueCount) queueCount.textContent = '';
 
   psnRenderTabBar();
   psnShowTab('search');
@@ -104,12 +129,10 @@ async function psnFetchSearchSuggestions(q) {
     if (!data.success || !data.rows || data.rows.length === 0) { dd.style.display = 'none'; return; }
     const matches = data.rows.slice(0, 8);
     dd.innerHTML = matches.map(h => `
-      <div onmousedown="event.preventDefault();" onclick="psnSelectSearchSuggestion(${h.fgId}, '${(h.productSerialNumber || '').replace(/'/g, "\\'")}')"
-        style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
-        onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-        <span style="font-weight:700;">${escapeHtml(h.productSerialNumber || '')}</span>
+      <div class="psn-suggestion-row" onmousedown="event.preventDefault();" onclick="psnSelectSearchSuggestion(${h.fgId}, '${(h.productSerialNumber || '').replace(/'/g, "\\'")}')">
+        <span style="font-weight:700; font-family:ui-monospace, 'SF Mono', Consolas, monospace;">${escapeHtml(h.productSerialNumber || '')}</span>
         <span style="font-size:0.75rem; color:var(--muted); margin-left:8px;">${escapeHtml(h.productName || '')}${h.productRating ? ' ' + escapeHtml(h.productRating) : ''}</span>
-        <div style="font-size:0.7rem; color:var(--muted); margin-top:2px;">${escapeHtml(h.customerName || '—')} · ${escapeHtml(h.status || '')}</div>
+        <div style="font-size:0.7rem; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:6px;">${escapeHtml(h.customerName || '—')} ${psnStatusBadge(h.status)}</div>
       </div>`).join('');
     dd.style.display = 'block';
   } catch (err) {
@@ -137,13 +160,13 @@ async function psnRunSearch() {
     showPurchaseFeedback('psn-feedback', 'Enter a serial number to search.', 'error');
     return;
   }
-  document.getElementById('psn-results').innerHTML = `<p style="color:var(--muted);">Searching...</p>`;
+  document.getElementById('psn-results').innerHTML = `<div class="psn-empty-state"><span class="psn-spinner"></span>Searching...</div>`;
   try {
     const data = await apFetch({ action: 'searchProductSerial', serial });
     if (!data.success) { showPurchaseFeedback('psn-feedback', escapeHtml(data.error || 'Search failed.'), 'error'); document.getElementById('psn-results').innerHTML = ''; return; }
     psnHits = data.rows || [];
     if (psnHits.length === 0) {
-      document.getElementById('psn-results').innerHTML = `<p style="color:var(--muted); padding:12px 0;">No product found with that serial number.</p>`;
+      document.getElementById('psn-results').innerHTML = `<div class="psn-empty-state"><div class="psn-empty-icon">🔍</div>No product found with that serial number.</div>`;
     } else if (psnHits.length === 1) {
       document.getElementById('psn-results').innerHTML = '';
       await psnOpenDetail(psnHits[0].fgId);
@@ -159,14 +182,19 @@ async function psnRunSearch() {
 function psnRenderChooser() {
   const wrap = document.getElementById('psn-results');
   wrap.innerHTML = `
-    <p style="color:var(--muted); margin-bottom:8px;">Multiple products matched — select the one you need:</p>
+    <p style="color:var(--muted); margin-bottom:10px; font-size:0.85rem;">Multiple products matched — select the one you need:</p>
     <div style="display:flex; flex-direction:column; gap:8px;">
       ${psnHits.map(h => `
-        <div onclick="psnOpenDetail(${h.fgId})" style="cursor:pointer; padding:12px; border:1px solid var(--border); border-radius:var(--radius); background:var(--card);">
-          <strong>${escapeHtml(h.productSerialNumber || '')}</strong>
-          — ${escapeHtml(h.productName || '')} ${escapeHtml(h.productRating || '')}
-          <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">
-            Job Card ${escapeHtml(h.jobCardNumber || '')} · Project ${escapeHtml(h.projectId || '—')} · ${escapeHtml(h.customerName || '')} · ${escapeHtml(h.status || '')}
+        <div class="psn-chooser-card" onclick="psnOpenDetail(${h.fgId})">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <div>
+              <span style="font-weight:700; font-family:ui-monospace, 'SF Mono', Consolas, monospace;">${escapeHtml(h.productSerialNumber || '')}</span>
+              <span style="color:var(--muted);"> — ${escapeHtml(h.productName || '')} ${escapeHtml(h.productRating || '')}</span>
+            </div>
+            ${psnStatusBadge(h.status)}
+          </div>
+          <div style="font-size:0.8rem; color:var(--muted); margin-top:6px;">
+            Job Card ${escapeHtml(psnShortJobCard(h.jobCardNumber))} · Project ${escapeHtml(h.projectId || '—')} · ${escapeHtml(h.customerName || '')}
           </div>
         </div>`).join('')}
     </div>`;
@@ -176,7 +204,7 @@ function psnRenderChooser() {
 async function psnOpenDetail(fgId) {
   psnActiveFgId = fgId;
   const detailEl = document.getElementById('psn-detail');
-  detailEl.innerHTML = `<p style="color:var(--muted);">Loading...</p>`;
+  detailEl.innerHTML = `<div class="psn-empty-state"><span class="psn-spinner"></span>Loading...</div>`;
   try {
     const data = await apFetch({ action: 'fetchProductSerialDetail', fgId });
     if (!data.success) { showPurchaseFeedback('psn-feedback', escapeHtml(data.error || 'Could not load this record.'), 'error'); detailEl.innerHTML = ''; return; }
@@ -187,13 +215,27 @@ async function psnOpenDetail(fgId) {
   }
 }
 
-function psnField(label, value) {
-  return `<div><div style="font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.03em;">${escapeHtml(label)}</div><div style="font-size:0.95rem;">${value === null || value === undefined || value === '' ? '—' : value}</div></div>`;
+function psnField(label, value, mono) {
+  return `<div><div class="psn-field-label">${escapeHtml(label)}</div><div class="psn-field-value${mono ? ' psn-mono' : ''}">${value === null || value === undefined || value === '' ? '<span style="color:var(--muted);">—</span>' : value}</div></div>`;
 }
 
+// One accent color + icon per section, purely visual grouping (no
+// semantic weight beyond "these six cards are different kinds of
+// information") — Identity/blue, Where It Went/green, Build Chain/purple,
+// Documents/slate, Materials/amber, Attribution/teal.
+const PSN_CARD_META = {
+  'Identity':                     { icon: '🏷️', accent: '#0056b3' },
+  'Where It Went':                { icon: '📦', accent: '#15803d' },
+  'Who Built It, Who Cleared It': { icon: '🛠️', accent: '#7c3aed' },
+  'Documents':                    { icon: '📄', accent: '#475569' },
+  'What Went Into It':            { icon: '🧱', accent: '#b45309' },
+  'Source Attribution':           { icon: '🔗', accent: '#0f766e' },
+};
+
 function psnCard(title, innerHtml) {
-  return `<div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:14px;">
-    <div style="font-weight:600; margin-bottom:10px;">${escapeHtml(title)}</div>
+  const meta = PSN_CARD_META[title] || { icon: '', accent: 'var(--brand)' };
+  return `<div class="psn-section-card" style="--psn-accent:${meta.accent};">
+    <div class="psn-section-title">${meta.icon ? `<span class="psn-section-icon">${meta.icon}</span>` : ''}${escapeHtml(title)}</div>
     ${innerHtml}
   </div>`;
 }
@@ -215,27 +257,29 @@ function psnRenderDetail(data) {
   // untouched, so any OTHER screen that counts "In Store" as live stock
   // (Live FG Stock, Store Ledger) still includes dispatched units; that is
   // a separate, larger gap this change does not address.
-  const statusDisplay = h.invoiceId ? 'Dispatched' : escapeHtml(h.status || '');
+  const statusDisplay = psnStatusBadge(h.invoiceId ? 'Dispatched' : h.status);
 
   const identity = `
-    <div style="font-size:1.4rem; font-weight:700; margin-bottom:10px;">${escapeHtml(h.productSerialNumber || '')}</div>
-    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+      <div style="font-size:1.5rem; font-weight:700; font-family:ui-monospace, 'SF Mono', Consolas, monospace;">${escapeHtml(h.productSerialNumber || '')}</div>
+      ${statusDisplay}
+    </div>
+    <div class="psn-field-grid">
       ${psnField('Product', escapeHtml(h.productName || ''))}
       ${psnField('Rating', escapeHtml(h.productRating || ''))}
       ${psnField('Description of Material', escapeHtml(h.descriptionOfMaterial || ''))}
       ${psnField('Make', escapeHtml(h.make || ''))}
-      ${psnField('Item Code', escapeHtml(h.itemCode || ''))}
+      ${psnField('Item Code', escapeHtml(h.itemCode || ''), true)}
       ${psnField('Unit', escapeHtml(h.unit || ''))}
       ${psnField('Finished Good Use', escapeHtml(h.finishedGoodUse || ''))}
       ${psnField('Department', escapeHtml(h.department || ''))}
-      ${psnField('Status', statusDisplay)}
     </div>`;
 
   const dispatchLine = h.invoiceId
     ? `Invoice ${escapeHtml(h.invoiceNo || '')} (${escapeHtml(h.invoiceType || '')}) — ${formatOrdinalDate(h.dispatchDate)}`
     : `<span style="color:var(--muted);">Not dispatched</span>`;
-  const whereItWent = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
-      ${psnField('Project ID', escapeHtml(h.projectId || ''))}
+  const whereItWent = `<div class="psn-field-grid" style="grid-template-columns:repeat(3,1fr);">
+      ${psnField('Project ID', escapeHtml(h.projectId || ''), true)}
       ${psnField('Company', escapeHtml(h.companyName || ''))}
       ${psnField('Dispatch', dispatchLine)}
     </div>`;
@@ -243,10 +287,10 @@ function psnRenderDetail(data) {
   const qaApprovedLine = h.qaApprovedOn
     ? formatOrdinalDate(h.qaApprovedOn)
     : `<span style="color:var(--muted);">— <span style="font-size:0.75rem;">(recorded from Sep 2026 onward)</span></span>`;
-  const buildChain = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+  const buildChain = `<div class="psn-field-grid" style="grid-template-columns:repeat(4,1fr);">
       ${psnField('Production Person', escapeHtml(h.productionPerson || ''))}
-      ${psnField('Job Card', escapeHtml(h.jobCardNumber || ''))}
-      ${psnField('BOQ ID', escapeHtml(h.boqId || ''))}
+      ${psnField('Job Card', escapeHtml(h.jobCardNumber || ''), true)}
+      ${psnField('BOQ ID', escapeHtml(h.boqId || ''), true)}
       ${psnField('Set Number', h.setNumber != null ? escapeHtml(String(h.setNumber)) : '')}
       ${psnField('Job Card Created', formatOrdinalDate(h.jobCardCreated))}
       ${psnField('FG Date', formatOrdinalDate(h.fgDate))}
@@ -255,22 +299,23 @@ function psnRenderDetail(data) {
     </div>`;
 
   const docsHtml = documents.length
-    ? `<div style="display:flex; flex-wrap:wrap; gap:10px;">${documents.map(d => `<a href="${driveLink(d.url)}" target="_blank" rel="noopener" style="font-size:0.85rem;">${escapeHtml(d.docLabel || d.docType)}${d.fileName ? ' — ' + escapeHtml(d.fileName) : ''} ↗</a>`).join('')}</div>`
+    ? `<div style="display:flex; flex-wrap:wrap; gap:10px;">${documents.map(d => `<a href="${driveLink(d.url)}" target="_blank" rel="noopener" class="psn-doc-chip">📎 ${escapeHtml(d.docLabel || d.docType)}${d.fileName ? ' — ' + escapeHtml(d.fileName) : ''}</a>`).join('')}</div>`
     : `<span style="color:var(--muted);">No documents.</span>`;
 
   const materialHtml = psnRenderMaterialSources(trace);
 
   let provenanceHtml;
   if (!trace) {
-    provenanceHtml = `<div style="padding:10px; background:#f1f5f9; border-left:4px solid #64748b; border-radius:var(--radius); color:var(--muted);">No attribution recorded — predates traceability.</div>`;
+    provenanceHtml = `<div style="padding:10px 12px; background:#f1f5f9; border-left:4px solid #64748b; border-radius:var(--radius); color:var(--muted); font-size:0.85rem;">No attribution recorded — predates traceability.</div>`;
   } else if (trace.snapshotStatus !== 'ok') {
-    provenanceHtml = `<div style="padding:10px; background:#fef3c7; border-left:4px solid #b45309; border-radius:var(--radius); margin-bottom:8px;">
+    provenanceHtml = `<div style="padding:10px 12px; background:#fef3c7; border-left:4px solid #b45309; border-radius:var(--radius); margin-bottom:10px; font-size:0.85rem;">
         <strong>Attribution ${escapeHtml(trace.snapshotStatus)}.</strong> ${escapeHtml(trace.snapshotError || 'Some material quantity could not be traced to a specific receipt.')}
       </div>
-      <button class="nav-btn-styled" onclick="psnRebuildSnapshot(${h.fgId})">Rebuild attribution</button>`;
+      <button class="nav-btn-styled" onclick="psnRebuildSnapshot(${h.fgId})">↻ Rebuild attribution</button>`;
   } else {
-    provenanceHtml = `<div style="font-size:0.8rem; color:var(--muted);">Source attribution frozen on ${escapeHtml(formatOrdinalDateTime(trace.builtAt) || '')}${trace.builtBy ? ' by ' + escapeHtml(trace.builtBy) : ''}.
-      <button class="nav-btn-styled" style="margin-left:10px; padding:2px 10px; font-size:0.75rem;" onclick="psnRebuildSnapshot(${h.fgId})">Rebuild</button></div>`;
+    provenanceHtml = `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+      <span style="font-size:0.8rem; color:var(--muted);">✓ Source attribution frozen on ${escapeHtml(formatOrdinalDateTime(trace.builtAt) || '')}${trace.builtBy ? ' by ' + escapeHtml(trace.builtBy) : ''}.</span>
+      <button class="nav-btn-styled" style="padding:3px 12px; font-size:0.75rem;" onclick="psnRebuildSnapshot(${h.fgId})">↻ Rebuild</button></div>`;
   }
 
   return psnCard('Identity', identity)
@@ -287,24 +332,30 @@ function psnRenderMaterialSources(trace) {
   }
   const lines = typeof trace.materialSources === 'string' ? JSON.parse(trace.materialSources) : trace.materialSources;
   return lines.map(m => {
+    const issued = Number(m.issuedQuantity) || 0;
+    const unattributed = Number(m.unattributedQuantity) || 0;
+    const attributedPct = issued > 0 ? Math.max(0, Math.min(100, Math.round(((issued - unattributed) / issued) * 100))) : 100;
+
     const poRows = (m.poLines || []).map(pl => {
       const tier = PSN_TIER_META[pl.tier] || { label: pl.tier, color: '#334155', bg: '#f1f5f9' };
-      const chip = `<span style="display:inline-block; padding:2px 8px; border-radius:999px; font-size:0.72rem; font-weight:600; color:${tier.color}; background:${tier.bg};">${escapeHtml(tier.label)}</span>`;
+      const chip = `<span class="psn-tier-chip" style="color:${tier.color}; background:${tier.bg};">${escapeHtml(tier.label)}</span>`;
       const evidence = pl.grnNumber
         ? `GRN ${escapeHtml(pl.grnNumber)}${pl.invoiceNumber ? ' · Invoice ' + escapeHtml(pl.invoiceNumber) : ''}${pl.qaPerson ? ' · QA by ' + escapeHtml(pl.qaPerson) : ''}${pl.qaPassDate ? ' on ' + formatOrdinalDate(pl.qaPassDate) : ''}`
         : (pl.poNo ? '' : '<span style="color:var(--muted);">No receipt could be matched for this quantity.</span>');
       const okNotOk = (pl.okQuantity != null || pl.notOkQuantity != null || pl.missingQuantity != null)
         ? ` <span style="color:var(--muted); font-size:0.78rem;">(OK ${trimNum(pl.okQuantity || 0)} / Not-OK ${trimNum(pl.notOkQuantity || 0)} / Missing ${trimNum(pl.missingQuantity || 0)})</span>` : '';
-      return `<div style="padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); margin-top:6px;">
-          ${chip} <strong style="margin-left:6px;">${pl.poNo ? escapeHtml(pl.poNo) : '<span style="color:var(--muted);">No PO</span>'}</strong>
-          ${pl.poDate ? ' — ' + formatOrdinalDate(pl.poDate) : ''} ${pl.vendorName ? ' — ' + escapeHtml(pl.vendorName) : ''}
-          <span style="float:right; font-weight:600;">${trimNum(pl.attributedQuantity || 0)}</span>
+      return `<div class="psn-po-row">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span>${chip} <strong style="margin-left:6px; font-family:ui-monospace, 'SF Mono', Consolas, monospace;">${pl.poNo ? escapeHtml(pl.poNo) : '<span style="color:var(--muted); font-family:inherit;">No PO</span>'}</strong>
+            ${pl.poDate ? ' <span style="color:var(--muted);">— ' + formatOrdinalDate(pl.poDate) + '</span>' : ''} ${pl.vendorName ? ' <span style="color:var(--muted);">— ' + escapeHtml(pl.vendorName) + '</span>' : ''}</span>
+            <span style="font-weight:700;">${trimNum(pl.attributedQuantity || 0)}</span>
+          </div>
           <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">${evidence}${okNotOk}</div>
         </div>`;
     }).join('');
 
-    const warn = m.unattributedQuantity > 0
-      ? `<div style="margin-top:6px; padding:8px; background:#fee2e2; border-left:4px solid #b91c1c; border-radius:var(--radius); font-size:0.82rem;">${trimNum(m.unattributedQuantity)} ${escapeHtml(m.unitType || '')} could not be attributed to any receipt.</div>`
+    const warn = unattributed > 0
+      ? `<div style="margin-top:8px; padding:8px 10px; background:#fee2e2; border-left:4px solid #b91c1c; border-radius:var(--radius); font-size:0.82rem;">${trimNum(unattributed)} ${escapeHtml(m.unitType || '')} could not be attributed to any receipt.</div>`
       : '';
 
     const rejectionsHtml = (m.rejections || []).length
@@ -316,11 +367,13 @@ function psnRenderMaterialSources(trace) {
         </div>`
       : '';
 
-    return `<div style="margin-bottom:14px; padding-bottom:10px; border-bottom:1px dashed var(--border);">
-        <div><strong>${escapeHtml(m.itemCode || '')}</strong> ${escapeHtml(m.materialName || '')}
-          <span style="float:right; font-size:0.82rem; color:var(--muted);">Allotted ${trimNum(m.allottedQuantity || 0)} / Used ${trimNum(m.usedQuantity || 0)} / Issued ${trimNum(m.issuedQuantity || 0)} ${escapeHtml(m.unitType || '')}</span>
+    return `<div class="psn-material-card">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap;">
+          <div><strong>${escapeHtml(m.itemCode || '')}</strong> <span style="color:var(--text);">${escapeHtml(m.materialName || '')}</span></div>
+          <span style="font-size:0.8rem; color:var(--muted); white-space:nowrap;">Allotted ${trimNum(m.allottedQuantity || 0)} / Used ${trimNum(m.usedQuantity || 0)} / Issued ${trimNum(m.issuedQuantity || 0)} ${escapeHtml(m.unitType || '')}</span>
         </div>
-        ${poRows || '<div style="color:var(--muted); font-size:0.85rem; margin-top:6px;">No source receipts recorded.</div>'}
+        <div class="psn-qty-bar-track"><div class="psn-qty-bar-fill" style="width:${attributedPct}%; ${unattributed > 0 ? 'background:#dc2626;' : ''}"></div></div>
+        ${poRows || '<div style="color:var(--muted); font-size:0.85rem; margin-top:8px;">No source receipts recorded.</div>'}
         ${warn}
         ${rejectionsHtml}
       </div>`;
@@ -346,30 +399,57 @@ async function psnRebuildSnapshot(fgId) {
 // later; nothing on this screen sends it anymore.
 async function psnLoadQueue() {
   const body = document.getElementById('psn-queue-body');
-  body.innerHTML = `<tr><td colspan="8" style="padding:10px; color:var(--muted);">Loading...</td></tr>`;
+  const filterInput = document.getElementById('psn-queue-filter-input');
+  if (filterInput) filterInput.value = '';
+  body.innerHTML = `<tr><td colspan="8" style="padding:16px; color:var(--muted); text-align:center;"><span class="psn-spinner"></span>Loading...</td></tr>`;
   try {
     const data = await apFetch({ action: 'fetchProductSerialQueue' });
     if (!data.success) { body.innerHTML = `<tr><td colspan="8" style="padding:10px; color:#b91c1c;">${escapeHtml(data.error || 'Failed to load.')}</td></tr>`; return; }
-    const rows = data.rows || [];
-    if (rows.length === 0) { body.innerHTML = `<tr><td colspan="8" style="padding:10px; color:var(--muted);">No units found.</td></tr>`; return; }
-    body.innerHTML = rows.map(r => {
-      const attribution = !r.traceId
-        ? '<span style="color:var(--muted);">Not built</span>'
-        : (r.snapshotStatus === 'ok' ? `<span style="color:#15803d;">OK (${r.poCount || 0} PO${r.poCount === 1 ? '' : 's'})</span>` : `<span style="color:#b45309;">${escapeHtml(r.snapshotStatus)}</span>`);
-      return `<tr style="cursor:pointer; border-top:1px solid var(--border);" onclick="psnOpenFromQueue(${r.fgId})">
-          <td style="padding:8px;">${escapeHtml(r.productSerialNumber || '')}</td>
-          <td style="padding:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(r.jobCardNumber || '')}">${escapeHtml(psnShortJobCard(r.jobCardNumber))}</td>
-          <td style="padding:8px;">${escapeHtml(r.projectId || '')}</td>
-          <td style="padding:8px;">${escapeHtml(r.customerName || '')}</td>
-          <td style="padding:8px;">${escapeHtml(r.productName || '')} ${escapeHtml(r.productRating || '')}</td>
-          <td style="padding:8px;">${formatOrdinalDate(r.fgDate)}</td>
-          <td style="padding:8px;">${escapeHtml(r.status || '')}</td>
-          <td style="padding:8px;">${attribution}</td>
-        </tr>`;
-    }).join('');
+    psnQueueRows = data.rows || [];
+    psnRenderQueueRows(psnQueueRows);
   } catch (err) {
+    psnQueueRows = [];
     body.innerHTML = `<tr><td colspan="8" style="padding:10px; color:#b91c1c;">Failed to load.</td></tr>`;
   }
+}
+
+function psnRenderQueueRows(rows) {
+  const body = document.getElementById('psn-queue-body');
+  const countEl = document.getElementById('psn-queue-count');
+  if (countEl) countEl.textContent = `${rows.length} of ${psnQueueRows.length} unit${psnQueueRows.length === 1 ? '' : 's'}`;
+  if (rows.length === 0) { body.innerHTML = `<tr><td colspan="8" style="padding:10px; color:var(--muted);">No units found.</td></tr>`; return; }
+  body.innerHTML = rows.map(r => {
+    const attribution = !r.traceId
+      ? '<span style="color:var(--muted);">Not built</span>'
+      : (r.snapshotStatus === 'ok' ? `<span style="color:#15803d; font-weight:600;">✓ OK (${r.poCount || 0} PO${r.poCount === 1 ? '' : 's'})</span>` : `<span style="color:#b45309; font-weight:600;">⚠ ${escapeHtml(r.snapshotStatus)}</span>`);
+    return `<tr style="cursor:pointer;" onclick="psnOpenFromQueue(${r.fgId})">
+        <td style="padding:8px; font-family:ui-monospace, 'SF Mono', Consolas, monospace; font-weight:600;">${escapeHtml(r.productSerialNumber || '')}</td>
+        <td style="padding:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(r.jobCardNumber || '')}">${escapeHtml(psnShortJobCard(r.jobCardNumber))}</td>
+        <td style="padding:8px;">${escapeHtml(r.projectId || '')}</td>
+        <td style="padding:8px;">${escapeHtml(r.customerName || '')}</td>
+        <td style="padding:8px;">${escapeHtml(r.productName || '')} ${escapeHtml(r.productRating || '')}</td>
+        <td style="padding:8px;">${formatOrdinalDate(r.fgDate)}</td>
+        <td style="padding:8px;">${psnStatusBadge(r.status)}</td>
+        <td style="padding:8px;">${attribution}</td>
+      </tr>`;
+  }).join('');
+}
+
+// psnFilterQueue -- client-side filter over the already-loaded queue, no
+// extra round-trip. Matches serial/job card/project/customer/product,
+// case-insensitive substring, same as every other quick-filter box in
+// this app.
+function psnFilterQueue(query) {
+  const q = (query || '').trim().toLowerCase();
+  if (!q) { psnRenderQueueRows(psnQueueRows); return; }
+  const filtered = psnQueueRows.filter(r =>
+    (r.productSerialNumber || '').toLowerCase().includes(q) ||
+    (r.jobCardNumber || '').toLowerCase().includes(q) ||
+    (r.projectId || '').toLowerCase().includes(q) ||
+    (r.customerName || '').toLowerCase().includes(q) ||
+    (r.productName || '').toLowerCase().includes(q)
+  );
+  psnRenderQueueRows(filtered);
 }
 
 // psnShortJobCard -- the full job_card_number is `JC_Set-<n>_<boqIdSuffix>`
