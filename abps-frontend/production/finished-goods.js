@@ -198,26 +198,15 @@ async function initializeFGAddWorkspace() {
     projDrop.placeholder = "Error loading projects";
   }
 
-  // Load personnel
-  const prodDrop  = document.getElementById("fg-add-prod-person");
-  prodDrop.innerHTML  = '<option value="">Loading...</option>';
-  try {
-    const data = await fetchWithStaleCache({ action:"getStoreOperatorsList" });
-    const allPersonnel = data.fullPersonnelDataRecordsTree || [];
-
-    const prodPeople  = filterOutPureAdminPersonnel(allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().trim() === "production" || d.toLowerCase().trim() === "admin")));
-
-    prodDrop.innerHTML  = '<option value="">— Select Person —</option>';
-
-    prodPeople.forEach(p => {
-      const opt = document.createElement("option"); opt.value = p.fullName; opt.textContent = p.fullName;
-      prodDrop.appendChild(opt);
-    });
-
-    } catch(e) {
-    prodDrop.innerHTML  = '<option value="">Error loading personnel</option>';
-  }
-
+  // The personnel dropdown that used to be loaded here is gone: the
+  // production person is now taken from the logged-in user at submit time
+  // (see productionPersonName below), so #fg-add-prod-person / #fg-add-qa-person
+  // no longer exist in index.html. The loader was left behind and its first
+  // line dereferenced the missing element unguarded — the throw was swallowed
+  // by the outer catch, which meant everything after it was silently skipped,
+  // INCLUDING the resetFGAddForm() below. That is exactly the "leaving and
+  // coming back should start fresh" guarantee this function exists to provide,
+  // so the form was quietly keeping a previous abandoned entry's values.
   resetFGAddForm();
   } catch(e) {
     console.error("initializeFGAddWorkspace error:", e);
@@ -230,7 +219,7 @@ async function handleFGAddProjectChange(projectId) {
   const meta = window.fgAddProjectMeta && window.fgAddProjectMeta[projectId];
   document.getElementById("fg-add-customer").value = meta ? (meta.companyName || "") : "";
 
-  const fieldsToToggle = ["fg-add-department","fg-add-serial","fg-add-prod-person","fg-add-qa-person","fg-add-remarks"];
+  const fieldsToToggle = ["fg-add-department","fg-add-serial","fg-add-remarks"];
   const submitBtn = document.getElementById("fg-add-submit-btn");
   const boqLabel = document.getElementById("fg-add-boq-label");
   const jobCardLabel = document.getElementById("fg-add-jobcard-label");
@@ -517,7 +506,7 @@ function updateFGSubmitButtonState() {
 }
 
 function resetFGAddForm() {
-  ["fg-add-department","fg-add-project-ta-input","fg-add-prod-person","fg-add-unit"].forEach(id => {
+  ["fg-add-department","fg-add-project-ta-input","fg-add-unit"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
   ["fg-add-customer","fg-add-product-name-display","fg-add-product-name",

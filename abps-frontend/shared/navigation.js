@@ -170,7 +170,14 @@ async function navigateToModule(key) {
       document.querySelectorAll('input[name="searchQual"]').forEach(cb => cb.checked = false);
       const drawerPanel = document.getElementById("custom-qualifications-sub-drawer");
       if (drawerPanel) drawerPanel.style.display = "block";
-      document.getElementById("selected-quals-display").textContent = "";
+      // #selected-quals-display was removed 10 Sep 2026 (see the no-op note
+      // in marketing/leads.js). The sibling reset below got its null guard;
+      // this site was missed, so the bare deref threw a TypeError right
+      // here — and because it threw mid-branch, loadQualFilter() on the
+      // next line never ran and Search by Qualification opened permanently
+      // empty. Guarded, not deleted, to match the sibling's shape.
+      const selQuals = document.getElementById("selected-quals-display");
+      if (selQuals) selQuals.textContent = "";
       loadQualFilter();
     } else if (key === "searchStatus") {
       document.querySelectorAll('input[name="leadMatrixStatusFilter"]').forEach(cb => cb.checked = false);
