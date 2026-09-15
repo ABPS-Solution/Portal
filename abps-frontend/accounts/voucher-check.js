@@ -47,7 +47,7 @@ function tvcRenderCard(v) {
       <button type="button" style="margin-top:4px; font-size:0.7rem; padding:2px 6px; border:1px solid var(--border); border-radius:4px; background:#fff; cursor:pointer;"
               onclick="document.getElementById('tvc-bill-file-${l.lineId}').click()">+ Upload Bill</button>`;
     const typeLabel = l.expenseType === 'Local Conveyance' && l.conveyanceMode ? `Local Conveyance (${escapeHtml(l.conveyanceMode)})`
-      : l.expenseType === 'Others' && l.otherText ? `Others (${escapeHtml(l.otherText)})` : escapeHtml(l.expenseType);
+      : l.expenseType === 'Others' && l.otherText ? `Others (${escapeHtml(l.otherText)})` : escapeHtml(tourExpenseTypeLabel(l.expenseType));
     return `<tr style="border-bottom:2px solid var(--border);" data-line-id="${l.lineId}">
       <td style="${cell}">${l.srNo}</td>
       <td style="${cell} ${colBorder}">${formatOrdinalDate(l.expenseDate)}</td>

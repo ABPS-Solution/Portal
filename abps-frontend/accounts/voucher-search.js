@@ -112,7 +112,7 @@ async function initializeVoucherSearchPanel() {
               <option value="">All</option>${TOUR_PURPOSES.map(p => `<option value="${p}">${p}</option>`).join("")}</select></div>
           <div><label class="field-label">Type</label>
             <select id="tvs-f-type" style="padding:8px; border:1px solid var(--border); border-radius:6px; min-width:140px;">
-              <option value="">All</option>${TOUR_EXPENSE_TYPES.map(t => `<option value="${t}">${t}</option>`).join("")}</select></div>
+              <option value="">All</option>${TOUR_EXPENSE_TYPES.map(t => `<option value="${t}">${tourExpenseTypeLabel(t)}</option>`).join("")}</select></div>
           <div><label class="field-label">Status</label>
             <select id="tvs-f-status" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
               <option value="">All</option><option value="Unchecked">Unchecked</option><option value="Checked">Checked</option></select></div>
@@ -375,7 +375,7 @@ function tvsRenderCard(v) {
       : '';
     return `<tr style="border-bottom:2px solid var(--border);">
       <td style="${cell}">${l.srNo}</td><td style="${cell} ${colBorder}">${formatOrdinalDate(l.expenseDate)}</td>
-      <td style="${cell} ${colBorder}">${escapeHtml(l.expenseType)}${l.conveyanceMode ? ' (' + escapeHtml(l.conveyanceMode) + ')' : ''}</td>
+      <td style="${cell} ${colBorder}">${escapeHtml(tourExpenseTypeLabel(l.expenseType))}${l.conveyanceMode ? ' (' + escapeHtml(l.conveyanceMode) + ')' : ''}</td>
       <td style="${amtCell} ${colBorder}">${formatINRComma(l.amount)}</td>
       <td style="${cell} ${colBorder}; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
       <td style="${cell} ${colBorder}">${actualCell}${overLimitBadge}</td>

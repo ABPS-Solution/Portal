@@ -54,7 +54,7 @@ async function edInitEmployeeSection(ns) {
       <div id="el-add-form" style="display:none; background:var(--highlight-bg); padding:16px; border-radius:var(--radius); margin-bottom:16px;">
         <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
           <select id="el-new-type" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
-            ${TOUR_EXPENSE_TYPES.map(t => `<option value="${t}">${t}</option>`).join("")}
+            ${TOUR_EXPENSE_TYPES.map(t => `<option value="${t}">${tourExpenseTypeLabel(t)}</option>`).join("")}
           </select>
           <input type="number" id="el-new-manager-limit" placeholder="Manager Daily Limit (₹)" min="0" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
           <input type="number" id="el-new-staff-limit" placeholder="Executive Daily Limit (₹)" min="0" style="padding:9px 10px; border:1px solid var(--border); border-radius:6px;">
@@ -285,7 +285,7 @@ async function loadExpenseLimitsTable() {
     const groups = Object.values(byType).sort((a, b) => a.expenseType.localeCompare(b.expenseType));
     const rows = groups.map(g => `
       <tr style="border-bottom:1px solid var(--border);" data-expense-type="${escapeHtml(g.expenseType)}">
-        <td style="padding:7px;">${escapeHtml(g.expenseType)}</td>
+        <td style="padding:7px;">${escapeHtml(tourExpenseTypeLabel(g.expenseType))}</td>
         <td style="padding:7px;"><input type="number" class="el-f-manager-limit" value="${g.managerLimit != null ? trimNum(g.managerLimit) : ''}" min="0" placeholder="—"
               style="width:100px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:right;"></td>
         <td style="padding:7px;"><input type="number" class="el-f-staff-limit" value="${g.staffLimit != null ? trimNum(g.staffLimit) : ''}" min="0" placeholder="—"

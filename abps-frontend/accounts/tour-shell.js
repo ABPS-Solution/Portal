@@ -13,6 +13,15 @@ const TOUR_TOGGLES = ["advance", "check", "search", "employees"];
 const TOUR_EXPENSE_TYPES = ["Travel", "Hotel", "Food", "Local Conveyance", "Material Purchase", "Others"];
 const TOUR_PURPOSES = ["Marketing", "Service", "QA", "Others"];
 
+// "Travel" is DISPLAYED as "Travel to Different City" (15 Sep 2026) —
+// people were filling small in-city expenses (auto, bus) under "Travel"
+// instead of "Local Conveyance" because the plain word read as covering
+// any trip. The stored value/DB column stays "Travel" everywhere (no
+// migration, no backend change, same value used for filtering) — this
+// only changes what gets displayed. Use this at every render site that
+// shows a raw expenseType to a human; never at a comparison/filter site.
+function tourExpenseTypeLabel(type) { return type === 'Travel' ? 'Travel to Different City' : type; }
+
 function initializeTourExpensePanel() {
   document.getElementById("te-feedback").style.display = "none";
   document.getElementById("te-success").style.display = "none";
