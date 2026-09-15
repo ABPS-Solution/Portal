@@ -592,12 +592,14 @@ function formatTime12h(value) {
 
 function formatDateTimeDMY(value) {
   if (!value) return "";
-  return `${formatDateDMY(value)}, ${formatTime12h(value)}`;
+  // formatOrdinalDateTime, not formatDateDMY+formatTime12h — house
+  // convention since 7 Sep 2026 is "8th Sep 2026", not DD/MM/YYYY.
+  return formatOrdinalDateTime(value);
 }
 
 function fmtPODate(raw) {
   if (!raw) return "";
-  return formatDateDMY(raw);
+  return formatOrdinalDate(raw);
 }
 
 function isoFromPODate(raw) {

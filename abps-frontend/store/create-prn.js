@@ -895,7 +895,7 @@ function renderPRNCreateTable() {
           <input type="checkbox" class="prn-create-checked" data-idx="${idx}" style="width:20px; height:20px; cursor:pointer; accent-color:#9333ea;" />
         </td>
         <td style="padding:8px; text-align:center;">
-          <input type="number" min="0" max="${storeCap}" value="${Number.isInteger(autoStoreQty) ? autoStoreQty : autoStoreQty.toFixed(2)}"
+          <input type="number" min="0" max="${storeCap}" value="${formatQtyTrimmed(autoStoreQty)}"
             class="prn-create-storeqty prn-create-decrease-storeqty" data-idx="${idx}" data-total-covered="${totalCovered}" data-buffered-req="${bufferedReq}" data-deferred="${item.deferred ? '1' : '0'}"
             oninput="updatePRNDecreaseRowPurchaseQty(${idx}, this)"
             style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
@@ -980,7 +980,7 @@ function renderPRNCreateTable() {
       const purchaseQty = isCountUnit ? Math.ceil(rawPurchaseQty - 1e-9) : rawPurchaseQty;
 
       const cell = document.getElementById(`prn-create-purchaseqty-${idx}`);
-      if (cell) cell.textContent = isCountUnit ? String(purchaseQty) : (Number.isInteger(purchaseQty) ? String(purchaseQty) : purchaseQty.toFixed(2));
+      if (cell) cell.textContent = isCountUnit ? String(purchaseQty) : formatQtyTrimmed(purchaseQty);
     });
   });
   

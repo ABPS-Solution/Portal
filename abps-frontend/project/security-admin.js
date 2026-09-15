@@ -681,8 +681,8 @@ function renderRegisteredDevicesList(devices) {
       <td style="padding:8px; font-size:0.78rem;">${(d.allowed_users || []).join(', ') || '—'}</td>
       <td style="padding:8px;">${d.status}</td>
       <td style="padding:8px; font-size:0.78rem;">${restrictedLabel}</td>
-      <td style="padding:8px;">${formatDateDMY(d.created_at)}</td>
-      <td style="padding:8px;">${d.last_used_at ? formatDateDMY(d.last_used_at) : '—'}</td>
+      <td style="padding:8px;">${formatOrdinalDate(d.created_at)}</td>
+      <td style="padding:8px;">${d.last_used_at ? formatOrdinalDate(d.last_used_at) : '—'}</td>
       <td style="padding:8px; white-space:nowrap;">
         <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="openAddDevicePersonModal(${d.device_id})">Add Person</button>
         <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="openDeviceRestrictionModal(${d.device_id})">Restrict Access</button>

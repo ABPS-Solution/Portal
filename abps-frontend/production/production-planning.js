@@ -43,8 +43,13 @@ const PPLAN_MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"
 const pplanFmt = s => { if (!s) return "-"; const d = pplanParse(s); return d.getUTCDate() + " " + PPLAN_MON[d.getUTCMonth()]; };
 
 const pplanIsAdmin = () => localStorage.getItem("isUserAdminGlobal") === "true";
+// Wrapped in its own max-width/margin:0 auto div, input itself at
+// width:100% — the DD/MM/YYYY overlay (shared/format.js) anchors to the
+// wrapper IT inserts around the input, so a width set directly ON the
+// input leaves the overlay floating at the input's old, uncentered
+// position (documented 4 Sep and 9 Sep 2026; this site was missed then).
 const pplanAsOfInputHtml = (id, value) => pplanIsAdmin()
-  ? `<input type="date" id="pplan-asof-${id}" value="${value || ''}" title="Admin only - set/backdate this completion for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.74rem; width:130px; box-sizing:border-box;" />`
+  ? `<div style="max-width:130px; margin:0 auto;"><input type="date" id="pplan-asof-${id}" value="${value || ''}" title="Admin only - set/backdate this completion for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box;" /></div>`
   : "";
 const pplanReadAsOf = (id) => { const el = document.getElementById(`pplan-asof-${id}`); return el && el.value ? el.value : undefined; };
 
