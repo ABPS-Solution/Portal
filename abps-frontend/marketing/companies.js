@@ -74,7 +74,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
           // Card Details flow: a specific person was searched but not found.
           bannerHook.innerHTML = `
             <div class="system-runtime-inline-alert-callout">
-              <span class="alert-callout-text-msg">We have information on the following people from this ${activeSearchCompany}, but not for ${targetName.toString().trim()}.</span>
+              <span class="alert-callout-text-msg">We have information on the following people from this ${escapeHtml(activeSearchCompany)}, but not for ${escapeHtml(targetName.toString().trim())}.</span>
               <button class="nav-btn-styled" style="background:var(--accent);" onclick="revealNewEntryFormDropdownFromBanner()">Create New Entry</button>
             </div>
           `;
@@ -250,7 +250,7 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
     });
 
     if (!data.success || !data.leads || data.leads.length === 0) {
-      expandDiv.innerHTML = `<p style="color:var(--warn); font-size:0.85rem; font-weight:700;">No records found for "${companyName}".</p>`;
+      expandDiv.innerHTML = `<p style="color:var(--warn); font-size:0.85rem; font-weight:700;">No records found for "${escapeHtml(companyName)}".</p>`;
       expandDiv.style.display = "block";
       setBtnLook("Collapse Company", "expanded");
       btn.disabled = false;
@@ -267,7 +267,7 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
       return aMatch && !bMatch ? -1 : !aMatch && bMatch ? 1 : 0;
     });
 
-    expandDiv.innerHTML = `<div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.3px;">📋 ${companyName} — All Contacts</div>`;
+    expandDiv.innerHTML = `<div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.3px;">📋 ${escapeHtml(companyName)} — All Contacts</div>`;
 
     leads.forEach(lead => {
       const tRef = lead["Lead ID"];
@@ -287,13 +287,13 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
         <div class="contact-summary-header-row" style="cursor:pointer;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)">
           <div class="contact-summary-title-info">
             <div class="meta-row-line-block" style="margin-bottom:6px;">
-              <span style="background:#e2e8f0;">Company:</span><strong style="margin-right:20px;">${lead["Company Name"] || companyName}</strong>
-              <span style="background:#edf2f7;">Status:</span><strong id="card-lbl-status-${tRef}">${lead["Status"] || "N/A"}</strong>
+              <span style="background:#e2e8f0;">Company:</span><strong style="margin-right:20px;">${escapeHtml(lead["Company Name"] || companyName)}</strong>
+              <span style="background:#edf2f7;">Status:</span><strong id="card-lbl-status-${tRef}">${escapeHtml(lead["Status"] || "N/A")}</strong>
               ${isTarget ? '<span style="background:var(--brand); color:#fff; margin-left:8px; font-size:0.65rem; padding:2px 6px; border-radius:4px; font-weight:700;">LINKED TO TASK</span>' : ''}
             </div>
             <div class="meta-row-line-block">
-              <span style="background:#e2e8f0;">Name:</span><strong style="margin-right:20px;" id="card-lbl-name-${tRef}">${cardName}</strong>
-              <span style="background:#edf2f7;">Position:</span><strong id="card-lbl-pos-${tRef}">${lead["Position"] || "Unspecified"}</strong>
+              <span style="background:#e2e8f0;">Name:</span><strong style="margin-right:20px;" id="card-lbl-name-${tRef}">${escapeHtml(cardName)}</strong>
+              <span style="background:#edf2f7;">Position:</span><strong id="card-lbl-pos-${tRef}">${escapeHtml(lead["Position"] || "Unspecified")}</strong>
             </div>
           </div>
           <div class="directory-btn-actions-block" onclick="event.stopPropagation()">
@@ -317,7 +317,7 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
     setBtnLook("Collapse Company", "expanded");
 
   } catch(e) {
-    expandDiv.innerHTML = `<p style="color:var(--warn);">Error: ${e.message}</p>`;
+    expandDiv.innerHTML = `<p style="color:var(--warn);">Error: ${escapeHtml(e.message)}</p>`;
     expandDiv.style.display = "block";
     setBtnLook("View Company", "collapsed");
   }

@@ -90,15 +90,15 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
     const centered = "text-align:center;";
     return `
       <tr style="border-bottom:2px solid var(--border);">
-        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered}">${t.status}</td>
-        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${t.type}</td>
-        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere; vertical-align:middle; ${centered} ${colBorder}">${t.eng}</td>
-        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere; vertical-align:middle; ${centered} ${colBorder}">${t.assigner || "System"}</td>
-        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${t.shift}</td>
+        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered}">${escapeHtml(t.status)}</td>
+        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${escapeHtml(t.type)}</td>
+        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere; vertical-align:middle; ${centered} ${colBorder}">${escapeHtml(t.eng)}</td>
+        <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere; vertical-align:middle; ${centered} ${colBorder}">${escapeHtml(t.assigner || "System")}</td>
+        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${escapeHtml(t.shift)}</td>
         <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${formatOrdinalDate(t.targetDate)}</td>
-        <td style="width:6%; padding:6px 4px; vertical-align:middle; ${centered} ${colBorder}"><span style="font-size:0.72rem; font-weight:700; color:#fff; background:${priorityColor}; padding:1px 6px; border-radius:3px;">${t.priority || "Medium"}</span></td>
-        <td style="width:30%; padding:6px 4px; font-size:0.85rem; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; vertical-align:middle; ${colBorder}">${t.desc || 'None'}</td>
-        <td style="width:17.5%; padding:6px 4px; font-size:0.85rem; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; vertical-align:middle; ${colBorder}">${t.completionNotes || '—'}</td>
+        <td style="width:6%; padding:6px 4px; vertical-align:middle; ${centered} ${colBorder}"><span style="font-size:0.72rem; font-weight:700; color:#fff; background:${priorityColor}; padding:1px 6px; border-radius:3px;">${escapeHtml(t.priority || "Medium")}</span></td>
+        <td style="width:30%; padding:6px 4px; font-size:0.85rem; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; vertical-align:middle; ${colBorder}">${escapeHtml(t.desc || 'None')}</td>
+        <td style="width:17.5%; padding:6px 4px; font-size:0.85rem; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; vertical-align:middle; ${colBorder}">${escapeHtml(t.completionNotes || '—')}</td>
         <td style="width:7.5%; padding:6px 4px; vertical-align:middle; ${colBorder}">
           <div style="display:flex; justify-content:center; gap:6px;">
             <button class="nav-btn-styled" id="trigger-inner-edit-task-${leadRef}-${t.id}" style="font-size:0.7rem; padding:3px 6px;">Edit</button>
@@ -351,9 +351,9 @@ async function executeTaskMatrixSearch() {
         card.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; min-width:0;">
-              <strong style="color:var(--brand); font-size:0.98rem; white-space:nowrap;">${t.type}</strong>
-              <span style="font-size:0.8rem; background:#edf2f7; padding:2px 9px; border-radius:10px; font-weight:700; white-space:nowrap;">${t.status}</span>
-              <span style="font-size:0.82rem; font-weight:700; padding:3px 10px; border-radius:10px; white-space:nowrap; ${dateChipStyle}">Target Date: ${formatOrdinalDate(t.targetDate)} · ${t.shift}</span>
+              <strong style="color:var(--brand); font-size:0.98rem; white-space:nowrap;">${escapeHtml(t.type)}</strong>
+              <span style="font-size:0.8rem; background:#edf2f7; padding:2px 9px; border-radius:10px; font-weight:700; white-space:nowrap;">${escapeHtml(t.status)}</span>
+              <span style="font-size:0.82rem; font-weight:700; padding:3px 10px; border-radius:10px; white-space:nowrap; ${dateChipStyle}">Target Date: ${formatOrdinalDate(t.targetDate)} · ${escapeHtml(t.shift)}</span>
             </div>
             <div style="display:flex; gap:6px; flex-shrink:0;">
               <button class="nav-btn-styled" id="view-company-btn-${t.id}" onclick="toggleTaskCompanyExpand('${t.id}', '${encodeURIComponent(t.companyName)}', '${encodeURIComponent(t.personName)}')" style="font-size:0.85rem; font-weight:700; padding:5px 12px; background:#fff; color:var(--brand); border:1px solid var(--brand); border-radius:4px; white-space:nowrap;">View Company</button>
@@ -362,12 +362,12 @@ async function executeTaskMatrixSearch() {
             </div>
           </div>
           <div style="font-size:0.95rem; color:var(--muted); margin-top:6px;">
-            <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Assigned to</span> <b style="color:#000; font-weight:600;">${t.eng}</b>
+            <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Assigned to</span> <b style="color:#000; font-weight:600;">${escapeHtml(t.eng)}</b>
             <span style="color:var(--border);">|</span>
-            <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">By</span> <b style="color:#000; font-weight:600;">${t.assigner || "System"}</b>
+            <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">By</span> <b style="color:#000; font-weight:600;">${escapeHtml(t.assigner || "System")}</b>
             <span style="color:var(--border);">·</span> ${t.companyName} (${t.personName})
           </div>
-          <div style="font-size:0.95rem; color:#000; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${(t.desc || '').replace(/"/g, '&quot;')}">${t.desc || 'None'}</div>
+          <div style="font-size:0.95rem; color:#000; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${(t.desc || '').replace(/"/g, '&quot;')}">${escapeHtml(t.desc || 'None')}</div>
           <div id="matrix-task-form-mount-${t.id}" style="margin-top:10px; display:none;"></div>
           <div id="matrix-task-company-expand-${t.id}" style="display:none; margin-top:12px; border-top:2px solid var(--border); padding-top:10px;"></div>
         `;
