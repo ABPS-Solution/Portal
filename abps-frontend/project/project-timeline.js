@@ -2243,23 +2243,17 @@ async function ptlSaveLdTerms() {
   }
 }
 
-async function ptlExtendLdDate() {
-  const newDate = document.getElementById("ptl-ld-extend-date")?.value;
-  const reason = document.getElementById("ptl-ld-extend-reason")?.value;
-  const documentRef = document.getElementById("ptl-ld-extend-docref")?.value;
-  if (!newDate || !reason || !reason.trim()) { alert("A new date and a reason are both required."); return; }
-  try {
-    const data = await apFetch({
-      action: "extendLdContractualDate", operatorName: appActiveOperatorIdentityString,
-      projectId: ptlLdPanelState.projectId, newDate, reason: reason.trim(), documentRef,
-    });
-    if (!data.success) { alert(data.error || "Could not extend this date."); return; }
-    ptlCloseLdPanel();
-    await selectPtlProject(ptlData.project.projectId);
-  } catch (e) {
-    alert("Network error: " + e.message);
-  }
-}
+// ptlExtendLdDate / the "Extend contractual date" UI removed 17 Sep 2026
+// (explicit request) — the contractual date now just tracks whatever
+// Final/Tentative Delivery Date is live in the MFC section (see
+// routes/timeline.js's fetchProjectTimeline, which now resolves the
+// PO-sourced contractual date live rather than freezing it at confirm
+// time), so LD recalculates automatically when that changes. A manually-
+// entered date (no PO delivery date on file) is still directly editable
+// via the "Save changes" button below instead of a separate extend flow.
+// project.ld_contractual_date_history / extendLdContractualDate
+// (routes/timeline.js) are flagged dead, not deleted, per house
+// convention — old rows stay as an audit trail of pre-17-Sep extensions.
 
 function ptlRenderLdPanel() {
   const body = document.getElementById("ptl-ld-panel-body");
@@ -2324,12 +2318,23 @@ function ptlRenderLdPanel() {
       + field("Grace days", `<input type="number" ${dis} value="${f.graceDays ?? 0}" style="${inputStyle}" oninput="ptlLdFormSet('graceDays', this.value)" />`)
       + `</div>`;
 
-    // Row 3: Basis / Currency / Tentative-or-Final delivery date. The date
-    // field's label switches to "Final" the moment mfc_actual_delivery_date
-    // is set, matching what contractualDate now actually resolves to below.
+    // Row 3: Basis / Currency / Tentative-or-Final delivery date.
+    //
+    // Contractual date no longer freezes at confirm time (17 Sep 2026,
+    // explicit request — the old "Extend Date" flow is gone). Two cases:
+    //   - source is 'manual' (no PO delivery date existed at confirm
+    //     time): stays a directly-editable input, always — "Save changes"
+    //     updates it, same as every other field on this form.
+    //   - source is 'po_delivery_date' (the normal case): read-only,
+    //     always shows the project's CURRENT live Final/Tentative
+    //     Delivery Date (from the MFC section) — no input, nothing to
+    //     extend. routes/timeline.js's fetchProjectTimeline resolves LD
+    //     money off this same live value, so changing the date in MFC
+    //     recalculates LD automatically with no action needed here.
     const finalDelivery = ptlData.project.actualDelivery || null;
     const tentativeDelivery = ptlData.project.tentativeDelivery || null;
-    const currentContractual = t?.contractualDate || finalDelivery || tentativeDelivery;
+    const liveDelivery = finalDelivery || tentativeDelivery;
+    const isManualSource = t?.contractualDateSource === "manual";
     const deliveryDateLabel = finalDelivery ? "Final Delivery Date" : "Tentative Delivery Date";
     html += `<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0 12px;">`
       + field("Basis", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('basisKind', this.value); ptlRenderLdPanel();">
@@ -2340,10 +2345,11 @@ function ptlRenderLdPanel() {
           <option value="INR" ${f.currency === "INR" ? "selected" : ""}>INR</option>
           <option value="USD" ${f.currency === "USD" ? "selected" : ""}>USD</option>
         </select>`)
-      + field(`${deliveryDateLabel}${t?.contractualDateSource === "po_delivery_date" ? " (from PO)" : ""}`,
-          isConfirmed
-            ? `<div style="padding:7px 0; font-size:0.85rem; font-weight:700;">${ptlFmtFull(currentContractual)} - frozen once confirmed; use "Extend Date" below to change it.</div>`
-            : `<input type="date" ${dis} value="${f.contractualDateManual || currentContractual || ""}" style="${inputStyle}" oninput="ptlLdFormSet('contractualDateManual', this.value)" />`)
+      + (isConfirmed && !isManualSource
+          ? field(`${deliveryDateLabel} (from MFC - follows it automatically)`,
+              `<div style="padding:7px 0; font-size:0.85rem; font-weight:700;">${liveDelivery ? ptlFmtFull(liveDelivery) : "-"}</div>`)
+          : field(isManualSource ? "Contractual delivery date (manual)" : deliveryDateLabel,
+              `<input type="date" ${dis} value="${f.contractualDateManual || t?.contractualDate || liveDelivery || ""}" style="${inputStyle}" oninput="ptlLdFormSet('contractualDateManual', this.value)" />`))
       + `</div>`;
 
     if (f.currency !== "INR") {
@@ -2391,27 +2397,9 @@ function ptlRenderLdPanel() {
     html += `<button type="button" onclick="ptlSaveLdTerms()" style="margin-top:8px; padding:9px 18px; font-size:0.85rem; font-weight:700; border:0; border-radius:var(--radius); background:var(--brand); color:#fff; cursor:pointer;">${isConfirmed ? "Save changes" : "Confirm LD Terms"}</button>`;
   }
 
-  if (isConfirmed && f.ldApplicable && canWrite) {
-    html += `<div style="margin-top:22px; padding-top:16px; border-top:1px solid var(--border);">
-      <h3 style="margin:0 0 8px; font-size:0.85rem; font-weight:800; color:var(--text);">Extend contractual date</h3>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 12px;">
-        ${field("New date", `<input type="date" id="ptl-ld-extend-date" style="${inputStyle}" />`)}
-        ${field("Reference (amendment/LOI, optional)", `<input type="text" id="ptl-ld-extend-docref" style="${inputStyle}" />`)}
-      </div>
-      ${field("Reason (required)", `<textarea id="ptl-ld-extend-reason" rows="2" style="${inputStyle} resize:vertical;"></textarea>`)}
-      <button type="button" onclick="ptlExtendLdDate()" style="padding:8px 16px; font-size:0.82rem; font-weight:700; border:1.5px solid var(--brand); border-radius:var(--radius); background:#fff; color:var(--brand); cursor:pointer;">Extend Date</button>
-    </div>`;
-  }
-
-  if ((ptlData.ldHistory || []).length) {
-    html += `<div style="margin-top:18px; padding-top:12px; border-top:1px solid var(--border);">
-      <h3 style="margin:0 0 8px; font-size:0.82rem; font-weight:800; color:var(--text);">Date extension history</h3>
-      ${ptlData.ldHistory.map(h => `<div style="font-size:0.76rem; color:var(--muted); margin-bottom:6px;">
-        ${ptlFmt(h.oldDate)} → <strong style="color:var(--text)">${ptlFmt(h.newDate)}</strong> - ${escapeHtml(h.reason)}
-        <span style="opacity:0.7;"> (${escapeHtml(h.changedBy || "")}, ${ptlFmt(h.changedAt)})</span>
-      </div>`).join("")}
-    </div>`;
-  }
+  // "Extend contractual date" form + "Date extension history" removed
+  // 17 Sep 2026 — see the comment above ptlRenderLdPanel's declaration
+  // for why (contractual date now just follows MFC's Delivery Date live).
 
   body.innerHTML = html;
 }
