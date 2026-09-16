@@ -1853,11 +1853,11 @@ function ptlBuildFlags() {
   if (ld) {
     if (ld.status === 'uncapped') {
       out.push({ sev: 'high', nodeId: '__ld__', title: `${ptlData.project.projectId} has an uncapped LD clause`,
-        msg: `${ptlFmtINR(ld.ld)} accruing, no cap stated - every week of delay adds more.`, owner: 'Project' });
+        msg: `${ptlFmtINR(ld.ld)} building up, no cap stated - every week of delay adds more.`, owner: 'Project' });
     } else if (ld.status === 'accruing_projected' || ld.status === 'accrued_final') {
       const soon = ld.daysToNextStep != null && ld.daysToNextStep <= 3;
       out.push({ sev: soon ? 'high' : 'normal', nodeId: '__ld__',
-        title: `${ptlData.project.projectId} is accruing LD - ${ptlFmtINR(ld.ld)}${ld.dispatchMode === 'actual' ? ' (final)' : ' (projected)'}`,
+        title: `${ptlData.project.projectId} has LD building up - ${ptlFmtINR(ld.ld)}${ld.dispatchMode === 'actual' ? ' (final)' : ' (estimate)'}`,
         msg: ld.daysToNextStep != null
           ? `Next LD step in ${ld.daysToNextStep} day${ld.daysToNextStep === 1 ? '' : 's'} - beating it saves ${ptlFmtINR(ld.marginal)}.`
           : `Contractual delivery was ${ptlFmtFull(ld.graceEnd)}.`,
@@ -2109,10 +2109,10 @@ const PTL_LD_STATUS_META = {
   not_applicable:      { label: "No LD clause on this PO",                  color: "#6b7a8d", bg: "#f1f5f9" },
   no_basis:            { label: "LD terms confirmed - PO value unresolved", color: "#92400e", bg: "#fffbeb" },
   on_time:             { label: "No LD exposure at current projection",     color: "#15803d", bg: "#f0fdf4" },
-  accruing_projected:  { label: "LD accruing (projected)",                  color: "#b45309", bg: "#fff7ed" },
-  accrued_final:       { label: "LD accrued (final)",                      color: "#b91c1c", bg: "#fef2f2" },
+  accruing_projected:  { label: "LD building up (estimate)",                color: "#b45309", bg: "#fff7ed" },
+  accrued_final:       { label: "LD locked in (final)",                    color: "#b91c1c", bg: "#fef2f2" },
   at_cap:              { label: "LD at cap",                               color: "#b91c1c", bg: "#fef2f2" },
-  uncapped:            { label: "LD accruing - uncapped clause",           color: "#b91c1c", bg: "#fef2f2" },
+  uncapped:            { label: "LD building up - no cap",                 color: "#b91c1c", bg: "#fef2f2" },
 };
 const PTL_LD_MONEY_STATUSES = new Set(["accruing_projected", "accrued_final", "at_cap", "uncapped"]);
 
