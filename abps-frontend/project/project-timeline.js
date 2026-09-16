@@ -2475,7 +2475,7 @@ function ptlRenderLdBoard(board, realised) {
       <thead><tr style="border-bottom:2px solid var(--border); text-align:left;">
         <th style="padding:8px 10px;">Project</th><th style="padding:8px 10px;">Company</th>
         <th style="padding:8px 10px; text-align:right;">Current exposure</th>
-        <th style="padding:8px 10px; text-align:right;">Value of expediting</th>
+        <th style="padding:8px 10px; text-align:right;">Savings if Dispatched Sooner</th>
         <th style="padding:8px 10px; text-align:right;">Next step in</th>
         <th style="padding:8px 10px; text-align:right;">₹/day</th>
       </tr></thead><tbody>${expeditable.map(r => row(r, true)).join("")}</tbody></table>`;
