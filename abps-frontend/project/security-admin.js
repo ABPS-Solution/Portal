@@ -345,11 +345,10 @@ function renderLoginLog() {
         <td style="padding:8px;">${l.user_name || '—'}</td>
         <td style="padding:8px; font-family:monospace;">${l.ip || '—'}</td>
         <td style="padding:8px; font-weight:700; color:${l.allowed ? '#16a34a' : '#dc2626'};">${l.allowed ? 'Allowed' : 'Blocked'}</td>
-        <td style="padding:8px;">${l.reason}</td>
         <td style="padding:8px;">${l.city ? `${l.city}, ` : ''}${l.country || '—'}</td>
         <td style="padding:8px;">${l.isp_asn || '—'}</td>
         <td style="padding:8px;">${l.is_vpn ? '⚠️ Yes' : 'No'}</td>
-      </tr>`).join('') || `<tr><td colspan="8" style="padding:14px; text-align:center; color:var(--muted);">No login attempts recorded yet.</td></tr>`;
+      </tr>`).join('') || `<tr><td colspan="7" style="padding:14px; text-align:center; color:var(--muted);">No login attempts recorded yet.</td></tr>`;
 }
 
 // ── Outage Mode (Office Networks tab) ────────────────────────────────────
