@@ -771,6 +771,7 @@
 
   <div id="dept-tabs-bar" class="dept-tabs-bar" style="display:none;">
     <span class="dept-tabs-label">Departments</span>
+    <button class="dept-tab" id="dept-tab-admin"      data-accent="#1e293b" onclick="handleDepartmentTabClick('admin')">Admin</button>
     <button class="dept-tab" id="dept-tab-marketing"  data-accent="#be185d" onclick="handleDepartmentTabClick('marketing')">Marketing</button>
     <button class="dept-tab" id="dept-tab-project"    data-accent="#2563eb" onclick="handleDepartmentTabClick('project')">Project</button>
     <button class="dept-tab" id="dept-tab-design"     data-accent="#2563eb" onclick="handleDepartmentTabClick('design')">Design</button>
@@ -813,18 +814,28 @@
       </div>
     </div>
 
+    <!-- ── ADMIN (16 Sep 2026 — Security & Login Access and Admin
+         Dashboard moved out from under Project into their own dedicated
+         department tab, same shape ERP already uses; the tile/permission/
+         panel behind each is unchanged) ──────────────────────────────── -->
+    <div id="dashboard-admin-department-header-block" class="dept-block" style="display:none; --dept-accent:#1e293b;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#1e293b;"></div>
+        <span class="dept-name">Admin</span>
+        <div id="mod-admin-dashboard-wrapper" style="display:none;">
+          <button class="dept-dash-pill" id="mod-admin-dashboard" onclick="navigateToAdminDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Admin Dashboard</button>
+        </div>
+      </div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-security-admin" onclick="switchActiveDashboardModule('security-admin')"><span class="mc-label">Security &amp; Login Access</span></div>
+      </div>
+    </div>
+
     <!-- ── PROJECT ────────────────────────────────────────────────────────── -->
     <div id="dashboard-project-department-header-block" class="dept-block" style="display:none; --dept-accent:#2563eb;">
       <div class="dept-header">
         <div class="dept-bar" style="background:#2563eb;"></div>
         <span class="dept-name">Project Department</span>
-        <div id="mod-admin-dashboard-wrapper" style="display:none;">
-          <button class="dept-dash-pill" id="mod-admin-dashboard" onclick="navigateToAdminDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Admin Dashboard</button>
-        </div>
-      </div>
-      <div class="sec-label">Admin</div>
-      <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-security-admin" onclick="switchActiveDashboardModule('security-admin')"><span class="mc-label">Security &amp; Login Access</span></div>
       </div>
       <div class="sec-label">Project Tracking</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">

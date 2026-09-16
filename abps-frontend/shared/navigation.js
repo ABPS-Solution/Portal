@@ -576,10 +576,18 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
       if (document.getElementById("mod-project-status")) document.getElementById("mod-project-status").style.display = canProjectStatus ? "block" : "none";
       const canCustomerQueryManagement = userPermissionsObject.customerQueryManagement === true;
       if (document.getElementById("mod-customer-queries")) document.getElementById("mod-customer-queries").style.display = canCustomerQueryManagement ? "block" : "none";
+      const projectHeaderBlock = document.getElementById("dashboard-project-department-header-block");
+      if (projectHeaderBlock) projectHeaderBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canCustomerQueryManagement) ? "block" : "none";
+
+      // Admin Department block visibility (16 Sep 2026) — Security & Login
+      // Access and Admin Dashboard moved out from under Project into their
+      // own dedicated department tab, same shape ERP already uses. Neither
+      // permission gates anything else, so this block's own OR-condition
+      // is exactly the two of them.
       const canSecurityAdmin = userPermissionsObject.securityLoginAccess === true;
       if (document.getElementById("mod-security-admin")) document.getElementById("mod-security-admin").style.display = canSecurityAdmin ? "block" : "none";
-      const projectHeaderBlock = document.getElementById("dashboard-project-department-header-block");
-      if (projectHeaderBlock) projectHeaderBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canCustomerQueryManagement || canSecurityAdmin || canViewAdminDashboard) ? "block" : "none";
+      const adminHeaderBlock = document.getElementById("dashboard-admin-department-header-block");
+      if (adminHeaderBlock) adminHeaderBlock.style.display = (canSecurityAdmin || canViewAdminDashboard) ? "block" : "none";
 
       const canTourExpense = userPermissionsObject.tourExpense === true;
       if (document.getElementById("mod-tour-expense")) document.getElementById("mod-tour-expense").style.display = canTourExpense ? "block" : "none";
@@ -626,7 +634,7 @@ function hideEmptyDashboardSections() {
 // currently shown". Called at the end of enforceDynamicModuleRoleGateways
 // on every refresh, so it stays in sync with permission changes without
 // needing to be threaded through every call site separately.
-const DEPT_TAB_KEYS = ['marketing', 'project', 'design', 'purchase', 'store', 'qa', 'production', 'accounts'];
+const DEPT_TAB_KEYS = ['admin', 'marketing', 'project', 'design', 'purchase', 'store', 'qa', 'production', 'accounts'];
 const DEPT_TAB_STORAGE_KEY = 'abpsActiveDepartmentTab';
 // Which departments are actually permission-visible, as of the last
 // enforceDynamicModuleRoleGateways pass. selectDepartmentTab consults
