@@ -390,6 +390,14 @@ function navigateToPurchaseDashboard() {
   // Same fix as Design/Store — the dashboard canvas isn't reliably nested
   // under its own department's enclosure panel, so show all of them.
   ddShowAllWorkspaceEnclosures();
+  // ddShowAllWorkspaceEnclosures() reveals the whole shared purchase
+  // enclosure panel, including purchase-po-revision-reminder-banner sitting
+  // at its top — that banner's display state is leftover from whatever it
+  // was last set to on a DIFFERENT Purchase screen this session (only
+  // navigateToPurchaseWorkspacePanel/create-prn.js actually check+toggle
+  // it). Reset it here so the Dashboard never shows a stale reminder.
+  const poRevBanner = document.getElementById("purchase-po-revision-reminder-banner");
+  if (poRevBanner) poRevBanner.style.display = "none";
   const c = document.getElementById("canvas-module-purchase-dashboard");
   if (c) c.style.display = "block";
   showDashboardGlobalToolbar("Purchase Dashboard", "pd-period-btns", pdReturnToMain);
@@ -403,6 +411,12 @@ function navigateToStoreDashboard() {
   // Same fix as Design — the dashboard canvas isn't reliably nested under
   // its own department's enclosure panel, so show all of them.
   ddShowAllWorkspaceEnclosures();
+  // Same leak as Purchase Dashboard (see navigateToPurchaseDashboard) —
+  // store-prn-revision-reminder-banner-el sits inside the shared store
+  // enclosure and keeps whatever display state a DIFFERENT Store screen
+  // last left it in.
+  document.querySelectorAll(".store-prn-revision-reminder-banner-el")
+    .forEach(b => b.style.display = "none");
   const c = document.getElementById("canvas-module-store-dashboard");
   if (c) c.style.display = "block";
   showDashboardGlobalToolbar("Store Dashboard", "sd-period-btns", sdReturnToMain);
