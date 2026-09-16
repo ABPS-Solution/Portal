@@ -2225,6 +2225,11 @@ async function ptlSaveLdTerms() {
   if (!ptlLdPanelState) return;
   const f = ptlLdPanelState.form;
   if (f.ldApplicable && !(Number(f.ratePercent) > 0)) { alert("Rate percent is required."); return; }
+  // Both columns are numeric(6,3) — max 999.999. A larger value used to
+  // hit a raw, unhelpful Postgres "numeric field overflow" (found via a
+  // real ref-id lookup, 17 Sep 2026) instead of a clear message.
+  if (f.ldApplicable && Number(f.ratePercent) > 999.999) { alert("Rate % can't be more than 999.999."); return; }
+  if (f.ldApplicable && f.capPercent != null && f.capPercent !== "" && Number(f.capPercent) > 999.999) { alert("Cap % can't be more than 999.999."); return; }
   try {
     const data = await apFetch({
       action: "saveLdTerms", operatorName: appActiveOperatorIdentityString, projectId: ptlLdPanelState.projectId,
@@ -2297,7 +2302,7 @@ function ptlRenderLdPanel() {
 
     // Row 1: Rate % / Per / Counted in
     html += `<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0 12px;">`
-      + field("Rate %", `<input type="number" step="0.001" ${dis} value="${f.ratePercent ?? ""}" style="${inputStyle}" oninput="ptlLdFormSet('ratePercent', this.value)" />`)
+      + field("Rate %", `<input type="number" step="0.001" min="0" max="999.999" ${dis} value="${f.ratePercent != null ? formatQtyTrimmed(f.ratePercent) : ""}" style="${inputStyle}" oninput="ptlLdFormSet('ratePercent', this.value)" />`)
       + field("Per", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('periodUnit', this.value)">
           ${["week","day","month"].map(u => `<option value="${u}" ${f.periodUnit === u ? "selected" : ""}>${u}</option>`).join("")}
         </select>`)
@@ -2314,7 +2319,7 @@ function ptlRenderLdPanel() {
           <option value="completed_only" ${f.partPeriodRule === "completed_only" ? "selected" : ""}>Completed periods only</option>
           <option value="pro_rata" ${f.partPeriodRule === "pro_rata" ? "selected" : ""}>Pro-rata</option>
         </select>`)
-      + field("Cap % (blank = uncapped)", `<input type="number" step="0.001" ${dis} value="${f.capPercent ?? ""}" style="${inputStyle}" oninput="ptlLdFormSet('capPercent', this.value)" placeholder="Uncapped" />`)
+      + field("Cap % (blank = uncapped)", `<input type="number" step="0.001" min="0" max="999.999" ${dis} value="${f.capPercent != null ? formatQtyTrimmed(f.capPercent) : ""}" style="${inputStyle}" oninput="ptlLdFormSet('capPercent', this.value)" placeholder="Uncapped" />`)
       + field("Grace days", `<input type="number" ${dis} value="${f.graceDays ?? 0}" style="${inputStyle}" oninput="ptlLdFormSet('graceDays', this.value)" />`)
       + `</div>`;
 
@@ -2353,7 +2358,7 @@ function ptlRenderLdPanel() {
       + `</div>`;
 
     if (f.currency !== "INR") {
-      html += field("INR per unit", `<input type="number" step="0.0001" ${dis} value="${f.usdRate ?? ""}" style="${inputStyle}" oninput="ptlLdFormSet('usdRate', this.value)" />`);
+      html += field("INR per unit", `<input type="number" step="0.0001" ${dis} value="${f.usdRate != null ? formatQtyTrimmed(f.usdRate) : ""}" style="${inputStyle}" oninput="ptlLdFormSet('usdRate', this.value)" />`);
     }
 
     // Row 4: PO basis value — which candidates show depends on the
@@ -2441,13 +2446,24 @@ function ptlRenderLdBoard(board, realised) {
   const expeditable = board.filter(r => r.ld.marginal > 0);
   const atCap = board.filter(r => !(r.ld.marginal > 0));
 
+  // Dispatch column — whether the effective dispatch date driving these
+  // numbers is a real, already-happened Final Invoice date ('actual') or
+  // still a projection off the current production plan ('projected').
+  // Matters for how much to trust the row: a 'projected' figure will
+  // keep moving as production actually progresses, an 'actual' one is
+  // final for that project's delay measurement.
+  const dispatchBadge = r => r.ld.dispatchMode === "actual"
+    ? `<span style="font-size:0.72rem; font-weight:700; padding:2px 7px; border-radius:8px; background:#dcfce7; color:#166534;">Actual</span>`
+    : `<span style="font-size:0.72rem; font-weight:700; padding:2px 7px; border-radius:8px; background:#fef3c7; color:#92400e;">Projected</span>`;
+
   const row = (r, showMarginal) => `<tr style="border-bottom:1px solid var(--border);">
     <td style="padding:8px 10px; font-weight:700; cursor:pointer; color:var(--brand);" onclick="ptlCloseLdBoard(); selectPtlProject('${r.projectId.replace(/'/g, "\\'")}');">${escapeHtml(r.projectId)}</td>
     <td style="padding:8px 10px; font-size:0.82rem; color:var(--muted);">${escapeHtml(r.companyName || "-")}</td>
+    <td style="padding:8px 10px; text-align:right;">${r.ld.delayDays != null ? r.ld.delayDays + "d" : "-"}</td>
+    <td style="padding:8px 10px;">${dispatchBadge(r)}</td>
     <td style="padding:8px 10px; text-align:right;">${ptlFmtINR(r.ld.ld)}</td>
     ${showMarginal ? `<td style="padding:8px 10px; text-align:right; font-weight:700; color:#15803d;">${ptlFmtINR(r.ld.marginal)}</td>
-    <td style="padding:8px 10px; text-align:right;">${r.ld.daysToNextStep != null ? r.ld.daysToNextStep + "d" : "-"}</td>
-    <td style="padding:8px 10px; text-align:right; font-size:0.82rem; color:var(--muted);">${r.ld.rupeesPerDaySaved ? ptlFmtINR(r.ld.rupeesPerDaySaved) + "/day" : "-"}</td>` : `<td style="padding:8px 10px; text-align:right; color:var(--muted);">-</td><td></td><td></td>`}
+    <td style="padding:8px 10px; text-align:right;">${r.ld.daysToNextStep != null ? r.ld.daysToNextStep + "d" : "-"}</td>` : `<td style="padding:8px 10px; text-align:right; color:var(--muted);">-</td><td></td>`}
   </tr>`;
 
   let html = `<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
@@ -2462,10 +2478,11 @@ function ptlRenderLdBoard(board, realised) {
     html += `<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
       <thead><tr style="border-bottom:2px solid var(--border); text-align:left;">
         <th style="padding:8px 10px;">Project</th><th style="padding:8px 10px;">Company</th>
+        <th style="padding:8px 10px; text-align:right;">Days Delayed</th>
+        <th style="padding:8px 10px;">Dispatch</th>
         <th style="padding:8px 10px; text-align:right;">Current exposure</th>
         <th style="padding:8px 10px; text-align:right;">Savings if Dispatched Sooner</th>
         <th style="padding:8px 10px; text-align:right;">Next step in</th>
-        <th style="padding:8px 10px; text-align:right;">₹ Saved per Day of Expediting</th>
       </tr></thead><tbody>${expeditable.map(r => row(r, true)).join("")}</tbody></table>`;
   }
 
