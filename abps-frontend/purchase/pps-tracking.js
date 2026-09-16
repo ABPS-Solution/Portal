@@ -348,6 +348,14 @@ async function loadPPSForPRN() {
             // deliveries planned against this PO line can never add up to
             // more than what was actually ordered on it.
             window.ppsScheduleMeta[key] = Number(po.orderedQty) || 0;
+            // Fully received on THIS specific PO — "+ Add Delivery" makes
+            // no sense once everything ordered on it has actually arrived
+            // (real user report, 16 Sep 2026); nothing further is ever
+            // coming for a closed PO, so offering to plan one more
+            // tranche was actively misleading. Existing tranches stay
+            // visible/removable as before — this only hides the button
+            // that would add a new one.
+            window.ppsScheduleFullyReceived[key] = (Number(po.orderedQty) || 0) > 0 && (Number(po.receivedQty) || 0) >= Number(po.orderedQty);
             if (!window.ppsScheduleState[key]) {
               window.ppsScheduleState[key] = (po.schedule || []).map(s => ({
                 scheduleId: s.scheduleId, plannedQty: s.plannedQty, plannedDate: isoFromPODate(s.plannedDate),
@@ -438,6 +446,10 @@ window.ppsScheduleState = window.ppsScheduleState || {};
 // orderedQty per key ("<prnId>|<itemCode>|<poNo>") — the cap every
 // delivery's quantity is checked against, see ppsClampDeliveryQty.
 window.ppsScheduleMeta = window.ppsScheduleMeta || {};
+// Whether THIS PO+item line has already fully received its ordered
+// quantity — see the "+ Add Delivery" suppression in
+// ppsRenderScheduleEditor below.
+window.ppsScheduleFullyReceived = window.ppsScheduleFullyReceived || {};
 
 function ppsScheduleKey(prnId, itemCode, poNo) {
   return `${prnId}|${itemCode}|${poNo}`.replace(/[^a-zA-Z0-9|_-]/g, "_");
@@ -487,7 +499,14 @@ function ppsRenderScheduleEditor(key) {
   const usedQty = deliveries.reduce((s, t) => s + (Number(t.plannedQty) || 0), 0);
   const remaining = Math.max(0, orderedQty - usedQty);
   const addLabel = deliveries.length > 0 && remaining > 0 ? `+ Add Delivery (${fmt(remaining)} left)` : "+ Add Delivery";
-  return `<div style="min-width:200px;">${empty}${rows}<button type="button" onclick="ppsAddDelivery('${key}')" style="display:block; width:100%; background:none; border:1.5px dashed var(--brand); color:var(--brand); border-radius:4px; font-size:0.68rem; font-weight:700; padding:5px 6px; cursor:pointer; box-sizing:border-box;">${addLabel}</button></div>`;
+  // Fully received on this PO — nothing further is ever coming, so the
+  // "+ Add Delivery" button is dropped entirely rather than shown
+  // pointlessly (real user report, 16 Sep 2026). Existing tranches stay
+  // exactly as they render above (already read-only once their own
+  // status is 'Received').
+  const fullyReceived = !!window.ppsScheduleFullyReceived[key];
+  const addBtn = fullyReceived ? "" : `<button type="button" onclick="ppsAddDelivery('${key}')" style="display:block; width:100%; background:none; border:1.5px dashed var(--brand); color:var(--brand); border-radius:4px; font-size:0.68rem; font-weight:700; padding:5px 6px; cursor:pointer; box-sizing:border-box;">${addLabel}</button>`;
+  return `<div style="min-width:200px;">${empty}${rows}${addBtn}</div>`;
 }
 
 function ppsRerenderSchedule(key) {
