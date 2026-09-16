@@ -9,6 +9,12 @@ let mcLineItemState = {};
 // project.projects; each field auto-saves individually on change so a
 // user can fill one today and the rest tomorrow (migration 113).
 let mcGatingState = {};
+// Frozen copy of mcGatingState as last loaded from the server, per
+// projectId — mcGatingState itself gets mutated in place by every
+// saveMcGatingField call, so this is what submitMcClearance's success
+// summary diffs against to show which gating fields (dates etc.) actually
+// changed this session, same "before → after" pattern as mcLineItemMeta.
+let mcGatingInitialSnapshot = {};
 // Per-project, per-line ORIGINAL description/Current MFC Quantity as last
 // loaded from the server — kept separate from mcLineItemState (which holds
 // the user's in-progress edits) so submitMcClearance's success summary can
@@ -36,6 +42,7 @@ function initializeManufacturingClearancePanel() {
   mcCurrentStatus = "Inactive";
   mcLineItemState = {};
   mcGatingState = {};
+  mcGatingInitialSnapshot = {};
   mcLineItemMeta = {};
   syncMcStatusPills();
   loadItemCodeCatalogIntoCache().catch(() => {});
@@ -82,6 +89,7 @@ async function loadManufacturingClearanceList() {
       // toggleMcCardBody skipped calling loadMcLineItems for it entirely.
       mcLineItemState = {};
       mcGatingState = {};
+      mcGatingInitialSnapshot = {};
       mcLineItemMeta = {};
       cardsContainer.innerHTML = "";
       data.projects.forEach(p => cardsContainer.appendChild(renderMcProjectCard(p)));
@@ -136,7 +144,7 @@ function renderMcProjectCard(project) {
         <div class="meta-row-line-block" style="display:flex; align-items:center; flex-wrap:wrap; gap:10px;">
           <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:3px 8px; font-size:0.85rem; border-radius:3px;">${project.projectId}</span>
           <strong style="color:#111827; font-size:0.9rem;">${project.companyName}</strong>
-          <span style="font-size:0.85rem;">${deliveryLabel}: <strong style="color:#111827;">${formatOrdinalDate(deliveryValue) || "—"}</strong></span>
+          <span id="mc-header-delivery-${safeId}" data-delivery-label="${escapeHtml(deliveryLabel)}" style="font-size:0.85rem;">${deliveryLabel}: <strong style="color:#111827;">${formatOrdinalDate(deliveryValue) || "—"}</strong></span>
           <span style="margin-left:auto; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#fff; background:${status.color}; padding:3px 8px; border-radius:10px;">${status.text}</span>
           <span id="mc-caret-${safeId}" style="font-weight:700; color:var(--muted);">▸</span>
         </div>
@@ -197,6 +205,7 @@ async function loadMcLineItems(projectId) {
       };
     });
     mcGatingState[projectId] = { ...data.gating };
+    mcGatingInitialSnapshot[projectId] = { ...data.gating };
     renderMcLineItemsTable(projectId, data.lineItems);
   } catch(e) {
     contentEl.innerHTML = `<span style="color:#b91c1c;">Network error: ${e.message}</span>`;
@@ -418,6 +427,20 @@ async function saveMcGatingField(projectId, field, value) {
     const panelEl = document.getElementById(`mc-gating-panel-${safeId}`);
     if (panelEl) panelEl.innerHTML = buildMcGatingPanelHtml(projectId, mcGatingState[projectId]);
     setMcTableEnabled(projectId, data.complete);
+
+    // The card header's own delivery-date chip (visible even with the card
+    // collapsed) is built once in renderMcProjectCard from the project's
+    // load-time snapshot — it never refreshed after a gating-field save, so
+    // changing "Final Delivery Date from MFC" here left the header showing
+    // the stale value until the whole panel was reopened. Update it in
+    // place whenever the field that actually feeds it changed.
+    if (field === "actualDeliveryDate") {
+      const headerSpan = document.getElementById(`mc-header-delivery-${safeId}`);
+      if (headerSpan) {
+        const label = headerSpan.dataset.deliveryLabel || "Final Delivery Date from MFC";
+        headerSpan.innerHTML = `${escapeHtml(label)}: <strong style="color:#111827;">${formatOrdinalDate(value) || "—"}</strong>`;
+      }
+    }
   } catch (e) {
     alert("Network error: " + e.message);
   }
@@ -588,9 +611,36 @@ async function submitMcClearance(projectId) {
         const label = r.standardProductName || (meta[r.lineId] && meta[r.lineId].description) || `Line ${r.lineId}`;
         return { label, before, after: r.newMfcQuantity };
       });
+
+      // Gating fields (Drawing Sent Date, Final Delivery Date from MFC,
+      // etc.) each auto-save individually on change, separate from this
+      // Submit action — but the submit success summary only ever showed
+      // quantity changes, so a date edited moments before hitting Submit
+      // looked like it was silently ignored. Diff the load-time snapshot
+      // against the current state and prepend any real changes.
+      const MC_GATING_FIELD_LABELS = {
+        drawingSentForApproval: "Drawing Sent for Approval",
+        drawingSentDate: "Drawing Sent Date",
+        drawingApprovalReceivedDate: "Drawing Approval Received Date",
+        dateOfMfcReceivedFromCustomer: "Date of MFC Received from Customer",
+        actualDeliveryDate: "Final Delivery Date from MFC",
+      };
+      const MC_GATING_DATE_FIELDS = new Set(["drawingSentDate", "drawingApprovalReceivedDate", "dateOfMfcReceivedFromCustomer", "actualDeliveryDate"]);
+      const beforeGating = mcGatingInitialSnapshot[projectId] || {};
+      const afterGating = mcGatingState[projectId] || {};
+      const gatingChangeRows = Object.keys(MC_GATING_FIELD_LABELS)
+        .filter(f => (beforeGating[f] || "") !== (afterGating[f] || ""))
+        .map(f => ({
+          label: MC_GATING_FIELD_LABELS[f],
+          before: MC_GATING_DATE_FIELDS.has(f) ? (formatOrdinalDate(beforeGating[f]) || "—") : (beforeGating[f] || "—"),
+          after: MC_GATING_DATE_FIELDS.has(f) ? (formatOrdinalDate(afterGating[f]) || "—") : (afterGating[f] || "—"),
+          raw: true,
+        }));
+
       delete mcLineItemState[projectId];
       delete mcLineItemMeta[projectId];
-      renderMcSubmitSuccess(projectId, summaryRows);
+      delete mcGatingInitialSnapshot[projectId];
+      renderMcSubmitSuccess(projectId, [...gatingChangeRows, ...summaryRows]);
     } else {
       alert(data.error || "Failed to submit Manufacturing Clearance.");
     }
@@ -787,8 +837,11 @@ function renderMcSubmitSuccess(projectId, summaryRows) {
   const contentEl = document.getElementById(`mc-body-content-${safeId}`);
   if (!contentEl) return;
 
+  // `raw` rows (gating-field changes — dates, Yes/No) are already
+  // display-ready strings; trimNum is for the quantity rows only and
+  // would mangle a date string.
   const bulletsHtml = summaryRows.map(r =>
-    `<li style="margin-bottom:4px;">${r.label}: <strong>${trimNum(r.before)}</strong> → <strong style="color:#15803d;">${trimNum(r.after)}</strong></li>`
+    `<li style="margin-bottom:4px;">${r.label}: <strong>${r.raw ? r.before : trimNum(r.before)}</strong> → <strong style="color:#15803d;">${r.raw ? r.after : trimNum(r.after)}</strong></li>`
   ).join("");
 
   contentEl.innerHTML = `

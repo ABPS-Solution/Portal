@@ -2346,7 +2346,7 @@ function ptlRenderLdPanel() {
           <option value="USD" ${f.currency === "USD" ? "selected" : ""}>USD</option>
         </select>`)
       + (isConfirmed && !isManualSource
-          ? field(`${deliveryDateLabel} (from MFC - follows it automatically)`,
+          ? field(deliveryDateLabel,
               `<div style="padding:7px 0; font-size:0.85rem; font-weight:700;">${liveDelivery ? ptlFmtFull(liveDelivery) : "-"}</div>`)
           : field(isManualSource ? "Contractual delivery date (manual)" : deliveryDateLabel,
               `<input type="date" ${dis} value="${f.contractualDateManual || t?.contractualDate || liveDelivery || ""}" style="${inputStyle}" oninput="ptlLdFormSet('contractualDateManual', this.value)" />`))
@@ -2465,7 +2465,7 @@ function ptlRenderLdBoard(board, realised) {
         <th style="padding:8px 10px; text-align:right;">Current exposure</th>
         <th style="padding:8px 10px; text-align:right;">Savings if Dispatched Sooner</th>
         <th style="padding:8px 10px; text-align:right;">Next step in</th>
-        <th style="padding:8px 10px; text-align:right;">₹/day</th>
+        <th style="padding:8px 10px; text-align:right;">₹ Saved per Day of Expediting</th>
       </tr></thead><tbody>${expeditable.map(r => row(r, true)).join("")}</tbody></table>`;
   }
 
