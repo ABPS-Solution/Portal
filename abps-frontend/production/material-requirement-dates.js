@@ -221,15 +221,11 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
         requirementId: t.requirementId, requiredQty: t.requiredQty, requiredDate: isoFromPODate(t.requiredDate),
       }));
     }
-    const editorCell = purchaseQty <= 0
-      ? `<span style="font-size:0.95rem; color:#15803d; font-weight:700;">Fully covered from store — no date needed</span>`
-      : readOnly
-        ? mrdReadOnlyTranches(st.lines[key])
-        : `<div id="mrdsched-${ns}-${key}">${mrdRenderScheduleEditor(ns, key)}</div>`;
-
-    // Received / PO Qty — same figure PPS Tracking already shows (16 Sep
+    // Received / PO Qty, and the "already ordered" locked block below —
+    // both from purchase.pps_tracking via line.purchaseOrders (16 Sep
     // 2026, added on request so this screen's operator can see the same
-    // "what's actually arrived" picture without switching screens).
+    // "what's actually arrived" picture PPS Tracking shows, without
+    // switching screens).
     const pos = line.purchaseOrders || [];
     const orderedOnPO = pos.reduce((s, po) => s + (Number(po.orderedQty) || 0), 0);
     const receivedOnPO = pos.reduce((s, po) => s + (Number(po.receivedQty) || 0), 0);
@@ -241,12 +237,47 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
         : `<div style="font-weight:800; font-family:monospace; font-size:0.98rem; color:#b45309;">${fmt(receivedOnPO)} / ${fmt(orderedOnPO)}</div>
            <div style="height:4px; background:#e2e8f0; border-radius:2px; margin-top:4px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:#f59e0b;"></div></div>`;
 
+    // Purchase Qty column: purchaseQty (line.purchaseQty) is the LIVE
+    // "still needs to be purchased" figure — 180 here — and stays exactly
+    // what saveMaterialRequirementDates validates the editable tranches
+    // against server-side; that is unchanged and untouched. What was
+    // confusing (real user report, 16 Sep 2026) was seeing only 180 here
+    // right next to PPS Tracking showing 301 across two POs, with no way
+    // to tell 121 of that 301 was already ordered and covered. So this
+    // column now shows the full total (301) with a breakdown, and the
+    // requirement-date editor gets a read-only "Already Ordered" block
+    // listing each PO that already covers part of this line — those
+    // portions are locked (there's genuinely nothing to schedule for
+    // material that's already been ordered), only the still-open 180
+    // remains editable, targeting the exact same live purchaseQty as
+    // before.
+    const totalTarget = purchaseQty + orderedOnPO;
+    const purchaseQtyCell = orderedOnPO > 0
+      ? `<div style="font-weight:700; font-size:1.05rem;">${fmt(totalTarget)}</div>
+         <div style="font-size:0.64rem; color:var(--muted); margin-top:2px; line-height:1.3;">${fmt(orderedOnPO)} already ordered<br/>${fmt(purchaseQty)} still to order</div>`
+      : fmt(purchaseQty);
+
+    const lockedBlock = orderedOnPO > 0
+      ? `<div style="margin-bottom:8px; padding:7px 8px; background:#f8fafc; border:1px dashed var(--border); border-radius:5px;">
+           <div style="font-size:0.64rem; font-weight:800; text-transform:uppercase; color:var(--muted); margin-bottom:3px;">Already Ordered (locked)</div>
+           ${pos.map(po => `<div style="font-size:0.82rem; font-weight:600;">${fmt(po.orderedQty)} on <span style="font-family:monospace; font-weight:700; color:var(--brand);">${esc(po.poNo)}</span></div>`).join("")}
+         </div>`
+      : "";
+    const editorInner = purchaseQty <= 0
+      ? (orderedOnPO > 0
+          ? `<span style="font-size:0.95rem; color:#15803d; font-weight:700;">Fully ordered — no requirement date needed</span>`
+          : `<span style="font-size:0.95rem; color:#15803d; font-weight:700;">Fully covered from store — no date needed</span>`)
+      : readOnly
+        ? mrdReadOnlyTranches(st.lines[key])
+        : `<div id="mrdsched-${ns}-${key}">${mrdRenderScheduleEditor(ns, key)}</div>`;
+    const editorCell = lockedBlock + editorInner;
+
     return `
       <tr style="border-bottom:1px solid #e2e8f0;">
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${esc(line.itemCode)}</td>
         <td style="padding:8px; font-size:0.9rem; font-weight:600;">${esc(line.materialName)}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-size:1.05rem;">${fmt(line.storeQty)}</td>
-        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.05rem;">${fmt(line.purchaseQty)}</td>
+        <td style="padding:8px; text-align:center;">${purchaseQtyCell}</td>
         <td style="padding:8px; font-size:0.95rem;">${editorCell}</td>
         <td style="padding:8px; text-align:center; min-width:110px;">${receivedCell}</td>
       </tr>`;
