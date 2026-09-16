@@ -237,26 +237,29 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
         : `<div style="font-weight:800; font-family:monospace; font-size:0.98rem; color:#b45309;">${fmt(receivedOnPO)} / ${fmt(orderedOnPO)}</div>
            <div style="height:4px; background:#e2e8f0; border-radius:2px; margin-top:4px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:#f59e0b;"></div></div>`;
 
-    // Purchase Qty column: purchaseQty (line.purchaseQty) is the LIVE
-    // "still needs to be purchased" figure — 180 here — and stays exactly
-    // what saveMaterialRequirementDates validates the editable tranches
-    // against server-side; that is unchanged and untouched. What was
-    // confusing (real user report, 16 Sep 2026) was seeing only 180 here
-    // right next to PPS Tracking showing 301 across two POs, with no way
-    // to tell 121 of that 301 was already ordered and covered. So this
-    // column now shows the full total (301) with a breakdown, and the
-    // requirement-date editor gets a read-only "Already Ordered" block
-    // listing each PO that already covers part of this line — those
-    // portions are locked (there's genuinely nothing to schedule for
-    // material that's already been ordered), only the still-open 180
-    // remains editable, targeting the exact same live purchaseQty as
-    // before.
-    const totalTarget = purchaseQty + orderedOnPO;
-    const purchaseQtyCell = orderedOnPO > 0
-      ? `<div style="font-weight:700; font-size:1.05rem;">${fmt(totalTarget)}</div>
-         <div style="font-size:0.64rem; color:var(--muted); margin-top:2px; line-height:1.3;">${fmt(orderedOnPO)} already ordered<br/>${fmt(purchaseQty)} still to order</div>`
-      : fmt(purchaseQty);
+    // Store Qty / Purchase Qty DISPLAY here mirrors PPS Tracking's own
+    // 16 Sep 2026 fix exactly (same fixed-at-ordering-time split, once at
+    // least one PO exists): displayPurchaseQty = orderedOnPO (the total
+    // actually ordered, matching Received/PO Qty's own denominator),
+    // displayStoreQty = bufferedPurchaseQty - orderedOnPO. A first attempt
+    // at this here separately computed `purchaseQty(live) + orderedOnPO`,
+    // which DOUBLE-COUNTED — orderedOnPO already includes whatever PO(s)
+    // cover the live "not yet received" remainder (a PO existing doesn't
+    // reduce purchase_quantity; only the material actually arriving and
+    // getting auto-assigned does), so adding them together overstated the
+    // real total (481 instead of 301 in a real reported case). The
+    // editable schedule editor's OWN target is UNCHANGED — it still sums
+    // to the live purchaseQty exactly as saveMaterialRequirementDates
+    // validates server-side; only what's shown in the Purchase Qty
+    // COLUMN and Store Qty column changed.
+    const displayPurchaseQty = pos.length > 0 ? orderedOnPO : purchaseQty;
+    const displayStoreQty = pos.length > 0 ? Math.max(0, (Number(line.bufferedPurchaseQty) || 0) - orderedOnPO) : (Number(line.storeQty) || 0);
 
+    // "Already Ordered (locked)" — every PO already covering part of this
+    // line (whether its material has arrived yet or not) has nothing left
+    // to schedule; only material with no PO at all yet still needs a
+    // requirement date, which is exactly what the live purchaseQty below
+    // already represents.
     const lockedBlock = orderedOnPO > 0
       ? `<div style="margin-bottom:8px; padding:7px 8px; background:#f8fafc; border:1px dashed var(--border); border-radius:5px;">
            <div style="font-size:0.64rem; font-weight:800; text-transform:uppercase; color:var(--muted); margin-bottom:3px;">Already Ordered (locked)</div>
@@ -272,14 +275,18 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
         : `<div id="mrdsched-${ns}-${key}">${mrdRenderScheduleEditor(ns, key)}</div>`;
     const editorCell = lockedBlock + editorInner;
 
+    // border-bottom belongs on each <td>, not the <tr> — a <tr>'s own
+    // border does not reliably paint under border-collapse:collapse (same
+    // fix as PPS Tracking, 16 Sep 2026).
+    const colBorder = "border-left:1.5px solid var(--border); border-bottom:1.5px solid var(--border);";
+    const firstColBorder = "border-bottom:1.5px solid var(--border);";
     return `
-      <tr style="border-bottom:1px solid #e2e8f0;">
-        <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${esc(line.itemCode)}</td>
-        <td style="padding:8px; font-size:0.9rem; font-weight:600;">${esc(line.materialName)}</td>
-        <td style="padding:8px; text-align:center; font-family:monospace; font-size:1.05rem;">${fmt(line.storeQty)}</td>
-        <td style="padding:8px; text-align:center;">${purchaseQtyCell}</td>
-        <td style="padding:8px; font-size:0.95rem;">${editorCell}</td>
-        <td style="padding:8px; text-align:center; min-width:110px;">${receivedCell}</td>
+      <tr>
+        <td style="padding:8px; font-size:0.9rem; font-weight:600; ${firstColBorder}">${esc(line.materialName)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-size:1.05rem; ${colBorder}">${fmt(displayStoreQty)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.05rem; ${colBorder}">${fmt(displayPurchaseQty)}</td>
+        <td style="padding:8px; font-size:0.95rem; ${colBorder}">${editorCell}</td>
+        <td style="padding:8px; text-align:center; min-width:110px; ${colBorder}">${receivedCell}</td>
       </tr>`;
   }).join("");
 
@@ -295,12 +302,11 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
       <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:900px;">
         <thead><tr style="background:#f8fafc;">
-          <th style="padding:8px; font-size:0.92rem; text-align:left;">Item Code</th>
-          <th style="padding:8px; font-size:0.92rem; text-align:left; min-width:200px;">Material Name</th>
-          <th style="padding:8px; font-size:0.92rem; text-align:center;">Store Qty</th>
-          <th style="padding:8px; font-size:0.92rem; text-align:center;">Purchase Qty</th>
-          <th style="padding:8px; font-size:0.92rem; text-align:left; min-width:260px;">Production Requirement Date</th>
-          <th style="padding:8px; font-size:0.92rem; text-align:center;">Received / PO Qty</th>
+          <th style="padding:8px; font-size:0.92rem; text-align:left; min-width:180px; border-bottom:1.5px solid var(--border);">Material Name</th>
+          <th style="padding:8px; font-size:0.92rem; text-align:center; border-left:1.5px solid var(--border); border-bottom:1.5px solid var(--border);">Store Qty</th>
+          <th style="padding:8px; font-size:0.92rem; text-align:center; border-left:1.5px solid var(--border); border-bottom:1.5px solid var(--border);">Purchase Qty</th>
+          <th style="padding:8px; font-size:0.92rem; text-align:left; min-width:340px; border-left:1.5px solid var(--border); border-bottom:1.5px solid var(--border);">Production Requirement Date</th>
+          <th style="padding:8px; font-size:0.92rem; text-align:center; border-left:1.5px solid var(--border); border-bottom:1.5px solid var(--border);">Received / PO Qty</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
