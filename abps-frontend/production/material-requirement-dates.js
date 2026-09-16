@@ -227,6 +227,20 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
         ? mrdReadOnlyTranches(st.lines[key])
         : `<div id="mrdsched-${ns}-${key}">${mrdRenderScheduleEditor(ns, key)}</div>`;
 
+    // Received / PO Qty — same figure PPS Tracking already shows (16 Sep
+    // 2026, added on request so this screen's operator can see the same
+    // "what's actually arrived" picture without switching screens).
+    const pos = line.purchaseOrders || [];
+    const orderedOnPO = pos.reduce((s, po) => s + (Number(po.orderedQty) || 0), 0);
+    const receivedOnPO = pos.reduce((s, po) => s + (Number(po.receivedQty) || 0), 0);
+    const pct = orderedOnPO > 0 ? Math.min(100, (receivedOnPO / orderedOnPO) * 100) : 0;
+    const receivedCell = orderedOnPO <= 0
+      ? `<span style="color:var(--muted); font-size:0.75rem;">—</span>`
+      : receivedOnPO >= orderedOnPO
+        ? `<span style="font-size:0.72rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px;">All Received</span>`
+        : `<div style="font-weight:800; font-family:monospace; font-size:0.98rem; color:#b45309;">${fmt(receivedOnPO)} / ${fmt(orderedOnPO)}</div>
+           <div style="height:4px; background:#e2e8f0; border-radius:2px; margin-top:4px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:#f59e0b;"></div></div>`;
+
     return `
       <tr style="border-bottom:1px solid #e2e8f0;">
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${esc(line.itemCode)}</td>
@@ -234,6 +248,7 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
         <td style="padding:8px; text-align:center; font-family:monospace; font-size:1.05rem;">${fmt(line.storeQty)}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.05rem;">${fmt(line.purchaseQty)}</td>
         <td style="padding:8px; font-size:0.95rem;">${editorCell}</td>
+        <td style="padding:8px; text-align:center; min-width:110px;">${receivedCell}</td>
       </tr>`;
   }).join("");
 
@@ -254,6 +269,7 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
           <th style="padding:8px; font-size:0.92rem; text-align:center;">Store Qty</th>
           <th style="padding:8px; font-size:0.92rem; text-align:center;">Purchase Qty</th>
           <th style="padding:8px; font-size:0.92rem; text-align:left; min-width:260px;">Production Requirement Date</th>
+          <th style="padding:8px; font-size:0.92rem; text-align:center;">Received / PO Qty</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
