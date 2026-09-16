@@ -242,9 +242,8 @@ function renderBOQRevisionRows(updateId) {
       }).join("");
 
   mount.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+    <div style="margin-bottom:8px;">
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand);">Material Rows *</div>
-      <button onclick="uboqRevRows.push({typeOfStore:'Raw Materials Store',materialName:'',itemCode:'',make:'',quantityFor1Set:'',unit:'NOS',designRatePerQuantity:''}); renderBOQRevisionRows(${updateId});" style="background:var(--accent); color:#fff; border:none; border-radius:4px; padding:5px 12px; font-size:0.78rem; font-weight:700; cursor:pointer;">+ Add Row</button>
     </div>
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
       <table class="store-basket-data-table" style="width:100%; min-width:1050px; border-collapse:collapse;">
@@ -263,6 +262,12 @@ function renderBOQRevisionRows(updateId) {
         </thead>
         <tbody>${rowsHtml}</tbody>
       </table>
+    </div>
+    <!-- Moved below the table, 16 Sep 2026 — with 150+ rows this button
+         used to sit far above the fold, forcing a scroll back up on every
+         single add. Same push/render call, purely a DOM position change. -->
+    <div style="margin-top:8px; text-align:right;">
+      <button onclick="uboqRevRows.push({typeOfStore:'Raw Materials Store',materialName:'',itemCode:'',make:'',quantityFor1Set:'',unit:'NOS',designRatePerQuantity:''}); renderBOQRevisionRows(${updateId});" style="background:var(--accent); color:#fff; border:none; border-radius:4px; padding:5px 12px; font-size:0.78rem; font-weight:700; cursor:pointer;">+ Add Row</button>
     </div>
     <div style="border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-top:14px; display:flex; justify-content:flex-end; gap:32px;">
       <div style="text-align:right;">
@@ -481,9 +486,8 @@ function renderUBOQForm() {
 
     <!-- Material Rows -->
     <div style="margin-bottom:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <div style="margin-bottom:10px;">
         <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand);">Material Rows *</span>
-        <button class="nav-btn-styled" onclick="addUBOQMaterialRow()" style="background:var(--accent); padding:5px 14px; font-size:0.78rem;">+ Add Row</button>
       </div>
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
         <table class="store-basket-data-table" style="width:100%; min-width:1050px; border-collapse:collapse;">
@@ -502,6 +506,12 @@ function renderUBOQForm() {
           </thead>
           <tbody id="uboq-material-rows-body"></tbody>
         </table>
+      </div>
+      <!-- Moved below the table, 16 Sep 2026 — same reasoning as Create
+           BOQ's identical move: don't force a scroll to the top of a
+           150-row table just to add one more. -->
+      <div style="margin-top:8px; text-align:right;">
+        <button class="nav-btn-styled" onclick="addUBOQMaterialRow()" style="background:var(--accent); padding:5px 14px; font-size:0.78rem;">+ Add Row</button>
       </div>
     </div>
 

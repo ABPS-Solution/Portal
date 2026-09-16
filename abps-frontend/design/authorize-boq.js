@@ -343,9 +343,8 @@ function renderEBOQForm(containerId) {
 
     <!-- Material Rows -->
     <div style="margin-bottom:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <div style="margin-bottom:10px;">
         <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand);">Material Rows *</span>
-        <button class="nav-btn-styled" onclick="addEBOQMaterialRow()" style="background:var(--accent); padding:5px 14px; font-size:0.78rem;">+ Add Row</button>
       </div>
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
         <table class="store-basket-data-table" style="width:100%; min-width:1050px; border-collapse:collapse;">
@@ -364,6 +363,12 @@ function renderEBOQForm(containerId) {
           </thead>
           <tbody id="eboq-material-rows-body"></tbody>
         </table>
+      </div>
+      <!-- Moved below the table, 16 Sep 2026 — same reasoning as Create/
+           Update BOQ's identical move: don't force a scroll to the top of
+           a 150-row table just to add one more. -->
+      <div style="margin-top:8px; text-align:right;">
+        <button class="nav-btn-styled" onclick="addEBOQMaterialRow()" style="background:var(--accent); padding:5px 14px; font-size:0.78rem;">+ Add Row</button>
       </div>
     </div>
 

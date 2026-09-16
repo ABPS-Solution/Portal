@@ -536,11 +536,17 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
     </div>
 
     <div style="margin-bottom:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <div style="margin-bottom:10px;">
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">Material Rows</div>
-        <button class="nav-btn-styled" id="cpo-add-row-btn" onclick="addCPOMaterialRow()" style="background:var(--accent); color:#fff; font-weight:700; padding:6px 14px;">+ Add Material Row</button>
       </div>
       <div id="cpo-rows-body"></div>
+      <!-- Moved below the rows, 16 Sep 2026 — with many material rows on
+           one PO, this button used to sit far above the fold, forcing a
+           scroll back up on every single add. Same id/onclick, purely a
+           DOM position change. -->
+      <div style="margin-top:8px; text-align:right;">
+        <button class="nav-btn-styled" id="cpo-add-row-btn" onclick="addCPOMaterialRow()" style="background:var(--accent); color:#fff; font-weight:700; padding:6px 14px;">+ Add Material Row</button>
+      </div>
     </div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">

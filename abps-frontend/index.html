@@ -3009,9 +3009,8 @@
 
       <!-- Material Rows -->
       <div style="margin-bottom:16px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="margin-bottom:10px;">
           <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">Material Rows *</span>
-          <button class="nav-btn-styled" id="cboq-add-row-btn" disabled onclick="addCBOQMaterialRow()" style="background:var(--accent); padding:5px 14px; font-size:0.78rem; opacity:0.5; cursor:not-allowed;">+ Add Row</button>
         </div>
         <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
           <table class="store-basket-data-table" style="width:100%; min-width:900px; border-collapse:collapse; overflow:visible;">
@@ -3034,6 +3033,13 @@
               </tr>
             </tbody>
           </table>
+        </div>
+        <!-- Moved below the table, 16 Sep 2026 — with 150+ rows this button
+             used to sit far above the fold, forcing a scroll back up on
+             every single add. Same id/onclick/enable-disable logic,
+             purely a DOM position change. -->
+        <div style="margin-top:8px; text-align:right;">
+          <button class="nav-btn-styled" id="cboq-add-row-btn" disabled onclick="addCBOQMaterialRow()" style="background:var(--accent); padding:5px 14px; font-size:0.78rem; opacity:0.5; cursor:not-allowed;">+ Add Row</button>
         </div>
       </div>
 
