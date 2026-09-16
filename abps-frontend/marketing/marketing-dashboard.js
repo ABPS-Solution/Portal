@@ -267,11 +267,14 @@ function showDashboardGlobalToolbar(title, periodBtnsId, returnFn) {
   // content starts underneath the floating bar.
   requestAnimationFrame(syncDashboardCanvasTopPadding);
   document.getElementById("dash-global-title").textContent = title;
-  ["dd-period-btns","pd-period-btns","sd-period-btns","md-period-btns","pd2-period-btns","ad-period-btns","qad-period-btns","adm-period-btns"].forEach(id => {
-    const el = document.getElementById(id); if (el) el.style.display = (id === periodBtnsId) ? "flex" : "none";
+  // Generic suffix selectors instead of a hardcoded per-dashboard id list —
+  // a new dashboard's toolbar elements are picked up automatically, no
+  // maintenance here needed (see CLAUDE.md's repeat-bug note on this).
+  document.querySelectorAll('[id$="-period-btns"]').forEach(el => {
+    el.style.display = (el.id === periodBtnsId) ? "flex" : "none";
   });
-  ["dd-custom-zone","pd-custom-zone","sd-custom-zone","md-custom-zone","pd2-custom-zone","ad-custom-zone","qad-custom-zone","adm-custom-zone"].forEach(id => {
-    const el = document.getElementById(id); if (el) el.style.display = "none";
+  document.querySelectorAll('[id$="-custom-zone"]').forEach(el => {
+    el.style.display = "none";
   });
   document.querySelectorAll('[id$="-workspace-enclosure-panel"] > .navigation-action-header-row').forEach(h => h.style.display = "none");
 }
