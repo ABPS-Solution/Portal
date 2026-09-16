@@ -146,7 +146,6 @@ function ppsRenderNeedQueueList(title, items, emptyMessage) {
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px 8px 22px; border-bottom:1px solid #f1f5f9;">
         <div style="min-width:0;">
           <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${item.prnId}</span>
-          <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.productName || ""}${item.productRating ? " " + item.productRating : ""}</div>
           ${hint}
         </div>
         <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
