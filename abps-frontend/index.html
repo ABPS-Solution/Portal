@@ -1026,14 +1026,18 @@
   <div id="module-store-workspace-enclosure-panel" class="workspace-panel" style="display: none; padding: 12px 10px;">
     
     <div class="navigation-action-header-row" style="margin-bottom: 15px; position: relative; display: flex; align-items: center; justify-content: space-between;">
-      <div id="store-panel-left-controls" style="visibility: hidden;">
+      <div id="store-panel-left-controls" style="visibility: hidden; flex: 0 0 auto;">
         <button class="nav-btn-styled" id="live-stock-sync-btn" style="background: var(--brand); padding: 6px 18px; display: inline-flex; align-items: center; gap: 6px;" onclick="triggerLiveWarehouseStockMetricsSync()">🔄 Refresh</button>
       </div>
-      
-      <!-- FIXED: Added id="store-panel-center-title" to allow dynamic title swapping -->
-      <span id="store-panel-center-title" style="position: absolute; left: 50%; transform: translateX(-50%); font-size: 1.1rem; font-weight: 700; color: var(--text); letter-spacing: 0.2px; visibility: hidden; white-space: nowrap;">Live Raw Materials Store Stock</span>
-      
-      <button class="nav-btn-styled" onclick="exitStoreWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
+
+      <!-- Title used to be position:absolute-centered independent of the two
+           buttons flanking it, so a long title (e.g. "Live Finished Goods
+           Store Stock") overlapped them at any width instead of ever
+           yielding space — fixed 17 Sep 2026 by letting it flex/truncate
+           in normal flow between the two fixed-width buttons instead. -->
+      <span id="store-panel-center-title" style="flex: 1 1 auto; min-width: 0; text-align: center; font-size: 1.1rem; font-weight: 700; color: var(--text); letter-spacing: 0.2px; visibility: hidden; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 12px;">Live Raw Materials Store Stock</span>
+
+      <button class="nav-btn-styled" style="flex: 0 0 auto;" onclick="exitStoreWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
     </div>
 
     <div id="store-prn-revision-reminder-banner" class="store-prn-revision-reminder-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ A BOQ has been revised — check the <strong>Revise PRN</strong> section to see if a PRN needs revising.</div>
@@ -2734,7 +2738,6 @@
       <button id="sa-tab-pins" class="nav-btn-styled" onclick="switchSecurityAdminTab('pins')" style="flex:1; padding:11px 16px;">Login PINs</button>
       <button id="sa-tab-registeredpcs" class="nav-btn-styled" onclick="switchSecurityAdminTab('registeredpcs')" style="flex:1; padding:11px 16px;">Registered Devices</button>
       <button id="sa-tab-log" class="nav-btn-styled" onclick="switchSecurityAdminTab('log')" style="flex:1; padding:11px 16px;">Login Log</button>
-      <button id="sa-tab-devices" class="nav-btn-styled" onclick="switchSecurityAdminTab('devices')" style="flex:1; padding:11px 16px;">Trusted Devices</button>
       <button id="sa-tab-networks" class="nav-btn-styled" onclick="switchSecurityAdminTab('networks')" style="flex:1; padding:11px 16px;">Office Networks</button>
       <button id="sa-tab-holidays" class="nav-btn-styled" onclick="switchSecurityAdminTab('holidays')" style="flex:1; padding:11px 16px;">Holidays</button>
     </div>

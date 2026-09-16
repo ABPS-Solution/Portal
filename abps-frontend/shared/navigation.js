@@ -210,6 +210,18 @@ function returnToDashboard() {
   // redundant with this but left in place.
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
 
+  // Fixed 17 Sep 2026: #dashboard-global-toolbar has no `workspace-panel`
+  // class, so the sweep above never caught it — leaving a Dashboard via
+  // this generic escape hatch (rather than the toolbar's own Return
+  // button, dashboardGlobalReturnClick) left the Today/Yesterday toolbar
+  // permanently stacked on top of whatever screen was visited next. Same
+  // bug class as the toolbar-sweep-list landmines already in CLAUDE.md.
+  const staleToolbar = document.getElementById("dashboard-global-toolbar");
+  if (staleToolbar) staleToolbar.style.display = "none";
+  const staleAppHeader = document.querySelector('header');
+  if (staleAppHeader) staleAppHeader.style.display = "";
+  if (typeof activeDashboardReturnFn !== 'undefined') activeDashboardReturnFn = null;
+
   // Clear any stale "missing person" banner / no-match notice left over from a prior visit
   const bannerHookReset = document.getElementById("split-missing-person-banner-hook");
   if (bannerHookReset) bannerHookReset.innerHTML = "";

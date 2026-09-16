@@ -38,7 +38,17 @@ function exitSecurityAdminBackToMenu() {
 }
 
 function switchSecurityAdminTab(tab) {
-  ['permissions', 'users', 'networks', 'holidays', 'devices', 'log', 'pins', 'registeredpcs'].forEach(t => {
+  // 'devices' (Trusted Devices) retired 17 Sep 2026 — the mechanism it
+  // shows (admin_db.trusted_devices) is only ever populated by Google
+  // Sign-In from an office IP, and Google Sign-In has been hidden from
+  // the login screen since the person_key rename; PIN login (the only
+  // real login path now) has its own separate device-trust system and
+  // never touches this table. Left structurally unreachable for weeks,
+  // so the tab is removed rather than left showing a permanently-empty
+  // table. sa-panel-devices/loadTrustedDevices/submitDeleteTrustedDevice
+  // and the backend fetchTrustedDevices/deleteTrustedDevice routes are
+  // flagged, not deleted, per house convention.
+  ['permissions', 'users', 'networks', 'holidays', 'log', 'pins', 'registeredpcs'].forEach(t => {
     document.getElementById(`sa-panel-${t}`).style.display = (t === tab) ? 'block' : 'none';
     document.getElementById(`sa-tab-${t}`).style.background = (t === tab) ? 'var(--brand)' : '#e2e8f0';
     document.getElementById(`sa-tab-${t}`).style.color = (t === tab) ? '#fff' : '#334155';
