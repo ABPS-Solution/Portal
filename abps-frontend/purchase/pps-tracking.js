@@ -372,7 +372,7 @@ async function loadPPSForPRN() {
             <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered Qty</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center;">Store Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center;" title="How much of this line is covered by store stock right now — a live figure, not a fixed snapshot from when the PRN was created. It rises as ordered material arrives and gets auto-assigned to this PRN, with Purchase Qty falling by the same amount.">Store Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center;">Purchase Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:120px;">Purchase Order(s)</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:130px;">Production Requirement Date</th>
@@ -413,16 +413,16 @@ function ppsScheduleKey(prnId, itemCode, poNo) {
 }
 
 // Shared per-PO block style for the Purchase Order(s) and Expected Delivery
-// Date columns — when a material line has 2+ POs, each PO's block gets its
-// own light background band + a top border (skipped on the first), so the
-// two columns' blocks line up and it's visually obvious where one PO's
-// info ends and the next begins, instead of every PO's divs just stacking
-// flush with nothing to separate them.
+// Date columns — when a material line has 2+ POs, each PO gets its own
+// FULLY boxed card (solid border all the way around + real vertical gap
+// to its neighbor), not just a background tint or a single top border —
+// those were tried first (16 Sep 2026) and still read as one clustered
+// block once actually seen live. A solid box + real margin is what
+// actually reads as "separate" at a glance. poCell and dateCell use the
+// SAME per-index style so the two columns' boxes line up row-for-row.
 function ppsPoBlockStyle(i, total) {
   if (total <= 1) return "padding:4px 6px;";
-  const bg = i % 2 === 0 ? "#fff" : "#f8fafc";
-  const top = i > 0 ? "border-top:1px solid #e2e8f0;" : "";
-  return `background:${bg}; ${top} padding:6px; border-radius:4px;`;
+  return `border:1.5px solid #cbd5e1; border-radius:6px; background:#fff; padding:8px; margin-bottom:${i < total - 1 ? "10px" : "0"}; box-shadow:0 1px 2px rgba(0,0,0,0.04);`;
 }
 
 function ppsRenderScheduleEditor(key) {
