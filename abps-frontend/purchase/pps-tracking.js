@@ -276,6 +276,26 @@ async function loadPPSForPRN() {
     const rowsHtml = materials.map(m => {
       const pos = m.purchaseOrders || [];
       const purchaseNeeded = Number(m.purchaseQty) || 0;
+      // Purchase Qty / Store Qty DISPLAY here is deliberately NOT the same
+      // as m.purchaseQty/m.storeQty's live backend values once at least
+      // one PO exists — real user-reported confusion 16 Sep 2026: those
+      // two columns are live operational figures
+      // (current_unassigned_store_quantity / purchase_quantity) that keep
+      // moving as material arrives and gets auto-assigned to this PRN
+      // (claimStoreForPRN), which is exactly correct for the stock-
+      // allocation engine elsewhere in the app but reads as a
+      // contradiction sitting right next to "Received / PO Qty" (which
+      // shows the fixed, ALREADY-ORDERED total). Once POs exist, this
+      // screen instead shows the fixed split as it stood at ordering
+      // time — Purchase Qty = what was actually ordered (matches the PO
+      // Qty in Received/PO Qty), Store Qty = the remainder of the
+      // buffered requirement — so the three numbers on this screen never
+      // visibly disagree. Before any PO exists, the live figures are
+      // still exactly right (there's nothing "ordered" yet to freeze
+      // against), so they're used unchanged.
+      const orderedOnPOForSplit = pos.reduce((s, po) => s + (Number(po.orderedQty) || 0), 0);
+      const displayPurchaseQty = pos.length > 0 ? orderedOnPOForSplit : purchaseNeeded;
+      const displayStoreQty = pos.length > 0 ? Math.max(0, (Number(m.bufferedPurchaseQty) || 0) - orderedOnPOForSplit) : (Number(m.storeQty) || 0);
       // "Received / PO Qty" means received against what's actually been
       // PLACED on a purchase order — summed from the PO allocations
       // themselves, not the line's full purchase requirement
@@ -349,35 +369,37 @@ async function loadPPSForPRN() {
         ? `<span style="color:var(--muted); font-size:0.75rem;">—</span>`
         : reqDates.map(r => `<div style="font-size:0.92rem; font-weight:700;">${fmt(r.qty)} on ${formatOrdinalDate(r.date)}</div>`).join("");
 
+      const colBorder = "border-left:1.5px solid var(--border);";
       return `
-        <tr style="border-bottom:1px solid #e2e8f0;">
+        <tr style="border-bottom:1.5px solid var(--border);">
           <td style="padding:8px; font-size:0.92rem; font-weight:600;">${esc(m.materialName)}${flag}</td>
-          <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.98rem;">${fmt(m.boqRequiredQty)}</td>
-          <td style="padding:8px; text-align:center; color:#b45309; font-weight:700;">${fmt(m.bufferPct)}%</td>
-          <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand); font-size:0.98rem;">${fmt(m.bufferedPurchaseQty)}</td>
-          <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.98rem;">${fmt(m.storeQty)}</td>
-          <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:0.98rem;">${fmt(m.purchaseQty)}</td>
-          <td style="padding:8px; text-align:center;">${poCell}</td>
-          <td style="padding:8px; text-align:center;">${reqDateCell}</td>
-          <td style="padding:8px; text-align:center;">${dateCell}</td>
-          <td style="padding:8px; text-align:center; min-width:110px;">${statusCell}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.98rem; ${colBorder}">${fmt(m.boqRequiredQty)}</td>
+          <td style="padding:8px; text-align:center; color:#b45309; font-weight:700; ${colBorder}">${fmt(m.bufferPct)}%</td>
+          <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand); font-size:1.15rem; ${colBorder}">${fmt(m.bufferedPurchaseQty)}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.98rem; ${colBorder}">${fmt(displayStoreQty)}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:0.98rem; ${colBorder}">${fmt(displayPurchaseQty)}</td>
+          <td style="padding:8px; text-align:center; ${colBorder}">${poCell}</td>
+          <td style="padding:8px; text-align:center; ${colBorder}">${reqDateCell}</td>
+          <td style="padding:8px; text-align:center; ${colBorder}">${dateCell}</td>
+          <td style="padding:8px; text-align:center; min-width:110px; ${colBorder}">${statusCell}</td>
         </tr>`;
     }).join("");
 
+    const headColBorder = "border-left:1.5px solid var(--border);";
     body.innerHTML = `
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
         <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1200px;">
-          <thead><tr style="background:#f8fafc;">
+          <thead><tr style="background:#f8fafc; border-bottom:1.5px solid var(--border);">
             <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:200px;">Material Name</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Qty</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered Qty</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center;" title="How much of this line is covered by store stock right now — a live figure, not a fixed snapshot from when the PRN was created. It rises as ordered material arrives and gets auto-assigned to this PRN, with Purchase Qty falling by the same amount.">Store Qty</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center;">Purchase Qty</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:120px;">Purchase Order(s)</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:130px;">Production Requirement Date</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:120px;">Expected Delivery Date</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center;">Received / PO Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; ${headColBorder}">BOQ Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309; ${headColBorder}">Buffer %</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand); ${headColBorder}">Buffered BOQ Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; ${headColBorder}" title="Once a PO exists for this line, this is the remainder of the buffered requirement not covered by what was ordered (Buffered BOQ Qty minus Purchase Qty) — not a live current-stock figure.">Store Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; ${headColBorder}" title="Once a PO exists for this line, this matches the total already ordered (same total as Received / PO Qty's denominator).">Purchase Qty</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:120px; ${headColBorder}">Purchase Order(s)</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:130px; ${headColBorder}">Production Requirement Date</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:120px; ${headColBorder}">Expected Delivery Date</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; ${headColBorder}">Received / PO Qty</th>
           </tr></thead>
           <tbody>${rowsHtml}</tbody>
         </table>
