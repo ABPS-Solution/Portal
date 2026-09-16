@@ -167,6 +167,15 @@ function driveLink(url) {
 // already established for permissions generally.
 function applyServerRoleFlags(permData) {
   localStorage.setItem("isUserAdminGlobal", permData.isAdmin ? "true" : "false");
+  // isUserSuperAdminGlobal (17 Sep 2026, super-admin tier) — same
+  // always-fresh-on-every-load mechanism as isUserAdminGlobal above, for
+  // exactly the same staleness reason. This is UX-only: it only controls
+  // whether super-admin-only controls RENDER (Permissions Matrix's Make/
+  // Remove Admin, Security & Login Access' Login Anywhere tab/PINs reveal/
+  // Add Person/Restrict Access) — every route backing those is separately
+  // gated requirePermission('perm_super_admin') server-side, which is the
+  // real enforcement regardless of what this flag says.
+  localStorage.setItem("isUserSuperAdminGlobal", permData.isSuperAdmin ? "true" : "false");
   localStorage.setItem("userDepartment", permData.department || "");
   localStorage.setItem("userProductionSubDept", permData.productionSubDept || "");
 }
@@ -528,6 +537,10 @@ function completeSuccessfulLogin(data, activeOperatorDisplayName, isUserAdminGlo
   localStorage.setItem("userPermissions", JSON.stringify(data.permissions));
   if (data.deviceToken) localStorage.setItem("abpsDeviceToken", data.deviceToken);
   localStorage.setItem("isUserAdminGlobal", isUserAdminGlobal ? "true" : "false");
+  // No client-side heuristic exists for super-admin (unlike isUserAdminGlobal's
+  // department-dropdown-text guess above) — starts false and is corrected
+  // by refreshServerRoleFlags() below, same as every other page load.
+  localStorage.setItem("isUserSuperAdminGlobal", "false");
   appActiveOperatorIdentityString = activeOperatorDisplayName;
   userPermissions = data.permissions;
   showAppView();

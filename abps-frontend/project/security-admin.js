@@ -15,7 +15,22 @@ let saAllUsers = [];
 let saAllPinUsers = [];
 let saAllLoginLogEntries = [];
 
+// Super-admin-tier gating (17 Sep 2026) — Login Anywhere is restricted to
+// perm_super_admin entirely (tab hidden for a plain Admin-tier viewer);
+// Login PINs' "PINs" reveal/change mode and Registered Devices' Add
+// Person / Restrict Access controls are restricted within those tabs
+// (see selectPinTreeMode / the Registered Devices card renderer below).
+// UX-only — every backing route is separately gated
+// requirePermission('perm_super_admin') server-side.
+function saViewerIsSuperAdmin() {
+  return localStorage.getItem("isUserSuperAdminGlobal") === "true";
+}
+
 async function initializeSecurityAdminPanel() {
+  const loginAnywhereTabBtn = document.getElementById("sa-tab-users");
+  if (loginAnywhereTabBtn) loginAnywhereTabBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
+  const pinsModeBtn = document.getElementById("pinmode-btn-changepin");
+  if (pinsModeBtn) pinsModeBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
   switchSecurityAdminTab('permissions');
   await Promise.all([
     loadSecurityAdminUsers(),
@@ -28,7 +43,7 @@ async function initializeSecurityAdminPanel() {
     loadRegisteredDevices(),
     loadPermissionCatalog(),
   ]);
-  selectPinTreeMode('changepin'); // sets the mode-button active styling; re-render is harmless, data's already loaded
+  selectPinTreeMode(saViewerIsSuperAdmin() ? 'changepin' : 'enroll'); // sets the mode-button active styling; re-render is harmless, data's already loaded
 }
 
 function exitSecurityAdminBackToMenu() {
@@ -38,6 +53,11 @@ function exitSecurityAdminBackToMenu() {
 }
 
 function switchSecurityAdminTab(tab) {
+  // Login Anywhere is super-admin-only (17 Sep 2026) — its tab button is
+  // already hidden for anyone else, but this refuses a direct call too
+  // (e.g. a stale bookmarked handler), same defense-in-depth spirit as
+  // the server-side gate on its own routes.
+  if (tab === 'users' && !saViewerIsSuperAdmin()) tab = 'permissions';
   // 'devices' (Trusted Devices) retired 17 Sep 2026 — the mechanism it
   // shows (admin_db.trusted_devices) is only ever populated by Google
   // Sign-In from an office IP, and Google Sign-In has been hidden from
@@ -468,6 +488,11 @@ function showPinChangeBanner(msg, isError) {
 }
 
 function selectPinTreeMode(mode) {
+  // "PINs" mode (reveal/change actual PIN digits) is super-admin-only
+  // (17 Sep 2026) — "Generate Enrollment Code" stays open to any
+  // perm_security_login_access holder. Backend also refuses the reveal/
+  // reset for a non-super-admin regardless of what this picks.
+  if (mode === 'changepin' && !saViewerIsSuperAdmin()) mode = 'enroll';
   pinTreeMode = mode;
   pinFlippedState = {}; // switching modes always resets every card to its front face
   pinChangeEditingState = {};
@@ -693,8 +718,8 @@ function renderRegisteredDevicesList(devices) {
       <td style="padding:8px;">${formatOrdinalDate(d.created_at)}</td>
       <td style="padding:8px;">${d.last_used_at ? formatOrdinalDate(d.last_used_at) : '—'}</td>
       <td style="padding:8px; white-space:nowrap;">
-        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="openAddDevicePersonModal(${d.device_id})">Add Person</button>
-        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="openDeviceRestrictionModal(${d.device_id})">Restrict Access</button>
+        ${saViewerIsSuperAdmin() ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="openAddDevicePersonModal(${d.device_id})">Add Person</button>
+        <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="openDeviceRestrictionModal(${d.device_id})">Restrict Access</button>` : ''}
         <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitDeleteRegisteredDevice(${d.device_id})">Delete</button>
       </td>
     </tr>`;
@@ -952,6 +977,8 @@ const PM_SYSTEM_COLOR = '#334155';
 let pmCatalog = [];
 let pmSelectedUser = null;
 let pmUserValues = {};
+let pmUserIsAdmin = false;
+let pmUserIsSuperAdmin = false;
 
 async function loadPermissionCatalog() {
   try {
@@ -993,6 +1020,8 @@ async function selectPermissionMatrixUser(personKey) {
     }
     pmSelectedUser = user;
     pmUserValues = data.values;
+    pmUserIsAdmin = !!data.isAdmin;
+    pmUserIsSuperAdmin = !!data.isSuperAdmin;
     renderPermissionMatrix();
   } catch (e) {
     document.getElementById("pm-matrix-root").innerHTML = `<div style="padding:14px; color:var(--warn);">Connection error: ${e.message}</div>`;
@@ -1048,12 +1077,50 @@ function renderPermissionMatrix() {
       </div>`;
   }).join('');
 
+  // Tier badge + Make/Remove Admin control (17 Sep 2026, super-admin
+  // tier). perm_super_admin is never togglable from here or anywhere —
+  // there is deliberately no control for it, only a "Super Admin" badge.
+  // The Make/Remove Admin button only ever RENDERS for a viewer whose own
+  // session has perm_super_admin (isUserSuperAdminGlobal, refreshed fresh
+  // on every load — never trust a stale login-time flag here); the real
+  // enforcement is the server's requirePermission('perm_super_admin')
+  // gate on /toggleUserAdmin regardless of what this client shows.
+  const viewerIsSuperAdmin = localStorage.getItem("isUserSuperAdminGlobal") === "true";
+  const tierLabel = pmUserIsSuperAdmin ? "Super Admin" : (pmUserIsAdmin ? "Admin" : "Normal");
+  const tierColor = pmUserIsSuperAdmin ? "#7c3aed" : (pmUserIsAdmin ? "#2563eb" : "#64748b");
+  let tierControlHtml = '';
+  if (viewerIsSuperAdmin && !pmUserIsSuperAdmin) {
+    tierControlHtml = `<button onclick="toggleUserAdminTier(${pmUserIsAdmin ? 'false' : 'true'})"
+      style="padding:6px 14px; border-radius:8px; border:1.5px solid ${pmUserIsAdmin ? 'var(--warn)' : '#2563eb'}; background:${pmUserIsAdmin ? 'transparent' : '#2563eb'}; color:${pmUserIsAdmin ? 'var(--warn)' : '#fff'}; font-weight:700; font-size:0.85rem; cursor:pointer;">
+      ${pmUserIsAdmin ? 'Remove Admin' : 'Make Admin'}</button>`;
+  }
+
   root.innerHTML = `
-    <div style="font-weight:700; font-size:1.1rem; margin-bottom:14px;">
-      Editing access for: ${pmSelectedUser.first_name || ''} ${pmSelectedUser.last_name || ''}
-      <span style="color:var(--muted); font-weight:500; font-size:0.95rem;"> (${pmSelectedUser.department || 'No department'})</span>
+    <div style="font-weight:700; font-size:1.1rem; margin-bottom:10px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <span>Editing access for: ${pmSelectedUser.first_name || ''} ${pmSelectedUser.last_name || ''}
+        <span style="color:var(--muted); font-weight:500; font-size:0.95rem;"> (${pmSelectedUser.department || 'No department'})</span>
+      </span>
+      <span style="padding:3px 10px; border-radius:999px; background:${tierColor}1a; border:1.5px solid ${tierColor}; color:${tierColor}; font-weight:800; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.3px;">${tierLabel}</span>
+      ${tierControlHtml}
     </div>
+    <div style="margin-bottom:14px;"></div>
     ${cards}`;
+}
+
+// toggleUserAdminTier — Make Admin / Remove Admin, only ever reachable
+// when the button rendered (viewer is Super Admin). Never touches
+// perm_super_admin. Server also refuses to demote a Super Admin, but
+// the button is already hidden for that case above.
+async function toggleUserAdminTier(enabled) {
+  if (!pmSelectedUser) return;
+  try {
+    const data = await apFetch({ action: "toggleUserAdmin", personKey: pmSelectedUser.personKey, enabled });
+    if (!data.success) { alert(data.error || 'Failed to update admin tier.'); return; }
+    pmUserIsAdmin = enabled;
+    renderPermissionMatrix();
+  } catch (e) {
+    alert('Connection error: ' + e.message);
+  }
 }
 
 async function togglePermissionMatrixPill(dbColumn) {
