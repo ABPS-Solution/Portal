@@ -564,6 +564,7 @@ async function savePPSDeliverySchedule(prnId, btn) {
 
   const originalText = btn.textContent;
   btn.disabled = true; btn.textContent = "Saving...";
+  showBlockingOverlay("Saving PPS Delivery Dates...");
   try {
     const data = await apFetch({ action: "savePODeliverySchedule", updates, operatorName: appActiveOperatorIdentityString });
     if (data.success) {
@@ -617,6 +618,7 @@ async function savePPSDeliverySchedule(prnId, btn) {
     showBOQBanner("pps-feedback", "Network error: " + e.message, "error");
   } finally {
     btn.disabled = false; btn.textContent = originalText;
+    hideBlockingOverlay();
   }
 }
 
