@@ -302,11 +302,17 @@ async function loadPPSForPRN() {
         ? `<span style="font-size:0.72rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px;">From store</span>`
         : `<span style="font-size:0.72rem; font-weight:700; color:#b91c1c; background:#fee2e2; padding:2px 8px; border-radius:4px;">Not yet ordered</span>`;
 
+      // Each PO gets its own visually-separated block (bordered, alternating
+      // background) rather than the divs just stacking flush — with 2+ POs
+      // against the same material line the un-separated stack read as one
+      // clustered mess with no way to tell where one PO's info ended and
+      // the next began. poCell and dateCell use the SAME per-index style
+      // (ppsPoBlockStyle) so the two columns visually line up row-for-row.
       const poCell = pos.length === 0
         ? (Number(m.stillToOrder) > 0
             ? `<span style="font-size:0.72rem; font-weight:700; color:#b91c1c; background:#fee2e2; padding:2px 8px; border-radius:4px;">Not yet ordered</span>`
             : `<span style="color:var(--muted); font-size:0.75rem;">—</span>`)
-        : pos.map(po => `<div style="font-family:monospace; font-size:0.72rem; font-weight:700;">${po.pdfUrl ? `<a href="${driveLink(po.pdfUrl)}" target="_blank" style="color:var(--brand); text-decoration:underline;">${esc(po.poNo)}</a>` : `<span style="color:var(--brand);">${esc(po.poNo)}</span>`} <span style="color:var(--muted); font-weight:700; font-size:0.98rem;">(${fmt(po.orderedQty)})</span></div>`).join("");
+        : pos.map((po, i) => `<div style="${ppsPoBlockStyle(i, pos.length)} font-family:monospace; font-size:0.72rem; font-weight:700;">${po.pdfUrl ? `<a href="${driveLink(po.pdfUrl)}" target="_blank" style="color:var(--brand); text-decoration:underline;">${esc(po.poNo)}</a>` : `<span style="color:var(--brand);">${esc(po.poNo)}</span>`} <span style="color:var(--muted); font-weight:700; font-size:0.98rem;">(${fmt(po.orderedQty)})</span></div>`).join("");
 
       // Expected Delivery is now an editable, per-tranche delivery
       // schedule (migration 112) — a single PO allocation can be split
@@ -315,7 +321,7 @@ async function loadPPSForPRN() {
       // ppsRenderScheduleEditor / savePPSDeliverySchedule below.
       const dateCell = pos.length === 0
         ? `<span style="color:var(--muted); font-size:0.75rem;">—</span>`
-        : pos.map(po => {
+        : pos.map((po, i) => {
             const key = ppsScheduleKey(prnId, m.itemCode, po.poNo);
             // Refreshed every render (unlike ppsScheduleState, which is
             // seeded once so in-progress edits survive a re-render) — the
@@ -328,7 +334,7 @@ async function loadPPSForPRN() {
                 originalPlannedDate: isoFromPODate(s.originalPlannedDate), fulfilledQty: s.fulfilledQty, status: s.status
               }));
             }
-            return `<div id="ppssched-${key}">${ppsRenderScheduleEditor(key)}</div>`;
+            return `<div style="${ppsPoBlockStyle(i, pos.length)}"><div id="ppssched-${key}">${ppsRenderScheduleEditor(key)}</div></div>`;
           }).join("");
 
       const flag = m.awaitingPoRevision
@@ -370,7 +376,7 @@ async function loadPPSForPRN() {
             <th style="padding:8px; font-size:0.7rem; text-align:center;">Purchase Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:120px;">Purchase Order(s)</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:130px;">Production Requirement Date</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:120px;">Expected Delivery</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:120px;">Expected Delivery Date</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center;">Received / PO Qty</th>
           </tr></thead>
           <tbody>${rowsHtml}</tbody>
@@ -404,6 +410,19 @@ window.ppsScheduleMeta = window.ppsScheduleMeta || {};
 
 function ppsScheduleKey(prnId, itemCode, poNo) {
   return `${prnId}|${itemCode}|${poNo}`.replace(/[^a-zA-Z0-9|_-]/g, "_");
+}
+
+// Shared per-PO block style for the Purchase Order(s) and Expected Delivery
+// Date columns — when a material line has 2+ POs, each PO's block gets its
+// own light background band + a top border (skipped on the first), so the
+// two columns' blocks line up and it's visually obvious where one PO's
+// info ends and the next begins, instead of every PO's divs just stacking
+// flush with nothing to separate them.
+function ppsPoBlockStyle(i, total) {
+  if (total <= 1) return "padding:4px 6px;";
+  const bg = i % 2 === 0 ? "#fff" : "#f8fafc";
+  const top = i > 0 ? "border-top:1px solid #e2e8f0;" : "";
+  return `background:${bg}; ${top} padding:6px; border-radius:4px;`;
 }
 
 function ppsRenderScheduleEditor(key) {

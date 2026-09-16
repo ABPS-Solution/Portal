@@ -601,7 +601,17 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
     // displays correctly without being editable.
     try {
       const data = await apFetch({ action: "fetchPODraftById", poNo: authorizePoNo });
-      if (isStale()) return;
+      // Deliberately NOT gated on isStale() here (unlike the vendor/project
+      // fetch above) — found 16 Sep 2026: this containerId is unique per PO
+      // number (po-auth-expand-<poNo>), so a "stale" call here can only ever
+      // be a second load of the SAME PO's SAME data (idempotent), never a
+      // different PO's data landing in the wrong card. The isStale() bail
+      // was instead the actual cause of "expand a PO, comes back blank,
+      // need to refresh" — any second dispatch for this card (e.g. a
+      // near-simultaneous click) bumped the container's generation counter
+      // AFTER this fetch had already started, so the fetch that actually
+      // returned real data silently discarded it and left the skeleton
+      // form (rendered above) with nothing populated, with no error shown.
       if (data.success && data.po) {
         const po = data.po;
         document.getElementById("cpo-vendor").value = po.vendorName || "";
