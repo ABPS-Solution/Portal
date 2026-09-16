@@ -344,11 +344,37 @@ function mrdRenderScheduleEditor(ns, key) {
 
   const exact = Math.abs(total - purchaseQty) < 1e-9;
   const sumColor = exact ? "#15803d" : "#b91c1c";
-  const sumLine = `<div style="font-size:0.74rem; font-weight:700; color:${sumColor}; margin-bottom:6px;">${fmt(total)} / ${fmt(purchaseQty)} scheduled${exact ? " ✓" : ""}</div>`;
+  const sumLine = `<div id="mrdsum-${ns}-${key}" style="font-size:0.74rem; font-weight:700; color:${sumColor}; margin-bottom:6px;">${fmt(total)} / ${fmt(purchaseQty)} scheduled${exact ? " ✓" : ""}</div>`;
 
   const addLabel = remaining > 0 ? `+ Add Delivery (${fmt(remaining)} left)` : "+ Add Delivery";
   return `${sumLine}${rowsHtml}
-    <button type="button" onclick="mrdAddTranche('${ns}','${key}')" style="margin-top:4px; padding:5px 12px; font-size:0.76rem; font-weight:700; border:1.5px dashed var(--border); border-radius:4px; background:#fff; color:var(--brand); cursor:pointer;">${addLabel}</button>`;
+    <button type="button" id="mrdaddbtn-${ns}-${key}" onclick="mrdAddTranche('${ns}','${key}')" style="margin-top:4px; padding:5px 12px; font-size:0.76rem; font-weight:700; border:1.5px dashed var(--border); border-radius:4px; background:#fff; color:var(--brand); cursor:pointer;">${addLabel}</button>`;
+}
+
+// mrdClampTranche deliberately doesn't call mrdRerenderSchedule on every
+// keystroke (that would replace the <input> mid-type and steal focus —
+// same reasoning as PPS's ppsClampDeliveryQty) — but leaving it at that
+// meant the sum line and "+ Add Delivery (N left)" button stayed frozen
+// at whatever they showed when the editor last fully rendered, which
+// read as "my typed value isn't registering" (real user report, 16 Sep
+// 2026) even though the value WAS being stored correctly underneath.
+// Fixed by updating just these two small, non-input elements directly.
+function mrdRefreshScheduleSummary(ns, key) {
+  const st = window.mrdState[ns];
+  const list = st.lines[key] || [];
+  const purchaseQty = Number(st.meta[key]) || 0;
+  const total = list.reduce((s, t) => s + (Number(t.requiredQty) || 0), 0);
+  const remaining = Math.max(0, purchaseQty - total);
+  const fmt = (n) => (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  const exact = Math.abs(total - purchaseQty) < 1e-9;
+
+  const sumEl = document.getElementById(`mrdsum-${ns}-${key}`);
+  if (sumEl) {
+    sumEl.style.color = exact ? "#15803d" : "#b91c1c";
+    sumEl.textContent = `${fmt(total)} / ${fmt(purchaseQty)} scheduled${exact ? " ✓" : ""}`;
+  }
+  const addBtn = document.getElementById(`mrdaddbtn-${ns}-${key}`);
+  if (addBtn) addBtn.textContent = remaining > 0 ? `+ Add Delivery (${fmt(remaining)} left)` : "+ Add Delivery";
 }
 
 function mrdAddTranche(ns, key) {
@@ -390,6 +416,7 @@ function mrdClampTranche(ns, key, idx, inputEl) {
   if (v > cap) v = cap;
   inputEl.value = v || '';
   list[idx].requiredQty = v || '';
+  mrdRefreshScheduleSummary(ns, key);
 }
 
 // Validates every line for a namespace and returns either { updates } or
@@ -522,9 +549,17 @@ async function submitReviseMRDQueue(ns, prnId, btn) {
     if (data.success) {
       document.getElementById("rmrd-delta-zone").innerHTML = "";
       document.getElementById("rmrd-queue-feed").innerHTML = "";
+      // Both tab labels ("PRN Revisions Needing..." / "Other Requirement
+      // Dates Revisions") shouldn't sit there below a success banner with
+      // nothing to click them into — hide the tab bar until the operator
+      // actually asks to revise another PRN (real user report, 16 Sep
+      // 2026). loadRMRDQueueTab() re-shows it, so it's wired through a
+      // wrapper rather than the bare tab-load call the button used before.
+      const tabsBar = document.getElementById("rmrd-tabs-bar");
+      if (tabsBar) tabsBar.style.display = "none";
       showPurchaseFeedback("rmrd-delta-feedback",
         `✅ Requirement dates for <strong>${prnId}</strong> revised.<br>` +
-        `<button onclick="document.getElementById('rmrd-delta-feedback').style.display='none'; loadRMRDQueueTab();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Revise Another PRN</button>`,
+        `<button onclick="document.getElementById('rmrd-delta-feedback').style.display='none'; const tb=document.getElementById('rmrd-tabs-bar'); if(tb) tb.style.display='flex'; loadRMRDQueueTab();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Revise Another PRN</button>`,
         "success", true);
     } else {
       btn.disabled = false; btn.textContent = originalText;
@@ -606,6 +641,11 @@ async function submitReviseMRDOther(ns, prnId, btn) {
     if (data.success) {
       document.getElementById("rmrd-body").innerHTML = "";
       document.getElementById("rmrd-selector-row").style.display = "none";
+      // Same fix as the queue tab's success path — hide the tab bar until
+      // "+ Revise Another PRN" is clicked. That button already calls
+      // initializeReviseMRDPanel(), which re-shows it.
+      const tabsBar = document.getElementById("rmrd-tabs-bar");
+      if (tabsBar) tabsBar.style.display = "none";
       const fb = document.getElementById("rmrd-feedback");
       fb.style.cssText = "display:block; background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:12px; margin-bottom:12px; border-radius:var(--radius);";
       fb.innerHTML = `✅ Requirement dates revised for <strong>${prnId}</strong>.
