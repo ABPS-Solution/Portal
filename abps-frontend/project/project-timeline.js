@@ -119,13 +119,24 @@ async function initializeProjectTimelinePanel() {
           style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
         <div id="ptl-project-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
       </div>
-      <button type="button" onclick="ptlOpenLdBoard()" style="padding:9px 16px; font-size:0.85rem; font-weight:700; border:1.5px solid #b45309; border-radius:var(--radius); background:#fffbeb; color:#92400e; cursor:pointer;">₹ LD Exposure Board</button>
+      <button type="button" id="ptl-ld-board-btn" onclick="ptlOpenLdBoard()" style="display:none; padding:9px 16px; font-size:0.85rem; font-weight:700; border:1.5px solid #b45309; border-radius:var(--radius); background:#fffbeb; color:#92400e; cursor:pointer;">₹ LD Exposure Board</button>
     </div>
     <div id="ptl-feedback" style="display:none; padding:12px; border-radius:var(--radius); margin-bottom:14px; border-left:4px solid;"></div>
     <div id="ptl-body"></div>
   `;
   document.getElementById("ptl-project-input").value = "";
   document.getElementById("ptl-body").innerHTML = "";
+  // LD Exposure Board button — narrowed 17 Sep 2026 to Marketing dept /
+  // Admin / Super Admin, matching backend's canAccessLd (routes/timeline.js).
+  // This is UX only; fetchLdExposureBoard refuses the request server-side
+  // regardless of what this hides. isUserAdminGlobal covers Admin+Super
+  // Admin (perm_super_admin always implies perm_admin, see the tier docs).
+  const ldBoardBtn = document.getElementById("ptl-ld-board-btn");
+  if (ldBoardBtn) {
+    const dept = localStorage.getItem("userDepartment") || "";
+    const isAdminTier = localStorage.getItem("isUserAdminGlobal") === "true";
+    if (dept === "Marketing" || isAdminTier) ldBoardBtn.style.display = "inline-block";
+  }
   const elHeaderLeft0 = document.getElementById("ptl-header-left");
   if (elHeaderLeft0) elHeaderLeft0.innerHTML = "";
   ptlData = null; ptlSelected = null;
@@ -2290,7 +2301,8 @@ function ptlRenderLdPanel() {
       </div>`;
     }
 
-    html += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:0 12px;">`
+    // Row 1: Rate % / Per / Counted in
+    html += `<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0 12px;">`
       + field("Rate %", `<input type="number" step="0.001" ${dis} value="${f.ratePercent ?? ""}" style="${inputStyle}" oninput="ptlLdFormSet('ratePercent', this.value)" />`)
       + field("Per", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('periodUnit', this.value)">
           ${["week","day","month"].map(u => `<option value="${u}" ${f.periodUnit === u ? "selected" : ""}>${u}</option>`).join("")}
@@ -2299,6 +2311,10 @@ function ptlRenderLdPanel() {
           <option value="calendar" ${f.periodBasis === "calendar" ? "selected" : ""}>Calendar days/weeks</option>
           <option value="business" ${f.periodBasis === "business" ? "selected" : ""}>Business days/weeks</option>
         </select>`)
+      + `</div>`;
+
+    // Row 2: Part period / Cap % / Grace days
+    html += `<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0 12px;">`
       + field("Part period", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('partPeriodRule', this.value)">
           <option value="part_thereof" ${f.partPeriodRule === "part_thereof" ? "selected" : ""}>Or part thereof</option>
           <option value="completed_only" ${f.partPeriodRule === "completed_only" ? "selected" : ""}>Completed periods only</option>
@@ -2306,26 +2322,38 @@ function ptlRenderLdPanel() {
         </select>`)
       + field("Cap % (blank = uncapped)", `<input type="number" step="0.001" ${dis} value="${f.capPercent ?? ""}" style="${inputStyle}" oninput="ptlLdFormSet('capPercent', this.value)" placeholder="Uncapped" />`)
       + field("Grace days", `<input type="number" ${dis} value="${f.graceDays ?? 0}" style="${inputStyle}" oninput="ptlLdFormSet('graceDays', this.value)" />`)
-      + field("Basis", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('basisKind', this.value)">
+      + `</div>`;
+
+    // Row 3: Basis / Currency / Tentative-or-Final delivery date. The date
+    // field's label switches to "Final" the moment mfc_actual_delivery_date
+    // is set, matching what contractualDate now actually resolves to below.
+    const finalDelivery = ptlData.project.actualDelivery || null;
+    const tentativeDelivery = ptlData.project.tentativeDelivery || null;
+    const currentContractual = t?.contractualDate || finalDelivery || tentativeDelivery;
+    const deliveryDateLabel = finalDelivery ? "Final Delivery Date" : "Tentative Delivery Date";
+    html += `<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0 12px;">`
+      + field("Basis", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('basisKind', this.value); ptlRenderLdPanel();">
           <option value="whole_po_basic" ${f.basisKind === "whole_po_basic" ? "selected" : ""}>Whole PO value</option>
-          <option value="delayed_goods_basic" ${f.basisKind === "delayed_goods_basic" ? "selected" : ""}>Delayed goods only (not yet supported - falls back to whole PO)</option>
+          <option value="delayed_goods_basic" ${f.basisKind === "delayed_goods_basic" ? "selected" : ""}>Delayed goods only</option>
         </select>`)
       + field("Currency", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('currency', this.value); ptlRenderLdPanel();">
           <option value="INR" ${f.currency === "INR" ? "selected" : ""}>INR</option>
           <option value="USD" ${f.currency === "USD" ? "selected" : ""}>USD</option>
         </select>`)
-      + (f.currency !== "INR" ? field("INR per unit", `<input type="number" step="0.0001" ${dis} value="${f.usdRate ?? ""}" style="${inputStyle}" oninput="ptlLdFormSet('usdRate', this.value)" />`) : "")
+      + field(`${deliveryDateLabel}${t?.contractualDateSource === "po_delivery_date" ? " (from PO)" : ""}`,
+          isConfirmed
+            ? `<div style="padding:7px 0; font-size:0.85rem; font-weight:700;">${ptlFmtFull(currentContractual)} - frozen once confirmed; use "Extend Date" below to change it.</div>`
+            : `<input type="date" ${dis} value="${f.contractualDateManual || currentContractual || ""}" style="${inputStyle}" oninput="ptlLdFormSet('contractualDateManual', this.value)" />`)
       + `</div>`;
 
-    const currentContractual = t?.contractualDate || ptlData.project.tentativeDelivery;
-    html += field(`Contractual delivery date${t?.contractualDateSource === "po_delivery_date" ? " (from PO Tentative Delivery Date)" : ""}`,
-      isConfirmed
-        ? `<div style="padding:7px 0; font-size:0.85rem; font-weight:700;">${ptlFmtFull(currentContractual)} - frozen once confirmed; use "Extend Date" below to change it.</div>`
-        : `<input type="date" ${dis} value="${f.contractualDateManual || currentContractual || ""}" style="${inputStyle}" oninput="ptlLdFormSet('contractualDateManual', this.value)" />`);
+    if (f.currency !== "INR") {
+      html += field("INR per unit", `<input type="number" step="0.0001" ${dis} value="${f.usdRate ?? ""}" style="${inputStyle}" oninput="ptlLdFormSet('usdRate', this.value)" />`);
+    }
 
-    // Basis amount - two independently-typed candidates that are NOT
-    // guaranteed to agree (see routes/timeline.js's resolveLdBasisAmount) -
-    // never auto-pick one.
+    // Row 4: PO basis value — which candidates show depends on the
+    // selected Basis (whole PO vs delayed goods only, wired 17 Sep 2026).
+    // Two independently-typed candidates are NOT guaranteed to agree (see
+    // routes/timeline.js's resolveLdBasisAmount) - never auto-pick one.
     const bc = ptlLdPanelState.basisCandidates;
     html += `<div style="margin:12px 0;"><label style="display:block; font-size:0.72rem; font-weight:700; color:var(--muted); margin-bottom:5px;">PO basis value</label>`;
     if (ptlLdPanelState.loadingBasis) {
@@ -2336,10 +2364,15 @@ function ptlRenderLdPanel() {
           onchange="ptlLdFormSet('basisAmountSource','${source}'); ptlLdFormSet('basisAmountInr', ${amount}); ptlRenderLdPanel();" />
         <span>${label}: <strong>${ptlFmtINR(amount)}</strong></span>
       </label>`;
-      html += opt("po_line_items_sum", bc.candidates.poLineItemsSum, "Sum of PO line items");
-      html += opt("basic_po_amount", bc.candidates.basicPoAmount, "Basic PO Amount (as typed on PO upload)");
-      if (bc.delta != null && bc.delta > 0) {
-        html += `<div style="font-size:0.76rem; color:#b45309; margin:4px 0 8px;">⚠ These two figures differ by ${ptlFmtINR(bc.delta)} - pick the correct one.</div>`;
+      if (f.basisKind === "delayed_goods_basic") {
+        html += opt("delayed_goods_sum", bc.candidates.delayedGoodsSum,
+          `Sum of not-yet-invoiced PO products${bc.delayedLineCount != null ? ` (${bc.delayedLineCount} of ${bc.lineCount} line${bc.lineCount === 1 ? "" : "s"})` : ""}`);
+      } else {
+        html += opt("po_line_items_sum", bc.candidates.poLineItemsSum, "Sum of PO products price");
+        html += opt("basic_po_amount", bc.candidates.basicPoAmount, "Basic PO Amount (as typed on PO upload)");
+        if (bc.delta != null && bc.delta > 0) {
+          html += `<div style="font-size:0.76rem; color:#b45309; margin:4px 0 8px;">⚠ These two figures differ by ${ptlFmtINR(bc.delta)} - pick the correct one.</div>`;
+        }
       }
       html += `<label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; cursor:pointer;">
         <input type="radio" name="ptl-ld-basis" style="width:auto; flex:none;" ${dis} ${f.basisAmountSource === "manual" ? "checked" : ""}
@@ -2350,6 +2383,7 @@ function ptlRenderLdPanel() {
     }
     html += `</div>`;
 
+    // Row 5: Notes
     html += field("Notes", `<textarea ${dis} rows="2" style="${inputStyle} resize:vertical;" oninput="ptlLdFormSet('notes', this.value)">${escapeHtml(f.notes || "")}</textarea>`);
   }
 
