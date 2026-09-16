@@ -369,10 +369,16 @@ async function loadPPSForPRN() {
         ? `<span style="color:var(--muted); font-size:0.75rem;">—</span>`
         : reqDates.map(r => `<div style="font-size:0.92rem; font-weight:700;">${fmt(r.qty)} on ${formatOrdinalDate(r.date)}</div>`).join("");
 
-      const colBorder = "border-left:1.5px solid var(--border);";
+      // border-bottom belongs on each <td>, not the <tr> — a <tr>'s own
+      // border does not reliably paint under border-collapse:collapse
+      // (confirmed live 16 Sep 2026: the row divider was invisible with
+      // it only on <tr>), while a border repeated on every cell always
+      // renders correctly.
+      const colBorder = "border-left:1.5px solid var(--border); border-bottom:1.5px solid var(--border);";
+      const firstColBorder = "border-bottom:1.5px solid var(--border);";
       return `
-        <tr style="border-bottom:1.5px solid var(--border);">
-          <td style="padding:8px; font-size:0.92rem; font-weight:600;">${esc(m.materialName)}${flag}</td>
+        <tr>
+          <td style="padding:8px; font-size:0.92rem; font-weight:600; ${firstColBorder}">${esc(m.materialName)}${flag}</td>
           <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.98rem; ${colBorder}">${fmt(m.boqRequiredQty)}</td>
           <td style="padding:8px; text-align:center; color:#b45309; font-weight:700; ${colBorder}">${fmt(m.bufferPct)}%</td>
           <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand); font-size:1.15rem; ${colBorder}">${fmt(m.bufferedPurchaseQty)}</td>
@@ -385,12 +391,15 @@ async function loadPPSForPRN() {
         </tr>`;
     }).join("");
 
-    const headColBorder = "border-left:1.5px solid var(--border);";
+    // Same reason as the row cells above — border-bottom on every <th>,
+    // not on the <tr>, or it doesn't paint under border-collapse:collapse.
+    const headColBorder = "border-left:1.5px solid var(--border); border-bottom:1.5px solid var(--border);";
+    const headFirstColBorder = "border-bottom:1.5px solid var(--border);";
     body.innerHTML = `
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
         <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1200px;">
-          <thead><tr style="background:#f8fafc; border-bottom:1.5px solid var(--border);">
-            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:200px;">Material Name</th>
+          <thead><tr style="background:#f8fafc;">
+            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:200px; ${headFirstColBorder}">Material Name</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; ${headColBorder}">BOQ Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309; ${headColBorder}">Buffer %</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand); ${headColBorder}">Buffered BOQ Qty</th>
