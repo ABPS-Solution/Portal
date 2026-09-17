@@ -510,6 +510,13 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
   const orderDateStr = `${dd}-${mmm}-${today.getFullYear()}`;
 
   const isAuth = window.cpoMode === 'authorize';
+  // go-live: lets an admin back-fill a pre-system PO under its original
+  // number, or seed the auto-numbering sequence to start from an
+  // arbitrary value. Creation-time only — never shown once isAuth is
+  // true, matching the backend's own creation-time-only enforcement (see
+  // validateManualPONumber's header comment in routes/purchase.js).
+  const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
+  const showPONumberOverride = isAdminUser && !isAuth;
 
   body.innerHTML = `
     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
@@ -531,6 +538,14 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
           <input type="date" lang="en-GB" id="cpo-delivery-date" oninput="persistCPODraft()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
         </div>
       </div>
+      ${showPONumberOverride ? `
+      <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Manual PO Number (admin only — optional)</label>
+          <input type="text" id="cpo-po-number-override" placeholder="Leave blank to auto-generate — use this only to back-fill a pre-system PO under its original number, or to seed the sequence" oninput="persistCPODraft()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+          <div style="font-size:0.7rem; color:var(--muted); margin-top:3px;">Letters, numbers, dots, hyphens, underscores only — no "/" (replace with "-"). Cannot be changed after this PO is created.</div>
+        </div>
+      </div>` : ""}
       <div id="cpo-vendor-preview" style="display:none; font-size:0.8rem; color:var(--muted); background:#fff; border:1px dashed var(--border); border-radius:var(--radius); padding:10px;"></div>
       <input type="hidden" id="cpo-order-date" value="${orderDateStr}" />
     </div>
@@ -689,6 +704,9 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
     if (draft.payment) document.getElementById("cpo-payment").value = draft.payment;
     if (draft.freightTerms) document.getElementById("cpo-freight-terms").value = draft.freightTerms;
     if (draft.notes) document.getElementById("cpo-notes").value = draft.notes;
+    if (draft.poNumberOverride && document.getElementById("cpo-po-number-override")) {
+      document.getElementById("cpo-po-number-override").value = draft.poNumberOverride;
+    }
   }
   renderCPOMaterialRows();
   recalcCPOTotals();
@@ -724,6 +742,7 @@ function persistCPODraft() {
       payment: document.getElementById("cpo-payment").value,
       freightTerms: document.getElementById("cpo-freight-terms").value,
       notes: document.getElementById("cpo-notes").value,
+      poNumberOverride: document.getElementById("cpo-po-number-override")?.value || "",
       materialRows: window.cpoMaterialRows || [],
       rowSeq: window.cpoRowSeq || 0,
     };
@@ -1161,6 +1180,21 @@ async function submitCreatePO() {
   if (!vendorName) return showErr("Please select a Vendor.");
   if (window.cpoMaterialRows.length === 0) return showErr("Add at least one material row.");
 
+  // go-live PO-number override (admin only, create mode only — the field
+  // itself only renders under those conditions, see buildCPOForm's
+  // showPONumberOverride). Mirrors the server's own validateManualPONumber
+  // for fast feedback; the server re-validates authoritatively regardless.
+  const poNumberOverrideVal = (document.getElementById("cpo-po-number-override")?.value || "").trim();
+  if (poNumberOverrideVal) {
+    if (poNumberOverrideVal.length > 60) return showErr("PO number is too long (max 60 characters).");
+    if (!/^[A-Za-z0-9._-]+$/.test(poNumberOverrideVal)) {
+      return showErr('PO number can only contain letters, numbers, dots, hyphens and underscores — replace "/" with "-".');
+    }
+    if (poNumberOverrideVal.startsWith(".") || poNumberOverrideVal.endsWith(".") || poNumberOverrideVal.includes("..")) {
+      return showErr('PO number cannot start or end with a dot, or contain "..".');
+    }
+  }
+
   for (let i = 0; i < window.cpoMaterialRows.length; i++) {
     const row = window.cpoMaterialRows[i];
     const n = i + 1;
@@ -1183,6 +1217,7 @@ async function submitCreatePO() {
 
   const payload = {
     vendorName,
+    poNumber: poNumberOverrideVal || undefined,
     supplierRef: document.getElementById("cpo-supplier-ref").value.trim(),
     orderDate: document.getElementById("cpo-order-date").value.trim(),
     deliveryDate,

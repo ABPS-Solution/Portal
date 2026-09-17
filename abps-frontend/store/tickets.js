@@ -116,7 +116,10 @@ async function submitMaterialRequestTicketToBackend() {
   }
 
   const isServiceSubmit = departmentVal === "Service";
-  const isLegacySubmit = isServiceSubmit && !!document.getElementById("ticket-legacy-project-toggle")?.checked;
+  // Legacy/pre-system ticket is available under any Outgoing Use as of
+  // go-live (was Service-only) — a pre-system project still in production,
+  // or a plain stock-count correction, can be raised from any department.
+  const isLegacySubmit = !!document.getElementById("ticket-legacy-project-toggle")?.checked;
   const legacyCompanyNameVal = isLegacySubmit ? (document.getElementById("ticket-legacy-company-name")?.value || "").trim() : "";
   const projectId = isLegacySubmit ? "" : projectIdField.value;
   const boqIdVal = document.getElementById("ticket-boq-dropdown")?.value || "";
@@ -150,8 +153,9 @@ async function submitMaterialRequestTicketToBackend() {
   }
 
   // Service is issued at the BOQ level (no Job Card); a legacy ticket has
-  // neither. Everything else still requires a Job Card Number.
-  if (!isServiceSubmit && !document.getElementById("ticket-job-card-dropdown")?.value) {
+  // neither, regardless of department. Everything else still requires a
+  // Job Card Number.
+  if (!isServiceSubmit && !isLegacySubmit && !document.getElementById("ticket-job-card-dropdown")?.value) {
     if (feedbackBanner) {
       feedbackBanner.style.cssText = "display: block; background: #fff3c7; border-color: #b45309; color: #b45309; padding: 10px; margin-bottom: 12px; border-left: 4px solid #b45309; text-align: left;";
       feedbackBanner.innerHTML = `<strong>Compulsory Input Missing:</strong> Please select a Job Card Number.`;
@@ -1407,7 +1411,9 @@ async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
   if (legacyToggle) legacyToggle.checked = false;
   if (legacyCompanyInput) { legacyCompanyInput.value = ""; legacyCompanyInput.style.display = "none"; }
   if (customerNameField) customerNameField.value = "";
-  if (legacyToggleWrapper) legacyToggleWrapper.style.display = isService ? "block" : "none";
+  // Legacy toggle is available under any Outgoing Use as of go-live (was
+  // Service-only) — see handleTicketLegacyToggleChange's own header comment.
+  if (legacyToggleWrapper) legacyToggleWrapper.style.display = "block";
   window.ticketJobCardsCache = [];
 
   // Reset BOQ/Job Card
@@ -1442,8 +1448,10 @@ async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
   }
 }
 
-// Legacy/pre-system project toggle — only ever shown when Outgoing Use =
-// Service. A ticket is either against a real project+BOQ or a bare
+// Legacy/pre-system project toggle — available under any Outgoing Use as
+// of go-live (was Service-only; widened so a pre-system project still in
+// production, or a plain stock-count correction, can be raised from any
+// department). A ticket is either against a real project+BOQ or a bare
 // company name, never both — checking this swaps the Project ID
 // typeahead for a free-text Company Name input and skips BOQ/Job Card
 // entirely (there is neither for a company this system never had a
@@ -1493,7 +1501,10 @@ function handleTicketLegacyCompanyNameInput(value) {
     storeScopeDrop.style.opacity = hasValue ? "1" : "0.5";
     storeScopeDrop.style.cursor = hasValue ? "pointer" : "not-allowed";
     if (hasValue) {
-      storeScopeDrop.innerHTML = buildStoreScopeOptionsHtml_("— Select Store —", true);
+      // Legacy tickets are no longer Service-restricted — Spare Store is
+      // permitted here (unlike the real-Service-BOQ path a few functions
+      // down, which keeps its Spare ban).
+      storeScopeDrop.innerHTML = buildStoreScopeOptionsHtml_("— Select Store —", false);
     } else {
       storeScopeDrop.value = "";
       storeScopeDrop.innerHTML = buildStoreScopeOptionsHtml_("— Type Company Name First —");
@@ -1577,14 +1588,18 @@ function handleCreateTicketBOQChange(chosenBoqId) {
   if (jobCardLabel) jobCardLabel.style.color = "var(--brand)";
 }
 
-// Service (and legacy-company) tickets have no Job Card, so every place
+// Service AND legacy-company tickets have no Job Card, so every place
 // that keys window._ticketJobCardMaterialsCache off "<jobCardNumber>|
 // <projectId>" and re-fetches via fetchJobCardMaterials on a miss needs a
-// Service-aware equivalent instead — shared here so
+// free-pool-aware equivalent instead — shared here so
 // loadItemCatalogForSelectedProjectAndStore and addItemToShoppingBasketRow
-// can never disagree on the key or which fetch to use.
+// can never disagree on the key or which fetch to use. Kept the name
+// ticketIsServiceItemMode_ (rather than renaming call sites) when the
+// legacy path was widened past Service-only at go-live — it now means
+// "free pool, no Job Card", not literally "Service".
 function ticketIsServiceItemMode_() {
-  return document.getElementById("ticket-department-outgoing-dropdown")?.value === "Service";
+  const dept = document.getElementById("ticket-department-outgoing-dropdown")?.value;
+  return dept === "Service" || !!document.getElementById("ticket-legacy-project-toggle")?.checked;
 }
 function ticketJcmCacheKeyFor_(activeStoreScope, jobCardNumberVal, projectId) {
   return ticketIsServiceItemMode_() ? ("SERVICE|" + activeStoreScope + "|" + projectId) : (jobCardNumberVal + "|" + projectId);
@@ -1624,18 +1639,22 @@ async function loadItemCatalogForSelectedProjectAndStore() {
   if (feedbackBanner) feedbackBanner.style.display = "none";
 
   const activeStoreScope = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
-  // Service (and legacy-company) tickets have no Job Card to scope the
-  // item list against — Spare Store is already disallowed for Service at
-  // submit time, so only Raw/FG need this branch. fetchServiceItemCatalog
-  // returns the free-pool catalog in the exact same row shape
-  // fetchJobCardMaterials does, so everything below this block (basket
-  // add, submit) keeps reading window._ticketJobCardMaterialsCache
-  // unmodified regardless of which fetch populated it.
-  const isServiceItemMode = document.getElementById("ticket-department-outgoing-dropdown")?.value === "Service";
-
+  // Free-pool tickets (Service, or legacy under go-live's widening) have no
+  // Job Card to scope the item list against. Spare Store is only reachable
+  // here for a legacy ticket — a real Service ticket's "Choose Store"
+  // dropdown never offers Spare Store as an option (buildStoreScopeOptionsHtml_'s
+  // restrictToService), so widening this condition to include Spare Store
+  // cannot affect a real Service ticket. fetchServiceItemCatalog returns
+  // the free-pool catalog in the exact same row shape fetchJobCardMaterials
+  // does, so everything below this block (basket add, submit) keeps
+  // reading window._ticketJobCardMaterialsCache unmodified regardless of
+  // which fetch populated it. Routed through the shared
+  // ticketIsServiceItemMode_/ticketJcmCacheKeyFor_ helpers rather than
+  // re-deriving inline — this used to be a 4th, undocumented read site that
+  // diverged from them (see those functions' own header comment).
   try {
-    if (isServiceItemMode && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Finished Goods Store")) {
-      const jcmCacheKeyService = "SERVICE|" + activeStoreScope + "|" + chosenProjectVal;
+    if (ticketIsServiceItemMode_() && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Finished Goods Store" || activeStoreScope === "Spare Store")) {
+      const jcmCacheKeyService = ticketJcmCacheKeyFor_(activeStoreScope, "", chosenProjectVal);
       let jcmFetchService;
       try {
         jcmFetchService = await apFetch({ action: "fetchServiceItemCatalog", typeOfStore: activeStoreScope });
@@ -1643,6 +1662,15 @@ async function loadItemCatalogForSelectedProjectAndStore() {
         jcmFetchService = { success: false, records: [], error: e.message };
       }
       window._ticketJobCardMaterialsCache = { key: jcmCacheKeyService, records: jcmFetchService.records || [] };
+      // Spare Store's basket-add validation (addItemToShoppingBasketRow)
+      // reads window.cachedSpareStoreStock directly, same as the real
+      // Job-Card-scoped Spare flow below — keep that cache warm here too
+      // so a legacy Spare Store ticket validates against real figures
+      // instead of a stale/empty array.
+      if (activeStoreScope === "Spare Store") {
+        apFetch({ action: "getSpareStoreStock" })
+          .then(d => { window.cachedSpareStoreStock = d.stock || []; }).catch(() => {});
+      }
 
       if (jcmFetchService.success && (jcmFetchService.records || []).length > 0) {
         itemDrop.innerHTML = '<option value="" style="font-weight:700;">— Select Material —</option>';
@@ -1656,7 +1684,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
         itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
         addBtn.style.cursor = "pointer";
       } else {
-        itemDrop.innerHTML = `<option value="">⚠️ No ${activeStoreScope === 'Finished Goods Store' ? 'Finished Goods' : 'Raw Material'} stock currently available</option>`;
+        itemDrop.innerHTML = `<option value="">⚠️ No ${activeStoreScope === 'Finished Goods Store' ? 'Finished Goods' : activeStoreScope === 'Spare Store' ? 'Spare' : 'Raw Material'} stock currently available</option>`;
         addZone.style.opacity = "0.5";
       }
       return;

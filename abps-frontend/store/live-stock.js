@@ -114,9 +114,13 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
     // (submitEngineerMaterialTicket blocks that combination server-side) —
     // Spare Stock Needed / Spare Store Extra Qty exist to cover a raw-stock
     // shortfall against a Job Card's BOQ allotment, a concept that doesn't
-    // apply to Service at all. Drop both columns entirely for Service
-    // tickets rather than just locking the select to "No".
-    const isServiceTicket = (ticket.department || "").toString().trim() === "Service";
+    // apply to a free-pool issue (Service, or a legacy/pre-system ticket —
+    // widened at go-live to any department) at all. Drop both columns
+    // entirely for a free-pool ticket rather than just locking the select
+    // to "No". A legacy ticket under a non-Service department still needs
+    // this — checking legacyCompanyName, not just department, is what
+    // makes that work.
+    const isServiceTicket = (ticket.department || "").toString().trim() === "Service" || !!ticket.legacyCompanyName;
     let itemRowsHtml = "";
     itemsArray.forEach(item => {
       const overrunHighlightStyle = item.requiresBOQIncreaseFlag === true ? 'color: var(--warn); font-weight: 800; background: #fff5f2; padding: 2px 6px; border-radius: 4px; border: 1px solid #fca5a5;' : '';
