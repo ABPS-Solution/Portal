@@ -472,7 +472,18 @@ async function addItemToShoppingBasketRow() {
   // --- SPARE STORE: block if requested qty exceeds available spare stock ---
   if (activeStoreScope === "Spare Store") {
     const spareCache = window.cachedSpareStoreStock || [];
-    const spareMatch = spareCache.find(item => (item.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
+    // Match by the selected option's tagged itemCode first, not by name
+    // text — two Spare Store items can share the same Name + Rating and
+    // differ only by Make (e.g. SIEMENS vs L&T), and separately,
+    // fetchJobCardMaterials bakes "- Make: X" into materialName while
+    // getSpareStoreStock never does, so a name-only match silently fails
+    // (reads as 0 available) for any item that has a Make. Falls back to
+    // the old name-based match only if the dropdown option was never
+    // tagged (shouldn't happen — defensive only).
+    const selectedItemCode = itemSelect.options[itemSelect.selectedIndex]?.dataset.itemcode || "";
+    const spareMatch = selectedItemCode
+      ? spareCache.find(item => item.itemCode === selectedItemCode)
+      : spareCache.find(item => (item.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
     const availableQty = spareMatch ? spareMatch.availableStock : 0;
 
     if (quantity > availableQty) {
@@ -1666,10 +1677,16 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       // reads window.cachedSpareStoreStock directly, same as the real
       // Job-Card-scoped Spare flow below — keep that cache warm here too
       // so a legacy Spare Store ticket validates against real figures
-      // instead of a stale/empty array.
+      // instead of a stale/empty array. AWAITED, not fire-and-forget —
+      // this used to be a background .then() that left a window where the
+      // Add button was already enabled but cachedSpareStoreStock was still
+      // empty, so the very first Add click after switching to Spare Store
+      // wrongly reported "Only 0 available" until the fetch caught up.
       if (activeStoreScope === "Spare Store") {
-        apFetch({ action: "getSpareStoreStock" })
-          .then(d => { window.cachedSpareStoreStock = d.stock || []; }).catch(() => {});
+        try {
+          const spareStockData = await apFetch({ action: "getSpareStoreStock" });
+          window.cachedSpareStoreStock = spareStockData.stock || [];
+        } catch (e) { /* addItemToShoppingBasketRow treats a missing entry as 0 available, same as before */ }
       }
 
       if (jcmFetchService.success && (jcmFetchService.records || []).length > 0) {
@@ -1678,6 +1695,13 @@ async function loadItemCatalogForSelectedProjectAndStore() {
           const opt = document.createElement("option");
           opt.value = r.materialName;
           opt.textContent = r.materialName;
+          // Two Spare Store items can legitimately share the same Name +
+          // Rating and differ only by Make (e.g. SIEMENS vs L&T variants) —
+          // the dropdown option text/value alone can't tell them apart.
+          // Tagging the real itemCode here lets addItemToShoppingBasketRow
+          // disambiguate instead of matching by name text, which would
+          // silently pick whichever one happens to come first in the cache.
+          if (activeStoreScope === "Spare Store" && r.itemCode) opt.dataset.itemcode = r.itemCode;
           itemDrop.appendChild(opt);
         });
         addZone.style.opacity = "1";
@@ -1693,10 +1717,16 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       // Spare Store now shows exactly the same Job-Card-allotted material list as Raw Materials
       // Store — the two share one unified JobCardMaterials row per material (see architecture
       // note: a Spare draw and a Raw draw on the same Job Card + item both update the same row).
-      // Physical Spare stock is pre-fetched here in the background for the Store Count pill —
-      // it does not gate which materials are selectable, only how much of each is available.
-      apFetch({ action: "getSpareStoreStock" })
-        .then(d => { window.cachedSpareStoreStock = d.stock || []; }).catch(() => {});
+      // Physical Spare stock is pre-fetched here for the Store Count pill and
+      // for addItemToShoppingBasketRow's quantity validation — it does not
+      // gate which materials are selectable, only how much of each is
+      // available. AWAITED (was fire-and-forget), same race-condition fix as
+      // the free-pool branch above — an Add click before this resolved could
+      // wrongly see an empty cachedSpareStoreStock and report "0 available".
+      try {
+        const spareStockData = await apFetch({ action: "getSpareStoreStock" });
+        window.cachedSpareStoreStock = spareStockData.stock || [];
+      } catch (e) { /* addItemToShoppingBasketRow treats a missing entry as 0 available, same as before */ }
 
       const chosenJobCardValSpare = document.getElementById("ticket-job-card-dropdown")?.value || "";
       if (!chosenJobCardValSpare) {
@@ -1729,6 +1759,14 @@ async function loadItemCatalogForSelectedProjectAndStore() {
             let opt = document.createElement("option");
             opt.value = r.materialName;
             opt.textContent = r.materialName;
+            // fetchJobCardMaterials bakes "- Make: X" into materialName,
+            // but getSpareStoreStock's own materialName never has it — so
+            // the availability check below can't match by name alone for
+            // any item with a Make value (silently reads as 0 available),
+            // and two different-Make item codes can't be told apart by
+            // name either. Tag the real itemCode so it can match on that
+            // instead. See addItemToShoppingBasketRow's Spare Store block.
+            if (r.itemCode) opt.dataset.itemcode = r.itemCode;
             itemDrop.appendChild(opt);
           }
         });

@@ -179,7 +179,9 @@ ${spareCellsHtml}
             <span id="ticket-card-caret-${ticket.ticketId}" style="float:right; font-weight:700; color:var(--muted);">▸</span>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
-            <span>Project ID:</span><strong style="margin-right:15px; color:var(--brand);">${ticket.projectId || "None"}</strong>
+            ${ticket.legacyCompanyName
+              ? `<span style="background:#fef3c7; color:#92400e; font-weight:700; padding:2px 6px; border-radius:4px; margin-right:8px;">LEGACY</span><span>Company:</span><strong style="margin-right:15px; color:var(--brand);">${ticket.legacyCompanyName}</strong>`
+              : `<span>Project ID:</span><strong style="margin-right:15px; color:var(--brand);">${ticket.projectId || "None"}</strong>`}
             <span>Job Card Number:</span><strong style="color:var(--brand);">${ticket.jobCardNumber || "—"}</strong>
           </div>
         </div>
@@ -320,6 +322,9 @@ function executeClientSideStoreTicketFilterSearch() {
             </div>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
+            ${ticket.legacyCompanyName
+              ? `<span style="background:#fef3c7; color:#92400e; font-weight:700; padding:2px 6px; border-radius:4px; margin-right:8px;">LEGACY</span><span>Company:</span> <strong style="margin-right:15px; color:var(--brand);">${ticket.legacyCompanyName}</strong>`
+              : `<span>Project ID:</span> <strong style="margin-right:15px; color:var(--brand);">${ticket.projectId || "None"}</strong>`}
             <span>Job Card Number:</span> <strong style="color:var(--brand);">${ticket.jobCardNumber || "—"}</strong>
           </div>
         </div>

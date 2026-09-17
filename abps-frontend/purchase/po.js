@@ -11,18 +11,53 @@ async function initializeAuthorizePOPanel() {
       return;
     }
     const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
+    // go-live: super-admin-only escape hatch for a typo made in the manual
+    // PO number override at creation (that field itself is creation-time
+    // only — see validateManualPONumber's header comment in
+    // routes/purchase.js). Only ever offered here, on the Pending
+    // Authorization list, because adminRenameRMPONumber itself refuses
+    // anything already authorized (no PDF regeneration on rename).
+    const isSuperAdminUser = localStorage.getItem("isUserSuperAdminGlobal") === "true";
     body.innerHTML = data.pos.map(po => `
       <div class="contact-summary-card-parent" style="margin-bottom:12px;">
         <div class="contact-summary-header-row" onclick="toggleAuthorizePOCard('${po.poNumber}')" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNumber}</span>
             <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
+            ${isSuperAdminUser ? `<button onclick="event.stopPropagation(); promptRenameRMPONumber('${po.poNumber}')" style="margin-left:10px; font-size:0.68rem; padding:2px 8px; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--muted); cursor:pointer;" title="Correct a typo'd PO number (super admin only)">Fix PO Number</button>` : ""}
           </div>
           <div style="font-size:0.85rem; color:var(--muted);">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${po.preparedBy}</div>
         </div>
         <div id="po-auth-expand-${po.poNumber}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
       </div>`).join("");
   } catch(e) { body.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+}
+
+// go-live: super-admin-only PO number correction (see the "Fix PO Number"
+// button in initializeAuthorizePOPanel). A plain prompt() is deliberate —
+// this is a rare, one-off correction action, not a screen worth a modal
+// for. Mirrors validateManualPONumber's character rule client-side for
+// fast feedback; the server re-validates and re-checks the "Pending
+// Authorization" status regardless.
+async function promptRenameRMPONumber(oldPoNo) {
+  const newPoNo = (prompt(`Correct PO number "${oldPoNo}" to:`, oldPoNo) || "").trim();
+  if (!newPoNo || newPoNo === oldPoNo) return;
+  if (!/^[A-Za-z0-9._-]+$/.test(newPoNo)) {
+    alert('PO number can only contain letters, numbers, dots, hyphens and underscores — replace "/" with "-".');
+    return;
+  }
+  if (!confirm(`Rename "${oldPoNo}" to "${newPoNo}"? This cannot be undone from here.`)) return;
+
+  showBlockingOverlay("Correcting PO number...");
+  try {
+    const data = await apFetch({ action: "adminRenameRMPONumber", oldPoNo, newPoNo, operatorName: appActiveOperatorIdentityString });
+    hideBlockingOverlay();
+    if (!data.success) { alert(data.error || "Failed to rename PO."); return; }
+    initializeAuthorizePOPanel();
+  } catch (e) {
+    hideBlockingOverlay();
+    alert(e.message || "Failed to rename PO.");
+  }
 }
 
 // Accordion, one PO expanded at a time — reuses the exact same panel
