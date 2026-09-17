@@ -488,6 +488,7 @@ function resetSequentialFormState() {
   if (document.getElementById("dropform-city")) document.getElementById("dropform-city").value = "";
   if (document.getElementById("dropform-state")) document.getElementById("dropform-state").value = "";
   if (document.getElementById("dropform-country")) document.getElementById("dropform-country").value = "";
+  wireCityAutoFillStateCountry("dropform-city", "dropform-state", "dropform-country");
   if (document.getElementById("purchaseInquire")) document.getElementById("purchaseInquire").value = "";
   if (document.getElementById("tenderInquire")) document.getElementById("tenderInquire").value = "";
   if (document.getElementById("esd")) document.getElementById("esd").value = "";
@@ -1853,6 +1854,22 @@ function openEmailLeadCreateEntryForm(index, mountEl, onCancelFn) {
   // filling it in here was silently recording our own address as the
   // lead's contact email on every new entry created off an Email Lead.
   if (dropEmailField && mailObject.senderEmail) dropEmailField.value = mailObject.senderEmail;
+  // Position/Phone/City/State/Country/Website — pulled from the sender's
+  // own signature block by summarizeInboundEmail (lib/gemini.js), same
+  // anti-contamination rules as contactPerson. Blank when the email
+  // genuinely doesn't state one, never fabricated.
+  const dropPosition = document.getElementById("dropform-position");
+  const dropPhone = document.getElementById("dropform-phone");
+  const dropWebsite = document.getElementById("dropform-website");
+  const dropCity = document.getElementById("dropform-city");
+  const dropState = document.getElementById("dropform-state");
+  const dropCountry = document.getElementById("dropform-country");
+  if (dropPosition && mailObject.extractedPosition) dropPosition.value = mailObject.extractedPosition;
+  if (dropPhone && mailObject.extractedPhone) dropPhone.value = mailObject.extractedPhone;
+  if (dropWebsite && mailObject.extractedWebsite) dropWebsite.value = mailObject.extractedWebsite;
+  if (dropCity && mailObject.extractedCity) dropCity.value = mailObject.extractedCity;
+  if (dropState && mailObject.extractedState) dropState.value = mailObject.extractedState;
+  if (dropCountry && mailObject.extractedCountry) dropCountry.value = mailObject.extractedCountry;
 
   // Email Leads is always an individual laptop login, never the shared
   // Visiting Card Details phone — force out of any leftover "CARD"
