@@ -512,6 +512,12 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-purchase-request-note"))  document.getElementById("mod-purchase-request-note").style.display  = canPurchaseRequestNote      ? "block" : "none";
   if (document.getElementById("mod-purchase-material-list")) document.getElementById("mod-purchase-material-list").style.display = canViewMaterialListPurchase  ? "block" : "none";
   if (document.getElementById("mod-purchase-create-po"))     document.getElementById("mod-purchase-create-po").style.display     = canCreatePO    ? "block" : "none";
+  // Edit Raw Material Purchase Order reuses perm_create_rm_po rather than a
+  // new permission column (18 Sep 2026, Checking Draft loop) — editing a
+  // pending PO is strictly weaker than creating one (no line items/stock
+  // effects written yet, vendor and PO number locked), so the same gate
+  // that lets someone create a PO also lets them edit their own pending one.
+  if (document.getElementById("mod-purchase-edit-po"))       document.getElementById("mod-purchase-edit-po").style.display       = canCreatePO    ? "block" : "none";
   if (document.getElementById("mod-purchase-authorize-po"))  document.getElementById("mod-purchase-authorize-po").style.display  = canAuthorizePO ? "block" : "none";
   if (document.getElementById("mod-purchase-authorize-prn")) document.getElementById("mod-purchase-authorize-prn").style.display = canAuthorizePRN ? "block" : "none";
   if (document.getElementById("mod-purchase-pps-tracking"))  document.getElementById("mod-purchase-pps-tracking").style.display  = canPPSTracking ? "block" : "none";

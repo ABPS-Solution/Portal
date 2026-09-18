@@ -39,7 +39,7 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
   document.getElementById("module-store-workspace-enclosure-panel").style.display = "none";
   document.getElementById("module-design-workspace-enclosure-panel").style.display = "none";
 
-  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po","canvas-module-purchase-rejected-material","canvas-module-purchase-create-po","canvas-module-purchase-authorize-prn","canvas-module-purchase-authorize-po","canvas-module-purchase-pps-tracking","canvas-module-purchase-revise-po","canvas-module-purchase-authorize-po-revision","canvas-module-purchase-revise-prn","canvas-module-purchase-search-po","canvas-module-purchase-vendor-costing"].forEach(id => {
+  ["canvas-module-purchase-prn","canvas-module-purchase-material-list","canvas-module-purchase-upload-rm-po","canvas-module-purchase-rejected-material","canvas-module-purchase-create-po","canvas-module-purchase-edit-po","canvas-module-purchase-authorize-prn","canvas-module-purchase-authorize-po","canvas-module-purchase-pps-tracking","canvas-module-purchase-revise-po","canvas-module-purchase-authorize-po-revision","canvas-module-purchase-revise-prn","canvas-module-purchase-search-po","canvas-module-purchase-vendor-costing"].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = "none";
   });
 
@@ -61,6 +61,11 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
     const cpoBanner = document.getElementById("create-po-feedback");
     if (cpoBanner) { cpoBanner.style.display = "none"; cpoBanner.innerHTML = ""; }
     initializeCreatePOPanel(extraArg);
+  } else if (targetModuleId === "purchase-edit-po") {
+    document.getElementById("canvas-module-purchase-edit-po").style.display = "block";
+    const editBanner = document.getElementById("edit-po-feedback");
+    if (editBanner) { editBanner.style.display = "none"; editBanner.innerHTML = ""; }
+    initializeEditPOPanel();
   } else if (targetModuleId === "purchase-authorize-prn") {
     document.getElementById("canvas-module-purchase-authorize-prn").style.display = "block";
     initializeAuthorizePRNPanel().catch(e => { if (e?.message !== "SESSION_EXPIRED") console.error("Authorize PRN panel init error:", e); });
@@ -124,17 +129,170 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
 // ── Revise PO ────────────────────────────────────────────────────────────
 window.rpoActive = null;   // { po, lineItems, kind }
 
+// switchRevisePOTab — three tabs now (18 Sep 2026, Checking Draft loop):
+// 'queue' (PRN-driven), 'other' (search any authorized PO), 'editing' (the
+// caller's own pending revisions, awaiting authorization, still editable).
 function switchRevisePOTab(tab) {
   const isQueue = tab === "queue";
+  const isOther = tab === "other";
+  const isEditing = tab === "editing";
   document.getElementById("rpo-queue-section").style.display = isQueue ? "block" : "none";
-  document.getElementById("rpo-other-section").style.display = isQueue ? "none" : "block";
+  document.getElementById("rpo-other-section").style.display = isOther ? "block" : "none";
+  const editingSection = document.getElementById("rpo-editing-section");
+  if (editingSection) editingSection.style.display = isEditing ? "block" : "none";
   document.getElementById("rpo-detail-zone").innerHTML = "";
   window.rpoActive = null;
   const on = (b) => { b.style.color = "var(--brand)"; b.style.borderBottomColor = "var(--brand)"; b.style.fontWeight = "800"; };
   const off = (b) => { b.style.color = "var(--muted)"; b.style.borderBottomColor = "transparent"; b.style.fontWeight = "700"; };
-  const q = document.getElementById("rpo-tab-queue"), o = document.getElementById("rpo-tab-other");
-  isQueue ? (on(q), off(o)) : (on(o), off(q));
+  const q = document.getElementById("rpo-tab-queue"), o = document.getElementById("rpo-tab-other"), ed = document.getElementById("rpo-tab-editing");
+  [q, o, ed].forEach(off);
+  on(isQueue ? q : (isOther ? o : ed));
   if (isQueue) initializeRevisePOPanel();
+  else if (isEditing) initializeRPOEditingTab();
+}
+
+// ── Pending Revisions (Editing) — the Checking Draft loop's revision-side
+// tab. Lists the caller's own pending revisions (admin sees all, same
+// server-side scoping as Edit Raw Material Purchase Order); opening one
+// reuses fetchPOForRevision + renderPORevisionCard with requestId set, so
+// the reviewer edits through the exact same rich form a fresh revision
+// draft uses, seeded with what's already drafted instead of the live PO.
+async function initializeRPOEditingTab() {
+  const feed = document.getElementById("rpo-editing-feed");
+  if (!feed) return;
+  feed.innerHTML = `<div style="text-align:center; padding:24px; color:var(--muted);">Loading…</div>`;
+  try {
+    const data = await apFetch({ action: "fetchMyPendingPORevisionsForEdit" });
+    const revisions = (data.success ? (data.revisions || []) : []);
+    if (revisions.length === 0) {
+      feed.innerHTML = `<div style="text-align:center; padding:26px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No pending revisions to edit.</div>`;
+      return;
+    }
+    feed.innerHTML = revisions.map(r => `
+      <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;">
+        <div>
+          <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${r.poNo}</div>
+          <div style="font-size:0.8rem; font-weight:600; margin-top:2px;">${r.vendorName || ""} &nbsp;·&nbsp; ${r.revisionKind}</div>
+          ${r.checkingDraftCount > 0 ? `<div style="font-size:0.72rem; color:#0ea5e9; font-weight:700; margin-top:2px;">Checking Draft #${r.checkingDraftCount}</div>` : ""}
+        </div>
+        <button class="nav-btn-styled" onclick="openPORevisionForEdit('${r.requestId}', '${r.poNo}')" style="background:var(--brand); color:#fff; font-weight:700; padding:7px 18px; font-size:0.8rem;">Edit →</button>
+      </div>`).join("");
+  } catch (e) {
+    feed.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
+  }
+}
+
+async function openPORevisionForEdit(requestId, poNo) {
+  const zone = document.getElementById("rpo-detail-zone");
+  zone.innerHTML = `<div style="text-align:center; padding:24px; color:var(--muted);">Loading revision…</div>`;
+  try {
+    const data = await apFetch({ action: "fetchPOForRevision", poNo, requestId });
+    if (!data.success) { zone.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${data.error}</div>`; return; }
+    const lineItems = (data.lineItems || []).map(li => ({
+      ...li,
+      quantity: li.orderedQty, // already overlaid with the drafted value server-side
+      _workingAllocations: (li.allocations || []).map(a => ({ prnId: a.prnId, quantity: Number(a.allocatedQty) || 0 })),
+      _allocationTouched: (li.allocations || []).length > 0,
+      _allocatedForQty: Number(li.orderedQty) || 0,
+    }));
+    window.rpoActive = {
+      po: data.po, lineItems, kind: data.editingRevisionKind || "Standalone",
+      editMode: true, requestId: data.editingRequestId || requestId,
+    };
+    renderPORevisionCard();
+  } catch (e) {
+    zone.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
+  }
+}
+
+async function updatePORevisionUI() {
+  const st = window.rpoActive;
+  if (!st || !st.editMode) return;
+  const lines = collectRPOLines();
+
+  for (const l of lines) {
+    if (!(l.additionalDescription || "").trim()) {
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: Description of Material is required.`, "error");
+    }
+    if (l.vendorDiscussedQty === undefined || l.vendorDiscussedQty === null || isNaN(l.vendorDiscussedQty)) {
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: Vendor Discussed Purchase Quantity is required.`, "error");
+    }
+    if (l.vendorDiscussedQty < l._received - 1e-9) {
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: ${l._received} already received, cannot revise below that.`, "error");
+    }
+    const sum = l.allocations.reduce((s, a) => s + a.quantity, 0);
+    if (sum > l.vendorDiscussedQty + 1e-9) {
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: allocated ${sum} but the revised line is ${l.vendorDiscussedQty}.`, "error");
+    }
+  }
+
+  const deliveryDateRaw = document.getElementById("rpo-delivery-date")?.value.trim();
+  let deliveryDate = deliveryDateRaw || null;
+  if (deliveryDateRaw) {
+    const d = new Date(deliveryDateRaw + "T00:00:00");
+    if (!isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mmm = d.toLocaleString('en-US',{month:'short'});
+      deliveryDate = `${dd}-${mmm}-${d.getFullYear()}`;
+    }
+  }
+
+  const btn = document.getElementById("rpo-submit-btn");
+  btn.disabled = true; btn.textContent = "Saving…";
+  showBlockingOverlay("Saving revision changes…");
+  try {
+    const data = await apFetch({ action: "updatePORevisionDraft", requestId: st.requestId,
+      lineItems: lines, operatorName: appActiveOperatorIdentityString,
+      supplierRef: document.getElementById("rpo-supplier-ref")?.value.trim() || null,
+      deliveryDate,
+      cgstPercent: parseFloat(document.getElementById("rpo-cgst")?.value) || 0,
+      sgstPercent: parseFloat(document.getElementById("rpo-sgst")?.value) || 0,
+      igstPercent: parseFloat(document.getElementById("rpo-igst")?.value) || 0,
+      packing: parseFloat(document.getElementById("rpo-packing")?.value) || 0,
+      freight: parseFloat(document.getElementById("rpo-freight")?.value) || 0,
+      other: parseFloat(document.getElementById("rpo-other")?.value) || 0,
+      roundOff: parseFloat(document.getElementById("rpo-roundoff")?.value) || 0,
+      tradeType: document.getElementById("rpo-trade-type")?.value || "Local",
+      usdRate: parseFloat(document.getElementById("rpo-usd-rate")?.value) || null,
+      warranty: document.getElementById("rpo-warranty")?.value.trim() || null,
+      insurance: document.getElementById("rpo-insurance")?.value.trim() || null,
+      paymentTerms: document.getElementById("rpo-payment")?.value.trim() || null,
+      freightTerms: document.getElementById("rpo-freight-terms")?.value.trim() || null,
+      notes: document.getElementById("rpo-notes")?.value.trim() || null,
+    });
+    hideBlockingOverlay();
+    if (data.success) {
+      showPurchaseFeedback("rpo-feedback", `Changes saved. This revision already shows your latest changes in Authorize Raw Material Purchase Order Revision — click "Generate Checking Draft" above when ready for a fresh printout.`, "success");
+      btn.disabled = false; btn.textContent = "Save Changes";
+    } else {
+      btn.disabled = false; btn.textContent = "Save Changes";
+      showPurchaseFeedback("rpo-feedback", data.error || "Save failed.", "error");
+    }
+  } catch (e) {
+    hideBlockingOverlay();
+    btn.disabled = false; btn.textContent = "Save Changes";
+    showPurchaseFeedback("rpo-feedback", "Network error: " + e.message, "error");
+  }
+}
+
+async function generateRevisionCheckingDraftUI() {
+  const st = window.rpoActive;
+  if (!st || !st.requestId) return;
+  showBlockingOverlay("Generating checking draft...");
+  try {
+    const data = await apFetch({ action: "regenerateRevisionCheckingDraft", requestId: st.requestId, operatorName: appActiveOperatorIdentityString });
+    hideBlockingOverlay();
+    if (data.success && data.checkingDocUrl) {
+      showPurchaseFeedback("rpo-feedback", `<strong>Checking Draft #${data.checkingDraftNumber} generated.</strong> <a href="${driveLink(data.checkingDocUrl)}" target="_blank" style="display:inline-block; margin-left:10px; background:#fff; color:#0ea5e9; border:1.5px solid #0ea5e9; padding:6px 14px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open Checking Draft #${data.checkingDraftNumber}</a>`, "success", true);
+    } else if (data.success) {
+      showPurchaseFeedback("rpo-feedback", `⚠️ Checking Draft #${data.checkingDraftNumber} could not be generated — click "Generate Checking Draft" again to retry.`, "error");
+    } else {
+      showPurchaseFeedback("rpo-feedback", data.error || "Failed.", "error");
+    }
+  } catch (e) {
+    hideBlockingOverlay();
+    showPurchaseFeedback("rpo-feedback", "Network error: " + e.message, "error");
+  }
 }
 
 async function initializeRevisePOPanel() {
@@ -505,10 +663,13 @@ function renderPORevisionCard() {
       </div>
 
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap;">
-        <button onclick="cancelPOEntirely('${po.poNo}')" class="nav-btn-styled" style="background:#dc2626;">Cancel this PO entirely</button>
+        ${st.editMode ? `<span></span>` : `<button onclick="cancelPOEntirely('${po.poNo}')" class="nav-btn-styled" style="background:#dc2626;">Cancel this PO entirely</button>`}
         <div style="display:flex; gap:10px;">
           <button onclick="document.getElementById('rpo-detail-zone').innerHTML=''; window.rpoActive=null;" style="padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.8rem;">Close</button>
-          <button class="nav-btn-styled" id="rpo-submit-btn" onclick="submitPORevisionUI()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Submit Revision for Authorization</button>
+          ${st.editMode
+            ? `<button class="nav-btn-styled" onclick="generateRevisionCheckingDraftUI()" style="background:#0ea5e9; color:#fff; font-weight:700;">📄 Generate Checking Draft</button>
+               <button class="nav-btn-styled" id="rpo-submit-btn" onclick="updatePORevisionUI()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Save Changes</button>`
+            : `<button class="nav-btn-styled" id="rpo-submit-btn" onclick="submitPORevisionUI()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Submit Revision for Authorization</button>`}
         </div>
       </div>
     </div>`;
@@ -926,6 +1087,7 @@ async function initializeAuthorizePORevisionPanel() {
             <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.95rem;">${r.poNo} <span style="font-size:0.7rem; color:var(--muted);">→ V${(Number(r.revisionNumber)||1) + 1}</span></div>
             <div style="font-size:0.82rem; font-weight:700;">${r.vendorName || ""}</div>
             <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Drafted by ${r.requestedBy || "—"} · ${r.requestedAt ? formatOrdinalDate(r.requestedAt) : ""}</div>
+            ${r.checkingDocUrl ? `<a href="${driveLink(r.checkingDocUrl)}" target="_blank" onclick="event.stopPropagation();" style="display:inline-block; margin-top:4px; font-size:0.72rem; color:#0ea5e9; font-weight:700; text-decoration:none;">📄 Open Checking Draft #${r.checkingDraftCount}</a>` : ""}
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <span style="font-size:0.68rem; font-weight:800; padding:4px 10px; border-radius:4px; background:${r.revisionKind === "Cancellation" ? "#fee2e2" : "#fef3c7"}; color:${r.revisionKind === "Cancellation" ? "#7f1d1d" : "#78350f"};">${r.revisionKind === "Cancellation" ? "FULL CANCELLATION" : r.revisionKind.toUpperCase()}</span>
@@ -1550,6 +1712,7 @@ async function authorizePORevisionUI(requestId, confirmStale) {
       let msg = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:8px;">✅ <strong>${data.poNo}</strong> revised to V${data.revisionNumber}!</div>`;
       if (notes.length) msg += `<div style="font-size:0.8rem; margin-bottom:8px;">${notes.join(" ")}</div>`;
       if (data.pdfUrl) msg += `<a href="${driveLink(data.pdfUrl)}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open PDF →</a>`;
+      msg += `<div style="font-size:0.75rem; color:var(--muted); margin-top:6px;">Checking drafts for this revision have been removed.</div>`;
       msg += `<button onclick="document.getElementById('apor-feedback').style.display='none'; initializeAuthorizePORevisionPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another PO Revision</button>`;
       showPurchaseFeedback("apor-feedback", msg, "success", true);
     } else {

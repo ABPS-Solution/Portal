@@ -24,6 +24,7 @@ async function initializeAuthorizePOPanel() {
           <div>
             <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNumber}</span>
             <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
+            ${po.checkingDraftCount > 0 ? `<a href="${driveLink(po.checkingDocUrl)}" target="_blank" onclick="event.stopPropagation();" style="margin-left:10px; font-size:0.72rem; color:#0ea5e9; font-weight:700; text-decoration:none;" title="Not authorized yet — the head reviews this on paper">📄 Checking Draft #${po.checkingDraftCount}</a>` : ""}
             ${isSuperAdminUser ? `<button onclick="event.stopPropagation(); promptRenameRMPONumber('${po.poNumber}')" style="margin-left:10px; font-size:0.68rem; padding:2px 8px; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--muted); cursor:pointer;" title="Correct a typo'd PO number (super admin only)">Fix PO Number</button>` : ""}
           </div>
           <div style="font-size:0.85rem; color:var(--muted);">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${po.preparedBy}</div>
@@ -488,8 +489,13 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
   `;
 }
 
-async function initializeCreatePOPanel(authorizePoNo = null, containerId = "create-po-body") {
-  window.cpoMode = authorizePoNo ? 'authorize' : 'create';
+async function initializeCreatePOPanel(authorizePoNo = null, containerId = "create-po-body", mode = null) {
+  // mode is explicit now (18 Sep 2026, Checking Draft loop) so the new
+  // Edit Raw Material Purchase Order screen can reuse this exact form —
+  // pass mode:'edit' from toggleEditPOCard. Every pre-existing call site
+  // (Authorize PO's toggleAuthorizePOCard, Create PO's own tab) omits the
+  // 3rd argument and keeps working unchanged.
+  window.cpoMode = mode || (authorizePoNo ? 'authorize' : 'create');
   window.cpoEditingPoNo = authorizePoNo || null;
 
   // Guards against two overlapping calls for the SAME container (e.g. a
@@ -545,13 +551,18 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
   const orderDateStr = `${dd}-${mmm}-${today.getFullYear()}`;
 
   const isAuth = window.cpoMode === 'authorize';
+  // isExisting covers BOTH screens that load an already-created pending PO
+  // (Authorize PO and, since 18 Sep 2026, Edit Raw Material Purchase
+  // Order) — vendor lock and the manual-PO-number field are about "this
+  // row already exists", not specifically about authorizing it.
+  const isExisting = isAuth || window.cpoMode === 'edit';
   // go-live: lets anyone who can create an RM PO back-fill a pre-system PO
   // under its original number, or seed the auto-numbering sequence to
   // start from an arbitrary value. Not admin-restricted. Creation-time
-  // only — never shown once isAuth is true, matching the backend's own
+  // only — never shown once isExisting is true, matching the backend's own
   // creation-time-only enforcement (see validateManualPONumber's header
   // comment in routes/purchase.js).
-  const showPONumberOverride = !isAuth;
+  const showPONumberOverride = !isExisting;
 
   body.innerHTML = `
     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
@@ -559,10 +570,10 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
         <div>
           <label class="field-label" style="margin-top:0;">Vendor Name *</label>
-          <select id="cpo-vendor" onchange="handleCPOVendorChange()" ${isAuth ? "disabled" : ""} style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; ${isAuth ? "background:#f1f5f9; color:#475569;" : ""}">
+          <select id="cpo-vendor" onchange="handleCPOVendorChange()" ${isExisting ? "disabled" : ""} style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; ${isExisting ? "background:#f1f5f9; color:#475569;" : ""}">
             <option value="">— Select Vendor —</option>${vendorOptions}
           </select>
-          ${isAuth ? `<div style="font-size:0.7rem; color:var(--muted); margin-top:3px;">Locked</div>` : ""}
+          ${isExisting ? `<div style="font-size:0.7rem; color:var(--muted); margin-top:3px;">Locked</div>` : ""}
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Supplier Offer No</label>
@@ -645,13 +656,16 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
         ${isAuth
           ? `<button class="nav-btn-styled" onclick="rejectPOFromForm()" style="background:#dc2626;">Reject PO</button>
              <button class="nav-btn-styled" id="cpo-submit-btn" onclick="authorizePOFromForm()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Authorize PO</button>`
+          : window.cpoMode === 'edit'
+          ? `<button class="nav-btn-styled" onclick="generateCheckingDraftOnly()" style="background:#0ea5e9; color:#fff; font-weight:700;">📄 Generate Checking Draft</button>
+             <button class="nav-btn-styled" id="cpo-submit-btn" onclick="saveEditedPO()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Save Changes</button>`
           : `<button class="nav-btn-styled" onclick="clearCPOForm()" style="background:#718096;">Clear PO</button>
              <button class="nav-btn-styled" id="cpo-submit-btn" onclick="submitCreatePO()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Submit for Authorization</button>`}
       </div>
     </div>
   `;
 
-  if (isAuth) {
+  if (isExisting) {
     // Load the PO's own saved data — not a local draft. Vendor is
     // pre-selected but the select stays disabled (set above), so it
     // displays correctly without being editable.
@@ -755,7 +769,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
 const CPO_DRAFT_STORAGE_KEY = 'abps_cpo_draft_v1';
 
 function persistCPODraft() {
-  if (window.cpoMode === 'authorize') return; // editing an existing PO, not a local draft
+  if (window.cpoMode === 'authorize' || window.cpoMode === 'edit') return; // editing an existing (server-backed) PO, not a local draft
   const vendorEl = document.getElementById("cpo-vendor");
   if (!vendorEl) return; // panel not mounted — nothing to save
   try {
@@ -1291,7 +1305,14 @@ async function submitCreatePO() {
       clearCPODraftStorage();
       document.getElementById("create-po-body").innerHTML = "";
       banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
-      banner.innerHTML = `<strong>PO Draft Created: ${data.poNo}</strong><br/>It has been sent for Authorization. <button class="nav-btn-styled" onclick="document.getElementById('create-po-feedback').style.display='none'; initializeCreatePOPanel();" style="background:#15803d; color:#fff; margin-top:8px; padding:6px 14px;">+ Create Another PO</button>`;
+      let msg = `<strong>PO Draft Created: ${data.poNo}</strong><br/>It has been sent for Authorization.`;
+      if (data.checkingDocUrl) {
+        msg += ` <a href="${driveLink(data.checkingDocUrl)}" target="_blank" style="display:inline-block; margin-left:6px; background:#fff; color:#0ea5e9; border:1.5px solid #0ea5e9; padding:5px 12px; border-radius:var(--radius); font-weight:700; font-size:0.8rem; text-decoration:none;">📄 Open Checking Draft #1</a>`;
+      } else if (data.checkingDocWarning) {
+        msg += `<br/><span style="font-size:0.78rem; color:#b45309;">⚠️ Checking Draft #1 could not be generated — open Edit Raw Material Purchase Order and click "Generate Checking Draft" to retry.</span>`;
+      }
+      msg += `<br/><button class="nav-btn-styled" onclick="document.getElementById('create-po-feedback').style.display='none'; initializeCreatePOPanel();" style="background:#15803d; color:#fff; margin-top:8px; padding:6px 14px;">+ Create Another PO</button>`;
+      banner.innerHTML = msg;
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
     } else {
       btn.disabled = false; btn.textContent = "Submit for Authorization";
@@ -1402,6 +1423,7 @@ async function authorizePOFromForm() {
       let msg = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:8px;">✅ ${poNo} Authorized Successfully!</div>`;
       if (data.pdfUrl) msg += `<a href="${driveLink(data.pdfUrl)}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open PO PDF</a>`;
       else if (data.pdfWarning) msg += `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — PO is authorized. Contact admin to verify Drive folder setup.</div>`;
+      msg += `<div style="font-size:0.75rem; color:var(--muted); margin-top:6px;">Checking drafts for this PO have been removed.</div>`;
       msg += `<button onclick="document.getElementById('authorize-po-feedback').style.display='none'; initializeAuthorizePOPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another PO</button>`;
       banner.innerHTML = msg;
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
@@ -1445,6 +1467,206 @@ async function rejectPOFromForm() {
     banner.textContent = "Network error: " + e.message;
     banner.scrollIntoView({ behavior:"smooth", block:"center" });
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Edit Raw Material Purchase Order (18 Sep 2026) — the Checking Draft
+// manual review loop. saveEditedPO / generateCheckingDraftOnly are the
+// 'edit'-mode counterparts of authorizePOFromForm/rejectPOFromForm: same
+// panel, same DOM ids, same row validation, but posting to
+// updatePurchaseOrderDraft (never authorizePurchaseOrder) and — per the
+// confirmed design — saving does NOT generate a document. Generation only
+// ever happens on explicit click, since each one is a paid PDFShift call.
+// ═══════════════════════════════════════════════════════════════════════
+function buildCPOEditPayload(banner) {
+  const showErr = (msg) => {
+    banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
+    banner.textContent = msg;
+    banner.scrollIntoView({ behavior:"smooth", block:"center" });
+  };
+
+  const poNo = window.cpoEditingPoNo;
+  if (!poNo) { showErr("No PO is loaded for editing."); return null; }
+  if (window.cpoMaterialRows.length === 0) { showErr("Add at least one material row."); return null; }
+
+  const deliveryDateRaw = document.getElementById("cpo-delivery-date").value.trim();
+  let deliveryDate = deliveryDateRaw;
+  if (deliveryDateRaw) {
+    const d = new Date(deliveryDateRaw + "T00:00:00");
+    if (!isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mmm = d.toLocaleString('en-US',{month:'short'});
+      deliveryDate = `${dd}-${mmm}-${d.getFullYear()}`;
+    }
+  }
+
+  for (let i = 0; i < window.cpoMaterialRows.length; i++) {
+    const row = window.cpoMaterialRows[i];
+    const n = i + 1;
+    if (!row.itemCode) { showErr(`Row ${n}: select a material from the search (item code required).`); return null; }
+    if (!(parseFloat(row.quantity) > 0)) { showErr(`Row ${n}: Quantity must be greater than 0.`); return null; }
+    if (!(parseFloat(row.rate) > 0)) { showErr(`Row ${n}: Rate must be greater than 0.`); return null; }
+    if (!(row.additionalDescription || "").trim()) { showErr(`Row ${n}: Description of Material is required.`); return null; }
+    if (!row._allocationTouched) {
+      showErr(`Row ${n}: click "Allocate to PRNs" and confirm the split (or Extra) before saving.`); return null;
+    }
+    const aSum = (row.allocations || []).reduce((s, a) => s + (Number(a.quantity) || 0), 0);
+    if (aSum > (parseFloat(row.quantity) || 0) + 1e-9) {
+      showErr(`Row ${n}: allocated ${aSum} across PRNs but only ${row.quantity} is being ordered.`); return null;
+    }
+  }
+
+  return {
+    poNo,
+    supplierRef: document.getElementById("cpo-supplier-ref").value.trim(),
+    deliveryDate,
+    lineItems: window.cpoMaterialRows.map(r => ({
+      description: r.description, additionalDescription: r.additionalDescription || "",
+      itemCode: r.itemCode, quantity: parseFloat(r.quantity) || 0,
+      unit: r.unit, rate: parseFloat(r.rate) || 0, discountPercent: parseFloat(r.discountPercent) || 0,
+      amount: Number(r.amount) || 0,
+      deliveryDate: r.deliveryDate || null,
+      allocations: (r.allocations || []).map(a => ({ prnId: a.prnId, quantity: Number(a.quantity) || 0 }))
+    })),
+    cgstPercent: document.getElementById("cpo-cgst").value.trim() === "" ? 9 : (parseFloat(document.getElementById("cpo-cgst").value) || 0),
+    sgstPercent: document.getElementById("cpo-sgst").value.trim() === "" ? 9 : (parseFloat(document.getElementById("cpo-sgst").value) || 0),
+    igstPercent: parseFloat(document.getElementById("cpo-igst").value) || 0,
+    packing: parseFloat(document.getElementById("cpo-packing").value) || 0,
+    freight: parseFloat(document.getElementById("cpo-freight").value) || 0,
+    other: parseFloat(document.getElementById("cpo-other").value) || 0,
+    roundOff: parseFloat(document.getElementById("cpo-roundoff").value) || 0,
+    tradeType: document.getElementById("cpo-trade-type")?.value || "Local",
+    usdRate: parseFloat(document.getElementById("cpo-usd-rate")?.value) || null,
+    warranty: document.getElementById("cpo-warranty").value.trim(),
+    insurance: document.getElementById("cpo-insurance").value.trim(),
+    paymentTerms: document.getElementById("cpo-payment").value.trim(),
+    freightTerms: document.getElementById("cpo-freight-terms").value.trim(),
+    notes: document.getElementById("cpo-notes").value.trim(),
+  };
+}
+
+async function saveEditedPO() {
+  const banner = document.getElementById("edit-po-feedback");
+  banner.style.display = "none";
+  const payload = buildCPOEditPayload(banner);
+  if (!payload) return;
+
+  const btn = document.getElementById("cpo-submit-btn");
+  btn.disabled = true; btn.textContent = "Saving...";
+  showBlockingOverlay("Saving changes...");
+  try {
+    const data = await apFetch({ action: "updatePurchaseOrderDraft", activeEngineer: appActiveOperatorIdentityString, ...payload, operatorName: appActiveOperatorIdentityString });
+    hideBlockingOverlay();
+    if (data.success) {
+      banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius); font-weight:600;";
+      banner.textContent = `Changes saved. This PO already shows your latest changes in Authorize Raw Material Purchase Order — click "Generate Checking Draft" above when ready for a fresh printout.`;
+      banner.scrollIntoView({ behavior:"smooth", block:"center" });
+      btn.disabled = false; btn.textContent = "Save Changes";
+    } else {
+      btn.disabled = false; btn.textContent = "Save Changes";
+      banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
+      banner.textContent = "Server error: " + data.error;
+      banner.scrollIntoView({ behavior:"smooth", block:"center" });
+    }
+  } catch (e) {
+    hideBlockingOverlay();
+    btn.disabled = false; btn.textContent = "Save Changes";
+    banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
+    banner.textContent = "Network error: " + e.message;
+    banner.scrollIntoView({ behavior:"smooth", block:"center" });
+  }
+}
+
+async function generateCheckingDraftOnly() {
+  const banner = document.getElementById("edit-po-feedback");
+  banner.style.display = "none";
+  const poNo = window.cpoEditingPoNo;
+  if (!poNo) return;
+
+  showBlockingOverlay("Generating checking draft...");
+  try {
+    const data = await apFetch({ action: "regeneratePOCheckingDraft", poNo, operatorName: appActiveOperatorIdentityString });
+    hideBlockingOverlay();
+    if (data.success) {
+      banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
+      if (data.checkingDocUrl) {
+        banner.innerHTML = `<strong>Checking Draft #${data.checkingDraftNumber} generated.</strong> <a href="${driveLink(data.checkingDocUrl)}" target="_blank" style="display:inline-block; margin-left:10px; background:#fff; color:#0ea5e9; border:1.5px solid #0ea5e9; padding:6px 14px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open Checking Draft #${data.checkingDraftNumber}</a>`;
+      } else {
+        banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #b45309; background:#fffbeb; color:#78350f; border-radius:var(--radius); font-weight:600;";
+        banner.textContent = `⚠️ Checking Draft #${data.checkingDraftNumber} could not be generated — click "Generate Checking Draft" again to retry.`;
+      }
+      banner.scrollIntoView({ behavior:"smooth", block:"center" });
+    } else {
+      banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
+      banner.textContent = "Server error: " + data.error;
+      banner.scrollIntoView({ behavior:"smooth", block:"center" });
+    }
+  } catch (e) {
+    hideBlockingOverlay();
+    banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
+    banner.textContent = "Network error: " + e.message;
+    banner.scrollIntoView({ behavior:"smooth", block:"center" });
+  }
+}
+
+// initializeEditPOPanel / toggleEditPOCard — the 'edit'-mode counterparts
+// of initializeAuthorizePOPanel/toggleAuthorizePOCard, scoped to the
+// caller's own pending POs (fetchPendingPOsForEditing enforces this
+// server-side too — only the original preparer may edit). A SEPARATE
+// window.cpoEditExpandedPoNo (not cpoExpandedPoNo) — sharing one would
+// make this screen and Authorize PO fight over which card is open when a
+// user bounces between them.
+async function initializeEditPOPanel() {
+  window.cpoEditExpandedPoNo = null;
+  const body = document.getElementById("edit-po-body");
+  body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading your pending POs...</div>`;
+  try {
+    const data = await apFetch({ action: "fetchPendingPOsForEditing" });
+    if (!data.success) { body.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    if (!data.pos || data.pos.length === 0) {
+      body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No pending Purchase Orders to edit.</div>`;
+      return;
+    }
+    const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
+    body.innerHTML = data.pos.map(po => `
+      <div class="contact-summary-card-parent" style="margin-bottom:12px;">
+        <div class="contact-summary-header-row" onclick="toggleEditPOCard('${po.poNumber}')" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNumber}</span>
+            <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
+            ${po.checkingDraftCount > 0 ? `<span style="margin-left:10px; font-size:0.72rem; color:#0ea5e9; font-weight:700;">Checking Draft #${po.checkingDraftCount}</span>` : ""}
+          </div>
+          <div style="font-size:0.85rem; color:var(--muted);">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></div>
+        </div>
+        <div id="po-edit-expand-${po.poNumber}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
+      </div>`).join("");
+  } catch(e) { body.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+}
+
+function toggleEditPOCard(poNo) {
+  const expandDiv = document.getElementById(`po-edit-expand-${poNo}`);
+  if (!expandDiv) return;
+
+  if (window.cpoEditExpandedPoNo === poNo) {
+    expandDiv.style.display = "none";
+    expandDiv.innerHTML = "";
+    window.cpoEditExpandedPoNo = null;
+    return;
+  }
+  if (window.cpoEditExpandedPoNo) {
+    const prev = document.getElementById(`po-edit-expand-${window.cpoEditExpandedPoNo}`);
+    if (prev) { prev.style.display = "none"; prev.innerHTML = ""; }
+  }
+  window.cpoEditExpandedPoNo = poNo;
+  expandDiv.style.display = "block";
+  expandDiv.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Loading PO…</div>`;
+  (async () => {
+    try {
+      await initializeCreatePOPanel(poNo, `po-edit-expand-${poNo}`, 'edit');
+    } catch (e) {
+      expandDiv.innerHTML = `<p style="color:var(--warn);">Failed to load: ${e.message}</p>`;
+    }
+  })();
 }
 
 let rejVendorSearchDebounce = null;

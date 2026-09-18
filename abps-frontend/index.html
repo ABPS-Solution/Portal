@@ -886,6 +886,7 @@
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')"><span class="mc-label">List of Material to Raise Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-create-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-create-po')"><span class="mc-label">Create Raw Material Purchase Order</span></div>
+        <div class="menu-card" id="mod-purchase-edit-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-edit-po')"><span class="mc-label">Edit Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-authorize-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po')"><span class="mc-label">Authorize Raw Material Purchase Order</span></div>
       </div>
       <div class="sec-label">PO Revision</div>
@@ -3489,9 +3490,16 @@
       <div id="aprn-cards-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
     </div>
 
+    <div id="canvas-module-purchase-edit-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Edit Raw Material Purchase Order</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Change a PO you created that's still awaiting authorization, then generate a fresh Checking Draft for the head to review on paper. The PO stays visible in Authorize Raw Material Purchase Order throughout, always showing your latest changes — saving and generating a document are two separate actions.</p>
+      <div id="edit-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="edit-po-body"></div>
+    </div>
+
     <div id="canvas-module-purchase-authorize-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Authorize Raw Material Purchase Order</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review pending Purchase Orders. On authorization, the PO PDF is generated and saved, and the order is finalized.</p>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review pending Purchase Orders. On authorization, the PO PDF is generated and saved, and the order is finalized. Checking drafts for this PO are removed once authorized.</p>
       <div id="authorize-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="authorize-po-body"></div>
     </div>
@@ -3553,6 +3561,7 @@
       <div style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--border);">
         <button id="rpo-tab-queue" onclick="switchRevisePOTab('queue')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:800; font-size:0.85rem; color:var(--brand); border-bottom:3px solid var(--brand); margin-bottom:-2px;">PRN Revisions Needing PO Revision</button>
         <button id="rpo-tab-other" onclick="switchRevisePOTab('other')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:700; font-size:0.85rem; color:var(--muted); border-bottom:3px solid transparent; margin-bottom:-2px;">Other PO Revisions</button>
+        <button id="rpo-tab-editing" onclick="switchRevisePOTab('editing')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:700; font-size:0.85rem; color:var(--muted); border-bottom:3px solid transparent; margin-bottom:-2px;">Pending Revisions (Editing)</button>
       </div>
 
       <div id="rpo-queue-section">
@@ -3581,6 +3590,11 @@
         </div>
         <div id="rpo-other-search-label" style="display:none; font-weight:700; margin-bottom:12px; font-size:0.85rem; line-height:1.7;"></div>
         <div id="rpo-search-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
+      </div>
+
+      <div id="rpo-editing-section" style="display:none;">
+        <p style="font-size:0.8rem; color:var(--muted); margin-bottom:12px;">Revisions you've drafted that are still awaiting authorization — edit them and generate a fresh checking draft for the head to review, same loop as Edit Raw Material Purchase Order.</p>
+        <div id="rpo-editing-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
       </div>
       </div>
 
