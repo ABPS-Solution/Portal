@@ -3134,8 +3134,16 @@
         </div>
       </div>
 
+      <div id="upload-drawings-type-zone" style="display:none; margin-bottom:16px;">
+        <label class="field-label" style="margin-top:0; color:var(--brand);">Drawing Type *</label>
+        <div style="display:flex; gap:10px; margin-top:6px;">
+          <button type="button" class="nav-btn-styled" id="upload-drawings-type-btn-approved" onclick="selectUploadDrawingsType('Customer Approved')" style="flex:1; padding:9px; font-weight:700;">Customer Approved</button>
+          <button type="button" class="nav-btn-styled" id="upload-drawings-type-btn-working" onclick="selectUploadDrawingsType('Working Drawing')" style="flex:1; padding:9px; font-weight:700;">Working Drawing</button>
+        </div>
+      </div>
+
       <div id="upload-drawings-existing-list" style="display:none; margin-bottom:16px;">
-        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">Already Uploaded Documents</div>
+        <div id="upload-drawings-list-heading" style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">Already Uploaded Documents</div>
         <div id="upload-drawings-list-mount" style="display:flex; flex-direction:column; gap:6px;"></div>
       </div>
 
