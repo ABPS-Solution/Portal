@@ -704,7 +704,7 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
       wrapperCard.className += " search-highlighted-focus-node";
     }
 
-    const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
+    const isAdminUser = localStorage.getItem("isUserSuperAdminGlobal") === "true";
     const deleteButtonHtml = isAdminUser
       ? `<button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}', '${encodeURIComponent(companyLabelName)}', '${encodeURIComponent(cardDisplayName)}')">Delete Record</button>`
       : ""; // Non-admins get absolutely nothing rendered
@@ -2270,15 +2270,12 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
               targetDispatchBillFileObj = null;
               targetCommissioningReportFileObj = null;
               targetPurchaseOrderFileObj = null;
-              document.getElementById('dispatch-bill-raw-file').value = '';
               document.getElementById('commissioning-report-raw-file').value = '';
               document.getElementById('commissioning-report-project-ta-input').value = '';
               document.getElementById('commissioning-report-customer-name').value = '';
               document.getElementById('purchase-order-raw-file').value = '';
-              const b1 = document.getElementById('dispatch-bill-upload-box');
               const b2 = document.getElementById('commissioning-report-upload-box');
               const b3 = document.getElementById('purchase-order-upload-box');
-              if (b1) { b1.textContent = '📋 Select Dispatch Bill'; b1.classList.remove('done'); }
               if (b2) { b2.textContent = '📋 Select Commissioning Report'; b2.classList.remove('done'); }
               if (b3) { b3.textContent = '📋 Select Purchase Order'; b3.classList.remove('done'); }
               document.getElementById('purchase-order-acceptance-date').value = '';
@@ -2286,10 +2283,8 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
               document.getElementById('purchase-order-contract-review-file').value = '';
               const b4 = document.getElementById('purchase-order-contract-review-box');
               if (b4) { b4.textContent = '📋 Select Contract Review Document *'; b4.classList.remove('done'); }
-              document.getElementById('dispatch-bill-feedback-banner').style.display = 'none';
               document.getElementById('commissioning-report-feedback-banner').style.display = 'none';
               document.getElementById('purchase-order-feedback-banner').style.display = 'none';
-              document.getElementById('dispatch-bill-inputs-container').style.display = 'block';
               document.getElementById('commissioning-report-inputs-container').style.display = 'block';
               document.getElementById('purchase-order-inputs-container').style.display = 'block';
             " style="background:#15803d; color:white; padding:8px 14px; font-weight:700; flex-shrink:0; align-self:flex-start;">+ Process Another</button>

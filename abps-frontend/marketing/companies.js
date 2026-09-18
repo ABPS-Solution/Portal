@@ -273,7 +273,7 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
       const tRef = lead["Lead ID"];
       const isTarget = (lead["Contact Person Name"] || "").toLowerCase() === personName.toLowerCase();
       const cardName = lead["Contact Person Name"] || "Unspecified";
-      const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
+      const isAdminUser = localStorage.getItem("isUserSuperAdminGlobal") === "true";
       const deleteHtml = isAdminUser
         ? `<button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}', '${encodeURIComponent(companyName)}', '${encodeURIComponent(cardName)}')">Delete Record</button>`
         : "";
