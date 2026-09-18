@@ -277,6 +277,7 @@ function renderMcLineItemsTable(projectId, lineItems) {
         <td style="padding:8px; text-align:center; vertical-align:middle; color:#111827;">${li.unit || "—"}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:600; color:#111827;" id="mc-std-itemcode-unit-${safeId}-${li.lineId}">${itemCodeUnitVal || "—"}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:700; color:#111827;">${fmtQty(li.mfcQuantity)}</td>
+        <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:700; color:#b45309;">${fmtQty(Math.max(0, (Number(li.quantity) || 0) - (Number(li.mfcQuantity) || 0)))}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle;">
           <input type="number" id="mc-new-mfc-${safeId}-${li.lineId}" value="${trimNum(state.newMfcQuantity)}" ${rowDisabledAttr}
             min="0" max="${li.quantity}" step="any"
@@ -298,9 +299,9 @@ function renderMcLineItemsTable(projectId, lineItems) {
       <div style="overflow-x:auto; margin-bottom:14px;">
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
           <colgroup>
-            <col style="width:16%;" /><col style="width:14%;" /><col style="width:14%;" /><col style="width:8%;" />
-            <col style="width:6%;" /><col style="width:7%;" /><col style="width:7%;" />
-            <col style="width:8%;" /><col style="width:8%;" /><col style="width:8%;" />
+            <col style="width:15%;" /><col style="width:13%;" /><col style="width:13%;" /><col style="width:7%;" />
+            <col style="width:6%;" /><col style="width:6%;" /><col style="width:6%;" />
+            <col style="width:7%;" /><col style="width:7%;" /><col style="width:8%;" /><col style="width:7%;" />
           </colgroup>
           <thead>
             <tr style="background:var(--highlight-bg); text-align:left;">
@@ -312,6 +313,7 @@ function renderMcLineItemsTable(projectId, lineItems) {
               <th style="padding:8px; text-align:center;">Order Product UOM</th>
               <th style="padding:8px; text-align:center;">Item Code UOM</th>
               <th style="padding:8px; text-align:center;">Current MFC Quantity</th>
+              <th style="padding:8px; text-align:center;">Pending MFC Quantity</th>
               <th style="padding:8px; text-align:center;">New MFC Quantity</th>
               <th style="padding:8px; text-align:center;">Hold</th>
             </tr>

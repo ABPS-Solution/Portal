@@ -177,7 +177,13 @@ function applyServerRoleFlags(permData) {
   // real enforcement regardless of what this flag says.
   localStorage.setItem("isUserSuperAdminGlobal", permData.isSuperAdmin ? "true" : "false");
   localStorage.setItem("userDepartment", permData.department || "");
-  localStorage.setItem("userProductionSubDept", permData.productionSubDept || "");
+  // productionSubDept is a TEXT[] column now (19 Sep 2026 — a Production
+  // person can belong to more than one sub-department) — stored as a
+  // comma-joined string here since localStorage only holds strings; every
+  // consumer must split(",") and check membership, not do a single-value
+  // equality compare (see production-planning.js's ptlCanWriteLane for the
+  // shape).
+  localStorage.setItem("userProductionSubDept", (permData.productionSubDept || []).join(","));
 }
 
 // refreshServerRoleFlags — same as applyServerRoleFlags, but fetches its

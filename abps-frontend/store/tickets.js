@@ -1371,13 +1371,17 @@ async function ticketLoadProjectListForDepartment_(isService) {
 // requester's own department/production sub-department wherever that's
 // resolvable (31 Aug 2026, see lib/productionScope.js server-side).
 // `lock` is getSessionPermissions' ticketOutgoingUseLock:
-//   { locked, value, blocked }
+//   { locked, value, blocked, allowedValues }
 // - blocked: nothing to lock to (Production, no sub-dept set) — hide the
 //   whole form behind an explanatory banner rather than guessing.
 // - locked: hide the dropdown, show a read-only badge in the header, and
 //   drive the existing dropdown-change cascade programmatically so every
 //   downstream field (project list, BOQ/Job Card visibility) behaves
 //   exactly as if the user had picked it themselves.
+// - not locked but allowedValues is set (19 Sep 2026 — a Production
+//   person can now belong to more than one sub-department): the dropdown
+//   stays, but every option outside allowedValues is hidden, so the
+//   person can only ever pick among their own sub-departments.
 // - neither: Admin, Store, or anyone else with access to this screen —
 //   dropdown stays exactly as it always was.
 function applyCmitDepartmentLock(lock) {
@@ -1395,6 +1399,13 @@ function applyCmitDepartmentLock(lock) {
   }
   if (blockedBanner) blockedBanner.style.display = "none";
   if (mainSection) mainSection.style.display = "";
+
+  if (dropdown) {
+    Array.from(dropdown.options).forEach(opt => {
+      if (!opt.value) return; // keep the "— Select —" placeholder always visible
+      opt.style.display = (!lock || !lock.allowedValues || lock.allowedValues.includes(opt.value)) ? "" : "none";
+    });
+  }
 
   if (lock && lock.locked && lock.value) {
     if (fieldWrapper) fieldWrapper.style.display = "none";

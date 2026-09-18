@@ -123,18 +123,20 @@ async function loadSecurityAdminUsers() {
 // (migration 147, production_sub_dept) — only meaningful for someone in
 // the Production department, so it only renders on their Login PINs
 // card (alongside the PIN itself, not Login Anywhere — this is a role
-// assignment, not a login permission). Not a toggle: clicking a pill
-// that's already selected clears it (nobody set), any other pill
-// switches to it.
+// assignment, not a login permission). A person can now belong to MORE
+// than one sub-department (19 Sep 2026, e.g. Reactor AND Panel) — each
+// pill toggles independently, any combination of the three can be active
+// at once.
 const PROD_SUB_DEPTS = ['Reactor', 'Capacitor', 'Panel'];
 
 function laSubDeptPillsHtml(u) {
+  const activeList = u.productionSubDept || [];
   return `
     <div style="display:flex; gap:4px; margin-top:6px; justify-content:center;">
       ${PROD_SUB_DEPTS.map(sd => {
-        const active = u.productionSubDept === sd;
+        const active = activeList.includes(sd);
         return `<button onclick="event.stopPropagation(); handleProductionSubDeptClick('${u.personKey}', '${sd}')"
-          title="${active ? `Click to clear ${sd}` : `Set Stage 4 role to ${sd}`}"
+          title="${active ? `Click to remove ${sd}` : `Add ${sd} to this person's Stage 4 role(s)`}"
           style="border:${active ? '2px solid #b45309' : '1px solid #dde3ea'}; background:${active ? '#b4530918' : '#fff'};
                  color:${active ? '#b45309' : '#64748b'}; border-radius:8px; padding:3px 8px; cursor:pointer;
                  font-size:0.68rem; font-weight:${active ? 800 : 600};">${sd}</button>`;
@@ -164,11 +166,12 @@ function laPersonButtonHtml(u, color) {
 async function handleProductionSubDeptClick(personKey, subDept) {
   const u = saAllPinUsers.find(x => x.personKey === personKey);
   if (!u) return;
-  const newValue = u.productionSubDept === subDept ? null : subDept;
   try {
-    const data = await apFetch({ action: "setProductionSubDepartment", personKey, subDept: newValue });
+    // The server toggles this one value's membership in the array —
+    // just send which pill was clicked, not a computed replacement.
+    const data = await apFetch({ action: "setProductionSubDepartment", personKey, subDept });
     if (data.success) {
-      u.productionSubDept = newValue;
+      u.productionSubDept = data.productionSubDept || [];
       renderSecurityAdminPinUsers();
     } else {
       showBOQBanner("sa-feedback", data.error || "Failed to update.", "error");

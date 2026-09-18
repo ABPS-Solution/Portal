@@ -48,7 +48,8 @@ function pd2RenderDashboard(data) {
   // that back in the title so it's never silently unclear why the
   // numbers only cover one department. Unscoped for everyone else.
   const titleEl = document.getElementById("dash-global-title");
-  if (titleEl) titleEl.textContent = stats.subDept ? `Production Dashboard — ${stats.subDept}` : "Production Dashboard";
+  const subDeptLabel = Array.isArray(stats.subDept) ? stats.subDept.join(" & ") : stats.subDept;
+  if (titleEl) titleEl.textContent = subDeptLabel ? `Production Dashboard — ${subDeptLabel}` : "Production Dashboard";
 
   // Row 1
   document.getElementById("pd2-s-activejcn").textContent   = stats.activeJCNs;
