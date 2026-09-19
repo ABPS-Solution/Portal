@@ -917,7 +917,10 @@ async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
 }
 
 async function commitRepairQAToBackend(grnNum, btn) {
-  const banner = document.getElementById('store-grn-runtime-feedback-banner');
+  // Currently Being Repaired at ABPS moved to its own section (19 Sep
+  // 2026, split out of Raw Materials Q/A Check) — banner/feed ids and the
+  // refresh callback below now target that standalone panel.
+  const banner = document.getElementById('store-repair-qa-runtime-feedback-banner');
   banner.style.display = "none";
 
   const lineItems = [];
@@ -941,15 +944,15 @@ async function commitRepairQAToBackend(grnNum, btn) {
     });
     hideBlockingOverlay();
     if (data.success) {
-      const feed = document.getElementById("store-grn-queue-cards-feed");
+      const feed = document.getElementById("store-repair-qa-queue-cards-feed");
       if (feed) feed.innerHTML = "";
       banner.style.cssText = "display: block; background: #dcfce7; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); margin-bottom:15px;";
       banner.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; text-align:left;">
           <div><strong>Success! Repaired material returned to stock.</strong></div>
           <button class="nav-btn-styled" onclick="
-            document.getElementById('store-grn-runtime-feedback-banner').style.display = 'none';
-            initializeStoreGrnWorkspaceQueue('repair');
+            document.getElementById('store-repair-qa-runtime-feedback-banner').style.display = 'none';
+            initializeStoreRepairQAWorkspace();
           " style="background: #15803d; color: white; padding:8px 16px; font-weight:700;">Refresh Queue</button>
         </div>`;
     } else {

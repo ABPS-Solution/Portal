@@ -428,14 +428,20 @@ async function commitQARevisionToBackend(grnNumber, btn) {
   }
 }
 
+// Currently Being Repaired at ABPS was split out of this screen into its
+// own section/permission (19 Sep 2026) — initializeStoreRepairQAWorkspace
+// below just calls this same function with toggle='repair', which now
+// targets the standalone panel's own feed id and renders no toggle bar
+// (single-purpose screen, nothing to switch between). Pending Q/A and Q/A
+// Revision stay together here, toggle bar unchanged for them.
 async function initializeStoreGrnWorkspaceQueue(toggle) {
   window.activeQAToggle = toggle || window.activeQAToggle || "pending";
-  const feed = document.getElementById("store-grn-queue-cards-feed");
+  const isRepair = window.activeQAToggle === 'repair';
+  const feed = document.getElementById(isRepair ? "store-repair-qa-queue-cards-feed" : "store-grn-queue-cards-feed");
 
-  const toggleBar = `
+  const toggleBar = isRepair ? "" : `
     <div style="display:flex; gap:14px; margin-bottom:16px;">
       <button class="nav-btn-styled" onclick="initializeStoreGrnWorkspaceQueue('pending')" style="flex:1; padding:11px 16px; background:${window.activeQAToggle==='pending' ? 'var(--brand)' : '#e2e8f0'}; color:${window.activeQAToggle==='pending' ? '#fff' : '#334155'}; font-weight:700;">Pending Q/A</button>
-      <button class="nav-btn-styled" onclick="initializeStoreGrnWorkspaceQueue('repair')" style="flex:1; padding:11px 16px; background:${window.activeQAToggle==='repair' ? 'var(--brand)' : '#e2e8f0'}; color:${window.activeQAToggle==='repair' ? '#fff' : '#334155'}; font-weight:700;">Currently Being Repaired at ABPS</button>
       <button class="nav-btn-styled" onclick="initializeStoreGrnWorkspaceQueue('revision')" style="flex:1; padding:11px 16px; background:${window.activeQAToggle==='revision' ? 'var(--brand)' : '#e2e8f0'}; color:${window.activeQAToggle==='revision' ? '#fff' : '#334155'}; font-weight:700;">Q/A Revision</button>
     </div>`;
 
@@ -611,6 +617,16 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
       }
     });
   } catch(e) { feed.innerHTML = toggleBar + `<p style="color:var(--warn);">${e.message}</p>`; }
+}
+
+// initializeStoreRepairQAWorkspace — Currently Being Repaired at ABPS,
+// now its own dashboard card/permission (perm_repair_qa), separate from
+// Raw Materials Q/A Check (perm_qa_check). Reuses
+// initializeStoreGrnWorkspaceQueue's existing 'repair' rendering path
+// unchanged — only the feed container and permission gate differ.
+async function initializeStoreRepairQAWorkspace() {
+  window.activeQAToggle = 'repair';
+  await initializeStoreGrnWorkspaceQueue('repair');
 }
 
 function reopenQAMaterialSearch(grnNum, idx) {

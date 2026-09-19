@@ -960,6 +960,7 @@
       <div class="sec-label">Inward Quality</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-store-grn" onclick="navigateToStoreWorkspacePanel('store-grn')"><span class="mc-label">Raw Materials Q/A Check</span></div>
+        <div class="menu-card" id="mod-repair-qa" onclick="navigateToStoreWorkspacePanel('repair-qa')"><span class="mc-label">Currently Being Repaired at ABPS</span></div>
       </div>
       <div class="sec-label">Finished Goods</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -1099,7 +1100,13 @@
       <h2 class="panel-title">Raw Materials Q/A Check</h2>
       <div id="store-grn-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="store-grn-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
-    </div>  
+    </div>
+
+    <div id="canvas-module-store-repair-qa" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <h2 class="panel-title">Currently Being Repaired at ABPS</h2>
+      <div id="store-repair-qa-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
+      <div id="store-repair-qa-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
+    </div>
 
     <div id="canvas-module-store-material-request" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:2px solid var(--bg); padding-bottom:10px;">

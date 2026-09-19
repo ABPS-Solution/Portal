@@ -247,6 +247,7 @@ function returnToDashboard() {
   if(document.getElementById("canvas-module-store-gate-entry")) document.getElementById("canvas-module-store-gate-entry").style.display = "none";
   if(document.getElementById("canvas-module-store-entry")) document.getElementById("canvas-module-store-entry").style.display = "none";
   if(document.getElementById("canvas-module-store-grn")) document.getElementById("canvas-module-store-grn").style.display = "none";
+  if(document.getElementById("canvas-module-store-repair-qa")) document.getElementById("canvas-module-store-repair-qa").style.display = "none";
   if(document.getElementById("canvas-module-store-live-stock")) document.getElementById("canvas-module-store-live-stock").style.display = "none";
   
   // FIXED REDIRECT RUNTIME REMOVES: Clear out the newly mounted Finished Goods view container as well
@@ -445,6 +446,11 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   }
   if (document.getElementById("mod-store-grn")) {
     document.getElementById("mod-store-grn").style.display = userPermissionsObject.qaCheck === true ? "block" : "none";
+  }
+  // Currently Being Repaired at ABPS — split out of Raw Materials Q/A
+  // Check into its own section/permission (19 Sep 2026).
+  if (document.getElementById("mod-repair-qa")) {
+    document.getElementById("mod-repair-qa").style.display = userPermissionsObject.repairQa === true ? "block" : "none";
   }
   if (document.getElementById("mod-store-ticket")) {
     document.getElementById("mod-store-ticket").style.display = canCreateTicket ? "block" : "none";
@@ -784,6 +790,7 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   if (document.getElementById("canvas-module-store-gate-entry")) document.getElementById("canvas-module-store-gate-entry").style.display = "none";
   if (document.getElementById("canvas-module-store-entry")) document.getElementById("canvas-module-store-entry").style.display = "none";
   if (document.getElementById("canvas-module-store-grn")) document.getElementById("canvas-module-store-grn").style.display = "none";
+  if (document.getElementById("canvas-module-store-repair-qa")) document.getElementById("canvas-module-store-repair-qa").style.display = "none";
   if (document.getElementById("canvas-module-assign-current-stock")) document.getElementById("canvas-module-assign-current-stock").style.display = "none";
   if (document.getElementById("canvas-module-expected-inbounds")) document.getElementById("canvas-module-expected-inbounds").style.display = "none";
 
@@ -841,6 +848,11 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
     if (grnBanner) { grnBanner.style.display = "none"; grnBanner.innerHTML = ""; }
     window.activeQAToggle = "pending";
     initializeStoreGrnWorkspaceQueue('pending');
+  } else if (targetPanelModuleId === 'repair-qa') {
+    document.getElementById("canvas-module-store-repair-qa").style.display = "block";
+    const repairBanner = document.getElementById("store-repair-qa-runtime-feedback-banner");
+    if (repairBanner) { repairBanner.style.display = "none"; repairBanner.innerHTML = ""; }
+    initializeStoreRepairQAWorkspace();
   } else if (targetPanelModuleId === 'stock-sweep') {
     document.getElementById("canvas-module-stock-sweep").style.display = "block";
     initializeStockSweepPanel();
@@ -883,6 +895,7 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   if (document.getElementById("canvas-module-store-gate-entry")) document.getElementById("canvas-module-store-gate-entry").style.display = "none";
   if (document.getElementById("canvas-module-store-entry")) document.getElementById("canvas-module-store-entry").style.display = "none";
   if (document.getElementById("canvas-module-store-grn")) document.getElementById("canvas-module-store-grn").style.display = "none";
+  if (document.getElementById("canvas-module-store-repair-qa")) document.getElementById("canvas-module-store-repair-qa").style.display = "none";
   if (document.getElementById("canvas-module-store-material-request")) document.getElementById("canvas-module-store-material-request").style.display = "none";
   if (document.getElementById("canvas-module-boq-increase-approvals")) document.getElementById("canvas-module-boq-increase-approvals").style.display = "none";
   if (document.getElementById("canvas-module-store-manager-approvals")) document.getElementById("canvas-module-store-manager-approvals").style.display = "none";
