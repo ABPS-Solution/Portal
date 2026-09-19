@@ -75,7 +75,10 @@ function exitStoreWorkspacePanelBackToMenu() {
   if(document.getElementById("canvas-module-stock-sweep")) { document.getElementById("canvas-module-stock-sweep").style.display = "none"; initializeStockSweepPanel(); }
   if(document.getElementById("canvas-module-fg-add")) document.getElementById("canvas-module-fg-add").style.display = "none";
   if(document.getElementById("canvas-module-fg-approval")) document.getElementById("canvas-module-fg-approval").style.display = "none";
-  if(document.getElementById("canvas-module-project-invoice")) document.getElementById("canvas-module-project-invoice").style.display = "none";
+  if(document.getElementById("canvas-module-create-project-dispatch-invoice")) document.getElementById("canvas-module-create-project-dispatch-invoice").style.display = "none";
+  if(document.getElementById("canvas-module-authorize-project-dispatch-invoice")) document.getElementById("canvas-module-authorize-project-dispatch-invoice").style.display = "none";
+  if(document.getElementById("canvas-module-revise-project-dispatch-invoice")) document.getElementById("canvas-module-revise-project-dispatch-invoice").style.display = "none";
+  if(document.getElementById("canvas-module-authorize-project-dispatch-invoice-revision")) document.getElementById("canvas-module-authorize-project-dispatch-invoice-revision").style.display = "none";
   if(document.getElementById("canvas-module-store-live-fg")) document.getElementById("canvas-module-store-live-fg").style.display = "none";
   if(document.getElementById("canvas-module-store-live-spare")) document.getElementById("canvas-module-store-live-spare").style.display = "none";
   if(document.getElementById("canvas-module-store-history-matrix")) document.getElementById("canvas-module-store-history-matrix").style.display = "none";

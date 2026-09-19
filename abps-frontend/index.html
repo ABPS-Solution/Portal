@@ -266,17 +266,19 @@
      default the way input does. */
   .grid-cell-item textarea { width: 100%; resize: none; overflow: hidden; font-family: inherit; box-sizing: border-box; }
 
-  /* Project Invoice Generation/Revise use the same shared .grid-cell-item
-     question/value fields as several other screens (Manufacturing
-     Clearance, Upload PO...) -- scoped up slightly here only, so this
-     one screen's question labels and values read a bit larger without
-     touching the shared class everywhere else it's used. */
-  #canvas-module-project-invoice .grid-cell-item label { font-size: 0.66rem; }
-  #canvas-module-project-invoice .grid-cell-item input,
-  #canvas-module-project-invoice .grid-cell-item select,
-  #canvas-module-project-invoice .grid-cell-item textarea { font-size: 0.87rem; }
-  #canvas-module-project-invoice .store-basket-data-table th { font-size: 0.82rem; }
-  #canvas-module-project-invoice .store-basket-data-table td { font-size: 0.9rem; }
+  /* Project Dispatch Invoice's four sections (Create/Authorize/Revise/
+     Authorize Revision, 19 Sep 2026 -- was one "Project Invoice
+     Generation" screen) use the same shared .grid-cell-item question/
+     value fields as several other screens (Manufacturing Clearance,
+     Upload PO...) -- scoped up slightly here only, via one shared class
+     on all four panels, so their question labels and values read a bit
+     larger without touching the shared class everywhere else it's used. */
+  .pdi-panel .grid-cell-item label { font-size: 0.66rem; }
+  .pdi-panel .grid-cell-item input,
+  .pdi-panel .grid-cell-item select,
+  .pdi-panel .grid-cell-item textarea { font-size: 0.87rem; }
+  .pdi-panel .store-basket-data-table th { font-size: 0.82rem; }
+  .pdi-panel .store-basket-data-table td { font-size: 0.9rem; }
 
   /* Same shared .grid-cell-item scoping trick, this time for a lead's
      View Details drawer (text/dropdown value boxes only — checkbox
@@ -943,7 +945,10 @@
       </div>
       <div class="sec-label">Dispatch</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-project-invoice"         onclick="switchActiveDashboardModule('project-invoice')"><span class="mc-label">Project Invoice Generation</span></div>
+        <div class="menu-card" id="mod-create-project-dispatch-invoice"              onclick="switchActiveDashboardModule('create-project-dispatch-invoice')"><span class="mc-label">Create Project Dispatch Invoice</span></div>
+        <div class="menu-card" id="mod-authorize-project-dispatch-invoice"           onclick="switchActiveDashboardModule('authorize-project-dispatch-invoice')"><span class="mc-label">Authorize Project Dispatch Invoice</span></div>
+        <div class="menu-card" id="mod-revise-project-dispatch-invoice"              onclick="switchActiveDashboardModule('revise-project-dispatch-invoice')"><span class="mc-label">Revise Project Dispatch Invoice</span></div>
+        <div class="menu-card" id="mod-authorize-project-dispatch-invoice-revision"  onclick="switchActiveDashboardModule('authorize-project-dispatch-invoice-revision')"><span class="mc-label">Authorize Project Dispatch Invoice Revision</span></div>
         <div class="menu-card" id="mod-material-outward"        onclick="switchActiveDashboardModule('material-outward')"><span class="mc-label">Material Outward on Delivery Challan</span></div>
       </div>
     </div>
@@ -1954,190 +1959,238 @@
       <div id="fg-approval-queue-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
     </div>
 
-    <div id="canvas-module-project-invoice" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 class="panel-title">Project Invoice Generation</h2>
-      <div id="pinv-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
-
+    <div id="canvas-module-create-project-dispatch-invoice" class="workspace-panel pdi-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Create Project Dispatch Invoice</h2>
       <div style="display:flex; gap:10px; margin-bottom:18px;">
-        <button class="nav-btn-styled" id="pinv-mode-generate-btn" onclick="switchPinvMode('generate')" style="background:var(--accent); font-weight:700; padding:9px 20px;">Generate Invoice</button>
-        <button class="nav-btn-styled" id="pinv-mode-revise-btn" onclick="switchPinvMode('revise')" style="background:#718096; font-weight:700; padding:9px 20px;">Revise Invoice</button>
+        <button class="nav-btn-styled" id="cpdi-tab-new" onclick="switchCreatePdiTab('new')" style="background:var(--accent); font-weight:700; padding:9px 20px;">New</button>
+        <button class="nav-btn-styled" id="cpdi-tab-editing" onclick="switchCreatePdiTab('editing')" style="background:#e2e8f0; color:var(--text); font-weight:700; padding:9px 20px;">Pending Invoices (Editing)</button>
       </div>
+      <div id="cpdi-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
-      <div id="pinv-generate-mode">
-      <div id="pinv-select-zone">
+      <div id="cpdi-new-section">
+      <div id="cpdi-select-zone">
         <label class="field-label" style="margin-top:0;">Project ID *</label>
-        <select id="pinv-project-select" onchange="handlePinvProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+        <select id="cpdi-project-select" onchange="handleCpdiProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
           <option value="">— Select Project ID —</option>
         </select>
       </div>
 
-      <div id="pinv-detail-zone" style="display:none; margin-top:20px;">
-        <div id="pinv-blockers" style="display:none; margin-bottom:16px;"></div>
+      <div id="cpdi-detail-zone" style="display:none; margin-top:20px;">
         <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px; min-width:760px;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px; min-width:640px;">
           <thead><tr style="background:var(--highlight-bg); text-align:left;">
             <th style="padding:8px;">Product</th><th style="padding:8px; text-align:center;">Ordered Qty</th>
-            <th style="padding:8px; text-align:center;">Total QA-Passed Job Cards</th>
             <th style="padding:8px; text-align:center;">Already Invoiced</th><th style="padding:8px; text-align:center;">Ready to Invoice</th>
             <th style="padding:8px; text-align:center;">Qty to Bill Now</th>
           </tr></thead>
-          <tbody id="pinv-jc-body"></tbody>
+          <tbody id="cpdi-jc-body"></tbody>
         </table>
         </div>
-        <div id="pinv-invoice-form-zone" style="display:none;"></div>
+        <div id="cpdi-invoice-form-zone" style="display:none;"></div>
 
-        <div id="pinv-documents-zone" style="display:none; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-top:16px;">
+        <div id="cpdi-documents-zone" style="display:none; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-top:16px;">
           <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:12px; letter-spacing:0.5px;">Invoice Documents</div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Packing List * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="pinv-doc-packingList-dropzone" onclick="document.getElementById('pinv-doc-packingList-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-packingList-dropzone" onclick="document.getElementById('cpdi-doc-packingList-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Packing List
               </div>
-              <input type="file" id="pinv-doc-packingList-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'packingList')" />
-              <div id="pinv-doc-packingList-filelist"></div>
+              <input type="file" id="cpdi-doc-packingList-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'packingList')" />
+              <div id="cpdi-doc-packingList-filelist"></div>
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">Delivery Challan * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="pinv-doc-deliveryChallan-dropzone" onclick="document.getElementById('pinv-doc-deliveryChallan-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-deliveryChallan-dropzone" onclick="document.getElementById('cpdi-doc-deliveryChallan-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Delivery Challan
               </div>
-              <input type="file" id="pinv-doc-deliveryChallan-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'deliveryChallan')" />
-              <div id="pinv-doc-deliveryChallan-filelist"></div>
+              <input type="file" id="cpdi-doc-deliveryChallan-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'deliveryChallan')" />
+              <div id="cpdi-doc-deliveryChallan-filelist"></div>
             </div>
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Warranty Card * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="pinv-doc-warrantyCard-dropzone" onclick="document.getElementById('pinv-doc-warrantyCard-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-warrantyCard-dropzone" onclick="document.getElementById('cpdi-doc-warrantyCard-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Warranty Card
               </div>
-              <input type="file" id="pinv-doc-warrantyCard-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'warrantyCard')" />
-              <div id="pinv-doc-warrantyCard-filelist"></div>
+              <input type="file" id="cpdi-doc-warrantyCard-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'warrantyCard')" />
+              <div id="cpdi-doc-warrantyCard-filelist"></div>
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">History Card * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="pinv-doc-historyCard-dropzone" onclick="document.getElementById('pinv-doc-historyCard-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-historyCard-dropzone" onclick="document.getElementById('cpdi-doc-historyCard-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach History Card
               </div>
-              <input type="file" id="pinv-doc-historyCard-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'historyCard')" />
-              <div id="pinv-doc-historyCard-filelist"></div>
+              <input type="file" id="cpdi-doc-historyCard-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'historyCard')" />
+              <div id="cpdi-doc-historyCard-filelist"></div>
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">Images of Products Loaded in Truck * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="pinv-doc-truckLoadedImages-dropzone" onclick="document.getElementById('pinv-doc-truckLoadedImages-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-truckLoadedImages-dropzone" onclick="document.getElementById('cpdi-doc-truckLoadedImages-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Images of Products Loaded in Truck
               </div>
-              <input type="file" id="pinv-doc-truckLoadedImages-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'truckLoadedImages')" />
-              <div id="pinv-doc-truckLoadedImages-filelist"></div>
+              <input type="file" id="cpdi-doc-truckLoadedImages-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'truckLoadedImages')" />
+              <div id="cpdi-doc-truckLoadedImages-filelist"></div>
             </div>
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">LR Copy</label>
-              <div class="card-box" id="pinv-doc-lrCopy-dropzone" onclick="document.getElementById('pinv-doc-lrCopy-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-lrCopy-dropzone" onclick="document.getElementById('cpdi-doc-lrCopy-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach LR Copy
               </div>
-              <input type="file" id="pinv-doc-lrCopy-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'lrCopy')" />
-              <div id="pinv-doc-lrCopy-filelist"></div>
+              <input type="file" id="cpdi-doc-lrCopy-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'lrCopy')" />
+              <div id="cpdi-doc-lrCopy-filelist"></div>
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">MD cc</label>
-              <div class="card-box" id="pinv-doc-mdcc-dropzone" onclick="document.getElementById('pinv-doc-mdcc-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-mdcc-dropzone" onclick="document.getElementById('cpdi-doc-mdcc-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach MD cc
               </div>
-              <input type="file" id="pinv-doc-mdcc-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'mdcc')" />
-              <div id="pinv-doc-mdcc-filelist"></div>
+              <input type="file" id="cpdi-doc-mdcc-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'mdcc')" />
+              <div id="cpdi-doc-mdcc-filelist"></div>
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">Inspection Clearance</label>
-              <div class="card-box" id="pinv-doc-inspectionClearance-dropzone" onclick="document.getElementById('pinv-doc-inspectionClearance-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-inspectionClearance-dropzone" onclick="document.getElementById('cpdi-doc-inspectionClearance-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Inspection Clearance
               </div>
-              <input type="file" id="pinv-doc-inspectionClearance-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'inspectionClearance')" />
-              <div id="pinv-doc-inspectionClearance-filelist"></div>
+              <input type="file" id="cpdi-doc-inspectionClearance-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'inspectionClearance')" />
+              <div id="cpdi-doc-inspectionClearance-filelist"></div>
             </div>
           </div>
 
           <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Serial Number Confirmation Sheet * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="pinv-doc-serialNumberConfirmationSheet-dropzone" onclick="document.getElementById('pinv-doc-serialNumberConfirmationSheet-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-serialNumberConfirmationSheet-dropzone" onclick="document.getElementById('cpdi-doc-serialNumberConfirmationSheet-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Serial Number Confirmation Sheet
               </div>
-              <input type="file" id="pinv-doc-serialNumberConfirmationSheet-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'serialNumberConfirmationSheet')" />
-              <div id="pinv-doc-serialNumberConfirmationSheet-filelist"></div>
+              <input type="file" id="cpdi-doc-serialNumberConfirmationSheet-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'serialNumberConfirmationSheet')" />
+              <div id="cpdi-doc-serialNumberConfirmationSheet-filelist"></div>
             </div>
           </div>
 
           <div>
             <label class="field-label" style="margin-top:0;">Payment Received Confirmation *</label>
-            <select id="pinv-payment-received" onchange="persistPinvDraft()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); max-width:260px;">
+            <select id="cpdi-payment-received" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); max-width:260px;">
               <option value="No">No</option>
               <option value="Yes">Yes</option>
             </select>
           </div>
         </div>
 
-        <div id="pinv-generate-zone" style="display:none; flex-direction:column; align-items:flex-end; gap:6px; margin-top:16px;">
-          <div id="pinv-generate-reason" style="font-size:0.78rem; color:#b45309; font-weight:600; text-align:right;"></div>
+        <div id="cpdi-generate-zone" style="display:none; flex-direction:column; align-items:flex-end; gap:6px; margin-top:16px;">
+          <div id="cpdi-generate-reason" style="font-size:0.78rem; color:#b45309; font-weight:600; text-align:right;"></div>
           <div style="display:flex; gap:10px; justify-content:flex-end;">
-            <button class="nav-btn-styled" onclick="clearPinvForm()" style="background:#718096; padding:10px 20px; font-weight:700;">Clear Invoice</button>
-            <button class="nav-btn-styled" id="pinv-generate-partial-btn" disabled style="background:var(--accent); padding:10px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;" onclick="openPinvConfirmModal('partial')">Generate Partial Invoice</button>
-            <button class="nav-btn-styled" id="pinv-generate-final-btn" disabled style="background:#15803d; padding:10px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;" onclick="openPinvConfirmModal('final')">Generate Final Invoice</button>
+            <button class="nav-btn-styled" id="cpdi-generate-partial-btn" disabled style="background:var(--accent); padding:10px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;" onclick="openCpdiConfirmModal('partial')">Create Partial Invoice Draft</button>
+            <button class="nav-btn-styled" id="cpdi-generate-final-btn" disabled style="background:#15803d; padding:10px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;" onclick="openCpdiConfirmModal('final')">Create Final Invoice Draft</button>
           </div>
         </div>
       </div>
 
-      <div id="pinv-success-zone" style="display:none; margin-top:20px;"></div>
+      <div id="cpdi-success-zone" style="display:none; margin-top:20px;"></div>
       </div>
 
-      <div id="pinv-revise-mode" style="display:none;">
-        <div id="pinv-revise-select-zone" style="position:relative;">
-          <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
-          <input type="text" id="pinv-revise-ta-input" autocomplete="off" placeholder="Type Project ID or Customer Name..."
-            oninput="handlePinvReviseTypeaheadInput(this.value)" onfocus="handlePinvReviseTypeaheadInput(this.value)"
-            style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
-          <div id="pinv-revise-ta-dropdown" style="display:none; position:absolute; z-index:50; background:#fff; border:1px solid var(--border); border-radius:var(--radius); max-height:240px; overflow-y:auto; width:100%; box-shadow:0 4px 14px rgba(0,0,0,0.08);"></div>
-          <div style="font-size:0.78rem; color:var(--muted); margin-top:6px;">Projects with at least one generated invoice (Partial or Final) appear here.</div>
-        </div>
-
-        <div id="pinv-revise-detail-zone" style="display:none; margin-top:20px;">
-          <div id="pinv-revise-history-zone" style="margin-bottom:16px;"></div>
-          <div id="pinv-revise-invoice-form-zone"></div>
-          <div id="pinv-revise-generate-btn-wrap" style="display:none; text-align:right; margin-top:16px;">
-            <button class="nav-btn-styled" style="background:var(--accent); padding:10px 24px; font-weight:700;" onclick="openPinvReviseConfirmModal()">Generate Revised Invoice Doc</button>
-          </div>
-        </div>
-
-        <div id="pinv-revise-success-zone" style="display:none; margin-top:20px;"></div>
+      <div id="cpdi-editing-section" style="display:none;">
+        <div id="cpdi-editing-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+        <div id="cpdi-editing-cards-feed"></div>
       </div>
     </div>
 
-    <div id="pinv-confirm-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div id="cpdi-confirm-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
       <div style="background:#fff; border-radius:var(--radius); padding:24px; max-width:420px; width:90%; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
-        <h3 id="pinv-confirm-title" style="margin:0 0 10px; color:var(--brand);">Confirm Invoice Generation</h3>
-        <p id="pinv-confirm-warning" style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;"></p>
-        <p style="font-size:0.85rem; color:var(--muted); margin-bottom:14px;">Type the Project ID <strong id="pinv-confirm-target"></strong> to confirm.</p>
-        <input type="text" id="pinv-confirm-input" style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); margin-bottom:14px;" oninput="handlePinvConfirmInput()" />
+        <h3 id="cpdi-confirm-title" style="margin:0 0 10px; color:var(--brand);">Confirm Invoice Draft</h3>
+        <p id="cpdi-confirm-warning" style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;"></p>
+        <p style="font-size:0.85rem; color:var(--muted); margin-bottom:14px;">Type the Project ID <strong id="cpdi-confirm-target"></strong> to confirm.</p>
+        <input type="text" id="cpdi-confirm-input" style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); margin-bottom:14px;" oninput="handleCpdiConfirmInput()" />
         <div style="display:flex; justify-content:flex-end; gap:10px;">
-          <button class="nav-btn-styled" style="background:#718096;" onclick="closePinvConfirmModal()">Cancel</button>
-          <button class="nav-btn-styled" id="pinv-confirm-submit-btn" disabled style="background:var(--accent); opacity:0.5; cursor:not-allowed;" onclick="submitPinvGeneration()">Generate Invoice Doc</button>
+          <button class="nav-btn-styled" style="background:#718096;" onclick="closeCpdiConfirmModal()">Cancel</button>
+          <button class="nav-btn-styled" id="cpdi-confirm-submit-btn" disabled style="background:var(--accent); opacity:0.5; cursor:not-allowed;" onclick="submitCpdiCreate()">Create Draft</button>
         </div>
       </div>
     </div>
 
-    <div id="pinv-revise-confirm-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div id="canvas-module-authorize-project-dispatch-invoice" class="workspace-panel pdi-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Authorize Project Dispatch Invoice</h2>
+      <div id="apdi-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="apdi-cards-feed"></div>
+    </div>
+
+    <div id="apdi-confirm-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
       <div style="background:#fff; border-radius:var(--radius); padding:24px; max-width:420px; width:90%; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
-        <h3 style="margin:0 0 10px; color:var(--brand);">Confirm Invoice Revision</h3>
-        <p style="font-size:0.85rem; color:var(--muted); margin-bottom:14px;">This will generate a new Project Invoice PDF for <strong id="pinv-revise-confirm-target"></strong> and update the project's saved invoice link. Project status, PRNs, and stock are not affected. Type the Project ID to confirm.</p>
-        <input type="text" id="pinv-revise-confirm-input" style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); margin-bottom:14px;" oninput="handlePinvReviseConfirmInput()" />
+        <h3 style="margin:0 0 10px; color:var(--brand);">Confirm Authorization</h3>
+        <p style="font-size:0.85rem; color:var(--muted); margin-bottom:14px;">Authorize <strong id="apdi-confirm-target"></strong>? This mints the invoice number, dispatches the reserved units, and (Final) closes out the project. This cannot be undone from here.</p>
         <div style="display:flex; justify-content:flex-end; gap:10px;">
-          <button class="nav-btn-styled" style="background:#718096;" onclick="closePinvReviseConfirmModal()">Cancel</button>
-          <button class="nav-btn-styled" id="pinv-revise-confirm-submit-btn" disabled style="background:var(--accent); opacity:0.5; cursor:not-allowed;" onclick="submitPinvRevision()">Generate Revised Invoice Doc</button>
+          <button class="nav-btn-styled" style="background:#718096;" onclick="closeApdiAuthorizeConfirm()">Cancel</button>
+          <button class="nav-btn-styled" style="background:var(--brand); font-weight:700;" onclick="submitApdiAuthorize()">Authorize</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="canvas-module-revise-project-dispatch-invoice" class="workspace-panel pdi-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Revise Project Dispatch Invoice</h2>
+      <div style="display:flex; gap:10px; margin-bottom:18px;">
+        <button class="nav-btn-styled" id="rpdi-tab-select" onclick="switchRevisePdiTab('select')" style="background:var(--accent); font-weight:700; padding:9px 20px;">Select Invoice</button>
+        <button class="nav-btn-styled" id="rpdi-tab-editing" onclick="switchRevisePdiTab('editing')" style="background:#e2e8f0; color:var(--text); font-weight:700; padding:9px 20px;">Pending Revisions (Editing)</button>
+      </div>
+      <div id="rpdi-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div id="rpdi-select-section">
+      <div id="rpdi-select-zone" style="position:relative;">
+        <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
+        <input type="text" id="rpdi-ta-input" autocomplete="off" placeholder="Type Project ID or Customer Name..."
+          oninput="handleRpdiTypeaheadInput(this.value)" onfocus="handleRpdiTypeaheadInput(this.value)"
+          style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
+        <div id="rpdi-ta-dropdown" style="display:none; position:absolute; z-index:50; background:#fff; border:1px solid var(--border); border-radius:var(--radius); max-height:240px; overflow-y:auto; width:100%; box-shadow:0 4px 14px rgba(0,0,0,0.08);"></div>
+        <div style="font-size:0.78rem; color:var(--muted); margin-top:6px;">Projects with at least one authorized invoice (Partial or Final) appear here.</div>
+      </div>
+
+      <div id="rpdi-detail-zone" style="display:none; margin-top:20px;">
+        <div id="rpdi-history-zone" style="margin-bottom:16px;"></div>
+        <div id="rpdi-invoice-form-zone"></div>
+        <div id="rpdi-generate-btn-wrap" style="display:none; text-align:right; margin-top:16px;">
+          <button class="nav-btn-styled" style="background:var(--accent); padding:10px 24px; font-weight:700;" onclick="openRpdiConfirmModal()">Submit Revision Request</button>
+        </div>
+      </div>
+
+      <div id="rpdi-success-zone" style="display:none; margin-top:20px;"></div>
+      </div>
+
+      <div id="rpdi-editing-section" style="display:none;">
+        <div id="rpdi-editing-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+        <div id="rpdi-editing-cards-feed"></div>
+      </div>
+    </div>
+
+    <div id="rpdi-confirm-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:var(--radius); padding:24px; max-width:420px; width:90%; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+        <h3 style="margin:0 0 10px; color:var(--brand);">Confirm Revision Request</h3>
+        <p style="font-size:0.85rem; color:var(--muted); margin-bottom:14px;">This will submit a revision request for <strong id="rpdi-confirm-target"></strong> — the live invoice stays exactly as it is until this request is authorized. Submit?</p>
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button class="nav-btn-styled" style="background:#718096;" onclick="closeRpdiConfirmModal()">Cancel</button>
+          <button class="nav-btn-styled" style="background:var(--accent); font-weight:700;" onclick="submitRpdiCreateRequest()">Submit Revision Request</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="canvas-module-authorize-project-dispatch-invoice-revision" class="workspace-panel pdi-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Authorize Project Dispatch Invoice Revision</h2>
+      <div id="arpdi-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="arpdi-cards-feed"></div>
+    </div>
+
+    <div id="arpdi-confirm-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:var(--radius); padding:24px; max-width:420px; width:90%; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+        <h3 style="margin:0 0 10px; color:var(--brand);">Confirm Revision Authorization</h3>
+        <p style="font-size:0.85rem; color:var(--muted); margin-bottom:14px;">Authorize <strong id="arpdi-confirm-target"></strong>? This applies the change summary above onto the live invoice — its number stays fixed, only revision-affected fields move.</p>
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button class="nav-btn-styled" style="background:#718096;" onclick="closeArpdiAuthorizeConfirm()">Cancel</button>
+          <button class="nav-btn-styled" style="background:var(--brand); font-weight:700;" onclick="submitArpdiAuthorize()">Authorize</button>
         </div>
       </div>
     </div>
@@ -5535,6 +5588,11 @@
 <script src="store/store-history.js"></script>
 <script src="store/store-dashboard.js"></script>
 <script src="store/material-outward.js"></script>
+<script src="store/dispatch-invoice-shared.js"></script>
+<script src="store/dispatch-invoice-create.js"></script>
+<script src="store/dispatch-invoice-authorize.js"></script>
+<script src="store/dispatch-invoice-revise.js"></script>
+<script src="store/dispatch-invoice-authorize-revision.js"></script>
 <script src="purchase/po.js"></script>
 <script src="purchase/vendor-costing.js"></script>
 <script src="purchase/revise-po.js"></script>
@@ -5545,7 +5603,9 @@
 <script src="production/job-card-sheet.js"></script>
 <script src="production/finished-goods.js"></script>
 <script src="production/fg-approval.js"></script>
-<script src="production/project-invoice.js"></script>
+<!-- production/project-invoice.js retired 19 Sep 2026, superseded by the
+     four store/dispatch-invoice-*.js files above (Project Dispatch
+     Invoice split, migrations 208-209). File kept on disk, unlinked. -->
 <script src="production/production-dashboard.js"></script>
 <script src="production/material-requirement-dates.js"></script>
 <script src="production/production-planning.js"></script>

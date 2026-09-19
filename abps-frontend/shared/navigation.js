@@ -254,7 +254,10 @@ function returnToDashboard() {
   if(document.getElementById("canvas-module-store-finished-goods-live-stock")) document.getElementById("canvas-module-store-finished-goods-live-stock").style.display = "none";
   if(document.getElementById("canvas-module-fg-add")) document.getElementById("canvas-module-fg-add").style.display = "none";
   if(document.getElementById("canvas-module-fg-approval")) document.getElementById("canvas-module-fg-approval").style.display = "none";
-  if(document.getElementById("canvas-module-project-invoice")) document.getElementById("canvas-module-project-invoice").style.display = "none";
+  if(document.getElementById("canvas-module-create-project-dispatch-invoice")) document.getElementById("canvas-module-create-project-dispatch-invoice").style.display = "none";
+  if(document.getElementById("canvas-module-authorize-project-dispatch-invoice")) document.getElementById("canvas-module-authorize-project-dispatch-invoice").style.display = "none";
+  if(document.getElementById("canvas-module-revise-project-dispatch-invoice")) document.getElementById("canvas-module-revise-project-dispatch-invoice").style.display = "none";
+  if(document.getElementById("canvas-module-authorize-project-dispatch-invoice-revision")) document.getElementById("canvas-module-authorize-project-dispatch-invoice-revision").style.display = "none";
   if(document.getElementById("canvas-module-material-outward")) document.getElementById("canvas-module-material-outward").style.display = "none";
   if(document.getElementById("canvas-module-assign-material-requirement-date")) document.getElementById("canvas-module-assign-material-requirement-date").style.display = "none";
   if(document.getElementById("canvas-module-revise-material-requirement-date")) document.getElementById("canvas-module-revise-material-requirement-date").style.display = "none";
@@ -463,8 +466,20 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-product-serial-tracking")) document.getElementById("mod-product-serial-tracking").style.display = canProductSerialTracking ? "block" : "none";
   if (document.getElementById("mod-assign-material-requirement-date")) document.getElementById("mod-assign-material-requirement-date").style.display = canAssignMRD ? "block" : "none";
   if (document.getElementById("mod-revise-material-requirement-date")) document.getElementById("mod-revise-material-requirement-date").style.display = canReviseMRD ? "block" : "none";
-  const canProjectInvoiceGeneration = userPermissionsObject.projectInvoiceGeneration === true;
-  if (document.getElementById("mod-project-invoice")) document.getElementById("mod-project-invoice").style.display = canProjectInvoiceGeneration ? "block" : "none";
+  // Project Dispatch Invoice's four sections (19 Sep 2026, migrations
+  // 208-209 -- was one "Project Invoice Generation" screen/permission).
+  // This card-visibility block was previously folded into
+  // productionHeaderBlock below even though the card lives in the Store
+  // block (a pre-existing bug) -- moved into storeHeaderBlock instead of
+  // being propagated to four flags.
+  const canCreateProjectDispatchInvoice = userPermissionsObject.createProjectDispatchInvoice === true;
+  const canAuthorizeProjectDispatchInvoice = userPermissionsObject.authorizeProjectDispatchInvoice === true;
+  const canReviseProjectDispatchInvoice = userPermissionsObject.reviseProjectDispatchInvoice === true;
+  const canAuthorizeProjectDispatchInvoiceRevision = userPermissionsObject.authorizeProjectDispatchInvoiceRevision === true;
+  if (document.getElementById("mod-create-project-dispatch-invoice")) document.getElementById("mod-create-project-dispatch-invoice").style.display = canCreateProjectDispatchInvoice ? "block" : "none";
+  if (document.getElementById("mod-authorize-project-dispatch-invoice")) document.getElementById("mod-authorize-project-dispatch-invoice").style.display = canAuthorizeProjectDispatchInvoice ? "block" : "none";
+  if (document.getElementById("mod-revise-project-dispatch-invoice")) document.getElementById("mod-revise-project-dispatch-invoice").style.display = canReviseProjectDispatchInvoice ? "block" : "none";
+  if (document.getElementById("mod-authorize-project-dispatch-invoice-revision")) document.getElementById("mod-authorize-project-dispatch-invoice-revision").style.display = canAuthorizeProjectDispatchInvoiceRevision ? "block" : "none";
   const canMaterialOutward = userPermissionsObject.materialOutward === true;
   if (document.getElementById("mod-material-outward")) document.getElementById("mod-material-outward").style.display = canMaterialOutward ? "block" : "none";
   if (document.getElementById("mod-job-card-sheet")) document.getElementById("mod-job-card-sheet").style.display = userPermissionsObject.jobCardSheet === true ? "block" : "none";
@@ -544,7 +559,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // Production Department block visibility
   const productionHeaderBlock = document.getElementById("dashboard-production-department-header-block");
   if (productionHeaderBlock) {
-    productionHeaderBlock.style.display = (canCreateJobCardNumber || canCreateTicket || canAddFinishedGoods || canProjectInvoiceGeneration || canProductionPlanning || canAssignMRD || canReviseMRD) ? "block" : "none";
+    productionHeaderBlock.style.display = (canCreateJobCardNumber || canCreateTicket || canAddFinishedGoods || canProductionPlanning || canAssignMRD || canReviseMRD) ? "block" : "none";
   }
 
   // Quality Assurance Department block visibility (8 Sep 2026) — perm_qa_check
@@ -593,7 +608,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");
       if (storeHeaderBlock) {
-        storeHeaderBlock.style.display = (canViewLiveStock || canReleaseTicket || canSearchStoreMat || canApproveBOQIncrease || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntryAndGrn === true || canViewLiveFinishedStock || canLiveSpareStoreStock || canReserveStoreStock || canPurchaseRequestNote) ? "block" : "none";
+        storeHeaderBlock.style.display = (canViewLiveStock || canReleaseTicket || canSearchStoreMat || canApproveBOQIncrease || userPermissionsObject.gateEntry === true || userPermissionsObject.storeEntryAndGrn === true || canViewLiveFinishedStock || canLiveSpareStoreStock || canReserveStoreStock || canPurchaseRequestNote || canCreateProjectDispatchInvoice || canAuthorizeProjectDispatchInvoice || canReviseProjectDispatchInvoice || canAuthorizeProjectDispatchInvoiceRevision) ? "block" : "none";
       }
 
       if (document.getElementById("mod-manufacturing-clearance")) document.getElementById("mod-manufacturing-clearance").style.display = canManufacturingClearance ? "block" : "none";
@@ -912,7 +927,10 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   // previous one, so its content rendered stacked underneath the new panel.
   if (document.getElementById("canvas-module-fg-add"))       document.getElementById("canvas-module-fg-add").style.display       = "none";
   if (document.getElementById("canvas-module-fg-approval"))  document.getElementById("canvas-module-fg-approval").style.display  = "none";
-  if (document.getElementById("canvas-module-project-invoice")) document.getElementById("canvas-module-project-invoice").style.display = "none";
+  if (document.getElementById("canvas-module-create-project-dispatch-invoice")) document.getElementById("canvas-module-create-project-dispatch-invoice").style.display = "none";
+  if (document.getElementById("canvas-module-authorize-project-dispatch-invoice")) document.getElementById("canvas-module-authorize-project-dispatch-invoice").style.display = "none";
+  if (document.getElementById("canvas-module-revise-project-dispatch-invoice")) document.getElementById("canvas-module-revise-project-dispatch-invoice").style.display = "none";
+  if (document.getElementById("canvas-module-authorize-project-dispatch-invoice-revision")) document.getElementById("canvas-module-authorize-project-dispatch-invoice-revision").style.display = "none";
   if (document.getElementById("canvas-module-material-outward")) document.getElementById("canvas-module-material-outward").style.display = "none";
   if (document.getElementById("canvas-module-qa-inspection-timeline")) document.getElementById("canvas-module-qa-inspection-timeline").style.display = "none";
   if (document.getElementById("canvas-module-product-serial-tracking")) document.getElementById("canvas-module-product-serial-tracking").style.display = "none";
@@ -1067,14 +1085,38 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     if (centerTitleFGA)  centerTitleFGA.style.visibility  = "hidden";
     document.getElementById("canvas-module-fg-approval").style.display = "block";
     initializeFGApprovalWorkspace();
-  } else if (targetCanvasModuleId === 'project-invoice') {
+  } else if (targetCanvasModuleId === 'create-project-dispatch-invoice') {
     document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
-    const leftControls = document.getElementById("store-panel-left-controls");
-    const centerTitle  = document.getElementById("store-panel-center-title");
-    if (leftControls) leftControls.style.visibility = "hidden";
-    if (centerTitle)  centerTitle.style.visibility  = "hidden";
-    document.getElementById("canvas-module-project-invoice").style.display = "block";
-    initializePinvWorkspace();
+    const leftControlsCPDI = document.getElementById("store-panel-left-controls");
+    const centerTitleCPDI  = document.getElementById("store-panel-center-title");
+    if (leftControlsCPDI) leftControlsCPDI.style.visibility = "hidden";
+    if (centerTitleCPDI)  centerTitleCPDI.style.visibility  = "hidden";
+    document.getElementById("canvas-module-create-project-dispatch-invoice").style.display = "block";
+    switchCreatePdiTab('new');
+  } else if (targetCanvasModuleId === 'authorize-project-dispatch-invoice') {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    const leftControlsAPDI = document.getElementById("store-panel-left-controls");
+    const centerTitleAPDI  = document.getElementById("store-panel-center-title");
+    if (leftControlsAPDI) leftControlsAPDI.style.visibility = "hidden";
+    if (centerTitleAPDI)  centerTitleAPDI.style.visibility  = "hidden";
+    document.getElementById("canvas-module-authorize-project-dispatch-invoice").style.display = "block";
+    initializeApdiWorkspace();
+  } else if (targetCanvasModuleId === 'revise-project-dispatch-invoice') {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    const leftControlsRPDI = document.getElementById("store-panel-left-controls");
+    const centerTitleRPDI  = document.getElementById("store-panel-center-title");
+    if (leftControlsRPDI) leftControlsRPDI.style.visibility = "hidden";
+    if (centerTitleRPDI)  centerTitleRPDI.style.visibility  = "hidden";
+    document.getElementById("canvas-module-revise-project-dispatch-invoice").style.display = "block";
+    switchRevisePdiTab('select');
+  } else if (targetCanvasModuleId === 'authorize-project-dispatch-invoice-revision') {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    const leftControlsARPDI = document.getElementById("store-panel-left-controls");
+    const centerTitleARPDI  = document.getElementById("store-panel-center-title");
+    if (leftControlsARPDI) leftControlsARPDI.style.visibility = "hidden";
+    if (centerTitleARPDI)  centerTitleARPDI.style.visibility  = "hidden";
+    document.getElementById("canvas-module-authorize-project-dispatch-invoice-revision").style.display = "block";
+    initializeArpdiWorkspace();
   } else if (targetCanvasModuleId === 'material-outward') {
     document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
     const leftControlsMOW = document.getElementById("store-panel-left-controls");
