@@ -89,10 +89,32 @@ async function edInitEmployeeSection(ns) {
   panel.innerHTML = `
     ${limitsBlock}
     ${addFormBlock}
+    <div style="margin-bottom:12px; max-width:320px;">
+      <input type="text" id="${ns}-search-input" placeholder="Search employee by name..." autocomplete="off"
+        oninput="edFilterEmployees('${ns}')"
+        style="width:100%; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.85rem; box-sizing:border-box;">
+    </div>
     <div id="${ns}-table-wrap" style="overflow-x:auto;"></div>`;
 
   if (ns === "ed") await loadExpenseLimitsTable();
   await edLoadEmployeeDetailsTable(ns);
+}
+
+// window.edEmployeesCache — the last full, unfiltered employee list per
+// namespace, so typing in the search box filters in place (no re-fetch,
+// same instant-as-you-type feel as Security & Login Access' Permissions
+// Matrix search) instead of hitting the server on every keystroke.
+window.edEmployeesCache = window.edEmployeesCache || {};
+
+function edFilterEmployees(ns) {
+  const query = (document.getElementById(`${ns}-search-input`)?.value || "").toLowerCase().trim();
+  const all = window.edEmployeesCache[ns] || [];
+  const filtered = !query ? all : all.filter(e =>
+    (e.employeeName || "").toLowerCase().includes(query) ||
+    (e.empCode || "").toLowerCase().includes(query) ||
+    (e.departmentName || "").toLowerCase().includes(query)
+  );
+  edRenderEmployeeTable(ns, filtered);
 }
 
 function edToggleAddForm(ns) {
@@ -138,8 +160,24 @@ async function edLoadEmployeeDetailsTable(ns) {
   try {
     const data = await acFetch("listAllTourEmployees", { sortBy: cfg.sortBy });
     if (!data.success) { wrap.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
+    window.edEmployeesCache[ns] = data.employees;
+    const searchInput = document.getElementById(`${ns}-search-input`);
+    if (searchInput) searchInput.value = "";
+    edRenderEmployeeTable(ns, data.employees);
+  } catch (e) { wrap.innerHTML = `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`; }
+}
+
+function edRenderEmployeeTable(ns, employees) {
+  const cfg = EMP_SCREEN_CONFIG[ns];
+  const wrap = document.getElementById(`${ns}-table-wrap`);
+  if (!wrap) return;
+  try {
     const cb = EMP_TABLE_COL_BORDER, cell = EMP_TABLE_CELL, th = EMP_TABLE_TH;
-    const rows = data.employees.map(e => {
+    if (employees.length === 0) {
+      wrap.innerHTML = `<div style="padding:20px; text-align:center; color:var(--muted);">No employees found.</div>`;
+      return;
+    }
+    const rows = employees.map(e => {
       const bothInactive = e.status === 'Inactive' && e.cashStatus === 'Inactive';
       const nameCell = cfg.editable
         ? `<input type="text" class="${ns}-f-name" value="${escapeHtml(e.employeeName)}" style="width:100%; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:center;">`
