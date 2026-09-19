@@ -1609,6 +1609,24 @@ async function generateCheckingDraftOnly() {
   }
 }
 
+// switchCreatePOTab — Edit Raw Material Purchase Order folded into a
+// second tab on Create Raw Material Purchase Order (19 Sep 2026, cleaner
+// than a whole separate dashboard card/panel) — same tab-bar pattern as
+// Revise PO's queue/other/editing tabs. 'new' is a brand-new PO
+// (create-po-body); 'editing' is the caller's own pending POs, still
+// awaiting authorization (edit-po-body, fetchPendingPOsForEditing).
+function switchCreatePOTab(tab, extraArg = null) {
+  const isNew = tab === 'new';
+  document.getElementById("cpo-new-section").style.display = isNew ? "" : "none";
+  document.getElementById("cpo-editing-section").style.display = isNew ? "none" : "";
+  const on = (b) => { b.style.color = "var(--brand)"; b.style.borderBottomColor = "var(--brand)"; b.style.fontWeight = "800"; };
+  const off = (b) => { b.style.color = "var(--muted)"; b.style.borderBottomColor = "transparent"; b.style.fontWeight = "700"; };
+  const n = document.getElementById("cpo-tab-new"), ed = document.getElementById("cpo-tab-editing");
+  isNew ? (on(n), off(ed)) : (on(ed), off(n));
+  if (isNew) initializeCreatePOPanel(extraArg);
+  else initializeEditPOPanel();
+}
+
 // initializeEditPOPanel / toggleEditPOCard — the 'edit'-mode counterparts
 // of initializeAuthorizePOPanel/toggleAuthorizePOCard, scoped to the
 // caller's own pending POs (fetchPendingPOsForEditing enforces this

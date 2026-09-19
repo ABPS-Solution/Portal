@@ -886,7 +886,6 @@
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')"><span class="mc-label">List of Material to Raise Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-create-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-create-po')"><span class="mc-label">Create Raw Material Purchase Order</span></div>
-        <div class="menu-card" id="mod-purchase-edit-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-edit-po')"><span class="mc-label">Edit Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-authorize-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po')"><span class="mc-label">Authorize Raw Material Purchase Order</span></div>
       </div>
       <div class="sec-label">PO Revision</div>
@@ -3478,9 +3477,22 @@
     <!-- MATERIAL LIST CANVAS -->
     <div id="canvas-module-purchase-create-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Create Raw Material Purchase Order</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Fill in the PO details and add material rows. Tag each material with the PRN using this Material. Submit when complete and it will go for Authorization.</p>
-      <div id="create-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
-      <div id="create-po-body"></div>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Fill in the PO details and add material rows. Tag each material with the PRN using this Material. Submit when complete and it will go for Authorization. Already-submitted POs still awaiting authorization can be changed under "Pending POs (Editing)" — generate a fresh Checking Draft there for the head to review on paper.</p>
+
+      <div style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--border);">
+        <button id="cpo-tab-new" onclick="switchCreatePOTab('new')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:800; font-size:0.85rem; color:var(--brand); border-bottom:3px solid var(--brand); margin-bottom:-2px;">New Purchase Order</button>
+        <button id="cpo-tab-editing" onclick="switchCreatePOTab('editing')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:700; font-size:0.85rem; color:var(--muted); border-bottom:3px solid transparent; margin-bottom:-2px;">Pending POs (Editing)</button>
+      </div>
+
+      <div id="cpo-new-section">
+        <div id="create-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+        <div id="create-po-body"></div>
+      </div>
+
+      <div id="cpo-editing-section" style="display:none;">
+        <div id="edit-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+        <div id="edit-po-body"></div>
+      </div>
     </div>
 
     <div id="canvas-module-purchase-authorize-prn" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
@@ -3488,13 +3500,6 @@
       <p id="aprn-panel-subtitle" style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review each pending PRN, adjust Store Quantity if needed, then authorize or reject.</p>
       <div id="aprn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="aprn-cards-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
-    </div>
-
-    <div id="canvas-module-purchase-edit-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 class="panel-title">Edit Raw Material Purchase Order</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Change a PO you created that's still awaiting authorization, then generate a fresh Checking Draft for the head to review on paper. The PO stays visible in Authorize Raw Material Purchase Order throughout, always showing your latest changes — saving and generating a document are two separate actions.</p>
-      <div id="edit-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
-      <div id="edit-po-body"></div>
     </div>
 
     <div id="canvas-module-purchase-authorize-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
