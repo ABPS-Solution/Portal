@@ -1124,7 +1124,7 @@
 
       <div class="section" id="cmit-main-section" style="background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
           <div id="wrapper-ticket-department-outgoing-field">
             <label class="field-label" id="lbl-dept-outgoing-title" style="margin-top:0; font-weight: 700;">Production Department / Outgoing Use *</label>
             <select id="ticket-department-outgoing-dropdown" onchange="handleCreateTicketDepartmentChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;">
@@ -1133,6 +1133,15 @@
               <option value="Capacitor">Capacitor</option>
               <option value="Panel">Panel</option>
               <option value="Service">Service</option>
+            </select>
+          </div>
+          <div id="wrapper-ticket-outward-purpose" style="display:none;">
+            <label class="field-label" style="margin-top:0; font-weight: 700;">Purpose *</label>
+            <select id="ticket-outward-purpose-dropdown" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;">
+              <option value="">— Select Purpose —</option>
+              <option value="Service">Service</option>
+              <option value="Processing">Processing</option>
+              <option value="Replacement">Replacement</option>
             </select>
           </div>
           <div id="wrapper-ticket-legacy-toggle" style="display:none;">

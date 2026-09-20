@@ -1,9 +1,17 @@
 // ═══════════════════════════════════════════════════════════════════════
-// Material Outward on Delivery Challan — Use Case 1: Service.
-// Two toggles: "Materials for Service" (approved Service tickets waiting
-// on a challan) and "Search Challans" (the register, filterable by
-// project + date range). Upload → AI-extracted review → commit follows
-// the same extract → review → commit pattern as Upload Purchase Order.
+// Material Outward on Delivery Challan (migration 211, 20 Sep 2026) —
+// system-generated document, PDFShift via lib/deliveryChallanTemplate.js
+// on the backend, replacing the old scanned-upload + AI-extraction flow.
+// Two toggles: "Materials for Outward" (approved tickets with a Purpose
+// set — Service/Processing/Replacement — waiting on a challan) and
+// "Search Challans" (the register, filterable by project + date range).
+//
+// Same watermarked checking-draft paper-review loop as RM PO's Checking
+// Draft and Project Dispatch Invoice, collapsed onto one screen for one
+// person (no separate maker/checker here — everything is
+// perm_material_outward): Save Draft (fields, no PDF, no number) ->
+// Generate Checking Draft (as many times as needed) -> Finalise Challan
+// (mints the real number + the clean PDF).
 // ═══════════════════════════════════════════════════════════════════════
 
 let mowServiceTicketsCache = [];
@@ -38,38 +46,74 @@ function switchMaterialOutwardToggle(mode) {
 async function loadMaterialOutwardServiceQueue() {
   const feed = document.getElementById("mow-service-queue-feed");
   if (!feed) return;
-  // Restores visibility in case a prior Confirm & Save hid this feed to
-  // show its own dedicated success view (see commitMaterialOutwardChallan/
+  // Restores visibility in case a prior Finalise hid this feed to show
+  // its own dedicated success view (see mowFinaliseChallan/
   // mowResetAfterChallanSave) — every path back into this queue (toggle
-  // switch, Load Next Ticket, Refresh Queue after Reject) goes through
-  // here, so this is the one place that needs to undo that hide.
+  // switch, Load Next Ticket, Save/Generate/Discard reloads) goes
+  // through here, so this is the one place that needs to undo that hide.
   feed.style.display = "flex";
-  feed.innerHTML = `<div style="color:var(--muted); padding:20px; text-align:center;">Loading approved Service tickets...</div>`;
+  feed.innerHTML = `<div style="color:var(--muted); padding:20px; text-align:center;">Loading approved tickets awaiting a Delivery Challan...</div>`;
   try {
     const data = await apFetch({ action: "fetchServiceTicketsAwaitingChallan" });
     if (!data.success) throw new Error(data.error || "Failed to load.");
     mowServiceTicketsCache = data.tickets || [];
     if (mowServiceTicketsCache.length === 0) {
-      feed.innerHTML = `<div style="color:var(--muted); padding:20px; text-align:center;">No approved Service tickets are awaiting a Delivery Challan.</div>`;
+      feed.innerHTML = `<div style="color:var(--muted); padding:20px; text-align:center;">No approved tickets are awaiting a Delivery Challan.</div>`;
       return;
     }
     feed.innerHTML = mowServiceTicketsCache.map(renderServiceTicketCard).join("");
+    mowServiceTicketsCache.forEach(t => mowValidateCard(t.ticket_id));
+    autoGrowAllIn(feed);
   } catch (err) {
     feed.innerHTML = `<div style="color:var(--danger); padding:20px; text-align:center;">${escapeHtml(err.message)}</div>`;
   }
 }
 
-// Per-ticket state — this screen can have several approved Service
-// tickets' cards on the page at once, each with its own independent
-// upload/AI-review progress, so every piece of in-flight state below is
-// keyed by ticketId rather than a single "active ticket" the old
-// modal-based version used.
-window._mowFilesByTicket = window._mowFilesByTicket || {};
-window._mowExtractedPreviewByTicket = window._mowExtractedPreviewByTicket || {};
+// Per-ticket client-side blocker count — this screen can have several
+// approved tickets' cards on the page at once, so this is keyed by
+// ticketId rather than a single "active ticket".
 window._mowBlockingCountByTicket = window._mowBlockingCountByTicket || {};
+
+// mowBuildDisplayLineItems — the materials table's row source. Prefers
+// the draft's own line_items (already {itemCode, description, hsnCode,
+// quantity, unit}, built server-side by saveDeliveryChallanDraft) so a
+// refreshed/resumed card shows whatever HSN codes were already typed;
+// falls back to building a blank-HSN display straight from the ticket's
+// approved release for a ticket that has no draft yet.
+function mowBuildDisplayLineItems(ticket) {
+  if (Array.isArray(ticket.line_items) && ticket.line_items.length) return ticket.line_items;
+  return (ticket.items || []).map(it => ({
+    itemCode: it.itemCode,
+    description: it.materialName || it.itemCode || "",
+    hsnCode: "",
+    quantity: it.released ?? it.__releaseQty ?? it.quantity ?? 0,
+    unit: it.unitType || "",
+  }));
+}
 
 function renderServiceTicketCard(ticket) {
   const ticketId = ticket.ticket_id;
+  const hasDraft = !!ticket.challan_id;
+  const items = mowBuildDisplayLineItems(ticket);
+  const todayStr = (typeof formatOrdinalDate === 'function') ? formatOrdinalDate(new Date()) : new Date().toLocaleDateString();
+
+  const returnableOptions = ['', 'Returnable', 'Non-Returnable'].map(v =>
+    `<option value="${v}" ${(ticket.returnable_status || '') === v ? 'selected' : ''}>${v || '— Select —'}</option>`).join("");
+
+  const materialRowsHtml = items.map((it, i) => `
+    <tr>
+      <td style="padding:8px; border:1px solid var(--border); text-align:center;">${i + 1}</td>
+      <td style="padding:8px; border:1px solid var(--border); font-family:monospace; text-align:center;">${escapeHtml(it.itemCode || '')}</td>
+      <td style="padding:8px; border:1px solid var(--border); white-space:normal; word-break:break-word;">${escapeHtml(it.description || '')}</td>
+      <td style="padding:6px; border:1px solid var(--border); text-align:center;">
+        <input type="text" class="mow-hsn-input" data-item-code="${escapeHtml(it.itemCode || '')}" data-ticket-id="${escapeHtml(ticketId)}"
+               value="${escapeHtml(it.hsnCode || '')}" oninput="mowValidateCard('${ticketId}')"
+               style="width:90px; text-align:center; padding:6px; border:1px solid ${(it.hsnCode || '').trim() ? 'var(--border)' : 'var(--danger)'}; border-radius:var(--radius);" />
+      </td>
+      <td style="padding:8px; border:1px solid var(--border); text-align:center; font-family:monospace; font-weight:700;">${escapeHtml(String(fmtQty(it.quantity ?? 0)))}</td>
+      <td style="padding:8px; border:1px solid var(--border); text-align:center;">${escapeHtml(it.unit || "—")}</td>
+    </tr>`).join("");
+
   return `
     <div class="section" id="mow-card-${ticketId}" style="padding:16px; border:1px solid var(--border); border-radius:var(--radius);">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
@@ -85,29 +129,234 @@ function renderServiceTicketCard(ticket) {
         <button class="nav-btn-styled" id="mow-reject-btn-${ticketId}" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; font-weight:700; padding:6px 14px; white-space:nowrap;" onclick="rejectMaterialOutwardRequest('${ticketId}')">Reject</button>
       </div>
 
-      <div id="mow-upload-section-${ticketId}" style="margin-top:14px; border-top:1px solid var(--border); padding-top:12px;">
-        <div class="card-row">
-          <div class="card-box" id="mow-challan-box-${ticketId}" onclick="document.getElementById('mow-challan-file-${ticketId}').click()">📄 Upload Challan</div>
-          <div class="card-box" id="mow-morf-box-${ticketId}" onclick="document.getElementById('mow-morf-file-${ticketId}').click()">📄 Request Form</div>
+      <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:12px;">
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px 16px; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;">
+          <div><label class="field-label" style="margin-top:0;">Purpose</label><div style="padding:8px; font-weight:700;">${escapeHtml(ticket.outward_purpose || '—')}</div></div>
+          <div><label class="field-label" style="margin-top:0;">Status *</label><select id="mow-status-${ticketId}" oninput="mowValidateCard('${ticketId}')" onchange="mowValidateCard('${ticketId}')" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);">${returnableOptions}</select></div>
+          <div><label class="field-label" style="margin-top:0;">Challan No</label><div style="padding:8px; color:var(--muted); font-style:italic;">allocated on finalise</div></div>
+          <div><label class="field-label" style="margin-top:0;">Challan Date</label><div style="padding:8px;">${escapeHtml(todayStr)}</div></div>
         </div>
-        <input type="file" id="mow-challan-file-${ticketId}" accept=".pdf,image/*" hidden onchange="handleMowFileSelected('${ticketId}', 'challan', this)" />
-        <input type="file" id="mow-morf-file-${ticketId}" accept=".pdf,image/*" hidden onchange="handleMowFileSelected('${ticketId}', 'morf', this)" />
-        <button class="btn btn-ai" id="mow-process-btn-${ticketId}" disabled style="width:100%; opacity:0.5; cursor:not-allowed;" onclick="processMaterialOutwardDocsWithAI('${ticketId}')">Process Docs with AI</button>
+
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px 16px; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;">
+          ${mowFieldFor(ticketId, 'Company Name', 'company', ticket.consignee_name, true)}
+          ${mowFieldFor(ticketId, 'Contact Name', 'contact-name', ticket.contact_person_name, true)}
+          ${mowFieldFor(ticketId, 'Contact Number', 'contact-number', ticket.contact_number, false)}
+        </div>
+        <div style="display:grid; grid-template-columns:2fr 1fr; gap:12px 16px; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;">
+          ${mowFieldFor(ticketId, 'Address', 'address', ticket.consignee_address, true)}
+          ${mowFieldFor(ticketId, 'State', 'state', ticket.consignee_state, false)}
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px 16px; margin-bottom:16px; border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;">
+          ${mowFieldFor(ticketId, 'LR No', 'lr', ticket.lr_number, false)}
+          ${mowFieldFor(ticketId, 'Transport Name', 'transport', ticket.transporter_name, false)}
+          ${mowFieldFor(ticketId, 'Freight', 'freight', ticket.freight, false)}
+        </div>
+        <div style="margin-bottom:16px; border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;">
+          ${mowFieldFor(ticketId, 'Note (optional)', 'note', ticket.challan_remarks, false)}
+        </div>
+
+        <h4 style="margin:0 0 6px; font-size:0.95rem; font-weight:800; color:var(--brand);">Materials</h4>
+        <p style="margin:0 0 8px; font-size:0.78rem; color:var(--muted);">Item Code, Description, Qty and Unit come from the approved Material Request — not editable here. HSN Code is required for every row.</p>
+        <table style="width:100%; border-collapse:collapse; margin-bottom:14px; table-layout:fixed;">
+          <colgroup><col style="width:6%;" /><col style="width:14%;" /><col style="width:38%;" /><col style="width:14%;" /><col style="width:14%;" /><col style="width:14%;" /></colgroup>
+          <thead><tr style="background:var(--highlight-bg);">
+            <th style="padding:8px; border:1px solid var(--border); font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Sr</th>
+            <th style="padding:8px; border:1px solid var(--border); font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Item Code</th>
+            <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Description of Material</th>
+            <th style="padding:8px; border:1px solid var(--border); font-size:0.75rem; text-transform:uppercase; color:var(--muted);">HSN Code *</th>
+            <th style="padding:8px; border:1px solid var(--border); font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Qty</th>
+            <th style="padding:8px; border:1px solid var(--border); font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Unit</th>
+          </tr></thead>
+          <tbody>${materialRowsHtml || '<tr><td colspan="6" style="padding:8px; text-align:center; color:var(--muted);">No items on this ticket.</td></tr>'}</tbody>
+        </table>
+
+        <div id="mow-crosscheck-band-${ticketId}"></div>
+
+        <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap;">
+          ${ticket.checking_doc_url ? `<a href="${driveLink(ticket.checking_doc_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; margin-right:auto;">View Checking Draft #${escapeHtml(String(ticket.checking_draft_count || ''))} ↗</a>` : '<span></span>'}
+          ${hasDraft ? `<button class="nav-btn-styled" id="mow-discard-btn-${ticketId}" style="background:#718096;" onclick="mowDiscardDraft('${ticketId}')">Discard Draft</button>` : ''}
+          <button class="nav-btn-styled" id="mow-save-btn-${ticketId}" style="background:#718096;" onclick="mowSaveDraft('${ticketId}')">Save Draft</button>
+          <button class="nav-btn-styled" id="mow-checking-btn-${ticketId}" style="background:var(--brand);" onclick="mowGenerateCheckingDraft('${ticketId}')">Generate Checking Draft</button>
+          <button class="nav-btn-styled" id="mow-finalise-btn-${ticketId}" style="background:var(--accent);" onclick="mowFinaliseChallan('${ticketId}')">Finalise Challan</button>
+        </div>
+        <div id="mow-inline-feedback-${ticketId}" style="display:none; margin-top:12px; padding:10px; border-left:4px solid; border-radius:var(--radius);"></div>
       </div>
-
-      <div id="mow-review-zone-${ticketId}"></div>
-
-      <div id="mow-inline-feedback-${ticketId}" style="display:none; margin-top:12px; padding:10px; border-left:4px solid; border-radius:var(--radius);"></div>
     </div>`;
+}
+
+// mowFieldFor — thin wrapper over the shared auto-growing-textarea
+// pattern, without the mowField id-parsing hack above (kept simple:
+// every caller passes the ticketId explicitly).
+function mowFieldFor(ticketId, label, key, value, required) {
+  const id = `mow-${key}-${ticketId}`;
+  return `<div><label class="field-label" style="margin-top:0;">${label}${required ? ' *' : ''}</label><textarea rows="1" id="${id}" oninput="autoGrowTextField(this); mowValidateCard('${ticketId}');" onfocus="autoGrowTextField(this);" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius); resize:none; overflow:hidden; font-family:inherit; font-size:inherit;">${escapeHtml(value || '')}</textarea></div>`;
+}
+
+// mowValidateCard — client-side validation only ("a convenience, never
+// the guard" — every rule here is re-enforced server-side in
+// saveDeliveryChallanDraft/generateDeliveryChallanCheckingDraft/
+// finaliseDeliveryChallan). Live-toggles Generate/Finalise disabled state
+// and red-borders any empty HSN cell.
+function mowValidateCard(ticketId) {
+  const card = document.getElementById(`mow-card-${ticketId}`);
+  if (!card) return;
+  const errors = [];
+  const status = document.getElementById(`mow-status-${ticketId}`)?.value || '';
+  if (!status) errors.push('Select a Status (Returnable / Non-Returnable).');
+  const company = document.getElementById(`mow-company-${ticketId}`)?.value.trim() || '';
+  if (!company) errors.push('Company Name is required.');
+  const contactName = document.getElementById(`mow-contact-name-${ticketId}`)?.value.trim() || '';
+  if (!contactName) errors.push('Contact Name is required.');
+  const address = document.getElementById(`mow-address-${ticketId}`)?.value.trim() || '';
+  if (!address) errors.push('Address is required.');
+  const hsnInputs = card.querySelectorAll('.mow-hsn-input');
+  let missingHsn = 0;
+  hsnInputs.forEach(inp => {
+    const filled = !!inp.value.trim();
+    inp.style.borderColor = filled ? 'var(--border)' : 'var(--danger)';
+    if (!filled) missingHsn++;
+  });
+  if (missingHsn > 0) errors.push(`HSN Code is required for ${missingHsn} material row${missingHsn > 1 ? 's' : ''}.`);
+
+  window._mowBlockingCountByTicket[ticketId] = errors.length;
+  const bandEl = document.getElementById(`mow-crosscheck-band-${ticketId}`);
+  if (bandEl) {
+    bandEl.innerHTML = errors.length
+      ? `<div style="margin-bottom:10px; padding:10px; border-left:4px solid var(--danger); background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-size:0.82rem;">
+          <strong>Cannot generate a checking draft or finalise until these are resolved:</strong>
+          <ul style="margin:6px 0 0; padding-left:18px;">${errors.map(m => `<li>${escapeHtml(m)}</li>`).join("")}</ul></div>`
+      : '';
+  }
+  ['mow-checking-btn-', 'mow-finalise-btn-'].forEach(prefix => {
+    const btn = document.getElementById(`${prefix}${ticketId}`);
+    if (btn) {
+      btn.disabled = errors.length > 0;
+      btn.style.opacity = errors.length > 0 ? "0.5" : "1";
+      btn.style.cursor = errors.length > 0 ? "not-allowed" : "pointer";
+    }
+  });
+}
+
+function mowShowInlineError(ticketId, msg) {
+  const feedback = document.getElementById(`mow-inline-feedback-${ticketId}`);
+  if (!feedback) return;
+  feedback.style.cssText = "display:block; margin-top:12px; padding:10px; border-left:4px solid var(--danger); background:#fef2f2; color:#b91c1c; border-radius:var(--radius);";
+  feedback.textContent = msg;
+}
+
+// mowCollectCardPayload — the fields this screen actually lets the
+// operator set, plus an hsnByItemCode map built from data-item-code
+// rather than DOM order, so a reordered/re-rendered table can never
+// mis-assign an HSN code to the wrong material line.
+function mowCollectCardPayload(ticketId) {
+  const val = (id) => document.getElementById(id)?.value.trim() || '';
+  const hsnByItemCode = {};
+  document.querySelectorAll(`.mow-hsn-input[data-ticket-id="${ticketId}"]`).forEach(inp => {
+    hsnByItemCode[inp.dataset.itemCode] = inp.value.trim();
+  });
+  return {
+    ticketId,
+    returnableStatus: document.getElementById(`mow-status-${ticketId}`)?.value || '',
+    companyName: val(`mow-company-${ticketId}`),
+    contactName: val(`mow-contact-name-${ticketId}`),
+    contactNumber: val(`mow-contact-number-${ticketId}`),
+    address: val(`mow-address-${ticketId}`),
+    state: val(`mow-state-${ticketId}`),
+    lrNo: val(`mow-lr-${ticketId}`),
+    transportName: val(`mow-transport-${ticketId}`),
+    freight: val(`mow-freight-${ticketId}`),
+    note: val(`mow-note-${ticketId}`),
+    hsnByItemCode,
+    operatorName: appActiveOperatorIdentityString || "Unknown",
+  };
+}
+
+// mowSaveDraftCore — the shared save step Generate Checking Draft and
+// Finalise both run first (so neither can act on stale field values
+// without the operator needing a separate explicit Save click). Returns
+// true/false; on failure it has already shown the inline error.
+async function mowSaveDraftCore(ticketId) {
+  try {
+    const data = await apFetch({ action: "saveDeliveryChallanDraft", ...mowCollectCardPayload(ticketId) });
+    if (!data.success) throw new Error(data.error || "Save failed.");
+    return true;
+  } catch (err) {
+    mowShowInlineError(ticketId, err.message);
+    return false;
+  }
+}
+
+async function mowSaveDraft(ticketId) {
+  const btn = document.getElementById(`mow-save-btn-${ticketId}`);
+  if (btn) { btn.disabled = true; btn.textContent = "Saving..."; }
+  const ok = await mowSaveDraftCore(ticketId);
+  if (btn) { btn.disabled = false; btn.textContent = "Save Draft"; }
+  if (ok) loadMaterialOutwardServiceQueue();
+}
+
+async function mowGenerateCheckingDraft(ticketId) {
+  const btn = document.getElementById(`mow-checking-btn-${ticketId}`);
+  if (btn) { btn.disabled = true; btn.textContent = "Generating..."; }
+  try {
+    const ok = await mowSaveDraftCore(ticketId);
+    if (!ok) return;
+    const data = await apFetch({ action: "generateDeliveryChallanCheckingDraft", ticketId });
+    if (!data.success) throw new Error(data.error || "Failed to generate checking draft.");
+    loadMaterialOutwardServiceQueue();
+  } catch (err) {
+    mowShowInlineError(ticketId, err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Generate Checking Draft"; }
+  }
+}
+
+async function mowFinaliseChallan(ticketId) {
+  const btn = document.getElementById(`mow-finalise-btn-${ticketId}`);
+  if (btn) { btn.disabled = true; btn.textContent = "Finalising..."; }
+  try {
+    const ok = await mowSaveDraftCore(ticketId);
+    if (!ok) return;
+    const data = await apFetch({ action: "finaliseDeliveryChallan", ticketId, operatorName: appActiveOperatorIdentityString || "Unknown" });
+    if (!data.success) throw new Error(data.error || "Finalise failed.");
+    // Own dedicated success view, same convention as Stock Sweep/Create
+    // BOQ — hide the rest of the queue entirely until the operator
+    // explicitly clicks Load Next Ticket (mowResetAfterChallanSave).
+    const feed = document.getElementById("mow-service-queue-feed");
+    if (feed) feed.style.display = "none";
+    const pendingNote = data.pdfPending
+      ? ' The PDF is still being generated in the background and will appear in the register shortly.'
+      : '';
+    showSuccessWithReset("mow-feedback-banner", `Delivery Challan ${escapeHtml(data.challanNumber)} generated for ${escapeHtml(ticketId)}.${pendingNote}`, "Load Next Ticket", "mowResetAfterChallanSave()");
+  } catch (err) {
+    mowShowInlineError(ticketId, err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Finalise Challan"; }
+  }
+}
+
+async function mowDiscardDraft(ticketId) {
+  if (!confirm(`Discard the in-progress Delivery Challan draft for ${ticketId}? Anything typed on this card will be lost.`)) return;
+  const btn = document.getElementById(`mow-discard-btn-${ticketId}`);
+  if (btn) { btn.disabled = true; btn.textContent = "Discarding..."; }
+  try {
+    const data = await apFetch({ action: "discardDeliveryChallanDraft", ticketId, operatorName: appActiveOperatorIdentityString || "Unknown" });
+    if (!data.success) throw new Error(data.error || "Discard failed.");
+    loadMaterialOutwardServiceQueue();
+  } catch (err) {
+    mowShowInlineError(ticketId, err.message);
+    if (btn) { btn.disabled = false; btn.textContent = "Discard Draft"; }
+  }
 }
 
 // Rejects (voids) a ticket sitting in this queue — for the case where the
 // Material Issue Ticket itself was a mistake (wrong material/qty
 // requested). Only offered while a ticket is still awaiting a challan
-// (this whole queue is exactly that population); the backend independently
-// re-checks status and that no challan was recorded before reversing
-// anything. Reverses the stock released at ticket approval and tells the
-// operator to raise a fresh ticket instead of trying to patch this one.
+// (this whole queue is exactly that population); the backend
+// independently re-checks status and that no challan was FINALISED
+// before reversing anything — an in-progress draft is deleted server-side
+// as part of the same reversal. Reverses the stock released at ticket
+// approval and tells the operator to raise a fresh ticket instead of
+// trying to patch this one.
 async function rejectMaterialOutwardRequest(ticketId) {
   const reason = prompt(`Reject ${ticketId} and return its stock to the store?\n\nThis completely voids the request — the operator will need to raise a new Material Issue Ticket with the correct material/quantity.\n\nOptional: reason for rejecting (shown in the audit log):`);
   if (reason === null) return; // Cancel
@@ -119,276 +368,13 @@ async function rejectMaterialOutwardRequest(ticketId) {
     showSuccessWithReset("mow-feedback-banner", `${escapeHtml(ticketId)} rejected — its stock has been returned to the store. Raise a new Material Issue Ticket to correct it.`, "Refresh Queue", "loadMaterialOutwardServiceQueue()");
     loadMaterialOutwardServiceQueue();
   } catch (err) {
-    const feedback = document.getElementById(`mow-inline-feedback-${ticketId}`);
-    if (feedback) {
-      feedback.style.cssText = "display:block; margin-top:12px; padding:10px; border-left:4px solid var(--danger); background:#fef2f2; color:#b91c1c; border-radius:var(--radius);";
-      feedback.textContent = err.message;
-    }
+    mowShowInlineError(ticketId, err.message);
     if (btn) { btn.disabled = false; btn.textContent = "Reject"; }
   }
 }
 
-function handleMowFileSelected(ticketId, kind, inputEl) {
-  const file = inputEl.files[0];
-  if (!file) return;
-  window._mowFilesByTicket[ticketId] = window._mowFilesByTicket[ticketId] || {};
-  window._mowFilesByTicket[ticketId][kind] = file;
-  const box = document.getElementById(`mow-${kind}-box-${ticketId}`);
-  if (box) {
-    box.textContent = (kind === 'challan' ? 'Challan ✅' : 'Request Form ✅');
-    box.classList.add('done');
-  }
-  const files = window._mowFilesByTicket[ticketId];
-  const btn = document.getElementById(`mow-process-btn-${ticketId}`);
-  if (btn) {
-    const ready = !!(files.challan && files.morf);
-    btn.disabled = !ready;
-    btn.style.opacity = ready ? "1" : "0.5";
-    btn.style.cursor = ready ? "pointer" : "not-allowed";
-  }
-}
-
-async function processMaterialOutwardDocsWithAI(ticketId) {
-  const ticket = mowServiceTicketsCache.find(t => t.ticket_id === ticketId);
-  const files = window._mowFilesByTicket[ticketId];
-  const feedback = document.getElementById(`mow-inline-feedback-${ticketId}`);
-  const showInlineError = (msg) => {
-    if (!feedback) return;
-    feedback.style.cssText = "display:block; margin-top:12px; padding:10px; border-left:4px solid var(--danger); background:#fef2f2; color:#b91c1c; border-radius:var(--radius);";
-    feedback.textContent = msg;
-  };
-  if (!ticket || !files || !files.challan || !files.morf) {
-    showInlineError(!files || !files.challan ? "Select a Delivery Challan file first." : "Select a Material Out Request Form file first.");
-    return;
-  }
-  const btn = document.getElementById(`mow-process-btn-${ticketId}`);
-  if (btn) { btn.disabled = true; btn.classList.add("loading"); btn.textContent = "AI Processing Docs"; }
-  try {
-    const readB64 = f => new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(f); });
-    const [dcB64, morfB64] = await Promise.all([readB64(files.challan), readB64(files.morf)]);
-    const challanFile = { fileName: files.challan.name, base64Data: dcB64, mimeType: files.challan.type || "application/octet-stream" };
-    const morfFilePayload = { fileName: files.morf.name, base64Data: morfB64, mimeType: files.morf.type || "application/octet-stream" };
-    const data = await apFetch({ action: "extractDeliveryChallanPreview", ticketId, challanFile, morfFile: morfFilePayload });
-    if (!data.success) throw new Error(data.error || "Extraction failed.");
-    window._mowExtractedPreviewByTicket[ticketId] = { ...data, challanFile, morfFile: morfFilePayload };
-    renderMaterialOutwardReviewForm(ticketId, data);
-  } catch (err) {
-    showInlineError(err.message);
-  } finally {
-    if (btn) { btn.disabled = false; btn.classList.remove("loading"); btn.textContent = "Process Docs with AI"; }
-  }
-}
-
-function renderMaterialOutwardReviewForm(ticketId, preview) {
-  const zone = document.getElementById(`mow-review-zone-${ticketId}`);
-  if (!zone) return;
-  // Hide the upload boxes once a review is in progress — re-uploading
-  // means Cancel first (cancelMaterialOutwardReview), not silently
-  // re-processing over an unsaved review.
-  const uploadSection = document.getElementById(`mow-upload-section-${ticketId}`);
-  if (uploadSection) uploadSection.style.display = "none";
-
-  // Materials Table (below) is view-only, sourced from the ticket's own
-  // approved release — never from the uploaded documents.
-  const ticket = mowServiceTicketsCache.find(t => t.ticket_id === ticketId);
-  const items = (ticket && Array.isArray(ticket.items)) ? ticket.items : [];
-
-  const returnableOptions = ['', 'Returnable', 'Non-Returnable'].map(v =>
-    `<option value="${v}" ${(preview.morf || {}).returnableStatus === v ? 'selected' : ''}>${v || '— Select —'}</option>`).join("");
-
-  // Contact Person/Number are now ONE merged field on this screen, but the
-  // two source documents each carry their own copy — the Delivery
-  // Challan's own contactPersonName/contactNumber, and the Material Out
-  // Request Form's separate contactName/contactNumber (parseMaterialOut
-  // RequestForm). Falling back to the MORF's copy when the challan's own
-  // is blank was dropped by mistake when the two sections were merged —
-  // a challan whose contact cell is phone-digits-only (so
-  // contactPersonName correctly comes back "") can still have a named
-  // contact on the MORF, and that name shouldn't be lost.
-  const morf = preview.morf || {};
-  const mergedContactPerson = preview.contactPersonName || morf.contactName || '';
-  const mergedContactNumber = preview.contactNumber || morf.contactNumber || '';
-
-  const fieldBoxStyle = "border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;";
-  // A plain single-line <input> clips a long value instead of showing it —
-  // every field here is an auto-growing textarea instead (shared
-  // autoGrowTextField, shared/ui.js), same convention as Project
-  // Invoice's own field() helper. autoGrowAllIn(zone) below sizes them
-  // once on first render, since a prefilled value never fires its own
-  // input event.
-  const field = (label, id, value, required) =>
-    `<div><label class="field-label" style="margin-top:0;">${label}${required ? ' *' : ''}</label><textarea rows="1" id="${id}" oninput="autoGrowTextField(this);" onfocus="autoGrowTextField(this);" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius); resize:none; overflow:hidden; font-family:inherit; font-size:inherit;">${escapeHtml(value || '')}</textarea></div>`;
-
-  const materialRowsHtml = items.map(it => `
-    <tr>
-      <td style="padding:8px; border:1px solid var(--border); white-space:normal; word-break:break-word;">${escapeHtml(it.materialName || it.itemCode || "")}</td>
-      <td style="padding:8px; border:1px solid var(--border); text-align:center; font-family:monospace; font-weight:700; font-size:1.15rem;">${escapeHtml(String(fmtQty(it.__releaseQty ?? it.quantity ?? 0)))}</td>
-      <td style="padding:8px; border:1px solid var(--border); text-align:center;">${escapeHtml(it.unitType || "—")}</td>
-    </tr>`).join("");
-
-  zone.innerHTML = `
-    <div style="margin-top:14px; border-top:2px solid var(--border); padding-top:16px;">
-      <h3 style="margin:0 0 4px; font-size:1.05rem;">Review — ${escapeHtml(ticketId)}</h3>
-      <p style="margin:0 0 12px; font-size:0.78rem; color:var(--muted);">Header fields were read from the Delivery Challan and Material Out Request Form — check the values below before saving.</p>
-      <div id="mow-crosscheck-band-${ticketId}"></div>
-
-      <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:12px 16px; margin-bottom:12px; ${fieldBoxStyle}">
-        ${field('Challan Number', `mow-review-number-${ticketId}`, preview.challanNumber, true)}
-        <div><label class="field-label" style="margin-top:0;">Challan Date *</label><input type="date" id="mow-review-date-${ticketId}" value="${escapeHtml(preview.challanDate || '')}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" /></div>
-        ${field('Company Name', `mow-review-consignee-name-${ticketId}`, preview.consigneeName, true)}
-        ${field('Contact Person', `mow-review-contact-name-${ticketId}`, mergedContactPerson, true)}
-        ${field('Contact Number', `mow-review-contact-number-${ticketId}`, mergedContactNumber, false)}
-      </div>
-      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px 16px; margin-bottom:12px; ${fieldBoxStyle}">
-        ${field('Transporter Name', `mow-review-transporter-${ticketId}`, preview.transporterName, false)}
-        ${field('Vehicle Number', `mow-review-vehicle-${ticketId}`, preview.vehicleNumber, false)}
-        ${field('LR Number', `mow-review-lr-${ticketId}`, preview.lrNumber, false)}
-        ${field('Freight Terms', `mow-review-freight-${ticketId}`, preview.freight, false)}
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 3fr; gap:12px 16px; margin-bottom:12px; ${fieldBoxStyle}">
-        ${field('State', `mow-review-state-${ticketId}`, preview.consigneeState, false)}
-        ${field('Company Address', `mow-review-consignee-address-${ticketId}`, preview.consigneeAddress, true)}
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 2fr 2fr; gap:12px 16px; margin-bottom:20px; ${fieldBoxStyle}">
-        <div><label class="field-label" style="margin-top:0;">Returnable Status</label><select id="mow-morf-returnable-${ticketId}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);">${returnableOptions}</select></div>
-        ${field('Delivery Challan Remarks', `mow-review-remarks-${ticketId}`, preview.remarks, false)}
-        ${field('Material Out Request Form Remarks', `mow-morf-remarks-${ticketId}`, morf.remarks, false)}
-      </div>
-
-      <h4 style="margin:0 0 6px; font-size:0.95rem; font-weight:800; color:var(--brand);">Materials Table</h4>
-      <p style="margin:0 0 8px; font-size:0.78rem; color:var(--muted);">Material Name and Qty here come from the approved Material Request (this ticket's own release) — not from the uploaded document. If you see a mismatch, upload a new document instead of editing here.</p>
-      <table style="width:100%; border-collapse:collapse; margin-bottom:20px; table-layout:fixed;">
-        <colgroup><col style="width:70%;" /><col style="width:15%;" /><col style="width:15%;" /></colgroup>
-        <thead><tr style="background:var(--highlight-bg);">
-          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Material Name</th>
-          <th style="padding:8px; border:1px solid var(--border); text-align:center; font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Qty</th>
-          <th style="padding:8px; border:1px solid var(--border); text-align:center; font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Unit</th>
-        </tr></thead>
-        <tbody>${materialRowsHtml || '<tr><td colspan="3" style="padding:8px; text-align:center; color:var(--muted);">No items on this ticket.</td></tr>'}</tbody>
-      </table>
-
-      <div style="display:flex; justify-content:flex-end; gap:10px;">
-        <button class="nav-btn-styled" style="background:#718096;" onclick="cancelMaterialOutwardReview('${ticketId}')">Cancel</button>
-        <button class="nav-btn-styled" id="mow-commit-btn-${ticketId}" style="background:var(--accent);" onclick="commitMaterialOutwardChallan('${ticketId}')">Confirm & Save</button>
-      </div>
-      <div id="mow-modal-inline-feedback-${ticketId}" style="display:none; margin-top:12px; padding:10px; border-left:4px solid; border-radius:var(--radius);"></div>
-    </div>
-  `;
-  autoGrowAllIn(zone);
-  renderMaterialOutwardCrossCheckBand(ticketId, preview.crossChecks || { blocking: [], warnings: [] }, preview.parseWarnings || []);
-}
-
-// Backs out of an in-progress review without saving, back to the upload
-// boxes — e.g. the operator picked the wrong file and wants to redo it.
-function cancelMaterialOutwardReview(ticketId) {
-  const zone = document.getElementById(`mow-review-zone-${ticketId}`);
-  if (zone) zone.innerHTML = "";
-  const uploadSection = document.getElementById(`mow-upload-section-${ticketId}`);
-  if (uploadSection) uploadSection.style.display = "";
-  delete window._mowExtractedPreviewByTicket[ticketId];
-}
-
-function renderMaterialOutwardCrossCheckBand(ticketId, crossChecks, parseWarnings) {
-  const bandEl = document.getElementById(`mow-crosscheck-band-${ticketId}`);
-  const commitBtn = document.getElementById(`mow-commit-btn-${ticketId}`);
-  const blocking = crossChecks.blocking || [];
-  const warnings = [...(crossChecks.warnings || []), ...(parseWarnings || [])];
-  window._mowBlockingCountByTicket[ticketId] = blocking.length;
-  if (!bandEl) return;
-  let html = "";
-  if (blocking.length) {
-    html += `<div style="margin-bottom:10px; padding:10px; border-left:4px solid var(--danger); background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-size:0.82rem;">
-      <strong>Cannot save until these are resolved:</strong><ul style="margin:6px 0 0; padding-left:18px;">${blocking.map(m => `<li>${escapeHtml(m)}</li>`).join("")}</ul></div>`;
-  }
-  if (warnings.length) {
-    html += `<div style="margin-bottom:12px; padding:10px; border-left:4px solid #f59e0b; background:#fffbeb; color:#b45309; border-radius:var(--radius); font-size:0.82rem;">
-      <strong>Worth a look (these do not prevent saving):</strong><ul style="margin:6px 0 0; padding-left:18px;">${warnings.map(m => `<li>${escapeHtml(m)}</li>`).join("")}</ul></div>`;
-  }
-  bandEl.innerHTML = html;
-  if (commitBtn) {
-    commitBtn.disabled = blocking.length > 0;
-    commitBtn.style.opacity = blocking.length > 0 ? "0.5" : "1";
-    commitBtn.style.cursor = blocking.length > 0 ? "not-allowed" : "pointer";
-  }
-}
-
-async function commitMaterialOutwardChallan(ticketId) {
-  const preview = window._mowExtractedPreviewByTicket[ticketId];
-  const ticket = mowServiceTicketsCache.find(t => t.ticket_id === ticketId);
-  if (!preview || !ticket) return;
-  const feedback = document.getElementById(`mow-modal-inline-feedback-${ticketId}`);
-  const showError = (msg) => {
-    feedback.style.cssText = "display:block; margin-top:12px; padding:10px; border-left:4px solid var(--danger); background:#fef2f2; color:#b91c1c; border-radius:var(--radius);";
-    feedback.textContent = msg;
-  };
-  const challanNumber = document.getElementById(`mow-review-number-${ticketId}`).value.trim();
-  const challanDate = document.getElementById(`mow-review-date-${ticketId}`).value;
-  const consigneeName = document.getElementById(`mow-review-consignee-name-${ticketId}`).value.trim();
-  const contactPersonName = document.getElementById(`mow-review-contact-name-${ticketId}`).value.trim();
-  const consigneeAddress = document.getElementById(`mow-review-consignee-address-${ticketId}`).value.trim();
-  if (!challanNumber || !challanDate || !consigneeName || !contactPersonName || !consigneeAddress) {
-    showError("Challan Number, Challan Date, Company Name, Contact Person, and Company Address are required.");
-    return;
-  }
-  // Materials Table is view-only, sourced from the ticket's own approved
-  // release — both backend arrays are built directly from it rather than
-  // from anything typed/edited on this screen, so they can never disagree
-  // with the ticket regardless of what the uploaded documents said.
-  const lineItems = [];
-  const morfLineItems = [];
-  for (const it of ticket.items || []) {
-    const materialName = it.materialName || it.itemCode || "";
-    const quantity = it.__releaseQty ?? it.quantity ?? 0;
-    const unit = it.unitType || "";
-    lineItems.push({ materialName, hsnCode: "", quantity, unit });
-    morfLineItems.push({ materialName, quantity, unit, rating: "" });
-  }
-  const morf = {
-    returnableStatus: document.getElementById(`mow-morf-returnable-${ticketId}`).value,
-    remarks: document.getElementById(`mow-morf-remarks-${ticketId}`).value.trim(),
-  };
-
-  const commitBtn = document.getElementById(`mow-commit-btn-${ticketId}`);
-  if (commitBtn) { commitBtn.disabled = true; commitBtn.textContent = "Saving..."; }
-  try {
-    const data = await apFetch({
-      action: "commitDeliveryChallan",
-      ticketId: ticket.ticket_id, projectId: ticket.project_id, legacyCompanyName: ticket.legacy_company_name,
-      companyName: ticket.company_name,
-      challanNumber, challanDate,
-      consigneeName, consigneeAddress,
-      consigneeState: document.getElementById(`mow-review-state-${ticketId}`).value.trim(),
-      contactPersonName,
-      contactNumber: document.getElementById(`mow-review-contact-number-${ticketId}`).value.trim(),
-      transporterName: document.getElementById(`mow-review-transporter-${ticketId}`).value.trim(),
-      vehicleNumber: document.getElementById(`mow-review-vehicle-${ticketId}`).value.trim(),
-      lrNumber: document.getElementById(`mow-review-lr-${ticketId}`).value.trim(),
-      freight: document.getElementById(`mow-review-freight-${ticketId}`).value.trim(),
-      challanRemarks: document.getElementById(`mow-review-remarks-${ticketId}`).value.trim(),
-      lineItems, morf, morfLineItems,
-      challanFile: preview.challanFile, morfFile: preview.morfFile,
-      operatorName: appActiveOperatorIdentityString || "Unknown",
-    });
-    if (!data.success) throw new Error(data.error || "Save failed.");
-    delete window._mowExtractedPreviewByTicket[ticketId];
-    delete window._mowFilesByTicket[ticketId];
-    // Own dedicated success view, same convention as Stock Sweep/Create
-    // BOQ — hide the rest of the queue entirely (don't leave the other
-    // still-pending tickets visible underneath) until the operator
-    // explicitly clicks Load Next Ticket, which is what actually reloads
-    // the queue and dismisses this banner (mowResetAfterChallanSave).
-    const feed = document.getElementById("mow-service-queue-feed");
-    if (feed) feed.style.display = "none";
-    showSuccessWithReset("mow-feedback-banner", `Delivery Challan ${escapeHtml(challanNumber)} and Material Out Request Form saved for ${escapeHtml(ticketId)}.`, "Load Next Ticket", "mowResetAfterChallanSave()");
-  } catch (err) {
-    showError(err.message);
-  } finally {
-    if (commitBtn) { commitBtn.disabled = false; commitBtn.textContent = "Confirm & Save"; }
-  }
-}
-
-// "+ Load Next Ticket" — dismisses the Confirm & Save success view and
-// reloads the queue (which also restores the feed's own visibility, see
+// "+ Load Next Ticket" — dismisses the Finalise success view and reloads
+// the queue (which also restores the feed's own visibility, see
 // loadMaterialOutwardServiceQueue's own comment).
 function mowResetAfterChallanSave() {
   const banner = document.getElementById("mow-feedback-banner");
@@ -430,29 +416,24 @@ async function runMaterialOutwardSearch() {
     }
     // Challan Materials — every material + qty on this challan, one per
     // line WITHIN the same cell (not a separate row per material), so a
-    // multi-material challan still reads as one register entry. Needs
-    // real width, so Date/Project/Ticket/Returnable/the two document
-    // columns are all narrowed slightly to make room. Challan No. and
-    // Consignee columns dropped (explicit request) — Ticket + Project
-    // already identify the row, and the challan document itself (View
-    // link) has both if ever needed.
+    // multi-material challan still reads as one register entry.
     results.innerHTML = `
       <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
-        <colgroup><col style="width:9%;" /><col style="width:16%;" /><col style="width:9%;" /><col style="width:34%;" /><col style="width:10%;" /><col style="width:11%;" /><col style="width:11%;" /></colgroup>
+        <colgroup><col style="width:9%;" /><col style="width:15%;" /><col style="width:9%;" /><col style="width:30%;" /><col style="width:9%;" /><col style="width:15%;" /><col style="width:13%;" /></colgroup>
         <thead><tr style="background:var(--highlight-bg);">
           <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Date</th>
           <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Project</th>
           <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Ticket</th>
           <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Challan Materials</th>
           <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Returnable</th>
-          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Delivery Challan</th>
-          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Request Form</th>
+          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Challan No.</th>
+          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Document</th>
         </tr></thead>
         <tbody>
           ${challans.map(c => {
             const materials = Array.isArray(c.line_items) ? c.line_items : [];
             const materialsHtml = materials.length
-              ? materials.map(it => `${escapeHtml(it.materialName || '')} — ${escapeHtml(String(it.quantity ?? ''))} ${escapeHtml(it.unit || '')}`).join('<br>')
+              ? materials.map(it => `${escapeHtml(it.description || it.materialName || '')} — ${escapeHtml(String(it.quantity ?? ''))} ${escapeHtml(it.unit || '')}`).join('<br>')
               : '—';
             return `
             <tr>
@@ -460,9 +441,9 @@ async function runMaterialOutwardSearch() {
               <td style="padding:8px; border:1px solid var(--border); word-wrap:break-word;">${escapeHtml(c.project_id || 'Legacy')}${c.company_name ? ' — ' + escapeHtml(c.company_name) : ''}</td>
               <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.ticket_id || '')}</td>
               <td style="padding:8px; border:1px solid var(--border); word-wrap:break-word;">${materialsHtml}</td>
-              <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.morf_returnable_status || '—')}</td>
+              <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.returnable_status || '—')}</td>
+              <td style="padding:8px; border:1px solid var(--border); font-family:monospace; font-size:0.8rem;">${escapeHtml(c.challan_number || '')}</td>
               <td style="padding:8px; border:1px solid var(--border);">${c.document_url ? `<a href="${driveLink(c.document_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">View ↗</a>` : '—'}</td>
-              <td style="padding:8px; border:1px solid var(--border);">${c.morf_document_url ? `<a href="${driveLink(c.morf_document_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">View ↗</a>` : '—'}</td>
             </tr>`;
           }).join("")}
         </tbody>

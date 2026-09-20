@@ -38,6 +38,10 @@ async function initializeMaterialRequestWorkspace() {
   projectDropdown.style.cursor = "not-allowed";
   projectDropdown.style.background = "#f1f5f9";
   deptDropdown.value = "";
+  const purposeWrapperInit = document.getElementById("wrapper-ticket-outward-purpose");
+  const purposeDropInit = document.getElementById("ticket-outward-purpose-dropdown");
+  if (purposeWrapperInit) purposeWrapperInit.style.display = "none";
+  if (purposeDropInit) purposeDropInit.value = "";
   const legacyToggleWrapper = document.getElementById("wrapper-ticket-legacy-toggle");
   const legacyToggle = document.getElementById("ticket-legacy-project-toggle");
   const legacyCompanyInput = document.getElementById("ticket-legacy-company-name");
@@ -163,6 +167,18 @@ async function submitMaterialRequestTicketToBackend() {
     return;
   }
 
+  // Purpose (Service/Processing/Replacement, migration 211) is required
+  // for a Service ticket — it feeds outward_purpose, which is what puts
+  // the ticket in the Material Outward / Delivery Challan queue.
+  const outwardPurposeVal = isServiceSubmit ? (document.getElementById("ticket-outward-purpose-dropdown")?.value || "") : "";
+  if (isServiceSubmit && !outwardPurposeVal) {
+    if (feedbackBanner) {
+      feedbackBanner.style.cssText = "display: block; background: #fff3c7; border-color: #b45309; color: #b45309; padding: 10px; margin-bottom: 12px; border-left: 4px solid #b45309; text-align: left;";
+      feedbackBanner.innerHTML = `<strong>Compulsory Input Missing:</strong> Please select a Purpose.`;
+    }
+    return;
+  }
+
   if (dynamicTicketShoppingBasketArray.length === 0) {
     if (feedbackBanner) {
       feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 10px; margin-bottom: 12px; border-left: 4px solid #b91c1c; text-align: left;";
@@ -196,6 +212,7 @@ async function submitMaterialRequestTicketToBackend() {
       legacyCompanyName: legacyCompanyNameVal,
       department: departmentVal,
       departmentOutgoing: departmentVal,
+      outwardPurpose: outwardPurposeVal,
       ticketTypeCommandString: ticketTypeVal,
       storeTargetScope: chosenStoreTargetScopeStr,
       requestOrReturn: 'Request',
@@ -1422,6 +1439,20 @@ function applyCmitDepartmentLock(lock) {
 
 async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
   const isService = chosenDepartmentVal === "Service";
+
+  // Purpose (Service/Processing/Replacement, migration 211) is
+  // Service-only-visible — it feeds outward_purpose, which is what makes
+  // a ticket free-pool and puts it in the Material Outward / Delivery
+  // Challan queue. Offering it under Reactor/Capacitor/Panel would make
+  // that ticket skip its Job Card allotment burn-down, a stock-integrity
+  // bug, not just a UI nicety. This handler runs for every path that
+  // changes Outgoing Use, including the locked/multi-sub-department cases
+  // driven programmatically by applyCmitDepartmentLock, so this one spot
+  // covers all of them.
+  const purposeWrapper = document.getElementById("wrapper-ticket-outward-purpose");
+  const purposeDrop = document.getElementById("ticket-outward-purpose-dropdown");
+  if (purposeWrapper) purposeWrapper.style.display = isService ? "" : "none";
+  if (purposeDrop && !isService) purposeDrop.value = "";
 
   // Reset Project field + legacy state
   const projectInput = document.getElementById("ticket-project-id-dropdown-ta-input");
