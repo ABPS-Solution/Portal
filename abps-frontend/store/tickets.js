@@ -167,8 +167,8 @@ async function submitMaterialRequestTicketToBackend() {
     return;
   }
 
-  // Purpose (Service/Processing/Replacement, migration 211) is required
-  // for a Service ticket — it feeds outward_purpose, which is what puts
+  // Purpose (Service/Processing, migration 213 retired Replacement) is
+  // required for a Service ticket — it feeds outward_purpose, which is what puts
   // the ticket in the Material Outward / Delivery Challan queue.
   const outwardPurposeVal = isServiceSubmit ? (document.getElementById("ticket-outward-purpose-dropdown")?.value || "") : "";
   if (isServiceSubmit && !outwardPurposeVal) {
@@ -1440,7 +1440,7 @@ function applyCmitDepartmentLock(lock) {
 async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
   const isService = chosenDepartmentVal === "Service";
 
-  // Purpose (Service/Processing/Replacement, migration 211) is
+  // Purpose (Service/Processing, migration 213 retired Replacement) is
   // Service-only-visible — it feeds outward_purpose, which is what makes
   // a ticket free-pool and puts it in the Material Outward / Delivery
   // Challan queue. Offering it under Reactor/Capacitor/Panel would make
