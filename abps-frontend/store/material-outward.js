@@ -235,7 +235,6 @@ function renderDraftChallanCard(draft) {
   const materialRowsHtml = items.map((it, i) => `
     <tr>
       <td style="padding:8px; border:1px solid var(--border); text-align:center;">${i + 1}</td>
-      <td style="padding:8px; border:1px solid var(--border); font-family:monospace; text-align:center;">${escapeHtml(it.itemCode || '')}</td>
       <td style="padding:8px; border:1px solid var(--border); white-space:normal; word-break:break-word;">${escapeHtml(it.description || '')}</td>
       <td style="padding:6px; border:1px solid var(--border); text-align:center;">
         <input type="text" class="mow-hsn-input" data-item-code="${escapeHtml(it.itemCode || '')}" data-challan-id="${challanId}"
@@ -285,18 +284,17 @@ function renderDraftChallanCard(draft) {
         </div>
 
         <h4 style="margin:0 0 6px; font-size:0.95rem; font-weight:800; color:var(--brand);">Materials</h4>
-        <p style="margin:0 0 8px; font-size:0.78rem; color:var(--muted);">Item Code, Description, Qty and Unit come from the linked tickets' approved release — not editable here. HSN Code is required for every row.</p>
+        <p style="margin:0 0 8px; font-size:0.78rem; color:var(--muted);">Description, Qty and Unit come from the linked tickets' approved release — not editable here. HSN Code is required for every row.</p>
         <table style="width:100%; border-collapse:collapse; margin-bottom:14px; table-layout:fixed;">
-          <colgroup><col style="width:6%;" /><col style="width:14%;" /><col style="width:38%;" /><col style="width:14%;" /><col style="width:14%;" /><col style="width:14%;" /></colgroup>
+          <colgroup><col style="width:7%;" /><col style="width:47%;" /><col style="width:16%;" /><col style="width:15%;" /><col style="width:15%;" /></colgroup>
           <thead><tr style="background:var(--highlight-bg);">
             <th style="padding:8px; border:1px solid var(--border); font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Sr</th>
-            <th style="padding:8px; border:1px solid var(--border); font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Item Code</th>
             <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Description of Material</th>
             <th style="padding:8px; border:1px solid var(--border); font-size:0.75rem; text-transform:uppercase; color:var(--muted);">HSN Code *</th>
             <th style="padding:8px; border:1px solid var(--border); font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Qty</th>
             <th style="padding:8px; border:1px solid var(--border); font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Unit</th>
           </tr></thead>
-          <tbody>${materialRowsHtml || '<tr><td colspan="6" style="padding:8px; text-align:center; color:var(--muted);">No items on this challan.</td></tr>'}</tbody>
+          <tbody>${materialRowsHtml || '<tr><td colspan="5" style="padding:8px; text-align:center; color:var(--muted);">No items on this challan.</td></tr>'}</tbody>
         </table>
 
         <div id="mow-crosscheck-band-${challanId}"></div>
