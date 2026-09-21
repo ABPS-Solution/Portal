@@ -295,7 +295,7 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
   } else {
     aiHtml = `<div style="background:#fef3c7; border:1px solid #fde68a; border-radius:6px; padding:10px 14px; margin-bottom:16px; font-size:0.82rem; color:#92400e;">
       AI summary unavailable${aiError ? `: ${escapeHtml(aiError)}` : ""}. The facts below are complete and unaffected.
-      <button class="btn btn-sub" style="margin-left:8px; font-size:0.72rem; padding:4px 8px;" onclick="mprepGenerateBrief()">Try again</button>
+      <button class="btn btn-sub" style="width:auto; display:inline-flex; margin-left:8px; font-size:0.72rem; padding:4px 8px;" onclick="mprepGenerateBrief()">Try again</button>
     </div>`;
   }
 
@@ -324,7 +324,7 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
     const fields = [["Status", p.status], ["Phone", p.phone], ["Email", p.email], ["ABPS Engineer", p.engineerDisplay]];
     const fieldsHtml = fields.map(([l, v]) => mprepFieldRow(l, v)).join("");
     const leadsHtml = (p.leads || []).map(({ leadId, rawLead }) => `
-      <div class="contact-summary-card-parent" id="mprep-lead-card-${leadId}">
+      <div class="contact-summary-card-parent" id="mprep-lead-card-${leadId}" style="background:#f8fafc;">
         <div class="contact-summary-header-row" style="cursor:pointer;" onclick="toggleContactExpansionView('${leadId}', \`${encodeURIComponent(JSON.stringify(rawLead))}\`)">
           <div class="contact-summary-title-info">
             <div class="meta-row-line-block" style="margin-bottom:6px;">
