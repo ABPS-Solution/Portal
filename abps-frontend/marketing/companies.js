@@ -66,7 +66,16 @@ async function triggerSequentialSearch(triggerSourceMode) {
       activeSearchCompany = comp.toString().trim();
       globalFollowUpsCacheMap = data.followups;
       globalTasksCacheMap = data.tasks;
-      
+
+      // A prior "Create New Entry"/"Create New Lead" click for a different
+      // (unmatched) search can leave step2-new-entry-dropdown visible —
+      // re-searching and landing here (a real match) must close it, or the
+      // form and the matched-company results render stacked together.
+      const staleNewEntryForm = document.getElementById("step2-new-entry-dropdown");
+      if (staleNewEntryForm) staleNewEntryForm.style.display = "none";
+      const staleBackRow = document.getElementById("staged-back-button-row");
+      if (staleBackRow) staleBackRow.style.display = "none";
+
       const bannerHook = document.getElementById("split-missing-person-banner-hook");
       if (bannerHook) {
         const searchedForPerson = targetName && targetName.toString().trim();

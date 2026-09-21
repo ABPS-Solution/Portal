@@ -44,6 +44,15 @@
   body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 20px; }
   input, select, textarea { width: 100%; padding: 6px 8px; border: 1.5px solid var(--border); border-radius: 4px; font-size: .85rem; background: #fff; color: var(--text); }
   label.field-label { display: block; font-size: .68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin: 8px 0 2px; }
+  /* Heavier borders for New Lead entry forms — the Create New Lead Details
+     form and an already-created lead's expanded edit wrapper — per explicit
+     request for more visual weight on these specific question boxes. */
+  #step2-new-entry-dropdown input,
+  #step2-new-entry-dropdown select,
+  #step2-new-entry-dropdown textarea,
+  .leads-editable-fields-box-canvas input,
+  .leads-editable-fields-box-canvas select,
+  .leads-editable-fields-box-canvas textarea { border: 1.5px solid #8492a6; }
 
   /* --- SECURE AUTHENTICATION CONTAINER WINDOW --- */
   #auth-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; height: 100vh; overflow: hidden; background: linear-gradient(135deg, var(--brand-dk), var(--brand)); }
@@ -5257,7 +5266,7 @@
 
     <div id="missing-trigger-notice-block" style="display:none; align-items:center; justify-content:space-between; gap:12px; padding:12px; background:#fff8e6; border-left:4px solid #d97706; border-radius:var(--radius); margin-top:10px;">
       <p style="margin:0; color:#92400e; font-weight:600;">No Lead Record exists for company.</p>
-      <button class="btn btn-sub" id="reveal-new-entry-btn" onclick="revealNewEntryFormDropdown()" style="width:auto; display:inline-flex; padding:10px 22px; font-size:0.92rem; flex-shrink:0;">Create New Entry</button>
+      <button class="btn btn-sub" id="reveal-new-entry-btn" onclick="revealNewEntryFormDropdown()" style="width:auto; display:inline-flex; padding:10px 22px; font-size:0.92rem; flex-shrink:0;">Create New Lead</button>
     </div>
 
     <div id="step2-new-entry-dropdown" style="display: none; padding: 0 4px; text-align: left;">
