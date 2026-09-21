@@ -1077,8 +1077,8 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         label.style.display = "none";
         let wrapper = document.createElement("div"); wrapper.style.cssText = "display: flex; flex-direction: column; gap: 6px; width:100%;";
         wrapper.innerHTML = `
-          <div><span style="font-size:0.58rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Tender Inquire</span><textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Tender Inquire" placeholder="Name of End User" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Tender Inquire"] || "")}</textarea></div>
-          <div><span style="font-size:0.58rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Purchase Inquire</span><textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Purchase Inquire" placeholder="Name of End User" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Purchase Inquire"] || "")}</textarea></div>
+          <div><span style="font-size:0.58rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Tender Inquire Contact Person</span><textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Tender Inquire" placeholder="Name of End User" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Tender Inquire"] || "")}</textarea></div>
+          <div><span style="font-size:0.58rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Purchase Inquire Contact Person</span><textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Purchase Inquire" placeholder="Name of End User" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Purchase Inquire"] || "")}</textarea></div>
         `;
         cell.appendChild(wrapper);
       }
@@ -2411,6 +2411,12 @@ async function extractPurchaseOrderForReview() {
       _poMimeType: activeWorkingFile.type || "application/octet-stream",
       _leadId: leadDropEl.value.trim(),
       _orderAcceptanceSentDate: poAcceptanceDate,
+      // ABPS Owner of Order used to auto-fill from the logged-in operator
+      // — now a compulsory manual pick from the current Marketing roster,
+      // so it genuinely reflects who owns this order, not just whoever
+      // happened to be uploading the PO. Left blank here on purpose (no
+      // default preselection) so the pick is a deliberate action.
+      _abpsOwnerOfOrder: '',
       _specialRequirement: document.getElementById("purchase-order-special-requirement").value.trim(),
       _contractReviewFileObj: poContractReviewFile,
       _orderAcceptanceFileObj: poOrderAcceptanceFile,
@@ -2729,6 +2735,25 @@ function renderPurchaseOrderReview() {
       </select>
     </div>`;
 
+  // ABPS Owner of Order — a compulsory pick from the current Marketing
+  // roster (cachedEngineers, the same {personKey, name} list every other
+  // engineer dropdown in this app uses), not the auto-filled logged-in
+  // operator this used to be. Deliberately submits the display NAME here,
+  // not personKey — abps_owner_of_order is a plain text column (no FK to
+  // admin_db.users) that several places (the lead's own "📄 Documents"
+  // card, in particular) render raw with no name-resolution step, and it
+  // has always held a readable name (previously the logged-in operator's
+  // own display name). Storing a person_key here would silently break
+  // that raw display.
+  const abpsOwnerFieldHtml = `
+    <div class="grid-cell-item" style="grid-column: span 4;">
+      <label style="font-size:0.72rem;">ABPS Owner of Order *</label>
+      <select oninput="updatePoReviewField('_abpsOwnerOfOrder', this.value)" style="font-size:0.95rem; padding:7px 8px;">
+        <option value="" ${!s._abpsOwnerOfOrder ? 'selected' : ''}>— Select —</option>
+        ${cachedEngineers.map(eng => `<option value="${eng.name.replace(/"/g, '&quot;')}" ${eng.name === s._abpsOwnerOfOrder ? 'selected' : ''}>${eng.name}</option>`).join('')}
+      </select>
+    </div>`;
+
   zone.innerHTML = `
     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:8px;">
       <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:1.05rem;">Review Extracted Purchase Order</div>
@@ -2785,6 +2810,7 @@ function renderPurchaseOrderReview() {
         ${editField('PO Total Amount', 'poTotalAmount', 'number', 'grid-column: span 4;', true)}
         ${lockedRow('Order Acceptance Link', orderAcceptanceLinkHtml, 'grid-column: span 4;')}
         ${lockedRow('Contract Review Link', contractReviewLinkHtml, 'grid-column: span 4;')}
+        ${abpsOwnerFieldHtml}
         ${editField('Order Acceptance Sent Date', '_orderAcceptanceSentDate', 'date', 'grid-column: span 4;', true)}
       </div>
 
@@ -2818,6 +2844,7 @@ function validatePoReviewBeforeSubmit(s) {
   if (!(s.poGstAmount !== '' && s.poGstAmount !== null && s.poGstAmount !== undefined && s.poGstAmount.toString().trim() !== '')) return "PO GST Amount is required.";
   if (!(s.poTotalAmount !== '' && s.poTotalAmount !== null && s.poTotalAmount !== undefined && s.poTotalAmount.toString().trim() !== '')) return "PO Total Amount is required.";
   if (!(s._orderAcceptanceSentDate || '').toString().trim()) return "Order Acceptance Sent Date is required.";
+  if (!(s._abpsOwnerOfOrder || '').toString().trim()) return "ABPS Owner of Order is required.";
   return null;
 }
 
@@ -2860,6 +2887,7 @@ async function submitReviewedPurchaseOrder() {
       fileName: s._poFileName, base64Data: s._poBase64, mimeType: s._poMimeType,
       specialRequirement: s._specialRequirement,
       orderAcceptanceSentDate: s._orderAcceptanceSentDate,
+      abpsOwnerOfOrder: s._abpsOwnerOfOrder,
       contractReviewFile: { fileName: s._contractReviewFileObj.name, base64Data: crBase64, mimeType: s._contractReviewFileObj.type || "application/octet-stream" },
       contractReviewUrl: s.contractReviewUrl,
       orderAcceptanceFile: { fileName: s._orderAcceptanceFileObj.name, base64Data: oaBase64, mimeType: s._orderAcceptanceFileObj.type || "application/octet-stream" },
