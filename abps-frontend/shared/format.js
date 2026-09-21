@@ -253,6 +253,71 @@ function enhanceOneDateInputForDMY(input) {
   sync();
 }
 
+// Formats a native <input type="time"> value ("HH:MM", always 24-hour
+// regardless of locale) into a friendly "h:mm AM/PM" string.
+function formatTimeAMPMFromHM(hm) {
+  if (!hm) return '';
+  const parts = hm.split(':');
+  if (parts.length < 2) return '';
+  let h = parseInt(parts[0], 10);
+  const m = parts[1];
+  if (isNaN(h)) return '';
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if (h === 0) h = 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+// Same overlay technique as enhanceOneDateInputForDMY, for the same
+// underlying reason: on mobile Safari/Chrome, a native <input type="time">'s
+// OWN displayed digits are rendered by the browser's internal time-picker
+// widget at a size that largely ignores the input's own font-size/line-
+// height CSS — this made "Time of Meeting" render as oversized, mismatched-
+// looking text next to a normally-sized Date of Meeting field (which
+// already had this same transparent-input-plus-custom-overlay treatment).
+// Hiding the native text (color:transparent) and drawing our own small,
+// consistently-styled "h:mm AM/PM" overlay on top fixes this the same way
+// the date fix did, without touching the native picker itself — clicks
+// still fall through and open it normally.
+function enhanceOneTimeInputForAMPM(input) {
+  if (input.dataset.ampmEnhanced) return;
+  input.dataset.ampmEnhanced = "1";
+
+  const wrap = document.createElement('span');
+  wrap.style.cssText = 'position:relative; display:inline-block; width:100%; min-width:0; max-width:100%; vertical-align:middle; box-sizing:border-box;';
+  input.parentNode.insertBefore(wrap, input);
+  wrap.appendChild(input);
+  input.style.width = '100%';
+  input.style.color = 'transparent';
+  input.style.background = 'transparent';
+  input.style.position = 'relative';
+  input.style.zIndex = '1';
+
+  const overlay = document.createElement('span');
+  overlay.style.cssText = 'position:absolute; left:1px; top:0; right:26px; bottom:0; display:flex; align-items:center; padding-left:9px; pointer-events:none; font:inherit; z-index:2; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;';
+  wrap.appendChild(overlay);
+
+  const sync = () => {
+    const formatted = formatTimeAMPMFromHM(input.value);
+    overlay.textContent = formatted || '--:-- --';
+    overlay.style.color = formatted ? 'inherit' : '#9ca3af';
+  };
+  input.addEventListener('input', sync);
+  input.addEventListener('change', sync);
+  input._ampmSync = sync;
+  sync();
+}
+
+function enhanceAllTimeInputsForAMPM() {
+  document.querySelectorAll('input[type="time"]').forEach(input => {
+    if (input.closest('#reusable-child-modules-template')) return;
+    if (input.dataset.ampmEnhanced) {
+      if (input._ampmSync) input._ampmSync();
+    } else {
+      enhanceOneTimeInputForAMPM(input);
+    }
+  });
+}
+
 function enhanceAllDateInputsForDMY() {
   // #reusable-child-modules-template (Follow-up/Task forms) is a hidden
   // master copy that gets cloneNode(true)'d fresh for every lead — never

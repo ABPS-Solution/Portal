@@ -2002,4 +2002,5 @@ function renderExpectedInboundsPOCard(po, scheme, cardId, defaultExpanded) {
 }
 
 setInterval(enhanceAllDateInputsForDMY, 400);
+setInterval(enhanceAllTimeInputsForAMPM, 400);
 

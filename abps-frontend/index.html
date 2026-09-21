@@ -548,7 +548,13 @@
        real min-width lets those same percentages resolve against a usable
        virtual width, and now the wrapper's overflow-x:auto genuinely
        scrolls horizontally instead of doing nothing. */
-    .mobile-scroll-table { min-width:900px; }
+    /* width (not just min-width) with !important — the table also carries
+       an inline `width:100%` (higher specificity than a plain class rule
+       for the same property), and some mobile WebKit versions resolve a
+       percentage `width` against `table-layout:fixed` BEFORE min-width is
+       applied, so min-width alone was not reliably winning on every
+       device. An explicit fixed width leaves no ambiguity either way. */
+    .mobile-scroll-table { width:900px !important; min-width:900px; }
   }
   
   .fup-item-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 4px; text-align: left; overflow: hidden; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }

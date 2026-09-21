@@ -47,32 +47,79 @@ function combineGateImagesToSingleBase64(files) {
     });
 
     Promise.all(files.map(loadImage)).then(images => {
-      if (images.length === 1) {
-        const canvas = document.createElement('canvas');
-        canvas.width = images[0].naturalWidth; canvas.height = images[0].naturalHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(images[0], 0, 0);
-        resolve({ base64: canvas.toDataURL('image/jpeg', 0.92).split(',')[1], mimeType: 'image/jpeg' });
-        return;
+      // A phone camera photo is routinely 3000-4000px wide and several MB —
+      // stacking 2-3 of those at full resolution produced a base64 payload
+      // well over the backend's 20MB request body limit ("request entity
+      // too large", a real reported failure on a genuine 3-page invoice).
+      // MAX_PAGE_WIDTH caps every page down to a size still perfectly
+      // readable for OCR/Gemini extraction before stacking; encodeUnderCap
+      // then re-encodes at progressively lower JPEG quality (and, as a last
+      // resort, shrinks further) until the result comfortably clears the
+      // limit, so this can't fail again regardless of how many pages or
+      // how high-res the source photos are.
+      const MAX_PAGE_WIDTH = 1600;
+      const scaleImage = img => {
+        const scale = Math.min(1, MAX_PAGE_WIDTH / img.naturalWidth);
+        return { img, width: Math.round(img.naturalWidth * scale), height: Math.round(img.naturalHeight * scale) };
+      };
+      const scaled = images.map(scaleImage);
+
+      let canvas, drawFn;
+      if (scaled.length === 1) {
+        canvas = document.createElement('canvas');
+        canvas.width = scaled[0].width; canvas.height = scaled[0].height;
+        drawFn = ctx => ctx.drawImage(scaled[0].img, 0, 0, scaled[0].width, scaled[0].height);
+      } else {
+        // Scale every page to a common width (the widest one, already capped
+        // above) so a page shot in portrait next to one shot in landscape
+        // still lines up cleanly, then stack top to bottom with a thin
+        // white gap between pages.
+        const gap = 14;
+        const targetWidth = Math.max(...scaled.map(s => s.width));
+        const heights = scaled.map(s => Math.round(s.height * (targetWidth / s.width)));
+        const totalHeight = heights.reduce((a, b) => a + b, 0) + gap * (scaled.length - 1);
+        canvas = document.createElement('canvas');
+        canvas.width = targetWidth; canvas.height = totalHeight;
+        drawFn = ctx => {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, targetWidth, totalHeight);
+          let y = 0;
+          scaled.forEach((s, i) => {
+            ctx.drawImage(s.img, 0, y, targetWidth, heights[i]);
+            y += heights[i] + gap;
+          });
+        };
       }
-      // Scale every page to a common width (the widest one) so a page shot
-      // in portrait next to one shot in landscape still lines up cleanly,
-      // then stack top to bottom with a thin white gap between pages.
-      const gap = 14;
-      const targetWidth = Math.max(...images.map(img => img.naturalWidth));
-      const scaledHeights = images.map(img => Math.round(img.naturalHeight * (targetWidth / img.naturalWidth)));
-      const totalHeight = scaledHeights.reduce((a, b) => a + b, 0) + gap * (images.length - 1);
-      const canvas = document.createElement('canvas');
-      canvas.width = targetWidth; canvas.height = totalHeight;
       const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, targetWidth, totalHeight);
-      let y = 0;
-      images.forEach((img, i) => {
-        ctx.drawImage(img, 0, y, targetWidth, scaledHeights[i]);
-        y += scaledHeights[i] + gap;
-      });
-      resolve({ base64: canvas.toDataURL('image/jpeg', 0.92).split(',')[1], mimeType: 'image/jpeg' });
+      drawFn(ctx);
+
+      // A single Gate Entry request can carry BOTH the Invoice's and the
+      // Challan's combined image at once (commitGateEntryPipelineStep), so
+      // this per-document cap has to leave room for two of these plus the
+      // line-items JSON in the SAME body — not just clear the limit on its
+      // own. 4MB each keeps two documents comfortably under even the
+      // tighter of this app's two backends (ERP's /exec body limit is
+      // 10MB; Portal's is 20MB). Quality steps down first (cheaper, keeps
+      // full page count on screen); if still over the cap even at the
+      // lowest quality, the canvas itself is shrunk further and re-drawn.
+      const MAX_BASE64_CHARS = 4 * 1024 * 1024;
+      const qualitySteps = [0.85, 0.7, 0.55, 0.4];
+      let base64 = null;
+      for (const q of qualitySteps) {
+        base64 = canvas.toDataURL('image/jpeg', q).split(',')[1];
+        if (base64.length <= MAX_BASE64_CHARS) break;
+      }
+      let shrinkFactor = 1;
+      while (base64.length > MAX_BASE64_CHARS && shrinkFactor > 0.25) {
+        shrinkFactor *= 0.75;
+        const shrunk = document.createElement('canvas');
+        shrunk.width = Math.max(1, Math.round(canvas.width * shrinkFactor));
+        shrunk.height = Math.max(1, Math.round(canvas.height * shrinkFactor));
+        shrunk.getContext('2d').drawImage(canvas, 0, 0, shrunk.width, shrunk.height);
+        base64 = shrunk.toDataURL('image/jpeg', 0.6).split(',')[1];
+      }
+
+      resolve({ base64, mimeType: 'image/jpeg' });
     }).catch(reject);
   });
 }
