@@ -3000,9 +3000,38 @@ function togglePinvDocCard(bodyId) {
   if (caret) caret.textContent = expanded ? "▸" : "▾";
 }
 
+// A device enrolled + restricted (Security & Login Access -> Registered
+// Devices -> Restrict Access) down to ONLY Create New Leads Details
+// (perm_card_details) gets that single true flag on `userPermissions` and
+// every other Marketing permission masked false server-side -- see
+// CLAUDE.md's "Device-restricted PIN login" landmine. This is the same
+// signal used everywhere else in the app to tell a narrowly-restricted
+// device apart from a normal full-access account, so it's reused here
+// rather than inventing a separate "is this device restricted" flag.
+// Data-safety measure: a phone whose only job is instant on-site lead
+// capture must not be able to pull up an existing lead's PO/Invoice/
+// Commissioning Report documents, even though it CAN search/view the
+// lead, follow-ups, and tasks to avoid creating a duplicate entry.
+function isMarketingAccessRestrictedToCardDetailsOnly() {
+  if (typeof userPermissions !== "object" || !userPermissions) return false;
+  if (userPermissions.cardDetails !== true) return false;
+  const broaderMarketingPerms = [
+    "searchCompany", "searchTasks", "searchStatus", "searchQualification",
+    "searchCityState", "emailLeads", "meetingPreparation",
+    "orderPaymentProgress", "commissioningReport", "purchaseOrder"
+  ];
+  return !broaderMarketingPerms.some(key => userPermissions[key] === true);
+}
+
 async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
   const mount = scopeNode.querySelector(".doc-info-mount-point");
   if (!mount) return;
+
+  if (isMarketingAccessRestrictedToCardDetailsOnly()) {
+    mount.innerHTML = "";
+    return;
+  }
+
   mount.innerHTML = '<p style="color:var(--muted); font-size:0.82rem; padding:8px 0;">Loading Document Information...</p>';
 
   try {
