@@ -441,6 +441,34 @@
     #workspace-cardDetails textarea { font-size:16px; padding:10px 8px; }
     #workspace-cardDetails .btn { width:100%; padding:12px !important; font-size:0.95rem; }
   }
+
+  /* --- CREATE NEW LEAD FORM MOBILE RESPONSIVENESS ---
+     This form (#step2-new-entry-dropdown) is the on-the-spot entry screen
+     used right after scanning a visiting card on a phone, so every fixed
+     multi-column row it uses (Company/Contact/Position, Meeting
+     Information, City/State/Country, etc. — all written as inline
+     `display:grid; grid-template-columns:...` in index.html) has to
+     collapse to one column on a phone width, not just look cramped. */
+  @media(max-width:640px) {
+    #missing-trigger-notice-block { flex-direction:column !important; align-items:stretch !important; text-align:center; }
+    #missing-trigger-notice-block #reveal-new-entry-btn { width:100%; }
+
+    #step2-new-entry-dropdown div[style*="display: grid"] { grid-template-columns:1fr !important; }
+    #step2-new-entry-dropdown input[type="text"],
+    #step2-new-entry-dropdown input[type="tel"],
+    #step2-new-entry-dropdown input[type="email"],
+    #step2-new-entry-dropdown input[type="url"],
+    #step2-new-entry-dropdown input[type="date"],
+    #step2-new-entry-dropdown input[type="time"],
+    #step2-new-entry-dropdown input[type="number"],
+    #step2-new-entry-dropdown select,
+    #step2-new-entry-dropdown textarea { font-size:16px; padding:10px 8px; }
+    #step2-new-entry-dropdown .section { padding:12px !important; }
+    #step2-new-entry-dropdown .pill-group label { padding:9px 14px; font-size:0.85rem; }
+    #step2-new-entry-dropdown label[style*="cursor:pointer"] { padding:4px 0; }
+    #step2-new-entry-dropdown #staged-back-button-row { flex-direction:column-reverse; }
+    #step2-new-entry-dropdown #staged-back-button-row .btn { width:100%; padding:14px !important; font-size:1rem; }
+  }
   
   .fup-item-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 4px; text-align: left; overflow: hidden; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
   .fup-item-header { padding: 8px; background: #edf2f7; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600; align-items: center; }

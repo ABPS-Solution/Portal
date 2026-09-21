@@ -489,6 +489,12 @@ function resetSequentialFormState() {
   if (document.getElementById("dropform-state")) document.getElementById("dropform-state").value = "";
   if (document.getElementById("dropform-country")) document.getElementById("dropform-country").value = "";
   wireCityAutoFillStateCountry("dropform-city", "dropform-state", "dropform-country");
+  // Card Details' own initial capture screen (Company Name/City/State/Country
+  // shown BEFORE "Search Marketing Database" is clicked) uses f-city/f-state/
+  // f-country, a completely separate set of fields from dropform-* above —
+  // this was previously unwired, so typing a City there and blurring out
+  // never filled State/Country.
+  wireCityAutoFillStateCountry("f-city", "f-state", "f-country");
   if (document.getElementById("purchaseInquire")) document.getElementById("purchaseInquire").value = "";
   if (document.getElementById("tenderInquire")) document.getElementById("tenderInquire").value = "";
   if (document.getElementById("esd")) document.getElementById("esd").value = "";
