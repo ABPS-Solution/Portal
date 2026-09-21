@@ -228,29 +228,30 @@ function mprepBulletList(items, emptyText) {
   </ul>`;
 }
 
-function mprepMatchBadge(reason) {
-  const labels = { exact_contact: "known contact", corporate_domain: "company domain", ai_extracted_name: "name match (unverified)" };
-  const colors = { exact_contact: "#047857", corporate_domain: "#047857", ai_extracted_name: "#b45309" };
-  if (!reason || !labels[reason]) return "";
-  return `<span style="font-size:0.62rem; font-weight:700; color:${colors[reason]}; background:${colors[reason]}18; padding:1px 6px; border-radius:3px; margin-left:6px; text-transform:uppercase;">${labels[reason]}</span>`;
-}
-
 function mprepTimelineRow(item) {
   const when = item.when ? formatOrdinalDate(item.when) : "(no date)";
+  const whenTime = item.whenTime ? formatPlainTimeOfDay(item.whenTime) : "";
   const actor = item.actor ? escapeHtml(item.actor) : "";
   const contact = item.contactPerson ? ` · ${escapeHtml(item.contactPerson)}` : "";
   const dirBadge = item.direction && item.direction !== "N/A"
-    ? `<span style="font-size:0.6rem; font-weight:700; color:${item.direction === "Inbound" ? "#0369a1" : "#7c3aed"}; text-transform:uppercase; margin-left:6px;">${item.direction}</span>`
+    ? `<span style="font-size:0.6rem; font-weight:700; color:${item.direction === "Incoming" ? "#0369a1" : "#7c3aed"}; text-transform:uppercase; margin-left:6px;">${item.direction}</span>`
     : "";
+  // Email entries deliberately carry no link and no match-reason badge —
+  // nobody viewing this brief has access to the inbox it landed in, so a
+  // link would be a dead click and an unverified badge would only invite
+  // doubt with no way to check it. Every other type still links through.
   const link = item.link ? `<a href="${driveLink(item.link)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; font-size:0.75rem; margin-left:8px;">Open ↗</a>` : "";
+  const venue = (item.meetingVenue || item.venueNameCity)
+    ? `<div style="font-size:0.75rem; color:var(--muted); margin-top:1px;">Venue: ${escapeHtml([item.meetingVenue, item.venueNameCity].filter(Boolean).join(", "))}</div>` : "";
   const detail = item.detail ? `<div style="font-size:0.78rem; color:var(--muted); margin-top:2px;">${escapeHtml(item.detail)}</div>` : "";
   return `<div style="display:flex; gap:10px; padding:8px 10px; border-bottom:1px solid #f1f5f9; break-inside:avoid;">
-    <div style="min-width:78px; font-size:0.72rem; color:var(--muted); font-weight:700;">${escapeHtml(when)}</div>
+    <div style="min-width:98px; font-size:0.72rem; color:var(--muted); font-weight:700;">${escapeHtml(when)}${whenTime ? `<div style="font-weight:600;">${escapeHtml(whenTime)}</div>` : ""}</div>
     <div style="flex:1; min-width:0;">
       <div style="font-size:0.82rem; font-weight:700; color:var(--text);">
-        [${escapeHtml(item.type)}]${dirBadge} ${escapeHtml(item.title || "")}${mprepMatchBadge(item.matchReason)}${link}
+        [${escapeHtml(item.type)}]${dirBadge} ${escapeHtml(item.title || "")}${link}
       </div>
       <div style="font-size:0.75rem; color:var(--muted); margin-top:1px;">${actor}${contact}</div>
+      ${venue}
       ${detail}
     </div>
   </div>`;
@@ -264,9 +265,16 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
   const ag = facts.atAGlance;
   const oi = facts.openItems;
 
+  // Needed by toggleContactExpansionView (leads.js) the moment a person's
+  // lead-wrapper card is clicked, below — same convention
+  // marketing/companies.js's toggleTaskCompanyExpand uses.
+  window.globalFollowUpsCacheMap = facts.followupsByLead || {};
+  window.globalTasksCacheMap = facts.tasksByLead || {};
+
   // ── AI brief block — 4 distinct mini-cards (colored top border, own
   // box) instead of stacked text sections, so each category is visually
-  // separated rather than reading as one dense cluster. ──────────────────
+  // separated rather than reading as one dense cluster. No Regenerate
+  // button — Generate Brief above already does that job. ─────────────────
   let aiHtml = "";
   if (aiBrief) {
     const CATS = [
@@ -280,10 +288,7 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
         ${mprepBulletList(c.arr.map(escapeHtml))}
       </div>`;
     aiHtml = `<div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:6px; padding:14px 16px; margin-bottom:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#4338ca; letter-spacing:0.5px;">AI Briefing</div>
-        <button class="btn btn-sub" style="width:auto; font-size:0.7rem; padding:3px 10px;" onclick="mprepGenerateBrief()">↻ Regenerate</button>
-      </div>
+      <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#4338ca; letter-spacing:0.5px; margin-bottom:10px;">AI Briefing</div>
       <div style="font-size:0.95rem; font-weight:700; color:var(--text); background:#fff; border-radius:6px; padding:10px 12px; margin-bottom:10px;">${escapeHtml(aiBrief.headline || "")}</div>
       ${CATS.length ? `<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:8px;">${CATS.map(catCard).join("")}</div>` : ""}
     </div>`;
@@ -297,12 +302,11 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
   // ── At a glance ─────────────────────────────────────────────────────
   const glanceTiles = [
     ["Days Since Last Contact", ag.daysSinceLastContact === null ? "Never" : ag.daysSinceLastContact],
+    ["Total Follow-Ups", ag.totalFollowUpCount],
     ["Overdue Tasks", ag.overdueTaskCount],
-    ["Pending Follow-Ups", ag.pendingFollowUpCount],
+    ["Completed Tasks", ag.completedTaskCount],
     ["Open Customer Queries", ag.openQueryCount],
-    ["Breached Queries", ag.breachedQueryCount],
-    ["Late Projects", ag.lateProjectCount],
-    ["Unanswered Inbound Email", ag.unansweredInbound ? "Yes" : "No"],
+    ["Unanswered Incoming Email", ag.unansweredIncomingEmail ? "Yes" : "No"],
   ];
   const glanceHtml = `<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-bottom:16px;">
     ${glanceTiles.map(([label, value]) => `
@@ -312,26 +316,35 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
       </div>`).join("")}
   </div>`;
 
-  // ── People ──────────────────────────────────────────────────────────
-  const peopleHtml = facts.contacts.map((p, i) => {
-    const fields = [
-      ["Status", p.status], ["Engineer", p.engineerDisplay], ["Phone", p.phone], ["Alt Phone", p.altPhone],
-      ["Email", p.email], ["Approx Requirement", p.approxRequirement], ["Business Potential", p.approxBusinessPotential],
-      ["Expected Order Timeline", p.expectedOrderTimeline], ["Competitor Details", p.competitorDetails],
-      ["Products Discussed", p.productsDiscussed],
-    ];
+  // ── People — grouped by person, each with their own lead-wrapper cards
+  // (one per enquiry), reusing the real lead View Details expand
+  // (toggleContactExpansionView, leads.js) exactly like any lead wrapper
+  // elsewhere in the app. ──────────────────────────────────────────────
+  const peopleHtml = (facts.people || []).map((p, i) => {
+    const fields = [["Status", p.status], ["Phone", p.phone], ["Email", p.email], ["ABPS Engineer", p.engineerDisplay]];
     const fieldsHtml = fields.map(([l, v]) => mprepFieldRow(l, v)).join("");
-    const body = `<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:6px; padding:8px 0 4px;">${fieldsHtml}</div>`;
-    if (facts.contacts.length === 1) {
-      return `<div style="margin-bottom:6px;"><strong style="font-size:0.88rem;">${escapeHtml(p.contactPersonName)}${p.position ? " · " + escapeHtml(p.position) : ""}</strong>${body}</div>`;
-    }
-    const bodyId = `mprep-person-body-${i}`;
-    return `<div style="margin-bottom:6px; border:1px solid #e2e8f0; border-radius:4px; overflow:hidden;">
-      <div onclick="mprepToggleCard('${bodyId}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:6px 10px;">
-        <strong style="font-size:0.82rem;">${escapeHtml(p.contactPersonName)}${p.position ? " · " + escapeHtml(p.position) : ""}</strong>
-        <span id="${bodyId}-caret" style="font-size:0.7rem; color:var(--muted);">▸</span>
-      </div>
-      <div id="${bodyId}" style="display:none; padding:0 10px;">${body}</div>
+    const leadsHtml = (p.leads || []).map(({ leadId, rawLead }) => `
+      <div class="contact-summary-card-parent" id="mprep-lead-card-${leadId}">
+        <div class="contact-summary-header-row" style="cursor:pointer;" onclick="toggleContactExpansionView('${leadId}', \`${encodeURIComponent(JSON.stringify(rawLead))}\`)">
+          <div class="contact-summary-title-info">
+            <div class="meta-row-line-block" style="margin-bottom:6px;">
+              <span style="background:#e2e8f0;">Status:</span><strong id="card-lbl-status-${leadId}">${escapeHtml(rawLead["Status"] || "N/A")}</strong>
+              <span style="background:#edf2f7;">Lead ID:</span><strong>${escapeHtml(leadId)}</strong>
+            </div>
+          </div>
+          <div class="directory-btn-actions-block" onclick="event.stopPropagation()">
+            <span id="expand-trigger-${leadId}" style="color:var(--brand); font-size:1.3rem; font-weight:700; line-height:1; padding:4px 6px;">▾</span>
+          </div>
+        </div>
+        <div class="contact-expanded-workspace-payload-drawer" id="drawer-panel-${leadId}" style="display:none; padding-top:4px;">
+          <div class="leads-editable-fields-box-canvas" id="canvas-fields-${leadId}"></div>
+          <div class="child-injected-modules-mount-point" id="modules-mount-${leadId}" style="margin-top:10px;"></div>
+        </div>
+      </div>`).join("");
+    return `<div style="margin-bottom:14px; border:1px solid #e2e8f0; border-radius:4px; padding:10px;">
+      <strong style="font-size:0.88rem;">${escapeHtml(p.contactPersonName)}${p.position ? " · " + escapeHtml(p.position) : ""}</strong>
+      <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:6px; padding:8px 0 4px;">${fieldsHtml}</div>
+      ${leadsHtml}
     </div>`;
   }).join("");
 
@@ -348,33 +361,6 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
     ? facts.timeline.map(mprepTimelineRow).join("")
     : `<div style="padding:12px; color:var(--muted); font-style:italic; font-size:0.82rem;">No recorded activity.</div>`;
 
-  // ── Order execution (projects + line items) ────────────────────────
-  const projectsHtml = facts.projects.map(p => {
-    const weak = p.matchReason === "company_name"
-      ? `<span style="font-size:0.6rem; font-weight:700; color:#b45309; margin-left:6px;">NAME MATCH: VERIFY</span>` : "";
-    const lines = facts.poLineItems.filter(li => li.project_id === p.project_id);
-    const lineFields = lines.map(li => `<div style="font-size:0.78rem; padding:4px 0; border-bottom:1px dashed #e2e8f0;">
-      ${escapeHtml(li.standard_product_name || li.description || "")} (Qty ${escapeHtml(String(li.mfc_quantity ?? li.quantity ?? ""))} ${escapeHtml(li.unit || "")})
-      ${li.on_hold ? `<span style="color:#b45309; font-weight:700;"> (ON HOLD${li.hold_reason ? ": " + escapeHtml(li.hold_reason) : ""})</span>` : ""}
-    </div>`).join("");
-    // Final Delivery -- the real Final Project Invoice date, not the
-    // tentative delivery_date entered at PO commit and not
-    // mfc_actual_delivery_date (an MFC gating field entered before
-    // Internal MFC, never a genuine delivery estimate -- see CLAUDE.md).
-    // "Not yet dispatched" until a Final invoice actually exists, same
-    // "hollow until a real Final invoice lands" convention Project
-    // Timeline's own merged delivery/dispatch node uses.
-    const finalDeliveryDisplay = p.final_delivery_date ? formatOrdinalDate(p.final_delivery_date) : "Not yet dispatched";
-    const fields = [
-      ["Status", p.project_status], ["PO Number", p.po_number], ["Final Delivery", finalDeliveryDisplay],
-    ];
-    return `<div style="margin-bottom:10px; border:1px solid #e2e8f0; border-radius:4px; padding:8px 10px;">
-      <strong style="font-size:0.85rem;">${escapeHtml(p.project_id)}${weak}</strong>
-      <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:6px; margin-top:6px;">${fields.map(([l, v]) => mprepFieldRow(l, v)).join("")}</div>
-      ${lineFields ? `<div style="margin-top:6px;">${lineFields}</div>` : ""}
-    </div>`;
-  }).join("");
-
   const invoicesHtml = facts.invoices.length ? mprepBulletList(facts.invoices.map(inv =>
     `<strong>${escapeHtml(inv.invoiceType)} Invoice ${escapeHtml(inv.invoiceNo)}</strong>${inv.revision > 1 ? ` (Rev ${inv.revision})` : ""}: ₹${escapeHtml(formatQtyTrimmed(inv.totalAmount))}${inv.pdfUrl ? ` <a href="${driveLink(inv.pdfUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">↗</a>` : ""}`
   )) : "";
@@ -383,37 +369,23 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
     `<strong>${escapeHtml(o.email_sent_date ? formatOrdinalDate(o.email_sent_date) : "")}</strong>: ${escapeHtml(o.email_subject || "Offer")}${o.estimated_value ? ` (₹${escapeHtml(formatQtyTrimmed(o.estimated_value))})` : ""}`
   )) : "";
 
-  const documentsHtml = facts.documents.length ? mprepBulletList(facts.documents.map(d =>
-    `PO ${escapeHtml(d.purchase_order_number || "-")} (${escapeHtml(d.purchase_order_date ? formatOrdinalDate(d.purchase_order_date) : "-")})${d.po_document_url ? ` <a href="${driveLink(d.po_document_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">↗</a>` : ""}`
-  )) : "";
-
-  // ── Reference (collapsed) ──────────────────────────────────────────
-  const refFields = [
-    ["Website", c.website], ["City", c.city], ["State", c.state], ["Country", c.country],
-    ["Address", c.company_address], ["Industry", c.type_of_industry],
-    ["Type of Customer", (c.typeOfCustomerList || []).join(", ")],
-  ];
-  const refHtml = `<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:6px;">${refFields.map(([l, v]) => mprepFieldRow(l, v)).join("")}</div>`;
-
-  // ── Below-the-fold detail — People/Timeline/Order Execution/Invoices/
-  // Offers/Documents/Reference are backup material, not what you need to
-  // walk into the meeting knowing. Collapsed by default behind one
-  // toggle; AI Briefing/At A Glance/Open Items stay visible on their own.
+  // ── Below-the-fold detail — People/Timeline/Invoices/Offers are backup
+  // material, not what you need to walk into the meeting knowing.
+  // Order Execution / Documents / Reference: Company Detail were removed
+  // outright (not just collapsed) — the same delivery/product facts that
+  // mattered now surface in the Timeline's own PO-received entry instead.
   const detailHtml = [
     mprepSection("People", "#be185d", peopleHtml),
     mprepSection("Activity Timeline", "#334155", `<div style="border:1px solid #e2e8f0; border-radius:4px;">${timelineHtml}</div>`),
-    mprepSection("Order Execution", "#0f766e", projectsHtml || `<div style="font-size:0.8rem; color:var(--muted); font-style:italic;">No linked project found.</div>`),
     mprepSection("Invoices", "#0f766e", invoicesHtml),
     mprepSection("Offers Sent", "#7c3aed", offersHtml),
-    mprepSection("Documents", "#0056b3", documentsHtml),
-    mprepSection("Reference: Company Detail", "#64748b", refHtml),
   ].join("");
 
   resultsNode.innerHTML = `
-    <div id="mprep-brief-print-area">
+    <div id="mprep-brief-area">
       <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">
         <h3 style="margin:0; font-size:1.1rem;">${escapeHtml(c.company_name)}${facts.scopeIsAllPeople ? "" : ` · ${escapeHtml(facts.contacts[0]?.contactPersonName || "")}`}</h3>
-        <button class="btn btn-sub" id="mprep-print-btn" onclick="window.print()" style="width:auto; flex-shrink:0; padding:8px 16px;">🖨 Print Brief</button>
+        <button class="btn btn-sub" id="mprep-download-btn" onclick="mprepDownloadBrief()" style="width:auto; flex-shrink:0; padding:8px 16px; background:#15803d; color:#fff; border-color:#15803d;">Download Brief</button>
       </div>
       ${aiHtml}
       ${mprepSection("At A Glance", "#0369a1", glanceHtml)}
@@ -426,18 +398,39 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
   `;
 }
 
+async function mprepDownloadBrief() {
+  if (!mprepSelectedCompanyName) return;
+  const btn = document.getElementById("mprep-download-btn");
+  const originalText = btn ? btn.textContent : "";
+  if (btn) { btn.disabled = true; btn.textContent = "Generating..."; }
+  showBlockingOverlay("Downloading Meeting Brief...");
+  try {
+    const data = await apFetch({
+      action: "generateMeetingBriefPdf",
+      companyName: mprepSelectedCompanyName,
+      leadIds: mprepSelectedLeadIds,
+    });
+    if (data.success) {
+      const link = document.createElement("a");
+      link.href = "data:application/pdf;base64," + data.base64;
+      link.download = data.fileName || "Meeting_Brief.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      mprepShowError(data.error || "Failed to generate the brief PDF.");
+    }
+  } catch (e) {
+    mprepShowError("Network error generating the brief PDF: " + e.message);
+  } finally {
+    hideBlockingOverlay();
+    if (btn) { btn.disabled = false; btn.textContent = originalText; }
+  }
+}
+
 function mprepToggleDetail() {
   const body = document.getElementById("mprep-detail-body");
   const caret = document.getElementById("mprep-detail-caret");
-  if (!body) return;
-  const isOpen = body.style.display === "block";
-  body.style.display = isOpen ? "none" : "block";
-  if (caret) caret.textContent = isOpen ? "▸" : "▾";
-}
-
-function mprepToggleCard(bodyId) {
-  const body = document.getElementById(bodyId);
-  const caret = document.getElementById(`${bodyId}-caret`);
   if (!body) return;
   const isOpen = body.style.display === "block";
   body.style.display = isOpen ? "none" : "block";
