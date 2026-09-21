@@ -40,6 +40,22 @@ function oppFmtDate(value) {
   return `${d.getDate()} ${month} ${d.getFullYear()}`;
 }
 
+// oppTodayIso / oppIsOverdueTranche — a tranche is overdue only while its
+// Expected Date has genuinely passed AND it's not yet fully received.
+// Deliberately re-derived from expectedAmount/receivedAmount directly
+// (not from t.status) so it stays correct regardless of which of the two
+// amounts changed last — the amount can be reduced to match what was
+// received just as easily as the received amount can catch up to it.
+function oppTodayIso() {
+  return new Date().toLocaleString('en-CA', { timeZone: 'Asia/Kolkata' }).slice(0, 10);
+}
+function oppIsOverdueTranche(t) {
+  if (!t.expectedDate || t.expectedDate >= oppTodayIso()) return false;
+  const expected = Number(t.expectedAmount) || 0;
+  const received = Number(t.receivedAmount) || 0;
+  return received + 1e-9 < expected;
+}
+
 async function initializeOrderPaymentPanel() {
   document.getElementById("opp-overdue-only").checked = window.oppOverdueOnly;
   document.getElementById("opp-search-input").value = "";
@@ -197,20 +213,33 @@ function oppRenderEditorContent(projectId) {
   // Each product is its own block (not a side-by-side flex row) so a long
   // description wraps at full width instead of squeezing awkwardly next
   // to the price column — the price sits on its own line underneath.
+  // Small bordered table, same column-border/row-border convention as the
+  // lead View Details Tasks table (tasks-followups.js) — Product 85% /
+  // Qty 5% / Amount 10%, one row per product.
   const productsBox = (lineItems || []).length ? `
     <div style="margin-top:12px; padding:10px 12px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:0.78rem;">
       <strong style="color:var(--muted); font-size:0.7rem; text-transform:uppercase;">Products in this Order</strong>
-      <div style="margin-top:6px;">
-        ${lineItems.map(li => `
-          <div style="padding:6px 0; border-bottom:1px dashed var(--border);">
-            <div>${escapeHtml(li.description || '-')}${li.quantity != null ? ` <strong>× ${oppFmt(li.quantity)}${li.unit ? ' ' + escapeHtml(li.unit) : ''}</strong>` : ''}</div>
-            <div style="font-family:monospace; color:var(--muted); margin-top:2px;">${li.totalAmount != null ? '₹' + oppFmt(li.totalAmount) : '-'}</div>
-          </div>`).join("")}
-      </div>
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-top:6px;">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border);">
+            <th style="width:85%; padding:5px 6px; text-align:left; font-size:0.68rem; text-transform:uppercase; color:var(--muted);">Product</th>
+            <th style="width:5%; padding:5px 6px; text-align:center; font-size:0.68rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Qty</th>
+            <th style="width:10%; padding:5px 6px; text-align:right; font-size:0.68rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${lineItems.map(li => `
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:5px 6px; word-wrap:break-word; overflow-wrap:break-word;">${escapeHtml(li.description || '-')}</td>
+              <td style="padding:5px 6px; text-align:center; border-left:2px solid var(--border); white-space:nowrap;">${li.quantity != null ? `<strong>${oppFmt(li.quantity)}${li.unit ? ' ' + escapeHtml(li.unit) : ''}</strong>` : '-'}</td>
+              <td style="padding:5px 6px; text-align:right; border-left:2px solid var(--border); font-family:monospace; white-space:nowrap;">${li.totalAmount != null ? '₹' + oppFmt(li.totalAmount) : '-'}</td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
     </div>` : "";
 
   return `
-    <div style="padding:14px 16px; border-top:1px solid var(--border); background:#f4f6f9;">
+    <div style="padding:14px 16px; border-top:1px solid var(--border); background:#e9edf2;">
       ${project.paymentTerms ? `
       <div style="padding:10px 12px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:0.82rem;">
         <strong style="color:var(--muted); font-size:0.72rem; text-transform:uppercase;">Payment Terms (reference only)</strong>
@@ -238,6 +267,10 @@ function oppFillTranchesIfPresent(projectId) {
   if (document.getElementById(`opp-tranches-wrap-${projectId}`)) oppRenderTranches(projectId);
 }
 
+function oppTrancheRowBg(t) {
+  return oppIsOverdueTranche(t) ? '#fef2f2' : '#f8fafc';
+}
+
 function oppRenderTranches(projectId) {
   const wrap = document.getElementById(`opp-tranches-wrap-${projectId}`);
   if (!wrap) return;
@@ -247,13 +280,21 @@ function oppRenderTranches(projectId) {
     const isReceived = t.status === 'Received';
     const note = slipped
       ? `<div id="opp-slip-note-${projectId}-${i}" style="font-size:0.68rem; color:#b45309; margin-top:2px;" title="Originally expected ${oppFmtDate(t.originalExpectedDate)}">slipped from ${oppFmtDate(t.originalExpectedDate)}</div>` : `<div id="opp-slip-note-${projectId}-${i}"></div>`;
+    // Expected/Received Amount are text inputs with live Indian-comma
+    // formatting (sanitizeAmountInput/formatIndianCurrencyInput, same
+    // pattern Review Extracted Purchase Order uses), not type="number" —
+    // a plain number input can't display "1,07,616" at all. Left BLANK
+    // (placeholder "0") rather than pre-filled with a literal "0" when
+    // there's no real value yet — typing into a pre-filled "0" without
+    // first clearing it is what produced "01111".
     return `
-      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:6px; padding:8px 10px; margin-bottom:8px;">
+      <div id="opp-tranche-row-${projectId}-${i}" style="background:${oppTrancheRowBg(t)}; border:1px solid var(--border); border-radius:6px; padding:8px 10px; margin-bottom:8px;">
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
           <div style="flex:1; min-width:110px;">
             <label class="field-label" style="margin-top:0; font-size:0.68rem;">Expected Amount ₹</label>
-            <input type="number" min="0.01" step="any" value="${formatQtyTrimmed(t.expectedAmount)}"
-              oninput="oppUpdateTrancheField('${projectId}', ${i}, 'expectedAmount', this.value)"
+            <input type="text" inputmode="decimal" placeholder="0" value="${t.expectedAmount ? formatIndianCurrencyInput(t.expectedAmount) : ''}"
+              oninput="oppUpdateTrancheField('${projectId}', ${i}, 'expectedAmount', sanitizeAmountInput(this))"
+              onblur="this.value = window.oppActiveTranchesByProject['${projectId}'][${i}].expectedAmount ? formatIndianCurrencyInput(window.oppActiveTranchesByProject['${projectId}'][${i}].expectedAmount) : '';"
               style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px;" />
           </div>
           <div style="flex:1; min-width:130px;">
@@ -264,8 +305,9 @@ function oppRenderTranches(projectId) {
           </div>
           <div style="flex:1; min-width:110px;">
             <label class="field-label" style="margin-top:0; font-size:0.68rem;">Received Amount ₹</label>
-            <input type="number" min="0" step="any" value="${formatQtyTrimmed(t.receivedAmount)}"
-              oninput="oppUpdateTrancheField('${projectId}', ${i}, 'receivedAmount', this.value)"
+            <input type="text" inputmode="decimal" placeholder="0" value="${t.receivedAmount ? formatIndianCurrencyInput(t.receivedAmount) : ''}"
+              oninput="oppUpdateTrancheField('${projectId}', ${i}, 'receivedAmount', sanitizeAmountInput(this))"
+              onblur="this.value = window.oppActiveTranchesByProject['${projectId}'][${i}].receivedAmount ? formatIndianCurrencyInput(window.oppActiveTranchesByProject['${projectId}'][${i}].receivedAmount) : '';"
               style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px;" />
           </div>
           <div style="flex:1; min-width:130px;">
@@ -330,6 +372,11 @@ function oppUpdateTrancheField(projectId, idx, field, value) {
     badge.style.background = isReceived ? '#dcfce7' : (t.status === 'Partially Received' ? '#fef3c7' : '#f1f5f9');
     badge.style.color = isReceived ? '#15803d' : (t.status === 'Partially Received' ? '#b45309' : '#475569');
   }
+  // A received-amount edit can clear (or trip) the overdue red tint just
+  // as much as a date edit can -- patch the row background directly here
+  // too, same cheap-leaf-node-only reasoning as the badge above.
+  const row = document.getElementById(`opp-tranche-row-${projectId}-${idx}`);
+  if (row) row.style.background = oppTrancheRowBg(t);
   oppRenderBalanceLine(projectId);
 }
 
@@ -354,14 +401,17 @@ function oppRenderBalanceLine(projectId) {
   const scheduled = list.reduce((s, t) => s + (Number(t.expectedAmount) || 0), 0);
   const poTotal = window.oppScheduleDataCache[projectId]?.poTotal;
   if (poTotal == null) {
-    el.innerHTML = `<span style="color:var(--muted);">Scheduled ₹${oppFmt(scheduled)}. PO Total unknown, cannot compare.</span>`;
+    el.innerHTML = `<div style="color:var(--muted);">Scheduled ₹${oppFmt(scheduled)}</div><div style="color:var(--muted); font-weight:600; margin-top:2px;">PO Total unknown, cannot compare.</div>`;
     return;
   }
   const diff = poTotal - scheduled;
-  let color = '#15803d', label = `Scheduled ₹${oppFmt(scheduled)} of ₹${oppFmt(poTotal)}, fully scheduled`;
-  if (diff > 0.005) { color = '#b45309'; label = `Scheduled ₹${oppFmt(scheduled)} of ₹${oppFmt(poTotal)}, ₹${oppFmt(diff)} unscheduled`; }
-  else if (diff < -0.005) { color = '#b91c1c'; label = `Scheduled ₹${oppFmt(scheduled)} of ₹${oppFmt(poTotal)}, ₹${oppFmt(-diff)} over-scheduled`; }
-  el.innerHTML = `<span style="color:${color};">${label}</span>`;
+  // "Scheduled X of Y" on its own line, the unscheduled/over-scheduled/
+  // fully-scheduled note on the line below it — the two used to run
+  // together as one long sentence.
+  let color = '#15803d', note = 'Fully scheduled.';
+  if (diff > 0.005) { color = '#b45309'; note = `₹${oppFmt(diff)} unscheduled.`; }
+  else if (diff < -0.005) { color = '#b91c1c'; note = `₹${oppFmt(-diff)} over-scheduled.`; }
+  el.innerHTML = `<div>Scheduled ₹${oppFmt(scheduled)} of ₹${oppFmt(poTotal)}</div><div style="color:${color}; margin-top:2px;">${note}</div>`;
 }
 
 async function oppSaveSchedule(projectId) {

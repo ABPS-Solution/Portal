@@ -4694,8 +4694,8 @@
           </div>
         </div>
 
-        <!-- ROW 4: Stale Leads + Recent Wins -->
-        <div class="dd-detail-row" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1; min-height:0;">
+        <!-- ROW 4: Stale Leads + Recent Wins + Overdue Order Payments -->
+        <div class="dd-detail-row" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
           <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
             <div class="dd-stat-label" style="margin-bottom:8px;">Leads Needing Attention (7+ days, current)</div>
             <div style="flex:1; min-height:0; overflow-y:auto;">
@@ -4724,6 +4724,24 @@
                   </tr>
                 </thead>
                 <tbody id="md-wins-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-stat-label" style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+              <span>Overdue Order Payments (live)</span>
+              <button class="nav-btn-styled" style="font-size:0.68rem; padding:3px 8px; background:#fff; color:var(--brand); border:1px solid var(--brand); white-space:nowrap;" onclick="switchActiveDashboardModule('order-payment')">Open ↗</button>
+            </div>
+            <div style="flex:1; min-height:0; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead>
+                  <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
+                    <th style="padding:4px;">Project ID</th>
+                    <th style="padding:4px;">Expected Date</th>
+                    <th style="padding:4px; text-align:right;">Expected Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="md-overdue-payments-tbody"></tbody>
               </table>
             </div>
           </div>

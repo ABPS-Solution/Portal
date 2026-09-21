@@ -43,7 +43,7 @@ async function mdLoadDashboard(customVal) {
 }
 
 function mdRenderDashboard(data) {
-  const { stats, statusCounts, verticalCounts, taskPriorityOpenCounts, taskPriorityOverdueCounts, staleLeads, recentWins } = data;
+  const { stats, statusCounts, verticalCounts, taskPriorityOpenCounts, taskPriorityOverdueCounts, staleLeads, recentWins, overdueOrderPayments } = data;
 
   document.getElementById("md-s-newleads").textContent       = stats.newLeads;
   document.getElementById("md-s-inprogress").textContent     = stats.inProgress;
@@ -137,6 +137,19 @@ function mdRenderDashboard(data) {
           <td style="padding:4px;">${w.company}</td>
           <td style="padding:4px;">${w.engineer}</td>
           <td style="padding:4px; text-align:right;">${formatOrdinalDate(w.date)}</td>
+        </tr>`).join("");
+
+  // Overdue Order Payments table — live, period-independent (see the
+  // backend's own comment on why), so this never reads from `stats`.
+  const overduePaymentsTbody = document.getElementById("md-overdue-payments-tbody");
+  const opList = overdueOrderPayments || [];
+  overduePaymentsTbody.innerHTML = opList.length === 0
+    ? `<tr><td colspan="3" style="color:var(--muted); padding:6px;">No overdue payments.</td></tr>`
+    : opList.map(p => `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px;">${escapeHtml(p.projectId)}</td>
+          <td style="padding:4px; color:#b91c1c; font-weight:700;">${escapeHtml(formatOrdinalDate(p.expectedDate))}</td>
+          <td style="padding:4px; text-align:right; font-family:monospace;">₹${(parseFloat(p.expectedAmount) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</td>
         </tr>`).join("");
 }
 
