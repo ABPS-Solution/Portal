@@ -462,12 +462,88 @@
     #step2-new-entry-dropdown input[type="time"],
     #step2-new-entry-dropdown input[type="number"],
     #step2-new-entry-dropdown select,
-    #step2-new-entry-dropdown textarea { font-size:16px; padding:10px 8px; }
+    #step2-new-entry-dropdown textarea { font-size:16px; padding:10px 8px; min-width:0; box-sizing:border-box; }
     #step2-new-entry-dropdown .section { padding:12px !important; }
     #step2-new-entry-dropdown .pill-group label { padding:9px 14px; font-size:0.85rem; }
     #step2-new-entry-dropdown label[style*="cursor:pointer"] { padding:4px 0; }
     #step2-new-entry-dropdown #staged-back-button-row { flex-direction:column-reverse; }
     #step2-new-entry-dropdown #staged-back-button-row .btn { width:100%; padding:14px !important; font-size:1rem; }
+    /* Date-input DD/MM/YYYY overlay (shared/format.js) — the wrap span
+       already sizes to 100% of its column, but nothing stopped the overlay
+       TEXT itself from visually spilling past the box on a narrow column;
+       harden it defensively regardless of which grid it sits in. */
+    #step2-new-entry-dropdown input[type="date"],
+    #step2-new-entry-dropdown input[type="time"] { width:100%; }
+  }
+
+  /* --- LEAD WRAPPER CARD (search results -> expand -> View Details) MOBILE
+     RESPONSIVENESS --- An enrolled/restricted phone's only real job is
+     searching an existing lead here (see Card Details), so this has to
+     work cleanly on a phone screen too, not just desktop. */
+  @media(max-width:640px) {
+    /* The collapsed card header ("Company Splar Machinery / Status New /
+       Name .. / Position ..") was a hardcoded 2-column CSS grid with
+       minmax(220px,1fr) + minmax(200px,1fr) columns — a combined floor of
+       ~450px that can never fit a phone screen, so the second column
+       (Name/Position) always overflowed off the right edge. Collapse to
+       one column below 640px. */
+    .contact-summary-title-info[style*="grid-template-columns"] { grid-template-columns:1fr !important; gap:8px 0 !important; }
+
+    /* View Details' own field grid (.compact-fields-grid) starts at 2
+       columns with NO narrower breakpoint at all — on a phone that's two
+       ~170px-wide columns, too cramped for a label like "Transformer
+       Heating / Breakdown Issue" plus its value. One column on mobile. */
+    .leads-editable-fields-box-canvas .compact-fields-grid { grid-template-columns:1fr !important; }
+    /* Several cells (ABPS Business Vertical, Type of Customer, Contract
+       Demand, Voltage Level Requirements, Existing System Details,
+       Products Discussed, Existing Project) request `grid-column: span 2`
+       inline via JS for the desktop 2/4/6-column grid above — with only
+       ONE explicit column now, CSS Grid auto-generates a second IMPLICIT
+       column just to satisfy that span request, so the cell still renders
+       roughly double-width and overflows the single real column. Force
+       every spanned cell back to a single column on mobile.
+       ".leads-editable-fields-box-canvas" is doubled on purpose — an
+       existing older rule (search "max-width: 599px" above) targets the
+       same shared .grid-cell-item class at equal specificity, so which one
+       wins would otherwise depend on source order alone; repeating a class
+       selector is valid CSS and bumps specificity without changing what it
+       matches, making this win regardless of where either rule sits. */
+    .leads-editable-fields-box-canvas.leads-editable-fields-box-canvas .grid-cell-item[style*="grid-column"],
+    .leads-editable-fields-box-canvas.leads-editable-fields-box-canvas .span-two-units { grid-column:1 !important; }
+    /* Denser field boxes (2px 4px padding, tiny label) read fine on a wide
+       desktop grid but look cramped/off-center on a full-width mobile
+       column — more breathing room, and a taller minimum so a short/empty
+       value's placeholder doesn't sit crushed against the bottom edge. */
+    .leads-editable-fields-box-canvas .grid-cell-item { padding:8px 10px; }
+    .leads-editable-fields-box-canvas .grid-cell-item label { font-size:0.68rem; margin-bottom:4px; }
+    .leads-editable-fields-box-canvas .grid-cell-item input:not([type="checkbox"]),
+    .leads-editable-fields-box-canvas .grid-cell-item select,
+    .leads-editable-fields-box-canvas .grid-cell-item textarea { padding:8px 8px; min-height:38px; box-sizing:border-box; }
+    .leads-editable-fields-box-canvas .grid-cell-item textarea { min-height:auto; }
+
+    /* Documents section (📄 Documents) and the Contract/Running Demand +
+       Power Factor / Expected Tender-RFQ-Date sub-blocks all use a plain
+       inline `grid-template-columns:repeat(2,1fr)` with no mobile
+       treatment at all — same fix. */
+    .child-injected-modules-mount-point div[style*="grid-template-columns:repeat(2,1fr)"] { grid-template-columns:1fr !important; }
+
+    /* + Log Follow-Up / + Add Task forms (#reusable-child-modules-template,
+       cloned into every expanded wrapper) are dense 4- and 6-column grids
+       with no mobile handling either. */
+    .template-fup-form, .template-task-form { grid-template-columns:1fr !important; }
+    .template-fup-form div[style*="grid-column:span"],
+    .template-task-form div[style*="grid-column:span"] { grid-column:1 !important; }
+
+    /* Follow-Up/Task history — a fixed-layout table with 6-10 columns at
+       tiny percentage widths (e.g. 5%) genuinely cannot be read on a phone
+       no matter how it's laid out; `table-layout:fixed; width:100%` also
+       defeats the `overflow-x:auto` wrapper around it, since the table
+       never becomes wider than its (narrow) container so there's nothing
+       to scroll — it just crushes every column instead. Giving the table a
+       real min-width lets those same percentages resolve against a usable
+       virtual width, and now the wrapper's overflow-x:auto genuinely
+       scrolls horizontally instead of doing nothing. */
+    .mobile-scroll-table { min-width:900px; }
   }
   
   .fup-item-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 4px; text-align: left; overflow: hidden; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
@@ -5457,9 +5533,9 @@
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-            <div><label class="field-label">Contract Demand (MVA)</label><input type="number" step="any" min="0" id="cdMva" /></div>
-            <div><label class="field-label">Running Demand (MVA)</label><input type="number" step="any" min="0" id="rdMva" /></div>
-            <div><label class="field-label">Avg Power Factor</label><input type="number" step="any" id="avgPf" /></div>
+            <div><label class="field-label">Contract Demand (MVA)</label><input type="number" step="any" min="0" inputmode="decimal" id="cdMva" /></div>
+            <div><label class="field-label">Running Demand (MVA)</label><input type="number" step="any" min="0" inputmode="decimal" id="rdMva" /></div>
+            <div><label class="field-label">Avg Power Factor</label><input type="number" step="any" inputmode="decimal" id="avgPf" /></div>
           </div>
 
           <div class="section-divider-line" style="margin: 15px 0; background: var(--border); height: 1px;"></div>

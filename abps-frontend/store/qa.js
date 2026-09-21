@@ -63,7 +63,7 @@ function renderIsolatedFollowUpTimeline(leadRef, list, scopeNode) {
   const headerColBorder = "border-left:2px solid var(--border);";
   box.innerHTML = `
     <div style="overflow-x:auto;">
-      <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+      <table class="mobile-scroll-table" style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <thead>
           <tr style="background:#f8fafc; border-bottom:2px solid var(--border);">
             <th style="width:10%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Timestamp</th>

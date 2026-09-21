@@ -111,7 +111,7 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
   const headerColBorder = "border-left:2px solid var(--border);";
   box.innerHTML = `
     <div style="overflow-x:auto;">
-      <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+      <table class="mobile-scroll-table" style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <thead>
           <tr style="background:#f0fdf4; border-bottom:2px solid var(--border);">
             <th style="width:6%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Status</th>
