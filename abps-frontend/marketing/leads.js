@@ -2969,14 +2969,45 @@ function resetPurchaseOrderWorkspace() {
   document.getElementById('purchase-order-inputs-container').style.display = 'block';
 }
 
-function handleGateFileSelectionChange(input, boxId, textMsg) {
-  const file = input.files[0];
-  if (!file) return;
-  if (boxId === 'gate-invoice-box') targetGateInvoiceFileObj = file;
-  else if (boxId === 'gate-challan-box') targetGateChallanFileObj = file;
-  const box = document.getElementById(boxId);
-  box.textContent = textMsg; box.classList.add('done');
+// docType is 'invoice' or 'challan' — a real vendor invoice/challan is
+// routinely 2-3 pages, so this appends to the running list (input carries
+// `multiple` in index.html) rather than replacing it; picking again after
+// removing a page, or picking the exact same file(s) twice, still fires
+// onchange because input.value is cleared after every pick.
+function handleGateFileSelectionMulti(input, docType) {
+  const files = [...(input.files || [])];
+  input.value = "";
+  if (files.length === 0) return;
+  const arr = docType === 'invoice' ? targetGateInvoiceFiles : targetGateChallanFiles;
+  arr.push(...files);
+  renderGateFileList(docType === 'invoice' ? 'gate-invoice-box' : 'gate-challan-box');
   updateGateRequiredMarkers();
+}
+
+function removeGateFile(docType, idx) {
+  const arr = docType === 'invoice' ? targetGateInvoiceFiles : targetGateChallanFiles;
+  arr.splice(idx, 1);
+  renderGateFileList(docType === 'invoice' ? 'gate-invoice-box' : 'gate-challan-box');
+  updateGateRequiredMarkers();
+}
+
+function renderGateFileList(boxId) {
+  const isInvoice = boxId === 'gate-invoice-box';
+  const docType = isInvoice ? 'invoice' : 'challan';
+  const label = isInvoice ? 'Invoice' : 'Challan';
+  const files = isInvoice ? targetGateInvoiceFiles : targetGateChallanFiles;
+  const box = document.getElementById(boxId);
+  if (box) {
+    if (files.length > 0) { box.textContent = `✅ ${label} Attached — ${files.length} page${files.length > 1 ? 's' : ''}, click to add more`; box.classList.add('done'); }
+    else { box.textContent = `📷 Select ${label} Image`; box.classList.remove('done'); }
+  }
+  const list = document.getElementById(boxId + '-filelist');
+  if (!list) return;
+  list.innerHTML = files.map((f, i) => `
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:0.76rem; padding:4px 8px; background:#f8fafc; border:1px solid var(--border); border-radius:4px; margin-top:4px;">
+      <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Page ${i + 1}: ${escapeHtml(f.name)}</span>
+      <span onclick="removeGateFile('${docType}', ${i})" style="cursor:pointer; color:#b91c1c; font-weight:700; flex-shrink:0;" title="Remove">✕</span>
+    </div>`).join("");
 }
 
 // Invoice Number's "*" only makes sense while an Invoice is actually
@@ -2987,8 +3018,8 @@ function handleGateFileSelectionChange(input, boxId, textMsg) {
 function updateGateRequiredMarkers() {
   const invMark = document.getElementById('gate-invoice-required-mark');
   const chMark  = document.getElementById('gate-challan-required-mark');
-  if (invMark) invMark.style.display = targetGateInvoiceFileObj ? 'inline' : 'none';
-  if (chMark)  chMark.style.display  = targetGateChallanFileObj  ? 'inline' : 'none';
+  if (invMark) invMark.style.display = targetGateInvoiceFiles.length > 0 ? 'inline' : 'none';
+  if (chMark)  chMark.style.display  = targetGateChallanFiles.length > 0  ? 'inline' : 'none';
 }
 
 function togglePinvDocCard(bodyId) {

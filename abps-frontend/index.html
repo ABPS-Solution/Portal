@@ -405,15 +405,20 @@
 
   /* --- GATE ENTRY MOBILE RESPONSIVENESS (scoped to #canvas-module-store-gate-entry only) --- */
   .gate-upload-row { display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
-  .gate-upload-row .card-box { flex:1 1 200px; }
+  /* Each Invoice/Challan slot is now a wrapper (the card-box itself + its
+     removable page list below it), not the card-box alone — flex sizing
+     moved here from .card-box so a multi-page file list doesn't get
+     squeezed by the old rule still assuming card-box was the flex item. */
+  .gate-upload-col { flex:1 1 200px; min-width:0; }
+  .gate-upload-col .card-box { width:100%; box-sizing:border-box; }
   .gate-meta-grid { display:grid; grid-template-columns:20fr 15fr 15fr 40fr 10fr; gap:10px; margin-bottom:15px; }
   .gate-verification-footer { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
 
   @media(max-width:640px) {
     #canvas-module-store-gate-entry { padding:12px !important; }
     #canvas-module-store-gate-entry h2 { font-size:1.05rem; }
-    .gate-upload-row { flex-direction:row; gap:8px; }
-    .gate-upload-row .card-box { min-height:44px !important; padding:8px 6px !important; font-size:0.72rem !important; line-height:1.2; }
+    .gate-upload-row { flex-direction:column; gap:8px; }
+    .gate-upload-col .card-box { min-height:48px !important; padding:10px 6px !important; font-size:0.78rem !important; line-height:1.3; }
     .gate-meta-grid { grid-template-columns:repeat(2,1fr); }
     .gate-verification-footer { flex-direction:column-reverse; }
     .gate-verification-footer .nav-btn-styled { width:100%; padding:12px !important; font-size:0.95rem; }
@@ -1150,11 +1155,18 @@
       <div class="section" style="padding: 16px;">
         <div id="gate-upload-fields-wrapper-group" style="display: block;">
           <div class="card-row gate-upload-row">
-            <div class="card-box" id="gate-invoice-box" onclick="document.getElementById('gate-invoice-file').click()" style="padding: 24px; font-size: 0.95rem; min-height: 80px; display: flex; align-items: center; justify-content: center;">📷 Select Invoice Image</div>
-            <div class="card-box" id="gate-challan-box" onclick="document.getElementById('gate-challan-file').click()" style="padding: 24px; font-size: 0.95rem; min-height: 80px; display: flex; align-items: center; justify-content: center;">📷 Select Challan Image</div>
+            <div class="gate-upload-col">
+              <div class="card-box" id="gate-invoice-box" onclick="document.getElementById('gate-invoice-file').click()" style="padding: 24px; font-size: 0.95rem; min-height: 80px; display: flex; align-items: center; justify-content: center;">📷 Select Invoice Image</div>
+              <div id="gate-invoice-box-filelist"></div>
+            </div>
+            <div class="gate-upload-col">
+              <div class="card-box" id="gate-challan-box" onclick="document.getElementById('gate-challan-file').click()" style="padding: 24px; font-size: 0.95rem; min-height: 80px; display: flex; align-items: center; justify-content: center;">📷 Select Challan Image</div>
+              <div id="gate-challan-box-filelist"></div>
+            </div>
           </div>
-          <input type="file" id="gate-invoice-file" accept="image/*,application/pdf" hidden onchange="handleGateFileSelectionChange(this, 'gate-invoice-box', 'Invoice Attached ✅')" />
-          <input type="file" id="gate-challan-file" accept="image/*,application/pdf" hidden onchange="handleGateFileSelectionChange(this, 'gate-challan-box', 'Challan Attached ✅')" />
+          <input type="file" id="gate-invoice-file" accept="image/*,application/pdf" multiple hidden onchange="handleGateFileSelectionMulti(this, 'invoice')" />
+          <input type="file" id="gate-challan-file" accept="image/*,application/pdf" multiple hidden onchange="handleGateFileSelectionMulti(this, 'challan')" />
+          <p style="font-size:0.72rem; color:var(--muted); margin:2px 0 10px;">A multi-page invoice/challan? Select all the page photos at once (or add more one at a time) — they're combined into one document automatically.</p>
           <button class="btn btn-ai" id="gate-parse-ai-btn" onclick="parseGateDocumentsWithAI()" style="width:100%;">Process Documents with AI</button>
         </div>
 

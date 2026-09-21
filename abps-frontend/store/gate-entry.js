@@ -1,13 +1,86 @@
-let targetGateInvoiceFileObj = null;
-let targetGateChallanFileObj = null;
+// Invoice/Challan each now hold an ARRAY of files, not one — a real vendor
+// invoice is routinely 2-3 pages and can't be captured in a single phone
+// photo. Multiple selected IMAGES are combined into one tall stacked image
+// client-side (combineGateImagesToSingleBase64 below) before either the AI
+// step or the final submit — this needed zero backend/schema changes,
+// since store.inbound_store_ledger.drive_image_url has always stored
+// exactly one URL per document type. A single PDF is passed through
+// unchanged (a PDF can already hold multiple pages on its own); mixing a
+// PDF with anything else, or selecting more than one PDF, isn't supported
+// (combining PDFs into one client-side needs a heavy PDF library this app
+// doesn't carry) — combineGateImagesToSingleBase64 rejects that combination
+// with a clear alert rather than silently dropping pages.
+let targetGateInvoiceFiles = [];
+let targetGateChallanFiles = [];
 let activeParsedGatePayloadCache = null;
 
+// Stacks one or more image Files vertically onto a single canvas and
+// returns { base64, mimeType } — or, for a lone PDF, reads it through
+// unchanged. Returns null for an empty list.
+function combineGateImagesToSingleBase64(files) {
+  return new Promise((resolve, reject) => {
+    if (!files || files.length === 0) { resolve(null); return; }
+
+    const hasPdf = files.some(f => f.type === 'application/pdf');
+    if (hasPdf) {
+      if (files.length > 1) {
+        reject(new Error('A PDF can\'t be combined with other files — select either one PDF, or one/more images, not both.'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => resolve({ base64: reader.result.split(',')[1], mimeType: 'application/pdf' });
+      reader.onerror = reject;
+      reader.readAsDataURL(files[0]);
+      return;
+    }
+
+    const loadImage = file => new Promise((res, rej) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => res(img);
+        img.onerror = rej;
+        img.src = e.target.result;
+      };
+      reader.onerror = rej;
+      reader.readAsDataURL(file);
+    });
+
+    Promise.all(files.map(loadImage)).then(images => {
+      if (images.length === 1) {
+        const canvas = document.createElement('canvas');
+        canvas.width = images[0].naturalWidth; canvas.height = images[0].naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(images[0], 0, 0);
+        resolve({ base64: canvas.toDataURL('image/jpeg', 0.92).split(',')[1], mimeType: 'image/jpeg' });
+        return;
+      }
+      // Scale every page to a common width (the widest one) so a page shot
+      // in portrait next to one shot in landscape still lines up cleanly,
+      // then stack top to bottom with a thin white gap between pages.
+      const gap = 14;
+      const targetWidth = Math.max(...images.map(img => img.naturalWidth));
+      const scaledHeights = images.map(img => Math.round(img.naturalHeight * (targetWidth / img.naturalWidth)));
+      const totalHeight = scaledHeights.reduce((a, b) => a + b, 0) + gap * (images.length - 1);
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth; canvas.height = totalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, targetWidth, totalHeight);
+      let y = 0;
+      images.forEach((img, i) => {
+        ctx.drawImage(img, 0, y, targetWidth, scaledHeights[i]);
+        y += scaledHeights[i] + gap;
+      });
+      resolve({ base64: canvas.toDataURL('image/jpeg', 0.92).split(',')[1], mimeType: 'image/jpeg' });
+    }).catch(reject);
+  });
+}
+
 function resetGateEntryWorkspaceState() {
-  targetGateInvoiceFileObj = null; targetGateChallanFileObj = null; activeParsedGatePayloadCache = null;
+  targetGateInvoiceFiles = []; targetGateChallanFiles = []; activeParsedGatePayloadCache = null;
   document.getElementById('gate-invoice-file').value = ""; document.getElementById('gate-challan-file').value = "";
-  const b1 = document.getElementById('gate-invoice-box'); const b2 = document.getElementById('gate-challan-box');
-  if (b1) { b1.textContent = "📷 Select Invoice Image"; b1.classList.remove('done'); }
-  if (b2) { b2.textContent = "📷 Select Challan Image"; b2.classList.remove('done'); }
+  renderGateFileList('gate-invoice-box'); renderGateFileList('gate-challan-box');
   if (typeof updateGateRequiredMarkers === 'function') updateGateRequiredMarkers();
   document.getElementById('gate-ai-verification-workspace').style.display = "none";
   document.getElementById('gate-verification-table-body').innerHTML = "";
@@ -40,34 +113,36 @@ function resetGateEntryWorkspaceState() {
 
 async function parseGateDocumentsWithAI() {
   const btn = document.getElementById('gate-parse-ai-btn');
-  if (!targetGateInvoiceFileObj && !targetGateChallanFileObj) return alert("Please select at least one document (Invoice or Challan) before processing.");
+  if (targetGateInvoiceFiles.length === 0 && targetGateChallanFiles.length === 0) return alert("Please select at least one document (Invoice or Challan) before processing.");
   btn.disabled = true; btn.innerHTML = 'AI Processing...';
   try {
-    const convertToBase64 = file => new Promise(res => {
-      if (!file) return res(null); const r = new FileReader();
-      r.onload = () => res(r.result.split(',')[1]); r.readAsDataURL(file);
-    });
-    const inv64 = targetGateInvoiceFileObj ? await convertToBase64(targetGateInvoiceFileObj) : null;
-    const ch64  = targetGateChallanFileObj  ? await convertToBase64(targetGateChallanFileObj)  : null;
-    
+    let invoiceCombined, challanCombined;
+    try {
+      [invoiceCombined, challanCombined] = await Promise.all([
+        combineGateImagesToSingleBase64(targetGateInvoiceFiles),
+        combineGateImagesToSingleBase64(targetGateChallanFiles)
+      ]);
+    } catch (combineErr) {
+      alert(combineErr.message);
+      return;
+    }
+
     const existingMaterialNamesList = (window.itemCodeCatalogCache || []).map(i => i.productName);
 
     // Use whichever document is available, prefer invoice, fall back to challan.
-    // The mimeType sent MUST match whichever file actually ended up as the
-    // "invoice" blob — when only a challan was selected, the challan's own
-    // file becomes invoiceBase64 (the fallback above), but the mimeType was
-    // still hardcoded to "image/jpeg" regardless of the challan's real
-    // format, mislabeling e.g. a PNG/HEIC file as JPEG and making Gemini's
-    // API reject it outright ("Unable to process input image"). Derive both
-    // from whichever File object actually supplied each blob.
-    const primaryFile = targetGateInvoiceFileObj || targetGateChallanFileObj;
-    const secondaryBase64 = (targetGateInvoiceFileObj && targetGateChallanFileObj) ? ch64 : null;
+    // The mimeType sent MUST match whichever combined blob actually ended up
+    // as the "invoice" one — when only a challan was selected, the challan's
+    // own combined image becomes invoiceBase64 (the fallback below), so its
+    // real mimeType has to travel with it or Gemini's API rejects a
+    // mislabeled image outright ("Unable to process input image").
+    const primary = invoiceCombined || challanCombined;
+    const secondary = (invoiceCombined && challanCombined) ? challanCombined : null;
     const data = await apFetch({
       action: "storeProcessAIInvoiceBlob",
-      invoiceBase64: inv64 || ch64,
-      invoiceMimeType: primaryFile ? primaryFile.type : "image/jpeg",
-      challanBase64: secondaryBase64,
-      challanMimeType: targetGateChallanFileObj ? targetGateChallanFileObj.type : "image/jpeg",
+      invoiceBase64: primary ? primary.base64 : null,
+      invoiceMimeType: primary ? primary.mimeType : "image/jpeg",
+      challanBase64: secondary ? secondary.base64 : null,
+      challanMimeType: secondary ? secondary.mimeType : "image/jpeg",
       canonicalMaterialsCatalog: existingMaterialNamesList
     });
     if (!data.success) return alert("AI Processing failed: " + data.error);
@@ -144,8 +219,8 @@ async function commitGateEntryRecordsToBackend() {
   // only if a Challan was attached, and both if both were. Previously
   // Invoice Number was unconditionally required even for a challan-only
   // Gate Entry, which had no invoice number to give.
-  if (targetGateInvoiceFileObj && !document.getElementById('gate-meta-invoice').value.trim()) return alert("Invoice Number is compulsory.");
-  if (targetGateChallanFileObj && !document.getElementById('gate-meta-challan').value.trim()) return alert("Challan Number is compulsory.");
+  if (targetGateInvoiceFiles.length > 0 && !document.getElementById('gate-meta-invoice').value.trim()) return alert("Invoice Number is compulsory.");
+  if (targetGateChallanFiles.length > 0 && !document.getElementById('gate-meta-challan').value.trim()) return alert("Challan Number is compulsory.");
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Generating Gate Entry...';
@@ -174,18 +249,26 @@ async function commitGateEntryRecordsToBackend() {
     }
   });
   
+  let invoiceCombined, challanCombined;
   try {
-    // Convert gate files to base64 for Drive storage
-    const convertToBase64 = file => new Promise(resolve => {
-      if (!file) { resolve(""); return; }
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.readAsDataURL(file);
-    });
-    const [invoiceBase64, challanBase64] = await Promise.all([
-      convertToBase64(targetGateInvoiceFileObj),
-      convertToBase64(targetGateChallanFileObj)
+    // Combine each document type's selected pages into one image (or pass a
+    // lone PDF through) for Drive storage — same combiner used at the AI
+    // step, run again here since the operator may have added/removed pages
+    // after that step ran.
+    [invoiceCombined, challanCombined] = await Promise.all([
+      combineGateImagesToSingleBase64(targetGateInvoiceFiles),
+      combineGateImagesToSingleBase64(targetGateChallanFiles)
     ]);
+  } catch (combineErr) {
+    hideBlockingOverlay();
+    alert(combineErr.message);
+    btn.disabled = false; btn.textContent = "Generate Gate Entry";
+    return;
+  }
+  const invoiceBase64 = invoiceCombined ? invoiceCombined.base64 : "";
+  const challanBase64 = challanCombined ? challanCombined.base64 : "";
+
+  try {
 
     // Local cleanup — no API call needed for short fields
     const rawVendor  = document.getElementById('gate-meta-vendor').value.trim();
