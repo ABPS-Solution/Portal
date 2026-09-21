@@ -170,6 +170,8 @@ The `purchase` schema covers the Purchase department's whole workflow: turning a
 | `usd_rate` | numeric | The USD-to-INR conversion rate used for an Import-trade-type PO's pricing. |
 | `pps_pdf_url` | text | **Dead as of 16 Sep 2026 (migration 202)** — the PPS Document moved from per-PO to per-PRN; this column is no longer written. See `purchase_request_notes.pps_pdf_url` for the live equivalent. Left in place, not dropped, per house convention. |
 | `pps_pdf_version` | integer, default 0 | **Dead as of 16 Sep 2026** — same as above, see `purchase_request_notes.pps_pdf_version`. |
+| `checking_draft_count` | integer, default 0 | **RM PO Checking Draft loop (18-19 Sep 2026).** An RM PO used to produce NO document at all until Authorized — now Create RM PO auto-generates a watermarked "FOR CHECKING ONLY" PDF (a `— DRAFT #N` suffix on the PO number, `Checked & Signed By` in place of `Checked By`/`Authorized By`) for a paper review loop with the department head. This column is the authoritative printed draft number, bumped each time "Generate Checking Draft" is clicked from **Create RM PO → Pending POs (Editing)**, never derived by counting Drive files. |
+| `checking_doc_url` / `checking_doc_file_id` | text | The current checking draft's Drive link/file id — **updated in place on every regeneration** (`lib/checkingDraft.js`'s `updateFileContent`, not delete-and-reupload) so a link the reviewer has open never breaks. Cleared to NULL on Authorize or Reject, once the real signed PO PDF exists (or the PO is rejected outright). |
 
 ---
 
@@ -212,6 +214,7 @@ The `purchase` schema covers the Purchase department's whole workflow: turning a
 | `authorized_at` | timestamptz | When authorized/rejected. |
 | `rejection_reason` | text | Free-text reason if rejected. |
 | `header_changes` | jsonb | Any proposed changes to PO header fields (vendor terms, trade type, etc.) as part of this revision, separate from the line-item changes. |
+| `checking_draft_count` / `checking_doc_url` / `checking_doc_file_id` | integer / text / text | **RM PO Checking Draft loop, extended to revisions (18-19 Sep 2026).** Revise RM PO's own **"Pending Revisions (Editing)"** tab reuses the exact same rich revision form to edit a drafted revision and generate its own checking draft — rendering the MERGED preview (live PO ⊕ drafted changes), via `lib/poRevisionMerge.js`'s pure-function helpers, which are also reused by the real `authorizePORevision` commit path so the preview and the actual merge can never disagree. Cleared once Authorize PO Revision commits (or the revision is rejected). |
 
 **Unique constraint:** `po_revision_requests_one_pending` — a partial unique index ensuring only one pending revision request can exist per PO at a time.
 
