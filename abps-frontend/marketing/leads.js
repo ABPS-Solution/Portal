@@ -2686,7 +2686,7 @@ function renderPurchaseOrderReview() {
     const val = type === 'date' ? (raw ? raw.toString().slice(0, 10) : '') : fmt(raw);
     const labelText = required ? `${label} *` : label;
     // Every "number" field on this screen is a rupee amount (Basic/GST/
-    // Total PO Amount, ABG/PBG/Advance Amount) — rendered with Indian comma
+    // Total PO Amount, ABG/PBG Amount) — rendered with Indian comma
     // grouping the same way the Product List's amount columns are.
     if (type === 'number') {
       return `
@@ -2872,7 +2872,6 @@ async function submitReviewedPurchaseOrder() {
       abgTerms: s.abgTerms, abgAmount: s.abgAmount, pbgTerms: s.pbgTerms, pbgAmount: s.pbgAmount,
       ldClause: s.ldClause, inspectionTerms: s.inspectionTerms, documentsRequirement: s.documentsRequirement,
       poBasicAmount: s.poBasicAmount, poGstAmount: s.poGstAmount, poTotalAmount: s.poTotalAmount,
-      advanceAmount: s.advanceAmount, advanceReceivedDate: s.advanceReceivedDate,
       productName: s.productName, summary: s.summary, scopeOfWork: s.scopeOfWork, abgRequired: s.abgRequired,
     });
 

@@ -814,6 +814,10 @@
         <div class="menu-card" id="mod-status" onclick="navigateToModule('searchStatus')"><span class="mc-label">Search Leads by ABPS Engineer Name and Status</span></div>
         <div class="menu-card" id="mod-tasks" onclick="navigateToModule('searchTasks')"><span class="mc-label">Search Tasks by ABPS Engineer Name and Status</span></div>
       </div>
+      <div class="sec-label">Order Payment</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-order-payment" onclick="switchActiveDashboardModule('order-payment')"><span class="mc-label">Order Payment Progress</span></div>
+      </div>
     </div>
 
     <!-- ── ADMIN (16 Sep 2026 — Security & Login Access and Admin
@@ -2666,6 +2670,34 @@
       </div>
       <div id="cq-resolved-list"></div>
     </div>
+    </div>
+  </div>
+
+  <div id="canvas-module-order-payment" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitOrderPaymentBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <h2 class="panel-title">Order Payment Progress</h2>
+    <div id="opp-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+    <div id="opp-aggregate-strip" style="display:none; margin-bottom:18px;"></div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
+      <div style="flex:1; min-width:240px; position:relative;">
+        <input type="text" id="opp-search-input" placeholder="Search Company Name or Project ID..." autocomplete="off"
+          oninput="oppFilterList(this.value)"
+          style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+      </div>
+      <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; font-weight:600; color:var(--muted); white-space:nowrap;">
+        <input type="checkbox" id="opp-include-fully-paid" onchange="oppToggleFullyPaid(this.checked)" />
+        Show fully paid POs
+      </label>
+    </div>
+
+    <div id="opp-list"></div>
+    <div id="opp-editor-zone"></div>
     </div>
   </div>
 
@@ -5574,6 +5606,7 @@
 <script src="marketing/business-card.js"></script>
 <script src="marketing/marketing-dashboard.js"></script>
 <script src="marketing/meeting-prep.js"></script>
+<script src="marketing/order-payment.js"></script>
 <script src="design/item-code-format.js"></script>
 <script src="design/item-codes.js"></script>
 <script src="design/material-descriptions.js"></script>

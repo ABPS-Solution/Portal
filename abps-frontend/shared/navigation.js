@@ -362,6 +362,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canSearchQual              = userPermissionsObject.searchQualification === true;
   const canSearchCityState         = userPermissionsObject.searchCityState === true;
   const canMeetingPreparation      = userPermissionsObject.meetingPreparation === true;
+  const canOrderPaymentProgress    = userPermissionsObject.orderPaymentProgress === true;
 
   // 2. EXTRACT RAW WAREHOUSE ACCESS PRIVILEGES MATRIX
   const canViewLiveStock           = userPermissionsObject.liveStoreStock === true;
@@ -437,6 +438,9 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   }
   if (document.getElementById("mod-meeting-prep")) {
     document.getElementById("mod-meeting-prep").style.display = canMeetingPreparation ? "block" : "none";
+  }
+  if (document.getElementById("mod-order-payment")) {
+    document.getElementById("mod-order-payment").style.display = canOrderPaymentProgress ? "block" : "none";
   }
 
   // --- SET INDIVIDUAL VISIBILITY FOR STORE & FINISHED GOODS CARDS ---
@@ -603,7 +607,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // --- EVALUATE DEPARTMENT ENCLOSURE OVERLAYS ---
   const marketingHeaderBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingHeaderBlock) {
-    marketingHeaderBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation) ? "block" : "none";
+    marketingHeaderBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation || canOrderPaymentProgress) ? "block" : "none";
   }
 
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");
@@ -1169,6 +1173,10 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     document.getElementById("dashboard-view").style.display = "none";
     const cqCanvas = document.getElementById("canvas-module-customer-queries");
     if (cqCanvas) { cqCanvas.style.display = "block"; initializeCustomerQueriesWorkspace(); }
+  } else if (targetCanvasModuleId === 'order-payment') {
+    document.getElementById("dashboard-view").style.display = "none";
+    const oppCanvas = document.getElementById("canvas-module-order-payment");
+    if (oppCanvas) { oppCanvas.style.display = "block"; initializeOrderPaymentPanel(); }
   } else if (targetCanvasModuleId === 'coming-soon') {
     document.getElementById("dashboard-view").style.display = "none";
     document.getElementById("module-workspace-container").style.display = "block";
@@ -1185,6 +1193,12 @@ function exitManufacturingClearanceBackToMenu() {
 
 function exitProjectTimelineBackToMenu() {
   document.getElementById("canvas-module-project-timeline").style.display = "none";
+  enforceDynamicModuleRoleGateways(userPermissions);
+  document.getElementById("dashboard-view").style.display = "flex";
+}
+
+function exitOrderPaymentBackToMenu() {
+  document.getElementById("canvas-module-order-payment").style.display = "none";
   enforceDynamicModuleRoleGateways(userPermissions);
   document.getElementById("dashboard-view").style.display = "flex";
 }
