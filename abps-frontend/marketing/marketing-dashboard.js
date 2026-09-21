@@ -147,7 +147,10 @@ function mdRenderDashboard(data) {
     ? `<tr><td colspan="3" style="color:var(--muted); padding:6px;">No overdue payments.</td></tr>`
     : opList.map(p => `
         <tr style="border-bottom:1px solid var(--border);">
-          <td style="padding:4px;">${escapeHtml(p.projectId)}</td>
+          <td style="padding:4px;">
+            <div>${escapeHtml(p.companyName || p.projectId)}</div>
+            ${p.companyName ? `<div style="font-size:0.68rem; color:var(--muted);">${escapeHtml(p.projectId)}</div>` : ""}
+          </td>
           <td style="padding:4px; color:#b91c1c; font-weight:700;">${escapeHtml(formatOrdinalDate(p.expectedDate))}</td>
           <td style="padding:4px; text-align:right; font-family:monospace;">₹${(parseFloat(p.expectedAmount) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</td>
         </tr>`).join("");

@@ -268,7 +268,9 @@ function oppFillTranchesIfPresent(projectId) {
 }
 
 function oppTrancheRowBg(t) {
-  return oppIsOverdueTranche(t) ? '#fef2f2' : '#f8fafc';
+  // Same red shade as the aggregate strip's Overdue buckets (#fee2e2),
+  // not a lighter one — the two should read as the same severity.
+  return oppIsOverdueTranche(t) ? '#fee2e2' : '#f8fafc';
 }
 
 function oppRenderTranches(projectId) {
