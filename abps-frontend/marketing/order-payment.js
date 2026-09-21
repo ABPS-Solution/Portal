@@ -19,7 +19,7 @@
 
 window.oppAllProjects = window.oppAllProjects || [];
 window.oppLastRenderedProjects = [];
-window.oppIncludeFullyPaid = false;
+window.oppOverdueOnly = false;   // client-side filter: only POs with >=1 tranche past its Expected Date
 window.oppExpandedProjects = new Set();       // projectIds with the payment editor open
 window.oppLeadExpandedProjects = new Set();   // projectIds with the View Lead panel open
 window.oppScheduleDataCache = {};             // projectId -> fetchOrderPaymentSchedule response (or {error})
@@ -29,8 +29,19 @@ function oppFmt(n) {
   return (parseFloat(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
 }
 
+// oppFmtDate — "21 Sep 2026" (numeric day, no ordinal suffix), the format
+// this screen deliberately uses instead of the app-wide formatOrdinalDate
+// ("21st Sep 2026"), per explicit request for this section only.
+function oppFmtDate(value) {
+  if (!value) return '';
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) return '';
+  const month = d.toLocaleString('en-US', { month: 'short' });
+  return `${d.getDate()} ${month} ${d.getFullYear()}`;
+}
+
 async function initializeOrderPaymentPanel() {
-  document.getElementById("opp-include-fully-paid").checked = window.oppIncludeFullyPaid;
+  document.getElementById("opp-overdue-only").checked = window.oppOverdueOnly;
   document.getElementById("opp-search-input").value = "";
   // Fresh state every time the panel is (re-)entered — same "reset on
   // entry" convention as every other full-screen canvas panel.
@@ -39,37 +50,41 @@ async function initializeOrderPaymentPanel() {
   window.oppScheduleDataCache = {};
   window.oppActiveTranchesByProject = {};
   await oppLoadList();
-  if (localStorage.getItem("isUserAdminGlobal") === "true") {
-    document.getElementById("opp-aggregate-strip").style.display = "block";
-    oppLoadAggregate();
-  } else {
-    document.getElementById("opp-aggregate-strip").style.display = "none";
-  }
+  // Visible to everyone who can reach this screen at all (perm_order_payment_
+  // progress), not admin-only — the backend gate matches (fetchOrderPaymentAggregate).
+  document.getElementById("opp-aggregate-strip").style.display = "block";
+  oppLoadAggregate();
 }
 
 async function oppLoadList() {
   const listEl = document.getElementById("opp-list");
   listEl.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Loading...</div>`;
   try {
-    const data = await apFetch({ action: "fetchOrderPaymentProgressList", includeFullyPaid: window.oppIncludeFullyPaid });
+    // Fully-paid POs are never fetched at all now -- there's no toggle to
+    // reveal them, they're simply not relevant to a payment-tracking list.
+    const data = await apFetch({ action: "fetchOrderPaymentProgressList", includeFullyPaid: false });
     if (!data.success) { listEl.innerHTML = `<div style="color:#b91c1c; padding:14px;">${escapeHtml(data.error || 'Failed to load.')}</div>`; return; }
     window.oppAllProjects = data.projects || [];
-    const q = (document.getElementById("opp-search-input").value || "").trim();
-    oppRenderList(q ? oppFilteredProjects(q) : window.oppAllProjects);
+    oppRenderList(oppFilteredProjects(document.getElementById("opp-search-input").value || ""));
   } catch (e) {
     listEl.innerHTML = `<div style="color:#b91c1c; padding:14px;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
-function oppToggleFullyPaid(checked) {
-  window.oppIncludeFullyPaid = checked;
-  oppLoadList();
+function oppToggleOverdueOnly(checked) {
+  window.oppOverdueOnly = checked;
+  oppRenderList(oppFilteredProjects(document.getElementById("opp-search-input").value || ""));
 }
 
+// oppFilteredProjects -- search text AND the "overdue only" toggle both
+// apply client-side over the already-fetched list (overdueCount is
+// already returned per project, no extra round trip needed for the toggle).
 function oppFilteredProjects(query) {
   const q = (query || "").trim().toLowerCase();
-  if (!q) return window.oppAllProjects;
-  return window.oppAllProjects.filter(p =>
+  let list = window.oppAllProjects;
+  if (window.oppOverdueOnly) list = list.filter(p => p.overdueCount > 0);
+  if (!q) return list;
+  return list.filter(p =>
     (p.companyName || "").toLowerCase().includes(q) ||
     (p.projectId || "").toLowerCase().includes(q) ||
     (p.poNumber || "").toLowerCase().includes(q));
@@ -106,7 +121,7 @@ function oppRenderCard(p) {
   const overdueChip = p.overdueCount > 0
     ? `<span style="background:#fee2e2; color:#b91c1c; font-weight:700; font-size:0.68rem; padding:2px 8px; border-radius:10px; margin-left:6px;">${p.overdueCount} overdue</span>` : "";
   const fallbackChip = p.poTotalSource === 'po_invoice_report_fallback'
-    ? `<span style="background:#fef3c7; color:#b45309; font-weight:700; font-size:0.66rem; padding:2px 8px; border-radius:10px; margin-left:6px;" title="No PO line items on this project — using the PO amount typed at upload as an estimate.">estimate</span>` : "";
+    ? `<span style="background:#fef3c7; color:#b45309; font-weight:700; font-size:0.66rem; padding:2px 8px; border-radius:10px; margin-left:6px;" title="No PO line items on this project. Using the PO amount typed at upload as an estimate.">estimate</span>` : "";
 
   const isExpanded = window.oppExpandedProjects.has(p.projectId);
   const isLeadExpanded = window.oppLeadExpandedProjects.has(p.projectId);
@@ -115,23 +130,23 @@ function oppRenderCard(p) {
     <div style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:10px; background:#fff; overflow:hidden;">
       <div style="padding:12px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; cursor:pointer;" onclick="oppToggleProject('${p.projectId}')">
         <div style="flex:1; min-width:220px;">
-          <div style="font-weight:800; font-size:0.95rem;">${escapeHtml(p.companyName || '—')}</div>
+          <div style="font-weight:800; font-size:0.95rem;">${escapeHtml(p.companyName || '-')}</div>
           <div style="font-size:0.78rem; color:var(--muted); margin-top:2px;">
             ${escapeHtml(p.projectId)} · ${escapeHtml(p.projectStatus || '')}${overdueChip}${fallbackChip}
           </div>
         </div>
-        <div style="display:flex; gap:22px; align-items:flex-start; font-family:monospace; text-align:right;">
+        <div style="display:flex; gap:26px; align-items:flex-start; font-family:monospace; text-align:right;">
           <div>
-            <div style="font-size:0.65rem; font-weight:800; text-transform:uppercase; color:var(--muted);">PO Total</div>
-            <div style="font-size:0.92rem; font-weight:700;">${unknownTotal ? '—' : '₹' + oppFmt(p.poTotal)}</div>
+            <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--muted);">PO Total</div>
+            <div style="font-size:1.08rem; font-weight:700;">${unknownTotal ? '-' : '₹' + oppFmt(p.poTotal)}</div>
           </div>
           <div>
-            <div style="font-size:0.65rem; font-weight:800; text-transform:uppercase; color:var(--muted);">Received</div>
-            <div style="font-size:0.92rem; font-weight:700; color:#15803d;">₹${oppFmt(p.receivedTotal)}</div>
+            <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--muted);">Received</div>
+            <div style="font-size:1.08rem; font-weight:700; color:#15803d;">₹${oppFmt(p.receivedTotal)}</div>
           </div>
           <div>
-            <div style="font-size:0.65rem; font-weight:800; text-transform:uppercase; color:var(--muted);">Pending</div>
-            <div style="font-size:0.92rem; font-weight:700; color:${isFullyPaid ? '#15803d' : '#b45309'};">${isFullyPaid ? 'Fully Paid' : '₹' + oppFmt(p.pendingBalance)}</div>
+            <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--muted);">Pending</div>
+            <div style="font-size:1.08rem; font-weight:700; color:${isFullyPaid ? '#15803d' : '#b45309'};">${isFullyPaid ? 'Fully Paid' : '₹' + oppFmt(p.pendingBalance)}</div>
           </div>
         </div>
         <button id="opp-lead-btn-${p.projectId}" class="nav-btn-styled" style="font-size:0.78rem; padding:5px 12px; background:#fff; color:var(--brand); border:1px solid var(--brand); white-space:nowrap;"
@@ -177,22 +192,25 @@ function oppRenderEditorContent(projectId) {
 
   const { project, poTotal, poTotalSource, lineItems } = cached;
   const fallbackNote = poTotalSource === 'po_invoice_report_fallback'
-    ? `<div style="font-size:0.72rem; color:#b45309; margin-top:4px;">⚠ This project has no line items yet — the PO Total shown is an estimate from the amount typed in at PO upload, not a reliable figure.</div>` : "";
+    ? `<div style="font-size:0.72rem; color:#b45309; margin-top:4px;">⚠ This project has no line items yet. The PO Total shown is an estimate from the amount typed in at PO upload, not a reliable figure.</div>` : "";
 
+  // Each product is its own block (not a side-by-side flex row) so a long
+  // description wraps at full width instead of squeezing awkwardly next
+  // to the price column — the price sits on its own line underneath.
   const productsBox = (lineItems || []).length ? `
     <div style="margin-top:12px; padding:10px 12px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:0.78rem;">
       <strong style="color:var(--muted); font-size:0.7rem; text-transform:uppercase;">Products in this Order</strong>
       <div style="margin-top:6px;">
         ${lineItems.map(li => `
-          <div style="display:flex; justify-content:space-between; gap:12px; padding:3px 0; border-bottom:1px dashed var(--border);">
-            <span>${escapeHtml(li.description || '—')}${li.quantity != null ? ` × ${oppFmt(li.quantity)}${li.unit ? ' ' + escapeHtml(li.unit) : ''}` : ''}</span>
-            <span style="font-family:monospace; white-space:nowrap;">${li.totalAmount != null ? '₹' + oppFmt(li.totalAmount) : '—'}</span>
+          <div style="padding:6px 0; border-bottom:1px dashed var(--border);">
+            <div>${escapeHtml(li.description || '-')}${li.quantity != null ? ` <strong>× ${oppFmt(li.quantity)}${li.unit ? ' ' + escapeHtml(li.unit) : ''}</strong>` : ''}</div>
+            <div style="font-family:monospace; color:var(--muted); margin-top:2px;">${li.totalAmount != null ? '₹' + oppFmt(li.totalAmount) : '-'}</div>
           </div>`).join("")}
       </div>
     </div>` : "";
 
   return `
-    <div style="padding:14px 16px; border-top:1px solid var(--border); background:#fbfdff;">
+    <div style="padding:14px 16px; border-top:1px solid var(--border); background:#f4f6f9;">
       ${project.paymentTerms ? `
       <div style="padding:10px 12px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:0.82rem;">
         <strong style="color:var(--muted); font-size:0.72rem; text-transform:uppercase;">Payment Terms (reference only)</strong>
@@ -228,13 +246,13 @@ function oppRenderTranches(projectId) {
     const slipped = t.originalExpectedDate && t.expectedDate && t.originalExpectedDate !== t.expectedDate;
     const isReceived = t.status === 'Received';
     const note = slipped
-      ? `<div id="opp-slip-note-${projectId}-${i}" style="font-size:0.68rem; color:#b45309; margin-top:2px;" title="Originally expected ${t.originalExpectedDate}">slipped from ${t.originalExpectedDate}</div>` : `<div id="opp-slip-note-${projectId}-${i}"></div>`;
+      ? `<div id="opp-slip-note-${projectId}-${i}" style="font-size:0.68rem; color:#b45309; margin-top:2px;" title="Originally expected ${oppFmtDate(t.originalExpectedDate)}">slipped from ${oppFmtDate(t.originalExpectedDate)}</div>` : `<div id="opp-slip-note-${projectId}-${i}"></div>`;
     return `
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:6px; padding:8px 10px; margin-bottom:8px;">
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
           <div style="flex:1; min-width:110px;">
             <label class="field-label" style="margin-top:0; font-size:0.68rem;">Expected Amount ₹</label>
-            <input type="number" min="0.01" step="any" value="${t.expectedAmount ?? ''}"
+            <input type="number" min="0.01" step="any" value="${formatQtyTrimmed(t.expectedAmount)}"
               oninput="oppUpdateTrancheField('${projectId}', ${i}, 'expectedAmount', this.value)"
               style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px;" />
           </div>
@@ -246,7 +264,7 @@ function oppRenderTranches(projectId) {
           </div>
           <div style="flex:1; min-width:110px;">
             <label class="field-label" style="margin-top:0; font-size:0.68rem;">Received Amount ₹</label>
-            <input type="number" min="0" step="any" value="${t.receivedAmount ?? ''}"
+            <input type="number" min="0" step="any" value="${formatQtyTrimmed(t.receivedAmount)}"
               oninput="oppUpdateTrancheField('${projectId}', ${i}, 'receivedAmount', this.value)"
               style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px;" />
           </div>
@@ -336,13 +354,13 @@ function oppRenderBalanceLine(projectId) {
   const scheduled = list.reduce((s, t) => s + (Number(t.expectedAmount) || 0), 0);
   const poTotal = window.oppScheduleDataCache[projectId]?.poTotal;
   if (poTotal == null) {
-    el.innerHTML = `<span style="color:var(--muted);">Scheduled ₹${oppFmt(scheduled)} — PO Total unknown, cannot compare.</span>`;
+    el.innerHTML = `<span style="color:var(--muted);">Scheduled ₹${oppFmt(scheduled)}. PO Total unknown, cannot compare.</span>`;
     return;
   }
   const diff = poTotal - scheduled;
-  let color = '#15803d', label = `Scheduled ₹${oppFmt(scheduled)} of ₹${oppFmt(poTotal)} — fully scheduled`;
-  if (diff > 0.005) { color = '#b45309'; label = `Scheduled ₹${oppFmt(scheduled)} of ₹${oppFmt(poTotal)} — ₹${oppFmt(diff)} unscheduled`; }
-  else if (diff < -0.005) { color = '#b91c1c'; label = `Scheduled ₹${oppFmt(scheduled)} of ₹${oppFmt(poTotal)} — ₹${oppFmt(-diff)} over-scheduled`; }
+  let color = '#15803d', label = `Scheduled ₹${oppFmt(scheduled)} of ₹${oppFmt(poTotal)}, fully scheduled`;
+  if (diff > 0.005) { color = '#b45309'; label = `Scheduled ₹${oppFmt(scheduled)} of ₹${oppFmt(poTotal)}, ₹${oppFmt(diff)} unscheduled`; }
+  else if (diff < -0.005) { color = '#b91c1c'; label = `Scheduled ₹${oppFmt(scheduled)} of ₹${oppFmt(poTotal)}, ₹${oppFmt(-diff)} over-scheduled`; }
   el.innerHTML = `<span style="color:${color};">${label}</span>`;
 }
 
@@ -472,7 +490,7 @@ async function oppToggleLeadExpand(projectId, encodedCompany) {
     }).join("");
 
     const html = `<div style="padding:12px 14px; border-top:1px solid var(--border); background:#f8fafc;">
-      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px;">📋 ${escapeHtml(companyName)} — Lead Record</div>
+      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px;">📋 ${escapeHtml(companyName)}, Lead Record</div>
       ${cardsHtml}
     </div>`;
     target.innerHTML = html;
@@ -502,18 +520,18 @@ function oppRenderAggregateStrip(data) {
     <div style="flex:1; min-width:120px; background:${color.bg}; border:1px solid ${color.border}; border-radius:var(--radius); padding:10px 12px;">
       <div style="font-size:0.66rem; font-weight:800; text-transform:uppercase; color:${color.text};">${label}</div>
       <div style="font-size:1.02rem; font-weight:800; color:${color.text}; font-family:monospace;">₹${oppFmt(b.amount)}</div>
-      <div style="font-size:0.66rem; color:var(--muted);">${b.count} payment${b.count === 1 ? '' : 's'}${b.oldestDate ? ' · oldest ' + b.oldestDate : ''}</div>
+      <div style="font-size:0.66rem; color:var(--muted);">${b.count} payment${b.count === 1 ? '' : 's'}${b.oldestDate ? ' · oldest ' + oppFmtDate(b.oldestDate) : ''}</div>
     </div>`;
   const red = { bg: '#fee2e2', border: '#fca5a5', text: '#b91c1c' };
-  const amber = { bg: '#fef3c7', border: '#fde68a', text: '#b45309' };
+  const green = { bg: '#dcfce7', border: '#86efac', text: '#15803d' };
   const neutral = { bg: '#f1f5f9', border: 'var(--border)', text: '#334155' };
   el.innerHTML = `
-    <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--muted); margin-bottom:8px;">Expected Payments Across All POs (Admin View)</div>
+    <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--muted); margin-bottom:8px;">Expected Payments Across All POs</div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      ${bucket('Overdue > 1 Week', data.overdueOverWeek, red)}
-      ${bucket('Overdue', data.overdue, red)}
-      ${bucket('Today', data.today, amber)}
-      ${bucket('This Week', data.thisWeek, amber)}
+      ${bucket('Overdue more than 7 days', data.overdueOverWeek, red)}
+      ${bucket('Overdue in last 7 days', data.overdue, red)}
+      ${bucket('Today', data.today, green)}
+      ${bucket('This Week', data.thisWeek, green)}
       ${bucket('Next Week', data.nextWeek, neutral)}
       ${bucket('This Month', data.thisMonth, neutral)}
       ${bucket('This Quarter', data.thisQuarter, neutral)}
