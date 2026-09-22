@@ -123,7 +123,7 @@ async function handleCpdiProjectChange(projectId) {
 function cpdiInitInvoiceStateFromLines() {
   cpdiInvoiceState = {
     insuranceNo: "", mdccNo: "", transportName: "", lrNoDate: "", lcNoDate: "", dcNoDate: "", vehicleNo: "", mobileNo: "",
-    incoterms: PDI_INCOTERMS_OPTIONS[0].code, incotermsPlace: "", tradeType: "Local", usdRate: "",
+    incoterms: "", incotermsPlace: "", tradeType: "Local", usdRate: "",
     billTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "" },
     shipTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "" },
     lineItems: cpdiCache.lines.map(l => {
@@ -263,11 +263,7 @@ function cpdiRenderInvoiceForm() {
         ${field('DC No & Date', 'dcNoDate')}
         ${field('Vehicle No.', 'vehicleNo')}
         ${field('Mobile No', 'mobileNo')}
-        <div class="grid-cell-item"><label>Incoterms</label>
-          <select onchange="updateCpdiField('incoterms', this.value)" style="width:100%; padding:6px 4px;">
-            ${PDI_INCOTERMS_OPTIONS.map(o => `<option value="${o.code}" ${s.incoterms === o.code ? 'selected' : ''}>${o.label}</option>`).join('')}
-          </select>
-        </div>
+        ${field('Incoterms', 'incoterms')}
         <div class="grid-cell-item"><label>Named Place</label>
           <input type="text" placeholder="e.g. Mumbai Port" value="${esc(s.incotermsPlace)}" oninput="updateCpdiField('incotermsPlace', this.value)" style="width:100%; padding:6px 4px;" />
         </div>

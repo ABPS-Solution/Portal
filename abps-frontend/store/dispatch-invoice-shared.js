@@ -47,16 +47,11 @@ const PDI_STANDARD_BANK_DETAILS = { ...PDI_BANK_OPTIONS[0] };
 function applyPdiBankOption(key) {
   return PDI_BANK_OPTIONS.find(o => o.key === key) || PDI_BANK_OPTIONS[0];
 }
-const PDI_INCOTERMS_OPTIONS = [
-  { code: 'EXW', label: 'EXW — Ex Works' },
-  { code: 'FCA', label: 'FCA — Free Carrier' },
-  { code: 'CPT', label: 'CPT — Carriage Paid To' },
-  { code: 'CIP', label: 'CIP — Carriage And Insurance Paid To' },
-  { code: 'DPU', label: 'DPU — Delivered At Place Unloaded' },
-  { code: 'FOB', label: 'FOB — Free On Board' },
-  { code: 'CFR', label: 'CFR — Cost And Freight' },
-  { code: 'CIF', label: 'CIF — Cost, Insurance And Freight' },
-];
+// Incoterms used to be a fixed dropdown (PDI_INCOTERMS_OPTIONS, 8 codes) --
+// changed to free text per explicit request, since Incoterms only ever
+// appears on this one document and a rigid list was more restrictive than
+// useful (e.g. no room for a trailing named-place variant, a rarer code,
+// or "N/A"). The paired "Named Place" field is unchanged.
 const PDI_STANDARD_DECLARATION = "I / We hereby certify that our registration certificate under the GST Act, 2017 is in force on the date on which the supply of goods specified in this Tax invoice is made by me / us & the transaction of supply covered by this Tax invoice had been effected by me / us & it shall be accounted for in the turnover of supplies while filing of return & due tax if any payable on the supplies has been paid or shall be paid. Further certified that the particulars given above are true and correct & the amount indicated represents the prices actually charged and that there is no flow of additional consideration directly or indirectly from the buyer. Interest @18% p.a. charged on all outstanding more than one month after invoice has been rendered.";
 
 // Client-side port of lib/poTemplate.js's numberToWordsINR/USD — live
