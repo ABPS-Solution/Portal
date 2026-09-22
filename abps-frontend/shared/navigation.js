@@ -758,6 +758,17 @@ function handleDepartmentTabClick(key) {
   document.querySelectorAll('[id$="-workspace-enclosure-panel"]').forEach(p => p.style.display = 'none');
   document.querySelectorAll('[id^="canvas-module-"]').forEach(p => p.style.display = 'none');
 
+  // Same gap returnToDashboard() already closed: #dashboard-global-toolbar
+  // is a fixed-position element outside both sweeps above, so switching
+  // department tabs while a Dashboard's toolbar was showing (rather than
+  // using its own Return button) left it stuck on screen, overlapping
+  // whatever screen the new department opened into.
+  const staleToolbar = document.getElementById('dashboard-global-toolbar');
+  if (staleToolbar) staleToolbar.style.display = 'none';
+  const staleAppHeader = document.querySelector('header');
+  if (staleAppHeader) staleAppHeader.style.display = '';
+  if (typeof activeDashboardReturnFn !== 'undefined') activeDashboardReturnFn = null;
+
   if (typeof enforceDynamicModuleRoleGateways === 'function' && typeof userPermissions !== 'undefined') {
     enforceDynamicModuleRoleGateways(userPermissions);
   }
