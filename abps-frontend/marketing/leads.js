@@ -473,7 +473,7 @@ function resetSequentialFormState() {
           input.checked = false;
       } else if (input.tagName === 'SELECT') {
           // Reset actions checkboxes and dropdown toggles back to standard "No"
-          if (['act1', 'act2', 'act3', 'act4', 'actOffer', 'act7'].includes(input.id)) {
+          if (['act1', 'act2', 'act3', 'act4', 'actOffer'].includes(input.id)) {
               input.value = 'No';
           } else if (input.id !== 'dropform-status') {
               // Section 3 engineering diagnostic select dropdowns are set empty by default
@@ -1521,9 +1521,8 @@ async function submitLead() {
       sendProfile: document.getElementById('act1').value, 
       sendPresentation: document.getElementById('act2').value, 
       arrangeVisit: document.getElementById('act3').value,
-      getEnquiry: document.getElementById('act4').value, 
-      sendOffer: document.getElementById('actOffer').value, 
-      followUpRequired: document.getElementById('act7').value
+      getEnquiry: document.getElementById('act4').value,
+      sendOffer: document.getElementById('actOffer').value
     };
 
     const d = await apFetch({
@@ -1861,7 +1860,7 @@ function openEmailLeadCreateEntryForm(index, mountEl, onCancelFn) {
     if (input.type === "checkbox" || input.type === "radio") {
       input.checked = false;
     } else if (input.tagName === "SELECT") {
-      if (["act1","act2","act3","act4","actOffer","act7"].includes(input.id)) {
+      if (["act1","act2","act3","act4","actOffer"].includes(input.id)) {
         input.value = "No";
       } else if (input.id !== "dropform-status") {
         input.value = "";
