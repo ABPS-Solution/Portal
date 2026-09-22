@@ -462,7 +462,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
         </span>
         ${hasAttachments ? `<span style="color:var(--muted); display:flex; align-items:center; gap:4px;">📎 ${escapeHtml(mail.attachments)}</span>` : ""}
       </div>
-      <div id="email-full-message-body-${mIdx}" style="display:none; margin-top:-4px; background:#f8fafc; border:1px solid var(--border); border-radius:4px; padding:10px; font-size:0.82rem; color:var(--text);">
+      <div id="email-full-message-body-${mIdx}" style="display:none; margin-top:-4px; background:#eef2f7; border:1px solid var(--border); border-radius:4px; padding:10px; font-size:0.82rem; color:var(--text);">
         <div style="font-weight:700; margin-bottom:6px;">${escapeHtml(mail.subject || "(no subject)")}</div>
         <div style="white-space:pre-wrap; line-height:1.5; max-height:400px; overflow-y:auto;">${escapeHtml(looksLikeHtmlBody(mail.body) ? stripHtmlBodyToPlainText(mail.body) : (mail.body || "(no body content available)"))}</div>
       </div>

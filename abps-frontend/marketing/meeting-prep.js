@@ -244,7 +244,7 @@ function mprepTimelineRow(item) {
   const venue = (item.meetingVenue || item.venueNameCity)
     ? `<div style="font-size:0.75rem; color:var(--muted); margin-top:1px;">Venue: ${escapeHtml([item.meetingVenue, item.venueNameCity].filter(Boolean).join(", "))}</div>` : "";
   const detail = item.detail ? `<div style="font-size:0.78rem; color:var(--muted); margin-top:2px;">${escapeHtml(item.detail)}</div>` : "";
-  return `<div style="display:flex; gap:10px; padding:8px 10px; background:#f8fafc; border-bottom:1px solid #f1f5f9; break-inside:avoid;">
+  return `<div style="display:flex; gap:10px; padding:8px 10px; background:#eef2f7; border-bottom:1px solid #f1f5f9; break-inside:avoid;">
     <div style="min-width:98px; font-size:0.72rem; color:var(--muted); font-weight:700;">${escapeHtml(when)}${whenTime ? `<div style="font-weight:600;">${escapeHtml(whenTime)}</div>` : ""}</div>
     <div style="flex:1; min-width:0;">
       <div style="font-size:0.82rem; font-weight:700; color:var(--text);">
@@ -325,7 +325,7 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
     const fields = [["Status", p.status], ["Phone", p.phone], ["Alt Phone", p.altPhone], ["Email", p.email], ["ABPS Engineer", p.engineerDisplay]];
     const fieldsHtml = fields.map(([l, v]) => mprepFieldRow(l, v)).join("");
     const leadsHtml = (p.leads || []).map(({ leadId, rawLead }) => `
-      <div class="contact-summary-card-parent" id="mprep-lead-card-${leadId}" style="background:#f8fafc;">
+      <div class="contact-summary-card-parent" id="mprep-lead-card-${leadId}" style="background:#eef2f7;">
         <div class="contact-summary-header-row" style="cursor:pointer;" onclick="toggleContactExpansionView('${leadId}', \`${encodeURIComponent(JSON.stringify(rawLead))}\`)">
           <div class="contact-summary-title-info">
             <div class="meta-row-line-block" style="margin-bottom:6px;">
