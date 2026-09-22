@@ -1372,6 +1372,48 @@ async function removeLeadRowEntirely(leadRef, encodedCompanyNameForConfirm, enco
     }
 }
 
+// Post-success "+ Create New Entry" button (the success banner shown after
+// submitLead()) — used to be an inline onclick that hardcoded
+// step1-card-capture-block back to visible, unconditionally. That's Card
+// Details' own block; in DROPDOWN mode (Search by Company Name) it either
+// doesn't exist in this panel or isn't what needs to reappear, and the
+// handler never re-showed company-dropdown-selector-block (DROPDOWN's own
+// search box) — so after creating a lead via Search by Company Name,
+// clicking "+ Create New Entry" left the whole panel blank: no form, no
+// results, no search box. Made mode-aware, matching how
+// triggerSequentialSearch/revealNewEntryFormDropdown already branch on
+// currentActiveModuleContext.
+function handlePostLeadCreationNewEntryClick() {
+  const feedbackBanner = document.getElementById('marketing-lead-creation-inline-feedback-banner');
+  if (feedbackBanner) feedbackBanner.style.display = 'none';
+  if (currentActiveModuleContext === "CARD") {
+    const step1Block = document.getElementById('step1-card-capture-block');
+    if (step1Block) step1Block.style.display = 'block';
+  } else if (currentActiveModuleContext === "DROPDOWN") {
+    const dropdownBlock = document.getElementById('company-dropdown-selector-block');
+    if (dropdownBlock) dropdownBlock.style.display = 'block';
+  }
+  const remainingForm = document.getElementById('remaining-sections-form');
+  if (remainingForm) remainingForm.style.display = 'block';
+  fileFront = null; fileBack = null;
+  const fb = document.getElementById('front-box'); if (fb) { fb.textContent = '📷 Front Side '; fb.classList.remove('done'); }
+  const bb = document.getElementById('back-box'); if (bb) { bb.textContent = '📷 Back Side (Optional)'; bb.classList.remove('done'); }
+  const fi = document.getElementById('card-front'); if (fi) fi.value = '';
+  const bi = document.getElementById('card-back'); if (bi) bi.value = '';
+  ['f-company','f-name','f-position','f-phone','f-altphone','f-email','f-website','f-city','f-state','f-country','f-address'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+  const stepDropdown = document.getElementById('step2-new-entry-dropdown');
+  if (stepDropdown) stepDropdown.style.display = 'none';
+  const inlineCanvas = document.getElementById('step2-inline-interaction-canvas');
+  if (inlineCanvas) inlineCanvas.style.display = 'none';
+  const missingBlock = document.getElementById('missing-trigger-notice-block');
+  if (missingBlock) missingBlock.style.display = 'none';
+  const globalCreateBtn = document.getElementById('global-direct-inline-create-entry-btn');
+  if (globalCreateBtn) globalCreateBtn.style.display = 'none';
+  const globalCollapseBtn = document.getElementById('global-direct-inline-collapse-entry-btn');
+  if (globalCollapseBtn) globalCollapseBtn.style.display = 'none';
+  resetSequentialFormState();
+}
+
 async function submitLead() {
   const btn = document.getElementById('submit-btn');
   const statusField = document.getElementById('dropform-status');
@@ -1518,23 +1560,7 @@ async function submitLead() {
                 <br/><span style="font-family: monospace; font-weight: 800; background: #fff; padding: 4px 10px; border-radius: 4px; border: 1px solid #15803d; color: #111827; display: inline-block; margin-top: 6px;">${d.leadId}</span>
               </span>
             </div>
-            <button class="nav-btn-styled" onclick="
-              document.getElementById('marketing-lead-creation-inline-feedback-banner').style.display = 'none';
-              document.getElementById('step1-card-capture-block').style.display = 'block';
-              document.getElementById('remaining-sections-form').style.display = 'block';
-              fileFront = null; fileBack = null;
-              const fb = document.getElementById('front-box'); if (fb) { fb.textContent = '📷 Front Side '; fb.classList.remove('done'); }
-              const bb = document.getElementById('back-box'); if (bb) { bb.textContent = '📷 Back Side (Optional)'; bb.classList.remove('done'); }
-              const fi = document.getElementById('card-front'); if (fi) fi.value = '';
-              const bi = document.getElementById('card-back'); if (bi) bi.value = '';
-              ['f-company','f-name','f-position','f-phone','f-altphone','f-email','f-website','f-city','f-state','f-country','f-address'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
-              document.getElementById('step2-new-entry-dropdown').style.display = 'none';
-              document.getElementById('step2-inline-interaction-canvas').style.display = 'none';
-              document.getElementById('missing-trigger-notice-block').style.display = 'none';
-              document.getElementById('global-direct-inline-create-entry-btn').style.display = 'none';
-              document.getElementById('global-direct-inline-collapse-entry-btn').style.display = 'none';
-              resetSequentialFormState();
-            " style="background: #166534; color: white; padding: 8px 16px; font-weight: 700;">
+            <button class="nav-btn-styled" onclick="handlePostLeadCreationNewEntryClick()" style="background: #166534; color: white; padding: 8px 16px; font-weight: 700;">
               + Create New Entry
             </button>
           </div>

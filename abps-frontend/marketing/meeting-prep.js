@@ -244,7 +244,7 @@ function mprepTimelineRow(item) {
   const venue = (item.meetingVenue || item.venueNameCity)
     ? `<div style="font-size:0.75rem; color:var(--muted); margin-top:1px;">Venue: ${escapeHtml([item.meetingVenue, item.venueNameCity].filter(Boolean).join(", "))}</div>` : "";
   const detail = item.detail ? `<div style="font-size:0.78rem; color:var(--muted); margin-top:2px;">${escapeHtml(item.detail)}</div>` : "";
-  return `<div style="display:flex; gap:10px; padding:8px 10px; border-bottom:1px solid #f1f5f9; break-inside:avoid;">
+  return `<div style="display:flex; gap:10px; padding:8px 10px; background:#f8fafc; border-bottom:1px solid #f1f5f9; break-inside:avoid;">
     <div style="min-width:98px; font-size:0.72rem; color:var(--muted); font-weight:700;">${escapeHtml(when)}${whenTime ? `<div style="font-weight:600;">${escapeHtml(whenTime)}</div>` : ""}</div>
     <div style="flex:1; min-width:0;">
       <div style="font-size:0.82rem; font-weight:700; color:var(--text);">
@@ -304,6 +304,7 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
     ["Days Since Last Contact", ag.daysSinceLastContact === null ? "Never" : ag.daysSinceLastContact],
     ["Total Follow-Ups", ag.totalFollowUpCount],
     ["Overdue Tasks", ag.overdueTaskCount],
+    ["Upcoming Tasks", ag.upcomingTaskCount],
     ["Completed Tasks", ag.completedTaskCount],
     ["Open Customer Queries", ag.openQueryCount],
     ["Unanswered Incoming Email", ag.unansweredIncomingEmail ? "Yes" : "No"],
@@ -321,7 +322,7 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
   // (toggleContactExpansionView, leads.js) exactly like any lead wrapper
   // elsewhere in the app. ──────────────────────────────────────────────
   const peopleHtml = (facts.people || []).map((p, i) => {
-    const fields = [["Status", p.status], ["Phone", p.phone], ["Email", p.email], ["ABPS Engineer", p.engineerDisplay]];
+    const fields = [["Status", p.status], ["Phone", p.phone], ["Alt Phone", p.altPhone], ["Email", p.email], ["ABPS Engineer", p.engineerDisplay]];
     const fieldsHtml = fields.map(([l, v]) => mprepFieldRow(l, v)).join("");
     const leadsHtml = (p.leads || []).map(({ leadId, rawLead }) => `
       <div class="contact-summary-card-parent" id="mprep-lead-card-${leadId}" style="background:#f8fafc;">
@@ -336,14 +337,14 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
             <span id="expand-trigger-${leadId}" style="color:var(--brand); font-size:1.3rem; font-weight:700; line-height:1; padding:4px 6px;">▾</span>
           </div>
         </div>
-        <div class="contact-expanded-workspace-payload-drawer" id="drawer-panel-${leadId}" style="display:none; padding-top:4px;">
+        <div class="contact-expanded-workspace-payload-drawer" id="drawer-panel-${leadId}" style="display:none; background:var(--highlight-bg); border-radius:4px; padding:8px;">
           <div class="leads-editable-fields-box-canvas" id="canvas-fields-${leadId}"></div>
           <div class="child-injected-modules-mount-point" id="modules-mount-${leadId}" style="margin-top:10px;"></div>
         </div>
       </div>`).join("");
     return `<div style="margin-bottom:14px; border:1px solid #e2e8f0; border-radius:4px; padding:10px;">
       <strong style="font-size:0.88rem;">${escapeHtml(p.contactPersonName)}${p.position ? " · " + escapeHtml(p.position) : ""}</strong>
-      <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:6px; padding:8px 0 4px;">${fieldsHtml}</div>
+      <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:6px; padding:8px 0 4px;">${fieldsHtml}</div>
       ${leadsHtml}
     </div>`;
   }).join("");
