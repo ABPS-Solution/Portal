@@ -61,8 +61,18 @@ async function loadMaterialOutwardServiceQueue() {
   feed.style.display = "flex";
   feed.innerHTML = `<div style="color:var(--muted); padding:20px; text-align:center;">Loading approved tickets awaiting a Delivery Challan...</div>`;
   try {
-    const data = await apFetch({ action: "fetchServiceTicketsAwaitingChallan" });
-    if (!data.success) throw new Error(data.error || "Failed to load.");
+    let data;
+    try {
+      data = await apFetch({ action: "fetchServiceTicketsAwaitingChallan" });
+      if (!data.success) throw new Error(data.error || "Failed to load.");
+      abpsDraftSave(MOW_QUEUE_CACHE_KEY, { tickets: data.tickets, drafts: data.drafts });
+    } catch (loadErr) {
+      // Offline / server unreachable: fall back to the last queue this
+      // browser saw, so typed-in challan fields can still be reviewed.
+      const cached = abpsDraftRead(MOW_QUEUE_CACHE_KEY);
+      if (!cached) throw loadErr;
+      data = { success: true, ...cached.payload, offline: true };
+    }
     mowServiceTicketsCache = data.tickets || [];
     mowDraftsCache = data.drafts || [];
     window._mowSelectedPoolTickets = new Set(
@@ -75,6 +85,8 @@ async function loadMaterialOutwardServiceQueue() {
     feed.innerHTML =
       mowDraftsCache.map(renderDraftChallanCard).join("") +
       renderTicketPoolSection();
+    if (data.offline) feed.insertAdjacentHTML("afterbegin", `<div style="padding:10px 12px; background:#fffbeb; border-left:4px solid #f59e0b; color:#92400e; border-radius:var(--radius); font-weight:600;">You're offline — showing the last saved queue. Your typing is kept on this device; save once you're back online.</div>`);
+    mowDraftsCache.forEach(d => mowRestoreCardLocal(d.challan_id));
     mowDraftsCache.forEach(d => mowValidateDraftCard(d.challan_id));
     autoGrowAllIn(feed);
   } catch (err) {
@@ -414,6 +426,7 @@ async function mowSaveDraftCore(challanId) {
   try {
     const data = await apFetch({ action: "saveDeliveryChallanDraft", ...mowCollectCardPayload(challanId) });
     if (!data.success) throw new Error(data.error || "Save failed.");
+    abpsDraftClear(mowCardKey(challanId));
     return true;
   } catch (err) {
     mowShowInlineError(challanId, err.message);
@@ -474,6 +487,7 @@ async function mowDiscardDraft(challanId, skipConfirm) {
   try {
     const data = await apFetch({ action: "discardDeliveryChallanDraft", challanId, operatorName: appActiveOperatorIdentityString || "Unknown" });
     if (!data.success) throw new Error(data.error || "Discard failed.");
+    abpsDraftClear(mowCardKey(challanId));
     loadMaterialOutwardServiceQueue();
   } catch (err) {
     mowShowInlineError(challanId, err.message);
@@ -585,3 +599,47 @@ async function runMaterialOutwardSearch() {
     results.innerHTML = `<div style="color:var(--danger); padding:16px; text-align:center;">${escapeHtml(err.message)}</div>`;
   }
 }
+
+
+// ── Unsaved typing kept on this device (24 Sep 2026) ───────────────────
+// Same treatment as Create BOQ: everything typed on a draft challan card
+// (header fields, Status, HSN codes) is kept in this browser as you type,
+// so leaving for the dashboard, a refresh or a dropped connection doesn't
+// lose it. Cleared once Save & Generate Checking Draft saves the card, or
+// the draft is discarded.
+const MOW_QUEUE_CACHE_KEY = "mowQueueCache";
+function mowCardKey(challanId) { return "mowCard:" + challanId; }
+
+function mowSaveCardLocal(challanId) {
+  const card = document.getElementById(`mow-draft-card-${challanId}`);
+  if (!card) return;
+  const vals = {};
+  card.querySelectorAll('textarea[id^="mow-"], select[id^="mow-"]').forEach(el => { vals[el.id] = el.value; });
+  card.querySelectorAll(".mow-hsn-input").forEach(el => { vals["hsn|" + el.dataset.itemCode] = el.value; });
+  abpsDraftSave(mowCardKey(challanId), vals);
+}
+
+function mowRestoreCardLocal(challanId) {
+  const d = abpsDraftRead(mowCardKey(challanId));
+  const card = document.getElementById(`mow-draft-card-${challanId}`);
+  if (!d || !card) return;
+  Object.entries(d.payload || {}).forEach(([k, v]) => {
+    const el = k.startsWith("hsn|")
+      ? card.querySelector(`.mow-hsn-input[data-item-code="${CSS.escape(k.slice(4))}"]`)
+      : card.querySelector("#" + CSS.escape(k));
+    if (el) el.value = v;
+  });
+}
+
+(function () {
+  let timer = null;
+  const handler = (e) => {
+    const card = e.target.closest && e.target.closest('[id^="mow-draft-card-"]');
+    if (!card) return;
+    const challanId = card.id.replace("mow-draft-card-", "");
+    clearTimeout(timer);
+    timer = setTimeout(() => mowSaveCardLocal(challanId), 400);
+  };
+  document.addEventListener("input", handler, true);
+  document.addEventListener("change", handler, true);
+})();
