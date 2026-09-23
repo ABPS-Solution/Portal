@@ -277,7 +277,7 @@ function renderDraftChallanCard(draft) {
 
         <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:12px 16px; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;">
           ${draft.outward_type === 'Processing'
-            ? mowFieldFor(challanId, 'Vendor Name', 'vendor', draft.vendor_name || draft.consignee_name, true)
+            ? mowVendorPickerFor(challanId, draft.vendor_name || '')
             : mowFieldFor(challanId, 'Company Name', 'company', draft.consignee_name, true)}
           ${mowFieldFor(challanId, 'Contact Name', 'contact-name', draft.contact_person_name, true)}
           ${mowFieldFor(challanId, 'Contact Number', 'contact-number', draft.contact_number, false)}
@@ -614,7 +614,7 @@ function mowSaveCardLocal(challanId) {
   const card = document.getElementById(`mow-draft-card-${challanId}`);
   if (!card) return;
   const vals = {};
-  card.querySelectorAll('textarea[id^="mow-"], select[id^="mow-"]').forEach(el => { vals[el.id] = el.value; });
+  card.querySelectorAll('textarea[id^="mow-"], select[id^="mow-"], input[id^="mow-vendor-"]').forEach(el => { vals[el.id] = el.value; });
   card.querySelectorAll(".mow-hsn-input").forEach(el => { vals["hsn|" + el.dataset.itemCode] = el.value; });
   abpsDraftSave(mowCardKey(challanId), vals);
 }
@@ -643,3 +643,50 @@ function mowRestoreCardLocal(challanId) {
   document.addEventListener("input", handler, true);
   document.addEventListener("change", handler, true);
 })();
+
+
+// Vendor Name for a Processing challan — must be a vendor from Purchase's
+// vendor list (the challan row links to it), so it's picked from search
+// suggestions rather than typed freely (24 Sep 2026).
+function mowVendorPickerFor(challanId, value) {
+  return `<div style="position:relative;"><label class="field-label" style="margin-top:0;">Vendor Name *</label>
+    <input type="text" id="mow-vendor-${challanId}" value="${escapeHtml(value || "")}" autocomplete="off" placeholder="Search vendor..."
+      oninput="mowVendorSearch(${challanId}, this.value); mowValidateDraftCard(${challanId});" onfocus="mowVendorSearch(${challanId}, this.value)"
+      style="width:100%; padding:8px; border:1.5px solid #94a3b8; background:#fff; border-radius:var(--radius); font-family:inherit; font-size:inherit;" />
+    <div id="mow-vendor-dd-${challanId}" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:4px; max-height:240px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>`;
+}
+
+let mowVendorSearchSeq = 0;
+async function mowVendorSearch(challanId, query) {
+  const input = document.getElementById(`mow-vendor-${challanId}`);
+  const dd = document.getElementById(`mow-vendor-dd-${challanId}`);
+  if (!input || !dd) return;
+  const seq = ++mowVendorSearchSeq;
+  try {
+    const data = await apFetch({ action: "searchVendorNamesForMaterialOutward", query: query || "" });
+    if (seq !== mowVendorSearchSeq) return;
+    const vendors = (data.success ? data.vendors : []) || [];
+    const r = input.getBoundingClientRect();
+    dd.style.left = r.left + "px"; dd.style.top = r.bottom + "px"; dd.style.width = Math.max(r.width, 260) + "px";
+    dd.innerHTML = vendors.length
+      ? vendors.map(v => `<div onmousedown="event.preventDefault(); mowPickVendor(${challanId}, this.dataset.v)" data-v="${escapeHtml(v)}"
+          style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.85rem;"
+          onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">${escapeHtml(v)}</div>`).join("")
+      : `<div style="padding:8px 12px; font-size:0.8rem; color:#b91c1c;">No vendor found. Add it as a vendor in Purchase first.</div>`;
+    dd.style.display = "block";
+  } catch (e) { dd.style.display = "none"; }
+}
+
+function mowPickVendor(challanId, name) {
+  const input = document.getElementById(`mow-vendor-${challanId}`);
+  const dd = document.getElementById(`mow-vendor-dd-${challanId}`);
+  if (input) input.value = name;
+  mowValidateDraftCard(challanId);
+  mowSaveCardLocal(challanId);
+  if (dd) dd.style.display = "none";
+}
+
+document.addEventListener("click", (e) => {
+  if (e.target.closest && (e.target.closest('[id^="mow-vendor-dd-"]') || e.target.closest('input[id^="mow-vendor-"]'))) return;
+  document.querySelectorAll('[id^="mow-vendor-dd-"]').forEach(d => { d.style.display = "none"; });
+});
