@@ -154,7 +154,7 @@ function renderRPRNDeltaTable() {
   zone.innerHTML = `
     <div style="font-size:0.85rem; font-weight:700; color:var(--brand); margin-bottom:12px;">Revised Purchase Request Note for ${pending.boqId}${revBadge}</div>
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-      <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1150px;">
+      <table class="store-basket-data-table prn-bordered-table" style="width:100%; border-collapse:collapse; min-width:1150px;">
         <thead>
           <tr style="background:#f8fafc;">
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
@@ -414,7 +414,7 @@ function renderRevisePRNTable() {
   document.getElementById("rprn-body").innerHTML = `
     <div style="font-size:0.85rem; font-weight:700; color:var(--muted); margin-bottom:10px;">PRN ID: <span style="font-family:monospace; color:var(--brand);">${st.prn.prnId}</span>${st.prn.version > 1 ? ` (v${st.prn.version})` : ""}</div>
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:14px;">
-      <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
+      <table class="store-basket-data-table prn-bordered-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
         <thead><tr style="background:#f8fafc;">
           <th style="padding:8px; font-size:0.68rem; text-align:left;">Item Code</th>
           <th style="padding:8px; font-size:0.68rem; text-align:left; min-width:190px;">Material Name</th>
