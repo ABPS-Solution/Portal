@@ -61,6 +61,11 @@
   /* Logging Follow-up / Creating Task forms — same heavier value-box border. */
   .template-fup-form input, .template-fup-form select, .template-fup-form textarea,
   .template-task-form input, .template-task-form select, .template-task-form textarea { border: 1.5px solid #8492a6 !important; }
+  /* Manufacturing Clearance — heavier value-box borders, dark values. */
+  #canvas-module-manufacturing-clearance input:not([type="checkbox"]):not([type="radio"]),
+  #canvas-module-manufacturing-clearance select,
+  #canvas-module-manufacturing-clearance textarea { border: 1.5px solid #8492a6 !important; color: #111827; }
+  #canvas-module-manufacturing-clearance input[type="date"] { color: transparent; }
 
   /* --- SECURE AUTHENTICATION CONTAINER WINDOW --- */
   #auth-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; height: 100vh; overflow: hidden; background: linear-gradient(135deg, var(--brand-dk), var(--brand)); }

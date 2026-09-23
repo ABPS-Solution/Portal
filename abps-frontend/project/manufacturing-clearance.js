@@ -377,7 +377,7 @@ function buildMcGatingPanelHtml(projectId, gating) {
   return `
     <div style="background:var(--highlight-bg); border:1px solid var(--border); border-radius:6px; padding:14px; margin-bottom:16px;">
       <div style="font-weight:800; font-size:0.9rem; color:${bannerColor}; margin-bottom:12px;">${bannerText}</div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; color:#111827;">
         <div>
           <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Drawing Sent for Approval</label>
           <select onchange="saveMcGatingField('${projectId}', 'drawingSentForApproval', this.value)"
@@ -394,7 +394,7 @@ function buildMcGatingPanelHtml(projectId, gating) {
         <div>
           <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Drawing Approval Received Date</label>
           <div title="Set automatically when the Customer Approved drawing is uploaded (admin can change it in Project Timeline)"
-            style="padding:7px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px; background:#f1f5f9; color:${gating.drawingApprovalReceivedDate ? "var(--text)" : "var(--muted)"};">
+            style="padding:7px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px; background:#f1f5f9; color:${gating.drawingApprovalReceivedDate ? "#111827" : "var(--muted)"};">
             ${gating.drawingApprovalReceivedDate ? formatOrdinalDate(gating.drawingApprovalReceivedDate) : "Awaiting Customer Approved drawing upload"}
           </div>
         </div>`}
