@@ -633,6 +633,7 @@ function renderAPRNRows(prnId) {
         <tr style="border-bottom:1px solid #f1f5f9; background:${rowBg};">
           <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
           <td style="padding:8px; font-size:0.82rem; font-weight:600;">${r.materialName || ""}</td>
+          <td style="padding:8px; font-size:0.8rem; color:#475569; text-align:center;">${r.typeOfMaterial || "—"}</td>
           <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(buffered)}${changeBadge}</td>
           <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${r.unit || "—"}</td>
           <td style="padding:8px; text-align:center; font-family:monospace;">${fmt(r.previousStoreQty)}</td>
@@ -656,6 +657,7 @@ function renderAPRNRows(prnId) {
           <thead><tr style="background:#f8fafc;">
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
             <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:190px;">Material Name</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center;">Type of Material</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">New Buffered BOQ Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center;">Current PRN Store Qty</th>
@@ -684,6 +686,7 @@ function renderAPRNRows(prnId) {
       <tr style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${r.materialName || ""}</td>
+        <td style="padding:8px; font-size:0.8rem; color:#475569; text-align:center;">${r.typeOfMaterial || "—"}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${trimNum(r.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center; color:#b45309; font-weight:700;">${r.bufferPct || 0}%</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${trimNum(buffered)}</td>
@@ -708,6 +711,7 @@ function renderAPRNRows(prnId) {
         <thead><tr style="background:#f8fafc;">
           <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
           <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:240px;">Material Name</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:center;">Type of Material</th>
           <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Qty</th>
           <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
           <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered BOQ Qty</th>
