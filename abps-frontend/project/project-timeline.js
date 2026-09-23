@@ -901,6 +901,26 @@ const PTL_MILESTONE_KEY = {};
    ══════════════════════════════════════════════════════════════════ */
 const PTL_MODES = { week: 6, days15: 15, month: 26 };
 const PTL_FONT_SCALE = { week: 1.32, days15: 1.14, month: 1.05 };
+// The exact calendar window each zoom shows (every day, Sundays/holidays
+// included): This Week = Monday-Sunday, 15 Days = today -7..+7,
+// This Month = 1st to last day of the current month. Day width is sized so
+// exactly this window fills the visible area right of the pinned gutter.
+function ptlZoomWindow() {
+  const t = ptlParse(ptlToday());
+  let from, to;
+  if (ptlMode === 'week') {
+    const dow = t.getUTCDay();
+    from = new Date(t.getTime() - (dow === 0 ? 6 : dow - 1) * PTL_DAYMS);
+    to = new Date(from.getTime() + 6 * PTL_DAYMS);
+  } else if (ptlMode === 'month') {
+    from = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), 1));
+    to = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, 0));
+  } else {
+    from = new Date(t.getTime() - 7 * PTL_DAYMS);
+    to = new Date(t.getTime() + 7 * PTL_DAYMS);
+  }
+  return { from: ptlIso(from), to: ptlIso(to), n: Math.round((to - from) / PTL_DAYMS) + 1 };
+}
 let ptlMode = "days15", ptlDayW = 30, ptlFS = 1.14;
 let ptlDays = [], ptlIndexMap = {};
 let ptlLastTodayX = 0;
@@ -960,8 +980,13 @@ function ptlBuildDayRange() {
   // Starts right on the earliest dated point - no multi-day dead zone to
   // scroll into before Stage 1's own first node (LEAD below still leaves
   // a small margin so that node's label/circle isn't flush against the edge).
-  const from = ptlParse(dates[0]);
-  const to = new Date(ptlParse(dates[dates.length - 1]).getTime() + 6 * PTL_DAYMS);
+  let from = ptlParse(dates[0]);
+  let to = new Date(ptlParse(dates[dates.length - 1]).getTime() + 6 * PTL_DAYMS);
+  // Always cover the zoom window (plus a small margin) so it can be
+  // scrolled to exactly, even when nothing is dated that early or late.
+  const zw = ptlZoomWindow();
+  from = new Date(Math.min(from.getTime(), ptlParse(zw.from).getTime() - 3 * PTL_DAYMS));
+  to = new Date(Math.max(to.getTime(), ptlParse(zw.to).getTime() + 3 * PTL_DAYMS));
   // Every calendar day is plotted now (31 Aug 2026, was Sunday-skipped) -
   // for date-continuity: something can genuinely happen on a Sunday or
   // holiday (this business does sometimes work them), and omitting that
@@ -1144,7 +1169,11 @@ function ptlRenderCanvas(containerId) {
   // little short (a slightly earlier wrap) is invisible; being even one
   // character long lets text visibly run past the gutter's right edge.
   const wrapChars = Math.max(10, Math.floor((gutterW - 28 * ptlFS - 16) / (6.6 * ptlFS) * 0.9));
-  ptlDayW = Math.max(16, Math.min(320, (availW - PAD_L - LEAD - PAD_R) / PTL_MODES[ptlMode]));
+  // Visible drawing width = the scroller's own width minus the pinned
+  // product gutter; the zoom window's days split it exactly.
+  const fitWidth = wrap.clientWidth || window.innerWidth;
+  const plotW = Math.max(300, fitWidth - gutterW);
+  ptlDayW = Math.max(16, plotW / ptlZoomWindow().n);
   const DENSE = ptlDayW < 38;
 
   const RULER_H = Math.round(56 * ptlFS);
@@ -1703,17 +1732,16 @@ function ptlRenderCanvas(containerId) {
   };
   wrap.onscroll = pinOverlays;
 
-  // Land the horizontal scroll on today - except in "This Week" mode,
-  // where centering today gave a floating 6-day window (e.g. Wed-Mon)
-  // instead of the actual calendar week. There, anchor on that week's
-  // Monday instead, so the 6-wide view always reads as Monday-Saturday.
-  if (ptlMode === 'week') {
-    const todayDow = ptlParse(today).getUTCDay(); // 0=Sun..6=Sat
-    const mondayOffset = todayDow === 0 ? 6 : todayDow - 1;
-    const mondayIso = ptlIso(new Date(ptlParse(today).getTime() - mondayOffset * PTL_DAYMS));
-    wrap.scrollLeft = Math.max(0, xOf(mondayIso) - PAD_L);
-  } else {
-    wrap.scrollLeft = Math.max(0, todayX - wrap.clientWidth / 2);
+  // Put the zoom window's first day right at the gutter's edge, so exactly
+  // that window (and nothing more) is on screen.
+  wrap.scrollLeft = Math.max(0, xOf(ptlZoomWindow().from) - ptlDayW / 2 - gutterW);
+  // A vertical scrollbar that only appeared after drawing narrows the view;
+  // re-fit once so the window's last day isn't cut off.
+  if (wrap.clientWidth && Math.abs(wrap.clientWidth - fitWidth) > 2 && !wrap.dataset.ptlRefit) {
+    wrap.dataset.ptlRefit = "1";
+    ptlRenderCanvas(containerId);
+    delete wrap.dataset.ptlRefit;
+    return;
   }
   pinOverlays();
 }
@@ -1920,15 +1948,19 @@ function ptlUpdateFsFlagsToggleBtn() {
 }
 
 function ptlJumpToday() {
-  const sc = document.getElementById(ptlCanvasContainerId);
-  if (!sc) return;
-  // In "This Week" mode, re-render rather than smooth-scroll to
-  // ptlLastTodayX (centered) - that would undo ptlRenderCanvas's own
-  // Monday-anchored positioning for this mode and go back to a floating
-  // 6-day window instead of the actual calendar week.
-  if (ptlMode === 'week') { ptlRenderCanvas(ptlCanvasContainerId); return; }
-  sc.scrollTo({ left: Math.max(0, ptlLastTodayX - sc.clientWidth / 2), behavior: "smooth" });
+  // Re-render: that lands the current zoom window exactly (see ptlZoomWindow).
+  if (document.getElementById(ptlCanvasContainerId)) ptlRenderCanvas(ptlCanvasContainerId);
 }
+
+// Window resize / iPad rotation: re-fit the zoom window to the new width.
+let ptlResizeTimer = null;
+window.addEventListener("resize", () => {
+  clearTimeout(ptlResizeTimer);
+  ptlResizeTimer = setTimeout(() => {
+    const sc = document.getElementById(ptlCanvasContainerId);
+    if (sc && sc.offsetParent !== null && ptlData) ptlRenderCanvas(ptlCanvasContainerId);
+  }, 200);
+});
 
 function ptlRenderFullscreen() {
   const ov = document.getElementById("ptl-fs-overlay");
