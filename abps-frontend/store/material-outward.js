@@ -251,7 +251,6 @@ function renderDraftChallanCard(draft) {
     <div class="section" id="mow-draft-card-${challanId}" style="padding:16px; border:1px solid var(--brand); border-radius:var(--radius); margin-bottom:16px; background:#fbfdff;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
         <div style="font-weight:800; font-size:1rem; color:var(--brand);">Draft Challan #${challanId} <span style="font-weight:600; color:var(--muted); font-size:0.85rem;">(${linkedTickets.length} ticket${linkedTickets.length === 1 ? '' : 's'})</span></div>
-        <button class="nav-btn-styled" style="background:#718096;" onclick="mowDiscardDraft(${challanId})">Discard Entire Draft</button>
       </div>
 
       <div style="margin-top:12px;">${linkedTicketsHtml}</div>
@@ -302,7 +301,8 @@ function renderDraftChallanCard(draft) {
 
         <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap;">
           ${draft.checking_doc_url ? `<a href="${driveLink(draft.checking_doc_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; margin-right:auto;">View Checking Draft #${escapeHtml(String(draft.checking_draft_count || ''))} ↗</a>` : '<span></span>'}
-          <button class="nav-btn-styled" id="mow-checking-btn-${challanId}" style="background:var(--brand);" onclick="mowGenerateCheckingDraft(${challanId})">📄 Save &amp; Generate Checking Draft</button>
+          <button class="nav-btn-styled" style="background:#718096;" onclick="mowDiscardDraft(${challanId})">Discard Entire Draft</button>
+          <button class="nav-btn-styled" id="mow-checking-btn-${challanId}" style="background:var(--brand);" onclick="mowGenerateCheckingDraft(${challanId})">Save &amp; Generate Checking Draft</button>
         </div>
         <div style="margin-top:8px; font-size:0.78rem; color:var(--muted); text-align:right;">
           Once a checking draft is printed, this challan waits in <strong>Authorize Material Outward on Delivery Challan</strong>.
@@ -441,7 +441,7 @@ async function mowGenerateCheckingDraft(challanId) {
   } catch (err) {
     mowShowInlineError(challanId, err.message);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = "📄 Save & Generate Checking Draft"; }
+    if (btn) { btn.disabled = false; btn.textContent = "Save & Generate Checking Draft"; }
   }
 }
 
