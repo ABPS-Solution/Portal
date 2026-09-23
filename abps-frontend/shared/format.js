@@ -186,11 +186,16 @@ function formatOrdinalDateTime(value) {
   if (!value) return '';
   const d = value instanceof Date ? value : new Date(value);
   if (isNaN(d.getTime())) return '';
-  let h = d.getHours();
-  const m = String(d.getMinutes()).padStart(2, '0');
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  h = h % 12; if (h === 0) h = 12;
-  return `${formatOrdinalDate(d)}, ${h}:${m} ${ampm}`;
+  // Always IST, whatever the viewing device's own time zone is.
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata', year: 'numeric', month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  }).formatToParts(d).map(x => [x.type, x.value]));
+  const day = Number(p.day);
+  const suffix = (day % 10 === 1 && day !== 11) ? 'st'
+    : (day % 10 === 2 && day !== 12) ? 'nd'
+    : (day % 10 === 3 && day !== 13) ? 'rd' : 'th';
+  return `${day}${suffix} ${p.month} ${p.year}, ${p.hour}:${p.minute} ${p.dayPeriod}`;
 }
 
 function formatDMYFromISO(iso) {
