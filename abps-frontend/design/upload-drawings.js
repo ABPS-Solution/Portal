@@ -110,10 +110,14 @@ async function refreshUploadDrawingsList(projectId, drawingType) {
 }
 
 function handleUploadDrawingsFileSelection(input) {
-  uploadDrawingsSelectedFile = input.files[0];
-  if (uploadDrawingsSelectedFile) {
-    const box = document.getElementById("upload-drawings-dropzone");
-    box.textContent = uploadDrawingsSelectedFile.name + " ✅";
+  // Several drawings can be picked at once; uploadDrawingsSelectedFile holds the list.
+  uploadDrawingsSelectedFile = Array.from(input.files || []);
+  const box = document.getElementById("upload-drawings-dropzone");
+  if (uploadDrawingsSelectedFile.length) {
+    box.textContent = uploadDrawingsSelectedFile.length === 1
+      ? uploadDrawingsSelectedFile[0].name + " ✅"
+      : `${uploadDrawingsSelectedFile.length} documents selected ✅`;
+    box.title = uploadDrawingsSelectedFile.map(f => f.name).join("\n");
     box.classList.add("done");
   }
 }
@@ -121,40 +125,65 @@ function handleUploadDrawingsFileSelection(input) {
 async function submitUploadDrawing() {
   const projectId = document.getElementById("upload-drawings-project-ta-input").value;
   const btn       = document.getElementById("upload-drawings-submit-btn");
+  const files     = Array.isArray(uploadDrawingsSelectedFile) ? uploadDrawingsSelectedFile : [];
 
   if (!projectId) return showBOQBanner("upload-drawings-feedback", "Select a Project ID first.", "error");
   if (!uploadDrawingsSelectedType) return showBOQBanner("upload-drawings-feedback", "Select a Drawing Type first.", "error");
-  if (!uploadDrawingsSelectedFile) return showBOQBanner("upload-drawings-feedback", "Select a file to upload first.", "error");
+  if (!files.length) return showBOQBanner("upload-drawings-feedback", "Select a file to upload first.", "error");
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Uploading...';
 
+  const uploaded = [], failed = [];
   try {
-    const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(uploadDrawingsSelectedFile); });
-    const data = await apFetch({
-      action: "uploadDrawingDocument",
-      projectId,
-      drawingType: uploadDrawingsSelectedType,
-      fileName: uploadDrawingsSelectedFile.name,
-      base64Data: b64,
-      mimeType: uploadDrawingsSelectedFile.type || "application/octet-stream"
-    });
-
-    if (data.success) {
-      showBOQBanner("upload-drawings-feedback", `<strong>${data.fileName}</strong> uploaded successfully as ${uploadDrawingsSelectedType}.`, "success");
-      uploadDrawingsSelectedFile = null;
-      document.getElementById("upload-drawings-input").value = "";
-      const box = document.getElementById("upload-drawings-dropzone");
-      box.textContent = "📎 Click to select a drawing document";
-      box.classList.remove("done");
-      await refreshUploadDrawingsList(projectId, uploadDrawingsSelectedType);
-    } else {
-      showBOQBanner("upload-drawings-feedback", data.error || "Upload failed.", "error");
+    // One at a time, in order: the first Customer Approved upload stamps the
+    // project's Drawing Approval Received Date server-side.
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      showBlockingOverlay(files.length > 1
+        ? `Uploading drawing ${i + 1} of ${files.length}...`
+        : "Uploading drawing document...");
+      try {
+        const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.onerror = rej; r.readAsDataURL(f); });
+        const data = await apFetch({
+          action: "uploadDrawingDocument",
+          projectId,
+          drawingType: uploadDrawingsSelectedType,
+          fileName: f.name,
+          base64Data: b64,
+          mimeType: f.type || "application/octet-stream"
+        });
+        if (data.success) uploaded.push(data.fileName || f.name);
+        else failed.push(`${f.name} (${data.error || "upload failed"})`);
+      } catch (e) {
+        if (e.message === "SESSION_EXPIRED") throw e;
+        failed.push(`${f.name} (${e.message})`);
+      }
     }
-  } catch(e) {
-    showBOQBanner("upload-drawings-feedback", "Network error: " + e.message, "error");
+  } catch (e) {
+    if (e.message !== "SESSION_EXPIRED") failed.push(e.message);
   } finally {
+    hideBlockingOverlay();
     btn.disabled = false;
     btn.textContent = "Upload Document";
+  }
+
+  const esc = (t) => escapeHtml(String(t));
+  if (uploaded.length && !failed.length) {
+    showBOQBanner("upload-drawings-feedback", uploaded.length === 1
+      ? `<strong>${esc(uploaded[0])}</strong> uploaded successfully as ${esc(uploadDrawingsSelectedType)}.`
+      : `${uploaded.length} documents uploaded successfully as ${esc(uploadDrawingsSelectedType)}.`, "success");
+  } else if (failed.length) {
+    showBOQBanner("upload-drawings-feedback",
+      `${uploaded.length ? `${uploaded.length} uploaded. ` : ""}Not uploaded: ${failed.map(esc).join("; ")}`, "error");
+  }
+  if (uploaded.length) {
+    uploadDrawingsSelectedFile = null;
+    document.getElementById("upload-drawings-input").value = "";
+    const box = document.getElementById("upload-drawings-dropzone");
+    box.textContent = "📎 Click to select drawing documents (you can pick several)";
+    box.title = "";
+    box.classList.remove("done");
+    await refreshUploadDrawingsList(projectId, uploadDrawingsSelectedType);
   }
 }

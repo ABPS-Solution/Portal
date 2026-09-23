@@ -71,7 +71,7 @@ async function toggleBOQRevisionExpansion(updateId) {
           ${uboqLockedWrapField(reqItem.productRating, 'background:#f1f5f9; color:var(--muted);')}
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:2fr 1fr; gap:12px; margin-bottom:12px;">
+      <div style="display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:12px;">
         <div style="position:relative;">
           <label class="field-label" style="margin-top:0;">Description of Material (optional)</label>
           <textarea id="boqrev-desc-input-${updateId}" rows="1" placeholder="Type to search or create a description..." autocomplete="off"
@@ -81,7 +81,7 @@ async function toggleBOQRevisionExpansion(updateId) {
           <div id="boqrev-desc-dropdown-${updateId}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           <input type="hidden" id="boqrev-description-id-${updateId}" value="${reqItem.newDescriptionId || ''}" />
         </div>
-        <div>
+        <div style="display:none;">
           <label class="field-label" style="margin-top:0;">Make</label>
           <input type="text" readonly value="${(() => { const c=(window.itemCodeCatalogCache||[]).find(x=>x.productName===reqItem.productName && (x.rating||'')===(reqItem.productRating||'')); return c ? (c.make||'') : ''; })()}" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; box-sizing:border-box;" placeholder="Auto-filled from Product Name" />
         </div>
@@ -458,7 +458,7 @@ function renderUBOQForm() {
           <textarea id="uboq-product-rating" readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(draft.productRating || '').toString().replace(/</g, '&lt;')}</textarea>
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:2fr 1fr; gap:12px; margin-bottom:12px;">
+      <div style="display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:12px;">
         <div style="position:relative;">
           <label class="field-label" style="margin-top:0;">Description of Material (optional)</label>
           <textarea id="uboq-desc-input" rows="1" placeholder="Type to search or create a description..." autocomplete="off"
@@ -468,7 +468,7 @@ function renderUBOQForm() {
           <div id="uboq-desc-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           <input type="hidden" id="uboq-description-id" value="${draft.descriptionId || ''}" />
         </div>
-        <div>
+        <div style="display:none;">
           <label class="field-label" style="margin-top:0;">Make</label>
           <input type="text" id="uboq-header-make" readonly value="${(() => { const c=(window.itemCodeCatalogCache||[]).find(x=>x.productName===draft.productName && (x.rating||'')===(draft.productRating||'')); return c ? (c.make||'') : ''; })()}" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; box-sizing:border-box;" placeholder="Auto-filled from Product Name" />
         </div>

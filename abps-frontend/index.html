@@ -3258,7 +3258,7 @@
               <textarea id="cboq-product-rating" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; font-family:inherit; font-size:inherit; line-height:1.4; display:block; min-height:38px; box-sizing:border-box; border:1.5px solid var(--border);" placeholder="Auto-filled from Product Name"></textarea>
             </div>
           </div>
-          <div style="display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-bottom:14px;">
+          <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
             <div style="position:relative;">
               <label class="field-label" style="margin-top:0;">Description of Material (optional)</label>
               <textarea id="cboq-desc-input" rows="1" placeholder="Type to search or create a description..." autocomplete="off"
@@ -3268,7 +3268,7 @@
               <div id="cboq-desc-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
               <input type="hidden" id="cboq-description-id" />
             </div>
-            <div>
+            <div style="display:none;">
               <label class="field-label" style="margin-top:0;">Make</label>
               <input type="text" id="cboq-header-make" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; box-sizing:border-box;" placeholder="Auto-filled from Product Name" />
             </div>
@@ -3435,9 +3435,9 @@
       <div id="upload-drawings-upload-zone" style="display:none; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
         <label class="field-label" style="margin-top:0; color:var(--brand);">Upload Drawing Document</label>
         <div class="card-box" id="upload-drawings-dropzone" onclick="document.getElementById('upload-drawings-input').click()" style="padding:20px; border:2px dashed var(--border); font-size:0.85rem; margin-top:6px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-          📎 Click to select a drawing document
+          📎 Click to select drawing documents (you can pick several)
         </div>
-        <input type="file" id="upload-drawings-input" hidden onchange="handleUploadDrawingsFileSelection(this)" />
+        <input type="file" id="upload-drawings-input" multiple hidden onchange="handleUploadDrawingsFileSelection(this)" />
         <div style="display:flex; justify-content:flex-end; margin-top:12px;">
           <button class="nav-btn-styled" id="upload-drawings-submit-btn" onclick="submitUploadDrawing()" style="background:var(--accent); padding:8px 24px; font-weight:700;">Upload Document</button>
         </div>

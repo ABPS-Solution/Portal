@@ -268,11 +268,6 @@ function renderMcLineItemsTable(projectId, lineItems) {
             style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; background:#f1f5f9; color:#111827; cursor:not-allowed;"
             placeholder="Auto-filled from Product Name">${ratingVal.replace(/</g,'&lt;')}</textarea>
         </td>
-        <td style="padding:8px; vertical-align:middle;">
-          <textarea rows="1" id="mc-std-make-${safeId}-${li.lineId}" readonly
-            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; background:#f1f5f9; color:#111827; cursor:not-allowed;"
-            placeholder="Auto-filled from Item Code">${makeVal.replace(/</g,'&lt;')}</textarea>
-        </td>
         <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:600; color:#111827;">${fmtQty(li.quantity)}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle; color:#111827;">${li.unit || "—"}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:600; color:#111827;" id="mc-std-itemcode-unit-${safeId}-${li.lineId}">${itemCodeUnitVal || "—"}</td>
@@ -299,7 +294,7 @@ function renderMcLineItemsTable(projectId, lineItems) {
       <div style="overflow-x:auto; margin-bottom:14px;">
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
           <colgroup>
-            <col style="width:15%;" /><col style="width:13%;" /><col style="width:13%;" /><col style="width:7%;" />
+            <col style="width:18%;" /><col style="width:15%;" /><col style="width:15%;" />
             <col style="width:6%;" /><col style="width:6%;" /><col style="width:6%;" />
             <col style="width:7%;" /><col style="width:7%;" /><col style="width:8%;" /><col style="width:7%;" />
           </colgroup>
@@ -308,7 +303,6 @@ function renderMcLineItemsTable(projectId, lineItems) {
               <th style="padding:8px;">Order Product Description</th>
               <th style="padding:8px;">Standard Product Name *</th>
               <th style="padding:8px;">Standard Product Rating</th>
-              <th style="padding:8px;">Make</th>
               <th style="padding:8px; text-align:center;">Order Quantity</th>
               <th style="padding:8px; text-align:center;">Order Product UOM</th>
               <th style="padding:8px; text-align:center;">Item Code UOM</th>
@@ -389,12 +383,12 @@ function buildMcGatingPanelHtml(projectId, gating) {
           <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Drawing Sent Date</label>
           <input type="date" value="${gating.drawingSentDate ? gating.drawingSentDate.slice(0,10) : ""}"
             onchange="saveMcGatingField('${projectId}', 'drawingSentDate', this.value)"
-            style="width:100%; padding:6px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px;" />
+            style="width:100%; padding:6px 8px; font-size:1rem; border:1.5px solid var(--border); border-radius:4px;" />
         </div>
         <div>
           <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Drawing Approval Received Date</label>
           <div title="Set automatically when the Customer Approved drawing is uploaded (admin can change it in Project Timeline)"
-            style="padding:7px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px; background:#f1f5f9; color:${gating.drawingApprovalReceivedDate ? "#111827" : "var(--muted)"};">
+            style="padding:7px 8px; font-size:1rem; border:1.5px solid var(--border); border-radius:4px; background:#f1f5f9; color:${gating.drawingApprovalReceivedDate ? "#111827" : "var(--muted)"};">
             ${gating.drawingApprovalReceivedDate ? formatOrdinalDate(gating.drawingApprovalReceivedDate) : "Awaiting Customer Approved drawing upload"}
           </div>
         </div>`}
@@ -402,13 +396,13 @@ function buildMcGatingPanelHtml(projectId, gating) {
           <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Date of MFC Received from Customer</label>
           <input type="date" value="${gating.dateOfMfcReceivedFromCustomer ? gating.dateOfMfcReceivedFromCustomer.slice(0,10) : ""}"
             onchange="saveMcGatingField('${projectId}', 'dateOfMfcReceivedFromCustomer', this.value)"
-            style="width:100%; padding:6px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px;" />
+            style="width:100%; padding:6px 8px; font-size:1rem; border:1.5px solid var(--border); border-radius:4px;" />
         </div>
         <div>
           <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Final Delivery Date from MFC</label>
           <input type="date" value="${gating.actualDeliveryDate ? gating.actualDeliveryDate.slice(0,10) : ""}"
             onchange="saveMcGatingField('${projectId}', 'actualDeliveryDate', this.value)"
-            style="width:100%; padding:6px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px;" />
+            style="width:100%; padding:6px 8px; font-size:1rem; border:1.5px solid var(--border); border-radius:4px;" />
         </div>
       </div>
     </div>

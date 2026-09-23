@@ -306,7 +306,7 @@ function renderEBOQForm(containerId) {
             placeholder="${eboqMode === "authorize-update" ? "" : "Auto-filled from Product Name"}">${(draft.productRating || '').toString().replace(/</g, '&lt;')}</textarea>
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:2fr 1fr; gap:12px; margin-bottom:12px;">
+      <div style="display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:12px;">
         <div style="position:relative;">
           <label class="field-label" style="margin-top:0;">Description of Material (optional)</label>
           <textarea id="eboq-desc-input" rows="1" placeholder="Type to search or create a description..." autocomplete="off"
@@ -316,7 +316,7 @@ function renderEBOQForm(containerId) {
           <div id="eboq-desc-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           <input type="hidden" id="eboq-description-id" value="${draft.descriptionId || ''}" />
         </div>
-        <div>
+        <div style="display:none;">
           <label class="field-label" style="margin-top:0;">Make</label>
           <input type="text" id="eboq-header-make" readonly value="" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; box-sizing:border-box;" placeholder="Auto-filled from Product Name" />
         </div>
