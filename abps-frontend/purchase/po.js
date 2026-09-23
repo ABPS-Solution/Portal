@@ -1,3 +1,12 @@
+// Current FY's PO prefix, e.g. "PO_26-27_" — same Apr-Mar IST rule as
+// routes/purchase.js's getCurrentFinancialYearLabel.
+function cpoCurrentPOPrefix() {
+  const ist = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+  const y = ist.getUTCFullYear(), start = ist.getUTCMonth() >= 3 ? y : y - 1;
+  const two = (n) => String(n % 100).padStart(2, "0");
+  return `PO_${two(start)}-${two(start + 1)}_`;
+}
+
 
 async function initializeAuthorizePOPanel() {
   window.cpoExpandedPoNo = null;
@@ -588,8 +597,10 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
       <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
         <div>
           <label class="field-label" style="margin-top:0;">Manual PO Number (optional)</label>
-          <input type="text" id="cpo-po-number-override" placeholder="Leave blank to auto-generate — use this only to back-fill a pre-system PO under its original number, or to seed the sequence" oninput="persistCPODraft()" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
-          <div style="font-size:0.7rem; color:var(--muted); margin-top:3px;">Letters, numbers, dots, hyphens, underscores only — no "/" (replace with "-"). Cannot be changed after this PO is created.</div>
+          <div style="display:flex; align-items:stretch; border:1.5px solid var(--border); border-radius:var(--radius); overflow:hidden; background:#fff;">
+            <span style="padding:9px 4px 9px 10px; background:#f1f5f9; font-family:monospace; font-weight:700; color:#475569; white-space:nowrap;">${cpoCurrentPOPrefix()}</span>
+            <input type="text" inputmode="numeric" id="cpo-po-number-override" placeholder="Leave blank to auto-generate, or enter the PO number, e.g. 1 or 10 (saved as ${cpoCurrentPOPrefix()}00001)" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,5); persistCPODraft()" style="padding:9px; border:none; width:100%; min-width:0;">
+          </div>
         </div>
       </div>` : ""}
       <div id="cpo-vendor-preview" style="display:none; font-size:0.8rem; color:var(--muted); background:#fff; border:1px dashed var(--border); border-radius:var(--radius); padding:10px;"></div>
@@ -1234,14 +1245,8 @@ async function submitCreatePO() {
   // server's own validateManualPONumber
   // for fast feedback; the server re-validates authoritatively regardless.
   const poNumberOverrideVal = (document.getElementById("cpo-po-number-override")?.value || "").trim();
-  if (poNumberOverrideVal) {
-    if (poNumberOverrideVal.length > 60) return showErr("PO number is too long (max 60 characters).");
-    if (!/^[A-Za-z0-9._-]+$/.test(poNumberOverrideVal)) {
-      return showErr('PO number can only contain letters, numbers, dots, hyphens and underscores — replace "/" with "-".');
-    }
-    if (poNumberOverrideVal.startsWith(".") || poNumberOverrideVal.endsWith(".") || poNumberOverrideVal.includes("..")) {
-      return showErr('PO number cannot start or end with a dot, or contain "..".');
-    }
+  if (poNumberOverrideVal && !(/^\d{1,5}$/.test(poNumberOverrideVal) && Number(poNumberOverrideVal) >= 1)) {
+    return showErr(`Manual PO Number must be a number from 1 to 99999 (saved as ${cpoCurrentPOPrefix()}00001).`);
   }
 
   for (let i = 0; i < window.cpoMaterialRows.length; i++) {

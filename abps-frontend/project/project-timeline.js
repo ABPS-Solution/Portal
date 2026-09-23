@@ -207,7 +207,7 @@ async function selectPtlProject(projectId) {
   fb.style.display = "none";
   ptlEnsureHolidaysLoaded(); // fire-and-forget, in parallel with the timeline fetch below
   try {
-    const data = await apFetch({ action: "fetchProjectTimeline", projectId });
+    const data = await apFetch({ action: "fetchProjectTimeline", projectId, todayOverride: ptlToday() });
     if (!data.success) {
       body.innerHTML = "";
       fb.style.cssText = "display:block; background:#fee2e2; border-color:#b91c1c; color:#b91c1c; padding:12px; margin-bottom:14px; border-left:4px solid #b91c1c;";
@@ -270,6 +270,21 @@ function ptlSetTodayOverride(value) {
   else localStorage.removeItem(PTL_TODAY_OVERRIDE_KEY);
   ptlRender();
   if (document.getElementById("ptl-fs-overlay")?.style.display !== "none") ptlRenderFullscreen();
+  ptlRefetchForTodayOverride();
+}
+
+// The server decides which un-ordered material is "due now" from today's
+// date, so a changed test date needs fresh data, not just a redraw.
+async function ptlRefetchForTodayOverride() {
+  const projectId = ptlData && ptlData.project && ptlData.project.projectId;
+  if (!projectId) return;
+  try {
+    const data = await apFetch({ action: "fetchProjectTimeline", projectId, todayOverride: ptlToday() });
+    if (!data.success || !ptlData || ptlData.project.projectId !== projectId) return;
+    ptlData = data;
+    ptlRender();
+    if (document.getElementById("ptl-fs-overlay")?.style.display !== "none") ptlRenderFullscreen();
+  } catch (e) { /* keep the current view */ }
 }
 
 // Same convention as Manufacturing Clearance's wrapper header: Tentative
