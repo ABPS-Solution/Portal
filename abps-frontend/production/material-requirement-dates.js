@@ -93,9 +93,8 @@ async function loadMRDNeedQueue() {
     });
     const groupsHtml = groups.map(g => `
       <div style="padding:6px 12px; background:#fef9ec; border-bottom:1px solid #f1f5f9; border-top:1px solid #f1f5f9;">
-        <span style="font-family:monospace; font-weight:700; font-size:0.74rem; color:#92400e;">${escapeHtml(g.projectId)}</span>
-        <span style="font-size:0.74rem; color:#92400e;"> — ${escapeHtml(g.customerName)}</span>
-        <span style="font-size:0.68rem; color:#b45309; font-weight:700;"> (${g.items.length})</span>
+        <span style="font-family:monospace; font-weight:700; font-size:0.92rem; color:#92400e;">${escapeHtml(g.projectId)}</span>
+        <span style="font-size:0.88rem; color:#b45309; font-weight:700;"> (${g.items.length})</span>
       </div>
       ${g.items.map(rowHtml).join("")}`).join("");
     zone.innerHTML = `
@@ -506,8 +505,8 @@ async function loadRMRDQueueTab() {
       g.items.push(item);
     });
     feed.innerHTML = groups.map(g => `
-      <div style="padding:4px 4px 2px; font-weight:700; font-size:0.78rem; color:var(--muted);">
-        <span style="font-family:monospace; color:var(--text);">${escapeHtml(g.projectId)}</span> — ${escapeHtml(g.customerName)} <span style="font-weight:700; color:#b45309;">(${g.items.length})</span>
+      <div style="padding:4px 4px 2px; font-weight:700; font-size:0.92rem; color:var(--muted);">
+        <span style="font-family:monospace; color:var(--text);">${escapeHtml(g.projectId)}</span> <span style="font-weight:700; color:#b45309;">(${g.items.length})</span>
       </div>
       <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">${g.items.map(cardHtml).join("")}</div>`).join("");
   } catch (e) {

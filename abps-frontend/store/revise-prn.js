@@ -61,8 +61,8 @@ async function loadRPRNQueueTab() {
       g.items.push(item);
     });
     feed.innerHTML = groups.map(g => `
-      <div style="padding:4px 4px 2px; font-weight:700; font-size:0.78rem; color:var(--muted);">
-        <span style="font-family:monospace; color:var(--text);">${escapeHtml(g.projectId)}</span> — ${escapeHtml(g.customerName)} <span style="font-weight:700; color:#b45309;">(${g.items.length})</span>
+      <div style="padding:4px 4px 2px; font-weight:700; font-size:0.92rem; color:var(--muted);">
+        <span style="font-family:monospace; color:var(--text);">${escapeHtml(g.projectId)}</span> <span style="font-weight:700; color:#b45309;">(${g.items.length})</span>
       </div>
       <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">${g.items.map(cardHtml).join("")}</div>`).join("");
   } catch (e) {

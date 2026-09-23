@@ -252,9 +252,8 @@ async function loadPRNNeedQueue() {
     });
     const groupsHtml = groups.map(g => `
       <div style="padding:6px 12px; background:#fef9ec; border-bottom:1px solid #f1f5f9; border-top:1px solid #f1f5f9;">
-        <span style="font-family:monospace; font-weight:700; font-size:0.74rem; color:#92400e;">${escapeHtml(g.projectId)}</span>
-        <span style="font-size:0.74rem; color:#92400e;"> — ${escapeHtml(g.customerName)}</span>
-        <span style="font-size:0.68rem; color:#b45309; font-weight:700;"> (${g.items.length})</span>
+        <span style="font-family:monospace; font-weight:700; font-size:0.92rem; color:#92400e;">${escapeHtml(g.projectId)}</span>
+        <span style="font-size:0.88rem; color:#b45309; font-weight:700;"> (${g.items.length})</span>
       </div>
       ${g.items.map(rowHtml).join("")}`).join("");
 
