@@ -193,6 +193,7 @@ async function initializePRNPanel() {
   }
 
   loadPRNNeedQueue();
+  prnDraftRestoreCreate();
 }
 
 async function loadPRNNeedQueue() {
@@ -544,6 +545,7 @@ async function initializeAuthorizePRNPanel() {
         <div id="aprn-body-${p.prnId}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>`;
       feed.appendChild(card);
     });
+    prnDraftRestoreAuthorize();
   } catch (e) {
     feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${e.message}</div>`;
   } finally {
@@ -755,6 +757,7 @@ async function authorizePRN(prnId) {
     });
     hideBlockingOverlay();
     if (data.success) {
+      abpsDraftClear(PRN_DRAFT_KEYS.authorize);
       checkStorePRNRevisionReminder();
       checkPurchasePORevisionReminder();
       const feed = document.getElementById("aprn-cards-feed");
@@ -811,6 +814,7 @@ async function rejectPRN(prnId) {
   try {
     const data = await apFetch({ action: "rejectPurchaseRequestNote", prnId });
     if (data.success) {
+      abpsDraftClear(PRN_DRAFT_KEYS.authorize);
       showPurchaseFeedback("aprn-feedback", `PRN ${prnId} was rejected and its store reservations released.`, "success");
       await initializeAuthorizePRNPanel();
     } else {
@@ -1085,6 +1089,7 @@ async function submitNewPRNCreation() {
       ? `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — PRN is saved. Contact admin to verify Drive folder setup.</div>`
       : (data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a></div>` : "");
 
+    abpsDraftClear(PRN_DRAFT_KEYS.create);
     if (successZone) {
       successZone.style.display = "block";
       successZone.innerHTML = `

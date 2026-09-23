@@ -54,6 +54,7 @@ async function initializeAssignMaterialRequirementDatePanel() {
     window.sharedProjectMeta = data.success ? (data.projectMeta || {}) : {};
   } catch (e) { window.sharedActiveProjectCodes = []; }
   await loadMRDNeedQueue();
+  prnDraftRestoreMrd();
 }
 
 async function loadMRDNeedQueue() {
@@ -182,6 +183,7 @@ async function submitMaterialRequirementDates(ns, prnId, btn) {
   try {
     const data = await apFetch({ action: "saveMaterialRequirementDates", prnId, updates: result.updates, operatorName: appActiveOperatorIdentityString });
     if (data.success) {
+      abpsDraftClear(PRN_DRAFT_KEYS.mrd);
       document.getElementById("mrd-body").innerHTML = "";
       const header = document.getElementById("mrd-prn-header");
       if (header) header.style.display = "none";
@@ -209,11 +211,13 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
   const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
   const esc = (s) => (s==null?"":s.toString().replace(/</g,"&lt;").replace(/>/g,"&gt;"));
 
+  const draftLines = readOnly ? null : prnDraftMrdLinesFor(ns, prnId);
   const rows = lines.map(line => {
     const key = mrdSanitizeKey(line.itemCode);
     const purchaseQty = Number(line.purchaseQty) || 0;
     st.meta[key] = purchaseQty;
     st.itemCodeByKey[key] = line.itemCode;
+    if (!st.lines[key] && draftLines && Array.isArray(draftLines[key])) st.lines[key] = draftLines[key];
     if (!st.lines[key]) {
       st.lines[key] = (line.tranches || []).map(t => ({
         requirementId: t.requirementId, requiredQty: t.requiredQty, requiredDate: isoFromPODate(t.requiredDate),
@@ -463,7 +467,10 @@ async function initializeReviseMRDPanel() {
   if (fb) { fb.style.display = "none"; fb.innerHTML = ""; }
   const tabsBar = document.getElementById("rmrd-tabs-bar");
   if (tabsBar) tabsBar.style.display = "flex";
+  const rd = abpsDraftRead(PRN_DRAFT_KEYS.rmrd);
+  if (rd && rd.payload.mode === "other") { await prnDraftRestoreRmrd(); return; }
   switchReviseMRDTab('queue');
+  if (rd) await prnDraftRestoreRmrd();
 }
 
 async function loadRMRDQueueTab() {
@@ -546,6 +553,7 @@ async function submitReviseMRDQueue(ns, prnId, btn) {
   try {
     const data = await apFetch({ action: "saveMaterialRequirementDates", prnId, updates: result.updates, operatorName: appActiveOperatorIdentityString });
     if (data.success) {
+      abpsDraftClear(PRN_DRAFT_KEYS.rmrd);
       document.getElementById("rmrd-delta-zone").innerHTML = "";
       document.getElementById("rmrd-queue-feed").innerHTML = "";
       // Both tab labels ("PRN Revisions Needing..." / "Other Requirement
@@ -638,6 +646,7 @@ async function submitReviseMRDOther(ns, prnId, btn) {
   try {
     const data = await apFetch({ action: "saveMaterialRequirementDates", prnId, updates: result.updates, operatorName: appActiveOperatorIdentityString });
     if (data.success) {
+      abpsDraftClear(PRN_DRAFT_KEYS.rmrd);
       document.getElementById("rmrd-body").innerHTML = "";
       document.getElementById("rmrd-selector-row").style.display = "none";
       // Same fix as the queue tab's success path — hide the tab bar until

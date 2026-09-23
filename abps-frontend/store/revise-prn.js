@@ -15,7 +15,9 @@ async function initializeRevisePRNPanel() {
   if (fb) { fb.style.display = "none"; fb.innerHTML = ""; }
   const tabsBar = document.getElementById("rprn-tabs-bar");
   if (tabsBar) tabsBar.style.display = "flex";
+  if (abpsDraftRead(PRN_DRAFT_KEYS.reviseOther)) { await prnDraftRestoreReviseOther(); return; }
   switchRevisePRNTab('queue');
+  if (abpsDraftRead(PRN_DRAFT_KEYS.reviseDelta)) { await loadRPRNQueueTab(); await prnDraftRestoreReviseDelta(); }
 }
 
 async function loadRPRNQueueTab() {
@@ -290,6 +292,7 @@ async function submitRPRNDelta() {
       return;
     }
 
+    abpsDraftClear(PRN_DRAFT_KEYS.reviseDelta);
     document.getElementById("rprn-delta-zone").innerHTML = "";
     // Also clears the stale queue card for THIS BOQ — it's the same PRN
     // that was just submitted, and left visible otherwise (still reading
@@ -462,6 +465,7 @@ async function submitRevisePRN() {
       operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success) {
+      abpsDraftClear(PRN_DRAFT_KEYS.reviseOther);
       document.getElementById("rprn-body").innerHTML = "";
       document.getElementById("rprn-selector-row").style.display = "none";
       document.getElementById("rprn-tabs-bar").style.display = "none";
