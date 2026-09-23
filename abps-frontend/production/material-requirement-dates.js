@@ -73,7 +73,7 @@ async function loadMRDNeedQueue() {
       return;
     }
     const rowHtml = item => `
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px 8px 22px; border-bottom:1px solid #f1f5f9;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px 8px 22px; border-bottom:1px solid #e5c877;">
         <div style="min-width:0;">
           <div style="font-size:0.95rem; font-weight:700; color:var(--text);">${item.productName || ""} ${item.productRating || ""}</div>
         </div>
