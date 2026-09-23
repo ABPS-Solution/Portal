@@ -36,7 +36,7 @@ function oppFmtDate(value) {
   if (!value) return '';
   const d = value instanceof Date ? value : new Date(value);
   if (isNaN(d.getTime())) return '';
-  const month = d.toLocaleString('en-US', { month: 'short' });
+  const month = APP_MONTH_NAMES[d.getMonth()];
   return `${d.getDate()} ${month} ${d.getFullYear()}`;
 }
 

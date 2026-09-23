@@ -167,6 +167,9 @@ function trimNum(n) {
 // Ordinal display date, e.g. "6th Sep 2026" — accepts an ISO date string
 // or a Date. Used anywhere a friendlier, unambiguous date than DD/MM/YYYY
 // is wanted (Advance Vouchers table, voucher-check line items).
+// One set of month names for every screen and document (matches
+// abps-backend/lib/docDate.js): September is always "Sept".
+const APP_MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
 function formatOrdinalDate(value) {
   if (!value) return '';
   const d = value instanceof Date ? value : new Date(value);
@@ -175,7 +178,7 @@ function formatOrdinalDate(value) {
   const suffix = (day % 10 === 1 && day !== 11) ? 'st'
     : (day % 10 === 2 && day !== 12) ? 'nd'
     : (day % 10 === 3 && day !== 13) ? 'rd' : 'th';
-  const month = d.toLocaleString('en-US', { month: 'short' });
+  const month = APP_MONTH_NAMES[d.getMonth()];
   return `${day}${suffix} ${month} ${d.getFullYear()}`;
 }
 
@@ -188,14 +191,14 @@ function formatOrdinalDateTime(value) {
   if (isNaN(d.getTime())) return '';
   // Always IST, whatever the viewing device's own time zone is.
   const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Kolkata', year: 'numeric', month: 'short', day: 'numeric',
+    timeZone: 'Asia/Kolkata', year: 'numeric', month: 'numeric', day: 'numeric',
     hour: 'numeric', minute: '2-digit', hour12: true,
   }).formatToParts(d).map(x => [x.type, x.value]));
   const day = Number(p.day);
   const suffix = (day % 10 === 1 && day !== 11) ? 'st'
     : (day % 10 === 2 && day !== 12) ? 'nd'
     : (day % 10 === 3 && day !== 13) ? 'rd' : 'th';
-  return `${day}${suffix} ${p.month} ${p.year}, ${p.hour}:${p.minute} ${p.dayPeriod}`;
+  return `${day}${suffix} ${APP_MONTH_NAMES[Number(p.month) - 1]} ${p.year}, ${p.hour}:${p.minute} ${p.dayPeriod}`;
 }
 
 function formatDMYFromISO(iso) {

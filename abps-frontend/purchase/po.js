@@ -279,7 +279,7 @@ function srchpoFmtDisplayDate(isoOrDateStr) {
   if (!isoOrDateStr) return "";
   const dt = new Date(isoOrDateStr);
   if (isNaN(dt.getTime())) return "";
-  return `${String(dt.getDate()).padStart(2,'0')} ${dt.toLocaleString('en-US',{month:'short'})} ${dt.getFullYear()}`;
+  return `${String(dt.getDate()).padStart(2,'0')} ${APP_MONTH_NAMES[dt.getMonth()]} ${dt.getFullYear()}`;
 }
 
 // searchRMPOMatrixUI — the single Search button behind every field on this

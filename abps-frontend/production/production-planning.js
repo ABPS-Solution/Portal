@@ -39,7 +39,7 @@ function pplanShortJobCard(jobCardNumber) {
 
 const PPLAN_DAYMS = 86400000;
 const pplanParse = s => new Date(s + "T00:00:00Z");
-const PPLAN_MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const PPLAN_MON = APP_MONTH_NAMES;
 const pplanFmt = s => { if (!s) return "-"; const d = pplanParse(s); return d.getUTCDate() + " " + PPLAN_MON[d.getUTCMonth()]; };
 
 const pplanIsAdmin = () => localStorage.getItem("isUserAdminGlobal") === "true";

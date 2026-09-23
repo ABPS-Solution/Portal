@@ -243,7 +243,7 @@ function ptlBdBetween(a, b) {
   }
   return count;
 }
-const PTL_MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const PTL_MON = APP_MONTH_NAMES;
 const ptlFmt = s => { if (!s) return "-"; const d = ptlParse(s); return d.getUTCDate() + " " + PTL_MON[d.getUTCMonth()]; };
 const ptlFmtFull = s => { if (!s) return "-"; const d = ptlParse(s); return d.getUTCDate() + " " + PTL_MON[d.getUTCMonth()] + " " + d.getUTCFullYear(); };
 
