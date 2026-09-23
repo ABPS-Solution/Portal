@@ -119,7 +119,11 @@ async function submitMaterialRequestTicketToBackend() {
     return;
   }
 
-  const isServiceSubmit = departmentVal === "Service";
+  // Processing is picked directly in Outgoing Use now (24 Sep 2026) and is
+  // stored exactly as before: department 'Service' + outward_purpose
+  // 'Processing'. Service stores outward_purpose 'Service'.
+  const isServiceSubmit = departmentVal === "Service" || departmentVal === "Processing";
+  const departmentSubmitVal = isServiceSubmit ? "Service" : departmentVal;
   // Legacy/pre-system ticket is available under any Outgoing Use as of
   // go-live (was Service-only) — a pre-system project still in production,
   // or a plain stock-count correction, can be raised from any department.
@@ -170,14 +174,7 @@ async function submitMaterialRequestTicketToBackend() {
   // Purpose (Service/Processing, migration 213 retired Replacement) is
   // required for a Service ticket — it feeds outward_purpose, which is what puts
   // the ticket in the Material Outward / Delivery Challan queue.
-  const outwardPurposeVal = isServiceSubmit ? (document.getElementById("ticket-outward-purpose-dropdown")?.value || "") : "";
-  if (isServiceSubmit && !outwardPurposeVal) {
-    if (feedbackBanner) {
-      feedbackBanner.style.cssText = "display: block; background: #fff3c7; border-color: #b45309; color: #b45309; padding: 10px; margin-bottom: 12px; border-left: 4px solid #b45309; text-align: left;";
-      feedbackBanner.innerHTML = `<strong>Compulsory Input Missing:</strong> Please select a Purpose.`;
-    }
-    return;
-  }
+  const outwardPurposeVal = isServiceSubmit ? departmentVal : "";
 
   if (dynamicTicketShoppingBasketArray.length === 0) {
     if (feedbackBanner) {
@@ -210,8 +207,8 @@ async function submitMaterialRequestTicketToBackend() {
       jobCardNumber: jobCardNumberVal,
       boqId: (isServiceSubmit && !isLegacySubmit) ? boqIdVal : "",
       legacyCompanyName: legacyCompanyNameVal,
-      department: departmentVal,
-      departmentOutgoing: departmentVal,
+      department: departmentSubmitVal,
+      departmentOutgoing: departmentSubmitVal,
       outwardPurpose: outwardPurposeVal,
       ticketTypeCommandString: ticketTypeVal,
       storeTargetScope: chosenStoreTargetScopeStr,
@@ -233,7 +230,8 @@ async function submitMaterialRequestTicketToBackend() {
       materialRequestPanelContainer.innerHTML = `
         <div style="background: #dcfce7; border: 1px solid #15803d; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin: 10px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
           <div>
-            <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 6px; font-weight: 700;">Success! Material Issue Ticket Created.</h3>
+            <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 6px; font-weight: 700;">Success! Material Issue Ticket Created${outwardPurposeVal ? ` for ${outwardPurposeVal}` : ""}.</h3>
+            ${outwardPurposeVal ? `<div style="font-size: 0.92rem; font-weight: 600; margin-bottom: 6px;">Purpose: <strong>${outwardPurposeVal}</strong></div>` : ""}
             <div style="font-size: 0.92rem; font-weight: 600; display: flex; align-items: center; gap: 4px;">
               Assigned Reference Tracking ID: 
               <span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #15803d; color: #111827; margin-left: 4px; font-size: 1rem;">
@@ -1438,7 +1436,7 @@ function applyCmitDepartmentLock(lock) {
 }
 
 async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
-  const isService = chosenDepartmentVal === "Service";
+  const isService = chosenDepartmentVal === "Service" || chosenDepartmentVal === "Processing";
 
   // Purpose (Service/Processing, migration 213 retired Replacement) is
   // Service-only-visible — it feeds outward_purpose, which is what makes
@@ -1451,8 +1449,8 @@ async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
   // covers all of them.
   const purposeWrapper = document.getElementById("wrapper-ticket-outward-purpose");
   const purposeDrop = document.getElementById("ticket-outward-purpose-dropdown");
-  if (purposeWrapper) purposeWrapper.style.display = isService ? "" : "none";
-  if (purposeDrop && !isService) purposeDrop.value = "";
+  if (purposeWrapper) purposeWrapper.style.display = "none"; // purpose now comes from Outgoing Use itself
+  if (purposeDrop) purposeDrop.value = isService ? chosenDepartmentVal : "";
 
   // Reset Project field + legacy state
   const projectInput = document.getElementById("ticket-project-id-dropdown-ta-input");
@@ -1601,7 +1599,7 @@ function handleCreateTicketOperatorChange(chosenOperatorVal) {
 
 function handleCreateTicketBOQChange(chosenBoqId) {
   const jobCardLabel = document.getElementById("lbl-job-card-title");
-  const isService = document.getElementById("ticket-department-outgoing-dropdown")?.value === "Service";
+  const isService = ["Service", "Processing"].includes(document.getElementById("ticket-department-outgoing-dropdown")?.value);
 
   // Clear BOQ cache — different BOQ means different material allocations
   window._ticketBOQCache = null;
@@ -1652,7 +1650,7 @@ function handleCreateTicketBOQChange(chosenBoqId) {
 // "free pool, no Job Card", not literally "Service".
 function ticketIsServiceItemMode_() {
   const dept = document.getElementById("ticket-department-outgoing-dropdown")?.value;
-  return dept === "Service" || !!document.getElementById("ticket-legacy-project-toggle")?.checked;
+  return dept === "Service" || dept === "Processing" || !!document.getElementById("ticket-legacy-project-toggle")?.checked;
 }
 function ticketJcmCacheKeyFor_(activeStoreScope, jobCardNumberVal, projectId) {
   return ticketIsServiceItemMode_() ? ("SERVICE|" + activeStoreScope + "|" + projectId) : (jobCardNumberVal + "|" + projectId);
@@ -1949,7 +1947,7 @@ function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
   // Panel rather than leaving an invalid combination selected.
   if (chosenStoreValue === "Finished Goods Store") {
     const deptDropForFG = document.getElementById("ticket-department-outgoing-dropdown");
-    const validFGDepts = ["Panel", "Service"];
+    const validFGDepts = ["Panel", "Service", "Processing"];
     if (deptDropForFG && !validFGDepts.includes(deptDropForFG.value)) {
       deptDropForFG.value = "Panel";
     }
@@ -1975,7 +1973,7 @@ function handleTicketJobCardChange(chosenJobCard) {
     storeScopeDrop.disabled = false;
     storeScopeDrop.style.opacity = "1";
     storeScopeDrop.style.cursor = "pointer";
-    storeScopeDrop.innerHTML = buildStoreScopeOptionsHtml_("— Select Store —", chosenDepartmentVal === "Service");
+    storeScopeDrop.innerHTML = buildStoreScopeOptionsHtml_("— Select Store —", chosenDepartmentVal === "Service" || chosenDepartmentVal === "Processing");
   }
   if (storeScopeLabel) storeScopeLabel.style.color = "var(--brand)";
 }
