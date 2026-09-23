@@ -143,9 +143,9 @@ function ppsRenderNeedQueueList(title, items, emptyMessage) {
       ? `<div style="font-size:0.85rem; font-weight:600; color:var(--muted); margin-top:2px;">${item.scheduledItems} of ${item.totalItems} items scheduled</div>`
       : "";
     return `
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px 8px 22px; border-bottom:1px solid #f1f5f9;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px 8px 22px; border-bottom:1px solid #e5c877;">
         <div style="min-width:0;">
-          <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${item.prnId}</span>
+          <div style="font-size:0.95rem; font-weight:700; color:var(--text);">${item.productName || ""} ${item.productRating || ""}</div>
           ${hint}
         </div>
         <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
@@ -166,9 +166,8 @@ function ppsRenderNeedQueueList(title, items, emptyMessage) {
   });
   const groupsHtml = groups.map(g => `
     <div style="padding:6px 12px; background:#fef9ec; border-bottom:1px solid #f1f5f9; border-top:1px solid #f1f5f9;">
-      <span style="font-family:monospace; font-weight:700; font-size:0.74rem; color:#92400e;">${escapeHtml(g.projectId)}</span>
-      <span style="font-size:0.74rem; color:#92400e;"> — ${escapeHtml(g.customerName)}</span>
-      <span style="font-size:0.68rem; color:#b45309; font-weight:700;"> (${g.items.length})</span>
+      <span style="font-family:monospace; font-weight:700; font-size:0.92rem; color:#92400e;">${escapeHtml(g.projectId)}</span>
+      <span style="font-size:0.88rem; color:#b45309; font-weight:700;"> (${g.items.length})</span>
     </div>
     ${g.items.map(rowHtml).join("")}`).join("");
 
