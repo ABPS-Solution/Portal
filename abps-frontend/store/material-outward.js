@@ -487,10 +487,9 @@ async function mowDiscardDraft(challanId, skipConfirm) {
 // tells the operator to raise a fresh ticket instead of trying to patch
 // this one.
 async function rejectMaterialOutwardRequest(ticketId) {
-  const reason = prompt(`Reject ${ticketId} and return its stock to the store?\n\nThis completely voids the request — the operator will need to raise a new Material Issue Ticket with the correct material/quantity.\n\nOptional: reason for rejecting (shown in the audit log):`);
-  if (reason === null) return; // Cancel
+  if (!confirm(`Reject ${ticketId} and return its stock to the store?\n\nThis completely voids the request — the operator will need to raise a new Material Issue Ticket with the correct material/quantity.`)) return;
   try {
-    const data = await apFetch({ action: "rejectMaterialOutwardRequest", ticketId, reason: reason || "", operatorName: appActiveOperatorIdentityString || "Unknown" });
+    const data = await apFetch({ action: "rejectMaterialOutwardRequest", ticketId, operatorName: appActiveOperatorIdentityString || "Unknown" });
     if (!data.success) throw new Error(data.error || "Failed to reject.");
     showSuccessWithReset("mow-feedback-banner", `${escapeHtml(ticketId)} rejected — its stock has been returned to the store. Raise a new Material Issue Ticket to correct it.`, "Refresh Queue", "loadMaterialOutwardServiceQueue()");
     loadMaterialOutwardServiceQueue();
