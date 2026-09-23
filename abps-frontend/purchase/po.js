@@ -680,8 +680,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
           ? `<button class="nav-btn-styled" onclick="rejectPOFromForm()" style="background:#dc2626;">Reject PO</button>
              <button class="nav-btn-styled" id="cpo-submit-btn" onclick="authorizePOFromForm()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Authorize PO</button>`
           : window.cpoMode === 'edit'
-          ? `<button class="nav-btn-styled" onclick="generateCheckingDraftOnly()" style="background:#0ea5e9; color:#fff; font-weight:700;">📄 Generate Checking Draft</button>
-             <button class="nav-btn-styled" id="cpo-submit-btn" onclick="saveEditedPO()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Save Changes</button>`
+          ? `<button class="nav-btn-styled" id="cpo-submit-btn" onclick="saveEditedPO()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">📄 Save &amp; Generate Checking Draft</button>`
           : `<button class="nav-btn-styled" onclick="clearCPOForm()" style="background:#718096;">Clear PO</button>
              <button class="nav-btn-styled" id="cpo-submit-btn" onclick="submitCreatePO()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Submit for Authorization</button>`}
       </div>
@@ -1575,19 +1574,19 @@ async function saveEditedPO() {
     const data = await apFetch({ action: "updatePurchaseOrderDraft", activeEngineer: appActiveOperatorIdentityString, ...payload, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success) {
-      banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius); font-weight:600;";
-      banner.textContent = `Changes saved. This PO already shows your latest changes in Authorize Raw Material Purchase Order — click "Generate Checking Draft" above when ready for a fresh printout.`;
-      banner.scrollIntoView({ behavior:"smooth", block:"center" });
-      btn.disabled = false; btn.textContent = "Save Changes";
+      // Saving and printing are one step (24 Sep 2026): a fresh checking
+      // draft is generated from what was just saved.
+      await generateCheckingDraftOnly();
+      btn.disabled = false; btn.textContent = "📄 Save & Generate Checking Draft";
     } else {
-      btn.disabled = false; btn.textContent = "Save Changes";
+      btn.disabled = false; btn.textContent = "📄 Save & Generate Checking Draft";
       banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
       banner.textContent = "Server error: " + data.error;
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
     }
   } catch (e) {
     hideBlockingOverlay();
-    btn.disabled = false; btn.textContent = "Save Changes";
+    btn.disabled = false; btn.textContent = "📄 Save & Generate Checking Draft";
     banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
     banner.textContent = "Network error: " + e.message;
     banner.scrollIntoView({ behavior:"smooth", block:"center" });
@@ -1600,7 +1599,7 @@ async function generateCheckingDraftOnly() {
   const poNo = window.cpoEditingPoNo;
   if (!poNo) return;
 
-  showBlockingOverlay("Generating checking draft...");
+  showBlockingOverlay("Changes saved. Generating checking draft...");
   try {
     const data = await apFetch({ action: "regeneratePOCheckingDraft", poNo, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
@@ -1610,7 +1609,7 @@ async function generateCheckingDraftOnly() {
         banner.innerHTML = `<strong>Checking Draft #${data.checkingDraftNumber} generated.</strong> <a href="${driveLink(data.checkingDocUrl)}" target="_blank" style="display:inline-block; margin-left:10px; background:#fff; color:#0ea5e9; border:1.5px solid #0ea5e9; padding:6px 14px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open Checking Draft #${data.checkingDraftNumber}</a>`;
       } else {
         banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #b45309; background:#fffbeb; color:#78350f; border-radius:var(--radius); font-weight:600;";
-        banner.textContent = `⚠️ Checking Draft #${data.checkingDraftNumber} could not be generated — click "Generate Checking Draft" again to retry.`;
+        banner.textContent = `⚠️ Checking Draft #${data.checkingDraftNumber} could not be generated — your changes are saved; click "Save & Generate Checking Draft" again to retry the printout.`;
       }
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
     } else {
