@@ -29,6 +29,8 @@ function eibFeedback(msg, ok) {
   el.style.borderLeftColor = ok ? "var(--accent)" : "var(--warn)";
   el.style.background = ok ? "#f0fdf4" : "#fef2f2";
   el.textContent = msg || "";
+  clearTimeout(eibFeedback._t);
+  if (msg && ok) eibFeedback._t = setTimeout(() => { el.style.display = "none"; }, 10000);
 }
 
 async function loadEmailInboxes() {
@@ -77,7 +79,7 @@ function eibRender() {
     const action = system
       ? `<span title="Its access also powers ${escapeHtml(c.systemRoles.join(", "))} — can't be disconnected" style="font-size:0.75rem; font-weight:700; color:#92400e; background:#fef3c7; padding:3px 8px; border-radius:10px;">System account (${escapeHtml(c.systemRoles.join(", "))})</span>`
       : revoked
-        ? `<span style="font-size:0.78rem; color:var(--muted);">Use Connect new inbox to reconnect</span>`
+        ? `<span style="font-size:0.78rem; color:var(--muted);">Use the link above to reconnect</span>`
         : `<button class="nav-btn-styled" style="background:var(--warn); padding:5px 12px; font-size:0.78rem;" onclick="eibDisconnect(${i})">Disconnect</button>`;
     return `<tr style="background:${EIB_SECTION_SHADE[c.feed] || "#fff"};">
       <td ${td}><strong>${escapeHtml(c.email)}</strong></td>
@@ -137,9 +139,8 @@ function eibRender() {
     </div>
     <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
       <h3 style="margin:0; color:var(--brand);">Connected Inboxes</h3>
-      <button class="nav-btn-styled" style="background:var(--accent);" onclick="eibConnectNew()">+ Connect new inbox</button>
     </div>
-    <p style="font-size:0.8rem; color:var(--muted); margin:0 0 8px;">Gmail accounts this system reads. Each one feeds one section, or none if Excluded (for test inboxes). Connecting opens Google's own permission screen: sign in as the inbox you want to add and click Allow.</p>
+    <p style="font-size:0.8rem; color:var(--muted); margin:0 0 8px;">Gmail accounts this system reads. Each one feeds one section, or none if Excluded (for test inboxes). To add one, use the link above.</p>
     <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; min-width:820px; border:1px solid var(--border);">
       <thead><tr><th ${th}>Inbox</th><th ${th}>Section</th><th ${th}>Status</th><th ${th}>Mail, last 7 days</th><th ${th}>Last checked</th><th ${th}></th></tr></thead>
       <tbody>${connRows || `<tr><td ${td} colspan="6">No inboxes connected.</td></tr>`}</tbody>
@@ -221,7 +222,7 @@ async function eibSetFeed(i, feed) {
 }
 async function eibDisconnect(i) {
   const c = eibConnections[i];
-  if (!confirm(`Disconnect ${c.email}? It will stop being read. You can reconnect it later with Connect new inbox.`)) return;
+  if (!confirm(`Disconnect ${c.email}? It will stop being read. You can reconnect it later with the link at the top.`)) return;
   try {
     const data = await apFetch({ action: "disconnectEmailInbox", email: c.email });
     if (!data.success) return eibFeedback(data.error || "Disconnect failed.", false);
@@ -229,6 +230,7 @@ async function eibDisconnect(i) {
     await loadEmailInboxes();
   } catch (e) { if (e.message !== "SESSION_EXPIRED") eibFeedback(e.message, false); }
 }
+// Unused since the Connect new inbox button was removed (share link replaces it).
 async function eibConnectNew() {
   try {
     const data = await apFetch({ action: "mintGmailConnectLink" });
