@@ -159,7 +159,7 @@ async function mowStartNewChallanFromSelection() {
 }
 
 async function mowAddSelectedToDraft(challanId) {
-  const draft = mowDraftsCache.find(d => d.challan_id === challanId);
+  const draft = mowDraftsCache.find(d => String(d.challan_id) === String(challanId));
   if (!draft) return;
   const existingIds = (draft.linked_tickets || []).map(t => t.ticketId);
   const ticketIds = [...new Set([...existingIds, ...window._mowSelectedPoolTickets])];
@@ -204,7 +204,7 @@ async function mowSaveDraftAndReload(challanId, ticketIds, existingDraft) {
 // the one being removed, through the same sync-based save route. If it
 // was the last ticket, the server deletes the now-empty draft entirely.
 async function mowRemoveTicketFromDraft(challanId, ticketId) {
-  const draft = mowDraftsCache.find(d => d.challan_id === challanId);
+  const draft = mowDraftsCache.find(d => String(d.challan_id) === String(challanId));
   if (!draft) return;
   if (!confirm(`Remove ${ticketId} from Draft Challan #${challanId}? It will return to the pool of tickets awaiting a challan.`)) return;
   const remaining = (draft.linked_tickets || []).map(t => t.ticketId).filter(id => id !== ticketId);
@@ -386,7 +386,7 @@ function mowCollectCardPayload(challanId) {
   document.querySelectorAll(`.mow-hsn-input[data-challan-id="${challanId}"]`).forEach(inp => {
     hsnByItemCode[inp.dataset.itemCode] = inp.value.trim();
   });
-  const draft = mowDraftsCache.find(d => d.challan_id === challanId);
+  const draft = mowDraftsCache.find(d => String(d.challan_id) === String(challanId));
   const ticketIds = (draft?.linked_tickets || []).map(t => t.ticketId);
   return {
     challanId, ticketIds,

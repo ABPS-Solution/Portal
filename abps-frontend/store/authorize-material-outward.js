@@ -45,7 +45,7 @@ function amoConsigneeLabel(c) {
 
 function amoRenderCard(c) {
   const id = c.challan_id;
-  const open = window._amoExpanded.has(id);
+  const open = window._amoExpanded.has(String(id));
   const own = c.created_by && c.created_by === window._amoViewer.personKey && !window._amoViewer.isAdmin;
   const tickets = c.linked_tickets || [];
   const items = c.line_items || [];
@@ -110,8 +110,9 @@ function amoRenderCard(c) {
 }
 
 function amoToggle(id) {
-  if (window._amoExpanded.has(id)) window._amoExpanded.delete(id);
-  else window._amoExpanded.add(id);
+  const key = String(id);
+  if (window._amoExpanded.has(key)) window._amoExpanded.delete(key);
+  else window._amoExpanded.add(key);
   const feed = document.getElementById("amo-feed");
   if (feed) feed.innerHTML = window._amoChallans.map(amoRenderCard).join("");
 }
@@ -133,7 +134,7 @@ function amoShowDone(html) {
 }
 
 async function amoAuthorize(id) {
-  const c = window._amoChallans.find(x => x.challan_id === id);
+  const c = window._amoChallans.find(x => String(x.challan_id) === String(id));
   if (!c) return;
   if (!confirm(`Authorize Delivery Challan ${c.challan_number || "#" + id}? This issues the real document; it can't be undone here.`)) return;
   showBlockingOverlay("Authorizing Delivery Challan...");
@@ -151,7 +152,7 @@ async function amoAuthorize(id) {
 }
 
 async function amoReject(id) {
-  const c = window._amoChallans.find(x => x.challan_id === id);
+  const c = window._amoChallans.find(x => String(x.challan_id) === String(id));
   if (!c) return;
   if (!confirm(`Reject ${c.challan_number || "Draft #" + id}? The draft is discarded and its tickets go back to Material Outward on Delivery Challan to be challaned again.`)) return;
   showBlockingOverlay("Rejecting...");
