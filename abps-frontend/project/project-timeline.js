@@ -767,7 +767,7 @@ function ptlRenderStageRows(nodes, today, prodPlanDone) {
     const done = !!n.actual || n.done === true;
     const late = ptlLate(n);
     const eff = ptlEff(n);
-    const dateTxt = n.notApplicable ? 'Not Eligible (no customer drawing approval)' : n.actual ? ptlFmtFull(n.actual) : (n.done ? `On or before ${ptlFmtFull(eff)} (exact date not tracked)` : eff ? `Due ${ptlFmtFull(eff)}` : 'Not yet scheduled');
+    const dateTxt = n.notApplicable ? 'Not Eligible (no customer drawing approval)' : n.actual ? ((n.id === 'rmpos' || n.id === 'pps') ? `Completed till date: ${ptlFmtFull(n.actual)}` : ptlFmtFull(n.actual)) : (n.done ? `On or before ${ptlFmtFull(eff)} (exact date not tracked)` : eff ? `Due ${ptlFmtFull(eff)}` : 'Not yet scheduled');
     // Same completion-status coloring as the canvas map (30 Aug 2026) -
     // grey scheduled / green done / red late, not department. `c` is
     // kept only for the department name badge text just below.
