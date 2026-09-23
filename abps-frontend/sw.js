@@ -36,8 +36,12 @@
 // avoid needing every user to clear site data by hand.
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'abps-v190';
+const CACHE_VERSION = 'abps-v191';
 const CACHE_NAME = `abps-shell-${CACHE_VERSION}`;
+
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
+});
 
 self.addEventListener('install', (event) => {
   // Take over as soon as this version is installed rather than waiting
