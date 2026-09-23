@@ -1520,6 +1520,19 @@ function ptlRenderCanvas(containerId) {
   P.push(`<g clip-path="url(#${clipId})">`);
   traces.forEach(t => P.push(`<path d="${t.d}" fill="none" stroke="${t.c}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`));
   P.push(`</g>`);
+  // Past the Final Delivery / Dispatch Date every line is late (24 Sep 2026):
+  // the same traces are redrawn in red, clipped to the right of that date.
+  const deliveryPos = pos['delivery'];
+  if (deliveryPos) {
+    const lateId = clipId + "late", lateSolidId = clipId + "latesolid";
+    const dx = deliveryPos.x;
+    P.push(`<defs><clipPath id="${lateId}"><rect x="${dx}" y="0" width="100000" height="${H}"/></clipPath><clipPath id="${lateSolidId}"><rect x="${dx}" y="0" width="${Math.max(0, todayX - dx)}" height="${H}"/></clipPath></defs>`);
+    P.push(`<g clip-path="url(#${lateId})">`);
+    traces.forEach(t => P.push(`<path d="${t.d}" fill="none" stroke="#e84545" stroke-width="1.8" stroke-dasharray="4 5" opacity=".85" stroke-linecap="round"/>`));
+    P.push(`</g><g clip-path="url(#${lateSolidId})">`);
+    traces.forEach(t => P.push(`<path d="${t.d}" fill="none" stroke="#e84545" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`));
+    P.push(`</g>`);
+  }
 
   // Nodes
   const laid = [];
@@ -1586,7 +1599,8 @@ function ptlRenderCanvas(containerId) {
     const kU = PL.place(k => { const b = y - R - GAP - k * (SLOT_UP + LINE_H); return { x0: x - lw / 2 - PTL_LBL_PAD, x1: x + lw / 2 + PTL_LBL_PAD, y0: b - (lines.length - 1) * LINE_H - ASC, y1: b + 3 }; }, maxSlotsUp);
     const base = y - R - GAP - kU * (SLOT_UP + LINE_H);
     if (kU > 0) P.push(`<line x1="${x}" y1="${y - R}" x2="${x}" y2="${base + 4}" stroke="${ring}" stroke-width="1" opacity=".3"/>`);
-    lines.forEach((ln, i) => P.push(`<text x="${x}" y="${base - (lines.length - 1 - i) * LINE_H}" text-anchor="middle" font-size="${11 * ptlFS}" font-weight="600" fill="${late ? '#e84545' : 'var(--text)'}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(ln)}</text>`));
+    const isFinalDelivery = n.id === 'delivery';
+    lines.forEach((ln, i) => P.push(`<text x="${x}" y="${base - (lines.length - 1 - i) * LINE_H}" text-anchor="middle" font-size="${(isFinalDelivery ? 12.5 : 11) * ptlFS}" font-weight="${isFinalDelivery ? 800 : 600}" fill="${late ? '#e84545' : (isFinalDelivery ? '#b45309' : 'var(--text)')}" paint-order="stroke" stroke="var(--bg,#f0f4f8)" stroke-width="3.5">${esc(ln)}</text>`));
 
     const dtx = ptlFmt(eff);
     // Stage 3's progress chip (e.g. "3/4 PRNs") - was only ever rendered in
@@ -1626,7 +1640,12 @@ function ptlRenderCanvas(containerId) {
         <animate attributeName="opacity" values="0.65;0.05;0.65" dur="1.6s" repeatCount="indefinite"/>
       </circle>`);
     }
-    P.push(`<circle cx="${x}" cy="${y}" r="${R}" fill="${done ? c : 'var(--card)'}" stroke="${ring}" stroke-width="${(late ? 2.6 : 2.2) * ptlFS}"/>`);
+    if (isFinalDelivery && !late) {
+      // Final Delivery / Dispatch Date is the key commitment on this map
+      // (24 Sep 2026): a fixed amber halo marks it even while on track.
+      P.push(`<circle cx="${x}" cy="${y}" r="${R * 1.75}" fill="rgba(245,158,11,0.18)" stroke="#d97706" stroke-width="${2.4 * ptlFS}"/>`);
+    }
+    P.push(`<circle cx="${x}" cy="${y}" r="${R}" fill="${done ? c : 'var(--card)'}" stroke="${isFinalDelivery && !late && !done ? '#d97706' : ring}" stroke-width="${(late || isFinalDelivery ? 2.6 : 2.2) * ptlFS}"/>`);
     if (done) P.push(`<path d="M${x - R * 0.43} ${y} l${R * 0.31} ${R * 0.32} l${R * 0.55} -${R * 0.61}" fill="none" stroke="var(--card)" stroke-width="${1.8 * ptlFS}" stroke-linecap="round" stroke-linejoin="round"/>`);
 
     const anchorId = boqId ? `ptl-step-${boqId}-${n.id}` : `ptl-row-${n.id}`;
