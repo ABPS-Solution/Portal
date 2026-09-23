@@ -170,6 +170,11 @@ async function navigateToModule(key) {
       if (companySelectorBlock) companySelectorBlock.style.display = "block";
       const inlineCanvasNode = document.getElementById("step2-inline-interaction-canvas");
       if (inlineCanvasNode) inlineCanvasNode.style.display = "none";
+      // A half-filled Create New Lead form must not survive leaving the screen.
+      const newEntryForm = document.getElementById("step2-new-entry-dropdown");
+      if (newEntryForm) newEntryForm.style.display = "none";
+      const missingNotice = document.getElementById("missing-trigger-notice-block");
+      if (missingNotice) missingNotice.style.display = "none";
       triggerCompanyDropdownArrayFetch();
     } else if (key === "cardDetails") {
       const companyInputTextNode = document.getElementById("f-company");
