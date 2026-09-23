@@ -75,8 +75,7 @@ async function loadMRDNeedQueue() {
     const rowHtml = item => `
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px 8px 22px; border-bottom:1px solid #f1f5f9;">
         <div style="min-width:0;">
-          <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${item.prnId}</span>
-          <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.productName || ""} ${item.productRating || ""}</div>
+          <div style="font-size:0.95rem; font-weight:700; color:var(--text);">${item.productName || ""} ${item.productRating || ""}</div>
         </div>
         <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
           onclick="jumpToMRDFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.prnId.replace(/'/g, "\\'")}', this)">
@@ -487,8 +486,7 @@ async function loadRMRDQueueTab() {
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius);">
         <div style="min-width:0; padding:6px 0;">
           <span style="font-size:0.68rem; font-weight:800; background:#fef3c7; color:#b45309; padding:2px 7px; border-radius:4px; margin-right:8px;">Revised</span>
-          <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${item.prnId}</span>
-          <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.productName || ""} ${item.productRating || ""}</div>
+          <div style="font-size:0.95rem; font-weight:700; color:var(--text);">${item.productName || ""} ${item.productRating || ""}</div>
         </div>
         <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
           <span style="font-size:0.72rem; color:#78350f; max-width:300px; line-height:1.35;">A PRN revision changed a Purchase Qty — revise the requirement dates to match.</span>
