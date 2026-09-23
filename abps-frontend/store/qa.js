@@ -436,8 +436,9 @@ async function commitQARevisionToBackend(grnNumber, btn) {
   });
 
   for (const li of lineItems) {
-    if (li.notOkQuantity > 0 && !li.actionForRejectedMaterial) {
-      alert(`Action for Rejected Material is required for ${li.itemCode}.`);
+    if (li.notOkQuantity > 0 && (!li.reasonForNotOk || !li.actionForRejectedMaterial)) {
+      const missing = [!li.reasonForNotOk && "Reason for Not OK", !li.actionForRejectedMaterial && "Action for Rejected"].filter(Boolean).join(" and ");
+      alert(`Cannot submit: ${li.itemCode} has ${li.notOkQuantity} Not OK but is missing ${missing}. Every row with Not OK above 0 needs both.`);
       return;
     }
   }

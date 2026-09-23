@@ -841,6 +841,7 @@ async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
   const btn = btnEl || event.target;
 
   let actionMissing = false;
+  const notOkIssues = [];
   let validationError = false;
   let qaDoneMissing = false;
 
@@ -854,7 +855,10 @@ async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
     const matName  = document.querySelector(`.qa-mat-name-${grnNum}[data-idx="${idx}"]`).value.trim();
     const unit     = document.querySelector(`.qa-unit-${grnNum}[data-idx="${idx}"]`).value.trim();
 
-    if (notOk > 0 && !action) actionMissing = true;
+    if (notOk > 0 && (!action || !reason)) {
+      notOkIssues.push(`${itemCode || line.itemCode}: ${notOk} Not OK — missing ${[!reason && "Reason for Not OK", !action && "Action for Rejected"].filter(Boolean).join(" and ")}`);
+      actionMissing = true;
+    }
     if (ok + notOk !== (parseInt(line.quantityReceived, 10) || 0)) validationError = true;
     if (!done) qaDoneMissing = true;
 
@@ -876,7 +880,7 @@ async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
     return;
   }
   if (actionMissing) {
-    showBOQBanner('store-grn-runtime-feedback-banner', "⚠️ Action for Rejected Material is compulsory for any line item with a Not OK quantity greater than zero.", "error");
+    showBOQBanner('store-grn-runtime-feedback-banner', `⚠️ Cannot submit: every row with a Not OK quantity above 0 needs both a Reason for Not OK and an Action for Rejected, so Store knows why it was rejected and what happens to it next.<br>${notOkIssues.map(t => "• " + escapeHtml(t)).join("<br>")}`, "error");
     banner.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
