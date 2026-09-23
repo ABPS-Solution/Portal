@@ -498,7 +498,7 @@ function renderPORevisionCard() {
       ? (Number(li.newRequiredQty) > Number(li.orderedQty) ? "#f0fdf4" : "#fffbeb")
       : "#fff";
     return `
-    <div data-lineidx="${idx}" style="background:${rpoRowBg}; border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px;">
+    <div data-lineidx="${idx}" style="background:${rpoRowBg}; border:1.5px solid #000; border-radius:var(--radius); padding:12px; margin-bottom:10px;">
       <div style="display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap;">
         <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx + 1}</div>
 
@@ -1245,7 +1245,7 @@ function renderAPORCard(r) {
     const rowBg = Math.abs(newQty - oldQty) < 1e-9 ? "#fff" : (newQty > oldQty ? "#f0fdf4" : "#fffbeb");
 
     return `
-    <div data-lineidx="${idx}" style="background:${rowBg}; border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px;">
+    <div data-lineidx="${idx}" style="background:${rowBg}; border:1.5px solid #000; border-radius:var(--radius); padding:12px; margin-bottom:10px;">
       <div style="display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap;">
         <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx + 1}</div>
 

@@ -902,14 +902,14 @@ function renderCPOMaterialRows() {
     const costingDiff = (hasRateValue && hasDesignRate) ? (effectiveRate - Number(designRate)) * lineQtyNow : null;
     const isAuthMode = window.cpoMode === 'authorize';
     const rowBg = (isAuthMode && isOverRate) ? "#fef2f2" : "#fff";
-    const rowBorderColor = (isAuthMode && isOverRate) ? "#fca5a5" : "var(--border)";
+    const rowBorderColor = (isAuthMode && isOverRate) ? "#dc2626" : "#000";
     const overRateWarning = isOverRate
       ? `<div style="margin-top:10px; padding:7px 10px; background:${isAuthMode ? "#fee2e2" : "#fffbeb"}; border:1px solid ${isAuthMode ? "#fca5a5" : "#fde68a"}; border-radius:4px; font-size:0.75rem; font-weight:700; color:${isAuthMode ? "#b91c1c" : "#78350f"};">
           ⚠️ Rate / Qty after Disc % (${fmtQty(effectiveRate)}) is higher than Design Rate / Qty (${fmtQty(designRate)}).${isAuthMode ? " Only an admin can authorize this PO as-is." : ""}
         </div>`
       : "";
 
-    return `<div data-rowid="${row.id}" style="background:${rowBg}; border:1px solid ${rowBorderColor}; border-radius:var(--radius); padding:12px; margin-bottom:10px;">
+    return `<div data-rowid="${row.id}" style="background:${rowBg}; border:1.5px solid ${rowBorderColor}; border-radius:var(--radius); padding:12px; margin-bottom:10px;">
       <div style="display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap;">
         <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx + 1}</div>
 
