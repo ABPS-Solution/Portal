@@ -262,15 +262,17 @@ async function updatePORevisionUI() {
     });
     hideBlockingOverlay();
     if (data.success) {
-      showPurchaseFeedback("rpo-feedback", `Changes saved. This revision already shows your latest changes in Authorize Raw Material Purchase Order Revision — click "Generate Checking Draft" above when ready for a fresh printout.`, "success");
-      btn.disabled = false; btn.textContent = "Save Changes";
+      // Saving and printing are one step (24 Sep 2026): a fresh checking
+      // draft is generated from what was just saved.
+      await generateRevisionCheckingDraftUI();
+      btn.disabled = false; btn.textContent = "📄 Save & Generate Checking Draft";
     } else {
-      btn.disabled = false; btn.textContent = "Save Changes";
+      btn.disabled = false; btn.textContent = "📄 Save & Generate Checking Draft";
       showPurchaseFeedback("rpo-feedback", data.error || "Save failed.", "error");
     }
   } catch (e) {
     hideBlockingOverlay();
-    btn.disabled = false; btn.textContent = "Save Changes";
+    btn.disabled = false; btn.textContent = "📄 Save & Generate Checking Draft";
     showPurchaseFeedback("rpo-feedback", "Network error: " + e.message, "error");
   }
 }
@@ -278,14 +280,14 @@ async function updatePORevisionUI() {
 async function generateRevisionCheckingDraftUI() {
   const st = window.rpoActive;
   if (!st || !st.requestId) return;
-  showBlockingOverlay("Generating checking draft...");
+  showBlockingOverlay("Changes saved. Generating checking draft...");
   try {
     const data = await apFetch({ action: "regenerateRevisionCheckingDraft", requestId: st.requestId, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success && data.checkingDocUrl) {
       showPurchaseFeedback("rpo-feedback", `<strong>Checking Draft #${data.checkingDraftNumber} generated.</strong> <a href="${driveLink(data.checkingDocUrl)}" target="_blank" style="display:inline-block; margin-left:10px; background:#fff; color:#0ea5e9; border:1.5px solid #0ea5e9; padding:6px 14px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open Checking Draft #${data.checkingDraftNumber}</a>`, "success", true);
     } else if (data.success) {
-      showPurchaseFeedback("rpo-feedback", `⚠️ Checking Draft #${data.checkingDraftNumber} could not be generated — click "Generate Checking Draft" again to retry.`, "error");
+      showPurchaseFeedback("rpo-feedback", `⚠️ Checking Draft #${data.checkingDraftNumber} could not be generated — your changes are saved; click "Save & Generate Checking Draft" again to retry the printout.`, "error");
     } else {
       showPurchaseFeedback("rpo-feedback", data.error || "Failed.", "error");
     }
@@ -667,8 +669,7 @@ function renderPORevisionCard() {
         <div style="display:flex; gap:10px;">
           <button onclick="document.getElementById('rpo-detail-zone').innerHTML=''; window.rpoActive=null;" style="padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.8rem;">Close</button>
           ${st.editMode
-            ? `<button class="nav-btn-styled" onclick="generateRevisionCheckingDraftUI()" style="background:#0ea5e9; color:#fff; font-weight:700;">📄 Generate Checking Draft</button>
-               <button class="nav-btn-styled" id="rpo-submit-btn" onclick="updatePORevisionUI()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Save Changes</button>`
+            ? `               <button class="nav-btn-styled" id="rpo-submit-btn" onclick="updatePORevisionUI()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">📄 Save &amp; Generate Checking Draft</button>`
             : `<button class="nav-btn-styled" id="rpo-submit-btn" onclick="submitPORevisionUI()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Submit Revision for Authorization</button>`}
         </div>
       </div>
