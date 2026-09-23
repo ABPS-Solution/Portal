@@ -2798,7 +2798,7 @@ function renderPurchaseOrderReview() {
   // has always held a readable name (previously the logged-in operator's
   // own display name). Storing a person_key here would silently break
   // that raw display.
-  // Unused since 23 Sep 2026: Owner of Order moved to the first screen; the review shows it locked.
+  // Pre-filled from the first screen's pick; still changeable while reviewing.
   const abpsOwnerFieldHtml = `
     <div class="grid-cell-item" style="grid-column: span 4;">
       <label style="font-size:0.72rem;">ABPS Owner of Order *</label>
@@ -2864,7 +2864,7 @@ function renderPurchaseOrderReview() {
         ${editField('PO Total Amount', 'poTotalAmount', 'number', 'grid-column: span 4;', true)}
         ${lockedRow('Order Acceptance Link', orderAcceptanceLinkHtml, 'grid-column: span 4;')}
         ${lockedRow('Contract Review Link', contractReviewLinkHtml, 'grid-column: span 4;')}
-        ${lockedRow('ABPS Owner of Order', escapeHtml(s._abpsOwnerOfOrder || ''), 'grid-column: span 4;')}
+        ${abpsOwnerFieldHtml}
         ${editField('Order Acceptance Sent Date', '_orderAcceptanceSentDate', 'date', 'grid-column: span 4;', true)}
       </div>
 
