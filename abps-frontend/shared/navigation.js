@@ -130,6 +130,11 @@ async function navigateToModule(key) {
     if (targetWorkspacePanel) targetWorkspacePanel.style.display = "block"; 
     
     document.getElementById("multi-contact-records-container").innerHTML = "";
+    // Search by Company Name's Back to Search / Create New Entry banner
+    // lives in this same shared canvas — clear it so it never carries over
+    // into the filter searches (Engineer & Status, Type of Customer, City).
+    const staleBannerHook = document.getElementById("split-missing-person-banner-hook");
+    if (staleBannerHook) staleBannerHook.innerHTML = "";
     document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
     document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
     document.getElementById("missing-trigger-notice-block").style.display = "none";
@@ -155,12 +160,17 @@ async function navigateToModule(key) {
     
     // Runtime synchronization switches
     if (key === "searchCompany") {
+      // Every entry starts fresh, like the first visit — never re-run the
+      // previous company search.
       const companyDropdownNode = document.getElementById("lookup-module-company-dropdown");
-      if (companyDropdownNode && companyDropdownNode.value) {
-          triggerSequentialSearch('DROPDOWN');
-      } else {
-          triggerCompanyDropdownArrayFetch();
-      }
+      if (companyDropdownNode) companyDropdownNode.value = "";
+      const companySuggestions = document.getElementById("lookup-module-company-dropdown-suggestions");
+      if (companySuggestions) companySuggestions.style.display = "none";
+      const companySelectorBlock = document.getElementById("company-dropdown-selector-block");
+      if (companySelectorBlock) companySelectorBlock.style.display = "block";
+      const inlineCanvasNode = document.getElementById("step2-inline-interaction-canvas");
+      if (inlineCanvasNode) inlineCanvasNode.style.display = "none";
+      triggerCompanyDropdownArrayFetch();
     } else if (key === "cardDetails") {
       const companyInputTextNode = document.getElementById("f-company");
       if (companyInputTextNode && companyInputTextNode.value.trim() !== "") {

@@ -1228,6 +1228,10 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
   let dividerAfterSave = document.createElement("div");
   dividerAfterSave.style.cssText = "height:3px; background:var(--border); margin:12px 0;";
   canvas.appendChild(dividerAfterSave);
+
+  // Same City -> State/Country auto-fill as the Create New Lead form.
+  const byHeaderKey = k => canvas.querySelector(`[data-header-key="${k}"]`);
+  wireCityAutoFillStateCountry(byHeaderKey("City"), byHeaderKey("State"), byHeaderKey("Country"));
 }
 
 async function commitTargetedLeadsMutationsRows(leadRef) {

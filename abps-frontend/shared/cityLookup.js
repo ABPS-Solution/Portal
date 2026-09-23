@@ -508,10 +508,13 @@ function lookupCityStateCountry(cityValue) {
 // person manually edited State/Country themselves after the auto-fill, that
 // manual edit is left alone; typing a new City with no match never wipes out
 // something the person deliberately typed.
+// Accepts element ids or the elements themselves (lead View Details
+// builds its inputs dynamically, without ids).
 function wireCityAutoFillStateCountry(cityInputId, stateInputId, countryInputId) {
-  const cityEl = document.getElementById(cityInputId);
-  const stateEl = document.getElementById(stateInputId);
-  const countryEl = document.getElementById(countryInputId);
+  const pick = x => (typeof x === 'string' ? document.getElementById(x) : x);
+  const cityEl = pick(cityInputId);
+  const stateEl = pick(stateInputId);
+  const countryEl = pick(countryInputId);
   if (!cityEl || !stateEl || !countryEl) return;
   // This element is reused (not re-cloned) every time a form re-opens, so
   // guard against binding the same blur listener multiple times.
