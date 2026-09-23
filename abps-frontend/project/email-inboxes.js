@@ -53,10 +53,23 @@ function eibCountCell(c) {
            : `<span style="color:var(--muted);">None</span>`;
 }
 
+const EIB_SECTION_ORDER = { "Leads": 0, "Customer Queries": 1, "Excluded": 2 };
+const EIB_SECTION_SHADE = { "Leads": "#eff6ff", "Customer Queries": "#f5f3ff", "Excluded": "#f3f4f6" };
+const EIB_SECTION_LABEL = {
+  "Leads": "Leads Received through Email",
+  "Customer Queries": "Customer Queries Received through Email",
+  "Excluded": "Excluded (not in any section)",
+};
+function eibSectionSort(a, b, key, tieKey) {
+  return ((EIB_SECTION_ORDER[a[key]] ?? 9) - (EIB_SECTION_ORDER[b[key]] ?? 9)) || String(a[tieKey]).localeCompare(String(b[tieKey]));
+}
+
 function eibRender() {
   const mount = document.getElementById("eib-mount");
-  const th = 'style="text-align:left; padding:8px; font-size:0.72rem; text-transform:uppercase; color:var(--muted); border-bottom:1.5px solid var(--border);"';
-  const td = 'style="padding:8px; border-bottom:1px solid var(--border); vertical-align:top; font-size:0.85rem;"';
+  eibConnections.sort((a, b) => eibSectionSort(a, b, "feed", "email"));
+  eibMailboxes.sort((a, b) => eibSectionSort(a, b, "section", "address"));
+  const th = 'style="text-align:left; padding:8px; font-size:0.72rem; text-transform:uppercase; color:var(--muted); background:#f8fafc; border:1px solid var(--border);"';
+  const td = 'style="padding:8px; border:1px solid var(--border); vertical-align:top; font-size:0.85rem;"';
 
   const connRows = eibConnections.map((c, i) => {
     const revoked = c.status !== "Active";
@@ -66,10 +79,10 @@ function eibRender() {
       : revoked
         ? `<span style="font-size:0.78rem; color:var(--muted);">Use Connect new inbox to reconnect</span>`
         : `<button class="nav-btn-styled" style="background:var(--warn); padding:5px 12px; font-size:0.78rem;" onclick="eibDisconnect(${i})">Disconnect</button>`;
-    return `<tr>
+    return `<tr style="background:${EIB_SECTION_SHADE[c.feed] || "#fff"};">
       <td ${td}><strong>${escapeHtml(c.email)}</strong></td>
       <td ${td}><select ${revoked ? "disabled" : ""} onchange="eibSetFeed(${i}, this.value)" style="width:auto; padding:5px;">
-        ${["Leads", "Customer Queries"].map(f => `<option value="${f}" ${c.feed === f ? "selected" : ""}>${f === "Leads" ? "Leads Received through Email" : "Customer Queries Received through Email"}</option>`).join("")}
+        ${["Leads", "Customer Queries", "Excluded"].map(f => `<option value="${f}" ${c.feed === f ? "selected" : ""}>${EIB_SECTION_LABEL[f]}</option>`).join("")}
       </select></td>
       <td ${td}><span style="font-weight:700; color:${revoked ? "var(--warn)" : "var(--accent)"};">${revoked ? "Disconnected" : "Connected"}</span></td>
       <td ${td}>${eibCountCell(c.last7Days)}</td>
@@ -82,7 +95,7 @@ function eibRender() {
   const mbRows = eibMailboxes.map((m, i) => {
     const chips = m.personKeys.map((k, j) => `<span style="display:inline-flex; align-items:center; gap:4px; background:var(--highlight-bg); border:1px solid var(--border); border-radius:12px; padding:2px 8px; margin:0 4px 4px 0; font-size:0.78rem;">${escapeHtml(eibUserName(k))}<span style="cursor:pointer; color:var(--warn); font-weight:700;" onclick="eibRemovePerson(${i}, ${j})">×</span></span>`).join("");
     const addOpts = users.filter(u => !m.personKeys.includes(u.key)).map(u => `<option value="${escapeHtml(u.key)}">${escapeHtml(u.name)}${u.dept ? " — " + escapeHtml(u.dept) : ""}</option>`).join("");
-    return `<tr style="${m._dirty ? "background:#fffbeb;" : ""}">
+    return `<tr style="background:${EIB_SECTION_SHADE[m.section] || "#fff"}; ${m._dirty ? "box-shadow:inset 4px 0 0 #f59e0b;" : ""}">
       <td ${td}><strong>${escapeHtml(m.address)}</strong></td>
       <td ${td}>${chips || `<span style="color:var(--muted); font-size:0.78rem;">No one linked</span>`}
         <select onchange="eibAddPerson(${i}, this.value)" style="width:100%; padding:4px; font-size:0.78rem; margin-top:2px;"><option value="">+ Add employee</option>${addOpts}</select></td>
@@ -112,19 +125,29 @@ function eibRender() {
     </div>` : "";
 
   mount.innerHTML = `
+    <div style="margin-bottom:20px; padding:12px 14px; border:1px solid var(--border); border-radius:var(--radius); background:#f8fafc;">
+      <h3 style="margin:0 0 4px; color:var(--brand);">Link to share</h3>
+      <p style="font-size:0.8rem; color:var(--muted); margin:0 0 8px;">Send this to the person who owns a new inbox. They open it, sign in to that inbox on Google's screen and click Allow. The inbox then appears below under Excluded until you pick its section. The link works for 7 days and can be used by more than one person.</p>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <input type="text" id="eib-invite-link" readonly placeholder="Click Generate link" style="flex:1; min-width:260px; font-size:0.8rem;">
+        <button class="nav-btn-styled" style="width:auto;" onclick="eibGenerateInvite()">Generate link</button>
+        <button class="nav-btn-styled" style="width:auto; background:var(--accent);" onclick="eibCopyInvite()">Copy</button>
+      </div>
+      <div id="eib-invite-expiry" style="font-size:0.75rem; color:var(--muted); margin-top:4px;"></div>
+    </div>
     <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
       <h3 style="margin:0; color:var(--brand);">Connected Inboxes</h3>
       <button class="nav-btn-styled" style="background:var(--accent);" onclick="eibConnectNew()">+ Connect new inbox</button>
     </div>
-    <p style="font-size:0.8rem; color:var(--muted); margin:0 0 8px;">Gmail accounts this system reads. Each one feeds exactly one section. Connecting opens Google's own permission screen: sign in as the inbox you want to add and click Allow.</p>
-    <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; min-width:820px;">
+    <p style="font-size:0.8rem; color:var(--muted); margin:0 0 8px;">Gmail accounts this system reads. Each one feeds one section, or none if Excluded (for test inboxes). Connecting opens Google's own permission screen: sign in as the inbox you want to add and click Allow.</p>
+    <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; min-width:820px; border:1px solid var(--border);">
       <thead><tr><th ${th}>Inbox</th><th ${th}>Section</th><th ${th}>Status</th><th ${th}>Mail, last 7 days</th><th ${th}>Last checked</th><th ${th}></th></tr></thead>
       <tbody>${connRows || `<tr><td ${td} colspan="6">No inboxes connected.</td></tr>`}</tbody>
     </table></div>
 
     <h3 style="margin:24px 0 8px; color:var(--brand);">Mailbox Directory</h3>
-    <p style="font-size:0.8rem; color:var(--muted); margin:0 0 8px;">Every address our mail arrives on, including the company addresses whose mail is copied into md@abpowerindia.com. Linked employee(s) are shown on Email Leads cards and filters. Untick "Show in this system" to hide an address's mail from this system's Leads Received through Email only. The other system keeps its own setting.</p>
-    <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; min-width:1100px;">
+    <p style="font-size:0.8rem; color:var(--muted); margin:0 0 8px;">Adding an address here does not connect it. It only tells the system who an address belongs to, for mail that already reaches a connected inbox (for example company addresses copied into md@abpowerindia.com). An inbox that is not copied into md@ must be connected with the link above. Every address our mail arrives on, including the company addresses whose mail is copied into md@abpowerindia.com. Linked employee(s) are shown on Email Leads cards and filters. Untick "Show in this system" to hide an address's mail from this system's Leads Received through Email only. The other system keeps its own setting.</p>
+    <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; min-width:1100px; border:1px solid var(--border);">
       <thead><tr><th ${th}>Address</th><th ${th}>Linked employee(s)</th><th ${th}>Note</th><th ${th}>Section</th><th ${th}>Arrives</th><th ${th}>Show in this system</th><th ${th}>Mail, last 7 days</th><th ${th}></th></tr></thead>
       <tbody>${mbRows || `<tr><td ${td} colspan="8">No addresses yet.</td></tr>`}</tbody>
     </table></div>
@@ -191,8 +214,9 @@ async function eibSetFeed(i, feed) {
   try {
     const data = await apFetch({ action: "setEmailInboxFeed", email: c.email, feed });
     if (!data.success) { eibFeedback(data.error || "Could not change section.", false); return loadEmailInboxes(); }
-    eibFeedback(`${c.email} now feeds ${feed === "Leads" ? "Leads Received through Email" : "Customer Queries Received through Email"}.`, true);
+    eibFeedback(feed === "Excluded" ? `${c.email} is now excluded from every section.` : `${c.email} now feeds ${EIB_SECTION_LABEL[feed]}.`, true);
     c.feed = feed;
+    eibRender();
   } catch (e) { if (e.message !== "SESSION_EXPIRED") eibFeedback(e.message, false); }
 }
 async function eibDisconnect(i) {
@@ -212,4 +236,19 @@ async function eibConnectNew() {
     window.open(data.url, "_blank", "noopener");
     eibFeedback("Google's permission screen opened in a new tab. Sign in as the inbox to add, click Allow, then come back and reload this tab.", true);
   } catch (e) { if (e.message !== "SESSION_EXPIRED") eibFeedback(e.message, false); }
+}
+
+async function eibGenerateInvite() {
+  try {
+    const data = await apFetch({ action: "mintGmailInviteLink" });
+    if (!data.success) return eibFeedback(data.error || "Could not create the link.", false);
+    document.getElementById("eib-invite-link").value = data.url;
+    document.getElementById("eib-invite-expiry").textContent = `Valid until ${formatOrdinalDateTime(new Date(data.expiresAt).toISOString())}.`;
+  } catch (e) { if (e.message !== "SESSION_EXPIRED") eibFeedback(e.message, false); }
+}
+async function eibCopyInvite() {
+  const el = document.getElementById("eib-invite-link");
+  if (!el || !el.value) return eibFeedback("Generate a link first.", false);
+  try { await navigator.clipboard.writeText(el.value); } catch (e) { el.select(); document.execCommand("copy"); }
+  eibFeedback("Link copied.", true);
 }
