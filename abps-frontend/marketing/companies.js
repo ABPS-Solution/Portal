@@ -137,6 +137,10 @@ async function triggerSequentialSearch(triggerSourceMode) {
       // The canvas still holds the previous search's cards (e.g. a lead just
       // deleted); mark it so Cancel & Back doesn't bring them back.
       if (inlineCanvas) { inlineCanvas.style.display = "none"; inlineCanvas.dataset.noMatch = "1"; }
+      const staleCards = document.getElementById("multi-contact-records-container");
+      if (staleCards) staleCards.innerHTML = "";
+      const staleBanner = document.getElementById("split-missing-person-banner-hook");
+      if (staleBanner) staleBanner.innerHTML = "";
       const staleBackRow = document.getElementById("staged-back-button-row");
       if (staleBackRow) staleBackRow.style.display = "none";
     }
