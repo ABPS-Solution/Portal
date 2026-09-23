@@ -103,6 +103,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
         }
       }
 
+      if (inlineCanvas) delete inlineCanvas.dataset.noMatch;
       buildMultiContactDirectoryInterface(data.leads, targetName);
       
       if (missingNoticeBlock) missingNoticeBlock.style.display = "none";
@@ -133,7 +134,11 @@ async function triggerSequentialSearch(triggerSourceMode) {
 
     } else {
       if (missingNoticeBlock) missingNoticeBlock.style.display = "flex";
-      if (inlineCanvas) inlineCanvas.style.display = "none";
+      // The canvas still holds the previous search's cards (e.g. a lead just
+      // deleted); mark it so Cancel & Back doesn't bring them back.
+      if (inlineCanvas) { inlineCanvas.style.display = "none"; inlineCanvas.dataset.noMatch = "1"; }
+      const staleBackRow = document.getElementById("staged-back-button-row");
+      if (staleBackRow) staleBackRow.style.display = "none";
     }
   } catch(e) { 
     alert("Lookup Failed: " + e.message); 

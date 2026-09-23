@@ -674,7 +674,14 @@ function returnToDirectoryCardsFromFormView() {
   // only Create New Entry control on these screens.
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
   document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
-  document.getElementById("step2-inline-interaction-canvas").style.display = "block";
+  const canvas = document.getElementById("step2-inline-interaction-canvas");
+  if (canvas.dataset.noMatch === "1") {
+    const notice = document.getElementById("missing-trigger-notice-block");
+    if (notice) notice.style.display = "flex";
+    canvas.style.display = "none";
+    return;
+  }
+  canvas.style.display = "block";
 }
 
 /**
