@@ -293,7 +293,7 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
       if (isTarget) card.style.cssText = "border:2.5px solid var(--brand) !important; background:var(--highlight-bg) !important; box-shadow:0 4px 12px rgba(0,86,179,0.15) !important;";
 
       card.innerHTML = `
-        <div class="contact-summary-header-row" style="cursor:pointer;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)">
+        <div class="contact-summary-header-row lead-wrapper-header" style="cursor:pointer;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)">
           <div class="contact-summary-title-info">
             <div class="meta-row-line-block" style="margin-bottom:6px;">
               <span style="background:#e2e8f0;">Company:</span><strong style="margin-right:20px;">${escapeHtml(lead["Company Name"] || companyName)}</strong>

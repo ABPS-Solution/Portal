@@ -326,7 +326,7 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
     const fieldsHtml = fields.map(([l, v]) => mprepFieldRow(l, v)).join("");
     const leadsHtml = (p.leads || []).map(({ leadId, rawLead }) => `
       <div class="contact-summary-card-parent" id="mprep-lead-card-${leadId}" style="background:#eef2f7;">
-        <div class="contact-summary-header-row" style="cursor:pointer;" onclick="toggleContactExpansionView('${leadId}', \`${encodeURIComponent(JSON.stringify(rawLead))}\`)">
+        <div class="contact-summary-header-row lead-wrapper-header" style="cursor:pointer;" onclick="toggleContactExpansionView('${leadId}', \`${encodeURIComponent(JSON.stringify(rawLead))}\`)">
           <div class="contact-summary-title-info">
             <div class="meta-row-line-block" style="margin-bottom:6px;">
               <span style="background:#e2e8f0;">Status:</span><strong id="card-lbl-status-${leadId}">${escapeHtml(rawLead["Status"] || "N/A")}</strong>

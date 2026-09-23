@@ -519,7 +519,7 @@ async function oppToggleLeadExpand(projectId, encodedCompany) {
       const tRef = lead["Lead ID"];
       return `
         <div class="contact-summary-card-parent" id="opp-lead-card-${tRef}">
-          <div class="contact-summary-header-row" style="cursor:pointer;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)">
+          <div class="contact-summary-header-row lead-wrapper-header" style="cursor:pointer;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)">
             <div class="contact-summary-title-info">
               <div class="meta-row-line-block" style="margin-bottom:6px;">
                 <span style="background:#e2e8f0;">Company:</span><strong style="margin-right:20px;">${escapeHtml(lead["Company Name"] || companyName)}</strong>

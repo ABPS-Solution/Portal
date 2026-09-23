@@ -718,7 +718,7 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
       : ""; // Non-admins get absolutely nothing rendered
 
     wrapperCard.innerHTML = `
-      <div class="contact-summary-header-row" style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; cursor:pointer;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)">
+      <div class="contact-summary-header-row lead-wrapper-header" style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; cursor:pointer;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)">
         <div class="contact-summary-title-info" style="flex:1; display:grid; grid-template-columns: minmax(220px, 1fr) minmax(200px, 1fr); gap:10px 24px;">
           <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
             <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Company</span>
