@@ -487,7 +487,7 @@ function renderCBOQMaterialRows() {
           oninput="cboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateCBOQTotals(); const r=document.getElementById('cboq-rate-${idx}'); if(r) { const v=(Number(cboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
           ${isFgRow ? `title="Provisional — replaced automatically when this Finished Goods material's own BOQ is authorized" style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
-      </td>
+      ${boqRateHintHtml(row)}</td>
       <td style="padding:4px; text-align:center;">
         <input type="text" id="cboq-rate-${idx}" value="${isRawMaterial ? totalMaterialRate.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '—'}" readonly
           style="padding:5px; font-size:0.85rem; font-weight:700; text-align:center; width:100%; background:#f0fdf4; color:var(--accent); cursor:not-allowed; border-radius:3px; border:1px solid #86efac;" />
@@ -518,6 +518,7 @@ function renderCBOQMaterialRows() {
   autoGrowAllIn(tbody);
 
   updateCBOQTotals();
+  boqPrefetchRatesThenRerender(cboqMaterialRows, renderCBOQMaterialRows);
 }
 
 function updateCBOQTotals() {
@@ -551,6 +552,63 @@ if (!window._boqDropdownScrollHandlerInstalled) {
       if (dd.style.display === 'block') dd.style.display = 'none';
     });
   }, true); // capture:true — catches scrolling on any nested scrollable container, not just the window
+}
+
+
+// ── Design Rate / Qty auto-fill from the latest RM PO (23 Sep 2026) ──
+// Cache of fetchBoqPurchaseRates per item code (null = never on an RM PO),
+// refreshed after 10 minutes so a newly authorized PO shows up.
+window.boqPurchaseRateCache = window.boqPurchaseRateCache || {};
+window.boqPurchaseRateFetchedAt = window.boqPurchaseRateFetchedAt || {};
+let boqPurchaseRateWindowDays = 30;
+function boqRateCached(code) {
+  return (code in window.boqPurchaseRateCache) && (Date.now() - (window.boqPurchaseRateFetchedAt[code] || 0) < 600000);
+}
+async function boqEnsurePurchaseRates(itemCodes) {
+  const missing = [...new Set((itemCodes || []).filter(c => c && !boqRateCached(c)))];
+  if (!missing.length) return false;
+  try {
+    const d = await apFetch({ action: "fetchBoqPurchaseRates", itemCodes: missing });
+    if (!d.success) return false;
+    if (d.windowDays) boqPurchaseRateWindowDays = d.windowDays;
+    missing.forEach(c => { window.boqPurchaseRateCache[c] = (d.rates || {})[c] || null; window.boqPurchaseRateFetchedAt[c] = Date.now(); });
+    return true;
+  } catch (e) { return false; }
+}
+function boqPrefetchRatesThenRerender(rows, rerender) {
+  const codes = (rows || []).filter(r => r.typeOfStore !== "Finished Goods Store").map(r => r.itemCode).filter(Boolean);
+  if (codes.some(c => !boqRateCached(c))) boqEnsurePurchaseRates(codes).then(changed => { if (changed) rerender(); });
+}
+function boqRateHintHtml(row) {
+  const wrap = (txt, color) => `<div style="font-size:0.68rem; line-height:1.25; color:${color || "var(--muted)"}; margin-top:3px; text-align:center;">${txt}</div>`;
+  if (!row.itemCode) return "";
+  if (row.typeOfStore === "Finished Goods Store") return wrap("Finished Goods: enter an approximate rate");
+  if (!(row.itemCode in window.boqPurchaseRateCache)) return wrap("Checking last purchase…");
+  const e = window.boqPurchaseRateCache[row.itemCode];
+  if (!e) return wrap("Never bought on an RM PO");
+  const ago = e.daysAgo <= 0 ? "today" : e.daysAgo === 1 ? "1 day ago" : `${e.daysAgo} days ago`;
+  const rate = "₹" + Number(e.rate).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  return wrap(`Last bought ${ago} at ${rate} (${escapeHtml(e.poNo)})` + (e.withinWindow ? "" : `<br>Older than ${boqPurchaseRateWindowDays} days, not auto-filled`),
+    e.withinWindow ? "#15803d" : "#b45309");
+}
+function boqUnverifyRow(prefix, idx) {
+  const rows = { eboq: eboqMaterialRows, boqrev: uboqRevRows }[prefix];
+  if (rows && rows[idx]) rows[idx].costingVerified = false;
+  const cb = document.getElementById(`${prefix}-cv-${idx}`);
+  if (cb) cb.checked = false;
+}
+// Mirrors lib/boqCosting.js: a revision row needs re-ticking when it is new,
+// its material changed, or its Qty / Set or Design Rate / Qty changed.
+function boqCostingRowKey(r) {
+  const code = String(r.itemCode || r.materialName || "").trim().toUpperCase();
+  const store = r.typeOfStore === "Finished Goods Store" ? "FG" : "RM";
+  return code ? `${code}|${store}|${r.descriptionId || ""}` : "";
+}
+function boqRevisionRowNeedsTick(baselineRows, r) {
+  const base = (baselineRows || []).find(b => boqCostingRowKey(b) === boqCostingRowKey(r));
+  if (!base) return true;
+  return Math.round((Number(base.quantityFor1Set) || 0) * 1000) !== Math.round((Number(r.quantityFor1Set) || 0) * 1000)
+    || Math.round((Number(base.designRatePerQuantity) || 0) * 100) !== Math.round((Number(r.designRatePerQuantity) || 0) * 100);
 }
 
 // Shared typeahead for BOQ material rows
@@ -779,7 +837,8 @@ async function toggleAuthBOQCardExpansion(boqId, mode) {
     if (!data.success) { bodyEl.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
 
     eboqCurrentDraft = data.draft;
-    eboqMaterialRows = (data.draft.materialRows || []).map(r => ({ ...r }));
+    // Every row starts unticked: the authorizer checks each one's costing here.
+    eboqMaterialRows = (data.draft.materialRows || []).map(r => ({ ...r, costingVerified: false }));
 
     let summaryHtml = "";
     if (mode === "authorize-update") {

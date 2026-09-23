@@ -136,6 +136,8 @@ async function authorizeBOQRevision(updateId) {
   if (invalid) { showBOQBanner("auth-boq-upd-feedback", "⚠️ Every row must have a Material Description and Qty/Set.", "error"); return; }
   if (uboqRevRows.length === 0) { showBOQBanner("auth-boq-upd-feedback", "⚠️ At least one material row is required.", "error"); return; }
   if (uboqRevRows.some(r => !(Number(r.designRatePerQuantity) > 0))) { showBOQBanner("auth-boq-upd-feedback", "⚠️ Every row must have Design Rate / Qty filled in.", "error"); return; }
+  const unverifiedRev = uboqRevRows.map((r, i) => (!r.costingVerified && boqRevisionRowNeedsTick(reqItem.oldMaterialRows, r)) ? i + 1 : null).filter(Boolean);
+  if (unverifiedRev.length) { showBOQBanner("auth-boq-upd-feedback", `⚠️ Tick Costing Verified for every new or changed row. Not ticked: row ${unverifiedRev.join(", ")}.`, "error"); return; }
 
   const authBtn = document.getElementById(`boqrev-auth-btn-${updateId}`);
   const rejBtn  = document.getElementById(`boqrev-reject-btn-${updateId}`);
@@ -359,6 +361,7 @@ function renderEBOQForm(containerId) {
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Cost / Set</th>
+              <th style="width:70px; padding:8px; font-size:0.7rem; text-align:center;">Costing Verified *</th>
               <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
             </tr>
           </thead>
@@ -581,7 +584,7 @@ function renderEBOQMaterialRows() {
   if (!tbody) return;
   tbody.innerHTML = "";
   if (eboqMaterialRows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows. Click "+ Add Row".</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows. Click "+ Add Row".</td></tr>';
     updateEBOQTotals();
     return;
   }
@@ -594,7 +597,7 @@ function renderEBOQMaterialRows() {
     tr.innerHTML = `
       <td style="text-align:center; padding:6px; font-weight:700; color:var(--muted);">${idx + 1}</td>
       <td style="padding:4px;">
-        <select onchange="eboqMaterialRows[${idx}].typeOfStore=this.value; renderEBOQMaterialRows();" style="padding:4px; font-size:0.8rem; width:100%;">
+        <select onchange="eboqMaterialRows[${idx}].typeOfStore=this.value; eboqMaterialRows[${idx}].costingVerified=false; renderEBOQMaterialRows();" style="padding:4px; font-size:0.8rem; width:100%;">
           <option value="Raw Materials Store" ${row.typeOfStore==="Raw Materials Store"?"selected":""}>Raw Material</option>
           <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods</option>
         </select>
@@ -613,7 +616,7 @@ function renderEBOQMaterialRows() {
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
-          oninput="eboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateEBOQTotals(); const r=document.getElementById('eboq-rate-${idx}'); if(r) { const v=eboqMaterialRows[${idx}].quantityFor1Set*(Number(eboqMaterialRows[${idx}].designRatePerQuantity)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
+          oninput="boqUnverifyRow('eboq', ${idx}); eboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateEBOQTotals(); const r=document.getElementById('eboq-rate-${idx}'); if(r) { const v=eboqMaterialRows[${idx}].quantityFor1Set*(Number(eboqMaterialRows[${idx}].designRatePerQuantity)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -623,14 +626,15 @@ function renderEBOQMaterialRows() {
       <td style="padding:4px; text-align:center;">
         ${isRawMaterial ? `
         <input type="number" class="boq-center-num" value="${row.designRatePerQuantity || ""}" min="0" step="1" placeholder="0.00"
-          oninput="eboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateEBOQTotals(); const r=document.getElementById('eboq-rate-${idx}'); if(r) { const v=(Number(eboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
+          oninput="boqUnverifyRow('eboq', ${idx}); eboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateEBOQTotals(); const r=document.getElementById('eboq-rate-${idx}'); if(r) { const v=(Number(eboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
           ${isFgRow ? `title="Provisional — replaced automatically when this Finished Goods material's own BOQ is authorized" style="padding:5px; font-size:0.85rem; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
         ` : `<input type="text" class="boq-center-num" value="—" readonly style="padding:5px; font-size:0.85rem; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
-      </td>
+      ${boqRateHintHtml(row)}</td>
       <td style="padding:4px; text-align:center;">
         <input type="text" id="eboq-rate-${idx}" value="${isRawMaterial ? totalMaterialRate.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '—'}" readonly
           style="padding:5px; font-size:0.85rem; font-weight:700; text-align:center; width:100%; background:#f0fdf4; color:var(--accent); cursor:not-allowed; border-radius:3px; border:1px solid #86efac;" />
       </td>
+      <td style="padding:4px; text-align:center; vertical-align:middle;"><input type="checkbox" id="eboq-cv-${idx}" ${row.costingVerified ? "checked" : ""} onchange="eboqMaterialRows[${idx}].costingVerified=this.checked;" title="Tick once you have checked this row&#39;s costing" style="width:18px; height:18px; cursor:pointer;" /></td>
       <td style="padding:4px; text-align:center;">
         <button onclick="deleteEBOQMaterialRow(${idx})" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:3px 8px; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:700;">✕</button>
       </td>`;
@@ -641,7 +645,7 @@ function renderEBOQMaterialRows() {
       descTr.style.borderBottom = "1px solid #f1f5f9";
       descTr.innerHTML = `
         <td></td>
-        <td colspan="8" style="padding:4px 4px 8px 4px; position:relative;">
+        <td colspan="9" style="padding:4px 4px 8px 4px; position:relative;">
           <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:3px;">Description of Material (optional, for this Finished Goods row)</label>
           <input type="text" id="eboq-row-desc-${idx}" value="${row.descriptionOfMaterial || ""}" placeholder="Type to search or create a description..." autocomplete="off"
             oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'eboq-row-desc-${idx}', 'eboq-row-desc-dropdown-${idx}', 'eboq-row-desc-id-${idx}', 'boqRowDescOnSelect', 'eboq:${idx}'); eboqMaterialRows[${idx}].descriptionOfMaterial=this.value; eboqMaterialRows[${idx}].descriptionId=null;"
@@ -656,6 +660,7 @@ function renderEBOQMaterialRows() {
   requestAnimationFrame(() => autoGrowAllIn(tbody));
 
   updateEBOQTotals();
+  boqPrefetchRatesThenRerender(eboqMaterialRows, renderEBOQMaterialRows);
 }
 
 function updateEBOQTotals() {
@@ -701,6 +706,8 @@ async function submitEBOQAuthorize() {
   const invalidRow = eboqMaterialRows.find(r => !r.materialName || !r.quantityFor1Set);
   if (invalidRow) { _validationFail("⚠️ All rows must have Material Description and Quantity."); return; }
   if (eboqMaterialRows.some(r => !(Number(r.designRatePerQuantity) > 0))) { _validationFail("⚠️ All rows must have Design Rate / Qty filled in."); return; }
+  const unverified = eboqMaterialRows.map((r, i) => r.costingVerified ? null : i + 1).filter(Boolean);
+  if (unverified.length) { _validationFail(`⚠️ Tick Costing Verified for every row. Not ticked: row ${unverified.join(", ")}.`); return; }
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Authorizing...';
