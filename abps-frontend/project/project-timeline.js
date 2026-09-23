@@ -56,7 +56,7 @@ const PTL_QA_CHAIN = new Set(['customer_inspection', 'inspection_clearance_note'
 // is set once by Manufacturing Clearance) - admin-only test backdate via
 // adminBackdateSystemDate, same resolveAdminBackdate gate as everything
 // else on this screen.
-const PTL_ADMIN_SYSTEM_DATE_IDS = new Set(['activated', 'mfcInt']);
+const PTL_ADMIN_SYSTEM_DATE_IDS = new Set(['activated', 'mfcInt', 'dwgAppr']);
 // Stage 3's four "system" trunk nodes are normally computed live off real
 // BOQ/PRN/PO/PPS rows, so - unlike Stage 2's two above - there's no
 // column to backdate. adminOverrideSystemMilestone writes a testing-only
@@ -752,7 +752,7 @@ function ptlRenderStageRows(nodes, today, prodPlanDone) {
     const done = !!n.actual || n.done === true;
     const late = ptlLate(n);
     const eff = ptlEff(n);
-    const dateTxt = n.actual ? ptlFmtFull(n.actual) : (n.done ? `On or before ${ptlFmtFull(eff)} (exact date not tracked)` : eff ? `Due ${ptlFmtFull(eff)}` : 'Not yet scheduled');
+    const dateTxt = n.notApplicable ? 'Not Eligible (no customer drawing approval)' : n.actual ? ptlFmtFull(n.actual) : (n.done ? `On or before ${ptlFmtFull(eff)} (exact date not tracked)` : eff ? `Due ${ptlFmtFull(eff)}` : 'Not yet scheduled');
     // Same completion-status coloring as the canvas map (30 Aug 2026) -
     // grey scheduled / green done / red late, not department. `c` is
     // kept only for the department name badge text just below.
@@ -776,7 +776,7 @@ function ptlRenderStageRows(nodes, today, prodPlanDone) {
     // to where they're actually set. saveTimelineMilestoneDate/
     // ptlSetQaMilestoneDate no longer exist; see routes/qaInspection.js.
     const qaUnsetPointer = PTL_QA_CHAIN.has(n.id) && !n.actual;
-    const systemDateCanEdit = PTL_ADMIN_SYSTEM_DATE_IDS.has(n.id) && ptlIsAdmin();
+    const systemDateCanEdit = PTL_ADMIN_SYSTEM_DATE_IDS.has(n.id) && !n.notApplicable && ptlIsAdmin();
     const milestoneOverrideCanEdit = !!PTL_ADMIN_MILESTONE_OVERRIDE_KEY[n.id] && ptlIsAdmin();
     return `
       <div id="ptl-row-${n.id}" ${hasDetail ? `onclick="ptlToggleNodeDetail('${n.id}')"` : ''} style="display:flex; align-items:flex-start; gap:12px; padding:10px 4px; border-bottom:1px solid var(--border); border-radius:4px;${hasDetail ? ' cursor:pointer;' : ''}">

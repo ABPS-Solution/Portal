@@ -135,6 +135,7 @@ async function authorizeBOQRevision(updateId) {
   const invalid = uboqRevRows.find(r => !r.materialName || r.quantityFor1Set === "" || r.quantityFor1Set === null || r.quantityFor1Set === undefined);
   if (invalid) { showBOQBanner("auth-boq-upd-feedback", "⚠️ Every row must have a Material Description and Qty/Set.", "error"); return; }
   if (uboqRevRows.length === 0) { showBOQBanner("auth-boq-upd-feedback", "⚠️ At least one material row is required.", "error"); return; }
+  if (uboqRevRows.some(r => !(Number(r.designRatePerQuantity) > 0))) { showBOQBanner("auth-boq-upd-feedback", "⚠️ Every row must have Design Rate / Qty filled in.", "error"); return; }
 
   const authBtn = document.getElementById(`boqrev-auth-btn-${updateId}`);
   const rejBtn  = document.getElementById(`boqrev-reject-btn-${updateId}`);
@@ -356,7 +357,7 @@ function renderEBOQForm(containerId) {
               <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
-              <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
+              <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Cost / Set</th>
               <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
             </tr>
@@ -699,6 +700,7 @@ async function submitEBOQAuthorize() {
 
   const invalidRow = eboqMaterialRows.find(r => !r.materialName || !r.quantityFor1Set);
   if (invalidRow) { _validationFail("⚠️ All rows must have Material Description and Quantity."); return; }
+  if (eboqMaterialRows.some(r => !(Number(r.designRatePerQuantity) > 0))) { _validationFail("⚠️ All rows must have Design Rate / Qty filled in."); return; }
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Authorizing...';

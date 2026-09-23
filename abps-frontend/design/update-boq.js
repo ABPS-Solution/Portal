@@ -255,7 +255,7 @@ function renderBOQRevisionRows(updateId) {
             <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
             <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
             <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
-            <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
+            <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty *</th>
             <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Cost / Set</th>
             <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
           </tr>
@@ -499,7 +499,7 @@ function renderUBOQForm() {
               <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
-              <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty</th>
+              <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty *</th>
               <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Cost / Set</th>
               <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
             </tr>
@@ -707,6 +707,7 @@ async function submitUpdateBOQ() {
 
   const invalidRow = uboqMaterialRows.find(r => !r.materialName || !r.quantityFor1Set);
   if (invalidRow) { _uValidationFail("⚠️ All rows must have Description and Quantity."); return; }
+  if (uboqMaterialRows.some(r => !(Number(r.designRatePerQuantity) > 0))) { _uValidationFail("⚠️ All rows must have Design Rate / Qty filled in."); return; }
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';

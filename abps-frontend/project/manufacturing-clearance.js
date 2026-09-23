@@ -370,8 +370,9 @@ function buildMcGatingPanelHtml(projectId, gating) {
   const bannerText = complete
     ? "Project is Eligible for Manufacturing Clearance"
     : "Complete All of the Tasks before Project is Eligible for Manufacturing Clearance";
-  const sentYes = gating.drawingSentForApproval === "Yes" ? "selected" : "";
-  const sentNo = gating.drawingSentForApproval !== "Yes" ? "selected" : "";
+  const sentVal = ["Yes", "Not Eligible"].includes(gating.drawingSentForApproval) ? gating.drawingSentForApproval : "No";
+  const notEligible = sentVal === "Not Eligible";
+  const sentOpt = v => `<option value="${v}" ${sentVal === v ? "selected" : ""}>${v}</option>`;
 
   return `
     <div style="background:var(--highlight-bg); border:1px solid var(--border); border-radius:6px; padding:14px; margin-bottom:16px;">
@@ -381,11 +382,10 @@ function buildMcGatingPanelHtml(projectId, gating) {
           <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Drawing Sent for Approval</label>
           <select onchange="saveMcGatingField('${projectId}', 'drawingSentForApproval', this.value)"
             style="width:100%; padding:7px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px;">
-            <option value="No" ${sentNo}>No</option>
-            <option value="Yes" ${sentYes}>Yes</option>
+            ${sentOpt("No")}${sentOpt("Yes")}${sentOpt("Not Eligible")}
           </select>
         </div>
-        <div>
+        ${notEligible ? "" : `<div>
           <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Drawing Sent Date</label>
           <input type="date" value="${gating.drawingSentDate ? gating.drawingSentDate.slice(0,10) : ""}"
             onchange="saveMcGatingField('${projectId}', 'drawingSentDate', this.value)"
@@ -393,10 +393,11 @@ function buildMcGatingPanelHtml(projectId, gating) {
         </div>
         <div>
           <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Drawing Approval Received Date</label>
-          <input type="date" value="${gating.drawingApprovalReceivedDate ? gating.drawingApprovalReceivedDate.slice(0,10) : ""}"
-            onchange="saveMcGatingField('${projectId}', 'drawingApprovalReceivedDate', this.value)"
-            style="width:100%; padding:6px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px;" />
-        </div>
+          <div title="Set automatically when the Customer Approved drawing is uploaded (admin can change it in Project Timeline)"
+            style="padding:7px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px; background:#f1f5f9; color:${gating.drawingApprovalReceivedDate ? "var(--text)" : "var(--muted)"};">
+            ${gating.drawingApprovalReceivedDate ? formatOrdinalDate(gating.drawingApprovalReceivedDate) : "Awaiting Customer Approved drawing upload"}
+          </div>
+        </div>`}
         <div>
           <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Date of MFC Received from Customer</label>
           <input type="date" value="${gating.dateOfMfcReceivedFromCustomer ? gating.dateOfMfcReceivedFromCustomer.slice(0,10) : ""}"
