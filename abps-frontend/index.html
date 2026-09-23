@@ -1145,6 +1145,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div class="menu-card" id="mod-revise-project-dispatch-invoice"              onclick="switchActiveDashboardModule('revise-project-dispatch-invoice')"><span class="mc-label">Revise Project Dispatch Invoice</span></div>
         <div class="menu-card" id="mod-authorize-project-dispatch-invoice-revision"  onclick="switchActiveDashboardModule('authorize-project-dispatch-invoice-revision')"><span class="mc-label">Authorize Project Dispatch Invoice Revision</span></div>
         <div class="menu-card" id="mod-material-outward"        onclick="switchActiveDashboardModule('material-outward')"><span class="mc-label">Material Outward on Delivery Challan</span></div>
+        <div class="menu-card" id="mod-authorize-material-outward" onclick="switchActiveDashboardModule('authorize-material-outward')"><span class="mc-label">Authorize Material Outward on Delivery Challan</span></div>
       </div>
     </div>
 
@@ -1434,6 +1435,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
               <tr><td colspan="4" style="text-align: center; color: var(--muted); padding: 20px;">Your request ticket basket is currently empty.</td></tr>
             </tbody>
           </table>
+        </div>
+        <div id="ticket-expected-return-section" style="display:none; margin-bottom:20px;">
+          <span style="display:block; font-size:0.75rem; font-weight:700; color:var(--brand); text-transform:uppercase; margin-bottom:4px;">Expected Return after Processing *</span>
+          <p style="margin:0 0 8px; font-size:0.78rem; color:var(--muted);">What you expect to receive back from the job-work vendor. The returning Delivery Challan will quote this ticket's outgoing Delivery Challan number.</p>
+          <div id="ticket-expected-return-body"></div>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border); padding-top: 14px;">
           <button class="nav-btn-styled" onclick="clearFullBasketDraftState()" style="background: #718096;">Clear Basket</button>
@@ -2404,6 +2410,13 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <button class="nav-btn-styled" style="background:var(--brand); font-weight:700;" onclick="submitArpdiAuthorize()">Authorize</button>
         </div>
       </div>
+    </div>
+
+    <div id="canvas-module-authorize-material-outward" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Authorize Material Outward on Delivery Challan</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin:6px 0 14px;">Delivery Challans whose Checking Draft has been printed. Review the paper copy, then authorize to issue the real document, or reject to send its tickets back to Material Outward on Delivery Challan.</p>
+      <div id="amo-feedback-banner" style="display:none;"></div>
+      <div id="amo-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
     </div>
 
     <div id="canvas-module-material-outward" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
@@ -5852,6 +5865,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="store/store-history.js"></script>
 <script src="store/store-dashboard.js"></script>
 <script src="store/material-outward.js"></script>
+<script src="store/authorize-material-outward.js"></script>
 <script src="store/dispatch-invoice-shared.js"></script>
 <script src="store/dispatch-invoice-create.js"></script>
 <script src="store/dispatch-invoice-authorize.js"></script>

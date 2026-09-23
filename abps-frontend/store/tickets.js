@@ -175,6 +175,16 @@ async function submitMaterialRequestTicketToBackend() {
   // the ticket in the Material Outward / Delivery Challan queue.
   const outwardPurposeVal = isServiceSubmit ? departmentVal : "";
 
+  const expectedReturnError = departmentVal === "Processing" ? ticketExpectedReturnError() : "";
+  if (expectedReturnError) {
+    if (feedbackBanner) {
+      feedbackBanner.style.cssText = "display: block; background: #fff3c7; border-color: #b45309; color: #b45309; padding: 10px; margin-bottom: 12px; border-left: 4px solid #b45309; text-align: left;";
+      feedbackBanner.innerHTML = `<strong>Expected Return:</strong> ${escapeHtml(expectedReturnError)}`;
+      feedbackBanner.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    return;
+  }
+
   if (dynamicTicketShoppingBasketArray.length === 0) {
     if (feedbackBanner) {
       feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 10px; margin-bottom: 12px; border-left: 4px solid #b91c1c; text-align: left;";
@@ -209,6 +219,9 @@ async function submitMaterialRequestTicketToBackend() {
       department: departmentSubmitVal,
       departmentOutgoing: departmentSubmitVal,
       outwardPurpose: outwardPurposeVal,
+      expectedReturnItems: departmentVal === "Processing"
+        ? (window.ticketExpectedReturnRows || []).map(r => ({ itemCode: r.itemCode, quantity: Number(r.quantity) }))
+        : [],
       ticketTypeCommandString: ticketTypeVal,
       storeTargetScope: chosenStoreTargetScopeStr,
       requestOrReturn: 'Request',
@@ -223,6 +236,7 @@ async function submitMaterialRequestTicketToBackend() {
     if (result.success) {
       // Clear current memory shopping draft arrays parameters instantly
       dynamicTicketShoppingBasketArray = [];
+      window.ticketExpectedReturnRows = [];
       
       // FIXED: Removed the 5-second automatic timeout return redirect entirely
       materialRequestPanelContainer.style.padding = "20px";
@@ -276,6 +290,8 @@ function resetStoreCreateTicketToInitialState() {
   if (materialRequestPanelContainer && window.storeCreateTicketOriginalTemplateCacheHTML) {
     // Restores original HTML skeleton element properties safely
     materialRequestPanelContainer.innerHTML = window.storeCreateTicketOriginalTemplateCacheHTML;
+    window.ticketExpectedReturnRows = [];
+    ticketSetExpectedReturnVisible(false);
     
     // Re-fire standard workflow bootloader tasks to sync operators and fresh available stocks live down to selects
     initializeMaterialRequestWorkspace();
@@ -1449,6 +1465,7 @@ async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
   const purposeWrapper = document.getElementById("wrapper-ticket-outward-purpose");
   const purposeDrop = document.getElementById("ticket-outward-purpose-dropdown");
   if (purposeWrapper) purposeWrapper.style.display = "none"; // purpose now comes from Outgoing Use itself
+  ticketSetExpectedReturnVisible(chosenDepartmentVal === "Processing");
   if (purposeDrop) purposeDrop.value = isService ? chosenDepartmentVal : "";
 
   // Reset Project field + legacy state
@@ -1995,3 +2012,123 @@ async function submitAssReservationChanges() {
   finally { hideBlockingOverlay(); }
 }
 
+
+
+// ── Expected Return after Processing (24 Sep 2026) ────────────────────
+// A Processing ticket lists what should come back from the job-work
+// vendor: a real item code (picked like Create BOQ's material search, with
+// the same "Create Item Code first" link for a new one) and a quantity.
+// The server takes each row's name and unit from the item code itself.
+window.ticketExpectedReturnRows = window.ticketExpectedReturnRows || [];
+
+function ticketSetExpectedReturnVisible(show) {
+  const section = document.getElementById("ticket-expected-return-section");
+  if (!section) return;
+  section.style.display = show ? "block" : "none";
+  if (!show) { window.ticketExpectedReturnRows = []; renderTicketExpectedReturns(); return; }
+  if (typeof loadItemCodeCatalogIntoCache === "function") loadItemCodeCatalogIntoCache().catch(() => {});
+  if (window.ticketExpectedReturnRows.length === 0) window.ticketExpectedReturnRows.push({ itemCode: "", materialName: "", unit: "", quantity: "" });
+  renderTicketExpectedReturns();
+}
+
+function renderTicketExpectedReturns() {
+  const body = document.getElementById("ticket-expected-return-body");
+  if (!body) return;
+  const rows = window.ticketExpectedReturnRows || [];
+  const cell = "padding:6px; border:1px solid var(--border);";
+  const head = "padding:7px 8px; border:1px solid var(--border); background:var(--highlight-bg); font-size:0.72rem; text-transform:uppercase; color:var(--muted);";
+  body.innerHTML = `
+    <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+      <colgroup><col style="width:6%"><col style="width:58%"><col style="width:12%"><col style="width:16%"><col style="width:8%"></colgroup>
+      <thead><tr><th style="${head}">Sr</th><th style="${head} text-align:left;">Material *</th><th style="${head}">Unit</th><th style="${head}">Qty *</th><th style="${head}"></th></tr></thead>
+      <tbody>${rows.map((r, i) => `
+        <tr>
+          <td style="${cell} text-align:center;">${i + 1}</td>
+          <td style="${cell}">
+            <input type="text" id="ter-mat-${i}" value="${escapeHtml(r.materialName || "")}" placeholder="Search material or item code..." autocomplete="off"
+              oninput="ticketExpectedReturnSearch(this.value, ${i})" onfocus="ticketExpectedReturnSearch(this.value, ${i})"
+              style="width:100%; padding:7px; border:1.5px solid ${r.itemCode ? "var(--brand)" : "#94a3b8"}; border-radius:4px;" />
+            <div id="ter-dd-${i}" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:4px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+            ${r.itemCode ? `<div style="font-size:0.72rem; color:var(--muted); margin-top:2px; font-family:monospace;">${escapeHtml(r.itemCode)}</div>` : ""}
+          </td>
+          <td style="${cell} text-align:center; font-weight:700;">${escapeHtml(r.unit || "—")}</td>
+          <td style="${cell}"><input type="number" min="0" step="any" value="${escapeHtml(String(r.quantity ?? ""))}" placeholder="0"
+              oninput="window.ticketExpectedReturnRows[${i}].quantity = this.value"
+              style="width:100%; padding:7px; text-align:center; border:1.5px solid #94a3b8; border-radius:4px;" /></td>
+          <td style="${cell} text-align:center;"><button onclick="ticketRemoveExpectedReturn(${i})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; border-radius:4px; cursor:pointer; padding:4px 8px;">✕</button></td>
+        </tr>`).join("")}</tbody>
+    </table>
+    <div style="margin-top:8px; text-align:right;">
+      <button class="nav-btn-styled" onclick="ticketAddExpectedReturn()" style="background:var(--accent); color:#fff; font-weight:700; padding:6px 14px; width:auto;">+ Add Return Row</button>
+    </div>`;
+}
+
+function ticketAddExpectedReturn() {
+  window.ticketExpectedReturnRows.push({ itemCode: "", materialName: "", unit: "", quantity: "" });
+  renderTicketExpectedReturns();
+}
+
+function ticketRemoveExpectedReturn(i) {
+  window.ticketExpectedReturnRows.splice(i, 1);
+  if (window.ticketExpectedReturnRows.length === 0) window.ticketExpectedReturnRows.push({ itemCode: "", materialName: "", unit: "", quantity: "" });
+  renderTicketExpectedReturns();
+}
+
+function ticketExpectedReturnSearch(query, i) {
+  const dd = document.getElementById(`ter-dd-${i}`);
+  const input = document.getElementById(`ter-mat-${i}`);
+  if (!dd || !input) return;
+  const row = window.ticketExpectedReturnRows[i];
+  if (row && row.materialName !== query) { row.itemCode = ""; row.unit = ""; row.materialName = query; }
+  const rect = input.getBoundingClientRect();
+  dd.style.left = rect.left + "px";
+  dd.style.top = rect.bottom + "px";
+  dd.style.width = Math.max(rect.width, 320) + "px";
+  dd.style.maxHeight = Math.min(Math.max(window.innerHeight - rect.bottom - 12, 180), 280) + "px";
+  const q = (query || "").trim().toLowerCase();
+  if (!q) { dd.style.display = "none"; return; }
+  const matches = (window.itemCodeCatalogCache || []).filter(item => {
+    const combined = (item.combinedName || item.productName || "").toLowerCase();
+    return combined.includes(q) || (item.itemCode || "").toLowerCase().includes(q);
+  }).slice(0, 10);
+  if (!matches.length) {
+    dd.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">No matching material found.
+      <a href="${window.location.pathname}?module=design-itemcode&q=${encodeURIComponent(query)}" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a></div>`;
+    dd.style.display = "block";
+    return;
+  }
+  dd.innerHTML = matches.map(item => `
+    <div onmousedown="event.preventDefault(); ticketSelectExpectedReturn(${i}, '${String(item.itemCode).replace(/'/g, "\\'")}')"
+      style="padding:9px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; display:flex; gap:10px; align-items:center;"
+      onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
+      <span style="flex:1; font-weight:600;">${escapeHtml(item.combinedName || item.productName || "")}</span>
+      <span style="font-size:0.7rem; color:var(--muted); font-family:monospace;">${escapeHtml(item.itemCode || "")}</span>
+    </div>`).join("");
+  dd.style.display = "block";
+}
+
+function ticketSelectExpectedReturn(i, itemCode) {
+  const item = (window.itemCodeCatalogCache || []).find(x => x.itemCode === itemCode);
+  const row = window.ticketExpectedReturnRows[i];
+  if (!item || !row) return;
+  row.itemCode = item.itemCode;
+  row.materialName = item.combinedName || item.productName || item.itemCode;
+  row.unit = item.unit || "";
+  renderTicketExpectedReturns();
+}
+
+function ticketExpectedReturnError() {
+  const rows = (window.ticketExpectedReturnRows || []).filter(r => r.itemCode || String(r.quantity || "").trim());
+  if (!rows.length) return "Add at least one row: the material you expect back after processing, and its quantity.";
+  for (let i = 0; i < rows.length; i++) {
+    if (!rows[i].itemCode) return `Row ${i + 1}: pick the material from the list (or create its item code first).`;
+    if (!(Number(rows[i].quantity) > 0)) return `Row ${i + 1}: enter a quantity above 0.`;
+  }
+  window.ticketExpectedReturnRows = rows;
+  return "";
+}
+
+document.addEventListener("click", (e) => {
+  if (e.target.closest && (e.target.closest('[id^="ter-dd-"]') || e.target.closest('[id^="ter-mat-"]'))) return;
+  document.querySelectorAll('[id^="ter-dd-"]').forEach(d => { d.style.display = "none"; });
+});

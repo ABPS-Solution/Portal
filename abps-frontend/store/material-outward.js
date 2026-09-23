@@ -102,7 +102,9 @@ function mowBuildDisplayLineItems(ticket) {
 }
 
 function mowTicketSummaryLine(t) {
-  return `${escapeHtml(t.ticket_id)} — ${escapeHtml(t.project_id || t.projectId || "Legacy")}` +
+  const tid = t.ticket_id || t.ticketId || "";
+  const proj = t.project_id || t.projectId || "";
+  return `${escapeHtml(tid)}${proj ? " — " + escapeHtml(proj) : ""}` +
     `${(t.company_name || t.companyName) ? " — " + escapeHtml(t.company_name || t.companyName) : ""}` +
     `${(t.boq_id || t.boqId) ? " · BOQ " + escapeHtml(t.boq_id || t.boqId) : ""}` +
     `${(t.job_card_number || t.jobCardNumber) ? " · Job Card " + escapeHtml(t.job_card_number || t.jobCardNumber) : ""}`;
@@ -239,7 +241,7 @@ function renderDraftChallanCard(draft) {
       <td style="padding:6px; border:1px solid var(--border); text-align:center;">
         <input type="text" class="mow-hsn-input" data-item-code="${escapeHtml(it.itemCode || '')}" data-challan-id="${challanId}"
                value="${escapeHtml(it.hsnCode || '')}" oninput="mowValidateDraftCard(${challanId})"
-               style="width:90px; text-align:center; padding:6px; border:1px solid ${(it.hsnCode || '').trim() ? 'var(--border)' : 'var(--danger)'}; border-radius:var(--radius);" />
+               style="width:100%; max-width:140px; text-align:center; padding:6px; border:1.5px solid ${(it.hsnCode || '').trim() ? '#94a3b8' : '#dc2626'}; background:#fff; border-radius:var(--radius);" />
       </td>
       <td style="padding:8px; border:1px solid var(--border); text-align:center; font-family:monospace; font-weight:700;">${escapeHtml(String(fmtQty(it.quantity ?? 0)))}</td>
       <td style="padding:8px; border:1px solid var(--border); text-align:center;">${escapeHtml(it.unit || "—")}</td>
@@ -257,16 +259,15 @@ function renderDraftChallanCard(draft) {
       <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:12px;">
         <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px 16px; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;">
           <div><label class="field-label" style="margin-top:0;">Purpose</label><div style="padding:8px; font-weight:700;">${escapeHtml(draft.outward_type || '—')}</div></div>
-          <div><label class="field-label" style="margin-top:0;">Status *</label><select id="mow-status-${challanId}" oninput="mowValidateDraftCard(${challanId})" onchange="mowValidateDraftCard(${challanId})" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);">${returnableOptions}</select></div>
-          <div><label class="field-label" style="margin-top:0;">Challan No</label><div style="padding:8px; color:var(--muted); font-style:italic;">allocated on finalise</div></div>
+          <div><label class="field-label" style="margin-top:0;">Status *</label><select id="mow-status-${challanId}" oninput="mowValidateDraftCard(${challanId})" onchange="mowValidateDraftCard(${challanId})" style="width:100%; padding:8px; border:1.5px solid #94a3b8; background:#fff; border-radius:var(--radius);">${returnableOptions}</select></div>
+          <div><label class="field-label" style="margin-top:0;">Challan No</label><div style="padding:8px; font-weight:700; font-family:monospace;">${escapeHtml(draft.challan_number || '—')}</div></div>
           <div><label class="field-label" style="margin-top:0;">Challan Date</label><div style="padding:8px;">${escapeHtml(todayStr)}</div></div>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 2fr; gap:12px 16px; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;">
-          ${mowFieldFor(challanId, 'Vendor Name (Processing)', 'vendor', draft.vendor_name, false)}
-          ${mowFieldFor(challanId, 'Company Name', 'company', draft.consignee_name, true)}
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px 16px; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;">
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:12px 16px; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;">
+          ${draft.outward_type === 'Processing'
+            ? mowFieldFor(challanId, 'Vendor Name', 'vendor', draft.vendor_name || draft.consignee_name, true)
+            : mowFieldFor(challanId, 'Company Name', 'company', draft.consignee_name, true)}
           ${mowFieldFor(challanId, 'Contact Name', 'contact-name', draft.contact_person_name, true)}
           ${mowFieldFor(challanId, 'Contact Number', 'contact-number', draft.contact_number, false)}
         </div>
@@ -302,8 +303,10 @@ function renderDraftChallanCard(draft) {
         <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap;">
           ${draft.checking_doc_url ? `<a href="${driveLink(draft.checking_doc_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; margin-right:auto;">View Checking Draft #${escapeHtml(String(draft.checking_draft_count || ''))} ↗</a>` : '<span></span>'}
           <button class="nav-btn-styled" id="mow-save-btn-${challanId}" style="background:#718096;" onclick="mowSaveDraft(${challanId})">Save Draft</button>
-          <button class="nav-btn-styled" id="mow-checking-btn-${challanId}" style="background:var(--brand);" onclick="mowGenerateCheckingDraft(${challanId})">Generate Checking Draft</button>
-          <button class="nav-btn-styled" id="mow-finalise-btn-${challanId}" style="background:var(--accent);" onclick="mowFinaliseChallan(${challanId})">Finalise Challan</button>
+          <button class="nav-btn-styled" id="mow-checking-btn-${challanId}" style="background:var(--brand);" onclick="mowGenerateCheckingDraft(${challanId})">📄 Save &amp; Generate Checking Draft</button>
+        </div>
+        <div style="margin-top:8px; font-size:0.78rem; color:var(--muted); text-align:right;">
+          Once a checking draft is printed, this challan waits in <strong>Authorize Material Outward on Delivery Challan</strong>.
         </div>
         <div id="mow-inline-feedback-${challanId}" style="display:none; margin-top:12px; padding:10px; border-left:4px solid; border-radius:var(--radius);"></div>
       </div>
@@ -315,7 +318,7 @@ function renderDraftChallanCard(draft) {
 // long value.
 function mowFieldFor(challanId, label, key, value, required) {
   const id = `mow-${key}-${challanId}`;
-  return `<div><label class="field-label" style="margin-top:0;">${label}${required ? ' *' : ''}</label><textarea rows="1" id="${id}" oninput="autoGrowTextField(this); mowValidateDraftCard(${challanId});" onfocus="autoGrowTextField(this);" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius); resize:none; overflow:hidden; font-family:inherit; font-size:inherit;">${escapeHtml(value || '')}</textarea></div>`;
+  return `<div><label class="field-label" style="margin-top:0;">${label}${required ? ' *' : ''}</label><textarea rows="1" id="${id}" oninput="autoGrowTextField(this); mowValidateDraftCard(${challanId});" onfocus="autoGrowTextField(this);" style="width:100%; padding:8px; border:1.5px solid #94a3b8; background:#fff; border-radius:var(--radius); resize:none; overflow:hidden; font-family:inherit; font-size:inherit;">${escapeHtml(value || '')}</textarea></div>`;
 }
 
 // mowValidateDraftCard — client-side validation only ("a convenience,
@@ -329,8 +332,9 @@ function mowValidateDraftCard(challanId) {
   const errors = [];
   const status = document.getElementById(`mow-status-${challanId}`)?.value || '';
   if (!status) errors.push('Select a Status (Returnable / Non-Returnable).');
-  const company = document.getElementById(`mow-company-${challanId}`)?.value.trim() || '';
-  if (!company) errors.push('Company Name is required.');
+  const isProcessingCard = !!document.getElementById(`mow-vendor-${challanId}`);
+  const consignee = document.getElementById(isProcessingCard ? `mow-vendor-${challanId}` : `mow-company-${challanId}`)?.value.trim() || '';
+  if (!consignee) errors.push(isProcessingCard ? 'Vendor Name is required.' : 'Company Name is required.');
   const contactName = document.getElementById(`mow-contact-name-${challanId}`)?.value.trim() || '';
   if (!contactName) errors.push('Contact Name is required.');
   const address = document.getElementById(`mow-address-${challanId}`)?.value.trim() || '';
@@ -339,7 +343,7 @@ function mowValidateDraftCard(challanId) {
   let missingHsn = 0;
   hsnInputs.forEach(inp => {
     const filled = !!inp.value.trim();
-    inp.style.borderColor = filled ? 'var(--border)' : 'var(--danger)';
+    inp.style.borderColor = filled ? '#94a3b8' : '#dc2626';
     if (!filled) missingHsn++;
   });
   if (missingHsn > 0) errors.push(`HSN Code is required for ${missingHsn} material row${missingHsn > 1 ? 's' : ''}.`);
@@ -349,7 +353,7 @@ function mowValidateDraftCard(challanId) {
   if (bandEl) {
     bandEl.innerHTML = errors.length
       ? `<div style="margin-bottom:10px; padding:10px; border-left:4px solid var(--danger); background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-size:0.82rem;">
-          <strong>Cannot generate a checking draft or finalise until these are resolved:</strong>
+          <strong>Cannot generate a checking draft until these are resolved:</strong>
           <ul style="margin:6px 0 0; padding-left:18px;">${errors.map(m => `<li>${escapeHtml(m)}</li>`).join("")}</ul></div>`
       : '';
   }
@@ -438,7 +442,7 @@ async function mowGenerateCheckingDraft(challanId) {
   } catch (err) {
     mowShowInlineError(challanId, err.message);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = "Generate Checking Draft"; }
+    if (btn) { btn.disabled = false; btn.textContent = "📄 Save & Generate Checking Draft"; }
   }
 }
 
@@ -491,8 +495,11 @@ async function rejectMaterialOutwardRequest(ticketId) {
   try {
     const data = await apFetch({ action: "rejectMaterialOutwardRequest", ticketId, operatorName: appActiveOperatorIdentityString || "Unknown" });
     if (!data.success) throw new Error(data.error || "Failed to reject.");
-    showSuccessWithReset("mow-feedback-banner", `${escapeHtml(ticketId)} rejected — its stock has been returned to the store. Raise a new Material Issue Ticket to correct it.`, "Refresh Queue", "loadMaterialOutwardServiceQueue()");
-    loadMaterialOutwardServiceQueue();
+    const feed = document.getElementById("mow-service-queue-feed");
+    if (feed) feed.style.display = "none";
+    showSuccessWithReset("mow-feedback-banner", `${escapeHtml(ticketId)} rejected — its stock has been returned to the store. Raise a new Material Issue Ticket to correct it.`, "Refresh Queue", "mowResetAfterChallanSave()");
+    const refreshBtn = document.querySelector("#mow-feedback-banner button");
+    if (refreshBtn) refreshBtn.textContent = "Refresh Queue";
   } catch (err) {
     alert(err.message);
   }
