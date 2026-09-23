@@ -356,10 +356,10 @@ function renderEBOQForm(containerId) {
               <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
               <th style="width:110px; padding:8px; font-size:0.7rem;">Type of Store *</th>
               <th style="width:350px; padding:8px; font-size:0.7rem;">Material Name *</th>
-              <th style="width:80px; padding:8px; font-size:0.7rem;">Item Code</th>
+              <th style="width:92px; padding:8px; font-size:0.7rem; text-align:center;">Item Code</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
-              <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty *</th>
+              <th style="width:150px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty *</th>
               <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Cost / Set</th>
               <th style="width:70px; padding:8px; font-size:0.7rem; text-align:center;">Costing Verified *</th>
               <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
@@ -612,7 +612,7 @@ function renderEBOQMaterialRows() {
       </td>
       <td style="padding:4px;">
         <input type="text" value="${row.itemCode || ""}" readonly 
-          style="padding:5px; font-size:0.78rem; font-family:monospace; font-weight:700; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:3px; border:1px solid #bae6fd; width:100%;" />
+          style="padding:5px; font-size:0.78rem; font-family:monospace; font-weight:700; text-align:center; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:3px; border:1px solid #bae6fd; width:100%;" />
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"

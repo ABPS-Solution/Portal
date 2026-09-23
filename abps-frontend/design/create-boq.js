@@ -470,7 +470,7 @@ function renderCBOQMaterialRows() {
       </td>
       <td style="padding:4px;">
         <input type="text" value="${row.itemCode || ""}" readonly 
-          style="padding:5px; font-size:0.78rem; font-family:monospace; font-weight:700; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:3px; border:1px solid #bae6fd; width:100%;" />
+          style="padding:5px; font-size:0.78rem; font-family:monospace; font-weight:700; text-align:center; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:3px; border:1px solid #bae6fd; width:100%;" />
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
@@ -588,7 +588,10 @@ function boqRateHintHtml(row) {
   if (!e) return wrap("Never bought on an RM PO");
   const ago = e.daysAgo <= 0 ? "today" : e.daysAgo === 1 ? "1 day ago" : `${e.daysAgo} days ago`;
   const rate = "₹" + Number(e.rate).toLocaleString("en-IN", { maximumFractionDigits: 2 });
-  return wrap(`Last bought ${ago} at ${rate} (${escapeHtml(e.poNo)})` + (e.withinWindow ? "" : `<br>Older than ${boqPurchaseRateWindowDays} days, not auto-filled`),
+  const po = e.pdfUrl
+    ? `<a href="${driveLink(e.pdfUrl)}" target="_blank" rel="noopener" style="color:inherit; font-weight:700; text-decoration:underline;">${escapeHtml(e.poNo)}</a>`
+    : escapeHtml(e.poNo);
+  return wrap(`Last bought ${ago} at ${rate} (${po})` + (e.withinWindow ? "" : `<br>Older than ${boqPurchaseRateWindowDays} days, not auto-filled`),
     e.withinWindow ? "#15803d" : "#b45309");
 }
 function boqUnverifyRow(prefix, idx) {
