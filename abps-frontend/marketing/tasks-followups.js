@@ -72,6 +72,12 @@ async function removeIsolatedFollowUpItem(leadRef, fNum, event) {
 // Column widths sum to 100%; wrapped in overflow-x:auto so it degrades to
 // a scrollbar rather than crushing content on a narrow viewport. List
 // arrives pre-sorted by creation order (backend: t.task_id ASC).
+// Completed in green, Assigned in red; anything else stays black.
+function taskStatusTextColor(status) {
+  const v = String(status || "").trim().toLowerCase();
+  return v === "completed" ? "#15803d" : v === "assigned" ? "#b91c1c" : "#000";
+}
+
 function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
   const box = scopeNode.querySelector(".template-task-box");
   if (list.length === 0) {
@@ -90,7 +96,7 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
     const centered = "text-align:center;";
     return `
       <tr style="border-bottom:2px solid var(--border);">
-        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered}">${escapeHtml(t.status)}</td>
+        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:${taskStatusTextColor(t.status)}; font-weight:700; vertical-align:middle; ${centered}">${escapeHtml(t.status)}</td>
         <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${escapeHtml(t.type)}</td>
         <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere; vertical-align:middle; ${centered} ${colBorder}">${escapeHtml(t.eng)}</td>
         <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere; vertical-align:middle; ${centered} ${colBorder}">${escapeHtml(t.assigner || "System")}</td>
@@ -130,7 +136,7 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
     return `
       <div style="border:1px solid var(--border); border-left:4px solid ${priorityColor}; border-radius:6px; padding:10px; margin-bottom:8px; background:#fff;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px;">
-          <span style="font-weight:700; font-size:0.88rem; color:#000;">${escapeHtml(t.status)} · ${escapeHtml(t.type)}</span>
+          <span style="font-weight:700; font-size:0.88rem; color:#000;"><span style="color:${taskStatusTextColor(t.status)};">${escapeHtml(t.status)}</span> · ${escapeHtml(t.type)}</span>
           <span style="flex-shrink:0; font-size:0.72rem; font-weight:700; color:#fff; background:${priorityColor}; padding:2px 8px; border-radius:3px;">${escapeHtml(t.priority || "Medium")}</span>
         </div>
         <div style="font-size:0.8rem; color:var(--muted); margin-bottom:6px;">Target: ${escapeHtml(t.shift)}, ${formatOrdinalDate(t.targetDate)}</div>
