@@ -308,6 +308,7 @@ function returnToDashboard() {
     if (btn) { btn.disabled = false; btn.innerHTML = cfg.btnLabel; }
   });
   const poAcceptDate = document.getElementById('purchase-order-acceptance-date'); if (poAcceptDate) poAcceptDate.value = '';
+  const poOwnerSel = document.getElementById('purchase-order-owner'); if (poOwnerSel) { populatePoOwnerDropdown(); poOwnerSel.value = ''; }
   const poSpecialReq = document.getElementById('purchase-order-special-requirement'); if (poSpecialReq) poSpecialReq.value = '';
   const poContractReviewInput = document.getElementById('purchase-order-contract-review-file'); if (poContractReviewInput) poContractReviewInput.value = '';
   const poContractReviewBox = document.getElementById('purchase-order-contract-review-box');

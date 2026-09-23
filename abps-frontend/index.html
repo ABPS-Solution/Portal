@@ -5266,10 +5266,17 @@
         </div>
         <div class="card-box" id="purchase-order-upload-box" onclick="document.getElementById('purchase-order-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Purchase Order *</div>
         <input type="file" id="purchase-order-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'purchase-order-upload-box', 'Purchase Order Added ✅')" />
-
-        <div style="margin-top: 12px;">
-          <label class="field-label">Order Acceptance Sent Date *</label>
-          <input type="date" lang="en-GB" id="purchase-order-acceptance-date" style="padding: 8px; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
+        <div style="margin-top: 12px; display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div>
+            <label class="field-label">ABPS Owner of Order *</label>
+            <select id="purchase-order-owner" onfocus="populatePoOwnerDropdown()" style="padding: 8px; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
+              <option value="">— Select —</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Order Acceptance Sent Date *</label>
+            <input type="date" lang="en-GB" id="purchase-order-acceptance-date" style="padding: 8px; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
+          </div>
         </div>
         <div style="margin-top: 12px;">
           <label class="field-label">Special Requirement <span style="color:var(--muted); font-weight:400;">(optional)</span></label>

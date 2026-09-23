@@ -2322,6 +2322,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
               if (b2) { b2.textContent = '📋 Select Commissioning Report'; b2.classList.remove('done'); }
               if (b3) { b3.textContent = '📋 Select Purchase Order'; b3.classList.remove('done'); }
               document.getElementById('purchase-order-acceptance-date').value = '';
+  { const o = document.getElementById('purchase-order-owner'); if (o) o.value = ''; }
               document.getElementById('purchase-order-special-requirement').value = '';
               document.getElementById('purchase-order-contract-review-file').value = '';
               const b4 = document.getElementById('purchase-order-contract-review-box');
@@ -2396,6 +2397,8 @@ async function extractPurchaseOrderForReview() {
   // doc are compulsory on every PO upload — Special Requirement stays
   // optional. Captured now (not asked again in the review screen) since
   // these are locked passthrough fields per the review screen's design.
+  const poOwner = (document.getElementById("purchase-order-owner") || {}).value || "";
+  if (!poOwner.trim()) { alert("ABPS Owner of Order is required."); return; }
   const poAcceptanceDate = document.getElementById("purchase-order-acceptance-date").value.trim();
   if (!poAcceptanceDate) { alert("Order Acceptance Sent Date is required."); return; }
   const poContractReviewFile = document.getElementById("purchase-order-contract-review-file").files[0];
@@ -2459,7 +2462,7 @@ async function extractPurchaseOrderForReview() {
       // so it genuinely reflects who owns this order, not just whoever
       // happened to be uploading the PO. Left blank here on purpose (no
       // default preselection) so the pick is a deliberate action.
-      _abpsOwnerOfOrder: '',
+      _abpsOwnerOfOrder: poOwner.trim(),
       _specialRequirement: document.getElementById("purchase-order-special-requirement").value.trim(),
       _contractReviewFileObj: poContractReviewFile,
       _orderAcceptanceFileObj: poOrderAcceptanceFile,
@@ -2788,6 +2791,7 @@ function renderPurchaseOrderReview() {
   // has always held a readable name (previously the logged-in operator's
   // own display name). Storing a person_key here would silently break
   // that raw display.
+  // Unused since 23 Sep 2026: Owner of Order moved to the first screen; the review shows it locked.
   const abpsOwnerFieldHtml = `
     <div class="grid-cell-item" style="grid-column: span 4;">
       <label style="font-size:0.72rem;">ABPS Owner of Order *</label>
@@ -2853,7 +2857,7 @@ function renderPurchaseOrderReview() {
         ${editField('PO Total Amount', 'poTotalAmount', 'number', 'grid-column: span 4;', true)}
         ${lockedRow('Order Acceptance Link', orderAcceptanceLinkHtml, 'grid-column: span 4;')}
         ${lockedRow('Contract Review Link', contractReviewLinkHtml, 'grid-column: span 4;')}
-        ${abpsOwnerFieldHtml}
+        ${lockedRow('ABPS Owner of Order', escapeHtml(s._abpsOwnerOfOrder || ''), 'grid-column: span 4;')}
         ${editField('Order Acceptance Sent Date', '_orderAcceptanceSentDate', 'date', 'grid-column: span 4;', true)}
       </div>
 
@@ -2989,6 +2993,7 @@ function resetPurchaseOrderWorkspace() {
   const box = document.getElementById('purchase-order-upload-box');
   if (box) { box.textContent = '📋 Select Purchase Order *'; box.classList.remove('done'); }
   document.getElementById('purchase-order-acceptance-date').value = '';
+  { const o = document.getElementById('purchase-order-owner'); if (o) o.value = ''; }
   document.getElementById('purchase-order-special-requirement').value = '';
   document.getElementById('purchase-order-contract-review-file').value = '';
   const crBox = document.getElementById('purchase-order-contract-review-box');
@@ -3279,3 +3284,15 @@ function handleFGProjectIdChange(selectedProjectId, canvasId) {
 
 // ─── ITEM CODE MODULE ───────────────────────────────────────────
 
+
+// ABPS Owner of Order picker on Upload Purchase Order's first screen —
+// a compulsory manual pick from the current Marketing roster (display name,
+// not person_key; see the review screen's own comment on why).
+function populatePoOwnerDropdown() {
+  const sel = document.getElementById("purchase-order-owner");
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— Select —</option>' + (cachedEngineers || []).map(eng =>
+    `<option value="${escapeHtml(eng.name)}">${escapeHtml(eng.name)}</option>`).join("");
+  sel.value = current;
+}
