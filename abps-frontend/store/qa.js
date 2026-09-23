@@ -337,7 +337,7 @@ async function openQARevisionDetail(grnNumber) {
         <div style="font-size:0.78rem; color:#7f1d1d; margin-top:8px;">Downstream activity has already moved past this Q/A. Correct it with a manual stock adjustment instead.</div>
       </div>` : ''}
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-        <table class="store-basket-data-table" style="width:100%; border-collapse:collapse;">
+        <table class="store-basket-data-table row-lined-table" style="width:100%; border-collapse:collapse;">
           <thead><tr style="background:#f8fafc;">
             <th style="width:110px; text-align:center; font-size:0.72rem; padding:8px 6px;">Item Code</th>
             <th style="text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Material Description</th>
@@ -529,7 +529,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
           </div>
           <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
             <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
-              <table class="store-basket-data-table" style="width:100%; table-layout:fixed; border-collapse:collapse;">
+              <table class="store-basket-data-table row-lined-table" style="width:100%; table-layout:fixed; border-collapse:collapse;">
                 <thead><tr style="background:#f8fafc;">
                   <th style="width:9%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
                   <th style="width:26%; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name</th>
@@ -627,7 +627,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
           </div>
           <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
             <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
-              <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:1250px; border-collapse:collapse;">
+              <table class="store-basket-data-table row-lined-table" style="width:100%; table-layout:fixed; min-width:1250px; border-collapse:collapse;">
                 <thead><tr style="background:#f8fafc;">
                   <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
                   <th style="width:180px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Material Description</th>
@@ -892,7 +892,7 @@ async function initializeRejectedMaterialPanel(toggle) {
         </div>
         <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
           <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
-            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:900px; border-collapse:collapse;">
+            <table class="store-basket-data-table row-lined-table" style="width:100%; table-layout:fixed; min-width:900px; border-collapse:collapse;">
               <thead><tr style="background:#f8fafc;">
                 <th style="width:100px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
                 <th style="width:260px; text-align:left; font-size:0.72rem; padding:8px 6px;">Material Name</th>

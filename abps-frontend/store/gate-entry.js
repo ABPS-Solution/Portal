@@ -376,9 +376,12 @@ async function checkGatePONumber() {
   if (!po) { msg.textContent = ""; return; }
   try {
     const data = await apFetch({ action: "validateGatePONumber", poNo: po });
+    if (input.value.trim() !== po) return; // a newer keystroke's check owns the message
     if (!(data.success && data.found)) {
       msg.style.color = "#b91c1c";
       msg.textContent = "No authorized PO Number found";
+    } else {
+      msg.textContent = "";
     }
   } catch(e) { msg.textContent = ""; }
 }
@@ -391,10 +394,16 @@ async function checkStoreEntryPONumber(gateNum) {
   if (!po) { msg.textContent = ""; input.style.borderColor = "#fca5a5"; return; }
   try {
     const data = await apFetch({ action: "validateGatePONumber", poNo: po });
+    if (input.value.trim() !== po) return; // a newer keystroke's check owns the message
     if (!(data.success && data.found)) {
       input.style.borderColor = "#fca5a5";
       msg.style.color = "#b91c1c";
       msg.textContent = "No authorized PO Number found";
+    } else {
+      // Valid again (24 Sep 2026 fix): the error used to stay up forever
+      // once shown, even after the number was corrected.
+      input.style.borderColor = "var(--border)";
+      msg.textContent = "";
     }
   } catch(e) { msg.textContent = ""; }
 }

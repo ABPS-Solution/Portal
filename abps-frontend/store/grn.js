@@ -170,7 +170,7 @@ async function initializeStoreEntryWorkspaceQueue() {
             <div id="se-po-check-msg-${item.gateNumber}" style="font-size:0.68rem; font-weight:700; margin-top:3px;"></div>
           </div>
           <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
-            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; min-width:1150px; border-collapse:collapse;">
+            <table class="store-basket-data-table row-lined-table" style="width:100%; table-layout:fixed; min-width:1150px; border-collapse:collapse;">
               <thead>
                 <tr style="background:#f8fafc;">
                   <th style="width:100px; text-align:center; font-size:0.68rem; padding:8px 6px; line-height:1.3;">Item Code</th>
