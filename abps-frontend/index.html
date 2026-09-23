@@ -5271,7 +5271,8 @@
       <div id="purchase-order-inputs-container" style="display: block;">
         <div style="margin-bottom: 12px;">
           <label class="field-label">Select Lead / Company *</label>
-          <select id="purchase-order-lead-dropdown" style="padding: 8px; font-weight: 600; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
+          <input type="text" id="purchase-order-lead-ta-input" autocomplete="off" placeholder="Start typing a company name..." oninput="handlePoLeadTypeaheadInput(this.value)" onfocus="handlePoLeadTypeaheadInput(this.value)" style="padding: 8px; font-weight: 600; border: 1.5px solid var(--border); border-radius: var(--radius); width:100%;">
+          <select id="purchase-order-lead-dropdown" style="display:none;">
             <option value="">— Select Company / Lead —</option>
           </select>
         </div>

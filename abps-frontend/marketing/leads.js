@@ -3010,6 +3010,8 @@ function resetPurchaseOrderWorkspace() {
   if (oaBox) { oaBox.textContent = '📋 Select Order Acceptance Document *'; oaBox.classList.remove('done'); }
   const leadDrop = document.getElementById('purchase-order-lead-dropdown');
   if (leadDrop) leadDrop.value = '';
+  const leadTa = document.getElementById('purchase-order-lead-ta-input');
+  if (leadTa) leadTa.value = '';
   document.getElementById('purchase-order-feedback-banner').style.display = 'none';
   const zone = document.getElementById('purchase-order-review-zone');
   zone.style.display = 'none'; zone.innerHTML = '';
@@ -3302,4 +3304,42 @@ function populatePoOwnerDropdown() {
   sel.innerHTML = '<option value="">— Select —</option>' + (cachedEngineers || []).map(eng =>
     `<option value="${escapeHtml(eng.name)}">${escapeHtml(eng.name)}</option>`).join("");
   sel.value = current;
+}
+
+// Select Lead / Company on Upload Purchase Order — type-to-search, same
+// floating dropdown as Search by Company Name. The hidden
+// #purchase-order-lead-dropdown <select> still holds the chosen leadId, so
+// every existing reader of its .value is unchanged.
+function handlePoLeadTypeaheadInput(query) {
+  const sel = document.getElementById("purchase-order-lead-dropdown");
+  const input = document.getElementById("purchase-order-lead-ta-input");
+  if (!sel || !input) return;
+  const ddId = "purchase-order-lead-ta-dropdown";
+  const dd = ensureCompanySearchDropdownEl(ddId);
+  dd.dataset.inputId = "purchase-order-lead-ta-input";
+  const selectedOpt = sel.selectedOptions[0];
+  if (!selectedOpt || selectedOpt.text !== query) sel.value = "";
+  const q = (query || "").trim().toLowerCase();
+  if (!q) { dd.style.display = "none"; return; }
+  const matches = [...sel.options].filter(o => o.value && o.text.toLowerCase().includes(q)).slice(0, 15);
+  if (!matches.length) { dd.style.display = "none"; return; }
+  dd.innerHTML = matches.map(o => `
+    <div onmousedown="event.preventDefault(); selectPoLeadTypeahead('${encodeURIComponent(o.value)}')"
+      style="padding:9px 12px; cursor:pointer; font-size:0.88rem; border-bottom:1px solid var(--border);"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">${escapeHtml(o.text)}</div>`).join("");
+  const rect = input.getBoundingClientRect();
+  dd.style.top = rect.bottom + "px";
+  dd.style.left = rect.left + "px";
+  dd.style.width = rect.width + "px";
+  dd.style.display = "block";
+}
+
+function selectPoLeadTypeahead(encodedValue) {
+  const sel = document.getElementById("purchase-order-lead-dropdown");
+  const input = document.getElementById("purchase-order-lead-ta-input");
+  if (!sel || !input) return;
+  sel.value = decodeURIComponent(encodedValue);
+  input.value = sel.selectedOptions[0] ? sel.selectedOptions[0].text : "";
+  const dd = document.getElementById("purchase-order-lead-ta-dropdown");
+  if (dd) dd.style.display = "none";
 }

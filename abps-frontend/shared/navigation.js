@@ -309,6 +309,8 @@ function returnToDashboard() {
     if (container) container.style.display = 'block';
     const leadDrop = document.getElementById(cfg.leadId);
     if (leadDrop) leadDrop.value = '';
+    const leadTa = document.getElementById(cfg.leadId.replace('-dropdown', '-ta-input'));
+    if (leadTa) leadTa.value = '';
     const btn = document.getElementById(cfg.btnId);
     if (btn) { btn.disabled = false; btn.innerHTML = cfg.btnLabel; }
   });
