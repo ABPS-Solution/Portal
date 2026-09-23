@@ -285,7 +285,11 @@ async function generateRevisionCheckingDraftUI() {
     const data = await apFetch({ action: "regenerateRevisionCheckingDraft", requestId: st.requestId, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success && data.checkingDocUrl) {
-      showPurchaseFeedback("rpo-feedback", `<strong>Checking Draft #${data.checkingDraftNumber} generated.</strong> <a href="${driveLink(data.checkingDocUrl)}" target="_blank" style="display:inline-block; margin-left:10px; background:#fff; color:#0ea5e9; border:1.5px solid #0ea5e9; padding:6px 14px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open Checking Draft #${data.checkingDraftNumber}</a>`, "success", true);
+      document.getElementById("rpo-detail-zone").innerHTML = "";
+      window.rpoActive = null;
+      const tabsZone = document.getElementById("rpo-tabs-and-lists");
+      if (tabsZone) tabsZone.style.display = "none";
+      showPurchaseFeedback("rpo-feedback", `<strong>Changes saved. Checking Draft #${data.checkingDraftNumber} generated.</strong> <a href="${driveLink(data.checkingDocUrl)}" target="_blank" style="display:inline-block; margin-left:10px; background:#fff; color:#0ea5e9; border:1.5px solid #0ea5e9; padding:6px 14px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open Checking Draft #${data.checkingDraftNumber}</a><div><button onclick="document.getElementById('rpo-feedback').style.display='none'; document.getElementById('rpo-tabs-and-lists').style.display=''; switchRevisePOTab('editing');" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Edit Another RM PO Revision</button></div>`, "success", true);
     } else if (data.success) {
       showPurchaseFeedback("rpo-feedback", `⚠️ Checking Draft #${data.checkingDraftNumber} could not be generated — your changes are saved; click "Save & Generate Checking Draft" again to retry the printout.`, "error");
     } else {

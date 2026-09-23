@@ -15,6 +15,8 @@ let rpdiCache = { invoiceId: null, projectId: "", invoiceType: "", invoiceRevisi
 
 function switchRevisePdiTab(tab) {
   const isSelect = tab === 'select';
+  const tabsBar = document.getElementById("rpdi-tab-select")?.parentElement;
+  if (tabsBar) tabsBar.style.display = "flex";
   document.getElementById("rpdi-select-section").style.display = isSelect ? "" : "none";
   document.getElementById("rpdi-editing-section").style.display = isSelect ? "none" : "";
   const on = (id) => { const el = document.getElementById(id); if (el) { el.style.background = "var(--accent)"; el.style.color = "#fff"; } };
@@ -377,6 +379,8 @@ async function submitRpdiCreateRequest() {
       operatorName: appActiveOperatorIdentityString || "Unknown",
     });
     if (data.success) {
+      const rpdiTabsBar = document.getElementById("rpdi-tab-select")?.parentElement;
+      if (rpdiTabsBar) rpdiTabsBar.style.display = "none";
       document.getElementById("rpdi-select-zone").style.display = "none";
       document.getElementById("rpdi-detail-zone").style.display = "none";
       const successZone = document.getElementById("rpdi-success-zone");
@@ -461,8 +465,7 @@ async function toggleRpdiEditCard(requestId) {
     card.innerHTML = `
       <div id="rpdi-edit-lineitems-wrap-${requestId}" style="overflow-x:auto;"></div>
       <div style="display:flex; gap:10px; margin-top:14px;">
-        <button class="nav-btn-styled" style="background:var(--brand); padding:8px 16px;" onclick="saveRpdiEdit(${requestId})">Save Changes</button>
-        <button class="nav-btn-styled" style="background:var(--accent); padding:8px 16px;" onclick="generateRpdiCheckingDraftOnly(${requestId})">📄 Generate Checking Draft</button>
+        <button class="nav-btn-styled" style="background:var(--brand); padding:8px 16px;" onclick="saveRpdiEdit(${requestId})">📄 Save &amp; Generate Checking Draft</button>
       </div>
       <div id="rpdi-edit-feedback-${requestId}" style="margin-top:10px;"></div>`;
     renderPdiLineItemsTable(`rpdi-edit-lineitems-wrap-${requestId}`, rpdiState.lineItems, `rpdi-edit-${requestId}`, 'updateRpdiEditLineItem', null, null);
@@ -487,22 +490,34 @@ async function saveRpdiEdit(requestId) {
       revisedInvoiceDetails: buildRpdiRevisedDetailsPayload(), revisedLineItems: buildRpdiRevisedLineItemsPayload(),
       operatorName: appActiveOperatorIdentityString || "Unknown",
     });
-    fb.innerHTML = data.success
-      ? `<div style="color:#15803d; font-weight:600;">Saved. Regenerate the checking draft to print an updated copy.</div>`
-      : `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`;
+    if (!data.success) { fb.innerHTML = `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`; return; }
   } catch(e) {
     fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
+    return;
   } finally {
     hideBlockingOverlay();
   }
+  // Saving and printing are one step (24 Sep 2026).
+  await generateRpdiCheckingDraftOnly(requestId);
 }
 async function generateRpdiCheckingDraftOnly(requestId) {
   const fb = document.getElementById(`rpdi-edit-feedback-${requestId}`);
   showBlockingOverlay("Generating checking draft...");
   try {
     const data = await apFetch({ action: "regenerateProjectDispatchInvoiceRevisionCheckingDraft", requestId });
+    if (data.success && data.checkingDocUrl) {
+      document.getElementById("rpdi-editing-cards-feed").innerHTML = "";
+      const tabsBar = document.getElementById("rpdi-tab-select")?.parentElement;
+      if (tabsBar) tabsBar.style.display = "none";
+      const fbEl = document.getElementById("rpdi-editing-feedback");
+      fbEl.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius); font-weight:600;";
+      fbEl.innerHTML = `Changes saved. Checking Draft #${data.checkingDraftNumber} generated. <a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">📄 Open Checking Draft ↗</a>
+        <div><button class="nav-btn-styled" style="margin-top:12px; background:var(--accent); padding:7px 18px; font-weight:700;" onclick="switchRevisePdiTab('editing')">+ Edit Another Invoice Revision</button></div>`;
+      fbEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     fb.innerHTML = data.success
-      ? `<div style="color:#15803d; font-weight:600;">Checking Draft #${data.checkingDraftNumber} generated. <a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`
+      ? `<div style="color:#b45309; font-weight:600;">Changes saved, but the checking draft could not be generated. Click the button again to retry.</div>`
       : `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`;
   } catch(e) {
     fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;

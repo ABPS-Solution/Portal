@@ -1606,7 +1606,12 @@ async function generateCheckingDraftOnly() {
     if (data.success) {
       banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
       if (data.checkingDocUrl) {
-        banner.innerHTML = `<strong>Checking Draft #${data.checkingDraftNumber} generated.</strong> <a href="${driveLink(data.checkingDocUrl)}" target="_blank" style="display:inline-block; margin-left:10px; background:#fff; color:#0ea5e9; border:1.5px solid #0ea5e9; padding:6px 14px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open Checking Draft #${data.checkingDraftNumber}</a>`;
+        // Same "done" state as Create PO's success (24 Sep 2026): the form and
+        // PO list are hidden until "+ Edit Another RM PO" is clicked.
+        document.getElementById("edit-po-body").innerHTML = "";
+        const cpoTabsBar = document.getElementById("cpo-tab-new")?.parentElement;
+        if (cpoTabsBar) cpoTabsBar.style.display = "none";
+        banner.innerHTML = `<strong>Changes saved. Checking Draft #${data.checkingDraftNumber} generated.</strong> <a href="${driveLink(data.checkingDocUrl)}" target="_blank" style="display:inline-block; margin-left:10px; background:#fff; color:#0ea5e9; border:1.5px solid #0ea5e9; padding:6px 14px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open Checking Draft #${data.checkingDraftNumber}</a><div><button onclick="document.getElementById('edit-po-feedback').style.display='none'; const tb=document.getElementById('cpo-tab-new').parentElement; tb.style.display='flex'; switchCreatePOTab('editing');" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Edit Another RM PO</button></div>`;
       } else {
         banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #b45309; background:#fffbeb; color:#78350f; border-radius:var(--radius); font-weight:600;";
         banner.textContent = `⚠️ Checking Draft #${data.checkingDraftNumber} could not be generated — your changes are saved; click "Save & Generate Checking Draft" again to retry the printout.`;
@@ -1633,6 +1638,10 @@ async function generateCheckingDraftOnly() {
 // awaiting authorization (edit-po-body, fetchPendingPOsForEditing).
 function switchCreatePOTab(tab, extraArg = null) {
   const isNew = tab === 'new';
+  const tabsBar = document.getElementById("cpo-tab-new")?.parentElement;
+  if (tabsBar) tabsBar.style.display = "flex";
+  const editFb = document.getElementById("edit-po-feedback");
+  if (editFb) editFb.style.display = "none";
   document.getElementById("cpo-new-section").style.display = isNew ? "" : "none";
   document.getElementById("cpo-editing-section").style.display = isNew ? "none" : "";
   const on = (b) => { b.style.color = "var(--brand)"; b.style.borderBottomColor = "var(--brand)"; b.style.fontWeight = "800"; };

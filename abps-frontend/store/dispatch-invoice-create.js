@@ -59,6 +59,8 @@ function cpdiRenderFileList(type) {
 // ── Tabs ─────────────────────────────────────────────────────────────
 function switchCreatePdiTab(tab) {
   const isNew = tab === 'new';
+  const tabsBar = document.getElementById("cpdi-tab-new")?.parentElement;
+  if (tabsBar) tabsBar.style.display = "flex";
   document.getElementById("cpdi-new-section").style.display = isNew ? "" : "none";
   document.getElementById("cpdi-editing-section").style.display = isNew ? "none" : "";
   const on = (id) => { const el = document.getElementById(id); if (el) { el.style.background = "var(--accent)"; el.style.color = "#fff"; } };
@@ -513,6 +515,8 @@ async function submitCpdiCreate() {
       paymentReceivedConfirmation, documents,
     });
     if (data.success) {
+      const cpdiTabsBar = document.getElementById("cpdi-tab-new")?.parentElement;
+      if (cpdiTabsBar) cpdiTabsBar.style.display = "none";
       document.getElementById("cpdi-select-zone").style.display = "none";
       document.getElementById("cpdi-detail-zone").style.display = "none";
       const successZone = document.getElementById("cpdi-success-zone");
@@ -599,8 +603,7 @@ async function toggleCpdiEditCard(invoiceId) {
       <div id="cpdi-edit-form-${invoiceId}"></div>
       <div id="cpdi-edit-lineitems-wrap-${invoiceId}" style="overflow-x:auto; margin-top:10px;"></div>
       <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
-        <button class="nav-btn-styled" style="background:var(--brand); padding:8px 16px;" onclick="saveCpdiEdit(${invoiceId})">Save Changes</button>
-        <button class="nav-btn-styled" style="background:var(--accent); padding:8px 16px;" onclick="generateCpdiCheckingDraftOnly(${invoiceId})">📄 Generate Invoice Checking Draft</button>
+        <button class="nav-btn-styled" style="background:var(--brand); padding:8px 16px;" onclick="saveCpdiEdit(${invoiceId})">📄 Save &amp; Generate Invoice Checking Draft</button>
         ${cpdiEditDispatchChallanId ? `<button class="nav-btn-styled" style="background:var(--accent); padding:8px 16px;" onclick="generateCpdiDcCheckingDraft(${invoiceId}, ${cpdiEditDispatchChallanId})">📄 Generate Delivery Challan Checking Draft</button>` : ''}
       </div>
       <div id="cpdi-edit-feedback-${invoiceId}" style="margin-top:10px;"></div>`;
@@ -637,14 +640,15 @@ async function saveCpdiEdit(invoiceId) {
   showBlockingOverlay("Saving changes...");
   try {
     const data = await apFetch({ action: "updateProjectDispatchInvoiceDraft", invoiceId, invoice: cpdiInvoiceState, operatorName: appActiveOperatorIdentityString || "Unknown" });
-    fb.innerHTML = data.success
-      ? `<div style="color:#15803d; font-weight:600;">Saved. Regenerate the checking draft to print an updated copy.</div>`
-      : `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`;
+    if (!data.success) { fb.innerHTML = `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`; return; }
   } catch(e) {
     fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
+    return;
   } finally {
     hideBlockingOverlay();
   }
+  // Saving and printing are one step (24 Sep 2026).
+  await generateCpdiCheckingDraftOnly(invoiceId);
 }
 
 async function generateCpdiCheckingDraftOnly(invoiceId) {
@@ -652,8 +656,23 @@ async function generateCpdiCheckingDraftOnly(invoiceId) {
   showBlockingOverlay("Generating checking draft...");
   try {
     const data = await apFetch({ action: "regenerateProjectDispatchInvoiceCheckingDraft", invoiceId });
+    if (data.success && data.checkingDocUrl) {
+      // Done state (24 Sep 2026): the list is hidden until "+ Edit Another" is clicked.
+      const challanId = cpdiEditDispatchChallanId;
+      document.getElementById("cpdi-editing-cards-feed").innerHTML = "";
+      const tabsBar = document.getElementById("cpdi-tab-new")?.parentElement;
+      if (tabsBar) tabsBar.style.display = "none";
+      const fbEl = document.getElementById("cpdi-editing-feedback");
+      fbEl.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius); font-weight:600;";
+      fbEl.innerHTML = `Changes saved. Invoice Checking Draft #${data.checkingDraftNumber} generated. <a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">📄 Open Invoice Checking Draft ↗</a>
+        <div id="cpdi-edit-done-dc" style="margin-top:10px;"></div>
+        <div><button class="nav-btn-styled" style="margin-top:12px; background:var(--accent); padding:7px 18px; font-weight:700;" onclick="switchCreatePdiTab('editing')">+ Edit Another Dispatch Invoice</button></div>`;
+      if (challanId) renderCpdiDcCheckingControl('cpdi-edit-done-dc', challanId);
+      fbEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     fb.innerHTML = data.success
-      ? `<div style="color:#15803d; font-weight:600;">Invoice Checking Draft #${data.checkingDraftNumber} generated. <a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`
+      ? `<div style="color:#b45309; font-weight:600;">Changes saved, but the checking draft could not be generated. Click the button again to retry.</div>`
       : `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`;
   } catch(e) {
     fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
