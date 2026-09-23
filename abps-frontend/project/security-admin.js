@@ -562,6 +562,7 @@ function pinFlipCardHtml(u, color) {
       </div>
       ${pinLockBadgeHtml(u)}
       ${u.department === 'Production' ? laSubDeptPillsHtml(u) : ''}
+      ${saViewerIsSuperAdmin() && !u.isSuperAdmin ? `<a href="#" onclick="submitRemoveUserFromSystem('${u.personKey}'); return false;" style="font-size:0.68rem; color:#b91c1c; font-weight:700; margin-top:4px; text-decoration:none;">Remove from system</a>` : ''}
     </div>`;
 }
 
@@ -657,7 +658,7 @@ function renderSecurityAdminPinUsers() {
   if (!root) return;
 
   const branches = LA_DEPARTMENTS.map(dept => {
-    const people = saAllPinUsers.filter(u => (u.department || '') === dept.name && (!q ||
+    const people = saAllPinUsers.filter(u => u.status === 'Active' && (u.department || '') === dept.name && (!q ||
       `${u.first_name} ${u.last_name}`.toLowerCase().includes(q)));
     if (q && people.length === 0) return '';
     return `
@@ -667,6 +668,15 @@ function renderSecurityAdminPinUsers() {
           ${people.length > 0 ? `<span style="background:${dept.color}1a; color:${dept.color}; font-size:0.72rem; font-weight:800; padding:2px 9px; border-radius:999px;">${people.length}</span>` : ''}
         </div>
         <div style="height:3px; width:100%; border-radius:2px; background:${dept.color};"></div>
+        ${saViewerIsSuperAdmin() ? (() => { const ds = dept.name.replace(/[^a-zA-Z0-9]/g, '_'); return `
+          <div style="text-align:center; margin-top:8px;">
+            <a href="#" onclick="toggleSaAddPersonForm('${ds}'); return false;" style="font-size:0.78rem; font-weight:700; color:${dept.color}; text-decoration:none;">+ Add person to ${dept.name}</a>
+            <div id="sa-add-form-${ds}" style="display:none; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:8px;">
+              <input id="sa-add-first-${ds}" placeholder="First name" style="width:170px; padding:6px 8px; border:1.5px solid #8492a6; border-radius:4px;">
+              <input id="sa-add-last-${ds}" placeholder="Last name" style="width:170px; padding:6px 8px; border:1.5px solid #8492a6; border-radius:4px;">
+              <button class="nav-btn-styled" style="width:auto; background:${dept.color}; padding:6px 14px;" onclick="submitAddUserToSystem('${ds}', '${dept.name}')">Add</button>
+            </div>
+          </div>`; })() : ''}
         ${people.length === 0
           ? `<div style="text-align:center; color:var(--muted); font-size:0.82rem; padding:16px 0 0;">No one in this department yet.</div>`
           : `<div style="display:flex; flex-wrap:wrap; justify-content:center; gap:26px 22px; width:100%; padding-top:4px;">
@@ -1147,5 +1157,40 @@ async function togglePermissionMatrixPill(dbColumn) {
     pmUserValues[dbColumn] = wasEnabled;
     renderPermissionMatrix();
     showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+  }
+}
+
+async function submitRemoveUserFromSystem(personKey) {
+  const u = saAllPinUsers.find(x => x.personKey === personKey);
+  const name = u ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : personKey;
+  if (!confirm(`Permanently delete ${name} from the system?\n\nThey are logged out everywhere and can never log in again. This cannot be undone. Old leads, tasks and follow-ups they are named on will show their user ID (${personKey}) instead of their name.`)) return;
+  try {
+    const data = await apFetch({ action: "removeUserFromSystem", personKey });
+    if (!data.success) { showBOQBanner("sa-feedback", data.error || "Could not remove this person.", "error"); return; }
+    showBOQBanner("sa-feedback", `${data.name} has been removed from the system.`, "success");
+    await loadSecurityAdminPinUsers();
+  } catch (e) {
+    if (e.message !== "SESSION_EXPIRED") showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+  }
+}
+
+function toggleSaAddPersonForm(deptSlug) {
+  const f = document.getElementById(`sa-add-form-${deptSlug}`);
+  if (!f) return;
+  f.style.display = f.style.display === "none" ? "flex" : "none";
+  if (f.style.display === "flex") { const i = f.querySelector("input"); if (i) i.focus(); }
+}
+
+async function submitAddUserToSystem(deptSlug, deptName) {
+  const first = (document.getElementById(`sa-add-first-${deptSlug}`).value || "").trim();
+  const last = (document.getElementById(`sa-add-last-${deptSlug}`).value || "").trim();
+  if (!first) { showBOQBanner("sa-feedback", "First name is required.", "error"); return; }
+  try {
+    const data = await apFetch({ action: "addUserToSystem", firstName: first, lastName: last, department: deptName });
+    if (!data.success) { showBOQBanner("sa-feedback", data.error || "Could not add this person.", "error"); return; }
+    showBOQBanner("sa-feedback", `${data.name} added to ${data.department} (user ID ${data.personKey}). Grant access in the Permissions tab, then give them an enrollment code to log in.`, "success");
+    await loadSecurityAdminPinUsers();
+  } catch (e) {
+    if (e.message !== "SESSION_EXPIRED") showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
   }
 }
