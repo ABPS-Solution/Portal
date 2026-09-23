@@ -36,7 +36,7 @@
 // avoid needing every user to clear site data by hand.
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'abps-v180';
+const CACHE_VERSION = 'abps-v181';
 const CACHE_NAME = `abps-shell-${CACHE_VERSION}`;
 
 self.addEventListener('install', (event) => {
@@ -106,14 +106,14 @@ self.addEventListener('fetch', (event) => {
     if (cached) {
       event.waitUntil((async () => {
         try {
-          const fresh = await fetch(req);
+          const fresh = await fetch(req, { cache: 'no-cache' }); // revalidate past the HTTP cache (Pages sends max-age=600)
           const cache = await caches.open(CACHE_NAME);
           await cache.put(req, fresh);
         } catch (_) { /* offline — keep serving the cached copy */ }
       })());
       return cached;
     }
-    const fresh = await fetch(req);
+    const fresh = await fetch(req, { cache: 'no-cache' }); // revalidate past the HTTP cache (Pages sends max-age=600)
     const cache = await caches.open(CACHE_NAME);
     cache.put(req, fresh.clone());
     return fresh;
