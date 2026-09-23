@@ -119,12 +119,12 @@ function renderTicketPoolSection() {
   const rowsHtml = mowServiceTicketsCache.map(t => `
     <label style="display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:8px; cursor:pointer; background:${window._mowSelectedPoolTickets.has(t.ticket_id) ? '#eff6ff' : '#fff'};">
       <input type="checkbox" class="mow-pool-checkbox" data-ticket-id="${escapeHtml(t.ticket_id)}" ${window._mowSelectedPoolTickets.has(t.ticket_id) ? 'checked' : ''}
-        onchange="mowTogglePoolSelection('${t.ticket_id}', this.checked)" style="margin-top:3px;" />
-      <div style="flex:1;">
+        onchange="mowTogglePoolSelection('${t.ticket_id}', this.checked)" style="margin-top:3px; width:18px; height:18px; flex:none; cursor:pointer;" />
+      <div style="flex:1; min-width:0;">
         <div style="font-weight:700; font-size:0.92rem;">${mowTicketSummaryLine(t)}</div>
         <div style="color:var(--muted); font-size:0.78rem; margin-top:2px;">Purpose: ${escapeHtml(t.outward_purpose || '—')} · ${escapeHtml(t.type_of_store || "")} · Requested by ${escapeHtml(t.requested_returned_by || "")}</div>
       </div>
-      <button class="nav-btn-styled" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; font-weight:700; padding:4px 10px; font-size:0.8rem; white-space:nowrap;" onclick="event.preventDefault(); rejectMaterialOutwardRequest('${t.ticket_id}')">Reject</button>
+      <button class="nav-btn-styled" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; font-weight:700; padding:4px 10px; font-size:0.8rem; white-space:nowrap; width:auto; flex:none;" onclick="event.preventDefault(); rejectMaterialOutwardRequest('${t.ticket_id}')">Reject</button>
     </label>`).join("");
 
   const addToDraftButtons = mowDraftsCache.map(d =>

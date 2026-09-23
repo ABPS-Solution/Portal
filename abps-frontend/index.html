@@ -4415,7 +4415,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div id="sd-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Live Queues — needs action right now -->
-        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending Ticket Approvals</div>
             <div class="dd-stat-val" id="sd-s-pending" style="color:#b45309;">—</div>
@@ -4433,6 +4433,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <div class="dd-stat-label">GRNs Awaiting QA Check</div>
             <div class="dd-stat-val" id="sd-s-qaawaiting" style="color:#b45309;">—</div>
             <div class="dd-stat-sub" id="sd-s-qaawaiting-sub"></div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Unactioned Material Outward on Delivery Challan</div>
+            <div class="dd-stat-val" id="sd-s-outward" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending Excess Material Requests</div>

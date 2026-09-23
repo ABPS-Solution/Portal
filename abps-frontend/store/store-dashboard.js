@@ -22,7 +22,7 @@ function sdLoadCustom() {
 
 async function sdLoadDashboard(customVal) {
   ["sd-s-tickets","sd-s-pending","sd-s-boqneedprn","sd-s-grns",
-   "sd-s-boqinc","sd-s-gateawaiting","sd-s-qaawaiting","sd-s-rejrate","sd-s-sweeps","sd-s-challans"].forEach(id => {
+   "sd-s-boqinc","sd-s-gateawaiting","sd-s-qaawaiting","sd-s-rejrate","sd-s-sweeps","sd-s-challans","sd-s-outward"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
   try {
@@ -45,6 +45,8 @@ function sdRenderDashboard(data) {
   document.getElementById("sd-s-pending").textContent   = stats.pendingApprovals;
   document.getElementById("sd-s-boqneedprn").textContent = stats.boqsNeedingPRN ?? "—";
   document.getElementById("sd-s-gateawaiting").textContent = stats.gateAwaitingGRN.count;
+  const outwardEl = document.getElementById("sd-s-outward");
+  if (outwardEl) outwardEl.textContent = stats.unactionedMaterialOutward ?? 0;
   document.getElementById("sd-s-gateawaiting-sub").textContent = stats.gateAwaitingGRN.count > 0
     ? `oldest ${stats.gateAwaitingGRN.oldestDays}d` : "";
   document.getElementById("sd-s-qaawaiting").textContent = stats.grnAwaitingQA.count;

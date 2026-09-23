@@ -192,7 +192,7 @@ ${spareCellsHtml}
       </div>
       <div id="ticket-card-body-${ticket.ticketId}" style="display:none; padding-top:10px; border-top:1px dashed var(--border); margin-top:6px;">
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px; margin-bottom:12px;">
-          <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.82rem; table-layout:fixed;">
+          <table class="prn-bordered-table" style="width:100%; border-collapse:collapse; text-align:left; font-size:0.82rem; table-layout:fixed;">
             <colgroup>
               <col style="width:auto;">
               <col style="width:110px;">
@@ -319,7 +319,7 @@ function executeClientSideStoreTicketFilterSearch() {
               <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:2px 6px; border-radius:4px; font-size:0.8rem;">${ticket.ticketId}</span>
               <span style="margin-left:8px;">Store:</span> <strong style="color:#111827;">${mappedStorageScope}</strong>
               <span style="margin-left:8px;">Department:</span> <strong style="color:#111827;">${ticket.department || "General Store"}</strong>
-              ${ticket.outwardPurpose ? `<span style="margin-left:8px;">Purpose:</span> <strong style="color:#111827;">${ticket.outwardPurpose}</strong>` : ""}
+              
             </div>
             <div>
               <span style="font-size:0.68rem; font-weight:700; border-radius:4px; padding:2px 6px; ${badgeColorStyle}">${statusBadgeText}</span>
@@ -340,7 +340,7 @@ function executeClientSideStoreTicketFilterSearch() {
           <strong>Created On:</strong> ${cleanCreatedDate} | <strong>Actioned On:</strong> ${cleanActionedDate}
         </div>
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px;">
-          <table style="width:100%; font-size:0.82rem; border-collapse:collapse; table-layout:fixed;">
+          <table class="prn-bordered-table" style="width:100%; font-size:0.82rem; border-collapse:collapse; table-layout:fixed;">
             <thead>
               <tr style="border-bottom:1px solid #e2e8f0; font-size:0.7rem; color:var(--muted); font-weight:bold; text-transform:uppercase;">
                 <th style="text-align:left; padding:4px;">Material Description</th>
