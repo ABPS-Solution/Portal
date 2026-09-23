@@ -302,7 +302,6 @@ function renderDraftChallanCard(draft) {
 
         <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap;">
           ${draft.checking_doc_url ? `<a href="${driveLink(draft.checking_doc_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; margin-right:auto;">View Checking Draft #${escapeHtml(String(draft.checking_draft_count || ''))} ↗</a>` : '<span></span>'}
-          <button class="nav-btn-styled" id="mow-save-btn-${challanId}" style="background:#718096;" onclick="mowSaveDraft(${challanId})">Save Draft</button>
           <button class="nav-btn-styled" id="mow-checking-btn-${challanId}" style="background:var(--brand);" onclick="mowGenerateCheckingDraft(${challanId})">📄 Save &amp; Generate Checking Draft</button>
         </div>
         <div style="margin-top:8px; font-size:0.78rem; color:var(--muted); text-align:right;">
