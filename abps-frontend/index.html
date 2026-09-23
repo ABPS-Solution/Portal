@@ -297,6 +297,20 @@
   .leads-editable-fields-box-canvas .grid-cell-item input:not([type="checkbox"]),
   .leads-editable-fields-box-canvas .grid-cell-item select,
   .leads-editable-fields-box-canvas .grid-cell-item textarea { font-size: 1rem; }
+
+  /* iOS Safari gives native date/time inputs an intrinsic min-width and a
+     tall native box, so they overflowed their column on phones regardless
+     of width:100%. appearance:none drops that intrinsic sizing; the
+     DD/MM/YYYY and AM/PM overlays (shared/format.js) render the value. */
+  @media (max-width:768px) {
+    input[type="date"], input[type="time"] {
+      -webkit-appearance: none; appearance: none;
+      display: block; width: 100% !important; min-width: 0; max-width: 100%;
+      box-sizing: border-box; min-height: 40px; line-height: normal;
+    }
+    input[type="date"]::-webkit-date-and-time-value,
+    input[type="time"]::-webkit-date-and-time-value { text-align: left; min-height: 1.2em; }
+  }
   /* View Details inputs get the same border as the Create New Lead form —
      .grid-cell-item's own 1px rule above otherwise overrides line ~53. */
   .leads-editable-fields-box-canvas .grid-cell-item input:not([type="checkbox"]):not([type="radio"]),
@@ -903,7 +917,7 @@
       <div class="user-profile-meta">
         <div class="user-full-name" id="display-full-name"></div>
       </div>
-      <button class="logout-btn" onclick="switchActiveDashboardModule('documentation')" title="Documentation" style="margin-right:6px;">Docs</button>
+      <button id="header-docs-btn" class="logout-btn" onclick="switchActiveDashboardModule('documentation')" title="Documentation" style="margin-right:6px;">Docs</button>
       <button class="logout-btn" onclick="executeLogout()">Sign Out</button>
     </div>
   </header>

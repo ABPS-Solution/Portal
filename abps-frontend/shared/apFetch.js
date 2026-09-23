@@ -166,6 +166,10 @@ function driveLink(url) {
 // it self-corrects on the next reload, same freshness guarantee D1
 // already established for permissions generally.
 function applyServerRoleFlags(permData) {
+  // A device restricted to a few sections (Registered Devices > Restrict
+  // Access) never shows the Docs button.
+  const docsBtn = document.getElementById("header-docs-btn");
+  if (docsBtn) docsBtn.style.display = permData.deviceRestricted ? "none" : "";
   localStorage.setItem("isUserAdminGlobal", permData.isAdmin ? "true" : "false");
   // isUserSuperAdminGlobal (17 Sep 2026, super-admin tier) — same
   // always-fresh-on-every-load mechanism as isUserAdminGlobal above, for
