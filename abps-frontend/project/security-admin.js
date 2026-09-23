@@ -29,6 +29,8 @@ function saViewerIsSuperAdmin() {
 async function initializeSecurityAdminPanel() {
   const loginAnywhereTabBtn = document.getElementById("sa-tab-users");
   if (loginAnywhereTabBtn) loginAnywhereTabBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
+  const emailInboxesTabBtn = document.getElementById("sa-tab-emailinboxes");
+  if (emailInboxesTabBtn) emailInboxesTabBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
   const pinsModeBtn = document.getElementById("pinmode-btn-changepin");
   if (pinsModeBtn) pinsModeBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
   switchSecurityAdminTab('permissions');
@@ -57,7 +59,7 @@ function switchSecurityAdminTab(tab) {
   // already hidden for anyone else, but this refuses a direct call too
   // (e.g. a stale bookmarked handler), same defense-in-depth spirit as
   // the server-side gate on its own routes.
-  if (tab === 'users' && !saViewerIsSuperAdmin()) tab = 'permissions';
+  if ((tab === 'users' || tab === 'emailinboxes') && !saViewerIsSuperAdmin()) tab = 'permissions';
   // 'devices' (Trusted Devices) retired 17 Sep 2026 — the mechanism it
   // shows (admin_db.trusted_devices) is only ever populated by Google
   // Sign-In from an office IP, and Google Sign-In has been hidden from
@@ -68,7 +70,8 @@ function switchSecurityAdminTab(tab) {
   // table. sa-panel-devices/loadTrustedDevices/submitDeleteTrustedDevice
   // and the backend fetchTrustedDevices/deleteTrustedDevice routes are
   // flagged, not deleted, per house convention.
-  ['permissions', 'users', 'networks', 'holidays', 'log', 'pins', 'registeredpcs'].forEach(t => {
+  if (tab === 'emailinboxes' && typeof loadEmailInboxes === 'function') loadEmailInboxes();
+  ['permissions', 'users', 'networks', 'holidays', 'log', 'pins', 'registeredpcs', 'emailinboxes'].forEach(t => {
     document.getElementById(`sa-panel-${t}`).style.display = (t === tab) ? 'block' : 'none';
     document.getElementById(`sa-tab-${t}`).style.background = (t === tab) ? 'var(--brand)' : '#e2e8f0';
     document.getElementById(`sa-tab-${t}`).style.color = (t === tab) ? '#fff' : '#334155';

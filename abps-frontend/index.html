@@ -2997,6 +2997,7 @@
       <button id="sa-tab-log" class="nav-btn-styled" onclick="switchSecurityAdminTab('log')" style="flex:1; padding:11px 16px;">Login Log</button>
       <button id="sa-tab-networks" class="nav-btn-styled" onclick="switchSecurityAdminTab('networks')" style="flex:1; padding:11px 16px;">Office Networks</button>
       <button id="sa-tab-holidays" class="nav-btn-styled" onclick="switchSecurityAdminTab('holidays')" style="flex:1; padding:11px 16px;">Holidays</button>
+      <button id="sa-tab-emailinboxes" class="nav-btn-styled" onclick="switchSecurityAdminTab('emailinboxes')" style="flex:1; padding:11px 16px;">Email Inboxes</button>
     </div>
 
     <!-- PERMISSIONS MATRIX — a visual, per-user, department-colored view
@@ -3066,6 +3067,10 @@
          Project Timeline's business-day math and by
          fetchTimelineHolidays for the canvas's day-axis coloring.
          Previously direct-SQL-only. -->
+    <div id="sa-panel-emailinboxes" style="display:none;">
+      <div id="eib-feedback" style="display:none; padding:10px 12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius); font-size:0.85rem;"></div>
+      <div id="eib-mount"></div>
+    </div>
     <div id="sa-panel-holidays" style="display:none;">
       <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:flex-end;">
         <div>
@@ -5764,6 +5769,7 @@
 <script src="project/project-status.js"></script>
 <script src="project/customer-queries.js"></script>
 <script src="project/security-admin.js"></script>
+<script src="project/email-inboxes.js"></script>
 <script src="marketing/leads.js"></script>
 <script src="marketing/companies.js"></script>
 <script src="marketing/tasks-followups.js"></script>
