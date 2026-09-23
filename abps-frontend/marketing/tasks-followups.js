@@ -109,8 +109,44 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
   }).join('');
 
   const headerColBorder = "border-left:2px solid var(--border);";
+
+  // Mobile card list — a fixed-percentage-of-900px column layout can
+  // never be made to fit every possible value (a 6% column is ~54px;
+  // "Afternoon", "28th Sep 2026", a 10-letter first name, or the
+  // "Medium"/"Urgent" priority pill can all genuinely exceed that no
+  // matter how the percentages are rebalanced). Rather than keep
+  // patching individual columns as each new value overflows, phone
+  // widths get a completely different layout — one card per task with
+  // every field on its own line, so there ARE no columns to overflow.
+  // Toggled purely by CSS (.mobile-scroll-table-wrap / .mobile-card-list,
+  // @media(max-width:640px) in index.html) — both markups always exist,
+  // the media query just decides which one is visible, so this needs no
+  // JS-side breakpoint detection and stays correct across resizes.
+  const cardsHtml = list.map(t => {
+    const priorityColor = priorityColors[t.priority] || "#64748b";
+    const deleteBtnHtmlM = isAdminUser
+      ? `<button class="nav-btn-styled" id="trigger-inner-delete-task-m-${leadRef}-${t.id}" style="font-size:0.7rem; background:var(--warn); padding:4px 10px;">Delete</button>`
+      : `<span id="trigger-inner-delete-task-m-${leadRef}-${t.id}" style="display:none;"></span>`;
+    return `
+      <div style="border:1px solid var(--border); border-left:4px solid ${priorityColor}; border-radius:6px; padding:10px; margin-bottom:8px; background:#fff;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px;">
+          <span style="font-weight:700; font-size:0.88rem; color:#000;">${escapeHtml(t.status)} · ${escapeHtml(t.type)}</span>
+          <span style="flex-shrink:0; font-size:0.72rem; font-weight:700; color:#fff; background:${priorityColor}; padding:2px 8px; border-radius:3px;">${escapeHtml(t.priority || "Medium")}</span>
+        </div>
+        <div style="font-size:0.8rem; color:var(--muted); margin-bottom:6px;">Target: ${escapeHtml(t.shift)}, ${formatOrdinalDate(t.targetDate)}</div>
+        <div style="font-size:0.8rem; margin-bottom:2px;"><strong>Assigned To:</strong> ${escapeHtml(t.eng)}</div>
+        <div style="font-size:0.8rem; margin-bottom:8px;"><strong>Assigned By:</strong> ${escapeHtml(t.assigner || "System")}</div>
+        <div style="font-size:0.85rem; color:#000; white-space:pre-wrap; margin-bottom:6px;">${escapeHtml(t.desc || 'None')}</div>
+        ${t.completionNotes ? `<div style="font-size:0.8rem; color:var(--muted); white-space:pre-wrap; margin-bottom:8px;"><strong>Completion Notes:</strong> ${escapeHtml(t.completionNotes)}</div>` : ''}
+        <div style="display:flex; justify-content:flex-end; gap:6px;">
+          <button class="nav-btn-styled" id="trigger-inner-edit-task-m-${leadRef}-${t.id}" style="font-size:0.7rem; padding:4px 10px;">Edit</button>
+          ${deleteBtnHtmlM}
+        </div>
+      </div>`;
+  }).join('');
+
   box.innerHTML = `
-    <div style="overflow-x:auto;">
+    <div class="mobile-scroll-table-wrap" style="overflow-x:auto;">
       <table class="mobile-scroll-table" style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <thead>
           <tr style="background:#f0fdf4; border-bottom:2px solid var(--border);">
@@ -128,13 +164,18 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
         </thead>
         <tbody>${rowsHtml}</tbody>
       </table>
-    </div>`;
+    </div>
+    <div class="mobile-card-list">${cardsHtml}</div>`;
 
   list.forEach(t => {
     if (isAdminUser && document.getElementById(`trigger-inner-delete-task-${leadRef}-${t.id}`)) {
       document.getElementById(`trigger-inner-delete-task-${leadRef}-${t.id}`).onclick = function(e) { removeIsolatedTaskItem(leadRef, t.id, e); };
     }
     document.getElementById('trigger-inner-edit-task-' + leadRef + '-' + t.id).onclick = function() { editIsolatedTaskItem(leadRef, scopeNode, t); };
+    if (isAdminUser && document.getElementById(`trigger-inner-delete-task-m-${leadRef}-${t.id}`)) {
+      document.getElementById(`trigger-inner-delete-task-m-${leadRef}-${t.id}`).onclick = function(e) { removeIsolatedTaskItem(leadRef, t.id, e); };
+    }
+    document.getElementById('trigger-inner-edit-task-m-' + leadRef + '-' + t.id).onclick = function() { editIsolatedTaskItem(leadRef, scopeNode, t); };
   });
 }
 

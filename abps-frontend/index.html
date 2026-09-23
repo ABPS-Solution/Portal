@@ -561,23 +561,31 @@
       margin-left:6px; font-size:1rem !important;
     }
 
-    /* Follow-Up/Task history — a fixed-layout table with 6-10 columns at
-       tiny percentage widths (e.g. 5%) genuinely cannot be read on a phone
-       no matter how it's laid out; `table-layout:fixed; width:100%` also
-       defeats the `overflow-x:auto` wrapper around it, since the table
-       never becomes wider than its (narrow) container so there's nothing
-       to scroll — it just crushes every column instead. Giving the table a
-       real min-width lets those same percentages resolve against a usable
-       virtual width, and now the wrapper's overflow-x:auto genuinely
-       scrolls horizontally instead of doing nothing. */
-    /* width (not just min-width) with !important — the table also carries
-       an inline `width:100%` (higher specificity than a plain class rule
-       for the same property), and some mobile WebKit versions resolve a
-       percentage `width` against `table-layout:fixed` BEFORE min-width is
-       applied, so min-width alone was not reliably winning on every
-       device. An explicit fixed width leaves no ambiguity either way. */
-    .mobile-scroll-table { width:900px !important; min-width:900px; }
+    /* Follow-Up/Task history — a fixed-percentage-of-900px table (still
+       used as-is on desktop/iPad, where it reads fine) genuinely cannot
+       be made to fit every real value on a phone: a horizontal-scroll
+       version was tried first (giving the table a real min-width so the
+       wrapper's overflow-x:auto actually had something to scroll), and
+       it DID stop columns crushing into each other — but a colored
+       status/priority pill, a 10+ letter name, or "Afternoon"/a full
+       ordinal date can still genuinely exceed even a rebalanced
+       percentage column, which is what kept resurfacing as "still
+       overlapping" reports. Rather than keep patching individual
+       columns, phone widths now get a completely different layout —
+       renderIsolatedTaskItemsList (marketing/tasks-followups.js) and
+       renderIsolatedFollowUpTimeline (store/qa.js) both emit TWO
+       markups, a .mobile-scroll-table-wrap (the table, unchanged) and a
+       .mobile-card-list (one card per record, every field on its own
+       line — there are no columns to overflow). This media query is
+       the only thing that decides which one is visible, so it stays
+       correct across resizes with no JS-side breakpoint logic. */
+    .mobile-scroll-table-wrap { display:none !important; }
+    .mobile-card-list { display:block !important; }
   }
+  /* Desktop/iPad default: the reverse of the phone rule above — table
+     shown, card list hidden. Declared once here rather than per-caller
+     since both render functions share this exact pair of classes. */
+  .mobile-card-list { display:none; }
   
   .fup-item-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 4px; text-align: left; overflow: hidden; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
   .fup-item-header { padding: 8px; background: #edf2f7; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600; align-items: center; }

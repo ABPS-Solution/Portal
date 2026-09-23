@@ -61,8 +61,37 @@ function renderIsolatedFollowUpTimeline(leadRef, list, scopeNode) {
   }).join('');
 
   const headerColBorder = "border-left:2px solid var(--border);";
+
+  // Mobile card list — same reasoning as the Tasks table's own version:
+  // a fixed-percentage-of-900px column can't be made to fit every real
+  // value (a name, a long Interaction Note, etc. no matter what %
+  // split is chosen), so phone widths get a completely different
+  // per-record card layout instead of columns at all. CSS-toggled via
+  // .mobile-scroll-table-wrap/.mobile-card-list, same as tasks-followups.js.
+  const cardsHtml = list.map(f => {
+    const outcomeColor = outcomeColors[f.outcome] || "#64748b";
+    const deleteBtnHtmlM = isAdminUser
+      ? `<button class="nav-btn-styled" id="trigger-inner-delete-fup-m-${leadRef}-${f.num}" style="font-size:0.7rem; background:var(--warn); padding:4px 10px;">Delete</button>`
+      : `<span id="trigger-inner-delete-fup-m-${leadRef}-${f.num}" style="display:none;"></span>`;
+    return `
+      <div style="border:1px solid var(--border); border-left:4px solid ${outcomeColor}; border-radius:6px; padding:10px; margin-bottom:8px; background:#fff;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px;">
+          <span style="font-weight:700; font-size:0.85rem; color:#000;">${formatFollowUpTimestamp(f.date, f.time)}</span>
+          ${f.outcome ? `<span style="flex-shrink:0; font-size:0.72rem; font-weight:700; color:#fff; background:${outcomeColor}; padding:2px 8px; border-radius:3px;">${f.outcome}</span>` : ''}
+        </div>
+        <div style="font-size:0.8rem; color:var(--muted); margin-bottom:6px;">By ${escapeHtml(f.eng)}${f.mode ? ` · ${escapeHtml(f.mode)}` : ''}</div>
+        <div style="font-size:0.85rem; color:#000; white-space:pre-wrap; margin-bottom:6px;">${escapeHtml(f.notes || 'None')}</div>
+        ${f.nextActionType ? `<div style="font-size:0.8rem; margin-bottom:2px;"><strong>Next Action:</strong> ${escapeHtml(f.nextActionType)}</div>` : ''}
+        ${f.objectionRaised ? `<div style="font-size:0.8rem; margin-bottom:8px;"><strong>Objection Raised:</strong> ${escapeHtml(f.objectionRaised)}</div>` : ''}
+        <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:8px;">
+          <button class="nav-btn-styled" id="trigger-inner-edit-fup-m-${leadRef}-${f.num}" style="font-size:0.7rem; padding:4px 10px;">Edit</button>
+          ${deleteBtnHtmlM}
+        </div>
+      </div>`;
+  }).join('');
+
   box.innerHTML = `
-    <div style="overflow-x:auto;">
+    <div class="mobile-scroll-table-wrap" style="overflow-x:auto;">
       <table class="mobile-scroll-table" style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <thead>
           <tr style="background:#f8fafc; border-bottom:2px solid var(--border);">
@@ -78,13 +107,18 @@ function renderIsolatedFollowUpTimeline(leadRef, list, scopeNode) {
         </thead>
         <tbody>${rowsHtml}</tbody>
       </table>
-    </div>`;
+    </div>
+    <div class="mobile-card-list">${cardsHtml}</div>`;
 
   list.forEach(f => {
     if (isAdminUser && document.getElementById(`trigger-inner-delete-fup-${leadRef}-${f.num}`)) {
       document.getElementById(`trigger-inner-delete-fup-${leadRef}-${f.num}`).onclick = function(e) { removeIsolatedFollowUpItem(leadRef, f.num, e); };
     }
     document.getElementById('trigger-inner-edit-fup-' + leadRef + '-' + f.num).onclick = function() { editIsolatedFollowUpItem(leadRef, scopeNode, f); };
+    if (isAdminUser && document.getElementById(`trigger-inner-delete-fup-m-${leadRef}-${f.num}`)) {
+      document.getElementById(`trigger-inner-delete-fup-m-${leadRef}-${f.num}`).onclick = function(e) { removeIsolatedFollowUpItem(leadRef, f.num, e); };
+    }
+    document.getElementById('trigger-inner-edit-fup-m-' + leadRef + '-' + f.num).onclick = function() { editIsolatedFollowUpItem(leadRef, scopeNode, f); };
   });
 }
 
