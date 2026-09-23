@@ -1769,7 +1769,7 @@ async function eiDelivRunSearch(params, label) {
   const results = document.getElementById("ei-delivered-results");
   results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
   try {
-    const data = await apFetch({ action: "fetchExpectedDeliveries", filterMode: "delivered", ...params });
+    const data = await apFetch({ action: "fetchExpectedDeliveries", filterMode: "delivered", todayOverride: localStorage.getItem("ptlTodayOverride") || "", ...params });
     if (!data.success) { results.innerHTML = `<div style="color:var(--warn); padding:12px;">${data.error}</div>`; return; }
     if (!data.delivered || data.delivered.length === 0) {
       results.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No delivered POs match.</div>`;
@@ -1809,7 +1809,7 @@ async function loadExpectedInbounds() {
   </div>`;
 
   try {
-    const data = await apFetch({ action: "fetchExpectedDeliveries", filterMode: expectedInboundsFilterMode });
+    const data = await apFetch({ action: "fetchExpectedDeliveries", filterMode: expectedInboundsFilterMode, todayOverride: localStorage.getItem("ptlTodayOverride") || "" });
     if (!data.success) {
       zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error}</div>`;
       return;
@@ -1823,7 +1823,7 @@ async function loadExpectedInbounds() {
     // visible alongside Overdue/Today/Upcoming, not hidden behind a
     // separate tab — the whole point of this bucket existing is that
     // unplanned material shouldn't be able to go unnoticed.
-    const totalCount = (data.today || []).length + (data.overdue || []).length + (data.upcoming || []).length + (data.unscheduled || []).length + (data.partiallyDelivered || []).length;
+    const totalCount = (data.today || []).length + (data.overdue || []).length + (data.upcoming || []).length + (data.partiallyDelivered || []).length;
 
     if (totalCount === 0) {
       zone.innerHTML = `<div style="text-align:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted);">
@@ -1843,7 +1843,7 @@ async function loadExpectedInbounds() {
     if ((data.overdue || []).length > 0)  zone.appendChild(renderExpectedInboundsSection("Overdue",   data.overdue,  schemeOverdue));
     if ((data.today || []).length > 0)    zone.appendChild(renderExpectedInboundsSection("Due Today", data.today,    schemeDueToday));
     if ((data.upcoming || []).length > 0) zone.appendChild(renderExpectedInboundsSection("Upcoming",  data.upcoming, schemeUpcoming));
-    if ((data.unscheduled || []).length > 0) zone.appendChild(renderExpectedInboundsSection("Unscheduled", data.unscheduled, schemeUnscheduled));
+    // Unscheduled POs are deliberately not shown here (24 Sep 2026).
     // Partially Delivered — only populated when that tab is selected
     // (filterMode === 'partiallyDelivered'), unlike Overdue/Today/
     // Unscheduled above which ride along with every date-window request.

@@ -88,6 +88,57 @@ async function initializeProductionPlanningPanel() {
   switchProductionPlanningTab("submit");
   pplanLoadEligibleProjects();
   loadProductionPlanningQueue();
+  pplanRestoreInitDraft();
+}
+
+// ── Unsaved Initial Plan dates (24 Sep 2026) ────────────────────────────
+// Dates typed into Submit Initial Plan are kept in this browser (same
+// storage as Create BOQ's draft) so collapsing a product, leaving for the
+// dashboard, a refresh or going offline doesn't lose them. Cleared per
+// product once its plan is submitted.
+const PPLAN_INIT_DRAFT_KEY = "pplanInitialPlan";
+function pplanInitDraft() {
+  const d = abpsDraftRead(PPLAN_INIT_DRAFT_KEY);
+  return d ? d.payload : { projectId: null, boqs: {} };
+}
+function pplanInitDraftValue(boqId, kind, stepId) {
+  const d = pplanInitDraft();
+  const v = ((d.boqs || {})[boqId] || {})[kind]?.[stepId];
+  return v ? escapeHtml(v) : "";
+}
+function pplanSaveInitDraft() {
+  const d = pplanInitDraft();
+  const projectId = document.getElementById("pplan-project-select-ta-input")?.value.trim() || d.projectId;
+  if (d.projectId && d.projectId !== projectId) d.boqs = {};
+  d.projectId = projectId;
+  document.querySelectorAll("input[data-pplan-boq]").forEach(el => {
+    const b = el.dataset.pplanBoq;
+    d.boqs[b] = d.boqs[b] || { start: {}, plan: {} };
+    d.boqs[b][el.dataset.pplanKind] = d.boqs[b][el.dataset.pplanKind] || {};
+    if (el.value) d.boqs[b][el.dataset.pplanKind][el.dataset.pplanStep] = el.value;
+    else delete d.boqs[b][el.dataset.pplanKind][el.dataset.pplanStep];
+  });
+  abpsDraftSave(PPLAN_INIT_DRAFT_KEY, d);
+}
+function pplanClearInitDraft(boqId) {
+  const d = pplanInitDraft();
+  if (d.boqs) delete d.boqs[boqId];
+  if (!d.boqs || !Object.keys(d.boqs).length) abpsDraftClear(PPLAN_INIT_DRAFT_KEY);
+  else abpsDraftSave(PPLAN_INIT_DRAFT_KEY, d);
+}
+async function pplanRestoreInitDraft() {
+  const d = pplanInitDraft();
+  const withValues = Object.keys(d.boqs || {}).filter(b => {
+    const x = d.boqs[b];
+    return Object.keys(x.start || {}).length || Object.keys(x.plan || {}).length;
+  });
+  if (!d.projectId || !withValues.length) return;
+  const input = document.getElementById("pplan-project-select-ta-input");
+  if (!input) return;
+  input.value = d.projectId;
+  await loadProductionPlanForProject();
+  withValues.forEach(b => pplanExpandedLanes.add(b));
+  if (pplanData) pplanRenderLanes();
 }
 
 // Swaps window.sharedActiveProjectCodes/sharedProjectMeta (the generic
@@ -256,7 +307,7 @@ function pplanRenderLanes() {
   const lanes = allLanes.filter(l => pplanActiveTab === "submit" ? !l.planInitialized : l.planInitialized);
   if (lanes.length === 0) {
     body.innerHTML = `<div style="margin-top:14px; background:var(--highlight-bg); border:1px dashed var(--border); border-radius:var(--radius); padding:14px; font-size:0.82rem; color:var(--muted);">
-      ${pplanActiveTab === "submit" ? "Every in-scope product on this project already has an initial plan — switch to Update Plan." : "No product on this project has been planned yet — switch to Submit Initial Plan."}
+      ${pplanActiveTab === "submit" ? "Every in-scope product on this project already has an initial plan — switch to Mark Completion and Revise Plan." : "No product on this project has been planned yet — switch to Submit Initial Plan."}
     </div>`;
     return;
   }
@@ -293,13 +344,13 @@ function pplanRenderLaneInitialPlanForm(lane) {
       <td style="width:40%; padding:6px 8px; font-size:0.98rem; font-weight:600; color:var(--text); text-align:center;">${escapeHtml(s.label)}</td>
       <td style="width:30%; padding:5px 8px; text-align:center; ${colBorder}">
         <div style="max-width:170px; margin:0 auto;">
-          <input type="date" ${dis} id="pplan-start-${lane.boqId}-${s.id}"
+          <input type="date" ${dis} id="pplan-start-${lane.boqId}-${s.id}" data-pplan-boq="${escapeHtml(lane.boqId)}" data-pplan-step="${s.id}" data-pplan-kind="start" value="${pplanInitDraftValue(lane.boqId, 'start', s.id)}" onchange="pplanSaveInitDraft()"
             style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box; text-align:center;${!canWrite ? ' background:#f1f5f9; cursor:not-allowed;' : ''}" />
         </div>
       </td>
       <td style="width:30%; padding:5px 8px; text-align:center; ${colBorder}">
         <div style="max-width:170px; margin:0 auto;">
-          <input type="date" ${dis} id="pplan-plan-${lane.boqId}-${s.id}"
+          <input type="date" ${dis} id="pplan-plan-${lane.boqId}-${s.id}" data-pplan-boq="${escapeHtml(lane.boqId)}" data-pplan-step="${s.id}" data-pplan-kind="plan" value="${pplanInitDraftValue(lane.boqId, 'plan', s.id)}" onchange="pplanSaveInitDraft()"
             style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box; text-align:center;${!canWrite ? ' background:#f1f5f9; cursor:not-allowed;' : ''}" />
         </div>
       </td>
@@ -452,6 +503,7 @@ async function pplanSubmitInitialPlan(boqId) {
   try {
     const data = await apFetch({ action: "submitInitialProductPlan", operatorName: appActiveOperatorIdentityString, boqId, steps });
     if (!data.success) { alert(data.error || "Could not submit the plan."); return; }
+    pplanClearInitDraft(boqId);
     await loadProductionPlanForProject(); // reload real server state rather than guess it locally
     loadProductionPlanningQueue();
   } catch (e) { alert("Network error: " + e.message); }
