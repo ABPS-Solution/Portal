@@ -195,8 +195,9 @@ async function navigateToModule(key) {
       const fd = document.getElementById("lead-matrix-active-filters-display");
       if (fd) { fd.style.display = "none"; fd.textContent = ""; }
     } else if (key === "searchEngineer") {
+      // Every entry starts fresh — no engineer pre-selected, no re-run.
       const engineerSelectNode = document.getElementById("engineer-filter-select");
-      if (engineerSelectNode && engineerSelectNode.value) triggerEngineerSearch();
+      if (engineerSelectNode) engineerSelectNode.value = "";
     } else if (key === "searchCityState") {
       loadCityStateFilterOptions();
     } else if (key === "emailLeads") {

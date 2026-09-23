@@ -9,6 +9,10 @@ async function initializeUploadDrawingsPanel() {
   document.getElementById("upload-drawings-upload-zone").style.display = "none";
   document.getElementById("upload-drawings-feedback").style.display = "none";
   uploadDrawingsSelectedType = null;
+  // Start fresh on every entry — the previously typed project used to stay.
+  if (projDrop) projDrop.value = "";
+  const projDropList = document.getElementById("upload-drawings-project-ta-dropdown");
+  if (projDropList) projDropList.style.display = "none";
 
   try {
     const data = await fetchWithStaleCache({ action:"pullLiveActiveProjectCodes", statusFilter: "Active" });

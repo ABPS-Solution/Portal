@@ -57,7 +57,8 @@ function oppIsOverdueTranche(t) {
 }
 
 async function initializeOrderPaymentPanel() {
-  document.getElementById("opp-overdue-only").checked = window.oppOverdueOnly;
+  window.oppOverdueOnly = false; // every entry starts unfiltered
+  document.getElementById("opp-overdue-only").checked = false;
   document.getElementById("opp-search-input").value = "";
   // Fresh state every time the panel is (re-)entered — same "reset on
   // entry" convention as every other full-screen canvas panel.
