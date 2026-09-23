@@ -531,6 +531,18 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
 
   const body = document.getElementById(containerId);
   if (!body) return;
+  // Every PO form uses the same element ids (cpo-vendor, cpo-rows-body...),
+  // so only ONE may exist on the page at a time. If the Create PO form (or
+  // another PO card) is still in the DOM, even hidden, getElementById finds
+  // IT first and this card is filled into the wrong form, leaving what you
+  // see blank (24 Sep 2026 — the long-running "expand a PO, details empty"
+  // bug on Authorize PO and Pending POs (Editing)). Clear any other form
+  // first; Create PO's own work is kept in its local draft and restored
+  // when that tab is opened again.
+  document.querySelectorAll("#cpo-rows-body").forEach(el => {
+    const holder = el.closest('#create-po-body, [id^="po-auth-expand-"], [id^="po-edit-expand-"]');
+    if (holder && holder !== body) holder.innerHTML = "";
+  });
   body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading vendors and projects...</div>`;
 
   // A local create-draft is only relevant to brand-new POs — editing an
@@ -905,7 +917,7 @@ function renderCPOMaterialRows() {
     const rowBorderColor = (isAuthMode && isOverRate) ? "#dc2626" : "#000";
     const overRateWarning = isOverRate
       ? `<div style="margin-top:10px; padding:7px 10px; background:${isAuthMode ? "#fee2e2" : "#fffbeb"}; border:1px solid ${isAuthMode ? "#fca5a5" : "#fde68a"}; border-radius:4px; font-size:0.75rem; font-weight:700; color:${isAuthMode ? "#b91c1c" : "#78350f"};">
-          ⚠️ Rate / Qty after Disc % (${fmtQty(effectiveRate)}) is higher than Design Rate / Qty (${fmtQty(designRate)}).${isAuthMode ? " Only an admin can authorize this PO as-is." : ""}
+          ⚠️ Rate / Qty after Disc % (${fmtQty(effectiveRate)}) is higher than Design Rate / Qty (${fmtQty(designRate)}).
         </div>`
       : "";
 
