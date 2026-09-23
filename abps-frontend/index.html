@@ -297,6 +297,11 @@
   .leads-editable-fields-box-canvas .grid-cell-item input:not([type="checkbox"]),
   .leads-editable-fields-box-canvas .grid-cell-item select,
   .leads-editable-fields-box-canvas .grid-cell-item textarea { font-size: 1rem; }
+  /* View Details inputs get the same border as the Create New Lead form —
+     .grid-cell-item's own 1px rule above otherwise overrides line ~53. */
+  .leads-editable-fields-box-canvas .grid-cell-item input:not([type="checkbox"]):not([type="radio"]),
+  .leads-editable-fields-box-canvas .grid-cell-item select,
+  .leads-editable-fields-box-canvas .grid-cell-item textarea { border: 1.5px solid #8492a6; border-radius: 4px; }
 
   .aoc-split-row-box { display: grid; grid-template-columns: 85px 1fr; gap: 8px; align-items: center; width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 6px; }
   .aoc-split-row-box select { padding: 4px 6px; font-weight: 700; color: var(--brand); text-align: center; }
