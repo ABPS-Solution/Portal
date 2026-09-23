@@ -2733,7 +2733,7 @@ function renderPurchaseOrderReview() {
   const lockedRow = (label, value, spanStyle) => `
     <div class="grid-cell-item" style="background:#f1f5f9;${spanStyle || ''}">
       <label style="font-size:0.72rem;">${label}</label>
-      <div style="padding:6px 4px; font-weight:600; color:var(--text); font-size:0.95rem; white-space:normal; word-break:break-word;">${value || '—'}</div>
+      <div style="padding:6px 8px; font-weight:600; color:var(--text); font-size:0.95rem; white-space:normal; word-break:break-word; border:1.5px solid #8492a6; border-radius:4px; background:#f8fafc;">${value || '—'}</div>
     </div>`;
 
   // Free-text fields render as an auto-growing textarea so a value that
