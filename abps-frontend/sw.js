@@ -36,7 +36,7 @@
 // avoid needing every user to clear site data by hand.
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'abps-v189';
+const CACHE_VERSION = 'abps-v190';
 const CACHE_NAME = `abps-shell-${CACHE_VERSION}`;
 
 self.addEventListener('install', (event) => {
@@ -81,7 +81,9 @@ self.addEventListener('fetch', (event) => {
     // no-cache meta tags used to provide.
     event.respondWith((async () => {
       try {
-        const fresh = await fetch(req);
+        // By URL (a navigate-mode Request can't take init options), past the
+        // browser's 10-min HTTP cache so a new deploy's markup shows at once.
+        const fresh = await fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' });
         const cache = await caches.open(CACHE_NAME);
         cache.put(req, fresh.clone());
         return fresh;
