@@ -722,7 +722,7 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
         <div class="contact-summary-title-info" style="flex:1; display:grid; grid-template-columns: minmax(220px, 1fr) minmax(200px, 1fr); gap:10px 24px;">
           <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
             <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Company</span>
-            <strong style="font-size:0.95rem; overflow-wrap:anywhere;">${companyLabelName}</strong>
+            <strong id="card-lbl-company-${tRef}" style="font-size:0.95rem; overflow-wrap:anywhere;">${companyLabelName}</strong>
           </div>
           <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
             <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Status</span>
@@ -1300,6 +1300,10 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
     });
 
     let companySaveOk = true;
+    if (!carrierCompanyId && Object.keys(companyFieldsPayload).length > 0) {
+      companySaveOk = false;
+      alert("Lead details saved, but company details (Company Name, City, State, Country, Address, Website, Type of Customer/Industry) could not be saved — company not identified. Please search the lead again and retry.");
+    }
     if (carrierCompanyId && Object.keys(companyFieldsPayload).length > 0) {
       const cr = await apFetch({
         action: "updateCompany",
@@ -1321,6 +1325,8 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
       if (document.getElementById(`card-lbl-name-${leadRef}`)) document.getElementById(`card-lbl-name-${leadRef}`).textContent = updatedNameText;
       if (document.getElementById(`card-lbl-pos-${leadRef}`)) document.getElementById(`card-lbl-pos-${leadRef}`).textContent = updatedPositionText;
       if (document.getElementById(`card-lbl-status-${leadRef}`)) document.getElementById(`card-lbl-status-${leadRef}`).textContent = updatedStatusText;
+      const companyLbl = document.getElementById(`card-lbl-company-${leadRef}`);
+      if (companyLbl && companySaveOk && companyFieldsPayload["Company Name"]) companyLbl.textContent = companyFieldsPayload["Company Name"];
 
       // The collapse/expand toggle re-reads leadMap from a JSON blob baked
       // into this card's onclick attribute at search-render time — closing
