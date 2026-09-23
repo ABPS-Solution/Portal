@@ -428,6 +428,12 @@
   .card-row { display: flex; gap: 6px; margin-bottom: 4px; }
   .card-box { flex: 1; border: 2px dashed var(--border); padding: 20px 10px; text-align: center; font-size: .85rem; cursor: pointer; border-radius: 4px; min-height: 46px; display: flex; align-items: center; justify-content: center; }
   .card-box.done { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  /* Document upload boxes on Upload Purchase Order / Create New Leads Details:
+     a clearly different look (blue dashed + tint) from the solid value boxes. */
+  #workspace-purchaseOrder .card-box:not(.done),
+  #workspace-cardDetails .card-box:not(.done) { border: 2px dashed var(--brand); background: #eff6ff; color: var(--brand); font-weight: 600; }
+  #workspace-purchaseOrder .card-box.done,
+  #workspace-cardDetails .card-box.done { border-style: solid; background: #f0fdf4; }
 
   /* --- GATE ENTRY MOBILE RESPONSIVENESS (scoped to #canvas-module-store-gate-entry only) --- */
   .gate-upload-row { display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
