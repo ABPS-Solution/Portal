@@ -201,6 +201,10 @@ async function refetchEmailLeadsListWithFilters() {
  * and updates the interface layout with instruction-centered headers.
  */
 async function executeInboundEmailSyncPipelineFetch() {
+  // Every entry starts fresh: filters and search reset, feed refetched.
+  activeEmailLeadsEngineerFilter = "ALL";
+  activeEmailLeadsDateFilter = "all";
+  activeEmailLeadsCompanySearch = "";
   // Static list, no server round-trip needed — rendered here (the
   // panel-open entry point) so the pills exist before the first fetch
   // resolves, not just after selectEmailLeadsDateFilter is first clicked.
