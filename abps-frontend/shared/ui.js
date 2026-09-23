@@ -1,3 +1,19 @@
+// Number boxes never change on mouse-wheel or Up/Down arrow keys (24 Sep
+// 2026, explicit request): scrolling the page with the cursor in a Qty/Rate
+// box used to silently change its value. On wheel the box loses focus, so
+// the page scrolls normally and the value is left alone. The spinner arrows
+// themselves are hidden in index.html's CSS.
+(function() {
+  document.addEventListener("wheel", function(e) {
+    const t = document.activeElement;
+    if (t && t.tagName === "INPUT" && t.type === "number" && (e.target === t || t.contains(e.target))) t.blur();
+  }, { capture: true, passive: true });
+  document.addEventListener("keydown", function(e) {
+    const t = e.target;
+    if (t && t.tagName === "INPUT" && t.type === "number" && (e.key === "ArrowUp" || e.key === "ArrowDown")) e.preventDefault();
+  }, true);
+})();
+
 // Global guard for every number input in the app — native <input type="number">
 // otherwise accepts 'e'/'E' (scientific notation), '+', and '-' even on
 // fields that make no sense with them (quantities, rates, percentages).
