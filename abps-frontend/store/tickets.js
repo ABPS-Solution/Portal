@@ -119,11 +119,10 @@ async function submitMaterialRequestTicketToBackend() {
     return;
   }
 
-  // Processing is picked directly in Outgoing Use now (24 Sep 2026) and is
-  // stored exactly as before: department 'Service' + outward_purpose
-  // 'Processing'. Service stores outward_purpose 'Service'.
+  // Processing is its own Outgoing Use / department (24 Sep 2026); the
+  // ticket's Purpose (outward_purpose) is the department itself.
   const isServiceSubmit = departmentVal === "Service" || departmentVal === "Processing";
-  const departmentSubmitVal = isServiceSubmit ? "Service" : departmentVal;
+  const departmentSubmitVal = departmentVal;
   // Legacy/pre-system ticket is available under any Outgoing Use as of
   // go-live (was Service-only) — a pre-system project still in production,
   // or a plain stock-count correction, can be raised from any department.
