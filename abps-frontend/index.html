@@ -1150,6 +1150,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div class="menu-card" id="mod-material-outward"        onclick="switchActiveDashboardModule('material-outward')"><span class="mc-label">Material Outward on Delivery Challan</span></div>
         <div class="menu-card" id="mod-authorize-material-outward" onclick="switchActiveDashboardModule('authorize-material-outward')"><span class="mc-label">Authorize Material Outward on Delivery Challan</span></div>
         <div class="menu-card" id="mod-search-material-outward" onclick="switchActiveDashboardModule('search-material-outward')"><span class="mc-label">Search Material Outward on Delivery Challan</span></div>
+        <div class="menu-card" id="mod-expected-processing-returns" onclick="switchActiveDashboardModule('expected-processing-returns')"><span class="mc-label">Expected Processing Material Return</span></div>
       </div>
       <div class="sec-label">Dispatch Invoice</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -2428,6 +2429,18 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <p style="font-size:0.82rem; color:var(--muted); margin:6px 0 14px;">Delivery Challans whose Checking Draft has been printed. Review the paper copy, then authorize to issue the real document, or reject to send its tickets back to Material Outward on Delivery Challan.</p>
       <div id="amo-feedback-banner" style="display:none;"></div>
       <div id="amo-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
+    </div>
+
+    <div id="canvas-module-expected-processing-returns" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Expected Processing Material Return</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin:6px 0 14px;">Every Processing ticket (material sent to an outside vendor for job work), what is expected back, and how far it has got. Returning material is received through normal Gate Entry.</p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
+        <button class="nav-btn-styled" id="epmr-filter-all" style="width:auto;" onclick="epmrSetFilter('all')">All</button>
+        <button class="nav-btn-styled" id="epmr-filter-sent" style="width:auto;" onclick="epmrSetFilter('sent')">Sent to Vendor</button>
+        <button class="nav-btn-styled" id="epmr-filter-pending" style="width:auto;" onclick="epmrSetFilter('pending')">Not Yet Sent</button>
+        <input type="text" id="epmr-search" placeholder="Search ticket, vendor, company, material..." autocomplete="off" oninput="epmrRender()" style="flex:1; min-width:220px; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" />
+      </div>
+      <div id="epmr-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
     </div>
 
     <div id="canvas-module-search-material-outward" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
@@ -5875,6 +5888,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="store/store-history.js"></script>
 <script src="store/store-dashboard.js"></script>
 <script src="store/material-outward.js"></script>
+<script src="store/expected-processing-returns.js"></script>
 <script src="store/authorize-material-outward.js"></script>
 <script src="store/dispatch-invoice-shared.js"></script>
 <script src="store/dispatch-invoice-create.js"></script>

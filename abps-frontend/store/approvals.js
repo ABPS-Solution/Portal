@@ -44,15 +44,15 @@ function renderBOQIncreaseTicketCard(ticket) {
     const reqQty = Number(item.requestedQty) || 0;
     const remQty = Number(item.boqRemainingQty) || 0;
     return `
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px; font-weight:600;">${item.itemDescription || ""}</td>
-        <td style="padding:8px; text-align:center; color:var(--muted); font-weight:600;">${item.unitType || "—"}</td>
-        <td style="padding:8px; text-align:center; font-weight:600;">${fmtQty(item.boqAllottedQty)}</td>
-        <td style="padding:8px; text-align:center; font-weight:600;">${fmtQty(item.boqUsedQty)}</td>
-        <td style="padding:8px; text-align:center; font-weight:700; color:#0369a1;">${fmtQty(remQty)}</td>
-        <td style="padding:8px; text-align:center; font-weight:600;">${fmtQty(reqQty)}</td>
-        <td style="padding:8px; text-align:center; font-weight:700; color:#b45309;">${fmtQty(item.boqExceedAmount)}</td>
-        <td style="padding:8px; text-align:center;">
+      <tr>
+        <td style="border:1px solid var(--border); padding:8px; font-weight:600;">${item.itemDescription || ""}</td>
+        <td style="border:1px solid var(--border); padding:8px; text-align:center; color:var(--muted); font-weight:600;">${item.unitType || "—"}</td>
+        <td style="border:1px solid var(--border); padding:8px; text-align:center; font-weight:600;">${fmtQty(item.boqAllottedQty)}</td>
+        <td style="border:1px solid var(--border); padding:8px; text-align:center; font-weight:600;">${fmtQty(item.boqUsedQty)}</td>
+        <td style="border:1px solid var(--border); padding:8px; text-align:center; font-weight:700; color:#0369a1;">${fmtQty(remQty)}</td>
+        <td style="border:1px solid var(--border); padding:8px; text-align:center; font-weight:600;">${fmtQty(reqQty)}</td>
+        <td style="border:1px solid var(--border); padding:8px; text-align:center; font-weight:700; color:#b45309;">${fmtQty(item.boqExceedAmount)}</td>
+        <td style="border:1px solid var(--border); padding:8px; text-align:center;">
           <input type="number" data-itemcode="${item.itemCode}" data-min="${remQty}" data-max="${reqQty}"
             id="boq-final-qty-${ticket.ticketId}-${safeCode}"
             value="${reqQty}" min="${remQty}" max="${reqQty}" step="any"
@@ -71,7 +71,9 @@ function renderBOQIncreaseTicketCard(ticket) {
           <span id="boq-increase-caret-${ticket.ticketId}" style="float:right; font-weight:700; color:var(--muted);">▸</span>
         </div>
         <div class="meta-row-line-block" style="margin-top:8px; font-size:0.85rem;">
-          <span>By:</span> <strong style="color:#111827;">${ticket.requestedBy}</strong>
+          <span>Project ID:</span> <strong style="color:#111827; font-family:monospace;">${escapeHtml(ticket.projectId || "—")}</strong>
+          <span style="margin-left:8px;">|</span>
+          <span style="margin-left:8px;">By:</span> <strong style="color:#111827;">${ticket.requestedBy}</strong>
           <span style="margin-left:8px;">|</span>
           <strong style="color:#111827; margin-left:8px;">${formatOrdinalDateTime(ticket.dateCreated)}</strong>
           <span style="margin-left:12px;">Dept:</span> <strong style="color:#111827;">${ticket.department || "—"}</strong>
@@ -88,14 +90,14 @@ function renderBOQIncreaseTicketCard(ticket) {
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
           <thead>
             <tr style="background:var(--highlight-bg); text-align:left;">
-              <th style="padding:8px;">Material Name</th>
-              <th style="padding:8px; text-align:center;">Unit</th>
-              <th style="padding:8px; text-align:center;">JC Allotted Qty</th>
-              <th style="padding:8px; text-align:center;">JC Used Qty</th>
-              <th style="padding:8px; text-align:center;">JC Remaining Qty</th>
-              <th style="padding:8px; text-align:center;">Requested Qty</th>
-              <th style="padding:8px; text-align:center;">Extra Qty</th>
-              <th style="padding:8px; text-align:center;">Final Ticket Qty</th>
+              <th style="border:1px solid var(--border); padding:8px;">Material Name</th>
+              <th style="border:1px solid var(--border); padding:8px; text-align:center;">Unit</th>
+              <th style="border:1px solid var(--border); padding:8px; text-align:center;">JC Allotted Qty</th>
+              <th style="border:1px solid var(--border); padding:8px; text-align:center;">JC Used Qty</th>
+              <th style="border:1px solid var(--border); padding:8px; text-align:center;">JC Remaining Qty</th>
+              <th style="border:1px solid var(--border); padding:8px; text-align:center;">Requested Qty</th>
+              <th style="border:1px solid var(--border); padding:8px; text-align:center;">Extra Qty</th>
+              <th style="border:1px solid var(--border); padding:8px; text-align:center;">Final Ticket Qty</th>
             </tr>
           </thead>
           <tbody>${rowsHtml}</tbody>

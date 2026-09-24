@@ -277,6 +277,7 @@ function returnToDashboard() {
   if(document.getElementById("canvas-module-material-outward")) document.getElementById("canvas-module-material-outward").style.display = "none";
   if(document.getElementById("canvas-module-authorize-material-outward")) document.getElementById("canvas-module-authorize-material-outward").style.display = "none";
   if (document.getElementById("canvas-module-search-material-outward")) document.getElementById("canvas-module-search-material-outward").style.display = "none";
+  if (document.getElementById("canvas-module-expected-processing-returns")) document.getElementById("canvas-module-expected-processing-returns").style.display = "none";
   if(document.getElementById("canvas-module-assign-material-requirement-date")) document.getElementById("canvas-module-assign-material-requirement-date").style.display = "none";
   if(document.getElementById("canvas-module-revise-material-requirement-date")) document.getElementById("canvas-module-revise-material-requirement-date").style.display = "none";
   if(document.getElementById("canvas-module-production-planning")) document.getElementById("canvas-module-production-planning").style.display = "none";
@@ -510,6 +511,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canAuthorizeMaterialOutward = userPermissionsObject.authorizeMaterialOutward === true;
   if (document.getElementById("mod-authorize-material-outward")) document.getElementById("mod-authorize-material-outward").style.display = canAuthorizeMaterialOutward ? "block" : "none";
   if (document.getElementById("mod-search-material-outward")) document.getElementById("mod-search-material-outward").style.display = userPermissionsObject.searchMaterialOutward === true ? "block" : "none";
+  if (document.getElementById("mod-expected-processing-returns")) document.getElementById("mod-expected-processing-returns").style.display = userPermissionsObject.expectedProcessingMaterialReturn === true ? "block" : "none";
   if (document.getElementById("mod-job-card-sheet")) document.getElementById("mod-job-card-sheet").style.display = userPermissionsObject.jobCardSheet === true ? "block" : "none";
   if (document.getElementById("mod-in-process-sheet")) document.getElementById("mod-in-process-sheet").style.display = userPermissionsObject.inProcessSheet === true ? "block" : "none";
 
@@ -973,6 +975,7 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   if (document.getElementById("canvas-module-material-outward")) document.getElementById("canvas-module-material-outward").style.display = "none";
   if (document.getElementById("canvas-module-authorize-material-outward")) document.getElementById("canvas-module-authorize-material-outward").style.display = "none";
   if (document.getElementById("canvas-module-search-material-outward")) document.getElementById("canvas-module-search-material-outward").style.display = "none";
+  if (document.getElementById("canvas-module-expected-processing-returns")) document.getElementById("canvas-module-expected-processing-returns").style.display = "none";
   if (document.getElementById("canvas-module-qa-inspection-timeline")) document.getElementById("canvas-module-qa-inspection-timeline").style.display = "none";
   if (document.getElementById("canvas-module-product-serial-tracking")) document.getElementById("canvas-module-product-serial-tracking").style.display = "none";
   if (document.getElementById("canvas-module-daily-timeline")) document.getElementById("canvas-module-daily-timeline").style.display = "none";
@@ -1158,6 +1161,15 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     if (centerTitleARPDI)  centerTitleARPDI.style.visibility  = "hidden";
     document.getElementById("canvas-module-authorize-project-dispatch-invoice-revision").style.display = "block";
     initializeArpdiWorkspace();
+  } else if (targetCanvasModuleId === 'expected-processing-returns') {
+    const epmrEnclosure = document.getElementById("module-store-workspace-enclosure-panel");
+    if (epmrEnclosure) epmrEnclosure.style.display = "block";
+    const leftControlsEPMR = document.getElementById("store-panel-left-controls");
+    const centerTitleEPMR  = document.getElementById("store-panel-center-title");
+    if (leftControlsEPMR) leftControlsEPMR.style.visibility = "hidden";
+    if (centerTitleEPMR)  centerTitleEPMR.style.visibility  = "hidden";
+    document.getElementById("canvas-module-expected-processing-returns").style.display = "block";
+    initializeExpectedProcessingReturnsWorkspace();
   } else if (targetCanvasModuleId === 'search-material-outward') {
     const smoEnclosure = document.getElementById("module-store-workspace-enclosure-panel");
     if (smoEnclosure) smoEnclosure.style.display = "block";

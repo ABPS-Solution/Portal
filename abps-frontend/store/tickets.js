@@ -193,16 +193,17 @@ async function submitMaterialRequestTicketToBackend() {
     return;
   }
   
+  // Cache the form BEFORE the button turns into a spinner, or "+ Create
+  // New Ticket" restores a stuck "Generating Request Ticket..." button.
+  if (!window.storeCreateTicketOriginalTemplateCacheHTML) {
+    window.storeCreateTicketOriginalTemplateCacheHTML = materialRequestPanelContainer.innerHTML;
+  }
   submitBtn.disabled = true;
   submitBtn.innerHTML = `
     <div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div>
     <span>Generating Request Ticket...</span>
   `;
   
-  // Cache the full primary HTML skeleton parameters map before clearing for success screen view layout
-  if (!window.storeCreateTicketOriginalTemplateCacheHTML) {
-    window.storeCreateTicketOriginalTemplateCacheHTML = materialRequestPanelContainer.innerHTML;
-  }
   
   showBlockingOverlay("Submitting Material Issue Ticket...");
   try {
@@ -290,6 +291,12 @@ function resetStoreCreateTicketToInitialState() {
   if (materialRequestPanelContainer && window.storeCreateTicketOriginalTemplateCacheHTML) {
     // Restores original HTML skeleton element properties safely
     materialRequestPanelContainer.innerHTML = window.storeCreateTicketOriginalTemplateCacheHTML;
+    const actionRow = document.getElementById("cmit-action-row");
+    if (actionRow) actionRow.innerHTML = `
+      <button class="nav-btn-styled" onclick="clearFullBasketDraftState()" style="background: #718096; padding: 9px 20px; font-weight: 700;">Clear Basket</button>
+      <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="submitMaterialRequestTicketToBackend()" style="background: var(--accent); padding: 9px 20px; font-weight: 700;">Generate Material Ticket</button>`;
+    const staleBanner = document.getElementById("store-ticket-runtime-inline-feedback-banner");
+    if (staleBanner) staleBanner.style.display = "none";
     window.ticketExpectedReturnRows = [];
     ticketSetExpectedReturnVisible(false);
     
@@ -796,12 +803,12 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
     return;
   }
   
-  const btn = document.getElementById("submit-ticket-final-btn");
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div> Transmitting Request to Admin...';
   if (!window.storeCreateTicketOriginalTemplateCacheHTML) {
     window.storeCreateTicketOriginalTemplateCacheHTML = materialRequestPanelContainer.innerHTML;
   }
+  const btn = document.getElementById("submit-ticket-final-btn");
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div> Transmitting Request to Admin...';
   try {
     // FIXED FLAT PAYLOAD: Flattens parameters straight into the base object root to prevent router switch drops
     const flatServerRequestPayload = {
@@ -823,7 +830,7 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
       materialRequestPanelContainer.innerHTML = `
         <div style="background: #e0f2fe; border: 1px solid #0369a1; border-left: 4px solid #0369a1; color: #0369a1; padding: 20px; border-radius: var(--radius); text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin: 10px 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
           <div>
-            <h3 style="font-size: 1.1rem; margin: 0 0 6px 0; font-weight: 700;">Job Card Limit Request Submitted</h3>
+            <h3 style="font-size: 1.1rem; margin: 0 0 6px 0; font-weight: 700;">Job Card Limit Increase Request Submitted</h3>
             <div style="font-size: 0.92rem; font-weight: 700; display: flex; align-items: center; gap: 4px;">
               Assigned Ticket ID:
               <span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #0369a1; color: #111827; margin-left: 4px; font-size: 1rem;">
