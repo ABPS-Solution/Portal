@@ -519,9 +519,10 @@ async function mowDiscardDraft(challanId, skipConfirm) {
 // tells the operator to raise a fresh ticket instead of trying to patch
 // this one.
 async function rejectMaterialOutwardRequest(ticketId) {
-  if (!confirm(`Reject ${ticketId} and return its stock to the store?\n\nThis completely voids the request — the operator will need to raise a new Material Issue Ticket with the correct material/quantity.`)) return;
   try {
+    showBlockingOverlay("Rejecting ticket...");
     const data = await apFetch({ action: "rejectMaterialOutwardRequest", ticketId, operatorName: appActiveOperatorIdentityString || "Unknown" });
+    hideBlockingOverlay();
     if (!data.success) throw new Error(data.error || "Failed to reject.");
     const feed = document.getElementById("mow-service-queue-feed");
     if (feed) feed.style.display = "none";
@@ -529,6 +530,7 @@ async function rejectMaterialOutwardRequest(ticketId) {
     const refreshBtn = document.querySelector("#mow-feedback-banner button");
     if (refreshBtn) refreshBtn.textContent = "Refresh Queue";
   } catch (err) {
+    hideBlockingOverlay();
     alert(err.message);
   }
 }
