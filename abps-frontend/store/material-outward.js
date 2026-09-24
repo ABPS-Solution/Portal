@@ -449,6 +449,7 @@ async function mowSaveDraft(challanId) {
 async function mowGenerateCheckingDraft(challanId) {
   const btn = document.getElementById(`mow-checking-btn-${challanId}`);
   if (btn) { btn.disabled = true; btn.textContent = "Generating..."; }
+  showBlockingOverlay("Saving challan and generating checking draft...");
   try {
     const ok = await mowSaveDraftCore(challanId);
     if (!ok) return;
@@ -467,6 +468,7 @@ async function mowGenerateCheckingDraft(challanId) {
   } catch (err) {
     mowShowInlineError(challanId, err.message);
   } finally {
+    hideBlockingOverlay();
     if (btn) { btn.disabled = false; btn.textContent = "Save & Generate Checking Draft"; }
   }
 }
