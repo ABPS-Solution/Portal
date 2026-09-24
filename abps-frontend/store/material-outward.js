@@ -75,7 +75,7 @@ async function loadMaterialOutwardServiceQueue() {
     const tabBtn = (key, label) => `<button class="nav-btn-styled" onclick="mowSwitchTab('${key}')" style="width:auto; background:${tab === key ? "var(--brand)" : "#e2e8f0"}; color:${tab === key ? "#fff" : "#334155"};">${label}</button>`;
     const tabsHtml = `<div style="display:flex; gap:8px;">${tabBtn("new", "New Challan")}${tabBtn("editing", `Pending Challans (Editing) (${editing.length})`)}</div>`;
     feed.innerHTML = tabsHtml + (tab === "editing"
-      ? (editing.length ? editing.map(renderDraftChallanCard).join("") : `<div style="padding:16px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:var(--radius);">No challans are waiting for edits.</div>`)
+      ? (editing.length ? editing.map(d => renderDraftChallanCard(d, true)).join("") : `<div style="padding:16px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:var(--radius);">No challans are waiting for edits.</div>`)
       : fresh.map(renderDraftChallanCard).join("") + renderTicketPoolSection());
     if (data.offline) feed.insertAdjacentHTML("afterbegin", `<div style="padding:10px 12px; background:#fffbeb; border-left:4px solid #f59e0b; color:#92400e; border-radius:var(--radius); font-weight:600;">You're offline — showing the last saved queue. Your typing is kept on this device; save once you're back online.</div>`);
     mowDraftsCache.forEach(d => { if (document.getElementById(`mow-draft-card-${d.challan_id}`)) { mowRestoreCardLocal(d.challan_id); mowValidateDraftCard(d.challan_id); } });
@@ -209,6 +209,8 @@ async function mowSaveDraftAndReload(challanId, ticketIds, existingDraft) {
 async function mowRemoveTicketFromDraft(challanId, ticketId) {
   const draft = mowDraftsCache.find(d => String(d.challan_id) === String(challanId));
   if (!draft) return;
+  if (window._mowExpandedDrafts) window._mowExpandedDrafts.add(String(challanId));
+  mowSaveCardLocal(challanId);
   if (!confirm(`Remove ${ticketId} from Draft Challan #${challanId}? It will return to the pool of tickets awaiting a challan.`)) return;
   const remaining = (draft.linked_tickets || []).map(t => t.ticketId).filter(id => id !== ticketId);
   if (remaining.length === 0) {
@@ -220,13 +222,14 @@ async function mowRemoveTicketFromDraft(challanId, ticketId) {
   await mowSaveDraftAndReload(challanId, remaining, draft);
 }
 
-function renderDraftChallanCard(draft) {
+function renderDraftChallanCard(draft, collapsible) {
   const challanId = draft.challan_id;
   const linkedTickets = draft.linked_tickets || [];
   const items = draft.line_items && draft.line_items.length
     ? draft.line_items
     : linkedTickets.flatMap(t => mowBuildDisplayLineItems({ ticket_id: t.ticketId, items: t.items }));
   const todayStr = (typeof formatOrdinalDate === 'function') ? formatOrdinalDate(new Date()) : new Date().toLocaleDateString();
+  const expanded = !collapsible || window._mowExpandedDrafts.has(String(challanId));
 
   const returnableOptions = ['', 'Returnable', 'Non-Returnable'].map(v =>
     `<option value="${v}" ${(draft.returnable_status || '') === v ? 'selected' : ''}>${v || '— Select —'}</option>`).join("");
@@ -252,11 +255,13 @@ function renderDraftChallanCard(draft) {
 
   return `
     <div class="section" id="mow-draft-card-${challanId}" style="padding:16px; border:1px solid var(--brand); border-radius:var(--radius); margin-bottom:16px; background:#fbfdff;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+      ${collapsible ? mowDraftCollapsedHeader(draft, expanded) : `<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
         <div style="font-weight:800; font-size:1rem; color:var(--brand);">Draft Challan #${challanId} <span style="font-weight:600; color:var(--muted); font-size:0.85rem;">(${linkedTickets.length} ticket${linkedTickets.length === 1 ? '' : 's'})</span></div>
-      </div>
+      </div>`}
+      <div id="mow-draft-body-${challanId}" style="display:${expanded ? 'block' : 'none'};">
 
       <div style="margin-top:12px;">${linkedTicketsHtml}</div>
+      ${collapsible ? mowEditAddTicketsSection(draft) : ''}
 
       <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:12px;">
         <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px 16px; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;">
@@ -309,7 +314,75 @@ function renderDraftChallanCard(draft) {
         </div>
         <div id="mow-inline-feedback-${challanId}" style="display:none; margin-top:12px; padding:10px; border-left:4px solid; border-radius:var(--radius);"></div>
       </div>
+      </div>
     </div>`;
+}
+
+// Pending Challans (Editing): each draft is collapsed to a one-line header
+// until clicked. Expanded state survives the reload after a save.
+window._mowExpandedDrafts = window._mowExpandedDrafts || new Set();
+
+function mowDraftCollapsedHeader(draft, expanded) {
+  const id = draft.challan_id;
+  const tickets = draft.linked_tickets || [];
+  const companies = [...new Set(tickets.map(t => t.companyName).filter(Boolean))];
+  const today = (typeof formatOrdinalDate === 'function') ? formatOrdinalDate(new Date()) : new Date().toLocaleDateString();
+  const cell = (label, value, mono) => `<div style="min-width:0;"><div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:var(--muted); letter-spacing:0.3px;">${label}</div><div style="font-weight:700; font-size:0.86rem; word-break:break-word;${mono ? ' font-family:monospace;' : ''}">${value}</div></div>`;
+  return `<div onclick="mowToggleDraftCard(${id})" style="display:flex; align-items:center; gap:14px; cursor:pointer; user-select:none;">
+      <div style="flex:1; display:grid; grid-template-columns:0.8fr 1.1fr 0.9fr 0.8fr 1.4fr 1.6fr; gap:10px 14px; align-items:start;">
+        ${cell('Purpose', escapeHtml(draft.outward_type || '—'))}
+        ${cell('Challan No', escapeHtml(draft.challan_number || '—'), true)}
+        ${cell('Challan Date', escapeHtml(today))}
+        ${cell('Draft', 'Checking Draft #' + escapeHtml(String(draft.checking_draft_count || 0)))}
+        ${cell('Ticket ID' + (tickets.length === 1 ? '' : 's'), tickets.map(t => escapeHtml(t.ticketId)).join('<br>') || '—', true)}
+        ${cell('Company Name', companies.map(escapeHtml).join('<br>') || '—')}
+      </div>
+      <span id="mow-draft-chevron-${id}" style="flex:none; font-size:1.1rem; color:var(--brand);">${expanded ? '▴' : '▾'}</span>
+    </div>`;
+}
+
+function mowToggleDraftCard(challanId) {
+  const body = document.getElementById(`mow-draft-body-${challanId}`);
+  if (!body) return;
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  const chev = document.getElementById(`mow-draft-chevron-${challanId}`);
+  if (chev) chev.textContent = open ? '▴' : '▾';
+  if (open) { window._mowExpandedDrafts.add(String(challanId)); autoGrowAllIn(body); }
+  else window._mowExpandedDrafts.delete(String(challanId));
+}
+
+// Tickets that can still be added to this draft: approved, not on any
+// challan yet, same Purpose as the draft.
+function mowEditAddTicketsSection(draft) {
+  const id = draft.challan_id;
+  const pool = mowServiceTicketsCache.filter(t => !draft.outward_type || t.outward_purpose === draft.outward_type);
+  if (!pool.length) {
+    return `<div style="margin-top:6px; font-size:0.8rem; color:var(--muted);">No other approved ${escapeHtml(draft.outward_type || '')} tickets are waiting to be added.</div>`;
+  }
+  const rows = pool.map(t => `
+    <label style="display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:6px; cursor:pointer; background:#fff;">
+      <input type="checkbox" class="mow-edit-add-cb" data-challan-id="${id}" data-ticket-id="${escapeHtml(t.ticket_id)}" style="margin-top:3px; width:16px; height:16px; flex:none; cursor:pointer;" />
+      <span style="font-size:0.85rem;">${mowTicketSummaryLine(t)}</span>
+    </label>`).join('');
+  return `<div style="margin-top:10px; padding:12px; border:1px dashed var(--border); border-radius:var(--radius); background:#f8fafc;">
+      <div style="font-weight:800; font-size:0.85rem; margin-bottom:8px;">Add Tickets to this Challan</div>
+      ${rows}
+      <button class="nav-btn-styled" id="mow-edit-add-btn-${id}" style="background:var(--brand); width:auto; margin-top:4px;" onclick="mowAddTicketsWhileEditing(${id})">+ Add Selected Tickets</button>
+    </div>`;
+}
+
+async function mowAddTicketsWhileEditing(challanId) {
+  const draft = mowDraftsCache.find(d => String(d.challan_id) === String(challanId));
+  if (!draft) return;
+  const picked = [...document.querySelectorAll(`.mow-edit-add-cb[data-challan-id="${challanId}"]:checked`)].map(cb => cb.dataset.ticketId);
+  if (!picked.length) { alert('Select at least one ticket to add.'); return; }
+  const btn = document.getElementById(`mow-edit-add-btn-${challanId}`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Adding...'; }
+  window._mowExpandedDrafts.add(String(challanId));
+  mowSaveCardLocal(challanId);
+  const existing = (draft.linked_tickets || []).map(t => t.ticketId);
+  await mowSaveDraftAndReload(challanId, [...new Set([...existing, ...picked])], draft);
 }
 
 // mowFieldFor — auto-growing-textarea field, same convention as Project
