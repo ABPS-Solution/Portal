@@ -1138,14 +1138,18 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div class="menu-card" id="mod-live-finished-store-stock" onclick="switchActiveDashboardModule('store-live-finished-goods')"><span class="mc-label">Live Finished Goods Store Stock</span></div>
         <div class="menu-card" id="mod-live-spare-store-stock"    onclick="switchActiveDashboardModule('store-live-spare')"><span class="mc-label">Live Spare Store Stock</span></div>
       </div>
-      <div class="sec-label">Dispatch</div>
+      <div class="sec-label">Delivery Challan</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-material-outward"        onclick="switchActiveDashboardModule('material-outward')"><span class="mc-label">Material Outward on Delivery Challan</span></div>
+        <div class="menu-card" id="mod-authorize-material-outward" onclick="switchActiveDashboardModule('authorize-material-outward')"><span class="mc-label">Authorize Material Outward on Delivery Challan</span></div>
+        <div class="menu-card" id="mod-search-material-outward" onclick="switchActiveDashboardModule('search-material-outward')"><span class="mc-label">Search Material Outward on Delivery Challan</span></div>
+      </div>
+      <div class="sec-label">Dispatch Invoice</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-create-project-dispatch-invoice"              onclick="switchActiveDashboardModule('create-project-dispatch-invoice')"><span class="mc-label">Create Project Dispatch Invoice</span></div>
         <div class="menu-card" id="mod-authorize-project-dispatch-invoice"           onclick="switchActiveDashboardModule('authorize-project-dispatch-invoice')"><span class="mc-label">Authorize Project Dispatch Invoice</span></div>
         <div class="menu-card" id="mod-revise-project-dispatch-invoice"              onclick="switchActiveDashboardModule('revise-project-dispatch-invoice')"><span class="mc-label">Revise Project Dispatch Invoice</span></div>
         <div class="menu-card" id="mod-authorize-project-dispatch-invoice-revision"  onclick="switchActiveDashboardModule('authorize-project-dispatch-invoice-revision')"><span class="mc-label">Authorize Project Dispatch Invoice Revision</span></div>
-        <div class="menu-card" id="mod-material-outward"        onclick="switchActiveDashboardModule('material-outward')"><span class="mc-label">Material Outward on Delivery Challan</span></div>
-        <div class="menu-card" id="mod-authorize-material-outward" onclick="switchActiveDashboardModule('authorize-material-outward')"><span class="mc-label">Authorize Material Outward on Delivery Challan</span></div>
       </div>
     </div>
 
@@ -2419,19 +2423,9 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div id="amo-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
     </div>
 
-    <div id="canvas-module-material-outward" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 class="panel-title">Material Outward on Delivery Challan</h2>
-      <div style="display:flex; gap:10px; margin:14px 0 18px;">
-        <button class="nav-btn-styled" id="mow-toggle-service-btn" onclick="switchMaterialOutwardToggle('service')" style="background:var(--brand);">Materials for Outward</button>
-        <button class="nav-btn-styled" id="mow-toggle-search-btn" onclick="switchMaterialOutwardToggle('search')" style="background:#718096;">Search Challans</button>
-      </div>
-      <div id="mow-feedback-banner" style="display:none; padding:12px; margin-bottom:14px; border-left:4px solid; border-radius:var(--radius);"></div>
-
-      <div id="mow-service-panel">
-        <div id="mow-service-queue-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
-      </div>
-
-      <div id="mow-search-panel" style="display:none;">
+    <div id="canvas-module-search-material-outward" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Search Material Outward on Delivery Challan</h2>
+      <div id="mow-search-panel">
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:12px; align-items:end; margin-bottom:16px;">
           <div style="position:relative;">
             <label class="field-label" style="margin-top:0;">Project ID or Customer Name</label>
@@ -2453,6 +2447,16 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div id="mow-search-label" style="display:none; font-weight:700; color:var(--brand); margin-bottom:10px; font-size:0.9rem; line-height:1.7;"></div>
         <div id="mow-search-results" style="overflow-x:auto;"></div>
       </div>
+    </div>
+
+    <div id="canvas-module-material-outward" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Material Outward on Delivery Challan</h2>
+      <div id="mow-feedback-banner" style="display:none; padding:12px; margin-bottom:14px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div id="mow-service-panel">
+        <div id="mow-service-queue-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
+      </div>
+
     </div>
 
     <div id="canvas-module-store-history-matrix" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">

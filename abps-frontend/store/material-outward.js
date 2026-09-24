@@ -24,30 +24,14 @@ let mowDraftsCache = [];
 window._mowSelectedPoolTickets = window._mowSelectedPoolTickets || new Set();
 
 async function initializeMaterialOutwardWorkspace() {
-  await ensureSharedProjectTypeaheadData();
-  switchMaterialOutwardToggle('service');
-}
-
-function switchMaterialOutwardToggle(mode) {
-  const serviceBtn = document.getElementById("mow-toggle-service-btn");
-  const searchBtn = document.getElementById("mow-toggle-search-btn");
-  const servicePanel = document.getElementById("mow-service-panel");
-  const searchPanel = document.getElementById("mow-search-panel");
   const feedback = document.getElementById("mow-feedback-banner");
   if (feedback) feedback.style.display = "none";
+  loadMaterialOutwardServiceQueue();
+}
 
-  if (mode === 'search') {
-    if (serviceBtn) serviceBtn.style.background = "#718096";
-    if (searchBtn) searchBtn.style.background = "var(--brand)";
-    if (servicePanel) servicePanel.style.display = "none";
-    if (searchPanel) searchPanel.style.display = "block";
-  } else {
-    if (serviceBtn) serviceBtn.style.background = "var(--brand)";
-    if (searchBtn) searchBtn.style.background = "#718096";
-    if (servicePanel) servicePanel.style.display = "block";
-    if (searchPanel) searchPanel.style.display = "none";
-    loadMaterialOutwardServiceQueue();
-  }
+// Search Material Outward on Delivery Challan — its own section since 24 Sep 2026.
+async function initializeSearchMaterialOutwardWorkspace() {
+  await ensureSharedProjectTypeaheadData();
 }
 
 async function loadMaterialOutwardServiceQueue() {
