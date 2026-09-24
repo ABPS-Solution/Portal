@@ -828,6 +828,13 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 .row-lined-table > tbody > tr > td { border-bottom:1px solid #cbd5e1 !important; }
 .row-lined-table > thead > tr > th, .row-lined-table > tbody > tr > td { border-right:1px solid #e2e8f0 !important; }
 .row-lined-table > thead > tr > th:last-child, .row-lined-table > tbody > tr > td:last-child { border-right:none !important; }
+/* Create Material Issue Ticket: phone */
+@media (max-width: 640px) {
+  #cmit-main-section > div[style*="grid"] { grid-template-columns: 1fr !important; }
+  #wrapper-ticket-add-item-zone > div[style*="flex"] { flex-wrap: wrap; }
+  #wrapper-ticket-add-item-zone > div[style*="flex"] > div:first-child { flex: 1 1 100% !important; }
+  #wrapper-ticket-add-item-zone > div[style*="flex"] > div:nth-child(2) { flex: 1 1 auto !important; }
+}
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
