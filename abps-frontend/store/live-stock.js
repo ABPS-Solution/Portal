@@ -10,7 +10,7 @@ function renderBOQLimitExceededApprovalRequestWorkspaceBlock(materialsList) {
   // anchor meant a second call (a second over-limit item added) would
   // resolve to a different element than the first call, leaving the
   // original box orphaned in the DOM instead of being replaced.
-  const bottomActionControlsRow = document.getElementById("shopping-basket-preview-table").parentElement.nextElementSibling;
+  const bottomActionControlsRow = document.getElementById("cmit-action-row");
 
   // This whole block gets rebuilt from scratch on every basket change
   // (renderDraftBasketTableViewportRows calls this again on ANY add/remove,
@@ -32,8 +32,8 @@ function renderBOQLimitExceededApprovalRequestWorkspaceBlock(materialsList) {
       <label class="field-label" style="margin: 0; color: var(--brand); font-weight: bold;">Explain Request / Justification *</label>
       <textarea id="boq-increase-justification-notes-input" placeholder="Specify why additional material is required for this Job Card..." style="min-height: 55px; padding: 8px; font-size: 0.82rem; border-color: var(--brand);"></textarea>
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px;">
-        <button class="nav-btn-styled" onclick="clearFullBasketDraftState()" style="background: #718096; padding: 6px 14px;">Clear Basket</button>
-        <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="executeBOQLimitIncreaseRequestTransmissionPipeline()" style="background: var(--brand); padding: 8px 20px; font-weight: 700;">Send Approval Request to Admin</button>
+        <button class="nav-btn-styled" onclick="clearFullBasketDraftState()" style="background: #718096; padding: 9px 20px; font-weight: 700;">Clear Basket</button>
+        <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="executeBOQLimitIncreaseRequestTransmissionPipeline()" style="background: var(--brand); padding: 9px 20px; font-weight: 700;">Send Approval Request to Admin</button>
       </div>
     </div>
   `;

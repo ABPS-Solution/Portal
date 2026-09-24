@@ -754,18 +754,16 @@ function renderDraftBasketTableViewportRows() {
 
 function resetMaterialRequestFormSubmissionActionControlsRow() {
   const inlineFeedbackBanner = document.getElementById("store-ticket-runtime-inline-feedback-banner");
-  const bottomActionControlsRow = document.getElementById("shopping-basket-preview-table").parentElement.nextElementSibling;
+  const bottomActionControlsRow = document.getElementById("cmit-action-row");
   
   if (inlineFeedbackBanner) inlineFeedbackBanner.style.display = "none";
   if (bottomActionControlsRow && !document.getElementById("boq-increase-justification-notes-input")) return;
   
-  const parentNodeBox = document.getElementById("shopping-basket-preview-table").parentNode;
-  // Recover native Generate Material Ticket options parameters row
-  let controlsRow = parentNodeBox.nextElementSibling;
+  let controlsRow = document.getElementById("cmit-action-row");
   if (controlsRow) {
     controlsRow.innerHTML = `
-      <button class="nav-btn-styled" onclick="clearFullBasketDraftState()" style="background: #718096;">Clear Basket</button>
-      <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="submitMaterialRequestTicketToBackend()" style="background: var(--accent); padding: 8px 20px; font-weight: 700;">Generate Material Ticket</button>
+      <button class="nav-btn-styled" onclick="clearFullBasketDraftState()" style="background: #718096; padding: 9px 20px; font-weight: 700;">Clear Basket</button>
+      <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="submitMaterialRequestTicketToBackend()" style="background: var(--accent); padding: 9px 20px; font-weight: 700;">Generate Material Ticket</button>
     `;
   }
 }

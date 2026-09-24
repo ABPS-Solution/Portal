@@ -1452,7 +1452,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <p style="margin:0 0 8px; font-size:0.78rem; color:var(--muted);">What you expect to receive back from the job-work vendor. The returning Delivery Challan will quote this ticket's outgoing Delivery Challan number.</p>
           <div id="ticket-expected-return-body"></div>
         </div>
-        <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border); padding-top: 14px;">
+        <div id="cmit-action-row" style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border); padding-top: 14px;">
           <button class="nav-btn-styled" onclick="clearFullBasketDraftState()" style="background: #718096; padding: 9px 20px; font-weight: 700;">Clear Basket</button>
           <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="submitMaterialRequestTicketToBackend()" style="background: var(--accent); padding: 9px 20px; font-weight: 700;">Generate Material Ticket</button>
         </div>
