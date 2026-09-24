@@ -30,7 +30,7 @@ function renderBOQLimitExceededApprovalRequestWorkspaceBlock(materialsList) {
   bottomActionControlsRow.innerHTML = `
     <div style="width: 100%; text-align: left; background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: var(--radius); display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
       <label class="field-label" style="margin: 0; color: var(--brand); font-weight: bold;">Explain Request / Justification *</label>
-      <textarea id="boq-increase-justification-notes-input" placeholder="Specify why additional material is required for this Job Card..." style="min-height: 55px; padding: 8px; font-size: 0.82rem; border-color: var(--brand);"></textarea>
+      <textarea id="boq-increase-justification-notes-input" placeholder="Specify why additional material is required for this Job Card..." style="min-height: 55px; padding: 8px; font-family: inherit; font-size: 0.85rem; border-color: var(--brand);"></textarea>
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px;">
         <button class="nav-btn-styled" onclick="clearFullBasketDraftState()" style="background: #718096; padding: 9px 20px; font-weight: 700;">Clear Basket</button>
         <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="executeBOQLimitIncreaseRequestTransmissionPipeline()" style="background: var(--brand); padding: 9px 20px; font-weight: 700;">Send Approval Request to Admin</button>
