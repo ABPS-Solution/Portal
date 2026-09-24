@@ -82,12 +82,19 @@ async function loadMaterialOutwardServiceQueue() {
       feed.innerHTML = `<div style="color:var(--muted); padding:20px; text-align:center;">No approved tickets are awaiting a Delivery Challan.</div>`;
       return;
     }
-    feed.innerHTML =
-      mowDraftsCache.map(renderDraftChallanCard).join("") +
-      renderTicketPoolSection();
+    // New Challan / Editing tabs (24 Sep 2026, same idea as Create PO): a
+    // draft stays under New until its first Checking Draft is printed,
+    // then it moves to Editing for any changes after the paper review.
+    const tab = window._mowTab || "new";
+    const editing = mowDraftsCache.filter(d => Number(d.checking_draft_count) > 0);
+    const fresh = mowDraftsCache.filter(d => !(Number(d.checking_draft_count) > 0));
+    const tabBtn = (key, label) => `<button class="nav-btn-styled" onclick="mowSwitchTab('${key}')" style="width:auto; background:${tab === key ? "var(--brand)" : "#e2e8f0"}; color:${tab === key ? "#fff" : "#334155"};">${label}</button>`;
+    const tabsHtml = `<div style="display:flex; gap:8px;">${tabBtn("new", "New Challan")}${tabBtn("editing", `Pending Challans (Editing) (${editing.length})`)}</div>`;
+    feed.innerHTML = tabsHtml + (tab === "editing"
+      ? (editing.length ? editing.map(renderDraftChallanCard).join("") : `<div style="padding:16px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:var(--radius);">No challans are waiting for edits.</div>`)
+      : fresh.map(renderDraftChallanCard).join("") + renderTicketPoolSection());
     if (data.offline) feed.insertAdjacentHTML("afterbegin", `<div style="padding:10px 12px; background:#fffbeb; border-left:4px solid #f59e0b; color:#92400e; border-radius:var(--radius); font-weight:600;">You're offline — showing the last saved queue. Your typing is kept on this device; save once you're back online.</div>`);
-    mowDraftsCache.forEach(d => mowRestoreCardLocal(d.challan_id));
-    mowDraftsCache.forEach(d => mowValidateDraftCard(d.challan_id));
+    mowDraftsCache.forEach(d => { if (document.getElementById(`mow-draft-card-${d.challan_id}`)) { mowRestoreCardLocal(d.challan_id); mowValidateDraftCard(d.challan_id); } });
     autoGrowAllIn(feed);
   } catch (err) {
     feed.innerHTML = `<div style="color:var(--danger); padding:20px; text-align:center;">${escapeHtml(err.message)}</div>`;
@@ -316,9 +323,6 @@ function renderDraftChallanCard(draft) {
           <button class="nav-btn-styled" style="background:#718096;" onclick="mowDiscardDraft(${challanId})">Discard Entire Draft</button>
           <button class="nav-btn-styled" id="mow-checking-btn-${challanId}" style="background:var(--brand);" onclick="mowGenerateCheckingDraft(${challanId})">Save &amp; Generate Checking Draft</button>
         </div>
-        <div style="margin-top:8px; font-size:0.78rem; color:var(--muted); text-align:right;">
-          Once a checking draft is printed, this challan waits in <strong>Authorize Material Outward on Delivery Challan</strong>.
-        </div>
         <div id="mow-inline-feedback-${challanId}" style="display:none; margin-top:12px; padding:10px; border-left:4px solid; border-radius:var(--radius);"></div>
       </div>
     </div>`;
@@ -450,7 +454,16 @@ async function mowGenerateCheckingDraft(challanId) {
     if (!ok) return;
     const data = await apFetch({ action: "generateDeliveryChallanCheckingDraft", challanId });
     if (!data.success) throw new Error(data.error || "Failed to generate checking draft.");
-    loadMaterialOutwardServiceQueue();
+    // Done view: only the success message until the next action is chosen.
+    const wasEditing = (window._mowTab || "new") === "editing";
+    const feed = document.getElementById("mow-service-queue-feed");
+    if (feed) feed.style.display = "none";
+    const draft = mowDraftsCache.find(d => String(d.challan_id) === String(challanId));
+    showSuccessWithReset("mow-feedback-banner",
+      `Delivery Challan ${escapeHtml(draft?.challan_number || "#" + challanId)} saved. Checking Draft #${escapeHtml(String(data.draftNumber))} generated — print it for review. It now waits in Authorize Material Outward on Delivery Challan.`,
+      wasEditing ? "Edit Another Challan" : "Create New Challan",
+      wasEditing ? "mowSwitchTab('editing')" : "mowSwitchTab('new')",
+      data.url ? [{ url: driveLink(data.url), label: "📄 Open Checking Draft #" + data.draftNumber }] : []);
   } catch (err) {
     mowShowInlineError(challanId, err.message);
   } finally {
@@ -666,6 +679,8 @@ async function mowVendorSearch(challanId, query) {
     const data = await apFetch({ action: "searchVendorNamesForMaterialOutward", query: query || "" });
     if (seq !== mowVendorSearchSeq) return;
     const vendors = (data.success ? data.vendors : []) || [];
+    window._mowVendorDetails = window._mowVendorDetails || {};
+    (data.vendorDetails || []).forEach(v => { window._mowVendorDetails[v.name] = v; });
     const r = input.getBoundingClientRect();
     dd.style.left = r.left + "px"; dd.style.top = r.bottom + "px"; dd.style.width = Math.max(r.width, 260) + "px";
     dd.innerHTML = vendors.length
@@ -681,6 +696,13 @@ function mowPickVendor(challanId, name) {
   const input = document.getElementById(`mow-vendor-${challanId}`);
   const dd = document.getElementById(`mow-vendor-dd-${challanId}`);
   if (input) input.value = name;
+  const vd = (window._mowVendorDetails || {})[name];
+  if (vd) {
+    const addr = document.getElementById(`mow-address-${challanId}`);
+    const st = document.getElementById(`mow-state-${challanId}`);
+    if (addr && vd.address) { addr.value = vd.address; autoGrowTextField(addr); }
+    if (st && vd.state) { st.value = vd.state; autoGrowTextField(st); }
+  }
   mowValidateDraftCard(challanId);
   mowSaveCardLocal(challanId);
   if (dd) dd.style.display = "none";
@@ -690,3 +712,11 @@ document.addEventListener("click", (e) => {
   if (e.target.closest && (e.target.closest('[id^="mow-vendor-dd-"]') || e.target.closest('input[id^="mow-vendor-"]'))) return;
   document.querySelectorAll('[id^="mow-vendor-dd-"]').forEach(d => { d.style.display = "none"; });
 });
+
+
+function mowSwitchTab(tab) {
+  window._mowTab = tab;
+  const banner = document.getElementById("mow-feedback-banner");
+  if (banner) banner.style.display = "none";
+  loadMaterialOutwardServiceQueue();
+}

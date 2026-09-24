@@ -52,11 +52,11 @@ function amoRenderCard(c) {
   const returns = tickets.flatMap(t => t.expectedReturnItems || []);
   const cell = "padding:7px 8px; border:1px solid var(--border);";
   const head = "padding:7px 8px; border:1px solid var(--border); background:var(--highlight-bg); font-size:0.72rem; text-transform:uppercase; color:var(--muted);";
-  const field = (label, value) => `<div><div class="field-label" style="margin-top:0;">${label}</div><div style="padding:6px 0; font-weight:600;">${escapeHtml(value || "—")}</div></div>`;
+  const field = (label, value) => `<div style="background:#fff; border:1px solid #cbd5e1; border-radius:var(--radius); padding:8px 10px; min-width:0;"><div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); margin-bottom:3px;">${label}</div><div style="font-weight:600; word-break:break-word;">${escapeHtml(value || "—")}</div></div>`;
 
   const body = !open ? "" : `
     <div style="margin-top:12px; border-top:1px dashed var(--border); padding-top:12px;">
-      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px 16px; margin-bottom:10px;">
+      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-bottom:14px; padding:12px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius);">
         ${field("Purpose", c.outward_type)}
         ${field("Status", c.returnable_status)}
         ${field("Challan No", c.challan_number)}
@@ -65,11 +65,11 @@ function amoRenderCard(c) {
         ${field("Contact Name", c.contact_person_name)}
         ${field("Contact Number", c.contact_number)}
         ${field("State", c.consignee_state)}
-        <div style="grid-column:span 2;">${field("Address", c.consignee_address)}</div>
+        <div style="grid-column:span 3;">${field("Address", c.consignee_address)}</div>
         ${field("LR No", c.lr_number)}
         ${field("Transport Name", c.transporter_name)}
         ${field("Freight", c.freight)}
-        <div style="grid-column:span 3;">${field("Note", c.challan_remarks)}</div>
+        <div style="grid-column:span 4;">${field("Note", c.challan_remarks)}</div>
       </div>
       <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-bottom:12px;">
         <colgroup><col style="width:7%"><col style="width:53%"><col style="width:14%"><col style="width:13%"><col style="width:13%"></colgroup>
