@@ -179,7 +179,7 @@ async function submitMaterialRequestTicketToBackend() {
   if (expectedReturnError) {
     if (feedbackBanner) {
       feedbackBanner.style.cssText = "display: block; background: #fff3c7; border-color: #b45309; color: #b45309; padding: 10px; margin-bottom: 12px; border-left: 4px solid #b45309; text-align: left;";
-      feedbackBanner.innerHTML = `<strong>Expected Return:</strong> ${escapeHtml(expectedReturnError)}`;
+      feedbackBanner.innerHTML = `<strong>Expected Processing Material Return:</strong> ${escapeHtml(expectedReturnError)}`;
       feedbackBanner.scrollIntoView({ behavior: "smooth", block: "center" });
     }
     return;
@@ -1445,6 +1445,11 @@ function applyCmitDepartmentLock(lock) {
   } else {
     if (fieldWrapper) fieldWrapper.style.display = "";
     if (badge) badge.style.display = "none";
+    // One real sub-dept: pre-select it (Processing is still offered).
+    if (lock && lock.defaultValue && dropdown && !dropdown.value) {
+      dropdown.value = lock.defaultValue;
+      handleCreateTicketDepartmentChange(lock.defaultValue);
+    }
   }
 }
 
@@ -2012,7 +2017,7 @@ async function submitAssReservationChanges() {
 
 
 
-// ── Expected Return after Processing (24 Sep 2026) ────────────────────
+// ── Expected Processing Material Return (24 Sep 2026) ────────────────────
 // A Processing ticket lists what should come back from the job-work
 // vendor: a real item code (picked like Create BOQ's material search, with
 // the same "Create Item Code first" link for a new one) and a quantity.

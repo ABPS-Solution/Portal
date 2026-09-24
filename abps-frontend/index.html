@@ -750,7 +750,7 @@
     position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
     color: var(--muted); font-size: 1rem; pointer-events: none;
   }
-  #psn-search-ta-input.psn-search-input { padding-left: 38px; font-size: 0.95rem; }
+  #psn-search-ta-input.psn-search-input { font-size: 0.95rem; }
   .psn-suggestion-row { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.1s; }
   .psn-suggestion-row:last-child { border-bottom: none; }
   .psn-suggestion-row:hover { background: var(--highlight-bg); }
@@ -1448,7 +1448,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           </table>
         </div>
         <div id="ticket-expected-return-section" style="display:none; margin-bottom:20px;">
-          <span style="display:block; font-size:0.75rem; font-weight:700; color:var(--brand); text-transform:uppercase; margin-bottom:4px;">Expected Return after Processing *</span>
+          <span style="display:block; font-size:0.75rem; font-weight:700; color:var(--brand); text-transform:uppercase; margin-bottom:4px;">Expected Processing Material Return *</span>
           <p style="margin:0 0 8px; font-size:0.78rem; color:var(--muted);">What you expect to receive back from the job-work vendor. The returning Delivery Challan will quote this ticket's outgoing Delivery Challan number.</p>
           <div id="ticket-expected-return-body"></div>
         </div>
@@ -2730,7 +2730,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div id="psn-search-bar" style="display:flex; gap:10px; align-items:flex-end; margin-bottom:20px;">
           <div class="psn-search-input-wrap">
             <label class="field-label" style="margin-top:0;">Product Serial Number</label>
-            <span class="psn-search-icon">🔍</span>
             <input type="text" id="psn-search-ta-input" class="form-input psn-search-input" autocomplete="off" placeholder="Type or scan the serial number on the product nameplate"
               oninput="psnHandleSearchInput(this.value)" />
             <div id="psn-search-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:280px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>

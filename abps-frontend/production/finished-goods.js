@@ -1,3 +1,5 @@
+// Declared here: its old home (project-invoice.js) is no longer loaded.
+let _submitFGAddItemInProgress = false;
 // Each document type now accepts multiple files (was one File per type) —
 // fgDocFiles[type] is an array, appended to on every selection rather than
 // replaced, with a running list rendered under each dropzone.

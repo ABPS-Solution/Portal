@@ -42,14 +42,14 @@ const pplanParse = s => new Date(s + "T00:00:00Z");
 const PPLAN_MON = APP_MONTH_NAMES;
 const pplanFmt = s => { if (!s) return "-"; const d = pplanParse(s); return d.getUTCDate() + " " + PPLAN_MON[d.getUTCMonth()]; };
 
-const pplanIsAdmin = () => localStorage.getItem("isUserAdminGlobal") === "true";
+const pplanIsAdmin = () => localStorage.getItem("isUserSuperAdminGlobal") === "true";
 // Wrapped in its own max-width/margin:0 auto div, input itself at
 // width:100% — the DD/MM/YYYY overlay (shared/format.js) anchors to the
 // wrapper IT inserts around the input, so a width set directly ON the
 // input leaves the overlay floating at the input's old, uncentered
 // position (documented 4 Sep and 9 Sep 2026; this site was missed then).
-const pplanAsOfInputHtml = (id, value) => pplanIsAdmin()
-  ? `<div style="max-width:130px; margin:0 auto;"><input type="date" id="pplan-asof-${id}" value="${value || ''}" title="Admin only - set/backdate this completion for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box;" /></div>`
+const pplanAsOfInputHtml = (id, value, onchangeJs) => pplanIsAdmin()
+  ? `<div style="max-width:140px; margin:0 auto;"><input type="date" id="pplan-asof-${id}" value="${value || ''}"${onchangeJs ? ` onchange="${onchangeJs}"` : ''} title="Super admin only - set/backdate this completion for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.85rem; font-weight:700; width:100%; box-sizing:border-box;" /></div>`
   : "";
 const pplanReadAsOf = (id) => { const el = document.getElementById(`pplan-asof-${id}`); return el && el.value ? el.value : undefined; };
 
@@ -196,9 +196,7 @@ async function loadProductionPlanningQueue() {
 }
 
 function pplanRenderNeedQueueList(title, items, emptyMessage) {
-  if (items.length === 0) {
-    return `<div style="padding:10px 14px; margin-bottom:10px; background:#f0fff4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-size:0.8rem; font-weight:600;">${emptyMessage}</div>`;
-  }
+  if (items.length === 0) return "";
   const rows = items.map(item => {
     const dueLine = item.dueDate
       ? `<div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">Due ${escapeHtml(pplanFmt(item.dueDate))}${item.daysOverdue ? ` — <strong style="color:#b91c1c;">${item.daysOverdue}d overdue</strong>` : ""}</div>`
@@ -426,7 +424,8 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
           }).join('')}</div>`
         : `<span style="font-size:0.78rem; color:var(--muted);">-</span>`;
       const doneLabel = done ? `<div style="font-size:0.74rem; color:${c}; font-weight:700; margin-bottom:4px;">Done ${pplanFmt(s.actual)}</div>` : '';
-      const adminAsOf = (canWrite && pplanIsAdmin()) ? `<div style="margin-top:4px; display:flex; justify-content:center;">${pplanAsOfInputHtml(`${lane.boqId}-${s.id}`, s.actual)}</div>` : '';
+      const redateJs = done ? `pplanAdminRedateStep('${lane.boqId}','${s.id}', this.value)` : '';
+      const adminAsOf = (canWrite && pplanIsAdmin()) ? `<div style="margin-top:4px; display:flex; justify-content:center;">${pplanAsOfInputHtml(`${lane.boqId}-${s.id}`, s.actual, redateJs)}</div>` : '';
       actionCell = `${doneLabel}${pills}${adminAsOf}`;
     }
 
@@ -437,8 +436,8 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
     // pplanUpdateStartDate never rejects on step status server-side.
     const startCell = canWrite && (s.terminal || !done)
       ? `<div style="max-width:150px; margin:0 auto;"><input type="date" value="${s.startDate || ''}" onchange="pplanUpdateStartDate('${lane.boqId}','${s.id}', this.value)"
-              style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box; text-align:center;" /></div>`
-      : `<span style="color:var(--muted); font-size:0.8rem;">${s.startDate ? pplanFmt(s.startDate) : '-'}</span>`;
+              style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.92rem; font-weight:700; width:100%; box-sizing:border-box; text-align:center;" /></div>`
+      : `<span style="color:var(--text); font-size:0.95rem; font-weight:700;">${s.startDate ? pplanFmt(s.startDate) : '-'}</span>`;
 
     // Current Target Completion Date — one editable field pre-filled with
     // the current value (was two columns: a read-only "Current Target
@@ -446,8 +445,8 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
     // merged 11 Sep 2026 into a single in-place-editable field).
     const targetCell = canWrite && (s.terminal || !done)
       ? `<div style="max-width:150px; margin:0 auto;"><input type="date" value="${s.target || ''}" onchange="pplanUpdateTarget('${lane.boqId}','${s.id}', this.value)"
-              style="padding:4px; border:1.5px solid var(--border); border-radius:4px; font-size:0.74rem; width:100%; box-sizing:border-box; text-align:center;" /></div>`
-      : `<span style="color:var(--muted); font-size:0.8rem;">${pplanFmt(currentTarget)}</span>`;
+              style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.92rem; font-weight:700; width:100%; box-sizing:border-box; text-align:center;" /></div>`
+      : `<span style="color:var(--text); font-size:0.95rem; font-weight:700;">${pplanFmt(currentTarget)}</span>`;
 
     const colBorder = "border-left:1px solid var(--border);";
     const mainRow = `
@@ -456,7 +455,7 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
           <span style="display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; background:${done ? c : '#fff'}; border:2px solid ${late ? 'var(--warn)' : c}; vertical-align:middle;"></span>
           ${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.78rem;">(automatic)</span>' : ''}${progressChip}
         </td>
-        <td style="width:14%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">
+        <td style="width:14%; padding:5px 8px; font-size:1rem; font-weight:800; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">
           ${pplanFmt(s.planned)}
           ${pplanIsAdmin() && s.planned ? `<div style="margin-top:4px; display:flex; flex-direction:column; align-items:center; gap:3px;">${pplanAsOfInputHtml(`planned-${lane.boqId}-${s.id}`, s.planned)}<button class="nav-btn-styled" style="padding:2px 8px; font-size:0.65rem;" onclick="pplanAdminOverridePlanned('${lane.boqId}','${s.id}')">Update (admin)</button></div>` : ''}
         </td>
@@ -564,6 +563,23 @@ async function pplanMarkStepJcDone(boqId, stepKey, jobCardNumber) {
       const set = new Set(step.doneJobCards || []); set.add(jobCardNumber);
       step.doneJobCards = Array.from(set);
     }
+    pplanRenderLanes();
+  } catch (e) { alert("Network error: " + e.message); }
+}
+
+// Super-admin testing override: move an already-completed step's
+// completion date. Re-marks one done Job Card with the chosen date; the
+// server recomputes the step and stamps that date (step stays complete).
+async function pplanAdminRedateStep(boqId, stepKey, date) {
+  if (!date) return;
+  const lane = pplanData.lanes.find(l => l.boqId === boqId);
+  const step = lane && lane.steps.find(s => s.id === stepKey);
+  const jc = step && (step.doneJobCards || [])[0];
+  if (!jc) { alert("No completed Job Card found on this step."); return; }
+  try {
+    const data = await apFetch({ action: "markProductPlanStepJobCardDone", operatorName: appActiveOperatorIdentityString, boqId, stepKey, jobCardNumber: jc, asOfDate: date });
+    if (!data.success) { alert(data.error || "Could not change this date."); return; }
+    step.actual = data.actualDate;
     pplanRenderLanes();
   } catch (e) { alert("Network error: " + e.message); }
 }

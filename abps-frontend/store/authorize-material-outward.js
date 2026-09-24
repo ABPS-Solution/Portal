@@ -77,7 +77,7 @@ function amoRenderCard(c) {
         <tbody>${items.map((it, i) => `<tr><td style="${cell} text-align:center;">${i + 1}</td><td style="${cell}">${escapeHtml(it.description || "")}</td><td style="${cell} text-align:center;">${escapeHtml(it.hsnCode || "")}</td><td style="${cell} text-align:center; font-weight:700;">${escapeHtml(String(fmtQty(it.quantity ?? 0)))}</td><td style="${cell} text-align:center;">${escapeHtml(it.unit || "")}</td></tr>`).join("")}</tbody>
       </table>
       ${returns.length ? `
-      <div style="font-weight:800; color:var(--brand); margin-bottom:6px;">Expected Return after Processing</div>
+      <div style="font-weight:800; color:var(--brand); margin-bottom:6px;">Expected Processing Material Return</div>
       <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-bottom:12px;">
         <colgroup><col style="width:7%"><col style="width:67%"><col style="width:13%"><col style="width:13%"></colgroup>
         <thead><tr><th style="${head}">Sr</th><th style="${head} text-align:left;">Material</th><th style="${head}">Qty</th><th style="${head}">Unit</th></tr></thead>
