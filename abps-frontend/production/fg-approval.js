@@ -135,16 +135,19 @@ function renderFGApprovalDetailBody(fgId) {
     </div>`;
 
   return `
-    <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:14px; margin-bottom:16px;">
-      ${field("Project ID", fg.projectId)}
-      ${field("Department", fg.department)}
-      ${field("Product Name", fg.productName)}
-      ${field("Product Rating", fg.productRating)}
-      ${field("Description of Material", fg.descriptionOfMaterial)}
-      ${field("Make", fg.make)}
-      ${field("Job Card Number *", fg.jobCardNumber)}
-      ${field("Unit *", fg.unit)}
-      ${field("Product Serial Number *", fg.productSerialNumber)}
+    <div style="border:1px solid var(--border); border-radius:var(--radius); background:#f8fafc; padding:14px; margin-bottom:16px; display:flex; flex-direction:column; gap:14px;">
+      <div style="display:grid; grid-template-columns:2fr 1fr 0.6fr 1fr; gap:14px;">
+        ${field("Project ID", fg.projectId)}
+        ${field("Department", fg.department)}
+        ${field("Unit", fg.unit)}
+        ${field("Product Serial Number", fg.productSerialNumber)}
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 2fr; gap:14px;">
+        ${field("Product Name", fg.productName)}
+        ${field("Product Rating", fg.productRating)}
+      </div>
+      ${field("Job Card Number", fg.jobCardNumber)}
+      ${fg.descriptionOfMaterial ? field("Description of Material", fg.descriptionOfMaterial) : ""}
     </div>
 
     ${fg.additionalRemarks ? `

@@ -605,16 +605,23 @@ async function submitFGAddItem() {
 
   showBlockingOverlay("Uploading documents...");
   try {
-    const documents = [];
+    // Up to 4 uploads at a time (was strictly one after another).
+    const jobs = [];
     for (const docType of Object.keys(FG_DOC_META)) {
-      const files = fgDocFiles[docType] || [];
-      const label = FG_DOC_META[docType].label;
-      for (const file of files) {
+      for (const file of (fgDocFiles[docType] || [])) jobs.push({ docType, file, label: FG_DOC_META[docType].label });
+    }
+    const documents = new Array(jobs.length);
+    let nextJob = 0;
+    const worker = async () => {
+      while (nextJob < jobs.length) {
+        const i = nextJob++;
+        const { docType, file, label } = jobs[i];
         const uploaded = await uploadFGDoc(file, label, jobCard);
         if (!uploaded) throw new Error(`Upload failed for "${file.name}" (${label}). Please retry.`);
-        documents.push({ docType, fileName: uploaded.fileName, url: uploaded.url });
+        documents[i] = { docType, fileName: uploaded.fileName, url: uploaded.url };
       }
-    }
+    };
+    await Promise.all(Array.from({ length: Math.min(4, jobs.length) }, worker));
 
     btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
 
