@@ -153,7 +153,6 @@ async function amoAuthorize(id) {
 async function amoReject(id) {
   const c = window._amoChallans.find(x => String(x.challan_id) === String(id));
   if (!c) return;
-  if (!confirm(`Reject ${c.challan_number || "Draft #" + id}? The draft is discarded and its tickets go back to Material Outward on Delivery Challan to be challaned again.`)) return;
   showBlockingOverlay("Rejecting...");
   try {
     const data = await apFetch({ action: "discardDeliveryChallanDraft", challanId: id, operatorName: appActiveOperatorIdentityString || "Unknown" });
