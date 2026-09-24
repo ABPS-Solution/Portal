@@ -136,7 +136,6 @@ function amoShowDone(html) {
 async function amoAuthorize(id) {
   const c = window._amoChallans.find(x => String(x.challan_id) === String(id));
   if (!c) return;
-  if (!confirm(`Authorize Delivery Challan ${c.challan_number || "#" + id}? This issues the real document; it can't be undone here.`)) return;
   showBlockingOverlay("Authorizing Delivery Challan...");
   try {
     const data = await apFetch({ action: "finaliseDeliveryChallan", challanId: id, operatorName: appActiveOperatorIdentityString || "Unknown" });
