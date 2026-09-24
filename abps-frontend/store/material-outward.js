@@ -498,13 +498,15 @@ async function mowFinaliseChallan(challanId) {
 }
 
 async function mowDiscardDraft(challanId, skipConfirm) {
-  if (!skipConfirm && !confirm(`Discard Draft Challan #${challanId} entirely? Every ticket on it returns to the pool, and anything typed on this card is lost.`)) return;
   try {
+    showBlockingOverlay("Discarding draft...");
     const data = await apFetch({ action: "discardDeliveryChallanDraft", challanId, operatorName: appActiveOperatorIdentityString || "Unknown" });
+    hideBlockingOverlay();
     if (!data.success) throw new Error(data.error || "Discard failed.");
     abpsDraftClear(mowCardKey(challanId));
     loadMaterialOutwardServiceQueue();
   } catch (err) {
+    hideBlockingOverlay();
     mowShowInlineError(challanId, err.message);
   }
 }
