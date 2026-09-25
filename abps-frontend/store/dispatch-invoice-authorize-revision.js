@@ -22,17 +22,17 @@ async function initializeArpdiWorkspace() {
     if (!data.success) { feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">${data.error || 'Failed to load.'}</div>`; return; }
     if (!(data.requests || []).length) { feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">No revision requests awaiting authorization.</div>`; return; }
     feed.innerHTML = data.requests.map(r => `
-      <div style="border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px; background:#fff;">
-        <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleArpdiCard(${r.requestId})">
-          <div>
-            <strong>Revision #${r.requestId}</strong> — ${r.invoiceType} Invoice ${r.invoiceNo} (${r.projectId}${r.companyName ? `, ${r.companyName}` : ''})
-            <div style="font-size:0.8rem; color:var(--muted);">Requested by ${r.requestedBy || '—'} · current revision V${r.currentRevision}</div>
-          </div>
-          <div style="text-align:right;">
-            ${r.checkingDocUrl ? `<a href="${driveLink(r.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">Draft #${r.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem;">No draft yet</span>`}
-          </div>
-        </div>
-        <div id="arpdi-card-${r.requestId}" style="display:none; margin-top:12px; border-top:1px solid var(--border); padding-top:12px;"></div>
+      <div style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:12px; background:#fff;">
+        ${renderPdiQueueCardHeader(`toggleArpdiCard(${r.requestId})`, [
+          ["Invoice No.", escapeHtml(r.invoiceNo || '')],
+          ["Revision", `V${Number(r.currentRevision) || 1} → V${(Number(r.currentRevision) || 1) + 1}`],
+          ["Invoice Type", escapeHtml(r.invoiceType || '')],
+          ["Customer", escapeHtml(r.companyName || '')],
+          ["Project ID", escapeHtml(r.projectId || '')],
+          ["Requested By", escapeHtml(r.requestedBy || '')],
+          ["Requested On", r.requestedAt ? escapeHtml(formatOrdinalDateTime(r.requestedAt)) : ''],
+        ], r.checkingDocUrl ? `<a href="${driveLink(r.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" class="pdi-link-btn">Draft #${r.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem; font-weight:600;">No draft yet</span>`)}
+        <div id="arpdi-card-${r.requestId}" style="display:none; padding:12px 14px;"></div>
       </div>`).join('');
     // Stash the full payload per request so toggleArpdiCard doesn't need a
     // second fetch — the queue route already returns { current, proposed }.
@@ -142,7 +142,11 @@ function renderArpdiCard(r) {
     </div>
     ${lineSummaryHtml}${generalSummaryHtml}${noChangesHtml}
     <div class="pdi-view-section" style="margin-top:6px;">Invoice after this revision (V${(Number(r.currentRevision) || 1) + 1})</div>
-    ${renderPdiInvoiceViewHtml(prop, { invoiceNo: r.invoiceNo, invoiceType: r.invoiceType, projectId: r.projectId })}
+    ${renderPdiInvoiceViewHtml(prop, {
+      invoiceNo: r.invoiceNo, invoiceType: r.invoiceType, projectId: r.projectId,
+      invoiceDate: r.draftDocDate ? formatOrdinalDate(r.draftDocDate) : (prop.invoiceDate || ''),
+      poNumber: r.poNumber, poDate: r.poDate ? formatOrdinalDate(r.poDate) : '',
+    })}
     <div class="pdi-view-section">Invoice Documents</div>
     <div id="arpdi-docs-${r.requestId}" style="font-size:0.85rem; color:var(--muted);">Loading documents...</div>
     <div style="margin-top:16px;">

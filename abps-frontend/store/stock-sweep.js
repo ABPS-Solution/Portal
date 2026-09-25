@@ -8,6 +8,9 @@ function initializeStockSweepPanel() {
   const formBody = document.getElementById("sweep-form-body");
   if (formBody) formBody.style.display = "";
   renderSweepBasket();
+  // The item code list is shared with other screens and was only ever filled
+  // by them, so opening Stock Sweep first left nothing to search (25 Sep 2026).
+  loadItemCodeCatalogIntoCache();
 }
 
 function handleSweepTypeChange() {
@@ -51,9 +54,17 @@ function handleSweepAllocationPick(sel) {
   renderSweepBasket();
 }
 
-function handleSweepSearch(query) {
+let sweepSearchMatches = [];
+async function handleSweepSearch(query) {
   const dropdown = document.getElementById("sweep-material-dropdown");
   if (!query || query.trim().length < 1) { dropdown.style.display = "none"; return; }
+  if (!(window.itemCodeCatalogCache || []).length) {
+    dropdown.innerHTML = `<div style="padding:8px 12px; color:var(--muted);">Loading item codes...</div>`;
+    dropdown.style.display = "block";
+    await loadItemCodeCatalogIntoCache();
+    const input = document.getElementById("sweep-material-search");
+    if (!input || input.value !== query) return;
+  }
   const catalog = window.itemCodeCatalogCache || [];
   const q = query.toLowerCase();
   const matches = catalog.filter(item => {
@@ -62,15 +73,26 @@ function handleSweepSearch(query) {
     const make = (item.make || "").toLowerCase();
     const combined = (item.combinedName || `${name} ${rating} ${make}`).toLowerCase().trim();
     return name.includes(q) || rating.includes(q) || make.includes(q) || combined.includes(q);
-  }).slice(0, 10);
-  if (matches.length === 0) { dropdown.style.display = "none"; return; }
-  dropdown.innerHTML = matches.map(item => `
-    <div onclick="addToSweepBasket('${item.itemCode}', \`${item.productName.replace(/`/g,"'")}\`, \`${(item.rating||'').replace(/`/g,"'")}\`, '${(item.unitType||'NOS').replace(/'/g,"")}')"
+  }).slice(0, 15);
+  if (matches.length === 0) {
+    dropdown.innerHTML = `<div style="padding:8px 12px; color:var(--muted);">No item code matches "${escapeHtml(query)}".</div>`;
+    dropdown.style.display = "block";
+    return;
+  }
+  sweepSearchMatches = matches;
+  dropdown.innerHTML = matches.map((item, i) => `
+    <div onmousedown="event.preventDefault();" onclick="addSweepSearchMatch(${i})"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>${item.productName}${item.rating ? ` - <span style="color:var(--brand); font-weight:700;">${item.rating}</span>` : ""}
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${escapeHtml(item.itemCode)}</span>${escapeHtml(item.productName || '')}${item.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(item.rating)}</span>` : ""}${item.make ? ` <span style="color:var(--muted);">- Make: ${escapeHtml(item.make)}</span>` : ""}
     </div>`).join("");
   dropdown.style.display = "block";
+}
+
+function addSweepSearchMatch(i) {
+  const item = sweepSearchMatches[i];
+  if (!item) return;
+  addToSweepBasket(item.itemCode, item.productName || '', item.rating || '', item.unit || item.unitType || 'NOS');
 }
 
 function addToSweepBasket(itemCode, materialName, rating, unitType) {
@@ -95,22 +117,22 @@ function updateSweepBasketField(itemCode, field, value) {
 function renderSweepBasket() {
   const body = document.getElementById("sweep-basket-body");
   if (sweepBasket.length === 0) {
-    body.innerHTML = '<tr id="sweep-basket-empty"><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No items added yet.</td></tr>';
+    body.innerHTML = '<tr id="sweep-basket-empty"><td colspan="5" style="padding:14px; border:1.5px solid #64748b; text-align:center; color:var(--muted);">No items added yet.</td></tr>';
   } else {
     body.innerHTML = sweepBasket.map(b => b.isBlockedExit ? `
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px; font-family:monospace;">${b.itemCode}</td>
-        <td style="padding:8px;">${b.materialName} <span style="color:var(--muted); font-size:0.78rem;">(from JC: ${b.jobCardNumber})</span></td>
-        <td style="padding:8px; font-family:monospace; color:var(--muted);">—</td>
-        <td style="padding:8px; font-family:monospace; font-weight:700;">${fmtQty(b.quantity)}</td>
-        <td style="padding:8px;"><button onclick="removeFromSweepBasketByAllocation(${b.allocationId})" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>
+      <tr>
+        <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace;">${b.itemCode}</td>
+        <td style="padding:8px; border:1.5px solid #64748b;">${b.materialName} <span style="color:var(--muted); font-size:0.78rem;">(from JC: ${b.jobCardNumber})</span></td>
+        <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; color:var(--muted);">—</td>
+        <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; font-weight:700;">${fmtQty(b.quantity)}</td>
+        <td style="padding:8px; border:1.5px solid #64748b;"><button onclick="removeFromSweepBasketByAllocation(${b.allocationId})" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>
       </tr>` : `
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px; font-family:monospace;">${b.itemCode}</td>
-        <td style="padding:8px;">${b.materialName}${b.rating ? ` - <span style="color:var(--brand); font-weight:700;">${b.rating}</span>` : ""}</td>
-        <td style="padding:8px; font-family:monospace; color:var(--muted);">${b.unitType || "NOS"}</td>
-        <td style="padding:8px;"><input type="number" min="0.01" step="any" required value="${b.quantity}" oninput="updateSweepBasketField('${b.itemCode}','quantity',this.value)" style="width:90px; padding:5px; border:1px solid var(--border); border-radius:4px;"></td>
-        <td style="padding:8px;"><button onclick="removeFromSweepBasket('${b.itemCode}')" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>
+      <tr>
+        <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace;">${b.itemCode}</td>
+        <td style="padding:8px; border:1.5px solid #64748b;">${b.materialName}${b.rating ? ` - <span style="color:var(--brand); font-weight:700;">${b.rating}</span>` : ""}</td>
+        <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; color:var(--muted);">${b.unitType || "NOS"}</td>
+        <td style="padding:8px; border:1.5px solid #64748b;"><input type="number" min="0.01" step="any" required value="${b.quantity}" oninput="updateSweepBasketField('${b.itemCode}','quantity',this.value)" style="width:90px; padding:5px; border:1px solid var(--border); border-radius:4px;"></td>
+        <td style="padding:8px; border:1.5px solid #64748b;"><button onclick="removeFromSweepBasket('${b.itemCode}')" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>
       </tr>`).join("");
   }
   updateSweepSubmitState();

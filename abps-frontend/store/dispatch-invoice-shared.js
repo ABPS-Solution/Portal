@@ -358,3 +358,15 @@ function renderPdiSuccessCard(elementId, opts) {
       </div>
     </div>`;
 }
+
+// renderPdiQueueCardHeader — the clickable header of an Authorize queue card
+// (25 Sep 2026): tinted background, labelled cells, the draft link on the
+// right. cells: [[label, valueHtml], ...]
+function renderPdiQueueCardHeader(onclickJs, cells, rightHtml) {
+  return `<div onclick="${onclickJs}" style="cursor:pointer; background:#eaf1fb; border-bottom:1px solid #d3e0f2; border-radius:var(--radius) var(--radius) 0 0; padding:12px 14px; display:flex; gap:14px; align-items:center;">
+    <div style="flex:1; display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px 16px;">
+      ${cells.map(c => `<div style="min-width:0;"><div style="font-size:0.66rem; font-weight:800; text-transform:uppercase; color:var(--muted);">${c[0]}</div><div style="font-weight:700; font-size:0.88rem; word-break:break-word;">${c[1] == null || c[1] === '' ? '—' : c[1]}</div></div>`).join('')}
+    </div>
+    <div style="flex-shrink:0; text-align:right;">${rightHtml || ''}</div>
+  </div>`;
+}

@@ -18,17 +18,17 @@ async function initializeApdiWorkspace() {
     if (!data.success) { feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">${data.error || 'Failed to load.'}</div>`; return; }
     if (!(data.invoices || []).length) { feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">No invoices awaiting authorization.</div>`; return; }
     feed.innerHTML = data.invoices.map(inv => `
-      <div style="border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px; background:#fff;">
-        <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleApdiCard(${inv.invoiceId})">
-          <div>
-            <strong>${inv.invoiceType} Invoice #${inv.invoiceId}</strong> — ${inv.projectId} ${inv.companyName ? `(${inv.companyName})` : ''}
-            <div style="font-size:0.8rem; color:var(--muted);">Created by ${inv.createdBy || '—'} · pending ${inv.pendingDays === 0 ? 'today' : `${inv.pendingDays} day(s)`}</div>
-          </div>
-          <div style="text-align:right;">
-            ${inv.checkingDocUrl ? `<a href="${driveLink(inv.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">Draft #${inv.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem;">No draft yet</span>`}
-          </div>
-        </div>
-        <div id="apdi-card-${inv.invoiceId}" style="display:none; margin-top:12px; border-top:1px solid var(--border); padding-top:12px;"></div>
+      <div style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:12px; background:#fff;">
+        ${renderPdiQueueCardHeader(`toggleApdiCard(${inv.invoiceId})`, [
+          ["Invoice No.", escapeHtml(inv.invoiceNo || '')],
+          ["Invoice Type", escapeHtml(inv.invoiceType || '')],
+          ["Customer", escapeHtml(inv.companyName || '')],
+          ["Project ID", escapeHtml(inv.projectId || '')],
+          ["Created By", escapeHtml(inv.createdBy || '')],
+          ["Created On", inv.createdAt ? escapeHtml(formatOrdinalDateTime(inv.createdAt)) : ''],
+          ["Pending", inv.pendingDays === 0 ? 'Today' : `${inv.pendingDays} day(s)`],
+        ], inv.checkingDocUrl ? `<a href="${driveLink(inv.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" class="pdi-link-btn">Draft #${inv.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem; font-weight:600;">No draft yet</span>`)}
+        <div id="apdi-card-${inv.invoiceId}" style="display:none; padding:12px 14px;"></div>
       </div>`).join('');
   } catch(e) {
     feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">Network error: ${e.message}</div>`;
