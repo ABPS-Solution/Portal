@@ -345,3 +345,12 @@ function enhanceAllDateInputsForDMY() {
     }
   });
 }
+
+// Item-code search: matches the full "Name - Rating - Make" text (so a
+// name copied from another screen finds its item), ignoring extra spaces.
+function itemCatalogMatches(it, query) {
+  const norm = (t) => (t || "").toString().toLowerCase().replace(/\s+/g, " ").trim();
+  const q = norm(query);
+  if (!q) return false;
+  return norm([it.combinedName, `${it.productName || ""} - ${it.rating || ""}`, it.productName, it.rating, it.make].join(" | ")).includes(q);
+}

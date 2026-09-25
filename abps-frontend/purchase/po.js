@@ -172,7 +172,7 @@ function handleSrchPOMaterialInput(query) {
   const catalog = window.itemCodeCatalogCache || [];
   if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
   const q = query.toLowerCase();
-  const matches = catalog.filter(it => (it.productName||"").toLowerCase().includes(q) || (it.rating||"").toLowerCase().includes(q) || (it.make||"").toLowerCase().includes(q)).slice(0, 10);
+  const matches = catalog.filter(it => itemCatalogMatches(it, q)).slice(0, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(it => `
     <div onclick="selectSrchPOMaterial('${it.itemCode}', \`${(it.productName||'').replace(/\`/g,"'")}\`, \`${(it.rating||'').replace(/\`/g,"'")}\`)"
@@ -1015,7 +1015,7 @@ function handleCPODescSearch(rowId, query) {
   const catalog = window.itemCodeCatalogCache || [];
   if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
   const q = query.toLowerCase();
-  const matches = catalog.filter(it => (it.productName||"").toLowerCase().includes(q) || (it.rating||"").toLowerCase().includes(q) || (it.make||"").toLowerCase().includes(q)).slice(0, 10);
+  const matches = catalog.filter(it => itemCatalogMatches(it, q)).slice(0, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(it => `
     <div onclick="selectCPOMaterial(${rowId}, '${it.itemCode}', \`${(it.combinedName || it.productName || '').replace(/\`/g,"'")}\`, '${(it.unit||'Nos').replace(/'/g,'')}')"
