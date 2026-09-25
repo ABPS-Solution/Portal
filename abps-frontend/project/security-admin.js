@@ -611,7 +611,8 @@ function handleChangePinBackClick(personKey) {
   const safeId = personKey.replace(/[^a-zA-Z0-9]/g, '_');
   const backEl = document.getElementById(`pinflip-back-${safeId}`);
   if (!backEl) return;
-  backEl.innerHTML = `<input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4"
+  const pinLen = (saAllPinUsers.find(x => x.personKey === personKey) || {}).isSuperAdmin ? 6 : 4;
+  backEl.innerHTML = `<input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="${pinLen}"
     id="pinchange-input-${safeId}" style="width:80px; text-align:center; font-weight:800; font-size:1.05rem; letter-spacing:4px; font-family:monospace; border:1.5px solid #cbd5e1; border-radius:6px; padding:4px;"
     oninput="handleChangePinInputTyping('${personKey}', this)" onclick="event.stopPropagation();">`;
   const input = document.getElementById(`pinchange-input-${safeId}`);
@@ -619,9 +620,10 @@ function handleChangePinBackClick(personKey) {
 }
 
 function handleChangePinInputTyping(personKey, inputEl) {
-  const digitsOnly = inputEl.value.replace(/\D/g, '').slice(0, 4);
+  const pinLen = (saAllPinUsers.find(x => x.personKey === personKey) || {}).isSuperAdmin ? 6 : 4;
+  const digitsOnly = inputEl.value.replace(/\D/g, '').slice(0, pinLen);
   if (inputEl.value !== digitsOnly) inputEl.value = digitsOnly;
-  if (digitsOnly.length === 4) submitAdminResetPin(personKey, digitsOnly);
+  if (digitsOnly.length === pinLen) submitAdminResetPin(personKey, digitsOnly);
 }
 
 async function submitAdminResetPin(personKey, newPin) {

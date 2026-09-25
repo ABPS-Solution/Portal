@@ -83,11 +83,16 @@ function selectLoginDeptButton(deptName) {
 
 // Auto-submits the instant a valid 4-digit PIN has been typed — no
 // separate "Log In" button in PIN mode.
+// A Super Admin's PIN is 6 digits: the server answers a 4-digit try with
+// needsSixDigits (not counted as a failure) and we wait for 6 from then on.
+let pinLoginSixDigitName = null;
 function handlePinDigitInput() {
   const pinInput = document.getElementById('pin-login-pin-input');
-  const digitsOnly = pinInput.value.replace(/\D/g, '').slice(0, 4);
+  const digitsOnly = pinInput.value.replace(/\D/g, '').slice(0, 6);
   if (pinInput.value !== digitsOnly) pinInput.value = digitsOnly;
-  if (digitsOnly.length === 4) submitPinLoginAttempt();
+  const engineerSelect = document.getElementById("app-auth-active-engineer-identity");
+  const needsSix = engineerSelect && pinLoginSixDigitName && engineerSelect.value === pinLoginSixDigitName;
+  if (digitsOnly.length === 6 || (digitsOnly.length === 4 && !needsSix)) submitPinLoginAttempt();
 }
 
 async function submitPinLoginAttempt() {
@@ -113,7 +118,7 @@ async function submitPinLoginAttempt() {
   if (!selectedName) return showFeedback("Select your name first.", true);
   if (!personKey) return showFeedback("Could not resolve an account for that name. Contact your administrator.", true);
   const pin = pinInput.value.trim();
-  if (!/^\d{4}$/.test(pin)) return showFeedback("Enter your 4-digit PIN.", true);
+  if (!/^(\d{4}|\d{6})$/.test(pin)) return showFeedback("Enter your PIN.", true);
   if (!deviceSecret) return showFeedback("This PC is not set up for PIN login.", true);
 
   pinInput.disabled = true;
@@ -123,6 +128,13 @@ async function submitPinLoginAttempt() {
       body: JSON.stringify({ action: "pinLogin", deviceSecret, personKey, pin }),
     });
     const data = await res.json();
+
+    if (!data.success && data.needsSixDigits) {
+      pinLoginSixDigitName = selectedName;
+      pinInput.disabled = false;
+      pinInput.focus();
+      return showFeedback(data.error || "Enter your 6-digit PIN.", false);
+    }
 
     if (data.success) {
       // permissions.admin is the server's real perm_admin flag — a more
@@ -183,7 +195,7 @@ async function submitDeviceEnrollmentCode() {
 
   if (!code) return showFeedback("Enter the enrollment code.", true);
   if (!deviceLabel) return showFeedback("Give this device a label (e.g. \"My Laptop\").", true);
-  if (!/^\d{4}$/.test(pin)) return showFeedback("Choose a 4-digit PIN.", true);
+  if (!/^(\d{4}|\d{6})$/.test(pin)) return showFeedback("Choose a 4-digit PIN (6 digits for the Super Admin).", true);
   if (pin !== pinConfirm) return showFeedback("PIN and Confirm PIN don't match.", true);
 
   try {

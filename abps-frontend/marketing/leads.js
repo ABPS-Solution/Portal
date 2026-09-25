@@ -250,8 +250,8 @@ function renderCountryCheckboxPillElements() {
     const cleanId = "country_chk_" + cleanCountryName.replace(/\s+/g, '_');
     
     countryMount.innerHTML += `
-      <input type="checkbox" name="searchCountryFilter" value="${cleanCountryName}" id="${cleanId}" onchange="handleCountryPillSelectionChangeContext()">
-      <label for="${cleanId}">${cleanCountryName}</label>
+      <input type="checkbox" name="searchCountryFilter" value="${escapeHtml(cleanCountryName)}" id="${escapeHtml(cleanId)}" onchange="handleCountryPillSelectionChangeContext()">
+      <label for="${escapeHtml(cleanId)}">${escapeHtml(cleanCountryName)}</label>
     `;
   });
 }
@@ -289,8 +289,8 @@ function handleCountryPillSelectionChangeContext() {
     const cleanId = "state_chk_" + cleanStateName.replace(/\s+/g, '_');
     
     stateMount.innerHTML += `
-      <input type="checkbox" name="searchStateFilter" value="${cleanStateName}" id="${cleanId}" onchange="handleStatePillSelectionChangeContext()">
-      <label for="${cleanId}">${cleanStateName}</label>
+      <input type="checkbox" name="searchStateFilter" value="${escapeHtml(cleanStateName)}" id="${escapeHtml(cleanId)}" onchange="handleStatePillSelectionChangeContext()">
+      <label for="${escapeHtml(cleanId)}">${escapeHtml(cleanStateName)}</label>
     `;
   });
 }
@@ -338,8 +338,8 @@ function handleStatePillSelectionChangeContext() {
   aggregatedCities.forEach(city => {
      const cleanCityId = "city_chk_" + city.replace(/\s+/g, '_');
      cityMountPoint.innerHTML += `
-       <input type="checkbox" name="searchCityFilter" value="${city}" id="${cleanCityId}" onchange="handleIndividualCityPillToggleSelectionContext()">
-       <label for="${cleanCityId}">${city}</label>
+       <input type="checkbox" name="searchCityFilter" value="${escapeHtml(city)}" id="${escapeHtml(cleanCityId)}" onchange="handleIndividualCityPillToggleSelectionContext()">
+       <label for="${escapeHtml(cleanCityId)}">${escapeHtml(city)}</label>
      `;
   });
 }
@@ -1571,7 +1571,7 @@ async function submitLead() {
         feedbackBanner.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div>
-              <strong style="font-size: 1rem;">Success! Lead Record Created for ${fields["Company Name"] || companyVal}.</strong><br/>
+              <strong style="font-size: 1rem;">Success! Lead Record Created for ${escapeHtml(fields["Company Name"] || companyVal)}.</strong><br/>
               <span style="font-size: 0.88rem; font-weight: 600;">Assigned LEAD ID:
                 <br/><span style="font-family: monospace; font-weight: 800; background: #fff; padding: 4px 10px; border-radius: 4px; border: 1px solid #15803d; color: #111827; display: inline-block; margin-top: 6px;">${d.leadId}</span>
               </span>
@@ -2784,7 +2784,7 @@ function renderPurchaseOrderReview() {
     <div class="grid-cell-item" style="grid-column: span 8;">
       <label style="font-size:0.72rem;">Company Name</label>
       <select oninput="updatePoReviewField('companyName', this.value)" style="font-size:0.95rem; padding:7px 8px;">
-        ${poReviewCompanyOptions().map(name => `<option value="${name.replace(/"/g, '&quot;')}" ${name === s.companyName ? 'selected' : ''}>${name}</option>`).join('')}
+        ${poReviewCompanyOptions().map(name => `<option value="${escapeHtml(name)}" ${name === s.companyName ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('')}
       </select>
     </div>`;
 
