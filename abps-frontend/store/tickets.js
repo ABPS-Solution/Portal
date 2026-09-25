@@ -752,7 +752,7 @@ function renderDraftBasketTableViewportRows() {
         ${rowItem.materialName} 
         ${rowItem.requiresBOQIncreaseFlag ? '<span style="font-size:0.65rem; background:#fef3c7; color:#b45309; padding:1px 4px; border-radius:3px; font-weight:bold; margin-left:4px;">⚠️ EXCEEDS JOB CARD LIMIT</span>' : ''}
       </td>
-      <td style="color:var(--muted); font-size:0.8rem;">${rowItem.unitType}</td>
+      <td style="text-align:center; font-weight:700; font-size:0.95rem;">${rowItem.unitType}</td>
       <td style="font-family:monospace; font-weight:700; font-size:1.05rem; text-align:center;">${rowItem.quantity}</td>
       <td style="text-align:center;">
         <button class="nav-btn-styled" onclick="removeSingleBasketItemLineAtIndex(${arrayIdx})" style="background:#e53e3e; padding:2px 8px; font-size:0.75rem;">Delete</button>
@@ -2065,28 +2065,29 @@ function renderTicketExpectedReturns() {
   const head = "padding:7px 8px; border:1px solid var(--border); background:var(--highlight-bg); font-size:0.72rem; text-transform:uppercase; color:var(--muted);";
   body.innerHTML = `
     <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
-      <colgroup><col style="width:6%"><col style="width:58%"><col style="width:12%"><col style="width:16%"><col style="width:8%"></colgroup>
-      <thead><tr><th style="${head}">Sr</th><th style="${head} text-align:left;">Material *</th><th style="${head}">Unit</th><th style="${head}">Qty *</th><th style="${head}"></th></tr></thead>
+      <colgroup><col style="width:64%"><col style="width:12%"><col style="width:16%"><col style="width:8%"></colgroup>
+      <thead><tr><th style="${head} text-align:left;">Material Name *</th><th style="${head}">Unit</th><th style="${head}">Qty *</th><th style="${head}"></th></tr></thead>
       <tbody>${rows.map((r, i) => `
         <tr>
-          <td style="${cell} text-align:center;">${i + 1}</td>
           <td style="${cell}">
-            <input type="text" id="ter-mat-${i}" value="${escapeHtml(r.materialName || "")}" placeholder="Search material or item code..." autocomplete="off"
-              oninput="ticketExpectedReturnSearch(this.value, ${i})" onfocus="ticketExpectedReturnSearch(this.value, ${i})"
-              style="width:100%; padding:7px; border:1.5px solid ${r.itemCode ? "var(--brand)" : "#94a3b8"}; border-radius:4px;" />
+            <textarea id="ter-mat-${i}" rows="1" placeholder="Search material or item code..." autocomplete="off"
+              oninput="ticketExpectedReturnSearch(this.value, ${i}); autoGrowTextField(this);" onfocus="ticketExpectedReturnSearch(this.value, ${i})"
+              onkeydown="if(event.key==='Enter') event.preventDefault();"
+              style="width:100%; padding:7px; border:1.5px solid ${r.itemCode ? "var(--brand)" : "#94a3b8"}; border-radius:4px; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.35; font-family:inherit; font-size:inherit; display:block;">${escapeHtml(r.materialName || "")}</textarea>
             <div id="ter-dd-${i}" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:4px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
             ${r.itemCode ? `<div style="font-size:0.72rem; color:var(--muted); margin-top:2px; font-family:monospace;">${escapeHtml(r.itemCode)}</div>` : ""}
           </td>
-          <td style="${cell} text-align:center; font-weight:700;">${escapeHtml(r.unit || "—")}</td>
+          <td style="${cell} text-align:center; font-weight:700; font-size:0.95rem;">${escapeHtml(r.unit || "N/A")}</td>
           <td style="${cell}"><input type="number" min="0" step="any" value="${escapeHtml(String(r.quantity ?? ""))}" placeholder="0"
               oninput="window.ticketExpectedReturnRows[${i}].quantity = this.value"
               style="width:100%; padding:7px; text-align:center; border:1.5px solid #94a3b8; border-radius:4px;" /></td>
-          <td style="${cell} text-align:center;"><button onclick="ticketRemoveExpectedReturn(${i})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; border-radius:4px; cursor:pointer; padding:4px 8px;">✕</button></td>
+          <td style="${cell} text-align:center;"><button class="nav-btn-styled" onclick="ticketRemoveExpectedReturn(${i})" style="background:#e53e3e; padding:2px 8px; font-size:0.75rem; width:auto;">Delete</button></td>
         </tr>`).join("")}</tbody>
     </table>
     <div style="margin-top:8px; text-align:right;">
       <button class="nav-btn-styled" onclick="ticketAddExpectedReturn()" style="background:var(--accent); color:#fff; font-weight:700; padding:6px 14px; width:auto;">+ Add Return Row</button>
     </div>`;
+  if (typeof autoGrowAllIn === "function") autoGrowAllIn(body);
 }
 
 function ticketAddExpectedReturn() {

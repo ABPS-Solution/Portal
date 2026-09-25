@@ -441,10 +441,10 @@
   #cboq-material-rows-body > tr > td,
   #eboq-material-rows-body > tr > td,
   #uboq-material-rows-body > tr > td,
-  [id^="boqrev-rows-mount-"] tbody > tr > td { vertical-align: top !important; padding-top: 8px !important; }
+  [id^="boqrev-rows-mount-"] tbody > tr > td { vertical-align: middle !important; padding-top: 6px !important; padding-bottom: 6px !important; }
   #cboq-material-rows-body input[type="checkbox"],
   #eboq-material-rows-body input[type="checkbox"],
-  [id^="boqrev-rows-mount-"] tbody input[type="checkbox"] { margin-top: 6px; }
+  [id^="boqrev-rows-mount-"] tbody input[type="checkbox"] { margin-top: 0; }
   /* Document upload boxes on Upload Purchase Order / Create New Leads Details:
      a clearly different look (blue dashed + tint) from the solid value boxes. */
   #workspace-purchaseOrder .card-box:not(.done),
@@ -836,13 +836,15 @@
    cell vertically centred. A Finished Goods row and its Description of Material
    row read as one block, so the line between them is removed. */
 .boq-material-table th, .boq-material-table td { border:2px solid var(--border) !important; vertical-align:middle !important; }
-.boq-material-table tr:has(+ tr > td[colspan]:not(:first-child)) > td { border-bottom-width:0 !important; }
-.boq-material-table tr:has(> td[colspan]:not(:first-child)) > td { border-top-width:0 !important; }
-/* Values the user never types (Item Code, Unit, Total, Finished Goods rate) show as plain text. */
-.boq-material-table td input[readonly], .boq-material-table td textarea[readonly] { border:none !important; background:transparent !important; box-shadow:none !important; font-weight:700; color:var(--text) !important; text-align:center; cursor:default !important; }
-/* Boxes the user fills in: heavier border, same as the Create New Lead form. */
-#canvas-module-design-create-boq input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), #canvas-module-design-auth-boq input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), #canvas-module-design-update-boq input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), #canvas-module-design-auth-boq-upd input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), #canvas-module-design-create-boq select, #canvas-module-design-auth-boq select, #canvas-module-design-update-boq select, #canvas-module-design-auth-boq-upd select, #canvas-module-design-create-boq textarea, #canvas-module-design-auth-boq textarea, #canvas-module-design-update-boq textarea, #canvas-module-design-auth-boq-upd textarea { border:1.5px solid #8492a6 !important; }
-#canvas-module-design-create-boq .boq-material-table td input[readonly], #canvas-module-design-auth-boq .boq-material-table td input[readonly], #canvas-module-design-update-boq .boq-material-table td input[readonly], #canvas-module-design-auth-boq-upd .boq-material-table td input[readonly], #canvas-module-design-create-boq .boq-material-table td textarea[readonly], #canvas-module-design-auth-boq .boq-material-table td textarea[readonly], #canvas-module-design-update-boq .boq-material-table td textarea[readonly], #canvas-module-design-auth-boq-upd .boq-material-table td textarea[readonly] { border:none !important; }
+.boq-material-table tr:has(+ tr > td[colspan]:not(:first-child)) > td { border-bottom:1px solid #e2e8f0 !important; }
+.boq-material-table tr:has(> td[colspan]:not(:first-child)) > td { border-top:1px solid #e2e8f0 !important; }
+/* Values the user never types (Item Code, Unit, Total, Finished Goods rate) read as plain cell text. */
+#canvas-module-design-create-boq#canvas-module-design-create-boq .boq-material-table td input[readonly], #canvas-module-design-auth-boq#canvas-module-design-auth-boq .boq-material-table td input[readonly], #canvas-module-design-update-boq#canvas-module-design-update-boq .boq-material-table td input[readonly], #canvas-module-design-auth-boq-upd#canvas-module-design-auth-boq-upd .boq-material-table td input[readonly], #canvas-module-design-create-boq#canvas-module-design-create-boq .boq-material-table td textarea[readonly], #canvas-module-design-auth-boq#canvas-module-design-auth-boq .boq-material-table td textarea[readonly], #canvas-module-design-update-boq#canvas-module-design-update-boq .boq-material-table td textarea[readonly], #canvas-module-design-auth-boq-upd#canvas-module-design-auth-boq-upd .boq-material-table td textarea[readonly] { border:none !important; background:transparent !important; box-shadow:none !important; font-weight:700 !important; text-align:center !important; cursor:default !important; padding:2px !important; }
+#canvas-module-design-create-boq#canvas-module-design-create-boq .boq-material-table tbody td:nth-child(4) input[readonly], #canvas-module-design-auth-boq#canvas-module-design-auth-boq .boq-material-table tbody td:nth-child(4) input[readonly], #canvas-module-design-update-boq#canvas-module-design-update-boq .boq-material-table tbody td:nth-child(4) input[readonly], #canvas-module-design-auth-boq-upd#canvas-module-design-auth-boq-upd .boq-material-table tbody td:nth-child(4) input[readonly] { color:var(--brand) !important; font-family:monospace; }
+#canvas-module-design-create-boq#canvas-module-design-create-boq .boq-material-table tbody td:nth-child(6) input[readonly], #canvas-module-design-auth-boq#canvas-module-design-auth-boq .boq-material-table tbody td:nth-child(6) input[readonly], #canvas-module-design-update-boq#canvas-module-design-update-boq .boq-material-table tbody td:nth-child(6) input[readonly], #canvas-module-design-auth-boq-upd#canvas-module-design-auth-boq-upd .boq-material-table tbody td:nth-child(6) input[readonly] { color:#64748b !important; }
+#canvas-module-design-create-boq#canvas-module-design-create-boq .boq-material-table tbody td:nth-child(8) input[readonly], #canvas-module-design-auth-boq#canvas-module-design-auth-boq .boq-material-table tbody td:nth-child(8) input[readonly], #canvas-module-design-update-boq#canvas-module-design-update-boq .boq-material-table tbody td:nth-child(8) input[readonly], #canvas-module-design-auth-boq-upd#canvas-module-design-auth-boq-upd .boq-material-table tbody td:nth-child(8) input[readonly] { color:#15803d !important; }
+/* BOQ Header box: subtle tint so it stands out from the page. */
+.boq-header-box { background:#eef4fb !important; border-color:#c7d7ee !important; }
 .prn-bordered-table { border:1px solid var(--border) !important; }
 #cmit-main-section .cmit-box { background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px 4px; margin-bottom:16px; }
 #cmit-main-section .cmit-box-title { font-size:0.8rem; font-weight:800; color:var(--brand); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--border); }
@@ -1474,7 +1476,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div class="cmit-box-title">Material Basket</div>
           <table class="store-basket-data-table prn-bordered-table cmit-basket-table" id="shopping-basket-preview-table">
             <thead>
-              <tr><th>Material Name</th><th>Unit</th><th style="text-align:center;">Quantity</th><th style="width: 60px; text-align: center;">Action</th></tr>
+              <tr><th>Material Name</th><th>Unit</th><th style="text-align:center;">Quantity</th><th style="width: 60px; text-align: center;"></th></tr>
             </thead>
             <tbody id="shopping-basket-table-body">
               <tr><td colspan="4" style="text-align: center; color: var(--muted); padding: 20px;">Your request ticket basket is currently empty.</td></tr>
@@ -3297,7 +3299,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <!-- Header Fields -->
       <div id="cboq-form-body">
         <div id="cboq-pending-products-banner" style="display:none; background:#fffbeb; border-left:4px solid #f59e0b; color:#92400e; padding:10px 14px; border-radius:var(--radius); margin-bottom:16px; font-size:0.85rem; font-weight:600;"></div>
-        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+        <div class="boq-header-box" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
           <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px; letter-spacing:0.5px;">BOQ Header Information</div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>

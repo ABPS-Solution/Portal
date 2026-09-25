@@ -261,7 +261,7 @@ function renderEBOQForm(containerId) {
   const draft = eboqCurrentDraft;
   const container = document.getElementById(containerId);
   container.innerHTML = `
-    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+    <div class="boq-header-box" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">BOQ Header</div>
       <div style="display:none;">
         <div>
