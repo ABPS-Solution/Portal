@@ -426,7 +426,7 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
   }).join("");
 
   return `
-    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+    <div class="po-section" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px; letter-spacing:0.5px;">Purchase Order Header (View Only)</div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:14px;">
         ${field("Vendor Name", po.vendorName)}
@@ -468,7 +468,7 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
     </div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
+      <div class="po-section" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Taxes & Charges</div>
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
           ${field("CGST %", fmt(po.cgstPercent))}
@@ -480,7 +480,7 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
           ${field("Round Off", fmt(po.roundOff))}
         </div>
       </div>
-      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
+      <div class="po-section" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Terms</div>
         ${field("Warranty", po.warranty)}
         <div style="margin-top:8px;">${field("Insurance", po.insurance)}</div>
@@ -586,7 +586,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
   const showPONumberOverride = !isExisting;
 
   body.innerHTML = `
-    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+    <div class="po-section" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px; letter-spacing:0.5px;">Purchase Order Header</div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
         <div>
@@ -634,7 +634,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
     </div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
+      <div class="po-section" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Taxes & Charges</div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
           <div><label class="field-label" style="margin-top:0;">Local / Import</label>
@@ -657,20 +657,20 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
           <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="cpo-roundoff" placeholder="0" step="any" data-allow-negative="true" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         </div>
       </div>
-      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
+      <div class="po-section" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Terms</div>
         <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Warranty</label><input type="text" id="cpo-warranty" placeholder="e.g. 24 Months From Date Of Commissioning" oninput="persistCPODraft()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Insurance</label><input type="text" id="cpo-insurance" placeholder="e.g. Transit Insurance by Vendor" oninput="persistCPODraft()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Payment Terms</label><input type="text" id="cpo-payment" placeholder="e.g. 60 Days Credit PDC" oninput="persistCPODraft()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         <div><label class="field-label" style="margin-top:0;">Freight Terms</label><input type="text" id="cpo-freight-terms" placeholder="e.g. To Pay" oninput="persistCPODraft()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
       </div>
-      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; grid-column:1 / -1;">
+      <div class="po-section" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; grid-column:1 / -1;">
         <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Notes (optional)</div>
         <textarea id="cpo-notes" rows="2" placeholder="Anything worth printing on the PO document below the material rows — left blank, nothing extra appears on the document." oninput="persistCPODraft()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%; font-family:inherit; font-size:0.85rem;"></textarea>
       </div>
     </div>
 
-    <div style="display:flex; justify-content:space-between; align-items:center; background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius); padding:14px; margin-bottom:16px;">
+    <div class="po-section" style="display:flex; justify-content:space-between; align-items:center; background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius); padding:14px; margin-bottom:16px;">
       <div style="font-size:0.85rem;">
         <div>Sub Total: <strong id="cpo-subtotal-disp">0.00</strong></div>
         <div style="font-size:1.05rem; margin-top:4px;">Grand Total: <strong id="cpo-grandtotal-disp" style="color:var(--brand);">0.00</strong></div>
