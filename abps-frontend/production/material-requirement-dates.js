@@ -499,7 +499,7 @@ async function loadRMRDQueueTab() {
           <div style="font-size:0.95rem; font-weight:700; color:var(--text);">${item.productName || ""} ${item.productRating || ""}</div>
         </div>
         <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
-          <span style="font-size:0.72rem; color:#78350f; max-width:300px; line-height:1.35;">A PRN revision changed a Purchase Qty — revise the requirement dates to match.</span>
+          <span style="font-size:0.72rem; color:#78350f; max-width:300px; line-height:1.35;">More material now has to be purchased than when dates were given (a PRN revision, or store stock moved to another product). Add dates for the extra quantity.</span>
           <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
             onclick="jumpToRMRDDelta('${item.prnId.replace(/'/g, "\\'")}', this)">
             Revise Dates →
