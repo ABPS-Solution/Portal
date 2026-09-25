@@ -60,7 +60,7 @@ function renderEmailLeadsReviewToggle() {
   if (!wrap) return;
   const on = emailLeadsReviewRejected;
   wrap.innerHTML = `
-    <div onclick="toggleEmailLeadsReviewRejected()" title="Show the inbound emails the AI decided were not leads, so a genuine enquiry it rejected can still be spotted"
+    <div onclick="toggleEmailLeadsReviewRejected()" title="Show the incoming emails the AI decided were not leads, so a genuine enquiry it rejected can still be spotted"
       style="cursor:pointer; user-select:none; border:1.5px solid ${on ? "var(--warn)" : "var(--border)"};
              background:${on ? "#fff7ed" : "#fff"}; color:${on ? "var(--warn)" : "var(--text)"};
              border-radius:6px; padding:6px 12px; font-size:0.78rem; font-weight:700;">
