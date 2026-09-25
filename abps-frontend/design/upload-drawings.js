@@ -70,8 +70,8 @@ function selectUploadDrawingsType(drawingType) {
 
   const approvedBtn = document.getElementById("upload-drawings-type-btn-approved");
   const workingBtn  = document.getElementById("upload-drawings-type-btn-working");
-  const activeStyle   = "flex:1; padding:9px; font-weight:700; background:var(--accent); color:#fff; border-color:var(--accent);";
-  const inactiveStyle = "flex:1; padding:9px; font-weight:700; background:#fff; color:var(--text);";
+  const activeStyle   = "flex:1; padding:9px; font-weight:700; background:var(--accent); color:#fff; border:2px solid var(--accent);";
+  const inactiveStyle = "flex:1; padding:9px; font-weight:700; background:#fff; color:var(--text); border:2px solid #94a3b8;";
   approvedBtn.style.cssText = drawingType === 'Customer Approved' ? activeStyle : inactiveStyle;
   workingBtn.style.cssText  = drawingType === 'Working Drawing'   ? activeStyle : inactiveStyle;
 
