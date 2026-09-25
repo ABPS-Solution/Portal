@@ -419,9 +419,24 @@ async function handleCreateTicketProjectChange(chosenProjectVal) {
     // department, so it keeps seeing every BOQ, same as before this
     // filter existed.
     const outgoingUse = document.getElementById("ticket-department-outgoing-dropdown")?.value || "";
-    const scopedJobCards = (outgoingUse && outgoingUse !== "Service")
-      ? (data.jobCards || []).filter(jc => jc.department === outgoingUse)
-      : (data.jobCards || []);
+    // Processing (25 Sep 2026): any BOQ of the project, limited to the
+    // requester's own production sub-department(s) when they are Production;
+    // everyone else sees them all. Reactor/Capacitor/Panel only offer Job
+    // Cards not yet in Finished Goods, so a BOQ with none left is hidden.
+    const allJobCards = data.jobCards || [];
+    let scopedJobCards;
+    if (!outgoingUse || outgoingUse === "Service") {
+      scopedJobCards = allJobCards;
+    } else if (outgoingUse === "Processing") {
+      const dept = localStorage.getItem("userDepartment") || localStorage.getItem("erpUserDepartment") || "";
+      const isAdmin = (localStorage.getItem("isUserAdminGlobal") || localStorage.getItem("erpIsUserAdminGlobal")) === "true";
+      const subDepts = (localStorage.getItem("userProductionSubDept") || localStorage.getItem("erpUserProductionSubDept") || "").split(",").filter(Boolean);
+      scopedJobCards = (dept === "Production" && !isAdmin)
+        ? allJobCards.filter(jc => subDepts.includes(jc.department))
+        : allJobCards;
+    } else {
+      scopedJobCards = allJobCards.filter(jc => jc.department === outgoingUse && !jc.hasFgEntry);
+    }
 
     // Extract unique BOQ IDs from the (possibly department-scoped) job cards
     const boqMap = {};

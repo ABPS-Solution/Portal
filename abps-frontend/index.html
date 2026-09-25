@@ -834,6 +834,12 @@
 
 .boq-material-table th, .boq-material-table td { border:1px solid var(--border) !important; }
 .prn-bordered-table { border:1px solid var(--border) !important; }
+#cmit-main-section .cmit-box { background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px 4px; margin-bottom:16px; }
+#cmit-main-section .cmit-box-title { font-size:0.8rem; font-weight:800; color:var(--brand); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+#cmit-main-section .cmit-box select, #cmit-main-section .cmit-box input[type="text"], #cmit-main-section .cmit-box input[type="number"] { min-height:36px; background:#fff; }
+#cmit-main-section .cmit-basket-table { width:100%; border-collapse:collapse; background:#fff; margin-bottom:12px; }
+#cmit-main-section .cmit-basket-table th { font-size:0.8rem; background:#f1f5f9; padding:9px 10px; }
+#cmit-main-section .cmit-basket-table td { padding:8px 10px; font-size:0.9rem; }
 .prn-bordered-table th, .prn-bordered-table td { border:1px solid var(--border) !important; }
 input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
 input[type=number] { -moz-appearance:textfield; appearance:textfield; }
@@ -1351,6 +1357,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
       <div class="section" id="cmit-main-section" style="background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
 
+        <div class="cmit-box">
+        <div class="cmit-box-title">Ticket Details</div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; align-items:end;">
           <div id="wrapper-ticket-department-outgoing-field">
             <label class="field-label" id="lbl-dept-outgoing-title" style="margin-top:0;">Production Department / Outgoing Use *</label>
@@ -1431,9 +1439,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             </select>
           </div>
         </div>
+        </div>
 
-        <div style="background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: var(--radius); margin-bottom: 18px; opacity: 0.5;" id="wrapper-ticket-add-item-zone">
-          <span style="display: block; font-size: 0.72rem; font-weight: 800; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Add Item</span>
+        <div class="cmit-box" style="opacity: 0.5;" id="wrapper-ticket-add-item-zone">
+          <div class="cmit-box-title">Add Item</div>
           <div style="display: flex; gap: 10px; align-items: flex-end;">
             <div style="flex: 1 1 auto; min-width: 0;">
               <label class="field-label" style="margin-top:0;">Material Description</label>
@@ -1449,9 +1458,9 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div id="spare-store-suggestion-banner" style="display:none; margin-top:8px; padding:8px 12px; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:4px; font-size:0.8rem; color:#92400e; font-weight:600;"></div>
         </div>
 
-        <div style="margin-bottom: 20px; overflow-x: auto;">
-          <span style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--brand); text-transform: uppercase; margin-bottom: 6px;">Material Basket</span>
-          <table class="store-basket-data-table" id="shopping-basket-preview-table">
+        <div class="cmit-box" style="overflow-x: auto;">
+          <div class="cmit-box-title">Material Basket</div>
+          <table class="store-basket-data-table prn-bordered-table cmit-basket-table" id="shopping-basket-preview-table">
             <thead>
               <tr><th>Material Name</th><th>Unit</th><th style="text-align:center;">Quantity</th><th style="width: 60px; text-align: center;">Action</th></tr>
             </thead>
@@ -1460,8 +1469,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             </tbody>
           </table>
         </div>
-        <div id="ticket-expected-return-section" style="display:none; margin-bottom:20px;">
-          <span style="display:block; font-size:0.75rem; font-weight:700; color:var(--brand); text-transform:uppercase; margin-bottom:4px;">Expected Processing Material Return *</span>
+        <div id="ticket-expected-return-section" class="cmit-box" style="display:none;">
+          <div class="cmit-box-title">Expected Processing Material Return *</div>
           <p style="margin:0 0 8px; font-size:0.78rem; color:var(--muted);">What you expect to receive back from the job-work vendor. The returning Delivery Challan will quote this ticket's outgoing Delivery Challan number.</p>
           <div id="ticket-expected-return-body"></div>
         </div>

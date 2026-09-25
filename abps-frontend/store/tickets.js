@@ -1658,7 +1658,13 @@ function handleCreateTicketBOQChange(chosenBoqId) {
     return;
   }
 
-  const filtered = (window.ticketJobCardsCache || []).filter(jc => jc.boqId === chosenBoqId);
+  // A Job Card already added to Finished Goods is finished: no more material.
+  const filtered = (window.ticketJobCardsCache || []).filter(jc => jc.boqId === chosenBoqId && !jc.hasFgEntry);
+  if (filtered.length === 0) {
+    ticketJobCardDisplayReset("All Job Cards of this BOQ are already in Finished Goods");
+    if (jobCardLabel) jobCardLabel.style.color = "var(--warn)";
+    return;
+  }
   ticketJobCardDisplayReset("— Select Job Card Number —");
   ticketJobCardPopulate(filtered.map(jc => ({ value: jc.jobCardNumber, label: `${jc.jobCardNumber} (Set ${jc.setNumber})` })));
   ticketJobCardDisplayEnable();
