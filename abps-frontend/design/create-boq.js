@@ -224,7 +224,7 @@ async function importCBOQFromExisting() {
     // products are currently allowed for this project.
     const banner = document.getElementById("cboq-import-banner");
     banner.style.display = "block";
-    banner.textContent = `Material rows imported from Project ID: ${data.sourceProjectId}, Product: ${data.sourceProductName} ${data.sourceProductRating}. Select the Product Name from the allowed list above.`;
+    banner.innerHTML = `Material rows imported from<br>Project ID: ${escapeHtml(data.sourceProjectId || '')}<br>Product: ${escapeHtml(((data.sourceProductName || '') + ' ' + (data.sourceProductRating || '')).trim())}<br>Select the Product Name from the allowed list above.`;
 
     window.cboqImportSourceInfo = { boqId, sourceProjectId: data.sourceProjectId, sourceProductName: data.sourceProductName, sourceProductRating: data.sourceProductRating };
   } catch(e) {
