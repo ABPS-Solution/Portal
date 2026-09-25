@@ -1489,19 +1489,19 @@ async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, a
   modal.innerHTML = `
     <div style="background:#fff;border-radius:var(--radius);padding:24px;max-width:680px;width:92%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;border-bottom:2px solid var(--border);padding-bottom:12px;">
-        <div style="display:flex; gap:16px; align-items:flex-start;">
-          <div style="flex-shrink:0; text-align:center; background:#eaf1fb; border:1px solid #d3e0f2; border-radius:var(--radius); padding:8px 14px;">
-            <div style="font-size:0.66rem; font-weight:800; text-transform:uppercase; color:var(--muted);">Total Stock</div>
-            <div style="font-size:1.9rem; font-weight:800; color:#0f172a; font-family:monospace; line-height:1.1;">${trimNum(totalQty)}</div>
-            <div style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</div>
-          </div>
-          <div>
-            <div style="font-size:1rem;font-weight:800;color:var(--brand);">${materialName}</div>
-            <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Item Code: <strong>${itemCode}</strong></div>
-            <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Available ${trimNum(availableQty || 0)} + Reserved ${trimNum(reservedQty || 0)}</div>
-          </div>
+        <div>
+          <div style="font-size:1rem;font-weight:800;color:var(--brand);">${materialName}</div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Item Code: <strong>${itemCode}</strong></div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Available ${trimNum(availableQty || 0)} + Reserved ${trimNum(reservedQty || 0)}</div>
         </div>
-        <button onclick="document.getElementById('stock-assignment-breakdown-modal-overlay').remove()" style="background:transparent;border:none;font-size:1.3rem;line-height:1;color:var(--muted);cursor:pointer;padding:0 0 0 10px;">&times;</button>
+        <div style="display:flex; gap:8px; align-items:flex-start; flex-shrink:0; margin-left:14px;">
+          <div style="text-align:center; background:#eaf1fb; border:1px solid #d3e0f2; border-radius:var(--radius); padding:6px 12px;">
+            <div style="font-size:0.62rem; font-weight:800; text-transform:uppercase; color:var(--muted);">Total Stock</div>
+            <div style="font-size:1.5rem; font-weight:800; color:#0f172a; font-family:monospace; line-height:1.1;">${trimNum(totalQty)}</div>
+            <div style="font-size:0.66rem; font-weight:700; color:var(--muted);">${unitLabel}</div>
+          </div>
+          <button onclick="document.getElementById('stock-assignment-breakdown-modal-overlay').remove()" style="background:transparent;border:none;font-size:1.3rem;line-height:1;color:var(--muted);cursor:pointer;padding:0 0 0 4px;">&times;</button>
+        </div>
       </div>
       <div id="stock-assignment-breakdown-body">
         <div style="text-align:center; padding:20px; color:var(--muted);"><div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>Loading breakdown...</div>
