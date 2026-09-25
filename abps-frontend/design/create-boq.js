@@ -474,7 +474,7 @@ function renderCBOQMaterialRows() {
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
-          oninput="cboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; updateCBOQTotals(); const r=document.getElementById('cboq-rate-${idx}'); if(r) { const v=cboqMaterialRows[${idx}].quantityFor1Set*(Number(cboqMaterialRows[${idx}].designRatePerQuantity)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
+          oninput="cboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; boqQtyChanged('cboq', ${idx}, this); updateCBOQTotals(); const r=document.getElementById('cboq-rate-${idx}'); if(r) { const v=cboqMaterialRows[${idx}].quantityFor1Set*(Number(cboqMaterialRows[${idx}].designRatePerQuantity)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center; vertical-align:middle;">
@@ -487,7 +487,7 @@ function renderCBOQMaterialRows() {
           oninput="cboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateCBOQTotals(); const r=document.getElementById('cboq-rate-${idx}'); if(r) { const v=(Number(cboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
           ${isFgRow ? `title="Provisional — replaced automatically when this Finished Goods material's own BOQ is authorized" style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
-      ${boqRateHintHtml(row)}</td>
+      ${boqRateHintHtml(row, 'cboq')}</td>
       <td style="padding:4px; text-align:center;">
         <input type="text" id="cboq-rate-${idx}" value="${isRawMaterial ? totalMaterialRate.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '—'}" readonly
           style="padding:5px; font-size:0.85rem; font-weight:700; text-align:center; width:100%; background:#f0fdf4; color:var(--accent); cursor:not-allowed; border-radius:3px; border:1px solid #86efac;" />
@@ -560,7 +560,7 @@ if (!window._boqDropdownScrollHandlerInstalled) {
 // refreshed after 10 minutes so a newly authorized PO shows up.
 window.boqPurchaseRateCache = window.boqPurchaseRateCache || {};
 window.boqPurchaseRateFetchedAt = window.boqPurchaseRateFetchedAt || {};
-let boqPurchaseRateWindowDays = 30;
+let boqPurchaseRateWindowDays = 90;
 function boqRateCached(code) {
   return (code in window.boqPurchaseRateCache) && (Date.now() - (window.boqPurchaseRateFetchedAt[code] || 0) < 600000);
 }
@@ -579,20 +579,89 @@ function boqPrefetchRatesThenRerender(rows, rerender) {
   const codes = (rows || []).filter(r => r.typeOfStore !== "Finished Goods Store").map(r => r.itemCode).filter(Boolean);
   if (codes.some(c => !boqRateCached(c))) boqEnsurePurchaseRates(codes).then(changed => { if (changed) rerender(); });
 }
-function boqRateHintHtml(row) {
-  const wrap = (txt, color) => `<div style="font-size:0.68rem; line-height:1.25; color:${color || "var(--muted)"}; margin-top:3px; text-align:center;">${txt}</div>`;
+// Mirrors lib/boqCosting.js suggestDesignRate (keep the two in sync):
+// quantity-weighted average of every in-window PO line; when there are 3+
+// lines and the largest PO qty is 2x+ the smallest, each line is weighted by
+// qty x closeness to this BOQ's need (log-scale, sigma 0.9).
+function boqSuggestRate(lines, need) {
+  const ls = (lines || []).map(l => ({ rate: Number(l.rate), qty: Number(l.qty) })).filter(l => Number.isFinite(l.rate) && l.rate >= 0 && l.qty > 0);
+  if (!ls.length) return null;
+  const r2 = n => Math.round(n * 100) / 100;
+  const sumQ = ls.reduce((a, l) => a + l.qty, 0);
+  const wAvg = ls.reduce((a, l) => a + l.rate * l.qty, 0) / sumQ;
+  const qtys = ls.map(l => l.qty), rates = ls.map(l => l.rate);
+  const out = { count: ls.length, weightedAvg: r2(wAvg), minRate: Math.min(...rates), maxRate: Math.max(...rates), rate: r2(wAvg), method: "weighted" };
+  if (need > 0 && ls.length >= 3 && Math.max(...qtys) >= 2 * Math.min(...qtys)) {
+    let sw = 0, swr = 0;
+    ls.forEach(l => { const d = Math.log(l.qty / need); const w = l.qty * Math.exp(-(d * d) / (2 * 0.81)); sw += w; swr += w * l.rate; });
+    if (sw > 1e-9) { out.rate = r2(swr / sw); out.method = "qtyAware"; }
+  }
+  return out;
+}
+function boqRowsForPrefix(prefix) {
+  return { cboq: typeof cboqMaterialRows !== "undefined" ? cboqMaterialRows : null,
+    eboq: typeof eboqMaterialRows !== "undefined" ? eboqMaterialRows : null,
+    uboq: typeof uboqMaterialRows !== "undefined" ? uboqMaterialRows : null,
+    boqrev: typeof uboqRevRows !== "undefined" ? uboqRevRows : null }[prefix];
+}
+function boqOrderQtyForPrefix(prefix) {
+  const id = prefix === "boqrev" ? `boqrev-order-qty-${typeof uboqRevExpandedId !== "undefined" ? uboqRevExpandedId : ""}` : `${prefix}-order-qty`;
+  return parseFloat(document.getElementById(id)?.value) || 0;
+}
+function boqRowNeed(prefix, row) {
+  return (Number(row.quantityFor1Set) || 0) * boqOrderQtyForPrefix(prefix);
+}
+function boqRowSuggestion(prefix, row) {
+  const e = row && row.itemCode ? window.boqPurchaseRateCache[row.itemCode] : null;
+  if (!e || !(e.lines || []).length) return null;
+  return boqSuggestRate(e.lines, prefix ? boqRowNeed(prefix, row) : 0);
+}
+// Rows whose rate was filled by the system (row -> the value filled). A rate
+// the user typed no longer matches, so it is never overwritten.
+window.boqAutoRateRows = window.boqAutoRateRows || new WeakMap();
+function boqApplyAutoRate(prefix, row) {
+  const sug = boqRowSuggestion(prefix, row);
+  if (!sug) return false;
+  row.designRatePerQuantity = sug.rate;
+  window.boqAutoRateRows.set(row, sug.rate);
+  return true;
+}
+// Called from each Qty / Set input: re-suggests the rate only while it is
+// still the auto-filled value, then patches the rate input + hint in place.
+function boqQtyChanged(prefix, idx, el) {
+  const rows = boqRowsForPrefix(prefix);
+  const row = rows && rows[idx];
+  if (!row) return;
+  const tr = el && el.closest("tr");
+  const auto = window.boqAutoRateRows.get(row);
+  if (auto !== undefined && Number(row.designRatePerQuantity) === Number(auto) && boqApplyAutoRate(prefix, row)) {
+    const rateInput = tr && tr.querySelector('input[oninput*="designRatePerQuantity="]');
+    if (rateInput) rateInput.value = row.designRatePerQuantity;
+  }
+  const hint = tr && tr.querySelector(".boq-rate-hint");
+  if (hint) hint.outerHTML = boqRateHintHtml(row, prefix);
+}
+function boqRateHintHtml(row, prefix) {
+  const wrap = (txt, color, title) => `<div class="boq-rate-hint" ${title ? `title="${escapeHtml(title)}"` : ""} style="font-size:0.68rem; line-height:1.25; color:${color || "var(--muted)"}; margin-top:3px; text-align:center;">${txt}</div>`;
   if (!row.itemCode) return "";
   if (row.typeOfStore === "Finished Goods Store") return wrap("Finished Goods: enter an approximate rate");
-  if (!(row.itemCode in window.boqPurchaseRateCache)) return wrap("Checking last purchase…");
+  if (!(row.itemCode in window.boqPurchaseRateCache)) return wrap("Checking purchase history…");
   const e = window.boqPurchaseRateCache[row.itemCode];
   if (!e) return wrap("Never bought on an RM PO");
+  const inr = n => "₹" + Number(n).toLocaleString("en-IN", { maximumFractionDigits: 2 });
   const ago = e.daysAgo <= 0 ? "today" : e.daysAgo === 1 ? "1 day ago" : `${e.daysAgo} days ago`;
-  const rate = "₹" + Number(e.rate).toLocaleString("en-IN", { maximumFractionDigits: 2 });
   const po = e.pdfUrl
     ? `<a href="${driveLink(e.pdfUrl)}" target="_blank" rel="noopener" style="color:inherit; font-weight:700; text-decoration:underline;">${escapeHtml(e.poNo)}</a>`
     : escapeHtml(e.poNo);
-  return wrap(`Last bought ${ago} at ${rate} (${po})` + (e.withinWindow ? "" : `<br>Older than ${boqPurchaseRateWindowDays} days, not auto-filled`),
-    e.withinWindow ? "#15803d" : "#b45309");
+  const lastLine = `Last ${inr(e.rate)} on ${po} (${ago})`;
+  const sug = boqRowSuggestion(prefix, row);
+  if (!sug) return wrap(`No PO in last ${boqPurchaseRateWindowDays} days, not auto-filled<br>${lastLine}`, "#b45309");
+  const range = sug.minRate === sug.maxRate ? "" : ` (range ${inr(sug.minRate)} to ${inr(sug.maxRate)})`;
+  const title = (e.lines || []).map(l => `${l.poNo}: ${trimNum(l.qty)} @ ${inr(l.rate)}`).join(" | ");
+  const main = sug.method === "qtyAware"
+    ? `Suggested ${inr(sug.rate)} for qty ${trimNum(boqRowNeed(prefix, row))}<br>Avg ${inr(sug.weightedAvg)} over ${sug.count} POs in ${boqPurchaseRateWindowDays} days${range}`
+    : `Avg ${inr(sug.weightedAvg)} over ${sug.count} PO${sug.count === 1 ? "" : "s"} in ${boqPurchaseRateWindowDays} days${range}`;
+  return wrap(`${main}<br>${lastLine}`, "#15803d", title);
 }
 function boqUnverifyRow(prefix, idx) {
   const rows = { eboq: eboqMaterialRows, boqrev: uboqRevRows }[prefix];
