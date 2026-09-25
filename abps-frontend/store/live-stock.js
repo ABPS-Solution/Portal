@@ -520,13 +520,13 @@ function renderRawMaterialsStockGrid() {
           const card = document.createElement("div");
           card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0; cursor:pointer;";
           card.title = "Click to see how Reserved stock is assigned across BOQs";
-          card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.availableStock, 'raw');
+          card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.availableStock, 'raw', item.reservedStock);
           card.innerHTML = `
             <div style="font-size:0.8rem; font-weight:700; color:#334155; line-height:1.4; word-break:break-word;">
               ${item.materialName}
             </div>
             <div style="text-align:right;">
-              <span style="display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:#dcfce7; color:#15803d;">${(item.unitType || "PCS").toUpperCase()}</span>
+              <span style="font-size:0.72rem; font-weight:700; color:#334155; margin-right:6px;">Total: <span style="font-family:monospace; font-size:0.8rem;">${trimNum((Number(item.availableStock) || 0) + (Number(item.reservedStock) || 0))}</span></span><span style="display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:#dcfce7; color:#15803d;">${(item.unitType || "PCS").toUpperCase()}</span>
             </div>
             <div style="border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; flex-direction:column; gap:4px;">
               <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:600; color:#334155;">
@@ -641,13 +641,13 @@ function renderSpareStoreStockGrid() {
         const card = document.createElement("div");
         card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0; cursor:pointer;";
         card.title = "Click to see how Reserved stock is assigned across BOQs";
-        card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.availableStock, 'spare');
+        card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.availableStock, 'spare', item.reservedStock);
         card.innerHTML = `
           <div style="font-size:0.8rem; font-weight:700; color:#334155; line-height:1.4; word-break:break-word;">
             ${item.materialName}
           </div>
           <div style="text-align:right;">
-            <span style="display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:#dcfce7; color:#15803d;">${(item.unitType || "NOS").toUpperCase()}</span>
+            <span style="font-size:0.72rem; font-weight:700; color:#334155; margin-right:6px;">Total: <span style="font-family:monospace; font-size:0.8rem;">${trimNum((Number(item.availableStock) || 0) + (Number(item.reservedStock) || 0))}</span></span><span style="display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:#dcfce7; color:#15803d;">${(item.unitType || "NOS").toUpperCase()}</span>
           </div>
           <div style="border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; flex-direction:column; gap:4px;">
             <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:600; color:#334155;">
@@ -1476,7 +1476,8 @@ function updatePRNPurchaseQtyCell(inputEl, idx) {
   if (cell) { cell.textContent = trimNum(purchaseQty); cell.style.color = "#1a2332"; }
 }
 
-async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, availableQty, storeType) {
+async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, availableQty, storeType, reservedQty) {
+  const totalQty = (Number(availableQty) || 0) + (Number(reservedQty) || 0);
   const existing = document.getElementById("stock-assignment-breakdown-modal-overlay");
   if (existing) existing.remove();
 
@@ -1488,9 +1489,17 @@ async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, a
   modal.innerHTML = `
     <div style="background:#fff;border-radius:var(--radius);padding:24px;max-width:680px;width:92%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;border-bottom:2px solid var(--border);padding-bottom:12px;">
-        <div>
-          <div style="font-size:1rem;font-weight:800;color:var(--brand);">${materialName}</div>
-          <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Item Code: <strong>${itemCode}</strong></div>
+        <div style="display:flex; gap:16px; align-items:flex-start;">
+          <div style="flex-shrink:0; text-align:center; background:#eaf1fb; border:1px solid #d3e0f2; border-radius:var(--radius); padding:8px 14px;">
+            <div style="font-size:0.66rem; font-weight:800; text-transform:uppercase; color:var(--muted);">Total Stock</div>
+            <div style="font-size:1.9rem; font-weight:800; color:#0f172a; font-family:monospace; line-height:1.1;">${trimNum(totalQty)}</div>
+            <div style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</div>
+          </div>
+          <div>
+            <div style="font-size:1rem;font-weight:800;color:var(--brand);">${materialName}</div>
+            <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Item Code: <strong>${itemCode}</strong></div>
+            <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Available ${trimNum(availableQty || 0)} + Reserved ${trimNum(reservedQty || 0)}</div>
+          </div>
         </div>
         <button onclick="document.getElementById('stock-assignment-breakdown-modal-overlay').remove()" style="background:transparent;border:none;font-size:1.3rem;line-height:1;color:var(--muted);cursor:pointer;padding:0 0 0 10px;">&times;</button>
       </div>
