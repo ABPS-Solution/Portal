@@ -1620,7 +1620,10 @@ function ptlRenderCanvas(containerId) {
     // (b) the extra line(s) stack downward under the node rather than
     // sideways into the next one.
     const CHIP_MAX_W = 150 * ptlFS;
-    const chipLines = ptlWrapChip(chipTxt, CHIP_MAX_W, 9.5, 3);
+    // Short form on the map only: the long "0 due now · 34 scheduled later"
+    // wrapped into the neighbouring node's labels.
+    const mapChipTxt = String(chipTxt || '').replace(/^0 due now · (\d+) scheduled later$/, '$1 due later');
+    const chipLines = ptlWrapChip(mapChipTxt, CHIP_MAX_W, 9.5, 3);
     const chipW = chipLines.length ? Math.max(...chipLines.map(l => ptlWMono(l, 9.5))) : 0;
     const bw = Math.max(ptlWMono(dtx, 10.5), chipW);
     const chipExtra = chipLines.length * LINE_H;
