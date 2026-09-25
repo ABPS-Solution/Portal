@@ -794,7 +794,7 @@ function ptlRenderStageRows(nodes, today, prodPlanDone) {
     const systemDateCanEdit = PTL_ADMIN_SYSTEM_DATE_IDS.has(n.id) && !n.notApplicable && ptlIsAdmin();
     const milestoneOverrideCanEdit = !!PTL_ADMIN_MILESTONE_OVERRIDE_KEY[n.id] && ptlIsAdmin();
     return `
-      <div id="ptl-row-${n.id}" ${hasDetail ? `onclick="ptlToggleNodeDetail('${n.id}')"` : ''} style="display:flex; align-items:flex-start; gap:12px; padding:10px 4px; border-bottom:1px solid var(--border); border-radius:4px;${hasDetail ? ' cursor:pointer;' : ''}">
+      <div id="ptl-row-${n.id}" ${hasDetail ? `onclick="ptlToggleNodeDetail('${n.id}')"` : ''} style="display:flex; align-items:flex-start; gap:12px; padding:10px 4px; border-bottom:1px solid var(--border); border-radius:4px;${hasDetail ? ' cursor:pointer;' : ''}${n.id === 'delivery' ? ' background:rgba(245,158,11,0.12); border:2px solid #d97706; padding:10px 8px; margin:4px 0;' : ''}">
         <div style="flex:none; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
           background:${done ? dotColor : '#fff'}; border:2.5px solid ${dotColor}; margin-top:2px;">
           ${done ? '<span style="color:#fff; font-weight:900; font-size:0.85rem;">✓</span>' : ''}
@@ -1377,11 +1377,11 @@ function ptlRenderCanvas(containerId) {
     const x = PAD_L + LEAD + i * ptlDayW, dt = ptlParse(d), m = dt.getUTCMonth(), mon = dt.getUTCDay() === 1;
     const isRest = ptlDayIsRest(d);
     if (m !== lastM) { lastM = m; RULER_G.push(`<text x="${x}" y="${14 * ptlFS}" font-size="${11 * ptlFS}" font-weight="800" letter-spacing="1.5" fill="var(--muted)">${PTL_MON[m].toUpperCase()} ${dt.getUTCFullYear()}</text>`); }
-    if (!DENSE || mon || isRest) {
+    {  // every day is labelled, month view included
       const dateColor = isRest ? PTL_REST_GREEN : (mon ? 'var(--text)' : 'var(--muted)');
       const dowColor = isRest ? PTL_REST_GREEN : 'var(--muted)';
-      RULER_G.push(`<text x="${x}" y="${RULER_H - 15 * ptlFS}" text-anchor="middle" font-size="${11.5 * ptlFS}" font-family="monospace" font-weight="${mon || isRest ? 800 : 600}" fill="${dateColor}">${dt.getUTCDate()}</text>`);
-      RULER_G.push(`<text x="${x}" y="${RULER_H - 5 * ptlFS}" text-anchor="middle" font-size="${9 * ptlFS}" font-family="monospace" font-weight="600" fill="${dowColor}">${DOW[dt.getUTCDay()]}</text>`);
+      RULER_G.push(`<text x="${x}" y="${RULER_H - 15 * ptlFS}" text-anchor="middle" font-size="${(DENSE ? 10 : 11.5) * ptlFS}" font-family="monospace" font-weight="${mon || isRest ? 800 : 600}" fill="${dateColor}">${dt.getUTCDate()}</text>`);
+      RULER_G.push(`<text x="${x}" y="${RULER_H - 5 * ptlFS}" text-anchor="middle" font-size="${(DENSE ? 8 : 9) * ptlFS}" font-family="monospace" font-weight="600" fill="${dowColor}">${DOW[dt.getUTCDay()]}</text>`);
     }
   });
 
