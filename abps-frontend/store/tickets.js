@@ -468,6 +468,16 @@ function checkSpareStoreSuggestion() {
  * 3. ADD LINE ITEM TO BASKET STREAM
  * Validates against ghost-stock limitations and formats rows inside the view viewport
  */
+// The same material added twice goes into one basket line. Matched on item
+// code: the dropdown text carries "- Make: X" but the stored name may not,
+// so a name comparison missed and created a second row.
+function ticketFindBasketLine_(itemCode, cleanNameKey) {
+  const code = (itemCode || "").trim();
+  return dynamicTicketShoppingBasketArray.find(i =>
+    (code && (i.itemCode || "").trim() === code)
+    || (i.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanNameKey);
+}
+
 async function addItemToShoppingBasketRow() {
   const itemSelect = document.getElementById("ticket-item-selection-dropdown");
   const qtyInput = document.getElementById("ticket-item-quantity-input");
@@ -529,7 +539,7 @@ async function addItemToShoppingBasketRow() {
       return;
     }
 
-    const existingLineItem = dynamicTicketShoppingBasketArray.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
+    const existingLineItem = ticketFindBasketLine_(spareMatch ? spareMatch.itemCode : "", cleanSearchKey);
     let totalRequestedQuantity = quantity;
     if (existingLineItem) {
       totalRequestedQuantity += existingLineItem.quantity;
@@ -575,7 +585,7 @@ async function addItemToShoppingBasketRow() {
       (c.productName || "").replace(/\s+/g, "").toLowerCase() === cleanSearchKey
     );
 
-    const existingLineItem = dynamicTicketShoppingBasketArray.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
+    const existingLineItem = ticketFindBasketLine_(jcmMatchFGAdd.itemCode, cleanSearchKey);
     let totalRequestedQuantity = quantity;
     if (existingLineItem) totalRequestedQuantity += existingLineItem.quantity;
 
@@ -664,7 +674,7 @@ async function addItemToShoppingBasketRow() {
     return;
   }
 
-  const existingLineItem = dynamicTicketShoppingBasketArray.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
+  const existingLineItem = ticketFindBasketLine_(jcmMatch.itemCode || itemData.itemCode, cleanSearchKey);
   let totalRequestedQuantity = quantity;
   if (existingLineItem) {
     totalRequestedQuantity += existingLineItem.quantity;
@@ -1518,7 +1528,7 @@ async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
     projectInput.placeholder = "Loading Projects...";
   }
   try {
-    await ticketLoadProjectListForDepartment_(isService);
+    await ticketLoadProjectListForDepartment_(chosenDepartmentVal === "Service");
   } catch (e) {
     console.error("Failed to load project list for Outgoing Use change:", e);
     if (projectInput) projectInput.placeholder = "Error loading projects";

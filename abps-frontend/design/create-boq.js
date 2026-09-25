@@ -455,7 +455,7 @@ function renderCBOQMaterialRows() {
     tr.innerHTML = `
       <td style="text-align:center; padding:6px; font-weight:700; color:var(--muted);">${idx + 1}</td>
       <td style="padding:4px;">
-        <select onchange="cboqMaterialRows[${idx}].typeOfStore=this.value; renderCBOQMaterialRows();" style="padding:4px; font-size:0.8rem; width:100%;">
+        <select onchange="cboqMaterialRows[${idx}].typeOfStore=this.value; if(this.value==='Finished Goods Store') cboqMaterialRows[${idx}].designRatePerQuantity=''; renderCBOQMaterialRows();" style="padding:4px; font-size:0.8rem; width:100%;">
           <option value="Raw Materials Store" ${row.typeOfStore==="Raw Materials Store"?"selected":""}>Raw Material</option>
           <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods</option>
         </select>
@@ -485,7 +485,7 @@ function renderCBOQMaterialRows() {
         ${isRawMaterial ? `
         <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="1" placeholder="0.00"
           oninput="cboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateCBOQTotals(); const r=document.getElementById('cboq-rate-${idx}'); if(r) { const v=(Number(cboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
-          ${isFgRow ? `title="Provisional — replaced automatically when this Finished Goods material's own BOQ is authorized" style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
+          ${isFgRow ? `readonly tabindex="-1" data-fg-rate="1" title="Filled automatically from this product's own authorized BOQ" style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       ${boqRateHintHtml(row, 'cboq')}</td>
       <td style="padding:4px; text-align:center;">
@@ -644,7 +644,7 @@ function boqQtyChanged(prefix, idx, el) {
 function boqRateHintHtml(row, prefix) {
   const wrap = (txt, color, title) => `<div class="boq-rate-hint" ${title ? `title="${escapeHtml(title)}"` : ""} style="font-size:0.68rem; line-height:1.25; color:${color || "var(--muted)"}; margin-top:3px; text-align:center;">${txt}</div>`;
   if (!row.itemCode) return "";
-  if (row.typeOfStore === "Finished Goods Store") return wrap("Finished Goods: enter an approximate rate");
+  if (row.typeOfStore === "Finished Goods Store") return wrap(Number(row.designRatePerQuantity) > 0 ? "From this product's own authorized BOQ" : "Filled automatically when this product's own BOQ is authorized");
   if (!(row.itemCode in window.boqPurchaseRateCache)) return wrap("Checking purchase history…");
   const e = window.boqPurchaseRateCache[row.itemCode];
   if (!e) return wrap("Never bought on an RM PO");

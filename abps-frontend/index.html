@@ -832,13 +832,25 @@
     .psn-field-grid { grid-template-columns: repeat(2, 1fr); }
   }
 
-.boq-material-table th, .boq-material-table td { border:1px solid var(--border) !important; }
+/* BOQ material tables (25 Sep 2026): 2px grid like the follow-up tables, every
+   cell vertically centred. A Finished Goods row and its Description of Material
+   row read as one block, so the line between them is removed. */
+.boq-material-table th, .boq-material-table td { border:2px solid var(--border) !important; vertical-align:middle !important; }
+.boq-material-table tr:has(+ tr > td[colspan]:not(:first-child)) > td { border-bottom-width:0 !important; }
+.boq-material-table tr:has(> td[colspan]:not(:first-child)) > td { border-top-width:0 !important; }
+/* Values the user never types (Item Code, Unit, Total, Finished Goods rate) show as plain text. */
+.boq-material-table td input[readonly], .boq-material-table td textarea[readonly] { border:none !important; background:transparent !important; box-shadow:none !important; font-weight:700; color:var(--text) !important; text-align:center; cursor:default !important; }
+/* Boxes the user fills in: heavier border, same as the Create New Lead form. */
+#canvas-module-design-create-boq input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), #canvas-module-design-auth-boq input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), #canvas-module-design-update-boq input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), #canvas-module-design-auth-boq-upd input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), #canvas-module-design-create-boq select, #canvas-module-design-auth-boq select, #canvas-module-design-update-boq select, #canvas-module-design-auth-boq-upd select, #canvas-module-design-create-boq textarea, #canvas-module-design-auth-boq textarea, #canvas-module-design-update-boq textarea, #canvas-module-design-auth-boq-upd textarea { border:1.5px solid #8492a6 !important; }
+#canvas-module-design-create-boq .boq-material-table td input[readonly], #canvas-module-design-auth-boq .boq-material-table td input[readonly], #canvas-module-design-update-boq .boq-material-table td input[readonly], #canvas-module-design-auth-boq-upd .boq-material-table td input[readonly], #canvas-module-design-create-boq .boq-material-table td textarea[readonly], #canvas-module-design-auth-boq .boq-material-table td textarea[readonly], #canvas-module-design-update-boq .boq-material-table td textarea[readonly], #canvas-module-design-auth-boq-upd .boq-material-table td textarea[readonly] { border:none !important; }
 .prn-bordered-table { border:1px solid var(--border) !important; }
 #cmit-main-section .cmit-box { background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px 4px; margin-bottom:16px; }
 #cmit-main-section .cmit-box-title { font-size:0.8rem; font-weight:800; color:var(--brand); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--border); }
 #cmit-main-section .cmit-box select, #cmit-main-section .cmit-box input[type="text"], #cmit-main-section .cmit-box input[type="number"] { min-height:36px; background:#fff; }
 #cmit-main-section .cmit-basket-table { width:100%; border-collapse:collapse; background:#fff; margin-bottom:12px; }
 #cmit-main-section .cmit-basket-table th { font-size:0.8rem; background:#f1f5f9; padding:9px 10px; }
+#cmit-main-section .cmit-basket-table, #cmit-main-section .cmit-basket-table th, #cmit-main-section .cmit-basket-table td { border:2px solid var(--border) !important; }
+#wrapper-ticket-boq-jobcard-row > div { align-self:start; }
 #cmit-main-section .cmit-basket-table td { padding:8px 10px; font-size:0.9rem; }
 .prn-bordered-table th, .prn-bordered-table td { border:1px solid var(--border) !important; }
 input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }

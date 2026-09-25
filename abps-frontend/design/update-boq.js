@@ -54,7 +54,7 @@ async function toggleBOQRevisionExpansion(updateId) {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Project ID (locked)</label>
-          ${uboqLockedWrapField(reqItem.projectId, 'background:#f1f5f9; color:var(--muted);')}
+          ${uboqLockedWrapField(reqItem.projectId, 'background:#f1f5f9; color:var(--text); font-weight:600;')}
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Customer Name (locked)</label>
@@ -64,11 +64,11 @@ async function toggleBOQRevisionExpansion(updateId) {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Product Name (locked)</label>
-          ${uboqLockedWrapField(reqItem.productName, 'background:#f1f5f9; color:var(--muted);')}
+          ${uboqLockedWrapField(reqItem.productName, 'background:#f1f5f9; color:var(--text); font-weight:600;')}
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Product Rating (locked)</label>
-          ${uboqLockedWrapField(reqItem.productRating, 'background:#f1f5f9; color:var(--muted);')}
+          ${uboqLockedWrapField(reqItem.productRating, 'background:#f1f5f9; color:var(--text); font-weight:600;')}
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:12px;">
@@ -83,10 +83,10 @@ async function toggleBOQRevisionExpansion(updateId) {
         </div>
         <div style="display:none;">
           <label class="field-label" style="margin-top:0;">Make</label>
-          <input type="text" readonly value="${(() => { const c=(window.itemCodeCatalogCache||[]).find(x=>x.productName===reqItem.productName && (x.rating||'')===(reqItem.productRating||'')); return c ? (c.make||'') : ''; })()}" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; box-sizing:border-box;" placeholder="Auto-filled from Product Name" />
+          <input type="text" readonly value="${(() => { const c=(window.itemCodeCatalogCache||[]).find(x=>x.productName===reqItem.productName && (x.rating||'')===(reqItem.productRating||'')); return c ? (c.make||'') : ''; })()}" style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; box-sizing:border-box;" placeholder="Auto-filled from Product Name" />
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Current Manufacturing Clearance Quantity (No. of Sets) *</label>
           <input type="number" id="boqrev-order-qty-${updateId}" value="${formatQtyTrimmed(reqItem.newOrderQuantity)}" min="1" readonly
@@ -94,11 +94,15 @@ async function toggleBOQRevisionExpansion(updateId) {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Date</label>
-          <input type="text" value="${formatOrdinalDate(reqItem.createdAt)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" value="${formatOrdinalDate(reqItem.createdAt)}" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Department (locked)</label>
-          <input type="text" value="${reqItem.department || ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" value="${reqItem.department || ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Prepared By (locked)</label>
+          <input type="text" value="${(reqItem.requestedBy || '').toString().replace(/"/g, '&quot;')}" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />
         </div>
       </div>
     </div>
@@ -191,7 +195,7 @@ function renderBOQRevisionRows(updateId) {
     <tr style="border-bottom:1px solid #f1f5f9;">
       <td style="text-align:center; padding:6px; font-weight:700; color:var(--muted);">${idx + 1}</td>
       <td style="padding:4px;">
-        <select onchange="uboqRevRows[${idx}].typeOfStore=this.value; uboqRevRows[${idx}].costingVerified=false; renderBOQRevisionRows(${updateId});" style="padding:4px; font-size:0.8rem; width:100%;">
+        <select onchange="uboqRevRows[${idx}].typeOfStore=this.value; if(this.value==='Finished Goods Store') uboqRevRows[${idx}].designRatePerQuantity=''; uboqRevRows[${idx}].costingVerified=false; renderBOQRevisionRows(${updateId});" style="padding:4px; font-size:0.8rem; width:100%;">
           <option value="Raw Materials Store" ${row.typeOfStore==="Raw Materials Store"?"selected":""}>Raw Material</option>
           <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods</option>
         </select>
@@ -220,13 +224,13 @@ function renderBOQRevisionRows(updateId) {
       <td style="padding:4px;">
         <input type="number" class="boq-center-num" value="${row.designRatePerQuantity || ""}" min="0" step="1" placeholder="0.00"
           oninput="boqUnverifyRow('boqrev', ${idx}); uboqRevRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; const r=document.getElementById('boqrev-rate-${idx}'); if(r) { const v=(Number(uboqRevRows[${idx}].quantityFor1Set)||0)*(Number(uboqRevRows[${idx}].designRatePerQuantity)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); } updateBOQRevisionTotalsOnly(${updateId}); recomputeBOQRevisionSummary(${updateId});"
-          ${isFgRow ? `title="Provisional — replaced automatically when this Finished Goods material's own BOQ is authorized" style="padding:5px; font-size:0.85rem; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
+          ${isFgRow ? `readonly tabindex="-1" data-fg-rate="1" title="Filled automatically from this product's own authorized BOQ" style="padding:5px; font-size:0.85rem; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
       ${boqRateHintHtml(row, 'boqrev')}</td>
       <td style="padding:4px;">
         <input type="text" id="boqrev-rate-${idx}" value="${isRawMaterial ? totalMaterialRate.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '—'}" readonly
           style="padding:5px; font-size:0.85rem; font-weight:700; text-align:center; width:100%; background:#f0fdf4; color:var(--accent); cursor:not-allowed; border-radius:3px; border:1px solid #86efac;" />
       </td>
-      <td style="padding:4px; text-align:center; vertical-align:middle;"><input type="checkbox" id="boqrev-cv-${idx}" ${row.costingVerified ? "checked" : ""} onchange="uboqRevRows[${idx}].costingVerified=this.checked;" title="Tick once you have checked this row&#39;s costing" style="width:18px; height:18px; cursor:pointer;" /></td>
+      <td style="padding:4px; text-align:center; vertical-align:middle;"><input type="checkbox" id="boqrev-cv-${idx}" ${row.typeOfStore === "Finished Goods Store" ? "checked disabled" : (row.costingVerified ? "checked" : "")} onchange="uboqRevRows[${idx}].costingVerified=this.checked;" title="Tick once you have checked this row&#39;s costing" style="width:18px; height:18px; cursor:pointer;" /></td>
       <td style="padding:4px; text-align:center;">
         <button onclick="uboqRevRows.splice(${idx},1); renderBOQRevisionRows(${updateId}); recomputeBOQRevisionSummary(${updateId});" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:3px 8px; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:700;">✕</button>
       </td>
@@ -257,7 +261,7 @@ function renderBOQRevisionRows(updateId) {
             <th style="width:350px; padding:8px; font-size:0.82rem;">Material Name *</th>
             <th style="width:76px; padding:8px; font-size:0.82rem; text-align:center;">Item Code</th>
             <th style="width:80px; padding:8px; font-size:0.82rem; text-align:center;">Qty / Set *</th>
-            <th style="width:56px; padding:8px; font-size:0.82rem; text-align:center;">Unit *</th>
+            <th style="width:56px; padding:8px; font-size:0.82rem; text-align:center;">Unit</th>
             <th style="width:190px; padding:8px; font-size:0.82rem; text-align:center;">Design Rate / Qty *</th>
             <th style="width:80px; padding:8px; font-size:0.82rem; text-align:center;">Total Material Cost / Set</th>
             <th style="width:70px; padding:8px; font-size:0.82rem; text-align:center;">Costing Verified *</th>
@@ -428,20 +432,16 @@ function renderUBOQForm() {
   container.innerHTML = `
     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">BOQ Header</div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+      <div style="display:none;">
         <div>
           <label class="field-label" style="margin-top:0;">BOQ ID</label>
           ${uboqLockedWrapField(draft.boqId, 'font-family:monospace; font-weight:800; background:#e0f2fe; color:var(--brand);')}
-        </div>
-        <div>
-          <label class="field-label" style="margin-top:0;">Prepared By (locked)</label>
-          <input type="text" value="${draft.preparedBy}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Project ID (locked)</label>
-          ${uboqLockedWrapField(draft.projectId, 'background:#f1f5f9; color:var(--muted);')}
+          ${uboqLockedWrapField(draft.projectId, 'background:#f1f5f9; color:var(--text); font-weight:600;')}
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Customer Name (locked)</label>
@@ -451,11 +451,11 @@ function renderUBOQForm() {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Product Name (locked)</label>
-          <textarea id="uboq-product-name" readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(draft.productName || '').toString().replace(/</g, '&lt;')}</textarea>
+          <textarea id="uboq-product-name" readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(draft.productName || '').toString().replace(/</g, '&lt;')}</textarea>
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Product Rating (locked)</label>
-          <textarea id="uboq-product-rating" readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(draft.productRating || '').toString().replace(/</g, '&lt;')}</textarea>
+          <textarea id="uboq-product-rating" readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(draft.productRating || '').toString().replace(/</g, '&lt;')}</textarea>
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:12px;">
@@ -470,21 +470,25 @@ function renderUBOQForm() {
         </div>
         <div style="display:none;">
           <label class="field-label" style="margin-top:0;">Make</label>
-          <input type="text" id="uboq-header-make" readonly value="${(() => { const c=(window.itemCodeCatalogCache||[]).find(x=>x.productName===draft.productName && (x.rating||'')===(draft.productRating||'')); return c ? (c.make||'') : ''; })()}" style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; box-sizing:border-box;" placeholder="Auto-filled from Product Name" />
+          <input type="text" id="uboq-header-make" readonly value="${(() => { const c=(window.itemCodeCatalogCache||[]).find(x=>x.productName===draft.productName && (x.rating||'')===(draft.productRating||'')); return c ? (c.make||'') : ''; })()}" style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; box-sizing:border-box;" placeholder="Auto-filled from Product Name" />
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px;">
+      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Current Manufacturing Clearance Quantity (No. of Sets) *</label>
           <input type="number" id="uboq-order-qty" value="${Math.round(Number(draft.orderQuantity) || 0)}" min="1" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Date</label>
-          <input type="text" value="${formatOrdinalDate(draft.date)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" value="${formatOrdinalDate(draft.date)}" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Department (locked)</label>
-          <input type="text" id="uboq-department" value="${draft.department}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" id="uboq-department" value="${draft.department}" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Prepared By (locked)</label>
+          <input type="text" value="${draft.preparedBy}" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />
         </div>
       </div>
     </div>
@@ -503,7 +507,7 @@ function renderUBOQForm() {
               <th style="width:350px; padding:8px; font-size:0.82rem;">Material Name *</th>
               <th style="width:76px; padding:8px; font-size:0.82rem; text-align:center;">Item Code</th>
               <th style="width:80px; padding:8px; font-size:0.82rem; text-align:center;">Qty / Set *</th>
-              <th style="width:56px; padding:8px; font-size:0.82rem; text-align:center;">Unit *</th>
+              <th style="width:56px; padding:8px; font-size:0.82rem; text-align:center;">Unit</th>
               <th style="width:190px; padding:8px; font-size:0.82rem; text-align:center;">Design Rate / Qty *</th>
               <th style="width:90px; padding:8px; font-size:0.82rem; text-align:center;">Total Material Cost / Set</th>
               <th style="width:40px; padding:8px; font-size:0.82rem; text-align:center;">Del</th>
@@ -568,7 +572,7 @@ function renderUBOQMaterialRows() {
     tr.innerHTML = `
       <td style="text-align:center; padding:6px; font-weight:700; color:var(--muted);">${idx + 1}</td>
       <td style="padding:4px;">
-        <select onchange="uboqMaterialRows[${idx}].typeOfStore=this.value; renderUBOQMaterialRows();" style="padding:4px; font-size:0.8rem; width:100%;">
+        <select onchange="uboqMaterialRows[${idx}].typeOfStore=this.value; if(this.value==='Finished Goods Store') uboqMaterialRows[${idx}].designRatePerQuantity=''; renderUBOQMaterialRows();" style="padding:4px; font-size:0.8rem; width:100%;">
           <option value="Raw Materials Store" ${row.typeOfStore==="Raw Materials Store"?"selected":""}>Raw Material</option>
           <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods</option>
         </select>
@@ -598,7 +602,7 @@ function renderUBOQMaterialRows() {
         ${isRawMaterial ? `
         <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="1" placeholder="0.00"
           oninput="uboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateUBOQTotals(); const r=document.getElementById('uboq-rate-${idx}'); if(r) { const v=(Number(uboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
-          ${isFgRow ? `title="Provisional — replaced automatically when this Finished Goods material's own BOQ is authorized" style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
+          ${isFgRow ? `readonly tabindex="-1" data-fg-rate="1" title="Filled automatically from this product's own authorized BOQ" style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
       ${boqRateHintHtml(row, 'uboq')}</td>
       <td style="padding:4px; text-align:center;">
@@ -726,7 +730,7 @@ async function submitUpdateBOQ() {
 
   const invalidRow = uboqMaterialRows.find(r => !r.materialName || !r.quantityFor1Set);
   if (invalidRow) { _uValidationFail("⚠️ All rows must have Description and Quantity."); return; }
-  if (uboqMaterialRows.some(r => !(Number(r.designRatePerQuantity) > 0))) { _uValidationFail("⚠️ All rows must have Design Rate / Qty filled in."); return; }
+  if (uboqMaterialRows.some(r => r.typeOfStore !== "Finished Goods Store" && !(Number(r.designRatePerQuantity) > 0))) { _uValidationFail("⚠️ All rows must have Design Rate / Qty filled in."); return; }
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
