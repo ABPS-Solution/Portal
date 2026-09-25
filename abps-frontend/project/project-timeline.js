@@ -761,17 +761,21 @@ function ptlRenderStage4Block(prodPlanNodes, inspCallNodes, today) {
   return stageHeader + `<div style="display:${collapsed ? 'none' : 'block'};">${bodyHtml}</div>`;
 }
 
+// Orange tick: done as of today, but more of it is still to come later in
+// the project (All RM POs / All PPS Released with material due later).
+const PTL_PARTIAL_ORANGE = '#f59e0b';
+
 function ptlRenderStageRows(nodes, today, prodPlanDone) {
   return nodes.map(n => {
     const c = PTL_COLORS[n.dept] || 'var(--muted)';
     const done = !!n.actual || n.done === true;
     const late = ptlLate(n);
     const eff = ptlEff(n);
-    const dateTxt = n.notApplicable ? 'Not Eligible (no customer drawing approval)' : n.actual ? ((n.id === 'rmpos' || n.id === 'pps') ? `Completed till date: ${ptlFmtFull(n.actual)}` : ptlFmtFull(n.actual)) : (n.done ? `On or before ${ptlFmtFull(eff)} (exact date not tracked)` : eff ? `Due ${ptlFmtFull(eff)}` : 'Not yet scheduled');
+    const dateTxt = n.notApplicable ? 'Not Eligible (no customer drawing approval)' : n.actual ? ((n.id === 'rmpos' || n.id === 'pps') ? `Completed till date: ${ptlFmtFull(n.actual)}${n.partial ? ' (more still to come later in the project)' : ''}` : ptlFmtFull(n.actual)) : (n.done ? `On or before ${ptlFmtFull(eff)} (exact date not tracked)` : eff ? `Due ${ptlFmtFull(eff)}` : 'Not yet scheduled');
     // Same completion-status coloring as the canvas map (30 Aug 2026) -
     // grey scheduled / green done / red late, not department. `c` is
     // kept only for the department name badge text just below.
-    const dotColor = late ? 'var(--warn)' : (done ? 'var(--accent)' : PTL_SCHEDULED_GREY);
+    const dotColor = late ? 'var(--warn)' : (done ? (n.partial ? PTL_PARTIAL_ORANGE : 'var(--accent)') : PTL_SCHEDULED_GREY);
     // "Show what's left" should only ever be a clickable toggle when
     // there's genuinely something outstanding to drill into. An empty
     // n.detail means one of two very different things - either this
@@ -1576,7 +1580,7 @@ function ptlRenderCanvas(containerId) {
   // still readable from the label text / lane gutter, just not color.
   const clickMap = [];
   laid.forEach(({ n, x, y, boqId, ownerLabel, ceilY, floorY }) => {
-    const c = 'var(--accent)';
+    const c = n.partial ? PTL_PARTIAL_ORANGE : 'var(--accent)';
     const eff = n.actual || n.target || n.planned;
     const done = !!n.actual || n.done === true;
     const late = !done && eff && eff < today;
