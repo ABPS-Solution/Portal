@@ -653,7 +653,7 @@ function renderAPRNRows(prnId) {
     mount.innerHTML = `
       ${changeSummary}
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-        <table class="store-basket-data-table prn-bordered-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
+        <table class="store-basket-data-table prn-bordered-table prn-view-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
           <thead><tr style="background:#f8fafc;">
             <th style="padding:8px; font-size:0.7rem; text-align:center; width:40px;">Sr No</th>
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
@@ -708,7 +708,7 @@ function renderAPRNRows(prnId) {
 
   mount.innerHTML = `
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-      <table class="store-basket-data-table prn-bordered-table" style="width:100%; border-collapse:collapse; min-width:1000px;">
+      <table class="store-basket-data-table prn-bordered-table prn-view-table" style="width:100%; border-collapse:collapse; min-width:1000px;">
         <thead><tr style="background:#f8fafc;">
           <th style="padding:8px; font-size:0.7rem; text-align:center; width:40px;">Sr No</th>
           <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
@@ -923,7 +923,7 @@ function renderPRNCreateTable() {
       <div style="font-size:0.82rem; margin-top:2px;"><span style="color:#111827; font-weight:700;">Product:</span> <span style="color:var(--brand); font-weight:600;">${prnHeaderProductLabel || "—"}</span></div>
     </div>
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
-      <table class="store-basket-data-table prn-bordered-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
+      <table class="store-basket-data-table prn-bordered-table prn-view-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
         <thead>
           <tr style="background:#f8fafc;">
             <th style="padding:8px; font-size:0.7rem; text-align:center; width:40px;">Sr No</th>
