@@ -292,7 +292,7 @@ function renderMcLineItemsTable(projectId, lineItems) {
     <div id="mc-gating-panel-${safeId}">${buildMcGatingPanelHtml(projectId, gating)}</div>
     <div id="mc-table-wrap-${safeId}">
       <div style="overflow-x:auto; margin-bottom:14px;">
-        <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
+        <table class="mc-lines-table" style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
           <colgroup>
             <col style="width:18%;" /><col style="width:15%;" /><col style="width:15%;" />
             <col style="width:6%;" /><col style="width:6%;" /><col style="width:6%;" />
