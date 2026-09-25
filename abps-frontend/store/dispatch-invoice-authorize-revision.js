@@ -49,7 +49,21 @@ function toggleArpdiCard(requestId) {
   if (arpdiExpandedRequestId === requestId) { card.style.display = "none"; arpdiExpandedRequestId = null; return; }
   arpdiExpandedRequestId = requestId;
   card.style.display = "block";
-  card.innerHTML = renderArpdiCard(window._arpdiRequestsById[requestId]);
+  const r = window._arpdiRequestsById[requestId];
+  card.innerHTML = renderArpdiCard(r);
+  loadArpdiDocuments(r);
+}
+
+async function loadArpdiDocuments(r) {
+  const zone = r && document.getElementById(`arpdi-docs-${r.requestId}`);
+  if (!zone) return;
+  try {
+    const data = await apFetch({ action: "fetchProjectInvoiceDocuments", invoiceId: r.invoiceId });
+    zone.innerHTML = data.success ? renderPdiDocumentsTableHtml(data.documents || [], null)
+      : `<div style="color:#b91c1c;">${escapeHtml(data.error || 'Failed to load documents.')}</div>`;
+  } catch (e) {
+    zone.innerHTML = `<div style="color:#b91c1c;">Network error: ${escapeHtml(e.message)}</div>`;
+  }
 }
 
 // The declarative field-diff shape, ported from purchase/revise-po.js's
@@ -123,9 +137,18 @@ function renderArpdiCard(r) {
     ? `<div style="padding:10px 14px; color:var(--muted); font-size:0.86rem; margin-bottom:12px;">No changes detected in this revision request.</div>` : "";
 
   return `
+    <div style="padding:10px 12px; margin-bottom:12px; border-left:4px solid #0ea5e9; background:#f0f9ff; color:#0c4a6e; border-radius:var(--radius); font-size:0.82rem; font-weight:600;">
+      View only. Authorizing approves the latest signed revision draft exactly as printed. To change anything, the person who drafted it edits it in Pending Revisions (Editing) and prints a new draft.
+    </div>
     ${lineSummaryHtml}${generalSummaryHtml}${noChangesHtml}
+    <div class="pdi-view-section" style="margin-top:6px;">Invoice after this revision (V${(Number(r.currentRevision) || 1) + 1})</div>
+    ${renderPdiInvoiceViewHtml(prop, { invoiceNo: r.invoiceNo, invoiceType: r.invoiceType, projectId: r.projectId })}
+    <div class="pdi-view-section">Invoice Documents</div>
+    <div id="arpdi-docs-${r.requestId}" style="font-size:0.85rem; color:var(--muted);">Loading documents...</div>
+    <div style="margin-top:16px;">
     <button class="nav-btn-styled" style="background:var(--brand); padding:8px 18px; font-weight:700;" onclick="openArpdiAuthorizeConfirm(${r.requestId}, '${r.invoiceNo}')">Authorize</button>
     ${typeof isUserAdminGlobal !== 'undefined' && isUserAdminGlobal ? `<button class="nav-btn-styled" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:8px 18px; font-weight:700; margin-left:8px;" onclick="adminDeleteArpdiRequest(${r.requestId})">Admin: Delete Request</button>` : ''}
+    </div>
     <div id="arpdi-card-feedback-${r.requestId}" style="margin-top:10px;"></div>`;
 }
 
@@ -149,13 +172,23 @@ async function submitArpdiAuthorize() {
       const pending = [];
       if (!data.url) pending.push("The invoice PDF is still being generated and will retry automatically.");
       if (data.challanNumber && !data.challanUrl) pending.push("The updated Delivery Challan PDF is still being generated and will retry automatically.");
-      showSuccessWithReset("arpdi-feedback",
-        `Revision authorized${data.invoiceNo ? ` for Invoice ${escapeHtml(String(data.invoiceNo))}` : ""} — now at V${data.revision}.${pending.length ? `<div style="font-weight:600; color:#b45309; margin-top:6px;">${pending.join("<br>")}</div>` : ""}`,
-        "Authorize Another", "initializeArpdiWorkspace()",
-        [
-          { label: "📄 Open Invoice PDF", url: data.url ? driveLink(data.url) : "" },
-          { label: "📄 Open Delivery Challan PDF", url: data.challanUrl ? driveLink(data.challanUrl) : "" },
-        ]);
+      const r = (window._arpdiRequestsById || {})[requestId] || {};
+      renderPdiSuccessCard("arpdi-feedback", {
+        title: `Revision authorized${data.invoiceNo ? ` for Invoice ${escapeHtml(String(data.invoiceNo))}` : ""}`,
+        rows: [
+          ["Invoice No.", data.invoiceNo],
+          ["Now at Revision", data.revision ? `V${data.revision}` : ""],
+          ["Invoice Type", r.invoiceType ? `${r.invoiceType} Invoice` : ""],
+          ["Project ID", r.projectId],
+          ["Delivery Challan No.", data.challanNumber],
+        ],
+        notes: pending,
+        links: [
+          { label: "📄 Open Revised Invoice", url: data.url ? driveLink(data.url) : "" },
+          { label: "📄 Open Delivery Challan", url: data.challanUrl ? driveLink(data.challanUrl) : "" },
+        ],
+        resetLabel: "Authorize Another", resetFn: "initializeArpdiWorkspace()",
+      });
       document.getElementById("arpdi-feedback").scrollIntoView({ behavior: "smooth", block: "center" });
     } else {
       const fb = document.getElementById(`arpdi-card-feedback-${requestId}`);

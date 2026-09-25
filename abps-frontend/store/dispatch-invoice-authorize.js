@@ -46,29 +46,20 @@ async function toggleApdiCard(invoiceId) {
     const data = await apFetch({ action: "fetchPendingProjectDispatchInvoiceDetail", invoiceId });
     if (!data.success) { card.innerHTML = `<div style="color:#b91c1c;">${data.error || 'Failed to load.'}</div>`; return; }
     const details = data.invoiceDetails || {};
-    const items = details.lineItems || [];
-    const rowsHtml = items.map(it => `<tr>
-      <td style="padding:6px;">${escapeHtml(it.description || '')}</td>
-      <td style="padding:6px; text-align:center;">${it.hsnNumber || '—'}</td>
-      <td style="padding:6px; text-align:center;">${it.quantity}</td>
-      <td style="padding:6px; text-align:right;">${(parseFloat(it.ratePerQuantity) || 0).toLocaleString('en-IN')}</td>
-      <td style="padding:6px; text-align:right; font-weight:600;">${(parseFloat(it.totalBasicPrice) || 0).toLocaleString('en-IN')}</td>
-    </tr>`).join('');
+    apdiCardMeta[invoiceId] = { invoiceNo: data.invoiceNo, projectId: data.projectId, invoiceType: data.invoiceType, companyName: data.companyName };
     card.innerHTML = `
-      <div style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">
-        Trade Type: <strong>${details.tradeType || 'Local'}</strong>${details.tradeType === 'Export' ? ` · Rate: ${details.usdRate || '—'}` : ''} ·
-        Freight: ${details.freightAmount || 0} · Others: ${details.othersAmount || 0}
+      <div style="padding:10px 12px; margin-bottom:12px; border-left:4px solid #0ea5e9; background:#f0f9ff; color:#0c4a6e; border-radius:var(--radius); font-size:0.82rem; font-weight:600;">
+        View only. Authorizing approves the latest signed draft exactly as printed. To change anything, the preparer edits it in Pending Invoices (Editing) and prints a new draft.
       </div>
-      <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:10px;">
-        <thead><tr style="background:var(--highlight-bg);"><th style="padding:6px; text-align:left;">Description</th><th style="padding:6px;">HSN</th><th style="padding:6px;">Qty</th><th style="padding:6px;">Rate</th><th style="padding:6px;">Amount</th></tr></thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
-      <div style="font-size:0.85rem; margin-bottom:10px;">
-        <strong>Documents:</strong>
-        ${(data.documents || []).map(d => `<div>${d.docLabel}${d.fileName ? ` — ${d.fileName}` : ''}: <a href="${driveLink(d.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`).join('') || '<span style="color:var(--muted);"> none</span>'}
-      </div>
+      ${renderPdiInvoiceViewHtml(details, {
+        invoiceNo: data.invoiceNo, invoiceDate: data.draftDocDate ? formatOrdinalDate(data.draftDocDate) : '',
+        invoiceType: data.invoiceType, projectId: data.projectId, poNumber: data.poNumber,
+        poDate: data.poDate ? formatOrdinalDate(data.poDate) : '', documents: data.documents || [],
+      })}
+      <div style="margin-top:16px;">
       <button class="nav-btn-styled" style="background:var(--brand); padding:8px 18px; font-weight:700;" onclick="openApdiAuthorizeConfirm(${invoiceId}, '${data.projectId}')">Authorize</button>
       ${typeof isUserAdminGlobal !== 'undefined' && isUserAdminGlobal ? `<button class="nav-btn-styled" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:8px 18px; font-weight:700; margin-left:8px;" onclick="adminDeleteApdiDraft(${invoiceId})">Admin: Delete Draft</button>` : ''}
+      </div>
       <div id="apdi-card-feedback-${invoiceId}" style="margin-top:10px;"></div>`;
   } catch(e) {
     card.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
@@ -76,6 +67,7 @@ async function toggleApdiCard(invoiceId) {
 }
 
 let apdiConfirmInvoiceId = null;
+const apdiCardMeta = {};
 function openApdiAuthorizeConfirm(invoiceId, projectId) {
   apdiConfirmInvoiceId = invoiceId;
   document.getElementById("apdi-confirm-target").textContent = `${projectId} (Invoice #${invoiceId})`;
@@ -95,13 +87,23 @@ async function submitApdiAuthorize() {
       const pending = [];
       if (!data.url) pending.push("The invoice PDF is still being generated and will retry automatically.");
       if (!data.challanUrl) pending.push("The Delivery Challan PDF is still being generated and will retry automatically — find it later in Search Material Outward on Delivery Challan.");
-      showSuccessWithReset("apdi-feedback",
-        `Invoice ${escapeHtml(String(data.invoiceNo || ""))} authorized.${data.challanNumber ? ` Delivery Challan ${escapeHtml(String(data.challanNumber))} created.` : ""}${pending.length ? `<div style="font-weight:600; color:#b45309; margin-top:6px;">${pending.join("<br>")}</div>` : ""}`,
-        "Authorize Another", "initializeApdiWorkspace()",
-        [
-          { label: "📄 Open Invoice PDF", url: data.url ? driveLink(data.url) : "" },
-          { label: "📄 Open Delivery Challan PDF", url: data.challanUrl ? driveLink(data.challanUrl) : "" },
-        ]);
+      const meta = apdiCardMeta[invoiceId] || {};
+      renderPdiSuccessCard("apdi-feedback", {
+        title: `Invoice ${escapeHtml(String(data.invoiceNo || ""))} authorized`,
+        rows: [
+          ["Invoice No.", data.invoiceNo],
+          ["Invoice Type", meta.invoiceType ? `${meta.invoiceType} Invoice` : ""],
+          ["Project ID", meta.projectId],
+          ["Customer", meta.companyName],
+          ["Delivery Challan No.", data.challanNumber],
+        ],
+        notes: pending,
+        links: [
+          { label: "📄 Open Invoice", url: data.url ? driveLink(data.url) : "" },
+          { label: "📄 Open Delivery Challan", url: data.challanUrl ? driveLink(data.challanUrl) : "" },
+        ],
+        resetLabel: "Authorize Another", resetFn: "initializeApdiWorkspace()",
+      });
       document.getElementById("apdi-feedback").scrollIntoView({ behavior: "smooth", block: "center" });
     } else {
       const fb = document.getElementById(`apdi-card-feedback-${invoiceId}`);
@@ -117,7 +119,7 @@ async function submitApdiAuthorize() {
 
 // ── Admin-only: delete a stuck draft (the sole escape hatch, no reject) ──
 async function adminDeleteApdiDraft(invoiceId) {
-  if (!confirm(`Admin: permanently delete pending invoice draft #${invoiceId}? This releases its reserved units and cannot be undone. No invoice number was ever minted, so nothing is burned.`)) return;
+  if (!confirm(`Admin: permanently delete pending invoice draft #${invoiceId}? This releases its reserved units and cannot be undone. Its invoice number will be recorded as cancelled.`)) return;
   showBlockingOverlay("Deleting draft...");
   try {
     const data = await apFetch({ action: "deleteProjectDispatchInvoiceDraft", invoiceId, operatorName: appActiveOperatorIdentityString || "Unknown" });

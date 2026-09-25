@@ -237,7 +237,7 @@ function cpdiRenderInvoiceForm() {
   zone.innerHTML = `
     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:16px;">
       <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:1rem;">Invoice Details</div>
-      <div style="font-size:0.87rem; color:var(--muted); margin-bottom:14px;">Fill in what the invoice needs. This creates a DRAFT — the invoice number is minted only when it's authorized.</div>
+      <div style="font-size:0.87rem; color:var(--muted); margin-bottom:14px;">Fill in what the invoice needs. This creates the invoice draft. The draft is the real invoice (its number is given when the draft is created): print it, get it signed, then it is authorized.</div>
 
       <div style="display:flex; gap:14px; align-items:flex-end; margin-bottom:14px; flex-wrap:wrap;">
         <div class="grid-cell-item" style="max-width:200px; margin:0;">
@@ -256,7 +256,7 @@ function cpdiRenderInvoiceForm() {
       </div>
 
       <div class="compact-fields-grid" style="margin-bottom:14px;">
-        <div class="grid-cell-item" style="background:#f1f5f9;"><label>Invoice No.</label><div style="padding:6px 4px; font-weight:600; color:var(--muted);" title="Allocated only when this draft is authorized">Allocated on authorization</div></div>
+        <div class="grid-cell-item" style="background:#f1f5f9;"><label>Invoice No.</label><div style="padding:6px 4px; font-weight:600; color:var(--muted);">Given when the draft is created</div></div>
         ${field('Insurance No.', 'insuranceNo')}
         ${field('MDCC NO', 'mdccNo')}
         ${field('Transport Name', 'transportName')}

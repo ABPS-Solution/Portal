@@ -210,3 +210,151 @@ function updatePdiTradeType(state, value) {
     state.usdRate = "";
   }
 }
+
+// ── View-only invoice (Authorize screens, 25 Sep 2026) ────────────────
+// Authorize approves the signed draft exactly as printed, so both Authorize
+// screens show every invoice detail read-only in one consistent layout.
+function pdiMoney(n, isExport) {
+  const v = (parseFloat(n) || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  return (isExport ? '$' : '₹') + v;
+}
+
+function renderPdiInvoiceViewHtml(d, meta) {
+  d = d || {}; meta = meta || {};
+  const isExport = d.tradeType === 'Export';
+  const usdRate = parseFloat(d.usdRate) || 0;
+  const conv = (n) => (isExport && usdRate > 0) ? (parseFloat(n) || 0) / usdRate : (parseFloat(n) || 0);
+  const v = (x) => (x == null || String(x).trim() === '') ? '<span style="color:var(--muted);">—</span>' : escapeHtml(String(x));
+  const cell = (label, val) => `<div class="pdi-view-cell"><div class="pdi-view-label">${label}</div><div class="pdi-view-value">${v(val)}</div></div>`;
+  const party = (title, p) => {
+    p = p || {};
+    const rows = [['Name', p.name], ['Address', p.address], ['State', p.state], ['GST No.', p.gstNo], ['Contact Name', p.contactName], ['Contact No.', p.contactNo]];
+    return `<div class="pdi-view-box"><div class="pdi-view-box-title">${title}</div>
+      <table class="pdi-grid-table"><tbody>${rows.map(r => `<tr><th style="width:32%;">${r[0]}</th><td>${v(r[1])}</td></tr>`).join('')}</tbody></table></div>`;
+  };
+  const items = d.lineItems || [];
+  const lineAmt = (it) => parseFloat(it.totalBasicPrice) || ((parseFloat(it.quantity) || 0) * (parseFloat(it.ratePerQuantity) || 0));
+  const rawSub = items.reduce((s, it) => s + lineAmt(it), 0);
+  const cgst = rawSub * (parseFloat(d.cgstPercent) || 0) / 100;
+  const sgst = rawSub * (parseFloat(d.sgstPercent) || 0) / 100;
+  const igst = rawSub * (parseFloat(d.igstPercent) || 0) / 100;
+  const extras = (parseFloat(d.freightAmount) || 0) + (parseFloat(d.othersAmount) || 0) + (parseFloat(d.roundOff) || 0);
+  const grand = isExport ? conv(rawSub) + extras : rawSub + cgst + sgst + igst + extras;
+  const bank = d.bankDetails || {};
+  const docs = meta.documents;
+  return `
+    <div class="pdi-view">
+      <div class="pdi-view-section">Invoice</div>
+      <div class="pdi-view-grid">
+        ${cell('Invoice No.', meta.invoiceNo)}
+        ${cell('Invoice Date', meta.invoiceDate)}
+        ${cell('Invoice Type', meta.invoiceType)}
+        ${cell('Project ID', meta.projectId)}
+        ${cell('PO Number', meta.poNumber)}
+        ${cell('PO Date', meta.poDate)}
+        ${cell('Local / Export', d.tradeType || 'Local')}
+        ${isExport ? cell('INR to USD Rate', d.usdRate) : ''}
+        ${cell('Insurance No.', d.insuranceNo)}
+        ${cell('MDCC No.', d.mdccNo)}
+        ${cell('Transport Name', d.transportName)}
+        ${cell('LR No & Date', d.lrNoDate)}
+        ${cell('LC No & Date', d.lcNoDate)}
+        ${cell('DC No & Date', d.dcNoDate)}
+        ${cell('Vehicle No.', d.vehicleNo)}
+        ${cell('Mobile No.', d.mobileNo)}
+        ${cell('Freight', d.freightText)}
+        ${cell('Incoterms', [d.incoterms, d.incotermsPlace].filter(Boolean).join(' '))}
+      </div>
+
+      <div class="pdi-view-two">${party('Bill To Party', d.billTo)}${party('Ship To Party', d.shipTo)}</div>
+
+      <div class="pdi-view-section">Product Details</div>
+      <div style="overflow-x:auto;">
+      <table class="pdi-grid-table" style="min-width:720px;">
+        <colgroup><col style="width:5%;"><col style="width:45%;"><col style="width:10%;"><col style="width:8%;"><col style="width:8%;"><col style="width:12%;"><col style="width:12%;"></colgroup>
+        <thead><tr><th>Sr No</th><th>Invoice Material Description</th><th>HSN Code</th><th>Qty</th><th>Unit</th><th>Rate / Qty</th><th>Amount</th></tr></thead>
+        <tbody>${items.length ? items.map((it, i) => `<tr>
+          <td style="text-align:center; font-weight:700;">${i + 1}</td>
+          <td>${v(it.description)}</td>
+          <td style="text-align:center;">${v(it.hsnNumber)}</td>
+          <td style="text-align:center; font-weight:700;">${v(fmtQty(it.quantity))}</td>
+          <td style="text-align:center;">${v(it.unit)}</td>
+          <td style="text-align:right;">${pdiMoney(conv(it.ratePerQuantity), isExport)}</td>
+          <td style="text-align:right; font-weight:700;">${pdiMoney(conv(lineAmt(it)), isExport)}</td>
+        </tr>`).join('') : `<tr><td colspan="7" style="text-align:center; color:var(--muted);">No lines</td></tr>`}</tbody>
+      </table>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+        <table class="pdi-grid-table" style="width:340px;"><tbody>
+          <tr><th>Sub Total</th><td style="text-align:right;">${pdiMoney(conv(rawSub), isExport)}</td></tr>
+          ${isExport ? '' : `
+          <tr><th>CGST ${v(d.cgstPercent || 0)}%</th><td style="text-align:right;">${pdiMoney(cgst)}</td></tr>
+          <tr><th>SGST ${v(d.sgstPercent || 0)}%</th><td style="text-align:right;">${pdiMoney(sgst)}</td></tr>
+          <tr><th>IGST ${v(d.igstPercent || 0)}%</th><td style="text-align:right;">${pdiMoney(igst)}</td></tr>`}
+          <tr><th>Freight (incl. GST)</th><td style="text-align:right;">${pdiMoney(d.freightAmount, isExport)}</td></tr>
+          <tr><th>Others (incl. GST)</th><td style="text-align:right;">${pdiMoney(d.othersAmount, isExport)}</td></tr>
+          <tr><th>Round Off</th><td style="text-align:right;">${pdiMoney(d.roundOff, isExport)}</td></tr>
+          <tr class="pdi-grand"><th>Grand Total</th><td style="text-align:right;">${pdiMoney(grand, isExport)}</td></tr>
+        </tbody></table>
+      </div>
+      <div style="margin-top:8px; font-size:0.86rem;">Amount in words: <strong>${isExport ? numberToWordsUSDClient(grand) : numberToWordsINRClient(grand)}</strong></div>
+
+      <div class="pdi-view-section">Bank Details</div>
+      <table class="pdi-grid-table"><tbody>
+        <tr><th style="width:20%;">Beneficiary</th><td>${v(bank.beneficiary)}</td><th style="width:20%;">Bank Name</th><td>${v(bank.bankName)}</td></tr>
+        <tr><th>${isExport ? 'Swift Code' : 'IFSC Code'}</th><td>${v(isExport ? bank.swift : bank.ifsc)}</td><th>A/C</th><td>${v(bank.ac)}</td></tr>
+        <tr><th>Address</th><td>${v(bank.address)}</td><th>Branch Name &amp; Code</th><td>${v(bank.branch)}</td></tr>
+      </tbody></table>
+
+      <div class="pdi-view-section">Declaration</div>
+      <div style="font-size:0.84rem; border:1px solid #cbd5e1; border-radius:4px; padding:10px; background:#fff;">${v(d.declaration)}</div>
+
+      ${docs === undefined ? '' : `<div class="pdi-view-section">Invoice Documents</div><div class="pdi-view-docs">${renderPdiDocumentsTableHtml(docs || [], null)}</div>`}
+    </div>`;
+}
+
+// renderPdiDocumentsTableHtml — supporting documents in a bordered table.
+// actions(doc) returns extra action-cell HTML (Revise's Replace / Remove),
+// or pass null for view only.
+function renderPdiDocumentsTableHtml(docs, actions) {
+  if (!docs.length) return `<div style="font-size:0.85rem; color:var(--muted); padding:6px 0;">No documents attached.</div>`;
+  return `
+    <table class="pdi-grid-table">
+      <colgroup><col style="width:6%;"><col style="width:28%;"><col><col style="width:${actions ? '28%' : '12%'};"></colgroup>
+      <thead><tr><th>Sr No</th><th>Document</th><th>File</th><th>${actions ? 'Actions' : 'Open'}</th></tr></thead>
+      <tbody>${docs.map((d, i) => `<tr>
+        <td style="text-align:center; font-weight:700;">${i + 1}</td>
+        <td style="font-weight:600;">${escapeHtml(d.docLabel || d.docType || '')}</td>
+        <td style="word-break:break-word;">${escapeHtml(d.fileName || '')}</td>
+        <td style="text-align:center; white-space:nowrap;">
+          <a href="${driveLink(d.url)}" target="_blank" rel="noopener" class="pdi-link-btn">Open ↗</a>${actions ? actions(d) : ''}
+        </td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+}
+
+// renderPdiSuccessCard — the Authorize screens' success message: title, the
+// key facts in a bordered table, document buttons and the reset button.
+function renderPdiSuccessCard(elementId, opts) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const rows = (opts.rows || []).filter(r => r && r[1] != null && r[1] !== '');
+  const links = (opts.links || []).filter(l => l && l.url);
+  el.style.cssText = "display:block; margin-bottom:14px;";
+  el.innerHTML = `
+    <div style="border:1.5px solid #86efac; background:#f0fdf4; border-radius:var(--radius); padding:18px;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+        <div style="width:34px; height:34px; border-radius:50%; background:#16a34a; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:800; flex-shrink:0;">✓</div>
+        <div style="font-size:1.05rem; font-weight:800; color:#15803d;">${opts.title}</div>
+      </div>
+      <table class="pdi-grid-table" style="max-width:640px; background:#fff;"><tbody>
+        ${rows.map(r => `<tr><th style="width:40%;">${r[0]}</th><td style="font-weight:700;">${escapeHtml(String(r[1]))}</td></tr>`).join('')}
+      </tbody></table>
+      ${(opts.notes || []).length ? `<div style="margin-top:10px; font-size:0.84rem; font-weight:600; color:#b45309;">${opts.notes.join('<br>')}</div>` : ''}
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+        ${links.map(l => `<a href="${l.url}" target="_blank" rel="noopener" style="display:inline-block; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:8px 16px; border-radius:var(--radius); font-weight:700; font-size:0.84rem; text-decoration:none;">${l.label} ↗</a>`).join('')}
+        <button class="nav-btn-styled" style="background:var(--accent); color:#fff; padding:8px 18px; font-weight:700; font-size:0.84rem;" onclick="${opts.resetFn}">+ ${opts.resetLabel}</button>
+      </div>
+    </div>`;
+}

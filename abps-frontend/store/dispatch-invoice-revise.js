@@ -98,25 +98,23 @@ async function loadRpdiHistory(projectId) {
       return;
     }
     historyZone.innerHTML = `
-      <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.9rem;">Invoice History — ${projectId}</div>
-      <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:0.88rem; margin-bottom:6px;">
-        <colgroup><col style="width:13%;" /><col style="width:23%;" /><col style="width:8%;" /><col style="width:13%;" /><col style="width:13%;" /><col style="width:30%;" /></colgroup>
-        <thead><tr style="background:var(--highlight-bg); text-align:left;">
-          <th style="padding:6px;">Type</th><th style="padding:6px;">Invoice No.</th><th style="padding:6px;">Rev</th><th style="padding:6px;">PDF</th><th style="padding:6px;">Docs</th><th style="padding:6px; text-align:right;"></th>
-        </tr></thead>
+      <div style="font-weight:800; color:var(--brand); margin-bottom:8px; font-size:0.95rem;">Invoice History — ${escapeHtml(projectId)}</div>
+      <table class="pdi-grid-table" style="margin-bottom:6px;">
+        <colgroup><col style="width:11%;" /><col style="width:24%;" /><col style="width:8%;" /><col style="width:12%;" /><col style="width:15%;" /><col style="width:30%;" /></colgroup>
+        <thead><tr><th>Type</th><th>Invoice No.</th><th>Rev</th><th>Invoice PDF</th><th>Documents</th><th>Action</th></tr></thead>
         <tbody>
-          ${data.invoices.map(inv => `<tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:6px; font-weight:700; word-wrap:break-word;">${inv.invoiceType}</td>
-            <td style="padding:6px; word-wrap:break-word;">${inv.invoiceNo}</td>
-            <td style="padding:6px;">V${inv.revision}</td>
-            <td style="padding:6px;">${inv.pdfUrl ? `<a href="${driveLink(inv.pdfUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a>` : '—'}</td>
-            <td style="padding:6px;"><button class="nav-btn-styled" style="background:var(--muted); padding:3px 10px; font-size:0.78rem;" onclick="toggleRpdiDocuments(${inv.invoiceId})">View</button></td>
-            <td style="padding:6px; text-align:right;">${inv.pendingRevisionRequestId
+          ${data.invoices.map(inv => `<tr>
+            <td style="font-weight:700; text-align:center; vertical-align:middle;">${inv.invoiceType}</td>
+            <td style="font-weight:600; vertical-align:middle;">${escapeHtml(inv.invoiceNo || '')}</td>
+            <td style="text-align:center; vertical-align:middle;">V${inv.revision}</td>
+            <td style="text-align:center; vertical-align:middle;">${inv.pdfUrl ? `<a href="${driveLink(inv.pdfUrl)}" target="_blank" rel="noopener" class="pdi-link-btn">Open ↗</a>` : '—'}</td>
+            <td style="text-align:center; vertical-align:middle;"><button id="rpdi-docs-btn-${inv.invoiceId}" class="nav-btn-styled" style="background:#475569; padding:4px 12px; font-size:0.8rem;" onclick="toggleRpdiDocuments(${inv.invoiceId})">View / Change</button></td>
+            <td style="text-align:center; vertical-align:middle;">${inv.pendingRevisionRequestId
               ? `<span style="color:#b45309; font-weight:600; font-size:0.8rem;">Revision pending (#${inv.pendingRevisionRequestId})</span>`
-              : `<button class="nav-btn-styled" style="background:var(--accent); padding:5px 12px; font-size:0.85rem;" onclick="loadRpdiForm(${inv.invoiceId})">Revise</button>`}</td>
+              : `<button class="nav-btn-styled" style="background:var(--accent); padding:5px 14px; font-size:0.85rem;" onclick="loadRpdiForm(${inv.invoiceId})">Revise Invoice</button>`}</td>
           </tr>
           <tr id="rpdi-docs-row-${inv.invoiceId}" style="display:none;">
-            <td colspan="6" style="padding:4px 6px 10px 6px;"><div id="rpdi-docs-zone-${inv.invoiceId}" style="font-size:0.82rem; color:var(--muted);"></div></td>
+            <td colspan="6" style="background:#f8fafc; padding:12px;"><div id="rpdi-docs-zone-${inv.invoiceId}"></div></td>
           </tr>`).join("")}
         </tbody>
       </table>`;
@@ -125,22 +123,117 @@ async function loadRpdiHistory(projectId) {
   }
 }
 
+// Supporting documents of an authorized invoice (25 Sep 2026): view, add,
+// replace or remove, like Add to FG Approval. These are not part of the
+// invoice PDF, so changing them never creates a revision.
+
 async function toggleRpdiDocuments(invoiceId) {
   const row = document.getElementById(`rpdi-docs-row-${invoiceId}`);
-  const zone = document.getElementById(`rpdi-docs-zone-${invoiceId}`);
-  if (!row || !zone) return;
+  if (!row) return;
   if (row.style.display === "table-row") { row.style.display = "none"; return; }
   row.style.display = "table-row";
-  zone.innerHTML = "Loading documents...";
+  await loadRpdiDocuments(invoiceId);
+}
+
+async function loadRpdiDocuments(invoiceId) {
+  const zone = document.getElementById(`rpdi-docs-zone-${invoiceId}`);
+  if (!zone) return;
+  zone.innerHTML = `<div style="color:var(--muted); font-size:0.85rem;">Loading documents...</div>`;
   try {
     const data = await apFetch({ action: "fetchProjectInvoiceDocuments", invoiceId });
-    if (!data.success) { zone.innerHTML = `<span style="color:#b91c1c;">${data.error || "Failed to load documents."}</span>`; return; }
-    if (!(data.documents || []).length) { zone.innerHTML = "No documents attached to this invoice."; return; }
-    zone.innerHTML = data.documents.map(d =>
-      `<div style="margin-bottom:2px;">${d.docLabel}${d.fileName ? ` — ${d.fileName}` : ""}: <a href="${driveLink(d.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`
-    ).join("");
+    if (!data.success) { zone.innerHTML = `<span style="color:#b91c1c;">${escapeHtml(data.error || "Failed to load documents.")}</span>`; return; }
+    const docs = data.documents || [];
+    const actions = (d) => `
+      <label class="pdi-act-btn" style="color:#0369a1; border-color:#7dd3fc;">Replace<input type="file" hidden onchange="rpdiReplaceDocument(${invoiceId}, ${d.documentId}, '${d.docType}', this)"></label>
+      <span class="pdi-act-btn" style="color:#b91c1c; border-color:#fca5a5;" onclick="rpdiRemoveDocument(${invoiceId}, ${d.documentId})">Remove</span>`;
+    zone.innerHTML = `
+      <div style="font-size:0.8rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:8px;">Invoice Documents</div>
+      ${renderPdiDocumentsTableHtml(docs, actions)}
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px; padding:10px; border:1px dashed #94a3b8; border-radius:6px; background:#fff;">
+        <strong style="font-size:0.84rem;">Add documents:</strong>
+        <select id="rpdi-add-doc-type-${invoiceId}" style="padding:6px 8px; font-size:0.85rem; max-width:320px;">
+          ${Object.keys(PDI_DOC_META).map(t => `<option value="${t}">${PDI_DOC_META[t].label}</option>`).join('')}
+        </select>
+        <label class="nav-btn-styled" style="background:var(--accent); color:#fff; padding:6px 14px; font-size:0.82rem; cursor:pointer;">Choose files &amp; upload<input type="file" multiple hidden onchange="rpdiAddDocuments(${invoiceId}, this)"></label>
+      </div>
+      <div style="font-size:0.78rem; color:var(--muted); margin-top:8px;">Changing documents here does not revise the invoice. A required document must always keep at least one file (use Replace).</div>
+      <div id="rpdi-docs-fb-${invoiceId}" style="margin-top:8px;"></div>`;
   } catch(e) {
-    zone.innerHTML = `<span style="color:#b91c1c;">Network error: ${e.message}</span>`;
+    zone.innerHTML = `<span style="color:#b91c1c;">Network error: ${escapeHtml(e.message)}</span>`;
+  }
+}
+
+async function rpdiUploadFiles(files, docType) {
+  const projectId = document.getElementById("rpdi-ta-input").value.trim();
+  const label = (PDI_DOC_META[docType] || {}).label || docType;
+  const out = [];
+  for (const file of files) {
+    const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(file); });
+    const up = await apFetch({
+      action: "uploadProjectInvoiceDocument", projectId, docLabel: label,
+      file: { fileName: file.name, base64Data: b64, mimeType: file.type || "application/octet-stream" },
+      operatorName: appActiveOperatorIdentityString || "Unknown",
+    });
+    if (!up.success || !up.url) throw new Error(`Upload failed for "${file.name}". ${up.error || ''}`);
+    out.push({ docType, fileName: file.name, url: up.url });
+  }
+  return out;
+}
+
+function rpdiDocsFeedback(invoiceId, msg, ok) {
+  const fb = document.getElementById(`rpdi-docs-fb-${invoiceId}`);
+  if (fb) fb.innerHTML = `<div style="font-weight:600; font-size:0.85rem; color:${ok ? '#15803d' : '#b91c1c'};">${escapeHtml(msg)}</div>`;
+}
+
+async function rpdiAddDocuments(invoiceId, input) {
+  const files = [...(input.files || [])];
+  input.value = "";
+  if (!files.length) return;
+  const docType = document.getElementById(`rpdi-add-doc-type-${invoiceId}`).value;
+  showBlockingOverlay("Uploading documents...");
+  try {
+    const documents = await rpdiUploadFiles(files, docType);
+    const data = await apFetch({ action: "attachProjectInvoiceDocuments", invoiceId, documents, operatorName: appActiveOperatorIdentityString || "Unknown" });
+    if (!data.success) { rpdiDocsFeedback(invoiceId, data.error || "Failed.", false); return; }
+    await loadRpdiDocuments(invoiceId);
+    rpdiDocsFeedback(invoiceId, `${documents.length} document(s) added. The invoice was not revised.`, true);
+  } catch(e) {
+    rpdiDocsFeedback(invoiceId, e.message, false);
+  } finally {
+    hideBlockingOverlay();
+  }
+}
+
+async function rpdiReplaceDocument(invoiceId, documentId, docType, input) {
+  const files = [...(input.files || [])];
+  input.value = "";
+  if (!files.length) return;
+  showBlockingOverlay("Replacing document...");
+  try {
+    const documents = await rpdiUploadFiles(files.slice(0, 1), docType);
+    const data = await apFetch({ action: "attachProjectInvoiceDocuments", invoiceId, documents, replaceDocumentId: documentId, operatorName: appActiveOperatorIdentityString || "Unknown" });
+    if (!data.success) { rpdiDocsFeedback(invoiceId, data.error || "Failed.", false); return; }
+    await loadRpdiDocuments(invoiceId);
+    rpdiDocsFeedback(invoiceId, "Document replaced. The invoice was not revised.", true);
+  } catch(e) {
+    rpdiDocsFeedback(invoiceId, e.message, false);
+  } finally {
+    hideBlockingOverlay();
+  }
+}
+
+async function rpdiRemoveDocument(invoiceId, documentId) {
+  if (!confirm("Remove this document from the invoice? The invoice itself is not changed.")) return;
+  showBlockingOverlay("Removing document...");
+  try {
+    const data = await apFetch({ action: "removeProjectInvoiceDocument", invoiceId, documentId, operatorName: appActiveOperatorIdentityString || "Unknown" });
+    if (!data.success) { rpdiDocsFeedback(invoiceId, data.error || "Failed.", false); return; }
+    await loadRpdiDocuments(invoiceId);
+    rpdiDocsFeedback(invoiceId, "Document removed. The invoice was not revised.", true);
+  } catch(e) {
+    rpdiDocsFeedback(invoiceId, e.message, false);
+  } finally {
+    hideBlockingOverlay();
   }
 }
 

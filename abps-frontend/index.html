@@ -304,6 +304,33 @@
   .pdi-panel .store-basket-data-table th { font-size: 0.82rem; }
   .pdi-panel .store-basket-data-table td { font-size: 0.9rem; }
 
+  /* Project Dispatch Invoice (all four sections, 25 Sep 2026): every input
+     gets a visible border and every table gets row + column lines, same
+     look as the Follow-Up tables. */
+  .pdi-panel input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
+  .pdi-panel select,
+  .pdi-panel textarea { border: 1.5px solid #94a3b8 !important; border-radius: 4px; background: #fff; }
+  .pdi-panel input:focus, .pdi-panel select:focus, .pdi-panel textarea:focus { border-color: var(--brand) !important; outline: none; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12); }
+  .pdi-panel input[readonly], .pdi-panel input:disabled, .pdi-panel select:disabled, .pdi-panel textarea:disabled { background: #f1f5f9 !important; }
+  .pdi-panel table { border-collapse: collapse; }
+  .pdi-panel table th, .pdi-panel table td { border: 1px solid #cbd5e1; }
+  .pdi-panel table thead th { background: #e0e7ff; color: #1e3a8a; font-weight: 700; }
+  .pdi-grid-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 0.87rem; background: #fff; }
+  .pdi-grid-table th, .pdi-grid-table td { border: 1px solid #cbd5e1; padding: 7px 9px; vertical-align: top; word-wrap: break-word; }
+  .pdi-grid-table thead th { background: #e0e7ff; color: #1e3a8a; font-weight: 700; text-align: center; }
+  .pdi-grid-table tbody th { background: #f1f5f9; color: #334155; font-weight: 700; text-align: left; }
+  .pdi-grid-table tr.pdi-grand th, .pdi-grid-table tr.pdi-grand td { background: #dcfce7; color: #15803d; font-weight: 800; }
+  .pdi-view-section { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--brand); margin: 16px 0 8px; }
+  .pdi-view-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); border-top: 1px solid #cbd5e1; border-left: 1px solid #cbd5e1; background: #fff; }
+  .pdi-view-cell { border-right: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; padding: 7px 9px; }
+  .pdi-view-label { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+  .pdi-view-value { font-size: 0.88rem; font-weight: 600; color: var(--text); word-break: break-word; }
+  .pdi-view-two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+  .pdi-view-box-title { font-size: 0.8rem; font-weight: 800; color: var(--brand); margin-bottom: 6px; text-transform: uppercase; }
+  .pdi-link-btn { display: inline-block; color: var(--brand); font-weight: 700; font-size: 0.8rem; text-decoration: none; border: 1px solid var(--brand); border-radius: 4px; padding: 2px 8px; }
+  .pdi-act-btn { display: inline-block; margin-left: 6px; font-weight: 700; font-size: 0.8rem; border-radius: 4px; padding: 2px 8px; cursor: pointer; border: 1px solid; background: #fff; }
+  @media (max-width: 640px) { .pdi-view-two { grid-template-columns: 1fr; } }
+
   /* Same shared .grid-cell-item scoping trick, this time for a lead's
      View Details drawer (text/dropdown value boxes only — checkbox
      inputs never appear in this canvas, but excluded explicitly anyway
@@ -2268,6 +2295,14 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
               <input type="file" id="cpdi-doc-packingList-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'packingList')" />
               <div id="cpdi-doc-packingList-filelist"></div>
             </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Serial Number Confirmation Sheet * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="cpdi-doc-serialNumberConfirmationSheet-dropzone" onclick="document.getElementById('cpdi-doc-serialNumberConfirmationSheet-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Serial Number Confirmation Sheet
+              </div>
+              <input type="file" id="cpdi-doc-serialNumberConfirmationSheet-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'serialNumberConfirmationSheet')" />
+              <div id="cpdi-doc-serialNumberConfirmationSheet-filelist"></div>
+            </div>
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
@@ -2324,16 +2359,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             </div>
           </div>
 
-          <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
-            <div>
-              <label class="field-label" style="margin-top:0;">Serial Number Confirmation Sheet * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="cpdi-doc-serialNumberConfirmationSheet-dropzone" onclick="document.getElementById('cpdi-doc-serialNumberConfirmationSheet-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-                📎 Click to attach Serial Number Confirmation Sheet
-              </div>
-              <input type="file" id="cpdi-doc-serialNumberConfirmationSheet-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'serialNumberConfirmationSheet')" />
-              <div id="cpdi-doc-serialNumberConfirmationSheet-filelist"></div>
-            </div>
-          </div>
 
           <div>
             <label class="field-label" style="margin-top:0;">Payment Received Confirmation *</label>
@@ -2465,11 +2490,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
     <div id="canvas-module-expected-processing-returns" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Expected Processing Material Return</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin:6px 0 14px;">Every Processing ticket (material sent to an outside vendor for job work), what is expected back, and how far it has got. Returning material is received through normal Gate Entry.</p>
+      <p style="font-size:0.82rem; color:var(--muted); margin:6px 0 14px;">Processing material that has been sent to an outside vendor (its Delivery Challan is authorized), and what is expected back. Click a ticket to see its materials. Returning material is received through normal Gate Entry.</p>
       <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
-        <button class="nav-btn-styled" id="epmr-filter-all" style="width:auto;" onclick="epmrSetFilter('all')">All</button>
-        <button class="nav-btn-styled" id="epmr-filter-sent" style="width:auto;" onclick="epmrSetFilter('sent')">Sent to Vendor</button>
-        <button class="nav-btn-styled" id="epmr-filter-pending" style="width:auto;" onclick="epmrSetFilter('pending')">Not Yet Sent</button>
         <input type="text" id="epmr-search" placeholder="Search ticket, vendor, company, material..." autocomplete="off" oninput="epmrRender()" style="flex:1; min-width:220px; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" />
       </div>
       <div id="epmr-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
