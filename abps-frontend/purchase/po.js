@@ -947,7 +947,7 @@ function renderCPOMaterialRows() {
       <div style="padding:10px 12px; display:flex; flex-direction:column; gap:10px;">
         ${nameBlock}
         <div style="display:grid; grid-template-columns:repeat(6, minmax(0, 1fr)); border:1.5px solid #cbd5e1; border-radius:6px; overflow:hidden;">
-          <div style="${cellIn}"><div style="${cellLbl}">Quantity *</div>
+          <div style="${cellIn}"><div style="${cellLbl}">Quantity *${row.unit ? ` (${esc(row.unit)})` : ""}</div>
             <input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${row.quantity}" oninput="updateCPORowField(${row.id},'quantity',this.value)" onblur="handleCPOQtyBlur(${row.id})" style="${inputCss} text-align:center;"></div>
           <div style="${cellCalc}"><div style="${cellLbl}">Design Rate / Qty</div>
             <div style="height:34px; display:flex; align-items:center; font-family:monospace; font-weight:700; color:#334155;">${hasDesignRate ? fmtQty(designRate) : '—'}</div></div>
