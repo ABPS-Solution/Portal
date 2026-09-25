@@ -974,7 +974,7 @@ function renderCPOMaterialRows() {
           <span style="${cellLbl} margin:0;">Allocated PRNs:</span>
           ${prnChips}
           ${allocCheck}
-          <button onclick="openCPOAllocationPicker(${row.id})" style="margin-left:auto; font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:700;">Allocate to PRNs</button>
+          <button onclick="openCPOAllocationPicker(${row.id})" style="margin-left:auto; font-size:0.75rem; padding:5px 12px; background:#7c3aed; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:700;">Allocate to PRNs</button>
         </div>
         ${overRateWarning}
       </div>

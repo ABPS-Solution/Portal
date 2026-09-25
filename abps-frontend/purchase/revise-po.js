@@ -1715,7 +1715,7 @@ function poRevRowHtml(o) {
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <span style="${lbl} margin:0;">Allocated PRNs:</span>
           <div style="flex:1; min-width:200px;">${o.chipsHtml}</div>
-          <button onclick="${o.allocOnclick}" style="font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:700;">Allocate to PRNs</button>
+          <button onclick="${o.allocOnclick}" style="font-size:0.75rem; padding:5px 12px; background:#7c3aed; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:700;">Allocate to PRNs</button>
         </div>
       </div>
     </div>`;
