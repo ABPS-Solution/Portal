@@ -931,7 +931,9 @@ function renderCPOMaterialRows() {
 
     const prnChips = allocList.map(a => `<span style="display:inline-block; vertical-align:middle; white-space:normal; overflow-wrap:anywhere; background:#e0f2fe; color:var(--brand); font-size:0.74rem; padding:3px 8px; border-radius:4px;">${esc(a.prnId)}: <strong>${a.quantity}</strong></span>`).join(" ");
     const allocOk = allocList.length > 0 && Math.abs(unallocNow) < 1e-9;
-    const allocCheck = allocList.length
+    const allocCheck = (!allocList.length && row._allocationTouched)
+      ? `<span style="font-size:0.78rem; font-weight:700; color:#b45309;">All ${fmtQty(lineQtyNow)} as extra stock (no PRN)</span>`
+      : allocList.length
       ? `<span style="font-size:0.78rem; font-weight:700; color:${allocOk ? '#15803d' : '#b45309'};">${fmtQty(allocSum)} / ${fmtQty(lineQtyNow)} allocated${unallocNow > 0 ? ` (${fmtQty(unallocNow)} extra)` : ''}</span>`
       : `<span style="font-size:0.78rem; font-weight:700; color:#b91c1c;">No PRNs allocated</span>`;
 
@@ -991,7 +993,7 @@ function cpoRowMissing(row) {
   if (!(parseFloat(row.quantity) > 0)) missing.push('quantity');
   if (row.rate === '' || row.rate == null || isNaN(parseFloat(row.rate))) missing.push('rate');
   if (!(row.additionalDescription || '').toString().trim()) missing.push('description');
-  if (!(row.allocations || []).length) missing.push('PRN');
+  if (!row._allocationTouched) missing.push('PRN allocation');
   return missing;
 }
 function cpoRowStatusHtml(row) {
