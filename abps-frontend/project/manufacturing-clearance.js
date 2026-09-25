@@ -99,9 +99,9 @@ async function loadManufacturingClearanceList() {
     body.innerHTML = data.projects.map(p => `
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px; font-family:monospace; word-break:break-word;">${p.projectId}</td>
-        <td style="padding:8px; word-break:break-word;">${p.companyName}</td>
+        <td style="padding:8px; word-break:break-word; font-size:0.95rem; font-weight:600;">${p.companyName}</td>
         <td style="padding:8px; white-space:pre-line; word-break:break-word;">${escapeHtml(p.orderProductDescription) || "—"}</td>
-        <td style="padding:8px;">${formatOrdinalDate(p.deliveryDate) || "—"}</td>
+        <td style="padding:8px; font-size:0.95rem; font-weight:600;">${formatOrdinalDate(p.deliveryDate) || "—"}</td>
         <td style="padding:8px;">
           ${mcCurrentStatus === "Inactive"
             ? `<button class="nav-btn-styled" style="background:#2f9e58; padding:5px 12px; font-size:0.78rem;" onclick="mcActivateProject('${p.projectId}')">Activate</button>`
