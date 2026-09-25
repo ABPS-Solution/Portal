@@ -249,19 +249,19 @@ function renderBOQRevisionRows(updateId) {
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand);">Material Rows *</div>
     </div>
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-      <table class="store-basket-data-table" style="width:100%; min-width:1050px; border-collapse:collapse;">
+      <table class="store-basket-data-table boq-material-table" style="width:100%; min-width:1050px; border-collapse:collapse;">
         <thead>
           <tr style="background:#f8fafc;">
-            <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
-            <th style="width:110px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-            <th style="width:350px; padding:8px; font-size:0.7rem;">Material Name *</th>
-            <th style="width:92px; padding:8px; font-size:0.7rem; text-align:center;">Item Code</th>
-            <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
-            <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
-            <th style="width:150px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty *</th>
-            <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Cost / Set</th>
-            <th style="width:70px; padding:8px; font-size:0.7rem; text-align:center;">Costing Verified *</th>
-            <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
+            <th style="width:40px; text-align:center; padding:8px; font-size:0.82rem;">Sr No</th>
+            <th style="width:110px; padding:8px; font-size:0.82rem;">Type of Store *</th>
+            <th style="width:350px; padding:8px; font-size:0.82rem;">Material Name *</th>
+            <th style="width:76px; padding:8px; font-size:0.82rem; text-align:center;">Item Code</th>
+            <th style="width:80px; padding:8px; font-size:0.82rem; text-align:center;">Qty / Set *</th>
+            <th style="width:56px; padding:8px; font-size:0.82rem; text-align:center;">Unit *</th>
+            <th style="width:190px; padding:8px; font-size:0.82rem; text-align:center;">Design Rate / Qty *</th>
+            <th style="width:80px; padding:8px; font-size:0.82rem; text-align:center;">Total Material Cost / Set</th>
+            <th style="width:70px; padding:8px; font-size:0.82rem; text-align:center;">Costing Verified *</th>
+            <th style="width:40px; padding:8px; font-size:0.82rem; text-align:center;">Del</th>
           </tr>
         </thead>
         <tbody>${rowsHtml}</tbody>
@@ -495,18 +495,18 @@ function renderUBOQForm() {
         <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand);">Material Rows *</span>
       </div>
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-        <table class="store-basket-data-table" style="width:100%; min-width:1050px; border-collapse:collapse;">
+        <table class="store-basket-data-table boq-material-table" style="width:100%; min-width:1050px; border-collapse:collapse;">
           <thead>
             <tr style="background:#f8fafc;">
-              <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
-              <th style="width:110px; padding:8px; font-size:0.7rem;">Type of Store *</th>
-              <th style="width:350px; padding:8px; font-size:0.7rem;">Material Name *</th>
-              <th style="width:92px; padding:8px; font-size:0.7rem; text-align:center;">Item Code</th>
-              <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
-              <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Unit *</th>
-              <th style="width:150px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty *</th>
-              <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Cost / Set</th>
-              <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
+              <th style="width:40px; text-align:center; padding:8px; font-size:0.82rem;">Sr No</th>
+              <th style="width:110px; padding:8px; font-size:0.82rem;">Type of Store *</th>
+              <th style="width:350px; padding:8px; font-size:0.82rem;">Material Name *</th>
+              <th style="width:76px; padding:8px; font-size:0.82rem; text-align:center;">Item Code</th>
+              <th style="width:80px; padding:8px; font-size:0.82rem; text-align:center;">Qty / Set *</th>
+              <th style="width:56px; padding:8px; font-size:0.82rem; text-align:center;">Unit *</th>
+              <th style="width:190px; padding:8px; font-size:0.82rem; text-align:center;">Design Rate / Qty *</th>
+              <th style="width:90px; padding:8px; font-size:0.82rem; text-align:center;">Total Material Cost / Set</th>
+              <th style="width:40px; padding:8px; font-size:0.82rem; text-align:center;">Del</th>
             </tr>
           </thead>
           <tbody id="uboq-material-rows-body"></tbody>

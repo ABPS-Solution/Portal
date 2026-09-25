@@ -132,7 +132,7 @@ async function psnFetchSearchSuggestions(q) {
       <div class="psn-suggestion-row" onmousedown="event.preventDefault();" onclick="psnSelectSearchSuggestion(${h.fgId}, '${(h.productSerialNumber || '').replace(/'/g, "\\'")}')">
         <span style="font-weight:700; font-family:ui-monospace, 'SF Mono', Consolas, monospace;">${escapeHtml(h.productSerialNumber || '')}</span>
         <span style="font-size:0.75rem; color:var(--muted); margin-left:8px;">${escapeHtml(h.productName || '')}${h.productRating ? ' ' + escapeHtml(h.productRating) : ''}</span>
-        <div style="font-size:0.7rem; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:6px;">${escapeHtml(h.customerName || '—')} ${psnStatusBadge(h.status)}</div>
+        <div style="font-size:0.7rem; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:6px;">${escapeHtml(h.customerName || 'N/A')} ${psnStatusBadge(h.status)}</div>
       </div>`).join('');
     dd.style.display = 'block';
   } catch (err) {
@@ -166,7 +166,7 @@ async function psnRunSearch() {
     if (!data.success) { showPurchaseFeedback('psn-feedback', escapeHtml(data.error || 'Search failed.'), 'error'); document.getElementById('psn-results').innerHTML = ''; return; }
     psnHits = data.rows || [];
     if (psnHits.length === 0) {
-      document.getElementById('psn-results').innerHTML = `<div class="psn-empty-state"><div class="psn-empty-icon">🔍</div>No product found with that serial number.</div>`;
+      document.getElementById('psn-results').innerHTML = `<div class="psn-empty-state">No product found with that serial number.</div>`;
     } else if (psnHits.length === 1) {
       document.getElementById('psn-results').innerHTML = '';
       await psnOpenDetail(psnHits[0].fgId);
@@ -174,7 +174,7 @@ async function psnRunSearch() {
       psnRenderChooser();
     }
   } catch (err) {
-    showPurchaseFeedback('psn-feedback', 'Search failed — please try again.', 'error');
+    showPurchaseFeedback('psn-feedback', 'Search failed, please try again.', 'error');
     document.getElementById('psn-results').innerHTML = '';
   }
 }
@@ -182,19 +182,19 @@ async function psnRunSearch() {
 function psnRenderChooser() {
   const wrap = document.getElementById('psn-results');
   wrap.innerHTML = `
-    <p style="color:var(--muted); margin-bottom:10px; font-size:0.85rem;">Multiple products matched — select the one you need:</p>
+    <p style="color:var(--muted); margin-bottom:10px; font-size:0.85rem;">Multiple products matched, select the one you need:</p>
     <div style="display:flex; flex-direction:column; gap:8px;">
       ${psnHits.map(h => `
         <div class="psn-chooser-card" onclick="psnOpenDetail(${h.fgId})">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
             <div>
               <span style="font-weight:700; font-family:ui-monospace, 'SF Mono', Consolas, monospace;">${escapeHtml(h.productSerialNumber || '')}</span>
-              <span style="color:var(--muted);"> — ${escapeHtml(h.productName || '')} ${escapeHtml(h.productRating || '')}</span>
+              <span style="color:var(--muted);"> · ${escapeHtml(h.productName || '')} ${escapeHtml(h.productRating || '')}</span>
             </div>
             ${psnStatusBadge(h.status)}
           </div>
           <div style="font-size:0.8rem; color:var(--muted); margin-top:6px;">
-            Job Card ${escapeHtml(psnShortJobCard(h.jobCardNumber))} · Project ${escapeHtml(h.projectId || '—')} · ${escapeHtml(h.customerName || '')}
+            Job Card ${escapeHtml(psnShortJobCard(h.jobCardNumber))} · Project ${escapeHtml(h.projectId || 'N/A')} · ${escapeHtml(h.customerName || '')}
           </div>
         </div>`).join('')}
     </div>`;
@@ -216,26 +216,36 @@ async function psnOpenDetail(fgId) {
 }
 
 function psnField(label, value, mono) {
-  return `<div><div class="psn-field-label">${escapeHtml(label)}</div><div class="psn-field-value${mono ? ' psn-mono' : ''}">${value === null || value === undefined || value === '' ? '<span style="color:var(--muted);">—</span>' : value}</div></div>`;
+  const empty = value === null || value === undefined || value === '';
+  return `<div class="psn-field"><div class="psn-field-label">${escapeHtml(label)}</div><div class="psn-field-value${mono ? ' psn-mono' : ''}">${empty ? '<span style="color:var(--muted);">N/A</span>' : value}</div></div>`;
 }
 
-// One accent color + icon per section, purely visual grouping (no
-// semantic weight beyond "these six cards are different kinds of
-// information") — Identity/blue, Where It Went/green, Build Chain/purple,
-// Documents/slate, Materials/amber, Attribution/teal.
+function psnDocLink(url, text) {
+  if (!text) return '';
+  return url
+    ? `<a href="${driveLink(url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; text-decoration:underline;">${escapeHtml(text)}</a>`
+    : escapeHtml(text);
+}
+
+function psnInvoiceText(invoiceNo, invoiceType) {
+  if (!invoiceNo) return '';
+  return invoiceNo + (invoiceType ? ` (${invoiceType})` : '');
+}
+
+// One accent color per section, purely visual grouping.
 const PSN_CARD_META = {
-  'Identity':                     { icon: '🏷️', accent: '#0056b3' },
-  'Where It Went':                { icon: '📦', accent: '#15803d' },
-  'Who Built It, Who Cleared It': { icon: '🛠️', accent: '#7c3aed' },
-  'Documents':                    { icon: '📄', accent: '#475569' },
-  'What Went Into It':            { icon: '🧱', accent: '#b45309' },
-  'Source Attribution':           { icon: '🔗', accent: '#0f766e' },
+  'Identity':                     '#0056b3',
+  'Where It Went':                '#15803d',
+  'Who Built It, Who Cleared It': '#7c3aed',
+  'Documents':                    '#475569',
+  'What Went Into It':            '#b45309',
+  'Source Attribution':           '#0f766e',
 };
 
 function psnCard(title, innerHtml) {
-  const meta = PSN_CARD_META[title] || { icon: '', accent: 'var(--brand)' };
-  return `<div class="psn-section-card" style="--psn-accent:${meta.accent};">
-    <div class="psn-section-title">${meta.icon ? `<span class="psn-section-icon">${meta.icon}</span>` : ''}${escapeHtml(title)}</div>
+  const accent = PSN_CARD_META[title] || 'var(--brand)';
+  return `<div class="psn-section-card" style="--psn-accent:${accent};">
+    <div class="psn-section-title">${escapeHtml(title)}</div>
     ${innerHtml}
   </div>`;
 }
@@ -244,19 +254,10 @@ function psnRenderDetail(data) {
   const h = data.header;
   const documents = data.documents || [];
   const trace = data.trace;
+  const usedIn = data.usedIn || [];
 
-  // Status shown here is intentionally NOT the bare fg.status column.
-  // production.finished_goods_inventory.status only ever tracks physical
-  // stock-room state ('Pending FG Approval' / 'In Store' / 'Reserved / On
-  // Ticket' / 'Consumed in Production') — Project Invoice Generation never
-  // writes to it (confirmed: it only sets production.job_cards
-  // .invoiced_in_invoice_id), so a genuinely-dispatched unit's raw status
-  // stays 'In Store' forever. h.invoiceId (joined off that same column) is
-  // what actually tells us it shipped, so it overrides the display here.
-  // Note this is a display-only fix — the underlying fg.status value is
-  // untouched, so any OTHER screen that counts "In Store" as live stock
-  // (Live FG Stock, Store Ledger) still includes dispatched units; that is
-  // a separate, larger gap this change does not address.
+  // The unit counts as dispatched once its Job Card is on an invoice (the
+  // raw fg.status predates the 'Dispatched' value on older rows).
   const statusDisplay = psnStatusBadge(h.invoiceId ? 'Dispatched' : h.status);
 
   const identity = `
@@ -264,59 +265,76 @@ function psnRenderDetail(data) {
       <div style="font-size:1.5rem; font-weight:700; font-family:ui-monospace, 'SF Mono', Consolas, monospace;">${escapeHtml(h.productSerialNumber || '')}</div>
       ${statusDisplay}
     </div>
-    <div class="psn-field-grid">
-      ${psnField('Product', escapeHtml(h.productName || ''))}
-      ${psnField('Rating', escapeHtml(h.productRating || ''))}
+    <div class="psn-field-grid psn-grid-6">
+      ${psnField('Product Name', escapeHtml(h.productName || ''))}
+      ${psnField('Product Rating', escapeHtml(h.productRating || ''))}
       ${psnField('Description of Material', escapeHtml(h.descriptionOfMaterial || ''))}
-      ${psnField('Make', escapeHtml(h.make || ''))}
-      ${psnField('Item Code', escapeHtml(h.itemCode || ''), true)}
       ${psnField('Unit', escapeHtml(h.unit || ''))}
-      ${psnField('Finished Good Use', escapeHtml(h.finishedGoodUse || ''))}
       ${psnField('Department', escapeHtml(h.department || ''))}
+      ${psnField('Finished Good Use', escapeHtml(h.finishedGoodUse || ''))}
+    </div>
+    <div class="psn-field-grid psn-grid-2" style="margin-top:10px;">
+      ${psnField('Job Card Number', escapeHtml(h.jobCardNumber || ''), true)}
+      ${psnField('BOQ ID', psnDocLink(h.boqPdfUrlNoCost, h.boqId), true)}
     </div>`;
 
-  const dispatchLine = h.invoiceId
-    ? `Invoice ${escapeHtml(h.invoiceNo || '')} (${escapeHtml(h.invoiceType || '')}) — ${formatOrdinalDate(h.dispatchDate)}`
-    : `<span style="color:var(--muted);">Not dispatched</span>`;
-  const whereItWent = `<div class="psn-field-grid" style="grid-template-columns:repeat(3,1fr);">
+  const dispatchValue = h.invoiceId
+    ? psnDocLink(h.invoicePdfUrl, psnInvoiceText(h.invoiceNo, h.invoiceType))
+      + (h.dispatchDate ? ` <span style="color:var(--muted);">on ${formatOrdinalDate(h.dispatchDate)}</span>` : '')
+    : (usedIn.length
+        ? '<span style="color:var(--muted);">Used inside another product, see Used In below</span>'
+        : '<span style="color:var(--muted);">Not dispatched</span>');
+  let whereItWent = `<div class="psn-field-grid psn-grid-3">
       ${psnField('Project ID', escapeHtml(h.projectId || ''), true)}
       ${psnField('Company', escapeHtml(h.companyName || ''))}
-      ${psnField('Dispatch', dispatchLine)}
+      ${psnField('Dispatch Invoice', dispatchValue)}
     </div>`;
+  if (usedIn.length) {
+    whereItWent += `<div class="psn-field-label" style="margin-top:14px;">Used In</div>
+      <table class="psn-bordered" style="margin-top:6px;">
+        <thead><tr><th style="width:6%;">Level</th><th>Product</th><th>Job Card Number</th><th style="width:14%;">Serial Number</th><th style="width:14%;">Finished Good Use</th><th style="width:18%;">Dispatch Invoice</th></tr></thead>
+        <tbody>${usedIn.map((u, i) => `<tr>
+          <td style="text-align:center;">${i + 1}</td>
+          <td>${escapeHtml(u.productName || '')}${u.productRating ? ' ' + escapeHtml(u.productRating) : ''}</td>
+          <td class="psn-mono">${escapeHtml(u.jobCardNumber || '')}</td>
+          <td class="psn-mono">${u.fgId ? `<a href="javascript:void(0)" onclick="psnOpenDetail(${u.fgId})" style="color:var(--brand); font-weight:700;">${escapeHtml(u.productSerialNumber || 'Open')}</a>` : '<span style="color:var(--muted);">Not yet added to FG</span>'}</td>
+          <td>${u.finishedGoodUse ? escapeHtml(u.finishedGoodUse) : '<span style="color:var(--muted);">N/A</span>'}</td>
+          <td>${u.invoiceNo ? psnDocLink(u.invoicePdfUrl, psnInvoiceText(u.invoiceNo, u.invoiceType)) : '<span style="color:var(--muted);">Not dispatched yet</span>'}</td>
+        </tr>`).join('')}</tbody>
+      </table>`;
+  }
 
   const qaApprovedLine = h.qaApprovedOn
     ? formatOrdinalDate(h.qaApprovedOn)
-    : `<span style="color:var(--muted);">— <span style="font-size:0.75rem;">(recorded from Sep 2026 onward)</span></span>`;
-  const buildChain = `<div class="psn-field-grid" style="grid-template-columns:repeat(4,1fr);">
-      ${psnField('Production Person', escapeHtml(h.productionPerson || ''))}
-      ${psnField('Job Card', escapeHtml(h.jobCardNumber || ''), true)}
-      ${psnField('BOQ ID', escapeHtml(h.boqId || ''), true)}
-      ${psnField('Set Number', h.setNumber != null ? escapeHtml(String(h.setNumber)) : '')}
-      ${psnField('Job Card Created', formatOrdinalDate(h.jobCardCreated))}
-      ${psnField('FG Date', formatOrdinalDate(h.fgDate))}
-      ${psnField('QA Authorizing Person', escapeHtml(h.qaAuthorizingPerson || ''))}
-      ${psnField('QA Approved On', qaApprovedLine)}
+    : `<span style="color:var(--muted);">N/A <span style="font-size:0.75rem;">(recorded from Sep 2026 onward)</span></span>`;
+  const buildChain = `<div class="psn-field-grid psn-grid-5">
+      ${psnField('Production Person who Add to FG', escapeHtml(h.productionPerson || ''))}
+      ${psnField('JC Set Number', h.setNumber != null ? escapeHtml(String(h.setNumber)) : '')}
+      ${psnField('JC FG Added Date', formatOrdinalDate(h.fgDate))}
+      ${psnField('Add to FG QA Authorizing Person', escapeHtml(h.qaAuthorizingPerson || ''))}
+      ${psnField('Add to FG QA Approved On Date', qaApprovedLine)}
     </div>`;
 
   const docsHtml = documents.length
-    ? `<div style="display:flex; flex-wrap:wrap; gap:10px;">${documents.map(d => `<a href="${driveLink(d.url)}" target="_blank" rel="noopener" class="psn-doc-chip">📎 ${escapeHtml(d.docLabel || d.docType)}${d.fileName ? ' — ' + escapeHtml(d.fileName) : ''}</a>`).join('')}</div>`
+    ? `<div style="display:flex; flex-wrap:wrap; gap:10px;">${documents.map(d => `<a href="${driveLink(d.url)}" target="_blank" rel="noopener" class="psn-doc-chip"><span class="psn-doc-type">${escapeHtml(d.docLabel || d.docType)}</span>${d.fileName ? `<span class="psn-doc-name">${escapeHtml(d.fileName)}</span>` : ''}</a>`).join('')}</div>`
     : `<span style="color:var(--muted);">No documents.</span>`;
 
   const materialHtml = psnRenderMaterialSources(trace);
 
   let provenanceHtml;
   if (!trace) {
-    provenanceHtml = `<div style="padding:10px 12px; background:#f1f5f9; border-left:4px solid #64748b; border-radius:var(--radius); color:var(--muted); font-size:0.85rem;">No attribution recorded — predates traceability.</div>`;
+    provenanceHtml = `<div style="padding:10px 12px; background:#f1f5f9; border-left:4px solid #64748b; border-radius:var(--radius); color:var(--muted); font-size:0.85rem;">No source record was saved for this unit (it was added before this tracking started).</div>`;
   } else if (trace.snapshotStatus !== 'ok') {
     provenanceHtml = `<div style="padding:10px 12px; background:#fef3c7; border-left:4px solid #b45309; border-radius:var(--radius); margin-bottom:10px; font-size:0.85rem;">
-        <strong>Attribution ${escapeHtml(trace.snapshotStatus)}.</strong> ${escapeHtml(trace.snapshotError || 'Some material quantity could not be traced to a specific receipt.')}
+        <strong>Source record is ${escapeHtml(trace.snapshotStatus)}.</strong> ${escapeHtml(trace.snapshotError || 'Some material quantity could not be traced to a specific receipt.')}
       </div>
-      <button class="nav-btn-styled" onclick="psnRebuildSnapshot(${h.fgId})">↻ Rebuild attribution</button>`;
+      <button class="nav-btn-styled" onclick="psnRebuildSnapshot(${h.fgId})">Rebuild</button>`;
   } else {
     provenanceHtml = `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-      <span style="font-size:0.8rem; color:var(--muted);">✓ Source attribution frozen on ${escapeHtml(formatOrdinalDateTime(trace.builtAt) || '')}${trace.builtBy ? ' by ' + escapeHtml(trace.builtBy) : ''}.</span>
-      <button class="nav-btn-styled" style="padding:3px 12px; font-size:0.75rem;" onclick="psnRebuildSnapshot(${h.fgId})">↻ Rebuild</button></div>`;
+      <span style="font-size:0.85rem; color:var(--muted);">Saved on ${escapeHtml(formatOrdinalDateTime(trace.builtAt) || '')}${trace.builtBy ? ' by ' + escapeHtml(trace.builtBy) : ''}.</span>
+      <button class="nav-btn-styled" style="padding:3px 12px; font-size:0.75rem;" onclick="psnRebuildSnapshot(${h.fgId})">Rebuild</button></div>`;
   }
+  provenanceHtml = `<p style="font-size:0.82rem; color:var(--muted); margin:0 0 10px;">A saved record of which purchase orders and GRNs supplied the material in this unit. It is made when the unit is added to Finished Goods, so later PO or stock changes cannot alter it. "What Went Into It" above is built from it. Use Rebuild only if it shows a problem.</p>` + provenanceHtml;
 
   return psnCard('Identity', identity)
     + psnCard('Where It Went', whereItWent)
@@ -340,17 +358,18 @@ function psnRenderMaterialSources(trace) {
       const tier = PSN_TIER_META[pl.tier] || { label: pl.tier, color: '#334155', bg: '#f1f5f9' };
       const chip = `<span class="psn-tier-chip" style="color:${tier.color}; background:${tier.bg};">${escapeHtml(tier.label)}</span>`;
       const evidence = pl.grnNumber
-        ? `GRN ${escapeHtml(pl.grnNumber)}${pl.invoiceNumber ? ' · Invoice ' + escapeHtml(pl.invoiceNumber) : ''}${pl.qaPerson ? ' · QA by ' + escapeHtml(pl.qaPerson) : ''}${pl.qaPassDate ? ' on ' + formatOrdinalDate(pl.qaPassDate) : ''}`
+        ? `${escapeHtml(pl.grnNumber)}${pl.invoiceNumber ? ' · Invoice ' + escapeHtml(pl.invoiceNumber) : ''}${pl.qaPerson ? ' · QA by ' + escapeHtml(pl.qaPerson) : ''}${pl.qaPassDate ? ' on ' + formatOrdinalDate(pl.qaPassDate) : ''}`
         : (pl.poNo ? '' : '<span style="color:var(--muted);">No receipt could be matched for this quantity.</span>');
       const okNotOk = (pl.okQuantity != null || pl.notOkQuantity != null || pl.missingQuantity != null)
-        ? ` <span style="color:var(--muted); font-size:0.78rem;">(OK ${trimNum(pl.okQuantity || 0)} / Not-OK ${trimNum(pl.notOkQuantity || 0)} / Missing ${trimNum(pl.missingQuantity || 0)})</span>` : '';
+        ? ` <span style="color:var(--muted);">(OK ${trimNum(pl.okQuantity || 0)} / Not-OK ${trimNum(pl.notOkQuantity || 0)} / Missing ${trimNum(pl.missingQuantity || 0)})</span>` : '';
+      const meta = [pl.poDate ? formatOrdinalDate(pl.poDate) : '', pl.vendorName ? escapeHtml(pl.vendorName) : ''].filter(Boolean).join(' · ');
       return `<div class="psn-po-row">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
             <span>${chip} <strong style="margin-left:6px; font-family:ui-monospace, 'SF Mono', Consolas, monospace;">${pl.poNo ? escapeHtml(pl.poNo) : '<span style="color:var(--muted); font-family:inherit;">No PO</span>'}</strong>
-            ${pl.poDate ? ' <span style="color:var(--muted);">— ' + formatOrdinalDate(pl.poDate) + '</span>' : ''} ${pl.vendorName ? ' <span style="color:var(--muted);">— ' + escapeHtml(pl.vendorName) + '</span>' : ''}</span>
+            ${meta ? ' <span style="color:var(--muted);">· ' + meta + '</span>' : ''}</span>
             <span style="font-weight:700;">${trimNum(pl.attributedQuantity || 0)}</span>
           </div>
-          <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">${evidence}${okNotOk}</div>
+          <div style="font-size:0.88rem; color:var(--text); margin-top:5px;">${evidence}${okNotOk}</div>
         </div>`;
     }).join('');
 
@@ -361,8 +380,8 @@ function psnRenderMaterialSources(trace) {
     const rejectionsHtml = (m.rejections || []).length
       ? `<div style="margin-top:8px;"><div style="font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Rejection / repair history</div>
           ${m.rejections.map(r => `<div style="font-size:0.8rem; padding:6px 0; border-top:1px solid var(--border);">
-              ${escapeHtml(r.status || '')} — Not-OK ${trimNum(r.notOkQuantity || 0)} / Missing ${trimNum(r.missingQuantity || 0)}
-              ${r.reasonForNotOk ? ' — ' + escapeHtml(r.reasonForNotOk) : ''} ${r.setDate ? ' (' + formatOrdinalDate(r.setDate) + ')' : ''}
+              ${escapeHtml(r.status || '')}: Not-OK ${trimNum(r.notOkQuantity || 0)} / Missing ${trimNum(r.missingQuantity || 0)}
+              ${r.reasonForNotOk ? ' · ' + escapeHtml(r.reasonForNotOk) : ''} ${r.setDate ? ' (' + formatOrdinalDate(r.setDate) + ')' : ''}
             </div>`).join('')}
         </div>`
       : '';
@@ -370,7 +389,7 @@ function psnRenderMaterialSources(trace) {
     return `<div class="psn-material-card">
         <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap;">
           <div><strong>${escapeHtml(m.itemCode || '')}</strong> <span style="color:var(--text);">${escapeHtml(m.materialName || '')}</span></div>
-          <span style="font-size:0.8rem; color:var(--muted); white-space:nowrap;">Allotted ${trimNum(m.allottedQuantity || 0)} / Used ${trimNum(m.usedQuantity || 0)} / Issued ${trimNum(m.issuedQuantity || 0)} ${escapeHtml(m.unitType || '')}</span>
+          <span style="font-size:0.95rem; font-weight:600; color:var(--text); white-space:nowrap;">Allotted ${trimNum(m.allottedQuantity || 0)} / Used ${trimNum(m.usedQuantity || 0)} / Issued ${trimNum(m.issuedQuantity || 0)} ${escapeHtml(m.unitType || '')}</span>
         </div>
         <div class="psn-qty-bar-track"><div class="psn-qty-bar-fill" style="width:${attributedPct}%; ${unattributed > 0 ? 'background:#dc2626;' : ''}"></div></div>
         ${poRows || '<div style="color:var(--muted); font-size:0.85rem; margin-top:8px;">No source receipts recorded.</div>'}
@@ -384,10 +403,10 @@ async function psnRebuildSnapshot(fgId) {
   try {
     const data = await apFetch({ action: 'rebuildProductSerialSnapshot', fgId, operatorName: appActiveOperatorIdentityString });
     if (!data.success) { showPurchaseFeedback('psn-feedback', escapeHtml(data.error || 'Rebuild failed.'), 'error'); return; }
-    showPurchaseFeedback('psn-feedback', `Attribution rebuilt (${escapeHtml(data.snapshotStatus)}).`, data.snapshotStatus === 'ok' ? 'success' : 'error', true);
+    showPurchaseFeedback('psn-feedback', `Source record rebuilt (${escapeHtml(data.snapshotStatus)}).`, data.snapshotStatus === 'ok' ? 'success' : 'error', true);
     if (psnActiveFgId) await psnOpenDetail(psnActiveFgId);
   } catch (err) {
-    showPurchaseFeedback('psn-feedback', 'Rebuild failed — please try again.', 'error');
+    showPurchaseFeedback('psn-feedback', 'Rebuild failed, please try again.', 'error');
   }
 }
 
@@ -421,7 +440,7 @@ function psnRenderQueueRows(rows) {
   body.innerHTML = rows.map(r => {
     const attribution = !r.traceId
       ? '<span style="color:var(--muted);">Not built</span>'
-      : (r.snapshotStatus === 'ok' ? `<span style="color:#15803d; font-weight:600;">✓ OK (${r.poCount || 0} PO${r.poCount === 1 ? '' : 's'})</span>` : `<span style="color:#b45309; font-weight:600;">⚠ ${escapeHtml(r.snapshotStatus)}</span>`);
+      : (r.snapshotStatus === 'ok' ? `<span style="color:#15803d; font-weight:600;">OK (${r.poCount || 0} PO${r.poCount === 1 ? '' : 's'})</span>` : `<span style="color:#b45309; font-weight:600;">${escapeHtml(r.snapshotStatus)}</span>`);
     return `<tr style="cursor:pointer;" onclick="psnOpenFromQueue(${r.fgId})">
         <td style="padding:8px; font-family:ui-monospace, 'SF Mono', Consolas, monospace; font-weight:600;">${escapeHtml(r.productSerialNumber || '')}</td>
         <td style="padding:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(r.jobCardNumber || '')}">${escapeHtml(psnShortJobCard(r.jobCardNumber))}</td>
