@@ -36,7 +36,7 @@ async function initializeAuthorizePOPanel() {
             ${po.checkingDraftCount > 0 ? `<a href="${driveLink(po.checkingDocUrl)}" target="_blank" onclick="event.stopPropagation();" style="margin-left:10px; font-size:0.72rem; color:#0ea5e9; font-weight:700; text-decoration:none;" title="Not authorized yet. Sign this printout, then authorize.">Draft #${po.checkingDraftCount}</a>` : ""}
             ${isSuperAdminUser ? `<button onclick="event.stopPropagation(); promptRenameRMPONumber('${po.poNumber}')" style="margin-left:10px; font-size:0.68rem; padding:2px 8px; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--muted); cursor:pointer;" title="Correct a typo'd PO number (super admin only)">Fix PO Number</button>` : ""}
           </div>
-          <div style="font-size:0.85rem; color:var(--muted);">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${po.preparedBy}</div>
+          <div style="font-size:1rem; color:#334155; font-weight:600;">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${po.preparedBy}</div>
         </div>
         <div id="po-auth-expand-${po.poNumber}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
       </div>`).join("");
@@ -365,7 +365,7 @@ function renderSrchPOResultsAsPOCards(list) {
           <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
           ${po.revisionNumber ? `<span style="margin-left:8px; font-size:0.72rem; color:var(--muted);">V${po.revisionNumber}</span>` : ""}
         </div>
-        <div style="font-size:0.85rem; color:var(--muted);">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></div>
+        <div style="font-size:1rem; color:#334155; font-weight:600;">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></div>
       </div>
       <div id="srchpo-expand-${po.poNo}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
     </div>`).join("");
@@ -1756,7 +1756,7 @@ async function initializeEditPOPanel() {
             <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
             ${po.checkingDraftCount > 0 ? `<span style="margin-left:10px; font-size:0.72rem; color:#0ea5e9; font-weight:700;">Draft #${po.checkingDraftCount}</span>` : ""}
           </div>
-          <div style="font-size:0.85rem; color:var(--muted);">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></div>
+          <div style="font-size:1rem; color:#334155; font-weight:600;">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></div>
         </div>
         <div id="po-edit-expand-${po.poNumber}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
       </div>`).join("");
