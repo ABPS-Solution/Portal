@@ -39,6 +39,7 @@ async function ensureRpdiProjectData(forceRefresh = false) {
 }
 
 async function initializeRpdiWorkspace() {
+  rpdiFormOpenId = null;
   document.getElementById("rpdi-ta-input").value = "";
   document.getElementById("rpdi-ta-dropdown").style.display = "none";
   document.getElementById("rpdi-detail-zone").style.display = "none";
@@ -84,6 +85,7 @@ function selectRpdiProject(projectId) {
 }
 
 async function loadRpdiHistory(projectId) {
+  rpdiFormOpenId = null;
   const detailZone = document.getElementById("rpdi-detail-zone");
   const historyZone = document.getElementById("rpdi-history-zone");
   const zone = document.getElementById("rpdi-invoice-form-zone");
@@ -131,6 +133,9 @@ async function toggleRpdiDocuments(invoiceId) {
   const row = document.getElementById(`rpdi-docs-row-${invoiceId}`);
   if (!row) return;
   if (row.style.display === "table-row") { row.style.display = "none"; return; }
+  // Only one thing open at a time: close any open revision form.
+  rpdiCloseForm();
+  document.querySelectorAll('[id^="rpdi-docs-row-"]').forEach(r => { r.style.display = "none"; });
   row.style.display = "table-row";
   await loadRpdiDocuments(invoiceId);
 }
@@ -237,7 +242,21 @@ async function rpdiRemoveDocument(invoiceId, documentId) {
   }
 }
 
+let rpdiFormOpenId = null;
+function rpdiCloseForm() {
+  rpdiFormOpenId = null;
+  const zone = document.getElementById("rpdi-invoice-form-zone");
+  if (zone) zone.innerHTML = "";
+  const wrap = document.getElementById("rpdi-generate-btn-wrap");
+  if (wrap) wrap.style.display = "none";
+}
+
 async function loadRpdiForm(invoiceId) {
+  // Clicking Revise Invoice again closes the form; opening it closes any
+  // open documents panel.
+  if (rpdiFormOpenId === invoiceId) { rpdiCloseForm(); return; }
+  document.querySelectorAll('[id^="rpdi-docs-row-"]').forEach(r => { r.style.display = "none"; });
+  rpdiFormOpenId = invoiceId;
   const zone = document.getElementById("rpdi-invoice-form-zone");
   zone.innerHTML = `<div style="text-align:center; padding:14px; color:var(--muted); font-size:0.9rem;">Loading current invoice details...</div>`;
   try {
