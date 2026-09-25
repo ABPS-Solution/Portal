@@ -2980,7 +2980,6 @@ async function submitReviewedPurchaseOrder() {
 function renderPurchaseOrderCommitSuccess(data) {
   const zone = document.getElementById("purchase-order-review-zone");
   const rupee = (v) => v ? '₹' + Number(v).toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '—';
-  const n = Number(data.extractedLineItemCount) || 0;
   const projectId = data.generatedProjectId || '';
   const tile = (label, value, mono) => `
     <div style="background:#fff; border:1px solid #d1fae5; border-radius:8px; padding:12px 14px; min-width:0;">
@@ -2990,10 +2989,8 @@ function renderPurchaseOrderCommitSuccess(data) {
   zone.innerHTML = `
     <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:18px 20px; margin-top:8px;">
       <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
-        <div style="width:40px; height:40px; border-radius:50%; background:#15803d; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:800; flex-shrink:0;">✓</div>
         <div style="flex:1; min-width:200px;">
           <div style="font-size:1.15rem; font-weight:800; color:#15803d;">Purchase Order Saved</div>
-          <div style="font-size:0.85rem; color:#166534; margin-top:2px;">${n} Product${n === 1 ? '' : 's'} saved and a project created for this order.</div>
         </div>
         <button class="nav-btn-styled" onclick="resetPurchaseOrderWorkspace()" style="width:auto; background:#15803d; color:#fff; padding:9px 18px; font-weight:700;">+ Process Another</button>
       </div>
@@ -3003,8 +3000,6 @@ function renderPurchaseOrderCommitSuccess(data) {
           <div style="font-size:0.7rem; font-weight:700; letter-spacing:0.03em; text-transform:uppercase; color:#6b7a8d; margin-bottom:4px;">Project ID Assigned</div>
           <div id="po-success-project-id" style="font-family:monospace; font-size:1.05rem; font-weight:700; color:#111827; overflow-wrap:anywhere;">${escapeHtml(projectId) || '—'}</div>
         </div>
-        ${projectId ? `<button class="nav-btn-styled" style="width:auto; background:#fff; color:#15803d; border:1.5px solid #15803d; padding:6px 14px; font-weight:700;"
-          onclick="navigator.clipboard.writeText(document.getElementById('po-success-project-id').textContent).then(() => { this.textContent = 'Copied'; setTimeout(() => this.textContent = 'Copy', 1500); })">Copy</button>` : ''}
       </div>
 
       <div style="margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:10px;">
