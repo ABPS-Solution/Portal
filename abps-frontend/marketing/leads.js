@@ -2992,7 +2992,7 @@ function renderPurchaseOrderCommitSuccess(data) {
         <div style="flex:1; min-width:200px;">
           <div style="font-size:1.15rem; font-weight:800; color:#15803d;">Purchase Order Saved</div>
         </div>
-        <button class="nav-btn-styled" onclick="resetPurchaseOrderWorkspace()" style="width:auto; background:#15803d; color:#fff; padding:9px 18px; font-weight:700;">+ Process Another</button>
+        <button class="nav-btn-styled" onclick="resetPurchaseOrderWorkspace()" style="width:auto; background:#15803d; color:#fff; padding:9px 18px; font-weight:700;">+ Upload Another</button>
       </div>
 
       <div style="margin-top:16px; background:#fff; border:1.5px solid #15803d; border-radius:8px; padding:12px 14px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
