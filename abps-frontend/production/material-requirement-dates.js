@@ -181,7 +181,8 @@ async function submitMaterialRequirementDates(ns, prnId, btn) {
   const originalText = btn.textContent;
   btn.disabled = true; btn.textContent = "Submitting…";
   try {
-    const data = await apFetch({ action: "saveMaterialRequirementDates", prnId, updates: result.updates, operatorName: appActiveOperatorIdentityString });
+    showBlockingOverlay("Saving Material Requirement Dates...");
+    const data = await apFetch({ action: "saveMaterialRequirementDates", prnId, updates: result.updates, operatorName: appActiveOperatorIdentityString }).finally(() => hideBlockingOverlay());
     if (data.success) {
       abpsDraftClear(PRN_DRAFT_KEYS.mrd);
       document.getElementById("mrd-body").innerHTML = "";
@@ -558,7 +559,8 @@ async function submitReviseMRDQueue(ns, prnId, btn) {
   const originalText = btn.textContent;
   btn.disabled = true; btn.textContent = "Submitting…";
   try {
-    const data = await apFetch({ action: "saveMaterialRequirementDates", prnId, updates: result.updates, operatorName: appActiveOperatorIdentityString });
+    showBlockingOverlay("Saving Material Requirement Dates...");
+    const data = await apFetch({ action: "saveMaterialRequirementDates", prnId, updates: result.updates, operatorName: appActiveOperatorIdentityString }).finally(() => hideBlockingOverlay());
     if (data.success) {
       abpsDraftClear(PRN_DRAFT_KEYS.rmrd);
       document.getElementById("rmrd-delta-zone").innerHTML = "";
@@ -651,7 +653,8 @@ async function submitReviseMRDOther(ns, prnId, btn) {
   const originalText = btn.textContent;
   btn.disabled = true; btn.textContent = "Submitting…";
   try {
-    const data = await apFetch({ action: "saveMaterialRequirementDates", prnId, updates: result.updates, operatorName: appActiveOperatorIdentityString });
+    showBlockingOverlay("Saving Material Requirement Dates...");
+    const data = await apFetch({ action: "saveMaterialRequirementDates", prnId, updates: result.updates, operatorName: appActiveOperatorIdentityString }).finally(() => hideBlockingOverlay());
     if (data.success) {
       abpsDraftClear(PRN_DRAFT_KEYS.rmrd);
       document.getElementById("rmrd-body").innerHTML = "";
