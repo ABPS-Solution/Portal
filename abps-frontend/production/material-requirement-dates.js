@@ -219,6 +219,8 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
     const purchaseQty = fullyOnPO ? 0 : (Number(line.purchaseQty) || 0);
     st.meta[key] = purchaseQty;
     st.itemCodeByKey[key] = line.itemCode;
+    st.srNoByKey = st.srNoByKey || {};
+    st.srNoByKey[key] = lineIdx + 1;
     if (!st.lines[key] && draftLines && Array.isArray(draftLines[key])) st.lines[key] = draftLines[key];
     if (!st.lines[key]) {
       st.lines[key] = (line.tranches || []).map(t => ({
@@ -437,14 +439,15 @@ function mrdValidateAndCollect(ns) {
   for (const key of Object.keys(st.meta)) {
     const purchaseQty = Number(st.meta[key]) || 0;
     const itemCode = st.itemCodeByKey[key] || key;
+    const rowRef = (st.srNoByKey && st.srNoByKey[key]) ? `Sr No ${st.srNoByKey[key]}` : itemCode;
     if (purchaseQty <= 0) continue;
     const tranches = st.lines[key] || [];
     if (tranches.length === 0 || tranches.some(t => !(Number(t.requiredQty) > 0) || !t.requiredDate)) {
-      return { error: `${itemCode}: every requirement date needs a quantity and a date.` };
+      return { error: `${rowRef}: every requirement date needs a quantity and a date.` };
     }
     const sum = tranches.reduce((s, t) => s + (Number(t.requiredQty) || 0), 0);
     if (Math.abs(sum - purchaseQty) > 1e-9) {
-      return { error: `${itemCode}: requirement dates must total exactly ${purchaseQty} (currently ${sum}).` };
+      return { error: `${rowRef}: requirement dates must total exactly ${purchaseQty} (currently ${sum}).` };
     }
     updates.push({ itemCode, tranches: tranches.map(t => ({ requirementId: t.requirementId, requiredQty: t.requiredQty, requiredDate: t.requiredDate })) });
   }
